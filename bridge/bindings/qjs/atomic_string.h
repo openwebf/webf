@@ -58,6 +58,9 @@ class AtomicString {
 
   bool IsEmpty() const;
   bool IsNull() const;
+  unsigned Hash() const {
+    return atom_;
+  }
   bool StartsWith(const StringView& prefix) const {
     // TODO(xiezuobing): 字符串处理(忽略大小写的对比开头)，区分是否是8Bit
       return false;

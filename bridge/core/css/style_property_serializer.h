@@ -48,58 +48,58 @@ class StylePropertySerializer {
  public:
   explicit StylePropertySerializer(const CSSPropertyValueSet&);
 
-  AtomicString AsText() const;
-  AtomicString SerializeShorthand(CSSPropertyID) const;
+  std::string AsText() const;
+  std::string SerializeShorthand(CSSPropertyID) const;
 
  private:
-  AtomicString GetCommonValue(const StylePropertyShorthand&) const;
-  AtomicString BorderPropertyValue(const StylePropertyShorthand&,
+  std::string GetCommonValue(const StylePropertyShorthand&) const;
+  std::string BorderPropertyValue(const StylePropertyShorthand&,
                              const StylePropertyShorthand&,
                              const StylePropertyShorthand&) const;
-  AtomicString BorderImagePropertyValue() const;
-  AtomicString BorderRadiusValue() const;
-  AtomicString GetLayeredShorthandValue(const StylePropertyShorthand&) const;
-  AtomicString Get2Values(const StylePropertyShorthand&) const;
-  AtomicString Get4Values(const StylePropertyShorthand&) const;
-  AtomicString PageBreakPropertyValue(const StylePropertyShorthand&) const;
-  AtomicString GetShorthandValue(const StylePropertyShorthand&,
-                           AtomicString separator = " ") const;
-  AtomicString GetShorthandValueForColumnRule(const StylePropertyShorthand&) const;
-  AtomicString GetShorthandValueForColumns(const StylePropertyShorthand&) const;
+  std::string BorderImagePropertyValue() const;
+  std::string BorderRadiusValue() const;
+  std::string GetLayeredShorthandValue(const StylePropertyShorthand&) const;
+  std::string Get2Values(const StylePropertyShorthand&) const;
+  std::string Get4Values(const StylePropertyShorthand&) const;
+  std::string PageBreakPropertyValue(const StylePropertyShorthand&) const;
+  std::string GetShorthandValue(const StylePropertyShorthand&,
+                           std::string separator = " ") const;
+  std::string GetShorthandValueForColumnRule(const StylePropertyShorthand&) const;
+  std::string GetShorthandValueForColumns(const StylePropertyShorthand&) const;
   // foo || bar || ... || baz
   // https://drafts.csswg.org/css-values-4/#component-combinators
-  AtomicString GetShorthandValueForDoubleBarCombinator(
+  std::string GetShorthandValueForDoubleBarCombinator(
       const StylePropertyShorthand&) const;
-  AtomicString GetShorthandValueForGrid(const StylePropertyShorthand&) const;
-  AtomicString GetShorthandValueForGridArea(const StylePropertyShorthand&) const;
-  AtomicString GetShorthandValueForGridLine(const StylePropertyShorthand&) const;
-  AtomicString GetShorthandValueForGridTemplate(const StylePropertyShorthand&) const;
-  AtomicString ContainerValue() const;
-  AtomicString TimelineValue(const StylePropertyShorthand&) const;
-  AtomicString ScrollTimelineValue() const;
-  AtomicString ViewTimelineValue() const;
-  AtomicString AnimationRangeShorthandValue() const;
-  AtomicString FontValue() const;
-  AtomicString FontSynthesisValue() const;
-  AtomicString FontVariantValue() const;
+  std::string GetShorthandValueForGrid(const StylePropertyShorthand&) const;
+  std::string GetShorthandValueForGridArea(const StylePropertyShorthand&) const;
+  std::string GetShorthandValueForGridLine(const StylePropertyShorthand&) const;
+  std::string GetShorthandValueForGridTemplate(const StylePropertyShorthand&) const;
+  std::string ContainerValue() const;
+  std::string TimelineValue(const StylePropertyShorthand&) const;
+  std::string ScrollTimelineValue() const;
+  std::string ViewTimelineValue() const;
+  std::string AnimationRangeShorthandValue() const;
+  std::string FontValue() const;
+  std::string FontSynthesisValue() const;
+  std::string FontVariantValue() const;
   bool AppendFontLonghandValueIfNotNormal(const CSSProperty&,
-                                          StringBuilder& result) const;
-  AtomicString OffsetValue() const;
-  AtomicString TextDecorationValue() const;
-  AtomicString TextSpacingValue() const;
-  AtomicString ContainIntrinsicSizeValue() const;
-  AtomicString WhiteSpaceValue() const;
-  AtomicString ScrollStartValue() const;
-  AtomicString ScrollStartTargetValue() const;
-  AtomicString PositionTryValue(const StylePropertyShorthand&) const;
-  AtomicString GetPropertyText(const CSSPropertyName&,
-                         const AtomicString& value,
+                                          std::string& result) const;
+  std::string OffsetValue() const;
+  std::string TextDecorationValue() const;
+  std::string TextSpacingValue() const;
+  std::string ContainIntrinsicSizeValue() const;
+  std::string WhiteSpaceValue() const;
+  std::string ScrollStartValue() const;
+  std::string ScrollStartTargetValue() const;
+  std::string PositionTryValue() const;
+  std::string GetPropertyText(const CSSPropertyName&,
+                         const std::string& value,
                          bool is_important,
                          bool is_not_first_decl) const;
   bool IsPropertyShorthandAvailable(const StylePropertyShorthand&) const;
   bool ShorthandHasOnlyInitialOrInheritedValue(
       const StylePropertyShorthand&) const;
-  void AppendBackgroundPropertyAsText(StringBuilder& result,
+  void AppendBackgroundPropertyAsText(std::string& result,
                                       unsigned& num_decls) const;
 
   // This function does checks common to all shorthands, and returns:
@@ -107,8 +107,8 @@ class StylePropertySerializer {
   // - An empty string if either some longhands are not set, the important
   // flag is not set consistently, or css-wide keywords are used. In these
   // cases serialization will always fail.
-  // - A null string otherwise.
-  AtomicString CommonShorthandChecks(const StylePropertyShorthand&) const;
+  // - A null std::string otherwise.
+  std::string CommonShorthandChecks(const StylePropertyShorthand&) const;
 
   // Only StylePropertySerializer uses the following two classes.
   class PropertyValueForSerializer {
@@ -138,7 +138,7 @@ class StylePropertySerializer {
     bool is_important_;
   };
 
-  AtomicString GetCustomPropertyText(const PropertyValueForSerializer&,
+  std::string GetCustomPropertyText(const PropertyValueForSerializer&,
                                bool is_not_first_decl) const;
 
   class CSSPropertyValueSetForSerializer final {
@@ -187,7 +187,7 @@ class StylePropertySerializer {
       // 3: color (this is kIntFirstCSSProperty)
       // 4: ...
       //
-      assert(index, property_set_->PropertyCount());
+      assert(index >= property_set_->PropertyCount());
       return static_cast<CSSPropertyID>(index - property_set_->PropertyCount() +
                                         kIntFirstCSSProperty);
     }

@@ -34,7 +34,7 @@
 #define WEBF_MEDIA_QUERY_H
 
 // TODO(xiezuobing): geometry/axis.h
-//#include "core/layout/geometry/axis.h"
+#include "core/layout/geometry/axis.h"
 
 #include <memory>
 #include "bindings/qjs/cppgc/member.h"

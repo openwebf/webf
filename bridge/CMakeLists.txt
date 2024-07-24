@@ -446,6 +446,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/legacy/bounding_client_rect.cc
     core/input/touch.cc
     core/input/touch_list.cc
+    core/css/css_timing_function_value.cc
+    core/platform/animation/timing_function.cc
+    gfx/animation/keyframe/timing_function.cc
+    gfx/geometry/cubic_bezier.cc
     )
 
   # Gen sources.

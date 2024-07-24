@@ -7,6 +7,7 @@
 #define BRIDGE_MACROS_H
 
 #include <stddef.h>
+#include "core/base/memory/stack_allocated.h"
 
 #if defined(__GNUC__) || defined(__clang__)
 #define LIKELY(x) __builtin_expect(!!(x), 1)
@@ -33,6 +34,7 @@
   Type(const Type&) = delete;            \
   Type& operator=(const Type&) = delete; \
   void* operator new(size_t) = delete;   \
+  void* operator new(size_t, webf::NotNullTag, void*) = delete; \
   void* operator new(size_t, void*) = delete
 
 #define WEBF_STACK_ALLOCATED()         \
@@ -48,6 +50,9 @@
 #define WEBF_DISALLOW_NEW()                                       \
  public:                                                          \
   using IsDisallowNewMarker = int;                                \
+  void* operator new(size_t, webf::NotNullTag, void* location) {   \
+    return location;                                              \
+  }                                                               \
   void* operator new(size_t, void* location) { return location; } \
                                                                   \
  private:                                                         \

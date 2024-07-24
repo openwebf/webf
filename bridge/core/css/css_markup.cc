@@ -3,8 +3,43 @@
 */
 
 #include "css_markup.h"
+#include "core/css/properties/css_parsing_utils.h"
+#include "core/platform/text/string_to_number.h"
 
 namespace webf {
+
+// "ident" from the CSS tokenizer, minus backslash-escape sequences
+static bool IsCSSTokenizerIdentifier(const StringView& string) {
+  unsigned length = string.length();
+
+  if (!length) {
+    return false;
+  }
+
+  return webf::VisitCharacters(string, [](const auto* chars, unsigned length) {
+    const auto* end = chars + length;
+
+    // -?
+    if (chars != end && chars[0] == '-') {
+      ++chars;
+    }
+
+    // {nmstart}
+    if (chars == end || !IsNameStartCodePoint(chars[0])) {
+      return false;
+    }
+    ++chars;
+
+    // {nmchar}*
+    for (; chars != end; ++chars) {
+      if (!IsNameCodePoint(chars[0])) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
 
 static void SerializeCharacterAsCodePoint(int32_t c, std::string& append_to) {
   char s[10];

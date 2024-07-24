@@ -49,8 +49,8 @@
 #include "core/css/css_value_keywords.h"
 #include "core/dom/tree_scope.h"
 #include "core/base/containers/enum_set.h"
-//#include "core/layout/geometry/axis.h"
-//#include "core/geometry/calculation_value.h"
+#include "core/layout/geometry/axis.h"
+#include "core/geometry/calculation_value.h"
 
 namespace webf {
 
@@ -138,12 +138,12 @@ class CSSMathExpressionNode {
                                      double multiplier) const = 0;
   virtual void AccumulateLengthUnitTypes(
       CSSPrimitiveValue::LengthTypeFlags& types) const = 0;
-  virtual scoped_refptr<const CalculationExpressionNode>
+  virtual std::shared_ptr<const CalculationExpressionNode>
   ToCalculationExpression(const CSSLengthResolver&) const = 0;
   virtual std::optional<PixelsAndPercent> ToPixelsAndPercent(
       const CSSLengthResolver&) const = 0;
 
-  scoped_refptr<const CalculationValue> ToCalcValue(
+  std::shared_ptr<const CalculationValue> ToCalcValue(
       const CSSLengthResolver& length_resolver,
       Length::ValueRange range,
       bool allows_negative_percentage_reference) const;
@@ -387,7 +387,7 @@ class CSSMathExpressionIdentifierLiteral final
   CSSPrimitiveValue::UnitType ResolvedUnitType() const final {
     return CSSPrimitiveValue::UnitType::kIdent;
   }
-  void Trace(Visitor* visitor) const final {
+  void Trace(GCVisitor* visitor) const final {
     CSSMathExpressionNode::Trace(visitor);
   }
 

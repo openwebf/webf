@@ -18,7 +18,7 @@
 #include <utility>
 
 
-namespace base {
+namespace webf {
 
 // Forward declarations needed for friend declarations.
 template <typename E, E MinEnumValue, E MaxEnumValue>
