@@ -28,10 +28,35 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "core/geometry/length.h"
 #include "css_value.h"
 
 namespace webf {
 
+CSSValue* CSSValue::Create(const webf::Length& value, float zoom) {
+  switch (value.GetType()) {
+    case Length::kAuto:
+    case Length::kMinContent:
+    case Length::kMaxContent:
+    case Length::kFillAvailable:
+    case Length::kFitContent:
+    case Length::kContent:
+    case Length::kExtendToZoom:
+      return CSSIdentifierValue::Create(value);
+    case Length::kPercent:
+    case Length::kFixed:
+    case Length::kCalculated:
+    case Length::kFlex:
+      return CSSPrimitiveValue::CreateFromLength(value, zoom);
+    case Length::kDeviceWidth:
+    case Length::kDeviceHeight:
+    case Length::kMinIntrinsic:
+    case Length::kNone:
+      NOTREACHED_IN_MIGRATION();
+      break;
+  }
+  return nullptr;
+}
 
 
 }  // namespace webf

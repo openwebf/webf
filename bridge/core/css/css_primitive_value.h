@@ -38,7 +38,6 @@
 
 namespace webf {
 
-class CSSLengthResolver;
 class CSSMathExpressionNode;
 
 // Dimension calculations are imprecise, often resulting in values of e.g.

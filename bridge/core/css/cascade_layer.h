@@ -9,9 +9,8 @@
 #ifndef WEBF_CASCADE_LAYER_H
 #define WEBF_CASCADE_LAYER_H
 
-
 #include "core/css/style_rule.h"
-#include "bindings/qjs//atomic_string.h"
+#include "bindings/qjs/atomic_string.h"
 
 namespace webf {
 

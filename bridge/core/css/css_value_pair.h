@@ -26,7 +26,6 @@
 #ifndef WEBF_CSS_VALUE_PAIR_H
 #define WEBF_CSS_VALUE_PAIR_H
 
-
 //#include "core/core_export.h"
 #include "core/css/css_value.h"
 #include "foundation/casting.h"

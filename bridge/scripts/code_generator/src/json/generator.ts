@@ -11,7 +11,8 @@ function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[
     data: blob.json.data,
     options,
     deps,
-    upperCamelCase
+    upperCamelCase,
+    enumKeyForCSSKeywords
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');
@@ -20,6 +21,13 @@ function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[
 
 function upperCamelCase(name: string) {
   return _.upperFirst(_.camelCase(name));
+}
+
+function enumKeyForCSSKeywords(name: string) {
+  if (name[0] == '-') {
+    return `kNegative` + upperCamelCase(name);
+  }
+  return 'k' + upperCamelCase(name);
 }
 
 function generateBody(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[], options: GenerateJSONOptions = {}): string {
@@ -31,6 +39,7 @@ function generateBody(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[],
     deps,
     options,
     upperCamelCase,
+    enumKeyForCSSKeywords,
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');

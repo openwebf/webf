@@ -5,6 +5,7 @@ const packageJSON = require('../package.json');
 const path = require('path');
 const glob = require('glob');
 const fs = require('fs');
+const { execSync } = require('child_process');
 const { IDLBlob } = require('../dist/idl/IDLBlob');
 const { JSONBlob } = require('../dist/json/JSONBlob');
 const { JSONTemplate } = require('../dist/json/JSONTemplate');
@@ -143,7 +144,14 @@ function genCodeFromJSONData() {
       let dist = blob.dist;
       let genFilePath = path.join(dist, targetTemplate.filename);
       wirteFileIfChanged(genFilePath + '.h', result.header);
-      result.source && wirteFileIfChanged(genFilePath + '.cc', result.source);
+
+      if (targetTemplate.gperf) {
+        execSync(`cat << EOF | gperf ${targetTemplate.gperf} > ${genFilePath + '.cc'} 
+${result.source}
+EOF`, {stdio: 'inherit'})
+      } else {
+        result.source && wirteFileIfChanged(genFilePath + '.cc', result.source);
+      }
     });
   }
 
