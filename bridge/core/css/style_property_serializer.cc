@@ -29,8 +29,7 @@
 
 #include <bitset>
 
-#include "base/logging.h"
-#include "base/memory/values_equivalent.h"
+#include "core/base/memory/values_equivalent.h"
 #include "core/animation/css/css_animation_data.h"
 #include "core/css/css_grid_template_areas_value.h"
 #include "core/css/css_identifier_value.h"
@@ -47,13 +46,13 @@
 #include "core/css/properties/longhand.h"
 #include "core/css/properties/longhands.h"
 #include "core/css/resolver/css_to_style_map.h"
-#include "core/css_value_keywords.h"
-#include "core/style_property_shorthand.h"
-// TODO(guopengfei)：待迁移如下代码
-// #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
-// #include "third_party/blink/renderer/platform/wtf/std_lib_extras.h"
-// #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
-// #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
+#include "core/css/css_value_keywords.h"
+//TODO::代码迁移，style_property_shorthand由模板生成
+//#include "core/style_property_shorthand.h"
+//TODO::代码迁移，runtime_enabled_features由模板生成
+//#include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+//#include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
+//#include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 
 namespace webf {
 
@@ -123,8 +122,8 @@ StylePropertySerializer::CSSPropertyValueSetForSerializer::
 }
 
 void StylePropertySerializer::CSSPropertyValueSetForSerializer::Trace(
-    blink::Visitor* visitor) const {
-  visitor->Trace(property_set_);
+    GCVisitor* visitor) const {
+  visitor->TraceMember(property_set_);
 }
 
 unsigned
@@ -248,45 +247,45 @@ StylePropertySerializer::StylePropertySerializer(
     const CSSPropertyValueSet& properties)
     : property_set_(properties) {}
 
-AtomicString StylePropertySerializer::GetCustomPropertyText(
+std::string StylePropertySerializer::GetCustomPropertyText(
     const PropertyValueForSerializer& property,
     bool is_not_first_decl) const {
   assert(property.Name().Id() == CSSPropertyID::kVariable);
-  StringBuilder result;
+  std::string result;
   if (is_not_first_decl) {
-    result.Append(' ');
+    result.append(" ");
   }
   const CSSValue* value = property.Value();
   SerializeIdentifier(property.Name().ToAtomicString(), result,
                       is_not_first_decl);
-  result.Append(": ");
-  result.Append(value->CssText());
+  result.append(": ");
+  result.append(value->CssText());
   if (property.IsImportant()) {
-    result.Append(" !important");
+    result.append(" !important");
   }
-  result.Append(';');
-  return result.ReleaseString();
+  result.append(";");
+  return result;
 }
 
-AtomicString StylePropertySerializer::GetPropertyText(const CSSPropertyName& name,
-                                                const AtomicString& value,
+std::string StylePropertySerializer::GetPropertyText(const CSSPropertyName& name,
+                                                const std::string& value,
                                                 bool is_important,
                                                 bool is_not_first_decl) const {
-  StringBuilder result;
+  std::string result;
   if (is_not_first_decl) {
-    result.Append(' ');
+    result.append(" ");
   }
-  result.Append(name.ToAtomicString());
-  result.Append(": ");
-  result.Append(value);
+  result.append(name.ToAtomicString());
+  result.append(": ");
+  result.append(value);
   if (is_important) {
-    result.Append(" !important");
+    result.append(" !important");
   }
-  result.Append(';');
-  return result.ReleaseString();
+  result.append(";");
+  return result;
 }
 
-AtomicString StylePropertySerializer::AsText() const {
+std::string StylePropertySerializer::AsText() const {
   StringBuilder result;
 
   std::bitset<kNumCSSPropertyIDs> longhand_serialized;
@@ -305,7 +304,6 @@ AtomicString StylePropertySerializer::AsText() const {
     const CSSPropertyName& name = property.Name();
     CSSPropertyID property_id = name.Id();
 
-#if DCHECK_IS_ON()
     if (property_id != CSSPropertyID::kVariable) {
       const CSSProperty& property_class = CSSProperty::Get(property_id);
       // Only web exposed properties should be part of the style.
@@ -316,7 +314,6 @@ AtomicString StylePropertySerializer::AsText() const {
       assert(!property_set_.IsDescriptorContext() ||
              property_class.IsDescriptor());
     }
-#endif  // DCHECK_IS_ON()
 
     switch (property_id) {
       case CSSPropertyID::kVariable:
@@ -363,7 +360,7 @@ AtomicString StylePropertySerializer::AsText() const {
         continue;
       }
 
-      AtomicString shorthand_result = SerializeShorthand(shorthand_property);
+      std::string shorthand_result = SerializeShorthand(shorthand_property);
       if (shorthand_result.empty()) {
         continue;
       }
@@ -434,7 +431,7 @@ static bool AllowInitialInShorthand(CSSPropertyID property_id) {
   }
 }
 
-AtomicString StylePropertySerializer::CommonShorthandChecks(
+std::string StylePropertySerializer::CommonShorthandChecks(
     const StylePropertyShorthand& shorthand) const {
   unsigned longhand_count = shorthand.length();
   if (!longhand_count || longhand_count > kMaxShorthandExpansion) {
@@ -501,15 +498,15 @@ AtomicString StylePropertySerializer::CommonShorthandChecks(
     }
   }
 
-  return AtomicString();
+  return std::string();
 }
 
-AtomicString StylePropertySerializer::SerializeShorthand(
+std::string StylePropertySerializer::SerializeShorthand(
     CSSPropertyID property_id) const {
   const StylePropertyShorthand& shorthand = shorthandForProperty(property_id);
   assert(shorthand.length());
 
-  AtomicString result = CommonShorthandChecks(shorthand);
+  std::string result = CommonShorthandChecks(shorthand);
   if (!result.IsNull()) {
     return result;
   }
@@ -664,7 +661,7 @@ AtomicString StylePropertySerializer::SerializeShorthand(
           return start->CssText();
         }
       }
-      return AtomicString();
+      return std::string();
     }
     case CSSPropertyID::kBorderRadius:
       return BorderRadiusValue();
@@ -698,7 +695,7 @@ AtomicString StylePropertySerializer::SerializeShorthand(
     case CSSPropertyID::kWebkitMaskBoxImage:
       // Temporary exceptions to the NOTREACHED() below.
       // TODO(crbug.com/1316689): Write something real here.
-      return AtomicString();
+      return std::string();
     case CSSPropertyID::kScrollStart:
       return ScrollStartValue();
     case CSSPropertyID::kScrollStartTarget:
@@ -710,7 +707,7 @@ AtomicString StylePropertySerializer::SerializeShorthand(
           << "Shorthand property "
           << CSSPropertyName(property_id).ToAtomicString()
           << " must be handled in StylePropertySerializer::SerializeShorthand.";
-      return AtomicString();
+      return std::string();
   }
 }
 
@@ -758,7 +755,7 @@ const CSSValue* GetFontStretchKeyword(const CSSValue* font_stretch_value) {
 // Returns false if the value cannot be represented in the font shorthand
 bool StylePropertySerializer::AppendFontLonghandValueIfNotNormal(
     const CSSProperty& property,
-    StringBuilder& result) const {
+    std::string& result) const {
   int found_property_index = property_set_.FindPropertyIndex(property);
   assert(found_property_index != -1);
 
@@ -776,7 +773,7 @@ bool StylePropertySerializer::AppendFontLonghandValueIfNotNormal(
     return true;
   }
 
-  AtomicString value;
+  std::string value;
   if (property.IDEquals(CSSPropertyID::kFontVariantLigatures) &&
       identifier_value && identifier_value->GetValueID() == CSSValueID::kNone) {
     // A shorter representation is preferred in general. Thus, 'none' returns
@@ -820,12 +817,10 @@ bool StylePropertySerializer::AppendFontLonghandValueIfNotNormal(
   return true;
 }
 
-AtomicString StylePropertySerializer::ContainerValue() const {
-  CHECK_EQ(containerShorthand().length(), 2u);
-  CHECK_EQ(containerShorthand().properties()[0],
-           &GetCSSPropertyContainerName());
-  CHECK_EQ(containerShorthand().properties()[1],
-           &GetCSSPropertyContainerType());
+std::string StylePropertySerializer::ContainerValue() const {
+  assert(containerShorthand().length() == 2u);
+  assert(containerShorthand().properties()[0] == &GetCSSPropertyContainerName());
+  assert(containerShorthand().properties()[1] == &GetCSSPropertyContainerType());
 
   CSSValueList* list = CSSValueList::CreateSlashSeparated();
 
@@ -891,10 +886,10 @@ CSSValue* TimelineValueItem(wtf_size_t index,
 
 }  // namespace
 
-AtomicString StylePropertySerializer::TimelineValue(
+std::string StylePropertySerializer::TimelineValue(
     const StylePropertyShorthand& shorthand) const {
-  CHECK_GE(shorthand.length(), 2u);
-  CHECK_LE(shorthand.length(), 3u);
+  assert(shorthand.length() >= 2u);
+  assert(shorthand.length() <= 3u);
 
   const CSSValueList& name_list = To<CSSValueList>(
       *property_set_.GetPropertyCSSValue(*shorthand.properties()[0]));
@@ -925,23 +920,18 @@ AtomicString StylePropertySerializer::TimelineValue(
   return list->CssText();
 }
 
-AtomicString StylePropertySerializer::ScrollTimelineValue() const {
-  CHECK_EQ(scrollTimelineShorthand().length(), 2u);
-  CHECK_EQ(scrollTimelineShorthand().properties()[0],
-           &GetCSSPropertyScrollTimelineName());
-  CHECK_EQ(scrollTimelineShorthand().properties()[1],
-           &GetCSSPropertyScrollTimelineAxis());
+std::string StylePropertySerializer::ScrollTimelineValue() const {
+  assert(scrollTimelineShorthand().length() == 2u);
+  assert(scrollTimelineShorthand().properties()[0] == &GetCSSPropertyScrollTimelineName());
+  assert(scrollTimelineShorthand().properties()[1] == &GetCSSPropertyScrollTimelineAxis());
   return TimelineValue(scrollTimelineShorthand());
 }
 
-AtomicString StylePropertySerializer::ViewTimelineValue() const {
-  CHECK_EQ(viewTimelineShorthand().length(), 3u);
-  CHECK_EQ(viewTimelineShorthand().properties()[0],
-           &GetCSSPropertyViewTimelineName());
-  CHECK_EQ(viewTimelineShorthand().properties()[1],
-           &GetCSSPropertyViewTimelineAxis());
-  CHECK_EQ(viewTimelineShorthand().properties()[2],
-           &GetCSSPropertyViewTimelineInset());
+std::string StylePropertySerializer::ViewTimelineValue() const {
+  assert(viewTimelineShorthand().length() == 3u);
+  assert(viewTimelineShorthand().properties()[0] == &GetCSSPropertyViewTimelineName());
+  assert(viewTimelineShorthand().properties()[1] == &GetCSSPropertyViewTimelineAxis());
+  assert(viewTimelineShorthand().properties()[2] == &GetCSSPropertyViewTimelineInset());
   return TimelineValue(viewTimelineShorthand());
 }
 
@@ -1007,12 +997,10 @@ CSSValue* AnimationRangeShorthandValueItem(wtf_size_t index,
 
 }  // namespace
 
-AtomicString StylePropertySerializer::AnimationRangeShorthandValue() const {
-  CHECK_EQ(animationRangeShorthand().length(), 2u);
-  CHECK_EQ(animationRangeShorthand().properties()[0],
-           &GetCSSPropertyAnimationRangeStart());
-  CHECK_EQ(animationRangeShorthand().properties()[1],
-           &GetCSSPropertyAnimationRangeEnd());
+std::string StylePropertySerializer::AnimationRangeShorthandValue() const {
+  assert(animationRangeShorthand().length() == 2u);
+  assert(animationRangeShorthand().properties()[0] == &GetCSSPropertyAnimationRangeStart());
+  assert(animationRangeShorthand().properties()[1] == &GetCSSPropertyAnimationRangeEnd());
 
   const CSSValueList& start_list = To<CSSValueList>(
       *property_set_.GetPropertyCSSValue(GetCSSPropertyAnimationRangeStart()));
@@ -1032,7 +1020,7 @@ AtomicString StylePropertySerializer::AnimationRangeShorthandValue() const {
   return list->CssText();
 }
 
-AtomicString StylePropertySerializer::FontValue() const {
+std::string StylePropertySerializer::FontValue() const {
   int font_size_property_index =
       property_set_.FindPropertyIndex(GetCSSPropertyFontSize());
   int font_family_property_index =
@@ -1217,7 +1205,7 @@ AtomicString StylePropertySerializer::FontValue() const {
   bool font_stretch_valid =
       AppendFontLonghandValueIfNotNormal(GetCSSPropertyFontStretch(), result);
   if (!font_stretch_valid) {
-    return AtomicString();
+    return std::string();
   }
   if (!result.empty()) {
     result.Append(' ');
@@ -1231,7 +1219,7 @@ AtomicString StylePropertySerializer::FontValue() const {
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::FontVariantValue() const {
+std::string StylePropertySerializer::FontVariantValue() const {
   StringBuilder result;
   bool is_variant_ligatures_none = false;
 
@@ -1272,7 +1260,7 @@ AtomicString StylePropertySerializer::FontVariantValue() const {
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::FontSynthesisValue() const {
+std::string StylePropertySerializer::FontSynthesisValue() const {
   StringBuilder result;
 
   int font_synthesis_weight_property_index =
@@ -1336,7 +1324,7 @@ AtomicString StylePropertySerializer::FontSynthesisValue() const {
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::OffsetValue() const {
+std::string StylePropertySerializer::OffsetValue() const {
   const CSSValue* position =
       property_set_.GetPropertyCSSValue(GetCSSPropertyOffsetPosition());
   const CSSValue* path =
@@ -1411,13 +1399,13 @@ AtomicString StylePropertySerializer::OffsetValue() const {
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::TextDecorationValue() const {
+std::string StylePropertySerializer::TextDecorationValue() const {
   StringBuilder result;
   const auto& shorthand = shorthandForProperty(CSSPropertyID::kTextDecoration);
   for (unsigned i = 0; i < shorthand.length(); ++i) {
     const CSSValue* value =
         property_set_.GetPropertyCSSValue(*shorthand.properties()[i]);
-    AtomicString value_text = value->CssText();
+    std::string value_text = value->CssText();
     if (value->IsInitialValue()) {
       continue;
     }
@@ -1445,7 +1433,7 @@ AtomicString StylePropertySerializer::TextDecorationValue() const {
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::Get2Values(
+std::string StylePropertySerializer::Get2Values(
     const StylePropertyShorthand& shorthand) const {
   // Assume the properties are in the usual order start, end.
   int start_value_index =
@@ -1454,7 +1442,7 @@ AtomicString StylePropertySerializer::Get2Values(
       property_set_.FindPropertyIndex(*shorthand.properties()[1]);
 
   if (start_value_index == -1 || end_value_index == -1) {
-    return AtomicString();
+    return std::string();
   }
 
   PropertyValueForSerializer start =
@@ -1472,7 +1460,7 @@ AtomicString StylePropertySerializer::Get2Values(
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::Get4Values(
+std::string StylePropertySerializer::Get4Values(
     const StylePropertyShorthand& shorthand) const {
   // Assume the properties are in the usual order top, right, bottom, left.
   int top_value_index =
@@ -1486,7 +1474,7 @@ AtomicString StylePropertySerializer::Get4Values(
 
   if (top_value_index == -1 || right_value_index == -1 ||
       bottom_value_index == -1 || left_value_index == -1) {
-    return {};
+    return std::string();
   }
 
   PropertyValueForSerializer top = property_set_.PropertyAt(top_value_index);
@@ -1561,7 +1549,7 @@ void SerializeMaskOriginAndClip(StringBuilder& result,
 
 }  // namespace
 
-AtomicString StylePropertySerializer::GetLayeredShorthandValue(
+std::string StylePropertySerializer::GetLayeredShorthandValue(
     const StylePropertyShorthand& shorthand) const {
   const unsigned size = shorthand.length();
 
@@ -1654,9 +1642,9 @@ AtomicString StylePropertySerializer::GetLayeredShorthandValue(
       }
 
       if (property->IDEquals(CSSPropertyID::kTransitionBehavior)) {
-        CHECK_EQ(shorthand.id(), CSSPropertyID::kTransition);
+        assert(shorthand.id() == CSSPropertyID::kTransition);
         auto* ident = DynamicTo<CSSIdentifierValue>(value);
-        CHECK(ident) << " transition-behavior should only have a "
+        assert(ident) << " transition-behavior should only have a "
                         "CSSIdentifierValue for a value. CssText: "
                      << value->CssText();
         if (ident->GetValueID() == CSSValueID::kNormal) {
@@ -1811,14 +1799,14 @@ AtomicString StylePropertySerializer::GetLayeredShorthandValue(
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::GetShorthandValue(
+std::string StylePropertySerializer::GetShorthandValue(
     const StylePropertyShorthand& shorthand,
-    AtomicString separator) const {
+    std::string separator) const {
   StringBuilder result;
   for (unsigned i = 0; i < shorthand.length(); ++i) {
     const CSSValue* value =
         property_set_.GetPropertyCSSValue(*shorthand.properties()[i]);
-    AtomicString value_text = value->CssText();
+    std::string value_text = value->CssText();
     if (value->IsInitialValue()) {
       continue;
     }
@@ -1830,7 +1818,7 @@ AtomicString StylePropertySerializer::GetShorthandValue(
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::GetShorthandValueForColumnRule(
+std::string StylePropertySerializer::GetShorthandValueForColumnRule(
     const StylePropertyShorthand& shorthand) const {
   assert(shorthand.length() == 3u);
 
@@ -1846,7 +1834,7 @@ AtomicString StylePropertySerializer::GetShorthandValueForColumnRule(
           DynamicTo<CSSIdentifierValue>(column_rule_width);
       !(ident_value && ident_value->GetValueID() == CSSValueID::kMedium) &&
       !column_rule_width->IsInitialValue()) {
-    AtomicString column_rule_width_text = column_rule_width->CssText();
+    std::string column_rule_width_text = column_rule_width->CssText();
     result.Append(column_rule_width_text);
   }
 
@@ -1854,7 +1842,7 @@ AtomicString StylePropertySerializer::GetShorthandValueForColumnRule(
           DynamicTo<CSSIdentifierValue>(column_rule_style);
       !(ident_value && ident_value->GetValueID() == CSSValueID::kNone) &&
       !column_rule_style->IsInitialValue()) {
-    AtomicString column_rule_style_text = column_rule_style->CssText();
+    std::string column_rule_style_text = column_rule_style->CssText();
     if (!result.empty()) {
       result.Append(" ");
     }
@@ -1866,7 +1854,7 @@ AtomicString StylePropertySerializer::GetShorthandValueForColumnRule(
       !(ident_value &&
         ident_value->GetValueID() == CSSValueID::kCurrentcolor) &&
       !column_rule_color->IsInitialValue()) {
-    AtomicString column_rule_color_text = column_rule_color->CssText();
+    std::string column_rule_color_text = column_rule_color->CssText();
     if (!result.empty()) {
       result.Append(" ");
     }
@@ -1881,7 +1869,7 @@ AtomicString StylePropertySerializer::GetShorthandValueForColumnRule(
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::GetShorthandValueForColumns(
+std::string StylePropertySerializer::GetShorthandValueForColumns(
     const StylePropertyShorthand& shorthand) const {
   assert(shorthand.length() == 2u);
 
@@ -1889,7 +1877,7 @@ AtomicString StylePropertySerializer::GetShorthandValueForColumns(
   for (unsigned i = 0; i < shorthand.length(); ++i) {
     const CSSValue* value =
         property_set_.GetPropertyCSSValue(*shorthand.properties()[i]);
-    AtomicString value_text = value->CssText();
+    std::string value_text = value->CssText();
     if (const auto* ident_value = DynamicTo<CSSIdentifierValue>(value);
         ident_value && ident_value->GetValueID() == CSSValueID::kAuto) {
       continue;
@@ -1907,7 +1895,7 @@ AtomicString StylePropertySerializer::GetShorthandValueForColumns(
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::GetShorthandValueForDoubleBarCombinator(
+std::string StylePropertySerializer::GetShorthandValueForDoubleBarCombinator(
     const StylePropertyShorthand& shorthand) const {
   StringBuilder result;
   for (unsigned i = 0; i < shorthand.length(); ++i) {
@@ -1919,7 +1907,7 @@ AtomicString StylePropertySerializer::GetShorthandValueForDoubleBarCombinator(
     if (*value == *longhand->InitialValue()) {
       continue;
     }
-    AtomicString value_text = value->CssText();
+    std::string value_text = value->CssText();
     if (!result.empty()) {
       result.Append(" ");
     }
@@ -1933,7 +1921,7 @@ AtomicString StylePropertySerializer::GetShorthandValueForDoubleBarCombinator(
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::GetShorthandValueForGrid(
+std::string StylePropertySerializer::GetShorthandValueForGrid(
     const StylePropertyShorthand& shorthand) const {
   assert(shorthand.length() == 6u);
 
@@ -1993,7 +1981,7 @@ AtomicString StylePropertySerializer::GetShorthandValueForGrid(
   if ((auto_flow_value_list || auto_row_value_list || auto_column_value_list) &&
       *template_area_value !=
           *GetCSSPropertyGridTemplateAreas().InitialValue()) {
-    return AtomicString();
+    return std::string();
   }
 
   // `grid-template-rows` and `grid-template-columns` are shorthards within this
@@ -2010,7 +1998,7 @@ AtomicString StylePropertySerializer::GetShorthandValueForGrid(
   if ((non_initial_template_rows && specified_non_initial_auto_rows) ||
       (non_initial_template_columns && specified_non_initial_auto_columns) ||
       (specified_non_initial_auto_rows && specified_non_initial_auto_columns)) {
-    return AtomicString();
+    return std::string();
   }
 
   // 1- <'grid-template'>
@@ -2024,7 +2012,7 @@ AtomicString StylePropertySerializer::GetShorthandValueForGrid(
     return GetShorthandValueForGridTemplate(shorthand);
   } else if (non_initial_template_rows && non_initial_template_columns) {
     // Specifying both rows and columns is not valid per the grammar.
-    return AtomicString();
+    return std::string();
   }
 
   // At this point, the syntax matches:
@@ -2072,9 +2060,9 @@ AtomicString StylePropertySerializer::GetShorthandValueForGrid(
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::GetShorthandValueForGridArea(
+std::string StylePropertySerializer::GetShorthandValueForGridArea(
     const StylePropertyShorthand& shorthand) const {
-  const AtomicString separator = " / ";
+  const std::string separator = " / ";
 
   assert(shorthand.length() == 4u);
   const CSSValue* grid_row_start =
@@ -2121,9 +2109,9 @@ AtomicString StylePropertySerializer::GetShorthandValueForGridArea(
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::GetShorthandValueForGridLine(
+std::string StylePropertySerializer::GetShorthandValueForGridLine(
     const StylePropertyShorthand& shorthand) const {
-  const AtomicString separator = " / ";
+  const std::string separator = " / ";
 
   assert(shorthand.length() == 2u);
   const CSSValue* line_start =
@@ -2143,7 +2131,7 @@ AtomicString StylePropertySerializer::GetShorthandValueForGridLine(
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::GetShorthandValueForGridTemplate(
+std::string StylePropertySerializer::GetShorthandValueForGridTemplate(
     const StylePropertyShorthand& shorthand) const {
   const CSSValue* template_row_values =
       property_set_.GetPropertyCSSValue(*shorthand.properties()[0]);
@@ -2159,24 +2147,24 @@ AtomicString StylePropertySerializer::GetShorthandValueForGridTemplate(
 }
 
 // only returns a non-null value if all properties have the same, non-null value
-AtomicString StylePropertySerializer::GetCommonValue(
+std::string StylePropertySerializer::GetCommonValue(
     const StylePropertyShorthand& shorthand) const {
-  AtomicString res;
+  std::string res;
   for (unsigned i = 0; i < shorthand.length(); ++i) {
     const CSSValue* value =
         property_set_.GetPropertyCSSValue(*shorthand.properties()[i]);
     // FIXME: CSSInitialValue::CssText should generate the right value.
-    AtomicString text = value->CssText();
+    std::string text = value->CssText();
     if (res.IsNull()) {
       res = text;
     } else if (res != text) {
-      return AtomicString();
+      return std::string();
     }
   }
   return res;
 }
 
-AtomicString StylePropertySerializer::BorderPropertyValue(
+std::string StylePropertySerializer::BorderPropertyValue(
     const StylePropertyShorthand& width,
     const StylePropertyShorthand& style,
     const StylePropertyShorthand& color) const {
@@ -2195,16 +2183,16 @@ AtomicString StylePropertySerializer::BorderPropertyValue(
         To<Longhand>(*border_image_property).InitialValue();
     if (value && !value->IsInitialValue() &&
         *value != *initial_specified_value) {
-      return AtomicString();
+      return std::string();
     }
   }
 
   const StylePropertyShorthand shorthand_properties[3] = {width, style, color};
   StringBuilder result;
   for (const auto& shorthand_property : shorthand_properties) {
-    const AtomicString value = GetCommonValue(shorthand_property);
+    const std::string value = GetCommonValue(shorthand_property);
     if (value.IsNull()) {
-      return AtomicString();
+      return std::string();
     }
     if (value == "initial") {
       continue;
@@ -2214,10 +2202,10 @@ AtomicString StylePropertySerializer::BorderPropertyValue(
     }
     result.Append(value);
   }
-  return result.empty() ? AtomicString() : result.ReleaseString();
+  return result.empty() ? std::string() : result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::BorderImagePropertyValue() const {
+std::string StylePropertySerializer::BorderImagePropertyValue() const {
   StringBuilder result;
   const CSSProperty* properties[] = {
       &GetCSSPropertyBorderImageSource(), &GetCSSPropertyBorderImageSlice(),
@@ -2237,10 +2225,10 @@ AtomicString StylePropertySerializer::BorderImagePropertyValue() const {
   return result.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::BorderRadiusValue() const {
+std::string StylePropertySerializer::BorderRadiusValue() const {
   auto serialize = [](const CSSValue& top_left, const CSSValue& top_right,
                       const CSSValue& bottom_right,
-                      const CSSValue& bottom_left) -> AtomicString {
+                      const CSSValue& bottom_left) -> std::string {
     bool show_bottom_left = !(top_right == bottom_left);
     bool show_bottom_right = !(top_left == bottom_right) || show_bottom_left;
     bool show_top_right = !(top_left == top_right) || show_bottom_right;
@@ -2289,7 +2277,7 @@ AtomicString StylePropertySerializer::BorderRadiusValue() const {
   return builder.ReleaseString();
 }
 
-AtomicString StylePropertySerializer::PageBreakPropertyValue(
+std::string StylePropertySerializer::PageBreakPropertyValue(
     const StylePropertyShorthand& shorthand) const {
   const CSSValue* value =
       property_set_.GetPropertyCSSValue(*shorthand.properties()[0]);
@@ -2302,12 +2290,12 @@ AtomicString StylePropertySerializer::PageBreakPropertyValue(
       value_id == CSSValueID::kRight || value_id == CSSValueID::kAvoid) {
     return value->CssText();
   }
-  return AtomicString();
+  return std::string();
 }
 
-AtomicString StylePropertySerializer::ContainIntrinsicSizeValue() const {
+std::string StylePropertySerializer::ContainIntrinsicSizeValue() const {
   // If the two values are identical, we return just one.
-  AtomicString res = GetCommonValue(containIntrinsicSizeShorthand());
+  std::string res = GetCommonValue(containIntrinsicSizeShorthand());
   if (!res.IsNull()) {
     return res;
   }
@@ -2315,7 +2303,7 @@ AtomicString StylePropertySerializer::ContainIntrinsicSizeValue() const {
   return GetShorthandValue(containIntrinsicSizeShorthand());
 }
 
-AtomicString StylePropertySerializer::TextSpacingValue() const {
+std::string StylePropertySerializer::TextSpacingValue() const {
   const auto* autospace_value = DynamicTo<CSSIdentifierValue>(
       property_set_.GetPropertyCSSValue(GetCSSPropertyTextAutospace()));
   assert(autospace_value);
@@ -2351,7 +2339,7 @@ AtomicString StylePropertySerializer::TextSpacingValue() const {
   return result.ToString();
 }
 
-AtomicString StylePropertySerializer::WhiteSpaceValue() const {
+std::string StylePropertySerializer::WhiteSpaceValue() const {
   const CSSValue* collapse_value =
       property_set_.GetPropertyCSSValue(GetCSSPropertyWhiteSpaceCollapse());
   const CSSValue* wrap_value =
@@ -2386,12 +2374,10 @@ AtomicString StylePropertySerializer::WhiteSpaceValue() const {
   return result.ToString();
 }
 
-AtomicString StylePropertySerializer::ScrollStartValue() const {
-  CHECK_EQ(scrollStartShorthand().length(), 2u);
-  CHECK_EQ(scrollStartShorthand().properties()[0],
-           &GetCSSPropertyScrollStartBlock());
-  CHECK_EQ(scrollStartShorthand().properties()[1],
-           &GetCSSPropertyScrollStartInline());
+std::string StylePropertySerializer::ScrollStartValue() const {
+  assert(scrollStartShorthand().length() == 2u);
+  assert(scrollStartShorthand().properties()[0] == &GetCSSPropertyScrollStartBlock());
+  assert(scrollStartShorthand().properties()[1] == &GetCSSPropertyScrollStartInline());
 
   CSSValueList* list = CSSValueList::CreateSpaceSeparated();
   const CSSValue* block_value =
@@ -2412,12 +2398,10 @@ AtomicString StylePropertySerializer::ScrollStartValue() const {
   return list->CssText();
 }
 
-AtomicString StylePropertySerializer::ScrollStartTargetValue() const {
-  CHECK_EQ(scrollStartTargetShorthand().length(), 2u);
-  CHECK_EQ(scrollStartTargetShorthand().properties()[0],
-           &GetCSSPropertyScrollStartTargetBlock());
-  CHECK_EQ(scrollStartTargetShorthand().properties()[1],
-           &GetCSSPropertyScrollStartTargetInline());
+std::string StylePropertySerializer::ScrollStartTargetValue() const {
+  assert(scrollStartTargetShorthand().length() == 2u);
+  assert(scrollStartTargetShorthand().properties()[0] == &GetCSSPropertyScrollStartTargetBlock());
+  assert(scrollStartTargetShorthand().properties()[1] == &GetCSSPropertyScrollStartTargetInline());
 
   CSSValueList* list = CSSValueList::CreateSpaceSeparated();
   const CSSValue* block_value =
@@ -2437,12 +2421,10 @@ AtomicString StylePropertySerializer::ScrollStartTargetValue() const {
   return list->CssText();
 }
 
-AtomicString StylePropertySerializer::PositionTryValue() const {
-  CHECK_EQ(positionTryShorthand().length(), 2u);
-  CHECK_EQ(positionTryShorthand().properties()[0],
-           &GetCSSPropertyPositionTryOrder());
-  CHECK_EQ(positionTryShorthand().properties()[1],
-           &GetCSSPropertyPositionTryOptions());
+std::string StylePropertySerializer::PositionTryValue() const {
+  assert(positionTryShorthand().length() == 2u);
+  assert(positionTryShorthand().properties()[0] == &GetCSSPropertyPositionTryOrder());
+  assert(positionTryShorthand().properties()[1] == &GetCSSPropertyPositionTryOptions());
 
   CSSValueList* list = CSSValueList::CreateSpaceSeparated();
   const CSSValue* order_value =
@@ -2450,8 +2432,8 @@ AtomicString StylePropertySerializer::PositionTryValue() const {
   const CSSValue* options_value =
       property_set_.GetPropertyCSSValue(GetCSSPropertyPositionTryOptions());
 
-  CHECK(order_value);
-  CHECK(options_value);
+  assert(order_value);
+  assert(options_value);
 
   if (To<CSSIdentifierValue>(*order_value).GetValueID() !=
       CSSValueID::kNormal) {
