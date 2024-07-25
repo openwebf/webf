@@ -32,7 +32,7 @@ class WebFPublicPluginEventListener : public EventListener {
 
   [[nodiscard]] bool Matches(const EventListener& other) const override {
     const auto* other_listener = DynamicTo<WebFPublicPluginEventListener>(other);
-    return other_listener && other_listener->callback_context_->ptr == callback_context_->ptr;
+    return other_listener && other_listener->callback_context_ && other_listener->callback_context_->callback == callback_context_->callback;
   }
 
   void Trace(GCVisitor* visitor) const override {}
@@ -65,6 +65,16 @@ void EventTargetWebFMethods::AddEventListener(EventTarget* event_target,
 
   event_target->addEventListener(event_name, listener_impl, event_listener_options,
                                  shared_exception_state->exception_state);
+}
+
+void EventTargetWebFMethods::RemoveEventListener(EventTarget* event_target,
+                                                 const char* event_name_str,
+                                                 WebFEventListenerContext* callback_context,
+                                                 SharedExceptionState* shared_exception_state) {
+  AtomicString event_name = AtomicString(event_target->ctx(), event_name_str);
+  auto listener_impl = WebFPublicPluginEventListener::Create(callback_context, shared_exception_state);
+
+  event_target->removeEventListener(event_name, listener_impl, shared_exception_state->exception_state);
 }
 
 void EventTargetWebFMethods::Release(EventTarget* event_target) {

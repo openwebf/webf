@@ -41,6 +41,11 @@ pub struct EventTargetRustMethods {
     callback_context: *const EventCallbackContext,
     options: *const AddEventListenerOptions,
     exception_state: *const OpaquePtr) -> c_void,
+  pub remove_event_listener: extern "C" fn(
+    event_target: *const OpaquePtr,
+    event_name: *const c_char,
+    callback_context: *const EventCallbackContext,
+    exception_state: *const OpaquePtr) -> c_void,
   pub release: extern "C" fn(event_target: *const OpaquePtr),
 }
 
@@ -130,6 +135,37 @@ impl EventTarget {
 
     Ok(())
   }
+
+  pub fn remove_event_listener(
+    &self,
+    event_name: &str,
+    callback: EventListenerCallback,
+    exception_state: &ExceptionState,
+  ) -> Result<(), String> {
+    let callback_context_data = Box::new(EventCallbackContextData {
+      event_target_ptr: self.ptr(),
+      event_target_method_pointer: self.method_pointer,
+      executing_context_ptr: self.context().ptr,
+      executing_context_method_pointer: self.context().method_pointer(),
+      func: callback,
+    });
+    let callback_context_data_ptr = Box::into_raw(callback_context_data);
+    let callback_context = Box::new(EventCallbackContext { callback: handle_event_listener_callback, free_ptr: handle_callback_data_free, ptr: callback_context_data_ptr});
+    let callback_context_ptr = Box::into_raw(callback_context);
+    let c_event_name = CString::new(event_name).unwrap();
+    unsafe {
+      ((*self.method_pointer).remove_event_listener)(self.ptr, c_event_name.as_ptr(), callback_context_ptr, exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      unsafe {
+        let _ = Box::from_raw(callback_context_ptr);
+        let _ = Box::from_raw(callback_context_data_ptr);
+      }
+      return Err(exception_state.stringify(self.context()));
+    }
+
+    Ok(())
+  }
 }
 
 pub trait EventTargetMethods {
@@ -143,6 +179,12 @@ pub trait EventTargetMethods {
     event_name: &str,
     callback: EventListenerCallback,
     options: &AddEventListenerOptions,
+    exception_state: &ExceptionState) -> Result<(), String>;
+
+  fn remove_event_listener(
+    &self,
+    event_name: &str,
+    callback: EventListenerCallback,
     exception_state: &ExceptionState) -> Result<(), String>;
 }
 
@@ -176,5 +218,11 @@ impl EventTargetMethods for EventTarget {
                         exception_state: &ExceptionState) -> Result<(), String> {
     self.add_event_listener(event_name, callback, options, exception_state)
   }
-}
 
+  fn remove_event_listener(&self,
+                           event_name: &str,
+                           callback: EventListenerCallback,
+                           exception_state: &ExceptionState) -> Result<(), String> {
+    self.remove_event_listener(event_name, callback, exception_state)
+  }
+}
