@@ -110,6 +110,13 @@ impl EventTargetMethods for Node {
                         exception_state: &ExceptionState) -> Result<(), String> {
     self.event_target.add_event_listener(event_name, callback, options, exception_state)
   }
+
+  fn remove_event_listener(&self,
+                           event_name: &str,
+                           callback: EventListenerCallback,
+                           exception_state: &ExceptionState) -> Result<(), String> {
+    self.event_target.remove_event_listener(event_name, callback, exception_state)
+  }
 }
 
 impl NodeMethods for Node {
