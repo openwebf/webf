@@ -67,6 +67,13 @@ impl EventTargetMethods for HTMLElement {
                         exception_state: &ExceptionState) -> Result<(), String> {
     self.element.add_event_listener(event_name, callback, options, exception_state)
   }
+
+  fn remove_event_listener(&self,
+                           event_name: &str,
+                           callback: EventListenerCallback,
+                           exception_state: &ExceptionState) -> Result<(), String> {
+    self.element.remove_event_listener(event_name, callback, exception_state)
+  }
 }
 
 impl HTMLElementMethods for HTMLElement {}
