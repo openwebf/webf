@@ -15,6 +15,7 @@ const { generateUnionTypes, generateUnionTypeFileName } = require('../dist/idl/g
 const { generateJSONTemplate } = require('../dist/json/generator');
 const { generateNamesInstaller } = require("../dist/json/generator");
 const { union } = require("lodash");
+const {makeCSSPropertyNames} = require("../dist/json/css_property_names");
 
 program
   .version(packageJSON.version)
@@ -33,7 +34,7 @@ if (!path.isAbsolute(dist)) {
   dist = path.join(process.cwd(), dist);
 }
 
-function wirteFileIfChanged(filePath, content) {
+function writeFileIfChanged(filePath, content) {
   if (fs.existsSync(filePath)) {
     const oldContent = fs.readFileSync(filePath, 'utf-8')
     if (oldContent === content) {
@@ -72,8 +73,8 @@ function genCodeFromTypeDefine() {
 
     let genFilePath = path.join(b.dist, b.filename);
 
-    wirteFileIfChanged(genFilePath + '.h', result.header);
-    wirteFileIfChanged(genFilePath + '.cc', result.source);
+    writeFileIfChanged(genFilePath + '.h', result.header);
+    writeFileIfChanged(genFilePath + '.cc', result.source);
   }
 
   let unionTypes = Array.from(unionTypeCollector.types);
@@ -86,8 +87,8 @@ function genCodeFromTypeDefine() {
   for(let i = 0; i < unionTypes.length; i ++) {
     let result = generateUnionTypes(unionTypes[i]);
     let filename = generateUnionTypeFileName(unionTypes[i]);
-    wirteFileIfChanged(path.join(dist, filename) + '.h', result.header);
-    wirteFileIfChanged(path.join(dist, filename) + '.cc', result.source);
+    writeFileIfChanged(path.join(dist, filename) + '.h', result.header);
+    writeFileIfChanged(path.join(dist, filename) + '.cc', result.source);
   }
 }
 
@@ -143,14 +144,14 @@ function genCodeFromJSONData() {
       let result = generateJSONTemplate(blobs[i], targetTemplateHeaderData, targetTemplateBodyData, depsBlob, targetTemplate.options);
       let dist = blob.dist;
       let genFilePath = path.join(dist, targetTemplate.filename);
-      wirteFileIfChanged(genFilePath + '.h', result.header);
+      writeFileIfChanged(genFilePath + '.h', result.header);
 
       if (targetTemplate.gperf) {
         execSync(`cat << EOF | gperf ${targetTemplate.gperf} > ${genFilePath + '.cc'} 
 ${result.source}
 EOF`, {stdio: 'inherit'})
       } else {
-        result.source && wirteFileIfChanged(genFilePath + '.cc', result.source);
+        result.source && writeFileIfChanged(genFilePath + '.cc', result.source);
       }
     });
   }
@@ -160,8 +161,16 @@ EOF`, {stdio: 'inherit'})
   let targetTemplateBody = templates.find(t => t.filename === 'names_installer.cc');
   let result = generateNamesInstaller(targetTemplateHeader, targetTemplateBody, names_needs_install);
   let genFilePath = path.join(dist, 'names_installer');
-  wirteFileIfChanged(genFilePath + '.h', result.header);
-  result.source && wirteFileIfChanged(genFilePath + '.cc', result.source);
+  writeFileIfChanged(genFilePath + '.h', result.header);
+  result.source && writeFileIfChanged(genFilePath + '.cc', result.source);
+
+  // Generate css_property_names code
+  let cssPropertyNamesResult = makeCSSPropertyNames();
+  let cssPropertyGenFilePath = path.join(dist, 'css_property_names');
+  writeFileIfChanged(cssPropertyGenFilePath + '.h', cssPropertyNamesResult.header);
+  execSync(`cat << EOF | gperf --key-positions='*' -P -n -m 50 -D -Q CSSPropStringPool > ${cssPropertyGenFilePath + '.cc'} 
+${cssPropertyNamesResult.source}
+EOF`, {stdio: 'inherit'});
 }
 
 class DefinedPropertyCollector {

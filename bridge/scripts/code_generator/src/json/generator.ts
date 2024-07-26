@@ -1,6 +1,7 @@
 import {JSONBlob} from './JSONBlob';
 import {JSONTemplate} from './JSONTemplate';
 import _ from 'lodash';
+import {upperCamelCase} from "./name_utiltities";
 
 function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[], options: GenerateJSONOptions = {}): string {
   let compiled = _.template(template.raw);
@@ -18,10 +19,6 @@ function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[
   }).join('\n');
 }
 
-
-function upperCamelCase(name: string) {
-  return _.upperFirst(_.camelCase(name));
-}
 
 function enumKeyForCSSKeywords(name: string) {
   if (name[0] == '-') {
