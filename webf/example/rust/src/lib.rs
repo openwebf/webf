@@ -1,6 +1,6 @@
 use std::ffi::{c_void, CString};
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{document, initialize_webf_api, RustValue};
+use webf_sys::{initialize_webf_api, RustValue};
 use webf_sys::event_target::{AddEventListenerOptions, EventTarget, EventTargetMethods};
 use webf_sys::node::NodeMethods;
 
@@ -28,12 +28,7 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
     document.body().append_child(&div, &exception_state).unwrap();
   });
 
-  let event_handle_copy = unsafe {
-    let ptr = Box::into_raw(event_handler.clone());
-    Box::from_raw(ptr)
-  };
-
-  div_element.add_event_listener("click", event_handler, &event_listener_options, &exception_state).unwrap();
+  div_element.add_event_listener("click", event_handler.clone(), &event_listener_options, &exception_state).unwrap();
 
   let text_node = document.create_text_node("From Rust", &exception_state).unwrap();
 
@@ -51,11 +46,7 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
     let context = event_target.context();
     let exception_state = context.create_exception_state();
 
-    let event_handle_copy = unsafe {
-      let ptr = Box::into_raw(event_handle_copy.clone());
-      Box::from_raw(ptr)
-    };
-    let _ = div_element.remove_event_listener("click", event_handle_copy, &exception_state);
+    let _ = div_element.remove_event_listener("click", event_handler.clone(), &exception_state);
   });
 
   event_cleaner_element.add_event_listener("click", event_cleaner_handler, &event_listener_options, &exception_state).unwrap();
