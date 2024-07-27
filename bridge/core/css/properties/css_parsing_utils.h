@@ -20,8 +20,8 @@
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_property_parser.h"
-#include "core/css/css_value_keywords.h"
-#include "core/frame/web_feature_forward.h"
+#include "css_value_keywords.h"
+#include "css_property_names.h"
 #include "core/style/grid_area.h"
 #include "bindings/qjs/cppgc/member.h"
 

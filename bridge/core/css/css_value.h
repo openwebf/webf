@@ -227,9 +227,8 @@ class CSSValue {
   }
   bool IsScopedValue() const { return !needs_tree_scope_population_; }
 
-
-  void TraceAfterDispatch(GCVisitor* visitor) const {}
-  void Trace(GCVisitor*) const;
+  virtual void TraceAfterDispatch(GCVisitor* visitor) const {}
+  virtual void Trace(GCVisitor*) const {};
 
   static const size_t kValueListSeparatorBits = 2;
   enum ValueListSeparator { kSpaceSeparator, kCommaSeparator, kSlashSeparator };

@@ -29,4 +29,11 @@
 
 #include "css_value_pool.h"
 
-namespace webf {}  // namespace webf
+namespace webf {
+
+CSSValuePool& CssValuePool() {
+  thread_local static CSSValuePool pool;
+  return pool;
+}
+
+}  // namespace webf

@@ -11,7 +11,7 @@
 
 
 #include "foundation/macros.h"
-#include "core/css/css_property_names.h"
+#include "css_property_names.h"
 
 namespace webf {
 

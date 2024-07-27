@@ -40,9 +40,9 @@
     "menu",
     "message-box",
     "small-caption",
-//    "-webkit-mini-control",
-//    "-webkit-small-control",
-//    "-webkit-control",
+    "-webkit-mini-control",
+    "-webkit-small-control",
+    "-webkit-control",
     "status-bar",
 
     //
@@ -223,8 +223,8 @@
     "white",
     "yellow",
     "transparent",
-//    "-webkit-link",
-//    "-webkit-activelink",
+    "-webkit-link",
+    "-webkit-activelink",
     "accentcolor",
     "accentcolortext",
     "activeborder",
@@ -266,31 +266,27 @@
     "window",
     "windowframe",
     "windowtext",
-//    "-internal-active-list-box-selection",
-//    "-internal-active-list-box-selection-text",
-//    "-internal-inactive-list-box-selection",
-//    "-internal-inactive-list-box-selection-text",
-//    {
-//      name: "-webkit-focus-ring-color",
-//      mode: "QuirksOrUASheet",
-//    },
+    "-internal-active-list-box-selection",
+    "-internal-active-list-box-selection-text",
+    "-internal-inactive-list-box-selection",
+    "-internal-inactive-list-box-selection-text",
     "currentcolor",
     "grey",
     //
     // Value used to implement the behavior in:
     // https://quirks.spec.whatwg.org/#the-tables-inherit-color-from-body-quirk
-//    "-internal-quirk-inherit",
+    "-internal-quirk-inherit",
     //
     // css-text-decor
     // <https://github.com/w3c/csswg-drafts/issues/7522>
-//    "-internal-spelling-error-color",
-//    "-internal-grammar-error-color",
+    "-internal-spelling-error-color",
+    "-internal-grammar-error-color",
     // ::search-text
     // <https://github.com/w3c/csswg-drafts/issues/10329>
-//    "-internal-search-color",
-//    "-internal-search-text-color",
-//    "-internal-current-search-color",
-//    "-internal-current-search-text-color",
+    "-internal-search-color",
+    "-internal-search-text-color",
+    "-internal-current-search-color",
+    "-internal-current-search-text-color",
 
     //
     // "Extended" named colors
@@ -1684,17 +1680,17 @@
     "additive",
     "extends",
     // Predefined counter styles that don't use the above systems
-//    "-internal-simp-chinese-informal",
-//    "-internal-simp-chinese-formal",
-//    "-internal-trad-chinese-informal",
-//    "-internal-trad-chinese-formal",
-//    "-internal-korean-hangul-formal",
-//    "-internal-korean-hanja-informal",
-//    "-internal-korean-hanja-formal",
-//    "-internal-hebrew",
-//    "-internal-lower-armenian",
-//    "-internal-upper-armenian",
-//    "-internal-ethiopic-numeric",
+    "-internal-simp-chinese-informal",
+    "-internal-simp-chinese-formal",
+    "-internal-trad-chinese-informal",
+    "-internal-trad-chinese-formal",
+    "-internal-korean-hangul-formal",
+    "-internal-korean-hanja-informal",
+    "-internal-korean-hanja-formal",
+    "-internal-hebrew",
+    "-internal-lower-armenian",
+    "-internal-upper-armenian",
+    "-internal-ethiopic-numeric",
 
     // @counter-style range
     // infinite,
@@ -1862,7 +1858,7 @@
     "most-block-size",
     "most-inline-size",
 
-    // position-try-options
+    // position-try-fallbacks
     // none
     "flip-block",
     "flip-inline",
@@ -1895,5 +1891,10 @@
     "of",
 
     // @supports blink-feature(RuntimeEnabledFeatureName)
+    "blink-feature",
+
+    // interpolate-size
+    "numeric-only",
+    "allow-keywords"
   ],
 }

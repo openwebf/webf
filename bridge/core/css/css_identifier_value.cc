@@ -22,13 +22,11 @@ std::shared_ptr<CSSIdentifierValue> CSSIdentifierValue::Create(CSSValueID value_
 }
 
 std::string CSSIdentifierValue::CustomCSSText() const {
-  return std::string(getValueName(value_id_));
+  return getValueName(value_id_);
 }
 
 CSSIdentifierValue::CSSIdentifierValue(CSSValueID value_id)
     : CSSValue(kIdentifierClass), value_id_(value_id) {
-  // TODO(sashab): Add a DCHECK_NE(valueID, CSSValueID::kInvalid) once no code
-  // paths cause this to happen.
 }
 
 CSSIdentifierValue::CSSIdentifierValue(CSSValueID value_id, bool was_quirky)

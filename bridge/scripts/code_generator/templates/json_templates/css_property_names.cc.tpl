@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include "core/css/parser/css_property_parser.h"
+#include "core/css/hash_tools.h"
 
 #ifdef _MSC_VER
 // Disable the warnings from casting a 64-bit pointer to 32-bit long
@@ -39,8 +40,8 @@ const Property* FindProperty(const char* str, unsigned int len) {
   return CSSPropertyNamesHash::findPropertyImpl(str, len);
 }
 
-CSSPropertyID CssPropertyID(const ExecutionContext* execution_context,
-                            const String& string)
+CSSPropertyID CssPropertyID(const ExecutingContext* execution_context,
+                            const std::string& string)
 {
     return ResolveCSSPropertyID(UnresolvedCSSPropertyID(execution_context,
                                                         string));

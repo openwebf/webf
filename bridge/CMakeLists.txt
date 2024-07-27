@@ -318,7 +318,13 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_parser_token_range.cc
     core/css/parser/css_parser_token_stream.cc
     core/css/parser/css_tokenizer.cc
+    core/css/parser/css_property_parser.cc
     core/css/parser/css_tokenizer_input_stream.cc
+    core/css/css_markup.cc
+    core/css/css_value.cc
+    core/css/css_value_pool.cc
+    core/css/css_identifier_value.cc
+    core/css/properties/css_parsing_utils.cc
     core/css/css_length_resolver.cc
 #    core/css/css_at_rule_id.cc
 #    core/css/media_list.cc
@@ -595,6 +601,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 
     # CSS Values
     out/css_value_keywords.cc
+    out/css_property_names.cc
+    out/property_bitset.cc
 
     # SVG files
     out/qjs_svg_element.cc

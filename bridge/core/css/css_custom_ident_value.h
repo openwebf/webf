@@ -7,7 +7,7 @@
 #ifndef WEBF_CORE_CSS_CSS_CUSTOM_IDENT_VALUE_H_
 #define WEBF_CORE_CSS_CSS_CUSTOM_IDENT_VALUE_H_
 
-#include "core/css/css_property_names.h"
+#include "css_property_name.h"
 #include "core/css/css_value.h"
 
 namespace webf {

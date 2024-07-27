@@ -29,6 +29,7 @@
  */
 
 #include "core/geometry/length.h"
+#include "css_identifier_value.h"
 #include "css_value.h"
 
 namespace webf {

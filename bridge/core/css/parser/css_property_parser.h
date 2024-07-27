@@ -30,7 +30,7 @@
 #ifndef WEBF_CSS_PROPERTY_PARSER_H
 #define WEBF_CSS_PROPERTY_PARSER_H
 
-//#include "css_tokenized_value.h"
+#include "css_property_names.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_mode.h"
 #include "core/css/parser/css_parser_token_range.h"
@@ -50,7 +50,6 @@ class ExecutingContext;
 
 // Inputs: PropertyID, isImportant bool, CSSParserTokenRange.
 // Outputs: Vector of CSSProperties
-
 class CSSPropertyParser {
   WEBF_STACK_ALLOCATED();
 
@@ -101,6 +100,7 @@ CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext*,
                         StringView,
                         CSSParserMode mode = kHTMLStandardMode);
 CSSValueID CssValueKeywordID(StringView);
+
 }  // namespace webf
 
 #endif  // WEBF_CSS_PROPERTY_PARSER_H

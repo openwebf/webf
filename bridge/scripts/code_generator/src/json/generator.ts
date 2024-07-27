@@ -20,11 +20,11 @@ function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[
 }
 
 
-function enumKeyForCSSKeywords(name: string) {
-  if (name[0] == '-') {
-    return `kNegative` + upperCamelCase(name);
+function enumKeyForCSSKeywords(keyword: any) {
+  if (typeof keyword !== 'string' && keyword === '-infinity') {
+    return 'kNegative' + upperCamelCase(keyword);
   }
-  return 'k' + upperCamelCase(name);
+  return 'k' + upperCamelCase(keyword);
 }
 
 function generateBody(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[], options: GenerateJSONOptions = {}): string {

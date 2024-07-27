@@ -16,10 +16,9 @@
 #include <cstring>
 #include <initializer_list>
 
-#include "core/css/css_property_names.h"
+#include "css_property_names.h"
 
 namespace webf {
-
 
 // A bitset designed for CSSPropertyIDs.
 //

@@ -3,9 +3,12 @@
 
 #include <cstddef>
 #include <cassert>
+#include <string>
 #include "foundation/macros.h"
 
 namespace webf {
+
+class ExecutingContext;
 
 enum class CSSPropertyID {
     kInvalid = 0,
@@ -99,6 +102,9 @@ int ResolveCSSPropertyAlias(int value);
 inline bool IsPropertyAlias(CSSPropertyID id) {
   return static_cast<int>(id) >= <%= properties.alias_offset %>;
 }
+
+CSSPropertyID CssPropertyID(const ExecutingContext* execution_context,
+                            const std::string& string);
 
 inline CSSPropertyID ResolveCSSPropertyID(CSSPropertyID id)
 {

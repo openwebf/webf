@@ -130,6 +130,7 @@ export class PropertyBase {
   property_methods?: string[] | undefined;
   is_property?: boolean | undefined;
   is_descriptor?: boolean | undefined;
+  surrogate_for?: string | PropertyBase;
   interpolable?: boolean | undefined;
   field_template?: string | undefined;
   valid_for_first_letter?: string | undefined;
@@ -395,16 +396,15 @@ export class CSSProperties {
     unvisited_property.visited_property = property_;
   }
 
-  set_derived_surrogate_attributes(property_: any) {
+  set_derived_surrogate_attributes(property_: PropertyBase) {
     if (!property_.surrogate_for) {
       return;
     }
-    if (!(property_.surrogate_for in this._properties_by_name)) {
+    if (!(property_.surrogate_for as string in this._properties_by_name)) {
       throw new Error(`surrogate_for must name a property`);
     }
-    property_.surrogate_for = this._properties_by_name[property_.surrogate_for];
+    property_.surrogate_for = this._properties_by_name[property_.surrogate_for as string];
   }
-
   set_derived_alternative_attributes(property_: any) {
     if (!property_.alternative_of) {
       return;

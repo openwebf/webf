@@ -15,7 +15,8 @@ const { generateUnionTypes, generateUnionTypeFileName } = require('../dist/idl/g
 const { generateJSONTemplate } = require('../dist/json/generator');
 const { generateNamesInstaller } = require("../dist/json/generator");
 const { union } = require("lodash");
-const {makeCSSPropertyNames} = require("../dist/json/css_property_names");
+const {makeCSSPropertyNames} = require("../dist/json/make_css_property_names");
+const {makePropertyBitset} = require("../dist/json/make_property_bitset");
 
 program
   .version(packageJSON.version)
@@ -171,6 +172,11 @@ EOF`, {stdio: 'inherit'})
   execSync(`cat << EOF | gperf --key-positions='*' -P -n -m 50 -D -Q CSSPropStringPool > ${cssPropertyGenFilePath + '.cc'} 
 ${cssPropertyNamesResult.source}
 EOF`, {stdio: 'inherit'});
+
+  // Generate property_bitset code
+  let propertyBitsetResult = makePropertyBitset();
+  let propertyBitSetGenFilePath = path.join(dist, 'property_bitset');
+  writeFileIfChanged(propertyBitSetGenFilePath + '.cc', propertyBitsetResult.source);
 }
 
 class DefinedPropertyCollector {

@@ -31,8 +31,8 @@
 #ifndef WEBF_CSS_VALUE_POOL_H
 #define WEBF_CSS_VALUE_POOL_H
 
-
-
+#include "css_property_names.h"
+#include "css_value_keywords.h"
 #include "core/base/types/pass_key.h"
 #include "core/css/css_color.h"
 //#include "core/css/css_custom_ident_value.h"
@@ -44,14 +44,11 @@
 #include "core/css/css_initial_value.h"
 #include "core/css/css_invalid_variable_value.h"
 #include "core/css/css_numeric_literal_value.h"
-#include "core/css/css_property_names.h"
 #include "core/css/css_revert_layer_value.h"
 #include "core/css/css_revert_value.h"
 #include "core/css/css_unset_value.h"
-#include "core/css/css_value_keywords.h"
 #include "core/css/css_value_list.h"
 //#include "core/css/fixed_size_cache.h"
-#include "core/css/css_value_keywords.h"
 #include "core/css/css_cyclic_variable_value.h"
 
 namespace webf {
@@ -219,6 +216,7 @@ class CSSValuePool final {
 };
 
 CSSValuePool& CssValuePool();
+
 }  // namespace webf
 
 #endif  // WEBF_CSS_VALUE_POOL_H

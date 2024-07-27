@@ -3,6 +3,7 @@
 */
 
 #include "css_markup.h"
+#include "core/css/parser/css_parser_idioms.h"
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/platform/text/string_to_number.h"
 
@@ -16,29 +17,28 @@ static bool IsCSSTokenizerIdentifier(const StringView& string) {
     return false;
   }
 
-  return webf::VisitCharacters(string, [](const auto* chars, unsigned length) {
-    const auto* end = chars + length;
+  const char* chars = string.Characters8();
+  const auto* end = chars + length;
 
-    // -?
-    if (chars != end && chars[0] == '-') {
-      ++chars;
-    }
+  // -?
+  if (chars != end && chars[0] == '-') {
+    ++chars;
+  }
 
-    // {nmstart}
-    if (chars == end || !IsNameStartCodePoint(chars[0])) {
+  // {nmstart}
+  if (chars == end || !IsNameStartCodePoint(chars[0])) {
+    return false;
+  }
+  ++chars;
+
+  // {nmchar}*
+  for (; chars != end; ++chars) {
+    if (!IsNameCodePoint(chars[0])) {
       return false;
     }
-    ++chars;
+  }
 
-    // {nmchar}*
-    for (; chars != end; ++chars) {
-      if (!IsNameCodePoint(chars[0])) {
-        return false;
-      }
-    }
-
-    return true;
-  });
+  return true;
 }
 
 static void SerializeCharacterAsCodePoint(int32_t c, std::string& append_to) {
