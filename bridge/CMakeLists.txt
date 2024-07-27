@@ -323,7 +323,14 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_markup.cc
     core/css/css_value.cc
     core/css/css_value_pool.cc
+    core/css/css_value_clamping_utils.cc
     core/css/css_identifier_value.cc
+    core/css/css_custom_ident_value.cc
+    core/css/css_numeric_literal_value.cc
+    core/css/css_math_function_value.cc
+    core/css/css_math_expression_node.cc
+    core/css/css_math_operator.cc
+    core/css/css_primitive_value.cc
     core/css/properties/css_parsing_utils.cc
     core/css/css_length_resolver.cc
 #    core/css/css_at_rule_id.cc

@@ -23,22 +23,21 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-
 #include <cmath>
 
-//#include "core/css/css_length_resolver.h"
-//#include "core/css/css_markup.h"
+#include "core/css/css_length_resolver.h"
+#include "core/css/css_markup.h"
 #include "core/css/css_math_expression_node.h"
-//#include "core/css/css_math_function_value.h"
-//#include "core/css/css_numeric_literal_value.h"
-//#include "core/css/css_resolution_units.h"
-//#include "core/css/css_value_clamping_utils.h"
+#include "core/css/css_math_function_value.h"
+#include "core/css/css_resolution_units.h"
+#include "core/css/css_math_operator.h"
+ #include "core/css/css_numeric_literal_value.h"
+#include "core/css/css_value_clamping_utils.h"
 #include "core/css/css_value_pool.h"
 #include "core/geometry/layout_unit.h"
 #include "foundation/string_builder.h"
 
 namespace webf {
-
 
 namespace {
 
@@ -58,12 +57,10 @@ float CSSPrimitiveValue::ClampToCSSLengthRange(double value) {
   // TODO(crbug.com/1133390): ClampTo function could occur the DECHECK failure
   // for NaN value. Therefore, infinity and NaN values should not be clamped
   // here.
-  return ClampTo<float>(CSSValueClampingUtils::ClampLength(value),
-                        kMinValueForCssLength, kMaxValueForCssLength);
+  return ClampTo<float>(CSSValueClampingUtils::ClampLength(value), kMinValueForCssLength, kMaxValueForCssLength);
 }
 
-Length::ValueRange CSSPrimitiveValue::ConversionToLengthValueRange(
-    ValueRange range) {
+Length::ValueRange CSSPrimitiveValue::ConversionToLengthValueRange(ValueRange range) {
   switch (range) {
     case ValueRange::kNonNegative:
       return Length::ValueRange::kNonNegative;
@@ -75,8 +72,7 @@ Length::ValueRange CSSPrimitiveValue::ConversionToLengthValueRange(
   }
 }
 
-CSSPrimitiveValue::ValueRange CSSPrimitiveValue::ValueRangeForLengthValueRange(
-    Length::ValueRange range) {
+CSSPrimitiveValue::ValueRange CSSPrimitiveValue::ValueRangeForLengthValueRange(Length::ValueRange range) {
   switch (range) {
     case Length::ValueRange::kNonNegative:
       return ValueRange::kNonNegative;
@@ -85,8 +81,7 @@ CSSPrimitiveValue::ValueRange CSSPrimitiveValue::ValueRangeForLengthValueRange(
   }
 }
 
-CSSPrimitiveValue::UnitCategory CSSPrimitiveValue::UnitTypeToUnitCategory(
-    UnitType type) {
+CSSPrimitiveValue::UnitCategory CSSPrimitiveValue::UnitTypeToUnitCategory(UnitType type) {
   switch (type) {
     case UnitType::kNumber:
     case UnitType::kInteger:
@@ -123,22 +118,19 @@ CSSPrimitiveValue::UnitCategory CSSPrimitiveValue::UnitTypeToUnitCategory(
   }
 }
 
-//bool CSSPrimitiveValue::IsCalculatedPercentageWithLength() const {
-//  // TODO(crbug.com/979895): Move this function to |CSSMathFunctionValue|.
-//  if (!IsCalculated()) {
-//    return false;
-//  }
-//  CalculationResultCategory category =
-//      To<CSSMathFunctionValue>(this)->Category();
-//  return category == kCalcLengthFunction || category == kCalcIntrinsicSize;
-//}
+bool CSSPrimitiveValue::IsCalculatedPercentageWithLength() const {
+  // TODO(crbug.com/979895): Move this function to |CSSMathFunctionValue|.
+  if (!IsCalculated()) {
+    return false;
+  }
+  CalculationResultCategory category = To<CSSMathFunctionValue>(this)->Category();
+  return category == kCalcLengthFunction || category == kCalcIntrinsicSize;
+}
 
-//bool CSSPrimitiveValue::IsResolution() const {
-//  return (IsNumericLiteralValue() &&
-//          To<CSSNumericLiteralValue>(this)->IsResolution()) ||
-//         (IsMathFunctionValue() &&
-//          To<CSSMathFunctionValue>(this)->IsResolution());
-//}
+bool CSSPrimitiveValue::IsResolution() const {
+  return (IsNumericLiteralValue() && To<CSSNumericLiteralValue>(this)->IsResolution()) ||
+         (IsMathFunctionValue() && To<CSSMathFunctionValue>(this)->IsResolution());
+}
 
 bool CSSPrimitiveValue::IsFlex() const {
   // TODO(crbug.com/993136): Either support math functions on flexible lengths;
@@ -232,64 +224,58 @@ bool CSSPrimitiveValue::HasContainerRelativeUnits() const {
   CSSPrimitiveValue::LengthTypeFlags units;
   AccumulateLengthUnitTypes(units);
   const CSSPrimitiveValue::LengthTypeFlags container_units(
-      (1ull << CSSPrimitiveValue::kUnitTypeContainerWidth) |
-      (1ull << CSSPrimitiveValue::kUnitTypeContainerHeight) |
+      (1ull << CSSPrimitiveValue::kUnitTypeContainerWidth) | (1ull << CSSPrimitiveValue::kUnitTypeContainerHeight) |
       (1ull << CSSPrimitiveValue::kUnitTypeContainerInlineSize) |
-      (1ull << CSSPrimitiveValue::kUnitTypeContainerBlockSize) |
-      (1ull << CSSPrimitiveValue::kUnitTypeContainerMin) |
+      (1ull << CSSPrimitiveValue::kUnitTypeContainerBlockSize) | (1ull << CSSPrimitiveValue::kUnitTypeContainerMin) |
       (1ull << CSSPrimitiveValue::kUnitTypeContainerMax));
   return (units & container_units).any();
 }
 
 // static
-CSSPrimitiveValue* CSSPrimitiveValue::CreateFromLength(const Length& length,
-                                                       float zoom) {
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::CreateFromLength(const Length& length, float zoom) {
   switch (length.GetType()) {
     case Length::kPercent:
-      return CSSNumericLiteralValue::Create(length.Percent(),
-                                            UnitType::kPercentage);
+      return CSSNumericLiteralValue::Create(length.Percent(), UnitType::kPercentage);
     case Length::kFixed:
-      return CSSNumericLiteralValue::Create(length.Value() / zoom,
-                                            UnitType::kPixels);
-    case Length::kCalculated: {
-      const CalculationValue& calc = length.GetCalculationValue();
-      if (calc.IsExpression() || calc.Pixels()) {
-        return CSSMathFunctionValue::Create(length, zoom);
-      }
-      double num = calc.Percent();
-      if (num < 0 && calc.IsNonNegative()) {
-        num = 0;
-      }
-      return CSSNumericLiteralValue::Create(num, UnitType::kPercentage);
-    }
+      return CSSNumericLiteralValue::Create(length.Value() / zoom, UnitType::kPixels);
+      //    case Length::kCalculated: {
+      //      const CalculationValue& calc = length.GetCalculationValue();
+      //      if (calc.IsExpression() || calc.Pixels()) {
+      //        return CSSMathFunctionValue::Create(length, zoom);
+      //      }
+      //      double num = calc.Percent();
+      //      if (num < 0 && calc.IsNonNegative()) {
+      //        num = 0;
+      //      }
+      //      return CSSNumericLiteralValue::Create(num, UnitType::kPercentage);
+      //    }
     case Length::kFlex:
-      return CSSNumericLiteralValue::Create(length.GetFloatValue(),
-                                            UnitType::kFlex);
+      return CSSNumericLiteralValue::Create(length.GetFloatValue(), UnitType::kFlex);
     default:
       break;
   }
-  NOTREACHED_IN_MIGRATION();
+  assert(false);
   return nullptr;
 }
 
 // TODO(crbug.com/1133390): When we support <frequency>, we must clamp like
 // <time>.
 double CSSPrimitiveValue::ComputeSeconds() const {
-  double result = IsCalculated()
-                      ? To<CSSMathFunctionValue>(this)->ComputeSeconds()
-                      : To<CSSNumericLiteralValue>(this)->ComputeSeconds();
+  //  double result = IsCalculated()
+  //                      ? To<CSSMathFunctionValue>(this)->ComputeSeconds()
+  //                      : To<CSSNumericLiteralValue>(this)->ComputeSeconds();
+  double result = To<CSSNumericLiteralValue>(this)->ComputeSeconds();
   return CSSValueClampingUtils::ClampTime(result);
 }
 
 double CSSPrimitiveValue::ComputeDegrees() const {
-  double result = IsCalculated()
-                      ? To<CSSMathFunctionValue>(this)->ComputeDegrees()
-                      : To<CSSNumericLiteralValue>(this)->ComputeDegrees();
+  double result = IsCalculated() ? To<CSSMathFunctionValue>(this)->ComputeDegrees()
+                                 : To<CSSNumericLiteralValue>(this)->ComputeDegrees();
   return CSSValueClampingUtils::ClampAngle(result);
 }
 
 double CSSPrimitiveValue::ComputeDotsPerPixel() const {
-  DCHECK(IsResolution());
+  assert(IsResolution());
 
   if (IsCalculated()) {
     return To<CSSMathFunctionValue>(this)->ComputeDotsPerPixel();
@@ -298,179 +284,132 @@ double CSSPrimitiveValue::ComputeDotsPerPixel() const {
   return To<CSSNumericLiteralValue>(this)->ComputeDotsPerPixel();
 }
 
-double CSSPrimitiveValue::ComputeDegrees(
-    const CSSLengthResolver& length_resolver) const {
-  double result =
-      IsCalculated()
-          ? To<CSSMathFunctionValue>(this)->ComputeDegrees(length_resolver)
-          : To<CSSNumericLiteralValue>(this)->ComputeDegrees();
+double CSSPrimitiveValue::ComputeDegrees(const CSSLengthResolver& length_resolver) const {
+  //  double result =
+  //      IsCalculated()
+  //          ? To<CSSMathFunctionValue>(this)->ComputeDegrees(length_resolver)
+  //          : To<CSSNumericLiteralValue>(this)->ComputeDegrees();
+  double result = To<CSSNumericLiteralValue>(this)->ComputeDegrees();
   return CSSValueClampingUtils::ClampAngle(result);
 }
 
-double CSSPrimitiveValue::ComputeSeconds(
-    const CSSLengthResolver& length_resolver) const {
-  double result =
-      IsCalculated()
-          ? To<CSSMathFunctionValue>(this)->ComputeSeconds(length_resolver)
-          : To<CSSNumericLiteralValue>(this)->ComputeSeconds();
+double CSSPrimitiveValue::ComputeSeconds(const CSSLengthResolver& length_resolver) const {
+  double result = IsCalculated() ? To<CSSMathFunctionValue>(this)->ComputeSeconds(length_resolver)
+                                 : To<CSSNumericLiteralValue>(this)->ComputeSeconds();
   return CSSValueClampingUtils::ClampTime(result);
 }
 
 template <>
-int CSSPrimitiveValue::ComputeLength(
-    const CSSLengthResolver& length_resolver) const {
+int CSSPrimitiveValue::ComputeLength(const CSSLengthResolver& length_resolver) const {
   return RoundForImpreciseConversion<int>(ComputeLengthDouble(length_resolver));
 }
 
 template <>
-unsigned CSSPrimitiveValue::ComputeLength(
-    const CSSLengthResolver& length_resolver) const {
-  return RoundForImpreciseConversion<unsigned>(
-      ComputeLengthDouble(length_resolver));
+unsigned CSSPrimitiveValue::ComputeLength(const CSSLengthResolver& length_resolver) const {
+  return RoundForImpreciseConversion<unsigned>(ComputeLengthDouble(length_resolver));
 }
 
 template <>
-Length CSSPrimitiveValue::ComputeLength(
-    const CSSLengthResolver& length_resolver) const {
-  return Length::Fixed(
-      ClampToCSSLengthRange(ComputeLengthDouble(length_resolver)));
+Length CSSPrimitiveValue::ComputeLength(const CSSLengthResolver& length_resolver) const {
+  return Length::Fixed(ClampToCSSLengthRange(ComputeLengthDouble(length_resolver)));
 }
 
 template <>
-int16_t CSSPrimitiveValue::ComputeLength(
-    const CSSLengthResolver& length_resolver) const {
-  return RoundForImpreciseConversion<int16_t>(
-      ComputeLengthDouble(length_resolver));
+int16_t CSSPrimitiveValue::ComputeLength(const CSSLengthResolver& length_resolver) const {
+  return RoundForImpreciseConversion<int16_t>(ComputeLengthDouble(length_resolver));
 }
 
 template <>
-uint16_t CSSPrimitiveValue::ComputeLength(
-    const CSSLengthResolver& length_resolver) const {
-  return RoundForImpreciseConversion<uint16_t>(
-      ComputeLengthDouble(length_resolver));
+uint16_t CSSPrimitiveValue::ComputeLength(const CSSLengthResolver& length_resolver) const {
+  return RoundForImpreciseConversion<uint16_t>(ComputeLengthDouble(length_resolver));
 }
 
 template <>
-uint8_t CSSPrimitiveValue::ComputeLength(
-    const CSSLengthResolver& length_resolver) const {
-  return RoundForImpreciseConversion<uint8_t>(
-      ComputeLengthDouble(length_resolver));
+uint8_t CSSPrimitiveValue::ComputeLength(const CSSLengthResolver& length_resolver) const {
+  return RoundForImpreciseConversion<uint8_t>(ComputeLengthDouble(length_resolver));
 }
 
 template <>
-float CSSPrimitiveValue::ComputeLength(
-    const CSSLengthResolver& length_resolver) const {
-  return ClampTo<float>(
-      CSSValueClampingUtils::ClampLength(ComputeLengthDouble(length_resolver)));
+float CSSPrimitiveValue::ComputeLength(const CSSLengthResolver& length_resolver) const {
+  return ClampTo<float>(CSSValueClampingUtils::ClampLength(ComputeLengthDouble(length_resolver)));
 }
 
 template <>
-double CSSPrimitiveValue::ComputeLength(
-    const CSSLengthResolver& length_resolver) const {
-  return CSSValueClampingUtils::ClampLength(
-      ComputeLengthDouble(length_resolver));
+double CSSPrimitiveValue::ComputeLength(const CSSLengthResolver& length_resolver) const {
+  return CSSValueClampingUtils::ClampLength(ComputeLengthDouble(length_resolver));
 }
 
-int CSSPrimitiveValue::ComputeInteger(
-    const CSSLengthResolver& length_resolver) const {
-  DCHECK(IsNumber());
-  return IsCalculated()
-             ? To<CSSMathFunctionValue>(this)->ComputeInteger(length_resolver)
-             : To<CSSNumericLiteralValue>(this)->ComputeInteger();
+int CSSPrimitiveValue::ComputeInteger(const CSSLengthResolver& length_resolver) const {
+  assert(IsNumber());
+  return IsCalculated() ? To<CSSMathFunctionValue>(this)->ComputeInteger(length_resolver)
+                        : To<CSSNumericLiteralValue>(this)->ComputeInteger();
 }
 
-double CSSPrimitiveValue::ComputeNumber(
-    const CSSLengthResolver& length_resolver) const {
-  DCHECK(IsNumber());
-  return IsCalculated()
-             ? To<CSSMathFunctionValue>(this)->ComputeNumber(length_resolver)
-             : To<CSSNumericLiteralValue>(this)->ComputeNumber();
+double CSSPrimitiveValue::ComputeNumber(const CSSLengthResolver& length_resolver) const {
+  assert(IsNumber());
+  return IsCalculated() ? To<CSSMathFunctionValue>(this)->ComputeNumber(length_resolver)
+                        : To<CSSNumericLiteralValue>(this)->ComputeNumber();
 }
 
-double CSSPrimitiveValue::ComputePercentage(
-    const CSSLengthResolver& length_resolver) const {
-  DCHECK(IsPercentage());
-  return IsCalculated() ? To<CSSMathFunctionValue>(this)->ComputePercentage(
-                              length_resolver)
+double CSSPrimitiveValue::ComputePercentage(const CSSLengthResolver& length_resolver) const {
+  assert(IsPercentage());
+  return IsCalculated() ? To<CSSMathFunctionValue>(this)->ComputePercentage(length_resolver)
                         : To<CSSNumericLiteralValue>(this)->ComputePercentage();
 }
 
-double CSSPrimitiveValue::ComputeLengthDouble(
-    const CSSLengthResolver& length_resolver) const {
+double CSSPrimitiveValue::ComputeLengthDouble(const CSSLengthResolver& length_resolver) const {
   if (IsCalculated()) {
     return To<CSSMathFunctionValue>(this)->ComputeLengthPx(length_resolver);
   }
   return To<CSSNumericLiteralValue>(this)->ComputeLengthPx(length_resolver);
 }
 
-bool CSSPrimitiveValue::AccumulateLengthArray(CSSLengthArray& length_array,
-                                              double multiplier) const {
-  DCHECK_EQ(length_array.values.size(), CSSLengthArray::kSize);
+bool CSSPrimitiveValue::AccumulateLengthArray(CSSLengthArray& length_array, double multiplier) const {
+  assert(length_array.values.size() == CSSLengthArray::kSize);
   if (IsCalculated()) {
-    return To<CSSMathFunctionValue>(this)->AccumulateLengthArray(length_array,
-                                                                 multiplier);
+    return To<CSSMathFunctionValue>(this)->AccumulateLengthArray(length_array, multiplier);
   }
-  return To<CSSNumericLiteralValue>(this)->AccumulateLengthArray(length_array,
-                                                                 multiplier);
+  return To<CSSNumericLiteralValue>(this)->AccumulateLengthArray(length_array, multiplier);
 }
 
-void CSSPrimitiveValue::AccumulateLengthUnitTypes(
-    LengthTypeFlags& types) const {
+void CSSPrimitiveValue::AccumulateLengthUnitTypes(LengthTypeFlags& types) const {
   if (IsCalculated()) {
     return To<CSSMathFunctionValue>(this)->AccumulateLengthUnitTypes(types);
   }
   To<CSSNumericLiteralValue>(this)->AccumulateLengthUnitTypes(types);
 }
 
-bool CSSPrimitiveValue::HasStaticViewportUnits(
-    const LengthTypeFlags& length_type_flags) {
+bool CSSPrimitiveValue::HasStaticViewportUnits(const LengthTypeFlags& length_type_flags) {
   return length_type_flags.test(CSSPrimitiveValue::kUnitTypeViewportWidth) ||
          length_type_flags.test(CSSPrimitiveValue::kUnitTypeViewportHeight) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeViewportInlineSize) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeViewportBlockSize) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeViewportInlineSize) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeViewportBlockSize) ||
          length_type_flags.test(CSSPrimitiveValue::kUnitTypeViewportMin) ||
          length_type_flags.test(CSSPrimitiveValue::kUnitTypeViewportMax) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeSmallViewportWidth) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeSmallViewportHeight) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeSmallViewportInlineSize) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeSmallViewportBlockSize) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeSmallViewportWidth) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeSmallViewportHeight) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeSmallViewportInlineSize) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeSmallViewportBlockSize) ||
          length_type_flags.test(CSSPrimitiveValue::kUnitTypeSmallViewportMin) ||
          length_type_flags.test(CSSPrimitiveValue::kUnitTypeSmallViewportMax) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeLargeViewportWidth) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeLargeViewportHeight) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeLargeViewportInlineSize) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeLargeViewportBlockSize) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeLargeViewportWidth) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeLargeViewportHeight) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeLargeViewportInlineSize) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeLargeViewportBlockSize) ||
          length_type_flags.test(CSSPrimitiveValue::kUnitTypeLargeViewportMin) ||
          length_type_flags.test(CSSPrimitiveValue::kUnitTypeLargeViewportMax);
 }
 
-bool CSSPrimitiveValue::HasDynamicViewportUnits(
-    const LengthTypeFlags& length_type_flags) {
-  return length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeDynamicViewportWidth) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeDynamicViewportHeight) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeDynamicViewportInlineSize) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeDynamicViewportBlockSize) ||
-         length_type_flags.test(
-             CSSPrimitiveValue::kUnitTypeDynamicViewportMin) ||
+bool CSSPrimitiveValue::HasDynamicViewportUnits(const LengthTypeFlags& length_type_flags) {
+  return length_type_flags.test(CSSPrimitiveValue::kUnitTypeDynamicViewportWidth) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeDynamicViewportHeight) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeDynamicViewportInlineSize) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeDynamicViewportBlockSize) ||
+         length_type_flags.test(CSSPrimitiveValue::kUnitTypeDynamicViewportMin) ||
          length_type_flags.test(CSSPrimitiveValue::kUnitTypeDynamicViewportMax);
 }
 
-double CSSPrimitiveValue::ConversionToCanonicalUnitsScaleFactor(
-    UnitType unit_type) {
+double CSSPrimitiveValue::ConversionToCanonicalUnitsScaleFactor(UnitType unit_type) {
   double factor = 1.0;
   // FIXME: the switch can be replaced by an array of scale factors.
   switch (unit_type) {
@@ -527,19 +466,16 @@ double CSSPrimitiveValue::ConversionToCanonicalUnitsScaleFactor(
   return factor;
 }
 
-Length CSSPrimitiveValue::ConvertToLength(
-    const CSSLengthResolver& length_resolver) const {
+Length CSSPrimitiveValue::ConvertToLength(const CSSLengthResolver& length_resolver) const {
   if (IsResolvableLength()) {
     return ComputeLength<Length>(length_resolver);
   }
   if (IsPercentage()) {
-    if (IsNumericLiteralValue() ||
-        !To<CSSMathFunctionValue>(this)->AllowsNegativePercentageReference()) {
-      return Length::Percent(
-          CSSValueClampingUtils::ClampLength(GetDoubleValueWithoutClamping()));
+    if (IsNumericLiteralValue() || !To<CSSMathFunctionValue>(this)->AllowsNegativePercentageReference()) {
+      return Length::Percent(CSSValueClampingUtils::ClampLength(GetDoubleValueWithoutClamping()));
     }
   }
-  DCHECK(IsCalculated());
+  assert(IsCalculated());
   return To<CSSMathFunctionValue>(this)->ConvertToLength(length_resolver);
 }
 
@@ -552,13 +488,22 @@ double CSSPrimitiveValue::GetDoubleValueWithoutClamping() const {
                         : To<CSSNumericLiteralValue>(this)->DoubleValue();
 }
 
-bool CSSPrimitiveValue::IsZero() const {
+CSSPrimitiveValue::BoolStatus CSSPrimitiveValue::IsZero() const {
   return IsCalculated() ? To<CSSMathFunctionValue>(this)->IsZero()
                         : To<CSSNumericLiteralValue>(this)->IsZero();
 }
 
-CSSPrimitiveValue::UnitType CSSPrimitiveValue::CanonicalUnitTypeForCategory(
-    UnitCategory category) {
+CSSPrimitiveValue::BoolStatus CSSPrimitiveValue::IsOne() const {
+  return IsCalculated() ? To<CSSMathFunctionValue>(this)->IsOne()
+                        : To<CSSNumericLiteralValue>(this)->IsOne();
+}
+
+CSSPrimitiveValue::BoolStatus CSSPrimitiveValue::IsNegative() const {
+  return IsCalculated() ? To<CSSMathFunctionValue>(this)->IsNegative()
+                        : To<CSSNumericLiteralValue>(this)->IsNegative();
+}
+
+CSSPrimitiveValue::UnitType CSSPrimitiveValue::CanonicalUnitTypeForCategory(UnitCategory category) {
   // The canonical unit type is chosen according to the way
   // CSSPropertyParser::ValidUnit() chooses the default unit in each category
   // (based on unitflags).
@@ -583,13 +528,11 @@ CSSPrimitiveValue::UnitType CSSPrimitiveValue::CanonicalUnitTypeForCategory(
 }
 
 // static
-CSSPrimitiveValue::UnitType CSSPrimitiveValue::CanonicalUnit(
-    CSSPrimitiveValue::UnitType unit_type) {
+CSSPrimitiveValue::UnitType CSSPrimitiveValue::CanonicalUnit(CSSPrimitiveValue::UnitType unit_type) {
   return CanonicalUnitTypeForCategory(UnitTypeToUnitCategory(unit_type));
 }
 
-bool CSSPrimitiveValue::UnitTypeToLengthUnitType(UnitType unit_type,
-                                                 LengthUnitType& length_type) {
+bool CSSPrimitiveValue::UnitTypeToLengthUnitType(UnitType unit_type, LengthUnitType& length_type) {
   switch (unit_type) {
     case CSSPrimitiveValue::UnitType::kPixels:
     case CSSPrimitiveValue::UnitType::kCentimeters:
@@ -736,8 +679,7 @@ bool CSSPrimitiveValue::UnitTypeToLengthUnitType(UnitType unit_type,
   }
 }
 
-CSSPrimitiveValue::UnitType CSSPrimitiveValue::LengthUnitTypeToUnitType(
-    LengthUnitType type) {
+CSSPrimitiveValue::UnitType CSSPrimitiveValue::LengthUnitTypeToUnitType(LengthUnitType type) {
   switch (type) {
     case kUnitTypePixels:
       return CSSPrimitiveValue::UnitType::kPixels;
@@ -830,7 +772,7 @@ CSSPrimitiveValue::UnitType CSSPrimitiveValue::LengthUnitTypeToUnitType(
     case kLengthUnitTypeCount:
       break;
   }
-  NOTREACHED_IN_MIGRATION();
+  assert(false);
   return CSSPrimitiveValue::UnitType::kUnknown;
 }
 
@@ -970,149 +912,110 @@ const char* CSSPrimitiveValue::UnitTypeToString(UnitType type) {
     default:
       break;
   }
-  NOTREACHED_IN_MIGRATION();
+  assert(false);
   return "";
 }
 
-String CSSPrimitiveValue::CustomCSSText() const {
+std::string CSSPrimitiveValue::CustomCSSText() const {
   if (IsCalculated()) {
     return To<CSSMathFunctionValue>(this)->CustomCSSText();
   }
   return To<CSSNumericLiteralValue>(this)->CustomCSSText();
 }
 
-void CSSPrimitiveValue::TraceAfterDispatch(blink::Visitor* visitor) const {
+void CSSPrimitiveValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
 }
 
 namespace {
 
-const CSSMathExpressionNode* CreateExpressionNodeFromDouble(
-    double value,
-    CSSPrimitiveValue::UnitType unit_type) {
+const std::shared_ptr<CSSMathExpressionNode> CreateExpressionNodeFromDouble(double value, CSSPrimitiveValue::UnitType unit_type) {
   return CSSMathExpressionNumericLiteral::Create(value, unit_type);
 }
 
-CSSPrimitiveValue* CreateValueFromOperation(const CSSMathExpressionNode* left,
-                                            const CSSMathExpressionNode* right,
+std::shared_ptr<CSSPrimitiveValue> CreateValueFromOperation(const std::shared_ptr<const CSSMathExpressionNode>& left,
+                                            const std::shared_ptr<const CSSMathExpressionNode>& right,
                                             CSSMathOperator op) {
-  const CSSMathExpressionNode* operation =
-      CSSMathExpressionOperation::CreateArithmeticOperationSimplified(
-          left, right, op);
+  const std::shared_ptr<CSSMathExpressionNode> operation =
+      CSSMathExpressionOperation::CreateArithmeticOperationSimplified(left, right, op);
   if (!operation) {
     return nullptr;
   }
-  if (auto* numeric = DynamicTo<CSSMathExpressionNumericLiteral>(operation)) {
-    return MakeGarbageCollected<CSSNumericLiteralValue>(
-        numeric->DoubleValue(), numeric->ResolvedUnitType());
+  if (auto* numeric = DynamicTo<CSSMathExpressionNumericLiteral>(operation.get())) {
+    return std::make_shared<CSSNumericLiteralValue>(numeric->DoubleValue(), numeric->ResolvedUnitType());
   }
-  return MakeGarbageCollected<CSSMathFunctionValue>(
-      operation, CSSPrimitiveValue::ValueRange::kAll);
+  return std::make_shared<CSSMathFunctionValue>(operation, CSSPrimitiveValue::ValueRange::kAll);
 }
 
 }  // namespace
 
-const CSSMathExpressionNode* CSSPrimitiveValue::ToMathExpressionNode() const {
+const std::shared_ptr<const CSSMathExpressionNode> CSSPrimitiveValue::ToMathExpressionNode() const {
   if (IsMathFunctionValue()) {
     return To<CSSMathFunctionValue>(this)->ExpressionNode();
   } else {
-    DCHECK(IsNumericLiteralValue());
+    assert(IsNumericLiteralValue());
     auto* numeric = To<CSSNumericLiteralValue>(this);
-    return CreateExpressionNodeFromDouble(numeric->DoubleValue(),
-                                          numeric->GetType());
+    return CreateExpressionNodeFromDouble(numeric->DoubleValue(), numeric->GetType());
   }
 }
 
-CSSPrimitiveValue* CSSPrimitiveValue::Add(double value,
-                                          UnitType unit_type) const {
-  return CreateValueFromOperation(
-      ToMathExpressionNode(), CreateExpressionNodeFromDouble(value, unit_type),
-      CSSMathOperator::kAdd);
-}
-
-CSSPrimitiveValue* CSSPrimitiveValue::AddTo(double value,
-                                            UnitType unit_type) const {
-  return CreateValueFromOperation(
-      CreateExpressionNodeFromDouble(value, unit_type), ToMathExpressionNode(),
-      CSSMathOperator::kAdd);
-}
-
-CSSPrimitiveValue* CSSPrimitiveValue::Add(
-    const CSSPrimitiveValue& other) const {
-  return CreateValueFromOperation(ToMathExpressionNode(),
-                                  other.ToMathExpressionNode(),
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::Add(double value, UnitType unit_type) const {
+  return CreateValueFromOperation(ToMathExpressionNode(), CreateExpressionNodeFromDouble(value, unit_type),
                                   CSSMathOperator::kAdd);
 }
 
-CSSPrimitiveValue* CSSPrimitiveValue::AddTo(
-    const CSSPrimitiveValue& other) const {
-  return CreateValueFromOperation(other.ToMathExpressionNode(),
-                                  ToMathExpressionNode(),
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::AddTo(double value, UnitType unit_type) const {
+  return CreateValueFromOperation(CreateExpressionNodeFromDouble(value, unit_type), ToMathExpressionNode(),
                                   CSSMathOperator::kAdd);
 }
 
-CSSPrimitiveValue* CSSPrimitiveValue::Subtract(double value,
-                                               UnitType unit_type) const {
-  return CreateValueFromOperation(
-      ToMathExpressionNode(), CreateExpressionNodeFromDouble(value, unit_type),
-      CSSMathOperator::kSubtract);
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::Add(const CSSPrimitiveValue& other) const {
+  return CreateValueFromOperation(ToMathExpressionNode(), other.ToMathExpressionNode(), CSSMathOperator::kAdd);
 }
 
-CSSPrimitiveValue* CSSPrimitiveValue::SubtractFrom(double value,
-                                                   UnitType unit_type) const {
-  return CreateValueFromOperation(
-      CreateExpressionNodeFromDouble(value, unit_type), ToMathExpressionNode(),
-      CSSMathOperator::kSubtract);
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::AddTo(const CSSPrimitiveValue& other) const {
+  return CreateValueFromOperation(other.ToMathExpressionNode(), ToMathExpressionNode(), CSSMathOperator::kAdd);
 }
 
-CSSPrimitiveValue* CSSPrimitiveValue::Subtract(
-    const CSSPrimitiveValue& other) const {
-  return CreateValueFromOperation(ToMathExpressionNode(),
-                                  other.ToMathExpressionNode(),
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::Subtract(double value, UnitType unit_type) const {
+  return CreateValueFromOperation(ToMathExpressionNode(), CreateExpressionNodeFromDouble(value, unit_type),
                                   CSSMathOperator::kSubtract);
 }
 
-CSSPrimitiveValue* CSSPrimitiveValue::SubtractFrom(
-    const CSSPrimitiveValue& other) const {
-  return CreateValueFromOperation(other.ToMathExpressionNode(),
-                                  ToMathExpressionNode(),
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::SubtractFrom(double value, UnitType unit_type) const {
+  return CreateValueFromOperation(CreateExpressionNodeFromDouble(value, unit_type), ToMathExpressionNode(),
                                   CSSMathOperator::kSubtract);
 }
 
-CSSPrimitiveValue* CSSPrimitiveValue::Multiply(double value,
-                                               UnitType unit_type) const {
-  return CreateValueFromOperation(
-      ToMathExpressionNode(), CreateExpressionNodeFromDouble(value, unit_type),
-      CSSMathOperator::kMultiply);
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::Subtract(const CSSPrimitiveValue& other) const {
+  return CreateValueFromOperation(ToMathExpressionNode(), other.ToMathExpressionNode(), CSSMathOperator::kSubtract);
 }
 
-CSSPrimitiveValue* CSSPrimitiveValue::MultiplyBy(double value,
-                                                 UnitType unit_type) const {
-  return CreateValueFromOperation(
-      CreateExpressionNodeFromDouble(value, unit_type), ToMathExpressionNode(),
-      CSSMathOperator::kMultiply);
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::SubtractFrom(const CSSPrimitiveValue& other) const {
+  return CreateValueFromOperation(other.ToMathExpressionNode(), ToMathExpressionNode(), CSSMathOperator::kSubtract);
 }
 
-CSSPrimitiveValue* CSSPrimitiveValue::Multiply(
-    const CSSPrimitiveValue& other) const {
-  return CreateValueFromOperation(ToMathExpressionNode(),
-                                  other.ToMathExpressionNode(),
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::Multiply(double value, UnitType unit_type) const {
+  return CreateValueFromOperation(ToMathExpressionNode(), CreateExpressionNodeFromDouble(value, unit_type),
                                   CSSMathOperator::kMultiply);
 }
 
-CSSPrimitiveValue* CSSPrimitiveValue::MultiplyBy(
-    const CSSPrimitiveValue& other) const {
-  return CreateValueFromOperation(other.ToMathExpressionNode(),
-                                  ToMathExpressionNode(),
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::MultiplyBy(double value, UnitType unit_type) const {
+  return CreateValueFromOperation(CreateExpressionNodeFromDouble(value, unit_type), ToMathExpressionNode(),
                                   CSSMathOperator::kMultiply);
 }
 
-CSSPrimitiveValue* CSSPrimitiveValue::Divide(double value,
-                                             UnitType unit_type) const {
-  return CreateValueFromOperation(
-      ToMathExpressionNode(), CreateExpressionNodeFromDouble(value, unit_type),
-      CSSMathOperator::kDivide);
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::Multiply(const CSSPrimitiveValue& other) const {
+  return CreateValueFromOperation(ToMathExpressionNode(), other.ToMathExpressionNode(), CSSMathOperator::kMultiply);
 }
 
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::MultiplyBy(const CSSPrimitiveValue& other) const {
+  return CreateValueFromOperation(other.ToMathExpressionNode(), ToMathExpressionNode(), CSSMathOperator::kMultiply);
+}
+
+std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::Divide(double value, UnitType unit_type) const {
+  return CreateValueFromOperation(ToMathExpressionNode(), CreateExpressionNodeFromDouble(value, unit_type),
+                                  CSSMathOperator::kDivide);
+}
 
 }  // namespace webf

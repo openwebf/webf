@@ -39,6 +39,7 @@
 namespace webf {
 
 class CSSMathExpressionNode;
+class CSSLengthResolver;
 
 // Dimension calculations are imprecise, often resulting in values of e.g.
 // 44.99998. We need to go ahead and round if we're really close to the next
@@ -297,7 +298,7 @@ class CSSPrimitiveValue : public CSSValue {
     return unit == UnitType::kDegrees || unit == UnitType::kRadians ||
            unit == UnitType::kGradians || unit == UnitType::kTurns;
   }
-  bool IsAngle() const;
+  [[nodiscard]] bool IsAngle() const;
   static bool IsViewportPercentageLength(UnitType type) {
     return type >= UnitType::kViewportWidth &&
            type <= UnitType::kDynamicViewportMax;
@@ -319,17 +320,17 @@ class CSSPrimitiveValue : public CSSValue {
            type == UnitType::kRcaps || IsViewportPercentageLength(type) ||
            IsContainerPercentageLength(type);
   }
-  bool IsLength() const;
-  bool IsNumber() const;
-  bool IsInteger() const;
-  bool IsPercentage() const;
+  [[nodiscard]] bool IsLength() const;
+  [[nodiscard]] bool IsNumber() const;
+  [[nodiscard]] bool IsInteger() const;
+  [[nodiscard]] bool IsPercentage() const;
   // Is this a percentage *or* a calc() with a percentage?
-  bool HasPercentage() const;
-  bool IsPx() const;
+  [[nodiscard]] bool HasPercentage() const;
+  [[nodiscard]] bool IsPx() const;
   static bool IsTime(UnitType unit) {
     return unit == UnitType::kSeconds || unit == UnitType::kMilliseconds;
   }
-  bool IsTime() const;
+  [[nodiscard]] bool IsTime() const;
   static bool IsFrequency(UnitType unit) {
     return unit == UnitType::kHertz || unit == UnitType::kKilohertz;
   }
@@ -354,8 +355,8 @@ class CSSPrimitiveValue : public CSSValue {
 
   // Creates either a |CSSNumericLiteralValue| or a |CSSMathFunctionValue|,
   // depending on whether |value| is calculated or not. We should never create a
-  // |CSSPrimitiveValue| that's not of any of its subclasses.
-  static CSSPrimitiveValue* CreateFromLength(const Length& value, float zoom);
+  // |CSSPrimitiveValue| that's not of its subclasses.
+  static std::shared_ptr<CSSPrimitiveValue> CreateFromLength(const Length& value, float zoom);
 
   double ComputeDegrees() const;
   double ComputeSeconds() const;
@@ -371,40 +372,48 @@ class CSSPrimitiveValue : public CSSValue {
   // Converts to a Length (Fixed, Percent or Calculated)
   Length ConvertToLength(const CSSLengthResolver&) const;
 
-  bool IsZero() const;
+  enum class BoolStatus {
+    kTrue,
+    kFalse,
+    kUnresolvable,
+  };
+
+  BoolStatus IsZero() const;
+  BoolStatus IsOne() const;
+  BoolStatus IsNegative() const;
 
   // this + value
-  CSSPrimitiveValue* Add(double value, UnitType unit_type) const;
+  std::shared_ptr<CSSPrimitiveValue> Add(double value, UnitType unit_type) const;
   // value + this
-  CSSPrimitiveValue* AddTo(double value, UnitType unit_type) const;
+  std::shared_ptr<CSSPrimitiveValue> AddTo(double value, UnitType unit_type) const;
   // this + value
-  CSSPrimitiveValue* Add(const CSSPrimitiveValue& value) const;
+  std::shared_ptr<CSSPrimitiveValue> Add(const CSSPrimitiveValue& value) const;
   // value + this
-  CSSPrimitiveValue* AddTo(const CSSPrimitiveValue& value) const;
+  std::shared_ptr<CSSPrimitiveValue> AddTo(const CSSPrimitiveValue& value) const;
   // this - value
-  CSSPrimitiveValue* Subtract(double value, UnitType unit_type) const;
+  std::shared_ptr<CSSPrimitiveValue> Subtract(double value, UnitType unit_type) const;
   // value - this
-  CSSPrimitiveValue* SubtractFrom(double value, UnitType unit_type) const;
+  std::shared_ptr<CSSPrimitiveValue> SubtractFrom(double value, UnitType unit_type) const;
   // this - value
-  CSSPrimitiveValue* Subtract(const CSSPrimitiveValue& value) const;
+  std::shared_ptr<CSSPrimitiveValue> Subtract(const CSSPrimitiveValue& value) const;
   // value - this
-  CSSPrimitiveValue* SubtractFrom(const CSSPrimitiveValue& value) const;
+  std::shared_ptr<CSSPrimitiveValue> SubtractFrom(const CSSPrimitiveValue& value) const;
   // this * value
-  CSSPrimitiveValue* Multiply(double value, UnitType unit_type) const;
+  std::shared_ptr<CSSPrimitiveValue> Multiply(double value, UnitType unit_type) const;
   // value * this
-  CSSPrimitiveValue* MultiplyBy(double value, UnitType unit_type) const;
+  std::shared_ptr<CSSPrimitiveValue> MultiplyBy(double value, UnitType unit_type) const;
   // this * value
-  CSSPrimitiveValue* Multiply(const CSSPrimitiveValue& value) const;
+  std::shared_ptr<CSSPrimitiveValue> Multiply(const CSSPrimitiveValue& value) const;
   // value * this
-  CSSPrimitiveValue* MultiplyBy(const CSSPrimitiveValue& value) const;
+  std::shared_ptr<CSSPrimitiveValue> MultiplyBy(const CSSPrimitiveValue& value) const;
   // this / value
-  CSSPrimitiveValue* Divide(double value, UnitType unit_type) const;
+  std::shared_ptr<CSSPrimitiveValue> Divide(double value, UnitType unit_type) const;
   // Note: value / this is not allowed until typed arithmetic is implemented.
-  CSSPrimitiveValue* DivideBy(double value, UnitType unit_type) const = delete;
+  std::shared_ptr<CSSPrimitiveValue> DivideBy(double value, UnitType unit_type) const = delete;
   // Note: this / value is not allowed until typed arithmetic is implemented.
-  CSSPrimitiveValue* Divide(const CSSPrimitiveValue& value) const = delete;
+  std::shared_ptr<CSSPrimitiveValue> Divide(const CSSPrimitiveValue& value) const = delete;
   // Note: value / this is not allowed until typed arithmetic is implemented.
-  CSSPrimitiveValue* DivideBy(const CSSPrimitiveValue& value) const = delete;
+  std::shared_ptr<CSSPrimitiveValue> DivideBy(const CSSPrimitiveValue& value) const = delete;
 
   // TODO(crbug.com/979895): The semantics of these untyped getters are not very
   // clear if |this| is a math function. Do not add new callers before further
@@ -440,7 +449,7 @@ class CSSPrimitiveValue : public CSSValue {
     return StringToUnitType(string.Characters16(), string.length());
   }
 
-  AtomicString CustomCSSText() const;
+  std::string CustomCSSText() const;
 
   void TraceAfterDispatch(GCVisitor*) const;
 
@@ -467,7 +476,7 @@ class CSSPrimitiveValue : public CSSValue {
 
  private:
   bool InvolvesLayout() const;
-  const CSSMathExpressionNode* ToMathExpressionNode() const;
+  const std::shared_ptr<const CSSMathExpressionNode> ToMathExpressionNode() const;
 };
 
 using CSSLengthArray = CSSPrimitiveValue::CSSLengthArray;

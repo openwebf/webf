@@ -39,7 +39,7 @@ class TreeScope;
 class CSSValue {
  public:
   // TODO(sashab): Remove this method and move logic to the caller.
-  static CSSValue* Create(const Length& value, float zoom);
+  static std::shared_ptr<CSSValue> Create(const Length& value, float zoom);
 
   std::string CssText() const;
 
@@ -332,7 +332,7 @@ class CSSValue {
 
   ClassType GetClassType() const { return static_cast<ClassType>(class_type_); }
 
-  const CSSValue& PopulateWithTreeScope(const TreeScope*) const;
+  const std::shared_ptr<CSSValue> PopulateWithTreeScope(const TreeScope*) const;
 
   explicit CSSValue(ClassType class_type)
       : allows_negative_percentage_reference_(false),

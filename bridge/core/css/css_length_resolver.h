@@ -7,17 +7,17 @@
 #ifndef WEBF_CORE_CSS_CSS_LENGTH_RESOLVER_H_
 #define WEBF_CORE_CSS_CSS_LENGTH_RESOLVER_H_
 
-#include <limits>
-
-#include "core/css/anchor_evaluator.h"
 #include "core/css/css_primitive_value.h"
 #include "core/style/inset_area.h"
 #include "core/style/scoped_css_name.h"
 #include "core/geometry/length.h"
 #include "core/platform/text/writing_mode.h"
-#include "core/platform/math_extras.h"
 
 namespace webf {
+
+class AnchorEvaluator;
+class ScopedCSSName;
+class InsetAreaOffsets;
 
 class CSSLengthResolver {
  public:

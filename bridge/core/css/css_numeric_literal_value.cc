@@ -5,7 +5,6 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "core/css/css_numeric_literal_value.h"
-
 #include "core/css/css_length_resolver.h"
 #include "core/css/css_value_pool.h"
 #include "core/platform/math_extras.h"
@@ -14,7 +13,7 @@
 namespace webf {
 
 struct SameSizeAsCSSNumericLiteralValue : CSSPrimitiveValue {
-  double num;
+  double num{};
 };
 static_assert(sizeof(CSSNumericLiteralValue) == sizeof(SameSizeAsCSSNumericLiteralValue),
                 "CSSNumericLiteralValue should stay small");
@@ -186,15 +185,10 @@ bool CSSNumericLiteralValue::IsComputationallyIndependent() const {
   return !IsRelativeUnit(GetType());
 }
 
-static String FormatNumber(double number, const char* suffix) {
-#if BUILDFLAG(IS_WIN) && _MSC_VER < 1900
-  unsigned oldFormat = _set_output_format(_TWO_DIGIT_EXPONENT);
-#endif
-  String result = String::Format("%.6g%s", number, suffix);
-#if BUILDFLAG(IS_WIN) && _MSC_VER < 1900
-  _set_output_format(oldFormat);
-#endif
-  return result;
+static std::string FormatNumber(double number, const char* suffix) {
+  char buffer[10];
+  snprintf(buffer, 10, "%.6g%s", number, suffix);
+  return buffer;
 }
 
 static std::string FormatInfinityOrNaN(double number, const char* suffix) {
@@ -212,7 +206,9 @@ static std::string FormatInfinityOrNaN(double number, const char* suffix) {
   }
 
   if (strlen(suffix) > 0) {
-    result = result + String::Format(" * 1%s", suffix);
+    char buffer[100];
+    snprintf(buffer, 100, " * 1%s", suffix);
+    result = result + buffer;
   }
   return result;
 }
@@ -307,12 +303,12 @@ std::string CSSNumericLiteralValue::CustomCSSText() const {
           text = FormatNumber(value, UnitTypeToString(GetType()));
         }
       } else {
-        StringBuilder builder;
+        std::string builder;
         int int_value = value;
         const char* unit_type = UnitTypeToString(GetType());
-        builder.AppendNumber(int_value);
-        builder.Append(unit_type, static_cast<unsigned>(strlen(unit_type)));
-        text = builder.ReleaseString();
+        builder.append(std::to_string(int_value));
+        builder.append(unit_type, static_cast<unsigned>(strlen(unit_type)));
+        text = builder;
       }
     } break;
     default:

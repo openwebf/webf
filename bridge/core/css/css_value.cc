@@ -30,11 +30,12 @@
 
 #include "core/geometry/length.h"
 #include "css_identifier_value.h"
+#include "core/css/css_primitive_value.h"
 #include "css_value.h"
 
 namespace webf {
 
-CSSValue* CSSValue::Create(const webf::Length& value, float zoom) {
+std::shared_ptr<CSSValue> CSSValue::Create(const webf::Length& value, float zoom) {
   switch (value.GetType()) {
     case Length::kAuto:
     case Length::kMinContent:
@@ -53,7 +54,7 @@ CSSValue* CSSValue::Create(const webf::Length& value, float zoom) {
     case Length::kDeviceHeight:
     case Length::kMinIntrinsic:
     case Length::kNone:
-      NOTREACHED_IN_MIGRATION();
+      assert(false);
       break;
   }
   return nullptr;

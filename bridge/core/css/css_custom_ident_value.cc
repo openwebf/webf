@@ -34,7 +34,7 @@ CSSCustomIdentValue::CSSCustomIdentValue(const ScopedCSSName& name)
 std::string CSSCustomIdentValue::CustomCSSText() const {
   if (IsKnownPropertyID()) {
     return CSSUnresolvedProperty::Get(property_id_)
-        .GetPropertyNameAtomicString();
+        .GetPropertyName();
   }
   std::string builder;
   SerializeIdentifier(string_, builder);
