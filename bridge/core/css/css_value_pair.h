@@ -29,7 +29,6 @@
 //#include "core/core_export.h"
 #include "core/css/css_value.h"
 #include "foundation/casting.h"
-#include "bindings/qjs/atomic_string.h"
 #include "foundation/string_builder.h"
 
 namespace webf {
@@ -56,19 +55,17 @@ class CSSValuePair : public CSSValue {
     return identical_values_policy_ == kKeepIdenticalValues;
   }
 
-  AtomicString CustomCSSText() const {
-    AtomicString first = first_->CssText();
-    AtomicString second = second_->CssText();
+  std::string CustomCSSText() const {
+    std::string first = first_->CssText();
+    std::string second = second_->CssText();
     if (identical_values_policy_ == kDropIdenticalValues && first == second) {
       return first;
     }
-    // TODO dongyajie check下是否字符串拼接替换成StringBuilder
-    StringBuilder result;
-    result.Append(first);
-    result.Append(StringView(" "));
-    result.Append(second);
-    //    return first.ToStringView() + " " + second;
-    return result.ReleaseString();
+    std::string result;
+    result.append(first);
+    result.append(" ");
+    result.append(second);
+    return result;
   }
 
   bool Equals(const CSSValuePair& other) const {

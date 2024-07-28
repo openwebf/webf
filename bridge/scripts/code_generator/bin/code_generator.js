@@ -17,6 +17,8 @@ const { generateNamesInstaller } = require("../dist/json/generator");
 const { union } = require("lodash");
 const {makeCSSPropertyNames} = require("../dist/json/make_css_property_names");
 const {makePropertyBitset} = require("../dist/json/make_property_bitset");
+const {makeStylePropertyShorthand} = require("../dist/json/make_property_shorthand");
+const {makeCSSPropertySubClasses} = require("../dist/json/make_css_property_subclasses");
 
 program
   .version(packageJSON.version)
@@ -177,6 +179,22 @@ EOF`, {stdio: 'inherit'});
   let propertyBitsetResult = makePropertyBitset();
   let propertyBitSetGenFilePath = path.join(dist, 'property_bitset');
   writeFileIfChanged(propertyBitSetGenFilePath + '.cc', propertyBitsetResult.source);
+
+  // Generate css_property_subclass code
+  let cssShortHandResult = makeCSSPropertySubClasses(true);
+  let cssShortHandGenFilePath = path.join(dist, 'shorthands');
+  writeFileIfChanged(cssShortHandGenFilePath + '.h', cssShortHandResult.header);
+  writeFileIfChanged(cssShortHandGenFilePath + '.cc', cssShortHandResult.source);
+
+  let cssLongHandResult = makeCSSPropertySubClasses(false);
+  let cssLongHandResultGenFilePath = path.join(dist, 'longhands');
+  writeFileIfChanged(cssLongHandResultGenFilePath + '.h', cssLongHandResult.header);
+  writeFileIfChanged(cssLongHandResultGenFilePath + '.cc', cssLongHandResult.source);
+
+  // Generate style_property_shorthand code
+  let stylePropertyShorthandResult = makeStylePropertyShorthand();
+  let stylePropertyShorthandGenFilePath = path.join(dist, 'style_property_shorthand');
+  writeFileIfChanged(stylePropertyShorthandGenFilePath + '.h', stylePropertyShorthandResult.header);
 }
 
 class DefinedPropertyCollector {

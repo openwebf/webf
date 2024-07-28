@@ -19,12 +19,8 @@
  * Boston, MA 02110-1301, USA.
  */
 
-  /*
-   * Copyright (C) 2022-present The WebF authors. All rights reserved.
-   */
-
-<% /* Assuming source_files_for_generated_file function is imported or defined elsewhere */ %>
-<%= source_files_for_generated_file(template_file, input_files) %>
+{% from 'templates/macros.tmpl' import source_files_for_generated_file %}
+{{source_files_for_generated_file(template_file, input_files)}}
 
 #include "third_party/blink/renderer/core/style_property_shorthand.h"
 
@@ -33,67 +29,69 @@
 #include "third_party/blink/renderer/core/css/properties/longhands.h"
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 
-<% /* Macro for defining shorthand properties */ %>
-<% function defineShorthand(property, expansion) { %>
+{% macro define_shorthand(property, expansion) -%}
   static const CSSProperty* longhands[] = {
-    <% expansion.enabledLonghands.forEach(function(longhand) { %>
-    &Get<%= longhand.propertyId %>(),
-    <% }); %>
+    {% for longhand in expansion.enabled_longhands %}
+    &Get{{longhand.property_id}}(),
+    {% endfor %}
   };
 
   static const StylePropertyShorthand shorthand(
-      CSSPropertyID::<%= property.enumKey %>, longhands, std::size(longhands));
-<% } %>
-//
+      CSSPropertyID::{{property.enum_key}}, longhands, std::size(longhands));
+{%- endmacro %}
+
 namespace blink {
+{% for property in properties %}
+  {% set function_prefix = property.name.to_lower_camel_case() %}
+  {% for expansion in property.expansions[1:] %}
 
-<% properties.forEach(function(property) { %>
-  <% var functionPrefix = property.name.toLowerCamelCase(); %>
-  <% property.expansions.slice(1).forEach(function(expansion) { %>
-
-static const StylePropertyShorthand* <%= functionPrefix %>Shorthand<%= expansion.index %>() {
-    <% expansion.flags.forEach(function(flag) { %>
-  if (<%= flag.enabled ? '!' : '' %>RuntimeEnabledFeatures::<%= flag.name %>Enabled())
+static const StylePropertyShorthand* {{function_prefix}}Shorthand{{expansion.index}}() {
+    {% for flag in expansion.flags %}
+  if ({{flag.enabled and '!' or ''}}RuntimeEnabledFeatures::{{flag.name}}Enabled())
     return nullptr;
-    <% }); %>
+    {% endfor %}
 
-  <% defineShorthand(property, expansion); %>
+  {{define_shorthand(property, expansion)}}
   return &shorthand;
 }
-  <% }); %>
+  {% endfor %}
 
-const StylePropertyShorthand& <%= functionPrefix %>Shorthand() {
-  <% if (property.expansions.length > 1) { %>
-    <% property.expansions.slice(1).forEach(function(expansion) { %>
-  if (const auto* s = <%= functionPrefix %>Shorthand<%= expansion.index %>())
+const StylePropertyShorthand& {{function_prefix}}Shorthand() {
+  {% if property.expansions|length > 1 %}
+    {% for expansion in property.expansions[1:] %}
+  if (const auto* s = {{function_prefix}}Shorthand{{expansion.index}}())
     return *s;
-    <% }); %>
-  <% } %>
-  <% if (property.expansions[0].flags) { %>
-    <% property.expansions[0].flags.forEach(function(flag) { %>
-  DCHECK(<%= flag.enabled ? '' : '!' %>RuntimeEnabledFeatures::<%= flag.name %>Enabled());
-    <% }); %>
-  <% } %>
-  <% if (property.expansions[0].isEmpty) { %>
+    {% endfor %}
+
+  {% endif %}
+  {% if property.expansions[0].flags %}
+    {% for flag in property.expansions[0].flags %}
+  DCHECK({{not flag.enabled and '!' or ''}}RuntimeEnabledFeatures::{{flag.name}}Enabled());
+    {% endfor %}
+
+  {% endif %}
+  {# Note: only expansions[0] can be empty #}
+  {% if property.expansions[0].is_empty %}
   static StylePropertyShorthand empty_shorthand;
   return empty_shorthand;
-  <% } else { %>
-  <% defineShorthand(property, property.expansions[0]); %>
+  {% else %}
+  {{define_shorthand(property, property.expansions[0])}}
   return shorthand;
-  <% } %>
+  {% endif %}
 }
-<% }); %>
+{% endfor %}
 
 // Returns an empty list if the property is not a shorthand
 const StylePropertyShorthand& shorthandForProperty(CSSPropertyID propertyID) {
+  // FIXME: We shouldn't switch between shorthand/not shorthand based on a runtime flag
   static StylePropertyShorthand empty_shorthand;
 
   switch (propertyID) {
-    <% properties.forEach(function(property) { %>
-      <% var functionPrefix = property.name.toLowerCamelCase(); %>
-    case CSSPropertyID::<%= property.enumKey %>:
-      return <%= functionPrefix %>Shorthand();
-    <% }); %>
+    {% for property in properties %}
+      {% set function_prefix = property.name.to_lower_camel_case() %}
+    case CSSPropertyID::{{property.enum_key}}:
+      return {{function_prefix}}Shorthand();
+    {% endfor %}
     default: {
       return empty_shorthand;
     }
@@ -104,20 +102,20 @@ void getMatchingShorthandsForLonghand(
     CSSPropertyID propertyID, Vector<StylePropertyShorthand, 4>* result) {
   DCHECK(!result->size());
   switch (propertyID) {
-    <% for (var longhandEnumKey in longhandsDictionary) { %>
-    case CSSPropertyID::<%= longhandEnumKey %>: {
-      <% longhandsDictionary[longhandEnumKey].forEach(function(shorthand) { %>
-        <% if (!shorthand.knownExposed) { %>
-      if (CSSProperty::Get(CSSPropertyID::<%= shorthand.enumKey %>).IsWebExposed())
-        result->UncheckedAppend(<%= shorthand.name.toLowerCamelCase() %>Shorthand());
-        <% } else { %>
-      DCHECK(CSSProperty::Get(CSSPropertyID::<%= shorthand.enumKey %>).IsWebExposed());
-      result->UncheckedAppend(<%= shorthand.name.toLowerCamelCase() %>Shorthand());
-        <% } %>
-      <% }); %>
+  {% for longhand_enum_key, shorthands in longhands_dictionary.items() %}
+    case CSSPropertyID::{{longhand_enum_key}}: {
+      {% for shorthand in shorthands %}
+        {% if not shorthand.known_exposed %}
+      if (CSSProperty::Get(CSSPropertyID::{{shorthand.enum_key}}).IsWebExposed())
+        result->UncheckedAppend({{shorthand.name.to_lower_camel_case()}}Shorthand());
+        {% else %}
+      DCHECK(CSSProperty::Get(CSSPropertyID::{{shorthand.enum_key}}).IsWebExposed());
+      result->UncheckedAppend({{shorthand.name.to_lower_camel_case()}}Shorthand());
+        {% endif %}
+      {% endfor %}
       break;
     }
-    <% } %>
+    {% endfor %}
     default:
       break;
   }

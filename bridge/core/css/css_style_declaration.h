@@ -9,7 +9,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
 #include "defined_properties.h"
-#include "core/css/css_property_names.h"
+#include "css_property_names.h"
 
 namespace webf {
 

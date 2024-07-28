@@ -19,37 +19,12 @@
  * Boston, MA 02110-1301, USA.
  */
 
- /*
-  * Copyright (C) 2022-present The WebF authors. All rights reserved.
-  */
+#ifndef WEBF_CORE_CSS_CSS_PROPERTY_SHORTHAND_H_
+#define WEBF_CORE_CSS_CSS_PROPERTY_SHORTHAND_H_
 
-<%
-// 定义sourceFilesForGeneratedFile函数，third_party/blink/renderer/build/scripts/templates/macros.tmpl
-  function sourceFilesForGeneratedFile(templateFile, inputFiles) {
-    if (!templateFile) {
-      throw new Error("template_file must be defined in template scripts.");
-    }
-    if (!inputFiles) {
-      throw new Error("input_files must be defined in template scripts.");
-    }
-
-    let result = `// Generated from template:\n//   ${templateFile}\n// and input files:\n`;
-    inputFiles.sort().forEach(input => {
-      result += `//   ${input}\n`;
-    });
-
-    return result;
-  }
-%>
-<%= sourceFilesForGeneratedFile(templateFile, inputFiles) %>
-
-#ifndef <%= headerGuard %>
-#define <%= headerGuard %>
-
-#include "core/css/css_property_names.h"
+#include <vector>
+#include "css_property_names.h"
 #include "core/css/properties/css_property.h"
-//#include "third_party/blink/renderer/platform/wtf/vector.h"
-#include<vector>
 
 namespace webf {
 
@@ -77,23 +52,23 @@ class StylePropertyShorthand {
   CSSPropertyID shorthand_id_;
 };
 
-<% properties.forEach(function(property) { %>
-const StylePropertyShorthand& <%= property.name.toLowerCamelCase() %>Shorthand();
+<% _.each(properties.shorthands, (property, index) => { %>
+const StylePropertyShorthand& <%= lowerCamelCase(property.name) %>Shorthand();
 <% }); %>
 
 const StylePropertyShorthand& transitionShorthandForParsing();
 
 // Returns an empty list if the property is not a shorthand.
-CORE_EXPORT const StylePropertyShorthand& shorthandForProperty(CSSPropertyID);
+const StylePropertyShorthand& shorthandForProperty(CSSPropertyID);
 
 // Return the list of shorthands for a given longhand.
 // The client must pass in an empty result vector.
 void getMatchingShorthandsForLonghand(
-    CSSPropertyID, Vector<StylePropertyShorthand, 4>* result);
+    CSSPropertyID, std::vector<StylePropertyShorthand>* result);
 
 unsigned indexOfShorthandForLonghand(CSSPropertyID,
-                                     const Vector<StylePropertyShorthand, 4>&);
+                                     const std::vector<StylePropertyShorthand>&);
 
-}  // namespace webf
+}  // namespace blink
 
-#endif  // <%= headerGuard %>
+#endif  // WEBF_CORE_CSS_CSS_PROPERTY_SHORTHAND_H_

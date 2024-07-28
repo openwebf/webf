@@ -33,22 +33,17 @@ namespace webf {
 struct SameSizeAsCSSValueList : CSSValue {
   std::vector<std::shared_ptr<const CSSValue>> list_values;
 };
-// TODO(guopengfei)：迁移代码，使用static_assert平替ASSERT_SIZE
 static_assert(sizeof(CSSValueList) == sizeof(SameSizeAsCSSValueList), "CSSValueList should stay small");
 
-CSSValueList::CSSValueList(ClassType class_type,
-                           ValueListSeparator list_separator)
-    : CSSValue(class_type) {
+CSSValueList::CSSValueList(ClassType class_type, ValueListSeparator list_separator) : CSSValue(class_type) {
   value_list_separator_ = list_separator;
 }
 
-CSSValueList::CSSValueList(ValueListSeparator list_separator)
-    : CSSValue(kValueListClass) {
+CSSValueList::CSSValueList(ValueListSeparator list_separator) : CSSValue(kValueListClass) {
   value_list_separator_ = list_separator;
 }
 
-CSSValueList::CSSValueList(ValueListSeparator list_separator,
-                           std::vector<std::shared_ptr<const CSSValue>> values)
+CSSValueList::CSSValueList(ValueListSeparator list_separator, std::vector<std::shared_ptr<const CSSValue>> values)
     : CSSValue(kValueListClass), values_(std::move(values)) {
   value_list_separator_ = list_separator;
 }
@@ -78,9 +73,7 @@ bool CSSValueList::RemoveAll(const CSSValue& val) {
   // }
 
   auto it = std::remove_if(values_.begin(), values_.end(),
-      [&val](const std::shared_ptr<const CSSValue>& value) {
-          return value && *value == val;
-      });
+                           [&val](const std::shared_ptr<const CSSValue>& value) { return value && *value == val; });
 
   if (it != values_.end()) {
     values_.erase(it, values_.end());
@@ -132,8 +125,7 @@ CSSValueList* CSSValueList::Copy() const {
   return new_list;
 }
 
-const CSSValueList& CSSValueList::PopulateWithTreeScope(
-    const TreeScope* tree_scope) const {
+const CSSValueList& CSSValueList::PopulateWithTreeScope(const TreeScope* tree_scope) const {
   // Note: this will be changed if any subclass also involves values that need
   // TreeScope population, as in that case, we will need to return an instance
   // of the subclass.
@@ -160,8 +152,8 @@ const CSSValueList& CSSValueList::PopulateWithTreeScope(
   return *new_list;
 }
 
-AtomicString CSSValueList::CustomCSSText() const {
-  StringView separator("");
+std::string CSSValueList::CustomCSSText() const {
+  std::string separator("");
   switch (value_list_separator_) {
     case kSpaceSeparator:
       separator = " ";
@@ -176,23 +168,22 @@ AtomicString CSSValueList::CustomCSSText() const {
       WEBF_LOG(VERBOSE) << "[CSSValueList]: NotReached CustomCSSText():" << value_list_separator_ << std::endl;
   }
 
-  StringBuilder result;
+  std::string result;
   for (const auto& value : values_) {
     if (!result.empty()) {
-      result.Append(separator);
+      result.append(separator);
     }
     // TODO(crbug.com/1213338): value_[i] can be null by CSSMathExpressionNode
     // which is implemented by css-values-3. Until fully implement the
     // css-values-4 features, we should append empty string to remove
     // null-pointer exception.
-    result.Append(value ? value->CssText() : AtomicString::Empty()); // TODO(guopengfei)：" "替换为AtomicString::Empty()
+    result.append(value ? value->CssText() : "");
   }
-  return result.ReleaseString();
+  return result;
 }
 
 bool CSSValueList::Equals(const CSSValueList& other) const {
-  return value_list_separator_ == other.value_list_separator_ &&
-         CompareCSSValueVector(values_, other.values_);
+  return value_list_separator_ == other.value_list_separator_ && CompareCSSValueVector(values_, other.values_);
 }
 
 bool CSSValueList::HasFailedOrCanceledSubresources() const {

@@ -98,11 +98,10 @@ inline void StringView::Clear() {
   bytes_ = nullptr;
 }
 
-bool EqualIgnoringASCIICase(const StringView&, const StringView&);
+bool EqualIgnoringASCIICase(const std::string&, const std::string&);
 
-template <typename CharacterTypeA, typename CharacterTypeB>
-inline bool EqualIgnoringASCIICase(const CharacterTypeA* a,
-                                   const CharacterTypeB* b,
+inline bool EqualIgnoringASCIICase(const char* a,
+                                   const char* b,
                                    size_t length) {
   for (size_t i = 0; i < length; ++i) {
     if (ToASCIILower(a[i]) != ToASCIILower(b[i]))

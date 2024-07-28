@@ -405,6 +405,7 @@ export class CSSProperties {
     }
     property_.surrogate_for = this._properties_by_name[property_.surrogate_for as string];
   }
+
   set_derived_alternative_attributes(property_: any) {
     if (!property_.alternative_of) {
       return;

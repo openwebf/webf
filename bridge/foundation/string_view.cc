@@ -67,19 +67,12 @@ AtomicString StringView::ToAtomicString(JSContext* ctx) const {
   }
 }
 
-bool EqualIgnoringASCIICase(const StringView& a, const StringView& b) {
+bool EqualIgnoringASCIICase(const std::string& a, const std::string& b) {
   if (a.length() != b.length())
     return false;
-  if (a.Bytes() == b.Bytes() && a.Is8Bit() == b.Is8Bit())
+  if (a.data() == b.data())
     return true;
-  if (a.Is8Bit()) {
-    if (b.Is8Bit())
-      return EqualIgnoringASCIICase(a.Characters8(), b.Characters8(), a.length());
-    return EqualIgnoringASCIICase(a.Characters8(), b.Characters16(), a.length());
-  }
-  if (b.Is8Bit())
-    return EqualIgnoringASCIICase(a.Characters16(), b.Characters8(), a.length());
-  return EqualIgnoringASCIICase(a.Characters16(), b.Characters16(), a.length());
+  return EqualIgnoringASCIICase(a.c_str(), b.c_str(), a.length());
 }
 
 }  // namespace webf

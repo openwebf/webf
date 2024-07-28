@@ -8831,18 +8831,18 @@
       name: "-webkit-animation",
       alias_for: "animation",
     },
-    {
-      // Since "animation" has an alternative property, "-webkit-animation"
-      // also needs to have an alternative property that is an alias of
-      // animation's alternative property. Unfortunately we can't just resolve
-      // -webkit-animation directly to animation's alternative, because we have
-      // to remember the -webkit-ness of the property to enable legacy parsing
-      // behavior. (See CSSParserLocalContext::UseAliasParsing).
-      name: "-webkit-alternative-animation-with-timeline",
-      alias_for: "-alternative-animation-with-timeline",
-      alternative_of: "-webkit-animation",
-      runtime_flag: "ScrollTimeline",
-    },
+//    {
+//      // Since "animation" has an alternative property, "-webkit-animation"
+//      // also needs to have an alternative property that is an alias of
+//      // animation's alternative property. Unfortunately we can't just resolve
+//      // -webkit-animation directly to animation's alternative, because we have
+//      // to remember the -webkit-ness of the property to enable legacy parsing
+//      // behavior. (See CSSParserLocalContext::UseAliasParsing).
+//      name: "-webkit-alternative-animation-with-timeline",
+//      alias_for: "-alternative-animation-with-timeline",
+//      alternative_of: "-webkit-animation",
+//      runtime_flag: "ScrollTimeline",
+//    },
     {
       name: "-webkit-animation-delay",
       alias_for: "animation-delay",

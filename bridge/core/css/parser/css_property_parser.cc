@@ -123,9 +123,9 @@ static CSSPropertyID UnresolvedCSSPropertyID(
 }
 
 CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* context,
-                                      StringView string_view,
+                                      const std::string& string,
                                       CSSParserMode mode) {
-  return UnresolvedCSSPropertyID(context, string_view.Characters8(), string_view.length(), mode);
+  return UnresolvedCSSPropertyID(context, string.c_str(), string.length(), mode);
 }
 
 

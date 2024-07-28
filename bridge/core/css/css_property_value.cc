@@ -24,4 +24,55 @@
 
 #include "css_property_value.h"
 
-namespace webf {}  // namespace webf
+namespace webf {
+
+struct SameSizeAsCSSPropertyValue {
+  uint32_t bitfields;
+  std::string property;
+  std::shared_ptr<void*> value;
+};
+
+static_assert(sizeof(CSSPropertyValue) == sizeof(SameSizeAsCSSPropertyValue));
+
+CSSPropertyValueMetadata::CSSPropertyValueMetadata(
+    const CSSPropertyName& name,
+    bool is_set_from_shorthand,
+    int index_in_shorthands_vector,
+    bool important,
+    bool implicit)
+    : property_id_(static_cast<unsigned>(name.Id())),
+      is_set_from_shorthand_(is_set_from_shorthand),
+      index_in_shorthands_vector_(index_in_shorthands_vector),
+      important_(important),
+      implicit_(implicit) {
+  if (name.IsCustomProperty()) {
+    custom_name_ = name.ToAtomicString();
+  }
+}
+
+CSSPropertyID CSSPropertyValueMetadata::ShorthandID() const {
+  if (!is_set_from_shorthand_) {
+    return CSSPropertyID::kInvalid;
+  }
+
+  Vector<StylePropertyShorthand, 4> shorthands;
+  getMatchingShorthandsForLonghand(PropertyID(), &shorthands);
+  DCHECK(shorthands.size());
+  assert(index_in_shorthands_vector_ > 0u);
+  assert(index_in_shorthands_vector_ < shorthands.size());
+  return shorthands.at(index_in_shorthands_vector_).id();
+}
+
+CSSPropertyName CSSPropertyValueMetadata::Name() const {
+  if (PropertyID() != CSSPropertyID::kVariable) {
+    return CSSPropertyName(PropertyID());
+  }
+  return CSSPropertyName(custom_name_);
+}
+
+bool CSSPropertyValue::operator==(const CSSPropertyValue& other) const {
+  return base::ValuesEquivalent(value_, other.value_) &&
+         IsImportant() == other.IsImportant();
+}
+
+}  // namespace webf

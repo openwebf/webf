@@ -11,6 +11,9 @@
 
 #include "foundation/string_view.h"
 #include "foundation/webf_malloc.h"
+#include "core/css/css_primitive_value.h"
+#include "css_value_keywords.h"
+#include "css_property_names.h"
 
 namespace webf {
 
@@ -103,31 +106,95 @@ class CSSParserToken {
   CSSParserToken(CSSParserTokenType, unsigned char);  // for DelimiterToken
   CSSParserToken(HashTokenType, StringView);
 
-  CSSParserTokenType GetType() const { return static_cast<CSSParserTokenType>(type_); }
-
-  BlockType GetBlockType() const { return static_cast<BlockType>(block_type_); }
-
-  void Serialize(std::string&) const;
-
-  StringView Value() const {
-    if (value_is_inline_) {
-      assert(value_is_8bit_);
-      return StringView(reinterpret_cast<const char*>(value_data_char_inline_), value_length_);
-    }
-    if (value_is_8bit_) {
-      return StringView(reinterpret_cast<const char*>(value_data_char_raw_), value_length_);
-    }
-    return StringView(reinterpret_cast<const char16_t*>(value_data_char_raw_), value_length_);
+  bool operator==(const CSSParserToken& other) const;
+  bool operator!=(const CSSParserToken& other) const {
+    return !(*this == other);
   }
-
-  bool IsEOF() const { return type_ == static_cast<unsigned>(kEOFToken); }
-  char16_t Delimiter() const;
 
   // Converts NumberToken to DimensionToken.
   void ConvertToDimensionWithUnit(StringView);
 
   // Converts NumberToken to PercentageToken.
   void ConvertToPercentage();
+
+  CSSParserTokenType GetType() const { return static_cast<CSSParserTokenType>(type_); }
+
+  std::string Value() const {
+    if (value_is_inline_) {
+      assert(value_is_8bit_);
+      return {reinterpret_cast<const char*>(value_data_char_inline_),
+                        value_length_};
+    }
+    assert(value_is_8bit_);
+    return {reinterpret_cast<const char*>(value_data_char_raw_),
+            value_length_};
+  }
+
+  bool IsEOF() const { return type_ == static_cast<unsigned>(kEOFToken); }
+  char Delimiter() const;
+
+  NumericSign GetNumericSign() const;
+  NumericValueType GetNumericValueType() const;
+  double NumericValue() const;
+  HashTokenType GetHashTokenType() const {
+    assert(type_ == static_cast<unsigned>(kHashToken));
+    return hash_token_type_;
+  }
+  BlockType GetBlockType() const { return static_cast<BlockType>(block_type_); }
+  CSSPrimitiveValue::UnitType GetUnitType() const {
+    return static_cast<CSSPrimitiveValue::UnitType>(unit_);
+  }
+  int32_t UnicodeRangeStart() const {
+    assert(type_ == static_cast<unsigned>(kUnicodeRangeToken));
+    return unicode_range_.start;
+  }
+  int32_t UnicodeRangeEnd() const {
+    assert(type_ == static_cast<unsigned>(kUnicodeRangeToken));
+    return unicode_range_.end;
+  }
+  CSSValueID Id() const;
+  CSSValueID FunctionId() const;
+
+  bool HasStringBacking() const;
+
+  CSSPropertyID ParseAsUnresolvedCSSPropertyID(
+      const ExecutingContext* execution_context,
+      CSSParserMode mode = kHTMLStandardMode) const;
+//  AtRuleDescriptorID ParseAsAtRuleDescriptorID() const;
+
+  void Serialize(std::string&) const;
+
+  CSSParserToken CopyWithUpdatedString(const StringView&) const;
+
+  static CSSParserTokenType ClosingTokenType(CSSParserTokenType opening_type) {
+    switch (opening_type) {
+      case kFunctionToken:
+      case kLeftParenthesisToken:
+        return kRightParenthesisToken;
+      case kLeftBracketToken:
+        return kRightBracketToken;
+      case kLeftBraceToken:
+        return kRightBraceToken;
+      default:
+        assert(false);
+        return kEOFToken;
+    }
+  }
+
+  // For debugging/logging only.
+  friend std::ostream& operator<<(std::ostream& stream,
+                                  const CSSParserToken& token) {
+    if (token.GetType() == kEOFToken) {
+      return stream << "<EOF>";
+    } else if (token.GetType() == kCommentToken) {
+      return stream << "/* comment */";
+    } else {
+      std::string sb;
+      token.Serialize(sb);
+      return stream << sb;
+    }
+  }
+
 
  private:
   void InitValueFromStringView(StringView string) {

@@ -1,7 +1,7 @@
 import {JSONBlob} from './JSONBlob';
 import {JSONTemplate} from './JSONTemplate';
 import _ from 'lodash';
-import {upperCamelCase} from "./name_utiltities";
+import {lowerCamelCase, upperCamelCase} from "./name_utiltities";
 
 function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[], options: GenerateJSONOptions = {}): string {
   let compiled = _.template(template.raw);

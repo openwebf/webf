@@ -8,6 +8,10 @@ export function upperCamelCase(name: string) {
   return _.upperFirst(_.camelCase(name));
 }
 
+export function lowerCamelCase(name: string) {
+  return _.camelCase(name);
+}
+
 export function idForCssPropertyAlias(propertyName: string) {
   return 'CSSPropertyAlias' + upperCamelCase(propertyName);
 }

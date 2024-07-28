@@ -40,21 +40,16 @@ class CSSValueList : public CSSValue {
   using reverse_iterator = std::vector<std::shared_ptr<const CSSValue>>::reverse_iterator;
   using const_reverse_iterator = std::vector<std::shared_ptr<const CSSValue>>::const_reverse_iterator;
 
-  // TODO(guopengfei)：非scriptWrappable，替换MakeGarbageCollected
   static std::unique_ptr<CSSValueList> CreateCommaSeparated() {
-    // return MakeGarbageCollected<CSSValueList>(kCommaSeparator);
     return std::make_unique<CSSValueList>(kCommaSeparator);
   }
   static std::unique_ptr<CSSValueList> CreateSpaceSeparated() {
-    // return MakeGarbageCollected<CSSValueList>(kSpaceSeparator);
     return std::make_unique<CSSValueList>(kCommaSeparator);
   }
   static std::unique_ptr<CSSValueList> CreateSlashSeparated() {
-    // return MakeGarbageCollected<CSSValueList>(kSlashSeparator);
     return std::make_unique<CSSValueList>(kSlashSeparator);
   }
   static std::unique_ptr<CSSValueList> CreateWithSeparatorFrom(const CSSValueList& list) {
-    // return MakeGarbageCollected<CSSValueList>(static_cast<ValueListSeparator>(list.value_list_separator_));
     return std::make_unique<CSSValueList>(static_cast<ValueListSeparator>(list.value_list_separator_));
   }
 
@@ -83,7 +78,7 @@ class CSSValueList : public CSSValue {
   bool HasValue(const CSSValue&) const;
   CSSValueList* Copy() const;
 
-  AtomicString CustomCSSText() const;
+  virtual std::string CustomCSSText() const;
   bool Equals(const CSSValueList&) const;
 
   const CSSValueList& PopulateWithTreeScope(const TreeScope*) const;

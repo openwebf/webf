@@ -322,7 +322,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_tokenizer_input_stream.cc
     core/css/css_markup.cc
     core/css/css_value.cc
+    core/css/css_value_pair.cc
     core/css/css_value_pool.cc
+    core/css/css_value_list.cc
+    core/css/css_bracketed_value_list.cc
     core/css/css_value_clamping_utils.cc
     core/css/css_identifier_value.cc
     core/css/css_custom_ident_value.cc

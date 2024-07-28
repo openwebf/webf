@@ -28,8 +28,8 @@
 #include <utility>
 
 #include "foundation/macros.h"
+#include "css_property_names.h"
 #include "core/css/css_property_name.h"
-#include "core/css/css_property_names.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/css/css_value.h"
 
@@ -55,7 +55,7 @@ struct CSSPropertyValueMetadata {
 
   CSSPropertyName Name() const;
 
-  AtomicString custom_name_;
+  std::string custom_name_;
   unsigned property_id_ : kCSSPropertyIDBitLength;
   unsigned is_set_from_shorthand_ : 1;
   // If this property was set as part of an ambiguous shorthand, gives the index
@@ -95,7 +95,7 @@ class CSSPropertyValue {
         value_(std::move(value)) {}
 
   CSSPropertyID Id() const { return metadata_.PropertyID(); }
-  const AtomicString& CustomPropertyName() const {
+  const std::string& CustomPropertyName() const {
     assert(Id() == CSSPropertyID::kVariable);
     return metadata_.custom_name_;
   }

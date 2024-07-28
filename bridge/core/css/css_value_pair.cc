@@ -7,8 +7,6 @@
 namespace webf {
 
 void CSSValuePair::TraceAfterDispatch(GCVisitor* visitor) const {
-//  visitor->Trace(first_);
-//  visitor->Trace(second_);
   CSSValue::TraceAfterDispatch(visitor);
 }
 }
