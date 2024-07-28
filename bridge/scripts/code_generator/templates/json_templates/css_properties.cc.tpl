@@ -2,23 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "<%= isShortHand ? 'shorthands.h' : 'longhands.h' %>"
 #include "core/css/properties/<%= isShortHand ? 'shorthand.h' : 'longhand.h' %>"
 
 #include "core/css/css_custom_ident_value.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_primitive_value.h"
-#include "core/css/css_primitive_value_mappings.h"
+// #include "core/css/css_primitive_value_mappings.h"
 #include "core/css/css_value_list.h"
 #include "core/css/css_value_pair.h"
-#include "core/css/properties/css_direction_aware_resolver.h"
-#include "core/css/properties/style_building_utils.h"
-#include "core/css/resolver/font_builder.h"
-#include "core/css/resolver/style_builder_converter.h"
 #include "core/css/resolver/style_resolver_state.h"
-#include "core/execution_context/execution_context.h"
-#include "core/style/computed_style.h"
-#include "core/style/style_svg_resource.h"
-#include "platform/runtime_enabled_features.h"
 
 namespace webf {
 namespace css_<%= isShortHand ? 'shorthand' : 'longhand' %> {
@@ -39,31 +32,10 @@ namespace css_<%= isShortHand ? 'shorthand' : 'longhand' %> {
     }
   <% } %>
 
-  <% if (!property.known_exposed) { %>
-CSSExposure <%= class_name %>::Exposure(const ExecutionContext* execution_context) const {
-    <% if (property.alternative) { %>
-        <%= returnNoneIfAlternativeExposed(property.alternative) %>
-    <% } %>
-    <% if (property.runtime_flag) { %>
-  if (!RuntimeEnabledFeatures.<%= property.runtime_flag %>Enabled(execution_context)) {
-    return CSSExposure.kNone;
-  }
-    <% } %>
-    <% if (property.is_internal) { %>
-  return CSSExposure.kUA;
-    <% } else { %>
-  return CSSExposure.kWeb;
-    <% } %>
-}
-  <% } %>
+
 
 const char* <%= class_name %>::GetPropertyName() const {
   return "<%= exposed_property.name %>";
-}
-
-const AtomicString& <%= class_name %>::GetPropertyNameAtomicString() const {
-  DEFINE_STATIC_LOCAL(const AtomicString, name, ("<%= exposed_property.name %>"));
-  return name;
 }
 
 const char* <%= class_name %>::GetJSPropertyName() const {

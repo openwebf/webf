@@ -19,6 +19,7 @@ const {makeCSSPropertyNames} = require("../dist/json/make_css_property_names");
 const {makePropertyBitset} = require("../dist/json/make_property_bitset");
 const {makeStylePropertyShorthand} = require("../dist/json/make_property_shorthand");
 const {makeCSSPropertySubClasses} = require("../dist/json/make_css_property_subclasses");
+const {makeCSSPropertyInstance} = require("../dist/json/make_css_property_instance");
 
 program
   .version(packageJSON.version)
@@ -195,6 +196,12 @@ EOF`, {stdio: 'inherit'});
   let stylePropertyShorthandResult = makeStylePropertyShorthand();
   let stylePropertyShorthandGenFilePath = path.join(dist, 'style_property_shorthand');
   writeFileIfChanged(stylePropertyShorthandGenFilePath + '.h', stylePropertyShorthandResult.header);
+
+  // Generate css_property_instance code
+  let cssPropertyInstanceResult = makeCSSPropertyInstance();
+  let cssPropertyInstanceGenFilePath = path.join(dist, 'css_property_instance');
+  writeFileIfChanged(cssPropertyInstanceGenFilePath + '.h', cssPropertyInstanceResult.header);
+  writeFileIfChanged(cssPropertyInstanceGenFilePath + '.cc', cssPropertyInstanceResult.source);
 }
 
 class DefinedPropertyCollector {

@@ -23,6 +23,7 @@
  */
 
 #include "css_property_value.h"
+#include "shorthands.h"
 
 namespace webf {
 

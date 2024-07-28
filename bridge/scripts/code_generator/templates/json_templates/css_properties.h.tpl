@@ -70,11 +70,7 @@ class <%= class_name %> final : public <%= property.superclass %> {
  public:
   constexpr <%= class_name %>() : <%= property.superclass %>(<%= ctor_args.join(', ') %>  ) { }
   const char* GetPropertyName() const override;
-  const AtomicString& GetPropertyNameAtomicString() const override;
   const char* GetJSPropertyName() const override;
-  <% if(!property.known_exposed) { %>
-  CSSExposure Exposure(const ExecutingContext*) const override;
-  <% } %>
   <% if(property.alternative) { %>
   CSSPropertyID GetAlternative() const override {
     return CSSPropertyID::<%= property.alternative.enum_key %>;
