@@ -196,6 +196,7 @@ EOF`, {stdio: 'inherit'});
   let stylePropertyShorthandResult = makeStylePropertyShorthand();
   let stylePropertyShorthandGenFilePath = path.join(dist, 'style_property_shorthand');
   writeFileIfChanged(stylePropertyShorthandGenFilePath + '.h', stylePropertyShorthandResult.header);
+  writeFileIfChanged(stylePropertyShorthandGenFilePath + '.cc', stylePropertyShorthandResult.source);
 
   // Generate css_property_instance code
   let cssPropertyInstanceResult = makeCSSPropertyInstance();
