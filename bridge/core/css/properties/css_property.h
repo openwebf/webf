@@ -23,7 +23,6 @@ namespace webf {
 class CSSUnresolvedProperty; //TODO(xiezuobing): core/css/properties/css_unresolved_property.h
 
 class ComputedStyle;
-class CrossThreadStyleValue;
 class ExecutingContext;
 class LayoutObject;
 
@@ -145,7 +144,7 @@ class CSSProperty: public CSSUnresolvedProperty {
                                             bool allow_visited_style,
                                             CSSValuePhase) const;
 
-  const CSSProperty& ResolveDirectionAwareProperty(
+  [[nodiscard]] const CSSProperty& ResolveDirectionAwareProperty(
       WritingDirectionMode writing_direction) const {
     if (!IsInLogicalPropertyGroup()) {
       // Avoid the potentially expensive virtual function call.
@@ -184,12 +183,6 @@ class CSSProperty: public CSSUnresolvedProperty {
   virtual const CSSProperty* SurrogateFor(WritingDirectionMode writing_direction_mode) const {
     return nullptr;
   }
-
-  static void FilterWebExposedCSSPropertiesIntoVector(
-      const ExecutingContext*,
-      const CSSPropertyID*,
-      uint32_t length,
-      std::vector<const CSSProperty*>&);
 
   enum Flag : Flags {
     kInterpolable = 1 << 0,

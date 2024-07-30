@@ -8,7 +8,7 @@
 #define WEBF_CORE_CSS_CSS_IDENTIFIER_VALUE_H_
 
 #include "core/css/css_value.h"
-#include "core/css/css_value_id_mappings.h"
+//#include "core/css/css_value_id_mappings.h"
 #include "css_value_keywords.h"
 #include "foundation/casting.h"
 

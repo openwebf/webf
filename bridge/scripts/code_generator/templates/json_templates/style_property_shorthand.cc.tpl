@@ -44,10 +44,6 @@ namespace webf {
   <% _.each(property.expansions.slice(1), (expansion, index) => { %>
 
 static const StylePropertyShorthand* <%= function_prefix %>Shorthand<%= expansion.index %>() {
-    <% _.each(expansion.flags, (flag, index) => { %>
-  if (<%= flag.enabled ? '!' : '' %>RuntimeEnabledFeatures::<%= flag.name %>Enabled())
-  return nullptr;
-    <% }); %>
   <% define_shorthand(property, expansion) %>
   return &shorthand;
 }
@@ -60,11 +56,6 @@ const StylePropertyShorthand& <%= function_prefix %>Shorthand() {
   if (const auto* s = <%= function_prefix %>Shorthand<%= expansion.index %>())
    return *s;
     <% }); %>
-  <% } %>
-  <% if (property.expansions[0].flags) { %>
-    <% _.each(property.expansions[0].flags, flag => { %>
-  assert(<%= flag.enabled ? '' : '!' %>RuntimeEnabledFeatures::<%= flag.name %>Enabled());
-    <% }) %>
   <% } %>
   <% if (property.expansions[0].is_empty) { %>
   static StylePropertyShorthand empty_shorthand;
@@ -104,10 +95,10 @@ void getMatchingShorthandsForLonghand(
       <% _.each(shorthands, shorthand => { %>
         <% if (!shorthand.known_exposed) { %>
       if (CSSProperty::Get(CSSPropertyID::<%= shorthand.enum_key %>).IsWebExposed())
-        result->UncheckedAppend(<%= lowerCamelCase(shorthand.name) %>Shorthand());
+        result->emplace_back(<%= lowerCamelCase(shorthand.name) %>Shorthand());
         <% } else { %>
         assert(CSSProperty::Get(CSSPropertyID::<%= shorthand.enum_key %>).IsWebExposed());
-        result->UncheckedAppend(<%= lowerCamelCase(shorthand.name) %>Shorthand());
+        result->emplace_back(<%= lowerCamelCase(shorthand.name) %>Shorthand());
         <% } %>
       <% }); %>
       break;
