@@ -8,7 +8,7 @@
 #define WEBF_CORE_CSS_CSS_VALUE_ID_MAPPINGS_H_
 
 #include "core/animation/effect_model.h"
-#include "core/css/css_value_id_mappings_generated.h"
+//#include "core/css/css_value_id_mappings_generated.h"
 #include "core/style/computed_style_constants.h"
 #include "core/css/css_value_keywords.h"
 

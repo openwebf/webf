@@ -60,5 +60,58 @@ std::shared_ptr<CSSValue> CSSValue::Create(const webf::Length& value, float zoom
   return nullptr;
 }
 
+std::string CSSValue::CssText() const {
+  return "";
+}
+
+bool CSSValue::HasFailedOrCanceledSubresources() const {
+//  if (IsValueList()) {
+//    return To<CSSValueList>(this)->HasFailedOrCanceledSubresources();
+//  }
+//  if (GetClassType() == kFontFaceSrcClass) {
+//    return To<CSSFontFaceSrcValue>(this)->HasFailedOrCanceledSubresources();
+//  }
+//  if (GetClassType() == kImageClass) {
+//    return To<CSSImageValue>(this)->HasFailedOrCanceledSubresources();
+//  }
+//  if (GetClassType() == kCrossfadeClass) {
+//    return To<cssvalue::CSSCrossfadeValue>(this)
+//        ->HasFailedOrCanceledSubresources();
+//  }
+//  if (GetClassType() == kImageSetClass) {
+//    return To<CSSImageSetValue>(this)->HasFailedOrCanceledSubresources();
+//  }
+
+  return false;
+}
+
+bool CSSValue::MayContainUrl() const {
+//  if (IsValueList()) {
+//    return To<CSSValueList>(*this).MayContainUrl();
+//  }
+//  return IsImageValue() || IsURIValue();
+  return false;
+}
+
+void CSSValue::ReResolveUrl(const Document& document) const {
+  // TODO(fs): Should handle all values that can contain URLs.
+//  if (IsImageValue()) {
+//    To<CSSImageValue>(*this).ReResolveURL(document);
+//    return;
+//  }
+//  if (IsURIValue()) {
+//    To<cssvalue::CSSURIValue>(*this).ReResolveUrl(document);
+//    return;
+//  }
+//  if (IsValueList()) {
+//    To<CSSValueList>(*this).ReResolveUrl(document);
+//    return;
+//  }
+}
+
+bool CSSValue::operator==(const webf::CSSValue&) const {
+  return false;
+}
+
 
 }  // namespace webf

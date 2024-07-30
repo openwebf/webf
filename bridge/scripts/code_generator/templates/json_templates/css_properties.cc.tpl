@@ -45,36 +45,33 @@ const char* <%= class_name %>::GetJSPropertyName() const {
   <% if (!is_alias) { %>
 
     <% if (property.surrogateFor) { %>
-const CSSProperty* <%= class_name %>::SurrogateFor(TextDirection direction,
-    webf::WritingMode writing_mode) const {
+const CSSProperty* <%= class_name %>::SurrogateFor(WritingDirectionMode) const {
   return &GetCSSProperty<%= upperCamelCase(property.surrogateFor.name) %>();
 }
     <% } %>
     <% if (property.logical_property_group) { %>
       <% const group = property.logical_property_group; %>
-      <% const group_name = upperCamelCase(group.name); %>
-      <% const resolver_name = upperCamelCase(group.resolver_name); %>
+      <% const group_name = group.name.toUpperCamelCase(); %>
+      <% const resolver_name = group.resolver_name.toUpperCamelCase(); %>
       <% if (group.is_logical) { %>
-const CSSProperty* <%= class_name %>::SurrogateFor(TextDirection direction,
-    webf::WritingMode writing_mode) const {
-  return &ResolveDirectionAwarePropertyInternal(direction, writing_mode);
+const CSSProperty* <%= class_name %>::SurrogateFor(WritingDirectionMode writing_direction) const {
+  return &ResolveDirectionAwarePropertyInternal(writing_direction);
 }
 
 const CSSProperty& <%= class_name %>::ResolveDirectionAwarePropertyInternal(
-    TextDirection direction,
-    webf::WritingMode writing_mode) const {
-  return CSSDirectionAwareResolver.Resolve<%= resolver_name %>(direction, writing_mode,
-      CSSDirectionAwareResolver.Physical<%= group_name %>Mapping());
+    WritingDirectionMode writing_direction) const {
+  return CSSDirectionAwareResolver::Resolve<%= resolver_name %>(writing_direction,
+      CSSDirectionAwareResolver::Physical<%= group_name %>Mapping());
 }
 
 bool <%= class_name %>::IsInSameLogicalPropertyGroupWithDifferentMappingLogic(
     CSSPropertyID id) const {
-  return CSSDirectionAwareResolver.Physical<%= group_name %>Mapping().Contains(id);
+  return CSSDirectionAwareResolver::Physical<%= group_name %>Mapping().Contains(id);
 }
       <% } else { %>
 bool <%= class_name %>::IsInSameLogicalPropertyGroupWithDifferentMappingLogic(
     CSSPropertyID id) const {
-  return CSSDirectionAwareResolver.Logical<%= group_name %>Mapping().Contains(id);
+  return CSSDirectionAwareResolver::Logical<%= group_name %>Mapping().Contains(id);
 }
       <% } %>
     <% } %>

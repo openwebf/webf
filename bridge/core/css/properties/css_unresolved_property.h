@@ -10,7 +10,7 @@
 #define WEBF_CSS_UNRESOLVED_PROPERTY_H
 
 #include "core/css/properties/css_exposure.h"
-#include "core/css/properties/css_property_instances.h"
+#include "css_property_instance.h"
 #include "built_in_string.h"
 //#include ""
 

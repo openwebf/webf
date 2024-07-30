@@ -31,7 +31,7 @@
 #include <bitset>
 
 #include "core/css/css_value.h"
-#include "core/geometry/length.h"
+#include "core/platform/geometry/length.h"
 #include "foundation/casting.h"
 #include "core/platform/math_extras.h"
 #include "foundation/string_view.h"

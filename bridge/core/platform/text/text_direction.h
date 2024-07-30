@@ -32,6 +32,7 @@
 
 #include <cstdint>
 #include <iosfwd>
+#include "foundation/macros.h"
 
 namespace webf {
 

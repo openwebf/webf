@@ -29,11 +29,11 @@
   TypeName(TypeName&&) = delete;     \
   TypeName& operator=(TypeName&&) = delete
 
-#define WEBF_STATIC_ONLY(Type)           \
-  Type() = delete;                       \
-  Type(const Type&) = delete;            \
-  Type& operator=(const Type&) = delete; \
-  void* operator new(size_t) = delete;   \
+#define WEBF_STATIC_ONLY(Type)                                  \
+  Type() = delete;                                              \
+  Type(const Type&) = delete;                                   \
+  Type& operator=(const Type&) = delete;                        \
+  void* operator new(size_t) = delete;                          \
   void* operator new(size_t, webf::NotNullTag, void*) = delete; \
   void* operator new(size_t, void*) = delete
 
@@ -47,15 +47,17 @@
 // Members you need a trace method and the containing object needs to call that
 // trace method.
 //
-#define WEBF_DISALLOW_NEW()                                       \
- public:                                                          \
-  using IsDisallowNewMarker = int;                                \
-  void* operator new(size_t, webf::NotNullTag, void* location) {   \
-    return location;                                              \
-  }                                                               \
-  void* operator new(size_t, void* location) { return location; } \
-                                                                  \
- private:                                                         \
+#define WEBF_DISALLOW_NEW()                                      \
+ public:                                                         \
+  using IsDisallowNewMarker = int;                               \
+  void* operator new(size_t, webf::NotNullTag, void* location) { \
+    return location;                                             \
+  }                                                              \
+  void* operator new(size_t, void* location) {                   \
+    return location;                                             \
+  }                                                              \
+                                                                 \
+ private:                                                        \
   void* operator new(size_t) = delete;
 
 #define WEBF_DISALLOW_COPY_AND_ASSIGN(TypeName) \
@@ -77,16 +79,57 @@
 // interchangeably.  This can be only used on types whose equality makes no
 // other sense than pointer equality.
 
-#define WEBF_DEFINE_COMPARISON_OPERATORS_WITH_REFERENCES(Type)                    \
-  inline bool operator==(const Type& a, const Type& b) { return &a == &b; }  \
-  inline bool operator==(const Type& a, const Type* b) { return &a == b; }   \
-  inline bool operator==(const Type* a, const Type& b) { return a == &b; }   \
-  inline bool operator!=(const Type& a, const Type& b) { return !(a == b); } \
-  inline bool operator!=(const Type& a, const Type* b) { return !(a == b); } \
-  inline bool operator!=(const Type* a, const Type& b) { return !(a == b); }
+#define WEBF_DEFINE_COMPARISON_OPERATORS_WITH_REFERENCES(Type) \
+  inline bool operator==(const Type& a, const Type& b) {       \
+    return &a == &b;                                           \
+  }                                                            \
+  inline bool operator==(const Type& a, const Type* b) {       \
+    return &a == b;                                            \
+  }                                                            \
+  inline bool operator==(const Type* a, const Type& b) {       \
+    return a == &b;                                            \
+  }                                                            \
+  inline bool operator!=(const Type& a, const Type& b) {       \
+    return !(a == b);                                          \
+  }                                                            \
+  inline bool operator!=(const Type& a, const Type* b) {       \
+    return !(a == b);                                          \
+  }                                                            \
+  inline bool operator!=(const Type* a, const Type& b) {       \
+    return !(a == b);                                          \
+  }
 
-#define DEFINE_GLOBAL(type, name)                                          \
+#define DEFINE_GLOBAL(type, name)                                    \
   std::aligned_storage_t<sizeof(type), alignof(type)> name##Storage; \
   const type& name = *std::launder(reinterpret_cast<type*>(&name##Storage))
+
+#define USING_FAST_MALLOC(type) USING_FAST_MALLOC_INTERNAL(type)
+
+#define USING_FAST_MALLOC_INTERNAL(type)  \
+ public:                                  \
+  void* operator new(size_t, void* p) {   \
+    return p;                             \
+  }                                       \
+  void* operator new[](size_t, void* p) { \
+    return p;                             \
+  }                                       \
+                                          \
+  void* operator new(size_t size) {       \
+    return malloc(size);                  \
+  }                                       \
+                                          \
+  void operator delete(void* p) {         \
+    free(p);                              \
+  }                                       \
+                                          \
+  void* operator new[](size_t size) {     \
+    return malloc(size);                  \
+  }                                       \
+                                          \
+  void operator delete[](void* p) {       \
+    free(p);                              \
+  }
+
+#define STACK_UNINITIALIZED [[clang::uninitialized]]
 
 #endif  // BRIDGE_MACROS_H

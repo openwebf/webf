@@ -9,7 +9,7 @@
 #ifndef WEBF_CSS_PROPERTY_NAME_H
 #define WEBF_CSS_PROPERTY_NAME_H
 
-
+#include <optional>
 #include "foundation/macros.h"
 #include "css_property_names.h"
 
@@ -29,21 +29,21 @@ class CSSPropertyName {
     assert(Id() != CSSPropertyID::kVariable);
   }
 
-  explicit CSSPropertyName(const AtomicString& custom_property_name)
+  explicit CSSPropertyName(const std::string& custom_property_name)
       : value_(static_cast<int>(CSSPropertyID::kVariable)),
         custom_property_name_(custom_property_name) {
-    assert(!custom_property_name.IsNull());
+    assert(!custom_property_name.empty());
   }
 
   static std::optional<CSSPropertyName> From(
       const ExecutingContext* execution_context,
-      const AtomicString& value) {
+      const std::string& value) {
     const CSSPropertyID property_id = CssPropertyID(execution_context, value);
     if (property_id == CSSPropertyID::kInvalid) {
       return std::nullopt;
     }
     if (property_id == CSSPropertyID::kVariable) {
-      return std::make_optional(CSSPropertyName(AtomicString(value)));
+      return std::make_optional(CSSPropertyName(value));
     }
     return std::make_optional(CSSPropertyName(property_id));
   }
@@ -60,7 +60,7 @@ class CSSPropertyName {
 
   bool IsCustomProperty() const { return Id() == CSSPropertyID::kVariable; }
 
-  AtomicString ToAtomicString() const;
+  std::string ToString() const;
 
  private:
   // For HashTraits::EmptyValue().
@@ -79,15 +79,8 @@ class CSSPropertyName {
   // The value_ field is either a CSSPropertyID, kEmptyValue, or
   // kDeletedValue.
   int value_;
-  AtomicString custom_property_name_;
-
-  //TODO(xiezuobing): 测试用友元类
-  friend class CSSPropertyNameTest;
-  // TODO(xiezuobing): HashTraits
-//  friend struct HashTraits<webf::CSSPropertyName>;
+  std::string custom_property_name_;
 };
-
-
 
 
 }  // namespace webf

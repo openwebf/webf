@@ -10,7 +10,7 @@
 #include "css_parser_idioms.h"
 #include "css_parser_token.h"
 #include "foundation/ascii_types.h"
-#include "foundation/string_builder.h"
+//#include "foundation/string_builder.h"
 
 #ifdef __SSE2__
 #include <immintrin.h>
@@ -446,7 +446,7 @@ CSSParserToken CSSTokenizer::ConsumeNumericToken() {
 CSSParserToken CSSTokenizer::ConsumeIdentLikeToken() {
   StringView name = ConsumeName();
   if (ConsumeIfNext('(')) {
-    if (EqualIgnoringASCIICase(name, "url")) {
+    if (EqualIgnoringASCIICase(name.Characters8(), "url")) {
       // The spec is slightly different so as to avoid dropping whitespace
       // tokens, but they wouldn't be used and this is easier.
       input_.AdvanceUntilNonWhitespace();
@@ -461,7 +461,7 @@ CSSParserToken CSSTokenizer::ConsumeIdentLikeToken() {
 }
 
 // https://drafts.csswg.org/css-syntax/#non-printable-code-point
-static bool IsNonPrintableCodePoint(UChar cc) {
+static bool IsNonPrintableCodePoint(const unsigned char cc) {
   return (cc >= '\0' && cc <= '\x8') || cc == '\xb' || (cc >= '\xe' && cc <= '\x1f') || cc == '\x7f';
 }
 
@@ -471,7 +471,7 @@ CSSParserToken CSSTokenizer::ConsumeUrlToken() {
 
   // URL tokens without escapes get handled without allocations
   for (unsigned size = 0;; size++) {
-    UChar cc = input_.PeekWithoutReplacement(size);
+    unsigned char cc = input_.PeekWithoutReplacement(size);
     if (cc == ')') {
       unsigned start_offset = input_.Offset();
       input_.Advance(size + 1);
@@ -484,7 +484,7 @@ CSSParserToken CSSTokenizer::ConsumeUrlToken() {
 
   std::string result;
   while (true) {
-    UChar cc = Consume();
+    unsigned char cc = Consume();
     if (cc == ')' || cc == kEndOfFileMarker) {
       return CSSParserToken(kUrlToken, RegisterString(result));
     }
@@ -795,7 +795,7 @@ CSSParserToken CSSTokenizer::ConsumeNumber() {
   unsigned number_length = 0;
   unsigned sign_length = 0;
 
-  UChar next = input_.PeekWithoutReplacement(0);
+  unsigned char next = input_.PeekWithoutReplacement(0);
   if (next == '+') {
     ++number_length;
     ++sign_length;

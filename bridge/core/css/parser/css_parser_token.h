@@ -10,7 +10,7 @@
 #define WEBF_CSS_PARSER_TOKEN_H
 
 #include "foundation/string_view.h"
-#include "foundation/webf_malloc.h"
+#include "foundation/macros.h"
 #include "core/css/css_primitive_value.h"
 #include "css_value_keywords.h"
 #include "css_property_names.h"

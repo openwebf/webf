@@ -100,24 +100,6 @@ inline void StringView::Clear() {
 
 bool EqualIgnoringASCIICase(const std::string&, const std::string&);
 
-inline bool EqualIgnoringASCIICase(const char* a,
-                                   const char* b,
-                                   size_t length) {
-  for (size_t i = 0; i < length; ++i) {
-    if (ToASCIILower(a[i]) != ToASCIILower(b[i]))
-      return false;
-  }
-  return true;
-}
-
-template <size_t N>
-inline bool EqualIgnoringASCIICase(const StringView& a,
-                                   const char (&literal)[N]) {
-  if (a.length() != N - 1 || (N == 1 && a.IsNull()))
-    return false;
-  return a.Is8Bit() ? EqualIgnoringASCIICase(a.Characters8(), literal, N - 1)
-                    : EqualIgnoringASCIICase(a.Characters16(), literal, N - 1);
-}
 
 }  // namespace webf
 

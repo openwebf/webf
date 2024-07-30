@@ -24,7 +24,6 @@
 #ifndef WEBF_QUALIFIED_NAME_H
 #define WEBF_QUALIFIED_NAME_H
 
-#include "foundation/webf_malloc.h"
 #include "core/platform/static_constructors.h"
 
 namespace webf {

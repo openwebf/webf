@@ -9,7 +9,7 @@
 #ifndef WEBF_CORE_ANIMATION_ANIMATION_TIME_DELTA_H_
 #define WEBF_CORE_ANIMATION_ANIMATION_TIME_DELTA_H_
 
-#include "foundation/webf_malloc.h"
+#include "foundation/macros.h"
 #include <cassert>
 #include <limits>
 #include <ostream>

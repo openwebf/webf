@@ -8,7 +8,6 @@
 #include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
 #include "core/html/parser/html_parser.h"
-#include "css_property_list.h"
 #include "element_namespace_uris.h"
 #include "html_names.h"
 
@@ -226,13 +225,14 @@ void InlineCssStyleDeclaration::InlineStyleChanged() {
 }
 
 bool InlineCssStyleDeclaration::NamedPropertyQuery(const AtomicString& key, ExceptionState&) {
-  return cssPropertyList.count(key.ToStdString(ctx())) > 0;
+//  return cssPropertyList.count(key.ToStdString(ctx())) > 0;
+  return false;
 }
 
 void InlineCssStyleDeclaration::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) {
-  for (auto& entry : cssPropertyList) {
-    names.emplace_back(AtomicString(ctx(), entry.first));
-  }
+//  for (auto& entry : cssPropertyList) {
+//    names.emplace_back(AtomicString(ctx(), entry.first));
+//  }
 }
 
 AtomicString InlineCssStyleDeclaration::InternalGetPropertyValue(std::string& name) {

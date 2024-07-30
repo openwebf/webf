@@ -6,6 +6,7 @@
 #define WEBF_CORE_CSS_CSS_PROPERTIES_<%= isShortHand ? 'SHORTHANDS' : 'LONGHANDS' %>_NAMES_H_
 
 #include "core/css/properties/<%= isShortHand ? 'shorthand.h' : 'longhand.h' %>"
+#include "core/css/properties/css_direction_aware_resolver.h"
 
 namespace webf {
 
@@ -85,7 +86,7 @@ class <%= class_name %> final : public <%= property.superclass %> {
   bool IsLayoutDependent(const ComputedStyle*, LayoutObject*) const override;
   <% } %>
   <% if(is_surrogate) { %>
-  const CSSProperty* SurrogateFor(TextDirection, webf::WritingMode) const override;
+  const CSSProperty* SurrogateFor(WritingDirectionMode) const override;
   <% } %>
   <% _.each(property.property_methods, (property_method, index) => { %>
   <%= property_method.return_type %> <%= property_method.name %><%= property_method.parameters %> const override;
@@ -93,8 +94,7 @@ class <%= class_name %> final : public <%= property.superclass %> {
   <% if (property.logical_property_group) { %>
   bool IsInSameLogicalPropertyGroupWithDifferentMappingLogic(CSSPropertyID) const override;
     <% if(property.logical_property_group.is_logical) { %>
-  const CSSProperty& ResolveDirectionAwarePropertyInternal(
-      TextDirection, webf::WritingMode) const override;
+  const CSSProperty& ResolveDirectionAwarePropertyInternal(WritingDirectionMode) const override;
   const CSSValue* CSSValueFromComputedStyleInternal(
       const ComputedStyle&,
       const LayoutObject*,

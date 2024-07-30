@@ -33,7 +33,6 @@
 #include "core/css/parser/css_parser_mode.h"
 #include "core/base/bit_field.h"
 #include "built_in_string.h"
-#include "foundation/string_builder.h"
 #include "core/style/computed_style_constants.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/dom/qualified_name.h"
@@ -119,8 +118,8 @@ class CSSSelector {
 
   ~CSSSelector();
 
-  AtomicString SelectorText() const;
-  AtomicString SimpleSelectorTextForDebug() const;
+  std::string SelectorText() const;
+  std::string SimpleSelectorTextForDebug() const;
 
   CSSSelector& operator=(const CSSSelector&) = delete;
   CSSSelector& operator=(CSSSelector&&);
@@ -687,8 +686,8 @@ class CSSSelector {
 
   unsigned SpecificityForOneSelector() const;
   unsigned SpecificityForPage() const;
-  bool SerializeSimpleSelector(StringBuilder& builder) const;
-  const CSSSelector* SerializeCompound(StringBuilder&) const;
+  bool SerializeSimpleSelector(std::string& builder) const;
+  const CSSSelector* SerializeCompound(std::string& builder) const;
 
   struct RareData {
     explicit RareData(const AtomicString& value);

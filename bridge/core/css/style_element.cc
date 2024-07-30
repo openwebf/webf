@@ -37,11 +37,6 @@
 
 namespace webf {
 
-static bool IsCSS(const Element& element, const AtomicString& type) {
-  return type.IsEmpty() || (element.IsHTMLElement() ? EqualIgnoringASCIICase(type, "text/css")
-                                                    : (type == AtomicString(element.ctx(), "text/css")));
-}
-
 StyleElement::StyleElement(Document* document, bool created_by_parser)
     : loading_(false),
       registered_as_candidate_(false),

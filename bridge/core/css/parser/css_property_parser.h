@@ -83,10 +83,10 @@ class CSSPropertyParser {
   bool ParseValueStart(CSSPropertyID unresolved_property,
                        bool allow_important_annotation,
                        StyleRule::RuleType rule_type);
-  bool ConsumeCSSWideKeyword(CSSPropertyID unresolved_property,
-                             bool allow_important_annotation);
-
-  bool ParseFontFaceDescriptor(CSSPropertyID);
+//  bool ConsumeCSSWideKeyword(CSSPropertyID unresolved_property,
+//                             bool allow_important_annotation);
+//
+//  bool ParseFontFaceDescriptor(CSSPropertyID);
 
  private:
   // Inputs:

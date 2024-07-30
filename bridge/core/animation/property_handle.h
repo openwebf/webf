@@ -8,7 +8,7 @@
 #define WEBF_CORE_ANIMATION_PROPERTY_HANDLE_H_
 
 #include "core/css/css_property_name.h"
-#include "core/css/css_property_names.h"
+#include "css_property_instance.h"
 #include "core/css/properties/css_property.h"
 #include "core/dom/qualified_name.h"
 #include "core/base/memory/stack_allocated.h"

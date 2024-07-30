@@ -48,23 +48,25 @@ StringView::StringView(void* bytes, unsigned length, bool is_wide_char)
 StringView::StringView(const char* view, unsigned length) : bytes_(view), length_(length), is_8bit_(true){};
 StringView::StringView(const unsigned char* view, unsigned length) : bytes_(view), length_(length), is_8bit_(true){};
 StringView::StringView(const char16_t* view, unsigned length) : bytes_(view), length_(length), is_8bit_(false){};
-//
-//template <typename CharacterTypeA, typename CharacterTypeB>
-//bool EqualIgnoringASCIICase2(const CharacterTypeA* a, const CharacterTypeB* b, uint32_t length) {
-//  for (uint32_t i = 0; i < length; ++i) {
-//    if (ToASCIILower(a[i]) != ToASCIILower(b[i]))
-//      return false;
-//  }
-//  return true;
-//}
 
 AtomicString StringView::ToAtomicString(JSContext* ctx) const {
   if (Is8Bit()) {
     return {ctx, Characters8(), length()};
   } else {
-    // TODO(xiezuobing): 确认抢类型转换是否安全
     return {ctx, reinterpret_cast<const uint16_t*>(Characters16()), length()};
   }
+}
+
+namespace {
+inline bool EqualIgnoringASCIICase(const char* a,
+                                   const char* b,
+                                   size_t length) {
+  for (size_t i = 0; i < length; ++i) {
+    if (ToASCIILower(a[i]) != ToASCIILower(b[i]))
+      return false;
+  }
+  return true;
+}
 }
 
 bool EqualIgnoringASCIICase(const std::string& a, const std::string& b) {

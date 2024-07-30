@@ -112,7 +112,6 @@ list(APPEND BRIDGE_SOURCE
   foundation/ascii_types.cc
   foundation/ui_command_buffer.cc
   foundation/ui_command_strategy.cc
-  foundation/string_builder.cc
   polyfill/dist/polyfill.cc
   multiple_threading/dispatcher.cc
   multiple_threading/looper.cc
@@ -295,7 +294,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/timing/performance_mark.cc
     core/timing/performance_entry.cc
     core/timing/performance_measure.cc
-    core/geometry/length.cc
+
 
     ## CSS
 
@@ -305,7 +304,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/style_element.cc
     core/css/style_engine.cc
     core/css/style_sheet_contents.cc
-    core/css/css_property_value.cc
+#    core/css/css_property_value.cc
     core/css/css_style_sheet.cc
     core/css/style_rule_import.cc
     core/css/style_sheet.cc
@@ -320,22 +319,33 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_tokenizer.cc
     core/css/parser/css_property_parser.cc
     core/css/parser/css_tokenizer_input_stream.cc
-    core/css/css_markup.cc
-    core/css/css_value.cc
-    core/css/css_value_pair.cc
-    core/css/css_value_pool.cc
-    core/css/css_value_list.cc
-    core/css/css_bracketed_value_list.cc
-    core/css/css_value_clamping_utils.cc
-    core/css/css_identifier_value.cc
-    core/css/css_custom_ident_value.cc
-    core/css/css_numeric_literal_value.cc
-    core/css/css_math_function_value.cc
-    core/css/css_math_expression_node.cc
-    core/css/css_math_operator.cc
-    core/css/css_primitive_value.cc
-    core/css/properties/css_parsing_utils.cc
-    core/css/css_length_resolver.cc
+    core/css/properties/css_direction_aware_resolver.cc
+    core/css/properties/css_unresolved_property.cc
+    core/css/properties/css_property.cc
+
+    core/platform/text/writing_mode.cc
+    core/platform/geometry/length.cc
+    core/platform/text/writing_direction_mode.cc
+    core/platform/geometry/dom_matrix.cc
+    core/platform/geometry/dom_matrix_readonly.cc
+#    core/css/properties/css_property.cc
+#    core/css/properties/css_parsing_utils.cc
+#    core/css/css_markup.cc
+#    core/css/css_value.cc
+#    core/css/css_value_pair.cc
+#    core/css/css_value_pool.cc
+#    core/css/css_property_name.cc
+#    core/css/css_value_list.cc
+#    core/css/css_bracketed_value_list.cc
+#    core/css/css_value_clamping_utils.cc
+#    core/css/css_identifier_value.cc
+#    core/css/css_custom_ident_value.cc
+#    core/css/css_numeric_literal_value.cc
+#    core/css/css_math_function_value.cc
+#    core/css/css_math_expression_node.cc
+#    core/css/css_math_operator.cc
+#    core/css/css_primitive_value.cc
+#    core/css/css_length_resolver.cc
 #    core/css/css_at_rule_id.cc
 #    core/css/media_list.cc
 #    core/css/media_query_parser.cc
@@ -438,8 +448,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/canvas/canvas_rendering_context_2d.cc
     core/html/canvas/canvas_gradient.cc
     core/html/canvas/canvas_pattern.cc
-    core/geometry/dom_matrix.cc
-    core/geometry/dom_matrix_readonly.cc
     core/html/forms/html_button_element.cc
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
@@ -613,6 +621,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/css_value_keywords.cc
     out/css_property_names.cc
     out/property_bitset.cc
+    out/longhands.cc
+    out/shorthands.cc
+    out/css_property_instance.cc
+    out/style_property_shorthand.cc
 
     # SVG files
     out/qjs_svg_element.cc

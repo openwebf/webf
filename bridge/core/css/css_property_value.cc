@@ -24,6 +24,7 @@
 
 #include "css_property_value.h"
 #include "shorthands.h"
+#include "style_property_shorthand.h"
 
 namespace webf {
 
@@ -56,9 +57,9 @@ CSSPropertyID CSSPropertyValueMetadata::ShorthandID() const {
     return CSSPropertyID::kInvalid;
   }
 
-  Vector<StylePropertyShorthand, 4> shorthands;
+  std::vector<StylePropertyShorthand> shorthands;
   getMatchingShorthandsForLonghand(PropertyID(), &shorthands);
-  DCHECK(shorthands.size());
+  assert(shorthands.size());
   assert(index_in_shorthands_vector_ > 0u);
   assert(index_in_shorthands_vector_ < shorthands.size());
   return shorthands.at(index_in_shorthands_vector_).id();
@@ -72,8 +73,7 @@ CSSPropertyName CSSPropertyValueMetadata::Name() const {
 }
 
 bool CSSPropertyValue::operator==(const CSSPropertyValue& other) const {
-  return base::ValuesEquivalent(value_, other.value_) &&
-         IsImportant() == other.IsImportant();
+  return value_ == other.value_ && IsImportant() == other.IsImportant();
 }
 
 }  // namespace webf

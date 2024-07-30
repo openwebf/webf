@@ -52,7 +52,7 @@ class StylePropertyShorthand {
   CSSPropertyID shorthand_id_;
 };
 
-<% _.each(properties.shorthands, (property, index) => { %>
+<% _.each(properties, (property, index) => { %>
 const StylePropertyShorthand& <%= lowerCamelCase(property.name) %>Shorthand();
 <% }); %>
 

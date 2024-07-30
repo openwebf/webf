@@ -24,7 +24,7 @@ class Variable : public Longhand {
   bool IsAffectedByAll() const override { return false; }
   CSSPropertyName GetCSSPropertyName() const override {
     assert_m(false, "NOTREACHED_IN_MIGRATION");
-    return CSSPropertyName(built_in_string::kempty_string);
+    return CSSPropertyName("");
   }
   const char* GetPropertyName() const override { return "variable"; }
   const AtomicString& GetPropertyNameAtomicString() const override {

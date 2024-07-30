@@ -21,7 +21,7 @@ function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[
 
 
 function enumKeyForCSSKeywords(keyword: any) {
-  if (typeof keyword !== 'string' && keyword === '-infinity') {
+  if (keyword === '-infinity') {
     return 'kNegative' + upperCamelCase(keyword);
   }
   return 'k' + upperCamelCase(keyword);

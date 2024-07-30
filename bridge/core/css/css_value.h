@@ -36,9 +36,8 @@ class Document;
 class Length;
 class TreeScope;
 
-class CSSValue {
+class CSSValue : public std::enable_shared_from_this<CSSValue> {
  public:
-  // TODO(sashab): Remove this method and move logic to the caller.
   static std::shared_ptr<CSSValue> Create(const Length& value, float zoom);
 
   std::string CssText() const;
@@ -219,9 +218,9 @@ class CSSValue {
 
   // Returns the same CSS value, but populated with the given tree scope for
   // tree-scoped names and references.
-  const CSSValue& EnsureScopedValue(const TreeScope* tree_scope) const {
+  std::shared_ptr<const CSSValue> EnsureScopedValue(const TreeScope* tree_scope) const {
     if (!needs_tree_scope_population_) {
-      return *this;
+      return shared_from_this();
     }
     return PopulateWithTreeScope(tree_scope);
   }

@@ -8,7 +8,6 @@
 #include <string>
 #include <cstdint>
 #include <algorithm>
-#include "foundation/string_builder.h"
 #include "gfx/animation/keyframe/timing_function.h"
 
 namespace webf {

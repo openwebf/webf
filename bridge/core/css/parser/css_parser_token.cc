@@ -259,7 +259,9 @@ void CSSParserToken::Serialize(std::string& builder) const {
       break;
     }
     case kUnicodeRangeToken:
-      builder.append(std::format("U+%X-%X", UnicodeRangeStart(), UnicodeRangeEnd()));
+      char buffer[20];
+      snprintf(buffer, 20, "U+%X-%X", UnicodeRangeStart(), UnicodeRangeEnd());
+      builder.append(buffer);
       return;
     case kStringToken:
       return SerializeString(Value(), builder);

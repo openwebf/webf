@@ -28,7 +28,7 @@
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/base/bits.h"
-#include "core/css/css_property_names.h"
+#include "css_property_names.h"
 #include "core/css/css_property_value.h"
 #include "core/css/parser/css_parser_mode.h"
 #include "core/css/properties/css_property.h"

@@ -10,7 +10,7 @@
 #define WEBF_CSS_TOKENIZER_INPUT_STREAM_H
 
 #include <cstdint>
-#include "foundation/webf_malloc.h"
+#include "foundation/macros.h"
 #include "foundation/string_view.h"
 #include "bindings/qjs/atomic_string.h"
 

@@ -32,24 +32,24 @@ namespace webf {
 namespace {
 
 // This may still consume tokens if it fails
-AtomicString ConsumeStringOrURI(CSSParserTokenStream& stream, ExecutingContext* executingContext) {
+std::string ConsumeStringOrURI(CSSParserTokenStream& stream) {
   const CSSParserToken& token = stream.Peek();
 
   if (token.GetType() == kStringToken || token.GetType() == kUrlToken) {
-    return stream.ConsumeIncludingWhitespace().Value().ToAtomicString(executingContext->ctx());
+    return stream.ConsumeIncludingWhitespace().Value();
   }
 
-  if (token.GetType() != kFunctionToken || !EqualIgnoringASCIICase(token.Value(), StringView("url"))) {
-    return AtomicString();
+  if (token.GetType() != kFunctionToken || !EqualIgnoringASCIICase(token.Value(), "url")) {
+    return "";
   }
 
-  AtomicString result;
+  std::string result;
   {
     CSSParserTokenStream::BlockGuard guard(stream);
     const CSSParserToken& uri = stream.ConsumeIncludingWhitespace();
     if (uri.GetType() != kBadStringToken && stream.UncheckedAtEnd()) {
       assert(uri.GetType() == kStringToken);
-      result = uri.Value().ToAtomicString(executingContext->ctx());
+      result = uri.Value();
     }
   }
   stream.ConsumeWhitespace();

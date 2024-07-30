@@ -12,12 +12,10 @@
 #include <memory>
 #include "core/css/css_property_name.h"
 #include "core/css/css_value.h"
-//#include "core/css/properties/css_direction_aware_resolver.h"
-#include "css_property_instances.h"
 #include "core/css/properties/css_unresolved_property.h"
-#include "core/platform//text/text_direction.h"
-#include "core/platform//text/writing_mode.h"
+#include "core/platform/text/writing_direction_mode.h"
 #include "foundation/casting.h"
+#include "css_property_instance.h"
 
 
 namespace webf {
@@ -146,26 +144,18 @@ class CSSProperty: public CSSUnresolvedProperty {
                                             const LayoutObject*,
                                             bool allow_visited_style,
                                             CSSValuePhase) const;
-  std::unique_ptr<CrossThreadStyleValue> CrossThreadStyleValueFromComputedStyle(
-      const ComputedStyle& computed_style,
-      const LayoutObject* layout_object,
-      bool allow_visited_style,
-      CSSValuePhase value_phase) const;
 
   const CSSProperty& ResolveDirectionAwareProperty(
-      TextDirection direction,
-      WritingMode writing_mode) const {
+      WritingDirectionMode writing_direction) const {
     if (!IsInLogicalPropertyGroup()) {
       // Avoid the potentially expensive virtual function call.
       return *this;
     } else {
-      return ResolveDirectionAwarePropertyInternal(direction, writing_mode);
+      return ResolveDirectionAwarePropertyInternal(writing_direction);
     }
   }
 
-  virtual const CSSProperty& ResolveDirectionAwarePropertyInternal(
-      TextDirection,
-      WritingMode) const {
+  virtual const CSSProperty& ResolveDirectionAwarePropertyInternal(WritingDirectionMode writing_direction_mode) const {
     return *this;
   }
   virtual bool IsInSameLogicalPropertyGroupWithDifferentMappingLogic(
@@ -191,7 +181,7 @@ class CSSProperty: public CSSUnresolvedProperty {
     }
   }
 
-  virtual const CSSProperty* SurrogateFor(TextDirection, WritingMode) const {
+  virtual const CSSProperty* SurrogateFor(WritingDirectionMode writing_direction_mode) const {
     return nullptr;
   }
 

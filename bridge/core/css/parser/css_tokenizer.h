@@ -10,7 +10,6 @@
 #define WEBF_CSS_TOKENIZER_H
 
 #include "foundation/macros.h"
-#include "bindings/qjs/atomic_string.h"
 #include "css_tokenizer_input_stream.h"
 #include "css_parser_token.h"
 

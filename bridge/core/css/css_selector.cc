@@ -35,7 +35,7 @@
 #include <algorithm>
 #include <memory>
 #include "style_rule.h"
-//#include "core/css/css_markup.h"
+#include "core/css/css_markup.h"
 #include "core/css/css_selector_list.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_token_range.h"
@@ -46,7 +46,6 @@
 #include "core/executing_context.h"
 //#include "core/html/html_document.h"
 //#include "core/html_names.h"
-#include "foundation/string_builder.h"
 
 namespace webf {
 
@@ -128,6 +127,107 @@ CSSSelector::~CSSSelector() {
   }
 }
 
+std::string CSSSelector::SelectorText() const {
+  std::string result;
+  for (const CSSSelector* compound = this; compound;
+       compound = compound->NextSimpleSelector()) {
+    std::string builder;
+    compound = compound->SerializeCompound(builder);
+    if (!compound) {
+      return builder + result;
+    }
+
+    RelationType relation = compound->Relation();
+    assert(relation < kSubSelector);
+    assert(relation < kScopeActivation);
+
+    const CSSSelector* next_compound = compound->NextSimpleSelector();
+    assert(next_compound);
+
+    // Skip leading :true. This internal pseudo-class is not supposed to
+    // affect serialization.
+    if (next_compound->GetPseudoType() == kPseudoTrue) {
+      next_compound = next_compound->NextSimpleSelector();
+    }
+
+    // If we are combining with an implicit :scope, it is as if we
+    // used a relative combinator.
+    if (!next_compound || (next_compound->Match() == kPseudoClass &&
+                           next_compound->GetPseudoType() == kPseudoScope &&
+                           next_compound->IsImplicit())) {
+      relation = ConvertRelationToRelative(relation);
+    }
+
+    switch (relation) {
+      case kDescendant:
+        result = " " + builder + result;
+        break;
+      case kChild:
+        result = " > " + builder + result;
+        break;
+      case kDirectAdjacent:
+        result = " + " + builder + result;
+        break;
+      case kIndirectAdjacent:
+        result = " ~ " + builder + result;
+        break;
+      case kSubSelector:
+      case kScopeActivation:
+        assert(false);
+        break;
+      case kShadowPart:
+      case kUAShadow:
+      case kShadowSlot:
+        result = builder + result;
+        break;
+      case kRelativeDescendant:
+        return builder + result;
+      case kRelativeChild:
+        return "> " + builder + result;
+      case kRelativeDirectAdjacent:
+        return "+ " + builder + result;
+      case kRelativeIndirectAdjacent:
+        return "~ " + builder + result;
+    }
+  }
+  assert(false);
+  return "";
+}
+
+static void SerializeIdentifierOrAny(const std::string& identifier,
+                                     const std::string& any,
+                                     std::string& builder) {
+  if (identifier != any) {
+    SerializeIdentifier(identifier, builder);
+  } else {
+    builder.Append(g_star_atom);
+  }
+}
+
+
+static void SerializeNamespacePrefixIfNeeded(const AtomicString& prefix,
+                                             const AtomicString& any,
+                                             std::string& builder,
+                                             bool is_attribute_selector) {
+  if (prefix.IsNull() || (prefix.empty() && is_attribute_selector)) {
+    return;
+  }
+  SerializeIdentifierOrAny(prefix, any, builder);
+  builder.Append('|');
+}
+
+std::string CSSSelector::SimpleSelectorTextForDebug() const {
+  std::string builder;
+  if (Match() == kTag && !IsImplicit()) {
+    SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), g_star_atom, builder,
+                                     IsAttributeSelector());
+    SerializeIdentifierOrAny(TagQName().LocalName(), UniversalSelectorAtom(),
+                             builder);
+  } else {
+    SerializeSimpleSelector(builder);
+  }
+  return builder;
+}
 
 CSSSelector::RelationType ConvertRelationToRelative(
     CSSSelector::RelationType relation) {
