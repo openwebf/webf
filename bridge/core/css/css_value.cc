@@ -28,14 +28,14 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "core/geometry/length.h"
+#include "core/platform/geometry/length.h"
 #include "css_identifier_value.h"
 #include "core/css/css_primitive_value.h"
 #include "css_value.h"
 
 namespace webf {
 
-std::shared_ptr<CSSValue> CSSValue::Create(const webf::Length& value, float zoom) {
+std::shared_ptr<const CSSValue> CSSValue::Create(const webf::Length& value, float zoom) {
   switch (value.GetType()) {
     case Length::kAuto:
     case Length::kMinContent:

@@ -23,16 +23,13 @@
  */
 
 #ifndef WEBF_CSS_PROPERTY_VALUE_SET_H
-#define WEBF_CSS_PROPERTY_VALUE_SET_H
-
-#include "bindings/qjs/atomic_string.h"
-#include "bindings/qjs/cppgc/gc_visitor.h"
+#define WEBF_CSS_PROPERTY_VALUE_SET_H#include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/base/bits.h"
-#include "css_property_names.h"
 #include "core/css/css_property_value.h"
 #include "core/css/parser/css_parser_mode.h"
 #include "core/css/properties/css_property.h"
 #include "core/css/property_set_css_style_declaration.h"
+#include "css_property_names.h"
 
 namespace webf {
 
@@ -43,7 +40,7 @@ class MutableCSSPropertyValueSet;
 class StyleSheetContents;
 enum class CSSValueID;
 
-class CSSPropertyValueSet {
+class CSSPropertyValueSet : public std::enable_shared_from_this<CSSPropertyValueSet> {
   friend class PropertyReference;
 
  public:
@@ -70,12 +67,12 @@ class CSSPropertyValueSet {
       return Id() != CSSPropertyID::kVariable && CSSProperty::Get(Id()).IsAffectedByAll();
     }
 
-    const CSSValue& Value() const { return PropertyValue(); }
+    const std::shared_ptr<const CSSValue>* Value() const { return PropertyValue(); }
 
     const CSSPropertyValueMetadata& PropertyMetadata() const;
 
    private:
-    const CSSValue& PropertyValue() const;
+    const std::shared_ptr<const CSSValue>* PropertyValue() const;
 
     const CSSPropertyValueSet* property_set_;
     unsigned index_;
@@ -91,17 +88,17 @@ class CSSPropertyValueSet {
   bool HasProperty(CSSPropertyID property) const { return FindPropertyIndex(property) != -1; }
 
   template <typename T>  // CSSPropertyID or AtomicString
-  const CSSValue* GetPropertyCSSValue(const T& property) const;
+  const std::shared_ptr<const CSSValue>* GetPropertyCSSValue(const T& property) const;
 
   template <typename T>  // CSSPropertyID or AtomicString
-  AtomicString GetPropertyValue(const T& property) const;
+  std::string GetPropertyValue(const T& property) const;
 
   template <typename T>  // CSSPropertyID or AtomicString
   bool PropertyIsImportant(const T& property) const;
 
-  const CSSValue* GetPropertyCSSValueWithHint(const AtomicString& property_name, unsigned index) const;
-  AtomicString GetPropertyValueWithHint(const AtomicString& property_name, unsigned index) const;
-  bool PropertyIsImportantWithHint(const AtomicString& property_name, unsigned index) const;
+  const std::shared_ptr<const CSSValue>* GetPropertyCSSValueWithHint(const std::string& property_name, unsigned index) const;
+  std::string GetPropertyValueWithHint(const std::string& property_name, unsigned index) const;
+  bool PropertyIsImportantWithHint(const std::string& property_name, unsigned index) const;
 
   bool ShorthandIsImportant(CSSPropertyID) const;
   bool ShorthandIsImportant(const AtomicString& custom_property_name) const {
@@ -114,19 +111,17 @@ class CSSPropertyValueSet {
 
   CSSParserMode CssParserMode() const { return static_cast<CSSParserMode>(css_parser_mode_); }
 
-  MutableCSSPropertyValueSet* MutableCopy() const;
-  ImmutableCSSPropertyValueSet* ImmutableCopyIfNeeded() const;
+  std::shared_ptr<const MutableCSSPropertyValueSet> MutableCopy() const;
+  std::shared_ptr<const ImmutableCSSPropertyValueSet> ImmutableCopyIfNeeded() const;
 
-  MutableCSSPropertyValueSet* CopyPropertiesInSet(const std::vector<const CSSProperty*>&) const;
+  const std::shared_ptr<const MutableCSSPropertyValueSet> CopyPropertiesInSet(const std::vector<const CSSProperty*>&) const;
 
-  AtomicString AsText() const;
+  std::string AsText() const;
 
   bool IsMutable() const { return is_mutable_; }
   bool ContainsCursorHand() const { return contains_cursor_hand_; }
 
   bool HasFailedOrCanceledSubresources() const;
-
-  static unsigned AverageSizeInBytes();
 
 #ifndef NDEBUG
   void ShowStyle();
@@ -170,7 +165,7 @@ class CSSLazyPropertyParser {
   virtual void Trace(GCVisitor*) const;
 };
 
-class alignas(std::max(alignof(Member<const CSSValue>), alignof(CSSPropertyValueMetadata))) ImmutableCSSPropertyValueSet
+class alignas(std::max(alignof(std::shared_ptr<const CSSValue>), alignof(CSSPropertyValueMetadata))) ImmutableCSSPropertyValueSet
     : public CSSPropertyValueSet {
  public:
   ImmutableCSSPropertyValueSet(const CSSPropertyValue*,
@@ -178,14 +173,14 @@ class alignas(std::max(alignof(Member<const CSSValue>), alignof(CSSPropertyValue
                                CSSParserMode,
                                bool contains_cursor_hand = false);
 
-  static ImmutableCSSPropertyValueSet* Create(const CSSPropertyValue* properties,
+  static std::shared_ptr<const ImmutableCSSPropertyValueSet> Create(const CSSPropertyValue* properties,
                                               unsigned count,
                                               CSSParserMode,
                                               bool contains_cursor_hand = false);
 
   unsigned PropertyCount() const { return array_size_; }
 
-  const Member<const CSSValue>* ValueArray() const;
+  const std::shared_ptr<const CSSValue>* ValueArray() const;
   const CSSPropertyValueMetadata* MetadataArray() const;
 
   template <typename T>  // CSSPropertyID or AtomicString
@@ -194,10 +189,10 @@ class alignas(std::max(alignof(Member<const CSSValue>), alignof(CSSPropertyValue
   void TraceAfterDispatch(GCVisitor*) const;
 };
 
-inline const Member<const CSSValue>* ImmutableCSSPropertyValueSet::ValueArray() const {
+inline const std::shared_ptr<const CSSValue>* ImmutableCSSPropertyValueSet::ValueArray() const {
   static_assert(sizeof(ImmutableCSSPropertyValueSet) % alignof(Member<const CSSValue>) == 0,
                 "ValueArray may be improperly aligned");
-  return reinterpret_cast<const Member<const CSSValue>*>(this + 1);
+  return reinterpret_cast<const std::shared_ptr<const CSSValue>*>(this + 1);
 }
 
 inline const CSSPropertyValueMetadata* ImmutableCSSPropertyValueSet::MetadataArray() const {
@@ -263,7 +258,6 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   SetResult ParseAndSetProperty(CSSPropertyID unresolved_property,
                                 StringView value,
                                 bool important,
-                                SecureContextMode,
                                 StyleSheetContents* context_style_sheet = nullptr);
 
   // Similar to ParseAndSetProperty(), but for custom properties instead.
@@ -273,7 +267,6 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   SetResult ParseAndSetCustomProperty(const AtomicString& custom_property_name,
                                       StringView value,
                                       bool important,
-                                      SecureContextMode,
                                       StyleSheetContents* context_style_sheet,
                                       bool is_animation_tainted);
 
@@ -300,7 +293,6 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
 
   void Clear();
   void ParseDeclarationList(const AtomicString& style_declaration,
-                            SecureContextMode,
                             StyleSheetContents* context_style_sheet);
 
   CSSStyleDeclaration* EnsureCSSStyleDeclaration(ExecutingContext* execution_context);
@@ -346,11 +338,11 @@ inline const CSSPropertyValueMetadata& CSSPropertyValueSet::PropertyReference::P
   return To<ImmutableCSSPropertyValueSet>(*property_set_).MetadataArray()[index_];
 }
 
-inline const CSSValue& CSSPropertyValueSet::PropertyReference::PropertyValue() const {
+inline const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::PropertyReference::PropertyValue() const {
   if (auto* mutable_property_set = DynamicTo<MutableCSSPropertyValueSet>(property_set_)) {
-    return *mutable_property_set->property_vector_.at(index_).Value();
+    return mutable_property_set->property_vector_.at(index_).Value();
   }
-  return *To<ImmutableCSSPropertyValueSet>(*property_set_).ValueArray()[index_];
+  return &To<ImmutableCSSPropertyValueSet>(*property_set_).ValueArray()[index_];
 }
 
 inline unsigned CSSPropertyValueSet::PropertyCount() const {
@@ -371,23 +363,6 @@ inline int CSSPropertyValueSet::FindPropertyIndex(const T& property) const {
   }
   return To<ImmutableCSSPropertyValueSet>(this)->FindPropertyIndex(property);
 }
-
-//
-//
-// class CSSPropertyValueSet {
-//  friend class PropertyReference;
-//};
-//
-//// Used for lazily parsing properties.
-// class CSSLazyPropertyParser {
-//  public:
-//   CSSLazyPropertyParser() = default;
-//   CSSLazyPropertyParser(const CSSLazyPropertyParser&) = delete;
-//   CSSLazyPropertyParser& operator=(const CSSLazyPropertyParser&) = delete;
-//   virtual ~CSSLazyPropertyParser() = default;
-//   virtual CSSPropertyValueSet* ParseProperties() = 0;
-//   virtual void Trace(GCVisitor*) const;
-// };
 
 }  // namespace webf
 

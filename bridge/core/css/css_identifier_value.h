@@ -29,7 +29,7 @@ class CSSIdentifierValue : public CSSValue {
     return std::make_shared<CSSIdentifierValue>(value);
   }
 
-  static std::shared_ptr<CSSIdentifierValue> Create(const Length& value) {
+  static std::shared_ptr<const CSSIdentifierValue> Create(const Length& value) {
     return std::make_shared<CSSIdentifierValue>(value);
   }
 

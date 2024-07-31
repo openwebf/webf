@@ -33,10 +33,6 @@
 #include "core/css/css_value_list.h"
 
 namespace webf {
-class StringBuilder;
-}  // namespace webf
-
-namespace webf {
 
 class CSSPropertyName;
 class CSSPropertyValueSet;
@@ -117,7 +113,7 @@ class StylePropertySerializer {
    public:
     explicit PropertyValueForSerializer(
         CSSPropertyValueSet::PropertyReference property)
-        : value_(&property.Value()),
+        : value_(property.Value()->get()),
           name_(property.Name()),
           is_important_(property.IsImportant()) {}
 

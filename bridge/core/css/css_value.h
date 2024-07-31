@@ -38,7 +38,7 @@ class TreeScope;
 
 class CSSValue : public std::enable_shared_from_this<CSSValue> {
  public:
-  static std::shared_ptr<CSSValue> Create(const Length& value, float zoom);
+  static std::shared_ptr<const CSSValue> Create(const Length& value, float zoom);
 
   std::string CssText() const;
 

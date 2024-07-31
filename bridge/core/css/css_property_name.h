@@ -20,7 +20,7 @@ class ExecutingContext;
 // This class may be used to represent the name of any valid CSS property,
 // including custom properties.
 class CSSPropertyName {
-  WEBF_DISALLOW_NEW();
+  WEBF_STACK_ALLOCATED();
 
  public:
   explicit CSSPropertyName(CSSPropertyID property_id)
@@ -53,14 +53,14 @@ class CSSPropertyName {
     return !(*this == other);
   }
 
-  CSSPropertyID Id() const {
+  [[nodiscard]] CSSPropertyID Id() const {
     assert(!IsEmptyValue() && !IsDeletedValue());
     return static_cast<CSSPropertyID>(value_);
   }
 
   bool IsCustomProperty() const { return Id() == CSSPropertyID::kVariable; }
 
-  std::string ToString() const;
+  const std::string& ToString() const;
 
  private:
   // For HashTraits::EmptyValue().
@@ -80,6 +80,7 @@ class CSSPropertyName {
   // kDeletedValue.
   int value_;
   std::string custom_property_name_;
+  mutable size_t custom_property_name_hash_value_{0};
 };
 
 

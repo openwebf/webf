@@ -18,7 +18,6 @@
 
 namespace webf {
 
-
 class CSSValue;
 class CSSParserContext;
 class CSSParserLocalContext;

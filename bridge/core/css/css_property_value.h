@@ -27,18 +27,17 @@
 
 #include <utility>
 
-#include "foundation/macros.h"
-#include "css_property_names.h"
-#include "core/css/css_property_name.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
+#include "core/css/css_property_name.h"
 #include "core/css/css_value.h"
+#include "css_property_names.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
-//class CSSValue; // TODO(xiezuobing): core/css/css_value.h
-
 struct CSSPropertyValueMetadata {
   WEBF_DISALLOW_NEW();
+
  public:
   CSSPropertyValueMetadata() = default;
 
@@ -49,9 +48,7 @@ struct CSSPropertyValueMetadata {
                            bool implicit);
 
   CSSPropertyID ShorthandID() const;
-  CSSPropertyID PropertyID() const {
-    return ConvertToCSSPropertyID(property_id_);
-  }
+  CSSPropertyID PropertyID() const { return ConvertToCSSPropertyID(property_id_); }
 
   CSSPropertyName Name() const;
 
@@ -77,22 +74,15 @@ class CSSPropertyValue {
                    bool is_set_from_shorthand = false,
                    int index_in_shorthands_vector = 0,
                    bool implicit = false)
-      : metadata_(name,
-                  is_set_from_shorthand,
-                  index_in_shorthands_vector,
-                  important,
-                  implicit),
+      : metadata_(name, is_set_from_shorthand, index_in_shorthands_vector, important, implicit),
         value_(std::move(value)) {}
 
-  CSSPropertyValue(const CSSPropertyValue& other)
-      : metadata_(other.metadata_),
-        value_(other.value_) {}
+  CSSPropertyValue(const CSSPropertyValue& other) : metadata_(other.metadata_), value_(other.value_) {}
   CSSPropertyValue& operator=(const CSSPropertyValue& other) = default;
 
   // FIXME: Remove this.
   CSSPropertyValue(CSSPropertyValueMetadata metadata, std::shared_ptr<const CSSValue> value)
-      : metadata_(std::move(metadata)),
-        value_(std::move(value)) {}
+      : metadata_(std::move(metadata)), value_(std::move(value)) {}
 
   CSSPropertyID Id() const { return metadata_.PropertyID(); }
   const std::string& CustomPropertyName() const {
@@ -105,28 +95,18 @@ class CSSPropertyValue {
   void SetImportant() { metadata_.important_ = true; }
   CSSPropertyName Name() const { return metadata_.Name(); }
 
-  const CSSValue* Value() const { return value_.get(); }
+  const std::shared_ptr<const CSSValue>* Value() const { return &value_; }
 
   const CSSPropertyValueMetadata& Metadata() const { return metadata_; }
 
   bool operator==(const CSSPropertyValue& other) const;
 
-  void Trace(GCVisitor* visitor) const {  }
+  void Trace(GCVisitor* visitor) const {}
 
  private:
   CSSPropertyValueMetadata metadata_;
   std::shared_ptr<const CSSValue> value_;
 };
-
-//namespace {
-//template <>
-//struct VectorTraits<webf::CSSPropertyValue>
-//    : VectorTraitsBase<webf::CSSPropertyValue> {
-//  static const bool kCanInitializeWithMemset = true;
-//  static const bool kCanClearUnusedSlotsWithMemset = true;
-//  static const bool kCanMoveWithMemcpy = true;
-//  static const bool kCanTraceConcurrently = true;
-//};
 
 }  // namespace webf
 

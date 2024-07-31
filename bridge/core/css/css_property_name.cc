@@ -7,13 +7,14 @@
  */
 
 #include "css_property_name.h"
-#include "css_property.h"
+#include "core/css/properties/css_property.h"
 
 namespace webf {
 
 struct SameSizeAsCSSPropertyName {
   CSSPropertyID property_id_;
   std::string custom_property_name_;
+  size_t custom_property_name_hash_value_{0};
 };
 
 static_assert(sizeof(CSSPropertyName) == sizeof(SameSizeAsCSSPropertyName));
@@ -28,12 +29,24 @@ bool CSSPropertyName::operator==(const CSSPropertyName& other) const {
   return custom_property_name_ == other.custom_property_name_;
 }
 
-std::string CSSPropertyName::ToString() const {
+const std::string& CSSPropertyName::ToString() const {
   if (IsCustomProperty()) {
     return custom_property_name_;
   }
 
-  return CSSProperty::Get
+  return CSSProperty::Get(Id()).GetPropertyName();
+}
+
+unsigned int CSSPropertyName::GetHash() const {
+  if (IsCustomProperty()) {
+    if (custom_property_name_hash_value_ != 0) {
+      return custom_property_name_hash_value_;
+    }
+    std::hash<std::string> hash_fn;
+    custom_property_name_hash_value_ = hash_fn(custom_property_name_);
+    return custom_property_name_hash_value_;
+  }
+  return value_;
 }
 
 
