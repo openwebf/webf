@@ -33,6 +33,8 @@ CSSStyleSheet::CSSStyleSheet(std::shared_ptr<StyleSheetContents> contents,
   //  contents_->RegisterClient(this);
 }
 
+CSSStyleSheet::~CSSStyleSheet() {}
+
 CSSStyleSheet* CSSStyleSheet::CreateInline(Node& owner_node,
                                            const std::string& base_url,
                                            const TextPosition& start_position) {

@@ -18,7 +18,6 @@ class CSSStyleSheet;
 class CSSValue;
 class ExceptionState;
 class ExecutingContext;
-enum class SecureContextMode;  //TODO(xiezuobing): 这个可以删除
 
 static bool IsPrototypeMethods(const AtomicString& key) {
   return key == defined_properties::kgetPropertyValue || key == defined_properties::kremoveProperty ||

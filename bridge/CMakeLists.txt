@@ -322,6 +322,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/properties/css_direction_aware_resolver.cc
     core/css/properties/css_unresolved_property.cc
     core/css/properties/css_property.cc
+    core/css/css_rule.cc
 
     core/platform/text/writing_mode.cc
     core/platform/geometry/length.cc

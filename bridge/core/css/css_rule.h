@@ -33,16 +33,15 @@
 namespace webf {
 
 class CSSParserContext;
-class CSSRuleList;
 class CSSStyleSheet;
+class CSSRuleList;
 class StyleRuleBase;
 class MediaQuerySetOwner;
 enum class SecureContextMode;
 class ExecutingContext;
 class ExceptionState;
 
-
-class  CSSRule : public ScriptWrappable {
+class CSSRule : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
@@ -89,7 +88,7 @@ class  CSSRule : public ScriptWrappable {
     return type > Type::kViewportRule ? 0 : static_cast<int>(type);
   }
 
-  virtual AtomicString cssText() const = 0;
+  virtual std::string cssText() const = 0;
   virtual void Reattach(StyleRuleBase*) = 0;
 
   virtual CSSRuleList* cssRules() const { return nullptr; }
@@ -113,7 +112,7 @@ class  CSSRule : public ScriptWrappable {
   }
 
   // The CSSOM spec states that "setting the cssText attribute must do nothing."
-  void setCSSText(const AtomicString&) {}
+  void setCSSText(const std::string&) {}
 
   virtual void UseCountForSignalAffected() {}
 
@@ -125,8 +124,7 @@ class  CSSRule : public ScriptWrappable {
     has_cached_selector_text_ = has_cached_selector_text;
   }
 
-  const CSSParserContext* ParserContext(SecureContextMode) const;
-
+  const CSSParserContext* ParserContext() const;
 
  private:
   bool VerifyParentIsCSSRule() const;
@@ -159,6 +157,7 @@ class  CSSRule : public ScriptWrappable {
       CSSRule& parent_rule,
       ExceptionState& exception_state);
 };
+
 }  // namespace webf
 
 #endif  // WEBF_CSS_RULE_H

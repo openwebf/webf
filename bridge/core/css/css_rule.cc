@@ -24,5 +24,50 @@
  */
 
 #include "css_rule.h"
+#include "core/css/css_style_sheet.h"
+#include "core/css/style_sheet_contents.h"
+#include "bindings/qjs/script_wrappable.h"
 
-namespace webf {}  // namespace webf
+namespace webf {
+
+struct SameSizeAsCSSRule : public ScriptWrappable {
+  unsigned char bitfields;
+  Member<ScriptWrappable> member;
+};
+
+static_assert(sizeof(CSSRule) == sizeof(SameSizeAsCSSRule));
+
+void CSSRule::SetParentStyleSheet(webf::CSSStyleSheet* style_sheet) {
+  parent_is_rule_ = false;
+  parent_ = style_sheet;
+}
+
+void CSSRule::SetParentRule(webf::CSSRule* rule) {
+  parent_is_rule_ = true;
+  parent_ = rule;
+}
+
+void CSSRule::Trace(webf::GCVisitor* visitor) const {
+  visitor->TraceMember(parent_);
+  ScriptWrappable::Trace(visitor);
+}
+
+CSSRule::CSSRule(webf::CSSStyleSheet* parent)
+    : has_cached_selector_text_(false), parent_is_rule_(false), parent_(parent), ScriptWrappable(parent->ctx()) {}
+
+const CSSParserContext* CSSRule::ParserContext() const {
+  CSSStyleSheet* style_sheet = parentStyleSheet();
+  return style_sheet->Contents()->ParserContext();
+}
+
+bool CSSRule::VerifyParentIsCSSRule() const {
+  return !parent_ || parent_->GetWrapperTypeInfo()->isSubclass(
+                         CSSRule::GetStaticWrapperTypeInfo());
+}
+
+bool CSSRule::VerifyParentIsCSSStyleSheet() const {
+  return !parent_ || parent_->GetWrapperTypeInfo()->isSubclass(
+                         CSSStyleSheet::GetStaticWrapperTypeInfo());
+}
+
+}  // namespace webf
