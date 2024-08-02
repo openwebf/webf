@@ -93,10 +93,12 @@ void DartIsolateContext::FinalizeJSRuntime() {
   HTMLElementFactory::Dispose();
   SVGElementFactory::Dispose();
   EventFactory::Dispose();
-  ClearUpWires(runtime_);
-  JS_TurnOnGC(runtime_);
-  JS_FreeRuntime(runtime_);
-  runtime_ = nullptr;
+  if (runtime_) {
+    ClearUpWires(runtime_);
+    JS_TurnOnGC(runtime_);
+    JS_FreeRuntime(runtime_);
+    runtime_ = nullptr;
+  }
   is_name_installed_ = false;
 }
 
@@ -110,6 +112,7 @@ DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dar
 }
 
 JSRuntime* DartIsolateContext::runtime() {
+  assert_m(runtime_ != nullptr, "nullptr is unsafe");
   return runtime_;
 }
 
