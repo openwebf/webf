@@ -27,27 +27,22 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-
 #ifndef WEBF_COLOR_H
 #define WEBF_COLOR_H
-
 
 #include <iosfwd>
 #include <optional>
 #include <tuple>
 
 #include "SkColor.h"
-#include "foundation/macros.h"
 #include "bindings/qjs/atomic_string.h"
-
+#include "foundation/macros.h"
 
 namespace webf {
-
 
 typedef unsigned RGBA32;  // RGBA quadruplet
 
 struct NamedColor {
-  WEBF_DISALLOW_NEW();
   const char* name;
   unsigned argb_value;
 };
@@ -109,21 +104,16 @@ class Color {
   };
 
   static bool HasRGBOrXYZComponents(ColorSpace color_space) {
-    return color_space == ColorSpace::kSRGB ||
-           color_space == ColorSpace::kSRGBLinear ||
-           color_space == ColorSpace::kDisplayP3 ||
-           color_space == ColorSpace::kA98RGB ||
-           color_space == ColorSpace::kProPhotoRGB ||
-           color_space == ColorSpace::kRec2020 ||
-           color_space == ColorSpace::kXYZD50 ||
-           color_space == ColorSpace::kXYZD65 ||
+    return color_space == ColorSpace::kSRGB || color_space == ColorSpace::kSRGBLinear ||
+           color_space == ColorSpace::kDisplayP3 || color_space == ColorSpace::kA98RGB ||
+           color_space == ColorSpace::kProPhotoRGB || color_space == ColorSpace::kRec2020 ||
+           color_space == ColorSpace::kXYZD50 || color_space == ColorSpace::kXYZD65 ||
            color_space == ColorSpace::kSRGBLegacy;
   }
 
   static bool IsLightnessFirstComponent(ColorSpace color_space) {
-    return color_space == ColorSpace::kLab ||
-           color_space == ColorSpace::kOklab ||
-           color_space == ColorSpace::kLch || color_space == ColorSpace::kOklch;
+    return color_space == ColorSpace::kLab || color_space == ColorSpace::kOklab || color_space == ColorSpace::kLch ||
+           color_space == ColorSpace::kOklch;
   }
 
   static bool IsChromaSecondComponent(ColorSpace color_space) {
@@ -135,23 +125,16 @@ class Color {
   // rgb(), rgba(), hex color, named color, hsl() and hwb() types. These colors
   // interpolate and serialize differently from other color types.
   static bool IsLegacyColorSpace(ColorSpace color_space) {
-    return color_space == ColorSpace::kSRGBLegacy ||
-           color_space == ColorSpace::kHSL || color_space == ColorSpace::kHWB;
+    return color_space == ColorSpace::kSRGBLegacy || color_space == ColorSpace::kHSL || color_space == ColorSpace::kHWB;
   }
 
   static bool ColorSpaceHasHue(ColorSpace color_space) {
-    return color_space == Color::ColorSpace::kLch ||
-           color_space == Color::ColorSpace::kOklch ||
-           color_space == Color::ColorSpace::kHSL ||
-           color_space == Color::ColorSpace::kHWB;
+    return color_space == Color::ColorSpace::kLch || color_space == Color::ColorSpace::kOklch ||
+           color_space == Color::ColorSpace::kHSL || color_space == Color::ColorSpace::kHWB;
   }
 
   // The default constructor creates a transparent color.
-  constexpr Color()
-      : param0_is_none_(0),
-        param1_is_none_(0),
-        param2_is_none_(0),
-        alpha_is_none_(0) {}
+  constexpr Color() : param0_is_none_(0), param1_is_none_(0), param2_is_none_(0), alpha_is_none_(0) {}
 
   // TODO(crbug.com/ 1333988): We have to reevaluate how we input int RGB and
   // RGBA values into blink::color. We should remove the int inputs in the
@@ -168,14 +151,12 @@ class Color {
 
   // Create a color using rgb() syntax.
   static constexpr Color FromRGB(int r, int g, int b) {
-    return Color(0xFF000000 | ClampInt255(r) << 16 | ClampInt255(g) << 8 |
-                 ClampInt255(b));
+    return Color(0xFF000000 | ClampInt255(r) << 16 | ClampInt255(g) << 8 | ClampInt255(b));
   }
 
   // Create a color using rgba() syntax.
   static constexpr Color FromRGBA(int r, int g, int b, int a) {
-    return Color(ClampInt255(a) << 24 | ClampInt255(r) << 16 |
-                 ClampInt255(g) << 8 | ClampInt255(b));
+    return Color(ClampInt255(a) << 24 | ClampInt255(r) << 16 | ClampInt255(g) << 8 | ClampInt255(b));
   }
 
   static Color FromRGBALegacy(std::optional<int> r,
@@ -185,9 +166,7 @@ class Color {
 
   // Create a color using the rgba() syntax, with float arguments. All
   // parameters will be clamped to the [0, 1] interval.
-  static constexpr Color FromRGBAFloat(float r, float g, float b, float a) {
-    return Color(SkColor4f{r, g, b, a});
-  }
+  static constexpr Color FromRGBAFloat(float r, float g, float b, float a) { return Color(SkColor4f{r, g, b, a}); }
 
   // Create a color from a generic color space. Parameters that are none should
   // be specified as std::nullopt. The value for `alpha` will be clamped to the
@@ -207,16 +186,10 @@ class Color {
   }
 
   // Create a color using the hsl() syntax.
-  static Color FromHSLA(std::optional<float> h,
-                        std::optional<float> s,
-                        std::optional<float> l,
-                        std::optional<float> a);
+  static Color FromHSLA(std::optional<float> h, std::optional<float> s, std::optional<float> l, std::optional<float> a);
 
   // Create a color using the hwb() syntax.
-  static Color FromHWBA(std::optional<float> h,
-                        std::optional<float> w,
-                        std::optional<float> b,
-                        std::optional<float> a);
+  static Color FromHWBA(std::optional<float> h, std::optional<float> w, std::optional<float> b, std::optional<float> a);
 
   enum class HueInterpolationMethod : uint8_t {
     kShorter,
@@ -246,12 +219,11 @@ class Color {
   // percentage: How far to interpolate between color1 and color2. 0.0 returns
   // color1 and 1.0 returns color2. It is unbounded, so it is possible to
   // interpolate beyond these bounds with percentages outside the range [0, 1].
-  static Color InterpolateColors(
-      ColorSpace interpolation_space,
-      std::optional<HueInterpolationMethod> hue_method,
-      Color color1,
-      Color color2,
-      float percentage);
+  static Color InterpolateColors(ColorSpace interpolation_space,
+                                 std::optional<HueInterpolationMethod> hue_method,
+                                 Color color1,
+                                 Color color2,
+                                 float percentage);
 
   // TODO(crbug.com/1308932): These three functions are just helpers for
   // while we're converting platform/graphics to float color.
@@ -272,28 +244,27 @@ class Color {
   // them.
   static bool IsBakedGamutMappingEnabled();
 
-  AtomicString SerializeInternal() const;
+  std::string SerializeInternal() const;
   // Returns the color serialized according to HTML5:
   // http://www.whatwg.org/specs/web-apps/current-work/#serialization-of-a-color
-  AtomicString SerializeAsCSSColor() const;
+  std::string SerializeAsCSSColor() const;
   // Canvas colors are serialized somewhat differently:
   // https://html.spec.whatwg.org/multipage/canvas.html#serialisation-of-a-color
-  AtomicString SerializeAsCanvasColor() const;
+  std::string SerializeAsCanvasColor() const;
   // For appending color interpolation spaces and hue interpolation methods to
   // the serialization of gradients and color-mix functions.
-  static AtomicString SerializeInterpolationSpace(
+  static std::string SerializeInterpolationSpace(
       Color::ColorSpace color_space,
-      Color::HueInterpolationMethod hue_interpolation_method =
-          Color::HueInterpolationMethod::kShorter);
+      Color::HueInterpolationMethod hue_interpolation_method = Color::HueInterpolationMethod::kShorter);
 
   // Returns the color serialized as either #RRGGBB or #RRGGBBAA. The latter
   // format is not a valid CSS color, and should only be seen in DRT dumps.
-  AtomicString NameForLayoutTreeAsText() const;
+  std::string NameForLayoutTreeAsText() const;
 
   // Returns whether parsing succeeded. The resulting Color is arbitrary
   // if parsing fails.
-  bool SetFromString(const AtomicString&);
-  bool SetNamedColor(const AtomicString&);
+  bool SetFromString(const std::string&);
+  bool SetNamedColor(const std::string&);
 
   bool IsFullyTransparent() const { return Alpha() <= 0.0f; }
   bool IsOpaque() const { return Alpha() >= 1.0f; }
@@ -308,9 +279,7 @@ class Color {
   bool Param1IsNone() const { return param1_is_none_; }
   bool Param2IsNone() const { return param2_is_none_; }
   bool AlphaIsNone() const { return alpha_is_none_; }
-  bool HasNoneParams() const {
-    return Param0IsNone() || Param1IsNone() || Param2IsNone() || AlphaIsNone();
-  }
+  bool HasNoneParams() const { return Param0IsNone() || Param1IsNone() || Param2IsNone() || AlphaIsNone(); }
 
   void SetAlpha(float alpha) { alpha_ = alpha; }
 
@@ -323,9 +292,7 @@ class Color {
   int Blue() const;
 
   // No colorspace conversions affect alpha.
-  int AlphaAsInteger() const {
-    return static_cast<int>(lrintf(alpha_ * 255.0f));
-  }
+  int AlphaAsInteger() const { return static_cast<int>(lrintf(alpha_ * 255.0f)); }
 
   RGBA32 Rgb() const;
   void GetRGBA(float& r, float& g, float& b, float& a) const;
@@ -347,8 +314,7 @@ class Color {
   Color BlendWithWhite() const;
 
   static bool ParseHexColor(const StringView&, Color&);
-  static bool ParseHexColor(const unsigned char *, unsigned, Color&);
-  static bool ParseHexColor(const char16_t *, unsigned, Color&);
+  static bool ParseHexColor(const char*, unsigned, Color&);
 
   static const Color kBlack;
   static const Color kWhite;
@@ -358,13 +324,10 @@ class Color {
   static const Color kTransparent;
 
   inline bool operator==(const Color& other) const {
-    return color_space_ == other.color_space_ &&
-           param0_is_none_ == other.param0_is_none_ &&
-           param1_is_none_ == other.param1_is_none_ &&
-           param2_is_none_ == other.param2_is_none_ &&
-           alpha_is_none_ == other.alpha_is_none_ && param0_ == other.param0_ &&
-           param1_ == other.param1_ && param2_ == other.param2_ &&
-           alpha_ == other.alpha_;
+    return color_space_ == other.color_space_ && param0_is_none_ == other.param0_is_none_ &&
+           param1_is_none_ == other.param1_is_none_ && param2_is_none_ == other.param2_is_none_ &&
+           alpha_is_none_ == other.alpha_is_none_ && param0_ == other.param0_ && param1_ == other.param1_ &&
+           param2_ == other.param2_ && alpha_ == other.alpha_;
   }
   inline bool operator!=(const Color& other) const { return !(*this == other); }
 
@@ -376,8 +339,7 @@ class Color {
   Color::ColorSpace GetColorInterpolationSpace() const;
 
   ColorSpace GetColorSpace() const { return color_space_; }
-  void ConvertToColorSpace(ColorSpace destination_color_space,
-                           bool resolve_missing_components = true);
+  void ConvertToColorSpace(ColorSpace destination_color_space, bool resolve_missing_components = true);
 
   // Colors can parse calc(NaN) and calc(Infinity). At computed value time this
   // function is called which resolves all NaNs to zero and +/-infinities to
@@ -385,19 +347,19 @@ class Color {
   // See https://github.com/w3c/csswg-drafts/issues/8629
   void ResolveNonFiniteValues();
 
-//  FRIEND_TEST_ALL_PREFIXES(BlinkColor, ColorMixNone);
-//  FRIEND_TEST_ALL_PREFIXES(BlinkColor, ColorInterpolation);
-//  FRIEND_TEST_ALL_PREFIXES(BlinkColor, HueInterpolation);
-//  FRIEND_TEST_ALL_PREFIXES(BlinkColor, Premultiply);
-//  FRIEND_TEST_ALL_PREFIXES(BlinkColor, Unpremultiply);
-//  FRIEND_TEST_ALL_PREFIXES(BlinkColor, ConvertToColorSpace);
-//  FRIEND_TEST_ALL_PREFIXES(BlinkColor, toSkColor4fValidation);
-//  FRIEND_TEST_ALL_PREFIXES(BlinkColor, ExportAsXYZD50Floats);
-//  FRIEND_TEST_ALL_PREFIXES(BlinkColor, ResolveMissingComponents);
-//  FRIEND_TEST_ALL_PREFIXES(BlinkColor, SubstituteMissingParameters);
+  //  FRIEND_TEST_ALL_PREFIXES(BlinkColor, ColorMixNone);
+  //  FRIEND_TEST_ALL_PREFIXES(BlinkColor, ColorInterpolation);
+  //  FRIEND_TEST_ALL_PREFIXES(BlinkColor, HueInterpolation);
+  //  FRIEND_TEST_ALL_PREFIXES(BlinkColor, Premultiply);
+  //  FRIEND_TEST_ALL_PREFIXES(BlinkColor, Unpremultiply);
+  //  FRIEND_TEST_ALL_PREFIXES(BlinkColor, ConvertToColorSpace);
+  //  FRIEND_TEST_ALL_PREFIXES(BlinkColor, toSkColor4fValidation);
+  //  FRIEND_TEST_ALL_PREFIXES(BlinkColor, ExportAsXYZD50Floats);
+  //  FRIEND_TEST_ALL_PREFIXES(BlinkColor, ResolveMissingComponents);
+  //  FRIEND_TEST_ALL_PREFIXES(BlinkColor, SubstituteMissingParameters);
 
  private:
-  AtomicString SerializeLegacyColorAsCSSColor() const;
+  std::string SerializeLegacyColorAsCSSColor() const;
   constexpr explicit Color(RGBA32 color)
       : param0_is_none_(0),
         param1_is_none_(0),
@@ -416,9 +378,7 @@ class Color {
         param1_(color.fG * 255.0),
         param2_(color.fB * 255.0),
         alpha_(color.fA) {}
-  static constexpr int ClampInt255(int x) {
-    return x < 0 ? 0 : (x > 255 ? 255 : x);
-  }
+  static constexpr int ClampInt255(int x) { return x < 0 ? 0 : (x > 255 ? 255 : x); }
   void GetHueMaxMin(double&, double&, double&) const;
 
   std::tuple<float, float, float> ExportAsXYZD50Floats() const;
@@ -427,7 +387,7 @@ class Color {
   SkColor4f ToSkColor4fInternal(bool gamut_map_oklab_oklch) const;
 
   // For testing purposes and for serializer.
-  static AtomicString ColorSpaceToString(Color::ColorSpace color_space);
+  static std::string ColorSpaceToString(Color::ColorSpace color_space);
 
   float PremultiplyColor();
   void UnpremultiplyColor();
@@ -435,17 +395,12 @@ class Color {
 
   // HueInterpolation assumes value1 and value2 are degrees, it will interpolate
   // value1 and value2 as per CSS Color 4 spec.
-  static float HueInterpolation(float value1,
-                                float value2,
-                                float percentage,
-                                HueInterpolationMethod hue_method);
+  static float HueInterpolation(float value1, float value2, float percentage, HueInterpolationMethod hue_method);
 
   // According the Spec https://www.w3.org/TR/css-color-4/#interpolation-missing
   // we have to do a special treatment of when to carry forward the 'noneness'
   // of a component, given if it's an 'analog component'.
-  static void CarryForwardAnalogousMissingComponents(
-      Color color,
-      ColorSpace prev_color_space);
+  static void CarryForwardAnalogousMissingComponents(Color color, ColorSpace prev_color_space);
 
   // https://www.w3.org/TR/css-color-4/#interpolation-missing
   // If a color with a carried forward missing component is interpolated
