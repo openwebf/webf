@@ -16,7 +16,6 @@
 
 namespace webf {
 
-
 class CSSValuePool;
 
 namespace cssvalue {
@@ -27,7 +26,7 @@ class CSSUnsetValue : public CSSValue {
 
   explicit CSSUnsetValue(webf::PassKey<CSSValuePool>) : CSSValue(kUnsetClass) {}
 
-  AtomicString CustomCSSText() const;
+  std::string CustomCSSText() const;
 
   bool Equals(const CSSUnsetValue&) const { return true; }
 

@@ -8,5 +8,20 @@
 
 
 #include "css_unset_value.h"
+#include "core/css/css_value_pool.h"
 
-namespace webf {}  // namespace webf
+namespace webf {
+
+namespace cssvalue {
+
+CSSUnsetValue* CSSUnsetValue::Create() {
+  return CssValuePool().UnsetValue();
+}
+
+std::string CSSUnsetValue::CustomCSSText() const {
+  return "unset";
+}
+
+}
+
+}  // namespace webf
