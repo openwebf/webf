@@ -18,16 +18,25 @@ namespace webf {
 
 class CSSValuePool; // TODO(xiezuobing): core/css/css_value_pool.h
 
+// The color scheme used for painting the native controls.
+enum class ColorScheme {
+  kDefault,
+  kLight,
+  kDark,
+  kPlatformHighContrast,  // When the platform is providing HC colors (eg.
+                          // Win)
+};
+
 namespace cssvalue {
 
 // Represents the non-keyword subset of <color>.
 class CSSColor : public CSSValue {
  public:
-  static CSSColor* Create(const Color& color);
+  static std::shared_ptr<const CSSColor> Create(const Color& color);
 
   CSSColor(Color color) : CSSValue(kColorClass), color_(color) {}
 
-  AtomicString CustomCSSText() const { return SerializeAsCSSComponentValue(color_); }
+  std::string CustomCSSText() const { return SerializeAsCSSComponentValue(color_); }
 
   Color Value() const { return color_; }
 
@@ -39,7 +48,7 @@ class CSSColor : public CSSValue {
 
   // Returns the color serialized according to CSSOM:
   // https://drafts.csswg.org/cssom/#serialize-a-css-component-value
-  static AtomicString SerializeAsCSSComponentValue(Color color);
+  static std::string SerializeAsCSSComponentValue(Color color);
 
  private:
   friend class ::webf::CSSValuePool;

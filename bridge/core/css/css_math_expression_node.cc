@@ -33,7 +33,8 @@
  */
 
 #include "css_math_expression_node.h"
-#include "core/geometry/calculation_expression_node.h"
+#include "core/platform/geometry/calculation_expression_node.h"
+#include "core/css/properties/css_parsing_utils.h"
 #include "css_math_operator.h"
 #include "css_color_channel_map.h"
 #include "css_value_clamping_utils.h"

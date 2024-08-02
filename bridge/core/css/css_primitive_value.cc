@@ -31,11 +31,10 @@
 #include "core/css/css_math_function_value.h"
 #include "core/css/css_resolution_units.h"
 #include "core/css/css_math_operator.h"
- #include "core/css/css_numeric_literal_value.h"
+#include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_value_clamping_utils.h"
 #include "core/css/css_value_pool.h"
-#include "core/geometry/layout_unit.h"
-#include "foundation/string_builder.h"
+#include "core/platform/geometry/layout_unit.h"
 
 namespace webf {
 

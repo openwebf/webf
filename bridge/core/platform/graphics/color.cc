@@ -673,21 +673,41 @@ float NormalizeSign(float number) {
 }
 
 template <typename T>
-inline void hash_combine(std::size_t& seed, const T& value) {
-  seed ^= std::hash<T>{}(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+unsigned HashInt(T key) {
+  static_assert(std::is_integral_v<T> || std::is_enum_v<T>);
+  std::hash<T> hash_fn;
+  return hash_fn(key);
 }
 
-template <typename... Args>
-std::size_t hash_values(const Args&... args) {
-  std::size_t seed = 0;
-  (hash_combine(seed, args), ...);
-  return seed;
+template <typename T>
+unsigned HashFloat(T key) {
+  static_assert(std::is_floating_point_v<T>);
+  std::hash<T> hash_fn;
+  return hash_fn(key);
+}
+
+// Useful compounding hash functions.
+inline void AddIntToHash(unsigned& hash, unsigned key) {
+  hash = ((hash << 5) + hash) + key;  // Djb2
+}
+
+inline void AddFloatToHash(unsigned& hash, float value) {
+  AddIntToHash(hash, HashFloat(value));
 }
 
 unsigned Color::GetHash() const {
-  return hash_values(static_cast<uint8_t>(color_space_), NormalizeSign(param0_), NormalizeSign(param1_),
-                     NormalizeSign(param2_), NormalizeSign(alpha_), param0_is_none_, param1_is_none_, param2_is_none_,
-                     alpha_is_none_);
+  unsigned result = HashInt(static_cast<uint8_t>(color_space_));
+
+  AddFloatToHash(result, NormalizeSign(param0_));
+  AddFloatToHash(result, NormalizeSign(param1_));
+  AddFloatToHash(result, NormalizeSign(param2_));
+  AddFloatToHash(result, NormalizeSign(alpha_));
+  AddIntToHash(result, param0_is_none_);
+  AddIntToHash(result, param1_is_none_);
+  AddIntToHash(result, param2_is_none_);
+  AddIntToHash(result, alpha_is_none_);
+
+  return result;
 }
 
 int Color::Red() const {
@@ -708,11 +728,10 @@ bool Color::ParseHexColor(const char* name, unsigned length, Color& color) {
   return ParseHexColorInternal(name, length, color);
 }
 
-bool Color::ParseHexColor(const StringView& name, Color& color) {
-  if (name.Empty())
+bool Color::ParseHexColor(const std::string& name, Color& color) {
+  if (name.empty())
     return false;
-  assert(name.Is8Bit());
-  return ParseHexColor(name.Characters8(), name.length(), color);
+  return ParseHexColor(name.c_str(), name.length(), color);
 }
 
 int DifferenceSquared(const Color& c1, const Color& c2) {

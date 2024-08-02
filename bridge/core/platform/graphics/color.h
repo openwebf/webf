@@ -53,6 +53,11 @@ class Color {
   WEBF_DISALLOW_NEW();
 
  public:
+
+  struct KeyHasher {
+    std::size_t operator()(const Color& c) const { return c.GetHash(); }
+  };
+
   // This enum represent the color space of the color itself. This is also used
   // for serialization purposes and for initialization. Don't change the order
   // of this enum, as how it's ordered helps performance (the compiler can
@@ -313,7 +318,7 @@ class Color {
   Color Blend(const Color&) const;
   Color BlendWithWhite() const;
 
-  static bool ParseHexColor(const StringView&, Color&);
+  static bool ParseHexColor(const std::string&, Color&);
   static bool ParseHexColor(const char*, unsigned, Color&);
 
   static const Color kBlack;

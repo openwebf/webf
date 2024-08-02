@@ -7,16 +7,15 @@
  */
 
 #include "css_color.h"
-#include "core/css/css_value_pool.h" //TODO(xiezuobing):
+#include "core/css/css_value_pool.h"
 
 namespace webf::cssvalue {
 
-//CSSColor* CSSColor::Create(const Color& color) {
-//  //TODO(xiezuobing): css_value_pool.j
-//  return CssValuePool().GetOrCreateColor(color);
-//}
+std::shared_ptr<const CSSColor> CSSColor::Create(const webf::Color& color) {
+  return CssValuePool().GetOrCreateColor(color);
+}
 
-AtomicString CSSColor::SerializeAsCSSComponentValue(Color color) {
+std::string CSSColor::SerializeAsCSSComponentValue(Color color) {
   return color.SerializeAsCSSColor();
 }
 

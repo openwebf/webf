@@ -16,6 +16,7 @@
 #include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_primitive_value.h"
 #include "core/css/css_repeat_style_value.h"
+#include "core/css/css_string_value.h"
 #include "core/css/css_value_list.h"
 #include "core/css/parser/css_parser_token.h"
 #include "core/css/parser/css_parser_token_range.h"
@@ -50,7 +51,7 @@ enum class DefaultFill { kFill, kNoFill };
 enum class ParsingStyle { kLegacy, kNotLegacy };
 enum class TrackListType { kGridAuto, kGridTemplate, kGridTemplateNoRepeat, kGridTemplateSubgrid };
 enum class UnitlessQuirk { kAllow, kForbid };
-enum class AllowCalcSize { kAllowWithAuto, kAllowWithoutAuto, kForbid };
+enum class AllowCalcSize { kAllowWithAuto, kAllowWithoutAuto, kAllowWithAutoAndContent, kForbid };
 enum class AllowedColors { kAll, kAbsolute };
 enum class EmptyPathStringHandling { kFailure, kTreatAsNone };
 
@@ -80,36 +81,140 @@ CSSParserTokenRange ConsumeFunction(CSSParserTokenStream&);
 // for <any-value>.
 bool ConsumeAnyValue(CSSParserTokenRange&);
 
-CSSPrimitiveValue* ConsumeInteger(CSSParserTokenRange&,
-                                  const CSSParserContext&,
-                                  double minimum_value = -std::numeric_limits<double>::max(),
-                                  const bool is_percentage_allowed = true);
-CSSPrimitiveValue* ConsumeInteger(CSSParserTokenStream&,
-                                  const CSSParserContext&,
-                                  double minimum_value = -std::numeric_limits<double>::max(),
-                                  const bool is_percentage_allowed = true);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeInteger(CSSParserTokenRange&,
+                                                        const CSSParserContext&,
+                                                        double minimum_value = -std::numeric_limits<double>::max(),
+                                                        const bool is_percentage_allowed = true);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeInteger(CSSParserTokenStream&,
+                                                        const CSSParserContext&,
+                                                        double minimum_value = -std::numeric_limits<double>::max(),
+                                                        const bool is_percentage_allowed = true);
 template <typename T>
     requires std::is_same_v<T, CSSParserTokenStream> ||
     std::is_same_v<T, CSSParserTokenRange> CSSPrimitiveValue* ConsumeIntegerOrNumberCalc(
         T&,
         const CSSParserContext&,
         CSSPrimitiveValue::ValueRange = CSSPrimitiveValue::ValueRange::kInteger);
-CSSPrimitiveValue* ConsumePositiveInteger(CSSParserTokenStream&, const CSSParserContext&);
-CSSPrimitiveValue* ConsumePositiveInteger(CSSParserTokenRange&, const CSSParserContext&);
+std::shared_ptr<const CSSPrimitiveValue> ConsumePositiveInteger(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSPrimitiveValue> ConsumePositiveInteger(CSSParserTokenRange&, const CSSParserContext&);
 bool ConsumeNumberRaw(CSSParserTokenStream&, const CSSParserContext& context, double& result);
 bool ConsumeNumberRaw(CSSParserTokenRange&, const CSSParserContext& context, double& result);
-CSSPrimitiveValue* ConsumeNumber(CSSParserTokenRange&, const CSSParserContext&, CSSPrimitiveValue::ValueRange);
-CSSPrimitiveValue* ConsumeNumber(CSSParserTokenStream&, const CSSParserContext&, CSSPrimitiveValue::ValueRange);
-CSSPrimitiveValue* ConsumeLength(CSSParserTokenRange&,
-                                 const CSSParserContext&,
-                                 CSSPrimitiveValue::ValueRange,
-                                 UnitlessQuirk = UnitlessQuirk::kForbid);
-CSSPrimitiveValue* ConsumeLength(CSSParserTokenStream&,
-                                 const CSSParserContext&,
-                                 CSSPrimitiveValue::ValueRange,
-                                 UnitlessQuirk = UnitlessQuirk::kForbid);
-CSSPrimitiveValue* ConsumePercent(CSSParserTokenRange&, const CSSParserContext&, CSSPrimitiveValue::ValueRange);
-CSSPrimitiveValue* ConsumePercent(CSSParserTokenStream&, const CSSParserContext&, CSSPrimitiveValue::ValueRange);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeNumber(CSSParserTokenRange&,
+                                                       const CSSParserContext&,
+                                                       CSSPrimitiveValue::ValueRange);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeNumber(CSSParserTokenStream&,
+                                                       const CSSParserContext&,
+                                                       CSSPrimitiveValue::ValueRange);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeLength(CSSParserTokenRange&,
+                                                       const CSSParserContext&,
+                                                       CSSPrimitiveValue::ValueRange,
+                                                       UnitlessQuirk = UnitlessQuirk::kForbid);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeLength(CSSParserTokenStream&,
+                                                       const CSSParserContext&,
+                                                       CSSPrimitiveValue::ValueRange,
+                                                       UnitlessQuirk = UnitlessQuirk::kForbid);
+std::shared_ptr<const CSSPrimitiveValue> ConsumePercent(CSSParserTokenRange&,
+                                                        const CSSParserContext&,
+                                                        CSSPrimitiveValue::ValueRange);
+std::shared_ptr<const CSSPrimitiveValue> ConsumePercent(CSSParserTokenStream&,
+                                                        const CSSParserContext&,
+                                                        CSSPrimitiveValue::ValueRange);
+
+// Any percentages are converted to numbers.
+std::shared_ptr<const CSSPrimitiveValue> ConsumeNumberOrPercent(CSSParserTokenRange&,
+                                                                const CSSParserContext&,
+                                                                CSSPrimitiveValue::ValueRange);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeNumberOrPercent(CSSParserTokenStream& stream,
+                                                                const CSSParserContext& context,
+                                                                CSSPrimitiveValue::ValueRange value_range);
+
+std::shared_ptr<const CSSPrimitiveValue> ConsumeAlphaValue(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeLengthOrPercent(CSSParserTokenRange&,
+                                                                const CSSParserContext&,
+                                                                CSSPrimitiveValue::ValueRange,
+                                                                UnitlessQuirk = UnitlessQuirk::kForbid,
+                                                                CSSAnchorQueryTypes = kCSSAnchorQueryTypesNone,
+                                                                AllowCalcSize = AllowCalcSize::kForbid);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeLengthOrPercent(CSSParserTokenStream&,
+                                                                const CSSParserContext&,
+                                                                CSSPrimitiveValue::ValueRange,
+                                                                UnitlessQuirk = UnitlessQuirk::kForbid,
+                                                                CSSAnchorQueryTypes = kCSSAnchorQueryTypesNone,
+                                                                AllowCalcSize = AllowCalcSize::kForbid);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeSVGGeometryPropertyLength(CSSParserTokenStream&,
+                                                                          const CSSParserContext&,
+                                                                          CSSPrimitiveValue::ValueRange);
+
+std::shared_ptr<const CSSPrimitiveValue> ConsumeAngle(CSSParserTokenRange&, const CSSParserContext&);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeAngle(CSSParserTokenRange&,
+                                                      const CSSParserContext&,
+                                                      double minimum_value,
+                                                      double maximum_value);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeAngle(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeAngle(CSSParserTokenStream&,
+                                                      const CSSParserContext&,
+                                                      double minimum_value,
+                                                      double maximum_value);
+
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSPrimitiveValue>
+    ConsumeTime(T&, const CSSParserContext&, CSSPrimitiveValue::ValueRange);
+
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSPrimitiveValue> ConsumeResolution(
+        T&,
+        const CSSParserContext&);
+
+std::shared_ptr<const CSSValue> ConsumeRatio(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenRange&);
+std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenStream&);
+std::shared_ptr<const CSSIdentifierValue> ConsumeIdentRange(CSSParserTokenRange&, CSSValueID lower, CSSValueID upper);
+std::shared_ptr<const CSSIdentifierValue> ConsumeIdentRange(CSSParserTokenStream&, CSSValueID lower, CSSValueID upper);
+
+template <CSSValueID, CSSValueID...>
+inline bool IdentMatches(CSSValueID id);
+
+template <typename... emptyBaseCase>
+inline bool IdentMatches(CSSValueID id) {
+  return false;
+}
+template <CSSValueID head, CSSValueID... tail>
+inline bool IdentMatches(CSSValueID id) {
+  return id == head || IdentMatches<tail...>(id);
+}
+
+template <CSSValueID... allowedIdents>
+CSSIdentifierValue* ConsumeIdent(CSSParserTokenRange&);
+template <CSSValueID... allowedIdents>
+CSSIdentifierValue* ConsumeIdent(CSSParserTokenStream&);
+
+std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenRange&, const CSSParserContext&);
+std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenStream&, const CSSParserContext&);
+
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSCustomIdentValue> ConsumeDashedIdent(
+        T&,
+        const CSSParserContext&);
+std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenRange&);
+std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenStream&);
+StringView ConsumeStringAsStringView(CSSParserTokenRange&);
+// cssvalue::CSSURIValue* ConsumeUrl(CSSParserTokenRange&, const CSSParserContext&);
+// cssvalue::CSSURIValue* ConsumeUrl(CSSParserTokenStream&, const CSSParserContext&);
+
+// Some properties accept non-standard colors, like rgb values without a
+// preceding hash, in quirks mode.
+std::shared_ptr<const CSSValue> ConsumeColorMaybeQuirky(CSSParserTokenStream&, const CSSParserContext&);
+
+// https://drafts.csswg.org/css-color-5/#typedef-color
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeColor(T&, const CSSParserContext&);
+
+// https://drafts.csswg.org/css-color-5/#absolute-color
+std::shared_ptr<const CSSValue> ConsumeAbsoluteColor(CSSParserTokenRange&, const CSSParserContext&);
 
 }  // namespace css_parsing_utils
 }  // namespace webf

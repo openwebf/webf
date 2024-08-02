@@ -302,6 +302,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/inline_css_style_declaration.cc
     core/css/computed_css_style_declaration.cc
     core/css/style_element.cc
+    core/css/style_color.cc
     core/css/style_engine.cc
     core/css/style_sheet_contents.cc
 #    core/css/css_property_value.cc
@@ -322,6 +323,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/properties/css_direction_aware_resolver.cc
     core/css/properties/css_unresolved_property.cc
     core/css/properties/css_property.cc
+    core/css/properties/css_parsing_utils.cc
+    core/css/properties/css_color_function_parser.cc
     core/css/css_rule.cc
     core/css/css_value.cc
     core/css/properties/longhand.cc
@@ -329,9 +332,26 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_property_value_set.cc
     core/css/css_property_name.cc
     core/css/css_property_value.cc
+    core/css/css_primitive_value.cc
+    core/css/css_identifier_value.cc
+    core/css/css_numeric_literal_value.cc
+    core/css/css_math_expression_node.cc
+    core/css/css_radio_value.cc
+    core/css/css_unset_value.cc
+    core/css/css_value_pair.cc
+    core/css/css_light_dart_value_pair.cc
+    core/css/css_revert_layer_value.cc
+    core/css/css_revert_value.cc
+    core/css/css_value_pool.cc
+    core/css/css_string_value.cc
+    core/css/css_initial_value.cc
+    core/css/css_color_mix_value.cc
+    core/css/css_color.cc
 
     core/platform/text/writing_mode.cc
     core/platform/geometry/length.cc
+    core/platform/graphics/color.cc
+    core/platform/graphics/color_conversions.cc
     core/platform/text/writing_direction_mode.cc
     core/platform/geometry/dom_matrix.cc
     core/platform/geometry/dom_matrix_readonly.cc
