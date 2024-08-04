@@ -7,7 +7,7 @@
 #ifndef WEBF_GEOMETRY_CALCULATION_EXPRESSION_NODE_H_
 #define WEBF_GEOMETRY_CALCULATION_EXPRESSION_NODE_H_
 
-#include "core/geometry/length.h"
+#include "core/platform/geometry/length.h"
 #include "foundation/casting.h"
 
 namespace webf {
@@ -34,26 +34,18 @@ enum class CalculationOperator {
   kMediaProgress,
   kInvalid
 };
-// TODO(guopengfei): 取消继承RefCounted<CalculationExpressionNode>
 // Represents an expression composed of numbers, |PixelsAndPercent| and multiple
 // types of operators. To be consumed by |Length| values that involve
 // non-trivial math functions like min() and max().
-class CalculationExpressionNode {
+class CalculationExpressionNode : public std::enable_shared_from_this<CalculationExpressionNode> {
  public:
-  virtual float Evaluate(float max_value,
-                         const Length::EvaluationInput&) const = 0;
-  bool operator==(const CalculationExpressionNode& other) const {
-    return Equals(other);
-  }
-  bool operator!=(const CalculationExpressionNode& other) const {
-    return !operator==(other);
-  }
+  virtual float Evaluate(float max_value, const Length::EvaluationInput&) const = 0;
+  bool operator==(const CalculationExpressionNode& other) const { return Equals(other); }
+  bool operator!=(const CalculationExpressionNode& other) const { return !operator==(other); }
 
   bool HasAuto() const { return has_auto_; }
   bool HasContentOrIntrinsicSize() const { return has_content_or_intrinsic_; }
-  bool HasAutoOrContentOrIntrinsicSize() const {
-    return has_auto_ || has_content_or_intrinsic_;
-  }
+  bool HasAutoOrContentOrIntrinsicSize() const { return has_auto_ || has_content_or_intrinsic_; }
   bool HasStretch() const { return has_stretch_; }
   // HasPercent returns whether this node's value expression should be
   // treated as having a percent.  Note that this means that percentages
@@ -72,8 +64,7 @@ class CalculationExpressionNode {
   virtual bool IsPixelsAndPercent() const { return false; }
   virtual bool IsOperation() const { return false; }
 
-  virtual std::shared_ptr<const CalculationExpressionNode> Zoom(
-      double factor) const = 0;
+  virtual std::shared_ptr<const CalculationExpressionNode> Zoom(double factor) const = 0;
 
   virtual ~CalculationExpressionNode() = default;
 
@@ -95,8 +86,7 @@ class CalculationExpressionNode {
   bool has_stretch_ = false;
 };
 
-class  CalculationExpressionNumberNode final
-    : public CalculationExpressionNode {
+class CalculationExpressionNumberNode final : public CalculationExpressionNode {
  public:
   CalculationExpressionNumberNode(float value) : value_(value) {
 #if DCHECK_IS_ON()
@@ -109,8 +99,7 @@ class  CalculationExpressionNumberNode final
   // Implement |CalculationExpressionNode|:
   float Evaluate(float max_value, const Length::EvaluationInput&) const final;
   bool Equals(const CalculationExpressionNode& other) const final;
-  std::shared_ptr<const CalculationExpressionNode> Zoom(
-      double factor) const final;
+  std::shared_ptr<const CalculationExpressionNode> Zoom(double factor) const final;
   bool IsNumber() const final { return true; }
   ~CalculationExpressionNumberNode() final = default;
 
@@ -124,63 +113,46 @@ class  CalculationExpressionNumberNode final
 
 template <>
 struct DowncastTraits<CalculationExpressionNumberNode> {
-  static bool AllowFrom(const CalculationExpressionNode& node) {
-    return node.IsNumber();
-  }
+  static bool AllowFrom(const CalculationExpressionNode& node) { return node.IsNumber(); }
 };
 
-class  CalculationExpressionIdentifierNode final
-    : public CalculationExpressionNode {
+class CalculationExpressionIdentifierNode final : public CalculationExpressionNode {
  public:
-  explicit CalculationExpressionIdentifierNode(AtomicString identifier)
-      : identifier_(std::move(identifier)) {
+  explicit CalculationExpressionIdentifierNode(std::string identifier) : identifier_(std::move(identifier)) {
 #if DCHECK_IS_ON()
     result_type_ = ResultType::kIdent;
 #endif
   }
 
-  const AtomicString& Value() const { return identifier_; }
+  const std::string& Value() const { return identifier_; }
 
   // Implement |CalculationExpressionNode|:
-  float Evaluate(float max_value, const Length::EvaluationInput&) const final {
-    return 0.0f;
-  }
+  float Evaluate(float max_value, const Length::EvaluationInput&) const final { return 0.0f; }
   bool Equals(const CalculationExpressionNode& other) const final {
-    return other.IsIdentifier() &&
-           DynamicTo<CalculationExpressionIdentifierNode>(other)->Value() ==
-               Value();
+    return other.IsIdentifier() && DynamicTo<CalculationExpressionIdentifierNode>(other)->Value() == Value();
   }
-  std::shared_ptr<const CalculationExpressionNode> Zoom(
-      double factor) const final {
-    return this;
-  }
+  std::shared_ptr<const CalculationExpressionNode> Zoom(double factor) const final { return shared_from_this(); }
   bool IsIdentifier() const final { return true; }
-/*
-#if DCHECK_IS_ON()
-  ResultType ResolvedResultType() const final { return ResultType::kIdent; }
-#endif
-
- */
+  #if DCHECK_IS_ON()
+    ResultType ResolvedResultType() const final { return ResultType::kIdent; }
+  #endif
 
  private:
-  AtomicString identifier_;
+  std::string identifier_;
 };
 
 template <>
 struct DowncastTraits<CalculationExpressionIdentifierNode> {
-  static bool AllowFrom(const CalculationExpressionNode& node) {
-    return node.IsIdentifier();
-  }
+  static bool AllowFrom(const CalculationExpressionNode& node) { return node.IsIdentifier(); }
 };
 
-class  CalculationExpressionSizingKeywordNode final
-    : public CalculationExpressionNode {
+class CalculationExpressionSizingKeywordNode final : public CalculationExpressionNode {
  public:
   enum class Keyword : uint8_t {
     kSize,
     kAny,
     kAuto,
-
+    kContent,
     // The keywords below should match those accepted by
     // css_parsing_utils::ValidWidthOrHeightKeyword.
     kMinContent,
@@ -199,35 +171,27 @@ class  CalculationExpressionSizingKeywordNode final
   // Implement |CalculationExpressionNode|:
   float Evaluate(float max_value, const Length::EvaluationInput&) const final;
   bool Equals(const CalculationExpressionNode& other) const final {
-    return other.IsSizingKeyword() &&
-           DynamicTo<CalculationExpressionSizingKeywordNode>(other)->Value() ==
-               Value();
+    return other.IsSizingKeyword() && DynamicTo<CalculationExpressionSizingKeywordNode>(other)->Value() == Value();
   }
-  std::shared_ptr<const CalculationExpressionNode> Zoom(
-      double factor) const final {
+  std::shared_ptr<const CalculationExpressionNode> Zoom(double factor) const final {
     // TODO(https://crbug.com/313072): Is this correct, or do we need to
     // adjust for zoom?
-    return this;
+    return shared_from_this();
   }
   bool IsSizingKeyword() const final { return true; }
 
   bool HasMinContent() const final {
-    return keyword_ == Keyword::kMinContent ||
-           keyword_ == Keyword::kWebkitMinContent;
+    return keyword_ == Keyword::kMinContent || keyword_ == Keyword::kWebkitMinContent;
   }
   bool HasMaxContent() const final {
-    return keyword_ == Keyword::kMaxContent ||
-           keyword_ == Keyword::kWebkitMaxContent;
+    return keyword_ == Keyword::kMaxContent || keyword_ == Keyword::kWebkitMaxContent;
   }
   bool HasFitContent() const final {
-    return keyword_ == Keyword::kFitContent ||
-           keyword_ == Keyword::kWebkitFitContent;
+    return keyword_ == Keyword::kFitContent || keyword_ == Keyword::kWebkitFitContent;
   }
 
 #if DCHECK_IS_ON()
-  ResultType ResolvedResultType() const final {
-    return ResultType::kPixelsAndPercent;
-  }
+  ResultType ResolvedResultType() const final { return ResultType::kPixelsAndPercent; }
 #endif
 
  private:
@@ -236,16 +200,12 @@ class  CalculationExpressionSizingKeywordNode final
 
 template <>
 struct DowncastTraits<CalculationExpressionSizingKeywordNode> {
-  static bool AllowFrom(const CalculationExpressionNode& node) {
-    return node.IsSizingKeyword();
-  }
+  static bool AllowFrom(const CalculationExpressionNode& node) { return node.IsSizingKeyword(); }
 };
 
-class  CalculationExpressionPixelsAndPercentNode final
-    : public CalculationExpressionNode {
+class CalculationExpressionPixelsAndPercentNode final : public CalculationExpressionNode {
  public:
-  CalculationExpressionPixelsAndPercentNode(PixelsAndPercent value)
-      : value_(value) {
+  CalculationExpressionPixelsAndPercentNode(PixelsAndPercent value) : value_(value) {
 #if DCHECK_IS_ON()
     result_type_ = ResultType::kPixelsAndPercent;
 #endif
@@ -263,8 +223,7 @@ class  CalculationExpressionPixelsAndPercentNode final
   // Implement |CalculationExpressionNode|:
   float Evaluate(float max_value, const Length::EvaluationInput&) const final;
   bool Equals(const CalculationExpressionNode& other) const final;
-  std::shared_ptr<const CalculationExpressionNode> Zoom(
-      double factor) const final;
+  std::shared_ptr<const CalculationExpressionNode> Zoom(double factor) const final;
   bool IsPixelsAndPercent() const final { return true; }
   ~CalculationExpressionPixelsAndPercentNode() final = default;
 
@@ -278,22 +237,16 @@ class  CalculationExpressionPixelsAndPercentNode final
 
 template <>
 struct DowncastTraits<CalculationExpressionPixelsAndPercentNode> {
-  static bool AllowFrom(const CalculationExpressionNode& node) {
-    return node.IsPixelsAndPercent();
-  }
+  static bool AllowFrom(const CalculationExpressionNode& node) { return node.IsPixelsAndPercent(); }
 };
 
-class CalculationExpressionOperationNode final
-    : public CalculationExpressionNode {
+class CalculationExpressionOperationNode final : public CalculationExpressionNode {
  public:
   using Children = std::vector<std::shared_ptr<const CalculationExpressionNode>>;
 
-  static std::shared_ptr<const CalculationExpressionNode> CreateSimplified(
-      Children&& children,
-      CalculationOperator op);
+  static std::shared_ptr<const CalculationExpressionNode> CreateSimplified(Children&& children, CalculationOperator op);
 
-  CalculationExpressionOperationNode(Children&& children,
-                                     CalculationOperator op);
+  CalculationExpressionOperationNode(Children&& children, CalculationOperator op);
 
   const Children& GetChildren() const { return children_; }
   CalculationOperator GetOperator() const { return operator_; }
@@ -301,8 +254,7 @@ class CalculationExpressionOperationNode final
   // Implement |CalculationExpressionNode|:
   float Evaluate(float max_value, const Length::EvaluationInput&) const final;
   bool Equals(const CalculationExpressionNode& other) const final;
-  std::shared_ptr<const CalculationExpressionNode> Zoom(
-      double factor) const final;
+  std::shared_ptr<const CalculationExpressionNode> Zoom(double factor) const final;
   bool IsOperation() const final { return true; }
   bool HasMinContent() const final;
   bool HasMaxContent() const final;
@@ -320,9 +272,7 @@ class CalculationExpressionOperationNode final
 
 template <>
 struct DowncastTraits<CalculationExpressionOperationNode> {
-  static bool AllowFrom(const CalculationExpressionNode& node) {
-    return node.IsOperation();
-  }
+  static bool AllowFrom(const CalculationExpressionNode& node) { return node.IsOperation(); }
 };
 
 }  // namespace webf

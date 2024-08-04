@@ -33,9 +33,9 @@
 #ifndef WEBF_CORE_GEOMETRY_CALCULATION_VALUE_H_
 #define WEBF_CORE_GEOMETRY_CALCULATION_VALUE_H_
 
-#include "foundation/webf_malloc.h"
-#include "core/geometry/length.h"
-#include "core/geometry/length_functions.h"
+#include "foundation/macros.h"
+#include "core/platform/geometry/length.h"
+#include "core/platform/geometry/length_functions.h"
 
 namespace webf {
 
