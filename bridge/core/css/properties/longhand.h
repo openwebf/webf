@@ -34,7 +34,7 @@ class Longhand : public CSSProperty {
 //   there may be “!important” after the value that the caller is responsible
 //   the caller is responsible for consuming. End-of-stream is checked
 //   by the caller (after potentially consuming “!important”).
-  virtual const CSSValue* ParseSingleValue(
+  virtual std::shared_ptr<const CSSValue> ParseSingleValue(
       CSSParserTokenStream& stream,
       const CSSParserContext& context,
       const CSSParserLocalContext& local_tokenizer) const {
@@ -65,7 +65,7 @@ class Longhand : public CSSProperty {
     assert_m(false, "NOTREACHED_IN_MIGRATION");
     return Color();
   }
-  virtual const CSSValue* InitialValue() const {
+  virtual std::shared_ptr<const CSSValue> InitialValue() const {
     return CSSInitialValue::Create();
   }
 

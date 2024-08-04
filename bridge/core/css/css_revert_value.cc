@@ -10,7 +10,7 @@
 namespace webf {
 namespace cssvalue {
 
-CSSRevertValue* CSSRevertValue::Create() {
+std::shared_ptr<const CSSRevertValue> CSSRevertValue::Create() {
   return CssValuePool().RevertValue();
 }
 

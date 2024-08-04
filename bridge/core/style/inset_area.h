@@ -13,7 +13,7 @@
 #include "core/css/anchor_query.h"
 #include "core/css/css_anchor_query_enums.h"
 #include "core/style/computed_style_constants.h"
-#include "core/geometry/layout_unit.h"
+#include "core/platform/geometry/layout_unit.h"
 
 namespace webf {
 

@@ -18,11 +18,12 @@
 #include "core/css/css_repeat_style_value.h"
 #include "core/css/css_string_value.h"
 #include "core/css/css_value_list.h"
+#include "core/css/parser/css_parser_local_context.h"
 #include "core/css/parser/css_parser_token.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_property_parser.h"
-#include "core/style/grid_area.h"
+//#include "core/style/grid_area.h"
 #include "css_property_names.h"
 #include "css_value_keywords.h"
 
@@ -186,9 +187,9 @@ inline bool IdentMatches(CSSValueID id) {
 }
 
 template <CSSValueID... allowedIdents>
-CSSIdentifierValue* ConsumeIdent(CSSParserTokenRange&);
+std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenRange&);
 template <CSSValueID... allowedIdents>
-CSSIdentifierValue* ConsumeIdent(CSSParserTokenStream&);
+std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenStream&);
 
 std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenRange&, const CSSParserContext&);
 std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenStream&, const CSSParserContext&);
@@ -215,6 +216,71 @@ template <typename T>
 
 // https://drafts.csswg.org/css-color-5/#absolute-color
 std::shared_ptr<const CSSValue> ConsumeAbsoluteColor(CSSParserTokenRange&, const CSSParserContext&);
+
+std::shared_ptr<const CSSValue> ConsumeLineWidth(CSSParserTokenRange&, const CSSParserContext&, UnitlessQuirk);
+std::shared_ptr<const CSSValue> ConsumeLineWidth(CSSParserTokenStream&, const CSSParserContext&, UnitlessQuirk);
+
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValuePair> ConsumePosition(T&,
+                                                                                               const CSSParserContext&,
+                                                                                               UnitlessQuirk);
+bool ConsumePosition(CSSParserTokenRange&,
+                     const CSSParserContext&,
+                     UnitlessQuirk,
+                     std::shared_ptr<const CSSValue>& result_x,
+                     std::shared_ptr<const CSSValue>& result_y);
+bool ConsumePosition(CSSParserTokenStream&,
+                     const CSSParserContext&,
+                     UnitlessQuirk,
+                     std::shared_ptr<const CSSValue>& result_x,
+                     std::shared_ptr<const CSSValue>& result_y);
+
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> bool ConsumeOneOrTwoValuedPosition(T&,
+                                                                              const CSSParserContext&,
+                                                                              UnitlessQuirk,
+                                                                              std::shared_ptr<const CSSValue>& result_x,
+                                                                              std::shared_ptr<const CSSValue>& result_y);
+
+bool ConsumeBorderShorthand(CSSParserTokenStream&,
+                            const CSSParserContext&,
+                            const CSSParserLocalContext&,
+                            std::shared_ptr<const CSSValue>& result_width,
+                            std::shared_ptr<const CSSValue>& result_style,
+                            std::shared_ptr<const CSSValue>& result_color);
+
+std::shared_ptr<const CSSValue> ConsumeBorderWidth(CSSParserTokenStream&,
+                             const CSSParserContext&,
+                             UnitlessQuirk);
+
+std::shared_ptr<const CSSValue> ParseBorderWidthSide(CSSParserTokenStream&,
+                               const CSSParserContext&,
+                               const CSSParserLocalContext&);
+
+std::shared_ptr<const CSSValue> ParseBorderStyleSide(CSSParserTokenStream&,
+                                     const CSSParserContext&);
+
+std::shared_ptr<const CSSValue> ConsumeBorderColorSide(CSSParserTokenStream&,
+                                 const CSSParserContext&,
+                                 const CSSParserLocalContext&);
+
+std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
+                              CSSPropertyID current_shorthand,
+                              const CSSParserContext& context,
+                              CSSParserTokenStream& stream);
+
+void CountKeywordOnlyPropertyUsage(CSSPropertyID,
+                                   const CSSParserContext&,
+                                   CSSValueID);
+
+void WarnInvalidKeywordPropertyUsage(CSSPropertyID,
+                                     const CSSParserContext&,
+                                     CSSValueID);
+
+bool ValidWidthOrHeightKeyword(CSSValueID id, const CSSParserContext& context);
+
 
 }  // namespace css_parsing_utils
 }  // namespace webf

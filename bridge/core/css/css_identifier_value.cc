@@ -12,8 +12,8 @@
 
 namespace webf {
 
-std::shared_ptr<CSSIdentifierValue> CSSIdentifierValue::Create(CSSValueID value_id) {
-  std::shared_ptr<CSSIdentifierValue> css_value = CssValuePool().IdentifierCacheValue(value_id);
+std::shared_ptr<const CSSIdentifierValue> CSSIdentifierValue::Create(CSSValueID value_id) {
+  std::shared_ptr<const CSSIdentifierValue> css_value = CssValuePool().IdentifierCacheValue(value_id);
   if (!css_value) {
     css_value = CssValuePool().SetIdentifierCacheValue(
         value_id, std::make_shared<CSSIdentifierValue>(value_id));

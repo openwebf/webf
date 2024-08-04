@@ -6,11 +6,11 @@
 
 #include "core/css/css_length_resolver.h"
 #include "core/css/css_resolution_units.h"
-#include "core/css/anchor_evaluator.h"
+//#include "core/css/anchor_evaluator.h"
 #include "core/css/css_primitive_value.h"
-#include "core/style/inset_area.h"
+//#include "core/style/inset_area.h"
 #include "core/style/scoped_css_name.h"
-#include "core/geometry/length.h"
+#include "core/platform/geometry/length.h"
 #include "core/platform/text/writing_mode.h"
 #include "core/platform/math_extras.h"
 

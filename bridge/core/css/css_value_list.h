@@ -40,17 +40,17 @@ class CSSValueList : public CSSValue {
   using reverse_iterator = std::vector<std::shared_ptr<const CSSValue>>::reverse_iterator;
   using const_reverse_iterator = std::vector<std::shared_ptr<const CSSValue>>::const_reverse_iterator;
 
-  static std::unique_ptr<CSSValueList> CreateCommaSeparated() {
-    return std::make_unique<CSSValueList>(kCommaSeparator);
+  static std::shared_ptr<const CSSValueList> CreateCommaSeparated() {
+    return std::make_shared<CSSValueList>(kCommaSeparator);
   }
-  static std::unique_ptr<CSSValueList> CreateSpaceSeparated() {
-    return std::make_unique<CSSValueList>(kCommaSeparator);
+  static std::shared_ptr<const CSSValueList> CreateSpaceSeparated() {
+    return std::make_shared<CSSValueList>(kCommaSeparator);
   }
-  static std::unique_ptr<CSSValueList> CreateSlashSeparated() {
-    return std::make_unique<CSSValueList>(kSlashSeparator);
+  static std::shared_ptr<const CSSValueList> CreateSlashSeparated() {
+    return std::make_shared<CSSValueList>(kSlashSeparator);
   }
-  static std::unique_ptr<CSSValueList> CreateWithSeparatorFrom(const CSSValueList& list) {
-    return std::make_unique<CSSValueList>(static_cast<ValueListSeparator>(list.value_list_separator_));
+  static std::shared_ptr<const CSSValueList> CreateWithSeparatorFrom(const CSSValueList& list) {
+    return std::make_shared<CSSValueList>(static_cast<ValueListSeparator>(list.value_list_separator_));
   }
 
   CSSValueList(ClassType, ValueListSeparator);
@@ -73,15 +73,15 @@ class CSSValueList : public CSSValue {
   const CSSValue& First() const { return *values_.front(); }
   const CSSValue& Last() const { return *values_.back(); }
 
-  void Append(const CSSValue& value);
-  bool RemoveAll(const CSSValue&);
-  bool HasValue(const CSSValue&) const;
-  CSSValueList* Copy() const;
+  void Append(const std::shared_ptr<const CSSValue>& value);
+  bool RemoveAll(const std::shared_ptr<const CSSValue>&);
+  bool HasValue(const std::shared_ptr<const CSSValue>&) const;
+  std::shared_ptr<const CSSValueList> Copy() const;
 
   virtual std::string CustomCSSText() const;
   bool Equals(const CSSValueList&) const;
 
-  const CSSValueList& PopulateWithTreeScope(const TreeScope*) const;
+  std::shared_ptr<const CSSValueList> PopulateWithTreeScope(const TreeScope*) const;
 
   bool HasFailedOrCanceledSubresources() const;
 

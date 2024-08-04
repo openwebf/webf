@@ -23,10 +23,7 @@
  */
 
 #include "core/css/css_value_list.h"
-
-#include <string_builder.h>
-
-#include "foundation/string_view.h"
+#include "core/css/css_value.h"
 
 namespace webf {
 
@@ -48,32 +45,21 @@ CSSValueList::CSSValueList(ValueListSeparator list_separator, std::vector<std::s
   value_list_separator_ = list_separator;
 }
 
-void CSSValueList::Append(const CSSValue& value) {
-  // TODO(guopengfei)：迁移代码
-  // values_.push_back(value);
-  values_.push_back(std::make_shared<const CSSValue>(value));
+void CSSValueList::Append(const std::shared_ptr<const CSSValue>& value) {
+  values_.push_back(value);
   // Note: this will be changed if we need to support tree scoped names and
   // references in any subclass.
   // TODO(crbug.com/1410362): Make CSSValueList immutable so that we don't need
   // to track it here.
-  if (IsBaseValueList() && !value.IsScopedValue()) {
+  if (IsBaseValueList() && !value->IsScopedValue()) {
     needs_tree_scope_population_ = true;
   }
 }
 
-bool CSSValueList::RemoveAll(const CSSValue& val) {
+bool CSSValueList::RemoveAll(const std::shared_ptr<const CSSValue>& val) {
   bool found = false;
-  // TODO（guopengfei）:迁移代码，使用 std::remove_if 和 erase 结合来移除元素
-  // for (int index = values_.size() - 1; index >= 0; --index) {
-  //   Member<const CSSValue>& value = values_.at(index);
-  //   if (value && *value == val) {
-  //     values_.EraseAt(index);
-  //     found = true;
-  //   }
-  // }
-
   auto it = std::remove_if(values_.begin(), values_.end(),
-                           [&val](const std::shared_ptr<const CSSValue>& value) { return value && *value == val; });
+                           [&val](const std::shared_ptr<const CSSValue>& value) { return value && value == val; });
 
   if (it != values_.end()) {
     values_.erase(it, values_.end());
@@ -86,7 +72,7 @@ bool CSSValueList::RemoveAll(const CSSValue& val) {
   // to track it here.
   if (IsBaseValueList()) {
     needs_tree_scope_population_ = false;
-    for (const std::shared_ptr<const CSSValue>& value : values_) {
+    for (auto&& value : values_) {
       if (!value->IsScopedValue()) {
         needs_tree_scope_population_ = true;
         break;
@@ -96,26 +82,26 @@ bool CSSValueList::RemoveAll(const CSSValue& val) {
   return found;
 }
 
-bool CSSValueList::HasValue(const CSSValue& val) const {
+bool CSSValueList::HasValue(const std::shared_ptr<const CSSValue>& val) const {
   for (const auto& value : values_) {
-    if (value && *value == val) {
+    if (value && value == val) {
       return true;
     }
   }
   return false;
 }
 
-CSSValueList* CSSValueList::Copy() const {
-  CSSValueList* new_list = nullptr;
+std::shared_ptr<const CSSValueList> CSSValueList::Copy() const {
+  std::shared_ptr<CSSValueList> new_list = nullptr;
   switch (value_list_separator_) {
     case kSpaceSeparator:
-      new_list = CreateSpaceSeparated().get();
+      new_list = std::const_pointer_cast<CSSValueList>(CreateSpaceSeparated());
       break;
     case kCommaSeparator:
-      new_list = CreateCommaSeparated().get();
+      new_list = std::const_pointer_cast<CSSValueList>(CreateCommaSeparated());
       break;
     case kSlashSeparator:
-      new_list = CreateSlashSeparated().get();
+      new_list = std::const_pointer_cast<CSSValueList>(CreateSlashSeparated());
       break;
     default:
       WEBF_LOG(VERBOSE) << "[CSSValueList]: NotReached Copy():" << value_list_separator_ << std::endl;
@@ -125,31 +111,31 @@ CSSValueList* CSSValueList::Copy() const {
   return new_list;
 }
 
-const CSSValueList& CSSValueList::PopulateWithTreeScope(const TreeScope* tree_scope) const {
+std::shared_ptr<const CSSValueList> CSSValueList::PopulateWithTreeScope(const TreeScope* tree_scope) const {
   // Note: this will be changed if any subclass also involves values that need
   // TreeScope population, as in that case, we will need to return an instance
   // of the subclass.
   assert(IsBaseValueList());
   assert(!IsScopedValue());
-  CSSValueList* new_list = nullptr;
+  std::shared_ptr<CSSValueList> new_list = nullptr;
   switch (value_list_separator_) {
     case kSpaceSeparator:
-      new_list = CreateSpaceSeparated().get();
+      new_list = std::const_pointer_cast<CSSValueList>(CreateSpaceSeparated());
       break;
     case kCommaSeparator:
-      new_list = CreateCommaSeparated().get();
+      new_list = std::const_pointer_cast<CSSValueList>(CreateCommaSeparated());
       break;
     case kSlashSeparator:
-      new_list = CreateSlashSeparated().get();
+      new_list = std::const_pointer_cast<CSSValueList>(CreateSlashSeparated());
       break;
     default:
       WEBF_LOG(VERBOSE) << "[CSSValueList]: NotReached PopulateWithTreeScope():" << value_list_separator_ << std::endl;
   }
   new_list->values_.reserve(values_.size());
   for (const std::shared_ptr<const CSSValue>& value : values_) {
-    new_list->values_.push_back(std::make_shared<CSSValue>(value->EnsureScopedValue(tree_scope)));
+    new_list->values_.push_back(value->EnsureScopedValue(tree_scope));
   }
-  return *new_list;
+  return new_list;
 }
 
 std::string CSSValueList::CustomCSSText() const {

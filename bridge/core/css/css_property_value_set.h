@@ -23,7 +23,9 @@
  */
 
 #ifndef WEBF_CSS_PROPERTY_VALUE_SET_H
-#define WEBF_CSS_PROPERTY_VALUE_SET_H#include "bindings/qjs/cppgc/gc_visitor.h"
+#define WEBF_CSS_PROPERTY_VALUE_SET_H
+
+#include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/base/bits.h"
 #include "core/css/css_property_value.h"
 #include "core/css/parser/css_parser_mode.h"

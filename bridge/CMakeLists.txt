@@ -155,6 +155,13 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/modp_b64/modp_b64.cc
   )
 
+  add_library(skia STATIC
+    third_party/skia/modules/skcms/skcms.cc
+    third_party/skia/modules/skcms/src/skcms_TransformBaseline.cc
+    third_party/skia/modules/skcms/src/skcms_TransformHsw.cc
+    third_party/skia/modules/skcms/src/skcms_TransformSkx.cc
+  )
+
   if (NOT MSVC)
     list(APPEND QUICK_JS_SOURCE third_party/quickjs/src/libbf.c)
   endif()
@@ -238,6 +245,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
+  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/skia/modules)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
   list(APPEND BRIDGE_LINK_LIBS modb)
 
@@ -297,7 +305,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 
 
     ## CSS
-
     core/css/css_style_declaration.cc
     core/css/inline_css_style_declaration.cc
     core/css/computed_css_style_declaration.cc
@@ -305,7 +312,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/style_color.cc
     core/css/style_engine.cc
     core/css/style_sheet_contents.cc
-#    core/css/css_property_value.cc
     core/css/css_style_sheet.cc
     core/css/style_rule_import.cc
     core/css/style_sheet.cc
@@ -315,6 +321,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_parser_impl.cc
     core/css/parser/css_lazy_parsing_state.cc
     core/css/parser/css_parser_token.cc
+    core/css/parser/css_parser_fast_path.cc
     core/css/parser/css_parser_token_range.cc
     core/css/parser/css_parser_token_stream.cc
     core/css/parser/css_tokenizer.cc
@@ -342,11 +349,19 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_light_dart_value_pair.cc
     core/css/css_revert_layer_value.cc
     core/css/css_revert_value.cc
+    core/css/css_initial_value.cc
+    core/css/css_inherit_value.cc
+    core/css/css_custom_ident_value.cc
+    core/css/css_value_list.cc
+    core/css/css_function_value.cc
+    core/css/css_appearance_auto_base_select_value_pair.cc
     core/css/css_value_pool.cc
     core/css/css_string_value.cc
     core/css/css_initial_value.cc
+    core/css/css_numeric_literal_value
     core/css/css_color_mix_value.cc
     core/css/css_color.cc
+    core/css/css_length_resolver.cc
 
     core/platform/text/writing_mode.cc
     core/platform/geometry/length.cc
@@ -354,6 +369,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/graphics/color_conversions.cc
     core/platform/text/writing_direction_mode.cc
     core/platform/geometry/dom_matrix.cc
+    core/platform/geometry/calculation_expression_node.cc
     core/platform/geometry/dom_matrix_readonly.cc
 #    core/css/properties/css_property.cc
 #    core/css/properties/css_parsing_utils.cc

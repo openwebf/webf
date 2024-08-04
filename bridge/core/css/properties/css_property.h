@@ -132,7 +132,7 @@ class CSSProperty: public CSSUnresolvedProperty {
     return false;
   }
 
-  virtual const CSSValue* CSSValueFromComputedStyleInternal(
+  virtual std::shared_ptr<const CSSValue> CSSValueFromComputedStyleInternal(
       const ComputedStyle&,
       const LayoutObject*,
       bool allow_visited_style,

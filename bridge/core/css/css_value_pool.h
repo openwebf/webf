@@ -34,6 +34,7 @@
 #include "core/css/css_color.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_initial_value.h"
+#include "core/css/css_inherit_value.h"
 #include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_revert_layer_value.h"
 #include "core/css/css_revert_value.h"
@@ -80,6 +81,7 @@ class CSSValuePool {
   std::shared_ptr<const CSSColor> TransparentColor() const { return color_transparent_; }
   std::shared_ptr<const CSSColor> WhiteColor() const { return color_white_; }
   std::shared_ptr<const CSSColor> BlackColor() const { return color_black_; }
+  std::shared_ptr<const CSSInheritedValue> InheritedValue() { return inherited_value_; }
   std::shared_ptr<const CSSInitialValue> InitialValue() const { return initial_value_; }
   std::shared_ptr<const CSSInitialValue> InitialSharedPointerValue() const { return initial_value_; }
   std::shared_ptr<const CSSUnsetValue> const UnsetValue() { return unset_value_; }
@@ -152,7 +154,7 @@ class CSSValuePool {
 
  private:
   //  // Cached individual values.
-  //  Member<CSSInheritedValue> inherited_value_;
+  std::shared_ptr<const CSSInheritedValue> inherited_value_;
   std::shared_ptr<const CSSInitialValue> initial_value_;
   std::shared_ptr<const CSSUnsetValue> unset_value_;
   std::shared_ptr<const CSSRevertValue> revert_value_;

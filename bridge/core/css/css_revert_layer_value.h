@@ -23,7 +23,7 @@ namespace cssvalue {
 
 class CSSRevertLayerValue : public CSSValue {
  public:
-  static CSSRevertLayerValue* Create();
+  static std::shared_ptr<const CSSRevertLayerValue> Create();
 
   explicit CSSRevertLayerValue(webf::PassKey<CSSValuePool>)
       : CSSValue(kRevertLayerClass) {}

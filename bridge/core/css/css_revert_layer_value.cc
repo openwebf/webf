@@ -11,7 +11,7 @@
 namespace webf {
 namespace cssvalue {
 
-CSSRevertLayerValue* CSSRevertLayerValue::Create() {
+std::shared_ptr<const CSSRevertLayerValue> CSSRevertLayerValue::Create() {
   return CssValuePool().RevertLayerValue();
 }
 

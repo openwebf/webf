@@ -5,14 +5,18 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "core/css/properties/css_parsing_utils.h"
+#include "core/css/css_appearance_auto_base_select_value_pair.h"
 #include "core/css/css_color_channel_map.h"
 #include "core/css/css_color_mix_value.h"
+#include "core/css/css_initial_value.h"
 #include "core/css/css_light_dart_value_pair.h"
 #include "core/css/css_math_expression_node.h"
 #include "core/css/css_math_function_value.h"
 #include "core/css/css_radio_value.h"
+#include "core/css/parser/css_parser_fast_path.h"
 #include "core/css/parser/css_parser_save_point.h"
 #include "core/css/properties/css_color_function_parser.h"
+#include "core/css/properties/longhand.h"
 #include "core/css/style_color.h"
 #include "core/platform/graphics/color.h"
 
@@ -1106,8 +1110,9 @@ static std::shared_ptr<const CSSValue> ConsumeColorMixFunction(CSSParserTokenStr
 
 template <class T>
     requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange>
-    static bool ParseHexColor(T& range, Color& result, bool accept_quirky_colors) {
+    std::is_same_v<T, CSSParserTokenRange> static bool ParseHexColor(T& range,
+                                                                     Color& result,
+                                                                     bool accept_quirky_colors) {
   const CSSParserToken& token = range.Peek();
   if (token.GetType() == kHashToken) {
     if (!Color::ParseHexColor(token.Value(), result)) {
@@ -1116,8 +1121,8 @@ template <class T>
   } else if (accept_quirky_colors) {
     std::string color;
     if (token.GetType() == kNumberToken || token.GetType() == kDimensionToken) {
-      if (token.GetNumericValueType() != kIntegerValueType ||
-          token.NumericValue() < 0. || token.NumericValue() >= 1000000.) {
+      if (token.GetNumericValueType() != kIntegerValueType || token.NumericValue() < 0. ||
+          token.NumericValue() >= 1000000.) {
         return false;
       }
       if (token.GetType() == kNumberToken) {  // e.g. 112233
@@ -1208,6 +1213,535 @@ template <typename T>
 
 template std::shared_ptr<const CSSValue> ConsumeColor(CSSParserTokenRange& range, const CSSParserContext& context);
 template std::shared_ptr<const CSSValue> ConsumeColor(CSSParserTokenStream& stream, const CSSParserContext& context);
+
+std::shared_ptr<const CSSValue> ConsumeLineWidth(CSSParserTokenRange& range,
+                                                 const CSSParserContext& context,
+                                                 UnitlessQuirk unitless) {
+  CSSValueID id = range.Peek().Id();
+  if (id == CSSValueID::kThin || id == CSSValueID::kMedium || id == CSSValueID::kThick) {
+    return ConsumeIdent(range);
+  }
+  return ConsumeLength(range, context, CSSPrimitiveValue::ValueRange::kNonNegative, unitless);
+}
+
+std::shared_ptr<const CSSValue> ConsumeLineWidth(CSSParserTokenStream& stream,
+                                                 const CSSParserContext& context,
+                                                 UnitlessQuirk unitless) {
+  CSSValueID id = stream.Peek().Id();
+  if (id == CSSValueID::kThin || id == CSSValueID::kMedium || id == CSSValueID::kThick) {
+    return ConsumeIdent(stream);
+  }
+  return ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative, unitless);
+}
+
+static bool IsVerticalPositionKeywordOnly(const CSSValue& value) {
+  auto* identifier_value = DynamicTo<CSSIdentifierValue>(value);
+  if (!identifier_value) {
+    return false;
+  }
+  CSSValueID value_id = identifier_value->GetValueID();
+  return value_id == CSSValueID::kTop || value_id == CSSValueID::kBottom;
+}
+
+static bool IsHorizontalPositionKeywordOnly(const CSSValue& value) {
+  auto* identifier_value = DynamicTo<CSSIdentifierValue>(value);
+  if (!identifier_value) {
+    return false;
+  }
+  CSSValueID value_id = identifier_value->GetValueID();
+  return value_id == CSSValueID::kLeft || value_id == CSSValueID::kRight;
+}
+
+static void PositionFromOneValue(const std::shared_ptr<const CSSValue>& value,
+                                 std::shared_ptr<const CSSValue>& result_x,
+                                 std::shared_ptr<const CSSValue>& result_y) {
+  bool value_applies_to_y_axis_only = IsVerticalPositionKeywordOnly(*value);
+  result_x = value;
+  result_y = CSSIdentifierValue::Create(CSSValueID::kCenter);
+  if (value_applies_to_y_axis_only) {
+    std::swap(result_x, result_y);
+  }
+}
+
+static void PositionFromTwoValues(const std::shared_ptr<const CSSValue>& value1,
+                                  const std::shared_ptr<const CSSValue>& value2,
+                                  std::shared_ptr<const CSSValue>& result_x,
+                                  std::shared_ptr<const CSSValue>& result_y) {
+  bool must_order_as_xy = IsHorizontalPositionKeywordOnly(*value1) || IsVerticalPositionKeywordOnly(*value2) ||
+                          !value1->IsIdentifierValue() || !value2->IsIdentifierValue();
+  bool must_order_as_yx = IsVerticalPositionKeywordOnly(*value1) || IsHorizontalPositionKeywordOnly(*value2);
+  assert(!must_order_as_xy || !must_order_as_yx);
+  result_x = value1;
+  result_y = value2;
+  if (must_order_as_yx) {
+    std::swap(result_x, result_y);
+  }
+}
+
+static void PositionFromThreeOrFourValues(const std::shared_ptr<const CSSValue>* values,
+                                          std::shared_ptr<const CSSValue>& result_x,
+                                          std::shared_ptr<const CSSValue>& result_y) {
+  std::shared_ptr<const CSSIdentifierValue> center = nullptr;
+  for (int i = 0; values[i]; i++) {
+    auto current_value = std::reinterpret_pointer_cast<const CSSIdentifierValue>(values[i]);
+    CSSValueID id = current_value->GetValueID();
+
+    if (id == CSSValueID::kCenter) {
+      assert(!center);
+      center = current_value;
+      continue;
+    }
+
+    std::shared_ptr<const CSSValue> result = nullptr;
+    if (values[i + 1] && !values[i + 1]->IsIdentifierValue()) {
+      result = std::make_shared<CSSValuePair>(current_value, values[++i], CSSValuePair::kKeepIdenticalValues);
+    } else {
+      result = current_value;
+    }
+
+    if (id == CSSValueID::kLeft || id == CSSValueID::kRight) {
+      assert(!result_x);
+      result_x = result;
+    } else {
+      assert(id == CSSValueID::kTop || id == CSSValueID::kBottom);
+      assert(!result_y);
+      result_y = result;
+    }
+  }
+
+  if (center) {
+    assert(!!result_x != !!result_y);
+    if (!result_x) {
+      result_x = center;
+    } else {
+      result_y = center;
+    }
+  }
+
+  assert(result_x && result_y);
+}
+
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> static std::shared_ptr<const CSSValue> ConsumePositionComponent(
+        T& stream,
+        const CSSParserContext& context,
+        UnitlessQuirk unitless,
+        bool& horizontal_edge,
+        bool& vertical_edge) {
+  if (stream.Peek().GetType() != kIdentToken) {
+    return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kAll, unitless);
+  }
+
+  CSSValueID id = stream.Peek().Id();
+  if (id == CSSValueID::kLeft || id == CSSValueID::kRight) {
+    if (horizontal_edge) {
+      return nullptr;
+    }
+    horizontal_edge = true;
+  } else if (id == CSSValueID::kTop || id == CSSValueID::kBottom) {
+    if (vertical_edge) {
+      return nullptr;
+    }
+    vertical_edge = true;
+  } else if (id != CSSValueID::kCenter) {
+    return nullptr;
+  }
+  return ConsumeIdent(stream);
+}
+
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValuePair>
+    ConsumePosition(T& range, const CSSParserContext& context, UnitlessQuirk unitless) {
+  std::shared_ptr<const CSSValue> result_x = nullptr;
+  std::shared_ptr<const CSSValue> result_y = nullptr;
+  if (ConsumePosition(range, context, unitless, result_x, result_y)) {
+    return std::make_shared<CSSValuePair>(result_x, result_y, CSSValuePair::kKeepIdenticalValues);
+  }
+  return nullptr;
+}
+
+template std::shared_ptr<const CSSValuePair> ConsumePosition(CSSParserTokenStream& stream,
+                                                             const CSSParserContext& context,
+                                                             UnitlessQuirk unitless);
+template std::shared_ptr<const CSSValuePair> ConsumePosition(CSSParserTokenRange& range,
+                                                             const CSSParserContext& context,
+                                                             UnitlessQuirk unitless);
+
+bool ConsumePosition(CSSParserTokenRange& range,
+                     const CSSParserContext& context,
+                     UnitlessQuirk unitless,
+                     std::shared_ptr<const CSSValue>& result_x,
+                     std::shared_ptr<const CSSValue>& result_y) {
+  bool horizontal_edge = false;
+  bool vertical_edge = false;
+  std::shared_ptr<const CSSValue> value1 =
+      ConsumePositionComponent(range, context, unitless, horizontal_edge, vertical_edge);
+  if (!value1) {
+    return false;
+  }
+  if (!value1->IsIdentifierValue()) {
+    horizontal_edge = true;
+  }
+
+  CSSParserTokenRange range_after_first_consume = range;
+  std::shared_ptr<const CSSValue> value2 =
+      ConsumePositionComponent(range, context, unitless, horizontal_edge, vertical_edge);
+  if (!value2) {
+    PositionFromOneValue(value1, result_x, result_y);
+    return true;
+  }
+
+  CSSParserTokenRange range_after_second_consume = range;
+  std::shared_ptr<const CSSValue> value3 = nullptr;
+  auto* identifier_value1 = DynamicTo<CSSIdentifierValue>(value1.get());
+  auto* identifier_value2 = DynamicTo<CSSIdentifierValue>(value2.get());
+  // TODO(crbug.com/940442): Fix the strange comparison of a
+  // CSSIdentifierValue instance against a specific "range peek" type check.
+  if (identifier_value1 && !!identifier_value2 != (range.Peek().GetType() == kIdentToken) &&
+      (identifier_value2 ? identifier_value2->GetValueID() : identifier_value1->GetValueID()) != CSSValueID::kCenter) {
+    value3 = ConsumePositionComponent(range, context, unitless, horizontal_edge, vertical_edge);
+  }
+  if (!value3) {
+    if (vertical_edge && !value2->IsIdentifierValue()) {
+      range = range_after_first_consume;
+      PositionFromOneValue(value1, result_x, result_y);
+      return true;
+    }
+    PositionFromTwoValues(value1, value2, result_x, result_y);
+    return true;
+  }
+
+  std::shared_ptr<const CSSValue> value4 = nullptr;
+  auto* identifier_value3 = DynamicTo<CSSIdentifierValue>(value3.get());
+  if (identifier_value3 && identifier_value3->GetValueID() != CSSValueID::kCenter &&
+      range.Peek().GetType() != kIdentToken) {
+    value4 = ConsumePositionComponent(range, context, unitless, horizontal_edge, vertical_edge);
+  }
+
+  if (!value4) {
+    // [top | bottom] <length-percentage> is not permitted
+    if (vertical_edge && !value2->IsIdentifierValue()) {
+      range = range_after_first_consume;
+      PositionFromOneValue(value1, result_x, result_y);
+      return true;
+    }
+    range = range_after_second_consume;
+    PositionFromTwoValues(value1, value2, result_x, result_y);
+    return true;
+  }
+
+  std::shared_ptr<const CSSValue> values[5];
+  values[0] = value1;
+  values[1] = value2;
+  values[2] = value3;
+  values[3] = value4;
+  values[4] = nullptr;
+  PositionFromThreeOrFourValues(values, result_x, result_y);
+  return true;
+}
+
+bool ConsumePosition(CSSParserTokenStream& stream,
+                     const CSSParserContext& context,
+                     UnitlessQuirk unitless,
+                     std::shared_ptr<const CSSValue>& result_x,
+                     std::shared_ptr<const CSSValue>& result_y) {
+  bool horizontal_edge = false;
+  bool vertical_edge = false;
+  std::shared_ptr<const CSSValue> value1 =
+      ConsumePositionComponent(stream, context, unitless, horizontal_edge, vertical_edge);
+  if (!value1) {
+    return false;
+  }
+  if (!value1->IsIdentifierValue()) {
+    horizontal_edge = true;
+  }
+
+  CSSParserTokenStream::State savepoint_after_first_consume = stream.Save();
+  std::shared_ptr<const CSSValue> value2 =
+      ConsumePositionComponent(stream, context, unitless, horizontal_edge, vertical_edge);
+  if (!value2) {
+    PositionFromOneValue(value1, result_x, result_y);
+    return true;
+  }
+
+  CSSParserTokenStream::State savepoint_after_second_consume = stream.Save();
+  std::shared_ptr<const CSSValue> value3 = nullptr;
+  auto* identifier_value1 = DynamicTo<CSSIdentifierValue>(value1.get());
+  auto* identifier_value2 = DynamicTo<CSSIdentifierValue>(value2.get());
+  // TODO(crbug.com/940442): Fix the strange comparison of a
+  // CSSIdentifierValue instance against a specific "stream peek" type check.
+  if (identifier_value1 && !!identifier_value2 != (stream.Peek().GetType() == kIdentToken) &&
+      (identifier_value2 ? identifier_value2->GetValueID() : identifier_value1->GetValueID()) != CSSValueID::kCenter) {
+    value3 = ConsumePositionComponent(stream, context, unitless, horizontal_edge, vertical_edge);
+  }
+  if (!value3) {
+    if (vertical_edge && !value2->IsIdentifierValue()) {
+      stream.Restore(savepoint_after_first_consume);
+      PositionFromOneValue(value1, result_x, result_y);
+      return true;
+    }
+    PositionFromTwoValues(value1, value2, result_x, result_y);
+    return true;
+  }
+
+  std::shared_ptr<const CSSValue> value4 = nullptr;
+  auto* identifier_value3 = DynamicTo<CSSIdentifierValue>(value3.get());
+  if (identifier_value3 && identifier_value3->GetValueID() != CSSValueID::kCenter &&
+      stream.Peek().GetType() != kIdentToken) {
+    value4 = ConsumePositionComponent(stream, context, unitless, horizontal_edge, vertical_edge);
+  }
+
+  if (!value4) {
+    // [top | bottom] <length-percentage> is not permitted
+    if (vertical_edge && !value2->IsIdentifierValue()) {
+      stream.Restore(savepoint_after_first_consume);
+      PositionFromOneValue(value1, result_x, result_y);
+      return true;
+    }
+    stream.Restore(savepoint_after_second_consume);
+    PositionFromTwoValues(value1, value2, result_x, result_y);
+    return true;
+  }
+
+  std::shared_ptr<const CSSValue> values[5];
+  values[0] = value1;
+  values[1] = value2;
+  values[2] = value3;
+  values[3] = value4;
+  values[4] = nullptr;
+  PositionFromThreeOrFourValues(values, result_x, result_y);
+  return true;
+}
+
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> bool ConsumeOneOrTwoValuedPosition(
+        T& range,
+        const CSSParserContext& context,
+        UnitlessQuirk unitless,
+        std::shared_ptr<const CSSValue>& result_x,
+        std::shared_ptr<const CSSValue>& result_y) {
+  bool horizontal_edge = false;
+  bool vertical_edge = false;
+  std::shared_ptr<const CSSValue> value1 =
+      ConsumePositionComponent(range, context, unitless, horizontal_edge, vertical_edge);
+  if (!value1) {
+    return false;
+  }
+  if (!value1->IsIdentifierValue()) {
+    horizontal_edge = true;
+  }
+
+  if (vertical_edge && ConsumeLengthOrPercent(range, context, CSSPrimitiveValue::ValueRange::kAll, unitless)) {
+    // <length-percentage> is not permitted after top | bottom.
+    return false;
+  }
+  std::shared_ptr<const CSSValue> value2 =
+      ConsumePositionComponent(range, context, unitless, horizontal_edge, vertical_edge);
+  if (!value2) {
+    PositionFromOneValue(value1, result_x, result_y);
+    return true;
+  }
+  PositionFromTwoValues(value1, value2, result_x, result_y);
+  return true;
+}
+
+bool ConsumeBorderShorthand(CSSParserTokenStream& stream,
+                            const CSSParserContext& context,
+                            const CSSParserLocalContext& local_context,
+                            std::shared_ptr<const CSSValue>& result_width,
+                            std::shared_ptr<const CSSValue>& result_style,
+                            std::shared_ptr<const CSSValue>& result_color) {
+  while (!result_width || !result_style || !result_color) {
+    if (!result_width) {
+      result_width = ParseBorderWidthSide(stream, context, local_context);
+      if (result_width) {
+        ConsumeCommaIncludingWhitespace(stream);
+        continue;
+      }
+    }
+    if (!result_style) {
+      result_style = ParseBorderStyleSide(stream, context);
+      if (result_style) {
+        ConsumeCommaIncludingWhitespace(stream);
+        continue;
+      }
+    }
+    if (!result_color) {
+      result_color = ConsumeBorderColorSide(stream, context, local_context);
+      if (result_color) {
+        ConsumeCommaIncludingWhitespace(stream);
+        continue;
+      }
+    }
+    break;
+  }
+
+  if (!result_width && !result_style && !result_color) {
+    return false;
+  }
+
+  if (!result_width) {
+    result_width = CSSInitialValue::Create();
+  }
+  if (!result_style) {
+    result_style = CSSInitialValue::Create();
+  }
+  if (!result_color) {
+    result_color = CSSInitialValue::Create();
+  }
+  return true;
+}
+
+std::shared_ptr<const CSSValue> ConsumeBorderWidth(CSSParserTokenStream& stream,
+                                                   const CSSParserContext& context,
+                                                   UnitlessQuirk unitless) {
+  if (stream.Peek().FunctionId() == CSSValueID::kInternalAppearanceAutoBaseSelect) {
+    CSSParserSavePoint savepoint(stream);
+    CSSParserTokenRange arg_range = ConsumeFunction(stream);
+    auto auto_value = ConsumeLineWidth(arg_range, context, unitless);
+    if (!auto_value || !ConsumeCommaIncludingWhitespace(arg_range)) {
+      return nullptr;
+    }
+    auto base_select_value = ConsumeLineWidth(arg_range, context, unitless);
+    if (!base_select_value || !arg_range.AtEnd()) {
+      return nullptr;
+    }
+    savepoint.Release();
+    return std::make_shared<CSSAppearanceAutoBaseSelectValuePair>(auto_value, base_select_value);
+  }
+  return ConsumeLineWidth(stream, context, unitless);
+}
+
+std::shared_ptr<const CSSValue> ParseBorderWidthSide(CSSParserTokenStream& stream,
+                                                     const CSSParserContext& context,
+                                                     const CSSParserLocalContext& local_context) {
+  CSSPropertyID shorthand = local_context.CurrentShorthand();
+  bool allow_quirky_lengths = IsQuirksModeBehavior(context.Mode()) &&
+                              (shorthand == CSSPropertyID::kInvalid || shorthand == CSSPropertyID::kBorderWidth);
+  UnitlessQuirk unitless = allow_quirky_lengths ? UnitlessQuirk::kAllow : UnitlessQuirk::kForbid;
+  return ConsumeBorderWidth(stream, context, unitless);
+}
+
+std::shared_ptr<const CSSValue> ParseBorderStyleSide(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  if (stream.Peek().FunctionId() == CSSValueID::kInternalAppearanceAutoBaseSelect) {
+    CSSParserSavePoint savepoint(stream);
+    CSSParserTokenRange arg_range = ConsumeFunction(stream);
+    auto auto_value = ConsumeIdent(arg_range);
+    if (!auto_value || !ConsumeCommaIncludingWhitespace(arg_range)) {
+      return nullptr;
+    }
+    auto base_select_value = ConsumeIdent(arg_range);
+    if (!base_select_value || !arg_range.AtEnd()) {
+      return nullptr;
+    }
+    savepoint.Release();
+    return std::make_shared<CSSAppearanceAutoBaseSelectValuePair>(auto_value, base_select_value);
+  }
+  return ParseLonghand(CSSPropertyID::kBorderLeftStyle, CSSPropertyID::kBorder, context, stream);
+}
+
+template <class T = CSSParserTokenRange>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSAppearanceAutoBaseSelectValuePair>
+    ConsumeAppearanceAutoBaseSelectColor(T& range, const CSSParserContext& context) {
+  if (range.Peek().FunctionId() != CSSValueID::kInternalAppearanceAutoBaseSelect) {
+    return nullptr;
+  }
+  CSSParserSavePoint savepoint(range);
+  CSSParserTokenRange arg_range = ConsumeFunction(range);
+  auto auto_value = ConsumeColor(arg_range, context);
+  if (!auto_value || !ConsumeCommaIncludingWhitespace(arg_range)) {
+    return nullptr;
+  }
+  auto base_select_value = ConsumeColor(arg_range, context);
+  if (!base_select_value || !arg_range.AtEnd()) {
+    return nullptr;
+  }
+  savepoint.Release();
+  return std::make_shared<CSSAppearanceAutoBaseSelectValuePair>(auto_value, base_select_value);
+}
+
+std::shared_ptr<const CSSValue> ConsumeBorderColorSide(CSSParserTokenStream& stream,
+                                                       const CSSParserContext& context,
+                                                       const CSSParserLocalContext& local_context) {
+  CSSPropertyID shorthand = local_context.CurrentShorthand();
+  bool allow_quirky_colors = IsQuirksModeBehavior(context.Mode()) &&
+                             (shorthand == CSSPropertyID::kInvalid || shorthand == CSSPropertyID::kBorderColor);
+  if (stream.Peek().FunctionId() == CSSValueID::kInternalAppearanceAutoBaseSelect &&
+      IsUASheetBehavior(context.Mode())) {
+    return ConsumeAppearanceAutoBaseSelectColor(stream, context);
+  }
+  return ConsumeColorInternal(stream, context, allow_quirky_colors, AllowedColors::kAll);
+}
+
+std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
+                                              CSSPropertyID current_shorthand,
+                                              const CSSParserContext& context,
+                                              CSSParserTokenStream& stream) {
+  CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
+  CSSValueID value_id = stream.Peek().Id();
+  assert(!CSSProperty::Get(property_id).IsShorthand());
+  if (CSSParserFastPaths::IsHandledByKeywordFastPath(property_id)) {
+    if (CSSParserFastPaths::IsValidKeywordPropertyAndValue(property_id, stream.Peek().Id(), context.Mode())) {
+      CountKeywordOnlyPropertyUsage(property_id, context, value_id);
+      return ConsumeIdent(stream);
+    }
+    WarnInvalidKeywordPropertyUsage(property_id, context, value_id);
+    return nullptr;
+  }
+
+  const auto local_context = CSSParserLocalContext()
+                                 .WithAliasParsing(IsPropertyAlias(unresolved_property))
+                                 .WithCurrentShorthand(current_shorthand);
+
+  std::shared_ptr<const CSSValue> result = To<Longhand>(CSSProperty::Get(property_id)).ParseSingleValue(stream, context, local_context);
+  return result;
+}
+
+void CountKeywordOnlyPropertyUsage(CSSPropertyID property, const CSSParserContext& context, CSSValueID value_id) {
+  if (!context.IsUseCounterRecordingEnabled()) {
+    return;
+  }
+  switch (property) {
+    case CSSPropertyID::kAppearance:
+    case CSSPropertyID::kAliasWebkitAppearance: {
+      if (value_id == CSSValueID::kSliderVertical) {
+        if (const auto* document = context.GetDocument()) {
+          WEBF_LOG(WARN) << "The keyword 'slider-vertical' specified to an 'appearance' "
+                            "property is not standardized. It will be removed in the future. "
+                            "Use <input type=range style=\"writing-mode: vertical-lr; "
+                            "direction: rtl\"> instead.";
+        }
+      }
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+void WarnInvalidKeywordPropertyUsage(CSSPropertyID property, const CSSParserContext& context, CSSValueID value_id) {}
+
+bool ValidWidthOrHeightKeyword(CSSValueID id, const CSSParserContext& context) {
+  // The keywords supported here should be kept in sync with
+  // CalculationExpressionSizingKeywordNode::Keyword and the things that use
+  // it.
+  // TODO(https://crbug.com/353538495): This should also be kept in sync with
+  // FlexBasis::ParseSingleValue, although we should eventually make it use
+  // this function instead.
+  if (id == CSSValueID::kWebkitMinContent ||
+      id == CSSValueID::kWebkitMaxContent ||
+      id == CSSValueID::kWebkitFillAvailable ||
+      id == CSSValueID::kWebkitFitContent || id == CSSValueID::kMinContent ||
+      id == CSSValueID::kMaxContent || id == CSSValueID::kFitContent) {
+    return true;
+  }
+  return false;
+}
+
 
 }  // namespace css_parsing_utils
 

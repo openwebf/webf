@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 #include "color_conversions.h"
+#include "core/base/numberics/angle_conversion.h"
+#include <numeric>
+#include "skcms/skcms.h"
 
 namespace webf {
 
@@ -12,6 +15,262 @@ namespace {
 constexpr float kD50_x = 0.9642f;
 constexpr float kD50_y = 1.0f;
 constexpr float kD50_z = 0.8251f;
+
+// NOTE: SkFixedToFloat is exact. SkFloatToFixed seems to lack a rounding step. For all fixed-point
+// values, this version is as accurate as possible for (fixed -> float -> fixed). Rounding reduces
+// accuracy if the intermediate floats are in the range that only holds integers (adding 0.5f to an
+// odd integer then snaps to nearest even). Using double for the rounding math gives maximum
+// accuracy for (float -> fixed -> float), but that's usually overkill.
+#define SkFixedToFloat(x) ((x) * 1.52587890625e-5f)
+
+/**
+ *  Describes a color gamut with primaries and a white point.
+ */
+struct SkColorSpacePrimaries {
+  float fRX;
+  float fRY;
+  float fGX;
+  float fGY;
+  float fBX;
+  float fBY;
+  float fWX;
+  float fWY;
+
+  /**
+   *  Convert primaries and a white point to a toXYZD50 matrix, the preferred color gamut
+   *  representation of SkColorSpace.
+   */
+  bool toXYZD50(skcms_Matrix3x3* toXYZ_D50) const {
+    return skcms_PrimariesToXYZD50(fRX, fRY, fGX, fGY, fBX, fBY, fWX, fWY, toXYZ_D50);
+  }
+};
+
+namespace SkNamedGamut {
+
+static constexpr skcms_Matrix3x3 kSRGB = {{
+    // ICC fixed-point (16.16) representation, taken from skcms. Please keep them exactly in sync.
+    // 0.436065674f, 0.385147095f, 0.143066406f,
+    // 0.222488403f, 0.716873169f, 0.060607910f,
+    // 0.013916016f, 0.097076416f, 0.714096069f,
+    {SkFixedToFloat(0x6FA2), SkFixedToFloat(0x6299), SkFixedToFloat(0x24A0)},
+    {SkFixedToFloat(0x38F5), SkFixedToFloat(0xB785), SkFixedToFloat(0x0F84)},
+    {SkFixedToFloat(0x0390), SkFixedToFloat(0x18DA), SkFixedToFloat(0xB6CF)},
+}};
+
+static constexpr skcms_Matrix3x3 kAdobeRGB = {{
+    // ICC fixed-point (16.16) repesentation of:
+    // 0.60974, 0.20528, 0.14919,
+    // 0.31111, 0.62567, 0.06322,
+    // 0.01947, 0.06087, 0.74457,
+    {SkFixedToFloat(0x9c18), SkFixedToFloat(0x348d), SkFixedToFloat(0x2631)},
+    {SkFixedToFloat(0x4fa5), SkFixedToFloat(0xa02c), SkFixedToFloat(0x102f)},
+    {SkFixedToFloat(0x04fc), SkFixedToFloat(0x0f95), SkFixedToFloat(0xbe9c)},
+}};
+
+static constexpr skcms_Matrix3x3 kDisplayP3 = {{
+    {0.515102f, 0.291965f, 0.157153f},
+    {0.241182f, 0.692236f, 0.0665819f},
+    {-0.00104941f, 0.0418818f, 0.784378f},
+}};
+
+static constexpr skcms_Matrix3x3 kRec2020 = {{
+    {0.673459f, 0.165661f, 0.125100f},
+    {0.279033f, 0.675338f, 0.0456288f},
+    {-0.00193139f, 0.0299794f, 0.797162f},
+}};
+
+static constexpr skcms_Matrix3x3 kXYZ = {{
+    {1.0f, 0.0f, 0.0f},
+    {0.0f, 1.0f, 0.0f},
+    {0.0f, 0.0f, 1.0f},
+}};
+
+}  // namespace SkNamedGamut
+
+namespace SkNamedPrimariesExt {
+
+////////////////////////////////////////////////////////////////////////////////
+// Color primaries defined by ITU-T H.273, table 2. Names are given by the first
+// specification referenced in the value's row.
+
+// Rec. ITU-R BT.709-6, value 1.
+static constexpr SkColorSpacePrimaries kRec709 = {0.64f, 0.33f, 0.3f, 0.6f, 0.15f, 0.06f, 0.3127f, 0.329f};
+
+// Rec. ITU-R BT.470-6 System M (historical), value 4.
+static constexpr SkColorSpacePrimaries kRec470SystemM = {0.67f, 0.33f, 0.21f, 0.71f, 0.14f, 0.08f, 0.31f, 0.316f};
+
+// Rec. ITU-R BT.470-6 System B, G (historical), value 5.
+static constexpr SkColorSpacePrimaries kRec470SystemBG = {0.64f, 0.33f, 0.29f, 0.60f, 0.15f, 0.06f, 0.3127f, 0.3290f};
+
+// Rec. ITU-R BT.601-7 525, value 6.
+static constexpr SkColorSpacePrimaries kRec601 = {0.630f, 0.340f, 0.310f, 0.595f, 0.155f, 0.070f, 0.3127f, 0.3290f};
+
+// SMPTE ST 240, value 7 (functionally the same as value 6).
+static constexpr SkColorSpacePrimaries kSMPTE_ST_240 = kRec601;
+
+// Generic film (colour filters using Illuminant C), value 8.
+static constexpr SkColorSpacePrimaries kGenericFilm = {0.681f, 0.319f, 0.243f, 0.692f, 0.145f, 0.049f, 0.310f, 0.316f};
+
+// Rec. ITU-R BT.2020-2, value 9.
+static constexpr SkColorSpacePrimaries kRec2020{0.708f, 0.292f, 0.170f, 0.797f, 0.131f, 0.046f, 0.3127f, 0.3290f};
+
+// SMPTE ST 428-1, value 10.
+static constexpr SkColorSpacePrimaries kSMPTE_ST_428_1 = {1.f, 0.f, 0.f, 1.f, 0.f, 0.f, 1.f / 3.f, 1.f / 3.f};
+
+// SMPTE RP 431-2, value 11.
+static constexpr SkColorSpacePrimaries kSMPTE_RP_431_2 = {0.680f, 0.320f, 0.265f, 0.690f,
+                                                          0.150f, 0.060f, 0.314f, 0.351f};
+
+// SMPTE EG 432-1, value 12.
+static constexpr SkColorSpacePrimaries kSMPTE_EG_432_1 = {0.680f, 0.320f, 0.265f,  0.690f,
+                                                          0.150f, 0.060f, 0.3127f, 0.3290f};
+
+// No corresponding industry specification identified, value 22.
+// This is sometimes referred to as EBU 3213-E, but that document doesn't
+// specify these values.
+static constexpr SkColorSpacePrimaries kITU_T_H273_Value22 = {0.630f, 0.340f, 0.295f,  0.605f,
+                                                              0.155f, 0.077f, 0.3127f, 0.3290f};
+
+////////////////////////////////////////////////////////////////////////////////
+// CSS Color Level 4 predefined and xyz color spaces.
+
+// 'srgb'
+static constexpr SkColorSpacePrimaries kSRGB = kRec709;
+
+// 'display-p3' (and also 'p3' as a color gamut).
+static constexpr SkColorSpacePrimaries kP3 = kSMPTE_EG_432_1;
+
+// 'a98-rgb'
+static constexpr SkColorSpacePrimaries kA98RGB = {0.64f, 0.33f, 0.21f, 0.71f, 0.15f, 0.06f, 0.3127f, 0.3290f};
+
+// 'prophoto-rgb'
+static constexpr SkColorSpacePrimaries kProPhotoRGB = {0.7347f, 0.2653f, 0.1596f,  0.8404f,
+                                                       0.0366f, 0.0001f, 0.34567f, 0.35850f};
+
+// 'rec2020' (as both a predefined color space and color gamut).
+// The value kRec2020 is already defined above.
+
+// 'xyzd50'
+static constexpr SkColorSpacePrimaries kXYZD50 = {1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.34567f, 0.35850f};
+
+// 'xyz' and 'xyzd65'
+static constexpr SkColorSpacePrimaries kXYZD65 = {1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.3127f, 0.3290f};
+
+////////////////////////////////////////////////////////////////////////////////
+// Additional helper color primaries.
+
+// Invalid primaries, initialized to zero.
+static constexpr SkColorSpacePrimaries kInvalid = {0};
+
+// The GenericRGB space on macOS.
+static constexpr SkColorSpacePrimaries kAppleGenericRGB = {0.63002f, 0.34000f, 0.29505f, 0.60498f,
+                                                           0.15501f, 0.07701f, 0.3127f,  0.3290f};
+
+// Primaries where the colors are rotated and the gamut is huge. Good for
+// testing.
+static constexpr SkColorSpacePrimaries kWideGamutColorSpin = {0.01f, 0.98f, 0.01f,   0.01f,
+                                                              0.98f, 0.01f, 0.3127f, 0.3290f};
+
+}  // namespace SkNamedPrimariesExt
+
+namespace SkNamedTransferFn {
+
+// Like SkNamedGamut::kSRGB, keeping this bitwise exactly the same as skcms makes things fastest.
+static constexpr skcms_TransferFunction kSRGB = {
+    2.4f, (float)(1 / 1.055), (float)(0.055 / 1.055), (float)(1 / 12.92), 0.04045f, 0.0f, 0.0f};
+
+static constexpr skcms_TransferFunction k2Dot2 = {2.2f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+
+static constexpr skcms_TransferFunction kLinear = {1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+
+static constexpr skcms_TransferFunction kRec2020 = {2.22222f, 0.909672f, 0.0903276f, 0.222222f, 0.0812429f, 0, 0};
+
+static constexpr skcms_TransferFunction kPQ = {-2.0f,         -107 / 128.0f,  1.0f,          32 / 2523.0f,
+                                               2413 / 128.0f, -2392 / 128.0f, 8192 / 1305.0f};
+
+static constexpr skcms_TransferFunction kHLG = {-3.0f, 2.0f, 2.0f, 1 / 0.17883277f, 0.28466892f, 0.55991073f, 0.0f};
+
+}  // namespace SkNamedTransferFn
+
+namespace SkNamedTransferFnExt {
+
+////////////////////////////////////////////////////////////////////////////////
+// Color primaries defined by ITU-T H.273, table 3. Names are given by the first
+// specification referenced in the value's row.
+
+// Rec. ITU-R BT.709-6, value 1.
+static constexpr skcms_TransferFunction kRec709 = {
+    2.222222222222f, 0.909672415686f, 0.090327584314f, 0.222222222222f, 0.081242858299f, 0.f, 0.f};
+
+// Rec. ITU-R BT.470-6 System M (historical) assumed display gamma 2.2, value 4.
+static constexpr skcms_TransferFunction kRec470SystemM = {2.2f, 1.f};
+
+// Rec. ITU-R BT.470-6 System B, G (historical) assumed display gamma 2.8,
+// value 5.
+static constexpr skcms_TransferFunction kRec470SystemBG = {2.8f, 1.f};
+
+// Rec. ITU-R BT.601-7, same as kRec709, value 6.
+static constexpr skcms_TransferFunction kRec601 = kRec709;
+
+// SMPTE ST 240, value 7.
+static constexpr skcms_TransferFunction kSMPTE_ST_240 = {
+    2.222222222222f, 0.899626676224f, 0.100373323776f, 0.25f, 0.091286342118f, 0.f, 0.f};
+
+// IEC 61966-2-4, value 11, same as kRec709 (but is explicitly extended).
+static constexpr skcms_TransferFunction kIEC61966_2_4 = kRec709;
+
+// IEC 61966-2-1 sRGB, value 13. This is almost equal to
+// SkNamedTransferFnExt::kSRGB. The differences are rounding errors that
+// cause test failures (and should be unified).
+static constexpr skcms_TransferFunction kIEC61966_2_1 = {2.4f, 0.947867345704f, 0.052132654296f, 0.077399380805f,
+                                                         0.040449937172f};
+
+// Rec. ITU-R BT.2020-2 (10-bit system), value 14.
+static constexpr skcms_TransferFunction kRec2020_10bit = kRec709;
+
+// Rec. ITU-R BT.2020-2 (12-bit system), value 15.
+static constexpr skcms_TransferFunction kRec2020_12bit = kRec709;
+
+// SMPTE ST 428-1, value 17.
+static constexpr skcms_TransferFunction kSMPTE_ST_428_1 = {2.6f, 1.034080527699f};
+
+////////////////////////////////////////////////////////////////////////////////
+// CSS Color Level 4 predefined color spaces.
+
+// 'srgb', 'display-p3'
+static constexpr skcms_TransferFunction kSRGB = kIEC61966_2_1;
+
+// 'a98-rgb'
+static constexpr skcms_TransferFunction kA98RGB = {2.2f, 1.};
+
+// 'prophoto-rgb'
+static constexpr skcms_TransferFunction kProPhotoRGB = {1.8f, 1.};
+
+// 'rec2020' uses the same transfer function as kRec709.
+static constexpr skcms_TransferFunction kRec2020 = kRec709;
+
+////////////////////////////////////////////////////////////////////////////////
+// Additional helper transfer functions.
+
+// Invalid primaries, initialized to zero.
+static constexpr skcms_TransferFunction kInvalid = {0};
+
+// The interpretation of kRec709 that is produced by accelerated video decode
+// on macOS.
+static constexpr skcms_TransferFunction kRec709Apple = {1.961f, 1.};
+
+// If the sRGB transfer function is f(x), then this transfer function is
+// f(x * 1023 / 510). This function gives 510 values to SDR content, and can
+// reach a maximum brightnes of 4.99x SDR brightness.
+static constexpr skcms_TransferFunction kSRGBExtended1023Over510 = {SkNamedTransferFnExt::kSRGB.g,
+                                                                    SkNamedTransferFnExt::kSRGB.a * 1023 / 510,
+                                                                    SkNamedTransferFnExt::kSRGB.b,
+                                                                    SkNamedTransferFnExt::kSRGB.c * 1023 / 510,
+                                                                    SkNamedTransferFnExt::kSRGB.d * 1023 / 510,
+                                                                    SkNamedTransferFnExt::kSRGB.e,
+                                                                    SkNamedTransferFnExt::kSRGB.f};
+
+}  // namespace SkNamedTransferFnExt
 
 // Evaluate the specified transfer function. This can be replaced by
 // skcms_TransferFunction_eval when b/331320414 is fixed.

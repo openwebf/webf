@@ -18,7 +18,7 @@ class CSSLengthResolver;
 // |CSSValue| class hierarchy.
 class CSSNumericLiteralValue : public CSSPrimitiveValue {
  public:
-  static std::shared_ptr<CSSNumericLiteralValue> Create(double num, UnitType);
+  static std::shared_ptr<const CSSNumericLiteralValue> Create(double num, UnitType);
 
   CSSNumericLiteralValue(double num, UnitType type);
 
@@ -95,7 +95,7 @@ class CSSNumericLiteralValue : public CSSPrimitiveValue {
   bool Equals(const CSSNumericLiteralValue& other) const;
 
   UnitType CanonicalUnit() const;
-  std::shared_ptr<CSSNumericLiteralValue> CreateCanonicalUnitValue() const;
+  std::shared_ptr<const CSSNumericLiteralValue> CreateCanonicalUnitValue() const;
 
   void TraceAfterDispatch(GCVisitor* visitor) const;
 

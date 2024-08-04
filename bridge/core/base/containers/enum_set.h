@@ -9,6 +9,8 @@
 #ifndef BASE_CONTAINERS_ENUM_SET_H_
 #define BASE_CONTAINERS_ENUM_SET_H_
 
+#include <cassert>
+#include "foundation/macros.h"
 #include <bitset>
 #include <cstddef>
 #include <initializer_list>

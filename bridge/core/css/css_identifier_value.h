@@ -19,10 +19,10 @@ namespace webf {
 // conflicts with CSSOM's CSSKeywordValue class.
 class CSSIdentifierValue : public CSSValue {
  public:
-  static std::shared_ptr<CSSIdentifierValue> Create(CSSValueID);
+  static std::shared_ptr<const CSSIdentifierValue> Create(CSSValueID);
 
   template <typename T>
-  static std::shared_ptr<CSSIdentifierValue> Create(T value) {
+  static std::shared_ptr<const CSSIdentifierValue> Create(T value) {
     static_assert(!std::is_same<T, CSSValueID>::value,
                   "Do not call create() with a CSSValueID; call "
                   "createIdentifier() instead");

@@ -33,6 +33,8 @@
  */
 
 #include <cstring>
+#include <cassert>
+#include "macros.h"
 
 #ifndef BRIDGE_FOUNDATION_ASCII_TYPES_H_
 #define BRIDGE_FOUNDATION_ASCII_TYPES_H_
@@ -126,6 +128,15 @@ inline unsigned char ToASCIILower(unsigned char c) {
 
 inline char ToASCIILower(char c) {
   return static_cast<char>(kASCIICaseFoldTable[static_cast<unsigned char>(c)]);
+}
+
+template <typename CharType>
+inline bool IsASCIIAlphaCaselessEqual(CharType css_character, char character) {
+  // This function compares a (preferably) constant ASCII
+  // lowercase letter to any input character.
+  assert(character > 'a');
+  assert(character < 'z');
+  return LIKELY((css_character | 0x20) == character);
 }
 
 }  // namespace webf

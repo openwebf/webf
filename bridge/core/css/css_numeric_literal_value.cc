@@ -29,7 +29,7 @@ CSSNumericLiteralValue::CSSNumericLiteralValue(double num, UnitType type)
 }
 
 // static
-std::shared_ptr<CSSNumericLiteralValue> CSSNumericLiteralValue::Create(double value,
+std::shared_ptr<const CSSNumericLiteralValue> CSSNumericLiteralValue::Create(double value,
                                                        UnitType type) {
   // NOTE: This will also deal with NaN and infinities.
   // Writing value < 0 || value > ... is not equivalent.
@@ -47,7 +47,7 @@ std::shared_ptr<CSSNumericLiteralValue> CSSNumericLiteralValue::Create(double va
   }
 
   CSSValuePool& pool = CssValuePool();
-  std::shared_ptr<CSSNumericLiteralValue> result = nullptr;
+  std::shared_ptr<const CSSNumericLiteralValue> result = nullptr;
   switch (type) {
     case CSSPrimitiveValue::UnitType::kPixels:
       result = pool.PixelCacheValue(int_value);
@@ -372,7 +372,7 @@ CSSPrimitiveValue::UnitType CSSNumericLiteralValue::CanonicalUnit() const {
   return CanonicalUnitTypeForCategory(UnitTypeToUnitCategory(GetType()));
 }
 
-std::shared_ptr<CSSNumericLiteralValue> CSSNumericLiteralValue::CreateCanonicalUnitValue()
+std::shared_ptr<const CSSNumericLiteralValue> CSSNumericLiteralValue::CreateCanonicalUnitValue()
     const {
   return Create(ComputeInCanonicalUnit(), CanonicalUnit());
 }

@@ -6,7 +6,7 @@
 #define WEBF_CORE_CSS_CSS_MATH_FUNCTION_VALUE_H_
 
 #include "bindings/qjs/cppgc/gc_visitor.h"
-#include "core/css/css_math_expression_node.h"
+//#include "core/css/css_math_expression_node.h"
 #include "core/css/css_primitive_value.h"
 
 namespace webf {

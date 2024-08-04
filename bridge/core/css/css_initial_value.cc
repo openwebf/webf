@@ -27,12 +27,12 @@
 
 namespace webf {
 
-CSSInitialValue* CSSInitialValue::Create() {
+std::shared_ptr<const CSSInitialValue> CSSInitialValue::Create() {
   return CssValuePool().InitialValue();
 }
 
-AtomicString CSSInitialValue::CustomCSSText(JSContext* ctx) const {
-  return AtomicString(ctx, "initial");
+std::string CSSInitialValue::CustomCSSText(JSContext* ctx) const {
+  return "initial";
 }
 
 }  // namespace webf

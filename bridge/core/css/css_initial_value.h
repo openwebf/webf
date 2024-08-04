@@ -33,11 +33,11 @@ namespace webf {
 
 class CSSInitialValue : public CSSValue {
  public:
-  static CSSInitialValue* Create();
+  static std::shared_ptr<const CSSInitialValue> Create();
 
   CSSInitialValue() : CSSValue(kInitialClass) {}
 
-  AtomicString CustomCSSText(JSContext* ctx) const;
+  std::string CustomCSSText(JSContext* ctx) const;
 
   bool Equals(const CSSInitialValue&) const { return true; }
 

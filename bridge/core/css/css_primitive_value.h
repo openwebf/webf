@@ -356,7 +356,7 @@ class CSSPrimitiveValue : public CSSValue {
   // Creates either a |CSSNumericLiteralValue| or a |CSSMathFunctionValue|,
   // depending on whether |value| is calculated or not. We should never create a
   // |CSSPrimitiveValue| that's not of its subclasses.
-  static std::shared_ptr<CSSPrimitiveValue> CreateFromLength(const Length& value, float zoom);
+  static std::shared_ptr<const CSSPrimitiveValue> CreateFromLength(const Length& value, float zoom);
 
   double ComputeDegrees() const;
   double ComputeSeconds() const;

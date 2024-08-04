@@ -23,7 +23,7 @@ namespace cssvalue {
 
 class CSSRevertValue : public CSSValue {
  public:
-  static CSSRevertValue* Create();
+  static std::shared_ptr<const CSSRevertValue> Create();
 
   explicit CSSRevertValue(webf::PassKey<CSSValuePool>)
       : CSSValue(kRevertClass) {}

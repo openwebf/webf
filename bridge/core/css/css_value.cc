@@ -28,10 +28,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "css_value.h"
+#include "core/css/css_primitive_value.h"
+#include "core/css/css_value_list.h"
 #include "core/platform/geometry/length.h"
 #include "css_identifier_value.h"
-#include "core/css/css_primitive_value.h"
-#include "css_value.h"
 
 namespace webf {
 
@@ -65,53 +66,69 @@ std::string CSSValue::CssText() const {
 }
 
 bool CSSValue::HasFailedOrCanceledSubresources() const {
-//  if (IsValueList()) {
-//    return To<CSSValueList>(this)->HasFailedOrCanceledSubresources();
-//  }
-//  if (GetClassType() == kFontFaceSrcClass) {
-//    return To<CSSFontFaceSrcValue>(this)->HasFailedOrCanceledSubresources();
-//  }
-//  if (GetClassType() == kImageClass) {
-//    return To<CSSImageValue>(this)->HasFailedOrCanceledSubresources();
-//  }
-//  if (GetClassType() == kCrossfadeClass) {
-//    return To<cssvalue::CSSCrossfadeValue>(this)
-//        ->HasFailedOrCanceledSubresources();
-//  }
-//  if (GetClassType() == kImageSetClass) {
-//    return To<CSSImageSetValue>(this)->HasFailedOrCanceledSubresources();
-//  }
+  //  if (IsValueList()) {
+  //    return To<CSSValueList>(this)->HasFailedOrCanceledSubresources();
+  //  }
+  //  if (GetClassType() == kFontFaceSrcClass) {
+  //    return To<CSSFontFaceSrcValue>(this)->HasFailedOrCanceledSubresources();
+  //  }
+  //  if (GetClassType() == kImageClass) {
+  //    return To<CSSImageValue>(this)->HasFailedOrCanceledSubresources();
+  //  }
+  //  if (GetClassType() == kCrossfadeClass) {
+  //    return To<cssvalue::CSSCrossfadeValue>(this)
+  //        ->HasFailedOrCanceledSubresources();
+  //  }
+  //  if (GetClassType() == kImageSetClass) {
+  //    return To<CSSImageSetValue>(this)->HasFailedOrCanceledSubresources();
+  //  }
 
   return false;
 }
 
 bool CSSValue::MayContainUrl() const {
-//  if (IsValueList()) {
-//    return To<CSSValueList>(*this).MayContainUrl();
-//  }
-//  return IsImageValue() || IsURIValue();
+  //  if (IsValueList()) {
+  //    return To<CSSValueList>(*this).MayContainUrl();
+  //  }
+  //  return IsImageValue() || IsURIValue();
   return false;
 }
 
 void CSSValue::ReResolveUrl(const Document& document) const {
   // TODO(fs): Should handle all values that can contain URLs.
-//  if (IsImageValue()) {
-//    To<CSSImageValue>(*this).ReResolveURL(document);
-//    return;
-//  }
-//  if (IsURIValue()) {
-//    To<cssvalue::CSSURIValue>(*this).ReResolveUrl(document);
-//    return;
-//  }
-//  if (IsValueList()) {
-//    To<CSSValueList>(*this).ReResolveUrl(document);
-//    return;
-//  }
+  //  if (IsImageValue()) {
+  //    To<CSSImageValue>(*this).ReResolveURL(document);
+  //    return;
+  //  }
+  //  if (IsURIValue()) {
+  //    To<cssvalue::CSSURIValue>(*this).ReResolveUrl(document);
+  //    return;
+  //  }
+  //  if (IsValueList()) {
+  //    To<CSSValueList>(*this).ReResolveUrl(document);
+  //    return;
+  //  }
+}
+
+std::shared_ptr<const CSSValue> CSSValue::PopulateWithTreeScope(const webf::TreeScope* tree_scope) const {
+  switch (GetClassType()) {
+//    case kCounterClass:
+//      return To<cssvalue::CSSCounterValue>(this)->PopulateWithTreeScope(
+//          tree_scope);
+//    case kCustomIdentClass:
+//      return To<CSSCustomIdentValue>(this)->PopulateWithTreeScope(tree_scope);
+//    case kMathFunctionClass:
+//      return To<CSSMathFunctionValue>(this)->PopulateWithTreeScope(tree_scope);
+    case kValueListClass:
+      return To<CSSValueList>(this)->PopulateWithTreeScope(tree_scope);
+    default:
+      assert(false);
+      return shared_from_this();
+  }
 }
 
 bool CSSValue::operator==(const webf::CSSValue&) const {
   return false;
 }
-
 
 }  // namespace webf

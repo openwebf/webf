@@ -331,7 +331,7 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
 
   ClassType GetClassType() const { return static_cast<ClassType>(class_type_); }
 
-  const std::shared_ptr<CSSValue> PopulateWithTreeScope(const TreeScope*) const;
+  std::shared_ptr<const CSSValue> PopulateWithTreeScope(const TreeScope*) const;
 
   explicit CSSValue(ClassType class_type)
       : allows_negative_percentage_reference_(false),

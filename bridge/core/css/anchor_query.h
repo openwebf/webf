@@ -11,7 +11,6 @@
 
 #include <cassert>
 #include "foundation/macros.h"
-#include "third_party/abseil-cpp/absl/types/variant.h"
 #include "core/css/css_anchor_query_enums.h"
 #include "core/style/anchor_specifier_value.h"
 

@@ -19,6 +19,18 @@
 #define FORCE_INLINE inline
 #endif
 
+#if defined(NDEBUG) && !defined(DCHECK_ALWAYS_ON)
+#define DCHECK_IS_ON() false
+#else
+#define DCHECK_IS_ON() true
+#endif
+
+#define DCHECK(exp) assert(exp)
+#define DCHECK_EQ(exp1, exp2) assert(exp1 == exp2)
+#define CHECK_EQ(exp1, exp2) assert(exp1 == exp2)
+#define DCHECK_GE(exp1, exp2) assert(exp1 > exp2)
+#define NOTREACHED_IN_MIGRATION() assert(false)
+
 #define assert_m(exp, msg) assert(((void)msg, exp))
 
 #define WEBF_DISALLOW_COPY(TypeName) TypeName(const TypeName&) = delete

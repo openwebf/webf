@@ -95,7 +95,7 @@ class <%= class_name %> final : public <%= property.superclass %> {
   bool IsInSameLogicalPropertyGroupWithDifferentMappingLogic(CSSPropertyID) const override;
     <% if(property.logical_property_group.is_logical) { %>
   const CSSProperty& ResolveDirectionAwarePropertyInternal(WritingDirectionMode) const override;
-  const CSSValue* CSSValueFromComputedStyleInternal(
+  std::shared_ptr<const CSSValue> CSSValueFromComputedStyleInternal(
       const ComputedStyle&,
       const LayoutObject*,
       bool allow_visited_style,

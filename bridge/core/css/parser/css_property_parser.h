@@ -99,7 +99,7 @@ class CSSPropertyParser {
 CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext*,
                         const std::string&,
                         CSSParserMode mode = kHTMLStandardMode);
-CSSValueID CssValueKeywordID(std::string);
+CSSValueID CssValueKeywordID(const std::string&);
 
 }  // namespace webf
 

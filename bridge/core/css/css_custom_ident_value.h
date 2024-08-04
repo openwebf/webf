@@ -7,8 +7,8 @@
 #ifndef WEBF_CORE_CSS_CSS_CUSTOM_IDENT_VALUE_H_
 #define WEBF_CORE_CSS_CSS_CUSTOM_IDENT_VALUE_H_
 
-#include "css_property_name.h"
 #include "core/css/css_value.h"
+#include "css_property_name.h"
 
 namespace webf {
 
@@ -26,9 +26,7 @@ class CSSCustomIdentValue : public CSSValue {
     assert(!IsKnownPropertyID());
     return string_;
   }
-  bool IsKnownPropertyID() const {
-    return property_id_ != CSSPropertyID::kInvalid;
-  }
+  bool IsKnownPropertyID() const { return property_id_ != CSSPropertyID::kInvalid; }
   CSSPropertyID ValueAsPropertyID() const {
     assert(IsKnownPropertyID());
     return property_id_;
@@ -36,14 +34,13 @@ class CSSCustomIdentValue : public CSSValue {
 
   std::string CustomCSSText() const;
 
-  const CSSCustomIdentValue& PopulateWithTreeScope(std::shared_ptr<const TreeScope>& tree_scope) const;
+  std::shared_ptr<const CSSCustomIdentValue> PopulateWithTreeScope(std::shared_ptr<const TreeScope>& tree_scope) const;
 
   bool Equals(const CSSCustomIdentValue& other) const {
     if (IsKnownPropertyID()) {
       return property_id_ == other.property_id_;
     }
-    return IsScopedValue() == other.IsScopedValue() &&
-           tree_scope_ == other.tree_scope_ && string_ == other.string_;
+    return IsScopedValue() == other.IsScopedValue() && tree_scope_ == other.tree_scope_ && string_ == other.string_;
   }
 
   void TraceAfterDispatch(GCVisitor*) const;
@@ -56,9 +53,7 @@ class CSSCustomIdentValue : public CSSValue {
 
 template <>
 struct DowncastTraits<CSSCustomIdentValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsCustomIdentValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsCustomIdentValue(); }
 };
 
 }  // namespace webf

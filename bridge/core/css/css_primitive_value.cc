@@ -231,7 +231,7 @@ bool CSSPrimitiveValue::HasContainerRelativeUnits() const {
 }
 
 // static
-std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::CreateFromLength(const Length& length, float zoom) {
+std::shared_ptr<const CSSPrimitiveValue> CSSPrimitiveValue::CreateFromLength(const Length& length, float zoom) {
   switch (length.GetType()) {
     case Length::kPercent:
       return CSSNumericLiteralValue::Create(length.Percent(), UnitType::kPercentage);

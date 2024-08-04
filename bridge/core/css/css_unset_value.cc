@@ -14,7 +14,7 @@ namespace webf {
 
 namespace cssvalue {
 
-CSSUnsetValue* CSSUnsetValue::Create() {
+std::shared_ptr<const CSSUnsetValue> CSSUnsetValue::Create() {
   return CssValuePool().UnsetValue();
 }
 

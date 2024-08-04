@@ -14,48 +14,39 @@
 namespace webf {
 
 CSSCustomIdentValue::CSSCustomIdentValue(const std::string& str)
-    : CSSValue(kCustomIdentClass),
-      string_(str),
-      property_id_(CSSPropertyID::kInvalid) {
+    : CSSValue(kCustomIdentClass), string_(str), property_id_(CSSPropertyID::kInvalid) {
   needs_tree_scope_population_ = true;
 }
 
-CSSCustomIdentValue::CSSCustomIdentValue(CSSPropertyID id)
-    : CSSValue(kCustomIdentClass), string_(), property_id_(id) {
+CSSCustomIdentValue::CSSCustomIdentValue(CSSPropertyID id) : CSSValue(kCustomIdentClass), string_(), property_id_(id) {
   assert(IsKnownPropertyID());
 }
 
-CSSCustomIdentValue::CSSCustomIdentValue(const ScopedCSSName& name)
-    : CSSCustomIdentValue(name.GetName()) {
+CSSCustomIdentValue::CSSCustomIdentValue(const ScopedCSSName& name) : CSSCustomIdentValue(name.GetName()) {
   tree_scope_ = name.GetTreeScope();
   needs_tree_scope_population_ = false;
 }
 
 std::string CSSCustomIdentValue::CustomCSSText() const {
   if (IsKnownPropertyID()) {
-    return CSSUnresolvedProperty::Get(property_id_)
-        .GetPropertyName();
+    return CSSUnresolvedProperty::Get(property_id_).GetPropertyName();
   }
   std::string builder;
   SerializeIdentifier(string_, builder);
   return builder;
 }
 
-const CSSCustomIdentValue& CSSCustomIdentValue::PopulateWithTreeScope(
+std::shared_ptr<const CSSCustomIdentValue> CSSCustomIdentValue::PopulateWithTreeScope(
     std::shared_ptr<const TreeScope>& tree_scope) const {
   assert(this->needs_tree_scope_population_);
-/*  // TODO(guopengfei)：改成智能指针
-  CSSCustomIdentValue* populated =
-      MakeGarbageCollected<CSSCustomIdentValue>(*this);
- */
   std::shared_ptr<CSSCustomIdentValue> populated = std::make_shared<CSSCustomIdentValue>(*this);
   populated->tree_scope_ = tree_scope;
   populated->needs_tree_scope_population_ = false;
-  return *populated;
+  return populated;
 }
 
 void CSSCustomIdentValue::TraceAfterDispatch(GCVisitor* visitor) const {
-  //visitor->TraceMember(tree_scope_);
+  // visitor->TraceMember(tree_scope_);
   CSSValue::TraceAfterDispatch(visitor);
 }
 

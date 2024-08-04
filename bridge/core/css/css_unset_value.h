@@ -22,7 +22,7 @@ namespace cssvalue {
 
 class CSSUnsetValue : public CSSValue {
  public:
-  static CSSUnsetValue* Create();
+  static std::shared_ptr<const CSSUnsetValue> Create();
 
   explicit CSSUnsetValue(webf::PassKey<CSSValuePool>) : CSSValue(kUnsetClass) {}
 
