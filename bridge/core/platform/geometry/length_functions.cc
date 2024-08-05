@@ -25,13 +25,11 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-#include "core/geometry/length_functions.h"
+#include "core/platform/geometry/length_functions.h"
 
-#include "core/geometry/layout_unit.h"
-#include "core/geometry/length_point.h"
-#include "core/geometry/length_size.h"
-#include "ui/gfx/geometry/point_f.h"
-#include "ui/gfx/geometry/size_f.h"
+#include "core/platform/geometry/layout_unit.h"
+#include "core/platform/geometry/length_point.h"
+#include "core/platform/geometry/length_size.h"
 
 namespace webf {
 
@@ -127,19 +125,6 @@ LayoutUnit ValueForLength(const Length& length,
   }
   assert_m(false, 'NOTREACHED_IN_MIGRATION');
   return LayoutUnit();
-}
-
-gfx::SizeF SizeForLengthSize(const LengthSize& length_size,
-                             const gfx::SizeF& box_size) {
-  return gfx::SizeF(
-      FloatValueForLength(length_size.Width(), box_size.width()),
-      FloatValueForLength(length_size.Height(), box_size.height()));
-}
-
-gfx::PointF PointForLengthPoint(const LengthPoint& length_point,
-                                const gfx::SizeF& box_size) {
-  return gfx::PointF(FloatValueForLength(length_point.X(), box_size.width()),
-                     FloatValueForLength(length_point.Y(), box_size.height()));
 }
 
 }  // namespace webf

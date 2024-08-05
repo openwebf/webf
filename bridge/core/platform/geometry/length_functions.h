@@ -28,8 +28,8 @@
 #ifndef WEBF_CORE_GEOMETRY_LENGTH_FUNCTIONS_H_
 #define WEBF_CORE_GEOMETRY_LENGTH_FUNCTIONS_H_
 
-#include "core/geometry/layout_unit.h"
-#include "core/geometry/length.h"
+#include "core/platform/geometry/layout_unit.h"
+#include "core/platform/geometry/length.h"
 
 namespace gfx {
 class PointF;
@@ -64,10 +64,6 @@ inline LayoutUnit MinimumValueForLength(
 LayoutUnit ValueForLength(const Length&,
                LayoutUnit maximum_value,
                const Length::EvaluationInput& input = {});
-gfx::SizeF SizeForLengthSize(const LengthSize&,
-                                             const gfx::SizeF& box_size);
-gfx::PointF PointForLengthPoint(const LengthPoint&,
-                                                const gfx::SizeF& box_size);
 
 }  // namespace webf
 

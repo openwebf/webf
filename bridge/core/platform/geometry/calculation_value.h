@@ -33,6 +33,7 @@
 #ifndef WEBF_CORE_GEOMETRY_CALCULATION_VALUE_H_
 #define WEBF_CORE_GEOMETRY_CALCULATION_VALUE_H_
 
+#include <memory>
 #include "foundation/macros.h"
 #include "core/platform/geometry/length.h"
 #include "core/platform/geometry/length_functions.h"
@@ -57,6 +58,13 @@ class CalculationValue {
       std::shared_ptr<const CalculationExpressionNode> expression,
       Length::ValueRange range);
 
+  explicit CalculationValue(PixelsAndPercent value, Length::ValueRange range)
+      : data_(value),
+        is_expression_(false),
+        is_non_negative_(range == Length::ValueRange::kNonNegative) {}
+
+  explicit CalculationValue(std::shared_ptr<const CalculationExpressionNode> expression,
+                            Length::ValueRange range);
   ~CalculationValue();
 
   float Evaluate(float max_value, const Length::EvaluationInput& = {}) const;
@@ -111,13 +119,6 @@ class CalculationValue {
   std::shared_ptr<const CalculationValue> Zoom(double factor) const;
 
  private:
-  CalculationValue(PixelsAndPercent value, Length::ValueRange range)
-      : data_(value),
-        is_expression_(false),
-        is_non_negative_(range == Length::ValueRange::kNonNegative) {}
-
-  CalculationValue(std::shared_ptr<const CalculationExpressionNode> expression,
-                   Length::ValueRange range);
 
   union DataUnion {
     explicit DataUnion(PixelsAndPercent value) : value(value) {}

@@ -80,6 +80,7 @@ struct PixelsAndPercent {
 };
 
 class Length;
+class CalculationValue;
 
 extern const Length& g_auto_length;
 extern const Length& g_fill_available_length;
@@ -120,13 +121,9 @@ class Length {
   Length() : value_(0), type_(kAuto) {}
 
   explicit Length(Length::Type t) : value_(0), type_(t) { assert(t != kCalculated); }
+  explicit Length(std::shared_ptr<const CalculationValue>);
 
   Length(int v, Length::Type t) : value_(v), type_(t) { assert(t != kCalculated); }
-
-  //  Length(LayoutUnit v, Length::Type t) : value_(v.ToFloat()), type_(t) {
-  //    assert(std::isfinite(v.ToFloat()));
-  //    assert(t != kCalculated);
-  //  }
 
   Length(float v, Length::Type t) : value_(v), type_(t) {
     assert(std::isfinite(v));
@@ -138,25 +135,13 @@ class Length {
     value_ = ClampTo<float>(v);
   }
 
-  Length(const Length& length) {
-    memcpy(this, &length, sizeof(Length));
-    //    if (IsCalculated())
-    //      IncrementCalculatedRef();
-  }
-
+  Length(const Length& length) { memcpy(this, &length, sizeof(Length)); }
   Length& operator=(const Length& length) {
-    //    if (length.IsCalculated())
-    //      length.IncrementCalculatedRef();
-    //    if (IsCalculated())
-    //      DecrementCalculatedRef();
     memcpy(this, &length, sizeof(Length));
     return *this;
   }
 
-  ~Length() {
-    //    if (IsCalculated())
-    //      DecrementCalculatedRef();
-  }
+  ~Length() {}
 
   bool operator==(const Length& o) const {
     if (type_ != o.type_ || quirk_ != o.quirk_) {
@@ -225,12 +210,12 @@ class Length {
 
   PixelsAndPercent GetPixelsAndPercent() const;
 
-  // const CalculationValue& GetCalculationValue() const;
+  std::shared_ptr<const CalculationValue> GetCalculationValue() const;
 
   // If |this| is calculated, returns the underlying |CalculationValue|. If not,
   // returns a |CalculationValue| constructed from |GetPixelsAndPercent()|. Hits
   // a DCHECK if |this| is not a specified value (e.g., 'auto').
-  // std::shared_ptr<const CalculationValue> AsCalculationValue() const;
+  std::shared_ptr<const CalculationValue> AsCalculationValue() const;
 
   [[nodiscard]] Length::Type GetType() const { return static_cast<Length::Type>(type_); }
   [[nodiscard]] bool Quirk() const { return quirk_; }
@@ -314,27 +299,27 @@ class Length {
   bool IsDeviceWidth() const { return GetType() == kDeviceWidth; }
   bool IsDeviceHeight() const { return GetType() == kDeviceHeight; }
 
-//  Length Blend(const Length& from, double progress, ValueRange range) const {
-//    assert(IsSpecified());
-//    assert(from.IsSpecified());
-//
-//    if (progress == 0.0)
-//      return from;
-//
-//    if (progress == 1.0)
-//      return *this;
-//
-//    if (from.GetType() == kCalculated || GetType() == kCalculated)
-//      return BlendMixedTypes(from, progress, range);
-//
-//    if (!from.IsZero() && !IsZero() && from.GetType() != GetType())
-//      return BlendMixedTypes(from, progress, range);
-//
-//    if (from.IsZero() && IsZero())
-//      return *this;
-//
-//    return BlendSameTypes(from, progress, range);
-//  }
+  Length Blend(const Length& from, double progress, ValueRange range) const {
+    assert(IsSpecified());
+    assert(from.IsSpecified());
+
+    if (progress == 0.0)
+      return from;
+
+    if (progress == 1.0)
+      return *this;
+
+    if (from.GetType() == kCalculated || GetType() == kCalculated)
+      return BlendMixedTypes(from, progress, range);
+
+    if (!from.IsZero() && !IsZero() && from.GetType() != GetType())
+      return BlendMixedTypes(from, progress, range);
+
+    if (from.IsZero() && IsZero())
+      return *this;
+
+    return BlendSameTypes(from, progress, range);
+  }
 
   float GetFloatValue() const {
     assert(!IsNone());
@@ -352,9 +337,9 @@ class Length {
     //    std::optional<IntrinsicLengthEvaluator> intrinsic_evaluator = std::nullopt;
   };
 
-//  float NonNanCalculatedValue(float max_value, const EvaluationInput&) const;
+  float NonNanCalculatedValue(float max_value, const EvaluationInput&) const;
 
-//  Length SubtractFromOneHundredPercent() const;
+  Length SubtractFromOneHundredPercent() const;
 
   Length Add(const Length& other) const;
 
@@ -363,9 +348,8 @@ class Length {
   std::string ToString() const;
 
  private:
-//  Length BlendMixedTypes(const Length& from, double progress, ValueRange) const;
-//
-//  Length BlendSameTypes(const Length& from, double progress, ValueRange) const;
+  Length BlendMixedTypes(const Length& from, double progress, ValueRange) const;
+  Length BlendSameTypes(const Length& from, double progress, ValueRange) const;
 
   int CalculationHandle() const {
     assert(IsCalculated());

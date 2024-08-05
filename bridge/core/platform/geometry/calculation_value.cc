@@ -4,16 +4,14 @@
 
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
-#include "core/geometry/calculation_value.h"
-
-#include "third_party/blink/renderer/platform/geometry/blend.h"
-#include "core/geometry/calculation_expression_node.h"
-#include "third_party/blink/renderer/platform/wtf/size_assertions.h"
+#include "core/platform/geometry/calculation_value.h"
+#include "core/platform/geometry/blend.h"
+#include "core/platform/geometry/calculation_expression_node.h"
+#include "core/platform/geometry/length.h"
 
 namespace webf {
 
-CalculationValue::DataUnion::DataUnion(
-    std::shared_ptr<const CalculationExpressionNode> expression)
+CalculationValue::DataUnion::DataUnion(std::shared_ptr<const CalculationExpressionNode> expression)
     : expression(std::move(expression)) {}
 
 CalculationValue::DataUnion::~DataUnion() {
@@ -25,32 +23,21 @@ std::shared_ptr<const CalculationValue> CalculationValue::CreateSimplified(
     std::shared_ptr<const CalculationExpressionNode> expression,
     Length::ValueRange range) {
   if (expression->IsPixelsAndPercent()) {
-    return Create(To<CalculationExpressionPixelsAndPercentNode>(*expression)
-                      .GetPixelsAndPercent(),
-                  range);
+    return Create(To<CalculationExpressionPixelsAndPercentNode>(*expression).GetPixelsAndPercent(), range);
   }
-  return base::AdoptRef(new CalculationValue(std::move(expression), range));
+  return std::make_shared<CalculationValue>(std::move(expression), range);
 }
 
-CalculationValue::CalculationValue(
-    std::shared_ptr<const CalculationExpressionNode> expression,
-    Length::ValueRange range)
-    : data_(std::move(expression)),
-      is_expression_(true),
-      is_non_negative_(range == Length::ValueRange::kNonNegative) {}
+CalculationValue::CalculationValue(std::shared_ptr<const CalculationExpressionNode> expression,
+                                   Length::ValueRange range)
+    : data_(std::move(expression)), is_expression_(true), is_non_negative_(range == Length::ValueRange::kNonNegative) {}
 
 CalculationValue::~CalculationValue() {
-  if (is_expression_)
-    data_.expression.~std::shared_ptr<const CalculationExpressionNode>();
-  else
-    data_.value.~PixelsAndPercent();
 }
 
-float CalculationValue::Evaluate(float max_value,
-                                 const Length::EvaluationInput& input) const {
-  float value = ClampTo<float>(
-      is_expression_ ? data_.expression->Evaluate(max_value, input)
-                     : Pixels() + Percent() / 100 * max_value);
+float CalculationValue::Evaluate(float max_value, const Length::EvaluationInput& input) const {
+  float value = ClampTo<float>(is_expression_ ? data_.expression->Evaluate(max_value, input)
+                                              : Pixels() + Percent() / 100 * max_value);
   return (IsNonNegative() && value < 0) ? 0 : value;
 }
 
@@ -61,86 +48,65 @@ bool CalculationValue::operator==(const CalculationValue& other) const {
 
   if (IsExpression())
     return other.IsExpression() && *data_.expression == *other.data_.expression;
-  return !other.IsExpression() && Pixels() == other.Pixels() &&
-         Percent() == other.Percent();
+  return !other.IsExpression() && Pixels() == other.Pixels() && Percent() == other.Percent();
 }
 
-std::shared_ptr<const CalculationExpressionNode>
-CalculationValue::GetOrCreateExpression() const {
+std::shared_ptr<const CalculationExpressionNode> CalculationValue::GetOrCreateExpression() const {
   if (IsExpression())
     return data_.expression;
-  return base::MakeRefCounted<CalculationExpressionPixelsAndPercentNode>(
-      GetPixelsAndPercent());
+  return std::make_shared<CalculationExpressionPixelsAndPercentNode>(GetPixelsAndPercent());
 }
 
-std::shared_ptr<const CalculationValue> CalculationValue::Blend(
-    const CalculationValue& from,
-    double progress,
-    Length::ValueRange range) const {
+std::shared_ptr<const CalculationValue> CalculationValue::Blend(const CalculationValue& from,
+                                                                double progress,
+                                                                Length::ValueRange range) const {
   if (!IsExpression() && !from.IsExpression()) {
     PixelsAndPercent from_pixels_and_percent = from.GetPixelsAndPercent();
     PixelsAndPercent to_pixels_and_percent = GetPixelsAndPercent();
-    const float pixels = blink::Blend(from_pixels_and_percent.pixels,
-                                      to_pixels_and_percent.pixels, progress);
-    const float percent = blink::Blend(from_pixels_and_percent.percent,
-                                       to_pixels_and_percent.percent, progress);
-    bool has_explicit_pixels = from_pixels_and_percent.has_explicit_pixels |
-                               to_pixels_and_percent.has_explicit_pixels;
-    bool has_explicit_percent = from_pixels_and_percent.has_explicit_percent |
-                                to_pixels_and_percent.has_explicit_percent;
-    return Create(PixelsAndPercent(pixels, percent, has_explicit_pixels,
-                                   has_explicit_percent),
-                  range);
+    const float pixels = webf::Blend(from_pixels_and_percent.pixels, to_pixels_and_percent.pixels, progress);
+    const float percent = webf::Blend(from_pixels_and_percent.percent, to_pixels_and_percent.percent, progress);
+    bool has_explicit_pixels = from_pixels_and_percent.has_explicit_pixels | to_pixels_and_percent.has_explicit_pixels;
+    bool has_explicit_percent =
+        from_pixels_and_percent.has_explicit_percent | to_pixels_and_percent.has_explicit_percent;
+    return Create(PixelsAndPercent(pixels, percent, has_explicit_pixels, has_explicit_percent), range);
   }
 
   auto blended_from = CalculationExpressionOperationNode::CreateSimplified(
       CalculationExpressionOperationNode::Children(
-          {from.GetOrCreateExpression(),
-           base::MakeRefCounted<CalculationExpressionNumberNode>(1.0 -
-                                                                 progress)}),
+          {from.GetOrCreateExpression(), std::make_shared<CalculationExpressionNumberNode>(1.0 - progress)}),
       CalculationOperator::kMultiply);
   auto blended_to = CalculationExpressionOperationNode::CreateSimplified(
       CalculationExpressionOperationNode::Children(
-          {GetOrCreateExpression(),
-           base::MakeRefCounted<CalculationExpressionNumberNode>(progress)}),
+          {GetOrCreateExpression(), std::make_shared<CalculationExpressionNumberNode>(progress)}),
       CalculationOperator::kMultiply);
   auto result_expression = CalculationExpressionOperationNode::CreateSimplified(
-      {std::move(blended_from), std::move(blended_to)},
-      CalculationOperator::kAdd);
+      {std::move(blended_from), std::move(blended_to)}, CalculationOperator::kAdd);
   return CreateSimplified(result_expression, range);
 }
 
-std::shared_ptr<const CalculationValue>
-CalculationValue::SubtractFromOneHundredPercent() const {
+std::shared_ptr<const CalculationValue> CalculationValue::SubtractFromOneHundredPercent() const {
   if (!IsExpression()) {
     PixelsAndPercent result(-Pixels(), 100 - Percent(), HasExplicitPixels(),
                             /*has_explicit_percent=*/true);
     return Create(result, Length::ValueRange::kAll);
   }
   auto hundred_percent =
-      base::MakeRefCounted<CalculationExpressionPixelsAndPercentNode>(
-          PixelsAndPercent(0, 100, false, true));
+      std::make_shared<CalculationExpressionPixelsAndPercentNode>(PixelsAndPercent(0, 100, false, true));
   auto result_expression = CalculationExpressionOperationNode::CreateSimplified(
-      CalculationExpressionOperationNode::Children(
-          {std::move(hundred_percent), GetOrCreateExpression()}),
+      CalculationExpressionOperationNode::Children({std::move(hundred_percent), GetOrCreateExpression()}),
       CalculationOperator::kSubtract);
-  return CreateSimplified(std::move(result_expression),
-                          Length::ValueRange::kAll);
+  return CreateSimplified(std::move(result_expression), Length::ValueRange::kAll);
 }
 
-std::shared_ptr<const CalculationValue> CalculationValue::Add(
-    const CalculationValue& other) const {
+std::shared_ptr<const CalculationValue> CalculationValue::Add(const CalculationValue& other) const {
   auto result_expression = CalculationExpressionOperationNode::CreateSimplified(
-      {GetOrCreateExpression(), other.GetOrCreateExpression()},
-      CalculationOperator::kAdd);
+      {GetOrCreateExpression(), other.GetOrCreateExpression()}, CalculationOperator::kAdd);
   return CreateSimplified(result_expression, Length::ValueRange::kAll);
 }
 
-std::shared_ptr<const CalculationValue> CalculationValue::Zoom(
-    double factor) const {
+std::shared_ptr<const CalculationValue> CalculationValue::Zoom(double factor) const {
   if (!IsExpression()) {
-    PixelsAndPercent result(Pixels() * factor, Percent(), HasExplicitPixels(),
-                            HasExplicitPercent());
+    PixelsAndPercent result(Pixels() * factor, Percent(), HasExplicitPixels(), HasExplicitPercent());
     return Create(result, GetValueRange());
   }
   return CreateSimplified(data_.expression->Zoom(factor), GetValueRange());
@@ -183,24 +149,21 @@ bool CalculationValue::HasMinContent() const {
   if (!IsExpression()) {
     return false;
   }
-  return data_.expression->HasContentOrIntrinsicSize() &&
-         data_.expression->HasMinContent();
+  return data_.expression->HasContentOrIntrinsicSize() && data_.expression->HasMinContent();
 }
 
 bool CalculationValue::HasMaxContent() const {
   if (!IsExpression()) {
     return false;
   }
-  return data_.expression->HasContentOrIntrinsicSize() &&
-         data_.expression->HasMaxContent();
+  return data_.expression->HasContentOrIntrinsicSize() && data_.expression->HasMaxContent();
 }
 
 bool CalculationValue::HasFitContent() const {
   if (!IsExpression()) {
     return false;
   }
-  return data_.expression->HasContentOrIntrinsicSize() &&
-         data_.expression->HasFitContent();
+  return data_.expression->HasContentOrIntrinsicSize() && data_.expression->HasFitContent();
 }
 
 }  // namespace webf
