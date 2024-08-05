@@ -343,6 +343,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_identifier_value.cc
     core/css/css_numeric_literal_value.cc
     core/css/css_math_expression_node.cc
+    core/css/css_math_function_value.cc
+    core/css/css_math_operator.cc
     core/css/css_radio_value.cc
     core/css/css_unset_value.cc
     core/css/css_value_pair.cc
@@ -362,6 +364,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_color_mix_value.cc
     core/css/css_color.cc
     core/css/css_length_resolver.cc
+    core/style/scoped_css_name.cc
 
     core/platform/text/writing_mode.cc
     core/platform/geometry/length.cc
@@ -371,6 +374,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/geometry/dom_matrix.cc
     core/platform/geometry/calculation_expression_node.cc
     core/platform/geometry/dom_matrix_readonly.cc
+    core/platform/geometry/length_functions.cc
+    core/platform/geometry/calculation_value.cc
 #    core/css/properties/css_property.cc
 #    core/css/properties/css_parsing_utils.cc
 #    core/css/css_markup.cc

@@ -36,6 +36,7 @@
 #define WEBF_CSS_MATH_EXPRESSION_NODE_H
 
 #include <optional>
+#include <span>
 
 #include "core/base/containers/enum_set.h"
 #include "core/css/css_anchor_query_enums.h"
@@ -102,7 +103,7 @@ class CSSMathExpressionNode : public std::enable_shared_from_this<CSSMathExpress
 
   using Flags = EnumSet<Flag, Flag::MinValue, Flag::MaxValue>;
 
-  static std::shared_ptr<CSSMathExpressionNode> ParseMathFunction(
+  static std::shared_ptr<const CSSMathExpressionNode> ParseMathFunction(
       CSSValueID function_id,
       CSSParserTokenRange tokens,
       const CSSParserContext&,
@@ -126,6 +127,7 @@ class CSSMathExpressionNode : public std::enable_shared_from_this<CSSMathExpress
   CSSPrimitiveValue::BoolStatus IsZero() const { return ResolvesTo(0.0); }
   CSSPrimitiveValue::BoolStatus IsOne() const { return ResolvesTo(1.0); }
   CSSPrimitiveValue::BoolStatus IsHundred() const { return ResolvesTo(100.0); }
+  virtual CSSPrimitiveValue::BoolStatus IsNegative() const = 0;
 
   // Resolves the expression into one value *without doing any type conversion*.
   // Hits DCHECK if type conversion is required.
@@ -199,6 +201,14 @@ class CSSMathExpressionNode : public std::enable_shared_from_this<CSSMathExpress
   }
   virtual std::shared_ptr<const CSSMathExpressionNode> PopulateWithTreeScope(const TreeScope*) const = 0;
 
+#if DCHECK_IS_ON()
+  // There's a subtle issue in comparing two percentages, e.g., min(10%, 20%).
+  // It doesn't always resolve into 10%, because the reference value may be
+  // negative. We use this to prevent comparing two percentages without knowing
+  // the sign of the reference value.
+  virtual bool InvolvesPercentageComparisons() const = 0;
+#endif
+
   // Rewrite this function according to the specified TryTacticTransform,
   // e.g. anchor(left) -> anchor(right). If this function is not affected
   // by the transform, returns `this`.
@@ -242,7 +252,7 @@ class CSSMathExpressionNumericLiteral final : public CSSMathExpressionNode {
   static std::shared_ptr<CSSMathExpressionNumericLiteral> Create(std::shared_ptr<const CSSNumericLiteralValue> value);
   static std::shared_ptr<CSSMathExpressionNumericLiteral> Create(double value, CSSPrimitiveValue::UnitType type);
 
-  explicit CSSMathExpressionNumericLiteral(const CSSNumericLiteralValue* value);
+  explicit CSSMathExpressionNumericLiteral(std::shared_ptr<const CSSNumericLiteralValue> value);
 
   std::shared_ptr<CSSMathExpressionNode> Copy() const final { return Create(value_); }
 
@@ -262,11 +272,13 @@ class CSSMathExpressionNumericLiteral final : public CSSMathExpressionNode {
 
   bool HasInvalidAnchorFunctions(const CSSLengthResolver&) const final { return false; }
 
+  CSSPrimitiveValue::BoolStatus IsNegative() const final;
   std::string CustomCSSText() const final;
   std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
   std::optional<PixelsAndPercent> ToPixelsAndPercent(const CSSLengthResolver&) const final;
   double DoubleValue() const final;
   std::optional<double> ComputeValueInCanonicalUnit() const final;
+  std::optional<double> ComputeValueInCanonicalUnit(const CSSLengthResolver& length_resolver) const final;
   double ComputeLengthPx(const CSSLengthResolver& length_resolver) const final;
   bool AccumulateLengthArray(CSSLengthArray& length_array, double multiplier) const final;
   void AccumulateLengthUnitTypes(CSSPrimitiveValue::LengthTypeFlags& types) const final;
@@ -274,6 +286,10 @@ class CSSMathExpressionNumericLiteral final : public CSSMathExpressionNode {
   bool operator==(const CSSMathExpressionNode& other) const final;
   CSSPrimitiveValue::UnitType ResolvedUnitType() const final;
   void Trace(GCVisitor* visitor) const final;
+
+#if DCHECK_IS_ON()
+  bool InvolvesPercentageComparisons() const final;
+#endif
 
  protected:
   double ComputeDouble(const CSSLengthResolver& length_resolver) const final;
@@ -317,6 +333,7 @@ class CSSMathExpressionIdentifierLiteral final : public CSSMathExpressionNode {
   }
 
   bool HasInvalidAnchorFunctions(const CSSLengthResolver&) const final { return false; }
+  CSSPrimitiveValue::BoolStatus IsNegative() const final { return CSSPrimitiveValue::BoolStatus::kUnresolvable; }
 
   std::string CustomCSSText() const final { return identifier_; }
   std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
@@ -326,6 +343,9 @@ class CSSMathExpressionIdentifierLiteral final : public CSSMathExpressionNode {
     return 0;
   }
   std::optional<double> ComputeValueInCanonicalUnit() const final { return std::nullopt; }
+  std::optional<double> ComputeValueInCanonicalUnit(const CSSLengthResolver& length_resolver) const final {
+    assert(false);
+  }
   double ComputeLengthPx(const CSSLengthResolver& length_resolver) const final {
     assert(false);
     return 0;
@@ -340,9 +360,9 @@ class CSSMathExpressionIdentifierLiteral final : public CSSMathExpressionNode {
   CSSPrimitiveValue::UnitType ResolvedUnitType() const final { return CSSPrimitiveValue::UnitType::kIdent; }
   void Trace(GCVisitor* visitor) const final { CSSMathExpressionNode::Trace(visitor); }
 
-  // #if DCHECK_IS_ON()
-  //   bool InvolvesPercentageComparisons() const final { return false; }
-  // #endif
+#if DCHECK_IS_ON()
+  bool InvolvesPercentageComparisons() const final { return false; }
+#endif
 
  protected:
   double ComputeDouble(const CSSLengthResolver& length_resolver) const final {
@@ -393,6 +413,7 @@ class CSSMathExpressionKeywordLiteral final : public CSSMathExpressionNode {
   }
 
   bool HasInvalidAnchorFunctions(const CSSLengthResolver&) const final { return false; }
+  CSSPrimitiveValue::BoolStatus IsNegative() const final { return CSSPrimitiveValue::BoolStatus::kUnresolvable; }
 
   std::string CustomCSSText() const final { return getValueName(keyword_); }
   std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
@@ -402,6 +423,9 @@ class CSSMathExpressionKeywordLiteral final : public CSSMathExpressionNode {
     return 0;
   }
   std::optional<double> ComputeValueInCanonicalUnit() const final { return std::nullopt; }
+  std::optional<double> ComputeValueInCanonicalUnit(const CSSLengthResolver& length_resolver) const final {
+    assert(false);
+  }
   double ComputeLengthPx(const CSSLengthResolver& length_resolver) const final {
     assert(false);
     return 0;
@@ -411,7 +435,7 @@ class CSSMathExpressionKeywordLiteral final : public CSSMathExpressionNode {
   bool IsComputationallyIndependent() const final { return true; }
   bool operator==(const CSSMathExpressionNode& other) const final {
     auto* other_keyword = DynamicTo<CSSMathExpressionKeywordLiteral>(other);
-    return other_keyword && other_keyword->GetValue() == GetValue() && other_keyword->GetOperator() == GetOperator();
+    return other_keyword && other_keyword->GetValue() == GetValue() && other_keyword->GetContext() == GetContext();
   }
   CSSPrimitiveValue::UnitType ResolvedUnitType() const final { return CSSPrimitiveValue::UnitType::kIdent; }
   void Trace(GCVisitor* visitor) const final { CSSMathExpressionNode::Trace(visitor); }
@@ -440,9 +464,10 @@ class CSSMathExpressionOperation final : public CSSMathExpressionNode {
  public:
   using Operands = std::vector<std::shared_ptr<const CSSMathExpressionNode>>;
 
-  static std::shared_ptr<CSSMathExpressionNode> CreateArithmeticOperation(const std::shared_ptr<const CSSMathExpressionNode>& left_side,
-                                                                          const std::shared_ptr<const CSSMathExpressionNode>& right_side,
-                                                                          CSSMathOperator op);
+  static std::shared_ptr<CSSMathExpressionNode> CreateArithmeticOperation(
+      std::shared_ptr<const CSSMathExpressionNode> left_side,
+      std::shared_ptr<const CSSMathExpressionNode> right_side,
+      CSSMathOperator op);
 
   static std::shared_ptr<CSSMathExpressionNode> CreateComparisonFunction(Operands&& operands, CSSMathOperator op);
   static std::shared_ptr<CSSMathExpressionNode> CreateComparisonFunctionSimplified(Operands&& operands,
@@ -456,8 +481,8 @@ class CSSMathExpressionOperation final : public CSSMathExpressionNode {
   static std::shared_ptr<CSSMathExpressionNode> CreateExponentialFunction(Operands&& operands, CSSValueID function_id);
 
   static std::shared_ptr<CSSMathExpressionNode> CreateArithmeticOperationSimplified(
-      const std::shared_ptr<const CSSMathExpressionNode>& left_side,
-      const std::shared_ptr<const CSSMathExpressionNode>& right_side,
+      std::shared_ptr<const CSSMathExpressionNode> left_side,
+      std::shared_ptr<const CSSMathExpressionNode> right_side,
       CSSMathOperator op);
 
   // In addition to the simplifications in
@@ -469,17 +494,18 @@ class CSSMathExpressionOperation final : public CSSMathExpressionNode {
   // animation code pass that multiplication to this function and have it turn
   // into calc-size(auto, 0.5 * size).
   static std::shared_ptr<CSSMathExpressionNode> CreateArithmeticOperationAndSimplifyCalcSize(
-      const CSSMathExpressionNode* left_side,
-      const CSSMathExpressionNode* right_side,
+      std::shared_ptr<const CSSMathExpressionNode> left_side,
+      std::shared_ptr<const CSSMathExpressionNode> right_side,
       CSSMathOperator op);
 
   static std::shared_ptr<CSSMathExpressionNode> CreateSignRelatedFunction(Operands&& operands, CSSValueID function_id);
 
-  static std::shared_ptr<CSSMathExpressionNode> CreateCalcSizeOperation(const std::shared_ptr<const CSSMathExpressionNode>& left_side,
-                                                                        const std::shared_ptr<const CSSMathExpressionNode>& right_side);
+  static std::shared_ptr<CSSMathExpressionNode> CreateCalcSizeOperation(
+      std::shared_ptr<const CSSMathExpressionNode> left_side,
+      std::shared_ptr<const CSSMathExpressionNode> right_side);
 
-  CSSMathExpressionOperation(const std::shared_ptr<CSSMathExpressionNode>& left_side,
-                             const std::shared_ptr<CSSMathExpressionNode>& right_side,
+  CSSMathExpressionOperation(std::shared_ptr<const CSSMathExpressionNode> left_side,
+                             std::shared_ptr<const CSSMathExpressionNode> right_side,
                              CSSMathOperator op,
                              CalculationResultCategory category);
 
@@ -529,12 +555,12 @@ class CSSMathExpressionOperation final : public CSSMathExpressionNode {
   bool HasPercentage() const final;
   bool InvolvesLayout() const final;
 
-  std::string CSSTextAsClamp() const;
-
+  CSSPrimitiveValue::BoolStatus IsNegative() const final;
   std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
   std::optional<PixelsAndPercent> ToPixelsAndPercent(const CSSLengthResolver&) const final;
   double DoubleValue() const final;
   std::optional<double> ComputeValueInCanonicalUnit() const final;
+  std::optional<double> ComputeValueInCanonicalUnit(const CSSLengthResolver& length_resolver) const final;
   double ComputeLengthPx(const CSSLengthResolver& length_resolver) const final;
   bool AccumulateLengthArray(CSSLengthArray& length_array, double multiplier) const final;
   void AccumulateLengthUnitTypes(CSSPrimitiveValue::LengthTypeFlags& types) const final;
@@ -549,8 +575,8 @@ class CSSMathExpressionOperation final : public CSSMathExpressionNode {
   bool HasInvalidAnchorFunctions(const CSSLengthResolver&) const final;
   void Trace(GCVisitor* visitor) const final;
 
-#if DDEBUG
-  bool InvolvesPercentageComparisons() const;
+#if DCHECK_IS_ON()
+  bool InvolvesPercentageComparisons() const final;
 #endif
 
  protected:
@@ -565,6 +591,12 @@ class CSSMathExpressionOperation final : public CSSMathExpressionNode {
 
   static double EvaluateOperator(const std::vector<double>& operands, CSSMathOperator op);
 
+  // Helper for iterating from the 2nd to the last operands
+  std::span<const std::shared_ptr<const CSSMathExpressionNode>> SecondToLastOperands() const {
+    std::span<const std::shared_ptr<const CSSMathExpressionNode>> span(operands_.begin() + 1, operands_.end());
+    return span;
+  }
+
   Operands operands_;
   const CSSMathOperator operator_;
 };
@@ -576,7 +608,7 @@ struct DowncastTraits<CSSMathExpressionOperation> {
 
 class CSSMathExpressionContainerFeature final : public CSSMathExpressionNode {
  public:
-  CSSMathExpressionContainerFeature(const CSSIdentifierValue* size_feature, const CSSCustomIdentValue* container_name);
+  CSSMathExpressionContainerFeature(std::shared_ptr<const CSSIdentifierValue> size_feature, std::shared_ptr<const CSSCustomIdentValue> container_name);
 
   std::shared_ptr<CSSMathExpressionNode> Copy() const final {
     return std::make_shared<CSSMathExpressionContainerFeature>(size_feature_, container_name_);
@@ -585,20 +617,25 @@ class CSSMathExpressionContainerFeature final : public CSSMathExpressionNode {
   bool IsContainerFeature() const final { return true; }
 
   std::shared_ptr<const CSSMathExpressionNode> PopulateWithTreeScope(const TreeScope* tree_scope) const final {
-    const auto* container_name =
-        container_name_ ? To<CSSCustomIdentValue>(&container_name_->EnsureScopedValue(tree_scope)) : nullptr;
+    std::shared_ptr<const CSSCustomIdentValue> container_name =
+        container_name_
+            ? std::reinterpret_pointer_cast<const CSSCustomIdentValue>(container_name_->EnsureScopedValue(tree_scope))
+            : nullptr;
     return std::make_shared<CSSMathExpressionContainerFeature>(size_feature_, container_name);
   }
   std::shared_ptr<const CSSMathExpressionNode> TransformAnchors(LogicalAxis axis,
                                                                 const TryTacticTransform& transform,
                                                                 const WritingDirectionMode& mode) const final {
-    return this;
+    return shared_from_this();
   }
   bool HasInvalidAnchorFunctions(const CSSLengthResolver&) const final { return false; }
 
   CSSValueID GetValue() const { return size_feature_->GetValueID(); }
 
-  bool IsZero() const final { return false; }
+   CSSPrimitiveValue::BoolStatus IsNegative() const final {
+     return CSSPrimitiveValue::BoolStatus::kUnresolvable;
+   }
+
   std::string CustomCSSText() const final;
   std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
   std::optional<PixelsAndPercent> ToPixelsAndPercent(const CSSLengthResolver&) const final;
@@ -607,6 +644,10 @@ class CSSMathExpressionContainerFeature final : public CSSMathExpressionNode {
     return 0;
   }
   std::optional<double> ComputeValueInCanonicalUnit() const final { return std::nullopt; }
+  std::optional<double> ComputeValueInCanonicalUnit(
+      const CSSLengthResolver& length_resolver) const final {
+    assert(false);
+  }
   double ComputeLengthPx(const CSSLengthResolver& length_resolver) const final {
     assert(false);
     return 0;
@@ -626,12 +667,15 @@ class CSSMathExpressionContainerFeature final : public CSSMathExpressionNode {
     CSSMathExpressionNode::Trace(visitor);
   }
 
-  // #if DCHECK_IS_ON()
-  //   bool InvolvesPercentageComparisons() const final { return false; }
-  // #endif
+#if DCHECK_IS_ON()
+  bool InvolvesPercentageComparisons() const final { return false; }
+#endif
 
  protected:
   double ComputeDouble(const CSSLengthResolver& length_resolver) const final;
+  CSSPrimitiveValue::BoolStatus ResolvesTo(double value) const final {
+    return CSSPrimitiveValue::BoolStatus::kUnresolvable;
+  }
 
  private:
   std::shared_ptr<const CSSIdentifierValue> size_feature_;
@@ -690,6 +734,10 @@ class CSSMathExpressionAnchorQuery final : public CSSMathExpressionNode {
                                                                 const TryTacticTransform&,
                                                                 const WritingDirectionMode&) const final;
   bool HasInvalidAnchorFunctions(const CSSLengthResolver&) const final;
+
+#if DCHECK_IS_ON()
+  bool InvolvesPercentageComparisons() const final { return false; }
+#endif
 
  protected:
   double ComputeDouble(const CSSLengthResolver&) const final;

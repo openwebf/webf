@@ -6,7 +6,7 @@
 #define WEBF_CORE_CSS_CSS_MATH_FUNCTION_VALUE_H_
 
 #include "bindings/qjs/cppgc/gc_visitor.h"
-//#include "core/css/css_math_expression_node.h"
+#include "core/css/css_math_expression_node.h"
 #include "core/css/css_primitive_value.h"
 
 namespace webf {
@@ -17,13 +17,13 @@ class WritingDirectionMode;
 // Numeric values that involve math functions (calc(), min(), max(), etc). This
 // is the equivalence of CSS Typed OM's |CSSMathValue| in the |CSSValue| class
 // hierarchy.
-class CSSMathFunctionValue : public CSSPrimitiveValue, public std::enable_shared_from_this<CSSMathFunctionValue> {
+class CSSMathFunctionValue : public CSSPrimitiveValue {
  public:
   //  static std::shared_ptr<CSSMathFunctionValue> Create(const Length&, float zoom);
   static std::shared_ptr<CSSMathFunctionValue> Create(const std::shared_ptr<CSSMathExpressionNode>& expression,
                                                       ValueRange = ValueRange::kAll);
 
-  CSSMathFunctionValue(const std::shared_ptr<CSSMathExpressionNode>& expression, ValueRange range);
+  CSSMathFunctionValue(std::shared_ptr<CSSMathExpressionNode> expression, ValueRange range);
 
   const std::shared_ptr<const CSSMathExpressionNode> ExpressionNode() const { return expression_; }
 

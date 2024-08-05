@@ -26,9 +26,13 @@
 #endif
 
 #define DCHECK(exp) assert(exp)
+#define CHECK(exp) assert(exp)
 #define DCHECK_EQ(exp1, exp2) assert(exp1 == exp2)
 #define CHECK_EQ(exp1, exp2) assert(exp1 == exp2)
 #define DCHECK_GE(exp1, exp2) assert(exp1 > exp2)
+#define CHECK_GT(exp1, exp2) assert(exp1 > exp2)
+#define DCHECK_NE(exp1, exp2) assert(exp1 != exp2)
+#define DCHECK_LE(exp1, exp2) assert(exp1 < exp2)
 #define NOTREACHED_IN_MIGRATION() assert(false)
 
 #define assert_m(exp, msg) assert(((void)msg, exp))

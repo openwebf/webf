@@ -6,7 +6,7 @@
 
 namespace webf {
 
-struct SameSizeAsCSSMathFunctionValue : CSSPrimitiveValue, public std::enable_shared_from_this<CSSMathFunctionValue> {
+struct SameSizeAsCSSMathFunctionValue : CSSPrimitiveValue {
   std::shared_ptr<const void*> expression;
   ValueRange value_range_in_target_context_;
 };
@@ -17,9 +17,9 @@ void CSSMathFunctionValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSPrimitiveValue::TraceAfterDispatch(visitor);
 }
 
-CSSMathFunctionValue::CSSMathFunctionValue(const std::shared_ptr<CSSMathExpressionNode>& expression,
+CSSMathFunctionValue::CSSMathFunctionValue(std::shared_ptr<CSSMathExpressionNode> expression,
                                            CSSPrimitiveValue::ValueRange range)
-    : CSSPrimitiveValue(kMathFunctionClass), expression_(expression), value_range_in_target_context_(range) {
+    : CSSPrimitiveValue(kMathFunctionClass), expression_(std::move(expression)), value_range_in_target_context_(range) {
   needs_tree_scope_population_ = !expression->IsScopedValue();
 }
 
@@ -49,12 +49,11 @@ bool CSSMathFunctionValue::MayHaveRelativeUnit() const {
 }
 
 double CSSMathFunctionValue::DoubleValue() const {
-  // #if DCHECK_IS_ON()
-  //   if (IsPercentage()) {
-  //     DCHECK(!AllowsNegativePercentageReference() ||
-  //            !expression_->InvolvesPercentageComparisons());
-  //   }
-  // #endif
+#if DCHECK_IS_ON()
+  if (IsPercentage()) {
+    DCHECK(!AllowsNegativePercentageReference() || !expression_->InvolvesPercentageComparisons());
+  }
+#endif
   return ClampToPermittedRange(expression_->DoubleValue());
 }
 
@@ -235,12 +234,12 @@ const std::shared_ptr<const CSSMathFunctionValue> CSSMathFunctionValue::Transfor
     LogicalAxis logical_axis,
     const TryTacticTransform& transform,
     const WritingDirectionMode& writing_direction) const {
-  const std::shared_ptr<CSSMathExpressionNode> transformed =
+  std::shared_ptr<const CSSMathExpressionNode> transformed =
       expression_->TransformAnchors(logical_axis, transform, writing_direction);
   if (transformed != expression_) {
     return std::make_shared<CSSMathFunctionValue>(transformed, value_range_in_target_context_);
   }
-  return shared_from_this();
+  return std::reinterpret_pointer_cast<const CSSMathFunctionValue>(shared_from_this());
 }
 
 }  // namespace webf
