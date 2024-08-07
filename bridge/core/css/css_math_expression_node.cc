@@ -34,11 +34,13 @@
 
 #include "css_math_expression_node.h"
 #include "core/base/containers/enum_set.h"
+#include "core/css/anchor_query.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/platform/geometry/calculation_expression_node.h"
 #include "core/platform/geometry/math_functions.h"
 #include "core/platform/geometry/sin_cos_degrees.h"
+#include "core/platform/text/writing_mode_utils.h"
 #include "css_color_channel_map.h"
 #include "css_math_operator.h"
 #include "css_value_clamping_utils.h"
@@ -478,64 +480,67 @@ class CSSMathExpressionNodeParser {
     }
   }
 
-  std::shared_ptr<const CSSMathExpressionNode> ParseAnchorQuery(CSSValueID function_id, CSSParserTokenRange& tokens) {
-    CSSAnchorQueryType anchor_query_type;
-    switch (function_id) {
-      case CSSValueID::kAnchor:
-        anchor_query_type = CSSAnchorQueryType::kAnchor;
-        break;
-      case CSSValueID::kAnchorSize:
-        anchor_query_type = CSSAnchorQueryType::kAnchorSize;
-        break;
-      default:
-        return nullptr;
-    }
-
-    if (!(static_cast<CSSAnchorQueryTypes>(anchor_query_type) & allowed_anchor_queries_)) {
-      return nullptr;
-    }
-
-    // |anchor_specifier| may be omitted to represent the default anchor.
-    auto anchor_specifier = css_parsing_utils::ConsumeDashedIdent(tokens, context_);
-
-    tokens.ConsumeWhitespace();
-    std::shared_ptr<const CSSValue> value = nullptr;
-    switch (anchor_query_type) {
-      case CSSAnchorQueryType::kAnchor:
-        value = css_parsing_utils::ConsumeIdent<CSSValueID::kInside, CSSValueID::kOutside, CSSValueID::kTop,
-                                                CSSValueID::kLeft, CSSValueID::kRight, CSSValueID::kBottom,
-                                                CSSValueID::kStart, CSSValueID::kEnd, CSSValueID::kSelfStart,
-                                                CSSValueID::kSelfEnd, CSSValueID::kCenter>(tokens);
-        if (!value) {
-          value = css_parsing_utils::ConsumePercent(tokens, context_, CSSPrimitiveValue::ValueRange::kAll);
-        }
-        break;
-      case CSSAnchorQueryType::kAnchorSize:
-        value = css_parsing_utils::ConsumeIdent<CSSValueID::kWidth, CSSValueID::kHeight, CSSValueID::kBlock,
-                                                CSSValueID::kInline, CSSValueID::kSelfBlock, CSSValueID::kSelfInline>(
-            tokens);
-        break;
-    }
-    if (!value) {
-      return nullptr;
-    }
-
-    std::shared_ptr<const CSSPrimitiveValue> fallback = nullptr;
-    if (css_parsing_utils::ConsumeCommaIncludingWhitespace(tokens)) {
-      fallback =
-          css_parsing_utils::ConsumeLengthOrPercent(tokens, context_, CSSPrimitiveValue::ValueRange::kAll,
-                                                    css_parsing_utils::UnitlessQuirk::kForbid, allowed_anchor_queries_);
-      if (!fallback) {
-        return nullptr;
-      }
-    }
-
-    tokens.ConsumeWhitespace();
-    if (!tokens.AtEnd()) {
-      return nullptr;
-    }
-    return std::make_shared<CSSMathExpressionAnchorQuery>(anchor_query_type, anchor_specifier, *value, fallback);
-  }
+  //  std::shared_ptr<const CSSMathExpressionNode> ParseAnchorQuery(CSSValueID function_id, CSSParserTokenRange& tokens)
+  //  {
+  //    CSSAnchorQueryType anchor_query_type;
+  //    switch (function_id) {
+  //      case CSSValueID::kAnchor:
+  //        anchor_query_type = CSSAnchorQueryType::kAnchor;
+  //        break;
+  //      case CSSValueID::kAnchorSize:
+  //        anchor_query_type = CSSAnchorQueryType::kAnchorSize;
+  //        break;
+  //      default:
+  //        return nullptr;
+  //    }
+  //
+  //    if (!(static_cast<CSSAnchorQueryTypes>(anchor_query_type) & allowed_anchor_queries_)) {
+  //      return nullptr;
+  //    }
+  //
+  //    // |anchor_specifier| may be omitted to represent the default anchor.
+  //    auto anchor_specifier = css_parsing_utils::ConsumeDashedIdent(tokens, context_);
+  //
+  //    tokens.ConsumeWhitespace();
+  //    std::shared_ptr<const CSSValue> value = nullptr;
+  //    switch (anchor_query_type) {
+  //      case CSSAnchorQueryType::kAnchor:
+  //        value = css_parsing_utils::ConsumeIdent<CSSValueID::kInside, CSSValueID::kOutside, CSSValueID::kTop,
+  //                                                CSSValueID::kLeft, CSSValueID::kRight, CSSValueID::kBottom,
+  //                                                CSSValueID::kStart, CSSValueID::kEnd, CSSValueID::kSelfStart,
+  //                                                CSSValueID::kSelfEnd, CSSValueID::kCenter>(tokens);
+  //        if (!value) {
+  //          value = css_parsing_utils::ConsumePercent(tokens, context_, CSSPrimitiveValue::ValueRange::kAll);
+  //        }
+  //        break;
+  //      case CSSAnchorQueryType::kAnchorSize:
+  //        value = css_parsing_utils::ConsumeIdent<CSSValueID::kWidth, CSSValueID::kHeight, CSSValueID::kBlock,
+  //                                                CSSValueID::kInline, CSSValueID::kSelfBlock,
+  //                                                CSSValueID::kSelfInline>(
+  //            tokens);
+  //        break;
+  //    }
+  //    if (!value) {
+  //      return nullptr;
+  //    }
+  //
+  //    std::shared_ptr<const CSSPrimitiveValue> fallback = nullptr;
+  //    if (css_parsing_utils::ConsumeCommaIncludingWhitespace(tokens)) {
+  //      fallback =
+  //          css_parsing_utils::ConsumeLengthOrPercent(tokens, context_, CSSPrimitiveValue::ValueRange::kAll,
+  //                                                    css_parsing_utils::UnitlessQuirk::kForbid,
+  //                                                    allowed_anchor_queries_);
+  //      if (!fallback) {
+  //        return nullptr;
+  //      }
+  //    }
+  //
+  //    tokens.ConsumeWhitespace();
+  //    if (!tokens.AtEnd()) {
+  //      return nullptr;
+  //    }
+  //    return std::make_shared<CSSMathExpressionAnchorQuery>(anchor_query_type, anchor_specifier, *value, fallback);
+  //  }
 
   bool ParseProgressNotationFromTo(CSSParserTokenRange& tokens,
                                    State state,
@@ -717,9 +722,9 @@ class CSSMathExpressionNodeParser {
     if (!IsSupportedMathFunction(function_id)) {
       return nullptr;
     }
-    if (auto anchor_query = ParseAnchorQuery(function_id, tokens)) {
-      return anchor_query;
-    }
+    //    if (auto anchor_query = ParseAnchorQuery(function_id, tokens)) {
+    //      return anchor_query;
+    //    }
     if (auto progress = ParseProgressNotation(function_id, tokens, state)) {
       return progress;
     }
@@ -2342,48 +2347,6 @@ std::shared_ptr<CSSMathExpressionNode> CSSMathExpressionOperation::CreateArithme
   return CreateArithmeticOperation(left_side, right_side, op);
 }
 
-// Do substitution in order to produce a calc-size() whose basis is not
-// another calc-size().
-std::shared_ptr<const CSSMathExpressionNode> UnnestCalcSize(
-    const std::shared_ptr<const CSSMathExpressionOperation>& calc_size_input) {
-  DCHECK(calc_size_input->IsCalcSize());
-  std::vector<std::shared_ptr<const CSSMathExpressionNode>> calculation_stack;
-  std::shared_ptr<const CSSMathExpressionNode> innermost_basis = nullptr;
-  std::shared_ptr<const CSSMathExpressionNode> current_result = nullptr;
-
-  std::shared_ptr<const CSSMathExpressionOperation> current_calc_size = calc_size_input;
-  while (true) {
-    std::shared_ptr<const CSSMathExpressionNode> basis = current_calc_size->GetOperands()[0];
-    std::shared_ptr<const CSSMathExpressionNode> calculation = current_calc_size->GetOperands()[1];
-    std::shared_ptr<const CSSMathExpressionOperation> basis_calc_size = DynamicToCalcSize(basis);
-    if (!basis_calc_size) {
-      current_result = calculation;
-      innermost_basis = basis;
-      break;
-    }
-    calculation_stack.push_back(calculation);
-    current_calc_size = basis_calc_size;
-  }
-
-  if (calculation_stack.empty()) {
-    // No substitution is needed; return the original.
-    return calc_size_input;
-  }
-
-  size_t substitution_count = 1;
-  do {
-    std::tie(current_result, substitution_count) =
-        SubstituteForSizeKeyword(calculation_stack.back(), current_result, std::max(substitution_count, 1u));
-    if (!current_result) {
-      // too much expansion
-      return nullptr;
-    }
-    calculation_stack.pop_back();
-  } while (!calculation_stack.empty());
-
-  return CSSMathExpressionOperation::CreateCalcSizeOperation(innermost_basis, current_result);
-}
-
 namespace {
 
 std::tuple<std::shared_ptr<const CSSMathExpressionNode>, size_t> SubstituteForSizeKeyword(
@@ -2430,6 +2393,49 @@ std::tuple<std::shared_ptr<const CSSMathExpressionNode>, size_t> SubstituteForSi
 }
 
 }  // namespace
+
+// Do substitution in order to produce a calc-size() whose basis is not
+// another calc-size().
+std::shared_ptr<const CSSMathExpressionNode> UnnestCalcSize(
+    const std::shared_ptr<const CSSMathExpressionOperation>& calc_size_input) {
+  DCHECK(calc_size_input->IsCalcSize());
+  std::vector<std::shared_ptr<const CSSMathExpressionNode>> calculation_stack;
+  std::shared_ptr<const CSSMathExpressionNode> innermost_basis = nullptr;
+  std::shared_ptr<const CSSMathExpressionNode> current_result = nullptr;
+
+  std::shared_ptr<const CSSMathExpressionOperation> current_calc_size = calc_size_input;
+  while (true) {
+    std::shared_ptr<const CSSMathExpressionNode> basis = current_calc_size->GetOperands()[0];
+    std::shared_ptr<const CSSMathExpressionNode> calculation = current_calc_size->GetOperands()[1];
+    std::shared_ptr<const CSSMathExpressionOperation> basis_calc_size = DynamicToCalcSize(basis);
+    if (!basis_calc_size) {
+      current_result = calculation;
+      innermost_basis = basis;
+      break;
+    }
+    calculation_stack.push_back(calculation);
+    current_calc_size = basis_calc_size;
+  }
+
+  if (calculation_stack.empty()) {
+    // No substitution is needed; return the original.
+    return calc_size_input;
+  }
+
+  size_t substitution_count = 1;
+  do {
+    std::tie(current_result, substitution_count) =
+        SubstituteForSizeKeyword(calculation_stack.back(), current_result, std::max(substitution_count, static_cast<size_t>(1u)));
+    if (!current_result) {
+      // too much expansion
+      return nullptr;
+    }
+    calculation_stack.pop_back();
+  } while (!calculation_stack.empty());
+
+  return CSSMathExpressionOperation::CreateCalcSizeOperation(innermost_basis, current_result);
+}
+
 
 // static
 std::shared_ptr<CSSMathExpressionNode> CSSMathExpressionOperation::CreateArithmeticOperationAndSimplifyCalcSize(
@@ -3582,5 +3588,202 @@ double CSSMathExpressionContainerFeature::ComputeDouble(const CSSLengthResolver&
 // ------ End of CSSMathExpressionContainerProgress member functions ------
 
 // ------ Start of CSSMathExpressionAnchorQuery member functions ------
+//
+// namespace {
+//
+// CalculationResultCategory AnchorQueryCategory(const CSSPrimitiveValue* fallback) {
+//  // Note that the main (non-fallback) result of an anchor query is always
+//  // a kCalcLength, so the only thing that can make our overall result anything
+//  // else is the fallback.
+//  if (!fallback || fallback->IsLength()) {
+//    return kCalcLength;
+//  }
+//  // This can happen for e.g. anchor(--a top, 10%). In this case, we can't
+//  // tell if we're going to return a <length> or a <percentage> without actually
+//  // evaluating the query.
+//  //
+//  // TODO(crbug.com/326088870): Evaluate anchor queries when understanding
+//  // the CalculationResultCategory for an expression.
+//  return kCalcLengthFunction;
+//}
+//
+//}  // namespace
+//
+// CSSMathExpressionAnchorQuery::CSSMathExpressionAnchorQuery(CSSAnchorQueryType type,
+//                                                           std::shared_ptr<const CSSValue> anchor_specifier,
+//                                                           std::shared_ptr<const CSSValue> value,
+//                                                           std::shared_ptr<const CSSPrimitiveValue> fallback)
+//    : CSSMathExpressionNode(
+//          AnchorQueryCategory(fallback.get()),
+//          false /* has_comparisons */,
+//          true /* has_anchor_functions */,
+//          (anchor_specifier && !anchor_specifier->IsScopedValue()) || (fallback && !fallback->IsScopedValue())),
+//      type_(type),
+//      anchor_specifier_(anchor_specifier),
+//      value_(value),
+//      fallback_(fallback) {}
+//
+// double CSSMathExpressionAnchorQuery::DoubleValue() const {
+//  NOTREACHED_IN_MIGRATION();
+//  return 0;
+//}
+//
+// double CSSMathExpressionAnchorQuery::ComputeLengthPx(const CSSLengthResolver& length_resolver) const {
+//  return ComputeDouble(length_resolver);
+//}
+//
+// std::string CSSMathExpressionAnchorQuery::CustomCSSText() const {
+//  std::string result;
+//  result.append(IsAnchor() ? "anchor(" : "anchor-size(");
+//  if (anchor_specifier_) {
+//    result.append(anchor_specifier_->CssText());
+//    result.append(" ");
+//  }
+//  result.append(value_->CssText());
+//  if (fallback_) {
+//    result.append(", ");
+//    result.append(fallback_->CustomCSSText());
+//  }
+//  result.append(")");
+//  return result;
+//}
+//
+// std::shared_ptr<const CalculationExpressionNode> CSSMathExpressionAnchorQuery::ToCalculationExpression(
+//    const CSSLengthResolver& length_resolver) const {
+//  AnchorQuery query = ToQuery(length_resolver);
+//
+//  Length result;
+//
+//  if (std::optional<LayoutUnit> px = EvaluateQuery(query, length_resolver)) {
+//    result = Length::Fixed(px.value());
+//  } else {
+//    // We should have checked HasInvalidAnchorFunctions() before entering here.
+//    CHECK(fallback_);
+//    result = fallback_->ConvertToLength(length_resolver);
+//  }
+//
+//  return result.AsCalculationValue()->GetOrCreateExpression();
+//}
+//
+// bool CSSMathExpressionAnchorQuery::operator==(const CSSMathExpressionNode& other) const {
+//  const auto* other_anchor = DynamicTo<CSSMathExpressionAnchorQuery>(other);
+//  if (!other_anchor) {
+//    return false;
+//  }
+//  return type_ == other_anchor->type_ && (anchor_specifier_ == other_anchor->anchor_specifier_) &&
+//         (value_ == other_anchor->value_) && (fallback_ == other_anchor->fallback_);
+//}
+//
+// std::shared_ptr<const CSSMathExpressionNode> CSSMathExpressionAnchorQuery::PopulateWithTreeScope(
+//    const TreeScope* tree_scope) const {
+//  return std::make_shared<CSSMathExpressionAnchorQuery>(
+//      type_, anchor_specifier_ ? anchor_specifier_->EnsureScopedValue(tree_scope) : nullptr, *value_,
+//      fallback_ ? std::reinterpret_pointer_cast<const CSSPrimitiveValue>(fallback_->EnsureScopedValue(tree_scope))
+//                : nullptr);
+//}
+//
+// void CSSMathExpressionAnchorQuery::Trace(webf::GCVisitor* visitor) const {}
+//
+// CSSValueID TransformAnchorCSSValueID(
+//    CSSValueID from,
+//    LogicalAxis logical_axis,
+//    const TryTacticTransform& transform,
+//    const WritingDirectionMode& writing_direction) {
+//  // The value transformation happens on logical insets, so we need to first
+//  // translate physical to logical, then carry out the transform, and then
+//  // convert *back* to physical.
+//  PhysicalToLogical logical_insets(writing_direction, CSSValueID::kTop,
+//                                   CSSValueID::kRight, CSSValueID::kBottom,
+//                                   CSSValueID::kLeft);
+//
+//  LogicalToPhysical<CSSValueID> insets = transform.Transform(
+//      TryTacticTransform::LogicalSides<CSSValueID>{
+//          .inline_start = logical_insets.InlineStart(),
+//          .inline_end = logical_insets.InlineEnd(),
+//          .block_start = logical_insets.BlockStart(),
+//          .block_end = logical_insets.BlockEnd()},
+//      writing_direction);
+//
+//  bool flip_logical = FlipLogical(logical_axis, transform);
+//
+//  switch (from) {
+//    // anchor()
+//    case CSSValueID::kTop:
+//      return insets.Top();
+//    case CSSValueID::kLeft:
+//      return insets.Left();
+//    case CSSValueID::kRight:
+//      return insets.Right();
+//    case CSSValueID::kBottom:
+//      return insets.Bottom();
+//    case CSSValueID::kStart:
+//      return flip_logical ? CSSValueID::kEnd : from;
+//    case CSSValueID::kEnd:
+//      return flip_logical ? CSSValueID::kStart : from;
+//    case CSSValueID::kSelfStart:
+//      return flip_logical ? CSSValueID::kSelfEnd : from;
+//    case CSSValueID::kSelfEnd:
+//      return flip_logical ? CSSValueID::kSelfStart : from;
+//    case CSSValueID::kCenter:
+//      return from;
+//    // anchor-size()
+//    case CSSValueID::kWidth:
+//      return transform.FlippedStart() ? CSSValueID::kHeight : from;
+//    case CSSValueID::kHeight:
+//      return transform.FlippedStart() ? CSSValueID::kWidth : from;
+//    case CSSValueID::kBlock:
+//      return transform.FlippedStart() ? CSSValueID::kInline : from;
+//    case CSSValueID::kInline:
+//      return transform.FlippedStart() ? CSSValueID::kBlock : from;
+//    case CSSValueID::kSelfBlock:
+//      return transform.FlippedStart() ? CSSValueID::kSelfInline : from;
+//    case CSSValueID::kSelfInline:
+//      return transform.FlippedStart() ? CSSValueID::kSelfBlock : from;
+//    default:
+//      NOTREACHED_IN_MIGRATION();
+//      return from;
+//  }
+//}
+//
+// std::shared_ptr<const CSSMathExpressionNode> CSSMathExpressionAnchorQuery::TransformAnchors(
+//    LogicalAxis logical_axis,
+//    const TryTacticTransform& transform,
+//    const WritingDirectionMode& writing_direction) const {
+//  std::shared_ptr<const CSSValue> transformed_value = value_;
+//  if (const auto* side = DynamicTo<CSSIdentifierValue>(value_.get())) {
+//    CSSValueID from = side->GetValueID();
+//    CSSValueID to = TransformAnchorCSSValueID(from, logical_axis, transform,
+//                                              writing_direction);
+//    if (from != to) {
+//      transformed_value = CSSIdentifierValue::Create(to);
+//    }
+//  } else if (const auto* percentage =
+//                 DynamicTo<CSSPrimitiveValue>(value_.Get())) {
+//    DCHECK(percentage->IsPercentage());
+//    float from = percentage->GetFloatValue();
+//    float to = TransformAnchorPercentage(from, logical_axis, transform);
+//    if (from != to) {
+//      transformed_value = CSSNumericLiteralValue::Create(
+//          to, CSSPrimitiveValue::UnitType::kPercentage);
+//    }
+//  }
+//
+//  // The fallback can contain anchors.
+//  const CSSPrimitiveValue* transformed_fallback = fallback_.Get();
+//  if (const auto* math_function =
+//          DynamicTo<CSSMathFunctionValue>(fallback_.Get())) {
+//    transformed_fallback = math_function->TransformAnchors(
+//        logical_axis, transform, writing_direction);
+//  }
+//
+//  if (transformed_value != value_ || transformed_fallback != fallback_) {
+//    // Either the value or the fallback was transformed.
+//    return MakeGarbageCollected<CSSMathExpressionAnchorQuery>(
+//        type_, anchor_specifier_, *transformed_value, transformed_fallback);
+//  }
+//
+//  // No transformation.
+//  return this;
+//}
 
 }  // namespace webf

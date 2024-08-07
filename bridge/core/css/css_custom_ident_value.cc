@@ -37,7 +37,7 @@ std::string CSSCustomIdentValue::CustomCSSText() const {
 }
 
 std::shared_ptr<const CSSCustomIdentValue> CSSCustomIdentValue::PopulateWithTreeScope(
-    std::shared_ptr<const TreeScope>& tree_scope) const {
+    const TreeScope* tree_scope) const {
   assert(this->needs_tree_scope_population_);
   std::shared_ptr<CSSCustomIdentValue> populated = std::make_shared<CSSCustomIdentValue>(*this);
   populated->tree_scope_ = tree_scope;

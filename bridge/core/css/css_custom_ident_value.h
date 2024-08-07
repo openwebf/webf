@@ -21,7 +21,7 @@ class CSSCustomIdentValue : public CSSValue {
   explicit CSSCustomIdentValue(CSSPropertyID);
   explicit CSSCustomIdentValue(const ScopedCSSName&);
 
-  const TreeScope* GetTreeScope() const { return tree_scope_.get(); }
+  const TreeScope* GetTreeScope() const { return tree_scope_; }
   const std::string& Value() const {
     assert(!IsKnownPropertyID());
     return string_;
@@ -34,7 +34,7 @@ class CSSCustomIdentValue : public CSSValue {
 
   std::string CustomCSSText() const;
 
-  std::shared_ptr<const CSSCustomIdentValue> PopulateWithTreeScope(std::shared_ptr<const TreeScope>& tree_scope) const;
+  std::shared_ptr<const CSSCustomIdentValue> PopulateWithTreeScope(const TreeScope* tree_scope) const;
 
   bool Equals(const CSSCustomIdentValue& other) const {
     if (IsKnownPropertyID()) {
@@ -46,7 +46,7 @@ class CSSCustomIdentValue : public CSSValue {
   void TraceAfterDispatch(GCVisitor*) const;
 
  private:
-  std::shared_ptr<const TreeScope> tree_scope_;
+  const TreeScope* tree_scope_;
   std::string string_;
   CSSPropertyID property_id_;
 };

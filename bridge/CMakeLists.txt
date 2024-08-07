@@ -303,7 +303,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/timing/performance_entry.cc
     core/timing/performance_measure.cc
 
-
     ## CSS
     core/css/css_style_declaration.cc
     core/css/inline_css_style_declaration.cc
@@ -363,15 +362,18 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_numeric_literal_value
     core/css/css_color_mix_value.cc
     core/css/css_color.cc
+    core/css/anchor_query.h
     core/css/css_length_resolver.cc
     core/style/scoped_css_name.cc
 
     core/platform/text/writing_mode.cc
-    core/platform/geometry/length.cc
+    core/platform/text/text_stream.cc
+    core/platform/text/writing_direction_mode.cc
     core/platform/graphics/color.cc
     core/platform/graphics/color_conversions.cc
-    core/platform/text/writing_direction_mode.cc
+    core/platform/geometry/length.cc
     core/platform/geometry/dom_matrix.cc
+    core/platform/geometry/layout_unit.cc
     core/platform/geometry/calculation_expression_node.cc
     core/platform/geometry/dom_matrix_readonly.cc
     core/platform/geometry/length_functions.cc
@@ -726,6 +728,7 @@ if (${IS_ANDROID})
   endif()
 
   add_definitions(-DIS_ANDROID=1)
+  add_definitions(-DANDROID=1)
   list(APPEND BRIDGE_LINK_LIBS ${log-lib})
 elseif(${IS_IOS})
   add_definitions(-DIS_IOS=1)

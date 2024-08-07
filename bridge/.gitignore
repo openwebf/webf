@@ -1,5 +1,5 @@
 xcschememanagement.plist
 
 cmake-build-*
-build
+polyfill/build/
 out

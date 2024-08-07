@@ -34,8 +34,7 @@
 #ifndef WEBF_CORE_PLATFORM_GEOMETRY_LENGTH_POINT_H_
 #define WEBF_CORE_PLATFORM_GEOMETRY_LENGTH_POINT_H_
 
-#include "core/geometry/length.h"
-#include "foundation/webf_malloc.h"
+#include "core/platform/geometry/length.h"
 
 namespace webf {
 

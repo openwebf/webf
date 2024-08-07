@@ -38,9 +38,7 @@
 namespace webf {
 
 StyleElement::StyleElement(Document* document, bool created_by_parser)
-    : loading_(false),
-      registered_as_candidate_(false),
-      created_by_parser_(created_by_parser) {
+    : loading_(false), registered_as_candidate_(false), created_by_parser_(created_by_parser) {
   // NOTE(xiezuobing):是否
   //  start_position_ = TextPosition::MinimumPosition();
 }
@@ -53,7 +51,7 @@ bool StyleElement::IsLoading() const {
   }
 
   sheet_->Contents();
-  //  return sheet_ ? sheet_->IsLoading() : false;
+//  return sheet_ ? sheet_->IsLoading() : false;
 }
 
 StyleElement::ProcessingResult StyleElement::ProcessStyleSheet(Document& document, Element& element) {

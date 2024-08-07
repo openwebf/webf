@@ -9,7 +9,7 @@
 #include <cmath>
 #include <optional>
 #include <utility>
-
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -190,7 +190,7 @@ ValueType EvaluateSteppedValueFunction(OperatorType op,
       return std::fmod(a, b);
     }
     default:
-      NOTREACHED_NORETURN();
+      assert(false);
   }
 }
 

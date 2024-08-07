@@ -10,6 +10,7 @@
 #define WEBF_CORE_CSS_ANCHOR_QUERY_H_
 
 #include <cassert>
+#include <variant>
 #include "foundation/macros.h"
 #include "core/css/css_anchor_query_enums.h"
 #include "core/style/anchor_specifier_value.h"
@@ -29,7 +30,7 @@ class AnchorQuery {
   AnchorQuery(CSSAnchorQueryType query_type,
               const AnchorSpecifierValue* anchor_specifier,
               float percentage,
-              absl::variant<CSSAnchorValue, CSSAnchorSizeValue> value)
+              std::variant<CSSAnchorValue, CSSAnchorSizeValue> value)
       : query_type_(query_type),
         anchor_specifier_(anchor_specifier),
         percentage_(percentage),
@@ -43,7 +44,7 @@ class AnchorQuery {
   }
   CSSAnchorValue AnchorSide() const {
     assert(query_type_ == CSSAnchorQueryType::kAnchor);
-    return absl::get<CSSAnchorValue>(value_);
+    return std::get<CSSAnchorValue>(value_);
   }
   float AnchorSidePercentage() const {
     assert(query_type_ == CSSAnchorQueryType::kAnchor);
@@ -56,7 +57,7 @@ class AnchorQuery {
   }
   CSSAnchorSizeValue AnchorSize() const {
     assert(query_type_ == CSSAnchorQueryType::kAnchorSize);
-    return absl::get<CSSAnchorSizeValue>(value_);
+    return std::get<CSSAnchorSizeValue>(value_);
   }
 
   bool operator==(const AnchorQuery& other) const;
@@ -67,7 +68,7 @@ class AnchorQuery {
   CSSAnchorQueryType query_type_;
   std::shared_ptr<const AnchorSpecifierValue> anchor_specifier_;
   float percentage_;
-  absl::variant<CSSAnchorValue, CSSAnchorSizeValue> value_;
+  std::variant<CSSAnchorValue, CSSAnchorSizeValue> value_;
 };
 
 }  // namespace webf

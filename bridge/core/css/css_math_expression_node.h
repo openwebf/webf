@@ -39,6 +39,7 @@
 #include <span>
 
 #include "core/base/containers/enum_set.h"
+#include "core/css/anchor_query.h"
 #include "core/css/css_anchor_query_enums.h"
 #include "core/css/css_custom_ident_value.h"
 #include "core/css/css_identifier_value.h"
@@ -687,72 +688,87 @@ struct DowncastTraits<CSSMathExpressionContainerFeature> {
   static bool AllowFrom(const CSSMathExpressionNode& node) { return node.IsContainerFeature(); }
 };
 
-// anchor() and anchor-size()
-class CSSMathExpressionAnchorQuery final : public CSSMathExpressionNode {
- public:
-  CSSMathExpressionAnchorQuery(CSSAnchorQueryType type,
-                               std::shared_ptr<const CSSValue> anchor_specifier,
-                               const CSSValue& value,
-                               const CSSPrimitiveValue* fallback);
-
-  std::shared_ptr<CSSMathExpressionNode> Copy() const final {
-    return std::make_shared<CSSMathExpressionAnchorQuery>(type_, anchor_specifier_, *value_, fallback_);
-  }
-
-  bool IsAnchor() const { return type_ == CSSAnchorQueryType::kAnchor; }
-  bool IsAnchorSize() const { return type_ == CSSAnchorQueryType::kAnchorSize; }
-
-  // TODO(crbug.com/1309178): This is not entirely correct, since "math
-  // function" should refer to functions defined in [1]. We may need to clean up
-  // the terminology in the code.
-  // [1] https://drafts.csswg.org/css-values-4/#math
-  bool IsMathFunction() const final { return true; }
-
-  bool IsAnchorQuery() const final { return true; }
-  bool IsZero() const final { return false; }
-  CSSPrimitiveValue::UnitType ResolvedUnitType() const final { return CSSPrimitiveValue::UnitType::kUnknown; }
-  std::optional<double> ComputeValueInCanonicalUnit() const final { return std::nullopt; }
-  std::optional<PixelsAndPercent> ToPixelsAndPercent(const CSSLengthResolver&) const final { return std::nullopt; }
-  bool AccumulateLengthArray(CSSLengthArray& length_array, double multiplier) const final { return false; }
-  bool IsComputationallyIndependent() const final { return false; }
-  double DoubleValue() const final;
-  double ComputeLengthPx(const CSSLengthResolver& length_resolver) const final;
-  void AccumulateLengthUnitTypes(CSSPrimitiveValue::LengthTypeFlags& types) const final {
-    // AccumulateLengthUnitTypes() is only used when interpolating the
-    // 'transform' property, where anchor queries are not allowed.
-    assert(false);
-    return;
-  }
-
-  std::string CustomCSSText() const final;
-  std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
-  bool operator==(const CSSMathExpressionNode& other) const final;
-  std::shared_ptr<const CSSMathExpressionNode> PopulateWithTreeScope(const TreeScope*) const final;
-  void Trace(GCVisitor* visitor) const final;
-
-  std::shared_ptr<const CSSMathExpressionNode> TransformAnchors(LogicalAxis,
-                                                                const TryTacticTransform&,
-                                                                const WritingDirectionMode&) const final;
-  bool HasInvalidAnchorFunctions(const CSSLengthResolver&) const final;
-
-#if DCHECK_IS_ON()
-  bool InvolvesPercentageComparisons() const final { return false; }
-#endif
-
- protected:
-  double ComputeDouble(const CSSLengthResolver&) const final;
-
- private:
-  CSSAnchorQueryType type_;
-  std::shared_ptr<const CSSValue> anchor_specifier_;
-  std::shared_ptr<const CSSValue> value_;
-  std::shared_ptr<const CSSPrimitiveValue> fallback_;
-};
-
-template <>
-struct DowncastTraits<CSSMathExpressionAnchorQuery> {
-  static bool AllowFrom(const CSSMathExpressionNode& node) { return node.IsAnchorQuery(); }
-};
+//// anchor() and anchor-size()
+//class CSSMathExpressionAnchorQuery final : public CSSMathExpressionNode {
+// public:
+//  CSSMathExpressionAnchorQuery(CSSAnchorQueryType type,
+//                               std::shared_ptr<const CSSValue> anchor_specifier,
+//                               std::shared_ptr<const CSSValue> value,
+//                               std::shared_ptr<const CSSPrimitiveValue> fallback);
+//
+//  std::shared_ptr<CSSMathExpressionNode> Copy() const final {
+//    return std::make_shared<CSSMathExpressionAnchorQuery>(type_, anchor_specifier_, *value_, fallback_);
+//  }
+//
+//  bool IsAnchor() const { return type_ == CSSAnchorQueryType::kAnchor; }
+//  bool IsAnchorSize() const { return type_ == CSSAnchorQueryType::kAnchorSize; }
+//
+//  // TODO(crbug.com/1309178): This is not entirely correct, since "math
+//  // function" should refer to functions defined in [1]. We may need to clean up
+//  // the terminology in the code.
+//  // [1] https://drafts.csswg.org/css-values-4/#math
+//  bool IsMathFunction() const final { return true; }
+//
+//  bool IsAnchorQuery() const final { return true; }
+//
+//  CSSPrimitiveValue::BoolStatus IsNegative() const final {
+//    return CSSPrimitiveValue::BoolStatus::kUnresolvable;
+//  }
+//  CSSPrimitiveValue::UnitType ResolvedUnitType() const final { return CSSPrimitiveValue::UnitType::kUnknown; }
+//  std::optional<double> ComputeValueInCanonicalUnit() const final { return std::nullopt; }
+//  std::optional<double> ComputeValueInCanonicalUnit(
+//      const CSSLengthResolver& length_resolver) const final {
+//    assert(false);
+//  }
+//  std::optional<PixelsAndPercent> ToPixelsAndPercent(const CSSLengthResolver&) const final { return std::nullopt; }
+//  bool AccumulateLengthArray(CSSLengthArray& length_array, double multiplier) const final { return false; }
+//  bool IsComputationallyIndependent() const final { return false; }
+//  double DoubleValue() const final;
+//  double ComputeLengthPx(const CSSLengthResolver& length_resolver) const final;
+//  void AccumulateLengthUnitTypes(CSSPrimitiveValue::LengthTypeFlags& types) const final {
+//    // AccumulateLengthUnitTypes() is only used when interpolating the
+//    // 'transform' property, where anchor queries are not allowed.
+//    assert(false);
+//    return;
+//  }
+//
+//  std::string CustomCSSText() const final;
+//  std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
+//  bool operator==(const CSSMathExpressionNode& other) const final;
+//  std::shared_ptr<const CSSMathExpressionNode> PopulateWithTreeScope(const TreeScope*) const final;
+//  void Trace(GCVisitor* visitor) const final;
+//
+//#if DCHECK_IS_ON()
+//  bool InvolvesPercentageComparisons() const final { return false; }
+//#endif
+//
+//  std::shared_ptr<const CSSMathExpressionNode> TransformAnchors(
+//      LogicalAxis,
+//      const TryTacticTransform&,
+//      const WritingDirectionMode&) const final;
+//  bool HasInvalidAnchorFunctions(const CSSLengthResolver&) const final;
+//
+// protected:
+//  double ComputeDouble(const CSSLengthResolver&) const final;
+//  CSSPrimitiveValue::BoolStatus ResolvesTo(double value) const final {
+//    return CSSPrimitiveValue::BoolStatus::kUnresolvable;
+//  }
+//
+// private:
+//  std::optional<LayoutUnit> EvaluateQuery(const AnchorQuery& query,
+//                                          const CSSLengthResolver&) const;
+//  AnchorQuery ToQuery(const CSSLengthResolver& length_resolver) const;
+//
+//  CSSAnchorQueryType type_;
+//  std::shared_ptr<const CSSValue> anchor_specifier_;
+//  std::shared_ptr<const CSSValue> value_;
+//  std::shared_ptr<const CSSPrimitiveValue> fallback_;
+//};
+//
+//template <>
+//struct DowncastTraits<CSSMathExpressionAnchorQuery> {
+//  static bool AllowFrom(const CSSMathExpressionNode& node) { return node.IsAnchorQuery(); }
+//};
 
 }  // namespace webf
 

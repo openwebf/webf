@@ -23,7 +23,7 @@
 #ifndef WEBF_PLATFORM_GEOMETRY_LENGTH_SIZE_H_
 #define WEBF_PLATFORM_GEOMETRY_LENGTH_SIZE_H_
 
-#include "core/geometry/length.h"
+#include "core/platform/geometry/length.h"
 
 namespace webf {
 
