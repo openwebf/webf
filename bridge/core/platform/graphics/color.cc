@@ -28,6 +28,7 @@
 #include "core/platform/geometry/blend.h"
 #include "core/platform/graphics/color_conversions.h"
 #include "core/platform/math_extras.h"
+#include "core/platform/hash_functions.h"
 
 namespace webf {
 
@@ -672,40 +673,17 @@ float NormalizeSign(float number) {
   return number;
 }
 
-template <typename T>
-unsigned HashInt(T key) {
-  static_assert(std::is_integral_v<T> || std::is_enum_v<T>);
-  std::hash<T> hash_fn;
-  return hash_fn(key);
-}
-
-template <typename T>
-unsigned HashFloat(T key) {
-  static_assert(std::is_floating_point_v<T>);
-  std::hash<T> hash_fn;
-  return hash_fn(key);
-}
-
-// Useful compounding hash functions.
-inline void AddIntToHash(unsigned& hash, unsigned key) {
-  hash = ((hash << 5) + hash) + key;  // Djb2
-}
-
-inline void AddFloatToHash(unsigned& hash, float value) {
-  AddIntToHash(hash, HashFloat(value));
-}
-
 unsigned Color::GetHash() const {
-  unsigned result = HashInt(static_cast<uint8_t>(color_space_));
+  unsigned result = WTF::HashInt(static_cast<uint8_t>(color_space_));
 
-  AddFloatToHash(result, NormalizeSign(param0_));
-  AddFloatToHash(result, NormalizeSign(param1_));
-  AddFloatToHash(result, NormalizeSign(param2_));
-  AddFloatToHash(result, NormalizeSign(alpha_));
-  AddIntToHash(result, param0_is_none_);
-  AddIntToHash(result, param1_is_none_);
-  AddIntToHash(result, param2_is_none_);
-  AddIntToHash(result, alpha_is_none_);
+  WTF::AddFloatToHash(result, NormalizeSign(param0_));
+  WTF::AddFloatToHash(result, NormalizeSign(param1_));
+  WTF::AddFloatToHash(result, NormalizeSign(param2_));
+  WTF::AddFloatToHash(result, NormalizeSign(alpha_));
+  WTF::AddIntToHash(result, param0_is_none_);
+  WTF::AddIntToHash(result, param1_is_none_);
+  WTF::AddIntToHash(result, param2_is_none_);
+  WTF::AddIntToHash(result, alpha_is_none_);
 
   return result;
 }

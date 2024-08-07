@@ -33,7 +33,6 @@
 
 #include <string>
 #include "bindings/qjs/atomic_string.h"
-#include "foundation/string_builder.h"
 
 namespace webf {
 
@@ -58,14 +57,13 @@ class TextStream final {
   TextStream& operator<<(double);
   TextStream& operator<<(const char*);
   TextStream& operator<<(const void*);
-  TextStream& operator<<(const AtomicString&);
   TextStream& operator<<(const std::string&);
   TextStream& operator<<(const FormatNumberRespectingIntegers&);
 
-  AtomicString Release();
+  std::string Release();
 
  private:
-  StringBuilder text_;
+  std::string text_;
 };
 
 void WriteIndent(TextStream&, int indent);

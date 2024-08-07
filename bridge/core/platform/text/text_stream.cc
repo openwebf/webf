@@ -30,7 +30,6 @@
 #include "text_stream.h"
 
 #include "core/platform/math_extras.h"
-#include "foundation/string_builder.h"
 
 namespace webf {
 
@@ -52,49 +51,49 @@ TextStream& TextStream::operator<<(bool b) {
 }
 
 TextStream& TextStream::operator<<(int16_t i) {
-  text_.AppendNumber(i);
+  text_.append(std::to_string(i));
   return *this;
 }
 
 TextStream& TextStream::operator<<(uint16_t i) {
-  text_.AppendNumber(i);
+  text_.append(std::to_string(i));
   return *this;
 }
 
 TextStream& TextStream::operator<<(int32_t i) {
-  text_.AppendNumber(i);
+  text_.append(std::to_string(i));
   return *this;
 }
 
 TextStream& TextStream::operator<<(uint32_t i) {
-  text_.AppendNumber(i);
+  text_.append(std::to_string(i));
   return *this;
 }
 
 TextStream& TextStream::operator<<(int64_t i) {
-  text_.AppendNumber(i);
+  text_.append(std::to_string(i));
   return *this;
 }
 
 TextStream& TextStream::operator<<(uint64_t i) {
   // TODO(xiezuobing): StringBuilder::AppendNumber
-  text_.AppendNumber(i);
+  text_.append(std::to_string(i));
   return *this;
 }
 
 TextStream& TextStream::operator<<(float f) {
   // TODO(xiezuobing): AtomicString::NumberToStringFixedWidth
-  text_.Append(AtomicString::NumberToStringFixedWidth(f, 2));
+  text_.append(std::to_string(f));
   return *this;
 }
 
 TextStream& TextStream::operator<<(double d) {
-  text_.Append(String::NumberToStringFixedWidth(d, 2));
+  text_.append(std::to_string(d));
   return *this;
 }
 
 TextStream& TextStream::operator<<(const char* string) {
-  text_.Append(string);
+  text_.append(string);
   return *this;
 }
 
@@ -105,12 +104,7 @@ TextStream& TextStream::operator<<(const void* p) {
 }
 
 TextStream& TextStream::operator<<(const std::string& string) {
-  text_.Append(string.data(), string.length());
-  return *this;
-}
-
-TextStream& TextStream::operator<<(const String& string) {
-  text_.Append(string);
+  text_.append(string.data(), string.length());
   return *this;
 }
 
@@ -119,14 +113,12 @@ TextStream& TextStream::operator<<(
   if (HasFractions(number_to_format.value))
     return *this << number_to_format.value;
 
-  text_.AppendNumber(static_cast<int>(round(number_to_format.value)));
+  text_.append(std::to_string(static_cast<int>(round(number_to_format.value))));
   return *this;
 }
 
-AtomicString TextStream::Release() {
-  AtomicString result = text_.ToString();
-  text_.Clear();
-  return result;
+std::string TextStream::Release() {
+  return text_;
 }
 
 void WriteIndent(TextStream& ts, int indent) {

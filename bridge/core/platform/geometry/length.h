@@ -34,6 +34,7 @@
 #include <optional>
 #include "bindings/qjs/atomic_string.h"
 #include "core/platform/math_extras.h"
+#include "core/platform/geometry/layout_unit.h"
 
 namespace webf {
 
@@ -124,6 +125,11 @@ class Length {
   explicit Length(std::shared_ptr<const CalculationValue>);
 
   Length(int v, Length::Type t) : value_(v), type_(t) { assert(t != kCalculated); }
+
+  Length(LayoutUnit v, Length::Type t) : value_(v.ToFloat()), type_(t) {
+    DCHECK(std::isfinite(v.ToFloat()));
+    DCHECK_NE(t, kCalculated);
+  }
 
   Length(float v, Length::Type t) : value_(v), type_(t) {
     assert(std::isfinite(v));
