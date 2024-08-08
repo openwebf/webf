@@ -426,3 +426,5 @@ Object.assign(global, {
   matchCacheSnapshot,
   getSnapshot,
 });
+
+nativeLoader.loadNativeLibrary('example_app', {}).catch(err => console.log(err));

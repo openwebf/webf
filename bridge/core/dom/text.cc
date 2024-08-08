@@ -24,6 +24,11 @@ Node::NodeType Text::nodeType() const {
   return Node::kTextNode;
 }
 
+WebFPublicMethods* Text::publicMethodPointer() {
+  auto* super_method = CharacterData::publicMethodPointer();
+  return new TextNodeWebFMethods(static_cast<CharacterDataWebFMethods*>(super_method));
+}
+
 std::string Text::nodeName() const {
   return "#text";
 }
