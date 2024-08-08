@@ -1712,6 +1712,25 @@ std::optional<PixelsAndPercent> CSSMathExpressionKeywordLiteral::ToPixelsAndPerc
   }
 }
 
+double CSSMathExpressionKeywordLiteral::ComputeDouble(
+    const CSSLengthResolver& length_resolver) const {
+  switch (context_) {
+    case CSSMathExpressionKeywordLiteral::Context::kMediaProgress: {
+      switch (keyword_) {
+        case CSSValueID::kWidth:
+          return length_resolver.ViewportWidth();
+        case CSSValueID::kHeight:
+          return length_resolver.ViewportHeight();
+        default:
+          assert(false);
+      }
+    }
+    case CSSMathExpressionKeywordLiteral::Context::kCalcSize:
+    case CSSMathExpressionKeywordLiteral::Context::kColorChannel:
+      assert(false);
+  };
+}
+
 // ------ End of CSSMathExpressionKeywordLiteral member functions ----
 
 // ------ Start of CSSMathExpressionOperation member functions ------

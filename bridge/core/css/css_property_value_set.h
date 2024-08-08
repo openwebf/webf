@@ -25,6 +25,7 @@
 #ifndef WEBF_CSS_PROPERTY_VALUE_SET_H
 #define WEBF_CSS_PROPERTY_VALUE_SET_H
 
+#include <span>
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/base/bits.h"
 #include "core/css/css_property_value.h"
@@ -84,7 +85,7 @@ class CSSPropertyValueSet : public std::enable_shared_from_this<CSSPropertyValue
   bool IsEmpty() const;
   PropertyReference PropertyAt(unsigned index) const { return PropertyReference(*this, index); }
 
-  template <typename T>  // CSSPropertyID or AtomicString
+  template <typename T>  // CSSPropertyID or std::string
   int FindPropertyIndex(const T& property) const;
 
   bool HasProperty(CSSPropertyID property) const { return FindPropertyIndex(property) != -1; }
@@ -98,12 +99,13 @@ class CSSPropertyValueSet : public std::enable_shared_from_this<CSSPropertyValue
   template <typename T>  // CSSPropertyID or AtomicString
   bool PropertyIsImportant(const T& property) const;
 
-  const std::shared_ptr<const CSSValue>* GetPropertyCSSValueWithHint(const std::string& property_name, unsigned index) const;
+  const std::shared_ptr<const CSSValue>* GetPropertyCSSValueWithHint(const std::string& property_name,
+                                                                     unsigned index) const;
   std::string GetPropertyValueWithHint(const std::string& property_name, unsigned index) const;
   bool PropertyIsImportantWithHint(const std::string& property_name, unsigned index) const;
 
   bool ShorthandIsImportant(CSSPropertyID) const;
-  bool ShorthandIsImportant(const AtomicString& custom_property_name) const {
+  bool ShorthandIsImportant(const std::string& custom_property_name) const {
     // Custom properties are never shorthands.
     return false;
   }
@@ -116,7 +118,8 @@ class CSSPropertyValueSet : public std::enable_shared_from_this<CSSPropertyValue
   std::shared_ptr<const MutableCSSPropertyValueSet> MutableCopy() const;
   std::shared_ptr<const ImmutableCSSPropertyValueSet> ImmutableCopyIfNeeded() const;
 
-  const std::shared_ptr<const MutableCSSPropertyValueSet> CopyPropertiesInSet(const std::vector<const CSSProperty*>&) const;
+  const std::shared_ptr<const MutableCSSPropertyValueSet> CopyPropertiesInSet(
+      const std::vector<const CSSProperty*>&) const;
 
   std::string AsText() const;
 
@@ -167,8 +170,8 @@ class CSSLazyPropertyParser {
   virtual void Trace(GCVisitor*) const;
 };
 
-class alignas(std::max(alignof(std::shared_ptr<const CSSValue>), alignof(CSSPropertyValueMetadata))) ImmutableCSSPropertyValueSet
-    : public CSSPropertyValueSet {
+class alignas(std::max(alignof(std::shared_ptr<const CSSValue>),
+                       alignof(CSSPropertyValueMetadata))) ImmutableCSSPropertyValueSet : public CSSPropertyValueSet {
  public:
   ImmutableCSSPropertyValueSet(const CSSPropertyValue*,
                                unsigned count,
@@ -176,16 +179,16 @@ class alignas(std::max(alignof(std::shared_ptr<const CSSValue>), alignof(CSSProp
                                bool contains_cursor_hand = false);
 
   static std::shared_ptr<const ImmutableCSSPropertyValueSet> Create(const CSSPropertyValue* properties,
-                                              unsigned count,
-                                              CSSParserMode,
-                                              bool contains_cursor_hand = false);
+                                                                    unsigned count,
+                                                                    CSSParserMode,
+                                                                    bool contains_cursor_hand = false);
 
   unsigned PropertyCount() const { return array_size_; }
 
   const std::shared_ptr<const CSSValue>* ValueArray() const;
   const CSSPropertyValueMetadata* MetadataArray() const;
 
-  template <typename T>  // CSSPropertyID or AtomicString
+  template <typename T>
   int FindPropertyIndex(const T& property) const;
 
   void TraceAfterDispatch(GCVisitor*) const;
@@ -249,16 +252,16 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   bool AddRespectingCascade(const CSSPropertyValue&);
 
   // Expands shorthand properties into multiple properties.
-  void SetProperty(CSSPropertyID, const CSSValue&, bool important = false);
+  void SetProperty(CSSPropertyID, std::shared_ptr<const CSSValue>, bool important = false);
 
   // Convenience wrapper around the above that also supports custom properties.
-  void SetProperty(const CSSPropertyName&, const CSSValue&, bool important = false);
+  void SetProperty(const CSSPropertyName&, std::shared_ptr<const CSSValue>, bool important = false);
 
   // Also a convenience wrapper around SetProperty(), parsing the value from a
   // string before setting it. If the value is empty, the property is removed.
   // Only for non-custom properties.
   SetResult ParseAndSetProperty(CSSPropertyID unresolved_property,
-                                StringView value,
+                                const std::string& value,
                                 bool important,
                                 StyleSheetContents* context_style_sheet = nullptr);
 
@@ -266,8 +269,8 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   // (By implementation quirk, it attempts shorthand expansion, even though
   // custom properties can never be shorthands.) If the value is empty,
   // the property is removed.
-  SetResult ParseAndSetCustomProperty(const AtomicString& custom_property_name,
-                                      StringView value,
+  SetResult ParseAndSetCustomProperty(const std::string& custom_property_name,
+                                      const std::string& value,
                                       bool important,
                                       StyleSheetContents* context_style_sheet,
                                       bool is_animation_tainted);
@@ -280,26 +283,26 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   // A streamlined version of the above, which can be used if you don't need
   // custom properties and don't need the return value (which requires an extra
   // comparison with the old property). This is the fastest form.
-  void SetLonghandProperty(CSSPropertyID, const CSSValue&);
+  void SetLonghandProperty(CSSPropertyID, std::shared_ptr<const CSSValue>);
 
   // Convenience form of the CSSPropertyValue overload above.
   SetResult SetLonghandProperty(CSSPropertyID, CSSValueID identifier, bool important = false);
 
-  template <typename T>  // CSSPropertyID or AtomicString
-  bool RemoveProperty(const T& property, AtomicString* return_text = nullptr);
-  bool RemovePropertiesInSet(const CSSProperty* const set[], unsigned length);
+  template <typename T>
+  bool RemoveProperty(const T& property, std::string* return_text = nullptr);
+
+  bool RemovePropertiesInSet(std::span<const CSSProperty* const> set);
   void RemoveEquivalentProperties(const CSSPropertyValueSet*);
   void RemoveEquivalentProperties(const CSSStyleDeclaration*);
 
   void MergeAndOverrideOnConflict(const CSSPropertyValueSet*);
 
   void Clear();
-  void ParseDeclarationList(const AtomicString& style_declaration,
-                            StyleSheetContents* context_style_sheet);
+  void ParseDeclarationList(const AtomicString& style_declaration, StyleSheetContents* context_style_sheet);
 
   CSSStyleDeclaration* EnsureCSSStyleDeclaration(ExecutingContext* execution_context);
 
-  template <typename T>  // CSSPropertyID or AtomicString
+  template <typename T>  // CSSPropertyID or std::string
   int FindPropertyIndex(const T& property) const;
 
   void TraceAfterDispatch(GCVisitor*) const;
@@ -315,10 +318,10 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   // nullptr).
   FORCE_INLINE CSSPropertyValue* FindInsertionPointForID(CSSPropertyID property_id);
 
-  bool RemovePropertyAtIndex(int, AtomicString* return_text);
+  bool RemovePropertyAtIndex(int, std::string* return_text);
 
   bool RemoveShorthandProperty(CSSPropertyID);
-  bool RemoveShorthandProperty(const AtomicString& custom_property_name) { return false; }
+  bool RemoveShorthandProperty(const std::string& custom_property_name) { return false; }
   CSSPropertyValue* FindCSSPropertyWithName(const CSSPropertyName&);
   Member<PropertySetCSSStyleDeclaration> cssom_wrapper_;
 

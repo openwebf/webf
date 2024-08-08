@@ -11,6 +11,7 @@
 
 #include "foundation/macros.h"
 #include "bindings/qjs/atomic_string.h"
+#include "core/css/css_property_value_set.h"
 #include "css_parser_mode.h"
 
 namespace webf {
@@ -24,6 +25,30 @@ class CSSParser {
   WEBF_STATIC_ONLY(CSSParser);
 
  public:
+
+  static MutableCSSPropertyValueSet::SetResult ParseValue(
+      MutableCSSPropertyValueSet*,
+      CSSPropertyID unresolved_property,
+      const std::string& value,
+      bool important,
+      const ExecutingContext* execution_context = nullptr);
+  static MutableCSSPropertyValueSet::SetResult ParseValue(
+      MutableCSSPropertyValueSet*,
+      CSSPropertyID unresolved_property,
+      const std::string& value,
+      bool important,
+      StyleSheetContents*,
+      const ExecutingContext* execution_context = nullptr);
+
+  static MutableCSSPropertyValueSet::SetResult ParseValueForCustomProperty(
+      MutableCSSPropertyValueSet*,
+      const std::string& property_name,
+      const std::string& value,
+      bool important,
+      StyleSheetContents*,
+      bool is_animation_tainted);
+
+
   static ParseSheetResult ParseSheet(const std::shared_ptr<const CSSParserContext>&,
                                      const std::shared_ptr<StyleSheetContents>&,
                                      const std::string&,
