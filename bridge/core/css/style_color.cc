@@ -29,93 +29,13 @@
  */
 
 #include "style_color.h"
-#include "core/css/css_color_mix_value.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_primitive_value.h"
 
 namespace webf {
 
-using UnderlyingColorType = StyleColor::UnresolvedColorMix::UnderlyingColorType;
-
-UnderlyingColorType ResolveColorOperandType(const StyleColor& c) {
-  if (c.IsUnresolvedColorMixFunction()) {
-    return UnderlyingColorType::kColorMix;
-  }
-  if (c.IsCurrentColor()) {
-    return UnderlyingColorType::kCurrentColor;
-  }
-  return UnderlyingColorType::kColor;
-}
-
-Color ResolveColorOperand(const StyleColor::ColorOrUnresolvedColorMix& color,
-                          UnderlyingColorType type,
-                          const Color& current_color) {
-  switch (type) {
-    case UnderlyingColorType::kColorMix:
-      return color.unresolved_color_mix->Resolve(current_color);
-    case UnderlyingColorType::kCurrentColor:
-      return current_color;
-    case UnderlyingColorType::kColor:
-      return color.color;
-  }
-}
-
-StyleColor::UnresolvedColorMix::UnresolvedColorMix(Color::ColorSpace color_interpolation_space,
-                                                   Color::HueInterpolationMethod hue_interpolation_method,
-                                                   const StyleColor& c1,
-                                                   const StyleColor& c2,
-                                                   double percentage,
-                                                   double alpha_multiplier)
-    : color_interpolation_space_(color_interpolation_space),
-      hue_interpolation_method_(hue_interpolation_method),
-      color1_(c1.color_or_unresolved_color_mix_),
-      color2_(c2.color_or_unresolved_color_mix_),
-      percentage_(percentage),
-      alpha_multiplier_(alpha_multiplier),
-      color1_type_(ResolveColorOperandType(c1)),
-      color2_type_(ResolveColorOperandType(c2)) {}
-
-Color StyleColor::UnresolvedColorMix::Resolve(const Color& current_color) const {
-  const Color c1 = ResolveColorOperand(color1_, color1_type_, current_color);
-  const Color c2 = ResolveColorOperand(color2_, color2_type_, current_color);
-  return Color::FromColorMix(color_interpolation_space_, hue_interpolation_method_, c1, c2, percentage_,
-                             alpha_multiplier_);
-}
-
-std::shared_ptr<const cssvalue::CSSColorMixValue> StyleColor::UnresolvedColorMix::ToCSSColorMixValue() const {
-  auto to_css_value = [](const ColorOrUnresolvedColorMix& color_or_mix,
-                         UnderlyingColorType type) -> std::shared_ptr<const CSSValue> {
-    switch (type) {
-      case UnderlyingColorType::kColor:
-        return cssvalue::CSSColor::Create(color_or_mix.color);
-      case UnderlyingColorType::kColorMix:
-        assert(color_or_mix.unresolved_color_mix);
-        return color_or_mix.unresolved_color_mix->ToCSSColorMixValue();
-      case UnderlyingColorType::kCurrentColor:
-        return CSSIdentifierValue::Create(CSSValueID::kCurrentcolor);
-    }
-  };
-
-  auto percent1 = CSSNumericLiteralValue::Create(100 * (1.0 - percentage_) * alpha_multiplier_,
-                                                 CSSPrimitiveValue::UnitType::kPercentage);
-  auto percent2 =
-      CSSNumericLiteralValue::Create(100 * percentage_ * alpha_multiplier_, CSSPrimitiveValue::UnitType::kPercentage);
-
-  return std::make_shared<cssvalue::CSSColorMixValue>(to_css_value(color1_, color1_type_),
-                                                      to_css_value(color2_, color2_type_), percent1, percent2,
-                                                      color_interpolation_space_, hue_interpolation_method_);
-}
-
-void StyleColor::ColorOrUnresolvedColorMix::Trace(GCVisitor* visitor) const {
-  //  visitor->Trace(unresolved_color_mix);
-}
-
 Color StyleColor::Resolve(const Color& current_color, ColorScheme color_scheme, bool* is_current_color) const {
-  if (IsUnresolvedColorMixFunction()) {
-    return color_or_unresolved_color_mix_.unresolved_color_mix->Resolve(current_color);
-  }
-
   if (is_current_color) {
     *is_current_color = IsCurrentColor();
   }
@@ -129,15 +49,6 @@ Color StyleColor::Resolve(const Color& current_color, ColorScheme color_scheme, 
     return ColorFromKeyword(color_keyword_, color_scheme);
   }
   return GetColor();
-}
-
-Color StyleColor::ResolveWithAlpha(Color current_color,
-                                   ColorScheme color_scheme,
-                                   int alpha,
-                                   bool* is_current_color) const {
-  Color color = Resolve(current_color, color_scheme, is_current_color);
-  // TODO(crbug.com/1333988) This looks unfriendly to CSS Color 4.
-  return Color(color.Red(), color.Green(), color.Blue(), alpha);
 }
 
 Color StyleColor::ColorFromKeyword(CSSValueID keyword, ColorScheme color_scheme) {
@@ -195,9 +106,8 @@ Color StyleColor::GetColor() const {
   // example in FilterEffectBuilder::BuildFilterEffect for shadow colors.
   // Unresolved color mix functions do not yet have a stored color.
 
-  assert(!IsUnresolvedColorMixFunction());
   assert(IsNumeric() || IsSystemColorIncludingDeprecated());
-  return color_or_unresolved_color_mix_.color;
+  return color;
 }
 
 bool StyleColor::IsSystemColorIncludingDeprecated(CSSValueID id) {
@@ -244,8 +154,6 @@ CSSValueID StyleColor::EffectiveColorKeyword() const {
 std::ostream& operator<<(std::ostream& stream, const StyleColor& color) {
   if (color.IsCurrentColor()) {
     return stream << "currentcolor";
-  } else if (color.IsUnresolvedColorMixFunction()) {
-    return stream << "<unresolved color-mix>";
   } else if (color.HasColorKeyword() && !color.IsNumeric()) {
     return stream << getValueName(color.GetColorKeyword());
   } else {

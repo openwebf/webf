@@ -11,7 +11,7 @@
 
 namespace webf::cssvalue {
 
-std::shared_ptr<const CSSColor> CSSColor::Create(const webf::Color& color) {
+std::shared_ptr<const CSSColor> CSSColor::Create(const Color& color) {
   return CssValuePool().GetOrCreateColor(color);
 }
 

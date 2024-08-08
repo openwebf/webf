@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef WEBF_CORE_CSS_CSS_RADIO_VALUE_H_
-#define WEBF_CORE_CSS_CSS_RADIO_VALUE_H_
+#ifndef WEBF_CORE_CSS_CSS_RATIO_VALUE_H_
+#define WEBF_CORE_CSS_CSS_RATIO_VALUE_H_
 
 #include "core/css/css_primitive_value.h"
 
@@ -45,4 +45,4 @@ struct DowncastTraits<cssvalue::CSSRatioValue> {
 
 }  // namespace webf
 
-#endif  // WEBF_CORE_CSS_CSS_RADIO_VALUE_H_
+#endif  // WEBF_CORE_CSS_CSS_RATIO_VALUE_H_

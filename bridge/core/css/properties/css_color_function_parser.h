@@ -37,9 +37,6 @@ class ColorFunctionParser {
           const CSSParserContext& context);
 
   enum class ChannelType { kNone, kPercentage, kNumber, kRelative };
-  bool ConsumeColorSpaceAndOriginColor(CSSParserTokenRange& args,
-                                       CSSValueID function_id,
-                                       const CSSParserContext& context);
   bool ConsumeChannel(CSSParserTokenRange& args, const CSSParserContext& context, int index);
   bool ConsumeAlpha(CSSParserTokenRange& args, const CSSParserContext& context);
   bool MakePerColorSpaceAdjustments();
@@ -56,18 +53,12 @@ class ColorFunctionParser {
                                                               double percentage_base,
                                                               const CSSColorChannelMap& color_channel_map);
 
-  Color::ColorSpace color_space_ = Color::ColorSpace::kNone;
   std::array<std::shared_ptr<const CSSValue>, 3> unresolved_channels_;
   std::array<std::optional<double>, 3> channels_;
   std::array<ChannelType, 3> channel_types_;
   std::shared_ptr<const CSSValue> unresolved_alpha_;
   ChannelType alpha_channel_type_;
   std::optional<double> alpha_ = 1.0;
-
-  // Metadata about the current function being parsed. Set by
-  // `ConsumeColorSpaceAndOriginColor()` after parsing the preamble of the
-  // function.
-  const FunctionMetadata* function_metadata_ = nullptr;
 
   // Legacy colors have commas separating their channels. This syntax is
   // incompatible with CSSColor4 features like "none" or alpha with a slash.

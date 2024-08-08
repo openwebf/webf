@@ -26,7 +26,6 @@
 #ifndef WEBF_CSS_PRIMITIVE_VALUE_H
 #define WEBF_CSS_PRIMITIVE_VALUE_H
 
-
 #include <array>
 #include <bitset>
 

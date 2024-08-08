@@ -155,13 +155,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/modp_b64/modp_b64.cc
   )
 
-  add_library(skia STATIC
-    third_party/skia/modules/skcms/skcms.cc
-    third_party/skia/modules/skcms/src/skcms_TransformBaseline.cc
-    third_party/skia/modules/skcms/src/skcms_TransformHsw.cc
-    third_party/skia/modules/skcms/src/skcms_TransformSkx.cc
-  )
-
   if (NOT MSVC)
     list(APPEND QUICK_JS_SOURCE third_party/quickjs/src/libbf.c)
   endif()
@@ -245,7 +238,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
-  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/skia/modules)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
   list(APPEND BRIDGE_LINK_LIBS modb)
 
@@ -344,7 +336,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_math_expression_node.cc
     core/css/css_math_function_value.cc
     core/css/css_math_operator.cc
-    core/css/css_radio_value.cc
+    core/css/css_ratio_value.cc
     core/css/css_unset_value.cc
     core/css/css_value_pair.cc
     core/css/css_light_dart_value_pair.cc
@@ -360,7 +352,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_string_value.cc
     core/css/css_initial_value.cc
     core/css/css_numeric_literal_value
-    core/css/css_color_mix_value.cc
     core/css/css_color.cc
     core/css/anchor_query.h
     core/css/css_length_resolver.cc

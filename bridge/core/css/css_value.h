@@ -234,81 +234,81 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
 
  protected:
   enum ClassType {
-    kNumericLiteralClass,
-    kMathFunctionClass,
-    kIdentifierClass,
-    kColorClass,
-    kColorMixClass,
-    kCounterClass,
-    kQuadClass,
-    kCustomIdentClass,
-    kStringClass,
-    kURIClass,
-    kValuePairClass,
-    kLightDarkValuePairClass,
-    kAppearanceAutoBaseSelectValuePairClass,
-    kScrollClass,
-    kViewClass,
-    kRatioClass,
+    kNumericLiteralClass, // done
+    kMathFunctionClass, // done
+    kIdentifierClass, // done
+    kColorClass, // done
+    kColorMixClass, // skip
+    kCounterClass, // skip
+    kQuadClass,  // future
+    kCustomIdentClass, // done
+    kStringClass, // done
+    kURIClass, // future
+    kValuePairClass, // done
+    kLightDarkValuePairClass, // done
+    kAppearanceAutoBaseSelectValuePairClass, // done
+    kScrollClass, // future
+    kViewClass, // done
+    kRatioClass, // done
 
     // Basic shape classes.
     // TODO(sashab): Represent these as a single subclass, BasicShapeClass.
-    kBasicShapeCircleClass,
-    kBasicShapeEllipseClass,
-    kBasicShapePolygonClass,
-    kBasicShapeInsetClass,
-    kBasicShapeRectClass,
-    kBasicShapeXYWHClass,
+    kBasicShapeCircleClass, // future
+    kBasicShapeEllipseClass, // future
+    kBasicShapePolygonClass,// future
+    kBasicShapeInsetClass,// future
+    kBasicShapeRectClass,// future
+    kBasicShapeXYWHClass,// future
 
     // Image classes.
-    kImageClass,
-    kCursorImageClass,
+    kImageClass, // future
+    kCursorImageClass, // skip
 
     // Image generator classes.
-    kCrossfadeClass,
-    kPaintClass,
-    kLinearGradientClass,
-    kRadialGradientClass,
-    kConicGradientClass,
-    kConstantGradientClass,
+    kCrossfadeClass, // skip
+    kPaintClass, // skip
+    kLinearGradientClass, // future
+    kRadialGradientClass,  // future
+    kConicGradientClass, // future
+    kConstantGradientClass, // future
 
     // Timing function classes.
-    kLinearTimingFunctionClass,
-    kCubicBezierTimingFunctionClass,
-    kStepsTimingFunctionClass,
+    kLinearTimingFunctionClass, // future
+    kCubicBezierTimingFunctionClass,  // future
+    kStepsTimingFunctionClass, // future
 
     // Other class types.
-    kBorderImageSliceClass,
-    kDynamicRangeLimitMixClass,
-    kFontFeatureClass,
-    kFontFaceSrcClass,
-    kFontFamilyClass,
-    kFontStyleRangeClass,
-    kFontVariationClass,
-    kAlternateClass,
+    kBorderImageSliceClass, // skip
+    kDynamicRangeLimitMixClass, // skip
+    kFontFeatureClass, // skip
+    kFontFaceSrcClass,  // future
+    kFontFamilyClass, // future
+    kFontStyleRangeClass, // future
+    kFontVariationClass, // future
+    kAlternateClass, // future
 
-    kInheritedClass,
-    kInitialClass,
-    kUnsetClass,
-    kRevertClass,
-    kRevertLayerClass,
+    kInheritedClass, // done
+    kInitialClass, // done
+    kUnsetClass, // done
+    kRevertClass, // done
+    kRevertLayerClass, // skip
 
-    kReflectClass,
+    kReflectClass, // skip
     kShadowClass,
     kUnicodeRangeClass,
     kGridTemplateAreasClass,
-    kPaletteMixClass,
-    kPathClass,
-    kRayClass,
-    kUnparsedDeclarationClass,
-    kPendingSubstitutionValueClass,
-    kPendingSystemFontValueClass,
+    kPaletteMixClass, // skip
+    kPathClass, // future
+    kRayClass, // skip
+    kUnparsedDeclarationClass, // future
+    kPendingSubstitutionValueClass, // future
+    kPendingSystemFontValueClass, // future
     kInvalidVariableValueClass,
     kCyclicVariableValueClass,
     kFlipRevertClass,
-    kLayoutFunctionClass,
+    kLayoutFunctionClass, // skip
 
-    kCSSContentDistributionClass,
+    kCSSContentDistributionClass, // skip
 
     kKeyframeShorthandClass,
     kInitialColorValueClass,

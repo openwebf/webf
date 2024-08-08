@@ -7,12 +7,11 @@
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/css_appearance_auto_base_select_value_pair.h"
 #include "core/css/css_color_channel_map.h"
-#include "core/css/css_color_mix_value.h"
 #include "core/css/css_initial_value.h"
 #include "core/css/css_light_dart_value_pair.h"
 #include "core/css/css_math_expression_node.h"
 #include "core/css/css_math_function_value.h"
-#include "core/css/css_radio_value.h"
+#include "core/css/css_ratio_value.h"
 #include "core/css/parser/css_parser_fast_path.h"
 #include "core/css/parser/css_parser_save_point.h"
 #include "core/css/properties/css_color_function_parser.h"
@@ -862,76 +861,6 @@ std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenStre
   return std::make_shared<CSSCustomIdentValue>(stream.ConsumeIncludingWhitespace().Value());
 }
 
-static bool ConsumeColorInterpolationSpace(CSSParserTokenRange& args,
-                                           Color::ColorSpace& color_space,
-                                           Color::HueInterpolationMethod& hue_interpolation) {
-  if (!ConsumeIdent<CSSValueID::kIn>(args)) {
-    return false;
-  }
-
-  std::optional<Color::ColorSpace> read_color_space;
-  if (ConsumeIdent<CSSValueID::kXyz>(args)) {
-    read_color_space = Color::ColorSpace::kXYZD65;
-  } else if (ConsumeIdent<CSSValueID::kXyzD50>(args)) {
-    read_color_space = Color::ColorSpace::kXYZD50;
-  } else if (ConsumeIdent<CSSValueID::kXyzD65>(args)) {
-    read_color_space = Color::ColorSpace::kXYZD65;
-  } else if (ConsumeIdent<CSSValueID::kSrgbLinear>(args)) {
-    read_color_space = Color::ColorSpace::kSRGBLinear;
-  } else if (ConsumeIdent<CSSValueID::kDisplayP3>(args)) {
-    read_color_space = Color::ColorSpace::kDisplayP3;
-  } else if (ConsumeIdent<CSSValueID::kA98Rgb>(args)) {
-    read_color_space = Color::ColorSpace::kA98RGB;
-  } else if (ConsumeIdent<CSSValueID::kProphotoRgb>(args)) {
-    read_color_space = Color::ColorSpace::kProPhotoRGB;
-  } else if (ConsumeIdent<CSSValueID::kRec2020>(args)) {
-    read_color_space = Color::ColorSpace::kRec2020;
-  } else if (ConsumeIdent<CSSValueID::kLab>(args)) {
-    read_color_space = Color::ColorSpace::kLab;
-  } else if (ConsumeIdent<CSSValueID::kOklab>(args)) {
-    read_color_space = Color::ColorSpace::kOklab;
-  } else if (ConsumeIdent<CSSValueID::kLch>(args)) {
-    read_color_space = Color::ColorSpace::kLch;
-  } else if (ConsumeIdent<CSSValueID::kOklch>(args)) {
-    read_color_space = Color::ColorSpace::kOklch;
-  } else if (ConsumeIdent<CSSValueID::kSrgb>(args)) {
-    read_color_space = Color::ColorSpace::kSRGB;
-  } else if (ConsumeIdent<CSSValueID::kHsl>(args)) {
-    read_color_space = Color::ColorSpace::kHSL;
-  } else if (ConsumeIdent<CSSValueID::kHwb>(args)) {
-    read_color_space = Color::ColorSpace::kHWB;
-  }
-
-  if (read_color_space) {
-    color_space = read_color_space.value();
-    std::optional<Color::HueInterpolationMethod> read_hue;
-    if (color_space == Color::ColorSpace::kHSL || color_space == Color::ColorSpace::kHWB ||
-        color_space == Color::ColorSpace::kLch || color_space == Color::ColorSpace::kOklch) {
-      if (ConsumeIdent<CSSValueID::kShorter>(args)) {
-        read_hue = Color::HueInterpolationMethod::kShorter;
-      } else if (ConsumeIdent<CSSValueID::kLonger>(args)) {
-        read_hue = Color::HueInterpolationMethod::kLonger;
-      } else if (ConsumeIdent<CSSValueID::kDecreasing>(args)) {
-        read_hue = Color::HueInterpolationMethod::kDecreasing;
-      } else if (ConsumeIdent<CSSValueID::kIncreasing>(args)) {
-        read_hue = Color::HueInterpolationMethod::kIncreasing;
-      }
-      if (read_hue) {
-        if (!ConsumeIdent<CSSValueID::kHue>(args)) {
-          return false;
-        }
-        hue_interpolation = read_hue.value();
-      } else {
-        // Shorter is the default method for hue interpolation.
-        hue_interpolation = Color::HueInterpolationMethod::kShorter;
-      }
-    }
-    return true;
-  }
-
-  return false;
-}
-
 template <class T>
     requires std::is_same_v<T, CSSParserTokenStream> ||
     std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue>
@@ -958,155 +887,6 @@ template <class T, typename Func>
   return std::make_shared<CSSLightDarkValuePair>(light_value, dark_value);
 }
 
-// https://www.w3.org/TR/css-color-5/#color-mix
-static std::shared_ptr<const CSSValue> ConsumeColorMixFunction(CSSParserTokenRange& range,
-                                                               const CSSParserContext& context,
-                                                               AllowedColors allowed_colors) {
-  assert(range.Peek().FunctionId() == CSSValueID::kColorMix);
-
-  CSSParserSavePoint savepoint(range);
-  CSSParserTokenRange args = ConsumeFunction(range);
-  // First argument is the colorspace
-  Color::ColorSpace color_space;
-  Color::HueInterpolationMethod hue_interpolation_method = Color::HueInterpolationMethod::kShorter;
-  if (!ConsumeColorInterpolationSpace(args, color_space, hue_interpolation_method)) {
-    return nullptr;
-  }
-
-  if (!ConsumeCommaIncludingWhitespace(args)) {
-    return nullptr;
-  }
-
-  const bool no_quirky_colors = false;
-
-  auto color1 = ConsumeColorInternal(args, context, no_quirky_colors, allowed_colors);
-  auto p1 = ConsumePercent(args, context, CSSPrimitiveValue::ValueRange::kAll);
-  // Color can come after the percentage
-  if (!color1) {
-    color1 = ConsumeColorInternal(args, context, no_quirky_colors, allowed_colors);
-    if (!color1) {
-      return nullptr;
-    }
-  }
-  // Reject negative values and values > 100%, but not calc() values.
-  if (auto* p1_numeric = DynamicTo<CSSNumericLiteralValue>(p1.get());
-      p1_numeric && (p1_numeric->ComputePercentage() < 0.0 || p1_numeric->ComputePercentage() > 100.0)) {
-    return nullptr;
-  }
-
-  if (!ConsumeCommaIncludingWhitespace(args)) {
-    return nullptr;
-  }
-
-  auto color2 = ConsumeColorInternal(args, context, no_quirky_colors, allowed_colors);
-  auto p2 = ConsumePercent(args, context, CSSPrimitiveValue::ValueRange::kAll);
-  // Color can come after the percentage
-  if (!color2) {
-    color2 = ConsumeColorInternal(args, context, no_quirky_colors, allowed_colors);
-    if (!color2) {
-      return nullptr;
-    }
-  }
-  // Reject negative values and values > 100%, but not calc() values.
-  if (auto* p2_numeric = DynamicTo<CSSNumericLiteralValue>(p2.get());
-      p2_numeric && (p2_numeric->ComputePercentage() < 0.0 || p2_numeric->ComputePercentage() > 100.0)) {
-    return nullptr;
-  }
-
-  // If both values are literally zero (and not calc()) reject at parse time
-  if (p1 && p2 && p1->IsNumericLiteralValue() && To<CSSNumericLiteralValue>(p1.get())->ComputePercentage() == 0.0f &&
-      p2->IsNumericLiteralValue() && To<CSSNumericLiteralValue>(p2.get())->ComputePercentage() == 0.0) {
-    return nullptr;
-  }
-
-  if (!args.AtEnd()) {
-    return nullptr;
-  }
-
-  savepoint.Release();
-
-  auto result =
-      std::make_shared<cssvalue::CSSColorMixValue>(color1, color2, p1, p2, color_space, hue_interpolation_method);
-  return result;
-}
-
-static std::shared_ptr<const CSSValue> ConsumeColorMixFunction(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
-                                                               AllowedColors allowed_colors) {
-  assert(stream.Peek().FunctionId() == CSSValueID::kColorMix);
-
-  CSSParserTokenStream::State savepoint = stream.Save();
-  CSSParserTokenRange args = ConsumeFunction(stream);
-  // First argument is the colorspace
-  Color::ColorSpace color_space;
-  Color::HueInterpolationMethod hue_interpolation_method = Color::HueInterpolationMethod::kShorter;
-  if (!ConsumeColorInterpolationSpace(args, color_space, hue_interpolation_method)) {
-    stream.Restore(savepoint);
-    return nullptr;
-  }
-
-  if (!ConsumeCommaIncludingWhitespace(args)) {
-    stream.Restore(savepoint);
-    return nullptr;
-  }
-
-  const bool no_quirky_colors = false;
-
-  auto color1 = ConsumeColorInternal(args, context, no_quirky_colors, allowed_colors);
-  auto p1 = ConsumePercent(args, context, CSSPrimitiveValue::ValueRange::kAll);
-  // Color can come after the percentage
-  if (!color1) {
-    color1 = ConsumeColorInternal(args, context, no_quirky_colors, allowed_colors);
-    if (!color1) {
-      stream.Restore(savepoint);
-      return nullptr;
-    }
-  }
-  // Reject negative values and values > 100%, but not calc() values.
-  if (auto* p1_numeric = DynamicTo<CSSNumericLiteralValue>(p1.get());
-      p1_numeric && (p1_numeric->ComputePercentage() < 0.0 || p1_numeric->ComputePercentage() > 100.0)) {
-    stream.Restore(savepoint);
-    return nullptr;
-  }
-
-  if (!ConsumeCommaIncludingWhitespace(args)) {
-    stream.Restore(savepoint);
-    return nullptr;
-  }
-
-  auto color2 = ConsumeColorInternal(args, context, no_quirky_colors, allowed_colors);
-  auto p2 = ConsumePercent(args, context, CSSPrimitiveValue::ValueRange::kAll);
-  // Color can come after the percentage
-  if (!color2) {
-    color2 = ConsumeColorInternal(args, context, no_quirky_colors, allowed_colors);
-    if (!color2) {
-      stream.Restore(savepoint);
-      return nullptr;
-    }
-  }
-  // Reject negative values and values > 100%, but not calc() values.
-  if (auto* p2_numeric = DynamicTo<CSSNumericLiteralValue>(p2.get());
-      p2_numeric && (p2_numeric->ComputePercentage() < 0.0 || p2_numeric->ComputePercentage() > 100.0)) {
-    stream.Restore(savepoint);
-    return nullptr;
-  }
-
-  // If both values are literally zero (and not calc()) reject at parse time
-  if (p1 && p2 && p1->IsNumericLiteralValue() && To<CSSNumericLiteralValue>(p1.get())->ComputePercentage() == 0.0f &&
-      p2->IsNumericLiteralValue() && To<CSSNumericLiteralValue>(p2.get())->ComputePercentage() == 0.0) {
-    stream.Restore(savepoint);
-    return nullptr;
-  }
-
-  if (!args.AtEnd()) {
-    stream.Restore(savepoint);
-    return nullptr;
-  }
-
-  auto result =
-      std::make_shared<cssvalue::CSSColorMixValue>(color1, color2, p1, p2, color_space, hue_interpolation_method);
-  return result;
-}
 
 template <class T>
     requires std::is_same_v<T, CSSParserTokenStream> ||
@@ -1159,11 +939,6 @@ template <class T>
         const CSSParserContext& context,
         bool accept_quirky_colors,
         AllowedColors allowed_colors) {
-  if (range.Peek().FunctionId() == CSSValueID::kColorMix) {
-    auto color = ConsumeColorMixFunction(range, context, allowed_colors);
-    return color;
-  }
-
   CSSValueID id = range.Peek().Id();
   if ((id == CSSValueID::kAccentcolor || id == CSSValueID::kAccentcolortext)) {
     return nullptr;

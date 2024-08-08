@@ -11,7 +11,7 @@
 
 
 #include "core/css/css_value_list.h"
-#include "core/css/css_value_keywords.h"
+#include "css_value_keywords.h"
 #include "foundation/casting.h"
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"

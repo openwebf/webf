@@ -10,8 +10,8 @@
 #define WEBF_CSS_COLOR_H
 
 #include "core/css/css_value.h"
-#include "core/platform/graphics/color.h"
 #include "foundation/casting.h"
+#include "core/platform/graphics/color.h"
 
 namespace webf {
 
@@ -43,7 +43,6 @@ class CSSColor : public CSSValue {
   bool Equals(const CSSColor& other) const { return color_ == other.color_; }
 
   void TraceAfterDispatch(GCVisitor* visitor) const {
-    CSSValue::TraceAfterDispatch(visitor);
   }
 
   // Returns the color serialized according to CSSOM:

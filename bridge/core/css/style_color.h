@@ -33,6 +33,7 @@
 
 #include "core/css/css_color.h"
 #include "css_value_keywords.h"
+#include "core/platform/graphics/color.h"
 #include "foundation/macros.h"
 
 namespace webf {
@@ -47,106 +48,22 @@ class StyleColor {
   WEBF_DISALLOW_NEW();
 
  public:
-  // When color-mix functions contain colors that cannot be resolved until used
-  // value time (such as "currentcolor"), we need to store them here and
-  // resolve them to individual colors later.
-  class UnresolvedColorMix;
-  struct ColorOrUnresolvedColorMix {
-    WEBF_DISALLOW_NEW();
-
-   public:
-    ColorOrUnresolvedColorMix() : color(Color::kTransparent) {}
-    explicit ColorOrUnresolvedColorMix(Color color) : color(color) {}
-    explicit ColorOrUnresolvedColorMix(const UnresolvedColorMix* color_mix) : unresolved_color_mix(color_mix) {}
-
-    void Trace(GCVisitor*) const;
-
-    Color color;
-    std::shared_ptr<const UnresolvedColorMix> unresolved_color_mix;
-  };
-
-  class UnresolvedColorMix {
-   public:
-    enum class UnderlyingColorType {
-      kColor,
-      kColorMix,
-      kCurrentColor,
-    };
-
-    UnresolvedColorMix(Color::ColorSpace color_interpolation_space,
-                       Color::HueInterpolationMethod hue_interpolation_method,
-                       const StyleColor& c1,
-                       const StyleColor& c2,
-                       double percentage,
-                       double alpha_multiplier);
-
-    void Trace(GCVisitor* visitor) const {}
-
-    std::shared_ptr<const cssvalue::CSSColorMixValue> ToCSSColorMixValue() const;
-
-    Color Resolve(const Color& current_color) const;
-
-    static bool Equals(const ColorOrUnresolvedColorMix& first,
-                       const ColorOrUnresolvedColorMix& second,
-                       UnderlyingColorType type) {
-      switch (type) {
-        case UnderlyingColorType::kCurrentColor:
-          return true;
-
-        case UnderlyingColorType::kColor:
-          return first.color == second.color;
-
-        case UnderlyingColorType::kColorMix:
-          return *first.unresolved_color_mix == *second.unresolved_color_mix;
-      }
-    }
-
-    bool operator==(const UnresolvedColorMix& other) const {
-      if (color_interpolation_space_ != other.color_interpolation_space_ ||
-          hue_interpolation_method_ != other.hue_interpolation_method_ || percentage_ != other.percentage_ ||
-          alpha_multiplier_ != other.alpha_multiplier_ || color1_type_ != other.color1_type_ ||
-          color2_type_ != other.color2_type_) {
-        return false;
-      }
-      return Equals(color1_, other.color1_, color1_type_) && Equals(color2_, other.color2_, color2_type_);
-    }
-
-    bool operator!=(const UnresolvedColorMix& other) const { return !(*this == other); }
-
-   private:
-    Color::ColorSpace color_interpolation_space_ = Color::ColorSpace::kNone;
-    Color::HueInterpolationMethod hue_interpolation_method_ = Color::HueInterpolationMethod::kShorter;
-    ColorOrUnresolvedColorMix color1_;
-    ColorOrUnresolvedColorMix color2_;
-    double percentage_ = 0.0;
-    double alpha_multiplier_ = 1.0;
-    UnderlyingColorType color1_type_ = UnderlyingColorType::kColor;
-    UnderlyingColorType color2_type_ = UnderlyingColorType::kColor;
-  };
-
   StyleColor() = default;
-  explicit StyleColor(Color color) : color_keyword_(CSSValueID::kInvalid), color_or_unresolved_color_mix_(color) {}
+  explicit StyleColor(Color color) : color_keyword_(CSSValueID::kInvalid) {}
   explicit StyleColor(CSSValueID keyword) : color_keyword_(keyword) {}
-  explicit StyleColor(const UnresolvedColorMix* color_mix)
-      : color_keyword_(CSSValueID::kColorMix), color_or_unresolved_color_mix_(color_mix) {}
   // We need to store the color and keyword for system colors to be able to
   // distinguish system colors from a normal color. System colors won't be
   // overridden by forced colors mode, even if forced-color-adjust is 'auto'.
-  StyleColor(Color color, CSSValueID keyword) : color_keyword_(keyword), color_or_unresolved_color_mix_(color) {}
+  StyleColor(Color color, CSSValueID keyword) : color_keyword_(keyword) {}
 
   void Trace(GCVisitor* visitor) const {}
 
   static StyleColor CurrentColor() { return StyleColor(); }
 
   bool IsCurrentColor() const { return color_keyword_ == CSSValueID::kCurrentcolor; }
-  bool IsUnresolvedColorMixFunction() const { return color_keyword_ == CSSValueID::kColorMix; }
   bool IsSystemColorIncludingDeprecated() const { return IsSystemColorIncludingDeprecated(color_keyword_); }
   bool IsSystemColor() const { return IsSystemColor(color_keyword_); }
-  const UnresolvedColorMix& GetUnresolvedColorMix() const {
-    assert(IsUnresolvedColorMixFunction());
-    return *color_or_unresolved_color_mix_.unresolved_color_mix;
-  }
-  bool IsAbsoluteColor() const { return !IsCurrentColor() && !IsUnresolvedColorMixFunction(); }
+  bool IsAbsoluteColor() const { return !IsCurrentColor(); }
   Color GetColor() const;
 
   CSSValueID GetColorKeyword() const {
@@ -156,13 +73,6 @@ class StyleColor {
   bool HasColorKeyword() const { return color_keyword_ != CSSValueID::kInvalid; }
 
   Color Resolve(const Color& current_color, ColorScheme color_scheme, bool* is_current_color = nullptr) const;
-
-  // Resolve and override the resolved color's alpha channel as specified by
-  // |alpha|.
-  Color ResolveWithAlpha(Color current_color,
-                         ColorScheme color_scheme,
-                         int alpha,
-                         bool* is_current_color = nullptr) const;
 
   bool IsNumeric() const { return EffectiveColorKeyword() == CSSValueID::kInvalid; }
 
@@ -180,20 +90,14 @@ class StyleColor {
       return true;
     }
 
-    if (IsUnresolvedColorMixFunction()) {
-      assert(other.IsUnresolvedColorMixFunction());
-      return *color_or_unresolved_color_mix_.unresolved_color_mix ==
-             *other.color_or_unresolved_color_mix_.unresolved_color_mix;
-    }
-
-    return color_or_unresolved_color_mix_.color == other.color_or_unresolved_color_mix_.color;
+    return color == other.color;
   }
 
   inline bool operator!=(const StyleColor& other) const { return !(*this == other); }
 
  protected:
   CSSValueID color_keyword_ = CSSValueID::kCurrentcolor;
-  ColorOrUnresolvedColorMix color_or_unresolved_color_mix_;
+  Color color;
 
  private:
   CSSValueID EffectiveColorKeyword() const;
