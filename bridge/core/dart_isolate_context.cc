@@ -85,20 +85,20 @@ void DartIsolateContext::InitializeJSRuntime() {
 }
 
 void DartIsolateContext::FinalizeJSRuntime() {
-  if (running_dart_isolates > 0)
+  if (running_dart_isolates > 0 ||
+      runtime_ == nullptr) {
     return;
+  }
 
   // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
   names_installer::Dispose();
   HTMLElementFactory::Dispose();
   SVGElementFactory::Dispose();
   EventFactory::Dispose();
-  if (runtime_) {
-    ClearUpWires(runtime_);
-    JS_TurnOnGC(runtime_);
-    JS_FreeRuntime(runtime_);
-    runtime_ = nullptr;
-  }
+  ClearUpWires(runtime_);
+  JS_TurnOnGC(runtime_);
+  JS_FreeRuntime(runtime_);
+  runtime_ = nullptr;
   is_name_installed_ = false;
 }
 
@@ -262,6 +262,10 @@ void DartIsolateContext::RemovePageSync(double thread_identity, WebFPage* page) 
       pages_in_ui_thread_.erase(it);
       break;
     }
+  }
+
+  if (pages_in_ui_thread_.empty()) {
+    FinalizeJSRuntime();
   }
 }
 
