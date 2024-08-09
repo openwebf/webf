@@ -191,7 +191,7 @@ class WebFViewController implements WidgetsBindingObserver {
       debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
       debugPaintSizeEnabled = true;
     }
-    BindingBridge.setup();
+
     _contextId = await initBridge(this, runningThread);
 
     _setupObserver();

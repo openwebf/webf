@@ -74,6 +74,9 @@ class DartIsolateContext {
  private:
   static void InitializeJSRuntime();
   static void FinalizeJSRuntime();
+  static std::unique_ptr<WebFPage> InitializeNewPageSync(DartIsolateContext* dart_isolate_context,
+                                                         size_t sync_buffer_size,
+                                                         double page_context_id);
   static void InitializeNewPageInJSThread(PageGroup* page_group,
                                           DartIsolateContext* dart_isolate_context,
                                           double page_context_id,
