@@ -71,9 +71,19 @@ void InitializeBuiltInStrings(JSContext* ctx) {
   }
 }
 
+std::string DartIsolateContext::getThreadIdString() {
+  std::thread::id threadId = std::this_thread::get_id();
+  std::ostringstream oss;
+  oss << threadId;
+  return "[JSRuntime Lifecycle] threadId " + oss.str();
+}
+
 void DartIsolateContext::InitializeJSRuntime() {
-  if (runtime_ != nullptr)
+  WEBF_LOG(VERBOSE) << getThreadIdString() << " InitializeJSRuntime Begin";
+  if (runtime_ != nullptr) {
+    WEBF_LOG(VERBOSE) << getThreadIdString() << " InitializeJSRuntime Fail. runtime_ != nullptr";
     return;
+  }
   runtime_ = JS_NewRuntime();
   // Avoid stack overflow when running in multiple threads.
   JS_UpdateStackTop(runtime_);
@@ -82,11 +92,19 @@ void DartIsolateContext::InitializeJSRuntime() {
     JSClassID id{0};
     JS_NewClassID(&id);
   }
+
+  WEBF_LOG(VERBOSE) << getThreadIdString() << " InitializeJSRuntime Done";
 }
 
 void DartIsolateContext::FinalizeJSRuntime() {
+  WEBF_LOG(VERBOSE) << getThreadIdString() << " FinalizeJSRuntime Begin";
   if (running_dart_isolates > 0 ||
       runtime_ == nullptr) {
+    if (running_dart_isolates > 0) {
+      WEBF_LOG(VERBOSE) << getThreadIdString() << " FinalizeJSRuntime Fail. running_dart_isolates > 0";
+    } else {
+      WEBF_LOG(VERBOSE) << getThreadIdString() << " FinalizeJSRuntime Fail. runtime_ == nullptr";
+    }
     return;
   }
 
@@ -100,6 +118,7 @@ void DartIsolateContext::FinalizeJSRuntime() {
   JS_FreeRuntime(runtime_);
   runtime_ = nullptr;
   is_name_installed_ = false;
+  WEBF_LOG(VERBOSE) << getThreadIdString() << " FinalizeJSRuntime Done";
 }
 
 DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length, bool profile_enabled)
@@ -109,6 +128,7 @@ DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dar
       dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
   is_valid_ = true;
   running_dart_isolates++;
+  WEBF_LOG(VERBOSE) << getThreadIdString() << " DartIsolateContext construction";
 }
 
 JSRuntime* DartIsolateContext::runtime() {
@@ -116,7 +136,9 @@ JSRuntime* DartIsolateContext::runtime() {
   return runtime_;
 }
 
-DartIsolateContext::~DartIsolateContext() {}
+DartIsolateContext::~DartIsolateContext() {
+  WEBF_LOG(VERBOSE) << getThreadIdString() << " DartIsolateContext destruct";
+}
 
 void DartIsolateContext::Dispose(multi_threading::Callback callback) {
   dispatcher_->Dispose([this, &callback]() {

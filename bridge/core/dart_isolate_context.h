@@ -72,6 +72,7 @@ class DartIsolateContext {
   void Dispose(multi_threading::Callback callback);
 
  private:
+  static std::string getThreadIdString();
   static void InitializeJSRuntime();
   static void FinalizeJSRuntime();
   static std::unique_ptr<WebFPage> InitializeNewPageSync(DartIsolateContext* dart_isolate_context,
