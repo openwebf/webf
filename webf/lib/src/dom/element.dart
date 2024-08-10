@@ -1441,11 +1441,21 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         RenderBoxModel _renderBoxModel = renderBoxModel!;
         // Find the renderBox of its containing block.
         RenderBox? containingBlockRenderBox = getContainingBlockRenderBox();
+        Node? previousSiblingNode = previousSibling;
         // Find the previous siblings to insert before renderBoxModel is detached.
-        RenderBox? preSibling = previousSibling?.renderer;
+        RenderBox? previousSiblingRenderBox = previousSiblingNode?.renderer;
+
+        // Search for elements whose style is not display: none.
+        while (previousSiblingRenderBox == null &&
+            previousSiblingNode is Element &&
+            previousSiblingNode.renderStyle.display == CSSDisplay.none) {
+          previousSiblingNode = previousSiblingNode.previousSibling;
+          previousSiblingRenderBox = previousSiblingNode?.renderer;
+        }
+
         // Original parent renderBox.
         RenderBox parentRenderBox = parentNode!.renderer!;
-        _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: preSibling);
+        _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: previousSiblingRenderBox);
       }
     }
 
