@@ -128,7 +128,12 @@ DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dar
       dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
   is_valid_ = true;
   running_dart_isolates++;
-  WEBF_LOG(VERBOSE) << getThreadIdString() << " DartIsolateContext construction";
+
+  std::ostringstream oss;
+  oss << static_cast<const void*>(this);
+  std::string address_str = oss.str();
+
+  WEBF_LOG(VERBOSE) << getThreadIdString() << " DartIsolateContext construction address: " << address_str;
 }
 
 JSRuntime* DartIsolateContext::runtime() {
