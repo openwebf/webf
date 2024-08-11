@@ -285,7 +285,7 @@ void clearUICommandItems(void* page_) {
 }
 
 // Callbacks when dart context object was finalized by Dart GC.
-static void finalize_dart_context(void* isolate_callback_data, void* peer) {
+static void finalize_dart_context(void* peer) {
   WEBF_LOG(VERBOSE) << "[Dispatcher]: BEGIN FINALIZE DART CONTEXT: ";
   auto* dart_isolate_context = (webf::DartIsolateContext*)peer;
   dart_isolate_context->Dispose([dart_isolate_context]() {
@@ -300,9 +300,8 @@ void init_dart_dynamic_linking(void* data) {
   }
 }
 
-void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_isolate_context) {
-  Dart_NewFinalizableHandle_DL(dart_handle, reinterpret_cast<void*>(dart_isolate_context),
-                               sizeof(webf::DartIsolateContext), finalize_dart_context);
+void on_dart_context_finalized(void* dart_isolate_context) {
+  finalize_dart_context(dart_isolate_context);
 }
 
 int8_t isJSThreadBlocked(void* dart_isolate_context_, double context_id) {

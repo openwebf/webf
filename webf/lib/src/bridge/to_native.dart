@@ -625,17 +625,6 @@ void initDartDynamicLinking() {
   _initDartDynamicLinking(NativeApi.initializeApiDLData);
 }
 
-typedef NativeRegisterDartContextFinalizer = Void Function(Handle object, Pointer<Void> dart_context);
-typedef DartRegisterDartContextFinalizer = void Function(Object object, Pointer<Void> dart_context);
-
-final DartRegisterDartContextFinalizer _registerDartContextFinalizer = WebFDynamicLibrary.ref
-    .lookup<NativeFunction<NativeRegisterDartContextFinalizer>>('register_dart_context_finalizer')
-    .asFunction();
-
-void registerDartContextFinalizer(DartContext dartContext) {
-  _registerDartContextFinalizer(dartContext, dartContext.pointer);
-}
-
 typedef NativeRegisterPluginByteCode = Void Function(Pointer<Uint8> bytes, Int32 length, Pointer<Utf8> pluginName);
 typedef DartRegisterPluginByteCode = void Function(Pointer<Uint8> bytes, int length, Pointer<Utf8> pluginName);
 
