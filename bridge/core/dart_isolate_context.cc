@@ -133,7 +133,9 @@ DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dar
   oss << static_cast<const void*>(this);
   std::string address_str = oss.str();
 
-  WEBF_LOG(VERBOSE) << getThreadIdString() << " DartIsolateContext construction address: " << address_str;
+  std::string running_isolates_str = std::to_string(running_dart_isolates);
+
+  WEBF_LOG(VERBOSE) << getThreadIdString() << " DartIsolateContext construction address: " << address_str << " running_dart_isolates " << running_isolates_str;
 }
 
 JSRuntime* DartIsolateContext::runtime() {
