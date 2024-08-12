@@ -40,16 +40,16 @@ class CSSValueList : public CSSValue {
   using reverse_iterator = std::vector<std::shared_ptr<const CSSValue>>::reverse_iterator;
   using const_reverse_iterator = std::vector<std::shared_ptr<const CSSValue>>::const_reverse_iterator;
 
-  static std::shared_ptr<const CSSValueList> CreateCommaSeparated() {
+  static std::shared_ptr<CSSValueList> CreateCommaSeparated() {
     return std::make_shared<CSSValueList>(kCommaSeparator);
   }
-  static std::shared_ptr<const CSSValueList> CreateSpaceSeparated() {
+  static std::shared_ptr<CSSValueList> CreateSpaceSeparated() {
     return std::make_shared<CSSValueList>(kCommaSeparator);
   }
-  static std::shared_ptr<const CSSValueList> CreateSlashSeparated() {
+  static std::shared_ptr<CSSValueList> CreateSlashSeparated() {
     return std::make_shared<CSSValueList>(kSlashSeparator);
   }
-  static std::shared_ptr<const CSSValueList> CreateWithSeparatorFrom(const CSSValueList& list) {
+  static std::shared_ptr<CSSValueList> CreateWithSeparatorFrom(const CSSValueList& list) {
     return std::make_shared<CSSValueList>(static_cast<ValueListSeparator>(list.value_list_separator_));
   }
 
