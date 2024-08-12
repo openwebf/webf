@@ -9,7 +9,7 @@
 
 namespace webf {
 
-CSSInvalidVariableValue* CSSInvalidVariableValue::Create() {
+std::shared_ptr<const CSSInvalidVariableValue> CSSInvalidVariableValue::Create() {
   return CssValuePool().InvalidVariableValue();
 }
 

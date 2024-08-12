@@ -21,7 +21,7 @@ namespace webf {
 // https://drafts.csswg.org/css-variables/#invalid-at-computed-value-time
 class CSSInvalidVariableValue : public CSSValue {
  public:
-  static CSSInvalidVariableValue* Create();
+  static std::shared_ptr<const CSSInvalidVariableValue> Create();
 
   // Only construct through MakeGarbageCollected for the initial value. Use
   // Create() to get the pooled value.
