@@ -39,6 +39,7 @@
 #include "core/css/css_revert_layer_value.h"
 #include "core/css/css_revert_value.h"
 #include "core/css/css_unset_value.h"
+#include "core/css/css_initial_color_value.h"
 #include "css_property_names.h"
 #include "css_value_keywords.h"
 // #include "core/css/css_custom_ident_value.h"
@@ -87,11 +88,9 @@ class CSSValuePool {
   std::shared_ptr<const CSSUnsetValue> const UnsetValue() { return unset_value_; }
   std::shared_ptr<const CSSRevertValue> const RevertValue() { return revert_value_; }
   std::shared_ptr<const CSSRevertLayerValue> const RevertLayerValue() { return revert_layer_value_; }
-  //  CSSInvalidVariableValue* InvalidVariableValue() { return invalid_variable_value_.get(); }
-  //  CSSCyclicVariableValue* CyclicVariableValue() { return cyclic_variable_value_.get(); }
-  //  CSSInitialColorValue* InitialColorValue() {
-  //    return initial_color_value_.Get();
-  //  }
+//    CSSInvalidVariableValue* InvalidVariableValue() { return invalid_variable_value_.get(); }
+//    CSSCyclicVariableValue* CyclicVariableValue() { return cyclic_variable_value_.get(); }
+  std::shared_ptr<const CSSInitialColorValue> const InitialColorValue() { return initial_color_value_; }
 
   // Vector caches.
   std::shared_ptr<const CSSIdentifierValue> IdentifierCacheValue(CSSValueID ident) {
@@ -159,6 +158,9 @@ class CSSValuePool {
   std::shared_ptr<const CSSUnsetValue> unset_value_;
   std::shared_ptr<const CSSRevertValue> revert_value_;
   std::shared_ptr<const CSSRevertLayerValue> revert_layer_value_;
+//  Member<CSSInvalidVariableValue> invalid_variable_value_;
+//  Member<CSSCyclicVariableValue> cyclic_variable_value_;
+  std::shared_ptr<const CSSInitialColorValue> initial_color_value_;
   std::shared_ptr<const CSSColor> color_transparent_;
   std::shared_ptr<const CSSColor> color_white_;
   std::shared_ptr<const CSSColor> color_black_;

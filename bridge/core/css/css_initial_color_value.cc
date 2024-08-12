@@ -10,7 +10,7 @@
 
 namespace webf {
 
-CSSInitialColorValue* CSSInitialColorValue::Create() {
+std::shared_ptr<const CSSInitialColorValue> CSSInitialColorValue::Create() {
   return CssValuePool().InitialColorValue();
 }
 

@@ -24,7 +24,7 @@ class CSSValuePool;
 // TODO(crbug.com/1046753): Remove this class when canvastext is supported.
 class CSSInitialColorValue : public CSSValue {
  public:
-  static CSSInitialColorValue* Create();
+  static std::shared_ptr<const CSSInitialColorValue> Create();
 
   explicit CSSInitialColorValue(webf::PassKey<CSSValuePool>)
       : CSSValue(kInitialColorValueClass) {}
