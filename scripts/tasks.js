@@ -90,6 +90,9 @@ task('build-darwin-webf-lib', done => {
     buildType = 'RelWithDebInfo';
   }
 
+  // Bundle quickjs into webf.
+  externCmakeArgs.push('-DSTATIC=true');
+
   if (isProfile) {
     externCmakeArgs.push('-DENABLE_PROFILE=TRUE');
   }
