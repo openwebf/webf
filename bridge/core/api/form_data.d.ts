@@ -2,8 +2,10 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-// type FormDataEntryValue = File | string;
-type FormDataPart={}
+
+// This file is for generate binding code only.
+
+type FormDataPart={} // dummy code. Real one is introduced in C++ form_data_part.h, also blob_part.h
 export interface FormData {
     new():FormData;
     append(name: string, value: BlobPart, fileName?: string): void;
