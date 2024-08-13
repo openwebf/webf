@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
+
 #include "form_data_part.h"
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/exception_state.h"

@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_API_FORM_DATA_H_
 #define WEBF_CORE_API_FORM_DATA_H_
