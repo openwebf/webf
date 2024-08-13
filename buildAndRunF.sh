@@ -17,5 +17,5 @@ build-linuxd(){
     cp -f bridge/cmake-build-linux/compile_commands.json .
 }
 echo To initialize the build, using build-linux or build-linuxd:
-echo then use runexample for release build, or runexample for debug build
+echo then use runexample for release build, or runexampled for debug build
 
