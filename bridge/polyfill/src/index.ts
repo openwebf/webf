@@ -22,8 +22,6 @@ import { webf } from './webf';
 import { WebSocket } from './websocket'
 import { ResizeObserver } from './resize-observer';
 import { _AbortController, _AbortSignal } from './abort-signal';
-// import { FormData } from './formdata'
-// import { ArrayBuffer } from './array-buffer';
 
 defineGlobalProperty('console', console);
 defineGlobalProperty('Request', Request);
@@ -47,9 +45,6 @@ defineGlobalProperty('WebSocket', WebSocket);
 defineGlobalProperty('ResizeObserver', ResizeObserver);
 defineGlobalProperty('AbortSignal', _AbortSignal);
 defineGlobalProperty('AbortController', _AbortController);
-// defineGlobalProperty('ArrayBuffer', ArrayBuffer);
-// defineGlobalProperty('Blob', Blob);
-// defineGlobalProperty('FormData', FormData);
 function defineGlobalProperty(key: string, value: any, isEnumerable: boolean = true) {
   Object.defineProperty(globalThis, key, {
     value: value,
@@ -58,33 +53,3 @@ function defineGlobalProperty(key: string, value: any, isEnumerable: boolean = t
     configurable: true
   });
 }
-// // 定义一个函数来覆盖 getOwnPropertyDescriptor
-// const getOwnPropertyDescriptorOverride = (key: string): PropertyDescriptor | undefined => {
-  
-//   // 返回原生的 getOwnPropertyDescriptor 方法的结果
-//   const obj= Reflect.getOwnPropertyDescriptor(globalThis, key);
-//   if(obj===undefined){
-//     if (key !== 'prototype' && key !== 'constructor') {
-//       // 尝试获取元素
-//       const element = document.getElementById(key);
-//       if (element !== null) {
-//         // 如果找到了元素，则返回一个新的属性描述符
-//         return {
-//           get: ()=>document.getElementById(key),
-//           enumerable: true,
-//           writable: false,
-//           configurable: true,
-//         };
-//       }
-//     }
-//   }
-//   return obj;
-// };
-
-// // 覆盖 globalThis 的 getOwnPropertyDescriptor 方法
-// Object.defineProperty(globalThis, 'getOwnPropertyDescriptor', {
-//   value: getOwnPropertyDescriptorOverride,
-//   enumerable: false, // 通常不希望这个方法是可枚举的
-//   writable: true,
-//   configurable: true,
-// });

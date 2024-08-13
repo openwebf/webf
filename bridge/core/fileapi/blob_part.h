@@ -17,11 +17,6 @@ class Blob;
 
 class BlobPart {
  public:
-#ifndef IMPLE_TYPE_USING_SHARED_PTR
-  using ImplType = std::shared_ptr<BlobPart>;
-#else
-  using ImplType = BlobPart*;
-#endif
   enum class ContentType { kArrayBuffer, kArrayBufferView, kBlob, kString };
 
   static std::shared_ptr<BlobPart> Create(JSContext* ctx, JSValue value, ExceptionState& exception_state);

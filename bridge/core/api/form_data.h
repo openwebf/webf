@@ -8,12 +8,10 @@
 #include "core/api/form_data_part.h"
 #include "core/binding_object.h"
 
-// #define IMPLE_TYPE_USING_SHARED_PTR
 #include "core/api/form_data_part.h"
 #include "core/fileapi/blob_part.h"
 
 namespace webf{
-    // 定义回调函数类型  
     class FormData :public BindingObject{
         DEFINE_WRAPPERTYPEINFO();
 

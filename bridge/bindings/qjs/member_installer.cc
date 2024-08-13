@@ -68,6 +68,7 @@ void MemberInstaller::InstallAttributes(ExecutingContext* context,
     }
   }
 }
+// Replace the name placeholder to avoid using C++ keyword **delete**.
 const char* fn_form_data_delete="form_data_delete";
 void MemberInstaller::InstallFunctions(ExecutingContext* context,
                                        JSValue root,
