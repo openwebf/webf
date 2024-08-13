@@ -3,7 +3,8 @@ type FormDataPart={}
 export interface FormData {
     new():FormData;
     append(name: string, value: BlobPart, fileName?: string): void;
-    // this method name will be fixed to **delete** when MemberInstaller::InstallFunctions is called
+    // This method name is a placeholder of **delete** method to avoid using C++ keyword
+    // and will be replaced to **delete** when installing in MemberInstaller::InstallFunctions.
     form_data_delete(name: string): void;
     get(name: string): BlobPart
     getAll(name: string): BlobPart[];

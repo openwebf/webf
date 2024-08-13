@@ -1,11 +1,11 @@
 runexample(){
     ret=$PWD
-    cd webf/example && flutter run --release
+    cd webf/example && flutter run -d linux --release
     cd $ret
 }
 runexampled(){
     ret=$PWD
-    cd webf/example && flutter run
+    cd webf/example && flutter run -d linux
     cd $ret
 }
 build-linux(){
