@@ -6,6 +6,7 @@
 #ifndef BRIDGE_BINDINGS_QJS_CONVERTER_IMPL_H_
 #define BRIDGE_BINDINGS_QJS_CONVERTER_IMPL_H_
 
+#include <memory>
 #include <type_traits>
 #include "atomic_string.h"
 #include "bindings/qjs/union_base.h"
@@ -14,6 +15,7 @@
 #include "core/dom/events/event_target.h"
 #include "core/dom/node_list.h"
 #include "core/fileapi/blob_part.h"
+#include "core/api/form_data_part.h"
 #include "core/fileapi/blob_property_bag.h"
 #include "core/frame/window.h"
 #include "core/html/html_body_element.h"
@@ -385,6 +387,30 @@ struct Converter<IDLCallback> : public ConverterBase<IDLCallback> {
 };
 
 template <>
+struct Converter<FormDataPart> : public ConverterBase<FormDataPart> {
+   using ImplType = FormDataPart::ImplType;
+   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
+    assert(!JS_IsException(value));
+    return FormDataPart::Create(ctx, value, exception_state);
+   }
+
+  static JSValue ToValue(JSContext* ctx, ImplType data) {
+    if (data == nullptr)
+      return JS_NULL;
+
+    return data->ToQuickJS(ctx);
+  }
+  
+  static JSValue ToValue(JSContext* ctx, FormDataPart* data) {
+    if (data == nullptr)
+      return JS_NULL;
+
+    return data->ToQuickJS(ctx);
+  }
+};
+
+
+template <>
 struct Converter<BlobPart> : public ConverterBase<BlobPart> {
   using ImplType = BlobPart::ImplType;
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
@@ -393,6 +419,12 @@ struct Converter<BlobPart> : public ConverterBase<BlobPart> {
   }
 
   static JSValue ToValue(JSContext* ctx, BlobPart* data) {
+    if (data == nullptr)
+      return JS_NULL;
+
+    return data->ToQuickJS(ctx);
+  }
+    static JSValue ToValue(JSContext* ctx, std::shared_ptr<BlobPart> data) {
     if (data == nullptr)
       return JS_NULL;
 

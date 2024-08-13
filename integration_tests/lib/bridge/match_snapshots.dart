@@ -3,7 +3,6 @@
  */
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:image_compare/image_compare.dart';
 

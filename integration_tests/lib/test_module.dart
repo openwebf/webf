@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:webf/webf.dart';
-import 'package:webf/dom.dart';
 
 class DemoModule extends BaseModule {
   DemoModule(ModuleManager? moduleManager) : super(moduleManager);

@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10.0)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
+set(CMAKE_C_COMPILER_LAUNCHER ccache)  
+set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 project(WebF)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
@@ -266,6 +268,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     # Core sources
     webf_bridge.cc
     core/api/api.cc
+    core/api/form_data.cc
+    core/api/form_data_part.cc
     core/executing_context.cc
     core/script_forbidden_scope.cc
     core/script_state.cc
@@ -412,6 +416,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_window.cc
     out/qjs_location.cc
     out/qjs_blob.cc
+    out/qjs_form_data.cc
     out/qjs_event.cc
     out/qjs_add_event_listener_options.cc
     out/qjs_event_listener_options.cc

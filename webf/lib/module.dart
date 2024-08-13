@@ -15,3 +15,6 @@ export 'src/module/history.dart';
 export 'src/module/hybrid_history.dart';
 export 'src/module/navigation.dart';
 export 'src/module/navigator.dart';
+export 'src/module/blob.dart'; 
+export 'src/module/form_data.dart';
+// export 'src/module/arraybuffer.dart';

@@ -136,7 +136,7 @@ class BindingObject : public ScriptWrappable {
   virtual bool IsTouchList() const;
   virtual bool IsComputedCssStyleDeclaration() const;
   virtual bool IsCanvasGradient() const;
-
+  virtual bool IsFormData() const;
  protected:
   void TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context);
   void FullFillPendingPromise(BindingObjectPromiseContext* binding_object_promise_context);

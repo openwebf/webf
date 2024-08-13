@@ -44,6 +44,9 @@ void _defineModuleCreator() {
   _defineModule((ModuleManager? moduleManager) => LocalStorageModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => SessionStorageModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => WebSocketModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => FormData(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => Blob(moduleManager));
+  // _defineModule((ModuleManager? moduleManager) => ArrayBufferData(moduleManager));
 }
 
 final Map<String, ModuleCreator> _creatorMap = {};
