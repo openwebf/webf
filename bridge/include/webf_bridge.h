@@ -147,6 +147,6 @@ WEBF_EXPORT_C void executeNativeCallback(DartWork* work_ptr);
 WEBF_EXPORT_C
 void init_dart_dynamic_linking(void* data);
 WEBF_EXPORT_C
-void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_isolate_context);
+void on_dart_context_finalized(void* dart_isolate_context);
 
 #endif  // WEBF_BRIDGE_EXPORT_H
