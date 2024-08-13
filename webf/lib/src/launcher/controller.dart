@@ -852,6 +852,9 @@ class WebFViewController implements WidgetsBindingObserver {
   @override
   void handleUpdateBackGestureProgress(backEvent) {
   }
+
+  @override
+  void didChangeViewFocus(event) {}
 }
 
 // An controller designed to control kraken's functional modules.
