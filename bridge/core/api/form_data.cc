@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
- 
+
 #include "form_data.h"
 #include <memory>
 #include "bindings/qjs/atomic_string.h"
@@ -33,27 +33,22 @@ void FormData::append(const AtomicString& name,
                       const std::shared_ptr<BlobPart>& value,
                       const AtomicString& fileName,
                       ExceptionState& exception_state) {
-  // 验证参数有效性
   if (name.IsEmpty()) {
     exception_state.ThrowException(ctx(), ErrorType::ArgumentError, "The name parameter must not be empty.");
     return;
   }
 
-  // 创建 FormDataPart 对象
   auto form_data_part = std::make_shared<FormDataPart>(name.ToStdString(ctx()), value, fileName.ToStdString(ctx()));
 
-  // 添加数据
   _parts.push_back(form_data_part);
 }
 
 void FormData::form_data_delete(const AtomicString& name, ExceptionState& exception_state) {
-  // 验证参数有效性
   if (name.IsEmpty()) {
     exception_state.ThrowException(ctx(), ErrorType::ArgumentError, "The name parameter must not be empty.");
     return;
   }
 
-  // 删除数据
   _parts.erase(std::remove_if(_parts.begin(), _parts.end(),
                               [name, this](const std::shared_ptr<FormDataPart>& part) {
                                 return part->GetName() == name.ToStdString(ctx());
@@ -62,33 +57,28 @@ void FormData::form_data_delete(const AtomicString& name, ExceptionState& except
 }
 
 webf::BlobPart* FormData::get(const AtomicString& name, ExceptionState& exception_state) {
-  // 验证参数有效性
   if (name.IsEmpty()) {
     exception_state.ThrowException(ctx(), ErrorType::ArgumentError, "The name parameter must not be empty.");
     return nullptr;
   }
 
-  // 查找数据
   for (const auto& part : _parts) {
     if (part->GetName() == name.ToStdString(ctx())) {
       return &*part->getFirst();
     }
   }
 
-  // 如果没有找到，则返回 nullptr
   return nullptr;
 }
 
 std::vector<BlobPart::ImplType> FormData::getAll(const AtomicString& name, ExceptionState& exception_state) {
   std::vector<BlobPart::ImplType> result;
 
-  // 验证参数有效性
   if (name.IsEmpty()) {
     exception_state.ThrowException(ctx(), ErrorType::ArgumentError, "The name parameter must not be empty.");
     return result;
   }
 
-  // 收集数据
   for (const auto& part : _parts) {
     if (part->GetName() == name.ToStdString(ctx())) {
       for (const auto& value : part->GetValues()) {
@@ -101,13 +91,11 @@ std::vector<BlobPart::ImplType> FormData::getAll(const AtomicString& name, Excep
 }
 
 bool FormData::has(const AtomicString& name, ExceptionState& exception_state) {
-  // 验证参数有效性
   if (name.IsEmpty()) {
     exception_state.ThrowException(ctx(), ErrorType::ArgumentError, "The name parameter must not be empty.");
     return false;
   }
 
-  // 检查数据
   for (const auto& part : _parts) {
     if (part->GetName() == name.ToStdString(ctx())) {
       return true;
@@ -121,23 +109,19 @@ void FormData::set(const AtomicString& name,
                    const std::shared_ptr<webf::BlobPart>& value,
                    const AtomicString& fileName,
                    ExceptionState& exception_state) {
-  // 验证参数有效性
   if (name.IsEmpty()) {
     exception_state.ThrowException(ctx(), ErrorType::ArgumentError, "The name parameter must not be empty.");
     return;
   }
 
-  // 移除已存在的相同名称的条目
   _parts.erase(std::remove_if(_parts.begin(), _parts.end(),
                               [name, this](const std::shared_ptr<FormDataPart>& part) {
                                 return part->GetName() == name.ToStdString(ctx());
                               }),
                _parts.end());
 
-  // 创建 FormDataPart 对象
   auto form_data_part = std::make_shared<FormDataPart>(name.ToStdString(ctx()), value, fileName.ToStdString(ctx()));
 
-  // 添加新的数据
   _parts.push_back(form_data_part);
 }
 
@@ -157,7 +141,6 @@ void FormData::forEach(const std::shared_ptr<QJSFunction>& callback,
     // TODO: which parent???
     /*parent*/ args[2] = ScriptValue(ctx(), this->ToQuickJS());
 
-    // 调用回调函数
     ScriptValue result = callback->Invoke(ctx(), thisArg, 3, args);
     if (result.IsException()) {
       exception_state.ThrowException(ctx(), result.QJSValue());
@@ -166,7 +149,6 @@ void FormData::forEach(const std::shared_ptr<QJSFunction>& callback,
   }
 }
 
-// 实现 keys() 方法
 std::vector<webf::AtomicString> FormData::keys(ExceptionState& exception_state) const {
   std::vector<webf::AtomicString> keys;
   for (const auto& part : _parts) {
@@ -175,7 +157,6 @@ std::vector<webf::AtomicString> FormData::keys(ExceptionState& exception_state) 
   return keys;
 }
 
-// 实现 values() 方法
 std::vector<std::shared_ptr<BlobPart>> FormData::values(ExceptionState& exception_state) const {
   std::vector<std::shared_ptr<BlobPart>> values;
   for (const auto& part : _parts) {
@@ -186,7 +167,6 @@ std::vector<std::shared_ptr<BlobPart>> FormData::values(ExceptionState& exceptio
   return values;
 }
 
-// 实现 entries() 方法
 std::vector<std::shared_ptr<FormDataPart>> FormData::entries(ExceptionState& exception_state) const {
     return std::vector<std::shared_ptr<FormDataPart>>(_parts.begin(), _parts.end());
 }
