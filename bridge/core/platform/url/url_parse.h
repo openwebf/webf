@@ -1,6 +1,8 @@
-//
-// Created by 谢作兵 on 12/08/24.
-//
+// Copyright 2013 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #ifndef WEBF_URL_PARSE_H
 #define WEBF_URL_PARSE_H
@@ -10,7 +12,6 @@
 #include <cassert>
 
 namespace webf {
-
 
 namespace url {
 
@@ -57,7 +58,7 @@ struct Component {
   // Returns a string_view using `source` as a backend.
   template <typename CharT>
   std::basic_string_view<CharT> as_string_view_on(const CharT* source) const {
-    assert(is_valid());
+    DCHECK(is_valid());
     return std::basic_string_view(&source[begin], len);
   }
 
@@ -66,6 +67,7 @@ struct Component {
 };
 
 // Permit printing Components by CHECK macros.
+
 std::ostream& operator<<(std::ostream& os, const Component& component);
 
 // Helper that returns a component created with the given begin and ending
@@ -94,7 +96,7 @@ inline Component MakeRange(int begin, int end) {
 //    else
 //      ParsePathURL(url, url_len, &parsed);
 //
-struct Parsed {
+struct  Parsed {
   // Identifies different components.
   enum ComponentType {
     SCHEME,
@@ -259,6 +261,7 @@ struct Parsed {
 };
 
 // Permits printing `Parsed` in gtest.
+
 std::ostream& operator<<(std::ostream& os, const Parsed& parsed);
 
 // Initialization functions ---------------------------------------------------
@@ -278,8 +281,8 @@ std::ostream& operator<<(std::ostream& os, const Parsed& parsed);
 // StandardURL is for when the scheme is known, such as "https:", "ftp:".
 // This is defined as "special" in URL Standard.
 // See https://url.spec.whatwg.org/#is-special
-Parsed ParseStandardURL(std::string_view url);
-Parsed ParseStandardURL(std::u16string_view url);
+ Parsed ParseStandardURL(std::string_view url);
+ Parsed ParseStandardURL(std::u16string_view url);
 // TODO(crbug.com/325408566): Remove once all third-party libraries use the
 // overloads above.
 
@@ -287,8 +290,8 @@ void ParseStandardURL(const char* url, int url_len, Parsed* parsed);
 
 // Non-special URL is for when the scheme is not special, such as "about:",
 // "javascript:". See https://url.spec.whatwg.org/#is-not-special
-Parsed ParseNonSpecialURL(std::string_view url);
-Parsed ParseNonSpecialURL(std::u16string_view url);
+ Parsed ParseNonSpecialURL(std::string_view url);
+ Parsed ParseNonSpecialURL(std::u16string_view url);
 
 // PathURL is for when the scheme is known not to have an authority (host)
 // section but that aren't file URLs either. The scheme is parsed, and
@@ -312,16 +315,16 @@ void ParsePathURL(const char* url,
 
 // FileURL is for file URLs. There are some special rules for interpreting
 // these.
-Parsed ParseFileURL(std::string_view url);
-Parsed ParseFileURL(std::u16string_view url);
+ Parsed ParseFileURL(std::string_view url);
+ Parsed ParseFileURL(std::u16string_view url);
 
 // Filesystem URLs are structured differently than other URLs.
-Parsed ParseFileSystemURL(std::string_view url);
-Parsed ParseFileSystemURL(std::u16string_view url);
+ Parsed ParseFileSystemURL(std::string_view url);
+ Parsed ParseFileSystemURL(std::u16string_view url);
 
 // MailtoURL is for mailto: urls. They are made up scheme,path,query
-Parsed ParseMailtoURL(std::string_view url);
-Parsed ParseMailtoURL(std::u16string_view url);
+ Parsed ParseMailtoURL(std::string_view url);
+ Parsed ParseMailtoURL(std::u16string_view url);
 
 // Helper functions -----------------------------------------------------------
 
@@ -407,7 +410,7 @@ void ParseAuthority(const char16_t* spec,
 // The return value will be a positive integer between 0 and 64K, or one of
 // the two special values below.
 enum SpecialPort { PORT_UNSPECIFIED = -1, PORT_INVALID = -2 };
-int ParsePort(const char* url, const Component& port);
+ int ParsePort(const char* url, const Component& port);
 
 int ParsePort(const char16_t* url, const Component& port);
 
@@ -446,16 +449,19 @@ void ExtractFileName(const char16_t* url,
 // If no key/value are found |*key| and |*value| will be unchanged and it will
 // return false.
 
+
 bool ExtractQueryKeyValue(std::string_view url,
                           Component* query,
                           Component* key,
                           Component* value);
+
 bool ExtractQueryKeyValue(std::u16string_view url,
                           Component* query,
                           Component* key,
                           Component* value);
 
 }  // namespace url
+
 
 }  // namespace webf
 
