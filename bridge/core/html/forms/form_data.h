@@ -10,6 +10,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
 #include "core/fileapi/blob_part.h"
+#include "core/html/forms/form_data_part.h"
 
 namespace webf {
 
@@ -21,8 +22,7 @@ class FormData : public BindingObject {
 
   FormData() = delete;
   static FormData* Create(ExecutingContext* context, ExceptionState& exception_state);
-  explicit FormData(JSContext* ctx) : BindingObject(ctx){};
-  explicit FormData(ExecutingContext* context, NativeBindingObject* native_binding_object);
+  explicit FormData(JSContext* ctx);
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,
                                      const NativeValue* argv,
@@ -46,15 +46,6 @@ class FormData : public BindingObject {
            const std::shared_ptr<webf::BlobPart>& value,
            const AtomicString& fileName,
            ExceptionState& exception_state);
-  void forEach(const std::shared_ptr<webf::QJSFunction>& callback, ExceptionState& exception_state) {
-    forEach(callback, webf::ScriptValue::Empty(ctx()), exception_state);
-  }
-  void forEach(const std::shared_ptr<webf::QJSFunction>& callback,
-               const webf::ScriptValue& thisArg,
-               ExceptionState& exception_state);
-  std::vector<AtomicString> keys(ExceptionState& exception_state) const;
-  std::vector<std::shared_ptr<BlobPart>> values(ExceptionState& exception_state) const;
-  std::vector<std::shared_ptr<FormDataPart>> entries(ExceptionState& exception_state) const;
 
  private:
   std::vector<std::shared_ptr<FormDataPart>> _parts;

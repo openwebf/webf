@@ -5,7 +5,6 @@
 export interface FormData {
   new(): FormData;
   append(name: string, value: BlobPart, fileName?: string): void;
-  append(name: string, value: string, fileName?: string): void;
   // This method name is a placeholder of **delete** method to avoid using C++ keyword
   // and will be replaced to **delete** when installing in MemberInstaller::InstallFunctions.
   form_data_delete(name: string): void;
