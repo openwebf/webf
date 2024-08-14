@@ -2,10 +2,10 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "form_data_part.h"
 #include "form_data.h"
 #include <memory>
 #include "bindings/qjs/atomic_string.h"
-#include "core/api/form_data_part.h"
 #include "core/executing_context.h"
 #include "core/fileapi/blob_part.h"
 

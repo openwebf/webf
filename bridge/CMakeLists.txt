@@ -266,8 +266,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     # Core sources
     webf_bridge.cc
     core/api/api.cc
-    core/api/form_data.cc
-    core/api/form_data_part.cc
     core/executing_context.cc
     core/script_forbidden_scope.cc
     core/script_state.cc
@@ -380,6 +378,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
+    core/html/forms/form_data.cc
+    core/html/forms/form_data_part.cc
 
     # SVG files
     core/svg/svg_element.cc
