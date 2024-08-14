@@ -16,13 +16,11 @@ dependencies:
   meta: ^1.7.0 # Pure dart module.
   ffi: ^2.0.1 # Pure dart module.
   hive: ^2.2.3
-  characters: ^1.2.0
   collection: ^1.16.0
   async: ^2.8.2 # Pure dart module.
   quiver: ^3.2.1 # Pure dart module.
   vector_math: ^2.1.2 # Pure dart module.
   source_span: ^1.9.0 # Pure dart module.
-  shared_preferences: 2.2.0 # No AndroidX used.
   archive: ^3.3.7 # Pure dart module.
   web_socket_channel: ^2.2.0
 
