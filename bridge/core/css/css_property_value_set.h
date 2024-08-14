@@ -27,11 +27,11 @@
 
 #include <span>
 #include "bindings/qjs/cppgc/gc_visitor.h"
+#include "core/base/compiler_specific.h"
 #include "core/base/bits.h"
 #include "core/css/css_property_value.h"
 #include "core/css/parser/css_parser_mode.h"
 #include "core/css/properties/css_property.h"
-#include "core/css/property_set_css_style_declaration.h"
 #include "css_property_names.h"
 
 namespace webf {
@@ -41,6 +41,7 @@ class ExecutingContext;
 class ImmutableCSSPropertyValueSet;
 class MutableCSSPropertyValueSet;
 class StyleSheetContents;
+class PropertySetCSSStyleDeclaration;
 enum class CSSValueID;
 
 class CSSPropertyValueSet : public std::enable_shared_from_this<CSSPropertyValueSet> {
@@ -90,13 +91,13 @@ class CSSPropertyValueSet : public std::enable_shared_from_this<CSSPropertyValue
 
   bool HasProperty(CSSPropertyID property) const { return FindPropertyIndex(property) != -1; }
 
-  template <typename T>  // CSSPropertyID or AtomicString
+  template <typename T>  // CSSPropertyID or std::string
   const std::shared_ptr<const CSSValue>* GetPropertyCSSValue(const T& property) const;
 
-  template <typename T>  // CSSPropertyID or AtomicString
+  template <typename T>  // CSSPropertyID or std::string
   std::string GetPropertyValue(const T& property) const;
 
-  template <typename T>  // CSSPropertyID or AtomicString
+  template <typename T>  // CSSPropertyID or std::string
   bool PropertyIsImportant(const T& property) const;
 
   const std::shared_ptr<const CSSValue>* GetPropertyCSSValueWithHint(const std::string& property_name,
@@ -298,7 +299,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   void MergeAndOverrideOnConflict(const CSSPropertyValueSet*);
 
   void Clear();
-  void ParseDeclarationList(const AtomicString& style_declaration, StyleSheetContents* context_style_sheet);
+  void ParseDeclarationList(const std::string& style_declaration, StyleSheetContents* context_style_sheet);
 
   CSSStyleDeclaration* EnsureCSSStyleDeclaration(ExecutingContext* execution_context);
 
@@ -308,7 +309,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   void TraceAfterDispatch(GCVisitor*) const;
 
  private:
-  template <typename T>  // CSSPropertyID or AtomicString
+  template <typename T>  // CSSPropertyID or std::string
   const CSSPropertyValue* FindPropertyPointer(const T& property) const;
 
   // Returns nullptr if there is no property to be overwritten.
@@ -316,14 +317,14 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   // If property_id is a logical property we've already seen a different
   // property matching, this will remove the existing property (and return
   // nullptr).
-  FORCE_INLINE CSSPropertyValue* FindInsertionPointForID(CSSPropertyID property_id);
+  ALWAYS_INLINE CSSPropertyValue* FindInsertionPointForID(CSSPropertyID property_id);
 
   bool RemovePropertyAtIndex(int, std::string* return_text);
 
   bool RemoveShorthandProperty(CSSPropertyID);
   bool RemoveShorthandProperty(const std::string& custom_property_name) { return false; }
   CSSPropertyValue* FindCSSPropertyWithName(const CSSPropertyName&);
-  Member<PropertySetCSSStyleDeclaration> cssom_wrapper_;
+  std::shared_ptr<PropertySetCSSStyleDeclaration> cssom_wrapper_;
 
   friend class CSSPropertyValueSet;
 

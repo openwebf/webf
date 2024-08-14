@@ -3362,6 +3362,10 @@ bool CSSMathExpressionOperation::HasInvalidAnchorFunctions(const CSSLengthResolv
   return false;
 }
 
+void CSSMathExpressionOperation::Trace(webf::GCVisitor* visitor) const {
+
+}
+
 #if DCHECK_IS_ON()
 bool CSSMathExpressionOperation::InvolvesPercentageComparisons() const {
   if (IsMinOrMax() && Category() == kCalcPercent && operands_.size() > 1u) {

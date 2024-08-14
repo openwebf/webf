@@ -7,6 +7,7 @@
 
 #include "core/platform/text/writing_direction_mode.h"
 #include "foundation/macros.h"
+#include "style_property_shorthand.h"
 
 namespace webf {
 
@@ -27,7 +28,7 @@ class CSSDirectionAwareResolver {
     bool Contains(CSSPropertyID) const;
 
    private:
-    const CSSProperty** properties_;
+    const CSSProperty* const* properties_;
   };
 
  public:

@@ -12,6 +12,9 @@
 
 namespace webf {
 
+CSSParserContext::CSSParserContext(CSSParserMode mode, const Document* use_counter_document)
+    : CSSParserContext("", mode, nullptr) {}
+
 CSSParserContext::CSSParserContext(const Document& document, const std::string& base_url_override)
     : document_(&document), base_url_(base_url_override) {}
 

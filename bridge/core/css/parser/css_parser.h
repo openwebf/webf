@@ -48,6 +48,9 @@ class CSSParser {
       StyleSheetContents*,
       bool is_animation_tainted);
 
+  static bool ParseDeclarationList(std::shared_ptr<const CSSParserContext>,
+                                   MutableCSSPropertyValueSet*,
+                                   const std::string&);
 
   static ParseSheetResult ParseSheet(const std::shared_ptr<const CSSParserContext>&,
                                      const std::shared_ptr<StyleSheetContents>&,

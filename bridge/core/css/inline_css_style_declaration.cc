@@ -8,6 +8,7 @@
 #include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
 #include "core/html/parser/html_parser.h"
+#include "core/css/inline_css_style_declaration.h"
 #include "element_namespace_uris.h"
 #include "html_names.h"
 
@@ -82,7 +83,7 @@ InlineCssStyleDeclaration* InlineCssStyleDeclaration::Create(ExecutingContext* c
 }
 
 InlineCssStyleDeclaration::InlineCssStyleDeclaration(ExecutingContext* context, Element* owner_element_)
-    : CSSStyleDeclaration(context->ctx()), owner_element_(owner_element_) {}
+    : AbstractPropertySetCSSStyleDeclaration(context), owner_element_(owner_element_) {}
 
 ScriptValue InlineCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
   if (IsPrototypeMethods(key)) {
@@ -287,6 +288,10 @@ void InlineCssStyleDeclaration::InternalClearProperty() {
   properties_.clear();
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, owner_element_->bindingObject(),
                                                        nullptr);
+}
+
+MutableCSSPropertyValueSet& InlineCssStyleDeclaration::PropertySet() const {
+//  return owner_element_->EnsureMutableInlineStyle();
 }
 
 }  // namespace webf

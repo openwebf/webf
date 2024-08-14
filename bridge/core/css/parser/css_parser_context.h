@@ -21,11 +21,14 @@ class StyleSheetContents;
 
 class CSSParserContext final {
  public:
+  explicit CSSParserContext(CSSParserMode, const Document* use_counter_document = nullptr);
   explicit CSSParserContext(const CSSParserContext*, const StyleSheetContents*);
   explicit CSSParserContext(const Document&, const std::string& base_url_override);
   explicit CSSParserContext(const std::string& base_url, CSSParserMode mode, const Document* use_counter_document);
 
   bool IsForMarkupSanitization() const;
+
+  void SetMode(CSSParserMode mode) { mode_ = mode; }
 
   bool IsUseCounterRecordingEnabled() const { return document_ != nullptr; }
   const Document* GetDocument() const;

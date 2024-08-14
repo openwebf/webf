@@ -241,6 +241,12 @@ NativeValue ScriptValue::ToNative(JSContext* ctx, ExceptionState& exception_stat
   }
 }
 
+double ScriptValue::ToDouble(JSContext* ctx) const {
+  double v;
+  JS_ToFloat64(ctx, &v, value_);
+  return v;
+}
+
 bool ScriptValue::IsException() const {
   return JS_IsException(value_);
 }
@@ -267,6 +273,10 @@ bool ScriptValue::IsUndefined() const {
 
 bool ScriptValue::IsBool() const {
   return JS_IsBool(value_);
+}
+
+bool ScriptValue::IsNumber() const {
+  return JS_IsNumber(value_);
 }
 
 void ScriptValue::Trace(GCVisitor* visitor) const {

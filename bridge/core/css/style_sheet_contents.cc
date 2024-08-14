@@ -219,7 +219,7 @@ void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
 }
 
 size_t StyleSheetContents::ReplaceRuleIfExists(StyleRuleBase* old_rule, StyleRuleBase* new_rule, size_t position_hint) {
-
+  return 0;
 }
 
 //

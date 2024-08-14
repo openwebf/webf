@@ -26,4 +26,10 @@
 
 #include "property_set_css_style_declaration.h"
 
-namespace webf {}  // namespace webf
+namespace webf {
+
+void PropertySetCSSStyleDeclaration::Trace(GCVisitor* visitor) const {
+  AbstractPropertySetCSSStyleDeclaration::Trace(visitor);
+}
+
+}  // namespace webf

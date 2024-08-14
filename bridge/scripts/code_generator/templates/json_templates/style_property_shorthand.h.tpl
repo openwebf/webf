@@ -22,6 +22,7 @@
 #ifndef WEBF_CORE_CSS_CSS_PROPERTY_SHORTHAND_H_
 #define WEBF_CORE_CSS_CSS_PROPERTY_SHORTHAND_H_
 
+#include <span>
 #include <vector>
 #include "css_property_names.h"
 #include "core/css/properties/css_property.h"
@@ -30,25 +31,21 @@ namespace webf {
 
 class StylePropertyShorthand {
  public:
+  using Properties = std::span<const CSSProperty* const>;
   constexpr StylePropertyShorthand()
-      : properties_(nullptr),
-        length_(0),
-        shorthand_id_(CSSPropertyID::kInvalid) {}
+      : shorthand_id_(CSSPropertyID::kInvalid) {}
 
   constexpr StylePropertyShorthand(CSSPropertyID id,
-                                   const CSSProperty** properties,
+                                   Properties properties,
                                    unsigned num_properties)
       : properties_(properties),
-        length_(num_properties),
         shorthand_id_(id) {}
 
-  const CSSProperty** properties() const { return properties_; }
-  unsigned length() const { return length_; }
+  Properties properties() const { return properties_; }
   CSSPropertyID id() const { return shorthand_id_; }
 
  private:
-  const CSSProperty** properties_;
-  unsigned length_;
+  Properties properties_;
   CSSPropertyID shorthand_id_;
 };
 

@@ -67,6 +67,8 @@ class ScriptValue final {
   std::unique_ptr<SharedNativeString> ToNativeString(JSContext* ctx) const;
   NativeValue ToNative(JSContext* ctx, ExceptionState& exception_state, bool shared_js_value = false) const;
 
+  double ToDouble(JSContext* ctx) const;
+
   bool IsException() const;
   bool IsEmpty() const;
   bool IsObject() const;
@@ -74,6 +76,7 @@ class ScriptValue final {
   bool IsNull() const;
   bool IsUndefined() const;
   bool IsBool() const;
+  bool IsNumber() const;
 
   void Trace(GCVisitor* visitor) const;
 

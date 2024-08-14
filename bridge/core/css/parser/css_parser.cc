@@ -11,6 +11,13 @@
 
 namespace webf {
 
+bool CSSParser::ParseDeclarationList(std::shared_ptr<const CSSParserContext> context,
+                                     MutableCSSPropertyValueSet* property_set,
+                                     const std::string& declaration) {
+//  return CSSParserImpl::ParseDeclarationList(property_set, declaration,
+//                                             context);
+}
+
 ParseSheetResult CSSParser::ParseSheet(const std::shared_ptr<const CSSParserContext>& context,
                                        const std::shared_ptr<StyleSheetContents>& style_sheet,
                                        const std::string& text,

@@ -31,9 +31,9 @@
 #define WEBF_ABSTRACT_PROPERTY_SET_CSS_STYLE_DECLARATION_H
 
 #include "core/css/css_style_declaration.h"
+#include "core/executing_context.h"
 
 namespace webf {
-
 
 class CSSRule;
 class CSSValue;
@@ -43,58 +43,28 @@ class ExecutingContext;
 class MutableCSSPropertyValueSet;
 class StyleSheetContents;
 
-
-class AbstractPropertySetCSSStyleDeclaration
-    : public CSSStyleDeclaration {
+class AbstractPropertySetCSSStyleDeclaration : public CSSStyleDeclaration {
  public:
   virtual Element* ParentElement() const { return nullptr; }
-  StyleSheetContents* ContextStyleSheet() const;
-  explicit AbstractPropertySetCSSStyleDeclaration(ExecutingContext* context)
-      : CSSStyleDeclaration(context->ctx()) {}
+//  StyleSheetContents* ContextStyleSheet() const;
+  explicit AbstractPropertySetCSSStyleDeclaration(ExecutingContext* context) : CSSStyleDeclaration(context->ctx()) {}
 
   // Some subclasses only allow a subset of the properties, for example
   // CSSPositionTryDescriptors only allows inset and sizing properties.
-  virtual bool IsPropertyValid(CSSPropertyID) const = 0;
+  virtual bool IsPropertyValid(CSSPropertyID) const { return false; };
+
+  std::string GetPropertyValueInternal(CSSPropertyID) final;
+  void SetPropertyInternal(CSSPropertyID,
+                           const std::string& custom_property_name,
+                           StringView value,
+                           bool important,
+                           ExceptionState&) final;
 
   void Trace(GCVisitor*) const override;
 
-//  AtomicString GetPropertyValueInternal(CSSPropertyID) final;
-//  void SetPropertyInternal(CSSPropertyID,
-//                           const AtomicString& custom_property_name,
-//                           StringView value,
-//                           bool important,
-//                           ExceptionState&) final;
-
  private:
   bool IsAbstractPropertySet() const final { return true; }
-//  CSSRule* parentRule() const override { return nullptr; }
-  unsigned length() const final;
-//  AtomicString item(unsigned index) const final;
-//  AtomicString getPropertyValue(const AtomicString& property_name) final;
-//  AtomicString getPropertyPriority(const AtomicString& property_name) final;
-//  AtomicString GetPropertyShorthand(const AtomicString& property_name) final;
-//  bool IsPropertyImplicit(const AtomicString& property_name) final;
-//  void setProperty(const ExecutingContext*,
-//                   const AtomicString& property_name,
-//                   const AtomicString& value,
-//                   const AtomicString& priority,
-//                   ExceptionState&) final;
-  AtomicString removeProperty(const AtomicString& property_name, ExceptionState&) final;
-  AtomicString CssFloat() const;
-  void SetCSSFloat(const AtomicString&, ExceptionState&);
-  AtomicString cssText() const final;
-//  void setCSSText(const ExecutingContext*,
-//                  const AtomicString&,
-//                  ExceptionState&) final;
-  /*const CSSValue* GetPropertyCSSValueInternal(CSSPropertyID) final;
-  const CSSValue* GetPropertyCSSValueInternal(
-      const AtomicString& custom_property_name) final;
-  AtomicString GetPropertyValueWithHint(const AtomicString& property_name,
-                                  unsigned index) final;
-  AtomicString GetPropertyPriorityWithHint(const AtomicString& property_name,
-                                     unsigned index) final;
-
-  bool CssPropertyMatches(CSSPropertyID, const CSSValue&) const final;*/
+  CSSRule* parentRule() const override { return nullptr; }
 
  protected:
   enum MutationType {
@@ -108,19 +78,15 @@ class AbstractPropertySetCSSStyleDeclaration
   };
   virtual void WillMutate() {}
   virtual void DidMutate(MutationType) {}
-  virtual MutableCSSPropertyValueSet& PropertySet() const = 0;
+  virtual const MutableCSSPropertyValueSet& PropertySet() const = 0;
   virtual bool IsKeyframeStyle() const { return false; }
-  bool FastPathSetProperty(CSSPropertyID unresolved_property,
-                           double value) override;
+  bool FastPathSetProperty(CSSPropertyID unresolved_property, double value) override;
 };
 
 template <>
 struct DowncastTraits<AbstractPropertySetCSSStyleDeclaration> {
-  static bool AllowFrom(const CSSStyleDeclaration& declaration) {
-    return declaration.IsAbstractPropertySet();
-  }
+  static bool AllowFrom(const CSSStyleDeclaration& declaration) { return declaration.IsAbstractPropertySet(); }
 };
-
 
 }  // namespace webf
 

@@ -109,6 +109,8 @@ list(APPEND BRIDGE_SOURCE
   foundation/stop_watch.cc
   foundation/profiler.cc
   foundation/dart_readable.cc
+  foundation/string_builder.cc
+  foundation/string_utils.cc
   foundation/ascii_types.cc
   foundation/ui_command_buffer.cc
   foundation/ui_command_strategy.cc
@@ -326,6 +328,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_rule.cc
     core/css/css_value.cc
     core/css/properties/longhand.cc
+    core/css/abstract_property_set_css_style_declaration.cc
+    core/css/property_set_css_style_declaration.cc
     core/css/style_rule.cc
     core/css/css_property_value_set.cc
     core/css/css_property_name.cc

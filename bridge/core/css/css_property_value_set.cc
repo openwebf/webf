@@ -31,6 +31,9 @@
 #include "core/css/css_markup.h"
 #include "core/css/parser/css_parser.h"
 #include "core/css/style_property_serializer.h"
+#include "core/css/style_sheet_contents.h"
+#include "core/css/property_set_css_style_declaration.h"
+#include "foundation/macros.h"
 #include "property_bitsets.h"
 #include "style_property_shorthand.h"
 
@@ -55,7 +58,7 @@ const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValue(
 
 static std::string SerializeShorthand(const CSSPropertyValueSet& property_set, CSSPropertyID property_id) {
   StylePropertyShorthand shorthand = shorthandForProperty(property_id);
-  if (!shorthand.length()) {
+  if (shorthand.properties().empty()) {
     return "";
   }
 
@@ -109,12 +112,13 @@ bool CSSPropertyValueSet::PropertyIsImportantWithHint(const std::string& propert
 
 bool CSSPropertyValueSet::ShorthandIsImportant(CSSPropertyID property_id) const {
   StylePropertyShorthand shorthand = shorthandForProperty(property_id);
-  if (!shorthand.length()) {
+  const StylePropertyShorthand::Properties longhands = shorthand.properties();
+  if (longhands.empty()) {
     return false;
   }
 
-  for (unsigned i = 0; i < shorthand.length(); ++i) {
-    if (!PropertyIsImportant(shorthand.properties()[i]->PropertyID())) {
+  for (const CSSProperty* const longhand : longhands) {
+    if (!PropertyIsImportant(longhand->PropertyID())) {
       return false;
     }
   }
@@ -228,7 +232,7 @@ static uint16_t GetConvertedCSSPropertyID(CSSPropertyID property_id) {
   return static_cast<uint16_t>(property_id);
 }
 
-static uint16_t GetConvertedCSSPropertyID(const AtomicString&) {
+static uint16_t GetConvertedCSSPropertyID(const std::string&) {
   return static_cast<uint16_t>(CSSPropertyID::kVariable);
 }
 
@@ -332,7 +336,7 @@ void MutableCSSPropertyValueSet::SetProperty(CSSPropertyID property_id,
   DCHECK_NE(property_id, CSSPropertyID::kVariable);
   DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);
   StylePropertyShorthand shorthand = shorthandForProperty(property_id);
-  if (!shorthand.length()) {
+  if (shorthand.properties().empty()) {
     SetLonghandProperty(CSSPropertyValue(CSSPropertyName(property_id), std::move(value), important));
     return;
   }
@@ -341,10 +345,9 @@ void MutableCSSPropertyValueSet::SetProperty(CSSPropertyID property_id,
 
   // The simple shorthand expansion below doesn't work for `white-space`.
   DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);
-  for (int i = 0; i < shorthand.length(); i++) {
-    const CSSProperty* longhand = shorthand.properties()[i];
+  for (const CSSProperty* const longhand : shorthand.properties()) {
     CSSPropertyName longhand_name(longhand->PropertyID());
-    property_vector_.emplace_back(CSSPropertyValue(longhand_name, std::move(value), important));
+    property_vector_.emplace_back(CSSPropertyValue(longhand_name, value, important));
   }
 }
 void MutableCSSPropertyValueSet::SetProperty(const CSSPropertyName& name,
@@ -392,10 +395,10 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCus
 
 MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::SetLonghandProperty(CSSPropertyValue property) {
   const CSSPropertyID id = property.Id();
-  DCHECK_EQ(shorthandForProperty(id).length(), 0u);
+  DCHECK_EQ(shorthandForProperty(id).properties().size(), 0u);
   CSSPropertyValue* to_replace;
   if (id == CSSPropertyID::kVariable) {
-    to_replace = const_cast<CSSPropertyValue*>(FindPropertyPointer(property.Name()));
+    to_replace = const_cast<CSSPropertyValue*>(FindPropertyPointer(property.Name().ToString()));
   } else {
     to_replace = FindInsertionPointForID(id);
   }
@@ -413,7 +416,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::SetLonghandPro
 }
 
 void MutableCSSPropertyValueSet::SetLonghandProperty(CSSPropertyID property_id, std::shared_ptr<const CSSValue> value) {
-  DCHECK_EQ(shorthandForProperty(property_id).length(), 0u);
+  DCHECK_EQ(shorthandForProperty(property_id).properties().size(), 0u);
   CSSPropertyValue* to_replace = FindInsertionPointForID(property_id);
   if (to_replace) {
     *to_replace = CSSPropertyValue(CSSPropertyName(property_id), value);
@@ -474,6 +477,158 @@ bool MutableCSSPropertyValueSet::RemovePropertiesInSet(std::span<const CSSProper
     return true;
   }
   return false;
+}
+
+void MutableCSSPropertyValueSet::RemoveEquivalentProperties(const CSSPropertyValueSet* style) {
+  std::vector<CSSPropertyID> properties_to_remove;
+  unsigned size = property_vector_.size();
+  for (unsigned i = 0; i < size; ++i) {
+    PropertyReference property = PropertyAt(i);
+    if (style->PropertyMatches(property.Id(), *property.Value()->get())) {
+      properties_to_remove.push_back(property.Id());
+    }
+  }
+  // FIXME: This should use mass removal.
+  for (unsigned i = 0; i < properties_to_remove.size(); ++i) {
+    RemoveProperty(properties_to_remove[i]);
+  }
+}
+
+void MutableCSSPropertyValueSet::RemoveEquivalentProperties(const CSSStyleDeclaration* style) {
+  std::vector<CSSPropertyID> properties_to_remove;
+  unsigned size = property_vector_.size();
+  for (unsigned i = 0; i < size; ++i) {
+    PropertyReference property = PropertyAt(i);
+    if (style->CssPropertyMatches(property.Id(), *property.Value()->get())) {
+      properties_to_remove.push_back(property.Id());
+    }
+  }
+  // FIXME: This should use mass removal.
+  for (unsigned i = 0; i < properties_to_remove.size(); ++i) {
+    RemoveProperty(properties_to_remove[i]);
+  }
+}
+
+void MutableCSSPropertyValueSet::MergeAndOverrideOnConflict(const CSSPropertyValueSet* other) {
+  unsigned size = other->PropertyCount();
+  for (unsigned n = 0; n < size; ++n) {
+    PropertyReference to_merge = other->PropertyAt(n);
+    SetLonghandProperty(CSSPropertyValue(to_merge.PropertyMetadata(), *to_merge.Value()));
+  }
+}
+
+void MutableCSSPropertyValueSet::Clear() {
+  property_vector_.clear();
+  may_have_logical_properties_ = false;
+}
+
+void MutableCSSPropertyValueSet::ParseDeclarationList(const std::string& style_declaration,
+                                                      StyleSheetContents* context_style_sheet) {
+  property_vector_.clear();
+
+  std::shared_ptr<CSSParserContext> context;
+  if (context_style_sheet) {
+    context = std::make_shared<CSSParserContext>(context_style_sheet->ParserContext(), context_style_sheet);
+    context->SetMode(CssParserMode());
+  } else {
+    context = std::make_shared<CSSParserContext>(CssParserMode());
+  }
+
+  CSSParser::ParseDeclarationList(std::move(context), this, style_declaration);
+}
+
+CSSStyleDeclaration* MutableCSSPropertyValueSet::EnsureCSSStyleDeclaration(ExecutingContext* execution_context) {
+  // FIXME: get rid of this weirdness of a CSSStyleDeclaration inside of a
+  // style property set.
+  if (cssom_wrapper_) {
+    //    DCHECK(
+    //        !static_cast<CSSStyleDeclaration*>(cssom_wrapper_.Get())->parentRule());
+    //    DCHECK(!cssom_wrapper_->ParentElement());
+    return cssom_wrapper_.get();
+  }
+//  new PropertySetCSSStyleDeclaration(execution_context, shared_from_this());
+//  cssom_wrapper_ = std::make_shared<PropertySetCSSStyleDeclaration>(execution_context, shared_from_this());
+  return cssom_wrapper_.get();
+}
+
+template <typename T>
+int MutableCSSPropertyValueSet::FindPropertyIndex(const T& property) const {
+  const CSSPropertyValue* begin = property_vector_.data();
+  const CSSPropertyValue* it = FindPropertyPointer(property);
+  return (it == nullptr) ? -1 : static_cast<int>(it - begin);
+}
+template int MutableCSSPropertyValueSet::FindPropertyIndex(const CSSPropertyID&) const;
+template int MutableCSSPropertyValueSet::FindPropertyIndex(const std::string&) const;
+
+void MutableCSSPropertyValueSet::TraceAfterDispatch(GCVisitor* visitor) const {
+  CSSPropertyValueSet::TraceAfterDispatch(visitor);
+}
+
+template <typename T>
+const CSSPropertyValue* MutableCSSPropertyValueSet::FindPropertyPointer(const T& property) const {
+  const CSSPropertyValue* begin = property_vector_.data();
+  const CSSPropertyValue* end = begin + property_vector_.size();
+
+  uint16_t id = GetConvertedCSSPropertyID(property);
+
+  const CSSPropertyValue* it = std::find_if(begin, end, [property, id](const CSSPropertyValue& css_property) -> bool {
+    return IsPropertyMatch(css_property.Metadata(), id, property);
+  });
+  return (it == end) ? nullptr : it;
+}
+
+ALWAYS_INLINE CSSPropertyValue* MutableCSSPropertyValueSet::FindInsertionPointForID(CSSPropertyID property_id) {
+  CSSPropertyValue* to_replace = const_cast<CSSPropertyValue*>(FindPropertyPointer(property_id));
+  if (to_replace == nullptr) {
+    return nullptr;
+  }
+  if (may_have_logical_properties_) {
+    const CSSProperty& prop = CSSProperty::Get(property_id);
+    if (prop.IsInLogicalPropertyGroup()) {
+      DCHECK(std::count(property_vector_.begin(), property_vector_.end(), *to_replace) > 0);
+      int to_replace_index = static_cast<int>(to_replace - property_vector_.data());
+      for (size_t n = property_vector_.size() - 1; n > to_replace_index; --n) {
+        if (prop.IsInSameLogicalPropertyGroupWithDifferentMappingLogic(PropertyAt(n).Id())) {
+          RemovePropertyAtIndex(to_replace_index, nullptr);
+          return nullptr;
+        }
+      }
+    }
+  }
+  return to_replace;
+}
+
+bool MutableCSSPropertyValueSet::RemovePropertyAtIndex(int property_index, std::string* return_text) {
+  if (property_index == -1) {
+    if (return_text) {
+      *return_text = "";
+    }
+    return false;
+  }
+
+  if (return_text) {
+    *return_text = PropertyAt(property_index).Value()->get()->CssText();
+  }
+
+  // A more efficient removal strategy would involve marking entries as empty
+  // and sweeping them when the vector grows too big.
+  property_vector_.erase(property_vector_.begin() + property_index);
+
+  return true;
+}
+
+bool MutableCSSPropertyValueSet::RemoveShorthandProperty(CSSPropertyID property_id) {
+  StylePropertyShorthand shorthand = shorthandForProperty(property_id);
+  if (shorthand.properties().empty()) {
+    return false;
+  }
+
+  return RemovePropertiesInSet(shorthand.properties());
+}
+
+CSSPropertyValue* MutableCSSPropertyValueSet::FindCSSPropertyWithName(const CSSPropertyName& name) {
+  return const_cast<CSSPropertyValue*>(name.IsCustomProperty() ? FindPropertyPointer(name.ToString())
+                                                               : FindPropertyPointer(name.Id()));
 }
 
 }  // namespace webf

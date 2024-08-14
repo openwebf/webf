@@ -11,13 +11,13 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_value.h"
 #include "bindings/qjs/script_wrappable.h"
-#include "css_style_declaration.h"
+#include "core/css/abstract_property_set_css_style_declaration.h"
 
 namespace webf {
 
 class Element;
 
-class InlineCssStyleDeclaration : public CSSStyleDeclaration {
+class InlineCssStyleDeclaration : public AbstractPropertySetCSSStyleDeclaration {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
@@ -51,6 +51,9 @@ class InlineCssStyleDeclaration : public CSSStyleDeclaration {
   void Trace(GCVisitor* visitor) const override;
 
  private:
+
+  MutableCSSPropertyValueSet& PropertySet() const override;
+
   AtomicString InternalGetPropertyValue(std::string& name);
   bool InternalSetProperty(std::string& name, const AtomicString& value);
   AtomicString InternalRemoveProperty(std::string& name);
