@@ -169,7 +169,7 @@ const std::string& GURL::spec() const {
   // NOTREACHED_NORETURN();
 
   assert_m(false,  "Trying to get the spec of an invalid URL!");
-  return webf::EmptyString();
+  return base::EmptyString();
 }
 
 // Note: code duplicated below (it's inconvenient to use a template here).
@@ -355,8 +355,8 @@ bool GURL::IsAboutSrcdoc() const {
 }
 
 bool GURL::SchemeIs(std::string_view lower_ascii_scheme) const {
-  assert(webf::IsStringASCII(lower_ascii_scheme));
-  assert(webf::ToLowerASCII(lower_ascii_scheme) == lower_ascii_scheme);
+  assert(base::IsStringASCII(lower_ascii_scheme));
+  assert(base::ToLowerASCII(lower_ascii_scheme) == lower_ascii_scheme);
 
   if (!has_scheme())
     return lower_ascii_scheme.empty();
@@ -378,8 +378,8 @@ bool GURL::SchemeIsCryptographic() const {
 }
 
 bool GURL::SchemeIsCryptographic(std::string_view lower_ascii_scheme) {
-  DCHECK(webf::IsStringASCII(lower_ascii_scheme));
-  DCHECK(webf::ToLowerASCII(lower_ascii_scheme) == lower_ascii_scheme);
+  DCHECK(base::IsStringASCII(lower_ascii_scheme));
+  DCHECK(base::ToLowerASCII(lower_ascii_scheme) == lower_ascii_scheme);
 
   return lower_ascii_scheme == url::kHttpsScheme ||
          lower_ascii_scheme == url::kWssScheme;
