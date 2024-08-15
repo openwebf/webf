@@ -1,6 +1,10 @@
-//
-// Created by 谢作兵 on 13/08/24.
-//
+// Copyright 2020 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_STRING_UTIL_INTERNAL_H
 #define WEBF_STRING_UTIL_INTERNAL_H
@@ -8,9 +12,12 @@
 #include <concepts>
 #include <string_view>
 #include <type_traits>
+#include "core/base/ranges/ranges.h"
 #include "core/base/ranges/algorithm.h"
 
-namespace webf {
+namespace base {
+
+namespace internal {
 
 // ASCII-specific tolower.  The standard library's tolower is locale sensitive,
 // so we don't want to use it here.
@@ -52,10 +59,12 @@ requires(std::integral<typename T::value_type>)
 template <typename CharT, typename CharU>
 inline bool EqualsCaseInsensitiveASCIIT(std::basic_string_view<CharT> a,
                                         std::basic_string_view<CharU> b) {
-  return ranges::equal(a, b, [](auto lhs, auto rhs) {
+  return webf::ranges::equal(a, b, [](auto lhs, auto rhs) {
     return ToLowerASCII(lhs) == ToLowerASCII(rhs);
   });
 }
+
+} // namespace internal
 
 }  // namespace webf
 
