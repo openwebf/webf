@@ -271,6 +271,104 @@ bool Document::hidden() {
   return NativeValueConverter<NativeTypeBool>::FromNativeValue(dart_result);
 }
 
+// TODO(xiezuobing):
+void Document::UpdateBaseURL() {
+//  KURL old_base_url = base_url_;
+//  // DOM 3 Core: When the Document supports the feature "HTML" [DOM Level 2
+//  // HTML], the base URI is computed using first the value of the href attribute
+//  // of the HTML BASE element if any, and the value of the documentURI attribute
+//  // from the Document interface otherwise (which we store, preparsed, in
+//  // |url_|).
+//  if (!base_element_url_.IsEmpty())
+//    base_url_ = base_element_url_;
+//  else if (!base_url_override_.IsEmpty())
+//    base_url_ = base_url_override_;
+//  else
+//    base_url_ = FallbackBaseURL();
+//  /
+////  GetSelectorQueryCache().Invalidate();
+//
+//  if (!base_url_.IsValid())
+//    base_url_ = KURL();
+//
+////  if (elem_sheet_) {
+////    // Element sheet is silly. It never contains anything.
+////    DCHECK(!elem_sheet_->Contents()->RuleCount());
+////    elem_sheet_ = nullptr;
+////  }
+//
+////  GetStyleEngine().BaseURLChanged();
+//
+//  if (!EqualIgnoringFragmentIdentifier(old_base_url, base_url_)) {
+//    // Base URL change changes any relative visited links.
+//    // FIXME: There are other URLs in the tree that would need to be
+//    // re-evaluated on dynamic base URL change. Style should be invalidated too.
+//    for (HTMLAnchorElement& anchor :
+//         Traversal<HTMLAnchorElement>::StartsAfter(*this))
+//      anchor.InvalidateCachedVisitedLinkHash();
+//  }
+//
+//  for (Element* element : *scripts()) {
+//    auto* script = To<HTMLScriptElement>(element);
+//    script->Loader()->DocumentBaseURLChanged();
+//  }
+//
+//  if (auto* document_rules = DocumentSpeculationRules::FromIfExists(*this)) {
+//    document_rules->DocumentBaseURLChanged();
+//  }
+}
+
+const KURL& Document::BaseURL() const {
+  if (!base_url_.IsNull())
+    return base_url_;
+  return BlankURL();
+}
+
+
+KURL Document::CompleteURL(
+    const std::string& url,
+    const CompleteURLPreloadStatus preload_status) const {
+  return CompleteURLWithOverride(url, base_url_, preload_status);
+}
+
+KURL Document::CompleteURLWithOverride(
+    const std::string& url,
+    const KURL& base_url_override,
+    CompleteURLPreloadStatus preload_status) const {
+  DCHECK(base_url_override.IsEmpty() || base_url_override.IsValid());
+
+  // Always return a null URL when passed a null string.
+  // FIXME: Should we change the KURL constructor to have this behavior?
+  // See also [CSS]StyleSheet::completeURL(const String&)
+  if (url == nullptr)
+    return KURL();
+
+  KURL result = KURL(base_url_override, url);
+  // If the conditions are met for
+  // `should_record_sandboxed_srcdoc_baseurl_metrics_` to be set, we should
+  // only record the metric if there's no `base_element_url_` set via a base
+  // element. We must also check the preload status below, since a
+  // PreloadRequest could call this function before `base_element_url_` is set.
+//  if (should_record_sandboxed_srcdoc_baseurl_metrics_ &&
+//      base_element_url_.IsEmpty() && preload_status != kIsPreload) {
+//    // Compute the same thing assuming an empty base url, to see if it changes.
+//    // This will allow us to ignore trivial changes, such as 'https://foo.com'
+//    // resolving as 'https://foo.com/', which happens whether the base url is
+//    // specified or not.
+//    // While the following computation is non-trivial overhead, it's not
+//    // expected to be needed often enough to be problematic, and it will be
+//    // removed once we've collected data for https://crbug.com/330744612.
+//    KURL empty_baseurl_result = KURL(KURL(), url);
+//    if (result != empty_baseurl_result) {
+////      CountUse(WebFeature::kSandboxedSrcdocFrameResolvesRelativeURL);
+//      // Let's not repeat the parallel computation again now we've found a
+//      // instance to record.
+////      should_record_sandboxed_srcdoc_baseurl_metrics_ = false;
+//    }
+//  }
+  return result;
+}
+
 template <typename CharType>
 static inline bool IsValidNameASCII(const CharType* characters, unsigned length) {
   CharType c = characters[0];
