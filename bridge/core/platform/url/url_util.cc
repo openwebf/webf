@@ -1,6 +1,3 @@
-//
-// Created by 谢作兵 on 13/08/24.
-//
 
 #include "url_util.h"
 
@@ -12,9 +9,7 @@
 #include <ostream>
 
 #include "core/base/compiler_specific.h"
-//#include "base/containers/contains.h"
 #include "core/base/ranges/algorithm.h"
-//#include "base/no_destructor.h"
 #include "core/base/no_destructor.h"
 #include "core/base/strings/string_util.h"
 #include "url_canon_internal.h"
@@ -176,7 +171,7 @@ inline bool DoCompareSchemeComponent(const CHAR* spec,
                                      const char* compare_to) {
   if (component.is_empty())
     return compare_to[0] == 0;  // When component is empty, match empty scheme.
-  return webf::EqualsCaseInsensitiveASCII(
+  return base::EqualsCaseInsensitiveASCII(
       std::basic_string_view(&spec[component.begin], component.len),
       compare_to);
 }
@@ -192,7 +187,7 @@ bool DoIsInSchemes(const CHAR* spec,
     return false;  // Empty or invalid schemes are non-standard.
 
   for (const SchemeWithType& scheme_with_type : schemes) {
-    if (webf::EqualsCaseInsensitiveASCII(
+    if (base::EqualsCaseInsensitiveASCII(
             std::basic_string_view(&spec[scheme.begin], scheme.len),
             scheme_with_type.scheme)) {
       *type = scheme_with_type.type;
@@ -214,7 +209,7 @@ bool DoIsOpaqueNonSpecial(const CHAR* spec, const Component& scheme) {
     return false;
   }
   for (const std::string& s : GetSchemeRegistry().opaque_non_special_schemes) {
-    if (webf::EqualsCaseInsensitiveASCII(
+    if (base::EqualsCaseInsensitiveASCII(
             std::basic_string_view(&spec[scheme.begin], scheme.len), s)) {
       return true;
     }
@@ -567,7 +562,7 @@ void DoAddSchemeWithHandler(const char* new_scheme,
   assert(schemes);
   assert(strlen(new_scheme) > 0);
   assert(strlen(handler) > 0);
-  assert(webf::ToLowerASCII(new_scheme) == new_scheme);
+  assert(base::ToLowerASCII(new_scheme) == new_scheme);
   assert(ranges::find(*schemes, new_scheme, &SchemeWithHandler::scheme) == std::ranges::end(*schemes));
 //  assert(!base::Contains(*schemes, new_scheme, &SchemeWithHandler::scheme));
   schemes->push_back({new_scheme, handler});
@@ -578,7 +573,7 @@ void DoAddScheme(const char* new_scheme, std::vector<std::string>* schemes) {
   assert(schemes);
   assert(strlen(new_scheme) > 0);
 
-  assert(webf::ToLowerASCII(new_scheme) == new_scheme);
+  assert(base::ToLowerASCII(new_scheme) == new_scheme);
   assert(ranges::find(*schemes, new_scheme) == std::ranges::end(*schemes));
 //  assert(!base::Contains(*schemes, new_scheme));
   schemes->push_back(new_scheme);
@@ -590,7 +585,7 @@ void DoAddSchemeWithType(const char* new_scheme,
   DoSchemeModificationPreamble();
   assert(schemes);
   assert(strlen(new_scheme) > 0);
-  assert(webf::ToLowerASCII(new_scheme) == new_scheme);
+  assert(base::ToLowerASCII(new_scheme) == new_scheme);
   assert(ranges::find(*schemes, new_scheme, &SchemeWithType::scheme) == std::ranges::end(*schemes));
 //  assert(!base::Contains(*schemes, new_scheme, &SchemeWithType::scheme));
   schemes->push_back({new_scheme, type});
