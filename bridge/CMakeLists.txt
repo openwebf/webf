@@ -379,7 +379,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
     core/html/forms/form_data.cc
-    core/html/forms/form_data_part.cc
 
     # SVG files
     core/svg/svg_element.cc
@@ -510,6 +509,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_union_dom_string_sequencedouble.cc
     out/qjs_unionhtml_image_elementhtml_canvas_element.cc
     out/qjs_union_dom_stringcanvas_gradient.cc
+    out/qjs_union_dom_stringblob.cc
     out/canvas_types.cc
     out/qjs_html_button_element.cc
     out/qjs_html_input_element.cc

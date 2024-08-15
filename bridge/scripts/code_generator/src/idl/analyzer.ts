@@ -151,6 +151,12 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
       return getParameterBaseType(argument);
     } else if (identifier === 'LegacyNullToEmptyString') {
       return FunctionArgumentType.legacy_dom_string;
+    } else if (identifier === 'ImplementedAs') {
+      let secondNameNode: ts.LiteralTypeNode = typeReference.typeArguments![1] as unknown as ts.LiteralTypeNode;
+      if (mode) {
+        mode.secondaryName = secondNameNode.literal['text'] as string;
+      }
+      return getParameterBaseType(typeReference.typeArguments![0] as unknown as ts.TypeNode);
     }
 
     return identifier;
@@ -288,6 +294,10 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
               let mode = new ParameterMode();
               f.returnType = getParameterType(m.type, unionTypeCollector, mode);
               f.returnTypeMode = mode;
+
+              if (mode.secondaryName) {
+                f.name = mode.secondaryName;
+              }
             }
             break;
           }

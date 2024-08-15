@@ -180,6 +180,7 @@
     "pageXOffset",
     "pageYOffset",
     "title",
-    "append"
+    "append",
+    "delete"
   ]
 }

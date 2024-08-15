@@ -15,7 +15,6 @@
 #include "core/dom/events/event_target.h"
 #include "core/dom/node_list.h"
 #include "core/fileapi/blob_part.h"
-#include "core/html/forms/form_data_part.h"
 #include "core/fileapi/blob_property_bag.h"
 #include "core/frame/window.h"
 #include "core/html/html_body_element.h"
@@ -383,29 +382,6 @@ struct Converter<IDLCallback> : public ConverterBase<IDLCallback> {
     }
 
     return QJSFunction::Create(ctx, value);
-  }
-};
-
-template <>
-struct Converter<FormDataPart> : public ConverterBase<FormDataPart> {
-   using ImplType = FormDataPart::ImplType;
-   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
-    assert(!JS_IsException(value));
-    return FormDataPart::Create(ctx, value, exception_state);
-   }
-
-  static JSValue ToValue(JSContext* ctx, ImplType data) {
-    if (data == nullptr)
-      return JS_NULL;
-
-    return data->ToQuickJS(ctx);
-  }
-  
-  static JSValue ToValue(JSContext* ctx, FormDataPart* data) {
-    if (data == nullptr)
-      return JS_NULL;
-
-    return data->ToQuickJS(ctx);
   }
 };
 

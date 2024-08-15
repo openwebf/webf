@@ -4,14 +4,12 @@
 
 export interface FormData {
   new(): FormData;
-  append(name: string, value: BlobPart, fileName?: string): void;
-  // This method name is a placeholder of **delete** method to avoid using C++ keyword
-  // and will be replaced to **delete** when installing in MemberInstaller::InstallFunctions.
-  form_data_delete(name: string): void;
-  get(name: string): BlobPart
-  getAll(name: string): BlobPart[];
+  append(name: string, value: (string | Blob), fileName?: string): void;
+  delete(name: string): ImplementedAs<void, "deleteEntry">;
+  get(name: string): (string | Blob);
+  getAll(name: string): (string | Blob)[];
   has(name: string): boolean;
-  set(name: string, value: BlobPart, fileName?: string): void;
+  set(name: string, value: string | Blob, fileName?: string): void;
 
   readonly forEach: JSArrayProtoMethod;
   readonly keys: JSArrayProtoMethod;
