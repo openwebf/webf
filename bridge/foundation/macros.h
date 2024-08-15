@@ -32,7 +32,8 @@
 #define DCHECK_GE(exp1, exp2) assert(exp1 > exp2)
 #define CHECK_GT(exp1, exp2) assert(exp1 > exp2)
 #define DCHECK_NE(exp1, exp2) assert(exp1 != exp2)
-#define DCHECK_LE(exp1, exp2) assert(exp1 < exp2)
+#define DCHECK_LE(exp1, exp2) assert(exp1 <= exp2)
+#define DCHECK_LT(exp1, exp2) assert(exp1 < exp2)
 #define NOTREACHED_IN_MIGRATION() assert(false)
 
 #define assert_m(exp, msg) assert(((void)msg, exp))
