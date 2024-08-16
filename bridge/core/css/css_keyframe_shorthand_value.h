@@ -10,7 +10,7 @@
 #define WEBF_CSS_KEYFRAME_SHORTHAND_VALUE_H
 
 #include "core/css/css_value.h"
-#include "core/css/css_property_names.h"
+#include "css_property_names.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/style_property_serializer.h"
 
@@ -41,9 +41,9 @@ class CSSKeyframeShorthandValue : public CSSValue {
   // Assumes that all property/value pairs that are present in the input set are
   // longhands for the same shorthand property/value pair.
   CSSKeyframeShorthandValue(CSSPropertyID shorthand,
-                            ImmutableCSSPropertyValueSet*);
+                            std::shared_ptr<ImmutableCSSPropertyValueSet>&);
 
-  AtomicString CustomCSSText() const;
+  std::string CustomCSSText() const;
 
   bool Equals(const CSSKeyframeShorthandValue& other) const {
     return shorthand_ == other.shorthand_ && properties_ == other.properties_;
@@ -58,7 +58,7 @@ class CSSKeyframeShorthandValue : public CSSValue {
   // this value instead of trying to calculate the common shorthand given the
   // longhands.
   CSSPropertyID shorthand_;
-  Member<ImmutableCSSPropertyValueSet> properties_;
+  std::shared_ptr<ImmutableCSSPropertyValueSet> properties_;
 };
 
 template <>

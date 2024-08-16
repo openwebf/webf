@@ -7,7 +7,8 @@
  */
 
 #include "core/css/css_keyframe_shorthand_value.h"
-//#include "core/style_property_shorthand.h"
+#include <iostream>
+#include "style_property_shorthand.h"
 
 namespace webf {
 
@@ -15,7 +16,7 @@ namespace webf {
 namespace {
 bool ShorthandMatches(CSSPropertyID expected_shorthand,
                       CSSPropertyID longhand) {
-  Vector<StylePropertyShorthand, 4> shorthands;
+  std::vector<StylePropertyShorthand> shorthands;
   getMatchingShorthandsForLonghand(longhand, &shorthands);
   for (unsigned i = 0; i < shorthands.size(); ++i) {
     if (shorthands.at(i).id() == expected_shorthand) {
@@ -31,17 +32,18 @@ bool ShorthandMatches(CSSPropertyID expected_shorthand,
 
 CSSKeyframeShorthandValue::CSSKeyframeShorthandValue(
     CSSPropertyID shorthand,
-    ImmutableCSSPropertyValueSet* properties)
+    std::shared_ptr<ImmutableCSSPropertyValueSet>& properties)
     : CSSValue(kKeyframeShorthandClass),
       shorthand_(shorthand),
       properties_(properties) {}
 
-AtomicString CSSKeyframeShorthandValue::CustomCSSText() const {
+std::string CSSKeyframeShorthandValue::CustomCSSText() const {
 #if DCHECK_IS_ON()
   // Check that all property/value pairs belong to the same shorthand.
   for (unsigned i = 0; i < properties_->PropertyCount(); i++) {
-    DCHECK(ShorthandMatches(shorthand_, properties_->PropertyAt(i).Id()))
-        << "These are not the longhands you're looking for.";
+    if(!ShorthandMatches(shorthand_, properties_->PropertyAt(i).Id())) {
+     std::cout << "These are not the longhands you're looking for." << std::endl;
+    }
   }
 #endif
 
@@ -49,7 +51,7 @@ AtomicString CSSKeyframeShorthandValue::CustomCSSText() const {
 }
 
 void CSSKeyframeShorthandValue::TraceAfterDispatch(GCVisitor* visitor) const {
-  visitor->TraceMember(properties_);
+//  visitor->TraceMember(properties_);
   CSSValue::TraceAfterDispatch(visitor);
 }
 
