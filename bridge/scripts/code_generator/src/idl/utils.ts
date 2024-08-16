@@ -12,8 +12,16 @@ export function addIndent(str: String, space: number) {
   return lines.join('\n');
 }
 
+function getUniversalPlatformFilename(blob: IDLBlob) {
+  const prefix = blob.platformPrefix + '_';
+  if (blob.filename.startsWith(prefix)) {
+      return blob.filename.substring(prefix.length);
+  }
+  return blob.filename;
+}
+
 export function getClassName(blob: IDLBlob) {
-  let raw = camelCase(blob.filename[4].toUpperCase() + blob.filename.slice(5));
+  let raw = camelCase(getUniversalPlatformFilename(blob));
   if (raw.slice(0, 3) == 'dom') {
     if (raw === 'domMatrixReadonly') {
       return `DOMMatrixReadOnly`;

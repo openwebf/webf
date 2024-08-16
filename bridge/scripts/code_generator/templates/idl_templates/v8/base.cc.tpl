@@ -6,11 +6,7 @@
 #include "<%= blob.filename %>.h"
 #include "foundation/native_value_converter.h"
 #include "binding_call_methods.h"
-#include "bindings/v8/member_installer.h"
-#include "bindings/v8/qjs_function.h"
-#include "bindings/v8/converter_impl.h"
-#include "bindings/v8/script_promise.h"
-#include "bindings/v8/cppgc/mutation_scope.h"
+#include "defined_properties.h"
 #include "core/executing_context.h"
 #include "core/dom/element.h"
 #include "core/dom/text.h"
@@ -20,7 +16,6 @@
 #include "core/input/touch_list.h"
 #include "core/dom/static_node_list.h"
 #include "core/html/html_all_collection.h"
-#include "defined_properties.h"
 
 namespace webf {
 

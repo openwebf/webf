@@ -5,7 +5,7 @@
 #include "include/webf_bridge.h"
 #include "core/dart_isolate_context.h"
 #include "core/html/parser/html_parser.h"
-//#include "core/page.h"
+#include "core/page.h"
 #include "foundation/native_type.h"
 #include "include/dart_api.h"
 #include "multiple_threading/dispatcher.h"

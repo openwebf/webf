@@ -127,7 +127,7 @@ class ExecutingContext {
 #elif WEBF_V8_JS_ENGINE
   static ExecutingContext* From(v8::Isolate* isolate);
   v8::Local<v8::Value> Global();
-  v8::Isolate ctx();
+  v8::Isolate* ctx();
   bool HandleException(v8::Local<v8::Value> exc);
   void ReportError(v8::Local<v8::Value> error);
   void DefineGlobalProperty(const char* prop, v8::Local<v8::Value> value);
