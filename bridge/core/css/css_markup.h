@@ -45,7 +45,7 @@ void SerializeIdentifier(const std::string& identifier,
 void SerializeString(const std::string&, std::string& append_to);
 std::string SerializeString(const std::string&);
 std::string SerializeURI(const std::string&);
-std::string SerializeFontFamily(const AtomicString&);
+std::string SerializeFontFamily(const std::string&);
 
 }
 

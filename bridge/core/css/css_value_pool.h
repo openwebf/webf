@@ -45,7 +45,8 @@
 #include "css_value_keywords.h"
 // #include "core/css/css_custom_ident_value.h"
 // #include "core/css/css_cyclic_variable_value.h"
-// #include "core/css/css_font_family_value.h"
+#include "core/css/css_font_family_value.h"
+#include "core/css/css_value_list.h"
 // #include "core/css/css_inherited_value.h"
 // #include "core/css/fixed_size_cache.h"
 // #include "core/css/css_cyclic_variable_value.h"
@@ -70,10 +71,9 @@ class CSSValuePool {
   //    static Color EmptyValue() { return Color::kTransparent; }
   //    static Color DeletedValue() { return Color::kWhite; }
   //  };
-  //  using FontFaceValueCache =
-  //      HeapHashMap<AtomicString, Member<const CSSValueList>>;
-  //  static const unsigned kMaximumFontFaceCacheSize = 128;
-  //  using FontFamilyValueCache = HeapHashMap<String, Member<CSSFontFamilyValue>>;
+    using FontFaceValueCache = std::unordered_map<std::string, std::shared_ptr<const CSSValueList>>;
+    static const unsigned kMaximumFontFaceCacheSize = 128;
+    using FontFamilyValueCache = std::unordered_map<std::string, std::shared_ptr<CSSFontFamilyValue>>;
   //
   //  CSSValuePool();
   //  CSSValuePool(const CSSValuePool&) = delete;
@@ -152,6 +152,29 @@ class CSSValuePool {
     return color_value_cache_[color];
   }
 
+
+  auto GetFontFamilyCacheEntry(
+      const std::string& family_name) {
+    return font_family_value_cache_.insert({family_name, nullptr});
+  }
+
+  auto GetFontFaceCacheEntry(
+      const std::string& string) {
+    // Just wipe out the cache and start rebuilding if it gets too big.
+    if (font_face_value_cache_.size() > kMaximumFontFaceCacheSize) {
+      font_face_value_cache_.clear();
+    }
+    return font_face_value_cache_.insert({string, nullptr});
+  }
+
+  FontFamilyValueCache GetFontFamilyCache() {
+    return font_family_value_cache_;
+  }
+
+  FontFaceValueCache GetFontFaceValueCache() {
+    return font_face_value_cache_;
+  }
+
  private:
   //  // Cached individual values.
   std::shared_ptr<const CSSInheritedValue> inherited_value_;
@@ -172,6 +195,8 @@ class CSSValuePool {
   std::vector<std::shared_ptr<const CSSNumericLiteralValue>> number_value_cache_;
 
   std::unordered_map<Color, std::shared_ptr<const CSSColor>, Color::KeyHasher> color_value_cache_;
+  FontFaceValueCache font_face_value_cache_;
+  FontFamilyValueCache font_family_value_cache_;
 };
 
 CSSValuePool& CssValuePool();

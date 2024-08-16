@@ -6,6 +6,7 @@
 #include "core/css/parser/css_parser_idioms.h"
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/platform/text/string_to_number.h"
+#include "core/platform/fonts/font_family.h"
 
 namespace webf {
 
@@ -134,16 +135,16 @@ std::string SerializeURI(const std::string& string) {
   return "url(" + SerializeString(string) + ")";
 }
 
-std::string SerializeFontFamily(const AtomicString& string) {
+std::string SerializeFontFamily(const std::string& string) {
   // Some <font-family> values are serialized without quotes.
   // See https://github.com/w3c/csswg-drafts/issues/5846
-//  return (css_parsing_utils::IsCSSWideKeyword(string) ||
-//          css_parsing_utils::IsDefaultKeyword(string) ||
-//          FontFamily::InferredTypeFor(string) ==
-//              FontFamily::Type::kGenericFamily ||
-//          !IsCSSTokenizerIdentifier(string))
-//             ? SerializeString(string)
-//             : string;
+  return (css_parsing_utils::IsCSSWideKeyword(StringView(string)) ||
+          css_parsing_utils::IsDefaultKeyword(StringView(string)) ||
+          FontFamily::InferredTypeFor(string) ==
+              FontFamily::Type::kGenericFamily ||
+          !IsCSSTokenizerIdentifier(StringView(string)))
+             ? SerializeString(string)
+             : string;
 }
 
 }
