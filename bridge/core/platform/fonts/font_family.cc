@@ -23,6 +23,8 @@
 * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// Copyright (C) 2022-present The WebF authors. All rights reserved.
+
 #include "font_family.h"
 
 #include "font_family_names.h"
