@@ -6,11 +6,64 @@
 #include <memory>
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
+#include "bindings/qjs/iterable.h"
 #include "core/executing_context.h"
 #include "core/fileapi/blob_part.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {
+
+namespace {
+
+class FormDataIterationSource final : public PairSyncIterationSource {
+ public:
+  FormDataIterationSource(FormData* form_data) : form_data_(form_data), current_(0) {}
+
+  ScriptValue Next(webf::ExceptionState& exception_state) override {}
+
+  ScriptValue Value() override {
+    return ScriptValue::Empty(ctx());
+  }
+
+  bool Done() override {
+    return false;
+  }
+
+  void Trace(webf::GCVisitor* visitor) override { visitor->TraceMember(form_data_); }
+
+  JSContext * ctx() override {
+    return form_data_->ctx();
+  }
+
+  //  bool FetchNextItem(ScriptState* script_state,
+  //                     std::string& name,
+  //                     V8FormDataEntryValue*& value,
+  //                     ExceptionState& exception_state) override {
+  //    if (current_ >= form_data_->size())
+  //      return false;
+  //
+  //    const FormData::Entry& entry = *form_data_->Entries()[current_++];
+  //    name = entry.name();
+  //    if (entry.IsString()) {
+  //      value = MakeGarbageCollected<V8FormDataEntryValue>(entry.Value());
+  //    } else {
+  //      DCHECK(entry.isFile());
+  //      value = MakeGarbageCollected<V8FormDataEntryValue>(entry.GetFile());
+  //    }
+  //    return true;
+  //  }
+  //
+  //  void Trace(Visitor* visitor) const override {
+  //    visitor->Trace(form_data_);
+  //    PairSyncIterable<FormData>::IterationSource::Trace(visitor);
+  //  }
+
+ private:
+  const Member<FormData> form_data_;
+  size_t current_;
+};
+
+}  // namespace
 
 FormData* FormData::Create(ExecutingContext* context, ExceptionState& exception_state) {
   return MakeGarbageCollected<FormData>(context->ctx());
@@ -146,6 +199,10 @@ void FormData::Trace(webf::GCVisitor* visitor) const {
   for (auto&& entry : entries_) {
     entry->Trace(visitor);
   }
+}
+
+std::shared_ptr<PairSyncIterationSource> FormData::CreateIterationSource(webf::ExceptionState &exception_state) {
+  return std::make_shared<FormDataIterationSource>(this);
 }
 
 void FormData::append(const webf::AtomicString& name, const webf::AtomicString& value) {

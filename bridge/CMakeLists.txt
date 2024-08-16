@@ -262,6 +262,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/exception_state.cc
     bindings/qjs/exception_message.cc
     bindings/qjs/rejected_promises.cc
+    bindings/qjs/sync_iterator.cc
     bindings/qjs/union_base.cc
     # Core sources
     webf_bridge.cc
@@ -557,6 +558,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_svg_ellipse_element.cc
     out/qjs_svg_style_element.cc
     out/qjs_svg_line_element.cc
+    out/qjs_sync_iterator.cc
     )
 
 

@@ -4,20 +4,23 @@
 
 #ifndef WEBF_CORE_API_FORM_DATA_H_
 #define WEBF_CORE_API_FORM_DATA_H_
+
 #include <string>
 #include <vector>
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/script_wrappable.h"
+#include "bindings/qjs/iterable.h"
 #include "core/binding_object.h"
 #include "core/fileapi/blob.h"
 #include "qjs_union_dom_stringblob.h"
 
 namespace webf {
 
-class FormData : public BindingObject {
-  DEFINE_WRAPPERTYPEINFO();
+class FormData;
 
+class FormData : public BindingObject, public PairSyncIterable {
+  DEFINE_WRAPPERTYPEINFO();
  public:
   class Entry;
   using ImplType = FormData*;
@@ -55,6 +58,8 @@ class FormData : public BindingObject {
   void Trace(webf::GCVisitor *visitor) const override;
 
  private:
+  std::shared_ptr<PairSyncIterationSource> CreateIterationSource(webf::ExceptionState &exception_state) override;
+
   void append(const AtomicString&name, const AtomicString& value);
   void append(const AtomicString&name, Blob* blob, const AtomicString& file_name);
 

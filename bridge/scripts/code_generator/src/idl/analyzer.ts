@@ -38,15 +38,20 @@ function getInterfaceName(statement: ts.Statement) {
 function getHeritageType(heritage: HeritageClause) {
   let expression = heritage.types[0].expression;
   if (expression.kind === ts.SyntaxKind.Identifier) {
-    return (expression as ts.Identifier).escapedText;
+    let heritageText = (expression as ts.Identifier).escapedText as string;
+    if (heritageText.toLowerCase().indexOf('mixin') >= 0) {
+      return null;
+    }
+    return heritageText;
   }
   return null;
 }
 
-function getMixins(hertage: HeritageClause): string[] | null {
-  if (hertage.types.length <= 1) return null;
+function getMixins(hasParent: boolean, hertage: HeritageClause): string[] | null {
+  const sliceIndex = (hasParent ? 1 : 0);
+  if (hertage.types.length <= sliceIndex) return null;
   let mixins: string[] = [];
-  hertage.types.slice(1).forEach(types => {
+  hertage.types.slice(sliceIndex).forEach(types => {
     let expression = types.expression;
     if (expression.kind === ts.SyntaxKind.Identifier) {
       mixins.push((expression as ts.Identifier).escapedText! as string);
@@ -224,7 +229,7 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
       if (s.heritageClauses) {
         let heritage = s.heritageClauses[0];
         let heritageType = getHeritageType(heritage);
-        let mixins = getMixins(heritage);
+        let mixins = getMixins(heritageType != null, heritage);
         if (heritageType) obj.parent = heritageType.toString();
         if (mixins) obj.mixinParent = mixins;
       }

@@ -2,7 +2,10 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-export interface FormData {
+
+import {ArrayLikeMethodsMixin} from "../../../bindings/qjs/array_methods";
+
+export interface FormData extends ArrayLikeMethodsMixin {
   new(): FormData;
   append(name: string, value: (string | Blob), fileName?: string): void;
   delete(name: string): ImplementedAs<void, "deleteEntry">;
@@ -10,10 +13,4 @@ export interface FormData {
   getAll(name: string): (string | Blob)[];
   has(name: string): boolean;
   set(name: string, value: string | Blob, fileName?: string): void;
-
-  readonly forEach: JSArrayProtoMethod;
-  readonly keys: JSArrayProtoMethod;
-  readonly entries: JSArrayProtoMethod;
-  readonly values: JSArrayProtoMethod;
-  readonly [Symbol.iterator]: JSArrayProtoMethod;
 }

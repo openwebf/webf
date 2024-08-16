@@ -20,9 +20,9 @@ TEST(FormData, append) {
   auto context = env->page()->executingContext();
   std::string code = R"(
     let formData = new FormData();
-
-    formData.append('name', 1234);
-    formData.append('age', 4567);
+    formData.append('1234', '4567');
+    formData.append('1234', '4567');
+    console.log(formData.keys());
   )";
   env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
 
