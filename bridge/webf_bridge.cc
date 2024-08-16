@@ -6,7 +6,7 @@
 #include "core/api/api.h"
 #include "core/dart_isolate_context.h"
 #include "core/html/parser/html_parser.h"
-//#include "core/page.h"
+#include "core/page.h"
 #include "foundation/native_type.h"
 #include "include/dart_api.h"
 #include "multiple_threading/dispatcher.h"
@@ -191,11 +191,11 @@ void parseHTML(void* page_,
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] parseHTMLWrapper call" << std::endl;
 #endif
-//  auto page = reinterpret_cast<webf::WebFPage*>(page_);
-//  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
-//  page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(
-//      page->isDedicated(), page->contextId(), webf::parseHTMLInternal, page_, code, length, profile_id,
-//      persistent_handle, result_callback);
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+  page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(
+      page->isDedicated(), page->contextId(), webf::parseHTMLInternal, page_, code, length, profile_id,
+      persistent_handle, result_callback);
 }
 
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {

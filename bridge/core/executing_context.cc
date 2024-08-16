@@ -15,6 +15,7 @@
 #include "foundation/logging.h"
 #include "polyfill.h"
 //#include "qjs_window.h"
+#include "bindings/v8/v8_binding_initializer.h"
 #include "script_forbidden_scope.h"
 //#include "timing/performance.h"
 
@@ -71,7 +72,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
 //  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallBindings");
 
   // Register all built-in native bindings.
-//  InstallBindings(this);
+  InstallBindings(this);
 
 //  dart_isolate_context->profiler()->FinishTrackSteps();
 //  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallDocument");

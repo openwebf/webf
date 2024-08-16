@@ -575,6 +575,9 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/wrapper_type_info.cc
     bindings/v8/v8_interface_bridge_base.cc
     bindings/v8/v8_initializer.cc
+    bindings/v8/v8_member_installer.cc
+    bindings/v8/v8_binding_initializer.cc
+    bindings/v8/generated_code_helper.h
     bindings/v8/platform/scoped_persistent.h
     bindings/v8/platform/v8_per_context_data.cc
     bindings/v8/platform/v8_per_isolate_data.cc
@@ -656,9 +659,14 @@ elseif ($ENV{WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/gin/gin_export.h
     bindings/v8/gin/per_context_data.cc
     bindings/v8/gin/context_holder.cc
-    out/built_in_string.cc
+
   )
 
+  # Gen sources.
+  list(APPEND BRIDGE_SOURCE
+    out/built_in_string.cc
+    out/v8_window_or_worker_global_scope.cc
+  )
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     add_library(v8 SHARED IMPORTED)
     set_target_properties(v8 PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/third_party/v8/lib/macos/arm64/libv8.dylib")
@@ -677,7 +685,7 @@ endif()
 list(APPEND BRIDGE_SOURCE
   # Core sources
   webf_bridge.cc
-#  core/api/api.cc
+  core/api/api.cc
   core/executing_context.cc
 #  core/script_forbidden_scope.cc
   core/script_state.cc
@@ -692,7 +700,7 @@ list(APPEND BRIDGE_SOURCE
 #  core/frame/console.cc
 #  core/frame/dom_timer.cc
 #  core/frame/dom_timer_coordinator.cc
-#  core/frame/window_or_worker_global_scope.cc
+  core/frame/window_or_worker_global_scope.cc
 #  core/frame/module_listener.cc
 #  core/frame/module_listener_container.cc
 #  core/frame/module_manager.cc

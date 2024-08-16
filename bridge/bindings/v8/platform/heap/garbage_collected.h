@@ -8,12 +8,6 @@
 
 #include <type_traits>
 
-//#include "base/functional/unretained_traits.h"
-//#include "third_party/blink/renderer/platform/heap/thread_state_storage.h"
-//#include "v8/include/cppgc/allocation.h"
-//#include "v8/include/cppgc/garbage-collected.h"
-//#include "v8/include/cppgc/liveness-broker.h"
-//#include "v8/include/cppgc/type-traits.h"
 #include <v8/v8.h>
 #include <v8/v8-cppgc.h>
 #include <v8/cppgc/allocation.h>

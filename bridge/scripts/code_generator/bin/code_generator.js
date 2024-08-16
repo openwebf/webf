@@ -55,9 +55,10 @@ function genCodeFromTypeDefine() {
   });
 
   let blobs = typeFiles.map(file => {
-    let filename = generatePlatformPrefix() + '_' + file.split('/').slice(-1)[0].replace('.d.ts', '');
+    let platformPrefix = generatePlatformPrefix();
+    let filename = platformPrefix + '_' + file.split('/').slice(-1)[0].replace('.d.ts', '');
     let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
-    return new IDLBlob(path.join(source, file), dist, filename, implement);
+    return new IDLBlob(path.join(source, file), dist, filename, implement, platformPrefix);
   });
 
   // Analyze all files first.

@@ -114,10 +114,19 @@ void DartIsolateContext::InitializeJSRuntime() {
 }
 
 void DartIsolateContext::FinalizeJSRuntime() {
-  if (running_dart_isolates > 0 ||
-      runtime_ == nullptr) {
+  if (running_dart_isolates > 0) {
     return;
   }
+#if WEBF_QUICKJS_JS_ENGINE
+  if (runtime_ == nullptr) {
+    return;
+  }
+#elif WEBF_V8_JS_ENGINE
+  if (isolate_ == nullptr) {
+    return;
+  }
+#endif
+
 
   // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
 //  names_installer::Dispose();
@@ -236,10 +245,10 @@ void* DartIsolateContext::AddNewPage(double thread_identity,
 std::unique_ptr<WebFPage> DartIsolateContext::InitializeNewPageSync(DartIsolateContext* dart_isolate_context,
                                                                     size_t sync_buffer_size,
                                                                     double page_context_id) {
-  dart_isolate_context->profiler()->StartTrackInitialize();
+//  dart_isolate_context->profiler()->StartTrackInitialize();
   DartIsolateContext::InitializeJSRuntime();
   auto page = std::make_unique<WebFPage>(dart_isolate_context, false, sync_buffer_size, page_context_id, nullptr);
-  dart_isolate_context->profiler()->FinishTrackInitialize();
+//  dart_isolate_context->profiler()->FinishTrackInitialize();
 
   return page;
 }
