@@ -19,6 +19,11 @@ namespace webf {
 
 class FormData;
 
+// Exchange data struct designed for reading the bytes data from Dart Side.
+struct NativeFormData : public DartReadable {
+
+};
+
 class FormData : public BindingObject, public PairSyncIterable {
   DEFINE_WRAPPERTYPEINFO();
 

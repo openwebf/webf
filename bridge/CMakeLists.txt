@@ -382,6 +382,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_textarea_element.cc
     core/html/forms/form_data.cc
 
+    core/platform/network/form_data_encoder.cc
+
     # SVG files
     core/svg/svg_element.cc
     core/svg/svg_graphics_element.cc
@@ -500,6 +502,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_iframe_element.cc
     out/qjs_html_canvas_element.cc
     out/qjs_html_link_element.cc
+    out/qjs_module_manager_options.cc
     out/qjs_image.cc
     out/qjs_widget_element.cc
     out/qjs_canvas_rendering_context_2d.cc

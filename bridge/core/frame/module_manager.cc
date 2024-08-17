@@ -8,6 +8,8 @@
 #include "foundation/native_value.h"
 #include "include/dart_api.h"
 #include "module_callback.h"
+#include "core/html/forms/form_data.h"
+#include "qjs_module_manager_options.h"
 
 namespace webf {
 
@@ -136,7 +138,31 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                   ScriptValue& params_value,
                                                   const std::shared_ptr<QJSFunction>& callback,
                                                   ExceptionState& exception) {
+  return __webf_invoke_module_with_options__(context, module_name, method, params_value, nullptr, callback,
+                                             exception);
+}
+
+namespace {
+
+struct NativeInvokeModuleOptions {
+  NativeForm* form_data;
+};
+
+};
+
+ScriptValue ModuleManager::__webf_invoke_module_with_options__(ExecutingContext* context,
+                                                               const AtomicString& module_name,
+                                                               const AtomicString& method,
+                                                               ScriptValue& params_value,
+                                                               const std::shared_ptr<ModuleManagerOptions>& options,
+                                                               const std::shared_ptr<QJSFunction>& callback,
+                                                               ExceptionState& exception) {
   NativeValue params = params_value.ToNative(context->ctx(), exception);
+  if (options != nullptr && options->hasFormData()) {
+    FormData* form_data = options->formData();
+  } else {
+
+  }
 
   if (exception.HasException()) {
     return ScriptValue::Empty(context->ctx());
