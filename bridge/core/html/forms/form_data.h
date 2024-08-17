@@ -7,10 +7,10 @@
 
 #include <string>
 #include <vector>
-#include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/atomic_string.h"
-#include "bindings/qjs/script_wrappable.h"
+#include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/iterable.h"
+#include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
 #include "core/fileapi/blob.h"
 #include "qjs_union_dom_stringblob.h"
@@ -21,6 +21,7 @@ class FormData;
 
 class FormData : public BindingObject, public PairSyncIterable {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   class Entry;
   using ImplType = FormData*;
@@ -55,13 +56,18 @@ class FormData : public BindingObject, public PairSyncIterable {
   void SetEntry(std::shared_ptr<Entry> entry);
   const std::vector<std::shared_ptr<const Entry>>& Entries() const { return entries_; }
 
-  void Trace(webf::GCVisitor *visitor) const override;
+  void Trace(webf::GCVisitor* visitor) const override;
+
+  void forEach(const std::shared_ptr<QJSFunction>& callback,
+               const webf::ScriptValue& this_arg,
+               webf::ExceptionState& exception_state) override;
+  void forEach(const std::shared_ptr<QJSFunction>& callback, webf::ExceptionState& exception_state) override;
 
  private:
-  std::shared_ptr<PairSyncIterationSource> CreateIterationSource(webf::ExceptionState &exception_state) override;
+  std::shared_ptr<PairSyncIterationSource> CreateIterationSource(webf::ExceptionState& exception_state) override;
 
-  void append(const AtomicString&name, const AtomicString& value);
-  void append(const AtomicString&name, Blob* blob, const AtomicString& file_name);
+  void append(const AtomicString& name, const AtomicString& value);
+  void append(const AtomicString& name, Blob* blob, const AtomicString& file_name);
 
   std::vector<std::shared_ptr<const Entry>> entries_;
 };

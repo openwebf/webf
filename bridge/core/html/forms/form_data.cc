@@ -19,44 +19,36 @@ class FormDataIterationSource final : public PairSyncIterationSource {
  public:
   FormDataIterationSource(FormData* form_data) : form_data_(form_data), current_(0) {}
 
-  ScriptValue Next(webf::ExceptionState& exception_state) override {}
+  ScriptValue Next(SyncIterator::Kind kind, webf::ExceptionState& exception_state) override {
+    if (current_ + 1 > form_data_->Entries().size()) {
+      if (exception_state.HasException())
+        return {};
+      return ESCreateIterResultObject(ctx(), true, ScriptValue::Undefined(ctx()));
+    }
 
-  ScriptValue Value() override {
-    return ScriptValue::Empty(ctx());
+    std::shared_ptr<const FormData::Entry> current_item = form_data_->Entries()[current_];
+    ScriptValue current_value =
+        current_item->IsString() ? ScriptValue(ctx(), current_item->Value()) : current_item->GetBlob()->ToValue();
+
+    current_++;
+
+    switch (kind) {
+      case SyncIterator::Kind::kKey:
+        return ESCreateIterResultObject(ctx(), false, ScriptValue(ctx(), current_item->name()));
+      case SyncIterator::Kind::kValue:
+        return ESCreateIterResultObject(ctx(), false, current_value);
+      case SyncIterator::Kind::kKeyValue:
+        return ESCreateIterResultObject(ctx(), false, ScriptValue(ctx(), current_item->name()), current_value);
+    }
   }
 
-  bool Done() override {
-    return false;
-  }
+  ScriptValue Value() override { return ScriptValue::Empty(ctx()); }
+
+  bool Done() override { return false; }
 
   void Trace(webf::GCVisitor* visitor) override { visitor->TraceMember(form_data_); }
 
-  JSContext * ctx() override {
-    return form_data_->ctx();
-  }
-
-  //  bool FetchNextItem(ScriptState* script_state,
-  //                     std::string& name,
-  //                     V8FormDataEntryValue*& value,
-  //                     ExceptionState& exception_state) override {
-  //    if (current_ >= form_data_->size())
-  //      return false;
-  //
-  //    const FormData::Entry& entry = *form_data_->Entries()[current_++];
-  //    name = entry.name();
-  //    if (entry.IsString()) {
-  //      value = MakeGarbageCollected<V8FormDataEntryValue>(entry.Value());
-  //    } else {
-  //      DCHECK(entry.isFile());
-  //      value = MakeGarbageCollected<V8FormDataEntryValue>(entry.GetFile());
-  //    }
-  //    return true;
-  //  }
-  //
-  //  void Trace(Visitor* visitor) const override {
-  //    visitor->Trace(form_data_);
-  //    PairSyncIterable<FormData>::IterationSource::Trace(visitor);
-  //  }
+  JSContext* ctx() override { return form_data_->ctx(); }
 
  private:
   const Member<FormData> form_data_;
@@ -201,7 +193,26 @@ void FormData::Trace(webf::GCVisitor* visitor) const {
   }
 }
 
-std::shared_ptr<PairSyncIterationSource> FormData::CreateIterationSource(webf::ExceptionState &exception_state) {
+void FormData::forEach(const std::shared_ptr<QJSFunction>& callback, webf::ExceptionState& exception_state) {
+  forEach(callback, ScriptValue::Empty(ctx()), exception_state);
+}
+
+void FormData::forEach(const std::shared_ptr<QJSFunction>& callback,
+                       const webf::ScriptValue& this_arg,
+                       webf::ExceptionState& exception_state) {
+  for (auto& entry : entries_) {
+    ScriptValue invoke_this = this_arg.IsEmpty() ? ScriptValue(ctx(), ToQuickJS()) : this_arg;
+    if (entry->IsString()) {
+      ScriptValue arguments[] = {ScriptValue(ctx(), entry->Value()), ScriptValue(ctx(), entry->name())};
+      callback->Invoke(ctx(), invoke_this, 2, arguments);
+    } else {
+      ScriptValue arguments[] = {entry->GetBlob()->ToValue(), ScriptValue(ctx(), entry->name())};
+      callback->Invoke(ctx(), invoke_this, 2, arguments);
+    }
+  }
+}
+
+std::shared_ptr<PairSyncIterationSource> FormData::CreateIterationSource(webf::ExceptionState& exception_state) {
   return std::make_shared<FormDataIterationSource>(this);
 }
 

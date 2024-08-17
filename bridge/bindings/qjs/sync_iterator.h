@@ -35,7 +35,7 @@ class SyncIterator : public ScriptWrappable {
   ScriptValue next(ExceptionState& exception_state);
   bool done();
   ScriptValue value();
-  SyncIterator* Symbol_iterator();
+  ScriptValue Symbol_iterator();
 
   void Trace(GCVisitor* visitor) const override;
 

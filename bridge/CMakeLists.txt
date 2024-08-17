@@ -263,6 +263,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/exception_message.cc
     bindings/qjs/rejected_promises.cc
     bindings/qjs/sync_iterator.cc
+    bindings/qjs/iterable.cc
     bindings/qjs/union_base.cc
     # Core sources
     webf_bridge.cc

@@ -22,7 +22,23 @@ TEST(FormData, append) {
     let formData = new FormData();
     formData.append('1234', '4567');
     formData.append('1234', '4567');
-    console.log(formData.keys());
+    const keys = formData.keys();
+    const values = formData.values();
+    const entries = formData.entries();
+
+    for (let key of keys) {
+      console.log(key);
+    }
+
+    for (let value of values) {
+      console.log(value);
+    }
+
+    for (let entry of entries) {
+      console.log(entry);
+    }
+
+    console.log(keys[Symbol.iterator]() == keys)
   )";
   env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
 

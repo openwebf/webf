@@ -11,8 +11,11 @@ ScriptValue SyncIterator::value() {
   return iteration_source_->Value();
 }
 
-SyncIterator* SyncIterator::Symbol_iterator() {
-  return this;
+ScriptValue SyncIterator::Symbol_iterator() {
+  auto iterator_return_func = [](JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    return JS_DupValue(ctx, this_val);
+  };
+  return ScriptValue(ctx(), JS_NewCFunction(ctx(), iterator_return_func, "iterator", 0));
 }
 
 bool SyncIterator::done() {
@@ -25,7 +28,7 @@ void SyncIterator::Trace(GCVisitor* visitor) const {
 }
 
 ScriptValue SyncIterator::next(ExceptionState& exception_state) {
-  return iteration_source_->Next(exception_state);
+  return iteration_source_->Next(kind_, exception_state);
 }
 
 }
