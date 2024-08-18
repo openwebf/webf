@@ -6,6 +6,10 @@
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
+import 'package:flutter/material.dart';
+import 'package:webf/dom.dart';
+import 'package:webf/webf.dart';
+
 
 void main() {
   runApp(MyApp());
@@ -15,6 +19,9 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    WebF.defineCustomElement(
+      'flutter-listview', (context) => FlutterListViewElement(context));
+      
     return MaterialApp(
       title: 'Kraken Browser',
       // theme: ThemeData.dark(),
@@ -89,5 +96,48 @@ class WebFDemo extends StatelessWidget {
           // in the middle of the parent.
           child: WebF(controller: controller),
         ));
+  }
+}
+
+
+
+
+class FlutterListViewElement extends WidgetElement {
+  FlutterListViewElement(BindingContext? context) : super(context);
+
+  late ScrollController controller;
+
+
+  @override
+  Map<String, dynamic> get defaultStyle => {
+    'display': 'block'
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    controller = ScrollController()..addListener(_scrollListener);
+  }
+
+  void _scrollListener() {
+    if (controller.position.atEdge) {
+      bool isReachBottom = controller.position.pixels != 0;
+      if (isReachBottom) {
+        dispatchEvent(Event('loadmore'));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, List<Widget> children) {
+    return ListView.builder(
+      controller: controller,
+      itemCount: children.length,
+      itemBuilder: (BuildContext context, int index) {
+        return children[index];
+      },
+      addAutomaticKeepAlives: false,
+      addRepaintBoundaries: false
+    );
   }
 }
