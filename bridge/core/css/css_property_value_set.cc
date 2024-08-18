@@ -56,7 +56,7 @@ const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValue(
   return PropertyAt(found_property_index).Value();
 }
 
-static std::string SerializeShorthand(const CSSPropertyValueSet& property_set, CSSPropertyID property_id) {
+static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> property_set, CSSPropertyID property_id) {
   StylePropertyShorthand shorthand = shorthandForProperty(property_id);
   if (shorthand.properties().empty()) {
     return "";
@@ -67,7 +67,7 @@ static std::string SerializeShorthand(const CSSPropertyValueSet& property_set, C
 
 template <typename T>
 std::string CSSPropertyValueSet::GetPropertyValue(const T& property) const {
-  std::string shorthand_serialization = SerializeShorthand(*this, property);
+  std::string shorthand_serialization = SerializeShorthand(shared_from_this(), property);
   if (!shorthand_serialization.empty()) {
     return shorthand_serialization;
   }
@@ -172,7 +172,7 @@ const std::shared_ptr<const MutableCSSPropertyValueSet> CSSPropertyValueSet::Cop
 }
 
 std::string CSSPropertyValueSet::AsText() const {
-  return StylePropertySerializer(*this).AsText();
+  return StylePropertySerializer(shared_from_this()).AsText();
 }
 
 bool CSSPropertyValueSet::HasFailedOrCanceledSubresources() const {

@@ -350,9 +350,11 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_inherit_value.cc
     core/css/css_custom_ident_value.cc
     core/css/css_value_list.cc
+    core/css/style_property_serializer.cc
     core/css/css_function_value.cc
     core/css/css_appearance_auto_base_select_value_pair.cc
     core/css/css_value_pool.cc
+    core/css/cssom_utils.cc
     core/css/css_string_value.cc
     core/css/css_initial_value.cc
     core/css/css_numeric_literal_value

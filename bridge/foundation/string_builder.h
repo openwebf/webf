@@ -27,6 +27,19 @@ class StringBuilder {
     assert(false);
   }
 
+  void Append(const StringBuilder& other) {
+    if (!other.length_)
+      return;
+
+    if (!length_ && !HasBuffer() && !other.string_.empty()) {
+      string_ = other.string_;
+      length_ = other.string_.length();
+      return;
+    }
+
+    Append(other.string_);
+  }
+
   void Append(unsigned char c) {
     EnsureBuffer8(1);
     string_.append(std::string(1, c));
@@ -52,6 +65,14 @@ class StringBuilder {
 
   std::string ReleaseString() {
     return string_;
+  }
+
+  bool empty() const {
+    return string_.empty();
+  }
+
+  size_t length() const {
+    return string_.length();
   }
 
   void Append(char c) { Append(static_cast<char>(c)); }

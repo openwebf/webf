@@ -43,6 +43,7 @@ class StylePropertyShorthand {
 
   Properties properties() const { return properties_; }
   CSSPropertyID id() const { return shorthand_id_; }
+  size_t length() const { return properties_.size(); }
 
  private:
   Properties properties_;

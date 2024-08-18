@@ -68,10 +68,10 @@ class CSSValueList : public CSSValue {
   const_reverse_iterator rbegin() const { return values_.rbegin(); }
   const_reverse_iterator rend() const { return values_.rend(); }
 
-  uint32_t length() const { return values_.size(); }
-  const CSSValue& Item(uint32_t index) const { return *values_[index]; }
-  const CSSValue& First() const { return *values_.front(); }
-  const CSSValue& Last() const { return *values_.back(); }
+  size_t length() const { return values_.size(); }
+  std::shared_ptr<const CSSValue> Item(uint32_t index) const { return values_[index]; }
+  std::shared_ptr<const CSSValue> First() const { return values_.front(); }
+  std::shared_ptr<const CSSValue> Last() const { return values_.back(); }
 
   void Append(const std::shared_ptr<const CSSValue>& value);
   bool RemoveAll(const std::shared_ptr<const CSSValue>&);

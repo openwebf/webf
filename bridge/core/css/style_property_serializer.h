@@ -29,6 +29,7 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_CSS_STYLE_PROPERTY_SERIALIZER_H_
 
 #include <bitset>
+#include "foundation/string_builder.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_value_list.h"
 
@@ -42,7 +43,7 @@ class StylePropertySerializer {
   WEBF_STACK_ALLOCATED();
 
  public:
-  explicit StylePropertySerializer(const CSSPropertyValueSet&);
+  explicit StylePropertySerializer(std::shared_ptr<const CSSPropertyValueSet>);
 
   std::string AsText() const;
   std::string SerializeShorthand(CSSPropertyID) const;
@@ -69,7 +70,7 @@ class StylePropertySerializer {
   std::string GetShorthandValueForGrid(const StylePropertyShorthand&) const;
   std::string GetShorthandValueForGridArea(const StylePropertyShorthand&) const;
   std::string GetShorthandValueForGridLine(const StylePropertyShorthand&) const;
-  std::string GetShorthandValueForGridTemplate(const StylePropertyShorthand&) const;
+//  std::string GetShorthandValueForGridTemplate(const StylePropertyShorthand&) const;
   std::string ContainerValue() const;
   std::string TimelineValue(const StylePropertyShorthand&) const;
   std::string ScrollTimelineValue() const;
@@ -79,12 +80,12 @@ class StylePropertySerializer {
   std::string FontSynthesisValue() const;
   std::string FontVariantValue() const;
   bool AppendFontLonghandValueIfNotNormal(const CSSProperty&,
-                                          std::string& result) const;
+                                          StringBuilder& result) const;
   std::string OffsetValue() const;
   std::string TextDecorationValue() const;
   std::string TextSpacingValue() const;
   std::string ContainIntrinsicSizeValue() const;
-  std::string WhiteSpaceValue() const;
+//  std::string WhiteSpaceValue() const;
   std::string ScrollStartValue() const;
   std::string ScrollStartTargetValue() const;
   std::string PositionTryValue() const;
@@ -113,23 +114,23 @@ class StylePropertySerializer {
    public:
     explicit PropertyValueForSerializer(
         CSSPropertyValueSet::PropertyReference property)
-        : value_(property.Value()->get()),
+        : value_(property.Value()),
           name_(property.Name()),
           is_important_(property.IsImportant()) {}
 
     // TODO(sashab): Make this take a const CSSValue&.
     PropertyValueForSerializer(const CSSPropertyName& name,
-                               const CSSValue* value,
+                               const std::shared_ptr<const CSSValue>* value,
                                bool is_important)
         : value_(value), name_(name), is_important_(is_important) {}
 
     const CSSPropertyName& Name() const { return name_; }
-    const CSSValue* Value() const { return value_; }
+    const std::shared_ptr<const CSSValue>* Value() const { return value_; }
     bool IsImportant() const { return is_important_; }
     bool IsValid() const { return value_; }
 
    private:
-    const CSSValue* value_;
+    const std::shared_ptr<const CSSValue>* value_;
     CSSPropertyName name_;
     bool is_important_;
   };
@@ -141,13 +142,13 @@ class StylePropertySerializer {
     WEBF_DISALLOW_NEW();
 
    public:
-    explicit CSSPropertyValueSetForSerializer(const CSSPropertyValueSet&);
+    explicit CSSPropertyValueSetForSerializer(std::shared_ptr<const CSSPropertyValueSet> properties);
 
     unsigned PropertyCount() const;
     PropertyValueForSerializer PropertyAt(unsigned index) const;
     bool ShouldProcessPropertyAt(unsigned index) const;
     int FindPropertyIndex(const CSSProperty&) const;
-    const CSSValue* GetPropertyCSSValue(const CSSProperty&) const;
+    std::shared_ptr<const CSSValue> GetPropertyCSSValue(const CSSProperty&) const;
     bool IsDescriptorContext() const;
 
     void Trace(GCVisitor*) const;
@@ -187,7 +188,7 @@ class StylePropertySerializer {
       return static_cast<CSSPropertyID>(index - property_set_->PropertyCount() +
                                         kIntFirstCSSProperty);
     }
-    Member<const CSSPropertyValueSet> property_set_;
+    std::shared_ptr<const CSSPropertyValueSet> property_set_;
     int all_index_;
     std::bitset<kNumCSSProperties> longhand_property_used_;
     bool need_to_expand_all_;
