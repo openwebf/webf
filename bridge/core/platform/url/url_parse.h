@@ -10,6 +10,7 @@
 #include <iosfwd>
 #include <string_view>
 #include <cassert>
+#include "foundation/macros.h"
 
 namespace webf {
 

@@ -318,56 +318,56 @@ void Document::UpdateBaseURL() {
 //  }
 }
 
-const KURL& Document::BaseURL() const {
-  if (!base_url_.IsNull())
-    return base_url_;
-  return BlankURL();
-}
+//const KURL& Document::BaseURL() const {
+//  if (!base_url_.IsNull())
+//    return base_url_;
+//  return BlankURL();
+//}
 
 
-KURL Document::CompleteURL(
-    const std::string& url,
-    const CompleteURLPreloadStatus preload_status) const {
-  return CompleteURLWithOverride(url, base_url_, preload_status);
-}
-
-KURL Document::CompleteURLWithOverride(
-    const std::string& url,
-    const KURL& base_url_override,
-    CompleteURLPreloadStatus preload_status) const {
-  DCHECK(base_url_override.IsEmpty() || base_url_override.IsValid());
-
-  // Always return a null URL when passed a null string.
-  // FIXME: Should we change the KURL constructor to have this behavior?
-  // See also [CSS]StyleSheet::completeURL(const String&)
-  if (url == nullptr)
-    return KURL();
-
-  KURL result = KURL(base_url_override, url);
-  // If the conditions are met for
-  // `should_record_sandboxed_srcdoc_baseurl_metrics_` to be set, we should
-  // only record the metric if there's no `base_element_url_` set via a base
-  // element. We must also check the preload status below, since a
-  // PreloadRequest could call this function before `base_element_url_` is set.
-//  if (should_record_sandboxed_srcdoc_baseurl_metrics_ &&
-//      base_element_url_.IsEmpty() && preload_status != kIsPreload) {
-//    // Compute the same thing assuming an empty base url, to see if it changes.
-//    // This will allow us to ignore trivial changes, such as 'https://foo.com'
-//    // resolving as 'https://foo.com/', which happens whether the base url is
-//    // specified or not.
-//    // While the following computation is non-trivial overhead, it's not
-//    // expected to be needed often enough to be problematic, and it will be
-//    // removed once we've collected data for https://crbug.com/330744612.
-//    KURL empty_baseurl_result = KURL(KURL(), url);
-//    if (result != empty_baseurl_result) {
-////      CountUse(WebFeature::kSandboxedSrcdocFrameResolvesRelativeURL);
-//      // Let's not repeat the parallel computation again now we've found a
-//      // instance to record.
-////      should_record_sandboxed_srcdoc_baseurl_metrics_ = false;
-//    }
-//  }
-  return result;
-}
+//KURL Document::CompleteURL(
+//    const std::string& url,
+//    const CompleteURLPreloadStatus preload_status) const {
+//  return CompleteURLWithOverride(url, base_url_, preload_status);
+//}
+//
+//KURL Document::CompleteURLWithOverride(
+//    const std::string& url,
+//    const KURL& base_url_override,
+//    CompleteURLPreloadStatus preload_status) const {
+//  DCHECK(base_url_override.IsEmpty() || base_url_override.IsValid());
+//
+//  // Always return a null URL when passed a null string.
+//  // FIXME: Should we change the KURL constructor to have this behavior?
+//  // See also [CSS]StyleSheet::completeURL(const String&)
+//  if (url.empty())
+//    return KURL();
+//
+//  KURL result = KURL(base_url_override, url);
+//  // If the conditions are met for
+//  // `should_record_sandboxed_srcdoc_baseurl_metrics_` to be set, we should
+//  // only record the metric if there's no `base_element_url_` set via a base
+//  // element. We must also check the preload status below, since a
+//  // PreloadRequest could call this function before `base_element_url_` is set.
+////  if (should_record_sandboxed_srcdoc_baseurl_metrics_ &&
+////      base_element_url_.IsEmpty() && preload_status != kIsPreload) {
+////    // Compute the same thing assuming an empty base url, to see if it changes.
+////    // This will allow us to ignore trivial changes, such as 'https://foo.com'
+////    // resolving as 'https://foo.com/', which happens whether the base url is
+////    // specified or not.
+////    // While the following computation is non-trivial overhead, it's not
+////    // expected to be needed often enough to be problematic, and it will be
+////    // removed once we've collected data for https://crbug.com/330744612.
+////    KURL empty_baseurl_result = KURL(KURL(), url);
+////    if (result != empty_baseurl_result) {
+//////      CountUse(WebFeature::kSandboxedSrcdocFrameResolvesRelativeURL);
+////      // Let's not repeat the parallel computation again now we've found a
+////      // instance to record.
+//////      should_record_sandboxed_srcdoc_baseurl_metrics_ = false;
+////    }
+////  }
+//  return result;
+//}
 
 template <typename CharType>
 static inline bool IsValidNameASCII(const CharType* characters, unsigned length) {

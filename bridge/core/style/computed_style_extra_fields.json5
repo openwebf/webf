@@ -1,7 +1,10 @@
 {
   // This file specifies fields in ComputedStyle that we would like to
   // generate, but are not CSS properties.
-
+  "metadata": {
+    "templates": [
+    ]
+  },
   parameters: {
     // If true, this field will be reset whenever we create a new ComputedStyle;
     // it will not be (automatically) kept from any previous styles, but will be

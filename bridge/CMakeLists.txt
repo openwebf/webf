@@ -328,6 +328,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_rule.cc
     core/css/css_value.cc
     core/css/properties/longhand.cc
+    core/css/properties/shorthands/shorthands_custom.cc
     core/css/abstract_property_set_css_style_declaration.cc
     core/css/property_set_css_style_declaration.cc
     core/css/style_rule.cc
@@ -335,6 +336,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_property_name.cc
     core/css/css_property_value.cc
     core/css/css_primitive_value.cc
+    core/css/css_repeat_style_value.cc
     core/css/css_identifier_value.cc
     core/css/css_numeric_literal_value.cc
     core/css/css_math_expression_node.cc
@@ -351,6 +353,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_custom_ident_value.cc
     core/css/css_value_list.cc
     core/css/style_property_serializer.cc
+
     core/css/css_function_value.cc
     core/css/css_appearance_auto_base_select_value_pair.cc
     core/css/css_value_pool.cc

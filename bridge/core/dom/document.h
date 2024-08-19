@@ -8,7 +8,7 @@
 #include "bindings/qjs/cppgc/local_handle.h"
 #include "container_node.h"
 #include "core/css/style_engine.h"
-#include "core/platform/url/kurl.h"
+//#include "core/platform/url/kurl.h"
 #include "event_type_names.h"
 #include "foundation/macros.h"
 #include "scripted_animation_controller.h"
@@ -90,15 +90,15 @@ class Document : public ContainerNode, public TreeScope {
 
   // Return the document URL, or an empty URL if it's unavailable.
   // This is not an implementation of web-exposed Document.prototype.URL.
-  const KURL& Url() const { return url_; }
+//  const KURL& Url() const { return url_; }
 
   // Document base URL.
   // https://html.spec.whatwg.org/C/#document-base-url
-  const KURL& BaseURL() const;
+//  const KURL& BaseURL() const;
 
   // Fallback base URL.
   // https://html.spec.whatwg.org/C/#fallback-base-url
-  KURL FallbackBaseURL() const;
+//  KURL FallbackBaseURL() const;
 
   // If we call CompleteURL* during preload, it's possible that we may not
   // have processed any <base> element the document might have
@@ -111,14 +111,14 @@ class Document : public ContainerNode, public TreeScope {
   // Creates URL based on passed relative url and this documents base URL.
   // Depending on base URL value it is possible that parent document
   // base URL will be used instead. Uses CompleteURLWithOverride internally.
-  KURL CompleteURL(
-      const std::string&,
-      const CompleteURLPreloadStatus preload_status = kIsNotPreload) const;
-  // Creates URL based on passed relative url and passed base URL override.
-  KURL CompleteURLWithOverride(
-      const std::string&,
-      const KURL& base_url_override,
-      const CompleteURLPreloadStatus preload_status = kIsNotPreload) const;
+//  KURL CompleteURL(
+//      const std::string&,
+//      const CompleteURLPreloadStatus preload_status = kIsNotPreload) const;
+//  // Creates URL based on passed relative url and passed base URL override.
+//  KURL CompleteURLWithOverride(
+//      const std::string&,
+//      const KURL& base_url_override,
+//      const CompleteURLPreloadStatus preload_status = kIsNotPreload) const;
 
   // The following implements the rule from HTML 4 for what valid names are.
   static bool IsValidName(const AtomicString& name);
@@ -172,19 +172,19 @@ class Document : public ContainerNode, public TreeScope {
   MutationObserverOptions mutation_observer_types_;
   std::shared_ptr<StyleEngine> style_engine_{nullptr};
   bool is_for_markup_sanitization_ = false;
-  KURL url_;  // Document.URL: The URL from which this document was retrieved.
-  KURL base_url_;  // Node.baseURI: The URL to use when resolving relative URLs.
-  KURL base_url_override_;  // An alternative base URL that takes precedence
+//  KURL url_;  // Document.URL: The URL from which this document was retrieved.
+//  KURL base_url_;  // Node.baseURI: The URL to use when resolving relative URLs.
+//  KURL base_url_override_;  // An alternative base URL that takes precedence
                             // over base_url_ (but not base_element_url_).
 
   // Used in FallbackBaseURL() to provide the base URL for  about:srcdoc  and
   // about:blank documents, which is the initiator's base URL at the time the
   // navigation was initiated. Separate from the base_url_* fields because the
   // fallback base URL should not take precedence over things like <base>.
-  KURL fallback_base_url_;
-
-  KURL base_element_url_;  // The URL set by the <base> element.
-  KURL cookie_url_;        // The URL to use for cookie access.
+//  KURL fallback_base_url_;
+//
+//  KURL base_element_url_;  // The URL set by the <base> element.
+//  KURL cookie_url_;        // The URL to use for cookie access.
 };
 
 WEBF_DEFINE_COMPARISON_OPERATORS_WITH_REFERENCES(Document)

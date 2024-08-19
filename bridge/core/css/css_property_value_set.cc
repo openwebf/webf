@@ -71,12 +71,14 @@ std::string CSSPropertyValueSet::GetPropertyValue(const T& property) const {
   if (!shorthand_serialization.empty()) {
     return shorthand_serialization;
   }
-  const CSSValue* value = GetPropertyCSSValue(property);
+  const std::shared_ptr<const CSSValue>* value = GetPropertyCSSValue(property);
   if (value) {
-    return value->CssText();
+    return value->get()->CssText();
   }
   return "";
 }
+template std::string CSSPropertyValueSet::GetPropertyValue<CSSPropertyID>(const CSSPropertyID&) const;
+
 template const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValue<CSSPropertyID>(
     const CSSPropertyID&) const;
 

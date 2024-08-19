@@ -59,7 +59,7 @@
 
 namespace webf {
 
-class  KURL {
+class KURL {
  USING_FAST_MALLOC(KURL);
 
 public:

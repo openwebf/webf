@@ -28,7 +28,7 @@ class  CSSRepeatStyleValue : public CSSValue {
 
   ~CSSRepeatStyleValue();
 
-  AtomicString CustomCSSText() const;
+  std::string CustomCSSText() const;
 
   bool Equals(const CSSRepeatStyleValue& other) const;
 
