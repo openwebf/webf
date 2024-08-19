@@ -43,8 +43,8 @@ class CSSValuePair : public CSSValue {
     assert(second_);
   }
 
-  const CSSValue& First() const { return *first_; }
-  const CSSValue& Second() const { return *second_; }
+  std::shared_ptr<const CSSValue> First() const { return first_; }
+  std::shared_ptr<const CSSValue> Second() const { return second_; }
 
   bool KeepIdenticalValues() const { return identical_values_policy_ == kKeepIdenticalValues; }
 

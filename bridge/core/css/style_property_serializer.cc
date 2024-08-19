@@ -786,7 +786,7 @@ bool IsIdentifier(const CSSValue& value, CSSValueID ident) {
 
 bool IsIdentifierPair(const CSSValue& value, CSSValueID ident) {
   const auto* pair_value = DynamicTo<CSSValuePair>(value);
-  return pair_value && IsIdentifier(pair_value->First(), ident) && IsIdentifier(pair_value->Second(), ident);
+  return pair_value && IsIdentifier(*pair_value->First(), ident) && IsIdentifier(*pair_value->Second(), ident);
 }
 
 std::shared_ptr<const CSSValue> TimelineValueItem(size_t index,
@@ -1991,12 +1991,12 @@ std::string StylePropertySerializer::BorderRadiusValue() const {
       To<CSSValuePair>(*property_set_.GetPropertyCSSValue(GetCSSPropertyBorderBottomLeftRadius()));
 
   StringBuilder builder;
-  builder.Append(serialize(top_left.First(), top_right.First(), bottom_right.First(), bottom_left.First()));
+  builder.Append(serialize(*top_left.First(), *top_right.First(), *bottom_right.First(), *bottom_left.First()));
 
   if (!(top_left.First() == top_left.Second()) || !(top_right.First() == top_right.Second()) ||
       !(bottom_right.First() == bottom_right.Second()) || !(bottom_left.First() == bottom_left.Second())) {
     builder.Append(" / ");
-    builder.Append(serialize(top_left.Second(), top_right.Second(), bottom_right.Second(), bottom_left.Second()));
+    builder.Append(serialize(*top_left.Second(), *top_right.Second(), *bottom_right.Second(), *bottom_left.Second()));
   }
 
   return builder.ReleaseString();

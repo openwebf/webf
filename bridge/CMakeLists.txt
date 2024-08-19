@@ -328,7 +328,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_rule.cc
     core/css/css_value.cc
     core/css/properties/longhand.cc
-    core/css/properties/shorthands/shorthands_custom.cc
+#    core/css/properties/shorthands/shorthands_custom.cc
     core/css/abstract_property_set_css_style_declaration.cc
     core/css/property_set_css_style_declaration.cc
     core/css/style_rule.cc
@@ -340,6 +340,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_identifier_value.cc
     core/css/css_numeric_literal_value.cc
     core/css/css_math_expression_node.cc
+    core/css/css_ray_value.cc
+    core/css/css_scroll_value.cc
+    core/css/css_basic_shape_value.cc
     core/css/css_math_function_value.cc
     core/css/css_math_operator.cc
     core/css/css_ratio_value.cc

@@ -23,7 +23,7 @@
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_property_parser.h"
-//#include "core/style/grid_area.h"
+// #include "core/style/grid_area.h"
 #include "css_property_names.h"
 #include "css_value_keywords.h"
 
@@ -92,7 +92,7 @@ std::shared_ptr<const CSSPrimitiveValue> ConsumeInteger(CSSParserTokenStream&,
                                                         const bool is_percentage_allowed = true);
 template <typename T>
     requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> CSSPrimitiveValue* ConsumeIntegerOrNumberCalc(
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSPrimitiveValue> ConsumeIntegerOrNumberCalc(
         T&,
         const CSSParserContext&,
         CSSPrimitiveValue::ValueRange = CSSPrimitiveValue::ValueRange::kInteger);
@@ -238,11 +238,12 @@ bool ConsumePosition(CSSParserTokenStream&,
 
 template <typename T>
     requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> bool ConsumeOneOrTwoValuedPosition(T&,
-                                                                              const CSSParserContext&,
-                                                                              UnitlessQuirk,
-                                                                              std::shared_ptr<const CSSValue>& result_x,
-                                                                              std::shared_ptr<const CSSValue>& result_y);
+    std::is_same_v<T, CSSParserTokenRange> bool ConsumeOneOrTwoValuedPosition(
+        T&,
+        const CSSParserContext&,
+        UnitlessQuirk,
+        std::shared_ptr<const CSSValue>& result_x,
+        std::shared_ptr<const CSSValue>& result_y);
 
 bool ConsumeBorderShorthand(CSSParserTokenStream&,
                             const CSSParserContext&,
@@ -251,36 +252,54 @@ bool ConsumeBorderShorthand(CSSParserTokenStream&,
                             std::shared_ptr<const CSSValue>& result_style,
                             std::shared_ptr<const CSSValue>& result_color);
 
-std::shared_ptr<const CSSValue> ConsumeBorderWidth(CSSParserTokenStream&,
-                             const CSSParserContext&,
-                             UnitlessQuirk);
+std::shared_ptr<const CSSValue> ConsumeBorderWidth(CSSParserTokenStream&, const CSSParserContext&, UnitlessQuirk);
 
 std::shared_ptr<const CSSValue> ParseBorderWidthSide(CSSParserTokenStream&,
-                               const CSSParserContext&,
-                               const CSSParserLocalContext&);
+                                                     const CSSParserContext&,
+                                                     const CSSParserLocalContext&);
 
-std::shared_ptr<const CSSValue> ParseBorderStyleSide(CSSParserTokenStream&,
-                                     const CSSParserContext&);
+std::shared_ptr<const CSSValue> ParseBorderStyleSide(CSSParserTokenStream&, const CSSParserContext&);
 
 std::shared_ptr<const CSSValue> ConsumeBorderColorSide(CSSParserTokenStream&,
-                                 const CSSParserContext&,
-                                 const CSSParserLocalContext&);
+                                                       const CSSParserContext&,
+                                                       const CSSParserLocalContext&);
 
 std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
-                              CSSPropertyID current_shorthand,
-                              const CSSParserContext& context,
-                              CSSParserTokenStream& stream);
+                                              CSSPropertyID current_shorthand,
+                                              const CSSParserContext& context,
+                                              CSSParserTokenStream& stream);
 
-void CountKeywordOnlyPropertyUsage(CSSPropertyID,
-                                   const CSSParserContext&,
-                                   CSSValueID);
+void CountKeywordOnlyPropertyUsage(CSSPropertyID, const CSSParserContext&, CSSValueID);
 
-void WarnInvalidKeywordPropertyUsage(CSSPropertyID,
-                                     const CSSParserContext&,
-                                     CSSValueID);
+void WarnInvalidKeywordPropertyUsage(CSSPropertyID, const CSSParserContext&, CSSValueID);
 
 bool ValidWidthOrHeightKeyword(CSSValueID id, const CSSParserContext& context);
 
+std::shared_ptr<const CSSValue> ConsumeMaxWidthOrHeight(CSSParserTokenStream&,
+                                                        const CSSParserContext&,
+                                                        UnitlessQuirk = UnitlessQuirk::kForbid);
+std::shared_ptr<const CSSValue> ConsumeWidthOrHeight(CSSParserTokenStream&,
+                                                     const CSSParserContext&,
+                                                     UnitlessQuirk = UnitlessQuirk::kForbid);
+
+std::shared_ptr<const CSSValue> ConsumeMarginOrOffset(CSSParserTokenStream&,
+                                                      const CSSParserContext&,
+                                                      UnitlessQuirk,
+                                                      CSSAnchorQueryTypes = kCSSAnchorQueryTypesNone);
+std::shared_ptr<const CSSValue> ConsumeScrollPadding(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeScrollStart(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeScrollStartTarget(CSSParserTokenStream&);
+std::shared_ptr<const CSSValue> ConsumeOffsetPath(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeOffsetRotate(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeInitialLetter(CSSParserTokenStream&, const CSSParserContext&);
+
+std::shared_ptr<const CSSValue> ConsumeAnimationIterationCount(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeAnimationName(CSSParserTokenStream&,
+                                                     const CSSParserContext&,
+                                                     bool allow_quoted_name);
+std::shared_ptr<const CSSValue> ConsumeAnimationTimeline(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeAnimationTimingFunction(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeAnimationDuration(CSSParserTokenStream&, const CSSParserContext&);
 
 }  // namespace css_parsing_utils
 }  // namespace webf

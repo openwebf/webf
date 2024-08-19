@@ -6,12 +6,15 @@
 
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/css_appearance_auto_base_select_value_pair.h"
+#include "core/css/css_basic_shape_value.h"
 #include "core/css/css_color_channel_map.h"
 #include "core/css/css_initial_value.h"
 #include "core/css/css_light_dart_value_pair.h"
 #include "core/css/css_math_expression_node.h"
 #include "core/css/css_math_function_value.h"
 #include "core/css/css_ratio_value.h"
+#include "core/css/css_ray_value.h"
+#include "core/css/css_scroll_value.h"
 #include "core/css/parser/css_parser_fast_path.h"
 #include "core/css/parser/css_parser_save_point.h"
 #include "core/css/properties/css_color_function_parser.h"
@@ -887,7 +890,6 @@ template <class T, typename Func>
   return std::make_shared<CSSLightDarkValuePair>(light_value, dark_value);
 }
 
-
 template <class T>
     requires std::is_same_v<T, CSSParserTokenStream> ||
     std::is_same_v<T, CSSParserTokenRange> static bool ParseHexColor(T& range,
@@ -1472,7 +1474,8 @@ std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
                                  .WithAliasParsing(IsPropertyAlias(unresolved_property))
                                  .WithCurrentShorthand(current_shorthand);
 
-  std::shared_ptr<const CSSValue> result = To<Longhand>(CSSProperty::Get(property_id)).ParseSingleValue(stream, context, local_context);
+  std::shared_ptr<const CSSValue> result =
+      To<Longhand>(CSSProperty::Get(property_id)).ParseSingleValue(stream, context, local_context);
   return result;
 }
 
@@ -1507,14 +1510,380 @@ bool ValidWidthOrHeightKeyword(CSSValueID id, const CSSParserContext& context) {
   // TODO(https://crbug.com/353538495): This should also be kept in sync with
   // FlexBasis::ParseSingleValue, although we should eventually make it use
   // this function instead.
-  if (id == CSSValueID::kWebkitMinContent ||
-      id == CSSValueID::kWebkitMaxContent ||
-      id == CSSValueID::kWebkitFillAvailable ||
-      id == CSSValueID::kWebkitFitContent || id == CSSValueID::kMinContent ||
+  if (id == CSSValueID::kWebkitMinContent || id == CSSValueID::kWebkitMaxContent ||
+      id == CSSValueID::kWebkitFillAvailable || id == CSSValueID::kWebkitFitContent || id == CSSValueID::kMinContent ||
       id == CSSValueID::kMaxContent || id == CSSValueID::kFitContent) {
     return true;
   }
   return false;
+}
+
+std::shared_ptr<const CSSValue> ConsumeMaxWidthOrHeight(CSSParserTokenStream& stream,
+                                                        const CSSParserContext& context,
+                                                        UnitlessQuirk unitless) {
+  if (stream.Peek().Id() == CSSValueID::kNone || ValidWidthOrHeightKeyword(stream.Peek().Id(), context)) {
+    return ConsumeIdent(stream);
+  }
+  return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative, unitless,
+                                static_cast<CSSAnchorQueryTypes>(CSSAnchorQueryType::kAnchorSize),
+                                AllowCalcSize::kAllowWithoutAuto);
+}
+
+std::shared_ptr<const CSSValue> ConsumeWidthOrHeight(CSSParserTokenStream& stream,
+                                                     const CSSParserContext& context,
+                                                     UnitlessQuirk unitless) {
+  if (stream.Peek().Id() == CSSValueID::kAuto || ValidWidthOrHeightKeyword(stream.Peek().Id(), context)) {
+    return ConsumeIdent(stream);
+  }
+  return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative, unitless,
+                                static_cast<CSSAnchorQueryTypes>(CSSAnchorQueryType::kAnchorSize),
+                                AllowCalcSize::kAllowWithAuto);
+}
+
+std::shared_ptr<const CSSValue> ConsumeMarginOrOffset(CSSParserTokenStream& stream,
+                                                      const CSSParserContext& context,
+                                                      UnitlessQuirk unitless,
+                                                      CSSAnchorQueryTypes allowed_anchor_queries) {
+  if (stream.Peek().Id() == CSSValueID::kAuto) {
+    return ConsumeIdent(stream);
+  }
+  return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kAll, unitless, allowed_anchor_queries);
+}
+
+std::shared_ptr<const CSSValue> ConsumeScrollPadding(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  if (stream.Peek().Id() == CSSValueID::kAuto) {
+    return ConsumeIdent(stream);
+  }
+  CSSParserContext::ParserModeOverridingScope scope(context, kHTMLStandardMode);
+  return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative, UnitlessQuirk::kForbid);
+}
+
+std::shared_ptr<const CSSValue> ConsumeScrollStart(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  if (std::shared_ptr<const CSSIdentifierValue> ident =
+          ConsumeIdent<CSSValueID::kAuto, CSSValueID::kStart, CSSValueID::kCenter, CSSValueID::kEnd, CSSValueID::kTop,
+                       CSSValueID::kBottom, CSSValueID::kLeft, CSSValueID::kRight>(stream)) {
+    return ident;
+  }
+  return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+}
+
+std::shared_ptr<const CSSValue> ConsumeScrollStartTarget(CSSParserTokenStream& stream) {
+  return ConsumeIdent<CSSValueID::kAuto, CSSValueID::kNone>(stream);
+}
+
+// https://drafts.csswg.org/css-box-4/#typedef-coord-box
+template <class T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSIdentifierValue> ConsumeCoordBoxInternal(T& range) {
+  return ConsumeIdent<CSSValueID::kContentBox, CSSValueID::kPaddingBox, CSSValueID::kBorderBox, CSSValueID::kFillBox,
+                      CSSValueID::kStrokeBox, CSSValueID::kViewBox>(range);
+}
+
+std::shared_ptr<const CSSIdentifierValue> ConsumeCoordBox(CSSParserTokenRange& range) {
+  return ConsumeCoordBoxInternal(range);
+}
+
+std::shared_ptr<const CSSIdentifierValue> ConsumeCoordBox(CSSParserTokenStream& stream) {
+  return ConsumeCoordBoxInternal(stream);
+}
+
+std::shared_ptr<const CSSValue> ConsumeRay(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  if (stream.Peek().FunctionId() != CSSValueID::kRay) {
+    return nullptr;
+  }
+
+  std::shared_ptr<const CSSValue> value;
+  {
+    CSSParserTokenStream::RestoringBlockGuard guard(stream);
+    stream.ConsumeWhitespace();
+
+    std::shared_ptr<const CSSPrimitiveValue> angle = nullptr;
+    std::shared_ptr<const CSSIdentifierValue> size = nullptr;
+    std::shared_ptr<const CSSIdentifierValue> contain = nullptr;
+    bool position = false;
+    std::shared_ptr<const CSSValue> x = nullptr;
+    std::shared_ptr<const CSSValue> y = nullptr;
+    while (!stream.AtEnd()) {
+      if (!angle) {
+        angle = ConsumeAngle(stream, context);
+        if (angle) {
+          continue;
+        }
+      }
+      if (!size) {
+        size = ConsumeIdent<CSSValueID::kClosestSide, CSSValueID::kClosestCorner, CSSValueID::kFarthestSide,
+                            CSSValueID::kFarthestCorner, CSSValueID::kSides>(stream);
+        if (size) {
+          continue;
+        }
+      }
+      if (!contain) {
+        contain = ConsumeIdent<CSSValueID::kContain>(stream);
+        if (contain) {
+          continue;
+        }
+      }
+      if (!position && ConsumeIdent<CSSValueID::kAt>(stream)) {
+        position = ConsumePosition(stream, context, UnitlessQuirk::kForbid, x, y);
+        if (position) {
+          continue;
+        }
+      }
+      return nullptr;
+    }
+    if (!angle) {
+      return nullptr;
+    }
+    guard.Release();
+    if (!size) {
+      size = CSSIdentifierValue::Create(CSSValueID::kClosestSide);
+    }
+    value = std::make_shared<const cssvalue::CSSRayValue>(angle, size, contain, x, y);
+  }
+  stream.ConsumeWhitespace();
+  return value;
+}
+
+std::shared_ptr<const CSSValue> ConsumeShapeRadius(CSSParserTokenStream& args, const CSSParserContext& context) {
+  if (IdentMatches<CSSValueID::kClosestSide, CSSValueID::kFarthestSide>(args.Peek().Id())) {
+    return ConsumeIdent(args);
+  }
+  return ConsumeLengthOrPercent(args, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+}
+
+std::shared_ptr<cssvalue::CSSBasicShapeCircleValue> ConsumeBasicShapeCircle(CSSParserTokenStream& args,
+                                                                            const CSSParserContext& context) {
+  // spec: https://drafts.csswg.org/css-shapes/#supported-basic-shapes
+  // circle( [<shape-radius>]? [at <position>]? )
+  auto shape = std::make_shared<cssvalue::CSSBasicShapeCircleValue>();
+  if (auto radius = ConsumeShapeRadius(args, context)) {
+    shape->SetRadius(radius);
+  }
+  if (ConsumeIdent<CSSValueID::kAt>(args)) {
+    std::shared_ptr<const CSSValue> center_x = nullptr;
+    std::shared_ptr<const CSSValue> center_y = nullptr;
+    if (!ConsumePosition(args, context, UnitlessQuirk::kForbid, center_x, center_y)) {
+      return nullptr;
+    }
+    shape->SetCenterX(center_x);
+    shape->SetCenterY(center_y);
+  }
+  return shape;
+}
+
+std::shared_ptr<const CSSValue> ConsumeOffsetPath(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  if (std::shared_ptr<const CSSValue> none = ConsumeIdent<CSSValueID::kNone>(stream)) {
+    return none;
+  }
+  std::shared_ptr<const CSSValue> coord_box = ConsumeCoordBox(stream);
+
+  std::shared_ptr<const CSSValue> offset_path = ConsumeRay(stream, context);
+  //  if (!offset_path) {
+  //    offset_path = ConsumeBasicShape(stream, context, AllowPathValue::kForbid);
+  //  }
+  //  if (!offset_path) {
+  //    offset_path = ConsumeUrl(stream, context);
+  //  }
+  //  if (!offset_path) {
+  //    offset_path = ConsumePathFunction(stream, EmptyPathStringHandling::kFailure);
+  //  }
+
+  if (!coord_box) {
+    coord_box = ConsumeCoordBox(stream);
+  }
+
+  if (!offset_path && !coord_box) {
+    return nullptr;
+  }
+
+  std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
+  if (offset_path) {
+    list->Append(offset_path);
+  }
+  if (!offset_path || (coord_box && To<CSSIdentifierValue>(coord_box.get())->GetValueID() != CSSValueID::kBorderBox)) {
+    list->Append(coord_box);
+  }
+
+  return list;
+}
+
+std::shared_ptr<const CSSValue> ConsumeOffsetRotate(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  std::shared_ptr<const CSSValue> angle = ConsumeAngle(stream, context);
+  std::shared_ptr<const CSSValue> keyword = ConsumeIdent<CSSValueID::kAuto, CSSValueID::kReverse>(stream);
+  if (!angle && !keyword) {
+    return nullptr;
+  }
+
+  if (!angle) {
+    angle = ConsumeAngle(stream, context);
+  }
+
+  std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
+  if (keyword) {
+    list->Append(keyword);
+  }
+  if (angle) {
+    list->Append(angle);
+  }
+  return list;
+}
+
+std::shared_ptr<const CSSValue> ConsumeInitialLetter(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  if (ConsumeIdent<CSSValueID::kNormal>(stream)) {
+    return CSSIdentifierValue::Create(CSSValueID::kNormal);
+  }
+
+  std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
+  // ["drop" | "raise"] number[1,Inf]
+  if (auto sink_type = ConsumeIdent<CSSValueID::kDrop, CSSValueID::kRaise>(stream)) {
+    if (auto size = ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative)) {
+      if (size->GetFloatValue() < 1) {
+        return nullptr;
+      }
+      list->Append(size);
+      list->Append(sink_type);
+      return list;
+    }
+    return nullptr;
+  }
+
+  // number[1, Inf]
+  // number[1, Inf] ["drop" | "raise"]
+  // number[1, Inf] integer[1, Inf]
+  if (auto size = ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative)) {
+    if (size->GetFloatValue() < 1) {
+      return nullptr;
+    }
+    list->Append(size);
+    if (auto sink_type = ConsumeIdent<CSSValueID::kDrop, CSSValueID::kRaise>(stream)) {
+      list->Append(sink_type);
+      return list;
+    }
+    if (auto sink = ConsumeIntegerOrNumberCalc(stream, context, CSSPrimitiveValue::ValueRange::kPositiveInteger)) {
+      list->Append(sink);
+      return list;
+    }
+    return list;
+  }
+
+  return nullptr;
+}
+
+std::shared_ptr<const CSSValue> ConsumeAnimationIterationCount(CSSParserTokenStream& stream,
+                                                               const CSSParserContext& context) {
+  if (stream.Peek().Id() == CSSValueID::kInfinite) {
+    return ConsumeIdent(stream);
+  }
+  return ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+}
+
+std::shared_ptr<const CSSValue> ConsumeAnimationName(CSSParserTokenStream& stream,
+                                                     const CSSParserContext& context,
+                                                     bool allow_quoted_name) {
+  if (stream.Peek().Id() == CSSValueID::kNone) {
+    return ConsumeIdent(stream);
+  }
+
+  if (allow_quoted_name && stream.Peek().GetType() == kStringToken) {
+    const CSSParserToken& token = stream.ConsumeIncludingWhitespace();
+    if (EqualIgnoringASCIICase(token.Value(), "none")) {
+      return CSSIdentifierValue::Create(CSSValueID::kNone);
+    }
+    return std::make_shared<CSSCustomIdentValue>(token.Value());
+  }
+
+  return ConsumeCustomIdent(stream, context);
+}
+
+namespace {
+
+std::shared_ptr<const CSSValue> ConsumeSingleTimelineInsetSide(CSSParserTokenStream& stream,
+                                         const CSSParserContext& context) {
+  if (std::shared_ptr<const CSSValue> ident = ConsumeIdent<CSSValueID::kAuto>(stream)) {
+    return ident;
+  }
+  return ConsumeLengthOrPercent(stream, context,
+                                CSSPrimitiveValue::ValueRange::kAll);
+}
+
+}  // namespace
+
+bool IsIdent(const CSSValue& value, CSSValueID id) {
+  const auto* ident = DynamicTo<CSSIdentifierValue>(value);
+  return ident && ident->GetValueID() == id;
+}
+
+std::shared_ptr<const CSSValue> ConsumeSingleTimelineInset(CSSParserTokenStream& stream,
+                                     const CSSParserContext& context) {
+  std::shared_ptr<const CSSValue> start = ConsumeSingleTimelineInsetSide(stream, context);
+  if (!start) {
+    return nullptr;
+  }
+  std::shared_ptr<const CSSValue> end = ConsumeSingleTimelineInsetSide(stream, context);
+  if (!end) {
+    end = start;
+  }
+  return std::make_shared<CSSValuePair>(start, end,
+                                            CSSValuePair::kDropIdenticalValues);
+}
+
+std::shared_ptr<const CSSValue> ConsumeScrollFunction(CSSParserTokenStream& stream,
+                                const CSSParserContext& context) {
+  if (stream.Peek().FunctionId() != CSSValueID::kScroll) {
+    return nullptr;
+  }
+
+  std::shared_ptr<const CSSValue> scroller = nullptr;
+  std::shared_ptr<const CSSIdentifierValue> axis = nullptr;
+
+  {
+    CSSParserTokenStream::BlockGuard guard(stream);
+    stream.ConsumeWhitespace();
+    while (!scroller || !axis) {
+      if (stream.AtEnd()) {
+        break;
+      }
+      if (!scroller) {
+        if ((scroller = ConsumeIdent<CSSValueID::kRoot, CSSValueID::kNearest,
+                                     CSSValueID::kSelf>(stream))) {
+          continue;
+        }
+      }
+      if (!axis) {
+        if ((axis = ConsumeIdent<CSSValueID::kBlock, CSSValueID::kInline,
+                                 CSSValueID::kX, CSSValueID::kY>(stream))) {
+          continue;
+        }
+      }
+      return nullptr;
+    }
+    if (!stream.AtEnd()) {
+      return nullptr;
+    }
+    // Nullify default values.
+    // https://drafts.csswg.org/scroll-animations-1/#valdef-scroll-nearest
+    if (scroller && IsIdent(*scroller, CSSValueID::kNearest)) {
+      scroller = nullptr;
+    }
+    // https://drafts.csswg.org/scroll-animations-1/#valdef-scroll-block
+    if (axis && IsIdent(*axis, CSSValueID::kBlock)) {
+      axis = nullptr;
+    }
+  }
+  stream.ConsumeWhitespace();
+  return std::make_shared<cssvalue::CSSScrollValue>(scroller, axis);
+}
+
+std::shared_ptr<const CSSValue> ConsumeAnimationTimeline(CSSParserTokenStream& stream,
+                                   const CSSParserContext& context) {
+  if (auto value =
+          ConsumeIdent<CSSValueID::kNone, CSSValueID::kAuto>(stream)) {
+    return value;
+  }
+  if (auto value = ConsumeDashedIdent(stream, context)) {
+    return value;
+  }
+  return ConsumeScrollFunction(stream, context);
 }
 
 

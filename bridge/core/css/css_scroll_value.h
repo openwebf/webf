@@ -16,7 +16,7 @@ namespace cssvalue {
 // https://drafts.csswg.org/scroll-animations-1/#scroll-notation
 class CSSScrollValue : public CSSValue {
  public:
-  CSSScrollValue(const CSSValue* scroller, const CSSValue* axis);
+  CSSScrollValue(std::shared_ptr<const CSSValue> scroller, std::shared_ptr<const CSSValue> axis);
 
   std::shared_ptr<const CSSValue> Scroller() const { return scroller_; }
   std::shared_ptr<const CSSValue> Axis() const { return axis_; }
