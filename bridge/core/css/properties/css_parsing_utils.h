@@ -56,7 +56,7 @@ enum class AllowCalcSize { kAllowWithAuto, kAllowWithoutAuto, kAllowWithAutoAndC
 enum class AllowedColors { kAll, kAbsolute };
 enum class EmptyPathStringHandling { kFailure, kTreatAsNone };
 
-using ConsumeAnimationItemValue = CSSValue* (*)(CSSPropertyID,
+using ConsumeAnimationItemValue = std::shared_ptr<const CSSValue> (*)(CSSPropertyID,
                                                 CSSParserTokenStream&,
                                                 const CSSParserContext&,
                                                 bool use_legacy_parsing);
@@ -201,7 +201,7 @@ template <typename T>
         const CSSParserContext&);
 std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenRange&);
 std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenStream&);
-StringView ConsumeStringAsStringView(CSSParserTokenRange&);
+std::string ConsumeStringAsString(CSSParserTokenStream& stream);
 // cssvalue::CSSURIValue* ConsumeUrl(CSSParserTokenRange&, const CSSParserContext&);
 // cssvalue::CSSURIValue* ConsumeUrl(CSSParserTokenStream&, const CSSParserContext&);
 
@@ -300,6 +300,55 @@ std::shared_ptr<const CSSValue> ConsumeAnimationName(CSSParserTokenStream&,
 std::shared_ptr<const CSSValue> ConsumeAnimationTimeline(CSSParserTokenStream&, const CSSParserContext&);
 std::shared_ptr<const CSSValue> ConsumeAnimationTimingFunction(CSSParserTokenStream&, const CSSParserContext&);
 std::shared_ptr<const CSSValue> ConsumeAnimationDuration(CSSParserTokenStream&, const CSSParserContext&);
+
+bool ConsumeAnimationShorthand(
+    const StylePropertyShorthand&,
+    std::vector<std::shared_ptr<CSSValueList>>&,
+    ConsumeAnimationItemValue,
+    IsResetOnlyFunction,
+    CSSParserTokenStream&,
+    const CSSParserContext&,
+    bool use_legacy_parsing);
+
+enum class IsImplicitProperty { kNotImplicit, kImplicit };
+
+void AddProperty(CSSPropertyID resolved_property,
+                 CSSPropertyID current_shorthand,
+                 const std::shared_ptr<const CSSValue>& value,
+                 bool important,
+                 IsImplicitProperty implicit,
+                 std::vector<CSSPropertyValue>& properties);
+
+bool ConsumeBackgroundPosition(CSSParserTokenStream&,
+                               const CSSParserContext&,
+                               UnitlessQuirk,
+                               std::shared_ptr<const CSSValue>& result_x,
+                               std::shared_ptr<const CSSValue>& result_y);
+
+std::shared_ptr<const CSSValue> ConsumeBackgroundAttachment(CSSParserTokenStream& stream);
+std::shared_ptr<const CSSValue> ConsumeBackgroundBoxOrText(CSSParserTokenStream& stream);
+std::shared_ptr<const CSSValue> ConsumeBackgroundBox(CSSParserTokenStream&);
+std::shared_ptr<const CSSValue> ConsumePrefixedBackgroundBox(CSSParserTokenStream&, AllowTextValue);
+
+std::shared_ptr<const CSSValue> ConsumeImageOrNone(CSSParserTokenStream& stream,
+                             const CSSParserContext& context);
+
+enum class ConsumeGeneratedImagePolicy { kAllow, kForbid };
+enum class ConsumeStringUrlImagePolicy { kAllow, kForbid };
+enum class ConsumeImageSetImagePolicy { kAllow, kForbid };
+
+std::shared_ptr<const CSSValue> ConsumeImage(
+    CSSParserTokenStream&,
+    const CSSParserContext&,
+    const ConsumeGeneratedImagePolicy = ConsumeGeneratedImagePolicy::kAllow,
+    const ConsumeStringUrlImagePolicy = ConsumeStringUrlImagePolicy::kForbid,
+    const ConsumeImageSetImagePolicy = ConsumeImageSetImagePolicy::kAllow);
+
+bool ParseBackgroundOrMask(bool,
+                           CSSParserTokenStream&,
+                           const CSSParserContext&,
+                           const CSSParserLocalContext&,
+                           std::vector<CSSPropertyValue>&);
 
 }  // namespace css_parsing_utils
 }  // namespace webf

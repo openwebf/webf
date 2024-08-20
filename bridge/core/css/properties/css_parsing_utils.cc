@@ -8,6 +8,12 @@
 #include "core/css/css_appearance_auto_base_select_value_pair.h"
 #include "core/css/css_basic_shape_value.h"
 #include "core/css/css_color_channel_map.h"
+#include "core/css/css_crossfade_value.h"
+#include "core/css/css_gradient_value.h"
+#include "core/css/css_image_set_option_value.h"
+#include "core/css/css_image_set_type_value.h"
+#include "core/css/css_image_set_value.h"
+#include "core/css/css_image_value.h"
 #include "core/css/css_initial_value.h"
 #include "core/css/css_light_dart_value_pair.h"
 #include "core/css/css_math_expression_node.h"
@@ -15,12 +21,15 @@
 #include "core/css/css_ratio_value.h"
 #include "core/css/css_ray_value.h"
 #include "core/css/css_scroll_value.h"
+#include "core/css/css_timing_function_value.h"
 #include "core/css/parser/css_parser_fast_path.h"
 #include "core/css/parser/css_parser_save_point.h"
 #include "core/css/properties/css_color_function_parser.h"
 #include "core/css/properties/longhand.h"
 #include "core/css/style_color.h"
 #include "core/platform/graphics/color.h"
+#include "foundation/macros.h"
+#include "style_property_shorthand.h"
 
 #include <cmath>
 #include <memory>
@@ -1798,12 +1807,11 @@ std::shared_ptr<const CSSValue> ConsumeAnimationName(CSSParserTokenStream& strea
 namespace {
 
 std::shared_ptr<const CSSValue> ConsumeSingleTimelineInsetSide(CSSParserTokenStream& stream,
-                                         const CSSParserContext& context) {
+                                                               const CSSParserContext& context) {
   if (std::shared_ptr<const CSSValue> ident = ConsumeIdent<CSSValueID::kAuto>(stream)) {
     return ident;
   }
-  return ConsumeLengthOrPercent(stream, context,
-                                CSSPrimitiveValue::ValueRange::kAll);
+  return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
 }
 
 }  // namespace
@@ -1814,7 +1822,7 @@ bool IsIdent(const CSSValue& value, CSSValueID id) {
 }
 
 std::shared_ptr<const CSSValue> ConsumeSingleTimelineInset(CSSParserTokenStream& stream,
-                                     const CSSParserContext& context) {
+                                                           const CSSParserContext& context) {
   std::shared_ptr<const CSSValue> start = ConsumeSingleTimelineInsetSide(stream, context);
   if (!start) {
     return nullptr;
@@ -1823,12 +1831,10 @@ std::shared_ptr<const CSSValue> ConsumeSingleTimelineInset(CSSParserTokenStream&
   if (!end) {
     end = start;
   }
-  return std::make_shared<CSSValuePair>(start, end,
-                                            CSSValuePair::kDropIdenticalValues);
+  return std::make_shared<CSSValuePair>(start, end, CSSValuePair::kDropIdenticalValues);
 }
 
-std::shared_ptr<const CSSValue> ConsumeScrollFunction(CSSParserTokenStream& stream,
-                                const CSSParserContext& context) {
+std::shared_ptr<const CSSValue> ConsumeScrollFunction(CSSParserTokenStream& stream, const CSSParserContext& context) {
   if (stream.Peek().FunctionId() != CSSValueID::kScroll) {
     return nullptr;
   }
@@ -1844,14 +1850,12 @@ std::shared_ptr<const CSSValue> ConsumeScrollFunction(CSSParserTokenStream& stre
         break;
       }
       if (!scroller) {
-        if ((scroller = ConsumeIdent<CSSValueID::kRoot, CSSValueID::kNearest,
-                                     CSSValueID::kSelf>(stream))) {
+        if ((scroller = ConsumeIdent<CSSValueID::kRoot, CSSValueID::kNearest, CSSValueID::kSelf>(stream))) {
           continue;
         }
       }
       if (!axis) {
-        if ((axis = ConsumeIdent<CSSValueID::kBlock, CSSValueID::kInline,
-                                 CSSValueID::kX, CSSValueID::kY>(stream))) {
+        if ((axis = ConsumeIdent<CSSValueID::kBlock, CSSValueID::kInline, CSSValueID::kX, CSSValueID::kY>(stream))) {
           continue;
         }
       }
@@ -1875,9 +1879,8 @@ std::shared_ptr<const CSSValue> ConsumeScrollFunction(CSSParserTokenStream& stre
 }
 
 std::shared_ptr<const CSSValue> ConsumeAnimationTimeline(CSSParserTokenStream& stream,
-                                   const CSSParserContext& context) {
-  if (auto value =
-          ConsumeIdent<CSSValueID::kNone, CSSValueID::kAuto>(stream)) {
+                                                         const CSSParserContext& context) {
+  if (auto value = ConsumeIdent<CSSValueID::kNone, CSSValueID::kAuto>(stream)) {
     return value;
   }
   if (auto value = ConsumeDashedIdent(stream, context)) {
@@ -1886,6 +1889,1543 @@ std::shared_ptr<const CSSValue> ConsumeAnimationTimeline(CSSParserTokenStream& s
   return ConsumeScrollFunction(stream, context);
 }
 
+std::optional<cssvalue::CSSLinearStop> ConsumeLinearStop(CSSParserTokenStream& stream,
+                                                         const CSSParserContext& context) {
+  std::optional<double> number;
+  std::optional<double> length_a;
+  std::optional<double> length_b;
+  while (!stream.AtEnd()) {
+    if (stream.Peek().GetType() == kCommaToken) {
+      break;
+    }
+    std::shared_ptr<const CSSPrimitiveValue> value =
+        ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+    if (!number.has_value() && value && value->IsNumber()) {
+      number = value->GetDoubleValue();
+      continue;
+    }
+    value = ConsumePercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+    if (!length_a.has_value() && value && value->IsPercentage()) {
+      length_a = value->GetDoubleValue();
+      value = ConsumePercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+      if (value && value->IsPercentage()) {
+        length_b = value->GetDoubleValue();
+      }
+      continue;
+    }
+    return {};
+  }
+  if (!number.has_value()) {
+    return {};
+  }
+  return {{number.value(), length_a, length_b}};
+}
+
+std::shared_ptr<const CSSValue> ConsumeLinear(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  std::shared_ptr<const CSSValue> result;
+
+  // https://w3c.github.io/csswg-drafts/css-easing/#linear-easing-function-parsing
+  DCHECK_EQ(stream.Peek().FunctionId(), CSSValueID::kLinear);
+  {
+    CSSParserTokenStream::RestoringBlockGuard guard(stream);
+    std::vector<cssvalue::CSSLinearStop> stop_list{};
+    std::optional<cssvalue::CSSLinearStop> linear_stop;
+    do {
+      linear_stop = ConsumeLinearStop(stream, context);
+      if (!linear_stop.has_value()) {
+        return nullptr;
+      }
+      stop_list.emplace_back(linear_stop.value());
+    } while (ConsumeCommaIncludingWhitespace(stream));
+    if (!stream.AtEnd()) {
+      return nullptr;
+    }
+    // 1. Let function be a new linear easing function.
+    // 2. Let largestInput be negative infinity.
+    // 3. If there are less than two items in stopList, then return failure.
+    if (stop_list.size() < 2) {
+      return nullptr;
+    }
+    // 4. For each stop in stopList:
+    double largest_input = std::numeric_limits<double>::lowest();
+    std::vector<gfx::LinearEasingPoint> points{};
+    for (size_t i = 0; i < stop_list.size(); ++i) {
+      const auto& stop = stop_list[i];
+      // 4.1. Let point be a new linear easing point with its output set
+      // to stop’s <number> as a number.
+      gfx::LinearEasingPoint point{std::numeric_limits<double>::quiet_NaN(), stop.number};
+      // 4.2. Append point to function’s points.
+      points.emplace_back(point);
+      // 4.3. If stop has a <linear-stop-length>, then:
+      if (stop.length_a.has_value()) {
+        // 4.3.1. Set point’s input to whichever is greater:
+        // stop’s <linear-stop-length>'s first <percentage> as a number,
+        // or largestInput.
+        points.back().input = std::max(largest_input, stop.length_a.value());
+        // 4.3.2. Set largestInput to point’s input.
+        largest_input = points.back().input;
+        // 4.3.3. If stop’s <linear-stop-length> has a second <percentage>,
+        // then:
+        if (stop.length_b.has_value()) {
+          // 4.3.3.1. Let extraPoint be a new linear easing point with its
+          // output set to stop’s <number> as a number.
+          gfx::LinearEasingPoint extra_point{// 4.3.3.3. Set extraPoint’s input to whichever is greater:
+                                             // stop’s <linear-stop-length>'s second <percentage>
+                                             // as a number, or largestInput.
+                                             std::max(largest_input, stop.length_b.value()), stop.number};
+          // 4.3.3.2. Append extraPoint to function’s points.
+          points.emplace_back(extra_point);
+          // 4.3.3.4. Set largestInput to extraPoint’s input.
+          largest_input = extra_point.input;
+        }
+        // 4.4. Otherwise, if stop is the first item in stopList, then:
+      } else if (i == 0) {
+        // 4.4.1. Set point’s input to 0.
+        points.back().input = 0;
+        // 4.4.2. Set largestInput to 0.
+        largest_input = 0;
+        // 4.5. Otherwise, if stop is the last item in stopList,
+        // then set point’s input to whichever is greater: 1 or largestInput.
+      } else if (i == stop_list.size() - 1) {
+        points.back().input = std::max(100., largest_input);
+      }
+    }
+    // 5. For runs of items in function’s points that have a null input, assign
+    // a number to the input by linearly interpolating between the closest
+    // previous and next points that have a non-null input.
+    size_t upper_index = 0;
+    for (size_t i = 1; i < points.size(); ++i) {
+      if (std::isnan(points[i].input)) {
+        if (i > upper_index) {
+          const auto it = std::find_if(std::next(points.begin(), i + 1), points.end(),
+                                       [](const auto& point) { return !std::isnan(point.input); });
+          upper_index = static_cast<size_t>(it - points.begin());
+        }
+        points[i].input =
+            points[i - 1].input + (points[upper_index].input - points[i - 1].input) / (upper_index - (i - 1));
+      }
+    }
+    guard.Release();
+    result = std::make_shared<cssvalue::CSSLinearTimingFunctionValue>(std::move(points));
+  }
+  stream.ConsumeWhitespace();
+
+  // 6. Return function.
+  return result;
+}
+
+std::shared_ptr<const CSSValue> ConsumeSteps(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  std::shared_ptr<const CSSValue> result;
+
+  DCHECK_EQ(stream.Peek().FunctionId(), CSSValueID::kSteps);
+  {
+    CSSParserTokenStream::RestoringBlockGuard guard(stream);
+
+    std::shared_ptr<const CSSPrimitiveValue> steps = ConsumePositiveInteger(stream, context);
+    if (!steps) {
+      return nullptr;
+    }
+
+    StepsTimingFunction::StepPosition position = StepsTimingFunction::StepPosition::END;
+    if (ConsumeCommaIncludingWhitespace(stream)) {
+      switch (stream.ConsumeIncludingWhitespace().Id()) {
+        case CSSValueID::kStart:
+          position = StepsTimingFunction::StepPosition::START;
+          break;
+
+        case CSSValueID::kEnd:
+          position = StepsTimingFunction::StepPosition::END;
+          break;
+
+        case CSSValueID::kJumpBoth:
+          position = StepsTimingFunction::StepPosition::JUMP_BOTH;
+          break;
+
+        case CSSValueID::kJumpEnd:
+          position = StepsTimingFunction::StepPosition::JUMP_END;
+          break;
+
+        case CSSValueID::kJumpNone:
+          position = StepsTimingFunction::StepPosition::JUMP_NONE;
+          break;
+
+        case CSSValueID::kJumpStart:
+          position = StepsTimingFunction::StepPosition::JUMP_START;
+          break;
+
+        default:
+          return nullptr;
+      }
+    }
+
+    if (!stream.AtEnd()) {
+      return nullptr;
+    }
+
+    // Steps(n, jump-none) requires n >= 2.
+    if (position == StepsTimingFunction::StepPosition::JUMP_NONE && steps->GetIntValue() < 2) {
+      return nullptr;
+    }
+
+    guard.Release();
+    result = std::make_shared<cssvalue::CSSStepsTimingFunctionValue>(steps->GetIntValue(), position);
+  }
+  stream.ConsumeWhitespace();
+  return result;
+}
+
+std::shared_ptr<const CSSValue> ConsumeCubicBezier(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  DCHECK_EQ(stream.Peek().FunctionId(), CSSValueID::kCubicBezier);
+  std::shared_ptr<const CSSValue> result = nullptr;
+  {
+    CSSParserTokenStream::RestoringBlockGuard guard(stream);
+
+    double x1, y1, x2, y2;
+    if (ConsumeNumberRaw(stream, context, x1) && x1 >= 0 && x1 <= 1 && ConsumeCommaIncludingWhitespace(stream) &&
+        ConsumeNumberRaw(stream, context, y1) && ConsumeCommaIncludingWhitespace(stream) &&
+        ConsumeNumberRaw(stream, context, x2) && x2 >= 0 && x2 <= 1 && ConsumeCommaIncludingWhitespace(stream) &&
+        ConsumeNumberRaw(stream, context, y2) && stream.AtEnd()) {
+      guard.Release();
+      result = std::make_shared<cssvalue::CSSCubicBezierTimingFunctionValue>(x1, y1, x2, y2);
+    }
+  }
+  if (result) {
+    stream.ConsumeWhitespace();
+  }
+
+  return result;
+}
+
+std::shared_ptr<const CSSValue> ConsumeAnimationTimingFunction(CSSParserTokenStream& stream,
+                                                               const CSSParserContext& context) {
+  CSSValueID id = stream.Peek().Id();
+  if (id == CSSValueID::kEase || id == CSSValueID::kLinear || id == CSSValueID::kEaseIn || id == CSSValueID::kEaseOut ||
+      id == CSSValueID::kEaseInOut || id == CSSValueID::kStepStart || id == CSSValueID::kStepEnd) {
+    return ConsumeIdent(stream);
+  }
+
+  CSSValueID function = stream.Peek().FunctionId();
+  if (function == CSSValueID::kLinear) {
+    return ConsumeLinear(stream, context);
+  }
+  if (function == CSSValueID::kSteps) {
+    return ConsumeSteps(stream, context);
+  }
+  if (function == CSSValueID::kCubicBezier) {
+    return ConsumeCubicBezier(stream, context);
+  }
+  return nullptr;
+}
+
+std::shared_ptr<const CSSValue> ConsumeAnimationDuration(CSSParserTokenStream& stream,
+                                                         const CSSParserContext& context) {
+  if (auto ident = ConsumeIdent<CSSValueID::kAuto>(stream)) {
+    return ident;
+  }
+  return ConsumeTime(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+}
+
+bool ConsumeAnimationShorthand(const StylePropertyShorthand& shorthand,
+                               std::vector<std::shared_ptr<CSSValueList>>& longhands,
+                               ConsumeAnimationItemValue consumeLonghandItem,
+                               IsResetOnlyFunction is_reset_only,
+                               CSSParserTokenStream& stream,
+                               const CSSParserContext& context,
+                               bool use_legacy_parsing) {
+  DCHECK(consumeLonghandItem);
+  const unsigned longhand_count = shorthand.length();
+  DCHECK_LE(longhand_count, kMaxNumAnimationLonghands);
+
+  for (unsigned i = 0; i < longhand_count; ++i) {
+    longhands[i] = CSSValueList::CreateCommaSeparated();
+  }
+
+  do {
+    bool parsed_longhand[kMaxNumAnimationLonghands] = {false};
+    bool found_any = false;
+    do {
+      bool found_property = false;
+      for (unsigned i = 0; i < longhand_count; ++i) {
+        if (parsed_longhand[i]) {
+          continue;
+        }
+
+        std::shared_ptr<const CSSValue> value =
+            consumeLonghandItem(shorthand.properties()[i]->PropertyID(), stream, context, use_legacy_parsing);
+        if (value) {
+          parsed_longhand[i] = true;
+          found_property = true;
+          found_any = true;
+          longhands[i]->Append(value);
+          break;
+        }
+      }
+      if (!found_property) {
+        break;
+      }
+    } while (!stream.AtEnd() && stream.Peek().GetType() != kCommaToken);
+
+    if (!found_any) {
+      return false;
+    }
+
+    for (unsigned i = 0; i < longhand_count; ++i) {
+      const Longhand& longhand = *To<Longhand>(shorthand.properties()[i]);
+      if (!parsed_longhand[i]) {
+        // For each longhand that doesn't parse, add the initial (list-item)
+        // value instead. However, we only do this *once* for reset-only
+        // properties to end up with the initial value for the property as
+        // a whole.
+        //
+        // Example:
+        //
+        //  animation: anim1, anim2;
+        //
+        // Should expand to (ignoring longhands other than name and timeline):
+        //
+        //   animation-name: anim1, anim2;
+        //   animation-timeline: auto;
+        //
+        // It should *not* expand to:
+        //
+        //   animation-name: anim1, anim2;
+        //   animation-timeline: auto, auto;
+        //
+        if (!is_reset_only(longhand.PropertyID()) || !longhands[i]->length()) {
+          longhands[i]->Append(longhand.InitialValue());
+        }
+      }
+      parsed_longhand[i] = false;
+    }
+  } while (ConsumeCommaIncludingWhitespace(stream));
+
+  return true;
+}
+
+void AddProperty(CSSPropertyID resolved_property,
+                 CSSPropertyID current_shorthand,
+                 const std::shared_ptr<const CSSValue>& value,
+                 bool important,
+                 IsImplicitProperty implicit,
+                 std::vector<CSSPropertyValue>& properties) {
+  DCHECK(!IsPropertyAlias(resolved_property));
+  DCHECK(implicit == IsImplicitProperty::kNotImplicit || implicit == IsImplicitProperty::kImplicit);
+
+  int shorthand_index = 0;
+  bool set_from_shorthand = false;
+
+  if (IsValidCSSPropertyID(current_shorthand)) {
+    std::vector<StylePropertyShorthand> shorthands;
+    shorthands.reserve(4);
+    getMatchingShorthandsForLonghand(resolved_property, &shorthands);
+    set_from_shorthand = true;
+    if (shorthands.size() > 1) {
+      shorthand_index = indexOfShorthandForLonghand(current_shorthand, shorthands);
+    }
+  }
+
+  properties.emplace_back(CSSPropertyValue(CSSPropertyName(resolved_property), value, important, set_from_shorthand,
+                                           shorthand_index, implicit == IsImplicitProperty::kImplicit));
+}
+
+static void SetAllowsNegativePercentageReference(CSSValue* value) {
+  if (auto* math_value = DynamicTo<CSSMathFunctionValue>(value)) {
+    math_value->SetAllowsNegativePercentageReference();
+  }
+}
+
+std::shared_ptr<const CSSValue> GetSingleValueOrMakeList(CSSValue::ValueListSeparator list_separator,
+                                                         std::vector<std::shared_ptr<const CSSValue>> values) {
+  if (values.size() == 1u) {
+    return values.front();
+  }
+  return std::make_shared<CSSValueList>(list_separator, std::move(values));
+}
+
+std::shared_ptr<const CSSPrimitiveValue> ConsumeLengthOrPercentCountNegative(CSSParserTokenRange& range,
+                                                                             const CSSParserContext& context) {
+  std::shared_ptr<const CSSPrimitiveValue> result =
+      ConsumeLengthOrPercent(range, context, CSSPrimitiveValue::ValueRange::kNonNegative, UnitlessQuirk::kForbid);
+  return result;
+}
+
+std::shared_ptr<const CSSPrimitiveValue> ConsumeLengthOrPercentCountNegative(CSSParserTokenStream& stream,
+                                                                             const CSSParserContext& context) {
+  std::shared_ptr<const CSSPrimitiveValue> result =
+      ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative, UnitlessQuirk::kForbid);
+  return result;
+}
+
+bool ConsumeBackgroundPosition(CSSParserTokenStream& stream,
+                               const CSSParserContext& context,
+                               UnitlessQuirk unitless,
+                               std::shared_ptr<const CSSValue>& result_x,
+                               std::shared_ptr<const CSSValue>& result_y) {
+  std::vector<std::shared_ptr<const CSSValue>> values_x;
+  std::vector<std::shared_ptr<const CSSValue>> values_y;
+
+  do {
+    std::shared_ptr<const CSSValue> position_x = nullptr;
+    std::shared_ptr<const CSSValue> position_y = nullptr;
+    if (!ConsumePosition(stream, context, unitless, position_x, position_y)) {
+      return false;
+    }
+    // TODO(crbug.com/825895): So far, 'background-position' is the only
+    // property that allows resolving a percentage against a negative value. If
+    // we have more of such properties, we should instead pass an additional
+    // argument to ask the parser to set this flag.
+    SetAllowsNegativePercentageReference(const_cast<CSSValue*>(position_x.get()));
+    SetAllowsNegativePercentageReference(const_cast<CSSValue*>(position_y.get()));
+    values_x.push_back(position_x);
+    values_y.push_back(position_y);
+  } while (ConsumeCommaIncludingWhitespace(stream));
+
+  // To conserve memory we don't wrap single values in lists.
+  result_x = GetSingleValueOrMakeList(CSSValue::kCommaSeparator, std::move(values_x));
+  result_y = GetSingleValueOrMakeList(CSSValue::kCommaSeparator, std::move(values_y));
+
+  return true;
+}
+
+std::shared_ptr<const CSSValue> ConsumeBackgroundSize(CSSParserTokenRange& range,
+                                                      const CSSParserContext& context,
+                                                      ParsingStyle parsing_style) {
+  if (IdentMatches<CSSValueID::kContain, CSSValueID::kCover>(range.Peek().Id())) {
+    return ConsumeIdent(range);
+  }
+
+  std::shared_ptr<const CSSValue> horizontal = ConsumeIdent<CSSValueID::kAuto>(range);
+  if (!horizontal) {
+    horizontal = ConsumeLengthOrPercentCountNegative(range, context);
+  }
+  if (!horizontal) {
+    return nullptr;
+  }
+
+  std::shared_ptr<const CSSValue> vertical = nullptr;
+  if (!range.AtEnd()) {
+    if (range.Peek().Id() == CSSValueID::kAuto) {  // `auto' is the default
+      range.ConsumeIncludingWhitespace();
+    } else {
+      vertical = ConsumeLengthOrPercentCountNegative(range, context);
+    }
+  } else if (parsing_style == ParsingStyle::kLegacy) {
+    // Legacy syntax: "-webkit-background-size: 10px" is equivalent to
+    // "background-size: 10px 10px".
+    vertical = horizontal;
+  }
+  if (!vertical) {
+    return horizontal;
+  }
+  return std::make_shared<CSSValuePair>(horizontal, vertical, CSSValuePair::kKeepIdenticalValues);
+}
+
+std::shared_ptr<const CSSValue> ConsumeBackgroundSize(CSSParserTokenStream& stream,
+                                                      const CSSParserContext& context,
+                                                      ParsingStyle parsing_style) {
+  if (IdentMatches<CSSValueID::kContain, CSSValueID::kCover>(stream.Peek().Id())) {
+    return ConsumeIdent(stream);
+  }
+
+  std::shared_ptr<const CSSValue> horizontal = ConsumeIdent<CSSValueID::kAuto>(stream);
+  if (!horizontal) {
+    horizontal = ConsumeLengthOrPercentCountNegative(stream, context);
+  }
+  if (!horizontal) {
+    return nullptr;
+  }
+
+  std::shared_ptr<const CSSValue> vertical = nullptr;
+  if (!stream.AtEnd()) {
+    if (stream.Peek().Id() == CSSValueID::kAuto) {  // `auto' is the default
+      stream.ConsumeIncludingWhitespace();
+    } else {
+      vertical = ConsumeLengthOrPercentCountNegative(stream, context);
+    }
+  } else if (parsing_style == ParsingStyle::kLegacy) {
+    // Legacy syntax: "-webkit-background-size: 10px" is equivalent to
+    // "background-size: 10px 10px".
+    vertical = horizontal;
+  }
+  if (!vertical) {
+    return horizontal;
+  }
+  return std::make_shared<CSSValuePair>(horizontal, vertical, CSSValuePair::kKeepIdenticalValues);
+}
+
+std::shared_ptr<const CSSValue> ConsumeBackgroundBoxOrText(CSSParserTokenStream& stream) {
+  return ConsumeIdent<CSSValueID::kBorderBox, CSSValueID::kPaddingBox, CSSValueID::kContentBox, CSSValueID::kText>(
+      stream);
+}
+
+std::shared_ptr<const CSSValue> ConsumeBackgroundAttachment(CSSParserTokenStream& stream) {
+  return ConsumeIdent<CSSValueID::kScroll, CSSValueID::kFixed, CSSValueID::kLocal>(stream);
+}
+
+// Returns a token whose token.Value() will contain the URL,
+// or the empty string if there are fetch restrictions,
+// or an EOF token if we failed to parse.
+//
+// NOTE: We are careful not to return a reference, since for
+// the streaming parser, the token will be overwritten on once we
+// move to the next one.
+//
+// NOTE: Keep in sync with the other ConsumeUrlAsToken.
+CSSParserToken ConsumeUrlAsToken(CSSParserTokenRange& range, const CSSParserContext& context) {
+  const CSSParserToken* token = &range.Peek();
+  if (token->GetType() == kUrlToken) {
+    range.ConsumeIncludingWhitespace();
+  } else if (token->FunctionId() == CSSValueID::kUrl) {
+    CSSParserTokenRange url_range = range;
+    CSSParserTokenRange url_args = url_range.ConsumeBlock();
+    const CSSParserToken& next = url_args.ConsumeIncludingWhitespace();
+    if (next.GetType() == kBadStringToken || !url_args.AtEnd()) {
+      return CSSParserToken(kEOFToken);
+    }
+    DCHECK_EQ(next.GetType(), kStringToken);
+    range = url_range;
+    range.ConsumeWhitespace();
+    token = &next;
+  } else {
+    return CSSParserToken(kEOFToken);
+  }
+  return *token;
+}
+
+CSSParserToken ConsumeUrlAsToken(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  CSSParserToken token = stream.Peek();
+  if (token.GetType() == kUrlToken) {
+    stream.ConsumeIncludingWhitespace();
+  } else if (token.FunctionId() == CSSValueID::kUrl) {
+    CSSParserSavePoint savepoint(stream);
+    CSSParserTokenRange url_args{std::span<CSSParserToken>()};
+    {
+      CSSParserTokenStream::BlockGuard guard(stream);
+      url_args = stream.ConsumeUntilPeekedTypeIs<>();
+    }
+    token = url_args.ConsumeIncludingWhitespace();
+    if (token.GetType() == kBadStringToken || !url_args.AtEnd()) {
+      return CSSParserToken(kEOFToken);
+    }
+    savepoint.Release();
+    DCHECK_EQ(token.GetType(), kStringToken);
+    stream.ConsumeWhitespace();
+  } else {
+    return CSSParserToken(kEOFToken);
+  }
+  return token;
+}
+
+CSSUrlData CollectUrlData(const std::string& url, const CSSParserContext& context) {
+  return CSSUrlData(url, context.CompleteNonEmptyURL(url));
+}
+
+static std::shared_ptr<const CSSImageValue> CreateCSSImageValueWithReferrer(const std::string& uri,
+                                                                            const CSSParserContext& context) {
+  auto image_value = std::make_shared<CSSImageValue>(CollectUrlData(uri, context));
+  return image_value;
+}
+
+// With the streaming parser, we cannot return a StringView, since the token
+// will go out of scope when we exit the function and the StringView might
+// point into the token.
+std::string ConsumeStringAsString(CSSParserTokenStream& stream) {
+  if (stream.Peek().GetType() != CSSParserTokenType::kStringToken) {
+    return "";
+  }
+
+  return stream.ConsumeIncludingWhitespace().Value();
+}
+
+bool IsImageSet(const CSSValueID id) {
+  return id == CSSValueID::kWebkitImageSet || id == CSSValueID::kImageSet;
+}
+
+bool IsGeneratedImage(const CSSValueID id) {
+  switch (id) {
+    case CSSValueID::kLinearGradient:
+    case CSSValueID::kRadialGradient:
+    case CSSValueID::kConicGradient:
+    case CSSValueID::kRepeatingLinearGradient:
+    case CSSValueID::kRepeatingRadialGradient:
+    case CSSValueID::kRepeatingConicGradient:
+    case CSSValueID::kWebkitLinearGradient:
+    case CSSValueID::kWebkitRadialGradient:
+    case CSSValueID::kWebkitRepeatingLinearGradient:
+    case CSSValueID::kWebkitRepeatingRadialGradient:
+    case CSSValueID::kWebkitGradient:
+    case CSSValueID::kWebkitCrossFade:
+    case CSSValueID::kPaint:
+    case CSSValueID::kCrossFade:
+      return true;
+
+    default:
+      return false;
+  }
+}
+
+std::shared_ptr<const CSSPrimitiveValue> ConsumeGradientLengthOrPercent(CSSParserTokenStream& stream,
+                                                                        const CSSParserContext& context,
+                                                                        CSSPrimitiveValue::ValueRange value_range,
+                                                                        UnitlessQuirk unitless) {
+  return ConsumeLengthOrPercent(stream, context, value_range, unitless);
+}
+
+using PositionFunctor = std::shared_ptr<const CSSPrimitiveValue> (*)(CSSParserTokenStream&,
+                                                                     const CSSParserContext&,
+                                                                     CSSPrimitiveValue::ValueRange,
+                                                                     UnitlessQuirk);
+
+static bool ConsumeGradientColorStops(CSSParserTokenStream& stream,
+                                      const CSSParserContext& context,
+                                      std::shared_ptr<cssvalue::CSSGradientValue> gradient,
+                                      PositionFunctor consume_position_func) {
+  bool supports_color_hints = gradient->GradientType() == cssvalue::kCSSLinearGradient ||
+                              gradient->GradientType() == cssvalue::kCSSRadialGradient ||
+                              gradient->GradientType() == cssvalue::kCSSConicGradient;
+
+  // The first color stop cannot be a color hint.
+  bool previous_stop_was_color_hint = true;
+  do {
+    cssvalue::CSSGradientColorStop stop;
+    stop.color_ = ConsumeColor(stream, context);
+    // Two hints in a row are not allowed.
+    if (!stop.color_ && (!supports_color_hints || previous_stop_was_color_hint)) {
+      return false;
+    }
+    previous_stop_was_color_hint = !stop.color_;
+    stop.offset_ = consume_position_func(stream, context, CSSPrimitiveValue::ValueRange::kAll, UnitlessQuirk::kForbid);
+    if (!stop.color_ && !stop.offset_) {
+      return false;
+    }
+    gradient->AddStop(stop);
+
+    if (!stop.color_ || !stop.offset_) {
+      continue;
+    }
+
+    // Optional second position.
+    stop.offset_ = consume_position_func(stream, context, CSSPrimitiveValue::ValueRange::kAll, UnitlessQuirk::kForbid);
+    if (stop.offset_) {
+      gradient->AddStop(stop);
+    }
+  } while (ConsumeCommaIncludingWhitespace(stream));
+
+  // The last color stop cannot be a color hint.
+  if (previous_stop_was_color_hint) {
+    return false;
+  }
+
+  // Must have 2 or more stops to be valid.
+  return gradient->StopCount() >= 2;
+}
+
+static std::shared_ptr<const CSSValue> ConsumeRadialGradient(CSSParserTokenStream& stream,
+                                                             const CSSParserContext& context,
+                                                             cssvalue::CSSGradientRepeat repeating) {
+  std::shared_ptr<const CSSIdentifierValue> shape = nullptr;
+  std::shared_ptr<const CSSIdentifierValue> size_keyword = nullptr;
+  std::shared_ptr<const CSSPrimitiveValue> horizontal_size = nullptr;
+  std::shared_ptr<const CSSPrimitiveValue> vertical_size = nullptr;
+
+  // First part of grammar, the size/shape/color space clause:
+  // [ in <color-space>? &&
+  // [[ circle || <length> ] |
+  // [ ellipse || [ <length> | <percentage> ]{2} ] |
+  // [ [ circle | ellipse] || <size-keyword> ]] ]
+
+  bool has_color_space = false;
+
+  for (int i = 0; i < 3; ++i) {
+    if (stream.Peek().GetType() == kIdentToken) {
+      CSSValueID id = stream.Peek().Id();
+      if (id == CSSValueID::kCircle || id == CSSValueID::kEllipse) {
+        if (shape) {
+          return nullptr;
+        }
+        shape = ConsumeIdent(stream);
+      } else if (id == CSSValueID::kClosestSide || id == CSSValueID::kClosestCorner ||
+                 id == CSSValueID::kFarthestSide || id == CSSValueID::kFarthestCorner) {
+        if (size_keyword) {
+          return nullptr;
+        }
+        size_keyword = ConsumeIdent(stream);
+      } else {
+        break;
+      }
+    } else {
+      std::shared_ptr<const CSSPrimitiveValue> center =
+          ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+      if (!center) {
+        break;
+      }
+      if (horizontal_size) {
+        return nullptr;
+      }
+      horizontal_size = center;
+      center = ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+      if (center) {
+        vertical_size = center;
+        ++i;
+      }
+    }
+  }
+
+  // You can specify size as a keyword or a length/percentage, not both.
+  if (size_keyword && horizontal_size) {
+    return nullptr;
+  }
+  // Circles must have 0 or 1 lengths.
+  if (shape && shape->GetValueID() == CSSValueID::kCircle && vertical_size) {
+    return nullptr;
+  }
+  // Ellipses must have 0 or 2 length/percentages.
+  if (shape && shape->GetValueID() == CSSValueID::kEllipse && horizontal_size && !vertical_size) {
+    return nullptr;
+  }
+  // If there's only one size, it must be a length.
+  if (!vertical_size && horizontal_size && horizontal_size->IsPercentage()) {
+    return nullptr;
+  }
+  if ((horizontal_size && horizontal_size->IsCalculatedPercentageWithLength()) ||
+      (vertical_size && vertical_size->IsCalculatedPercentageWithLength())) {
+    return nullptr;
+  }
+
+  std::shared_ptr<const CSSValue> center_x = nullptr;
+  std::shared_ptr<const CSSValue> center_y = nullptr;
+  if (stream.Peek().Id() == CSSValueID::kAt) {
+    stream.ConsumeIncludingWhitespace();
+    ConsumePosition(stream, context, UnitlessQuirk::kForbid, center_x, center_y);
+    if (!(center_x && center_y)) {
+      return nullptr;
+    }
+    // Right now, CSS radial gradients have the same start and end centers.
+  }
+
+  if ((shape || size_keyword || horizontal_size || center_x || center_y || has_color_space) &&
+      !ConsumeCommaIncludingWhitespace(stream)) {
+    return nullptr;
+  }
+
+  std::shared_ptr<cssvalue::CSSGradientValue> result = std::make_shared<cssvalue::CSSRadialGradientValue>(
+      center_x, center_y, shape, size_keyword, horizontal_size, vertical_size, repeating, cssvalue::kCSSRadialGradient);
+
+  return ConsumeGradientColorStops(stream, context, result, ConsumeGradientLengthOrPercent) ? result : nullptr;
+}
+
+static std::shared_ptr<const CSSValue> ConsumeLinearGradient(CSSParserTokenStream& stream,
+                                                             const CSSParserContext& context,
+                                                             cssvalue::CSSGradientRepeat repeating,
+                                                             cssvalue::CSSGradientType gradient_type) {
+  // First part of grammar, the size/shape/color space clause:
+  // [ in <color-space>? || [ <angle> | to <side-or-corner> ]?]
+  bool expect_comma = true;
+  bool has_color_space = false;
+
+  std::shared_ptr<const CSSPrimitiveValue> angle = ConsumeAngle(stream, context);
+  std::shared_ptr<const CSSIdentifierValue> end_x = nullptr;
+  std::shared_ptr<const CSSIdentifierValue> end_y = nullptr;
+  if (!angle) {
+    // <side-or-corner> parsing
+    if (gradient_type == cssvalue::kCSSPrefixedLinearGradient || ConsumeIdent<CSSValueID::kTo>(stream)) {
+      end_x = ConsumeIdent<CSSValueID::kLeft, CSSValueID::kRight>(stream);
+      end_y = ConsumeIdent<CSSValueID::kBottom, CSSValueID::kTop>(stream);
+      if (!end_x && !end_y) {
+        if (gradient_type == cssvalue::kCSSLinearGradient) {
+          return nullptr;
+        }
+        end_y = CSSIdentifierValue::Create(CSSValueID::kTop);
+        expect_comma = false;
+      } else if (!end_x) {
+        end_x = ConsumeIdent<CSSValueID::kLeft, CSSValueID::kRight>(stream);
+      }
+    } else {
+      // No <angle> or <side-to-corner>
+      expect_comma = false;
+    }
+  }
+
+  if (has_color_space) {
+    expect_comma = true;
+  }
+
+  if (expect_comma && !ConsumeCommaIncludingWhitespace(stream)) {
+    return nullptr;
+  }
+
+  std::shared_ptr<cssvalue::CSSGradientValue> result = std::make_shared<cssvalue::CSSLinearGradientValue>(
+      end_x, end_y, nullptr, nullptr, angle, repeating, gradient_type);
+
+  return ConsumeGradientColorStops(stream, context, result, ConsumeGradientLengthOrPercent) ? result : nullptr;
+}
+
+// This should go away once we drop support for -webkit-gradient
+static std::shared_ptr<const CSSPrimitiveValue> ConsumeDeprecatedGradientPoint(CSSParserTokenStream& stream,
+                                                                               const CSSParserContext& context,
+                                                                               bool horizontal) {
+  if (stream.Peek().GetType() == kIdentToken) {
+    if ((horizontal && ConsumeIdent<CSSValueID::kLeft>(stream)) ||
+        (!horizontal && ConsumeIdent<CSSValueID::kTop>(stream))) {
+      return CSSNumericLiteralValue::Create(0., CSSPrimitiveValue::UnitType::kPercentage);
+    }
+    if ((horizontal && ConsumeIdent<CSSValueID::kRight>(stream)) ||
+        (!horizontal && ConsumeIdent<CSSValueID::kBottom>(stream))) {
+      return CSSNumericLiteralValue::Create(100., CSSPrimitiveValue::UnitType::kPercentage);
+    }
+    if (ConsumeIdent<CSSValueID::kCenter>(stream)) {
+      return CSSNumericLiteralValue::Create(50., CSSPrimitiveValue::UnitType::kPercentage);
+    }
+    return nullptr;
+  }
+  std::shared_ptr<const CSSPrimitiveValue> result =
+      ConsumePercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+  if (!result) {
+    result = ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+  }
+  return result;
+}
+
+// Used to parse colors for -webkit-gradient(...).
+static std::shared_ptr<const CSSValue> ConsumeDeprecatedGradientStopColor(CSSParserTokenStream& stream,
+                                                                          const CSSParserContext& context) {
+  if (stream.Peek().Id() == CSSValueID::kCurrentcolor) {
+    return nullptr;
+  }
+  return ConsumeColor(stream, context);
+}
+
+static bool ConsumeDeprecatedGradientColorStop(CSSParserTokenStream& stream,
+                                               cssvalue::CSSGradientColorStop& stop,
+                                               const CSSParserContext& context) {
+  CSSValueID id = stream.Peek().FunctionId();
+  if (id != CSSValueID::kFrom && id != CSSValueID::kTo && id != CSSValueID::kColorStop) {
+    return false;
+  }
+
+  {
+    CSSParserTokenStream::BlockGuard guard(stream);
+    stream.ConsumeWhitespace();
+    double position;
+    if (id == CSSValueID::kFrom || id == CSSValueID::kTo) {
+      position = (id == CSSValueID::kFrom) ? 0 : 1;
+    } else {
+      DCHECK(id == CSSValueID::kColorStop);
+      if (std::shared_ptr<const CSSPrimitiveValue> percent_value =
+              ConsumePercent(stream, context, CSSPrimitiveValue::ValueRange::kAll)) {
+        position = percent_value->GetDoubleValue() / 100.0;
+      } else if (!ConsumeNumberRaw(stream, context, position)) {
+        return false;
+      }
+
+      if (!ConsumeCommaIncludingWhitespace(stream)) {
+        return false;
+      }
+    }
+
+    stop.offset_ = CSSNumericLiteralValue::Create(position, CSSPrimitiveValue::UnitType::kNumber);
+    stop.color_ = ConsumeDeprecatedGradientStopColor(stream, context);
+    if (!stream.AtEnd()) {
+      return false;
+    }
+  }
+  stream.ConsumeWhitespace();
+  return stop.color_.get();
+}
+
+static std::shared_ptr<const CSSValue> ConsumeDeprecatedGradient(CSSParserTokenStream& stream,
+                                                                 const CSSParserContext& context) {
+  CSSValueID id = stream.ConsumeIncludingWhitespace().Id();
+  if (id != CSSValueID::kRadial && id != CSSValueID::kLinear) {
+    return nullptr;
+  }
+
+  if (!ConsumeCommaIncludingWhitespace(stream)) {
+    return nullptr;
+  }
+
+  std::shared_ptr<const CSSPrimitiveValue> first_x = ConsumeDeprecatedGradientPoint(stream, context, true);
+  if (!first_x) {
+    return nullptr;
+  }
+  std::shared_ptr<const CSSPrimitiveValue> first_y = ConsumeDeprecatedGradientPoint(stream, context, false);
+  if (!first_y) {
+    return nullptr;
+  }
+  if (!ConsumeCommaIncludingWhitespace(stream)) {
+    return nullptr;
+  }
+
+  // For radial gradients only, we now expect a numeric radius.
+  std::shared_ptr<const CSSPrimitiveValue> first_radius = nullptr;
+  if (id == CSSValueID::kRadial) {
+    first_radius = ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+    if (!first_radius || !ConsumeCommaIncludingWhitespace(stream)) {
+      return nullptr;
+    }
+  }
+
+  std::shared_ptr<const CSSPrimitiveValue> second_x = ConsumeDeprecatedGradientPoint(stream, context, true);
+  if (!second_x) {
+    return nullptr;
+  }
+  std::shared_ptr<const CSSPrimitiveValue> second_y = ConsumeDeprecatedGradientPoint(stream, context, false);
+  if (!second_y) {
+    return nullptr;
+  }
+
+  // For radial gradients only, we now expect the second radius.
+  std::shared_ptr<const CSSPrimitiveValue> second_radius = nullptr;
+  if (id == CSSValueID::kRadial) {
+    if (!ConsumeCommaIncludingWhitespace(stream)) {
+      return nullptr;
+    }
+    second_radius = ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+    if (!second_radius) {
+      return nullptr;
+    }
+  }
+
+  std::shared_ptr<cssvalue::CSSGradientValue> result;
+  if (id == CSSValueID::kRadial) {
+    result = std::make_shared<cssvalue::CSSRadialGradientValue>(first_x, first_y, first_radius, second_x, second_y,
+                                                                second_radius, cssvalue::kNonRepeating,
+                                                                cssvalue::kCSSDeprecatedRadialGradient);
+  } else {
+    result = std::make_shared<cssvalue::CSSLinearGradientValue>(
+        first_x, first_y, second_x, second_y, nullptr, cssvalue::kNonRepeating, cssvalue::kCSSDeprecatedLinearGradient);
+  }
+  cssvalue::CSSGradientColorStop stop;
+  while (ConsumeCommaIncludingWhitespace(stream)) {
+    if (!ConsumeDeprecatedGradientColorStop(stream, stop, context)) {
+      return nullptr;
+    }
+    result->AddStop(stop);
+  }
+
+  return result;
+}
+
+static std::shared_ptr<const CSSValue> ConsumeDeprecatedRadialGradient(CSSParserTokenStream& stream,
+                                                                       const CSSParserContext& context,
+                                                                       cssvalue::CSSGradientRepeat repeating) {
+  std::shared_ptr<const CSSValue> center_x = nullptr;
+  std::shared_ptr<const CSSValue> center_y = nullptr;
+  ConsumeOneOrTwoValuedPosition(stream, context, UnitlessQuirk::kForbid, center_x, center_y);
+  if ((center_x || center_y) && !ConsumeCommaIncludingWhitespace(stream)) {
+    return nullptr;
+  }
+
+  std::shared_ptr<const CSSIdentifierValue> shape = ConsumeIdent<CSSValueID::kCircle, CSSValueID::kEllipse>(stream);
+  std::shared_ptr<const CSSIdentifierValue> size_keyword =
+      ConsumeIdent<CSSValueID::kClosestSide, CSSValueID::kClosestCorner, CSSValueID::kFarthestSide,
+                   CSSValueID::kFarthestCorner, CSSValueID::kContain, CSSValueID::kCover>(stream);
+  if (!shape) {
+    shape = ConsumeIdent<CSSValueID::kCircle, CSSValueID::kEllipse>(stream);
+  }
+
+  // Or, two lengths or percentages
+  std::shared_ptr<const CSSPrimitiveValue> horizontal_size = nullptr;
+  std::shared_ptr<const CSSPrimitiveValue> vertical_size = nullptr;
+  if (!shape && !size_keyword) {
+    horizontal_size = ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+    if (horizontal_size) {
+      vertical_size = ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+      if (!vertical_size) {
+        return nullptr;
+      }
+      ConsumeCommaIncludingWhitespace(stream);
+    }
+  } else {
+    ConsumeCommaIncludingWhitespace(stream);
+  }
+
+  std::shared_ptr<cssvalue::CSSGradientValue> result = std::make_shared<cssvalue::CSSRadialGradientValue>(
+      center_x, center_y, shape, size_keyword, horizontal_size, vertical_size, repeating,
+      cssvalue::kCSSPrefixedRadialGradient);
+  return ConsumeGradientColorStops(stream, context, result, ConsumeGradientLengthOrPercent) ? result : nullptr;
+}
+
+static std::shared_ptr<const CSSPrimitiveValue> ConsumeGradientAngleOrPercent(CSSParserTokenStream& stream,
+                                                                              const CSSParserContext& context,
+                                                                              CSSPrimitiveValue::ValueRange value_range,
+                                                                              UnitlessQuirk) {
+  const CSSParserToken& token = stream.Peek();
+  if (token.GetType() == kDimensionToken || token.GetType() == kNumberToken) {
+    return ConsumeAngle(stream, context);
+  }
+  if (token.GetType() == kPercentageToken) {
+    return ConsumePercent(stream, context, value_range);
+  }
+  MathFunctionParser math_parser(stream, context, value_range);
+  if (const std::shared_ptr<const CSSMathFunctionValue>* calculation = math_parser.Value()) {
+    CalculationResultCategory category = calculation->get()->Category();
+    // TODO(fs): Add and support kCalcPercentAngle?
+    if (category == kCalcAngle || category == kCalcPercent) {
+      return math_parser.ConsumeValue();
+    }
+  }
+  return nullptr;
+}
+
+static std::shared_ptr<const CSSValue> ConsumeConicGradient(CSSParserTokenStream& stream,
+                                                            const CSSParserContext& context,
+                                                            cssvalue::CSSGradientRepeat repeating) {
+  bool has_color_space = false;
+
+  std::shared_ptr<const CSSPrimitiveValue> from_angle = nullptr;
+  if (ConsumeIdent<CSSValueID::kFrom>(stream)) {
+    if (!(from_angle = ConsumeAngle(stream, context))) {
+      return nullptr;
+    }
+  }
+
+  std::shared_ptr<const CSSValue> center_x = nullptr;
+  std::shared_ptr<const CSSValue> center_y = nullptr;
+  if (ConsumeIdent<CSSValueID::kAt>(stream)) {
+    if (!ConsumePosition(stream, context, UnitlessQuirk::kForbid, center_x, center_y)) {
+      return nullptr;
+    }
+  }
+
+  // Comma separator required when fromAngle, position or color_space is
+  // present.
+  if ((from_angle || center_x || center_y || has_color_space) && !ConsumeCommaIncludingWhitespace(stream)) {
+    return nullptr;
+  }
+
+  auto result = std::make_shared<cssvalue::CSSConicGradientValue>(center_x, center_y, from_angle, repeating);
+
+  return ConsumeGradientColorStops(stream, context, result, ConsumeGradientAngleOrPercent) ? result : nullptr;
+}
+
+static std::shared_ptr<const CSSValue> ConsumeDeprecatedWebkitCrossFade(CSSParserTokenStream& stream,
+                                                                        const CSSParserContext& context) {
+  std::shared_ptr<const CSSValue> from_image_value = ConsumeImageOrNone(stream, context);
+  if (!from_image_value || !ConsumeCommaIncludingWhitespace(stream)) {
+    return nullptr;
+  }
+  std::shared_ptr<const CSSValue> to_image_value = ConsumeImageOrNone(stream, context);
+  if (!to_image_value || !ConsumeCommaIncludingWhitespace(stream)) {
+    return nullptr;
+  }
+
+  std::shared_ptr<const CSSPrimitiveValue> percentage = nullptr;
+  if (std::shared_ptr<const CSSPrimitiveValue> percent_value =
+          ConsumePercent(stream, context, CSSPrimitiveValue::ValueRange::kAll)) {
+    percentage = CSSNumericLiteralValue::Create(ClampTo<double>(percent_value->GetDoubleValue() / 100.0, 0, 1),
+                                                CSSPrimitiveValue::UnitType::kNumber);
+  } else if (std::shared_ptr<const CSSPrimitiveValue> number_value =
+                 ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kAll)) {
+    percentage = CSSNumericLiteralValue::Create(ClampTo<double>(number_value->GetDoubleValue(), 0, 1),
+                                                CSSPrimitiveValue::UnitType::kNumber);
+  }
+
+  if (!percentage) {
+    return nullptr;
+  }
+  return std::make_shared<cssvalue::CSSCrossfadeValue>(
+      /*is_legacy_variant=*/true,
+      std::vector<std::pair<std::shared_ptr<const CSSValue>, std::shared_ptr<const CSSPrimitiveValue>>>{
+          {from_image_value, nullptr}, {to_image_value, percentage}});
+}
+
+static std::shared_ptr<const CSSValue> ConsumeImageSet(
+    CSSParserTokenStream& stream,
+    const CSSParserContext& context,
+    ConsumeGeneratedImagePolicy generated_image_policy);
+
+static std::shared_ptr<const CSSValue> ConsumeGeneratedImage(CSSParserTokenStream& stream,
+                                                             const CSSParserContext& context);
+
+std::shared_ptr<const CSSValue> ConsumeImage(CSSParserTokenStream& stream,
+                                             const CSSParserContext& context,
+                                             const ConsumeGeneratedImagePolicy generated_image_policy,
+                                             const ConsumeStringUrlImagePolicy string_url_image_policy,
+                                             const ConsumeImageSetImagePolicy image_set_image_policy) {
+  CSSParserToken uri = ConsumeUrlAsToken(stream, context);
+  if (uri.GetType() != kEOFToken) {
+    return CreateCSSImageValueWithReferrer(uri.Value(), context);
+  }
+  if (string_url_image_policy == ConsumeStringUrlImagePolicy::kAllow) {
+    std::string uri_string = ConsumeStringAsString(stream);
+    if (!uri_string.empty()) {
+      return CreateCSSImageValueWithReferrer(uri_string, context);
+    }
+  }
+  if (stream.Peek().GetType() == kFunctionToken) {
+    CSSValueID id = stream.Peek().FunctionId();
+    if (image_set_image_policy == ConsumeImageSetImagePolicy::kAllow && IsImageSet(id)) {
+      return ConsumeImageSet(stream, context, generated_image_policy);
+    }
+    if (generated_image_policy == ConsumeGeneratedImagePolicy::kAllow && IsGeneratedImage(id)) {
+      return ConsumeGeneratedImage(stream, context);
+    }
+  }
+  return nullptr;
+}
+
+static std::shared_ptr<const CSSImageSetTypeValue> ConsumeImageSetType(CSSParserTokenStream& stream) {
+  if (stream.Peek().FunctionId() != CSSValueID::kType) {
+    return nullptr;
+  }
+
+  std::string type;
+  {
+    CSSParserTokenStream::RestoringBlockGuard guard(stream);
+    stream.ConsumeWhitespace();
+
+    type = ConsumeStringAsString(stream);
+    if (type.empty() || !stream.AtEnd()) {
+      return nullptr;
+    }
+
+    guard.Release();
+  }
+  stream.ConsumeWhitespace();
+  return std::make_shared<CSSImageSetTypeValue>(type);
+}
+
+static std::shared_ptr<const CSSImageSetOptionValue> ConsumeImageSetOption(
+    CSSParserTokenStream& stream,
+    const CSSParserContext& context,
+    ConsumeGeneratedImagePolicy generated_image_policy) {
+  std::shared_ptr<const CSSValue> image =
+      ConsumeImage(stream, context, generated_image_policy, ConsumeStringUrlImagePolicy::kAllow,
+                   ConsumeImageSetImagePolicy::kForbid);
+  if (!image) {
+    return nullptr;
+  }
+
+  // Type could appear before or after resolution
+  std::shared_ptr<const CSSImageSetTypeValue> type = ConsumeImageSetType(stream);
+  std::shared_ptr<const CSSPrimitiveValue> resolution = ConsumeResolution(stream, context);
+  if (!type) {
+    type = ConsumeImageSetType(stream);
+  }
+
+  return std::make_shared<CSSImageSetOptionValue>(image, resolution, type);
+}
+
+static std::shared_ptr<const CSSValue> ConsumeImageSet(
+    CSSParserTokenStream& stream,
+    const CSSParserContext& context,
+    ConsumeGeneratedImagePolicy generated_image_policy = ConsumeGeneratedImagePolicy::kAllow) {
+  auto image_set = std::make_shared<CSSImageSetValue>();
+  CSSValueID function_id = stream.Peek().FunctionId();
+  {
+    CSSParserTokenStream::RestoringBlockGuard guard(stream);
+    stream.ConsumeWhitespace();
+
+    do {
+      auto image_set_option = ConsumeImageSetOption(stream, context, generated_image_policy);
+      if (!image_set_option) {
+        return nullptr;
+      }
+
+      image_set->Append(image_set_option);
+    } while (ConsumeCommaIncludingWhitespace(stream));
+
+    if (!stream.AtEnd()) {
+      return nullptr;
+    }
+
+    switch (function_id) {
+      case CSSValueID::kWebkitImageSet:
+        break;
+
+      case CSSValueID::kImageSet:
+        break;
+
+      default:
+        NOTREACHED_IN_MIGRATION();
+        break;
+    }
+
+    guard.Release();
+  }
+  stream.ConsumeWhitespace();
+
+  return image_set;
+}
+
+// https://drafts.csswg.org/css-images-4/#cross-fade-function
+static std::shared_ptr<const CSSValue> ConsumeCrossFade(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  // Parse an arbitrary comma-separated image|color values,
+  // where each image may have a percentage before or after it.
+  std::vector<std::pair<std::shared_ptr<const CSSValue>, std::shared_ptr<const CSSPrimitiveValue>>>
+      image_and_percentages;
+  std::shared_ptr<const CSSValue> image = nullptr;
+  std::shared_ptr<const CSSPrimitiveValue> percentage = nullptr;
+  for (;;) {
+    if (std::shared_ptr<const CSSPrimitiveValue> percent_value =
+            ConsumePercent(stream, context, CSSPrimitiveValue::ValueRange::kAll)) {
+      if (percentage) {
+        return nullptr;
+      }
+      if (percent_value->IsNumericLiteralValue()) {
+        double val = percent_value->GetDoubleValue();
+        if (!(val >= 0.0 && val <= 100.0)) {  // Includes checks for NaN and infinities.
+          return nullptr;
+        }
+      }
+      percentage = percent_value;
+      continue;
+    } else if (std::shared_ptr<const CSSValue> image_value = ConsumeImage(stream, context)) {
+      if (image) {
+        return nullptr;
+      }
+      image = image_value;
+    } else if (std::shared_ptr<const CSSValue> color_value = ConsumeColor(stream, context)) {
+      if (image) {
+        return nullptr;
+      }
+
+      // Wrap the color in a constant gradient, so that we can treat it as a
+      // gradient in nearly all the remaining code.
+      image = std::make_shared<cssvalue::CSSConstantGradientValue>(color_value);
+    } else {
+      if (!image) {
+        return nullptr;
+      }
+      image_and_percentages.emplace_back(image, percentage);
+      image = nullptr;
+      percentage = nullptr;
+      if (!ConsumeCommaIncludingWhitespace(stream)) {
+        break;
+      }
+    }
+  }
+  if (image_and_percentages.empty()) {
+    return nullptr;
+  }
+
+  return std::make_shared<cssvalue::CSSCrossfadeValue>(
+      /*is_legacy_variant=*/false, image_and_percentages);
+}
+
+static std::shared_ptr<const CSSValue> ConsumeGeneratedImage(CSSParserTokenStream& stream,
+                                                             const CSSParserContext& context) {
+  CSSValueID id = stream.Peek().FunctionId();
+  if (!IsGeneratedImage(id)) {
+    return nullptr;
+  }
+
+  std::shared_ptr<const CSSValue> result = nullptr;
+  {
+    CSSParserTokenStream::RestoringBlockGuard guard(stream);
+    stream.ConsumeWhitespace();
+    if (id == CSSValueID::kRadialGradient) {
+      result = ConsumeRadialGradient(stream, context, cssvalue::kNonRepeating);
+    } else if (id == CSSValueID::kRepeatingRadialGradient) {
+      result = ConsumeRadialGradient(stream, context, cssvalue::kRepeating);
+    } else if (id == CSSValueID::kWebkitLinearGradient) {
+      result = ConsumeLinearGradient(stream, context, cssvalue::kNonRepeating, cssvalue::kCSSPrefixedLinearGradient);
+    } else if (id == CSSValueID::kWebkitRepeatingLinearGradient) {
+      result = ConsumeLinearGradient(stream, context, cssvalue::kRepeating, cssvalue::kCSSPrefixedLinearGradient);
+    } else if (id == CSSValueID::kRepeatingLinearGradient) {
+      result = ConsumeLinearGradient(stream, context, cssvalue::kRepeating, cssvalue::kCSSLinearGradient);
+    } else if (id == CSSValueID::kLinearGradient) {
+      result = ConsumeLinearGradient(stream, context, cssvalue::kNonRepeating, cssvalue::kCSSLinearGradient);
+    } else if (id == CSSValueID::kWebkitGradient) {
+      result = ConsumeDeprecatedGradient(stream, context);
+    } else if (id == CSSValueID::kWebkitRadialGradient) {
+      result = ConsumeDeprecatedRadialGradient(stream, context, cssvalue::kNonRepeating);
+    } else if (id == CSSValueID::kWebkitRepeatingRadialGradient) {
+      result = ConsumeDeprecatedRadialGradient(stream, context, cssvalue::kRepeating);
+    } else if (id == CSSValueID::kConicGradient) {
+      result = ConsumeConicGradient(stream, context, cssvalue::kNonRepeating);
+    } else if (id == CSSValueID::kRepeatingConicGradient) {
+      result = ConsumeConicGradient(stream, context, cssvalue::kRepeating);
+    } else if (id == CSSValueID::kWebkitCrossFade) {
+      result = ConsumeDeprecatedWebkitCrossFade(stream, context);
+    } else if (id == CSSValueID::kCrossFade) {
+      result = ConsumeCrossFade(stream, context);
+    } else if (id == CSSValueID::kPaint) {
+      result = nullptr;
+    }
+    if (!result || !stream.AtEnd()) {
+      return nullptr;
+    }
+    guard.Release();
+  }
+  stream.ConsumeWhitespace();
+
+  return result;
+}
+
+std::shared_ptr<const CSSValue> ConsumeImageOrNone(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  if (stream.Peek().Id() == CSSValueID::kNone) {
+    return ConsumeIdent(stream);
+  }
+  return ConsumeImage(stream, context);
+}
+
+
+template <CSSValueID start, CSSValueID end>
+std::shared_ptr<const CSSValue> ConsumePositionLonghand(CSSParserTokenStream& range,
+                                  const CSSParserContext& context) {
+  if (range.Peek().GetType() == kIdentToken) {
+    CSSValueID id = range.Peek().Id();
+    int percent;
+    if (id == start) {
+      percent = 0;
+    } else if (id == CSSValueID::kCenter) {
+      percent = 50;
+    } else if (id == end) {
+      percent = 100;
+    } else {
+      return nullptr;
+    }
+    range.ConsumeIncludingWhitespace();
+    return CSSNumericLiteralValue::Create(
+        percent, CSSPrimitiveValue::UnitType::kPercentage);
+  }
+  return ConsumeLengthOrPercent(range, context,
+                                CSSPrimitiveValue::ValueRange::kAll);
+}
+
+std::shared_ptr<const CSSValue> ConsumePrefixedBackgroundBox(CSSParserTokenStream& stream,
+                                       AllowTextValue allow_text_value) {
+  // The values 'border', 'padding' and 'content' are deprecated and do not
+  // apply to the version of the property that has the -webkit- prefix removed.
+  if (std::shared_ptr<const CSSValue> value = ConsumeIdentRange(stream, CSSValueID::kBorder,
+                                          CSSValueID::kPaddingBox)) {
+    return value;
+  }
+  if (allow_text_value == AllowTextValue::kAllow &&
+      stream.Peek().Id() == CSSValueID::kText) {
+    return ConsumeIdent(stream);
+  }
+  return nullptr;
+}
+
+std::shared_ptr<const CSSValue> ConsumeCoordBoxOrNoClip(CSSParserTokenStream& stream) {
+  if (stream.Peek().Id() == CSSValueID::kNoClip) {
+    return css_parsing_utils::ConsumeIdent(stream);
+  }
+  return css_parsing_utils::ConsumeCoordBox(stream);
+}
+
+std::shared_ptr<const CSSIdentifierValue> ConsumeRepeatStyleIdent(CSSParserTokenStream& stream) {
+  return ConsumeIdent<CSSValueID::kRepeat, CSSValueID::kNoRepeat,
+                      CSSValueID::kRound, CSSValueID::kSpace>(stream);
+}
+
+std::shared_ptr<CSSRepeatStyleValue> ConsumeRepeatStyleValue(CSSParserTokenStream& range) {
+  if (auto id = ConsumeIdent<CSSValueID::kRepeatX>(range)) {
+    return std::make_shared<CSSRepeatStyleValue>(id);
+  }
+
+  if (auto id = ConsumeIdent<CSSValueID::kRepeatY>(range)) {
+    return std::make_shared<CSSRepeatStyleValue>(id);
+  }
+
+  if (auto id1 = ConsumeRepeatStyleIdent(range)) {
+    if (auto id2 = ConsumeRepeatStyleIdent(range)) {
+      return std::make_shared<CSSRepeatStyleValue>(id1, id2);
+    }
+
+    return std::make_shared<CSSRepeatStyleValue>(id1);
+  }
+
+  return nullptr;
+}
+
+std::shared_ptr<const CSSValue> ConsumeMaskMode(CSSParserTokenStream& stream) {
+  return ConsumeIdent<CSSValueID::kAlpha, CSSValueID::kLuminance,
+                      CSSValueID::kMatchSource>(stream);
+}
+
+std::shared_ptr<const CSSValue> ConsumeMaskComposite(CSSParserTokenStream& stream) {
+  return ConsumeIdent<CSSValueID::kAdd, CSSValueID::kSubtract,
+                      CSSValueID::kIntersect, CSSValueID::kExclude>(stream);
+}
+
+namespace {
+
+std::shared_ptr<const CSSValue> ConsumeBackgroundComponent(CSSPropertyID resolved_property,
+                                                           CSSParserTokenStream& stream,
+                                                           const CSSParserContext& context,
+                                                           bool use_alias_parsing) {
+  switch (resolved_property) {
+    case CSSPropertyID::kBackgroundClip:
+      return ConsumeBackgroundBoxOrText(stream);
+    case CSSPropertyID::kBackgroundAttachment:
+      return ConsumeBackgroundAttachment(stream);
+    case CSSPropertyID::kBackgroundOrigin:
+      return ConsumeBackgroundBox(stream);
+    case CSSPropertyID::kBackgroundImage:
+    case CSSPropertyID::kMaskImage:
+      return ConsumeImageOrNone(stream, context);
+    case CSSPropertyID::kBackgroundPositionX:
+    case CSSPropertyID::kWebkitMaskPositionX:
+      return ConsumePositionLonghand<CSSValueID::kLeft, CSSValueID::kRight>(stream, context);
+    case CSSPropertyID::kBackgroundPositionY:
+    case CSSPropertyID::kWebkitMaskPositionY:
+      return ConsumePositionLonghand<CSSValueID::kTop, CSSValueID::kBottom>(stream, context);
+    case CSSPropertyID::kBackgroundSize:
+      return ConsumeBackgroundSize(stream, context, ParsingStyle::kNotLegacy);
+    case CSSPropertyID::kMaskSize:
+      return ConsumeBackgroundSize(stream, context, ParsingStyle::kNotLegacy);
+    case CSSPropertyID::kBackgroundColor:
+      return ConsumeColor(stream, context);
+    case CSSPropertyID::kMaskClip:
+      return use_alias_parsing ? ConsumePrefixedBackgroundBox(stream, AllowTextValue::kAllow)
+                               : ConsumeCoordBoxOrNoClip(stream);
+    case CSSPropertyID::kMaskOrigin:
+      return use_alias_parsing ? ConsumePrefixedBackgroundBox(stream, AllowTextValue::kForbid)
+                               : ConsumeCoordBox(stream);
+    case CSSPropertyID::kBackgroundRepeat:
+    case CSSPropertyID::kMaskRepeat:
+      return ConsumeRepeatStyleValue(stream);
+    case CSSPropertyID::kMaskComposite:
+      return ConsumeMaskComposite(stream);
+    case CSSPropertyID::kMaskMode:
+      return ConsumeMaskMode(stream);
+    default:
+      return nullptr;
+  };
+}
+
+}  // namespace
+
+std::shared_ptr<const CSSValue> ConsumeBackgroundBox(CSSParserTokenStream& stream) {
+  return ConsumeIdent<CSSValueID::kBorderBox, CSSValueID::kPaddingBox, CSSValueID::kContentBox>(stream);
+}
+
+// Note: this assumes y properties (e.g. background-position-y) follow the x
+// properties in the shorthand array.
+// TODO(jiameng): this is used by background and -webkit-mask, hence we
+// need local_context as an input that contains shorthand id. We will consider
+// remove local_context as an input after
+//   (i). StylePropertyShorthand is refactored and
+//   (ii). we split parsing logic of background and -webkit-mask into
+//   different property classes.
+bool ParseBackgroundOrMask(bool important,
+                           CSSParserTokenStream& stream,
+                           const CSSParserContext& context,
+                           const CSSParserLocalContext& local_context,
+                           std::vector<CSSPropertyValue>& properties) {
+  CSSPropertyID shorthand_id = local_context.CurrentShorthand();
+  DCHECK(shorthand_id == CSSPropertyID::kBackground || shorthand_id == CSSPropertyID::kMask);
+  const StylePropertyShorthand& shorthand =
+      shorthand_id == CSSPropertyID::kBackground ? backgroundShorthand() : maskShorthand();
+
+  const unsigned longhand_count = shorthand.length();
+  std::vector<std::shared_ptr<const CSSValue>> longhands[10];
+  CHECK_LE(longhand_count, 10u);
+
+  bool implicit = false;
+  bool previous_layer_had_background_color = false;
+  do {
+    bool parsed_longhand[10] = {false};
+    std::shared_ptr<const CSSValue> origin_value = nullptr;
+    bool found_property;
+    bool found_any = false;
+    do {
+      found_property = false;
+      bool bg_position_parsed_in_current_layer = false;
+      for (unsigned i = 0; i < longhand_count; ++i) {
+        if (parsed_longhand[i]) {
+          continue;
+        }
+
+        std::shared_ptr<const CSSValue> value = nullptr;
+        std::shared_ptr<const CSSValue> value_y = nullptr;
+        const CSSProperty& property = *shorthand.properties()[i];
+        if (property.IDEquals(CSSPropertyID::kBackgroundPositionX) ||
+            property.IDEquals(CSSPropertyID::kWebkitMaskPositionX)) {
+          if (!ConsumePosition(stream, context, UnitlessQuirk::kForbid, value, value_y)) {
+            continue;
+          }
+          if (value) {
+            bg_position_parsed_in_current_layer = true;
+          }
+        } else if (property.IDEquals(CSSPropertyID::kBackgroundSize) || property.IDEquals(CSSPropertyID::kMaskSize)) {
+          if (!ConsumeSlashIncludingWhitespace(stream)) {
+            continue;
+          }
+          value = ConsumeBackgroundSize(stream, context, ParsingStyle::kNotLegacy);
+          if (!value || !bg_position_parsed_in_current_layer) {
+            return false;
+          }
+        } else if (property.IDEquals(CSSPropertyID::kBackgroundPositionY) ||
+                   property.IDEquals(CSSPropertyID::kWebkitMaskPositionY)) {
+          continue;
+        } else {
+          value = ConsumeBackgroundComponent(property.PropertyID(), stream, context, local_context.UseAliasParsing());
+        }
+        if (value) {
+          if (property.IDEquals(CSSPropertyID::kBackgroundOrigin) || property.IDEquals(CSSPropertyID::kMaskOrigin)) {
+            origin_value = value;
+          }
+          parsed_longhand[i] = true;
+          found_property = true;
+          found_any = true;
+          longhands[i].push_back(value);
+          if (value_y) {
+            parsed_longhand[i + 1] = true;
+            longhands[i + 1].push_back(value_y);
+          }
+        }
+      }
+    } while (found_property && !stream.AtEnd() && stream.Peek().GetType() != kCommaToken);
+
+    if (!found_any) {
+      return false;
+    }
+    if (previous_layer_had_background_color) {
+      // Colors are only allowed in the last layer; previous layer had
+      // a background color and we now know for sure it was not the last one,
+      // so return parse failure.
+      return false;
+    }
+
+    // TODO(timloh): This will make invalid longhands, see crbug.com/386459
+    for (unsigned i = 0; i < longhand_count; ++i) {
+      const CSSProperty& property = *shorthand.properties()[i];
+
+      if (property.IDEquals(CSSPropertyID::kBackgroundColor)) {
+        if (parsed_longhand[i]) {
+          previous_layer_had_background_color = true;
+        }
+      }
+      if (!parsed_longhand[i]) {
+        if ((property.IDEquals(CSSPropertyID::kBackgroundClip) || property.IDEquals(CSSPropertyID::kMaskClip)) &&
+            origin_value) {
+          longhands[i].push_back(origin_value);
+          continue;
+        }
+
+        if (shorthand_id == CSSPropertyID::kMask) {
+          longhands[i].push_back(To<Longhand>(property).InitialValue());
+        } else {
+          longhands[i].push_back(CSSInitialValue::Create());
+        }
+      }
+    }
+  } while (ConsumeCommaIncludingWhitespace(stream));
+
+  for (unsigned i = 0; i < longhand_count; ++i) {
+    const CSSProperty& property = *shorthand.properties()[i];
+
+    std::shared_ptr<const CSSValue> longhand;
+    if (property.IDEquals(CSSPropertyID::kBackgroundColor)) {
+      // There can only be one background-color (we've verified this earlier,
+      // by means of previous_layer_had_background_color), so pick out only
+      // the last one (any others will just be “initial” over and over again).
+      longhand = longhands[i].back();
+    } else {
+      // To conserve memory we don't wrap a single value in a list.
+      longhand = GetSingleValueOrMakeList(CSSValue::kCommaSeparator, std::move(longhands[i]));
+    }
+
+    AddProperty(property.PropertyID(), shorthand.id(), longhand, important,
+                implicit ? IsImplicitProperty::kImplicit : IsImplicitProperty::kNotImplicit, properties);
+  }
+  return true;
+}
 
 }  // namespace css_parsing_utils
 

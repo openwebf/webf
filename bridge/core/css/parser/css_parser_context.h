@@ -14,6 +14,7 @@
 #include "core/executing_context.h"
 #include "core/base/auto_reset.h"
 #include "css_parser_mode.h"
+#include "core/platform/url/kurl.h"
 
 namespace webf {
 
@@ -27,6 +28,9 @@ class CSSParserContext final {
   explicit CSSParserContext(const Document&, const std::string& base_url_override);
   explicit CSSParserContext(const std::string& base_url, CSSParserMode mode, const Document* use_counter_document);
 
+
+  const KURL& BaseURL() const { return base_url_; }
+
   bool IsForMarkupSanitization() const;
 
   void SetMode(CSSParserMode mode) { mode_ = mode; }
@@ -36,6 +40,12 @@ class CSSParserContext final {
   ExecutingContext* GetExecutingContext() const;
   bool IsDocumentHandleEqual(const Document* other) const;
   CSSParserMode Mode() const { return mode_; }
+
+  KURL CompleteURL(const std::string& url) const;
+
+  // Like CompleteURL(), but if `url` is empty a null KURL is returned.
+  KURL CompleteNonEmptyURL(const std::string& url) const;
+
 
   // Overrides |mode_| of a CSSParserContext within the scope, allowing us to
   // switching parsing mode while parsing different parts of a style sheet.
@@ -55,7 +65,7 @@ class CSSParserContext final {
 
 
  private:
-  std::string base_url_;
+  KURL base_url_;
   CSSParserMode mode_;
   Member<const Document> document_;
 };

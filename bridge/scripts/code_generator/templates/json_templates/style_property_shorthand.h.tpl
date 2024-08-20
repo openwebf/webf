@@ -36,8 +36,7 @@ class StylePropertyShorthand {
       : shorthand_id_(CSSPropertyID::kInvalid) {}
 
   constexpr StylePropertyShorthand(CSSPropertyID id,
-                                   Properties properties,
-                                   unsigned num_properties)
+                                   Properties properties)
       : properties_(properties),
         shorthand_id_(id) {}
 

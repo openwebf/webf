@@ -49,8 +49,6 @@ struct CSSLinearStop {
 
 class CSSLinearTimingFunctionValue : public CSSValue {
  public:
-  explicit CSSLinearTimingFunctionValue(std::vector<gfx::LinearEasingPoint> points)
-      : CSSValue(kLinearTimingFunctionClass), points_(std::move(points)) {}
   explicit CSSLinearTimingFunctionValue(
       const std::vector<gfx::LinearEasingPoint>& points)
       : CSSValue(kLinearTimingFunctionClass), points_(points) {}

@@ -40,6 +40,21 @@ const Document* CSSParserContext::GetDocument() const {
   return document_.Get();
 }
 
+KURL CSSParserContext::CompleteURL(const std::string& url) const {
+  if (url.empty()) {
+    return KURL();
+  }
+  return KURL(BaseURL(), url);
+}
+
+KURL CSSParserContext::CompleteNonEmptyURL(const std::string& url) const {
+  if (url.empty()) {
+    return KURL("");
+  }
+  return CompleteURL(url);
+}
+
+
 bool CSSParserContext::IsForMarkupSanitization() const {
   return document_ && document_->IsForMarkupSanitization();
 }

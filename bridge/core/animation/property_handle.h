@@ -43,7 +43,7 @@ class PropertyHandle {
                           ? &GetCSSPropertyVariable()
                           : &CSSProperty::Get(property_name.Id())),
         property_name_(property_name.IsCustomProperty()
-                           ? property_name.ToAtomicString()
+                           ? property_name.ToString()
                            : AtomicString::Null()) {}
 
   explicit PropertyHandle(const QualifiedName& attribute_name)

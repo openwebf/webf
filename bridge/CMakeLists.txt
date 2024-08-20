@@ -336,6 +336,13 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_property_name.cc
     core/css/css_property_value.cc
     core/css/css_primitive_value.cc
+    core/css/css_image_value.cc
+    core/css/css_image_generator_value.cc
+    core/css/css_gradient_value.cc
+    core/css/css_image_set_type_value.cc
+    core/css/css_image_set_option_value.cc
+    core/css/css_image_set_value.cc
+    core/css/css_crossfade_value.cc
     core/css/css_repeat_style_value.cc
     core/css/css_identifier_value.cc
     core/css/css_numeric_literal_value.cc
@@ -374,6 +381,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/text/writing_direction_mode.cc
     core/platform/graphics/color.cc
     core/platform/graphics/color_conversions.cc
+    core/platform/graphics/graphic_types.cc
+    core/platform/graphics/gradient.cc
     core/platform/geometry/length.cc
     core/platform/geometry/dom_matrix.cc
     core/platform/geometry/layout_unit.cc
@@ -381,17 +390,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/geometry/dom_matrix_readonly.cc
     core/platform/geometry/length_functions.cc
     core/platform/geometry/calculation_value.cc
-#    core/css/properties/css_property.cc
-#    core/css/properties/css_parsing_utils.cc
-#    core/css/css_markup.cc
-#    core/css/css_value.cc
-#    core/css/css_value_pair.cc
-#    core/css/css_value_pool.cc
-#    core/css/css_property_name.cc
-#    core/css/css_value_list.cc
 #    core/css/css_bracketed_value_list.cc
 #    core/css/css_value_clamping_utils.cc
-#    core/css/css_identifier_value.cc
 #    core/css/css_custom_ident_value.cc
 #    core/css/css_numeric_literal_value.cc
 #    core/css/css_math_function_value.cc
@@ -406,24 +406,13 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 #    core/css/css_selector.cc
 #    core/css/css_selector_list.cc
 #    core/css/pending_sheet_type.cc
-#    core/css/style_rule.cc
 #    core/css/style_rule_keyframe.cc
 #    core/platform/text/text_position.cc
 #    core/css/parser/css_lazy_property_parser_impl.cc
 #    core/css/parser/css_parser_observer.cc
-#    core/css/css_markup.cc
-#    core/css/css_property_value_set.cc
 #    core/css/parser/css_selector_parser.cc
 #    core/css/parser/css_variable_parser.cc
-#    core/css/css_initial_value.cc
-#    core/css/css_primitive_value.cc
-#    core/css/css_color.cc
-#    core/css/css_value.cc
-#    core/css/css_identifier_value.cc
 #    core/css/css_keyframe_shorthand_value.cc
-#    core/css/css_value_list.cc
-#    core/css/style_property_serializer.cc
-#    core/css/css_value_pair.cc
     core/dom/frame_request_callback_collection.cc
     core/dom/events/registered_eventListener.cc
     core/dom/events/event_listener_map.cc
@@ -532,6 +521,21 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/animation/timing_function.cc
     gfx/animation/keyframe/timing_function.cc
     gfx/geometry/cubic_bezier.cc
+    gfx/geometry/point_conversions.cc
+    gfx/geometry/point.cc
+    gfx/geometry/point_f.cc
+    gfx/geometry/size.cc
+    gfx/geometry/size_f.cc
+    gfx/geometry/vector2d.cc
+    gfx/geometry/vector2d_f.cc
+    gfx/geometry/insets.cc
+    gfx/geometry/insets_conversions.cc
+    gfx/geometry/insets_f.cc
+    gfx/geometry/rect.cc
+    gfx/geometry/rect_f.cc
+    gfx/geometry/rect_conversions.cc
+    gfx/geometry/size_conversions.cc
+
     )
 
   # Gen sources.
