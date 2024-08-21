@@ -125,6 +125,7 @@ bool UICommandBuffer::empty() {
 }
 
 void UICommandBuffer::clear() {
+  if (buffer_ == nullptr) return;
   memset(buffer_, 0, sizeof(UICommandItem) * size_);
   size_ = 0;
   kind_flag = 0;
