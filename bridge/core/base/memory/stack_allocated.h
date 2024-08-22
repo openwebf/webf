@@ -5,27 +5,6 @@
 #ifndef BASE_MEMORY_STACK_ALLOCATED_H_
 #define BASE_MEMORY_STACK_ALLOCATED_H_
 
-#include <stddef.h>
-
-#if defined(__clang__)
-#define STACK_ALLOCATED_IGNORE(reason) \
-  __attribute__((annotate("stack_allocated_ignore")))
-#else  // !defined(__clang__)
-#define STACK_ALLOCATED_IGNORE(reason)
-#endif  // !defined(__clang__)
-
-// If a class or one of its ancestor classes is annotated with STACK_ALLOCATED()
-// in its class definition, then instances of the class may not be allocated on
-// the heap or as a member variable of a non-stack-allocated class.
-#define STACK_ALLOCATED()                                         \
- public:                                                          \
-  using IsStackAllocatedTypeMarker [[maybe_unused]] = int;        \
-                                                                  \
- private:                                                         \
-  void* operator new(size_t) = delete;                            \
-  void* operator new(size_t, ::base::NotNullTag, void*) = delete; \
-  void* operator new(size_t, void*) = delete
-
 namespace webf {
 
 // NotNullTag was originally added to WebKit here:

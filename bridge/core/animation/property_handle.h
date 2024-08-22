@@ -11,7 +11,6 @@
 #include "css_property_instance.h"
 #include "core/css/properties/css_property.h"
 #include "core/dom/qualified_name.h"
-#include "core/base/memory/stack_allocated.h"
 #include "core/platform/hash_traits.h"
 
 namespace webf {
@@ -123,8 +122,8 @@ class PropertyHandle {
 
   HandleType handle_type_;
   union {
-    std::shared_ptr<const CSSProperty> css_property_;
-    std::shared_ptr<const QualifiedName> svg_attribute_;
+    const CSSProperty* css_property_;
+    const QualifiedName* svg_attribute_;
   };
   AtomicString property_name_;
 
@@ -143,7 +142,7 @@ struct HashTraits<webf::PropertyHandle>
   }
 
   static void ConstructDeletedValue(webf::PropertyHandle& slot) {
-    new (webf::NotNullTag::kNotNull, &slot) webf::PropertyHandle(
+    new (NotNullTag::kNotNull, &slot) webf::PropertyHandle(
         webf::PropertyHandle::DeletedValueForHashTraits());
   }
   static bool IsDeletedValue(const webf::PropertyHandle& value) {

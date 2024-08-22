@@ -2,12 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Copyright (C) 2022-present The WebF authors. All rights reserved.
+
 #ifndef WEBF_CORE_CSS_PARSER_CSS_PARSER_SAVE_POINT_H_
 #define WEBF_CORE_CSS_PARSER_CSS_PARSER_SAVE_POINT_H_
 
+#include <type_traits>
+
+#include "foundation/macros.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_parser_token_stream.h"
-#include "foundation/macros.h"
 
 namespace webf {
 
@@ -18,9 +22,10 @@ namespace webf {
 //
 // Rewind happens automatically in the destructor, unless you've called
 // Release() to commit to the position in the stream.
-
 template <class T>
-    requires std::is_same_v<T, CSSParserTokenStream> || std::is_same_v<T, CSSParserTokenRange> class CSSParserSavePoint;
+  requires std::is_same_v<T, CSSParserTokenStream> ||
+           std::is_same_v<T, CSSParserTokenRange>
+class CSSParserSavePoint;
 
 // Deduction guide to pick the correct template.
 template <class T>
@@ -31,7 +36,8 @@ class CSSParserSavePoint<CSSParserTokenStream> {
   WEBF_STACK_ALLOCATED();
 
  public:
-  explicit CSSParserSavePoint(CSSParserTokenStream& stream) : stream_(stream), savepoint_(stream.Save()) {}
+  explicit CSSParserSavePoint(CSSParserTokenStream& stream)
+      : stream_(stream), savepoint_(stream.Save()) {}
 
   ~CSSParserSavePoint() {
     if (!released_) {
@@ -56,7 +62,8 @@ class CSSParserSavePoint<CSSParserTokenRange> {
   WEBF_STACK_ALLOCATED();
 
  public:
-  explicit CSSParserSavePoint(CSSParserTokenRange& range) : range_(range), saved_range_(range) {}
+  explicit CSSParserSavePoint(CSSParserTokenRange& range)
+      : range_(range), saved_range_(range) {}
 
   ~CSSParserSavePoint() {
     if (!released_) {

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Copyright (C) 2022-present The WebF authors. All rights reserved.
+
 // Defines a simple float vector class.  This class is used to indicate a
 // distance in two dimensions between two points. Subtracting two points should
 // produce a vector, and adding a vector to a point produces the point at the
@@ -13,6 +15,9 @@
 #include <iosfwd>
 #include <string>
 
+namespace perfetto {
+class TracedValue;
+}
 namespace gfx {
 
 class Vector2dF {
@@ -78,6 +83,8 @@ class Vector2dF {
   }
 
   std::string ToString() const;
+
+  void WriteIntoTrace(perfetto::TracedValue) const;
 
  private:
   float x_;

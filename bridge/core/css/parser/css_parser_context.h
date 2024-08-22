@@ -21,6 +21,8 @@ namespace webf {
 class Document;
 class StyleSheetContents;
 
+enum class SecureContextMode { kInsecureContext, kSecureContext };
+
 class CSSParserContext final {
  public:
   explicit CSSParserContext(CSSParserMode, const Document* use_counter_document = nullptr);
@@ -69,6 +71,8 @@ class CSSParserContext final {
   CSSParserMode mode_;
   Member<const Document> document_;
 };
+
+std::shared_ptr<const CSSParserContext> StrictCSSParserContext(SecureContextMode);
 
 }  // namespace webf
 

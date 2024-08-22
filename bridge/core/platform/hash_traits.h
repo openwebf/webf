@@ -33,19 +33,19 @@
 #include <utility>
 
 #include "core/platform/hash_functions.h"
-#include "core/platform/std_lib_extras.h"
+//#include "core/platform/std_lib_extras.h"
 #include "core/platform/type_traits.h"
 #include "foundation/macros.h"
 #include "core/base/memory/stack_allocated.h"
 
 // TODO(guopengfei)：copy from third_party/blink/renderer/platform/wtf/hash_table_deleted_value_type.h
-namespace WTF {
+namespace webf {
 
 enum HashTableDeletedValueType { kHashTableDeletedValue };
 
 }  // namespace WTF
 
-namespace WTF {
+namespace webf {
 
 // A hash traits type is required for a type when the type is used as the key
 // or value of a HashTable-based classes. See documentation in
@@ -265,7 +265,11 @@ template <typename T>
 struct IntWithZeroKeyHashTraits
     : IntHashTraits<T,
                     std::numeric_limits<T>::max(),
-                    std::numeric_limits<T>::max() - 1> {};
+                    std::numeric_limits<T>::max() - 1> {
+  size_t operator()(T key) const {
+    return GetHash(key);
+  }
+};
 
 // This hash traits can be used in cases where the key is already a good hash.
 struct AlreadyHashedTraits : GenericHashTraits<unsigned> {
@@ -604,18 +608,18 @@ unsigned GetHash(const T& key) {
   return HashTraits<T>::GetHash(key);
 }
 
-}  // namespace WTF
+}  // namespace webf
 
-using WTF::AlreadyHashedTraits;
-using WTF::AlreadyHashedWithZeroKeyTraits;
-using WTF::EnumHashTraits;
-using WTF::GenericHashTraits;
-using WTF::HashTraits;
-using WTF::IntHashTraits;
-using WTF::IntWithZeroKeyHashTraits;
-using WTF::OneFieldHashTraits;
-using WTF::PairHashTraits;
-using WTF::SimpleClassHashTraits;
-using WTF::TwoFieldsHashTraits;
+using webf::AlreadyHashedTraits;
+using webf::AlreadyHashedWithZeroKeyTraits;
+using webf::EnumHashTraits;
+using webf::GenericHashTraits;
+using webf::HashTraits;
+using webf::IntHashTraits;
+using webf::IntWithZeroKeyHashTraits;
+using webf::OneFieldHashTraits;
+using webf::PairHashTraits;
+using webf::SimpleClassHashTraits;
+using webf::TwoFieldsHashTraits;
 
 #endif  // WEBF_CORE_PLATFORM_WTF_HASH_TRAITS_H_

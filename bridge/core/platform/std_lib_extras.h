@@ -150,7 +150,7 @@ class StaticSingleton final {
 };
 
 }  // namespace webf
-
+/* // TODO(guopengfei)：
 // Use this to declare and define a static local pointer to a ref-counted object
 // so that it is leaked so that the object's destructors are not called at
 // exit.  This macro should be used with ref-counted objects rather than
@@ -162,6 +162,7 @@ class StaticSingleton final {
       o->AddRef();                                \
     return o.get();                               \
   }(arguments);
+*/
 
 /*
  * The reinterpret_cast<Type1*>([pointer to Type2]) expressions - where

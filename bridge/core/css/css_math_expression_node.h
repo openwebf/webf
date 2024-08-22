@@ -49,6 +49,7 @@
 #include "core/css/css_value.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/dom/tree_scope.h"
+#include "core/platform/geometry/calculation_value.h"
 #include "core/layout/geometry/axis.h"
 #include "core/platform/geometry/calculation_value.h"
 #include "css_value_keywords.h"

@@ -10,7 +10,7 @@
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/heap_vector.h"
 #include "core/html/collection_type.h"
-#include "node.h"
+#include "core/dom/node.h"
 
 namespace webf {
 
@@ -20,6 +20,32 @@ class HTMLCollection;
 // for a Node Vector that is used to store child Nodes of a given Node.
 const int kInitialNodeVectorSize = 11;
 using NodeVector = std::vector<Node*>;
+
+enum class DynamicRestyleFlags {
+  kChildrenOrSiblingsAffectedByFocus = 1 << 0,
+  kChildrenOrSiblingsAffectedByHover = 1 << 1,
+  kChildrenOrSiblingsAffectedByActive = 1 << 2,
+  kChildrenOrSiblingsAffectedByDrag = 1 << 3,
+  kChildrenAffectedByFirstChildRules = 1 << 4,
+  kChildrenAffectedByLastChildRules = 1 << 5,
+  kChildrenAffectedByDirectAdjacentRules = 1 << 6,
+  kChildrenAffectedByIndirectAdjacentRules = 1 << 7,
+  kChildrenAffectedByForwardPositionalRules = 1 << 8,
+  kChildrenAffectedByBackwardPositionalRules = 1 << 9,
+  kAffectedByFirstChildRules = 1 << 10,
+  kAffectedByLastChildRules = 1 << 11,
+  kChildrenOrSiblingsAffectedByFocusWithin = 1 << 12,
+  kChildrenOrSiblingsAffectedByFocusVisible = 1 << 13,
+
+  kNumberOfDynamicRestyleFlags = 14,
+
+  kChildrenAffectedByStructuralRules =
+      kChildrenAffectedByFirstChildRules | kChildrenAffectedByLastChildRules |
+      kChildrenAffectedByDirectAdjacentRules |
+      kChildrenAffectedByIndirectAdjacentRules |
+      kChildrenAffectedByForwardPositionalRules |
+      kChildrenAffectedByBackwardPositionalRules
+};
 
 class ContainerNode : public Node {
  public:
@@ -177,6 +203,40 @@ class ContainerNode : public Node {
 
   void Trace(GCVisitor* visitor) const override;
 
+  bool Node::IsTreeScope() const {
+    return &GetTreeScope().RootNode() == this;
+  }
+
+  bool HasRestyleFlag(DynamicRestyleFlags mask) const {
+    if (const NodeRareData* data = RareData()) {
+      return data->HasRestyleFlag(mask);
+    }
+    return false;
+  }
+
+  void ContainerNode::SetRestyleFlag(DynamicRestyleFlags mask) {
+    assert(IsElementNode() || IsShadowRoot());
+    EnsureRareData().SetRestyleFlag(mask);
+  }
+
+  bool ChildrenAffectedByForwardPositionalRules() const {
+    return HasRestyleFlag(
+        DynamicRestyleFlags::kChildrenAffectedByForwardPositionalRules);
+  }
+  void SetChildrenAffectedByForwardPositionalRules() {
+    SetRestyleFlag(
+        DynamicRestyleFlags::kChildrenAffectedByForwardPositionalRules);
+  }
+
+  bool ChildrenAffectedByBackwardPositionalRules() const {
+    return HasRestyleFlag(
+        DynamicRestyleFlags::kChildrenAffectedByBackwardPositionalRules);
+  }
+  void SetChildrenAffectedByBackwardPositionalRules() {
+    SetRestyleFlag(
+        DynamicRestyleFlags::kChildrenAffectedByBackwardPositionalRules);
+  }
+
  protected:
   ContainerNode(TreeScope* tree_scope, ConstructionType = kCreateContainer);
   ContainerNode(ExecutingContext* context, Document* document, ConstructionType = kCreateContainer);
@@ -191,7 +251,9 @@ class ContainerNode : public Node {
   // modifications. |ChildrenChange| is either nullptr or points to a
   // ChildNode::ChildrenChange structure that describes the changes in the tree.
   // If non-null, blink may preserve caches that aren't affected by the change.
-  void InvalidateNodeListCachesInAncestors(const ChildrenChange*);
+  void InvalidateNodeListCachesInAncestors(const QualifiedName* attr_name,
+                                           Element* attribute_owner_element,
+                                           const ChildrenChange*);
 
   void SetFirstChild(Node* child) { first_child_ = child; }
   void SetLastChild(Node* child) { last_child_ = child; }

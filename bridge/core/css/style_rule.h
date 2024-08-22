@@ -225,7 +225,7 @@ class StyleRuleBase : public std::enable_shared_from_this<StyleRuleBase> {
 // partially implemented using its static member functions.
 class StyleRule : public StyleRuleBase {
  public:
-  static std::shared_ptr<StyleRule> Create(std::span<CSSSelector> selectors, CSSPropertyValueSet* properties) {
+  static std::shared_ptr<StyleRule> Create(std::span<CSSSelector> selectors, std::shared_ptr<CSSPropertyValueSet> properties) {
     return std::make_shared<StyleRule>(webf::PassKey<StyleRule>(), selectors, properties);
   }
   static std::shared_ptr<StyleRule> Create(std::span<CSSSelector> selectors,
@@ -255,7 +255,7 @@ class StyleRule : public StyleRuleBase {
   // selectors). Do not call them directly; they are public only so that
   // MakeGarbageCollected() can call them. Instead, use Create() above or
   // Copy() below, as appropriate.
-  StyleRule(webf::PassKey<StyleRule>, std::span<CSSSelector> selector_vector, CSSPropertyValueSet*);
+  StyleRule(webf::PassKey<StyleRule>, std::span<CSSSelector> selector_vector, std::shared_ptr<CSSPropertyValueSet>);
   StyleRule(webf::PassKey<StyleRule>, std::span<CSSSelector> selector_vector, std::shared_ptr<CSSLazyPropertyParser>);
   // If you use this constructor, the object will not be fully constructed until
   // you call SetProperties().

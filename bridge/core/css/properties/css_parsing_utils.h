@@ -350,6 +350,15 @@ bool ParseBackgroundOrMask(bool,
                            const CSSParserLocalContext&,
                            std::vector<CSSPropertyValue>&);
 
+template <typename T>
+bool ConsumeIfIdent(T& range_or_stream, const char* ident) {
+  if (!AtIdent(range_or_stream.Peek(), ident)) {
+    return false;
+  }
+  range_or_stream.ConsumeIncludingWhitespace();
+  return true;
+}
+
 }  // namespace css_parsing_utils
 }  // namespace webf
 

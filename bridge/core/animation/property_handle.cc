@@ -7,7 +7,8 @@
  */
 
 #include "core/animation/property_handle.h"
-#include "core/platform/hash_traits.h"
+
+#include "core/platform/text/atomic_string_hash.h"
 
 namespace webf {
 
@@ -37,11 +38,11 @@ unsigned PropertyHandle::GetHash() const {
     case kHandlePresentationAttribute:
       return -static_cast<int>(css_property_->PropertyID());
     case kHandleSVGAttribute:
-      return WTF::GetHash(svg_attribute_);
+      return WTF::GetHash(*svg_attribute_);
     default:
       assert_m(false, "PropertyHandle::GetHash() NOTREACHED_IN_MIGRATION");
       return 0;
   }
 }
 
-}  // namespace blink
+}  // namespace webf

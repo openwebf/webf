@@ -7,7 +7,6 @@
 #include "core/animation/css/css_animation_data.h"
 
 #include "core/animation/timing.h"
-#include "core/platform/std_lib_extras.h"
 // TODO(guopengfei)：由模板生成，待迁移
 //#include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 

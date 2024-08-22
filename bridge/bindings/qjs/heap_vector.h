@@ -12,8 +12,45 @@ class HeapVector final {
  public:
   HeapVector() = default;
 
+  void push_back(const V& value) { entries_.push_back(value); }
+
+  V& at(size_t index) {
+    if (index >= entries_.size()) {
+      throw std::out_of_range("Index out of range");
+    }
+    return entries_.at(index);
+  }
+
+  size_t size() const { return entries_.size(); }
+
+  bool empty() const { return entries_.empty(); }
+
+  void clear() { entries_.clear(); }
+
+  bool contains(const V& value) const { return std::find(entries_.begin(), entries_.end(), value) != entries_.end(); }
+
+  int find(const V& value) const {
+    auto it = std::find(entries_.begin(), entries_.end(), value);
+    if (it != entries_.end()) {
+      return std::distance(entries_.begin(), it);
+    } else {
+      return -1;  // 未找到元素
+    }
+  }
+
+  void erase_at(size_t index) {
+    if (index >= entries_.size()) {
+      throw std::out_of_range("Index out of range");
+    }
+    entries_.erase(entries_.begin() + index);
+  }
+
   void TraceValue(GCVisitor* visitor) const;
   void TraceMember(GCVisitor* visitor) const;
+
+  const std::vector<V>& ToStdVector() const {
+    return entries_;
+  }
 
  private:
   std::vector<V> entries_;

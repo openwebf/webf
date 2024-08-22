@@ -14,8 +14,26 @@
 #include "legacy/element_attributes.h"
 #include "parent_node.h"
 #include "qjs_scroll_to_options.h"
+#include "gfx/geometry/vector2d_f.h"
 
 namespace webf {
+
+class ShadowRoot;
+
+enum class ElementFlags {
+  kTabIndexWasSetExplicitly = 1 << 0,
+  kStyleAffectedByEmpty = 1 << 1,
+  kIsInCanvasSubtree = 1 << 2,
+  kContainsFullScreenElement = 1 << 3,
+  kIsInTopLayer = 1 << 4,
+  kContainsPersistentVideo = 1 << 5,
+  kIsEligibleForElementCapture = 1 << 6,
+  kHasCheckedElementCaptureEligibility = 1 << 7,
+
+  kNumberOfElementFlags = 8,  // Size of bitfield used to store the flags.
+};
+
+using ScrollOffset = gfx::Vector2dF;
 
 class Element : public ContainerNode {
   DEFINE_WRAPPERTYPEINFO();
@@ -56,6 +74,7 @@ class Element : public ContainerNode {
   ElementAttributes* attributes() const { return &EnsureElementAttributes(); }
   ElementAttributes& EnsureElementAttributes() const;
 
+  bool hasAttributes() const;
   bool hasAttribute(const AtomicString&, ExceptionState& exception_state);
   AtomicString getAttribute(const AtomicString&, ExceptionState& exception_state) const;
 
@@ -117,6 +136,7 @@ class Element : public ContainerNode {
 
   bool HasTagName(const AtomicString&) const;
   AtomicString nodeValue() const override;
+  const QualifiedName& TagQName() const { return tag_name_; }
   AtomicString tagName() const { return getUppercasedQualifiedName(); }
   AtomicString prefix() const { return prefix_; }
   AtomicString localName() const { return local_name_; }
@@ -161,6 +181,70 @@ class Element : public ContainerNode {
 
   void Trace(GCVisitor* visitor) const override;
 
+  // add for invalidation begin
+  bool IsDocumentElement() const;
+
+  // NOTE: This shadows Node::GetComputedStyle().
+  const ComputedStyle* GetComputedStyle() const {
+    //return computed_style_.Get();
+    return nullptr;
+  }
+  // const ComputedStyle& ComputedStyleRef() const {
+  //   assert(computed_style_);
+  //   return *computed_style_;
+  // }
+
+  void SetComputedStyle(const ComputedStyle* computed_style) {
+    //computed_style_ = computed_style;
+  }
+
+  // ElementRareDataVector* GetElementRareData() const;
+  // ElementRareDataVector& EnsureElementRareData();
+
+  // Returns the shadow root attached to this element if it is a shadow host.
+  ShadowRoot* GetShadowRoot() const;
+  // ShadowRoot* OpenShadowRoot() const;
+  // ShadowRoot* ClosedShadowRoot() const;
+  // ShadowRoot* AuthorShadowRoot() const;
+  // ShadowRoot* UserAgentShadowRoot() const;
+
+  virtual const AtomicString& ShadowPseudoId() const;
+  // The specified string must start with "-webkit-" or "-internal-". The
+  // former can be used as a selector in any places, and the latter can be
+  // used only in UA stylesheet.
+  void SetShadowPseudoId(const AtomicString&);
+
+  AtomicString LocalNameForSelectorMatching() const;
+
+  // Call this to get the value of the id attribute for style resolution
+  // purposes.  The value will already be lowercased if the document is in
+  // compatibility mode, so this function is not suitable for non-style uses.
+  const AtomicString& IdForStyleResolution() const;
+
+  bool HasID() const;
+  bool HasClass() const;
+  const SpaceSplitString& ClassNames() const;
+  bool HasClassName(const AtomicString& class_name) const;
+
+  // Returns true if the element has 1 or more part names.
+  bool HasPart() const;
+  // Returns the list of part names if it has ever been created.
+  DOMTokenList* GetPart() const;
+  // IDL method.
+  // Returns the list of part names, creating it if it doesn't exist.
+  //DOMTokenList& part();
+
+  // Ignores namespace.
+  bool HasAttributeIgnoringNamespace(const AtomicString& local_name) const;
+
+  void SetAnimationStyleChange(bool);
+  void SetNeedsAnimationStyleRecalc();
+
+  bool ChildStyleRecalcBlockedByDisplayLock() const;
+
+  //void SetNeedsCompositingUpdate();
+
+  // add for invalidation end
  protected:
   void SetAttributeInternal(const AtomicString&,
                             const AtomicString& value,
@@ -191,6 +275,8 @@ class Element : public ContainerNode {
   mutable std::unique_ptr<ElementData> element_data_;
   mutable Member<ElementAttributes> attributes_;
   Member<InlineCssStyleDeclaration> cssom_wrapper_;
+
+  QualifiedName tag_name_;
 };
 
 template <typename T>
@@ -220,6 +306,36 @@ struct DowncastTraits<Element> {
 inline Element* Node::parentElement() const {
   return DynamicTo<Element>(parentNode());
 }
+
+inline bool Element::hasAttributes() const {
+  //return !Attributes().IsEmpty();
+
+  return !EnsureElementAttributes().hasAttributes();
+}
+
+inline const AtomicString& Element::IdForStyleResolution() const {
+  assert(HasID());
+  return GetElementData()->IdForStyleResolution();
+}
+
+inline const SpaceSplitString& Element::ClassNames() const {
+  assert(HasClass());
+  assert(HasElementData());
+  return GetElementData()->ClassNames();
+}
+
+inline bool Element::HasClassName(const AtomicString& class_name) const {
+  return HasElementData() && GetElementData()->ClassNames().Contains(class_name);
+}
+
+inline bool Element::HasID() const {
+  return HasElementData() && GetElementData()->HasID();
+}
+
+inline bool Element::HasClass() const {
+  return HasElementData() && GetElementData()->HasClass();
+}
+
 
 }  // namespace webf
 

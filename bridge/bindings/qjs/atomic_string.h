@@ -135,6 +135,17 @@ bool AtomicString::ContainsOnlyLatin1OrEmpty() const {
     ored |= characters[i];
   return !(ored & 0xFF00);
 }
+
+// Define external global variables for the commonly used atomic strings.
+// These are only usable from the main thread.
+extern const AtomicString& g_null_atom;
+extern const AtomicString& g_empty_atom;
+extern const AtomicString& g_star_atom;
+extern const AtomicString& g_xml_atom;
+extern const AtomicString& g_xmlns_atom;
+extern const AtomicString& g_xlink_atom;
+extern const AtomicString& g_http_atom;
+extern const AtomicString& g_https_atom;
 }  // namespace webf
 
 #endif  // BRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_

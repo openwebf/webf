@@ -345,6 +345,7 @@ class CSSSelector {
     kPseudoHighlight,
     kPseudoHost,
     kPseudoHostContext,
+    kPseudoHostHasNonAutoAppearance,
     kPseudoHostHasAppearance,
     kPseudoIsHtml,
     kPseudoListBox,
@@ -375,6 +376,9 @@ class CSSSelector {
     // Scroll markers pseudos for Carousel
     kPseudoScrollMarker,
     kPseudoScrollMarkerGroup,
+    // Scroll button pseudos for Carousel
+    kPseudoScrollNextButton,
+    kPseudoScrollPrevButton,
   };
 
   enum class AttributeMatchType : int {
@@ -632,7 +636,7 @@ class CSSSelector {
 
   void Trace(GCVisitor* visitor) const;
 
-  static AtomicString FormatPseudoTypeForDebugging(PseudoType);
+  static std::string FormatPseudoTypeForDebugging(PseudoType);
 
 
 
@@ -792,5 +796,16 @@ inline const QualifiedName& AnyQName() {
 }
 
 }  // namespace webf
+
+// 特化 std::hash 模板以支持 PseudoType
+namespace std {
+template <>
+struct hash<webf::CSSSelector::PseudoType> {
+  std::size_t operator()(const webf::CSSSelector::PseudoType& pseudoType) const {
+    return std::hash<int>()(static_cast<int>(pseudoType));
+  }
+};
+}
+
 
 #endif  // WEBF_CSS_SELECTOR_H

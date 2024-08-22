@@ -134,4 +134,112 @@ void StyleEngine::Trace(GCVisitor* visitor) {
   visitor->TraceMember(document_);
 }
 
+void StyleEngine::UpdateStyleInvalidationRoot(ContainerNode* ancestor,
+                                              Node* dirty_node) {
+  if (GetDocument().IsActive()) {
+    if (InDOMRemoval()) {
+      ancestor = nullptr;
+      dirty_node = document_;
+    }
+    style_invalidation_root_.Update(ancestor, dirty_node);
+  }
+}
+
+void StyleEngine::UpdateStyleRecalcRoot(ContainerNode* ancestor,
+                                        Node* dirty_node) {
+  if (!GetDocument().IsActive()) {
+    return;
+  }
+  // We have at least one instance where we mark style dirty from style recalc
+  // (from LayoutTextControl::StyleDidChange()). That means we are in the
+  // process of traversing down the tree from the recalc root. Any updates to
+  // the style recalc root will be cleared after the style recalc traversal
+  // finishes and updating it may just trigger sanity DCHECKs in
+  // StyleTraversalRoot. Just return here instead.
+  if (GetDocument().InStyleRecalc()) {
+    assert(allow_mark_style_dirty_from_recalc_);
+    return;
+  }
+  assert(!InRebuildLayoutTree());
+  if (InDOMRemoval()) {
+    ancestor = nullptr;
+    dirty_node = document_;
+  }
+// #if DCHECK_IS_ON()
+//   DCHECK(!dirty_node || DisplayLockUtilities::AssertStyleAllowed(*dirty_node));
+// #endif
+  style_recalc_root_.Update(ancestor, dirty_node);
+}
+/* // TODO(guopengfei)：先注释，暂不支持Layout
+void StyleEngine::UpdateLayoutTreeRebuildRoot(ContainerNode* ancestor,
+                                              Node* dirty_node) {
+  assert(!InDOMRemoval());
+  if (!GetDocument().IsActive()) {
+    return;
+  }
+  if (InRebuildLayoutTree()) {
+    assert(allow_mark_for_reattach_from_rebuild_layout_tree_);
+    return;
+  }
+
+ #if DCHECK_IS_ON()
+  DCHECK(GetDocument().InStyleRecalc());
+  DCHECK(dirty_node);
+  DCHECK(DisplayLockUtilities::AssertStyleAllowed(*dirty_node));
+#endif
+  layout_tree_rebuild_root_.Update(ancestor, dirty_node);
+}
+*/
+
+void PossiblyScheduleNthPseudoInvalidations(webf::Node& node) {
+  if (!node.IsElementNode()) {
+    return;
+  }
+  ContainerNode* parent = node.parentNode();
+  if (parent == nullptr) {
+    return;
+  }
+
+  if ((parent->ChildrenAffectedByForwardPositionalRules() &&
+       node.nextSibling()) ||
+      (parent->ChildrenAffectedByBackwardPositionalRules() &&
+       node.previousSibling())) {
+    node.GetDocument().GetStyleEngine().ScheduleNthPseudoInvalidations(*parent);
+       }
+}
+
+void StyleEngine::ScheduleNthPseudoInvalidations(ContainerNode& nth_parent) {
+  InvalidationLists invalidation_lists;
+  GetRuleFeatureSet().CollectNthInvalidationSet(invalidation_lists);
+  pending_invalidations_.ScheduleInvalidationSetsForNode(invalidation_lists,
+                                                         nth_parent);
+}
+
+bool StyleEngine::MarkReattachAllowed() const {
+  return !InRebuildLayoutTree() ||
+         allow_mark_for_reattach_from_rebuild_layout_tree_;
+}
+
+bool StyleEngine::MarkStyleDirtyAllowed() const {
+  if (GetDocument().InStyleRecalc() || InContainerQueryStyleRecalc()) {
+    return allow_mark_style_dirty_from_recalc_;
+  }
+  return !InRebuildLayoutTree();
+}
+
+const HeapVector<Member<StyleSheet>>& StyleEngine::StyleSheetsForStyleSheetList(
+    TreeScope& tree_scope) {
+  /* // TODO(guopengfei)：注释Sheet相关
+  assert(document_);
+  TreeScopeStyleSheetCollection& collection =
+      EnsureStyleSheetCollectionFor(tree_scope);
+  if (document_->IsActive()) {
+    collection.UpdateStyleSheetList();
+  }
+  return collection.StyleSheetsForStyleSheetList();
+  */
+}
+
 }  // namespace webf
+
+

@@ -30,7 +30,7 @@ Element::Element(const AtomicString& namespace_uri,
                  const AtomicString& prefix,
                  Document* document,
                  Node::ConstructionType construction_type)
-    : ContainerNode(document, construction_type), local_name_(local_name), namespace_uri_(namespace_uri) {
+    : ContainerNode(document, construction_type), local_name_(local_name), namespace_uri_(namespace_uri), tag_name_(local_name) {
   auto buffer = GetExecutingContext()->uiCommandBuffer();
   if (namespace_uri == element_namespace_uris::khtml) {
     buffer->AddCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())), bindingObject(),
@@ -334,6 +334,10 @@ bool Element::IsWidgetElement() const {
   return false;
 }
 
+bool Element::IsDocumentElement() const {
+  return this == GetDocument().documentElement();
+}
+
 void Element::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(attributes_);
   visitor->TraceMember(cssom_wrapper_);
@@ -341,6 +345,37 @@ void Element::Trace(GCVisitor* visitor) const {
     element_data_->Trace(visitor);
   }
   ContainerNode::Trace(visitor);
+}
+
+AtomicString Element::LocalNameForSelectorMatching() const {
+  /* // TODO(guopengfei)：
+  if (IsHTMLElement() || !IsA<HTMLDocument>(GetDocument())) {
+    return localName();
+  }
+  return localName().LowerASCII();
+  */
+  return AtomicString::Empty();
+}
+
+bool Element::HasAttributeIgnoringNamespace(
+    const AtomicString& local_name) const {
+  if (!HasElementData()) {
+    return false;
+  }
+  /* // TODO(guopengfei)：
+  WTF::AtomicStringTable::WeakResult hint =
+      WeakLowercaseIfNecessary(local_name);
+  SynchronizeAttributeHinted(local_name, hint);
+  if (hint.IsNull()) {
+    return false;
+  }
+  for (const Attribute& attribute : GetElementData()->Attributes()) {
+    if (hint == attribute.LocalName()) {
+      return true;
+    }
+  }
+  */
+  return false;
 }
 
 // https://dom.spec.whatwg.org/#concept-element-qualified-name
@@ -678,4 +713,123 @@ void Element::FinishParsingChildren() {
   // .ScheduleInvalidationsForHasPseudoAffectedByInsertion(
   //   parentElement(), previousSibling(), *this);
 }
+
+ShadowRoot* Element::GetShadowRoot() const {
+  // TODO(guopengfei)：未迁移ElementRareDataVector、ShadowRoot
+  // if (const ElementRareDataVector* data = GetElementRareData()) {
+  //   return data->GetShadowRoot();
+  // }
+  return nullptr;
+}
+//
+// inline ElementRareDataVector* Element::GetElementRareData() const {
+//   return static_cast<ElementRareDataVector*>(RareData());
+// }
+//
+// inline ElementRareDataVector& Element::EnsureElementRareData() {
+//   return static_cast<ElementRareDataVector&>(EnsureRareData());
+// }
+
+bool Element::HasPart() const {
+  // TODO(guopengfei)：未迁移ElementRareDataVector
+  // if (const ElementRareDataVector* data = GetElementRareData()) {
+  //   if (auto* part = data->GetPart()) {
+  //     return part->length() > 0;
+  //   }
+  // }
+  return false;
+}
+
+DOMTokenList* Element::GetPart() const {
+  // TODO(guopengfei)：未迁移ElementRareDataVector
+  // if (const ElementRareDataVector* data = GetElementRareData()) {
+  //   return data->GetPart();
+  // }
+  return nullptr;
+}
+// TODO(guopengfei)：未迁移ElementRareDataVector
+// DOMTokenList& Element::part() {
+//   ElementRareDataVector& rare_data = EnsureElementRareData();
+//   DOMTokenList* part = rare_data.GetPart();
+//   if (!part) {
+//     part = MakeGarbageCollected<DOMTokenList>(*this, html_names::kPartAttr);
+//     rare_data.SetPart(part);
+//   }
+//   return *part;
+// }
+
+const AtomicString& Element::ShadowPseudoId() const {
+  // TODO(guopengfei)：未迁移ShadowRoot
+  // if (ShadowRoot* root = ContainingShadowRoot()) {
+  //   if (root->IsUserAgent()) {
+  //     return FastGetAttribute(html_names::kPseudoAttr);
+  //   }
+  // }
+  return g_null_atom;
+}
+
+
+void Element::SetShadowPseudoId(const AtomicString& id) {
+#if DCHECK_IS_ON()
+  {
+    // NOTE: This treats "cue" as kPseudoWebKitCustomElement, so "cue"
+    // is allowed here.
+    CSSSelector::PseudoType type =
+        CSSSelectorParser::ParsePseudoType(id, false, &GetDocument());
+    DCHECK(type == CSSSelector::kPseudoWebKitCustomElement ||
+           type == CSSSelector::kPseudoBlinkInternalElement ||
+           type == CSSSelector::kPseudoDetailsContent ||
+           type == CSSSelector::kPseudoSelectFallbackButtonIcon ||
+           type == CSSSelector::kPseudoSelectFallbackButton ||
+           type == CSSSelector::kPseudoSelectFallbackButtonText ||
+           type == CSSSelector::kPseudoSelectFallbackDatalist)
+        << "type: " << type << ", id: " << id;
+  }
+#endif
+  setAttribute(html_names::kPseudoAttr, id);
+}
+
+void Element::SetAnimationStyleChange(bool animation_style_change) {
+  if (animation_style_change && GetDocument().InStyleRecalc()) {
+    return;
+  }
+  /* // TODO(guopengfei)：暂不支持ElementAnimations
+  if (ElementRareDataVector* data = GetElementRareData()) {
+    if (ElementAnimations* element_animations = data->GetElementAnimations()) {
+      element_animations->SetAnimationStyleChange(animation_style_change);
+    }
+  }
+  */
+}
+
+void Element::SetNeedsAnimationStyleRecalc() {
+  if (GetDocument().InStyleRecalc()) {
+    return;
+  }
+  if (GetDocument().GetStyleEngine().InApplyAnimationUpdate()) {
+    return;
+  }
+  if (GetStyleChangeType() != kNoStyleChange) {
+    return;
+  }
+
+  SetNeedsStyleRecalc(kLocalStyleChange, StyleChangeReasonForTracing::Create(style_change_reason::kAnimation));
+  /*
+    // TODO(guopengfei)：未迁移ComputedStyle
+    // Setting this flag to 'true' only makes sense if there's an existing style,
+    // otherwise there is no previous style to use as the basis for the new one.
+    if (NeedsStyleRecalc() && GetComputedStyle() &&
+        !GetComputedStyle()->IsEnsuredInDisplayNone()) {
+      SetAnimationStyleChange(true);
+      }
+    */
+}
+
+bool Element::ChildStyleRecalcBlockedByDisplayLock() const {
+  // TODO(guopengfei)：暂不支持
+  //auto* context = GetDisplayLockContext();
+  //return context && !context->ShouldStyleChildren();
+  return false;
+}
+
 }  // namespace webf

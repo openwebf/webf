@@ -59,4 +59,26 @@ bool CSSParserContext::IsForMarkupSanitization() const {
   return document_ && document_->IsForMarkupSanitization();
 }
 
+// TODO(xiaochengh): This function never returns null. Change it to return a
+// const reference to avoid confusion.
+std::shared_ptr<const CSSParserContext> StrictCSSParserContext(SecureContextMode secure_context_mode) {
+  /* // TODO(guopengfei)：
+  thread_local static std::shared_ptr<CSSParserContext> strict_context_pool = std::make_shared<CSSParserContext>();
+  thread_local static std::shared_ptr<CSSParserContext> secure_strict_context_pool = std::make_shared<CSSParserContext>();
+
+  std::shared_ptr<CSSParserContext> context =
+      secure_context_mode == SecureContextMode::kSecureContext
+          ? secure_strict_context_pool
+          : strict_context_pool;
+  if (!context) {
+    context = std::make_shared<CSSParserContext>(kHTMLStandardMode,
+                                                     secure_context_mode);
+    ((void)0)(&context);
+  }
+
+  return context;
+  */
+  return nullptr;
+}
+
 }  // namespace webf

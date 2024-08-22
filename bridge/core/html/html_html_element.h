@@ -5,7 +5,7 @@
 #ifndef BRIDGE_CORE_HTML_HTML_HTML_ELEMENT_H_
 #define BRIDGE_CORE_HTML_HTML_HTML_ELEMENT_H_
 
-#include "html_element.h"
+#include "core/html/html_element.h"
 
 namespace webf {
 

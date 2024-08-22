@@ -440,7 +440,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/dom_string_map.cc
     core/dom/space_split_string.cc
     core/dom/scripted_animation_controller.cc
-    core/dom/node_data.cc
+    #core/dom/node_data.cc
     core/dom/document_fragment.cc
     core/dom/child_node_list.cc
     core/dom/empty_node_list.cc
@@ -494,6 +494,12 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
+
+    # css invalidation
+    core/css/invalidation/invalidation_flags.cc
+    core/css/invalidation/invalidation_set.cc
+    core/css/invalidation/pending_invalidations.cc
+    core/css/invalidation/style_invalidator.cc
 
     # SVG files
     core/svg/svg_element.cc

@@ -2,10 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Copyright (C) 2022-present The WebF authors. All rights reserved.
 #include <cmath>
 
 #include "gfx/geometry/vector2d_f.h"
 #include "core/base/build_config.h"
+
+//#include "base/strings/stringprintf.h"
+//#include "base/trace_event/typed_macros.h"
+//#include "build/build_config.h"
 
 namespace gfx {
 
@@ -14,6 +19,12 @@ std::string Vector2dF::ToString() const {
   snprintf(buffer, 10, "[%g %g]", x_, y_);
   return buffer;
 }
+// TODO(guopengfei)：先注释Trace相关
+//void Vector2dF::WriteIntoTrace(perfetto::TracedValue ctx) const {
+//  perfetto::TracedDictionary dict = std::move(ctx).WriteDictionary();
+//  dict.Add("x", x_);
+//  dict.Add("y", y_);
+//}
 
 bool Vector2dF::IsZero() const {
   return x_ == 0 && y_ == 0;
@@ -49,12 +60,12 @@ void Vector2dF::InvScale(float inv_x_scale, float inv_y_scale) {
 
 double CrossProduct(const Vector2dF& lhs, const Vector2dF& rhs) {
   return static_cast<double>(lhs.x()) * rhs.y() -
-         static_cast<double>(lhs.y()) * rhs.x();
+      static_cast<double>(lhs.y()) * rhs.x();
 }
 
 double DotProduct(const Vector2dF& lhs, const Vector2dF& rhs) {
   return static_cast<double>(lhs.x()) * rhs.x() +
-         static_cast<double>(lhs.y()) * rhs.y();
+      static_cast<double>(lhs.y()) * rhs.y();
 }
 
 Vector2dF ScaleVector2d(const Vector2dF& v, float x_scale, float y_scale) {
@@ -64,6 +75,9 @@ Vector2dF ScaleVector2d(const Vector2dF& v, float x_scale, float y_scale) {
 }
 
 float Vector2dF::SlopeAngleRadians() const {
+  // TODO(guopengfei)：先忽略IS_APPLE平台差异
+  return atan2f(y_, x_);
+/*
 #if BUILDFLAG(IS_APPLE)
   // atan2f(...) returns less accurate results on Mac.
   // 3.1415925 vs. 3.14159274 for atan2f(0, -50) as an example.
@@ -72,6 +86,7 @@ float Vector2dF::SlopeAngleRadians() const {
 #else
   return atan2f(y_, x_);
 #endif
+ */
 }
 
 }  // namespace gfx

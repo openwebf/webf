@@ -25,6 +25,8 @@
 #define WEBF_QUALIFIED_NAME_H
 
 #include "core/platform/static_constructors.h"
+#include "core/platform/hash_traits.h"
+#include "bindings/qjs/atomic_string.h"
 
 namespace webf {
 
@@ -173,9 +175,53 @@ class QualifiedName {
     std::shared_ptr<QualifiedNameImpl> impl_;
 };
 
+inline unsigned HashComponents(const QualifiedNameComponents& buf) {
+  // TODO(guopengfei)：临时返回0xFFFFFF，编译通过
+  // return StringHasher::HashMemory<sizeof(QualifiedNameComponents)>(&buf) &
+  //        0xFFFFFF;
+  return 0xFFFFFF;
+}
 
 DEFINE_GLOBAL(QualifiedName, g_any_name);
 DEFINE_GLOBAL(QualifiedName, g_null_name);
+
+template <>
+struct HashTraits<QualifiedName::QualifiedNameImpl*>
+    : GenericHashTraits<QualifiedName::QualifiedNameImpl*> {
+  static unsigned GetHash(const QualifiedName::QualifiedNameImpl* name) {
+    if (!name->existing_hash_) {
+      name->existing_hash_ = name->ComputeHash();
+    }
+    return name->existing_hash_;
+  }
+  static constexpr bool kSafeToCompareToEmptyOrDeleted = false;
+};
+
+template <>
+struct HashTraits<webf::QualifiedName>
+    : GenericHashTraits<webf::QualifiedName> {
+  using QualifiedNameImpl = webf::QualifiedName::QualifiedNameImpl;
+  static unsigned GetHash(const webf::QualifiedName& name) {
+    return webf::GetHash(name.Impl());
+  }
+  static constexpr bool kSafeToCompareToEmptyOrDeleted = false;
+
+  static constexpr bool kEmptyValueIsZero = false;
+  static const webf::QualifiedName& EmptyValue() {
+    return webf::QualifiedName::Null();
+  }
+  /*
+  // TODO(guopengfei)：先注释
+  static bool IsDeletedValue(const blink::QualifiedName& value) {
+    return HashTraits<scoped_refptr<QualifiedNameImpl>>::IsDeletedValue(
+        value.impl_);
+  }
+  static void ConstructDeletedValue(blink::QualifiedName& slot) {
+    HashTraits<scoped_refptr<QualifiedNameImpl>>::ConstructDeletedValue(
+        slot.impl_);
+  }
+  */
+};
 
 }  // namespace webf
 

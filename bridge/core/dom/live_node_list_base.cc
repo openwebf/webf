@@ -23,11 +23,28 @@
  */
 
 #include "live_node_list_base.h"
+#include "core/dom/live_node_list.h"
 
 namespace webf {
 
 ContainerNode& LiveNodeListBase::RootNode() const {
   return *owner_node_;
+}
+
+void LiveNodeListBase::InvalidateCacheForAttribute(
+    const QualifiedName* attr_name) const {
+  if (IsLiveNodeListType(GetType()))
+    To<LiveNodeList>(this)->InvalidateCacheForAttribute(attr_name);
+  else
+    To<HTMLCollection>(this)->InvalidateCacheForAttribute(attr_name);
+}
+
+void LiveNodeListBase::DidMoveToDocument(Document& old_document,
+                                         Document& new_document) {
+  InvalidateCache(&old_document);
+  // TODO(guopengfei)：先注释
+  //old_document.UnregisterNodeList(this);
+  //new_document.RegisterNodeList(this);
 }
 
 }  // namespace webf

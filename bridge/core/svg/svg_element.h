@@ -16,6 +16,9 @@ class SVGElement : public Element {
   using ImplType = SVGElement*;
   SVGElement(const AtomicString& tag_name, Document* document, ConstructionType = kCreateHTMLElement);
 
+  void SetNeedsStyleRecalcForInstances(StyleChangeType,
+                                      const StyleChangeReasonForTracing&);
+
  private:
 };
 }  // namespace webf

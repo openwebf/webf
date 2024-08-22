@@ -140,6 +140,10 @@ const Derived* To(const Base* from) {
   return from ? &To<Derived>(*from) : nullptr;
 }
 
+template <typename T, typename U>
+std::shared_ptr<T> ToPtr(const std::shared_ptr<U>& ptr) {
+  return std::dynamic_pointer_cast<T>(ptr);
+}
 template <typename Derived, typename Base>
 Derived& To(Base& from) {
   return static_cast<Derived&>(from);
