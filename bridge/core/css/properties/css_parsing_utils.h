@@ -35,8 +35,15 @@ class CSSParserTokenStream;
 class CSSPropertyValue;
 class CSSValue;
 class CSSValueList;
+class CSSShadowValue;
 class CSSValuePair;
 class StylePropertyShorthand;
+
+namespace cssvalue {
+
+class CSSFontFeatureValue;
+
+}
 
 // "Consume" functions, when successful, should consume all the relevant tokens
 // as well as any trailing whitespace. When the start of the range doesn't
@@ -57,15 +64,15 @@ enum class AllowedColors { kAll, kAbsolute };
 enum class EmptyPathStringHandling { kFailure, kTreatAsNone };
 
 using ConsumeAnimationItemValue = std::shared_ptr<const CSSValue> (*)(CSSPropertyID,
-                                                CSSParserTokenStream&,
-                                                const CSSParserContext&,
-                                                bool use_legacy_parsing);
+                                                                      CSSParserTokenStream&,
+                                                                      const CSSParserContext&,
+                                                                      bool use_legacy_parsing);
 using IsResetOnlyFunction = bool (*)(CSSPropertyID);
 using IsPositionKeyword = bool (*)(CSSValueID);
 
 constexpr size_t kMaxNumAnimationLonghands = 12;
 
-void Complete4Sides(CSSValue* side[4]);
+void Complete4Sides(std::shared_ptr<const CSSValue> side[4]);
 
 // TODO(timloh): These should probably just be consumeComma and consumeSlash.
 bool ConsumeCommaIncludingWhitespace(CSSParserTokenRange&);
@@ -301,14 +308,13 @@ std::shared_ptr<const CSSValue> ConsumeAnimationTimeline(CSSParserTokenStream&, 
 std::shared_ptr<const CSSValue> ConsumeAnimationTimingFunction(CSSParserTokenStream&, const CSSParserContext&);
 std::shared_ptr<const CSSValue> ConsumeAnimationDuration(CSSParserTokenStream&, const CSSParserContext&);
 
-bool ConsumeAnimationShorthand(
-    const StylePropertyShorthand&,
-    std::vector<std::shared_ptr<CSSValueList>>&,
-    ConsumeAnimationItemValue,
-    IsResetOnlyFunction,
-    CSSParserTokenStream&,
-    const CSSParserContext&,
-    bool use_legacy_parsing);
+bool ConsumeAnimationShorthand(const StylePropertyShorthand&,
+                               std::vector<std::shared_ptr<CSSValueList>>&,
+                               ConsumeAnimationItemValue,
+                               IsResetOnlyFunction,
+                               CSSParserTokenStream&,
+                               const CSSParserContext&,
+                               bool use_legacy_parsing);
 
 enum class IsImplicitProperty { kNotImplicit, kImplicit };
 
@@ -330,25 +336,24 @@ std::shared_ptr<const CSSValue> ConsumeBackgroundBoxOrText(CSSParserTokenStream&
 std::shared_ptr<const CSSValue> ConsumeBackgroundBox(CSSParserTokenStream&);
 std::shared_ptr<const CSSValue> ConsumePrefixedBackgroundBox(CSSParserTokenStream&, AllowTextValue);
 
-std::shared_ptr<const CSSValue> ConsumeImageOrNone(CSSParserTokenStream& stream,
-                             const CSSParserContext& context);
+std::shared_ptr<const CSSValue> ConsumeImageOrNone(CSSParserTokenStream& stream, const CSSParserContext& context);
 
 enum class ConsumeGeneratedImagePolicy { kAllow, kForbid };
 enum class ConsumeStringUrlImagePolicy { kAllow, kForbid };
 enum class ConsumeImageSetImagePolicy { kAllow, kForbid };
 
-std::shared_ptr<const CSSValue> ConsumeImage(
-    CSSParserTokenStream&,
-    const CSSParserContext&,
-    const ConsumeGeneratedImagePolicy = ConsumeGeneratedImagePolicy::kAllow,
-    const ConsumeStringUrlImagePolicy = ConsumeStringUrlImagePolicy::kForbid,
-    const ConsumeImageSetImagePolicy = ConsumeImageSetImagePolicy::kAllow);
+std::shared_ptr<const CSSValue> ConsumeImage(CSSParserTokenStream&,
+                                             const CSSParserContext&,
+                                             const ConsumeGeneratedImagePolicy = ConsumeGeneratedImagePolicy::kAllow,
+                                             const ConsumeStringUrlImagePolicy = ConsumeStringUrlImagePolicy::kForbid,
+                                             const ConsumeImageSetImagePolicy = ConsumeImageSetImagePolicy::kAllow);
 
 bool ParseBackgroundOrMask(bool,
                            CSSParserTokenStream&,
                            const CSSParserContext&,
                            const CSSParserLocalContext&,
                            std::vector<CSSPropertyValue>&);
+
 
 template <typename T>
 bool ConsumeIfIdent(T& range_or_stream, const char* ident) {
@@ -357,6 +362,158 @@ bool ConsumeIfIdent(T& range_or_stream, const char* ident) {
   }
   range_or_stream.ConsumeIncludingWhitespace();
   return true;
+}
+
+bool ConsumeShorthandVia2Longhands(const StylePropertyShorthand&,
+                                   bool important,
+                                   const CSSParserContext&,
+                                   CSSParserTokenStream&,
+                                   std::vector<CSSPropertyValue>& properties);
+
+bool ConsumeShorthandVia4Longhands(const StylePropertyShorthand&,
+                                   bool important,
+                                   const CSSParserContext&,
+                                   CSSParserTokenStream&,
+                                   std::vector<CSSPropertyValue>& properties);
+
+bool ConsumeShorthandGreedilyViaLonghands(const StylePropertyShorthand&,
+                                          bool important,
+                                          const CSSParserContext&,
+                                          CSSParserTokenStream&,
+                                          std::vector<CSSPropertyValue>& properties,
+                                          bool use_initial_value_function = false);
+
+void AddExpandedPropertyForValue(CSSPropertyID prop_id,
+                                 const std::shared_ptr<const CSSValue>&,
+                                 bool,
+                                 std::vector<CSSPropertyValue>& properties);
+
+bool ConsumeBorderImageComponents(CSSParserTokenStream& stream,
+                                  const CSSParserContext& context,
+                                  std::shared_ptr<const CSSValue>& source,
+                                  std::shared_ptr<const CSSValue>& slice,
+                                  std::shared_ptr<const CSSValue>& width,
+                                  std::shared_ptr<const CSSValue>& outset,
+                                  std::shared_ptr<const CSSValue>& repeat,
+                                  DefaultFill default_fill);
+
+std::shared_ptr<const CSSValue> ConsumeBorderImageRepeat(CSSParserTokenStream&);
+std::shared_ptr<const CSSValue> ConsumeBorderImageSlice(CSSParserTokenStream&, const CSSParserContext&, DefaultFill);
+std::shared_ptr<const CSSValue> ConsumeBorderImageWidth(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeBorderImageOutset(CSSParserTokenStream&, const CSSParserContext&);
+bool ConsumeColumnWidthOrCount(CSSParserTokenStream& stream,
+                               const CSSParserContext& context,
+                               std::shared_ptr<const CSSValue>& column_width,
+                               std::shared_ptr<const CSSValue>& column_count);
+
+std::shared_ptr<const CSSValue> ParseBorderRadiusCorner(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ParseBorderWidthSide(CSSParserTokenStream&,
+                                                     const CSSParserContext&,
+                                                     const CSSParserLocalContext&);
+std::shared_ptr<const CSSValue> ParseBorderStyleSide(CSSParserTokenStream&, const CSSParserContext&);
+
+bool ConsumeRadii(std::shared_ptr<const CSSValue> horizontal_radii[4],
+                  std::shared_ptr<const CSSValue> vertical_radii[4],
+                  CSSParserTokenStream& stream,
+                  const CSSParserContext& context,
+                  bool use_legacy_parsing);
+
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeSingleContainerName(
+        T&,
+        const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeContainerName(CSSParserTokenStream&, const CSSParserContext&);
+
+std::shared_ptr<const CSSValue> ConsumeContainerType(CSSParserTokenStream& stream);
+
+std::shared_ptr<const CSSValue> ConsumeShadow(CSSParserTokenStream&, const CSSParserContext&, AllowInsetAndSpread);
+
+std::shared_ptr<const CSSShadowValue> ParseSingleShadow(CSSParserTokenStream&,
+                                                        const CSSParserContext&,
+                                                        AllowInsetAndSpread);
+
+std::shared_ptr<const CSSValue> ConsumeColumnCount(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeColumnWidth(CSSParserTokenStream&, const CSSParserContext&);
+bool ConsumeColumnWidthOrCount(CSSParserTokenStream&,
+                               const CSSParserContext&,
+                               std::shared_ptr<const CSSValue>&,
+                               std::shared_ptr<const CSSValue>&);
+std::shared_ptr<const CSSValue> ConsumeGapLength(CSSParserTokenStream&, const CSSParserContext&);
+
+std::shared_ptr<const CSSValue> ConsumeCounter(CSSParserTokenStream&, const CSSParserContext&, int);
+
+std::shared_ptr<const CSSValue> ConsumeFontSize(CSSParserTokenStream&,
+                                                const CSSParserContext&,
+                                                UnitlessQuirk = UnitlessQuirk::kForbid);
+
+std::shared_ptr<const CSSValue> ConsumeLineHeight(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeMathDepth(CSSParserTokenStream& stream, const CSSParserContext& context);
+
+std::shared_ptr<const CSSValue> ConsumeFontPalette(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValueList> ConsumeFontFamily(CSSParserTokenRange&);
+std::shared_ptr<const CSSValueList> ConsumeFontFamily(CSSParserTokenStream&);
+std::shared_ptr<const CSSValueList> ConsumeNonGenericFamilyNameList(CSSParserTokenStream& stream);
+std::shared_ptr<const CSSValue> ConsumeGenericFamily(CSSParserTokenRange&);
+std::shared_ptr<const CSSValue> ConsumeGenericFamily(CSSParserTokenStream&);
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeFamilyName(T&);
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::string ConcatenateFamilyName(T&);
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSIdentifierValue> ConsumeFontStretchKeywordOnly(
+        T&,
+        const CSSParserContext&);
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeFontStretch(T&,
+                                                                                              const CSSParserContext&);
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeFontStyle(T&,
+                                                                                            const CSSParserContext&);
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeFontWeight(T&,
+                                                                                             const CSSParserContext&);
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeFontFeatureSettings(
+        T&,
+        const CSSParserContext&);
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const cssvalue::CSSFontFeatureValue> ConsumeFontFeatureTag(
+        T&,
+        const CSSParserContext&);
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSIdentifierValue> ConsumeFontVariantCSS21(T&);
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSIdentifierValue> ConsumeFontFormatIdent(T&);
+
+// ConsumeCommaSeparatedList and ConsumeSpaceSeparatedList take a callback
+// function to call on each item in the list, followed by the arguments to pass
+// to this callback.  The first argument to the callback must be the
+// CSSParserTokenStream
+template <typename Func, typename... Args>
+std::shared_ptr<const CSSValueList> ConsumeCommaSeparatedList(Func callback,
+                                                              CSSParserTokenStream& stream,
+                                                              Args&&... args) {
+  std::shared_ptr<CSSValueList> list = CSSValueList::CreateCommaSeparated();
+  do {
+    std::shared_ptr<const CSSValue> value = callback(stream, std::forward<Args>(args)...);
+    if (!value) {
+      return nullptr;
+    }
+    list->Append(value);
+  } while (ConsumeCommaIncludingWhitespace(stream));
+  DCHECK(list->length());
+  return list;
 }
 
 }  // namespace css_parsing_utils

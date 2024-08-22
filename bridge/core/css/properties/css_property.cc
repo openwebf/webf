@@ -32,7 +32,7 @@ bool CSSProperty::IsRepeated(const CSSPropertyName& name) {
   return !name.IsCustomProperty() && Get(name.Id()).IsRepeated();
 }
 
-const CSSValue* CSSProperty::CSSValueFromComputedStyle(
+std::shared_ptr<const CSSValue> CSSProperty::CSSValueFromComputedStyle(
     const ComputedStyle& style,
     const LayoutObject* layout_object,
     bool allow_visited_style,

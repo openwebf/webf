@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2017 Apple Inc. All rights reserved.
+* Copyright (C) 2011 Apple Inc. All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted provided that the following conditions
@@ -10,10 +10,10 @@
 *    notice, this list of conditions and the following disclaimer in the
 *    documentation and/or other materials provided with the distribution.
 *
-* THIS SOFTWARE IS PROVIDED BY APPLE INC. ``AS IS'' AND ANY
+* THIS SOFTWARE IS PROVIDED BY APPLE COMPUTER, INC. ``AS IS'' AND ANY
 * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-* PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE INC. OR
+* PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE COMPUTER, INC. OR
 * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -23,37 +23,37 @@
 * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// Copyright (C) 2022-present The WebF authors. All rights reserved.
-
-#include "css_font_style_range_value.h"
+#include "core/css/css_border_image_slice_value.h"
 
 namespace webf {
-
 namespace cssvalue {
 
-std::string CSSFontStyleRangeValue::CustomCSSText() const {
-  if (!oblique_values_) {
-    return font_style_value_->CssText();
-  }
-
-  std::string builder;
-  builder+=font_style_value_->CssText();
-  builder+=" ";
-  builder+=oblique_values_->CssText();
-  return builder;
+CSSBorderImageSliceValue::CSSBorderImageSliceValue(std::shared_ptr<const CSSQuadValue> slices,
+                                                  bool fill)
+   : CSSValue(kBorderImageSliceClass), slices_(slices), fill_(fill) {
+ DCHECK(slices_);
 }
 
-bool CSSFontStyleRangeValue::Equals(const CSSFontStyleRangeValue& other) const {
-  if (!oblique_values_) {
-    return font_style_value_ == other.font_style_value_;
-  }
-  return font_style_value_ == other.font_style_value_ &&
-         *oblique_values_ == *other.oblique_values_;
+std::string CSSBorderImageSliceValue::CustomCSSText() const {
+ // Dump the slices first.
+ std::string text = slices_->CssText();
+
+ // Now the fill keywords if it is present.
+ if (fill_) {
+   return text + " fill";
+ }
+ return text;
 }
 
-void CSSFontStyleRangeValue::TraceAfterDispatch(GCVisitor* visitor) const {
-  CSSValue::TraceAfterDispatch(visitor);
+bool CSSBorderImageSliceValue::Equals(
+   const CSSBorderImageSliceValue& other) const {
+ return fill_ == other.fill_ && ValuesEquivalent(slices_, other.slices_);
+}
+
+void CSSBorderImageSliceValue::TraceAfterDispatch(
+   GCVisitor* visitor) const {
+ CSSValue::TraceAfterDispatch(visitor);
 }
 
 }  // namespace cssvalue
-}  // namespace webf
+}  // namespace blink
