@@ -1,21 +1,21 @@
 /**
-* (C) 1999-2003 Lars Knoll (knoll@kde.org)
-* Copyright (C) 2004, 2005, 2006, 2009 Apple Computer, Inc.
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Library General Public
-* License as published by the Free Software Foundation; either
-* version 2 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Library General Public License for more details.
-*
-* You should have received a copy of the GNU Library General Public License
-* along with this library; see the file COPYING.LIB.  If not, write to
-* the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-* Boston, MA 02110-1301, USA.
+ * (C) 1999-2003 Lars Knoll (knoll@kde.org)
+ * Copyright (C) 2004, 2005, 2006, 2009 Apple Computer, Inc.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public License
+ * along with this library; see the file COPYING.LIB.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301, USA.
  */
 
 /*
@@ -29,19 +29,13 @@
 namespace webf {
 
 // Used for text-shadow and box-shadow
-CSSShadowValue::CSSShadowValue(CSSPrimitiveValue* x,
-                               CSSPrimitiveValue* y,
-                               CSSPrimitiveValue* blur,
-                               CSSPrimitiveValue* spread,
-                               CSSIdentifierValue* style,
-                               CSSValue* color)
-    : CSSValue(kShadowClass),
-      x(x),
-      y(y),
-      blur(blur),
-      spread(spread),
-      style(style),
-      color(color) {}
+CSSShadowValue::CSSShadowValue(const std::shared_ptr<const CSSPrimitiveValue>& x,
+                               const std::shared_ptr<const CSSPrimitiveValue>& y,
+                               const std::shared_ptr<const CSSPrimitiveValue>& blur,
+                               const std::shared_ptr<const CSSPrimitiveValue>& spread,
+                               const std::shared_ptr<const CSSIdentifierValue>& style,
+                               const std::shared_ptr<const CSSValue>& color)
+    : CSSValue(kShadowClass), x(x), y(y), blur(blur), spread(spread), style(style), color(color) {}
 
 std::string CSSShadowValue::CustomCSSText() const {
   std::string text = "";
@@ -65,16 +59,8 @@ std::string CSSShadowValue::CustomCSSText() const {
 }
 
 bool CSSShadowValue::Equals(const CSSShadowValue& other) const {
-  return color == other.color &&
-         x == other.x &&
-         y == other.y &&
-         blur == other.blur &&
-         spread == other.spread &&
+  return color == other.color && x == other.x && y == other.y && blur == other.blur && spread == other.spread &&
          style == other.style;
-}
-
-void CSSShadowValue::TraceAfterDispatch(webf::GCVisitor* visitor) const {
-  CSSValue::TraceAfterDispatch(visitor);
 }
 
 }  // namespace webf

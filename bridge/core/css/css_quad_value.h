@@ -36,10 +36,10 @@ class CSSQuadValue : public CSSValue {
  public:
   enum TypeForSerialization { kSerializeAsRect, kSerializeAsQuad };
 
-  CSSQuadValue(CSSValue* top,
-               CSSValue* right,
-               CSSValue* bottom,
-               CSSValue* left,
+  CSSQuadValue(const std::shared_ptr<const CSSValue>& top,
+               const std::shared_ptr<const CSSValue>& right,
+               const std::shared_ptr<const CSSValue>& bottom,
+               const std::shared_ptr<const CSSValue>& left,
                TypeForSerialization serialization_type)
       : CSSValue(kQuadClass),
         serialization_type_(serialization_type),
@@ -56,10 +56,10 @@ class CSSQuadValue : public CSSValue {
         bottom_(value),
         left_(value) {}
 
-  CSSValue* Top() const { return top_.get(); }
-  CSSValue* Right() const { return right_.get(); }
-  CSSValue* Bottom() const { return bottom_.get(); }
-  CSSValue* Left() const { return left_.get(); }
+  const CSSValue* Top() const { return top_.get(); }
+  const CSSValue* Right() const { return right_.get(); }
+  const CSSValue* Bottom() const { return bottom_.get(); }
+  const CSSValue* Left() const { return left_.get(); }
 
   TypeForSerialization SerializationType() { return serialization_type_; }
 
@@ -76,10 +76,10 @@ class CSSQuadValue : public CSSValue {
 
  private:
   TypeForSerialization serialization_type_;
-  std::shared_ptr<CSSValue> top_;
-  std::shared_ptr<CSSValue> right_;
-  std::shared_ptr<CSSValue> bottom_;
-  std::shared_ptr<CSSValue> left_;
+  std::shared_ptr<const CSSValue> top_;
+  std::shared_ptr<const CSSValue> right_;
+  std::shared_ptr<const CSSValue> bottom_;
+  std::shared_ptr<const CSSValue> left_;
 };
 
 template <>

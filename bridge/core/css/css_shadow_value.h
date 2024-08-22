@@ -33,26 +33,23 @@ namespace webf {
 // Used for text-shadow and box-shadow
 class CSSShadowValue : public CSSValue {
  public:
-  CSSShadowValue(CSSPrimitiveValue* x,
-                 CSSPrimitiveValue* y,
-                 CSSPrimitiveValue* blur,
-                 CSSPrimitiveValue* spread,
-                 CSSIdentifierValue* style,
-                 CSSValue* color);
+  CSSShadowValue(const std::shared_ptr<const CSSPrimitiveValue>& x,
+                 const std::shared_ptr<const CSSPrimitiveValue>& y,
+                 const std::shared_ptr<const CSSPrimitiveValue>& blur,
+                 const std::shared_ptr<const CSSPrimitiveValue>& spread,
+                 const std::shared_ptr<const CSSIdentifierValue>& style,
+                 const std::shared_ptr<const CSSValue>& color);
 
   std::string CustomCSSText() const;
 
   bool Equals(const CSSShadowValue&) const;
 
-  std::shared_ptr<CSSPrimitiveValue> x;
-  std::shared_ptr<CSSPrimitiveValue> y;
-  std::shared_ptr<CSSPrimitiveValue> blur;
-  std::shared_ptr<CSSPrimitiveValue> spread;
-  std::shared_ptr<CSSIdentifierValue> style;
-  std::shared_ptr<CSSValue> color;
-
-  void TraceAfterDispatch(webf::GCVisitor*) const;
-
+  std::shared_ptr<const CSSPrimitiveValue> x;
+  std::shared_ptr<const CSSPrimitiveValue> y;
+  std::shared_ptr<const CSSPrimitiveValue> blur;
+  std::shared_ptr<const CSSPrimitiveValue> spread;
+  std::shared_ptr<const CSSIdentifierValue> style;
+  std::shared_ptr<const CSSValue> color;
 };
 
 template <>

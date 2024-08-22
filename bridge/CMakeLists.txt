@@ -315,6 +315,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_lazy_parsing_state.cc
     core/css/parser/css_parser_token.cc
     core/css/parser/css_parser_fast_path.cc
+    core/css/parser/font_variant_alternates_parser.cc
     core/css/parser/css_parser_token_range.cc
     core/css/parser/css_parser_token_stream.cc
     core/css/parser/css_tokenizer.cc
@@ -328,13 +329,17 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_rule.cc
     core/css/css_value.cc
     core/css/properties/longhand.cc
-#    core/css/properties/shorthands/shorthands_custom.cc
+    core/css/properties/shorthands/shorthands_custom.cc
     core/css/abstract_property_set_css_style_declaration.cc
     core/css/property_set_css_style_declaration.cc
     core/css/style_rule.cc
     core/css/css_property_value_set.cc
     core/css/css_property_name.cc
     core/css/css_property_value.cc
+    core/css/css_quad_value.cc
+    core/css/css_shadow_value.cc
+    core/css/css_font_style_range_value.cc
+    core/css/css_border_image_slice_value.cc
     core/css/css_primitive_value.cc
     core/css/css_image_value.cc
     core/css/css_image_generator_value.cc
