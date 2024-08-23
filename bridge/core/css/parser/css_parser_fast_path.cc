@@ -8,6 +8,7 @@
 #include <arm_neon.h>
 #endif
 
+#include "core/css/parser/css_parser_idioms.h"
 #include "core/css/css_function_value.h"
 #include "core/css/css_inherit_value.h"
 #include "core/css/css_initial_value.h"

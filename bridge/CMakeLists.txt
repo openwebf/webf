@@ -329,7 +329,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_rule.cc
     core/css/css_value.cc
     core/css/properties/longhand.cc
-    core/css/properties/shorthands/shorthands_custom.cc
+#    core/css/properties/shorthands/shorthands_custom.cc
     core/css/abstract_property_set_css_style_declaration.cc
     core/css/property_set_css_style_declaration.cc
     core/css/style_rule.cc
@@ -353,6 +353,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_numeric_literal_value.cc
     core/css/css_math_expression_node.cc
     core/css/css_ray_value.cc
+    core/css/css_grid_auto_repeat_value.cc
+    core/css/css_grid_integer_repeat_value.cc
+    core/css/css_grid_template_areas_value.cc
     core/css/css_scroll_value.cc
     core/css/css_basic_shape_value.cc
     core/css/css_math_function_value.cc
@@ -380,6 +383,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/anchor_query.h
     core/css/css_length_resolver.cc
     core/style/scoped_css_name.cc
+    core/style/grid_area.h
 
     core/platform/text/writing_mode.cc
     core/platform/text/text_stream.cc

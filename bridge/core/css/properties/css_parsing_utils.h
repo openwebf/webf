@@ -506,6 +506,24 @@ std::shared_ptr<const CSSValueList> ConsumeCommaSeparatedList(Func callback,
   return list;
 }
 
+std::shared_ptr<const CSSValue> ConsumeGridLine(CSSParserTokenStream&, const CSSParserContext&);
+bool ConsumeGridItemPositionShorthand(bool important,
+                                      CSSParserTokenStream&,
+                                      const CSSParserContext&,
+                                      std::shared_ptr<const CSSValue>& start_value,
+                                      std::shared_ptr<const CSSValue>& end_value);
+
+bool ConsumeGridTemplateShorthand(bool important,
+                                  CSSParserTokenStream&,
+                                  const CSSParserContext&,
+                                  std::shared_ptr<const CSSValue>& template_rows,
+                                  std::shared_ptr<const CSSValue>& template_columns,
+                                  std::shared_ptr<const CSSValue>& template_areas);
+
+std::shared_ptr<const CSSValue> ConsumeGridTrackList(CSSParserTokenStream&,
+                               const CSSParserContext&,
+                               TrackListType);
+
 }  // namespace css_parsing_utils
 }  // namespace webf
 

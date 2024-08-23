@@ -46,6 +46,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "core/css/parser/css_parser_idioms.h"
 #include "space_split_string.h"
 #include <sstream>
 #include <unordered_set>

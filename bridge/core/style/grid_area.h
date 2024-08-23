@@ -33,6 +33,8 @@
 #ifndef WEBF_CORE_STYLE_GRID_AREA_H_
 #define WEBF_CORE_STYLE_GRID_AREA_H_
 
+#include <algorithm>
+#include <unordered_map>
 #include "core/style/grid_enums.h"
 #include "core/platform/math_extras.h"
 

@@ -75,9 +75,9 @@ class FontVariantEastAsianParser {
   }
 
  private:
-  std::shared_ptr<CSSIdentifierValue> east_asian_form_value_;
-  std::shared_ptr<CSSIdentifierValue> east_asian_width_value_;
-  std::shared_ptr<CSSIdentifierValue> ruby_value_;
+  std::shared_ptr<const CSSIdentifierValue> east_asian_form_value_;
+  std::shared_ptr<const CSSIdentifierValue> east_asian_width_value_;
+  std::shared_ptr<const CSSIdentifierValue> ruby_value_;
 };
 
 }  // namespace blink

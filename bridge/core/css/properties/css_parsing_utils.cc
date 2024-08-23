@@ -8,6 +8,9 @@
 #include "core/css/css_appearance_auto_base_select_value_pair.h"
 #include "core/css/css_basic_shape_value.h"
 #include "core/css/css_border_image_slice_value.h"
+#include "core/css/css_bracketed_value_list.h"
+#include "core/css/css_grid_template_areas_value.h"
+#include "core/css/css_grid_integer_repeat_value.h"
 #include "core/css/css_color_channel_map.h"
 #include "core/css/css_crossfade_value.h"
 #include "core/css/css_font_family_value.h"
@@ -15,6 +18,7 @@
 #include "core/css/css_font_style_range_value.h"
 #include "core/css/css_function_value.h"
 #include "core/css/css_gradient_value.h"
+#include "core/css/css_grid_auto_repeat_value.h"
 #include "core/css/css_image_set_option_value.h"
 #include "core/css/css_image_set_type_value.h"
 #include "core/css/css_image_set_value.h"
@@ -30,11 +34,13 @@
 #include "core/css/css_shadow_value.h"
 #include "core/css/css_timing_function_value.h"
 #include "core/css/parser/css_parser_fast_path.h"
+#include "core/css/parser/css_parser_idioms.h"
 #include "core/css/parser/css_parser_save_point.h"
 #include "core/css/properties/css_color_function_parser.h"
 #include "core/css/properties/longhand.h"
 #include "core/css/style_color.h"
 #include "core/platform/graphics/color.h"
+#include "core/style/grid_area.h"
 #include "foundation/macros.h"
 #include "style_property_shorthand.h"
 
@@ -4432,6 +4438,669 @@ template <typename T>
 
 template std::shared_ptr<const CSSIdentifierValue> ConsumeFontFormatIdent(CSSParserTokenRange& stream);
 
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdentForGridLine(
+        T& stream,
+        const CSSParserContext& context) {
+  if (stream.Peek().Id() == CSSValueID::kAuto || stream.Peek().Id() == CSSValueID::kSpan) {
+    return nullptr;
+  }
+  return ConsumeCustomIdent(stream, context);
+}
+
+std::shared_ptr<const CSSValue> ConsumeGridLine(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  if (stream.Peek().Id() == CSSValueID::kAuto) {
+    return ConsumeIdent(stream);
+  }
+
+  std::shared_ptr<const CSSIdentifierValue> span_value = nullptr;
+  std::shared_ptr<const CSSCustomIdentValue> grid_line_name = nullptr;
+  std::shared_ptr<const CSSPrimitiveValue> numeric_value = ConsumeInteger(stream, context);
+  if (numeric_value) {
+    grid_line_name = ConsumeCustomIdentForGridLine(stream, context);
+    span_value = ConsumeIdent<CSSValueID::kSpan>(stream);
+  } else {
+    span_value = ConsumeIdent<CSSValueID::kSpan>(stream);
+    if (span_value) {
+      numeric_value = ConsumeInteger(stream, context);
+      grid_line_name = ConsumeCustomIdentForGridLine(stream, context);
+      if (!numeric_value) {
+        numeric_value = ConsumeInteger(stream, context);
+      }
+    } else {
+      grid_line_name = ConsumeCustomIdentForGridLine(stream, context);
+      if (grid_line_name) {
+        numeric_value = ConsumeInteger(stream, context);
+        span_value = ConsumeIdent<CSSValueID::kSpan>(stream);
+        if (!span_value && !numeric_value) {
+          return grid_line_name;
+        }
+      } else {
+        return nullptr;
+      }
+    }
+  }
+
+  if (span_value && !numeric_value && !grid_line_name) {
+    return nullptr;  // "span" keyword alone is invalid.
+  }
+  if (span_value && numeric_value && numeric_value->GetIntValue() < 0) {
+    return nullptr;  // Negative numbers are not allowed for span.
+  }
+  if (numeric_value && numeric_value->GetIntValue() == 0) {
+    return nullptr;  // An <integer> value of zero makes the declaration
+                     // invalid.
+  }
+
+  if (numeric_value) {
+    numeric_value = CSSNumericLiteralValue::Create(
+        ClampTo(numeric_value->GetIntValue(), -kGridMaxTracks, kGridMaxTracks), CSSPrimitiveValue::UnitType::kInteger);
+  }
+
+  std::shared_ptr<CSSValueList> values = CSSValueList::CreateSpaceSeparated();
+  if (span_value) {
+    values->Append(span_value);
+  }
+  // If span is present, omit `1` if there's a trailing identifier.
+  if (numeric_value && (!span_value || !grid_line_name || numeric_value->GetIntValue() != 1)) {
+    values->Append(numeric_value);
+  }
+  if (grid_line_name) {
+    values->Append(grid_line_name);
+  }
+  DCHECK(values->length());
+  return values;
+}
+
+bool ConsumeGridItemPositionShorthand(bool important,
+                                      CSSParserTokenStream& stream,
+                                      const CSSParserContext& context,
+                                      std::shared_ptr<const CSSValue>& start_value,
+                                      std::shared_ptr<const CSSValue>& end_value) {
+  // Input should be nullptrs.
+  DCHECK(!start_value);
+  DCHECK(!end_value);
+
+  start_value = ConsumeGridLine(stream, context);
+  if (!start_value) {
+    return false;
+  }
+
+  if (ConsumeSlashIncludingWhitespace(stream)) {
+    end_value = ConsumeGridLine(stream, context);
+    if (!end_value) {
+      return false;
+    }
+  } else {
+    end_value = start_value->IsCustomIdentValue() ? start_value : CSSIdentifierValue::Create(CSSValueID::kAuto);
+  }
+
+  return true;
+}
+
+// Appends to the passed in CSSBracketedValueList if any, otherwise creates a
+// new one. Returns nullptr if an empty list is consumed.
+std::shared_ptr<CSSBracketedValueList> ConsumeGridLineNames(
+    CSSParserTokenStream& stream,
+    const CSSParserContext& context,
+    bool is_subgrid_track_list,
+    std::shared_ptr<CSSBracketedValueList> line_names = nullptr) {
+  if (stream.Peek().GetType() != kLeftBracketToken) {
+    return nullptr;
+  }
+  {
+    CSSParserTokenStream::RestoringBlockGuard savepoint(stream);
+    stream.ConsumeWhitespace();
+
+    if (!line_names) {
+      line_names = std::make_shared<CSSBracketedValueList>();
+    }
+
+    while (std::shared_ptr<const CSSCustomIdentValue> line_name = ConsumeCustomIdentForGridLine(stream, context)) {
+      line_names->Append(line_name);
+    }
+
+    if (!savepoint.Release()) {
+      return nullptr;
+    }
+  }
+  stream.ConsumeWhitespace();
+
+  if (!is_subgrid_track_list && line_names->length() == 0U) {
+    return nullptr;
+  }
+
+  return line_names;
+}
+
+bool AppendLineNames(CSSParserTokenStream& stream,
+                     const CSSParserContext& context,
+                     bool is_subgrid_track_list,
+                     std::shared_ptr<CSSValueList> values) {
+  if (std::shared_ptr<const CSSBracketedValueList> line_names =
+          ConsumeGridLineNames(stream, context, is_subgrid_track_list)) {
+    values->Append(line_names);
+    return true;
+  }
+  return false;
+}
+
+
+std::shared_ptr<const CSSValue> ConsumeGridBreadth(CSSParserTokenStream& stream,
+                             const CSSParserContext& context) {
+  const CSSParserToken& token = stream.Peek();
+  if (IdentMatches<CSSValueID::kAuto, CSSValueID::kMinContent,
+                   CSSValueID::kMaxContent>(token.Id())) {
+    return ConsumeIdent(stream);
+  }
+  if (token.GetType() == kDimensionToken &&
+      token.GetUnitType() == CSSPrimitiveValue::UnitType::kFlex) {
+    if (token.NumericValue() < 0) {
+      return nullptr;
+    }
+    return CSSNumericLiteralValue::Create(
+        stream.ConsumeIncludingWhitespace().NumericValue(),
+        CSSPrimitiveValue::UnitType::kFlex);
+  }
+  return ConsumeLengthOrPercent(stream, context,
+                                CSSPrimitiveValue::ValueRange::kNonNegative,
+                                UnitlessQuirk::kForbid);
+}
+
+
+std::shared_ptr<const CSSValue> ConsumeFitContent(CSSParserTokenStream& stream,
+                            const CSSParserContext& context) {
+  std::shared_ptr<CSSFunctionValue> result;
+  {
+    CSSParserTokenStream::RestoringBlockGuard guard(stream);
+    stream.ConsumeWhitespace();
+    std::shared_ptr<const CSSPrimitiveValue> length = ConsumeLengthOrPercent(
+        stream, context, CSSPrimitiveValue::ValueRange::kNonNegative,
+        UnitlessQuirk::kAllow);
+    if (!length || !stream.AtEnd()) {
+      return nullptr;
+    }
+    guard.Release();
+    result = std::make_shared<CSSFunctionValue>(CSSValueID::kFitContent);
+    result->Append(length);
+  }
+  stream.ConsumeWhitespace();
+  return result;
+}
+
+
+std::shared_ptr<const CSSValue> ConsumeGridTrackSize(CSSParserTokenStream& stream,
+                               const CSSParserContext& context) {
+  const auto& token_id = stream.Peek().FunctionId();
+
+  if (token_id == CSSValueID::kMinmax) {
+    std::shared_ptr<CSSFunctionValue> result;
+    DCHECK_EQ(stream.Peek().GetType(), kFunctionToken);
+    {
+      CSSParserTokenStream::RestoringBlockGuard guard(stream);
+      stream.ConsumeWhitespace();
+      std::shared_ptr<const CSSValue> min_track_breadth = ConsumeGridBreadth(stream, context);
+      auto* min_track_breadth_primitive_value =
+          DynamicTo<CSSPrimitiveValue>(min_track_breadth.get());
+      if (!min_track_breadth ||
+          (min_track_breadth_primitive_value &&
+           min_track_breadth_primitive_value->IsFlex()) ||
+          !ConsumeCommaIncludingWhitespace(stream)) {
+        return nullptr;
+      }
+      std::shared_ptr<const CSSValue> max_track_breadth = ConsumeGridBreadth(stream, context);
+      if (!max_track_breadth || !stream.AtEnd()) {
+        return nullptr;
+      }
+      guard.Release();
+      result = std::make_shared<CSSFunctionValue>(CSSValueID::kMinmax);
+      result->Append(min_track_breadth);
+      result->Append(max_track_breadth);
+    }
+    stream.ConsumeWhitespace();
+    return result;
+  }
+
+  return (token_id == CSSValueID::kFitContent)
+             ? ConsumeFitContent(stream, context)
+             : ConsumeGridBreadth(stream, context);
+}
+
+bool IsGridBreadthFixedSized(const CSSValue& value) {
+  if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(value)) {
+    CSSValueID value_id = identifier_value->GetValueID();
+    return value_id != CSSValueID::kAuto &&
+           value_id != CSSValueID::kMinContent &&
+           value_id != CSSValueID::kMaxContent;
+  }
+
+  if (auto* primitive_value = DynamicTo<CSSPrimitiveValue>(value)) {
+    return !primitive_value->IsFlex();
+  }
+
+  NOTREACHED_IN_MIGRATION();
+  return true;
+}
+
+bool IsGridTrackFixedSized(const CSSValue& value) {
+  if (value.IsPrimitiveValue() || value.IsIdentifierValue()) {
+    return IsGridBreadthFixedSized(value);
+  }
+
+  auto& function = To<CSSFunctionValue>(value);
+  if (function.FunctionType() == CSSValueID::kFitContent) {
+    return false;
+  }
+
+  std::shared_ptr<const CSSValue>&& min_value = function.Item(0);
+  std::shared_ptr<const CSSValue>&& max_value = function.Item(1);
+  return IsGridBreadthFixedSized(*min_value) ||
+         IsGridBreadthFixedSized(*max_value);
+}
+
+bool ConsumeGridTrackRepeatFunction(CSSParserTokenStream& stream,
+                                    const CSSParserContext& context,
+                                    bool is_subgrid_track_list,
+                                    CSSValueList& list,
+                                    bool& is_auto_repeat,
+                                    bool& all_tracks_are_fixed_sized) {
+  DCHECK_EQ(stream.Peek().GetType(), kFunctionToken);
+  CSSParserTokenStream::BlockGuard guard(stream);
+  stream.ConsumeWhitespace();
+
+  // <name-repeat> syntax for subgrids only supports `auto-fill`.
+  if (is_subgrid_track_list && IdentMatches<CSSValueID::kAutoFit>(stream.Peek().Id())) {
+    return false;
+  }
+
+  is_auto_repeat = IdentMatches<CSSValueID::kAutoFill, CSSValueID::kAutoFit>(stream.Peek().Id());
+  std::shared_ptr<CSSValueList> repeated_values;
+  // The number of repetitions for <auto-repeat> is not important at parsing
+  // level because it will be computed later, let's set it to 1.
+  size_t repetitions = 1;
+
+  if (is_auto_repeat) {
+    repeated_values = std::make_shared<cssvalue::CSSGridAutoRepeatValue>(stream.ConsumeIncludingWhitespace().Id());
+  } else {
+    // TODO(rob.buis): a consumeIntegerRaw would be more efficient here.
+    std::shared_ptr<const CSSPrimitiveValue> repetition = ConsumePositiveInteger(stream, context);
+    if (!repetition) {
+      return false;
+    }
+    repetitions = ClampTo<size_t>(repetition->GetDoubleValue(), 0, kGridMaxTracks);
+    repeated_values = CSSValueList::CreateSpaceSeparated();
+  }
+
+  if (!ConsumeCommaIncludingWhitespace(stream)) {
+    return false;
+  }
+
+  size_t number_of_line_name_sets = AppendLineNames(stream, context, is_subgrid_track_list, repeated_values);
+  size_t number_of_tracks = 0;
+  while (!stream.AtEnd()) {
+    if (is_subgrid_track_list) {
+      if (!number_of_line_name_sets || !AppendLineNames(stream, context, is_subgrid_track_list, repeated_values)) {
+        return false;
+      }
+      ++number_of_line_name_sets;
+    } else {
+      std::shared_ptr<const CSSValue> track_size = ConsumeGridTrackSize(stream, context);
+      if (!track_size) {
+        return false;
+      }
+      if (all_tracks_are_fixed_sized) {
+        all_tracks_are_fixed_sized = IsGridTrackFixedSized(*track_size);
+      }
+      repeated_values->Append(track_size);
+      ++number_of_tracks;
+      AppendLineNames(stream, context, is_subgrid_track_list, repeated_values);
+    }
+  }
+
+  // We should have found at least one <track-size> or else it is not a valid
+  // <track-list>. If it's a subgrid <line-name-list>, then we should have found
+  // at least one named grid line.
+  if ((is_subgrid_track_list && !number_of_line_name_sets) || (!is_subgrid_track_list && !number_of_tracks)) {
+    return false;
+  }
+
+  if (is_auto_repeat) {
+    list.Append(repeated_values);
+  } else {
+    // We clamp the repetitions to a multiple of the repeat() track list's size,
+    // while staying below the max grid size.
+    repetitions =
+        std::min(repetitions, kGridMaxTracks / (is_subgrid_track_list ? number_of_line_name_sets : number_of_tracks));
+    auto integer_repeated_values = std::make_shared<cssvalue::CSSGridIntegerRepeatValue>(repetitions);
+    for (size_t i = 0; i < repeated_values->length(); ++i) {
+      integer_repeated_values->Append(repeated_values->Item(i));
+    }
+    list.Append(integer_repeated_values);
+  }
+
+  return true;
+}
+
+std::shared_ptr<const CSSValue> ConsumeGridTrackList(CSSParserTokenStream& stream,
+                                                     const CSSParserContext& context,
+                                                     TrackListType track_list_type) {
+  bool allow_grid_line_names = track_list_type != TrackListType::kGridAuto;
+  if (!allow_grid_line_names && stream.Peek().GetType() == kLeftBracketToken) {
+    return nullptr;
+  }
+
+  bool is_subgrid_track_list = track_list_type == TrackListType::kGridTemplateSubgrid;
+
+  std::shared_ptr<CSSValueList> values = CSSValueList::CreateSpaceSeparated();
+  if (is_subgrid_track_list) {
+    if (IdentMatches<CSSValueID::kSubgrid>(stream.Peek().Id())) {
+      values->Append(ConsumeIdent(stream));
+    } else {
+      return nullptr;
+    }
+  }
+
+  AppendLineNames(stream, context, is_subgrid_track_list, values);
+
+  bool allow_repeat = is_subgrid_track_list || track_list_type == TrackListType::kGridTemplate;
+  bool seen_auto_repeat = false;
+  bool all_tracks_are_fixed_sized = true;
+  auto IsRangeAtEnd = [](CSSParserTokenStream& stream) -> bool {
+    return stream.AtEnd() || stream.Peek().GetType() == kDelimiterToken;
+  };
+
+  do {
+    bool is_auto_repeat;
+    if (stream.Peek().FunctionId() == CSSValueID::kRepeat) {
+      if (!allow_repeat) {
+        return nullptr;
+      }
+      if (!ConsumeGridTrackRepeatFunction(stream, context, is_subgrid_track_list, *values, is_auto_repeat,
+                                          all_tracks_are_fixed_sized)) {
+        return nullptr;
+      }
+      stream.ConsumeWhitespace();
+      if (is_auto_repeat && seen_auto_repeat) {
+        return nullptr;
+      }
+
+      seen_auto_repeat = seen_auto_repeat || is_auto_repeat;
+    } else if (std::shared_ptr<const CSSValue> value = ConsumeGridTrackSize(stream, context)) {
+      // If we find a <track-size> in a subgrid track list, then it isn't a
+      // valid <line-name-list>.
+      if (is_subgrid_track_list) {
+        return nullptr;
+      }
+      if (all_tracks_are_fixed_sized) {
+        all_tracks_are_fixed_sized = IsGridTrackFixedSized(*value);
+      }
+
+      values->Append(value);
+    } else if (!is_subgrid_track_list) {
+      return nullptr;
+    }
+
+    if (seen_auto_repeat && !all_tracks_are_fixed_sized) {
+      return nullptr;
+    }
+    if (!allow_grid_line_names && stream.Peek().GetType() == kLeftBracketToken) {
+      return nullptr;
+    }
+
+    bool did_append_line_names = AppendLineNames(stream, context, is_subgrid_track_list, values);
+    if (is_subgrid_track_list && !did_append_line_names && stream.Peek().FunctionId() != CSSValueID::kRepeat) {
+      return IsRangeAtEnd(stream) ? values : nullptr;
+    }
+  } while (!IsRangeAtEnd(stream));
+
+  return values;
+}
+
+std::shared_ptr<const CSSValue> ConsumeGridTemplatesRowsOrColumns(CSSParserTokenStream& stream,
+                                                                  const CSSParserContext& context) {
+  switch (stream.Peek().Id()) {
+    case CSSValueID::kNone:
+      return ConsumeIdent(stream);
+    case CSSValueID::kSubgrid:
+      return ConsumeGridTrackList(stream, context, TrackListType::kGridTemplateSubgrid);
+    default:
+      return ConsumeGridTrackList(stream, context, TrackListType::kGridTemplate);
+  }
+}
+
+std::vector<std::string> ParseGridTemplateAreasColumnNames(const std::string& grid_row_names) {
+  DCHECK(!grid_row_names.empty());
+
+  StringBuilder area_name;
+  std::vector<std::string> column_names;
+  for (unsigned i = 0; i < grid_row_names.length(); ++i) {
+    if (IsCSSSpace(grid_row_names[i])) {
+      if (!area_name.empty()) {
+        column_names.push_back(area_name.ReleaseString());
+      }
+      continue;
+    }
+    if (grid_row_names[i] == '.') {
+      if (area_name == ".") {
+        continue;
+      }
+      if (!area_name.empty()) {
+        column_names.push_back(area_name.ReleaseString());
+      }
+    } else {
+      if (!IsNameCodePoint(grid_row_names[i])) {
+        return {};
+      }
+      if (area_name == ".") {
+        column_names.push_back(area_name.ReleaseString());
+      }
+    }
+    area_name.Append(grid_row_names[i]);
+  }
+
+  if (!area_name.empty()) {
+    column_names.push_back(area_name.ReleaseString());
+  }
+
+  return column_names;
+}
+
+bool ParseGridTemplateAreasRow(const std::string& grid_row_names,
+                               NamedGridAreaMap& grid_area_map,
+                               const size_t row_count,
+                               size_t& column_count) {
+  if (grid_row_names.empty()) {
+    return false;
+  }
+
+  std::vector<std::string> column_names = ParseGridTemplateAreasColumnNames(grid_row_names);
+  if (row_count == 0) {
+    column_count = column_names.size();
+    if (column_count == 0) {
+      return false;
+    }
+  } else if (column_count != column_names.size()) {
+    // The declaration is invalid if all the rows don't have the number of
+    // columns.
+    return false;
+  }
+
+  for (size_t current_column = 0; current_column < column_count; ++current_column) {
+    const std::string& grid_area_name = column_names[current_column];
+
+    // Unamed areas are always valid (we consider them to be 1x1).
+    if (grid_area_name == ".") {
+      continue;
+    }
+
+    size_t look_ahead_column = current_column + 1;
+    while (look_ahead_column < column_count && column_names[look_ahead_column] == grid_area_name) {
+      look_ahead_column++;
+    }
+
+    NamedGridAreaMap::iterator grid_area_it = grid_area_map.find(grid_area_name);
+    if (grid_area_it == grid_area_map.end()) {
+      grid_area_map.emplace(grid_area_name,
+                            GridArea(GridSpan::TranslatedDefiniteGridSpan(row_count, row_count + 1),
+                                     GridSpan::TranslatedDefiniteGridSpan(current_column, look_ahead_column)));
+    } else {
+      GridArea& grid_area = grid_area_it->second;
+
+      // The following checks test that the grid area is a single filled-in
+      // rectangle.
+      // 1. The new row is adjacent to the previously parsed row.
+      if (row_count != grid_area.rows.EndLine()) {
+        return false;
+      }
+
+      // 2. The new area starts at the same position as the previously parsed
+      // area.
+      if (current_column != grid_area.columns.StartLine()) {
+        return false;
+      }
+
+      // 3. The new area ends at the same position as the previously parsed
+      // area.
+      if (look_ahead_column != grid_area.columns.EndLine()) {
+        return false;
+      }
+
+      grid_area.rows = GridSpan::TranslatedDefiniteGridSpan(grid_area.rows.StartLine(), grid_area.rows.EndLine() + 1);
+    }
+    current_column = look_ahead_column - 1;
+  }
+
+  return true;
+}
+
+bool ConsumeGridTemplateRowsAndAreasAndColumns(bool important,
+                                               CSSParserTokenStream& stream,
+                                               const CSSParserContext& context,
+                                               std::shared_ptr<const CSSValue>& template_rows,
+                                               std::shared_ptr<const CSSValue>& template_columns,
+                                               std::shared_ptr<const CSSValue>& template_areas) {
+  DCHECK(!template_rows);
+  DCHECK(!template_columns);
+  DCHECK(!template_areas);
+
+  NamedGridAreaMap grid_area_map;
+  size_t row_count = 0;
+  size_t column_count = 0;
+  std::shared_ptr<CSSValueList> template_rows_value_list = CSSValueList::CreateSpaceSeparated();
+
+  // Persists between loop iterations so we can use the same value for
+  // consecutive <line-names> values
+  std::shared_ptr<CSSBracketedValueList> line_names = nullptr;
+
+  // See comment in Grid::ParseShorthand() about the use of AtEnd.
+
+  do {
+    // Handle leading <custom-ident>*.
+    bool has_previous_line_names = line_names != nullptr;
+    line_names = ConsumeGridLineNames(stream, context, /* is_subgrid_track_list */ false, line_names);
+    if (line_names && !has_previous_line_names) {
+      template_rows_value_list->Append(line_names);
+    }
+
+    // Handle a template-area's row.
+    if (stream.Peek().GetType() != kStringToken ||
+        !ParseGridTemplateAreasRow(stream.ConsumeIncludingWhitespace().Value(), grid_area_map, row_count,
+                                   column_count)) {
+      return false;
+    }
+    ++row_count;
+
+    // Handle template-rows's track-size.
+    std::shared_ptr<const CSSValue> value = ConsumeGridTrackSize(stream, context);
+    if (!value) {
+      value = CSSIdentifierValue::Create(CSSValueID::kAuto);
+    }
+    template_rows_value_list->Append(value);
+
+    // This will handle the trailing/leading <custom-ident>* in the grammar.
+    line_names = ConsumeGridLineNames(stream, context,
+                                      /* is_subgrid_track_list */ false);
+    if (line_names) {
+      template_rows_value_list->Append(line_names);
+    }
+  } while (!stream.AtEnd() && !(stream.Peek().GetType() == kDelimiterToken &&
+                                (stream.Peek().Delimiter() == '/' || stream.Peek().Delimiter() == '!')));
+
+  if (!stream.AtEnd() && stream.Peek().Delimiter() != '!') {
+    if (!ConsumeSlashIncludingWhitespace(stream)) {
+      return false;
+    }
+    template_columns = ConsumeGridTrackList(stream, context, TrackListType::kGridTemplateNoRepeat);
+    if (!template_columns || !(stream.AtEnd() || stream.Peek().Delimiter() == '!')) {
+      return false;
+    }
+  } else {
+    template_columns = CSSIdentifierValue::Create(CSSValueID::kNone);
+  }
+
+  template_rows = template_rows_value_list;
+  template_areas = std::make_shared<cssvalue::CSSGridTemplateAreasValue>(grid_area_map, row_count, column_count);
+  return true;
+}
+
+bool ConsumeGridTemplateShorthand(bool important,
+                                  CSSParserTokenStream& stream,
+                                  const CSSParserContext& context,
+                                  std::shared_ptr<const CSSValue>& template_rows,
+                                  std::shared_ptr<const CSSValue>& template_columns,
+                                  std::shared_ptr<const CSSValue>& template_areas) {
+  DCHECK(!template_rows);
+  DCHECK(!template_columns);
+  DCHECK(!template_areas);
+
+  DCHECK_EQ(gridTemplateShorthand().length(), 3u);
+
+  {
+    // 1- <grid-template-rows> / <grid-template-columns>
+    CSSParserSavePoint savepoint(stream);
+    template_rows = ConsumeIdent<CSSValueID::kNone>(stream);
+    if (!template_rows) {
+      template_rows = ConsumeGridTemplatesRowsOrColumns(stream, context);
+    }
+
+    if (template_rows && ConsumeSlashIncludingWhitespace(stream)) {
+      template_columns = ConsumeGridTemplatesRowsOrColumns(stream, context);
+      if (template_columns) {
+        template_areas = CSSIdentifierValue::Create(CSSValueID::kNone);
+        savepoint.Release();
+        return true;
+      }
+    }
+
+    template_rows = nullptr;
+    template_columns = nullptr;
+    template_areas = nullptr;
+  }
+
+  {
+    // 2- [ <line-names>? <string> <track-size>? <line-names>? ]+
+    // [ / <track-list> ]?
+    CSSParserSavePoint savepoint(stream);
+    if (ConsumeGridTemplateRowsAndAreasAndColumns(important, stream, context, template_rows, template_columns,
+                                                  template_areas)) {
+      savepoint.Release();
+      return true;
+    }
+  }
+
+  // 3- 'none' alone case. This must come after the others, since “none“
+  // could also be the start of case 1.
+  template_rows = ConsumeIdent<CSSValueID::kNone>(stream);
+  if (template_rows) {
+    template_rows = CSSIdentifierValue::Create(CSSValueID::kNone);
+    template_columns = CSSIdentifierValue::Create(CSSValueID::kNone);
+    template_areas = CSSIdentifierValue::Create(CSSValueID::kNone);
+    return true;
+  }
+
+  return false;
+}
 }  // namespace css_parsing_utils
 
 }  // namespace webf

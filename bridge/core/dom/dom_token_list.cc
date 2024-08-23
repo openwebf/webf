@@ -26,6 +26,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "core/css/parser/css_parser_idioms.h"
 #include "dom_token_list.h"
 #include "element.h"
 
