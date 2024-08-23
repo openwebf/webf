@@ -3,7 +3,7 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-#include "v8_member_installer.h"
+#include "bindings/v8/v8_member_installer.h"
 #include "core/executing_context.h"
 
 namespace webf {
