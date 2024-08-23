@@ -21,6 +21,12 @@
 
 namespace webf {
 
+#if WEBF_V8_JS_ENGINE
+enum IsolateEmbedderDataSlot {
+  kExecutingContextSlot = 0,
+};
+#endif
+
 static std::atomic<int32_t> context_unique_id{0};
 
 #define MAX_JS_CONTEXT 8192
@@ -68,6 +74,8 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   JS_SetHostPromiseRejectionTracker(script_state_.runtime(), promiseRejectTracker, nullptr);
 
 #elif WEBF_V8_JS_ENGINE
+  v8::Isolate* isolate = script_state_.isolate();
+  isolate->SetData(kExecutingContextSlot, this);
 #endif
 
 //  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallBindings");
@@ -250,6 +258,10 @@ bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
 }
 
 #elif WEBF_V8_JS_ENGINE
+
+ExecutingContext* ExecutingContext::From(v8::Isolate* isolate) {
+  return static_cast<ExecutingContext*>(isolate->GetData(kExecutingContextSlot));
+}
 
 #endif
 
