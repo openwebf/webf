@@ -4,48 +4,35 @@
 */
 
 #include "exception_state.h"
+#include "bindings/v8/v8_throw_exception.h"
 
 namespace webf {
 
-void ExceptionState::ThrowException(v8::Isolate* ctx, ErrorType type, const std::string& message) {
+void ExceptionState::ThrowException(v8::Isolate* isolate, ErrorType type, const std::string& message) {
   switch (type) {
     case ErrorType::TypeError:
-//      exception_ = JS_ThrowTypeError(ctx, "%s", message.c_str());
+      V8ThrowException::ThrowError(isolate, message);
       break;
     case InternalError:
-//      exception_ = JS_ThrowInternalError(ctx, "%s", message.c_str());
+      // TODO match InternalError
+      V8ThrowException::ThrowError(isolate, message);
       break;
     case RangeError:
-//      exception_ = JS_ThrowRangeError(ctx, "%s", message.c_str());
+      V8ThrowException::ThrowRangeError(isolate, message);
       break;
     case ReferenceError:
-//      exception_ = JS_ThrowReferenceError(ctx, "%s", message.c_str());
+      V8ThrowException::ThrowReferenceError(isolate, message);
       break;
     case SyntaxError:
-//      exception_ = JS_ThrowSyntaxError(ctx, "%s", message.c_str());
+      V8ThrowException::ThrowSyntaxError(isolate, message);
       break;
   }
+  didThrowException_ = true;
 }
 
-void ExceptionState::ThrowException(v8::Isolate* ctx, v8::Local<v8::Value> exception) {
-//  exception_ = JS_DupValue(ctx, exception);
-}
 
 bool ExceptionState::HasException() {
-  return !exception_->IsNull();
-}
-
-ExceptionState& ExceptionState::ReturnThis() {
-  return *this;
-}
-
-//  virtual v8::Local<v8::Value> ToV8() {
-//    return ;
-//  }
-
-v8::Local<v8::Value> ExceptionState::CurrentException(v8::Isolate* ctx) {
-//  return JS_GetException(ctx);
-//return v8::Value;
+  return didThrowException_;
 }
 
 }  // namespace webf
