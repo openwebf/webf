@@ -7,6 +7,8 @@
 
 namespace webf {
 
+#if WEBF_QUICKJS_JS_ENGINE
+
 static void handleTimerCallback(DOMTimer* timer, char* errmsg) {
   auto* context = timer->context();
 
@@ -187,5 +189,38 @@ ScriptValue WindowOrWorkerGlobalScope::__memory_usage__(ExecutingContext* contex
 
   return ScriptValue::CreateJsonObject(context->ctx(), buff, strlen(buff));
 }
+#elif WEBF_V8_JS_ENGINE
+
+int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
+                                          const v8::Local<v8::Function> &callback,
+                                          int32_t timeout,
+                                          ExceptionState& exception) {
+  if (callback.IsEmpty()) {
+    exception.ThrowException(callback->GetIsolate(), ErrorType::InternalError, "Timeout callback is null");
+    return -1;
+  }
+
+  return 0;
+  // TODO
+  // Create a timer object to keep track timer callback.
+  //  auto timer = DOMTimer::create(context, handler, DOMTimer::TimerKind::kOnce);
+  //  auto timer_id = context->dartMethodPtr()->setTimeout(context->isDedicated(), timer.get(), context->contextId(),
+  //                                                       handleTransientCallbackWrapper, timeout);
+
+  // Register timerId.
+  //  timer->setTimerId(timer_id);
+
+  //  context->Timers()->installNewTimer(context, timer_id, timer);
+
+  //  return timer_id;
+}
+
+int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
+                                          const v8::Local<v8::Function> &callback,
+                                          ExceptionState& exception) {
+  return setTimeout(context, callback, 0.0, exception);
+}
+
+#endif
 
 }  // namespace webf
