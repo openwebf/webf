@@ -172,7 +172,6 @@ class ExecutingContext {
   void InstallPerformance();
 
   void DrainPendingPromiseJobs();
-  void EnsureEnqueueMicrotask();
 
   static void promiseRejectTracker(JSContext* ctx,
                                    JSValueConst promise,
