@@ -42,7 +42,7 @@ function generateMethodArgumentsCheck(m: FunctionDeclaration) {
   return `  if (args.Length() < ${requiredArgsCount}) {
     v8::Isolate* isolate = args.GetIsolate();
     std::string error_message = std::format("Failed to execute '${m.name}' : ${requiredArgsCount} argument required, but {} present.", args.Length());
-    isolate->ThrowException(v8::String::NewFromUtf8(isolate, error_message.c_str()).ToLocalChecked());
+    V8ThrowException::ThrowError(isolate, error_message);
     args.GetReturnValue().SetUndefined();
   }
 `;
@@ -327,7 +327,8 @@ function generateRequiredInitBody(argument: FunctionArguments, argsIndex: number
 
   return `auto&& args_${argument.name} = ${body};
 if (UNLIKELY(exception_state.HasException())) {
-  return exception_state.ToQuickJS();
+  args.GetReturnValue().SetUndefined();
+  return;
 }`;
 }
 
@@ -375,7 +376,8 @@ ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...pre
 
   return `auto&& args_${argument.name} = Converter<IDLOptional<${generateIDLTypeConverter(argument.type)}>>::FromValue(ctx, argv[${argsIndex}], exception_state);
 if (UNLIKELY(exception_state.HasException())) {
-  return exception_state.ToQuickJS();
+  args.GetReturnValue().SetUndefined();
+  return;
 }
 
 if (argc <= ${argsIndex + 1}) {
@@ -520,32 +522,39 @@ function generateFunctionBody(blob: IDLBlob, declare: FunctionDeclaration, optio
 }) {
   let paramCheck = generateMethodArgumentsCheck(declare);
   let callBody = generateFunctionCallBody(blob, declare, options);
-  let returnValueInit = generateReturnValueInit(blob, declare.returnType, options);
+  // let returnValueInit = generateReturnValueInit(blob, declare.returnType, options);
+  let returnValueInit = '';
   let returnValueResult = generateReturnValueResult(blob, declare.returnType, declare.returnTypeMode, options);
 
-  let constructorPrototypeInit = (options.isConstructor && returnValueInit.length > 0) ? `JSValue proto = JS_GetPropertyStr(ctx, this_val, "prototype");
-  JS_SetPrototype(ctx, return_value->ToQuickJSUnsafe(), proto);
-  JS_FreeValue(ctx, proto);` : '';
+  // let constructorPrototypeInit = (options.isConstructor && returnValueInit.length > 0) ? `JSValue proto = JS_GetPropertyStr(ctx, this_val, "prototype");
+  // JS_SetPrototype(ctx, return_value->ToQuickJSUnsafe(), proto);
+  // JS_FreeValue(ctx, proto);` : '';
+  let constructorPrototypeInit = '';
 
   return `${paramCheck}
 
   ExceptionState exception_state;
-  ExecutingContext* context = ExecutingContext::From(ctx);
-  if (!context->IsContextValid()) return JS_NULL;
+  v8::Isolate* isolate = args.GetIsolate();
+  ExecutingContext* context = ExecutingContext::From(isolate);
+  if (!context->IsContextValid()) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   
-  context->dartIsolateContext()->profiler()->StartTrackSteps("${getClassName(blob)}::${declare.name}");
+  // context->dartIsolateContext()->profiler()->StartTrackSteps("${getClassName(blob)}::${declare.name}");
   
-  MemberMutationScope scope{context};
+  // MemberMutationScope scope{context};
   ${returnValueInit}
 
   do {  // Dummy loop for use of 'break'.
 ${addIndent(callBody, 4)}
   } while (false);
   
-   context->dartIsolateContext()->profiler()->FinishTrackSteps();
+  // context->dartIsolateContext()->profiler()->FinishTrackSteps();
 
   if (UNLIKELY(exception_state.HasException())) {
-    return exception_state.ToQuickJS();
+    args.GetReturnValue().SetUndefined();
+    return;
   }
   ${constructorPrototypeInit}
   return ${returnValueResult};

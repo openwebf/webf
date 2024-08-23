@@ -22,19 +22,13 @@ class ExceptionState {
   WEBF_DISALLOW_NEW();
 
  public:
-  void ThrowException(v8::Isolate* ctx, ErrorType type, const std::string& message);
-  void ThrowException(v8::Isolate* ctx, v8::Local<v8::Value> exception);
+  void ThrowException(v8::Isolate* isolate, ErrorType type, const std::string& message);
   bool HasException();
 
-  ExceptionState& ReturnThis();
-
-//  virtual v8::Local<v8::Value> ToV8() {
-//    return exception_;
-//  }
-  static v8::Local<v8::Value> CurrentException(v8::Isolate* ctx);
+//  ExceptionState& ReturnThis();
 
  private:
-  v8::Local<v8::Value> exception_;
+  bool didThrowException_{false};
 };
 
 }  // namespace webf

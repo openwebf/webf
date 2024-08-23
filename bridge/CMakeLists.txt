@@ -646,6 +646,8 @@ elseif (${WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/v8_member_installer.cc
     bindings/v8/v8_binding_initializer.cc
     bindings/v8/generated_code_helper.h
+    bindings/v8/exception_state.cc
+    bindings/v8/v8_throw_exception.cc
     bindings/v8/platform/scoped_persistent.h
     bindings/v8/platform/v8_per_context_data.cc
     bindings/v8/platform/v8_per_isolate_data.cc
