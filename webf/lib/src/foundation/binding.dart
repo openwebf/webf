@@ -341,6 +341,9 @@ void invokeBindingMethodFromNativeImpl(double contextId, int profileId, Pointer<
     WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
   }
 
+  // Make sure the dart object related to nativeBindingObject had been created.
+  flushUICommand(controller.view, nullptr);
+
   BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
 
   if (enableWebFProfileTracking) {
