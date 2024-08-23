@@ -39,8 +39,11 @@ function generateMethodArgumentsCheck(m: FunctionDeclaration) {
     return '';
   }
 
-  return `  if (argc < ${requiredArgsCount}) {
-    return JS_ThrowTypeError(ctx, "Failed to execute '${m.name}' : ${requiredArgsCount} argument required, but %d present.", argc);
+  return `  if (args.Length() < ${requiredArgsCount}) {
+    v8::Isolate* isolate = args.GetIsolate();
+    std::string error_message = std::format("Failed to execute '${m.name}' : ${requiredArgsCount} argument required, but {} present.", args.Length());
+    isolate->ThrowException(v8::String::NewFromUtf8(isolate, error_message.c_str()).ToLocalChecked());
+    args.GetReturnValue().SetUndefined();
   }
 `;
 }
@@ -677,7 +680,7 @@ const WrapperTypeInfo& ${className}::wrapper_type_info_ = QJS${className}::wrapp
       }
       case TemplateKind.globalFunction: {
         object = object as FunctionObject;
-        options.globalFunctionInstallList.push(` {"${object.declare.name}", ${object.declare.name}, ${object.declare.args.length}}`);
+        options.globalFunctionInstallList.push(` {"${object.declare.name}", ${object.declare.name}}`);
         return _.template(readTemplate('global_function'))({
           className,
           blob: blob,
