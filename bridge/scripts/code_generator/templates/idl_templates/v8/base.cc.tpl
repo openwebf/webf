@@ -6,6 +6,7 @@
 #include "<%= blob.filename %>.h"
 #include "foundation/native_value_converter.h"
 #include "binding_call_methods.h"
+#include "bindings/v8/v8_member_installer.h"
 #include "defined_properties.h"
 #include "core/executing_context.h"
 #include "core/dom/element.h"
@@ -25,7 +26,7 @@ namespace webf {
 <%= content %>
 
 <% if (globalFunctionInstallList.length > 0 || classPropsInstallList.length > 0 || classMethodsInstallList.length > 0 || constructorInstallList.length > 0) { %>
-void QJS<%= className %>::Install(ExecutingContext* context) {
+void V8<%= className %>::Install(ExecutingContext* context) {
   <% if (globalFunctionInstallList.length > 0) { %> InstallGlobalFunctions(context); <% } %>
   <% if(classPropsInstallList.length > 0) { %> InstallPrototypeProperties(context); <% } %>
   <% if(classMethodsInstallList.length > 0) { %> InstallPrototypeMethods(context); <% } %>
@@ -35,16 +36,16 @@ void QJS<%= className %>::Install(ExecutingContext* context) {
 <% } %>
 
 <% if(globalFunctionInstallList.length > 0) { %>
-void QJS<%= className %>::InstallGlobalFunctions(ExecutingContext* context) {
+void V8<%= className %>::InstallGlobalFunctions(ExecutingContext* context) {
   std::initializer_list<MemberInstaller::FunctionConfig> functionConfig {
     <%= globalFunctionInstallList.join(',\n') %>
   };
-  MemberInstaller::InstallFunctions(context, context->Global(), functionConfig);
+  MemberInstaller::InstallFunctions(context, functionConfig);
 }
 <% } %>
 
 <% if(classPropsInstallList.length > 0) { %>
-void QJS<%= className %>::InstallPrototypeProperties(ExecutingContext* context) {
+void V8<%= className %>::InstallPrototypeProperties(ExecutingContext* context) {
   const WrapperTypeInfo* wrapperTypeInfo = GetWrapperTypeInfo();
   JSValue prototype = context->contextData()->prototypeForType(wrapperTypeInfo);
   std::initializer_list<MemberInstaller::FunctionConfig> functionConfig {
@@ -55,7 +56,7 @@ void QJS<%= className %>::InstallPrototypeProperties(ExecutingContext* context) 
 <% } %>
 
 <% if(classMethodsInstallList.length > 0) { %>
-void QJS<%= className %>::InstallPrototypeMethods(ExecutingContext* context) {
+void V8<%= className %>::InstallPrototypeMethods(ExecutingContext* context) {
   const WrapperTypeInfo* wrapperTypeInfo = GetWrapperTypeInfo();
   JSValue prototype = context->contextData()->prototypeForType(wrapperTypeInfo);
 
@@ -68,7 +69,7 @@ void QJS<%= className %>::InstallPrototypeMethods(ExecutingContext* context) {
 <% } %>
 
 <% if (constructorInstallList.length > 0) { %>
-void QJS<%= className %>::InstallConstructor(ExecutingContext* context) {
+void V8<%= className %>::InstallConstructor(ExecutingContext* context) {
   const WrapperTypeInfo* wrapperTypeInfo = GetWrapperTypeInfo();
   JSValue constructor = context->contextData()->constructorForType(wrapperTypeInfo);
 
