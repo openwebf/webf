@@ -263,6 +263,11 @@ ExecutingContext* ExecutingContext::From(v8::Isolate* isolate) {
   return static_cast<ExecutingContext*>(isolate->GetData(kExecutingContextSlot));
 }
 
+v8::Isolate* ExecutingContext::ctx() {
+  assert(IsCtxValid());
+  return script_state_.ctx();
+}
+
 #endif
 
 bool ExecutingContext::IsContextValid() const {
