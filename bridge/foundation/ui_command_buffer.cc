@@ -77,13 +77,6 @@ void UICommandBuffer::addCommand(const UICommandItem& item, bool request_ui_upda
     max_size_ = max_size_ * 2;
   }
 
-#if FLUTTER_BACKEND
-  if (UNLIKELY(request_ui_update && !update_batched_ && context_->IsContextValid())) {
-    context_->dartMethodPtr()->requestBatchUpdate(context_->isDedicated(), context_->contextId());
-    update_batched_ = true;
-  }
-#endif
-
   buffer_[size_] = item;
   size_++;
 }
@@ -98,13 +91,6 @@ void UICommandBuffer::addCommands(const webf::UICommandItem* items, int64_t item
     buffer_ = (UICommandItem*)realloc(buffer_, sizeof(UICommandItem) * target_size * 2);
     max_size_ = target_size * 2;
   }
-
-#if FLUTTER_BACKEND
-  if (UNLIKELY(request_ui_update && !update_batched_ && context_->IsContextValid())) {
-    context_->dartMethodPtr()->requestBatchUpdate(context_->isDedicated(), context_->contextId());
-    update_batched_ = true;
-  }
-#endif
 
   std::memcpy(buffer_ + size_, items, sizeof(UICommandItem) * item_size);
   size_ = target_size;
