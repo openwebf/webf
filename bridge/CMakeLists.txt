@@ -329,7 +329,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_rule.cc
     core/css/css_value.cc
     core/css/properties/longhand.cc
-#    core/css/properties/shorthands/shorthands_custom.cc
+    core/css/properties/shorthands/shorthands_custom.cc
     core/css/abstract_property_set_css_style_declaration.cc
     core/css/property_set_css_style_declaration.cc
     core/css/style_rule.cc

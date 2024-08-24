@@ -203,27 +203,27 @@ PhysicalMapping<4> CSSDirectionAwareResolver::PhysicalPaddingMapping() {
   return PhysicalMapping<4>(paddingShorthand());
 }
 
-LogicalMapping<4> CSSDirectionAwareResolver::LogicalScrollMarginMapping() {
-  static const CSSProperty* kProperties[] = {
-      &GetCSSPropertyScrollMarginBlockStart(), &GetCSSPropertyScrollMarginBlockEnd(),
-      &GetCSSPropertyScrollMarginInlineStart(), &GetCSSPropertyScrollMarginInlineEnd()};
-  return LogicalMapping<4>(kProperties);
-}
+//LogicalMapping<4> CSSDirectionAwareResolver::LogicalScrollMarginMapping() {
+//  static const CSSProperty* kProperties[] = {
+//      &GetCSSPropertyScrollMarginBlockStart(), &GetCSSPropertyScrollMarginBlockEnd(),
+//      &GetCSSPropertyScrollMarginInlineStart(), &GetCSSPropertyScrollMarginInlineEnd()};
+//  return LogicalMapping<4>(kProperties);
+//}
 
-PhysicalMapping<4> CSSDirectionAwareResolver::PhysicalScrollMarginMapping() {
-  return PhysicalMapping<4>(scrollMarginShorthand());
-}
+//PhysicalMapping<4> CSSDirectionAwareResolver::PhysicalScrollMarginMapping() {
+//  return PhysicalMapping<4>(scrollMarginShorthand());
+//}
 
-LogicalMapping<4> CSSDirectionAwareResolver::LogicalScrollPaddingMapping() {
-  static const CSSProperty* kProperties[] = {
-      &GetCSSPropertyScrollPaddingBlockStart(), &GetCSSPropertyScrollPaddingBlockEnd(),
-      &GetCSSPropertyScrollPaddingInlineStart(), &GetCSSPropertyScrollPaddingInlineEnd()};
-  return LogicalMapping<4>(kProperties);
-}
+//LogicalMapping<4> CSSDirectionAwareResolver::LogicalScrollPaddingMapping() {
+//  static const CSSProperty* kProperties[] = {
+//      &GetCSSPropertyScrollPaddingBlockStart(), &GetCSSPropertyScrollPaddingBlockEnd(),
+//      &GetCSSPropertyScrollPaddingInlineStart(), &GetCSSPropertyScrollPaddingInlineEnd()};
+//  return LogicalMapping<4>(kProperties);
+//}
 
-PhysicalMapping<4> CSSDirectionAwareResolver::PhysicalScrollPaddingMapping() {
-  return PhysicalMapping<4>(scrollPaddingShorthand());
-}
+//PhysicalMapping<4> CSSDirectionAwareResolver::PhysicalScrollPaddingMapping() {
+//  return PhysicalMapping<4>(scrollPaddingShorthand());
+//}
 
 LogicalMapping<2> CSSDirectionAwareResolver::LogicalScrollStartMapping() {
   static const CSSProperty* kProperties[] = {&GetCSSPropertyScrollStartBlock(), &GetCSSPropertyScrollStartInline()};

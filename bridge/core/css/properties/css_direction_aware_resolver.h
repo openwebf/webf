@@ -66,8 +66,8 @@ class CSSDirectionAwareResolver {
   static LogicalMapping<2> LogicalOverflowMapping();
   static LogicalMapping<2> LogicalOverscrollBehaviorMapping();
   static LogicalMapping<4> LogicalPaddingMapping();
-  static LogicalMapping<4> LogicalScrollMarginMapping();
-  static LogicalMapping<4> LogicalScrollPaddingMapping();
+//  static LogicalMapping<4> LogicalScrollMarginMapping();
+//  static LogicalMapping<4> LogicalScrollPaddingMapping();
   static LogicalMapping<2> LogicalScrollStartMapping();
   static LogicalMapping<2> LogicalScrollStartTargetMapping();
   static LogicalMapping<2> LogicalSizeMapping();
@@ -86,8 +86,8 @@ class CSSDirectionAwareResolver {
   static PhysicalMapping<2> PhysicalOverflowMapping();
   static PhysicalMapping<2> PhysicalOverscrollBehaviorMapping();
   static PhysicalMapping<4> PhysicalPaddingMapping();
-  static PhysicalMapping<4> PhysicalScrollMarginMapping();
-  static PhysicalMapping<4> PhysicalScrollPaddingMapping();
+//  static PhysicalMapping<4> PhysicalScrollMarginMapping();
+//  static PhysicalMapping<4> PhysicalScrollPaddingMapping();
   static PhysicalMapping<2> PhysicalScrollStartMapping();
   static PhysicalMapping<2> PhysicalScrollStartTargetMapping();
   static PhysicalMapping<2> PhysicalSizeMapping();

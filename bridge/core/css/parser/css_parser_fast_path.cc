@@ -45,14 +45,14 @@ static inline bool IsSimpleLengthPropertyID(CSSPropertyID property_id, bool& acc
       CSSPropertyID::kPaddingLeft,
       CSSPropertyID::kPaddingRight,
       CSSPropertyID::kPaddingTop,
-      CSSPropertyID::kScrollPaddingBlockEnd,
-      CSSPropertyID::kScrollPaddingBlockStart,
-      CSSPropertyID::kScrollPaddingBottom,
-      CSSPropertyID::kScrollPaddingInlineEnd,
-      CSSPropertyID::kScrollPaddingInlineStart,
-      CSSPropertyID::kScrollPaddingLeft,
-      CSSPropertyID::kScrollPaddingRight,
-      CSSPropertyID::kScrollPaddingTop,
+//      CSSPropertyID::kScrollPaddingBlockEnd,
+//      CSSPropertyID::kScrollPaddingBlockStart,
+//      CSSPropertyID::kScrollPaddingBottom,
+//      CSSPropertyID::kScrollPaddingInlineEnd,
+//      CSSPropertyID::kScrollPaddingInlineStart,
+//      CSSPropertyID::kScrollPaddingLeft,
+//      CSSPropertyID::kScrollPaddingRight,
+//      CSSPropertyID::kScrollPaddingTop,
       CSSPropertyID::kPaddingBlockEnd,
       CSSPropertyID::kPaddingBlockStart,
       CSSPropertyID::kPaddingInlineEnd,
@@ -1119,8 +1119,8 @@ bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(CSSPropertyID property_i
     case CSSPropertyID::kImageRendering:
       return value_id == CSSValueID::kAuto || value_id == CSSValueID::kWebkitOptimizeContrast ||
              value_id == CSSValueID::kPixelated;
-    case CSSPropertyID::kInterpolateSize:
-      return value_id == CSSValueID::kNumericOnly || value_id == CSSValueID::kAllowKeywords;
+//    case CSSPropertyID::kInterpolateSize:
+//      return value_id == CSSValueID::kNumericOnly || value_id == CSSValueID::kAllowKeywords;
     case CSSPropertyID::kIsolation:
       return value_id == CSSValueID::kAuto || value_id == CSSValueID::kIsolate;
     case CSSPropertyID::kListStylePosition:
@@ -1180,10 +1180,10 @@ bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(CSSPropertyID property_i
       return value_id == CSSValueID::kNone || value_id == CSSValueID::kBoth || value_id == CSSValueID::kHorizontal ||
              value_id == CSSValueID::kVertical || value_id == CSSValueID::kBlock || value_id == CSSValueID::kInline ||
              value_id == CSSValueID::kInternalTextareaAuto || (value_id == CSSValueID::kAuto);
-    case CSSPropertyID::kScrollMarkerGroup:
-      return value_id == CSSValueID::kNone || value_id == CSSValueID::kAfter || value_id == CSSValueID::kBefore;
-    case CSSPropertyID::kScrollBehavior:
-      return value_id == CSSValueID::kAuto || value_id == CSSValueID::kSmooth;
+//    case CSSPropertyID::kScrollMarkerGroup:
+//      return value_id == CSSValueID::kNone || value_id == CSSValueID::kAfter || value_id == CSSValueID::kBefore;
+//    case CSSPropertyID::kScrollBehavior:
+//      return value_id == CSSValueID::kAuto || value_id == CSSValueID::kSmooth;
     case CSSPropertyID::kShapeRendering:
       return value_id == CSSValueID::kAuto || value_id == CSSValueID::kOptimizespeed ||
              value_id == CSSValueID::kCrispedges || value_id == CSSValueID::kGeometricprecision;
@@ -1228,12 +1228,12 @@ bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(CSSPropertyID property_i
     case CSSPropertyID::kTextTransform:
       return (value_id >= CSSValueID::kCapitalize && value_id <= CSSValueID::kMathAuto) ||
              value_id == CSSValueID::kNone;
-    case CSSPropertyID::kUnicodeBidi:
-      return value_id == CSSValueID::kNormal || value_id == CSSValueID::kEmbed ||
-             value_id == CSSValueID::kBidiOverride || value_id == CSSValueID::kWebkitIsolate ||
-             value_id == CSSValueID::kWebkitIsolateOverride || value_id == CSSValueID::kWebkitPlaintext ||
-             value_id == CSSValueID::kIsolate || value_id == CSSValueID::kIsolateOverride ||
-             value_id == CSSValueID::kPlaintext;
+//    case CSSPropertyID::kUnicodeBidi:
+//      return value_id == CSSValueID::kNormal || value_id == CSSValueID::kEmbed ||
+//             value_id == CSSValueID::kBidiOverride || value_id == CSSValueID::kWebkitIsolate ||
+//             value_id == CSSValueID::kWebkitIsolateOverride || value_id == CSSValueID::kWebkitPlaintext ||
+//             value_id == CSSValueID::kIsolate || value_id == CSSValueID::kIsolateOverride ||
+//             value_id == CSSValueID::kPlaintext;
     case CSSPropertyID::kVectorEffect:
       return value_id == CSSValueID::kNone || value_id == CSSValueID::kNonScalingStroke;
     case CSSPropertyID::kVisibility:
@@ -1437,7 +1437,7 @@ CSSBitset CSSParserFastPaths::handled_by_keyword_fast_paths_properties_{{
     CSSPropertyID::kImageRendering,
     CSSPropertyID::kInternalOverflowBlock,
     CSSPropertyID::kInternalOverflowInline,
-    CSSPropertyID::kInterpolateSize,
+//    CSSPropertyID::kInterpolateSize,
     CSSPropertyID::kListStylePosition,
     CSSPropertyID::kMaskType,
     CSSPropertyID::kMathShift,
@@ -1459,8 +1459,8 @@ CSSBitset CSSParserFastPaths::handled_by_keyword_fast_paths_properties_{{
     CSSPropertyID::kPositionTryOrder,
     CSSPropertyID::kReadingFlow,
     CSSPropertyID::kResize,
-    CSSPropertyID::kScrollMarkerGroup,
-    CSSPropertyID::kScrollBehavior,
+//    CSSPropertyID::kScrollMarkerGroup,
+//    CSSPropertyID::kScrollBehavior,
     CSSPropertyID::kOverscrollBehaviorInline,
     CSSPropertyID::kOverscrollBehaviorBlock,
     CSSPropertyID::kOverscrollBehaviorX,
@@ -1484,7 +1484,7 @@ CSSBitset CSSParserFastPaths::handled_by_keyword_fast_paths_properties_{{
     CSSPropertyID::kTextRendering,
     CSSPropertyID::kTextSpacingTrim,
     CSSPropertyID::kTextTransform,
-    CSSPropertyID::kUnicodeBidi,
+//    CSSPropertyID::kUnicodeBidi,
     CSSPropertyID::kVectorEffect,
     CSSPropertyID::kVisibility,
     CSSPropertyID::kAppRegion,

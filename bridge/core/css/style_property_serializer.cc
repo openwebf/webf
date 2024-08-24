@@ -608,18 +608,18 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
     }
     case CSSPropertyID::kBorderRadius:
       return BorderRadiusValue();
-    case CSSPropertyID::kScrollPadding:
-      return Get4Values(scrollPaddingShorthand());
-    case CSSPropertyID::kScrollPaddingBlock:
-      return Get2Values(scrollPaddingBlockShorthand());
-    case CSSPropertyID::kScrollPaddingInline:
-      return Get2Values(scrollPaddingInlineShorthand());
-    case CSSPropertyID::kScrollMargin:
-      return Get4Values(scrollMarginShorthand());
-    case CSSPropertyID::kScrollMarginBlock:
-      return Get2Values(scrollMarginBlockShorthand());
-    case CSSPropertyID::kScrollMarginInline:
-      return Get2Values(scrollMarginInlineShorthand());
+//    case CSSPropertyID::kScrollPadding:
+//      return Get4Values(scrollPaddingShorthand());
+//    case CSSPropertyID::kScrollPaddingBlock:
+//      return Get2Values(scrollPaddingBlockShorthand());
+//    case CSSPropertyID::kScrollPaddingInline:
+//      return Get2Values(scrollPaddingInlineShorthand());
+//    case CSSPropertyID::kScrollMargin:
+//      return Get4Values(scrollMarginShorthand());
+//    case CSSPropertyID::kScrollMarginBlock:
+//      return Get2Values(scrollMarginBlockShorthand());
+//    case CSSPropertyID::kScrollMarginInline:
+//      return Get2Values(scrollMarginInlineShorthand());
     case CSSPropertyID::kScrollTimeline:
       return ScrollTimelineValue();
     case CSSPropertyID::kPageBreakAfter:

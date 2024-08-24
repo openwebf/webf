@@ -524,6 +524,40 @@ std::shared_ptr<const CSSValue> ConsumeGridTrackList(CSSParserTokenStream&,
                                const CSSParserContext&,
                                TrackListType);
 
+std::shared_ptr<const CSSValue> ConsumeGridTemplatesRowsOrColumns(CSSParserTokenStream&,
+                                            const CSSParserContext&);
+
+// The fragmentation spec says that page-break-(after|before|inside) are to be
+// treated as shorthands for their break-(after|before|inside) counterparts.
+// We'll do the same for the non-standard properties
+// -webkit-column-break-(after|before|inside).
+bool ConsumeFromPageBreakBetween(CSSParserTokenStream&, CSSValueID&);
+bool ConsumeFromColumnBreakBetween(CSSParserTokenStream&, CSSValueID&);
+bool ConsumeFromColumnOrPageBreakInside(CSSParserTokenStream&, CSSValueID&);
+
+bool IsBaselineKeyword(CSSValueID id);
+
+
+std::shared_ptr<const CSSValue> ConsumeSingleTimelineAxis(CSSParserTokenStream&);
+std::shared_ptr<const CSSValue> ConsumeSingleTimelineName(CSSParserTokenStream&,
+                                    const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeSingleTimelineInset(CSSParserTokenStream&,
+                                     const CSSParserContext&);
+
+std::shared_ptr<const CSSValue> ConsumeTransitionProperty(CSSParserTokenStream&,
+                                    const CSSParserContext&);
+
+bool IsValidPropertyList(const CSSValueList&);
+bool IsValidTransitionBehavior(const CSSValueID&);
+bool IsValidTransitionBehaviorList(const CSSValueList&);
+
+// Consume the `autospace` production.
+// https://drafts.csswg.org/css-text-4/#typedef-autospace
+std::shared_ptr<const CSSValue> ConsumeAutospace(CSSParserTokenStream&);
+// Consume the `spacing-trim` production.
+// https://drafts.csswg.org/css-text-4/#typedef-spacing-trim
+std::shared_ptr<const CSSValue> ConsumeSpacingTrim(CSSParserTokenStream&);
+
 }  // namespace css_parsing_utils
 }  // namespace webf
 

@@ -9,8 +9,6 @@
 #include "core/css/css_basic_shape_value.h"
 #include "core/css/css_border_image_slice_value.h"
 #include "core/css/css_bracketed_value_list.h"
-#include "core/css/css_grid_template_areas_value.h"
-#include "core/css/css_grid_integer_repeat_value.h"
 #include "core/css/css_color_channel_map.h"
 #include "core/css/css_crossfade_value.h"
 #include "core/css/css_font_family_value.h"
@@ -19,6 +17,8 @@
 #include "core/css/css_function_value.h"
 #include "core/css/css_gradient_value.h"
 #include "core/css/css_grid_auto_repeat_value.h"
+#include "core/css/css_grid_integer_repeat_value.h"
+#include "core/css/css_grid_template_areas_value.h"
 #include "core/css/css_image_set_option_value.h"
 #include "core/css/css_image_set_type_value.h"
 #include "core/css/css_image_set_value.h"
@@ -1858,6 +1858,27 @@ std::shared_ptr<const CSSValue> ConsumeSingleTimelineInset(CSSParserTokenStream&
     end = start;
   }
   return std::make_shared<CSSValuePair>(start, end, CSSValuePair::kDropIdenticalValues);
+}
+
+std::shared_ptr<const CSSValue> ConsumeTransitionProperty(CSSParserTokenStream& stream,
+                                                          const CSSParserContext& context) {
+  const CSSParserToken& token = stream.Peek();
+  if (token.GetType() != kIdentToken) {
+    return nullptr;
+  }
+  if (token.Id() == CSSValueID::kNone) {
+    return ConsumeIdent(stream);
+  }
+  const auto* execution_context = context.GetExecutingContext();
+  CSSPropertyID unresolved_property = token.ParseAsUnresolvedCSSPropertyID(execution_context);
+  if (unresolved_property != CSSPropertyID::kInvalid && unresolved_property != CSSPropertyID::kVariable) {
+#if DCHECK_IS_ON()
+    DCHECK(CSSProperty::Get(ResolveCSSPropertyID(unresolved_property)).IsWebExposed(execution_context));
+#endif
+    stream.ConsumeIncludingWhitespace();
+    return std::make_shared<CSSCustomIdentValue>(unresolved_property);
+  }
+  return ConsumeCustomIdent(stream, context);
 }
 
 std::shared_ptr<const CSSValue> ConsumeScrollFunction(CSSParserTokenStream& stream, const CSSParserContext& context) {
@@ -4586,38 +4607,28 @@ bool AppendLineNames(CSSParserTokenStream& stream,
   return false;
 }
 
-
-std::shared_ptr<const CSSValue> ConsumeGridBreadth(CSSParserTokenStream& stream,
-                             const CSSParserContext& context) {
+std::shared_ptr<const CSSValue> ConsumeGridBreadth(CSSParserTokenStream& stream, const CSSParserContext& context) {
   const CSSParserToken& token = stream.Peek();
-  if (IdentMatches<CSSValueID::kAuto, CSSValueID::kMinContent,
-                   CSSValueID::kMaxContent>(token.Id())) {
+  if (IdentMatches<CSSValueID::kAuto, CSSValueID::kMinContent, CSSValueID::kMaxContent>(token.Id())) {
     return ConsumeIdent(stream);
   }
-  if (token.GetType() == kDimensionToken &&
-      token.GetUnitType() == CSSPrimitiveValue::UnitType::kFlex) {
+  if (token.GetType() == kDimensionToken && token.GetUnitType() == CSSPrimitiveValue::UnitType::kFlex) {
     if (token.NumericValue() < 0) {
       return nullptr;
     }
-    return CSSNumericLiteralValue::Create(
-        stream.ConsumeIncludingWhitespace().NumericValue(),
-        CSSPrimitiveValue::UnitType::kFlex);
+    return CSSNumericLiteralValue::Create(stream.ConsumeIncludingWhitespace().NumericValue(),
+                                          CSSPrimitiveValue::UnitType::kFlex);
   }
-  return ConsumeLengthOrPercent(stream, context,
-                                CSSPrimitiveValue::ValueRange::kNonNegative,
-                                UnitlessQuirk::kForbid);
+  return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative, UnitlessQuirk::kForbid);
 }
 
-
-std::shared_ptr<const CSSValue> ConsumeFitContent(CSSParserTokenStream& stream,
-                            const CSSParserContext& context) {
+std::shared_ptr<const CSSValue> ConsumeFitContent(CSSParserTokenStream& stream, const CSSParserContext& context) {
   std::shared_ptr<CSSFunctionValue> result;
   {
     CSSParserTokenStream::RestoringBlockGuard guard(stream);
     stream.ConsumeWhitespace();
-    std::shared_ptr<const CSSPrimitiveValue> length = ConsumeLengthOrPercent(
-        stream, context, CSSPrimitiveValue::ValueRange::kNonNegative,
-        UnitlessQuirk::kAllow);
+    std::shared_ptr<const CSSPrimitiveValue> length =
+        ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative, UnitlessQuirk::kAllow);
     if (!length || !stream.AtEnd()) {
       return nullptr;
     }
@@ -4629,9 +4640,7 @@ std::shared_ptr<const CSSValue> ConsumeFitContent(CSSParserTokenStream& stream,
   return result;
 }
 
-
-std::shared_ptr<const CSSValue> ConsumeGridTrackSize(CSSParserTokenStream& stream,
-                               const CSSParserContext& context) {
+std::shared_ptr<const CSSValue> ConsumeGridTrackSize(CSSParserTokenStream& stream, const CSSParserContext& context) {
   const auto& token_id = stream.Peek().FunctionId();
 
   if (token_id == CSSValueID::kMinmax) {
@@ -4641,11 +4650,8 @@ std::shared_ptr<const CSSValue> ConsumeGridTrackSize(CSSParserTokenStream& strea
       CSSParserTokenStream::RestoringBlockGuard guard(stream);
       stream.ConsumeWhitespace();
       std::shared_ptr<const CSSValue> min_track_breadth = ConsumeGridBreadth(stream, context);
-      auto* min_track_breadth_primitive_value =
-          DynamicTo<CSSPrimitiveValue>(min_track_breadth.get());
-      if (!min_track_breadth ||
-          (min_track_breadth_primitive_value &&
-           min_track_breadth_primitive_value->IsFlex()) ||
+      auto* min_track_breadth_primitive_value = DynamicTo<CSSPrimitiveValue>(min_track_breadth.get());
+      if (!min_track_breadth || (min_track_breadth_primitive_value && min_track_breadth_primitive_value->IsFlex()) ||
           !ConsumeCommaIncludingWhitespace(stream)) {
         return nullptr;
       }
@@ -4662,17 +4668,14 @@ std::shared_ptr<const CSSValue> ConsumeGridTrackSize(CSSParserTokenStream& strea
     return result;
   }
 
-  return (token_id == CSSValueID::kFitContent)
-             ? ConsumeFitContent(stream, context)
-             : ConsumeGridBreadth(stream, context);
+  return (token_id == CSSValueID::kFitContent) ? ConsumeFitContent(stream, context)
+                                               : ConsumeGridBreadth(stream, context);
 }
 
 bool IsGridBreadthFixedSized(const CSSValue& value) {
   if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(value)) {
     CSSValueID value_id = identifier_value->GetValueID();
-    return value_id != CSSValueID::kAuto &&
-           value_id != CSSValueID::kMinContent &&
-           value_id != CSSValueID::kMaxContent;
+    return value_id != CSSValueID::kAuto && value_id != CSSValueID::kMinContent && value_id != CSSValueID::kMaxContent;
   }
 
   if (auto* primitive_value = DynamicTo<CSSPrimitiveValue>(value)) {
@@ -4695,8 +4698,7 @@ bool IsGridTrackFixedSized(const CSSValue& value) {
 
   std::shared_ptr<const CSSValue>&& min_value = function.Item(0);
   std::shared_ptr<const CSSValue>&& max_value = function.Item(1);
-  return IsGridBreadthFixedSized(*min_value) ||
-         IsGridBreadthFixedSized(*max_value);
+  return IsGridBreadthFixedSized(*min_value) || IsGridBreadthFixedSized(*max_value);
 }
 
 bool ConsumeGridTrackRepeatFunction(CSSParserTokenStream& stream,
@@ -5101,6 +5103,106 @@ bool ConsumeGridTemplateShorthand(bool important,
 
   return false;
 }
+
+bool ConsumeFromPageBreakBetween(CSSParserTokenStream& stream, CSSValueID& value) {
+  if (!ConsumeCSSValueId(stream, value)) {
+    return false;
+  }
+
+  if (value == CSSValueID::kAlways) {
+    value = CSSValueID::kPage;
+    return true;
+  }
+  return value == CSSValueID::kAuto || value == CSSValueID::kAvoid || value == CSSValueID::kLeft ||
+         value == CSSValueID::kRight;
+}
+
+bool ConsumeFromColumnBreakBetween(CSSParserTokenStream& stream, CSSValueID& value) {
+  if (!ConsumeCSSValueId(stream, value)) {
+    return false;
+  }
+
+  if (value == CSSValueID::kAlways) {
+    value = CSSValueID::kColumn;
+    return true;
+  }
+  return value == CSSValueID::kAuto || value == CSSValueID::kAvoid;
+}
+
+bool ConsumeFromColumnOrPageBreakInside(CSSParserTokenStream& stream, CSSValueID& value) {
+  if (!ConsumeCSSValueId(stream, value)) {
+    return false;
+  }
+  return value == CSSValueID::kAuto || value == CSSValueID::kAvoid;
+}
+
+bool IsBaselineKeyword(CSSValueID id) {
+  return IdentMatches<CSSValueID::kFirst, CSSValueID::kLast, CSSValueID::kBaseline>(id);
+}
+
+std::shared_ptr<const CSSValue> ConsumeSingleTimelineAxis(CSSParserTokenStream& stream) {
+  return ConsumeIdent<CSSValueID::kBlock, CSSValueID::kInline, CSSValueID::kX, CSSValueID::kY>(stream);
+}
+
+std::shared_ptr<const CSSValue> ConsumeSingleTimelineName(CSSParserTokenStream& stream,
+                                                          const CSSParserContext& context) {
+  if (std::shared_ptr<const CSSValue> value = ConsumeIdent<CSSValueID::kNone>(stream)) {
+    return value;
+  }
+  return ConsumeDashedIdent(stream, context);
+}
+
+bool IsValidPropertyList(const CSSValueList& value_list) {
+  if (value_list.length() < 2) {
+    return true;
+  }
+  for (auto& value : value_list) {
+    auto* identifier_value = DynamicTo<CSSIdentifierValue>(value.get());
+    if (identifier_value && identifier_value->GetValueID() == CSSValueID::kNone) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool IsValidTransitionBehavior(const CSSValueID& value) {
+  switch (value) {
+    case CSSValueID::kNormal:
+    case CSSValueID::kAllowDiscrete:
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool IsValidTransitionBehaviorList(const CSSValueList& value_list) {
+  for (auto& value : value_list) {
+    auto* ident_value = DynamicTo<CSSIdentifierValue>(value.get());
+    if (!ident_value) {
+      return false;
+    }
+    if (!IsValidTransitionBehavior(ident_value->GetValueID())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+// Consume the `autospace` production.
+// https://drafts.csswg.org/css-text-4/#typedef-autospace
+std::shared_ptr<const CSSValue> ConsumeAutospace(CSSParserTokenStream& stream) {
+  // Currently, only `no-autospace` is supported.
+  return ConsumeIdent<CSSValueID::kNoAutospace>(stream);
+}
+
+// Consume the `spacing-trim` production.
+// https://drafts.csswg.org/css-text-4/#typedef-spacing-trim
+std::shared_ptr<const CSSValue> ConsumeSpacingTrim(CSSParserTokenStream& stream) {
+  return ConsumeIdent<CSSValueID::kTrimStart, CSSValueID::kSpaceAll,
+                      CSSValueID::kSpaceFirst>(stream);
+}
+
 }  // namespace css_parsing_utils
 
 }  // namespace webf
