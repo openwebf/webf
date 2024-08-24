@@ -379,6 +379,7 @@ class CSSPrimitiveValue : public CSSValue {
 
   BoolStatus IsZero() const;
   BoolStatus IsOne() const;
+  BoolStatus IsHundred() const;
   BoolStatus IsNegative() const;
 
   // this + value

@@ -60,6 +60,7 @@ class CSSMathFunctionValue : public CSSPrimitiveValue {
 
   BoolStatus IsZero() const;
   BoolStatus IsOne() const;
+  BoolStatus IsHundred() const;
   BoolStatus IsNegative() const;
 
   bool IsComputationallyIndependent() const;

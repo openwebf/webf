@@ -12,6 +12,7 @@
 #include "bindings/qjs/cppgc/member.h"
 #include "core/css/css_anchor_query_enums.h"
 #include "core/css/css_custom_ident_value.h"
+#include "core/css/css_function_value.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_primitive_value.h"
@@ -301,9 +302,16 @@ std::shared_ptr<const CSSValue> ConsumeOffsetRotate(CSSParserTokenStream&, const
 std::shared_ptr<const CSSValue> ConsumeInitialLetter(CSSParserTokenStream&, const CSSParserContext&);
 
 std::shared_ptr<const CSSValue> ConsumeAnimationIterationCount(CSSParserTokenStream&, const CSSParserContext&);
+// https://drafts.csswg.org/scroll-animations-1/#typedef-timeline-range-name
+std::shared_ptr<const CSSValue> ConsumeTimelineRangeName(CSSParserTokenStream&);
+std::shared_ptr<const CSSValue> ConsumeTimelineRangeName(CSSParserTokenRange&);
 std::shared_ptr<const CSSValue> ConsumeAnimationName(CSSParserTokenStream&,
                                                      const CSSParserContext&,
                                                      bool allow_quoted_name);
+std::shared_ptr<const CSSValue> ConsumeAnimationRange(CSSParserTokenStream&,
+                                                      const CSSParserContext&,
+                                                      double default_offset_percent);
+
 std::shared_ptr<const CSSValue> ConsumeAnimationTimeline(CSSParserTokenStream&, const CSSParserContext&);
 std::shared_ptr<const CSSValue> ConsumeAnimationTimingFunction(CSSParserTokenStream&, const CSSParserContext&);
 std::shared_ptr<const CSSValue> ConsumeAnimationDuration(CSSParserTokenStream&, const CSSParserContext&);
@@ -520,12 +528,9 @@ bool ConsumeGridTemplateShorthand(bool important,
                                   std::shared_ptr<const CSSValue>& template_columns,
                                   std::shared_ptr<const CSSValue>& template_areas);
 
-std::shared_ptr<const CSSValue> ConsumeGridTrackList(CSSParserTokenStream&,
-                               const CSSParserContext&,
-                               TrackListType);
+std::shared_ptr<const CSSValue> ConsumeGridTrackList(CSSParserTokenStream&, const CSSParserContext&, TrackListType);
 
-std::shared_ptr<const CSSValue> ConsumeGridTemplatesRowsOrColumns(CSSParserTokenStream&,
-                                            const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeGridTemplatesRowsOrColumns(CSSParserTokenStream&, const CSSParserContext&);
 
 // The fragmentation spec says that page-break-(after|before|inside) are to be
 // treated as shorthands for their break-(after|before|inside) counterparts.
@@ -537,15 +542,11 @@ bool ConsumeFromColumnOrPageBreakInside(CSSParserTokenStream&, CSSValueID&);
 
 bool IsBaselineKeyword(CSSValueID id);
 
-
 std::shared_ptr<const CSSValue> ConsumeSingleTimelineAxis(CSSParserTokenStream&);
-std::shared_ptr<const CSSValue> ConsumeSingleTimelineName(CSSParserTokenStream&,
-                                    const CSSParserContext&);
-std::shared_ptr<const CSSValue> ConsumeSingleTimelineInset(CSSParserTokenStream&,
-                                     const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeSingleTimelineName(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeSingleTimelineInset(CSSParserTokenStream&, const CSSParserContext&);
 
-std::shared_ptr<const CSSValue> ConsumeTransitionProperty(CSSParserTokenStream&,
-                                    const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeTransitionProperty(CSSParserTokenStream&, const CSSParserContext&);
 
 bool IsValidPropertyList(const CSSValueList&);
 bool IsValidTransitionBehavior(const CSSValueID&);
@@ -557,6 +558,64 @@ std::shared_ptr<const CSSValue> ConsumeAutospace(CSSParserTokenStream&);
 // Consume the `spacing-trim` production.
 // https://drafts.csswg.org/css-text-4/#typedef-spacing-trim
 std::shared_ptr<const CSSValue> ConsumeSpacingTrim(CSSParserTokenStream&);
+
+std::shared_ptr<const CSSValue> ConsumeBaseline(CSSParserTokenStream& stream);
+
+std::shared_ptr<const CSSValue> ConsumeSelfPositionOverflowPosition(CSSParserTokenStream&, IsPositionKeyword);
+std::shared_ptr<const CSSValue> ConsumeContentDistributionOverflowPosition(CSSParserTokenStream&, IsPositionKeyword);
+std::shared_ptr<const CSSValue> ConsumeFirstBaseline(CSSParserTokenStream& stream);
+
+bool IsContentPositionKeyword(CSSValueID);
+
+bool IsBaselineKeyword(CSSValueID id);
+bool IsSelfPositionKeyword(CSSValueID);
+bool IsSelfPositionOrLeftOrRightKeyword(CSSValueID);
+bool IsContentPositionOrLeftOrRightKeyword(CSSValueID);
+bool IsCSSWideKeyword(CSSValueID);
+bool IsCSSWideKeyword(const std::string&);
+bool IsRevertKeyword(const std::string&);
+bool IsDefaultKeyword(StringView);
+bool IsHashIdentifier(const CSSParserToken&);
+bool IsDashedIdent(const CSSParserToken&);
+
+bool ConsumeTranslate3d(CSSParserTokenStream& stream,
+                        const CSSParserContext& context,
+                        std::shared_ptr<CSSFunctionValue>& transform_value);
+std::shared_ptr<const CSSValue> ConsumeTransformValue(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeTransformList(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeFilterFunctionList(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ConsumeBackgroundBlendMode(CSSParserTokenStream& stream);
+
+std::shared_ptr<const CSSValue> ParseBackgroundBox(CSSParserTokenStream& stream,
+                                                   const CSSParserLocalContext& local_context,
+                                                   AllowTextValue alias_allow_text_value);
+
+std::shared_ptr<const CSSValue> ParseBackgroundSize(CSSParserTokenStream& stream,
+                                                    const CSSParserContext& context,
+                                                    const CSSParserLocalContext& local_context);
+
+template <CSSValueID start, CSSValueID end>
+std::shared_ptr<const CSSValue> ConsumePositionLonghand(CSSParserTokenStream& range, const CSSParserContext& context) {
+  if (range.Peek().GetType() == kIdentToken) {
+    CSSValueID id = range.Peek().Id();
+    int percent;
+    if (id == start) {
+      percent = 0;
+    } else if (id == CSSValueID::kCenter) {
+      percent = 50;
+    } else if (id == end) {
+      percent = 100;
+    } else {
+      return nullptr;
+    }
+    range.ConsumeIncludingWhitespace();
+    return CSSNumericLiteralValue::Create(percent, CSSPrimitiveValue::UnitType::kPercentage);
+  }
+  return ConsumeLengthOrPercent(range, context, CSSPrimitiveValue::ValueRange::kAll);
+}
+
+std::shared_ptr<const CSSValueList> ParseRepeatStyle(CSSParserTokenStream& stream);
+std::shared_ptr<const CSSValue> ParseSpacing(CSSParserTokenStream&, const CSSParserContext&);
 
 }  // namespace css_parsing_utils
 }  // namespace webf

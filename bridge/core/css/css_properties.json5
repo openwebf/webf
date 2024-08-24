@@ -54,7 +54,7 @@
         "ParseSingleValue",
         "ParseShorthand",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback",
+//        "ColorIncludingFallback",
         "InitialValue"
       ],
     },
@@ -1257,7 +1257,7 @@
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+//        "ColorIncludingFallback"
       ],
       interpolable: true,
       inherited: true,
@@ -6965,43 +6965,43 @@
         "scroll-anchor"
       ],
     },
-    {
-      name: "position-anchor",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      style_builder_custom_functions: [
-        "initial",
-        "inherit",
-        "value"
-      ],
-      include_paths: [
-        "third_party/blink/renderer/core/style/scoped_css_name.h"
-      ],
-      type_name: "ScopedCSSName",
-      wrapper_pointer_name: "Member",
-      default_value: "nullptr",
-      field_group: "*",
-      field_template: "external",
-      converter: "ConvertPositionAnchor",
-      keywords: [
-        "auto"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      runtime_flag: "CSSAnchorPositioning",
-      valid_for_permission_element: true,
-      valid_for_position_try: true,
-      // Needs to be applied before inset-area which in turn needs to be applied
-      // before inset properties.
-      priority: 2,
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
+//    {
+//      name: "position-anchor",
+//      property_methods: [
+//        "ParseSingleValue",
+//        /* "CSSValueFromComputedStyleInternal" */
+//      ],
+//      style_builder_custom_functions: [
+//        "initial",
+//        "inherit",
+//        "value"
+//      ],
+//      include_paths: [
+//        "third_party/blink/renderer/core/style/scoped_css_name.h"
+//      ],
+//      type_name: "ScopedCSSName",
+//      wrapper_pointer_name: "Member",
+//      default_value: "nullptr",
+//      field_group: "*",
+//      field_template: "external",
+//      converter: "ConvertPositionAnchor",
+//      keywords: [
+//        "auto"
+//      ],
+//      typedom_types: [
+//        "Keyword"
+//      ],
+//      runtime_flag: "CSSAnchorPositioning",
+//      valid_for_permission_element: true,
+//      valid_for_position_try: true,
+//      // Needs to be applied before inset-area which in turn needs to be applied
+//      // before inset properties.
+//      priority: 2,
+//      invalidate: [
+//        "layout",
+//        "paint"
+//      ],
+//    },
     {
       name: "position-try-fallbacks",
       property_methods: [
