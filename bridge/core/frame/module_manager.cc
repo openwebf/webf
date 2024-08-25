@@ -142,14 +142,6 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                              exception);
 }
 
-namespace {
-
-struct NativeInvokeModuleOptions {
-  NativeForm* form_data;
-};
-
-};
-
 ScriptValue ModuleManager::__webf_invoke_module_with_options__(ExecutingContext* context,
                                                                const AtomicString& module_name,
                                                                const AtomicString& method,
@@ -160,8 +152,7 @@ ScriptValue ModuleManager::__webf_invoke_module_with_options__(ExecutingContext*
   NativeValue params = params_value.ToNative(context->ctx(), exception);
   if (options != nullptr && options->hasFormData()) {
     FormData* form_data = options->formData();
-  } else {
-
+    WEBF_LOG(VERBOSE) << "FORM DATA: " << form_data;
   }
 
   if (exception.HasException()) {
@@ -181,11 +172,12 @@ ScriptValue ModuleManager::__webf_invoke_module_with_options__(ExecutingContext*
     result = context->dartMethodPtr()->invokeModule(context->isDedicated(), module_context.get(), context->contextId(),
                                                     context->dartIsolateContext()->profiler()->link_id(),
                                                     module_name_string.get(), method_name_string.get(), &params,
+                                                    1,
                                                     handleInvokeModuleTransientCallbackWrapper);
   } else {
     result = context->dartMethodPtr()->invokeModule(
         context->isDedicated(), nullptr, context->contextId(), context->dartIsolateContext()->profiler()->link_id(),
-        module_name_string.get(), method_name_string.get(), &params, handleInvokeModuleUnexpectedCallback);
+        module_name_string.get(), method_name_string.get(), &params, 1, handleInvokeModuleUnexpectedCallback);
   }
 
   context->dartIsolateContext()->profiler()->FinishTrackLinkSteps();

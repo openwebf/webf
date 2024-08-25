@@ -382,7 +382,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_textarea_element.cc
     core/html/forms/form_data.cc
 
-    core/platform/network/form_data_encoder.cc
+#    core/platform/network/form_data_encoder.cc
 
     # SVG files
     core/svg/svg_element.cc
