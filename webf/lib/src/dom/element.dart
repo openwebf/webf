@@ -649,6 +649,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // Cancel running animation.
     renderStyle.cancelRunningAnimation();
 
+    ownerView.window.unwatchViewportSizeChangeForElement(this);
+
     RenderBoxModel? renderBoxModel = this.renderBoxModel;
     if (renderBoxModel != null) {
       // Remove all intersection change listeners.
