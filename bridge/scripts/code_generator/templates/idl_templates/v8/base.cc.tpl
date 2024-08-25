@@ -7,6 +7,7 @@
 #include "foundation/native_value_converter.h"
 #include "foundation/macros.h"
 #include "binding_call_methods.h"
+#include "bindings/v8/converter_impl.h"
 #include "bindings/v8/v8_member_installer.h"
 #include "bindings/v8/v8_throw_exception.h"
 #include "defined_properties.h"
