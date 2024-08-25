@@ -6,7 +6,9 @@
 
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/css_appearance_auto_base_select_value_pair.h"
+#include "core/css/css_axis_value.h"
 #include "core/css/css_basic_shape_value.h"
+#include "core/css/css_border_image.h"
 #include "core/css/css_border_image_slice_value.h"
 #include "core/css/css_bracketed_value_list.h"
 #include "core/css/css_color_channel_map.h"
@@ -1688,8 +1690,8 @@ std::shared_ptr<const CSSValue> ConsumeShapeRadius(CSSParserTokenStream& args, c
   return ConsumeLengthOrPercent(args, context, CSSPrimitiveValue::ValueRange::kNonNegative);
 }
 
-std::shared_ptr<cssvalue::CSSBasicShapeCircleValue> ConsumeBasicShapeCircle(CSSParserTokenStream& args,
-                                                                            const CSSParserContext& context) {
+std::shared_ptr<const cssvalue::CSSBasicShapeCircleValue> ConsumeBasicShapeCircle(CSSParserTokenStream& args,
+                                                                                  const CSSParserContext& context) {
   // spec: https://drafts.csswg.org/css-shapes/#supported-basic-shapes
   // circle( [<shape-radius>]? [at <position>]? )
   auto shape = std::make_shared<cssvalue::CSSBasicShapeCircleValue>();
@@ -1715,12 +1717,12 @@ std::shared_ptr<const CSSValue> ConsumeOffsetPath(CSSParserTokenStream& stream, 
   std::shared_ptr<const CSSValue> coord_box = ConsumeCoordBox(stream);
 
   std::shared_ptr<const CSSValue> offset_path = ConsumeRay(stream, context);
-  //  if (!offset_path) {
-  //    offset_path = ConsumeBasicShape(stream, context, AllowPathValue::kForbid);
-  //  }
-  //  if (!offset_path) {
-  //    offset_path = ConsumeUrl(stream, context);
-  //  }
+  if (!offset_path) {
+    offset_path = ConsumeBasicShape(stream, context, AllowPathValue::kForbid);
+  }
+  if (!offset_path) {
+    offset_path = ConsumeUrl(stream, context);
+  }
   //  if (!offset_path) {
   //    offset_path = ConsumePathFunction(stream, EmptyPathStringHandling::kFailure);
   //  }
@@ -3283,26 +3285,6 @@ std::shared_ptr<const CSSValue> ConsumeImageOrNone(CSSParserTokenStream& stream,
   return ConsumeImage(stream, context);
 }
 
-template <CSSValueID start, CSSValueID end>
-std::shared_ptr<const CSSValue> ConsumePositionLonghand(CSSParserTokenStream& range, const CSSParserContext& context) {
-  if (range.Peek().GetType() == kIdentToken) {
-    CSSValueID id = range.Peek().Id();
-    int percent;
-    if (id == start) {
-      percent = 0;
-    } else if (id == CSSValueID::kCenter) {
-      percent = 50;
-    } else if (id == end) {
-      percent = 100;
-    } else {
-      return nullptr;
-    }
-    range.ConsumeIncludingWhitespace();
-    return CSSNumericLiteralValue::Create(percent, CSSPrimitiveValue::UnitType::kPercentage);
-  }
-  return ConsumeLengthOrPercent(range, context, CSSPrimitiveValue::ValueRange::kAll);
-}
-
 std::shared_ptr<const CSSValue> ConsumePrefixedBackgroundBox(CSSParserTokenStream& stream,
                                                              AllowTextValue allow_text_value) {
   // The values 'border', 'padding' and 'content' are deprecated and do not
@@ -3353,6 +3335,10 @@ std::shared_ptr<const CSSValue> ConsumeMaskMode(CSSParserTokenStream& stream) {
 
 std::shared_ptr<const CSSValue> ConsumeMaskComposite(CSSParserTokenStream& stream) {
   return ConsumeIdent<CSSValueID::kAdd, CSSValueID::kSubtract, CSSValueID::kIntersect, CSSValueID::kExclude>(stream);
+}
+
+std::shared_ptr<const CSSValue> ConsumePrefixedMaskComposite(CSSParserTokenStream& stream) {
+  return ConsumeIdentRange(stream, CSSValueID::kClear, CSSValueID::kPlusLighter);
 }
 
 namespace {
@@ -5741,15 +5727,279 @@ std::shared_ptr<const CSSValueList> ParseRepeatStyle(CSSParserTokenStream& strea
   return ConsumeCommaSeparatedList(ConsumeRepeatStyleValue, stream);
 }
 
-
-std::shared_ptr<const CSSValue> ParseSpacing(CSSParserTokenStream& stream,
-                       const CSSParserContext& context) {
+std::shared_ptr<const CSSValue> ParseSpacing(CSSParserTokenStream& stream, const CSSParserContext& context) {
   if (stream.Peek().Id() == CSSValueID::kNormal) {
     return ConsumeIdent(stream);
   }
   // TODO(timloh): allow <percentage>s in word-spacing.
-  return ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kAll,
-                       UnitlessQuirk::kAllow);
+  return ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kAll, UnitlessQuirk::kAllow);
+}
+
+std::shared_ptr<const CSSValue> ParseMaskSize(CSSParserTokenStream& stream,
+                                              const CSSParserContext& context,
+                                              const CSSParserLocalContext& local_context) {
+  return ConsumeCommaSeparatedList(
+      static_cast<std::shared_ptr<const CSSValue> (*)(CSSParserTokenStream&, const CSSParserContext&, ParsingStyle)>(
+          ConsumeBackgroundSize),
+      stream, context, ParsingStyle::kNotLegacy);
+}
+
+std::shared_ptr<const CSSValue> ConsumeWebkitBorderImage(CSSParserTokenStream& stream,
+                                                         const CSSParserContext& context) {
+  std::shared_ptr<const CSSValue> source = nullptr;
+  std::shared_ptr<const CSSValue> slice = nullptr;
+  std::shared_ptr<const CSSValue> width = nullptr;
+  std::shared_ptr<const CSSValue> outset = nullptr;
+  std::shared_ptr<const CSSValue> repeat = nullptr;
+  if (ConsumeBorderImageComponents(stream, context, source, slice, width, outset, repeat, DefaultFill::kFill)) {
+    return CreateBorderImageValue(source, slice, width, outset, repeat);
+  }
+  return nullptr;
+}
+
+UnitlessQuirk UnitlessUnlessShorthand(const CSSParserLocalContext& local_context) {
+  return local_context.CurrentShorthand() == CSSPropertyID::kInvalid ? UnitlessQuirk::kAllow : UnitlessQuirk::kForbid;
+}
+
+// https://drafts.csswg.org/css-shapes-1/#typedef-shape-box
+std::shared_ptr<const CSSIdentifierValue> ConsumeShapeBox(CSSParserTokenStream& stream) {
+  return ConsumeIdent<CSSValueID::kContentBox, CSSValueID::kPaddingBox, CSSValueID::kBorderBox, CSSValueID::kMarginBox>(
+      stream);
+}
+
+// https://drafts.csswg.org/css-box-4/#typedef-visual-box
+std::shared_ptr<const CSSIdentifierValue> ConsumeVisualBox(CSSParserTokenStream& range) {
+  return ConsumeIdent<CSSValueID::kContentBox, CSSValueID::kPaddingBox, CSSValueID::kBorderBox>(range);
+}
+
+// https://drafts.fxtf.org/css-masking/#typedef-geometry-box
+std::shared_ptr<const CSSIdentifierValue> ConsumeGeometryBox(CSSParserTokenStream& stream) {
+  return ConsumeIdent<CSSValueID::kBorderBox, CSSValueID::kPaddingBox, CSSValueID::kContentBox, CSSValueID::kMarginBox,
+                      CSSValueID::kFillBox, CSSValueID::kStrokeBox, CSSValueID::kViewBox>(stream);
+}
+
+std::shared_ptr<const cssvalue::CSSBasicShapeEllipseValue> ConsumeBasicShapeEllipse(CSSParserTokenStream& args,
+                                                                                    const CSSParserContext& context) {
+  // spec: https://drafts.csswg.org/css-shapes/#supported-basic-shapes
+  // ellipse( [<shape-radius>{2}]? [at <position>]? )
+  auto shape = std::make_shared<cssvalue::CSSBasicShapeEllipseValue>();
+  if (std::shared_ptr<const CSSValue> radius_x = ConsumeShapeRadius(args, context)) {
+    std::shared_ptr<const CSSValue> radius_y = ConsumeShapeRadius(args, context);
+    if (!radius_y) {
+      return nullptr;
+    }
+    shape->SetRadiusX(radius_x);
+    shape->SetRadiusY(radius_y);
+  }
+  if (ConsumeIdent<CSSValueID::kAt>(args)) {
+    std::shared_ptr<const CSSValue> center_x = nullptr;
+    std::shared_ptr<const CSSValue> center_y = nullptr;
+    if (!ConsumePosition(args, context, UnitlessQuirk::kForbid, center_x, center_y)) {
+      return nullptr;
+    }
+    shape->SetCenterX(center_x);
+    shape->SetCenterY(center_y);
+  }
+  return shape;
+}
+
+std::shared_ptr<const CSSValue> ConsumeBasicShape(CSSParserTokenStream& stream,
+                                                  const CSSParserContext& context,
+                                                  AllowPathValue allow_path,
+                                                  AllowBasicShapeRectValue allow_rect,
+                                                  AllowBasicShapeXYWHValue allow_xywh) {
+  std::shared_ptr<const CSSValue> shape = nullptr;
+  if (stream.Peek().GetType() != kFunctionToken) {
+    return nullptr;
+  }
+  CSSValueID id = stream.Peek().FunctionId();
+  {
+    CSSParserTokenStream::RestoringBlockGuard guard(stream);
+    stream.ConsumeWhitespace();
+    if (id == CSSValueID::kCircle) {
+      shape = ConsumeBasicShapeCircle(stream, context);
+    } else if (id == CSSValueID::kEllipse) {
+      shape = ConsumeBasicShapeEllipse(stream, context);
+    }
+    //    else if (id == CSSValueID::kPolygon) {
+    //      shape = ConsumeBasicShapePolygon(stream, context);
+    //    } else if (id == CSSValueID::kInset) {
+    //      shape = ConsumeBasicShapeInset(stream, context);
+    //    } else if (id == CSSValueID::kPath && allow_path == AllowPathValue::kAllow) {
+    //      shape = ConsumeBasicShapePath(stream);
+    //    } else if (id == CSSValueID::kRect && allow_rect == AllowBasicShapeRectValue::kAllow) {
+    //      shape = ConsumeBasicShapeRect(stream, context);
+    //    } else if (id == CSSValueID::kXywh && allow_xywh == AllowBasicShapeXYWHValue::kAllow) {
+    //      shape = ConsumeBasicShapeXYWH(stream, context);
+    //    }
+    if (!shape || !stream.AtEnd()) {
+      return nullptr;
+    }
+
+    guard.Release();
+  }
+  stream.ConsumeWhitespace();
+  return shape;
+}
+
+std::shared_ptr<const CSSValue> ConsumeIntrinsicSizeLonghand(CSSParserTokenStream& stream,
+                                                             const CSSParserContext& context) {
+  if (css_parsing_utils::IdentMatches<CSSValueID::kNone>(stream.Peek().Id())) {
+    return css_parsing_utils::ConsumeIdent(stream);
+  }
+  std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
+  if (css_parsing_utils::IdentMatches<CSSValueID::kAuto>(stream.Peek().Id())) {
+    list->Append(css_parsing_utils::ConsumeIdent(stream));
+  }
+  if (css_parsing_utils::IdentMatches<CSSValueID::kNone>(stream.Peek().Id())) {
+    list->Append(css_parsing_utils::ConsumeIdent(stream));
+  } else {
+    std::shared_ptr<const CSSValue> length =
+        css_parsing_utils::ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+    if (!length) {
+      return nullptr;
+    }
+    list->Append(length);
+  }
+  return list;
+}
+
+std::shared_ptr<const CSSValue> ConsumeFontSizeAdjust(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  if (stream.Peek().Id() == CSSValueID::kNone) {
+    return css_parsing_utils::ConsumeIdent(stream);
+  }
+
+  std::shared_ptr<const CSSIdentifierValue> font_metric =
+      ConsumeIdent<CSSValueID::kExHeight, CSSValueID::kCapHeight, CSSValueID::kChWidth, CSSValueID::kIcWidth,
+                   CSSValueID::kIcHeight>(stream);
+
+  std::shared_ptr<const CSSValue> value =
+      css_parsing_utils::ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+  if (!value) {
+    value = ConsumeIdent<CSSValueID::kFromFont>(stream);
+  }
+
+  if (!value || !font_metric || font_metric->GetValueID() == CSSValueID::kExHeight) {
+    return value;
+  }
+
+  return std::make_shared<CSSValuePair>(font_metric, value, CSSValuePair::kKeepIdenticalValues);
+}
+
+std::shared_ptr<const CSSValue> ConsumeAxis(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  CSSValueID axis_id = stream.Peek().Id();
+  if (axis_id == CSSValueID::kX || axis_id == CSSValueID::kY || axis_id == CSSValueID::kZ) {
+    ConsumeIdent(stream);
+    return std::make_shared<cssvalue::CSSAxisValue>(axis_id);
+  }
+
+  std::shared_ptr<const CSSValue> x_dimension = ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+  std::shared_ptr<const CSSValue> y_dimension = ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+  std::shared_ptr<const CSSValue> z_dimension = ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+  if (!x_dimension || !y_dimension || !z_dimension) {
+    return nullptr;
+  }
+  return std::make_shared<cssvalue::CSSAxisValue>(std::static_pointer_cast<const CSSPrimitiveValue>(x_dimension),
+                                                  std::static_pointer_cast<const CSSPrimitiveValue>(y_dimension),
+                                                  std::static_pointer_cast<const CSSPrimitiveValue>(z_dimension));
+}
+
+
+// none | [ underline || overline || line-through || blink ] | spelling-error |
+// grammar-error
+std::shared_ptr<const CSSValue> ConsumeTextDecorationLine(CSSParserTokenStream& stream) {
+  CSSValueID id = stream.Peek().Id();
+  if (id == CSSValueID::kNone) {
+    return ConsumeIdent(stream);
+  }
+
+  if (id == CSSValueID::kSpellingError || id == CSSValueID::kGrammarError) {
+    // Note that StyleBuilderConverter::ConvertFlags() requires that values
+    // other than 'none' appear in a CSSValueList.
+    std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
+    list->Append(ConsumeIdent(stream));
+    return list;
+  }
+
+  std::shared_ptr<const CSSIdentifierValue> underline = nullptr;
+  std::shared_ptr<const CSSIdentifierValue> overline = nullptr;
+  std::shared_ptr<const CSSIdentifierValue> line_through = nullptr;
+  std::shared_ptr<const CSSIdentifierValue> blink = nullptr;
+
+  while (true) {
+    id = stream.Peek().Id();
+    if (id == CSSValueID::kUnderline && !underline) {
+      underline = ConsumeIdent(stream);
+    } else if (id == CSSValueID::kOverline && !overline) {
+      overline = ConsumeIdent(stream);
+    } else if (id == CSSValueID::kLineThrough && !line_through) {
+      line_through = ConsumeIdent(stream);
+    } else if (id == CSSValueID::kBlink && !blink) {
+      blink = ConsumeIdent(stream);
+    } else {
+      break;
+    }
+  }
+
+  std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
+  if (underline) {
+    list->Append(underline);
+  }
+  if (overline) {
+    list->Append(overline);
+  }
+  if (line_through) {
+    list->Append(line_through);
+  }
+  if (blink) {
+    list->Append(blink);
+  }
+
+  if (!list->length()) {
+    return nullptr;
+  }
+  return list;
+}
+
+// Consume the `text-box-edge` production.
+std::shared_ptr<const CSSValue> ConsumeTextBoxEdge(CSSParserTokenStream& stream) {
+  if (auto auto_value =
+          ConsumeIdent<CSSValueID::kAuto>(stream)) {
+    return auto_value;
+  }
+
+  auto over_type =
+      ConsumeIdent<CSSValueID::kText, CSSValueID::kCap, CSSValueID::kEx>(
+          stream);
+  if (!over_type) {
+    return nullptr;
+  }
+  // The second parameter is optional, the first parameter will be used for
+  // both if the second parameter is not provided.
+  if (auto under_type =
+          ConsumeIdent<CSSValueID::kText, CSSValueID::kAlphabetic>(stream)) {
+    // Align with the CSS specification: "If only one value is specified,
+    // both edges are assigned that same keyword if possible; else 'text' is
+    // assumed as the missing value.".
+    // If the `over_type` is 'cap' or 'ex', since it does not have a
+    // corresponding line-under baseline, `text` will be used to fill the
+    // missing value. If the `over_type` is `text`, the default `under_type` is
+    // `text` to prioritize the same keyword.
+    // In all cases above, the `under_type` of `text` can be omitted for
+    // serialization.
+    if (under_type->GetValueID() == CSSValueID::kText) {
+      if (over_type->GetValueID() == CSSValueID::kText ||
+          over_type->GetValueID() == CSSValueID::kCap ||
+          over_type->GetValueID() == CSSValueID::kEx) {
+        return over_type;
+      }
+    }
+    auto list = CSSValueList::CreateSpaceSeparated();
+    list->Append(over_type);
+    list->Append(under_type);
+    return list;
+  }
+  return over_type;
 }
 
 }  // namespace css_parsing_utils

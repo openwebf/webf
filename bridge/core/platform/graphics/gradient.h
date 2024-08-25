@@ -31,7 +31,7 @@
 
 #include "core/platform/graphics/color.h"
 #include "core/platform/graphics/graphic_types.h"
-#include "gfx/geometry/point.h"
+#include "core/platform/gfx/geometry/point.h"
 
 namespace gfx {
 class PointF;

@@ -329,6 +329,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_rule.cc
     core/css/css_value.cc
     core/css/css_content_distribution_value.cc
+    core/css/css_reflect_value.cc
+    core/css/css_border_image.cc
+    core/css/css_axis_value.cc
     core/css/properties/longhand.cc
     core/css/properties/shorthands/shorthands_custom.cc
     core/css/properties/longhands/longhands_custom.cc
@@ -530,22 +533,22 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/input/touch_list.cc
     core/css/css_timing_function_value.cc
     core/platform/animation/timing_function.cc
-    gfx/animation/keyframe/timing_function.cc
-    gfx/geometry/cubic_bezier.cc
-    gfx/geometry/point_conversions.cc
-    gfx/geometry/point.cc
-    gfx/geometry/point_f.cc
-    gfx/geometry/size.cc
-    gfx/geometry/size_f.cc
-    gfx/geometry/vector2d.cc
-    gfx/geometry/vector2d_f.cc
-    gfx/geometry/insets.cc
-    gfx/geometry/insets_conversions.cc
-    gfx/geometry/insets_f.cc
-    gfx/geometry/rect.cc
-    gfx/geometry/rect_f.cc
-    gfx/geometry/rect_conversions.cc
-    gfx/geometry/size_conversions.cc
+    core/platform/gfx/animation/keyframe/timing_function.cc
+    core/platform/gfx/geometry/cubic_bezier.cc
+    core/platform/gfx/geometry/point_conversions.cc
+    core/platform/gfx/geometry/point.cc
+    core/platform/gfx/geometry/point_f.cc
+    core/platform/gfx/geometry/size.cc
+    core/platform/gfx/geometry/size_f.cc
+    core/platform/gfx/geometry/vector2d.cc
+    core/platform/gfx/geometry/vector2d_f.cc
+    core/platform/gfx/geometry/insets.cc
+    core/platform/gfx/geometry/insets_conversions.cc
+    core/platform/gfx/geometry/insets_f.cc
+    core/platform/gfx/geometry/rect.cc
+    core/platform/gfx/geometry/rect_f.cc
+    core/platform/gfx/geometry/rect_conversions.cc
+    core/platform/gfx/geometry/size_conversions.cc
 
     )
 

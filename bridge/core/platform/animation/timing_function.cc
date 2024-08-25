@@ -8,7 +8,7 @@
 #include <string>
 #include <cstdint>
 #include <algorithm>
-#include "gfx/animation/keyframe/timing_function.h"
+#include "core/platform/gfx/animation/keyframe/timing_function.h"
 
 namespace webf {
 

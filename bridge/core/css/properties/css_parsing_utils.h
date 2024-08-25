@@ -17,7 +17,9 @@
 #include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_primitive_value.h"
 #include "core/css/css_repeat_style_value.h"
+#include "core/style/grid_area.h"
 #include "core/css/css_string_value.h"
+#include "core/css/css_uri_value.h"
 #include "core/css/css_value_list.h"
 #include "core/css/parser/css_parser_local_context.h"
 #include "core/css/parser/css_parser_token.h"
@@ -343,6 +345,11 @@ std::shared_ptr<const CSSValue> ConsumeBackgroundAttachment(CSSParserTokenStream
 std::shared_ptr<const CSSValue> ConsumeBackgroundBoxOrText(CSSParserTokenStream& stream);
 std::shared_ptr<const CSSValue> ConsumeBackgroundBox(CSSParserTokenStream&);
 std::shared_ptr<const CSSValue> ConsumePrefixedBackgroundBox(CSSParserTokenStream&, AllowTextValue);
+std::shared_ptr<const CSSValue> ConsumeMaskComposite(CSSParserTokenStream&);
+std::shared_ptr<const CSSValue> ConsumePrefixedMaskComposite(CSSParserTokenStream&);
+std::shared_ptr<const CSSValue> ConsumeMaskMode(CSSParserTokenStream&);
+
+std::shared_ptr<const CSSValue> ConsumeCoordBoxOrNoClip(CSSParserTokenStream&);
 
 std::shared_ptr<const CSSValue> ConsumeImageOrNone(CSSParserTokenStream& stream, const CSSParserContext& context);
 
@@ -494,6 +501,28 @@ template <typename T>
     requires std::is_same_v<T, CSSParserTokenStream> ||
     std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSIdentifierValue> ConsumeFontFormatIdent(T&);
 
+
+template <typename Func, typename... Args>
+std::shared_ptr<const CSSValueList> ConsumeSpaceSeparatedList(Func callback,
+                                        CSSParserTokenStream& stream,
+                                        Args&&... args) {
+  std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
+  do {
+    std::shared_ptr<CSSValue> value = callback(stream, std::forward<Args>(args)...);
+    if (!value) {
+      return list->length() > 0 ? list : nullptr;
+    }
+    list->Append(value);
+  } while (!stream.AtEnd());
+  DCHECK(list->length());
+  return list;
+}
+
+bool ParseGridTemplateAreasRow(const std::string& grid_row_names,
+                               NamedGridAreaMap& grid_area_map,
+                               const size_t row_count,
+                               size_t& column_count);
+
 // ConsumeCommaSeparatedList and ConsumeSpaceSeparatedList take a callback
 // function to call on each item in the list, followed by the arguments to pass
 // to this callback.  The first argument to the callback must be the
@@ -616,6 +645,41 @@ std::shared_ptr<const CSSValue> ConsumePositionLonghand(CSSParserTokenStream& ra
 
 std::shared_ptr<const CSSValueList> ParseRepeatStyle(CSSParserTokenStream& stream);
 std::shared_ptr<const CSSValue> ParseSpacing(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<const CSSValue> ParseMaskSize(CSSParserTokenStream&,
+                                              const CSSParserContext&,
+                                              const CSSParserLocalContext&);
+
+std::shared_ptr<const CSSValue> ConsumeWebkitBorderImage(CSSParserTokenStream&, const CSSParserContext&);
+
+UnitlessQuirk UnitlessUnlessShorthand(const CSSParserLocalContext&);
+
+std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenStream& stream, const CSSParserContext& context);
+
+std::shared_ptr<const CSSIdentifierValue> ConsumeShapeBox(CSSParserTokenStream&);
+std::shared_ptr<const CSSIdentifierValue> ConsumeVisualBox(CSSParserTokenStream&);
+std::shared_ptr<const CSSIdentifierValue> ConsumeCoordBox(CSSParserTokenStream& stream);
+std::shared_ptr<const CSSIdentifierValue> ConsumeGeometryBox(CSSParserTokenStream&);
+
+std::shared_ptr<const CSSValue> ConsumeBasicShape(CSSParserTokenStream&,
+                                                  const CSSParserContext&,
+                                                  AllowPathValue = AllowPathValue::kAllow,
+                                                  AllowBasicShapeRectValue = AllowBasicShapeRectValue::kAllow,
+                                                  AllowBasicShapeXYWHValue = AllowBasicShapeXYWHValue::kAllow);
+
+std::shared_ptr<const CSSValue> ConsumeIntrinsicSizeLonghand(CSSParserTokenStream& stream,
+                                                             const CSSParserContext& context);
+
+std::shared_ptr<const CSSValue> ConsumeFontSizeAdjust(CSSParserTokenStream& stream,
+                                                      const CSSParserContext& context);
+
+std::shared_ptr<const CSSValue> ConsumeAxis(CSSParserTokenStream&, const CSSParserContext& context);
+
+std::shared_ptr<const CSSValue> ConsumeTextDecorationLine(CSSParserTokenStream&);
+std::shared_ptr<const CSSValue> ConsumeTextBoxEdge(CSSParserTokenStream&);
+
+std::shared_ptr<const CSSValue> ConsumeTransformList(CSSParserTokenStream&,
+                               const CSSParserContext&,
+                               const CSSParserLocalContext&);
 
 }  // namespace css_parsing_utils
 }  // namespace webf

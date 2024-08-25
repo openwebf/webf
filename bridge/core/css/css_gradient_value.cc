@@ -37,8 +37,8 @@
 #include "core/platform/geometry/SKScalar.h"
 #include "core/platform/graphics/gradient.h"
 #include "css_value_keywords.h"
-#include "gfx/geometry/point_f.h"
-#include "gfx/geometry/rect_f.h"
+#include "core/platform/gfx/geometry/point_f.h"
+#include "core/platform/gfx/geometry/rect_f.h"
 
 namespace webf::cssvalue {
 

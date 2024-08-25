@@ -37,7 +37,7 @@
 #include "core/platform/std_lib_extras.h"
 //#include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 //#include "third_party/blink/renderer/platform/wtf/thread_safe_ref_counted.h"
-#include "gfx/animation/keyframe/timing_function.h"
+#include "core/platform/gfx/animation/keyframe/timing_function.h"
 
 namespace webf {
 

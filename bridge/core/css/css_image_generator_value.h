@@ -28,7 +28,7 @@
 
 #include <set>
 #include "core/css/css_value.h"
-#include "gfx/geometry/size_f.h"
+#include "core/platform/gfx/geometry/size_f.h"
 
 namespace webf {
 

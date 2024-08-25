@@ -48,7 +48,7 @@ class CSSQuadValue : public CSSValue {
         bottom_(bottom),
         left_(left) {}
 
-  CSSQuadValue(CSSValue* value, TypeForSerialization serialization_type)
+  CSSQuadValue(std::shared_ptr<const CSSValue> value, TypeForSerialization serialization_type)
       : CSSValue(kQuadClass),
         serialization_type_(serialization_type),
         top_(value),
