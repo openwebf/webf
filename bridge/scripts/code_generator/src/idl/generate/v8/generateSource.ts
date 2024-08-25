@@ -318,11 +318,11 @@ function generateRequiredInitBody(argument: FunctionArguments, argsIndex: number
 
   let body = '';
   if (argument.isDotDotDot) {
-    body = `Converter<${type}>::FromValue(ctx, argv + ${argsIndex}, argc - ${argsIndex}, exception_state)`
+    body = `Converter<${type}>::FromValue(isolate, args + ${argsIndex}, args - ${argsIndex}, exception_state)`
   } else if (hasArgumentCheck) {
     body = `Converter<${type}>::ArgumentsValue(context, argv[${argsIndex}], ${argsIndex}, exception_state)`;
   } else {
-    body = `Converter<${type}>::FromValue(ctx, argv[${argsIndex}], exception_state)`;
+    body = `Converter<${type}>::FromValue(isolate, args[${argsIndex}], exception_state)`;
   }
 
   return `auto&& args_${argument.name} = ${body};
@@ -543,7 +543,7 @@ function generateFunctionBody(blob: IDLBlob, declare: FunctionDeclaration, optio
   
   // context->dartIsolateContext()->profiler()->StartTrackSteps("${getClassName(blob)}::${declare.name}");
   
-  // MemberMutationScope scope{context};
+  v8::HandleScope handle_scope(isolate);
   ${returnValueInit}
 
   do {  // Dummy loop for use of 'break'.
