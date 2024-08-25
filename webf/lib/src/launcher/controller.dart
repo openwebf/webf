@@ -801,8 +801,9 @@ class WebFViewController implements WidgetsBindingObserver {
       }
       // Show keyboard
       if (shouldScrollByToCenter) {
-        window.scrollBy(0, scrollOffset, true);
+        window.scrollBy(0, scrollOffset, false);
       }
+      window.resizeViewportRelatedElements();
     }
     viewport?.bottomInset = bottomInsets;
   }
