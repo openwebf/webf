@@ -325,7 +325,7 @@ function generateRequiredInitBody(argument: FunctionArguments, argsIndex: number
     body = `Converter<${type}>::FromValue(isolate, args[${argsIndex}], exception_state)`;
   }
 
-  return `auto&& args_${argument.name} = ${body};
+  return `auto args_${argument.name} = ${body};
 if (UNLIKELY(exception_state.HasException())) {
   args.GetReturnValue().SetUndefined();
   return;
@@ -374,13 +374,13 @@ ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...pre
   }
 
 
-  return `auto&& args_${argument.name} = Converter<IDLOptional<${generateIDLTypeConverter(argument.type)}>>::FromValue(ctx, argv[${argsIndex}], exception_state);
+  return `auto args_${argument.name} = Converter<IDLOptional<${generateIDLTypeConverter(argument.type)}>>::FromValue(isolate, args[${argsIndex}], exception_state);
 if (UNLIKELY(exception_state.HasException())) {
   args.GetReturnValue().SetUndefined();
   return;
 }
 
-if (argc <= ${argsIndex + 1}) {
+if (args.Length() <= ${argsIndex + 1}) {
   ${call}
   break;
 }`;
@@ -432,7 +432,7 @@ ${returnValueAssignment} self->${generateCallMethodName(declaration.name)}(${min
     call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declaration.name)}(context, ${requiredArguments.join(',')});`;
   }
 
-  let minimalRequiredCall = (declaration.args.length == 0 || (declaration.args[0].isDotDotDot)) ? call : `if (argc <= ${minimalRequiredArgc}) {
+  let minimalRequiredCall = (declaration.args.length == 0 || (declaration.args[0].isDotDotDot)) ? call : `if (args.Length() <= ${minimalRequiredArgc}) {
   ${call}
   break;
 }`;
@@ -511,7 +511,7 @@ function generateReturnValueResult(blob: IDLBlob, type: ParameterType, mode?: Pa
     return `return_value->${method}()`;
   }
 
-  return `Converter<${generateIDLTypeConverter(type)}>::ToValue(ctx, std::move(return_value))`;
+  return `Converter<${generateIDLTypeConverter(type)}>::ToValue(isolate, std::move(return_value))`;
 }
 
 type GenFunctionBodyOptions = { isConstructor?: boolean, isInstanceMethod?: boolean };
@@ -522,8 +522,7 @@ function generateFunctionBody(blob: IDLBlob, declare: FunctionDeclaration, optio
 }) {
   let paramCheck = generateMethodArgumentsCheck(declare);
   let callBody = generateFunctionCallBody(blob, declare, options);
-  // let returnValueInit = generateReturnValueInit(blob, declare.returnType, options);
-  let returnValueInit = '';
+  let returnValueInit = generateReturnValueInit(blob, declare.returnType, options);
   let returnValueResult = generateReturnValueResult(blob, declare.returnType, declare.returnTypeMode, options);
 
   // let constructorPrototypeInit = (options.isConstructor && returnValueInit.length > 0) ? `JSValue proto = JS_GetPropertyStr(ctx, this_val, "prototype");
@@ -557,7 +556,7 @@ ${addIndent(callBody, 4)}
     return;
   }
   ${constructorPrototypeInit}
-  return ${returnValueResult};
+  args.GetReturnValue().Set(${returnValueResult});
 `;
 }
 

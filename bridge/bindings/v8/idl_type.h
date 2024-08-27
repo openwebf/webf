@@ -12,10 +12,22 @@
 
 namespace webf {
 
+struct IDLTypeBase {
+  using ImplType = void;
+};
+
 template <typename T>
 struct IDLTypeBaseHelper {
   using ImplType = T;
 };
+
+template <typename T>
+struct IDLOptional final : public IDLTypeBase {
+  using ImplType = typename Converter<T>::ImplType;
+};
+
+struct IDLInt64 final : public IDLTypeBaseHelper<int64_t> {};
+struct IDLDouble final : public IDLTypeBaseHelper<double> {};
 
 // Function callback
 struct IDLCallback : public IDLTypeBaseHelper<v8::MaybeLocal<v8::Function>> {

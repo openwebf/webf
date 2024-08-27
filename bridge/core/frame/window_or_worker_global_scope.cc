@@ -192,11 +192,12 @@ ScriptValue WindowOrWorkerGlobalScope::__memory_usage__(ExecutingContext* contex
 #elif WEBF_V8_JS_ENGINE
 
 int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
-                                          const v8::Local<v8::Function> &callback,
+                                          const v8::MaybeLocal<v8::Function> maybeCallback,
                                           int32_t timeout,
                                           ExceptionState& exception) {
-  if (callback.IsEmpty()) {
-    exception.ThrowException(callback->GetIsolate(), ErrorType::InternalError, "Timeout callback is null");
+  v8::Local<v8::Function> callback;
+  if (!maybeCallback.ToLocal(&callback)) {
+    exception.ThrowException(context->ctx(), ErrorType::InternalError, "Timeout callback is null");
     return -1;
   }
 
@@ -216,9 +217,9 @@ int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
 }
 
 int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
-                                          const v8::Local<v8::Function> &callback,
+                                          const v8::MaybeLocal<v8::Function> maybeCallback,
                                           ExceptionState& exception) {
-  return setTimeout(context, callback, 0.0, exception);
+  return setTimeout(context, maybeCallback, 0.0, exception);
 }
 
 #endif

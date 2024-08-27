@@ -37,11 +37,11 @@ class WindowOrWorkerGlobalScope {
   static ScriptValue __memory_usage__(ExecutingContext* context, ExceptionState& exception_state);
 #elif WEBF_V8_JS_ENGINE
   static int setTimeout(ExecutingContext* context,
-                        const v8::Local<v8::Function> &callback,
+                        v8::MaybeLocal<v8::Function> maybeCallback,
                         int32_t timeout,
                         ExceptionState& exception);
   static int setTimeout(ExecutingContext* context,
-                        const v8::Local<v8::Function> &callback,
+                        v8::MaybeLocal<v8::Function> maybeCallback,
                         ExceptionState& exception);
 //  static int setInterval(ExecutingContext* context,
 //                         const v8::Local<v8::Function> callback,
