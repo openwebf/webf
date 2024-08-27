@@ -73,7 +73,7 @@ class StylePropertySerializer {
 //  std::string GetShorthandValueForGridTemplate(const StylePropertyShorthand&) const;
   std::string ContainerValue() const;
   std::string TimelineValue(const StylePropertyShorthand&) const;
-  std::string AnimationRangeShorthandValue() const;
+//  std::string AnimationRangeShorthandValue() const;
   std::string FontValue() const;
   std::string FontSynthesisValue() const;
   std::string FontVariantValue() const;

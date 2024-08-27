@@ -143,128 +143,128 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
   return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeDashedIdent<CSSParserTokenStream>,
                                                       stream, context);
 }
-
-std::shared_ptr<const CSSValue> AnimationComposition::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                       const CSSParserContext& context,
-                                                                       const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const CSSIdentifierValue>(CSSParserTokenStream&)>(
-      css_parsing_utils::ConsumeIdent<CSSValueID::kReplace, CSSValueID::kAdd, CSSValueID::kAccumulate>, stream);
-}
-
-std::shared_ptr<const CSSValue> AnimationDelay::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
-                                                                 const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList(
-      static_cast<std::shared_ptr<const CSSPrimitiveValue> (*)(CSSParserTokenStream&, const CSSParserContext&,
-                                                               CSSPrimitiveValue::ValueRange)>(
-          css_parsing_utils::ConsumeTime),
-      stream, context, CSSPrimitiveValue::ValueRange::kAll);
-}
-
-std::shared_ptr<const CSSValue> AnimationDirection::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                     const CSSParserContext&,
-                                                                     const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const CSSIdentifierValue>(CSSParserTokenStream&)>(
-      css_parsing_utils::ConsumeIdent<CSSValueID::kNormal, CSSValueID::kAlternate, CSSValueID::kReverse,
-                                      CSSValueID::kAlternateReverse>,
-      stream);
-}
-
-std::shared_ptr<const CSSValue> AnimationDirection::InitialValue() const {
-  return CSSIdentifierValue::Create(CSSValueID::kNormal);
-}
-
-std::shared_ptr<const CSSValue> AnimationDuration::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
-                                                                    const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationDuration, stream, context);
-}
-
-std::shared_ptr<const CSSValue> AnimationFillMode::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext&,
-                                                                    const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const CSSIdentifierValue>(CSSParserTokenStream&)>(
-      css_parsing_utils::ConsumeIdent<CSSValueID::kNone, CSSValueID::kForwards, CSSValueID::kBackwards,
-                                      CSSValueID::kBoth>,
-      stream);
-}
-
-std::shared_ptr<const CSSValue> AnimationFillMode::InitialValue() const {
-  return CSSIdentifierValue::Create(CSSValueID::kNone);
-}
-
-std::shared_ptr<const CSSValue> AnimationIterationCount::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                          const CSSParserContext& context,
-                                                                          const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationIterationCount, stream,
-                                                      context);
-}
-
-std::shared_ptr<const CSSValue> AnimationName::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
-                                                                const CSSParserLocalContext& local_context) const {
-  // Allow quoted name if this is an alias property.
-  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationName, stream, context,
-                                                      local_context.UseAliasParsing());
-}
-
-std::shared_ptr<const CSSValue> AnimationName::InitialValue() const {
-  return CSSIdentifierValue::Create(CSSValueID::kNone);
-}
-
-std::shared_ptr<const CSSValue> AnimationPlayState::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                     const CSSParserContext&,
-                                                                     const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const CSSIdentifierValue>(CSSParserTokenStream&)>(
-      css_parsing_utils::ConsumeIdent<CSSValueID::kRunning, CSSValueID::kPaused>, stream);
-}
-
-std::shared_ptr<const CSSValue> AnimationPlayState::InitialValue() const {
-  return CSSIdentifierValue::Create(CSSValueID::kRunning);
-}
-
-std::shared_ptr<const CSSValue> AnimationRangeStart::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                      const CSSParserContext& context,
-                                                                      const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationRange, stream, context,
-                                                      /* default_offset_percent */ 0.0);
-}
-
-std::shared_ptr<const CSSValue> AnimationRangeStart::InitialValue() const {
-  return CSSIdentifierValue::Create(CSSValueID::kNormal);
-}
-
-std::shared_ptr<const CSSValue> AnimationRangeEnd::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
-                                                                    const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationRange, stream, context,
-                                                      /* default_offset_percent */ 100.0);
-}
-
-std::shared_ptr<const CSSValue> AnimationRangeEnd::InitialValue() const {
-  return CSSIdentifierValue::Create(CSSValueID::kNormal);
-}
-
-std::shared_ptr<const CSSValue> AnimationTimeline::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
-                                                                    const CSSParserLocalContext& local_context) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationTimeline, stream, context);
-}
-
-std::shared_ptr<const CSSValue> AnimationTimeline::InitialValue() const {
-  return CSSIdentifierValue::Create(CSSValueID::kAuto);
-}
-
-std::shared_ptr<const CSSValue> AnimationTimingFunction::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                          const CSSParserContext& context,
-                                                                          const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationTimingFunction, stream,
-                                                      context);
-}
-
-std::shared_ptr<const CSSValue> AnimationTimingFunction::InitialValue() const {
-  return CSSIdentifierValue::Create(CSSValueID::kEase);
-}
+//
+//std::shared_ptr<const CSSValue> AnimationComposition::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                                       const CSSParserContext& context,
+//                                                                       const CSSParserLocalContext&) const {
+//  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const CSSIdentifierValue>(CSSParserTokenStream&)>(
+//      css_parsing_utils::ConsumeIdent<CSSValueID::kReplace, CSSValueID::kAdd, CSSValueID::kAccumulate>, stream);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationDelay::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                                 const CSSParserContext& context,
+//                                                                 const CSSParserLocalContext&) const {
+//  return css_parsing_utils::ConsumeCommaSeparatedList(
+//      static_cast<std::shared_ptr<const CSSPrimitiveValue> (*)(CSSParserTokenStream&, const CSSParserContext&,
+//                                                               CSSPrimitiveValue::ValueRange)>(
+//          css_parsing_utils::ConsumeTime),
+//      stream, context, CSSPrimitiveValue::ValueRange::kAll);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationDirection::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                                     const CSSParserContext&,
+//                                                                     const CSSParserLocalContext&) const {
+//  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const CSSIdentifierValue>(CSSParserTokenStream&)>(
+//      css_parsing_utils::ConsumeIdent<CSSValueID::kNormal, CSSValueID::kAlternate, CSSValueID::kReverse,
+//                                      CSSValueID::kAlternateReverse>,
+//      stream);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationDirection::InitialValue() const {
+//  return CSSIdentifierValue::Create(CSSValueID::kNormal);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationDuration::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                                    const CSSParserContext& context,
+//                                                                    const CSSParserLocalContext&) const {
+//  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationDuration, stream, context);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationFillMode::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                                    const CSSParserContext&,
+//                                                                    const CSSParserLocalContext&) const {
+//  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const CSSIdentifierValue>(CSSParserTokenStream&)>(
+//      css_parsing_utils::ConsumeIdent<CSSValueID::kNone, CSSValueID::kForwards, CSSValueID::kBackwards,
+//                                      CSSValueID::kBoth>,
+//      stream);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationFillMode::InitialValue() const {
+//  return CSSIdentifierValue::Create(CSSValueID::kNone);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationIterationCount::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                                          const CSSParserContext& context,
+//                                                                          const CSSParserLocalContext&) const {
+//  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationIterationCount, stream,
+//                                                      context);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationName::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                                const CSSParserContext& context,
+//                                                                const CSSParserLocalContext& local_context) const {
+//  // Allow quoted name if this is an alias property.
+//  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationName, stream, context,
+//                                                      local_context.UseAliasParsing());
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationName::InitialValue() const {
+//  return CSSIdentifierValue::Create(CSSValueID::kNone);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationPlayState::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                                     const CSSParserContext&,
+//                                                                     const CSSParserLocalContext&) const {
+//  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const CSSIdentifierValue>(CSSParserTokenStream&)>(
+//      css_parsing_utils::ConsumeIdent<CSSValueID::kRunning, CSSValueID::kPaused>, stream);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationPlayState::InitialValue() const {
+//  return CSSIdentifierValue::Create(CSSValueID::kRunning);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationRangeStart::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                                      const CSSParserContext& context,
+//                                                                      const CSSParserLocalContext&) const {
+//  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationRange, stream, context,
+//                                                      /* default_offset_percent */ 0.0);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationRangeStart::InitialValue() const {
+//  return CSSIdentifierValue::Create(CSSValueID::kNormal);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationRangeEnd::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                                    const CSSParserContext& context,
+//                                                                    const CSSParserLocalContext&) const {
+//  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationRange, stream, context,
+//                                                      /* default_offset_percent */ 100.0);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationRangeEnd::InitialValue() const {
+//  return CSSIdentifierValue::Create(CSSValueID::kNormal);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationTimeline::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                                    const CSSParserContext& context,
+//                                                                    const CSSParserLocalContext& local_context) const {
+//  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationTimeline, stream, context);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationTimeline::InitialValue() const {
+//  return CSSIdentifierValue::Create(CSSValueID::kAuto);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationTimingFunction::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                                          const CSSParserContext& context,
+//                                                                          const CSSParserLocalContext&) const {
+//  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationTimingFunction, stream,
+//                                                      context);
+//}
+//
+//std::shared_ptr<const CSSValue> AnimationTimingFunction::InitialValue() const {
+//  return CSSIdentifierValue::Create(CSSValueID::kEase);
+//}
 
 std::shared_ptr<const CSSValue> AspectRatio::ParseSingleValue(CSSParserTokenStream& stream,
                                                               const CSSParserContext& context,
@@ -2691,43 +2691,43 @@ std::shared_ptr<const CSSValue> TransitionTimingFunction::InitialValue() const {
   return CSSIdentifierValue::Create(CSSValueID::kEase);
 }
 
-std::shared_ptr<const CSSValue> Translate::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
-                                                            const CSSParserLocalContext&) const {
-  CSSValueID id = stream.Peek().Id();
-  if (id == CSSValueID::kNone) {
-    return css_parsing_utils::ConsumeIdent(stream);
-  }
-
-  std::shared_ptr<const CSSValue> translate_x =
-      css_parsing_utils::ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
-  if (!translate_x) {
-    return nullptr;
-  }
-  std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
-  list->Append(translate_x);
-  std::shared_ptr<const CSSPrimitiveValue> translate_y =
-      css_parsing_utils::ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
-  if (translate_y) {
-    std::shared_ptr<const CSSPrimitiveValue> translate_z =
-        css_parsing_utils::ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kAll);
-
-    if (translate_z && translate_z->IsZero() == CSSPrimitiveValue::BoolStatus::kTrue) {
-      translate_z = nullptr;
-    }
-    if (translate_y->IsZero() == CSSPrimitiveValue::BoolStatus::kTrue && !translate_y->HasPercentage() &&
-        !translate_z) {
-      return list;
-    }
-
-    list->Append(translate_y);
-    if (translate_z) {
-      list->Append(translate_z);
-    }
-  }
-
-  return list;
-}
+//std::shared_ptr<const CSSValue> Translate::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                            const CSSParserContext& context,
+//                                                            const CSSParserLocalContext&) const {
+//  CSSValueID id = stream.Peek().Id();
+//  if (id == CSSValueID::kNone) {
+//    return css_parsing_utils::ConsumeIdent(stream);
+//  }
+//
+//  std::shared_ptr<const CSSValue> translate_x =
+//      css_parsing_utils::ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+//  if (!translate_x) {
+//    return nullptr;
+//  }
+//  std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
+//  list->Append(translate_x);
+//  std::shared_ptr<const CSSPrimitiveValue> translate_y =
+//      css_parsing_utils::ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+//  if (translate_y) {
+//    std::shared_ptr<const CSSPrimitiveValue> translate_z =
+//        css_parsing_utils::ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+//
+//    if (translate_z && translate_z->IsZero() == CSSPrimitiveValue::BoolStatus::kTrue) {
+//      translate_z = nullptr;
+//    }
+//    if (translate_y->IsZero() == CSSPrimitiveValue::BoolStatus::kTrue && !translate_y->HasPercentage() &&
+//        !translate_z) {
+//      return list;
+//    }
+//
+//    list->Append(translate_y);
+//    if (translate_z) {
+//      list->Append(translate_z);
+//    }
+//  }
+//
+//  return list;
+//}
 
 std::shared_ptr<const CSSValue> VerticalAlign::ParseSingleValue(CSSParserTokenStream& stream,
                                                                 const CSSParserContext& context,

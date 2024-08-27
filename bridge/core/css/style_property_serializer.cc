@@ -463,12 +463,12 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
   }
 
   switch (property_id) {
-    case CSSPropertyID::kAnimation:
-      return GetLayeredShorthandValue(animationShorthand());
-    case CSSPropertyID::kAlternativeAnimationWithTimeline:
-      return GetLayeredShorthandValue(alternativeAnimationWithTimelineShorthand());
-    case CSSPropertyID::kAnimationRange:
-      return AnimationRangeShorthandValue();
+//    case CSSPropertyID::kAnimation:
+//      return GetLayeredShorthandValue(animationShorthand());
+//    case CSSPropertyID::kAlternativeAnimationWithTimeline:
+//      return GetLayeredShorthandValue(alternativeAnimationWithTimelineShorthand());
+//    case CSSPropertyID::kAnimationRange:
+//      return AnimationRangeShorthandValue();
     case CSSPropertyID::kBorderSpacing:
       return Get2Values(borderSpacingShorthand());
     case CSSPropertyID::kBackgroundPosition:
@@ -886,26 +886,26 @@ std::shared_ptr<CSSValueList> AnimationRangeShorthandValueItem(size_t index,
 
 }  // namespace
 
-std::string StylePropertySerializer::AnimationRangeShorthandValue() const {
-  assert(animationRangeShorthand().length() == 2u);
-  assert(animationRangeShorthand().properties()[0] == &GetCSSPropertyAnimationRangeStart());
-  assert(animationRangeShorthand().properties()[1] == &GetCSSPropertyAnimationRangeEnd());
-
-  const auto& start_list = To<CSSValueList>(*property_set_.GetPropertyCSSValue(GetCSSPropertyAnimationRangeStart()));
-  const auto& end_list = To<CSSValueList>(*property_set_.GetPropertyCSSValue(GetCSSPropertyAnimationRangeEnd()));
-
-  if (start_list.length() != end_list.length()) {
-    return "";
-  }
-
-  std::shared_ptr<CSSValueList> list = CSSValueList::CreateCommaSeparated();
-
-  for (size_t i = 0; i < start_list.length(); ++i) {
-    list->Append(AnimationRangeShorthandValueItem(i, start_list, end_list));
-  }
-
-  return list->CssText();
-}
+//std::string StylePropertySerializer::AnimationRangeShorthandValue() const {
+//  assert(animationRangeShorthand().length() == 2u);
+//  assert(animationRangeShorthand().properties()[0] == &GetCSSPropertyAnimationRangeStart());
+//  assert(animationRangeShorthand().properties()[1] == &GetCSSPropertyAnimationRangeEnd());
+//
+//  const auto& start_list = To<CSSValueList>(*property_set_.GetPropertyCSSValue(GetCSSPropertyAnimationRangeStart()));
+//  const auto& end_list = To<CSSValueList>(*property_set_.GetPropertyCSSValue(GetCSSPropertyAnimationRangeEnd()));
+//
+//  if (start_list.length() != end_list.length()) {
+//    return "";
+//  }
+//
+//  std::shared_ptr<CSSValueList> list = CSSValueList::CreateCommaSeparated();
+//
+//  for (size_t i = 0; i < start_list.length(); ++i) {
+//    list->Append(AnimationRangeShorthandValueItem(i, start_list, end_list));
+//  }
+//
+//  return list->CssText();
+//}
 
 std::string StylePropertySerializer::FontValue() const {
   int font_size_property_index = property_set_.FindPropertyIndex(GetCSSPropertyFontSize());
@@ -1383,20 +1383,20 @@ std::string StylePropertySerializer::GetLayeredShorthandValue(const StylePropert
 //        }
 //        omit_value = true;
 //      }
-      if (property->IDEquals(CSSPropertyID::kAnimationRangeStart)) {
-        auto* ident = DynamicTo<CSSIdentifierValue>(value);
-        if (!ident || (ident->GetValueID() != CSSValueID::kNormal) || layer > 0) {
-          return "";
-        }
-        omit_value = true;
-      }
-      if (property->IDEquals(CSSPropertyID::kAnimationRangeEnd)) {
-        auto* ident = DynamicTo<CSSIdentifierValue>(value);
-        if (!ident || (ident->GetValueID() != CSSValueID::kNormal) || layer > 0) {
-          return "";
-        }
-        omit_value = true;
-      }
+//      if (property->IDEquals(CSSPropertyID::kAnimationRangeStart)) {
+//        auto* ident = DynamicTo<CSSIdentifierValue>(value);
+//        if (!ident || (ident->GetValueID() != CSSValueID::kNormal) || layer > 0) {
+//          return "";
+//        }
+//        omit_value = true;
+//      }
+//      if (property->IDEquals(CSSPropertyID::kAnimationRangeEnd)) {
+//        auto* ident = DynamicTo<CSSIdentifierValue>(value);
+//        if (!ident || (ident->GetValueID() != CSSValueID::kNormal) || layer > 0) {
+//          return "";
+//        }
+//        omit_value = true;
+//      }
 
       if (property->IDEquals(CSSPropertyID::kTransitionBehavior)) {
         assert(shorthand.id() == CSSPropertyID::kTransition);

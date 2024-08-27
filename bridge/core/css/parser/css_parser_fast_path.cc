@@ -1311,9 +1311,9 @@ bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(CSSPropertyID property_i
     case CSSPropertyID::kWhiteSpaceCollapse:
       return value_id == CSSValueID::kCollapse || value_id == CSSValueID::kPreserve ||
              value_id == CSSValueID::kPreserveBreaks || value_id == CSSValueID::kBreakSpaces;
-    case CSSPropertyID::kWordBreak:
-      return value_id == CSSValueID::kNormal || value_id == CSSValueID::kBreakAll || value_id == CSSValueID::kKeepAll ||
-             value_id == CSSValueID::kBreakWord || value_id == CSSValueID::kAutoPhrase;
+//    case CSSPropertyID::kWordBreak:
+//      return value_id == CSSValueID::kNormal || value_id == CSSValueID::kBreakAll || value_id == CSSValueID::kKeepAll ||
+//             value_id == CSSValueID::kBreakWord || value_id == CSSValueID::kAutoPhrase;
     case CSSPropertyID::kOverscrollBehaviorInline:
     case CSSPropertyID::kOverscrollBehaviorBlock:
     case CSSPropertyID::kOverscrollBehaviorX:
@@ -1439,7 +1439,7 @@ CSSBitset CSSParserFastPaths::handled_by_keyword_fast_paths_properties_{{
     CSSPropertyID::kUserSelect,
     CSSPropertyID::kWebkitWritingMode,
     CSSPropertyID::kWhiteSpaceCollapse,
-    CSSPropertyID::kWordBreak,
+//    CSSPropertyID::kWordBreak,
     CSSPropertyID::kWritingMode,
     CSSPropertyID::kOriginTrialTestProperty,
     CSSPropertyID::kOverlay,
