@@ -14,7 +14,7 @@
 #include "legacy/element_attributes.h"
 #include "parent_node.h"
 #include "qjs_scroll_to_options.h"
-#include "gfx/geometry/vector2d_f.h"
+#include "core/platform/gfx/geometry/vector2d_f.h"
 
 namespace webf {
 
