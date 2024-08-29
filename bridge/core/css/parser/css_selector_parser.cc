@@ -869,26 +869,25 @@ bool CSSSelectorParser::ConsumePartialComplexSelector(
 
 // static
 CSSSelector::PseudoType CSSSelectorParser::ParsePseudoType(
-    const std::string& name,
+    const AtomicString& name,
     bool has_arguments,
     const Document* document) {
-  //TODO(xiezuobing): 需要传入ExecutingContext
-  ExecutingContext* context;
   CSSSelector::PseudoType pseudo_type =
-      CSSSelector::NameToPseudoType(AtomicString(context->ctx(), name), has_arguments, document);
+      CSSSelector::NameToPseudoType(name, has_arguments, document);
 
   if (pseudo_type != CSSSelector::PseudoType::kPseudoUnknown) {
     return pseudo_type;
   }
 
-  if (name.rfind("-webkit-", 0) == 0) {
+  std::string tmp = name.ToStdString(document->ctx());
+  if (tmp.rfind("-webkit-", 0) == 0) {
     return CSSSelector::PseudoType::kPseudoWebKitCustomElement;
   }
   return CSSSelector::PseudoType::kPseudoUnknown;
 }
 
 namespace {
-PseudoId ParsePseudoElementLegacy(const AtomicString& selector_string,
+PseudoId ParsePseudoElementLegacy(const std::string& selector_string,
                                   const Node* parent) {
   CSSTokenizer tokenizer(selector_string);
   const auto tokens = tokenizer.TokenizeToEOF();
@@ -908,7 +907,7 @@ PseudoId ParsePseudoElementLegacy(const AtomicString& selector_string,
     CSSParserToken selector_name_token = range.Consume();
     PseudoId pseudo_id =
         CSSSelector::GetPseudoId(CSSSelectorParser::ParsePseudoType(
-            selector_name_token.Value(),
+            selector_name_token.Value().ToAtomicString(parent->ctx()),
             selector_name_token.GetType() == kFunctionToken,
             parent ? &parent->GetDocument() : nullptr));
 
@@ -926,7 +925,7 @@ PseudoId ParsePseudoElementLegacy(const AtomicString& selector_string,
   return kPseudoIdNone;
 }
 
-AtomicString ParsePseudoElementArgument(const AtomicString& selector_string) {
+AtomicString ParsePseudoElementArgument(const std::string& selector_string) {
   CSSTokenizer tokenizer(selector_string);
   const auto tokens = tokenizer.TokenizeToEOF();
   CSSParserTokenRange range(tokens);

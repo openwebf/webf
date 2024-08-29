@@ -40,9 +40,8 @@
 #include "core/dom/node_lists_node_data.h"
 //#include "core/dom/part.h"
 //#include "third_party/blink/renderer/core/layout/layout_object.h"
-//#include "third_party/blink/renderer/core/page/page.h"
+#include "core/page.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
-//#include "third_party/blink/renderer/platform/wtf/size_assertions.h"
 
 namespace webf {
 
@@ -140,16 +139,13 @@ void NodeRareData::Trace(GCVisitor* visitor) const {
 }
 
 void NodeRareData::IncrementConnectedSubframeCount() {
-  // TODO(guopengfei)：先注释Page相关
-  //assert((connected_frame_count_ + 1) <= Page::MaxNumberOfFrames());
+  assert((connected_frame_count_ + 1) <= WebFPage::MaxNumberOfFrames());
   ++connected_frame_count_;
 }
 
 NodeListsNodeData& NodeRareData::CreateNodeLists() {
-/*
   node_lists_ = std::make_shared<NodeListsNodeData>();
   return *node_lists_;
- */
 }
 
 FlatTreeNodeData& NodeRareData::EnsureFlatTreeNodeData() {
@@ -158,7 +154,23 @@ FlatTreeNodeData& NodeRareData::EnsureFlatTreeNodeData() {
   return *flat_tree_node_data_;
 }
 
-// TODO(guopengfei)：暂时不知道什么作用
+ChildNodeList* NodeRareData::EnsureChildNodeList(ContainerNode& node) {
+  if (node_list_)
+    return To<ChildNodeList>(node_list_.Get());
+  auto* list = MakeGarbageCollected<ChildNodeList>(&node);
+  node_list_ = list;
+  return list;
+}
+
+EmptyNodeList* NodeRareData::EnsureEmptyChildNodeList(Node& node) {
+  if (node_list_)
+    return To<EmptyNodeList>(node_list_.Get());
+  auto* list = MakeGarbageCollected<EmptyNodeList>(&node);
+  node_list_ = list;
+  return list;
+}
+
+// TODO(guopengfei)：
 static_assert(static_cast<int>(NodeRareData::kNumberOfElementFlags) ==
                   static_cast<int>(ElementFlags::kNumberOfElementFlags),
               "kNumberOfElementFlags must match.");
@@ -167,4 +179,4 @@ static_assert(
         static_cast<int>(DynamicRestyleFlags::kNumberOfDynamicRestyleFlags),
     "kNumberOfDynamicRestyleFlags must match.");
 
-}  // namespace blink
+}  // namespace webf

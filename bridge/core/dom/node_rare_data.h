@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (C) 2008, 2010 Apple Inc. All rights reserved.
  * Copyright (C) 2008 David Smith <catfish.man@gmail.com>
  *
@@ -25,11 +25,8 @@
 #define WEBF_CORE_DOM_NODE_RARE_DATA_H_
 
 #include <unordered_set>
+#include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/heap_vector.h"
-#include "bindings/qjs/cppgc/garbage_collected.h"
-#include "core/dom/flat_tree_node_data.h"
-#include "core/dom/node_lists_node_data.h"
-#include "core/dom/mutation_observer_registration.h"
 
 namespace webf {
 
@@ -37,11 +34,21 @@ enum class DynamicRestyleFlags;
 enum class ElementFlags;
 class FlatTreeNodeData;
 class MutationObserverRegistration;
+class NodeListsNodeData;
 class NodeRareData;
-//class Part;
-//class ScrollTimeline;
+/*
+// TODO(guopengfei)：
+class Part;f
+class ScrollTimeline;
 
-//using PartsList = HeapDeque<Member<Part>>;
+using PartsList = HeapDeque<Member<Part>>;
+*/
+
+class ChildNodeList;
+class EmptyNodeList;
+class ContainerNode;
+class NodeList;
+class Node;
 
 class NodeMutationObserverData final {
  public:
@@ -120,17 +127,21 @@ class NodeRareData {
   void SetRestyleFlag(DynamicRestyleFlags mask) { restyle_flags_ |= static_cast<uint16_t>(mask); }
   bool HasRestyleFlags() const { return restyle_flags_; }
   void ClearRestyleFlags() { restyle_flags_ = 0u; }
-  // TODO(guopengfei)：暂不支持ScrollTimeline
-  //void RegisterScrollTimeline(ScrollTimeline*);
-  //void UnregisterScrollTimeline(ScrollTimeline*);
-  //void InvalidateAssociatedAnimationEffects();
+  // TODO(guopengfei)：ScrollTimeline not support
+  // void RegisterScrollTimeline(ScrollTimeline*);
+  // void UnregisterScrollTimeline(ScrollTimeline*);
+  // void InvalidateAssociatedAnimationEffects();
 
-  // TODO(guopengfei)：暂不支持Part
-  //void AddDOMPart(Part& part);
-  //void RemoveDOMPart(Part& part);
-  //PartsList* GetDOMParts() const;
+  // TODO(guopengfei)：Part not support
+  // void AddDOMPart(Part& part);
+  // void RemoveDOMPart(Part& part);
+  // PartsList* GetDOMParts() const;
 
   virtual void Trace(GCVisitor*) const;
+
+  // TODO(guopengfei)：copy from core/dom/node_data.h
+  ChildNodeList* EnsureChildNodeList(ContainerNode& node);
+  EmptyNodeList* EnsureEmptyChildNodeList(Node& node);
 
  protected:
   uint32_t restyle_flags_ : kNumberOfDynamicRestyleFlags = 0u;
@@ -145,12 +156,14 @@ class NodeRareData {
   std::shared_ptr<FlatTreeNodeData> flat_tree_node_data_;
   // Keeps strong scroll timeline pointers linked to this node to ensure
   // the timelines are alive as long as the node is alive.
-  //Member<std::unordered_set<Member<ScrollTimeline>>> scroll_timelines_;
+  // Member<std::unordered_set<Member<ScrollTimeline>>> scroll_timelines_;
 
   // An ordered set of DOM Parts for this Node, in order of construction. This
   // order is important, since `getParts()` returns a tree-ordered set of parts,
   // with parts on the same `Node` returned in `Part` construction order.
-  //Member<PartsList> dom_parts_;
+  // Member<PartsList> dom_parts_;
+
+  Member<NodeList> node_list_;
 };
 
 }  // namespace webf

@@ -636,7 +636,7 @@ class CSSSelector {
 
   void Trace(GCVisitor* visitor) const;
 
-  static std::string FormatPseudoTypeForDebugging(PseudoType);
+  static AtomicString FormatPseudoTypeForDebugging(PseudoType);
 
 
 
@@ -793,6 +793,14 @@ CSSSelector::RelationType ConvertRelationToRelative(
 
 inline const QualifiedName& AnyQName() {
   return g_any_name;
+}
+
+inline const AtomicString& CSSSelector::Value() const {
+  assert(Match() != static_cast<unsigned>(kTag));
+  if (HasRareData()) {
+    return data_.rare_data_->matching_value_;
+  }
+  return data_.value_;
 }
 
 }  // namespace webf

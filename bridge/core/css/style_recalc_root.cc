@@ -55,6 +55,7 @@ std::optional<Member<Element>> FirstFlatTreeAncestorForChildDirty(
     // closest ancestor for dirty bits is the shadow host or nullptr.
     return parent.ParentOrShadowHostElement();
   }
+  /*  // TODO(guopengfei)：
   ShadowRoot* root = parent.GetShadowRoot();
   if (!root) {
     return To<Element>(&parent);
@@ -71,6 +72,7 @@ std::optional<Member<Element>> FirstFlatTreeAncestorForChildDirty(
       return slot;
     }
   }
+  */
   // The slot has also been removed. Fall back to using the light tree parent as
   // the new recalc root.
   return std::nullopt;

@@ -180,7 +180,7 @@ bool StyleInvalidator::SiblingData::MatchCurrentInvalidationSets(
       this_element_needs_style_recalc = true;
     }
 
-    if (const DescendantInvalidationSet* descendants =
+    if (const std::shared_ptr<DescendantInvalidationSet> descendants =
             invalidation_set.SiblingDescendants()) {
       if (descendants->WholeSubtreeInvalid()) {
         //TRACE_STYLE_INVALIDATOR_INVALIDATION_SET(

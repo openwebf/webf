@@ -539,6 +539,29 @@ bool Document::ShouldScheduleLayoutTreeUpdate() const {
   return true;
 }
 
+void Document::ScheduleLayoutTreeUpdate() {
+  assert(!HasPendingVisualUpdate());
+  assert(ShouldScheduleLayoutTreeUpdate());
+  assert(NeedsLayoutTreeUpdate());
+  /* // TODO(guopengfei)：
+  if (!View()->CanThrottleRendering() && ShouldScheduleLayout()) {
+    GetPage()->Animator().ScheduleVisualUpdate(GetFrame());
+  }
+
+  // FrameSelection caches visual selection information, which must be
+  // invalidated on dirty layout tree.
+  GetFrame()->Selection().MarkCacheDirty();
+
+  lifecycle_.EnsureStateAtMost(DocumentLifecycle::kVisualUpdatePending);
+
+  // DEVTOOLS_TIMELINE_TRACE_EVENT_INSTANT_WITH_CATEGORIES(
+  //     TRACE_DISABLED_BY_DEFAULT("devtools.timeline"),
+  //     "ScheduleStyleRecalculation", inspector_recalculate_styles_event::Data,
+  //     GetFrame());
+  ++style_version_;
+  */
+}
+
 void Document::RegisterNodeList(const LiveNodeListBase* list) {
   /*
   node_lists_.Add(list, list->InvalidationType());
@@ -582,11 +605,8 @@ bool Document::ShouldInvalidateNodeListCaches(
 }
 
 void Document::InvalidateNodeListCaches(const QualifiedName* attr_name) {
-  /*
-  for (const LiveNodeListBase* list : lists_invalidated_at_document_)
-    list->InvalidateCacheForAttribute(attr_name);
-
-    */
+  //for (const LiveNodeListBase* list : lists_invalidated_at_document_)
+  //  list->InvalidateCacheForAttribute(attr_name);
 }
 
 }  // namespace webf

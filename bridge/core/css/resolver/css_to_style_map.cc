@@ -27,19 +27,22 @@
  * Boston, MA 02110-1301, USA.
  */
 
-// Copyright (C) 2022-present The WebF authors. All rights reserved.
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
+/*
 #include "core/css/resolver/css_to_style_map.h"
 
 #include "core/animation/css/css_animation_data.h"
 #include "core/animation/effect_model.h"
-#include "core/css/css_border_image_slice_value.h"
+//#include "core/css/css_border_image_slice_value.h"
 #include "core/css/css_custom_ident_value.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_math_function_value.h"
 #include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_primitive_value.h"
-#include "core/css/css_primitive_value_mappings.h"
+//#include "core/css/css_primitive_value_mappings.h"
 #include "core/css/css_quad_value.h"
 #include "core/css/css_repeat_style_value.h"
 #include "core/css/css_scroll_value.h"
@@ -47,12 +50,12 @@
 #include "core/css/css_to_length_conversion_data.h"
 #include "core/css/css_value_pair.h"
 #include "core/css/css_view_value.h"
-#include "core/css/resolver/style_builder_converter.h"
+//#include "core/css/resolver/style_builder_converter.h"
 #include "core/css/resolver/style_resolver_state.h"
-#include "core/css/css_value_keywords.h"
-#include "core/style/border_image_length_box.h"
-#include "core/style/computed_style.h"
-#include "core/style/fill_layer.h"
+#include "css_value_keywords.h"
+//#include "core/style/border_image_length_box.h"
+//#include "core/style/computed_style.h"
+//#include "core/style/fill_layer.h"
 #include "core/platform/animation/timing_function.h"
 
 namespace webf {
@@ -537,7 +540,7 @@ CSSTransitionData::TransitionProperty CSSToStyleMap::MapAnimationProperty(
   if (To<CSSIdentifierValue>(value).GetValueID() == CSSValueID::kAll) {
     return CSSTransitionData::InitialProperty();
   }
-  DCHECK_EQ(To<CSSIdentifierValue>(value).GetValueID(), CSSValueID::kNone);
+  assert(To<CSSIdentifierValue>(value).GetValueID() == CSSValueID::kNone);
   return CSSTransitionData::TransitionProperty(
       CSSTransitionData::kTransitionNone);
 }
@@ -800,5 +803,5 @@ void CSSToStyleMap::MapNinePieceImageRepeat(StyleResolverState&,
   }
   image.SetVerticalRule(vertical_rule);
 }
-
+*/
 }  // namespace webf

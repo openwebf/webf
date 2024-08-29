@@ -32,6 +32,7 @@
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_primitive_value.h"
+#include "core/css/css_color_mix_value.h"
 
 namespace webf {
 
@@ -89,40 +90,39 @@ Color StyleColor::UnresolvedColorMix::Resolve(
                              alpha_multiplier_);
 }
 
-cssvalue::CSSColorMixValue* StyleColor::UnresolvedColorMix::ToCSSColorMixValue()
+std::shared_ptr<cssvalue::CSSColorMixValue> StyleColor::UnresolvedColorMix::ToCSSColorMixValue()
     const {
   auto to_css_value = [](const ColorOrUnresolvedColorMix& color_or_mix,
                          UnderlyingColorType type) -> const CSSValue* {
     switch (type) {
       case UnderlyingColorType::kColor:
-        return cssvalue::CSSColor::Create(color_or_mix.color);
+        return cssvalue::CSSColor::Create(color_or_mix.color).get();
       case UnderlyingColorType::kColorMix:
         assert(color_or_mix.unresolved_color_mix);
-        return color_or_mix.unresolved_color_mix->ToCSSColorMixValue();
+      return color_or_mix.unresolved_color_mix->ToCSSColorMixValue().get();
       case UnderlyingColorType::kCurrentColor:
-        return CSSIdentifierValue::Create(CSSValueID::kCurrentcolor);
+        return CSSIdentifierValue::Create(CSSValueID::kCurrentcolor).get();
     }
   };
 
   const CSSPrimitiveValue* percent1 = CSSNumericLiteralValue::Create(
       100 * (1.0 - percentage_) * alpha_multiplier_,
-      CSSPrimitiveValue::UnitType::kPercentage);
+      CSSPrimitiveValue::UnitType::kPercentage).get();
   const CSSPrimitiveValue* percent2 =
       CSSNumericLiteralValue::Create(100 * percentage_ * alpha_multiplier_,
-                                     CSSPrimitiveValue::UnitType::kPercentage);
+                                     CSSPrimitiveValue::UnitType::kPercentage).get();
 
-  return MakeGarbageCollected<cssvalue::CSSColorMixValue>(
-      to_css_value(color1_, color1_type_), to_css_value(color2_, color2_type_),
-      percent1, percent2, color_interpolation_space_,
+  return std::make_shared<cssvalue::CSSColorMixValue>(
+      to_css_value(color1_, color1_type_),
+      to_css_value(color2_, color2_type_),
+      percent1,
+      percent2,
+      color_interpolation_space_,
       hue_interpolation_method_);
 }
 
-void StyleColor::ColorOrUnresolvedColorMix::Trace(Visitor* visitor) const {
-  visitor->Trace(unresolved_color_mix);
-}
-
 Color StyleColor::Resolve(const Color& current_color,
-                          mojom::blink::ColorScheme color_scheme,
+                          ColorScheme color_scheme,
                           bool* is_current_color) const {
   if (is_current_color) {
     *is_current_color = IsCurrentColor();

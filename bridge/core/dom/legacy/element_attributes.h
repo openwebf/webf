@@ -40,7 +40,7 @@ class ElementAttributes : public ScriptWrappable {
 
   void Trace(GCVisitor* visitor) const override;
 
-  bool ElementAttributes::hasAttributes() const;
+  bool hasAttributes() const;
 
  private:
   Member<Element> element_;

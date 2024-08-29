@@ -45,7 +45,7 @@ class LiveNodeList : public NodeList, public LiveNodeListBase {
                JSContext* ctx = nullptr); // TODO(guopengfei)：添加JSContext参数，临时解决编译
 
   unsigned length() const final;
-  Element* item(unsigned offset) const final;
+  Element* item(unsigned offset) const;
   virtual bool ElementMatches(const Element&) const = 0;
 
   void InvalidateCache(Document* old_document = nullptr) const final;

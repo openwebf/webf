@@ -41,14 +41,13 @@
 #include "core/css/invalidation/invalidation_flags.h"
 //#include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
 #include "foundation/casting.h"
-#include "core/platform/forward.h"
+//#include "core/platform/forward.h"
 #include "core/platform/text/atomic_string_hash.h"
 //#include "third_party/blink/renderer/platform/wtf/text/string_hash.h"
 
 namespace webf {
 
 class Element;
-//class TracedValue; // TODO(guopengfei)：
 
 enum class InvalidationType {
   kInvalidateDescendants,
@@ -57,11 +56,6 @@ enum class InvalidationType {
 };
 
 class InvalidationSet;
-// TODO(guopengfei)：用不上了
-// struct InvalidationSetDeleter {
-//   static void Destruct(const InvalidationSet*);
-// };
-
 
 // Tracks data to determine which descendants in a DOM subtree, or
 // siblings and their descendants, need to have style recalculated.
@@ -102,7 +96,6 @@ class InvalidationSet {
  public:
   InvalidationSet(const InvalidationSet&) = delete;
   InvalidationSet& operator=(const InvalidationSet&) = delete;
-  virtual ~InvalidationSet() = default; // Add a virtual destructor
 
   bool operator==(const InvalidationSet&) const;
   bool operator!=(const InvalidationSet& o) const { return !(*this == o); }
@@ -233,7 +226,7 @@ class InvalidationSet {
   // sharing this singleton between such features saves a lot of memory on
   // sites with a big number of style rules.
   static std::shared_ptr<InvalidationSet> SelfInvalidationSet();
-  bool IsSelfInvalidationSet() const { return this == SelfInvalidationSet(); }
+  bool IsSelfInvalidationSet() const { return this == SelfInvalidationSet().get(); }
 
   // Returns a singleton DescendantInvalidationSet which invalidates all
   // shadow-including descendants with part attributes.
@@ -342,6 +335,7 @@ class InvalidationSet {
       AtomicString string_;
       // Used when type_ is kHashSet.
       std::unordered_set<AtomicString, AtomicString::KeyHasher>::iterator hash_set_iterator_;
+      //HashSet<AtomicString>::iterator hash_set_iterator_;
     };
 
     class Range {
@@ -369,13 +363,13 @@ class InvalidationSet {
     void SetIsHashSet(Flags& flags) { flags.bits_ |= GetMask(); }
 
     AtomicString string_{};
-    std::unordered_set<AtomicString, AtomicString::KeyHasher>* hash_set_{};
+    std::unordered_set<AtomicString, AtomicString::KeyHasher>* hash_set_;
   };
 
  protected:
   explicit InvalidationSet(InvalidationType);
 
-  ~InvalidationSet() {
+  virtual ~InvalidationSet() {
     assert(is_alive_);
     is_alive_ = false;
     ClearAllBackings();
@@ -448,20 +442,17 @@ class InvalidationSet {
 class DescendantInvalidationSet final : public InvalidationSet {
  public:
   static std::shared_ptr<DescendantInvalidationSet> Create() {
-    //return base::AdoptRef(new DescendantInvalidationSet);
     return std::make_shared<DescendantInvalidationSet>();
   }
 
- private:
   DescendantInvalidationSet()
       : InvalidationSet(InvalidationType::kInvalidateDescendants) {}
 };
 
 class SiblingInvalidationSet : public InvalidationSet {
 public:
-  static std::shared_ptr<SiblingInvalidationSet> Create(
-      std::shared_ptr<DescendantInvalidationSet> descendants) {
-    return std::make_shared<SiblingInvalidationSet>(std::move(descendants));
+  static std::shared_ptr<SiblingInvalidationSet> Create(const std::shared_ptr<DescendantInvalidationSet>& descendants) {
+    return std::make_shared<SiblingInvalidationSet>(descendants);
   }
 
   static constexpr unsigned kDirectAdjacentMax =
@@ -475,13 +466,13 @@ public:
         std::max(value, max_direct_adjacent_selectors_);
   }
 
-  DescendantInvalidationSet* SiblingDescendants() const {
-    return sibling_descendant_invalidation_set_.get();
+  std::shared_ptr<DescendantInvalidationSet> SiblingDescendants() const {
+    return sibling_descendant_invalidation_set_;
   }
   DescendantInvalidationSet& EnsureSiblingDescendants();
 
-  DescendantInvalidationSet* Descendants() const {
-    return descendant_invalidation_set_.get();
+  std::shared_ptr<DescendantInvalidationSet> Descendants() const {
+    return descendant_invalidation_set_;
   }
   DescendantInvalidationSet& EnsureDescendants();
 
@@ -489,9 +480,10 @@ protected:
   // Base constructor for NthSiblingInvalidationSet.
   SiblingInvalidationSet();
 
-private:
-  SiblingInvalidationSet(std::shared_ptr<DescendantInvalidationSet> descendants)
+public: // for std::make_shared
+  explicit SiblingInvalidationSet(const std::shared_ptr<DescendantInvalidationSet>& descendants);
 
+private:
   // Indicates the maximum possible number of siblings affected.
   unsigned max_direct_adjacent_selectors_;
 
@@ -529,11 +521,9 @@ private:
 class NthSiblingInvalidationSet final : public SiblingInvalidationSet {
  public:
   static std::shared_ptr<NthSiblingInvalidationSet> Create() {
-    // return base::AdoptRef(new NthSiblingInvalidationSet());
     return std::make_shared<NthSiblingInvalidationSet>();
   }
 
- private:
   NthSiblingInvalidationSet() = default;
 };
 

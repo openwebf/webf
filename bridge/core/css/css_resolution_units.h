@@ -25,7 +25,6 @@
 #define WEBF_CORE_CSS_CSS_RESOLUTION_UNITS_H_
 
 #include "core/platform/resolution_units.h"
-#include "core/platform/forward.h"
 
 namespace webf {
 

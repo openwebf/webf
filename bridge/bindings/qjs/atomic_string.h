@@ -148,4 +148,12 @@ extern const AtomicString& g_http_atom;
 extern const AtomicString& g_https_atom;
 }  // namespace webf
 
+using webf::AtomicString;
+using webf::g_null_atom;
+using webf::g_empty_atom;
+using webf::g_star_atom;
+using webf::g_xml_atom;
+using webf::g_xmlns_atom;
+using webf::g_xlink_atom;
+
 #endif  // BRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_

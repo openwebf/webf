@@ -42,8 +42,8 @@ class ScopedCSSName {
   }
 
   unsigned GetHash() const {
-    unsigned hash = WTF::GetHash(name_.c_str());
-    WTF::AddIntToHash(hash, WTF::GetHash(tree_scope_));
+    unsigned hash = webf::GetHash(name_.c_str());
+    webf::AddIntToHash(hash, webf::GetHash(tree_scope_));
     return hash;
   }
 

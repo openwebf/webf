@@ -14,10 +14,13 @@ class HeapVector final {
 
   void push_back(const V& value) { entries_.push_back(value); }
 
+  const V& at(size_t index) const {
+    assert(index < entries_.size() && "Index out of range");
+    return entries_.at(index);
+  }
+
   V& at(size_t index) {
-    if (index >= entries_.size()) {
-      throw std::out_of_range("Index out of range");
-    }
+    assert(index < entries_.size() && "Index out of range");
     return entries_.at(index);
   }
 
@@ -27,30 +30,47 @@ class HeapVector final {
 
   void clear() { entries_.clear(); }
 
-  bool contains(const V& value) const { return std::find(entries_.begin(), entries_.end(), value) != entries_.end(); }
+  bool contains(const V& value) const {
+    return std::find(entries_.begin(), entries_.end(), value) != entries_.end();
+  }
 
   int find(const V& value) const {
     auto it = std::find(entries_.begin(), entries_.end(), value);
     if (it != entries_.end()) {
       return std::distance(entries_.begin(), it);
     } else {
-      return -1;  // 未找到元素
+      return -1;  // not find
     }
   }
 
-  void erase_at(size_t index) {
+  bool erase_at(size_t index) {
     if (index >= entries_.size()) {
-      throw std::out_of_range("Index out of range");
+      std::cerr << "Index out of range" << std::endl;
+      return false;
     }
     entries_.erase(entries_.begin() + index);
+    return true;
+  }
+
+  void AppendVector(const HeapVector<V>& other) {
+    entries_.insert(entries_.end(), other.entries_.begin(), other.entries_.end());
   }
 
   void TraceValue(GCVisitor* visitor) const;
   void TraceMember(GCVisitor* visitor) const;
 
-  const std::vector<V>& ToStdVector() const {
-    return entries_;
-  }
+  using iterator = typename std::vector<V>::iterator;
+  using const_iterator = typename std::vector<V>::const_iterator;
+
+  iterator begin() { return entries_.begin(); }
+  const_iterator begin() const { return entries_.begin(); }
+  iterator end() { return entries_.end(); }
+  const_iterator end() const { return entries_.end(); }
+
+  const std::vector<V>& ToStdVector() const { return entries_; }
+
+  using ValueType = V;
+  using value_type = V;
 
  private:
   std::vector<V> entries_;

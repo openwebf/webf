@@ -56,8 +56,8 @@ class CSSTimingData {
         CubicBezierTimingFunction::EaseType::EASE);
   }
 
-  template <class T, uint32_t C>
-  static const T& GetRepeated(const Vector<T, C>& v, size_t index) {
+  template <class T>
+  static const T& GetRepeated(const std::vector<T>& v, size_t index) {
     return v[index % v.size()];
   }
 

@@ -127,6 +127,12 @@ bool IsA(Base* from) {
   return from && IsA<Derived>(*from);
 }
 
+// for ptr
+template <typename Derived, typename Base>
+bool IsA(const std::shared_ptr<Base>& base) {
+  return std::dynamic_pointer_cast<Derived>(base) != nullptr;
+}
+
 // Unconditionally downcasts from Base to Derived. Internally, this asserts
 // that |from| is a Derived to help catch bad casts in testing/fuzzing. For the
 // pointer overloads, returns nullptr if the input pointer is nullptr.
@@ -140,10 +146,6 @@ const Derived* To(const Base* from) {
   return from ? &To<Derived>(*from) : nullptr;
 }
 
-template <typename T, typename U>
-std::shared_ptr<T> ToPtr(const std::shared_ptr<U>& ptr) {
-  return std::dynamic_pointer_cast<T>(ptr);
-}
 template <typename Derived, typename Base>
 Derived& To(Base& from) {
   return static_cast<Derived&>(from);
@@ -151,6 +153,12 @@ Derived& To(Base& from) {
 template <typename Derived, typename Base>
 Derived* To(Base* from) {
   return from ? &To<Derived>(*from) : nullptr;
+}
+
+// for ptr
+template <typename Target, typename Source>
+std::shared_ptr<Target> ToPtr(const std::shared_ptr<Source>& source) {
+  return std::dynamic_pointer_cast<Target>(source);
 }
 
 // Unconditionally downcasts from Base to Derived. Internally, this asserts
@@ -193,6 +201,12 @@ Derived* DynamicTo(Base* from) {
 template <typename Derived, typename Base>
 Derived* DynamicTo(Base& from) {
   return IsA<Derived>(from) ? &To<Derived>(from) : nullptr;
+}
+
+// for ptr
+template <typename Derived, typename Base>
+std::shared_ptr<Derived> DynamicToPtr(const std::shared_ptr<Base>& from) {
+  return IsA<Derived>(from) ? ToPtr<Derived>(from) : std::shared_ptr<Derived>();
 }
 
 }  // namespace webf

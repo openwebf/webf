@@ -259,8 +259,7 @@ class RuleInvalidationData {
   unsigned num_candidates_for_names_bloom_filter = 0;
 
   InvalidationSetMap attribute_invalidation_sets;
-  InvalidationSetMap
-      id_invalidation_sets;  // See comment on class_invalidation_sets_.
+  InvalidationSetMap id_invalidation_sets;  // See comment on class_invalidation_sets_.
   PseudoTypeInvalidationSetMap pseudo_invalidation_sets;
   std::shared_ptr<SiblingInvalidationSet> universal_sibling_invalidation_set;
   std::shared_ptr<NthSiblingInvalidationSet> nth_invalidation_set;

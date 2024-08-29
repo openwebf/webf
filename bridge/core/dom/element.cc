@@ -3,6 +3,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "element.h"
+
+#include <core/css/parser/css_selector_parser.h>
+
 #include <utility>
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
@@ -765,27 +768,21 @@ const AtomicString& Element::ShadowPseudoId() const {
   //     return FastGetAttribute(html_names::kPseudoAttr);
   //   }
   // }
-  return g_null_atom;
+  return AtomicString::Null();
 }
 
 
 void Element::SetShadowPseudoId(const AtomicString& id) {
-#if DCHECK_IS_ON()
   {
     // NOTE: This treats "cue" as kPseudoWebKitCustomElement, so "cue"
     // is allowed here.
-    CSSSelector::PseudoType type =
-        CSSSelectorParser::ParsePseudoType(id, false, &GetDocument());
-    DCHECK(type == CSSSelector::kPseudoWebKitCustomElement ||
-           type == CSSSelector::kPseudoBlinkInternalElement ||
-           type == CSSSelector::kPseudoDetailsContent ||
-           type == CSSSelector::kPseudoSelectFallbackButtonIcon ||
-           type == CSSSelector::kPseudoSelectFallbackButton ||
-           type == CSSSelector::kPseudoSelectFallbackButtonText ||
-           type == CSSSelector::kPseudoSelectFallbackDatalist)
-        << "type: " << type << ", id: " << id;
+    CSSSelector::PseudoType type = CSSSelectorParser::ParsePseudoType(id, false, &GetDocument());
+    assert(type == CSSSelector::kPseudoWebKitCustomElement || type == CSSSelector::kPseudoBlinkInternalElement ||
+           type == CSSSelector::kPseudoDetailsContent || type == CSSSelector::kPseudoSelectFallbackButtonIcon ||
+           type == CSSSelector::kPseudoSelectFallbackButton || type == CSSSelector::kPseudoSelectFallbackButtonText ||
+           type == CSSSelector::kPseudoSelectFallbackDatalist);
   }
-#endif
+
   setAttribute(html_names::kPseudoAttr, id);
 }
 

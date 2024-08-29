@@ -6,9 +6,9 @@
 #define BRIDGE_DOCUMENT_H
 
 #include "bindings/qjs/cppgc/local_handle.h"
-#include "core/dom/document_lifecycle.h"
 #include "container_node.h"
 #include "core/css/style_engine.h"
+#include "core/dom/document_lifecycle.h"
 #include "core/platform/url/kurl.h"
 #include "event_type_names.h"
 #include "foundation/macros.h"
@@ -23,6 +23,7 @@ class HTMLHtmlElement;
 class HTMLAllCollection;
 class Text;
 class Comment;
+class LiveNodeListBase;
 
 enum NodeListInvalidationType : int {
   kDoNotInvalidateOnAttributeChanges = 0,
@@ -181,6 +182,7 @@ class Document : public ContainerNode, public TreeScope {
   bool InvalidationDisallowed() const;
 
   bool ShouldScheduleLayoutTreeUpdate() const;
+  void ScheduleLayoutTreeUpdate();
 
   StyleEngine& GetStyleEngine() const {
     assert(style_engine_.get());
@@ -194,6 +196,37 @@ class Document : public ContainerNode, public TreeScope {
   bool ShouldInvalidateNodeListCaches(
       const QualifiedName* attr_name = nullptr) const;
   void InvalidateNodeListCaches(const QualifiedName* attr_name);
+
+  enum class StyleAndLayoutTreeUpdate {
+    // Style/layout-tree is not dirty.
+    kNone,
+
+    // Style/layout-tree is dirty, and it's possible to understand whether a
+    // given element will be affected or not by analyzing its ancestor chain.
+    kAnalyzed,
+
+    // Style/layout-tree is dirty, but we cannot decide which specific elements
+    // need to have its style or layout tree updated.
+    kFull,
+  };
+
+  // Looks at various sources that cause style/layout-tree dirtiness,
+  // and returns the severity of the needed update.
+  //
+  // Note that this does not cover "implicit" style/layout-tree dirtiness
+  // via layout/container-queries. That is: this function may return kNone,
+  // and yet a subsequent layout may need to recalc container-query-dependent
+  // styles.
+  StyleAndLayoutTreeUpdate CalculateStyleAndLayoutTreeUpdate() const;
+
+  bool NeedsLayoutTreeUpdate() const {
+    return CalculateStyleAndLayoutTreeUpdate() !=
+           StyleAndLayoutTreeUpdate::kNone;
+  }
+
+  void ScheduleLayoutTreeUpdateIfNeeded();
+  // TODO(guopengfei)：
+  //DisplayLockDocumentState& GetDisplayLockDocumentState() const;
 
  private:
   int node_count_{0};
@@ -227,6 +260,14 @@ class Document : public ContainerNode, public TreeScope {
 };
 
 WEBF_DEFINE_COMPARISON_OPERATORS_WITH_REFERENCES(Document)
+
+inline void Document::ScheduleLayoutTreeUpdateIfNeeded() {
+  // Inline early out to avoid the function calls below.
+  if (HasPendingVisualUpdate())
+    return;
+  if (ShouldScheduleLayoutTreeUpdate() && NeedsLayoutTreeUpdate())
+    ScheduleLayoutTreeUpdate();
+}
 
 template <>
 struct DowncastTraits<Document> {

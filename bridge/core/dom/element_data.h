@@ -9,9 +9,10 @@
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/cppgc/member.h"
+#include "core/dom/attribute_collection.h"
 #include "dom_string_map.h"
 #include "dom_token_list.h"
-#include "attribute_collection.h"
+#include <core/base/bit_field.h>
 
 namespace webf {
 
@@ -41,15 +42,23 @@ class ElementData {
 
  const SpaceSplitString& ClassNames() const { return class_names_; }
 
- const AtomicString& IdForStyleResolution() const {
-   return id_for_style_resolution_;
-  }
+ const AtomicString& IdForStyleResolution() const { return id_for_style_resolution_; }
  AtomicString SetIdForStyleResolution(AtomicString new_id) const {
    return std::exchange(id_for_style_resolution_, std::move(new_id));
-  }
+ }
+
+ const CSSPropertyValueSet* InlineStyle() const { return inline_style_.get(); }
+
+ const CSSPropertyValueSet* PresentationAttributeStyle() const;
+
+ using BitField = ConcurrentlyReadBitField<uint32_t>;
+ using IsUniqueFlag =
+    BitField::DefineFirstValue<bool, 1, BitFieldValueConstness::kConst>;
+
+ BitField bit_field_;
 
 protected:
- mutable Member<CSSPropertyValueSet> inline_style_;
+ mutable std::shared_ptr<CSSPropertyValueSet> inline_style_;
  mutable SpaceSplitString class_names_;
  mutable AtomicString id_for_style_resolution_;
 
@@ -82,6 +91,13 @@ public:
  Attribute attribute_array_[0];
 };
 
+template <>
+struct DowncastTraits<ShareableElementData> {
+ static bool AllowFrom(const ElementData& data) {
+  return !data.bit_field_.get<ElementData::IsUniqueFlag>();
+ }
+};
+
 // UniqueElementData is created when an element needs to mutate its attributes
 // or gains presentation attribute style (ex. width="10"). It does not need to
 // be created to fill in values in the ElementData that are derived from
@@ -107,6 +123,13 @@ public:
  // so this might not make sense.
  mutable Member<CSSPropertyValueSet> presentation_attribute_style_;
  AttributeVector attribute_vector_;
+};
+
+template <>
+struct DowncastTraits<UniqueElementData> {
+ static bool AllowFrom(const ElementData& data) {
+  return data.bit_field_.get<ElementData::IsUniqueFlag>();
+ }
 };
 
 }  // namespace webf

@@ -43,11 +43,14 @@
 #define WEBF_CORE_DOM_ATTRIBUTE_COLLECTION_H_
 
 #include "core/dom/attribute.h"
-//#include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
+#include "bindings/qjs/heap_vector.h"
 //#include "third_party/blink/renderer/platform/wtf/text/atomic_string_table.h"
-//#include "third_party/blink/renderer/platform/wtf/vector.h"
 
 namespace webf {
+
+const uint32_t kNotFound = UINT_MAX;
+
+class WeakResult;
 
 template <typename Container, typename ContainerMemberType = Container>
 class AttributeCollectionGeneric {
@@ -61,7 +64,7 @@ class AttributeCollectionGeneric {
 
   ValueType& operator[](unsigned index) const { return at(index); }
   ValueType& at(unsigned index) const {
-    CHECK_LT(index, size());
+    assert(index < size());
     return begin()[index];
   }
 
@@ -76,9 +79,9 @@ class AttributeCollectionGeneric {
 
   // Find() returns nullptr if the specified name is not found.
   iterator Find(const QualifiedName&) const;
-  iterator Find(const AtomicString& name) const;
+  //iterator Find(const AtomicString& name) const;
   uint32_t FindIndex(const QualifiedName&) const;
-  uint32_t FindIndex(const AtomicString& name) const;
+  //uint32_t FindIndex(const AtomicString& name) const;
 
   // FindHinted() and FindIndexHinted() have subtle semantics.
   //
@@ -123,10 +126,9 @@ class AttributeCollectionGeneric {
   //      corresponding to the him can  be reallocated to a different string
   //      making the |hint| semantically invalid. However, because the
   //      |collection| is not mutated, |hint| will not match anything.
-  iterator FindHinted(const StringView& name,
-                      WTF::AtomicStringTable::WeakResult hint) const;
-  uint32_t FindIndexHinted(const StringView& name,
-                             WTF::AtomicStringTable::WeakResult hint) const;
+  //iterator FindHinted(const StringView& name,
+  //                    WTF::AtomicStringTable::WeakResult hint) const;
+  uint32_t FindIndexHinted(const StringView& name, WeakResult hint) const;
 
  protected:
   iterator FindWithPrefix(const StringView& name) const;
@@ -163,7 +165,7 @@ class AttributeCollection
             AttributeArray(array, size)) {}
 };
 
-using AttributeVector = std::vector<Attribute>;
+using AttributeVector = HeapVector<Attribute>;
 class MutableAttributeCollection
     : public AttributeCollectionGeneric<AttributeVector, AttributeVector&> {
  public:
@@ -182,15 +184,15 @@ inline void MutableAttributeCollection::Append(const QualifiedName& name,
 }
 
 inline void MutableAttributeCollection::Remove(unsigned index) {
-  attributes_.EraseAt(index);
+  attributes_.erase_at(index);
 }
-
+/* // TODO(guopengfei)：
 template <typename Container, typename ContainerMemberType>
 inline typename AttributeCollectionGeneric<Container,
                                            ContainerMemberType>::iterator
 AttributeCollectionGeneric<Container, ContainerMemberType>::Find(
     const AtomicString& name) const {
-  return FindHinted(name, WTF::AtomicStringTable::WeakResult(name.Impl()));
+  return FindHinted(name, webf::WeakResult(name.Impl()));
 }
 
 template <typename Container, typename ContainerMemberType>
@@ -201,7 +203,7 @@ AttributeCollectionGeneric<Container, ContainerMemberType>::FindIndexHinted(
   iterator it = FindHinted(name, hint);
   return it ? uint32_t(it - begin()) : kNotFound;
 }
-
+*/
 template <typename Container, typename ContainerMemberType>
 inline uint32_t
 AttributeCollectionGeneric<Container, ContainerMemberType>::FindIndex(
@@ -214,12 +216,12 @@ AttributeCollectionGeneric<Container, ContainerMemberType>::FindIndex(
   }
   return kNotFound;
 }
-
+/* // TODO(guopengfei)：
 template <typename Container, typename ContainerMemberType>
 inline uint32_t
 AttributeCollectionGeneric<Container, ContainerMemberType>::FindIndex(
     const AtomicString& name) const {
-  return FindIndexHinted(name, WTF::AtomicStringTable::WeakResult(name.Impl()));
+  return FindIndexHinted(name, WeakResult(name.Impl()));
 }
 
 template <typename Container, typename ContainerMemberType>
@@ -227,7 +229,7 @@ inline typename AttributeCollectionGeneric<Container,
                                            ContainerMemberType>::iterator
 AttributeCollectionGeneric<Container, ContainerMemberType>::FindHinted(
     const StringView& name,
-    WTF::AtomicStringTable::WeakResult hint) const {
+    WeakResult hint) const {
   // A slow check is required if there are any attributes with prefixes
   // and no unprefixed name matches.
   bool has_attributes_with_prefixes = false;
@@ -253,7 +255,7 @@ AttributeCollectionGeneric<Container, ContainerMemberType>::FindHinted(
     return FindWithPrefix(name);
   return nullptr;
 }
-
+*/
 template <typename Container, typename ContainerMemberType>
 inline typename AttributeCollectionGeneric<Container,
                                            ContainerMemberType>::iterator
@@ -279,7 +281,7 @@ AttributeCollectionGeneric<Container, ContainerMemberType>::FindWithPrefix(
     if (!it->GetName().HasPrefix()) {
       // Skip attributes with no prefixes because they must be checked in
       // FindIndex(const AtomicString&).
-      DCHECK(!(name == it->LocalName()));
+      assert(!(name == it->LocalName()));
     } else {
       // FIXME: Would be faster to do this comparison without calling ToString,
       // which generates a temporary string by concatenation. But this branch is

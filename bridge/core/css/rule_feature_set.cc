@@ -43,8 +43,7 @@
 #include "core/css/style_scope.h"
 #include "core/dom/element.h"
 #include "core/dom/node.h"
-//#include "third_party/blink/renderer/core/inspector/inspector_trace_events.h"
-//#include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
+#include "foundation/string_builder.h"
 
 namespace webf {
 
@@ -274,8 +273,9 @@ bool RequiresSubtreeInvalidation(const CSSSelector& selector) {
 std::shared_ptr<InvalidationSet> CopyInvalidationSet(
     const InvalidationSet& invalidation_set) {
   if (invalidation_set.IsSiblingInvalidationSet()) {
-    std::shared_ptr<InvalidationSet> copy =
-        SiblingInvalidationSet::Create(nullptr);
+    // Correct the parameter type for Create method
+    std::shared_ptr<DescendantInvalidationSet> descendants = std::make_shared<DescendantInvalidationSet>();
+    std::shared_ptr<InvalidationSet> copy = SiblingInvalidationSet::Create(descendants);
     copy->Combine(invalidation_set);
     return copy;
   }
@@ -307,18 +307,18 @@ bool InvalidationSetMapsEqual(const MapType& a, const MapType& b) {
   return true;
 }
 
-void ExtractInvalidationSets(InvalidationSet* invalidation_set,
-                             DescendantInvalidationSet*& descendants,
-                             SiblingInvalidationSet*& siblings) {
+void ExtractInvalidationSets(std::shared_ptr<InvalidationSet> invalidation_set,
+                             std::shared_ptr<DescendantInvalidationSet>& descendants,
+                             std::shared_ptr<SiblingInvalidationSet>& siblings) {
   assert(invalidation_set->IsAlive());
-  if (auto* descendant =
-          DynamicTo<DescendantInvalidationSet>(invalidation_set)) {
+  if (auto descendant =
+          DynamicToPtr<DescendantInvalidationSet>(invalidation_set)) {
     descendants = descendant;
     siblings = nullptr;
     return;
   }
 
-  siblings = To<SiblingInvalidationSet>(invalidation_set);
+  siblings = ToPtr<SiblingInvalidationSet>(invalidation_set);
   descendants = siblings->Descendants();
 }
 
@@ -422,7 +422,7 @@ InvalidationSet& RuleFeatureSet::EnsureMutableInvalidationSet(
     // descendant → sibling+descendant.
     std::shared_ptr<InvalidationSet> descendants = invalidation_set;
     invalidation_set = SiblingInvalidationSet::Create(
-        To<DescendantInvalidationSet>(descendants.get()));
+         ToPtr<DescendantInvalidationSet>(descendants));
     return *invalidation_set;
   }
 }
@@ -433,7 +433,7 @@ InvalidationSet& RuleFeatureSet::EnsureInvalidationSet(InvalidationSetMap& map,
                                                        PositionType position,
                                                        bool in_nth_child) {
   std::shared_ptr<InvalidationSet>& invalidation_set =
-      map.insert(std::make_pair(key, nullptr)).stored_value->value;
+      map.insert(std::make_pair(key, nullptr)).first->second;
   return EnsureMutableInvalidationSet(type, position, in_nth_child,
                                       invalidation_set);
 }
@@ -444,8 +444,7 @@ InvalidationSet& RuleFeatureSet::EnsureInvalidationSet(
     InvalidationType type,
     PositionType position,
     bool in_nth_child) {
-  std::shared_ptr<InvalidationSet>& invalidation_set =
-      map.insert(key, nullptr).stored_value->value;
+  std::shared_ptr<InvalidationSet>& invalidation_set = map.insert({key, nullptr}).first->second;
   return EnsureMutableInvalidationSet(type, position, in_nth_child,
                                       invalidation_set);
 }
@@ -455,8 +454,7 @@ void RuleFeatureSet::MergeInvalidationSet(
     const AtomicString& key,
     std::shared_ptr<InvalidationSet> invalidation_set) {
   assert(invalidation_set);
-  std::shared_ptr<InvalidationSet>& slot =
-      map.insert(key, nullptr).stored_value->value;
+  std::shared_ptr<InvalidationSet>& slot = map.insert({key, nullptr}).first->second;
   if (!slot) {
     slot = std::move(invalidation_set);
   } else {
@@ -473,8 +471,7 @@ void RuleFeatureSet::MergeInvalidationSet(
     CSSSelector::PseudoType key,
     std::shared_ptr<InvalidationSet> invalidation_set) {
   assert(invalidation_set);
-  std::shared_ptr<InvalidationSet>& slot =
-      map.insert(key, nullptr).stored_value->value;
+  std::shared_ptr<InvalidationSet>& slot = map.insert({key, nullptr}).first->second;
   if (!slot) {
     slot = std::move(invalidation_set);
   } else {
@@ -520,7 +517,7 @@ ALWAYS_INLINE InvalidationSet& RuleFeatureSet::EnsureClassInvalidationSet(
     InvalidationType type,
     PositionType position,
     bool in_nth_child) {
-  assert(!class_name.empty());
+  assert(!class_name.IsEmpty());
   return EnsureInvalidationSet(class_invalidation_sets_, class_name, type,
                                position, in_nth_child);
 }
@@ -530,7 +527,7 @@ inline InvalidationSet& RuleFeatureSet::EnsureAttributeInvalidationSet(
     InvalidationType type,
     PositionType position,
     bool in_nth_child) {
-  assert(!attribute_name.empty());
+  assert(!attribute_name.IsEmpty());
   return EnsureInvalidationSet(attribute_invalidation_sets_, attribute_name,
                                type, position, in_nth_child);
 }
@@ -540,7 +537,7 @@ inline InvalidationSet& RuleFeatureSet::EnsureIdInvalidationSet(
     InvalidationType type,
     PositionType position,
     bool in_nth_child) {
-  assert(!id.empty());
+  assert(!id.IsEmpty());
   return EnsureInvalidationSet(id_invalidation_sets_, id, type, position,
                                in_nth_child);
 }
@@ -1007,7 +1004,7 @@ const CSSSelector* RuleFeatureSet::ExtractInvalidationSetFeaturesFromCompound(
     if (InvalidationSet* invalidation_set = InvalidationSetForSimpleSelector(
             *simple_selector, InvalidationType::kInvalidateDescendants,
             position, in_nth_child)) {
-      if (invalidation_set == nth_invalidation_set_) {
+      if (invalidation_set == nth_invalidation_set_.get()) {
         features.has_nth_pseudo = true;
       } else if (position == kSubject) {
         invalidation_set->SetInvalidatesSelf();
@@ -1619,7 +1616,7 @@ void RuleFeatureSet::AddFeaturesToInvalidationSetsForSimpleSelector(
                            : InvalidationType::kInvalidateDescendants,
           kAncestor, in_nth_child)) {
     if (!sibling_features) {
-      if (invalidation_set == nth_invalidation_set_) {
+      if (invalidation_set == nth_invalidation_set_.get()) {
         // TODO(futhark): We can extract the features from the current compound
         // to optimize this.
         invalidation_set->SetWholeSubtreeInvalid();
@@ -1930,8 +1927,10 @@ bool RuleFeatureSet::HasViewportDependentMediaQueries() const {
 }
 
 bool RuleFeatureSet::HasDynamicViewportDependentMediaQueries() const {
-  return media_query_result_flags_.unit_flags &
-         MediaQueryExpValue::UnitFlags::kDynamicViewport;
+  // TODO(guopengfei)：
+  //return media_query_result_flags_.unit_flags &
+  //       MediaQueryExpValue::UnitFlags::kDynamicViewport;
+  return false;
 }
 
 void RuleFeatureSet::CollectInvalidationSetsForClass(
@@ -1953,19 +1952,19 @@ void RuleFeatureSet::CollectInvalidationSetsForClass(
     return;
   }
 
-  DescendantInvalidationSet* descendants;
-  SiblingInvalidationSet* siblings;
-  ExtractInvalidationSets(it->value.get(), descendants, siblings);
+  std::shared_ptr<DescendantInvalidationSet> descendants;
+  std::shared_ptr<SiblingInvalidationSet> siblings;
+  ExtractInvalidationSets(it->second, descendants, siblings);
 
   if (descendants) {
-    TRACE_SCHEDULE_STYLE_INVALIDATION(element, *descendants, ClassChange,
-                                      class_name);
+    //TRACE_SCHEDULE_STYLE_INVALIDATION(element, *descendants, ClassChange,
+    //                                  class_name);
     invalidation_lists.descendants.push_back(descendants);
   }
 
   if (siblings) {
-    TRACE_SCHEDULE_STYLE_INVALIDATION(element, *siblings, ClassChange,
-                                      class_name);
+    //TRACE_SCHEDULE_STYLE_INVALIDATION(element, *siblings, ClassChange,
+    //                                  class_name);
     invalidation_lists.siblings.push_back(siblings);
   }
 }
@@ -1981,7 +1980,7 @@ void RuleFeatureSet::CollectSiblingInvalidationSetForClass(
     return;
   }
 
-  auto* sibling_set = DynamicTo<SiblingInvalidationSet>(it->value.get());
+  auto* sibling_set = DynamicTo<SiblingInvalidationSet>(it->second.get());
   if (!sibling_set) {
     return;
   }
@@ -1990,9 +1989,9 @@ void RuleFeatureSet::CollectSiblingInvalidationSetForClass(
     return;
   }
 
-  TRACE_SCHEDULE_STYLE_INVALIDATION(element, *sibling_set, ClassChange,
-                                    class_name);
-  invalidation_lists.siblings.push_back(sibling_set);
+  //TRACE_SCHEDULE_STYLE_INVALIDATION(element, *sibling_set, ClassChange,
+  //                                  class_name);
+  invalidation_lists.siblings.push_back(std::shared_ptr<InvalidationSet>(sibling_set));
 }
 
 void RuleFeatureSet::CollectInvalidationSetsForId(
@@ -2010,17 +2009,17 @@ void RuleFeatureSet::CollectInvalidationSetsForId(
     return;
   }
 
-  DescendantInvalidationSet* descendants;
-  SiblingInvalidationSet* siblings;
-  ExtractInvalidationSets(it->value.get(), descendants, siblings);
+  std::shared_ptr<DescendantInvalidationSet> descendants;
+  std::shared_ptr<SiblingInvalidationSet> siblings;
+  ExtractInvalidationSets(it->second, descendants, siblings);
 
   if (descendants) {
-    TRACE_SCHEDULE_STYLE_INVALIDATION(element, *descendants, IdChange, id);
+    //TRACE_SCHEDULE_STYLE_INVALIDATION(element, *descendants, IdChange, id);
     invalidation_lists.descendants.push_back(descendants);
   }
 
   if (siblings) {
-    TRACE_SCHEDULE_STYLE_INVALIDATION(element, *siblings, IdChange, id);
+    //TRACE_SCHEDULE_STYLE_INVALIDATION(element, *siblings, IdChange, id);
     invalidation_lists.siblings.push_back(siblings);
   }
 }
@@ -2035,7 +2034,7 @@ void RuleFeatureSet::CollectSiblingInvalidationSetForId(
     return;
   }
 
-  auto* sibling_set = DynamicTo<SiblingInvalidationSet>(it->value.get());
+  auto* sibling_set = DynamicTo<SiblingInvalidationSet>(it->second.get());
   if (!sibling_set) {
     return;
   }
@@ -2044,8 +2043,8 @@ void RuleFeatureSet::CollectSiblingInvalidationSetForId(
     return;
   }
 
-  TRACE_SCHEDULE_STYLE_INVALIDATION(element, *sibling_set, IdChange, id);
-  invalidation_lists.siblings.push_back(sibling_set);
+  //TRACE_SCHEDULE_STYLE_INVALIDATION(element, *sibling_set, IdChange, id);
+  invalidation_lists.siblings.push_back(std::shared_ptr<InvalidationSet>(sibling_set));
 }
 
 void RuleFeatureSet::CollectInvalidationSetsForAttribute(
@@ -2058,19 +2057,19 @@ void RuleFeatureSet::CollectInvalidationSetsForAttribute(
     return;
   }
 
-  DescendantInvalidationSet* descendants;
-  SiblingInvalidationSet* siblings;
-  ExtractInvalidationSets(it->value.get(), descendants, siblings);
+  std::shared_ptr<DescendantInvalidationSet> descendants;
+  std::shared_ptr<SiblingInvalidationSet> siblings;
+  ExtractInvalidationSets(it->second, descendants, siblings);
 
   if (descendants) {
-    TRACE_SCHEDULE_STYLE_INVALIDATION(element, *descendants, AttributeChange,
-                                      attribute_name);
+    //TRACE_SCHEDULE_STYLE_INVALIDATION(element, *descendants, AttributeChange,
+    //                                  attribute_name);
     invalidation_lists.descendants.push_back(descendants);
   }
 
   if (siblings) {
-    TRACE_SCHEDULE_STYLE_INVALIDATION(element, *siblings, AttributeChange,
-                                      attribute_name);
+    //TRACE_SCHEDULE_STYLE_INVALIDATION(element, *siblings, AttributeChange,
+    //                                  attribute_name);
     invalidation_lists.siblings.push_back(siblings);
   }
 }
@@ -2086,7 +2085,8 @@ void RuleFeatureSet::CollectSiblingInvalidationSetForAttribute(
     return;
   }
 
-  auto* sibling_set = DynamicTo<SiblingInvalidationSet>(it->value.get());
+  //auto* sibling_set = DynamicTo<SiblingInvalidationSet>(it->second.get());
+  auto sibling_set = DynamicToPtr<SiblingInvalidationSet>(it->second);
   if (!sibling_set) {
     return;
   }
@@ -2095,8 +2095,8 @@ void RuleFeatureSet::CollectSiblingInvalidationSetForAttribute(
     return;
   }
 
-  TRACE_SCHEDULE_STYLE_INVALIDATION(element, *sibling_set, AttributeChange,
-                                    attribute_name);
+  //TRACE_SCHEDULE_STYLE_INVALIDATION(element, *sibling_set, AttributeChange,
+  //                                  attribute_name);
   invalidation_lists.siblings.push_back(sibling_set);
 }
 
@@ -2110,18 +2110,18 @@ void RuleFeatureSet::CollectInvalidationSetsForPseudoClass(
     return;
   }
 
-  DescendantInvalidationSet* descendants;
-  SiblingInvalidationSet* siblings;
-  ExtractInvalidationSets(it->second.get(), descendants, siblings);
+  std::shared_ptr<DescendantInvalidationSet> descendants;
+  std::shared_ptr<SiblingInvalidationSet> siblings;
+  ExtractInvalidationSets(it->second, descendants, siblings);
 
   if (descendants) {
-    TRACE_SCHEDULE_STYLE_INVALIDATION(element, *descendants, PseudoChange,
-                                      pseudo);
+    //TRACE_SCHEDULE_STYLE_INVALIDATION(element, *descendants, PseudoChange,
+    //                                  pseudo);
     invalidation_lists.descendants.push_back(descendants);
   }
 
   if (siblings) {
-    TRACE_SCHEDULE_STYLE_INVALIDATION(element, *siblings, PseudoChange, pseudo);
+    //TRACE_SCHEDULE_STYLE_INVALIDATION(element, *siblings, PseudoChange, pseudo);
     invalidation_lists.siblings.push_back(siblings);
   }
 }
@@ -2186,22 +2186,22 @@ void RuleFeatureSet::AddFeaturesToUniversalSiblingInvalidationSet(
 
 bool RuleFeatureSet::NeedsHasInvalidationForClass(
     const AtomicString& class_name) const {
-  return classes_in_has_argument_.Contains(class_name);
+  return classes_in_has_argument_.find(class_name) != classes_in_has_argument_.end();
 }
 
 bool RuleFeatureSet::NeedsHasInvalidationForAttribute(
     const QualifiedName& attribute_name) const {
-  return attributes_in_has_argument_.Contains(attribute_name.LocalName());
+  return attributes_in_has_argument_.find(attribute_name.LocalName()) != attributes_in_has_argument_.end();
 }
 
 bool RuleFeatureSet::NeedsHasInvalidationForId(const AtomicString& id) const {
-  return ids_in_has_argument_.Contains(id);
+  return ids_in_has_argument_.find(id) != ids_in_has_argument_.end();
 }
 
 bool RuleFeatureSet::NeedsHasInvalidationForTagName(
     const AtomicString& tag_name) const {
   return universal_in_has_argument_ ||
-         tag_names_in_has_argument_.Contains(tag_name);
+         tag_names_in_has_argument_.find(tag_name) != tag_names_in_has_argument_.end();
 }
 
 bool RuleFeatureSet::NeedsHasInvalidationForInsertedOrRemovedElement(
@@ -2218,7 +2218,7 @@ bool RuleFeatureSet::NeedsHasInvalidationForInsertedOrRemovedElement(
 
   if (element.HasClass()) {
     const SpaceSplitString& class_names = element.ClassNames();
-    for (wtf_size_t i = 0; i < class_names.size(); i++) {
+    for (uint32_t i = 0; i < class_names.size(); i++) {
       if (NeedsHasInvalidationForClass(class_names[i])) {
         return true;
       }
@@ -2231,7 +2231,7 @@ bool RuleFeatureSet::NeedsHasInvalidationForInsertedOrRemovedElement(
 
 bool RuleFeatureSet::NeedsHasInvalidationForPseudoClass(
     CSSSelector::PseudoType pseudo_type) const {
-  return pseudos_in_has_argument_.Contains(pseudo_type);
+  return pseudos_in_has_argument_.find(pseudo_type) != pseudos_in_has_argument_.end();
 }
 
 void RuleFeatureSet::InvalidationSetFeatures::Merge(
@@ -2299,21 +2299,21 @@ std::string RuleFeatureSet::ToString() const {
   };
 
   struct Entry {
-    String name;
-    const InvalidationSet* set;
+    std::string name;
+    const std::shared_ptr<InvalidationSet> set;
     unsigned flags;
   };
 
-  Vector<Entry> entries;
+  HeapVector<Entry> entries;
 
   auto add_invalidation_sets =
-      [&entries](const String& webf, InvalidationSet* set, unsigned flags,
+      [&entries](const std::string& webf, std::shared_ptr<InvalidationSet> set, unsigned flags,
                  const char* prefix = "", const char* suffix = "") {
         if (!set) {
           return;
         }
-        DescendantInvalidationSet* descendants;
-        SiblingInvalidationSet* siblings;
+        std::shared_ptr<DescendantInvalidationSet> descendants;
+        std::shared_ptr<SiblingInvalidationSet> siblings;
         ExtractInvalidationSets(set, descendants, siblings);
 
         if (descendants) {
@@ -2328,7 +2328,7 @@ std::string RuleFeatureSet::ToString() const {
         }
       };
 
-  auto format_name = [](const String& webf, unsigned flags) {
+  auto format_name = [](const std::string& webf, unsigned flags) {
     StringBuilder builder;
     // Prefix:
 
@@ -2353,40 +2353,41 @@ std::string RuleFeatureSet::ToString() const {
     return builder.ReleaseString();
   };
 
-  auto format_max_direct_adjancent = [](unsigned max) -> String {
+  auto format_max_direct_adjancent = [](unsigned max) -> std::string {
     if (max == SiblingInvalidationSet::kDirectAdjacentMax) {
       return "~";
     }
     if (max) {
-      return String::Number(max);
+      return std::to_string(max);
     }
-    return g_empty_atom;
+    return "";
   };
 
   for (auto& i : id_invalidation_sets_) {
-    add_invalidation_sets(i.first, i.second.get(), kId, "#");
+    add_invalidation_sets(i.first.ToStringView().Characters8ToStdString(), i.second, kId, "#");
   }
   for (auto& i : class_invalidation_sets_) {
-    add_invalidation_sets(i.first, i.second.get(), kClass, ".");
+    add_invalidation_sets(i.first.ToStringView().Characters8ToStdString(), i.second, kClass, ".");
   }
   for (auto& i : attribute_invalidation_sets_) {
-    add_invalidation_sets(i.first, i.second.get(), kAttribute, "[", "]");
+    add_invalidation_sets(i.first.ToStringView().Characters8ToStdString(), i.second, kAttribute, "[", "]");
   }
   for (auto& i : pseudo_invalidation_sets_) {
-    String name = CSSSelector::FormatPseudoTypeForDebugging(
+    AtomicString name = CSSSelector::FormatPseudoTypeForDebugging(
         static_cast<CSSSelector::PseudoType>(i.first));
-    add_invalidation_sets(name, i.second.get(), kPseudo, ":", "");
+    add_invalidation_sets(name.ToStringView().Characters8ToStdString(), i.second, kPseudo, ":", "");
   }
 
-  add_invalidation_sets("*", universal_sibling_invalidation_set_.get(),
+  add_invalidation_sets("*", universal_sibling_invalidation_set_,
                         kUniversal);
-  add_invalidation_sets("nth", nth_invalidation_set_.get(), kNth);
+  add_invalidation_sets("nth", nth_invalidation_set_, kNth);
 
   std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
     if (a.flags != b.flags) {
       return a.flags < b.flags;
     }
-    return WTF::CodeUnitCompareLessThan(a.name, b.name);
+    //return WTF::CodeUnitCompareLessThan(a.name, b.name);
+    return a.name < b.name;
   });
 
   for (const Entry& entry : entries) {
@@ -2411,7 +2412,7 @@ std::string RuleFeatureSet::ToString() const {
 }
 
 std::ostream& operator<<(std::ostream& ostream, const RuleFeatureSet& set) {
-  return ostream << set.ToString().Utf8();
+  return ostream << set.ToString();
 }
 
 }  // namespace blink

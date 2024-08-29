@@ -24,9 +24,10 @@
 #ifndef WEBF_QUALIFIED_NAME_H
 #define WEBF_QUALIFIED_NAME_H
 
+#include "bindings/qjs/atomic_string.h"
 #include "core/platform/static_constructors.h"
 #include "core/platform/hash_traits.h"
-#include "bindings/qjs/atomic_string.h"
+#include <built_in_string.h>
 
 namespace webf {
 
@@ -96,6 +97,13 @@ class QualifiedName {
 
     };
 
+    [[nodiscard]] std::size_t hash() const { return impl_->ComputeHash(); }
+
+    // 为了在 std::unordered_map 和 std::unordered_set 中使用
+    // struct KeyHasher {
+    //   std::size_t operator()(const QualifiedName& k) const { return k.impl_->ComputeHash(); }
+    // };
+
     QualifiedName(const AtomicString& prefix,
                   const AtomicString& local_name,
                   const AtomicString& namespace_uri);
@@ -146,7 +154,7 @@ class QualifiedName {
     // at build time (such as <img>).
     bool IsDefinedName() const { return impl_ && impl_->is_static_; }
 
-    AtomicString ToString() const;
+    [[nodiscard]] std::string ToString() const;
 
     QualifiedNameImpl* Impl() const { return impl_.get(); }
 
@@ -163,7 +171,7 @@ class QualifiedName {
                              const AtomicString& name_namespace);
 
    private:
-//    friend struct WTF::HashTraits<blink::QualifiedName>;
+    friend struct HashTraits<QualifiedName>;
 
     // This constructor is used only to create global/static QNames that don't
     // require any ref counting.
@@ -176,7 +184,7 @@ class QualifiedName {
 };
 
 inline unsigned HashComponents(const QualifiedNameComponents& buf) {
-  // TODO(guopengfei)：临时返回0xFFFFFF，编译通过
+  // TODO(guopengfei)：return 0xFFFFFF for Compile
   // return StringHasher::HashMemory<sizeof(QualifiedNameComponents)>(&buf) &
   //        0xFFFFFF;
   return 0xFFFFFF;
@@ -198,31 +206,33 @@ struct HashTraits<QualifiedName::QualifiedNameImpl*>
 };
 
 template <>
-struct HashTraits<webf::QualifiedName>
-    : GenericHashTraits<webf::QualifiedName> {
+struct HashTraits<webf::QualifiedName> : GenericHashTraits<webf::QualifiedName> {
   using QualifiedNameImpl = webf::QualifiedName::QualifiedNameImpl;
-  static unsigned GetHash(const webf::QualifiedName& name) {
-    return webf::GetHash(name.Impl());
-  }
+  static unsigned GetHash(const webf::QualifiedName& name) { return webf::GetHash(name.Impl()); }
   static constexpr bool kSafeToCompareToEmptyOrDeleted = false;
 
   static constexpr bool kEmptyValueIsZero = false;
-  static const webf::QualifiedName& EmptyValue() {
-    return webf::QualifiedName::Null();
+  static const webf::QualifiedName& EmptyValue() { return webf::QualifiedName::Null(); }
+
+  static bool IsDeletedValue(const QualifiedName& value) {
+    return HashTraits<std::shared_ptr<QualifiedNameImpl>>::IsDeletedValue(value.impl_);
   }
-  /*
-  // TODO(guopengfei)：先注释
-  static bool IsDeletedValue(const blink::QualifiedName& value) {
-    return HashTraits<scoped_refptr<QualifiedNameImpl>>::IsDeletedValue(
-        value.impl_);
-  }
-  static void ConstructDeletedValue(blink::QualifiedName& slot) {
-    HashTraits<scoped_refptr<QualifiedNameImpl>>::ConstructDeletedValue(
+  static void ConstructDeletedValue(QualifiedName& slot) {
+    HashTraits<std::shared_ptr<QualifiedNameImpl>>::ConstructDeletedValue(
         slot.impl_);
   }
-  */
+
 };
 
 }  // namespace webf
+
+namespace std {
+template <>
+struct hash<webf::QualifiedName> {
+  std::size_t operator()(const webf::QualifiedName& q) const noexcept {
+    return q.hash();
+  }
+};
+}
 
 #endif  // WEBF_QUALIFIED_NAME_H

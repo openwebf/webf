@@ -9,10 +9,7 @@ namespace webf {
 
 void ElementData::CopyWith(ElementData* other) {}
 
-void ElementData::TraceAfterDispatch(GCVisitor* visitor) const {
-  visitor->TraceMember(inline_style_);
-  //visitor->TraceMember(class_names_);
-}
+void ElementData::TraceAfterDispatch(GCVisitor* visitor) const {}
 
 void ElementData::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(class_lists_);

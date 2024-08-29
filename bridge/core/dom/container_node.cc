@@ -27,10 +27,10 @@
  */
 
 #include "container_node.h"
-#include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
-#include "child_list_mutation_scope.h"
-#include "child_node_list.h"
+#include "core/dom/child_list_mutation_scope.h"
+#include "core/dom/child_node_list.h"
+#include "core/dom/node_lists_node_data.h"
 #include "core/html/html_all_collection.h"
 #include "core/script_forbidden_scope.h"
 #include "core/dom/events/event_dispatch_forbidden_scope.h"
@@ -585,6 +585,10 @@ void ContainerNode::RemoveBetween(Node* previous_child, Node* next_child, Node& 
                                                        nullptr);
 }
 
+NodeListsNodeData& ContainerNode::EnsureNodeLists() {
+  return EnsureRareData().EnsureNodeLists();
+}
+
 template <typename Functor>
 void ContainerNode::InsertNodeVector(const NodeVector& targets,
                                      Node* next,
@@ -744,7 +748,7 @@ void ContainerNode::InvalidateNodeListCachesInAncestors(
       lists->InvalidateCaches(attr_name);
   }
 }
-/*
+/* // TODO(guopengfei)：webf old impl
 void ContainerNode::InvalidateNodeListCachesInAncestors(const webf::ContainerNode::ChildrenChange* change) {
   // This is a performance optimization, NodeList cache invalidation is
   // not necessary for a text change.
@@ -782,6 +786,11 @@ void ContainerNode::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(last_child_);
 
   Node::Trace(visitor);
+}
+
+void ContainerNode::SetRestyleFlag(DynamicRestyleFlags mask) {
+  assert(IsElementNode() || IsShadowRoot());
+  EnsureRareData().SetRestyleFlag(mask);
 }
 
 }  // namespace webf

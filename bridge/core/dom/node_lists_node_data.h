@@ -25,20 +25,13 @@
 #define WEBF_CORE_DOM_NODE_LISTS_NODE_DATA_H_
 
 #include <unordered_map>
-#include "core/dom/container_node.h"
 #include "core/dom/child_node_list.h"
 #include "core/dom/empty_node_list.h"
 #include "core/dom/qualified_name.h"
 #include "core/dom/tag_collection.h"
 #include "core/html/collection_type.h"
-// #include "third_party/blink/renderer/platform/heap/collection_support/heap_hash_map.h"
-// #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
-// #include "third_party/blink/renderer/platform/wtf/hash_traits.h"
-#include "core/platform/hash_traits.h"
-// #include "third_party/blink/renderer/platform/wtf/text/atomic_string.h"
 #include "bindings/qjs/atomic_string.h"
-// #include "third_party/blink/renderer/platform/wtf/text/string_hash.h"
 
 namespace webf {
 
@@ -52,7 +45,7 @@ class NodeListsNodeData final {
   ChildNodeList* EnsureChildNodeList(ContainerNode& node) {
     if (child_node_list_)
       return To<ChildNodeList>(child_node_list_.Get());
-    auto* list = MakeGarbageCollected<ChildNodeList>(node);
+    auto* list = MakeGarbageCollected<ChildNodeList>(&node);
     child_node_list_ = list;
     return list;
   }
@@ -60,22 +53,35 @@ class NodeListsNodeData final {
   EmptyNodeList* EnsureEmptyChildNodeList(Node& node) {
     if (child_node_list_)
       return To<EmptyNodeList>(child_node_list_.Get());
-    auto* list = MakeGarbageCollected<EmptyNodeList>(node);
+    auto* list = MakeGarbageCollected<EmptyNodeList>(&node);
     child_node_list_ = list;
     return list;
   }
 
   using NamedNodeListKey = std::pair<CollectionType, AtomicString>;
-  struct NodeListAtomicCacheMapEntryHashTraits : HashTraits<std::pair<CollectionType, AtomicString>> {
-    static unsigned GetHash(const NamedNodeListKey& entry) {
-      return webf::GetHash(entry.second == CSSSelector::UniversalSelectorAtom() ? g_star_atom : entry.second) +
-             entry.first;
-    }
-    static constexpr bool kSafeToCompareToEmptyOrDeleted = HashTraits<AtomicString>::kSafeToCompareToEmptyOrDeleted;
+  struct NodeListAtomicCacheMapEntryHashTraits {
+
+    NodeListAtomicCacheMapEntryHashTraits() = default;
+
+    struct Hash {
+      size_t operator()(const NamedNodeListKey& entry) const {
+        size_t hash1 = entry.second == CSSSelector::UniversalSelectorAtom() ? g_star_atom.Hash() : entry.second.Hash();
+        size_t hash2 = std::hash<CollectionType>()(entry.first);
+        return hash1 ^ (hash2 << 1); // Combine the two hash values
+      }
+    };
+
+    struct Equal {
+      bool operator()(const NamedNodeListKey& lhs, const NamedNodeListKey& rhs) const {
+        return lhs == rhs;
+      }
+    };
+
+    static constexpr bool kSafeToCompareToEmptyOrDeleted = true;
   };
 
-  typedef std::unordered_map<NamedNodeListKey, Member<LiveNodeListBase>, NodeListAtomicCacheMapEntryHashTraits>
-      NodeListAtomicNameCacheMap;
+  typedef std::unordered_map<NamedNodeListKey, std::shared_ptr<LiveNodeListBase>,
+    NodeListAtomicCacheMapEntryHashTraits::Hash, NodeListAtomicCacheMapEntryHashTraits::Equal> NodeListAtomicNameCacheMap;
   typedef std::unordered_map<QualifiedName, Member<TagCollectionNS>> TagCollectionNSCache;
 
   template <typename T>
@@ -83,7 +89,7 @@ class NodeListsNodeData final {
     NamedNodeListKey key(collection_type, name);
     auto result = atomic_name_caches_.insert({key, nullptr});
     if (!result.second) {
-      return static_cast<T*>(result.first->second.Get());
+      return static_cast<T*>(result.first->second.get());
     }
 
     auto* list = MakeGarbageCollected<T>(node, collection_type, name);
@@ -96,18 +102,18 @@ class NodeListsNodeData final {
     NamedNodeListKey key(collection_type, CSSSelector::UniversalSelectorAtom());
     auto result = atomic_name_caches_.insert({key, nullptr});
     if (!result.second) {
-      return static_cast<T*>(result.first->second.Get());
+      return static_cast<T*>(result.first->second.get());
     }
 
-    auto* list = MakeGarbageCollected<T>(node, collection_type);
+    auto list = std::make_shared<T>(node, collection_type);
     result.first->second = list;
-    return list;
+    return list.get();
   }
 
   template <typename T>
   T* Cached(CollectionType collection_type) {
     auto it = atomic_name_caches_.find(NamedNodeListKey(collection_type, CSSSelector::UniversalSelectorAtom()));
-    return static_cast<T*>(it != atomic_name_caches_.end() ? it->second.Get() : nullptr);
+    return static_cast<T*>(it != atomic_name_caches_.end() ? it->second.get() : nullptr);
   }
 
   TagCollectionNS* AddCache(ContainerNode& node, const AtomicString& namespace_uri, const AtomicString& local_name) {
@@ -117,7 +123,7 @@ class NodeListsNodeData final {
       return result.first->second.Get();
     }
 
-    auto* list = MakeGarbageCollected<TagCollectionNS>(node, namespace_uri, local_name);
+    auto* list = MakeGarbageCollected<TagCollectionNS>(node, kTagCollectionNSType, namespace_uri, local_name);
     result.first->second = list;
     return list;
   }
@@ -138,7 +144,7 @@ class NodeListsNodeData final {
     NodeListAtomicNameCacheMap::const_iterator atomic_name_cache_end = atomic_name_caches_.end();
     for (NodeListAtomicNameCacheMap::const_iterator it = atomic_name_caches_.begin(); it != atomic_name_cache_end;
          ++it) {
-      LiveNodeListBase* list = it->second.Get();
+      LiveNodeListBase* list = it->second.get();
       list->DidMoveToDocument(old_document, new_document);
     }
 

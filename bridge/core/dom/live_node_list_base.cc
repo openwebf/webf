@@ -42,7 +42,7 @@ void LiveNodeListBase::InvalidateCacheForAttribute(
 void LiveNodeListBase::DidMoveToDocument(Document& old_document,
                                          Document& new_document) {
   InvalidateCache(&old_document);
-  // TODO(guopengfei)：先注释
+  // TODO(guopengfei)：
   //old_document.UnregisterNodeList(this);
   //new_document.RegisterNodeList(this);
 }

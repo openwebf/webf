@@ -23,7 +23,6 @@
  */
 
 #include "core/dom/qualified_name.h"
-//#include "core/platform/static_constructors.h"
 #include <unordered_set>
 
 //TODO(xiezuobing): qualified实现
@@ -86,7 +85,7 @@ QualifiedName::QualifiedName(const AtomicString& p,
                              const AtomicString& l,
                              const AtomicString& n,
                              bool is_static) {
-                             /* TODO(guopengfei)：临时编译
+                             /* //TODO(guopengfei)：
   QualifiedNameData data = {{p.Impl(), l.Impl(), n.Impl()}, is_static};
   QualifiedNameCache::AddResult add_result =
       GetQualifiedNameCache().AddWithTranslator<QNameComponentsTranslator>(
@@ -99,5 +98,14 @@ QualifiedName::QualifiedName(const AtomicString& p,
 }
 
 QualifiedName::~QualifiedName() = default;
+
+std::string QualifiedName::ToString() const {
+  //TODO(guopengfei)：
+  JSContext* ctx = nullptr;
+  std::string local = LocalName().ToStdString(ctx);
+  if (HasPrefix())
+    return Prefix().ToStdString(ctx) + ":" + local;
+  return local;
+}
 
 }  // namespace webf

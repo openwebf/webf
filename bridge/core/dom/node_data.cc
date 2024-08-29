@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+/*
 #include "node_data.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
@@ -74,3 +75,4 @@ void NodeData::Trace(GCVisitor* visitor) const {
 }
 
 }  // namespace webf
+*/

@@ -197,26 +197,13 @@ class ContainerNode : public Node {
   // synchronous events.
   virtual void ChildrenChanged(const ChildrenChange&);
 
-  // Utility functions for NodeListsNodeData API.
-  template <typename Collection>
-  Collection* EnsureCachedCollection(CollectionType);
-
   void Trace(GCVisitor* visitor) const override;
-
-  bool Node::IsTreeScope() const {
-    return &GetTreeScope().RootNode() == this;
-  }
 
   bool HasRestyleFlag(DynamicRestyleFlags mask) const {
     if (const NodeRareData* data = RareData()) {
       return data->HasRestyleFlag(mask);
     }
     return false;
-  }
-
-  void ContainerNode::SetRestyleFlag(DynamicRestyleFlags mask) {
-    assert(IsElementNode() || IsShadowRoot());
-    EnsureRareData().SetRestyleFlag(mask);
   }
 
   bool ChildrenAffectedByForwardPositionalRules() const {
@@ -258,10 +245,25 @@ class ContainerNode : public Node {
   void SetFirstChild(Node* child) { first_child_ = child; }
   void SetLastChild(Node* child) { last_child_ = child; }
 
+  // Utility functions for NodeListsNodeData API.
+  template <typename Collection>
+  Collection* EnsureCachedCollection(CollectionType);
+  template <typename Collection>
+  Collection* EnsureCachedCollection(CollectionType, const AtomicString& name);
+  template <typename Collection>
+  Collection* EnsureCachedCollection(CollectionType,
+                                     const AtomicString& namespace_uri,
+                                     const AtomicString& local_name);
+  template <typename Collection>
+  Collection* CachedCollection(CollectionType);
+
  private:
   bool IsContainerNode() const = delete;  // This will catch anyone doing an unnecessary check.
   bool IsTextNode() const = delete;       // This will catch anyone doing an unnecessary check.
   void RemoveBetween(Node* previous_child, Node* next_child, Node& old_child);
+
+  NodeListsNodeData& EnsureNodeLists();
+
   // Inserts the specified nodes before |next|.
   // |next| may be nullptr.
   // |post_insertion_notification_targets| must not be nullptr.
@@ -283,6 +285,14 @@ class ContainerNode : public Node {
 
   inline bool IsChildTypeAllowed(const Node& child) const;
   inline bool IsHostIncludingInclusiveAncestorOfThis(const Node&, ExceptionState&) const;
+
+  bool HasRestyleFlags() const {
+    if (const NodeRareData* data = RareData()) {
+      return data->HasRestyleFlags();
+    }
+    return false;
+  }
+  void SetRestyleFlag(DynamicRestyleFlags);
 
   Member<Node> first_child_;
   Member<Node> last_child_;
@@ -310,6 +320,10 @@ inline bool ContainerNode::HasChildCount(unsigned count) const {
     --count;
   }
   return !count && !child;
+}
+
+inline bool Node::IsTreeScope() const {
+  return &GetTreeScope().RootNode() == this;
 }
 
 template <>

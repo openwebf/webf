@@ -202,8 +202,8 @@ class  StepsTimingFunction final : public TimingFunction {
   static std::shared_ptr<StepsTimingFunction> Preset(StepPosition position) {
     //DEFINE_STATIC_REF(StepsTimingFunction, start,Create(1, StepPosition::START));
     //DEFINE_STATIC_REF(StepsTimingFunction, end, Create(1, StepPosition::END));
-    thtead_local static std::shared_ptr<StepsTimingFunction> start = Create(1, StepPosition::START);
-    thtead_local static std::shared_ptr<StepsTimingFunction> end = Create(1, StepPosition::END);
+    thread_local static std::shared_ptr<StepsTimingFunction> start = Create(1, StepPosition::START);
+    thread_local static std::shared_ptr<StepsTimingFunction> end = Create(1, StepPosition::END);
     switch (position) {
       case StepPosition::START:
         return start;

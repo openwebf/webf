@@ -33,7 +33,6 @@
 #include <utility>
 
 #include "core/platform/hash_functions.h"
-//#include "core/platform/std_lib_extras.h"
 #include "core/platform/type_traits.h"
 #include "foundation/macros.h"
 #include "core/base/memory/stack_allocated.h"
@@ -209,7 +208,7 @@ struct GenericHashTraitsBase {
 template <typename T, auto empty_value, auto deleted_value>
 struct IntOrEnumHashTraits : internal::GenericHashTraitsBase<T> {
   static_assert(std::is_integral_v<T> || std::is_enum_v<T>);
-  static unsigned GetHash(T key) { return WTF::HashInt(key); }
+  static unsigned GetHash(T key) { return webf::HashInt(key); }
   static constexpr bool kEmptyValueIsZero =
       static_cast<int64_t>(empty_value) == 0;
   static constexpr T EmptyValue() { return static_cast<T>(empty_value); }
@@ -266,9 +265,9 @@ struct IntWithZeroKeyHashTraits
     : IntHashTraits<T,
                     std::numeric_limits<T>::max(),
                     std::numeric_limits<T>::max() - 1> {
-  size_t operator()(T key) const {
-    return GetHash(key);
-  }
+  // size_t operator()(T key) const {
+  //   return GetHash(key);
+  // }
 };
 
 // This hash traits can be used in cases where the key is already a good hash.
@@ -289,9 +288,10 @@ struct GenericHashTraits<P*> : internal::GenericHashTraitsBase<P*> {
 template <typename P>
 struct GenericHashTraits<std::shared_ptr<P>>
     : internal::GenericHashTraitsBase<std::shared_ptr<P>> {
-  static_assert(sizeof(void*) == sizeof(std::shared_ptr<P>),
-                "Unexpected RefPtr size."
-                " RefPtr needs to be single pointer to support deleted value.");
+  // TODO(guopengfei)：use std::shared_ptr
+  // static_assert(sizeof(void*) == sizeof(std::shared_ptr<P>),
+  //               "Unexpected RefPtr size."
+  //               " RefPtr needs to be single pointer to support deleted value.");
 
   static unsigned GetHash(P* key) { return HashPointer(key); }
   static unsigned GetHash(const std::shared_ptr<P>& key) {

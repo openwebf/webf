@@ -208,7 +208,7 @@ void RuleInvalidationData::CollectInvalidationSetsForAttribute(
     Element& element,
     const QualifiedName& attribute_name) const {
   RuleInvalidationData::InvalidationSetMap::const_iterator it =
-      attribute_invalidation_sets.find(attribute_name.LocalName());
+      attribute_invalidation_sets.find(attribute_name.LocalName().ToStdString(element.ctx()));
   if (it == attribute_invalidation_sets.end()) {
     return;
   }
@@ -236,7 +236,7 @@ void RuleInvalidationData::CollectSiblingInvalidationSetForAttribute(
     const QualifiedName& attribute_name,
     unsigned min_direct_adjacent) const {
   RuleInvalidationData::InvalidationSetMap::const_iterator it =
-      attribute_invalidation_sets.find(attribute_name.LocalName());
+      attribute_invalidation_sets.find(attribute_name.LocalName().ToStdString(element.ctx()));
   if (it == attribute_invalidation_sets.end()) {
     return;
   }

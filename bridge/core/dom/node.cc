@@ -74,9 +74,12 @@ ContainerNode* Node::parentNode() const {
 
 NodeList* Node::childNodes() {
   auto* this_node = DynamicTo<ContainerNode>(this);
-  if (this_node)
-    return EnsureRareData().EnsureNodeLists().EnsureChildNodeList(*this_node);
-  return EnsureRareData().EnsureNodeLists().EnsureEmptyChildNodeList(*this);
+  if (this_node) {
+    // return EnsureRareData().EnsureNodeLists().EnsureChildNodeList(*this_node);
+    return EnsureRareData().EnsureChildNodeList(*this_node);
+  }
+  // return EnsureRareData().EnsureNodeLists().EnsureEmptyChildNodeList(*this)
+  return EnsureRareData().EnsureEmptyChildNodeList(*this);
 }
 
 //// Helper object to allocate EventTargetData which is otherwise only used
@@ -147,10 +150,9 @@ void Node::RegisterMutationObserver(MutationObserver& observer,
                                     MutationObserverOptions options,
                                     const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter) {
   MutationObserverRegistration* registration = nullptr;
-
   for (const auto& item : EnsureRareData().EnsureMutationObserverData().Registry()) {
     if (item->Observer() == &observer) {
-      registration = item;
+      registration = item.Get();
       registration->ResetObservation(options, attribute_filter);
     }
   }
@@ -736,13 +738,14 @@ FlatTreeNodeData* Node::GetFlatTreeNodeData() const {
 }
 
 void Node::ClearFlatTreeNodeData() {
-  if (FlatTreeNodeData* data = GetFlatTreeNodeData())
-    data->Clear();
+  // TODO(guopengfei)：FlatTreeNodeData not support
+  // if (FlatTreeNodeData* data = GetFlatTreeNodeData())
+  //   data->Clear();
 }
 
 void Node::ClearFlatTreeNodeDataIfHostChanged(const ContainerNode& parent) {
   /*
-  // TODO(guopengfei)：HTMLSlotElement相关，暂不支持
+  // TODO(guopengfei)：HTMLSlotElement not support
   if (FlatTreeNodeData* data = GetFlatTreeNodeData()) {
     if (data->AssignedSlot() &&
         data->AssignedSlot()->OwnerShadowHost() != &parent) {
@@ -785,7 +788,8 @@ void Node::SetNeedsStyleRecalc(StyleChangeType change_type,
   // AnimationStyleChange bit may be reset to 'true'.
   if (auto* this_element = DynamicTo<Element>(this)) {
     this_element->SetAnimationStyleChange(false);
-
+    /*
+    // TODO(guopengfei)：PseudoElement not support
     // The style walk for the pseudo tree created for a ViewTransition is
     // done after resolving style for the author DOM. See
     // StyleEngine::RecalcTransitionPseudoStyle.
@@ -800,7 +804,7 @@ void Node::SetNeedsStyleRecalc(StyleChangeType change_type,
       };
       ViewTransitionUtils::ForEachTransitionPseudo(GetDocument(),
                                                    update_style_change);
-    }
+    }*/
   }
 
   if (auto* svg_element = DynamicTo<SVGElement>(this))
@@ -841,6 +845,8 @@ void Node::MarkAncestorsWithChildNeedsStyleRecalc() {
   // early return here is a performance optimization.
   if (parent_dirty)
     return;
+  /*
+  // TODO(guopengfei)：DisplayLockDocumentState not support
   // If we are outside the flat tree we should not update the recalc root
   // because we should not traverse those nodes from StyleEngine::RecalcStyle().
   const ComputedStyle* current_style = nullptr;
@@ -853,6 +859,8 @@ void Node::MarkAncestorsWithChildNeedsStyleRecalc() {
   if (current_style && current_style->IsEnsuredOutsideFlatTree()) {
     return;
   }
+
+  // TODO(guopengfei)：DisplayLockDocumentState not support
   // If we're in a locked subtree, then we should not update the style recalc
   // roots. These would be updated when we commit the lock. If we have locked
   // display locks somewhere in the document, we iterate up the ancestor chain
@@ -864,7 +872,7 @@ void Node::MarkAncestorsWithChildNeedsStyleRecalc() {
       if (ancestor_copy->ChildStyleRecalcBlockedByDisplayLock())
         return;
     }
-  }
+  }*/
 
   GetDocument().GetStyleEngine().UpdateStyleRecalcRoot(ancestor, this);
   GetDocument().ScheduleLayoutTreeUpdateIfNeeded();

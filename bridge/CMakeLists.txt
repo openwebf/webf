@@ -307,6 +307,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/style_sheet_contents.cc
     core/css/css_style_sheet.cc
     core/css/style_rule_import.cc
+    core/css/style_recalc_root.cc
     core/css/style_sheet.cc
     core/css/parser/css_parser.cc
     core/css/parser/css_parser_context.cc
@@ -393,6 +394,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/text/writing_mode.cc
     core/platform/text/text_stream.cc
     core/platform/text/writing_direction_mode.cc
+    core/platform/text/string_statics.cc
     core/platform/graphics/color.cc
     core/platform/graphics/color_conversions.cc
     core/platform/graphics/graphic_types.cc
@@ -427,6 +429,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 #    core/css/parser/css_selector_parser.cc
 #    core/css/parser/css_variable_parser.cc
 #    core/css/css_keyframe_shorthand_value.cc
+    core/dom/node_lists_node_data.cc
+    core/dom/node_rare_data.cc
     core/dom/frame_request_callback_collection.cc
     core/dom/events/registered_eventListener.cc
     core/dom/events/event_listener_map.cc

@@ -29,7 +29,7 @@ class PropertyHandle {
   }
 
   // TODO(crbug.com/980160): Eliminate call to GetCSSPropertyVariable().
-  explicit PropertyHandle(const AtomicString& property_name)
+  explicit PropertyHandle(const std::string& property_name)
       : handle_type_(kHandleCSSCustomProperty),
         css_property_(&GetCSSPropertyVariable()),
         property_name_(property_name) {}
@@ -43,7 +43,7 @@ class PropertyHandle {
                           : &CSSProperty::Get(property_name.Id())),
         property_name_(property_name.IsCustomProperty()
                            ? property_name.ToString()
-                           : AtomicString::Null()) {}
+                           : "") {}
 
   explicit PropertyHandle(const QualifiedName& attribute_name)
       : handle_type_(kHandleSVGAttribute), svg_attribute_(&attribute_name) {}
@@ -66,7 +66,7 @@ class PropertyHandle {
   bool IsCSSCustomProperty() const {
     return handle_type_ == kHandleCSSCustomProperty;
   }
-  const AtomicString& CustomPropertyName() const {
+  const std::string& CustomPropertyName() const {
     assert(IsCSSCustomProperty());
     return property_name_;
   }
@@ -125,14 +125,14 @@ class PropertyHandle {
     const CSSProperty* css_property_;
     const QualifiedName* svg_attribute_;
   };
-  AtomicString property_name_;
+  std::string property_name_;
 
-  friend struct ::WTF::HashTraits<webf::PropertyHandle>;
+  friend struct ::webf::HashTraits<webf::PropertyHandle>;
 };
 
 }  // namespace webf
 
-namespace WTF {
+namespace webf {
 
 template <>
 struct HashTraits<webf::PropertyHandle>

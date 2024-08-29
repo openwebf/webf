@@ -34,11 +34,11 @@ unsigned PropertyHandle::GetHash() const {
     case kHandleCSSProperty:
       return static_cast<int>(css_property_->PropertyID());
     case kHandleCSSCustomProperty:
-      return WTF::GetHash(property_name_);
+      return webf::GetHash(property_name_.c_str());
     case kHandlePresentationAttribute:
       return -static_cast<int>(css_property_->PropertyID());
     case kHandleSVGAttribute:
-      return WTF::GetHash(*svg_attribute_);
+      return webf::GetHash(*svg_attribute_);
     default:
       assert_m(false, "PropertyHandle::GetHash() NOTREACHED_IN_MIGRATION");
       return 0;

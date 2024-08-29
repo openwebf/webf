@@ -38,9 +38,7 @@
 #include "core/base/memory/values_equivalent.h"
 //#include "third_party/blink/renderer/core/css/resolver/style_resolver.h"
 #include "core/dom/element.h"
-//#include "third_party/blink/renderer/core/inspector/inspector_trace_events.h"
 #include "core/inspector/invalidation_set_to_selector_map.h"
-//#include "third_party/blink/renderer/platform/instrumentation/tracing/traced_value.h"
 //#include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
 
 namespace webf {
@@ -572,7 +570,7 @@ std::string InvalidationSet::ToString() const {
 }
 
 SiblingInvalidationSet::SiblingInvalidationSet(
-    std::shared_ptr<DescendantInvalidationSet> descendants)
+    const std::shared_ptr<DescendantInvalidationSet>& descendants)
     : InvalidationSet(InvalidationType::kInvalidateSiblings),
       max_direct_adjacent_selectors_(1),
       descendant_invalidation_set_(std::move(descendants)) {}

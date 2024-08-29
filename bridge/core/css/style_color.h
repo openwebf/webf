@@ -38,7 +38,7 @@
 #include <memory>
 
 //#include "third_party/blink/public/mojom/frame/color_scheme.mojom-blink-forward.h"
-#include "core/css_value_keywords.h"
+#include "css_value_keywords.h"
 #include "core/platform/graphics/color.h"
 #include "foundation/macros.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
@@ -50,10 +50,12 @@ class ColorProvider;
 
 namespace webf {
 
+namespace mojom {
+enum class ColorScheme : int32_t;
+}
+
 namespace cssvalue {
-
 class CSSColorMixValue;
-
 }  // namespace cssvalue
 
 class StyleColor {
@@ -70,16 +72,13 @@ class StyleColor {
    public:
     ColorOrUnresolvedColorMix() : color(Color::kTransparent) {}
     explicit ColorOrUnresolvedColorMix(Color color) : color(color) {}
-    explicit ColorOrUnresolvedColorMix(const UnresolvedColorMix* color_mix)
-        : unresolved_color_mix(color_mix) {}
-
-     void Trace(GCVisitor*) const;
+    explicit ColorOrUnresolvedColorMix(const UnresolvedColorMix* color_mix) : unresolved_color_mix(color_mix) {}
 
     Color color;
     std::shared_ptr<const UnresolvedColorMix> unresolved_color_mix;
   };
 
-  class UnresolvedColorMix : public GarbageCollected<UnresolvedColorMix> {
+  class UnresolvedColorMix {
    public:
     enum class UnderlyingColorType {
       kColor,
@@ -100,7 +99,7 @@ class StyleColor {
       //visitor->TraceMember(color2_);
     }
 
-    cssvalue::CSSColorMixValue* ToCSSColorMixValue() const;
+    [[nodiscard]] std::shared_ptr<cssvalue::CSSColorMixValue> ToCSSColorMixValue() const;
 
     Color Resolve(const Color& current_color) const;
 
@@ -168,9 +167,6 @@ class StyleColor {
   bool IsUnresolvedColorMixFunction() const {
     return color_keyword_ == CSSValueID::kColorMix;
   }
-  bool IsSystemColorIncludingDeprecated() const {
-    return IsSystemColorIncludingDeprecated(color_keyword_);
-  }
   bool IsSystemColor() const { return IsSystemColor(color_keyword_); }
   bool IsAbsoluteColor() const { return !IsCurrentColor(); }
   Color GetColor() const;
@@ -207,6 +203,7 @@ class StyleColor {
  protected:
   CSSValueID color_keyword_ = CSSValueID::kCurrentcolor;
   Color color;
+  ColorOrUnresolvedColorMix color_or_unresolved_color_mix_;
 
  private:
   CSSValueID EffectiveColorKeyword() const;

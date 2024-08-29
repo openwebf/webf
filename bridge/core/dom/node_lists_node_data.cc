@@ -31,7 +31,6 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "core/dom/node_lists_node_data.h"
-
 #include "core/dom/live_node_list.h"
 
 namespace webf {
@@ -48,10 +47,14 @@ void NodeListsNodeData::InvalidateCaches(const QualifiedName* attr_name) {
 }
 
 void NodeListsNodeData::Trace(GCVisitor* visitor) const {
-  // TODO(guopengfei)：
-  //visitor->Trace(child_node_list_);
+  visitor->TraceMember(child_node_list_);
   //visitor->Trace(atomic_name_caches_);
-  //visitor->Trace(tag_collection_ns_caches_);
+
+  for (const auto& entry : tag_collection_ns_caches_) {
+    //const webf::QualifiedName& key = entry.first;
+    //const webf::Member<webf::TagCollectionNS>& value = entry.second;
+    visitor->TraceMember(entry.second);
+  }
 }
 
 }  // namespace webf

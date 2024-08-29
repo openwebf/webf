@@ -189,10 +189,9 @@ void PendingInvalidations::RescheduleSiblingInvalidationsAsDescendants(
   InvalidationLists invalidation_lists;
   for (const auto& invalidation_set : pending_invalidations.Siblings()) {
     invalidation_lists.descendants.push_back(invalidation_set);
-    if (DescendantInvalidationSet* descendants =
-            To<SiblingInvalidationSet>(*invalidation_set)
-                .SiblingDescendants()) {
-      invalidation_lists.descendants.push_back(std::shared_ptr<InvalidationSet>(descendants));
+    if (std::shared_ptr<DescendantInvalidationSet> descendants =
+            To<SiblingInvalidationSet>(*invalidation_set).SiblingDescendants()) {
+      invalidation_lists.descendants.push_back(descendants);
     }
   }
   ScheduleInvalidationSetsForNode(invalidation_lists, *parent);

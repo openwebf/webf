@@ -35,6 +35,7 @@ class ContainerNode;
 class NodeList;
 class EventTargetDataObject;
 class QJSUnionDomStringNode;
+class ShadowRoot;
 
 // Values for kChildNeedsStyleRecalcFlag, controlling whether a node gets its
 // style recalculated.
@@ -418,6 +419,13 @@ class Node : public EventTarget {
   }
   void MarkAncestorsWithChildNeedsStyleInvalidation();
 
+  // crbug.com/569532: containingShadowRoot() can return nullptr even if
+  // isInShadowTree() returns true.
+  // This can happen when handling queued events (e.g. during execCommand())
+  ShadowRoot* ContainingShadowRoot() const;
+  ShadowRoot* GetShadowRoot() const;
+  bool IsInUserAgentShadowRoot() const;
+
  private:
   enum NodeFlags : uint32_t {
     kHasDataFlag = 1,
@@ -522,7 +530,7 @@ class Node : public EventTarget {
 };
 
 // Allow equality comparisons of Nodes by reference or pointer, interchangeably.
-(Node)
+DEFINE_COMPARISON_OPERATORS_WITH_REFERENCES(Node)
 
 template <>
 struct DowncastTraits<Node> {

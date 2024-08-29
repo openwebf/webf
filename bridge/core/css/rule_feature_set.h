@@ -32,8 +32,8 @@
 //#include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
 //#include "third_party/blink/renderer/platform/wtf/bloom_filter.h"
 #include "core/platform/bloom_filter.h"
-//#include "third_party/blink/renderer/platform/wtf/forward.h"
-#include "core/platform/forward.h"
+#include <bindings/qjs/heap_vector.h>
+// #include "third_party/blink/renderer/platform/wtf/forward.h"
 //#include "third_party/blink/renderer/platform/wtf/hash_set.h"
 
 namespace webf {
@@ -288,8 +288,7 @@ public:
       std::unordered_map<AtomicString, std::shared_ptr<InvalidationSet>, AtomicString::KeyHasher>;
   using PseudoTypeInvalidationSetMap =
       std::unordered_map<CSSSelector::PseudoType,
-              std::shared_ptr<InvalidationSet>,
-              IntWithZeroKeyHashTraits<unsigned>>;
+              std::shared_ptr<InvalidationSet>>;
   using ValuesInHasArgument = std::unordered_set<AtomicString, AtomicString::KeyHasher>;
   using PseudosInHasArgument = std::unordered_set<CSSSelector::PseudoType>;
 
@@ -408,11 +407,11 @@ public:
              tag_names.size() + emitted_tag_names.size();
     }
 
-    std::vector<AtomicString> classes;
-    std::vector<AtomicString> attributes;
-    std::vector<AtomicString> ids;
-    std::vector<AtomicString> tag_names;
-    std::vector<AtomicString> emitted_tag_names;
+    HeapVector<AtomicString> classes;
+    HeapVector<AtomicString> attributes;
+    HeapVector<AtomicString> ids;
+    HeapVector<AtomicString> tag_names;
+    HeapVector<AtomicString> emitted_tag_names;
     unsigned max_direct_adjacent_selectors = 0;
 
     // descendant_features_depth is used while adding features for logical
@@ -880,8 +879,7 @@ public:
   unsigned num_candidates_for_names_bloom_filter_ = 0;
 
   InvalidationSetMap attribute_invalidation_sets_;
-  InvalidationSetMap
-      id_invalidation_sets_;  // See comment on class_invalidation_sets_.
+  InvalidationSetMap id_invalidation_sets_;  // See comment on class_invalidation_sets_.
   PseudoTypeInvalidationSetMap pseudo_invalidation_sets_;
   std::shared_ptr<SiblingInvalidationSet> universal_sibling_invalidation_set_;
   std::shared_ptr<NthSiblingInvalidationSet> nth_invalidation_set_;
