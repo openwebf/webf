@@ -38,6 +38,7 @@ Document* Document::Create(ExecutingContext* context, ExceptionState& exception_
 
 Document::Document(ExecutingContext* context)
     : ContainerNode(context, this, ConstructionType::kCreateDocument), TreeScope(*this) {
+  lifecycle_.AdvanceTo(DocumentLifecycle::kInactive);
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCreateDocument, nullptr, bindingObject(), nullptr);
 }
 
@@ -412,7 +413,7 @@ Node* Document::Clone(Document&, CloneChildrenFlag) const {
   return nullptr;
 }
 
-HTMLHtmlElement* Document::documentElement() const {
+Element* Document::documentElement() const {
   for (HTMLElement* child = Traversal<HTMLElement>::FirstChild(*this); child;
        child = Traversal<HTMLElement>::NextSibling(*child)) {
     if (IsA<HTMLHtmlElement>(*child))
@@ -519,6 +520,93 @@ StyleEngine& Document::EnsureStyleEngine() {
   }
   assert(style_engine_.get());
   return *style_engine_;
+}
+
+bool Document::InStyleRecalc() const {
+  return lifecycle_.GetState() == DocumentLifecycle::kInStyleRecalc ||
+         style_engine_->InContainerQueryStyleRecalc() ||
+         style_engine_->InPositionTryStyleRecalc() ||
+         style_engine_->InEnsureComputedStyle();
+}
+
+bool Document::ShouldScheduleLayoutTreeUpdate() const {
+  if (!IsActive())
+    return false;
+  if (InStyleRecalc())
+    return false;
+  if (lifecycle_.GetState() == DocumentLifecycle::kInPerformLayout)
+    return false;
+  return true;
+}
+
+void Document::ScheduleLayoutTreeUpdate() {
+  assert(!HasPendingVisualUpdate());
+  assert(ShouldScheduleLayoutTreeUpdate());
+  assert(NeedsLayoutTreeUpdate());
+  /* // TODO(guopengfei)：
+  if (!View()->CanThrottleRendering() && ShouldScheduleLayout()) {
+    GetPage()->Animator().ScheduleVisualUpdate(GetFrame());
+  }
+
+  // FrameSelection caches visual selection information, which must be
+  // invalidated on dirty layout tree.
+  GetFrame()->Selection().MarkCacheDirty();
+
+  lifecycle_.EnsureStateAtMost(DocumentLifecycle::kVisualUpdatePending);
+
+  // DEVTOOLS_TIMELINE_TRACE_EVENT_INSTANT_WITH_CATEGORIES(
+  //     TRACE_DISABLED_BY_DEFAULT("devtools.timeline"),
+  //     "ScheduleStyleRecalculation", inspector_recalculate_styles_event::Data,
+  //     GetFrame());
+  ++style_version_;
+  */
+}
+
+void Document::RegisterNodeList(const LiveNodeListBase* list) {
+  /*
+  node_lists_.Add(list, list->InvalidationType());
+  if (list->IsRootedAtTreeScope())
+    lists_invalidated_at_document_.insert(list);
+    */
+}
+
+void Document::UnregisterNodeList(const LiveNodeListBase* list) {
+  /*
+  node_lists_.Remove(list, list->InvalidationType());
+  if (list->IsRootedAtTreeScope()) {
+    DCHECK(lists_invalidated_at_document_.Contains(list));
+    lists_invalidated_at_document_.erase(list);
+  }
+  */
+}
+
+void Document::RegisterNodeListWithIdNameCache(const LiveNodeListBase* list) {
+  //node_lists_.Add(list, kInvalidateOnIdNameAttrChange);
+}
+
+void Document::UnregisterNodeListWithIdNameCache(const LiveNodeListBase* list) {
+  //node_lists_.Remove(list, kInvalidateOnIdNameAttrChange);
+}
+
+bool Document::ShouldInvalidateNodeListCaches(
+    const QualifiedName* attr_name) const {
+  /*
+  if (attr_name) {
+    return node_lists_.NeedsInvalidateOnAttributeChange() &&
+           ShouldInvalidateNodeListCachesForAttr<
+               kDoNotInvalidateOnAttributeChanges + 1>(node_lists_, *attr_name);
+  }
+
+  // If the invalidation is not for an attribute, invalidation is needed if
+  // there is any node list present (with any invalidation type).
+  return !node_lists_.IsEmpty();
+  */
+  return false;
+}
+
+void Document::InvalidateNodeListCaches(const QualifiedName* attr_name) {
+  //for (const LiveNodeListBase* list : lists_invalidated_at_document_)
+  //  list->InvalidateCacheForAttribute(attr_name);
 }
 
 }  // namespace webf

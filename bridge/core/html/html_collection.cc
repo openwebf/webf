@@ -102,10 +102,63 @@ static NodeListSearchRoot SearchRootFromCollectionType(const ContainerNode& owne
   return NodeListSearchRoot::kOwnerNode;
 }
 
+static NodeListInvalidationType InvalidationTypeExcludingIdAndNameAttributes(
+    CollectionType type) {
+  switch (type) {
+    case kTagCollectionType:
+    case kTagCollectionNSType:
+    case kHTMLTagCollectionType:
+    case kDocImages:
+    case kDocEmbeds:
+    case kDocForms:
+    case kDocScripts:
+    case kDocAll:
+    case kNodeChildren:
+    case kTableTBodies:
+    case kTSectionRows:
+    case kTableRows:
+    case kTRCells:
+    case kSelectOptions:
+    case kMapAreas:
+      return kDoNotInvalidateOnAttributeChanges;
+    case kDocApplets:
+    case kSelectedOptions:
+    case kDataListOptions:
+      // FIXME: We can do better some day.
+      return kInvalidateOnAnyAttrChange;
+    case kDocAnchors:
+      return kInvalidateOnNameAttrChange;
+    case kDocLinks:
+      return kInvalidateOnHRefAttrChange;
+    case kWindowNamedItems:
+      return kInvalidateOnIdNameAttrChange;
+    case kDocumentNamedItems:
+      return kInvalidateOnIdNameAttrChange;
+    case kDocumentAllNamedItems:
+      return kInvalidateOnIdNameAttrChange;
+    case kFormControls:
+      return kInvalidateForFormControls;
+    case kClassCollectionType:
+      return kInvalidateOnClassAttrChange;
+    case kPopoverInvokers:
+      return kInvalidateOnPopoverInvokerAttrChange;
+    case kNameNodeListType:
+    case kRadioNodeListType:
+    case kRadioImgNodeListType:
+    case kLabelsNodeListType:
+      break;
+  }
+  NOTREACHED_IN_MIGRATION();
+  return kDoNotInvalidateOnAttributeChanges;
+}
+
 HTMLCollection::HTMLCollection(ContainerNode& owner_node,
                                CollectionType type,
                                ItemAfterOverrideType item_after_override_type)
-    : LiveNodeListBase(owner_node, SearchRootFromCollectionType(owner_node, type), type),
+    : LiveNodeListBase(owner_node,
+      SearchRootFromCollectionType(owner_node, type),
+      InvalidationTypeExcludingIdAndNameAttributes(type),
+      type),
       overrides_item_after_(item_after_override_type == kOverridesItemAfter),
       should_only_include_direct_children_(ShouldTypeOnlyIncludeDirectChildren(type)),
       ScriptWrappable(owner_node.ctx()) {

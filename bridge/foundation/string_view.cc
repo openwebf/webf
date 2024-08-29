@@ -57,6 +57,15 @@ AtomicString StringView::ToAtomicString(JSContext* ctx) const {
   }
 }
 
+// Function to convert Characters8 to std::string
+std::string StringView::Characters8ToStdString() const {
+  if (is_8bit_) {
+    return {Characters8(), length()};
+  } else {
+    return "";
+  }
+}
+
 namespace {
 inline bool EqualIgnoringASCIICase(const char* a,
                                    const char* b,

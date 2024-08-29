@@ -7,8 +7,8 @@
 #include "core/animation/css/css_animation_data.h"
 
 #include "core/animation/timing.h"
-#include "core/platform/std_lib_extras.h"
-// TODO(guopengfei)：由模板生成，待迁移
+#include "css_value_keywords.h"
+// TODO(guopengfei)：
 //#include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 
 namespace webf {
@@ -28,17 +28,17 @@ CSSAnimationData::CSSAnimationData() : CSSTimingData(InitialDuration()) {
 CSSAnimationData::CSSAnimationData(const CSSAnimationData& other) = default;
 
 std::optional<double> CSSAnimationData::InitialDuration() {
-/*
-  // TODO(guopengfei)：不使用std::nullopt特性
-  if (RuntimeEnabledFeatures::ScrollTimelineEnabled()) {
-    return std::nullopt; // 显式地表示没有值
-  }
- */
+
+  // TODO(guopengfei)：not use std::nullopt
+  //if (RuntimeEnabledFeatures::ScrollTimelineEnabled()) {
+  //  return std::nullopt;
+  //}
+
   return 0;
 }
 
 const AtomicString& CSSAnimationData::InitialName() {
-  // TODO(guopengfei)：使用智能指针替换
+  // TODO(guopengfei)：
   //DEFINE_STATIC_LOCAL(const AtomicString, name, ("none"));
   //return name;
   return AtomicString::Empty();

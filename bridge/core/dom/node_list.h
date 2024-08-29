@@ -38,6 +38,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "core/html/collection_type.h"
 #include "core/html/html_collection.h"
+#include "core/dom/container_node.h"
 
 namespace webf {
 
@@ -85,16 +86,16 @@ class NodeList : public ScriptWrappable {
  protected:
   std::unordered_map<CollectionType, Member<HTMLCollection>> tag_collection_cache_;
 };
-
+/*
 template <typename Collection>
 inline Collection* ContainerNode::EnsureCachedCollection(CollectionType type) {
   auto* this_node = DynamicTo<ContainerNode>(this);
   if (this_node) {
-    return reinterpret_cast<NodeList*>(EnsureNodeData().EnsureChildNodeList(*this))->AddCache<Collection>(*this, type);
+    return reinterpret_cast<NodeList*>(EnsureRareData().EnsureChildNodeList(*this))->AddCache<Collection>(*this, type);
   }
-  return reinterpret_cast<NodeList*>(EnsureNodeData().EnsureEmptyChildNodeList(*this))
+  return reinterpret_cast<NodeList*>(EnsureRareData().EnsureEmptyChildNodeList(*this))
       ->AddCache<Collection>(*this, type);
-}
+}*/
 
 }  // namespace webf
 

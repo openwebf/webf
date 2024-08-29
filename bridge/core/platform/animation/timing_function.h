@@ -34,7 +34,6 @@
 #include "core/base/ranges/algorithm.h"
 //#include "third_party/blink/renderer/platform/wtf/casting.h"
 #include "foundation/casting.h"
-#include "core/platform/std_lib_extras.h"
 //#include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 //#include "third_party/blink/renderer/platform/wtf/thread_safe_ref_counted.h"
 #include "core/platform/gfx/animation/keyframe/timing_function.h"
@@ -201,13 +200,10 @@ class  StepsTimingFunction final : public TimingFunction {
   }
 
   static std::shared_ptr<StepsTimingFunction> Preset(StepPosition position) {
-    /*
-      DEFINE_STATIC_REF(StepsTimingFunction, start,
-                        Create(1, StepPosition::START));
-      DEFINE_STATIC_REF(StepsTimingFunction, end, Create(1, StepPosition::END));
-     */
-    static std::shared_ptr<StepsTimingFunction> start = Create(1, StepPosition::START);
-    static std::shared_ptr<StepsTimingFunction> end = Create(1, StepPosition::END);
+    //DEFINE_STATIC_REF(StepsTimingFunction, start,Create(1, StepPosition::START));
+    //DEFINE_STATIC_REF(StepsTimingFunction, end, Create(1, StepPosition::END));
+    thread_local static std::shared_ptr<StepsTimingFunction> start = Create(1, StepPosition::START);
+    thread_local static std::shared_ptr<StepsTimingFunction> end = Create(1, StepPosition::END);
     switch (position) {
       case StepPosition::START:
         return start;

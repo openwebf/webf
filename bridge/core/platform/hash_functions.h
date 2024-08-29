@@ -28,7 +28,7 @@
 
 #include "core/base/bit_cast.h"
 
-namespace WTF {
+namespace webf {
 
 namespace internal {
 

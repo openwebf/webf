@@ -38,11 +38,6 @@ class AnimationTimeDelta {
 
  public:
   constexpr AnimationTimeDelta() : delta_(0) {}
-  /*
-  // TODO(guopengfei)：默认使用双精度，先注释base::TimeDelta，以编译通过
-  constexpr explicit AnimationTimeDelta(base::TimeDelta time_delta)
-      : delta_(time_delta.InSecondsF()) {}
-   */
 
   // Do not use this directly -- use the macros below.
   constexpr explicit AnimationTimeDelta(double delta) : delta_(delta) {}

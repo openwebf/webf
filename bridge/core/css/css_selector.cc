@@ -46,6 +46,7 @@
 #include "core/executing_context.h"
 //#include "core/html/html_document.h"
 //#include "core/html_names.h"
+#include "foundation/string_builder.h"
 
 namespace webf {
 
@@ -917,6 +918,22 @@ bool CSSSelector::IsASCIILower(const AtomicString& value) {
   return true;
 }
 
+std::string CSSSelector::FormatPseudoTypeForDebugging(PseudoType type) {
+  for (const auto& s : kPseudoTypeWithoutArgumentsMap) {
+    if (s.type == type) {
+      return s.string;
+    }
+  }
+  for (const auto& s : kPseudoTypeWithArgumentsMap) {
+    if (s.type == type) {
+      return s.string;
+    }
+  }
+  StringBuilder builder;
+  builder.Append("pseudo-");
+  builder.Append(std::to_string(static_cast<int>(type)));
+  return builder.ReleaseString();
+}
 
 CSSSelector::RareData::RareData(const AtomicString& value)
     : matching_value_(value),

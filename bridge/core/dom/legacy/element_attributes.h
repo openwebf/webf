@@ -40,6 +40,8 @@ class ElementAttributes : public ScriptWrappable {
 
   void Trace(GCVisitor* visitor) const override;
 
+  bool hasAttributes() const;
+
  private:
   Member<Element> element_;
   std::unordered_map<AtomicString, AtomicString, AtomicString::KeyHasher> attributes_;

@@ -9,6 +9,8 @@ namespace webf {
 
 void ElementData::CopyWith(ElementData* other) {}
 
+void ElementData::TraceAfterDispatch(GCVisitor* visitor) const {}
+
 void ElementData::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(class_lists_);
   visitor->TraceMember(data_set_);
@@ -28,6 +30,12 @@ DOMStringMap* ElementData::DataSet() const {
 
 void ElementData::SetDataSet(webf::DOMStringMap* data_set) {
   data_set_ = data_set;
+}
+
+inline AttributeCollection ElementData::Attributes() const {
+  if (auto* unique_element_data = DynamicTo<UniqueElementData>(this))
+    return unique_element_data->Attributes();
+  return To<ShareableElementData>(this)->Attributes();
 }
 
 }  // namespace webf

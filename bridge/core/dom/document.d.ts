@@ -20,7 +20,7 @@ interface Document extends Node, ParentNode {
   __clear_cookies__(): DartImpl<void>;
   domain: string;
   readonly head: HTMLHeadElement | null;
-  readonly documentElement: HTMLHtmlElement | null;
+  readonly documentElement: Element | null;
   // Legacy impl: get the polyfill implements from global object.
   readonly location: any;
   readonly compatMode: string;

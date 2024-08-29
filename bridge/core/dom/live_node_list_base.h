@@ -28,6 +28,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "core/html/collection_type.h"
 #include "element_traversal.h"
+#include "out/html_names.h"
 
 namespace webf {
 
@@ -36,14 +37,22 @@ enum class NodeListSearchRoot {
   kTreeScope,
 };
 
+class Document;
 class ContainerNode;
 class Node;
 
 class LiveNodeListBase : public GarbageCollectedMixin {
  public:
-  explicit LiveNodeListBase(ContainerNode& owner_node, NodeListSearchRoot search_root, CollectionType collection_type)
-      : owner_node_(&owner_node), search_root_(static_cast<unsigned>(search_root)), collection_type_(collection_type) {
+  explicit LiveNodeListBase(ContainerNode& owner_node,
+                            NodeListSearchRoot search_root,
+                            NodeListInvalidationType invalidation_type,
+                            CollectionType collection_type)
+      : owner_node_(&owner_node),
+        search_root_(static_cast<unsigned>(search_root)),
+        invalidation_type_(invalidation_type),
+        collection_type_(collection_type) {
     assert(search_root_ == static_cast<unsigned>(search_root));
+    assert(invalidation_type_ == static_cast<unsigned>(invalidation_type));
     assert(collection_type_ == static_cast<unsigned>(collection_type));
   }
 
@@ -51,6 +60,7 @@ class LiveNodeListBase : public GarbageCollectedMixin {
 
   ContainerNode& RootNode() const;
 
+  void DidMoveToDocument(Document& old_document, Document& new_document);
   FORCE_INLINE bool IsRootedAtTreeScope() const {
     return search_root_ == static_cast<unsigned>(NodeListSearchRoot::kTreeScope);
   }
@@ -58,6 +68,14 @@ class LiveNodeListBase : public GarbageCollectedMixin {
   ContainerNode& ownerNode() const { return *owner_node_; }
 
   virtual void InvalidateCache(Document* old_document = nullptr) const = 0;
+
+  FORCE_INLINE NodeListInvalidationType InvalidationType() const {
+    return static_cast<NodeListInvalidationType>(invalidation_type_);
+  }
+  void InvalidateCacheForAttribute(const QualifiedName*) const;
+
+  static bool ShouldInvalidateTypeOnAttributeChange(NodeListInvalidationType,
+                                                    const QualifiedName&);
 
   void Trace(GCVisitor* visitor) const override { visitor->TraceMember(owner_node_); }
 
@@ -82,8 +100,44 @@ class LiveNodeListBase : public GarbageCollectedMixin {
  private:
   Member<ContainerNode> owner_node_;  // Cannot be null.
   const unsigned search_root_ : 1;
+  const unsigned invalidation_type_ : 4;
   const unsigned collection_type_ : 5;
 };
+
+inline  bool LiveNodeListBase::ShouldInvalidateTypeOnAttributeChange(
+    NodeListInvalidationType type,
+    const QualifiedName& attr_name) {
+  /* // TODO(guopengfei)：先注释
+  switch (type) {
+    case kInvalidateOnClassAttrChange:
+      return attr_name == html_names::kClassAttr;
+    case kInvalidateOnNameAttrChange:
+      return attr_name == html_names::kNameAttr;
+    case kInvalidateOnIdNameAttrChange:
+      return attr_name == html_names::kIdAttr ||
+             attr_name == html_names::kNameAttr;
+    case kInvalidateOnForAttrChange:
+      return attr_name == html_names::kForAttr;
+    case kInvalidateForFormControls:
+      return attr_name == html_names::kNameAttr ||
+             attr_name == html_names::kIdAttr ||
+             attr_name == html_names::kForAttr ||
+             attr_name == html_names::kFormAttr ||
+             attr_name == html_names::kTypeAttr;
+    case kInvalidateOnHRefAttrChange:
+      return attr_name == html_names::kHrefAttr;
+    case kInvalidateOnPopoverInvokerAttrChange:
+      return attr_name == html_names::kPopoverAttr ||
+             attr_name == html_names::kPopovertargetAttr ||
+             attr_name == html_names::kPopovertargetactionAttr;
+    case kDoNotInvalidateOnAttributeChanges:
+      return false;
+    case kInvalidateOnAnyAttrChange:
+      return true;
+  }
+  */
+  return false;
+}
 
 template <typename MatchFunc>
 Element* LiveNodeListBase::TraverseMatchingElementsForwardToOffset(Element& current_element,

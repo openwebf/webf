@@ -68,6 +68,9 @@ class WebFPage final {
   FORCE_INLINE bool isDedicated() { return context_->isDedicated(); };
   FORCE_INLINE double contextId() { return context_->contextId(); }
 
+  // Don't allow more than a certain number of frames in a page.
+  static int MaxNumberOfFrames();
+
 #if IS_TEST
   // the owner pointer which take JSBridge as property.
   void* owner;

@@ -34,16 +34,26 @@
 #ifndef WEBF_STYLE_ENGINE_H
 #define WEBF_STYLE_ENGINE_H
 
+#include <core/base/auto_reset.h>
 #include <unordered_map>
+#include "core/css/css_global_rule_set.h"
+#include "core/css/invalidation/pending_invalidations.h"
+//#include "core/css/layout_tree_rebuild_root.h"
+//#include "core/css/resolver/style_resolver.h"
+#include "core/css/style_invalidation_root.h"
+#include "core/css/style_recalc_root.h"
 #include "core/dom/element.h"
 #include "core/platform/text/text_position.h"
 #include "pending_sheet_type.h"
+#include "style_sheet.h"
 
 namespace webf {
 
 class StyleSheetContents;
 class CSSStyleSheet;
 class Document;
+class StyleResolver;
+class LayoutTreeRebuildRoot;
 
 class StyleEngine final {
  public:
@@ -55,6 +65,60 @@ class StyleEngine final {
   CSSStyleSheet* ParseSheet(Element&, const std::string& text);
 
   void AddPendingBlockingSheet(Node& style_sheet_candidate_node, PendingSheetType type);
+
+  bool InRebuildLayoutTree() const { return in_layout_tree_rebuild_; }
+  bool InDOMRemoval() const { return in_dom_removal_; }
+  bool InDetachLayoutTree() const { return in_detach_scope_; }
+  bool InContainerQueryStyleRecalc() const {
+   return in_container_query_style_recalc_;
+  }
+  bool InPositionTryStyleRecalc() const {
+   return in_position_try_style_recalc_;
+  }
+
+ class InApplyAnimationUpdateScope {
+   WEBF_STACK_ALLOCATED();
+
+  public:
+   explicit InApplyAnimationUpdateScope(StyleEngine& engine)
+       : auto_reset_(&engine.in_apply_animation_update_, true) {}
+
+  private:
+   AutoReset<bool> auto_reset_;
+  };
+
+ bool InApplyAnimationUpdate() const { return in_apply_animation_update_; }
+
+  class InEnsureComputedStyleScope {
+   WEBF_STACK_ALLOCATED();
+
+  public:
+   explicit InEnsureComputedStyleScope(StyleEngine& engine)
+       : auto_reset_(&engine.in_ensure_computed_style_, true) {}
+
+  private:
+   AutoReset<bool> auto_reset_;
+  };
+
+  bool InEnsureComputedStyle() const { return in_ensure_computed_style_; }
+
+  void UpdateStyleInvalidationRoot(ContainerNode* ancestor, Node* dirty_node);
+  void UpdateStyleRecalcRoot(ContainerNode* ancestor, Node* dirty_node);
+  // TODO(guopengfei)：先注释
+  // void UpdateLayoutTreeRebuildRoot(ContainerNode* ancestor, Node* dirty_node);
+
+  bool MarkReattachAllowed() const;
+  bool MarkStyleDirtyAllowed() const;
+
+  void ScheduleNthPseudoInvalidations(ContainerNode&);
+
+  const RuleFeatureSet& GetRuleFeatureSet() const {
+   assert(global_rule_set_);
+   return global_rule_set_->GetRuleFeatureSet();
+  }
+
+ const HeapVector<Member<StyleSheet>>& StyleSheetsForStyleSheetList(
+    TreeScope&);
 
  private:
   Member<Document> document_;
@@ -68,7 +132,42 @@ class StyleEngine final {
   // loaded). See:
   // https://html.spec.whatwg.org/multipage/semantics.html#interactions-of-styling-and-scripting
   int pending_script_blocking_stylesheets_{0};
+
+  bool in_container_query_style_recalc_{false};
+  bool in_position_try_style_recalc_{false};
+  bool in_apply_animation_update_{false};
+  bool in_ensure_computed_style_{false};
+  bool in_dom_removal_{false};
+  bool in_detach_scope_{false};
+  bool in_layout_tree_rebuild_{false};
+
+  // Set to true if we allow marking style dirty from style recalc. Ideally, we
+  // should get rid of this, but we keep track of where we allow it with
+  // AllowMarkStyleDirtyFromRecalcScope.
+  bool allow_mark_style_dirty_from_recalc_{false};
+
+  // Set to true if we allow marking for reattachment from layout tree rebuild.
+  // AllowMarkStyleDirtyFromRecalcScope.
+  bool allow_mark_for_reattach_from_rebuild_layout_tree_{false};
+
+  // Set to true if we are allowed to skip recalc for a size container subtree.
+  bool allow_skip_style_recalc_{false};
+
+  PendingInvalidations pending_invalidations_;
+
+  StyleInvalidationRoot style_invalidation_root_;
+  StyleRecalcRoot style_recalc_root_;
+  // TODO(guopengfei)：先注释
+  // LayoutTreeRebuildRoot layout_tree_rebuild_root_;
+
+  std::shared_ptr<StyleResolver> resolver_;
+  // TODO(guopengfei)：先注释
+  // Member<ViewportStyleResolver> viewport_resolver_;
+  // Member<MediaQueryEvaluator> media_query_evaluator_;
+  Member<CSSGlobalRuleSet> global_rule_set_;
 };
+
+void PossiblyScheduleNthPseudoInvalidations(Node& node);
 
 }  // namespace webf
 

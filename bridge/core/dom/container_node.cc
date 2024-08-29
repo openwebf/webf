@@ -27,10 +27,10 @@
  */
 
 #include "container_node.h"
-#include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
-#include "child_list_mutation_scope.h"
-#include "child_node_list.h"
+#include "core/dom/child_list_mutation_scope.h"
+#include "core/dom/child_node_list.h"
+#include "core/dom/node_lists_node_data.h"
 #include "core/html/html_all_collection.h"
 #include "core/script_forbidden_scope.h"
 #include "core/dom/events/event_dispatch_forbidden_scope.h"
@@ -558,7 +558,7 @@ void ContainerNode::NotifyNodeAtEndOfBuildingFragmentTree(webf::Node& node,
 
   // No node-lists should have been created at this (otherwise
   // InvalidateNodeListCaches() would need to be called).
-  assert(!Data() || !Data()->NodeLists());
+  assert(!RareData() || !RareData()->NodeLists());
 
   if (node.IsContainerNode()) {
     DynamicTo<ContainerNode>(node)->ChildrenChanged(change);
@@ -583,6 +583,10 @@ void ContainerNode::RemoveBetween(Node* previous_child, Node* next_child, Node& 
 
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveNode, nullptr, old_child.bindingObject(),
                                                        nullptr);
+}
+
+NodeListsNodeData& ContainerNode::EnsureNodeLists() {
+  return EnsureRareData().EnsureNodeLists();
 }
 
 template <typename Functor>
@@ -698,9 +702,53 @@ void ContainerNode::NotifyNodeRemoved(Node& root) {
 }
 
 void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& change) {
-  InvalidateNodeListCachesInAncestors(&change);
+  InvalidateNodeListCachesInAncestors(nullptr, nullptr, &change);
 }
 
+void ContainerNode::InvalidateNodeListCachesInAncestors(
+    const QualifiedName* attr_name,
+    Element* attribute_owner_element,
+    const ChildrenChange* change) {
+  // This is a performance optimization, NodeList cache invalidation is
+  // not necessary for a text change.
+  if (change && change->type == ChildrenChangeType::kTextChanged)
+    return;
+
+  if (!attr_name || IsAttributeNode()) {
+    if (const NodeRareData* data = RareData()) {
+      if (NodeListsNodeData* lists = data->NodeLists()) {
+        if (ChildNodeList* child_node_list = lists->GetChildNodeList(*this)) {
+          if (change) {
+            child_node_list->ChildrenChanged(*change);
+          } else {
+            child_node_list->InvalidateCache();
+          }
+        }
+      }
+    }
+  }
+
+  // This is a performance optimization, NodeList cache invalidation is
+  // not necessary for non-element nodes.
+  if (change && change->affects_elements == ChildrenChangeAffectsElements::kNo)
+    return;
+
+  // Modifications to attributes that are not associated with an Element can't
+  // invalidate NodeList caches.
+  if (attr_name && !attribute_owner_element)
+    return;
+
+  if (!GetDocument().ShouldInvalidateNodeListCaches(attr_name))
+    return;
+
+  GetDocument().InvalidateNodeListCaches(attr_name);
+
+  for (ContainerNode* node = this; node; node = node->parentNode()) {
+    if (NodeListsNodeData* lists = node->NodeLists())
+      lists->InvalidateCaches(attr_name);
+  }
+}
+/* // TODO(guopengfei)：webf old impl
 void ContainerNode::InvalidateNodeListCachesInAncestors(const webf::ContainerNode::ChildrenChange* change) {
   // This is a performance optimization, NodeList cache invalidation is
   // not necessary for a text change.
@@ -708,7 +756,7 @@ void ContainerNode::InvalidateNodeListCachesInAncestors(const webf::ContainerNod
     return;
 
   if (HasNodeData()) {
-    if (NodeList* lists = Data()->NodeLists()) {
+    if (NodeList* lists = RareData()->NodeLists()) {
       if (lists != nullptr && lists->IsChildNodeList()) {
         auto* child_node_list = static_cast<ChildNodeList*>(lists);
         if (change) {
@@ -731,13 +779,18 @@ void ContainerNode::InvalidateNodeListCachesInAncestors(const webf::ContainerNod
       reinterpret_cast<ChildNodeList*>(lists)->InvalidateCache();
     }
   }
-}
+}*/
 
 void ContainerNode::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(first_child_);
   visitor->TraceMember(last_child_);
 
   Node::Trace(visitor);
+}
+
+void ContainerNode::SetRestyleFlag(DynamicRestyleFlags mask) {
+  assert(IsElementNode() || IsShadowRoot());
+  EnsureRareData().SetRestyleFlag(mask);
 }
 
 }  // namespace webf

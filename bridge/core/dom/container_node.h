@@ -10,7 +10,7 @@
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/heap_vector.h"
 #include "core/html/collection_type.h"
-#include "node.h"
+#include "core/dom/node.h"
 
 namespace webf {
 
@@ -20,6 +20,32 @@ class HTMLCollection;
 // for a Node Vector that is used to store child Nodes of a given Node.
 const int kInitialNodeVectorSize = 11;
 using NodeVector = std::vector<Node*>;
+
+enum class DynamicRestyleFlags {
+  kChildrenOrSiblingsAffectedByFocus = 1 << 0,
+  kChildrenOrSiblingsAffectedByHover = 1 << 1,
+  kChildrenOrSiblingsAffectedByActive = 1 << 2,
+  kChildrenOrSiblingsAffectedByDrag = 1 << 3,
+  kChildrenAffectedByFirstChildRules = 1 << 4,
+  kChildrenAffectedByLastChildRules = 1 << 5,
+  kChildrenAffectedByDirectAdjacentRules = 1 << 6,
+  kChildrenAffectedByIndirectAdjacentRules = 1 << 7,
+  kChildrenAffectedByForwardPositionalRules = 1 << 8,
+  kChildrenAffectedByBackwardPositionalRules = 1 << 9,
+  kAffectedByFirstChildRules = 1 << 10,
+  kAffectedByLastChildRules = 1 << 11,
+  kChildrenOrSiblingsAffectedByFocusWithin = 1 << 12,
+  kChildrenOrSiblingsAffectedByFocusVisible = 1 << 13,
+
+  kNumberOfDynamicRestyleFlags = 14,
+
+  kChildrenAffectedByStructuralRules =
+      kChildrenAffectedByFirstChildRules | kChildrenAffectedByLastChildRules |
+      kChildrenAffectedByDirectAdjacentRules |
+      kChildrenAffectedByIndirectAdjacentRules |
+      kChildrenAffectedByForwardPositionalRules |
+      kChildrenAffectedByBackwardPositionalRules
+};
 
 class ContainerNode : public Node {
  public:
@@ -171,11 +197,32 @@ class ContainerNode : public Node {
   // synchronous events.
   virtual void ChildrenChanged(const ChildrenChange&);
 
-  // Utility functions for NodeListsNodeData API.
-  template <typename Collection>
-  Collection* EnsureCachedCollection(CollectionType);
-
   void Trace(GCVisitor* visitor) const override;
+
+  bool HasRestyleFlag(DynamicRestyleFlags mask) const {
+    if (const NodeRareData* data = RareData()) {
+      return data->HasRestyleFlag(mask);
+    }
+    return false;
+  }
+
+  bool ChildrenAffectedByForwardPositionalRules() const {
+    return HasRestyleFlag(
+        DynamicRestyleFlags::kChildrenAffectedByForwardPositionalRules);
+  }
+  void SetChildrenAffectedByForwardPositionalRules() {
+    SetRestyleFlag(
+        DynamicRestyleFlags::kChildrenAffectedByForwardPositionalRules);
+  }
+
+  bool ChildrenAffectedByBackwardPositionalRules() const {
+    return HasRestyleFlag(
+        DynamicRestyleFlags::kChildrenAffectedByBackwardPositionalRules);
+  }
+  void SetChildrenAffectedByBackwardPositionalRules() {
+    SetRestyleFlag(
+        DynamicRestyleFlags::kChildrenAffectedByBackwardPositionalRules);
+  }
 
  protected:
   ContainerNode(TreeScope* tree_scope, ConstructionType = kCreateContainer);
@@ -191,15 +238,32 @@ class ContainerNode : public Node {
   // modifications. |ChildrenChange| is either nullptr or points to a
   // ChildNode::ChildrenChange structure that describes the changes in the tree.
   // If non-null, blink may preserve caches that aren't affected by the change.
-  void InvalidateNodeListCachesInAncestors(const ChildrenChange*);
+  void InvalidateNodeListCachesInAncestors(const QualifiedName* attr_name,
+                                           Element* attribute_owner_element,
+                                           const ChildrenChange*);
 
   void SetFirstChild(Node* child) { first_child_ = child; }
   void SetLastChild(Node* child) { last_child_ = child; }
+
+  // Utility functions for NodeListsNodeData API.
+  template <typename Collection>
+  Collection* EnsureCachedCollection(CollectionType);
+  template <typename Collection>
+  Collection* EnsureCachedCollection(CollectionType, const AtomicString& name);
+  template <typename Collection>
+  Collection* EnsureCachedCollection(CollectionType,
+                                     const AtomicString& namespace_uri,
+                                     const AtomicString& local_name);
+  template <typename Collection>
+  Collection* CachedCollection(CollectionType);
 
  private:
   bool IsContainerNode() const = delete;  // This will catch anyone doing an unnecessary check.
   bool IsTextNode() const = delete;       // This will catch anyone doing an unnecessary check.
   void RemoveBetween(Node* previous_child, Node* next_child, Node& old_child);
+
+  NodeListsNodeData& EnsureNodeLists();
+
   // Inserts the specified nodes before |next|.
   // |next| may be nullptr.
   // |post_insertion_notification_targets| must not be nullptr.
@@ -221,6 +285,14 @@ class ContainerNode : public Node {
 
   inline bool IsChildTypeAllowed(const Node& child) const;
   inline bool IsHostIncludingInclusiveAncestorOfThis(const Node&, ExceptionState&) const;
+
+  bool HasRestyleFlags() const {
+    if (const NodeRareData* data = RareData()) {
+      return data->HasRestyleFlags();
+    }
+    return false;
+  }
+  void SetRestyleFlag(DynamicRestyleFlags);
 
   Member<Node> first_child_;
   Member<Node> last_child_;
@@ -248,6 +320,10 @@ inline bool ContainerNode::HasChildCount(unsigned count) const {
     --count;
   }
   return !count && !child;
+}
+
+inline bool Node::IsTreeScope() const {
+  return &GetTreeScope().RootNode() == this;
 }
 
 template <>

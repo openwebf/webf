@@ -4,7 +4,6 @@
  */
 #include <atomic>
 #include <unordered_map>
-
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/binding_initializer.h"
 #include "core/dart_methods.h"
@@ -19,6 +18,19 @@
 #include "polyfill.h"
 
 namespace webf {
+
+namespace {
+// This seems like a reasonable upper bound, and otherwise mutually
+// recursive frameset pages can quickly bring the program to its knees
+// with exponential growth in the number of frames.
+const int kMaxNumberOfFrames = 1000;
+
+// It is possible to use a reduced frame limit for testing, but only two values
+// are permitted, the default or reduced limit.
+const int kTenFrames = 10;
+
+bool g_limit_max_frames_to_ten_for_testing = false;
+}
 
 ConsoleMessageHandler WebFPage::consoleMessageHandler{nullptr};
 
@@ -151,6 +163,11 @@ WebFPage::~WebFPage() {
 
 void WebFPage::reportError(const char* errmsg) {
   handler_(context_, errmsg);
+}
+
+// static
+int WebFPage::MaxNumberOfFrames() {
+  return kMaxNumberOfFrames;
 }
 
 }  // namespace webf

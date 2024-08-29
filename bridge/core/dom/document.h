@@ -8,7 +8,8 @@
 #include "bindings/qjs/cppgc/local_handle.h"
 #include "container_node.h"
 #include "core/css/style_engine.h"
-//#include "core/platform/url/kurl.h"
+#include "core/dom/document_lifecycle.h"
+#include "core/platform/url/kurl.h"
 #include "event_type_names.h"
 #include "foundation/macros.h"
 #include "scripted_animation_controller.h"
@@ -22,6 +23,7 @@ class HTMLHtmlElement;
 class HTMLAllCollection;
 class Text;
 class Comment;
+class LiveNodeListBase;
 
 enum NodeListInvalidationType : int {
   kDoNotInvalidateOnAttributeChanges = 0,
@@ -32,6 +34,7 @@ enum NodeListInvalidationType : int {
   kInvalidateForFormControls,
   kInvalidateOnHRefAttrChange,
   kInvalidateOnAnyAttrChange,
+  kInvalidateOnPopoverInvokerAttrChange,
 };
 const int kNumNodeListInvalidationTypes = kInvalidateOnAnyAttrChange + 1;
 
@@ -125,7 +128,7 @@ class Document : public ContainerNode, public TreeScope {
 
   Node* Clone(Document&, CloneChildrenFlag) const override;
 
-  [[nodiscard]] HTMLHtmlElement* documentElement() const;
+  [[nodiscard]] Element* documentElement() const;
 
   // "body element" as defined by HTML5
   // (https://html.spec.whatwg.org/C/#the-body-element-2).
@@ -166,6 +169,65 @@ class Document : public ContainerNode, public TreeScope {
   StyleEngine& EnsureStyleEngine();
   bool IsForMarkupSanitization() const { return is_for_markup_sanitization_; }
 
+  DocumentLifecycle& Lifecycle() { return lifecycle_; }
+  const DocumentLifecycle& Lifecycle() const { return lifecycle_; }
+  bool IsActive() const { return lifecycle_.IsActive(); }
+  bool IsDetached() const {
+    return lifecycle_.GetState() >= DocumentLifecycle::kStopping;
+  }
+  bool IsStopped() const {
+    return lifecycle_.GetState() == DocumentLifecycle::kStopped;
+  }
+  bool InStyleRecalc() const;
+  bool InvalidationDisallowed() const;
+
+  bool ShouldScheduleLayoutTreeUpdate() const;
+  void ScheduleLayoutTreeUpdate();
+
+  StyleEngine& GetStyleEngine() const {
+    assert(style_engine_.get());
+    return *style_engine_.get();
+  }
+
+  void RegisterNodeList(const LiveNodeListBase*);
+  void UnregisterNodeList(const LiveNodeListBase*);
+  void RegisterNodeListWithIdNameCache(const LiveNodeListBase*);
+  void UnregisterNodeListWithIdNameCache(const LiveNodeListBase*);
+  bool ShouldInvalidateNodeListCaches(
+      const QualifiedName* attr_name = nullptr) const;
+  void InvalidateNodeListCaches(const QualifiedName* attr_name);
+
+  enum class StyleAndLayoutTreeUpdate {
+    // Style/layout-tree is not dirty.
+    kNone,
+
+    // Style/layout-tree is dirty, and it's possible to understand whether a
+    // given element will be affected or not by analyzing its ancestor chain.
+    kAnalyzed,
+
+    // Style/layout-tree is dirty, but we cannot decide which specific elements
+    // need to have its style or layout tree updated.
+    kFull,
+  };
+
+  // Looks at various sources that cause style/layout-tree dirtiness,
+  // and returns the severity of the needed update.
+  //
+  // Note that this does not cover "implicit" style/layout-tree dirtiness
+  // via layout/container-queries. That is: this function may return kNone,
+  // and yet a subsequent layout may need to recalc container-query-dependent
+  // styles.
+  StyleAndLayoutTreeUpdate CalculateStyleAndLayoutTreeUpdate() const;
+
+  bool NeedsLayoutTreeUpdate() const {
+    return CalculateStyleAndLayoutTreeUpdate() !=
+           StyleAndLayoutTreeUpdate::kNone;
+  }
+
+  void ScheduleLayoutTreeUpdateIfNeeded();
+  // TODO(guopengfei)：
+  //DisplayLockDocumentState& GetDisplayLockDocumentState() const;
+
  private:
   int node_count_{0};
   ScriptAnimationController script_animation_controller_;
@@ -181,13 +243,31 @@ class Document : public ContainerNode, public TreeScope {
   // about:blank documents, which is the initiator's base URL at the time the
   // navigation was initiated. Separate from the base_url_* fields because the
   // fallback base URL should not take precedence over things like <base>.
-//  KURL fallback_base_url_;
-//
-//  KURL base_element_url_;  // The URL set by the <base> element.
-//  KURL cookie_url_;        // The URL to use for cookie access.
+  KURL fallback_base_url_;
+
+  KURL base_element_url_;  // The URL set by the <base> element.
+  KURL cookie_url_;        // The URL to use for cookie access.
+
+  bool HasPendingVisualUpdate() const {
+    return lifecycle_.GetState() == DocumentLifecycle::kVisualUpdatePending;
+  }
+
+  DocumentLifecycle lifecycle_;
+
+  //HeapHashSet<WeakMember<const LiveNodeListBase>>
+  //lists_invalidated_at_document_;
+  //LiveNodeListRegistry node_lists_;
 };
 
 WEBF_DEFINE_COMPARISON_OPERATORS_WITH_REFERENCES(Document)
+
+inline void Document::ScheduleLayoutTreeUpdateIfNeeded() {
+  // Inline early out to avoid the function calls below.
+  if (HasPendingVisualUpdate())
+    return;
+  if (ShouldScheduleLayoutTreeUpdate() && NeedsLayoutTreeUpdate())
+    ScheduleLayoutTreeUpdate();
+}
 
 template <>
 struct DowncastTraits<Document> {

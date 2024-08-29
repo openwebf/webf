@@ -24,11 +24,11 @@
 
 #ifndef WEBF_CORE_CSS_RESOLVER_CSS_TO_STYLE_MAP_H_
 #define WEBF_CORE_CSS_RESOLVER_CSS_TO_STYLE_MAP_H_
-
+/*
 #include "core/animation/css/css_animation_data.h"
 #include "core/animation/css/css_transition_data.h"
 #include "core/animation/timing.h"
-#include "core/css/css_property_names.h"
+#include "css_property_names.h"
 #include "core/style/computed_style_constants.h"
 #include "core/style/style_timeline.h"
 #include "core/platform/animation/timing_function.h"
@@ -100,9 +100,9 @@ class CSSToStyleMap {
   static CSSTransitionData::TransitionProperty MapAnimationProperty(
       StyleResolverState&,
       const CSSValue&);
-  static scoped_refptr<TimingFunction> MapAnimationTimingFunction(
+  static std::shared_ptr<TimingFunction> MapAnimationTimingFunction(
       const CSSValue&);
-  static scoped_refptr<TimingFunction> MapAnimationTimingFunction(
+  static std::shared_ptr<TimingFunction> MapAnimationTimingFunction(
       StyleResolverState&,
       const CSSValue&);
 
@@ -121,5 +121,5 @@ class CSSToStyleMap {
 };
 
 }  // namespace webf
-
+*/
 #endif  // WEBF_CORE_CSS_RESOLVER_CSS_TO_STYLE_MAP_H_

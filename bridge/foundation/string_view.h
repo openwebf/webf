@@ -80,6 +80,9 @@ class StringView final {
 
   AtomicString ToAtomicString(JSContext* ctx) const;
 
+  // TODO(guopengfei)：just support utf-8
+  [[nodiscard]] std::string Characters8ToStdString() const;
+
   char16_t operator[](unsigned i) const {
     assert(i < length());
     if (Is8Bit())

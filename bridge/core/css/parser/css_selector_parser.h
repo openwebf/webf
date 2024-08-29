@@ -32,7 +32,7 @@ class CSSSelectorParser {
   WEBF_STACK_ALLOCATED();
  public:
   static std::span<CSSSelector> ParseSelector(
-      CSSParserTokenRange,
+      CSSParserTokenStream&,
       std::shared_ptr<const CSSParserContext>,
       CSSNestingType,
       std::shared_ptr<const StyleRule> parent_rule_for_nesting,
@@ -52,19 +52,17 @@ class CSSSelectorParser {
       std::shared_ptr<CSSParserObserver>,
       std::vector<CSSSelector>&);
 
-  static bool ConsumeANPlusB(CSSParserTokenRange&, std::pair<int, int>&);
-  CSSSelectorList* ConsumeNthChildOfSelectors(CSSParserTokenRange&);
+  static bool ConsumeANPlusB(CSSParserTokenStream&, std::pair<int, int>&);
+  CSSSelectorList* ConsumeNthChildOfSelectors(CSSParserTokenStream&);
 
-  static bool SupportsComplexSelector(CSSParserTokenRange,
+  static bool SupportsComplexSelector(CSSParserTokenStream&,
                                       std::shared_ptr<const CSSParserContext>);
 
-  static CSSSelector::PseudoType ParsePseudoType(const AtomicString&,
+  static CSSSelector::PseudoType ParsePseudoType(const AtomicString& name,
                                                  bool has_arguments,
                                                  const Document*);
 
-  static PseudoId ParsePseudoElement(const AtomicString&,
-                                     const Node*,
-                                     AtomicString& argument);
+  static PseudoId ParsePseudoElement(const std::string& selector_string, const Node* parent, AtomicString& argument);
 
   // https://drafts.csswg.org/css-cascade-6/#typedef-scope-start
   // https://drafts.csswg.org/css-cascade-6/#typedef-scope-end
@@ -73,7 +71,7 @@ class CSSSelectorParser {
   // normal and expected, since <scope-start> / <scope-end> are forgiving
   // selector lists.
   static std::optional<std::span<CSSSelector>> ParseScopeBoundary(
-      CSSParserTokenRange,
+      CSSParserTokenStream&,
       std::shared_ptr<const CSSParserContext>,
       CSSNestingType,
       std::shared_ptr<const StyleRule> parent_rule_for_nesting,
@@ -103,33 +101,33 @@ class CSSSelectorParser {
   //
   // CSSNestingType::kScope is similar, but will prepend relative selectors with
   // :scope instead of &.
-  std::span<CSSSelector> ConsumeComplexSelectorList(CSSParserTokenRange& range,
+  std::span<CSSSelector> ConsumeComplexSelectorList(CSSParserTokenStream& stream,
                                                      CSSNestingType);
   std::span<CSSSelector> ConsumeComplexSelectorList(
-      CSSParserTokenStream& range,
+      CSSParserTokenStream& stream,
       std::shared_ptr<CSSParserObserver> observer,
       CSSNestingType);
-  std::shared_ptr<CSSSelectorList> ConsumeCompoundSelectorList(CSSParserTokenRange&);
+  std::shared_ptr<CSSSelectorList> ConsumeCompoundSelectorList(CSSParserTokenStream&);
   // Consumes a complex selector list if inside_compound_pseudo_ is false,
   // otherwise consumes a compound selector list.
-  std::shared_ptr<CSSSelectorList> ConsumeNestedSelectorList(CSSParserTokenRange&);
-  CSSSelectorList* ConsumeForgivingNestedSelectorList(CSSParserTokenRange&);
+  std::shared_ptr<CSSSelectorList> ConsumeNestedSelectorList(CSSParserTokenStream&);
+  CSSSelectorList* ConsumeForgivingNestedSelectorList(CSSParserTokenStream&);
   // https://drafts.csswg.org/selectors/#typedef-forgiving-selector-list
   std::optional<std::span<CSSSelector>> ConsumeForgivingComplexSelectorList(
-      CSSParserTokenRange&,
+      CSSParserTokenStream&,
       CSSNestingType);
-  std::shared_ptr<CSSSelectorList> ConsumeForgivingCompoundSelectorList(CSSParserTokenRange&);
+  std::shared_ptr<CSSSelectorList> ConsumeForgivingCompoundSelectorList(CSSParserTokenStream&);
   // https://drafts.csswg.org/selectors/#typedef-relative-selector-list
-  std::shared_ptr<CSSSelectorList> ConsumeForgivingRelativeSelectorList(CSSParserTokenRange&);
-  std::shared_ptr<CSSSelectorList> ConsumeRelativeSelectorList(CSSParserTokenRange&);
-  void AddPlaceholderSelectorIfNeeded(const CSSParserTokenRange& argument);
+  std::shared_ptr<CSSSelectorList> ConsumeForgivingRelativeSelectorList(CSSParserTokenStream&);
+  std::shared_ptr<CSSSelectorList> ConsumeRelativeSelectorList(CSSParserTokenStream&);
+  void AddPlaceholderSelectorIfNeeded(CSSParserTokenStream& argument);
 
   std::span<CSSSelector> ConsumeNestedRelativeSelector(
-      CSSParserTokenRange& range,
+      CSSParserTokenStream& stream,
       CSSNestingType);
-  std::span<CSSSelector> ConsumeRelativeSelector(CSSParserTokenRange&);
+  std::span<CSSSelector> ConsumeRelativeSelector(CSSParserTokenStream&);
   std::span<CSSSelector> ConsumeComplexSelector(
-      CSSParserTokenRange& range,
+      CSSParserTokenStream& stream,
       CSSNestingType,
       bool first_in_complex_selector_list);
 
@@ -148,33 +146,33 @@ class CSSSelectorParser {
   //
   // Returns false if parse error.
   bool ConsumePartialComplexSelector(
-      CSSParserTokenRange&,
+      CSSParserTokenStream&,
       CSSSelector::RelationType& /* current combinator */,
       unsigned /* previous compound flags */,
       CSSNestingType);
 
-  bool ConsumeName(CSSParserTokenRange&,
+  bool ConsumeName(CSSParserTokenStream&,
                    AtomicString& name,
                    AtomicString& namespace_prefix);
 
   // These will return true iff the selector is valid;
   // otherwise, the vector will be pushed onto output_.
-  bool ConsumeId(CSSParserTokenRange&);
-  bool ConsumeClass(CSSParserTokenRange&);
-  bool ConsumeAttribute(CSSParserTokenRange&);
-  bool ConsumePseudo(CSSParserTokenRange&);
-  bool ConsumeNestingParent(CSSParserTokenRange& range);
+  bool ConsumeId(CSSParserTokenStream&);
+  bool ConsumeClass(CSSParserTokenStream&);
+  bool ConsumeAttribute(CSSParserTokenStream&);
+  bool ConsumePseudo(CSSParserTokenStream&);
+  bool ConsumeNestingParent(CSSParserTokenStream& stream);
   // This doesn't include element names, since they're handled specially
-  bool ConsumeSimpleSelector(CSSParserTokenRange&);
+  bool ConsumeSimpleSelector(CSSParserTokenStream&);
 
   // Returns an empty range on error.
-  std::span<CSSSelector> ConsumeCompoundSelector(CSSParserTokenRange&,
+  std::span<CSSSelector> ConsumeCompoundSelector(CSSParserTokenStream&,
                                                   CSSNestingType);
 
-  bool PeekIsCombinator(CSSParserTokenRange& range);
-  CSSSelector::RelationType ConsumeCombinator(CSSParserTokenRange&);
-  CSSSelector::MatchType ConsumeAttributeMatch(CSSParserTokenRange&);
-  CSSSelector::AttributeMatchType ConsumeAttributeFlags(CSSParserTokenRange&);
+  bool PeekIsCombinator(CSSParserTokenStream& stream);
+  CSSSelector::RelationType ConsumeCombinator(CSSParserTokenStream&);
+  CSSSelector::MatchType ConsumeAttributeMatch(CSSParserTokenStream&);
+  CSSSelector::AttributeMatchType ConsumeAttributeFlags(CSSParserTokenStream&);
 
   const AtomicString& DefaultNamespace() const;
   const AtomicString& DetermineNamespace(const AtomicString& prefix);

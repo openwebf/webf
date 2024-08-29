@@ -49,7 +49,7 @@ class CalculationValue {
   static std::shared_ptr<const CalculationValue> Create(
       PixelsAndPercent value,
       Length::ValueRange range) {
-    return std::make_shared<CalculationValue>(value, range);
+    return std::shared_ptr<const CalculationValue>(new CalculationValue(value, range));
   }
 
   // If |expression| simply wraps a |PixelsAndPercent| value, this function
