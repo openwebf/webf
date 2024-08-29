@@ -144,8 +144,6 @@ class StyleSheetContents final {
   unsigned RuleCount() const;
   StyleRuleBase* RuleAt(unsigned index) const;
 
-  unsigned EstimatedSizeInBytes() const;
-
   bool WrapperInsertRule(StyleRuleBase*, unsigned index);
   bool WrapperDeleteRule(unsigned index);
 

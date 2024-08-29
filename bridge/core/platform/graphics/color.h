@@ -53,63 +53,6 @@ class Color {
   WEBF_DISALLOW_NEW();
 
  public:
-  // This enum represent the color space of the color itself. This is also used
-  // for serialization purposes and for initialization. Don't change the order
-  // of this enum, as how it's ordered helps performance (the compiler can
-  // decide that the first few elements are for ColorFunctionSpace and the last
-  // few elements are for RGB-like serialization.)
-  // For details on serialization, see:
-  // https://www.w3.org/TR/css-color-4/#serializing-color-values
-  // https://www.w3.org/TR/css-color-5/#serial-relative-color
-  enum class ColorSpace : uint8_t {
-    // All these are to be serialized with the color() syntax of a given
-    // predefined color space. The
-    // values of `params0_`, `params1_`, and `params2_` are red, green, and blue
-    // values in the color space specified by `color_space_`.
-    kSRGB,
-    kSRGBLinear,
-    kDisplayP3,
-    kA98RGB,
-    kProPhotoRGB,
-    kRec2020,
-    kXYZD50,
-    kXYZD65,
-    // Serializes to lab(). The value of `param0_` is lightness and is
-    // guaranteed to be non-negative. The value of `param1_` and `param2_` are
-    // the a-axis and b-axis values and are unbounded.
-    kLab,
-    // Serializes to oklab(). Parameter meanings are the same as for kLab.
-    kOklab,
-    // Serializes to lch(). The value of `param0_` is lightness and is
-    // guaranteed to be non-negative. The value of `param1_` is chroma and is
-    // also guaranteed to be non-negative. The value of `param2_` is hue, and
-    // is unbounded.
-    kLch,
-    // Serializes to oklch(). Parameter meanings are the same as for kLCH.
-    kOklch,
-    // Serializes to rgb() or rgba().
-    // The values of `params0_`, `params1_`, and `params2_` are red, green, and
-    // blue sRGB values, and are guaranteed to be present and in the [0, 1]
-    // interval.
-    kSRGBLegacy,
-    // Serializes to rgb() or rgba() for non-relative colors and to hsl() for
-    // unresolved relative colors.
-    // The values of `params0_`, `params1_`, and `params2_` are Hue, Saturation,
-    // and Ligthness. These can be none. Hue is a namber in the range from 0.0
-    // to 6.0, and the rest are in the rance from 0.0 to 1.0.
-    // interval.
-    kHSL,
-    // Serializes to rgb() or rgba() for non-relative colors and to hwb() for
-    // unresolved relative colors.
-    // The values of `params0_`, `params1_`, and `params2_` are Hue, White,
-    // and Black. These can be none. Hue is a namber in the range from 0.0
-    // to 6.0, and the rest are in the rance from 0.0 to 1.0.
-    // interval.
-    kHWB,
-    // An uninitialized color.
-    kNone,
-  };
-
   struct KeyHasher {
     std::size_t operator()(const Color& c) const { return c.GetHash(); }
   };
@@ -173,35 +116,6 @@ class Color {
     kIncreasing,
     kDecreasing,
   };
-
-  // Creates a color with the Color-Mix method in CSS Color 5. This will produce
-  // an interpolation between two colors, and apply an alpha multiplier if the
-  // proportion was not 100% when parsing.
-  static Color FromColorMix(ColorSpace interpolation_space,
-                            std::optional<HueInterpolationMethod> hue_method,
-                            Color color1,
-                            Color color2,
-                            float percentage,
-                            float alpha_multiplier);
-
-  // Produce a color that is the result of mixing color1 and color2.
-  //
-  // interpolation_space: The space in which to perform the interpolation. Both
-  // input colors are converted to this space before interpolation and the
-  // resulting color will be in this space as well.
-  //
-  // hue_method: See https://www.w3.org/TR/css-color-4/#hue-interpolation.
-  //
-  // percentage: How far to interpolate between color1 and color2. 0.0 returns
-  // color1 and 1.0 returns color2. It is unbounded, so it is possible to
-  // interpolate beyond these bounds with percentages outside the range [0, 1].
-  static Color InterpolateColors(
-      ColorSpace interpolation_space,
-      std::optional<HueInterpolationMethod> hue_method,
-      Color color1,
-      Color color2,
-      float percentage);
-
   // TODO(crbug.com/1308932): These three functions are just helpers for
   // while we're converting platform/graphics to float color.
   static constexpr Color FromSkColor4f(SkColor4f fc) { return Color(fc); }
@@ -296,19 +210,6 @@ class Color {
   // maximum/minimum values, if they exist. It leaves finite values unchanged.
   // See https://github.com/w3c/csswg-drafts/issues/8629
   void ResolveNonFiniteValues();
-
-  void ConvertToColorSpace(ColorSpace destination_color_space,
-                         bool resolve_missing_components = true);
-
-  // https://www.w3.org/TR/css-color-4/#legacy-color-syntax
-  // Returns true if the color is of a type that predates CSS Color 4. Includes
-  // rgb(), rgba(), hex color, named color, hsl() and hwb() types. These colors
-  // interpolate and serialize differently from other color types.
-  static bool IsLegacyColorSpace(ColorSpace color_space) {
-    return color_space == ColorSpace::kSRGBLegacy ||
-           color_space == ColorSpace::kHSL || color_space == ColorSpace::kHWB;
-  }
-
  private:
   std::string SerializeLegacyColorAsCSSColor() const;
   constexpr explicit Color(RGBA32 color)
@@ -350,8 +251,6 @@ class Color {
 
   // The alpha value for the color is guaranteed to be in the [0, 1] interval.
   float alpha_ = 0.f;
-
-  ColorSpace color_space_ = ColorSpace::kSRGBLegacy;
 };
 
 // For unit tests and similar.

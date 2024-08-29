@@ -43,6 +43,7 @@
 #include "core/platform/gfx/geometry/point.h"
 // #include "core/css/properties/computed_style_utils.h"
 #include "core/css/properties/css_parsing_utils.h"
+// #include "core/css/css_transition_data.h"
 #include "longhands.h"
 // #include "core/css/resolver/style_builder_converter.h"
 // #include "core/css/resolver/style_resolver.h"
@@ -144,14 +145,15 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
                                                       stream, context);
 }
 //
-//std::shared_ptr<const CSSValue> AnimationComposition::ParseSingleValue(CSSParserTokenStream& stream,
+// std::shared_ptr<const CSSValue> AnimationComposition::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                                       const CSSParserContext& context,
 //                                                                       const CSSParserLocalContext&) const {
-//  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const CSSIdentifierValue>(CSSParserTokenStream&)>(
+//  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const
+//  CSSIdentifierValue>(CSSParserTokenStream&)>(
 //      css_parsing_utils::ConsumeIdent<CSSValueID::kReplace, CSSValueID::kAdd, CSSValueID::kAccumulate>, stream);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationDelay::ParseSingleValue(CSSParserTokenStream& stream,
+// std::shared_ptr<const CSSValue> AnimationDelay::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                                 const CSSParserContext& context,
 //                                                                 const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(
@@ -161,46 +163,48 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
 //      stream, context, CSSPrimitiveValue::ValueRange::kAll);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationDirection::ParseSingleValue(CSSParserTokenStream& stream,
+// std::shared_ptr<const CSSValue> AnimationDirection::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                                     const CSSParserContext&,
 //                                                                     const CSSParserLocalContext&) const {
-//  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const CSSIdentifierValue>(CSSParserTokenStream&)>(
+//  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const
+//  CSSIdentifierValue>(CSSParserTokenStream&)>(
 //      css_parsing_utils::ConsumeIdent<CSSValueID::kNormal, CSSValueID::kAlternate, CSSValueID::kReverse,
 //                                      CSSValueID::kAlternateReverse>,
 //      stream);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationDirection::InitialValue() const {
+// std::shared_ptr<const CSSValue> AnimationDirection::InitialValue() const {
 //  return CSSIdentifierValue::Create(CSSValueID::kNormal);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationDuration::ParseSingleValue(CSSParserTokenStream& stream,
+// std::shared_ptr<const CSSValue> AnimationDuration::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                                    const CSSParserContext& context,
 //                                                                    const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationDuration, stream, context);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationFillMode::ParseSingleValue(CSSParserTokenStream& stream,
+// std::shared_ptr<const CSSValue> AnimationFillMode::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                                    const CSSParserContext&,
 //                                                                    const CSSParserLocalContext&) const {
-//  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const CSSIdentifierValue>(CSSParserTokenStream&)>(
+//  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const
+//  CSSIdentifierValue>(CSSParserTokenStream&)>(
 //      css_parsing_utils::ConsumeIdent<CSSValueID::kNone, CSSValueID::kForwards, CSSValueID::kBackwards,
 //                                      CSSValueID::kBoth>,
 //      stream);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationFillMode::InitialValue() const {
+// std::shared_ptr<const CSSValue> AnimationFillMode::InitialValue() const {
 //  return CSSIdentifierValue::Create(CSSValueID::kNone);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationIterationCount::ParseSingleValue(CSSParserTokenStream& stream,
+// std::shared_ptr<const CSSValue> AnimationIterationCount::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                                          const CSSParserContext& context,
 //                                                                          const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationIterationCount, stream,
 //                                                      context);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationName::ParseSingleValue(CSSParserTokenStream& stream,
+// std::shared_ptr<const CSSValue> AnimationName::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                                const CSSParserContext& context,
 //                                                                const CSSParserLocalContext& local_context) const {
 //  // Allow quoted name if this is an alias property.
@@ -208,61 +212,63 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
 //                                                      local_context.UseAliasParsing());
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationName::InitialValue() const {
+// std::shared_ptr<const CSSValue> AnimationName::InitialValue() const {
 //  return CSSIdentifierValue::Create(CSSValueID::kNone);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationPlayState::ParseSingleValue(CSSParserTokenStream& stream,
+// std::shared_ptr<const CSSValue> AnimationPlayState::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                                     const CSSParserContext&,
 //                                                                     const CSSParserLocalContext&) const {
-//  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const CSSIdentifierValue>(CSSParserTokenStream&)>(
+//  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const
+//  CSSIdentifierValue>(CSSParserTokenStream&)>(
 //      css_parsing_utils::ConsumeIdent<CSSValueID::kRunning, CSSValueID::kPaused>, stream);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationPlayState::InitialValue() const {
+// std::shared_ptr<const CSSValue> AnimationPlayState::InitialValue() const {
 //  return CSSIdentifierValue::Create(CSSValueID::kRunning);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationRangeStart::ParseSingleValue(CSSParserTokenStream& stream,
+// std::shared_ptr<const CSSValue> AnimationRangeStart::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                                      const CSSParserContext& context,
 //                                                                      const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationRange, stream, context,
 //                                                      /* default_offset_percent */ 0.0);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationRangeStart::InitialValue() const {
+// std::shared_ptr<const CSSValue> AnimationRangeStart::InitialValue() const {
 //  return CSSIdentifierValue::Create(CSSValueID::kNormal);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationRangeEnd::ParseSingleValue(CSSParserTokenStream& stream,
+// std::shared_ptr<const CSSValue> AnimationRangeEnd::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                                    const CSSParserContext& context,
 //                                                                    const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationRange, stream, context,
 //                                                      /* default_offset_percent */ 100.0);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationRangeEnd::InitialValue() const {
+// std::shared_ptr<const CSSValue> AnimationRangeEnd::InitialValue() const {
 //  return CSSIdentifierValue::Create(CSSValueID::kNormal);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationTimeline::ParseSingleValue(CSSParserTokenStream& stream,
+// std::shared_ptr<const CSSValue> AnimationTimeline::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                                    const CSSParserContext& context,
-//                                                                    const CSSParserLocalContext& local_context) const {
+//                                                                    const CSSParserLocalContext& local_context) const
+//                                                                    {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationTimeline, stream, context);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationTimeline::InitialValue() const {
+// std::shared_ptr<const CSSValue> AnimationTimeline::InitialValue() const {
 //  return CSSIdentifierValue::Create(CSSValueID::kAuto);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationTimingFunction::ParseSingleValue(CSSParserTokenStream& stream,
+// std::shared_ptr<const CSSValue> AnimationTimingFunction::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                                          const CSSParserContext& context,
 //                                                                          const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationTimingFunction, stream,
 //                                                      context);
 //}
 //
-//std::shared_ptr<const CSSValue> AnimationTimingFunction::InitialValue() const {
+// std::shared_ptr<const CSSValue> AnimationTimingFunction::InitialValue() const {
 //  return CSSIdentifierValue::Create(CSSValueID::kEase);
 //}
 
@@ -360,17 +366,6 @@ std::shared_ptr<const CSSValue> BackgroundRepeat::ParseSingleValue(CSSParserToke
                                                                    const CSSParserContext& context,
                                                                    const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ParseRepeatStyle(stream);
-}
-
-std::shared_ptr<const CSSValue> BaselineShift::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
-                                                                const CSSParserLocalContext&) const {
-  CSSValueID id = stream.Peek().Id();
-  if (id == CSSValueID::kBaseline || id == CSSValueID::kSub || id == CSSValueID::kSuper) {
-    return css_parsing_utils::ConsumeIdent(stream);
-  }
-  CSSParserContext::ParserModeOverridingScope scope(context, kSVGAttributeMode);
-  return css_parsing_utils::ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
 }
 
 std::shared_ptr<const CSSValue> BlockSize::ParseSingleValue(CSSParserTokenStream& stream,
@@ -1806,22 +1801,6 @@ std::shared_ptr<const CSSValue> LineHeight::ParseSingleValue(CSSParserTokenStrea
   return css_parsing_utils::ConsumeLineHeight(stream, context);
 }
 
-std::shared_ptr<const CSSValue> ListStyleImage::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
-                                                                 const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeImageOrNone(stream, context);
-}
-
-std::shared_ptr<const CSSValue> ListStyleType::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
-                                                                const CSSParserLocalContext&) const {
-  if (auto none = css_parsing_utils::ConsumeIdent<CSSValueID::kNone>(stream)) {
-    return none;
-  }
-
-  return css_parsing_utils::ConsumeString(stream);
-}
-
 std::shared_ptr<const CSSValue> MarginBlockEnd::ParseSingleValue(CSSParserTokenStream& stream,
                                                                  const CSSParserContext& context,
                                                                  const CSSParserLocalContext&) const {
@@ -2295,7 +2274,6 @@ std::shared_ptr<const CSSValue> Scale::ParseSingleValue(CSSParserTokenStream& st
   return list;
 }
 
-
 static std::shared_ptr<const CSSValue> ConsumePageSize(CSSParserTokenStream& stream) {
   return css_parsing_utils::ConsumeIdent<CSSValueID::kA3, CSSValueID::kA4, CSSValueID::kA5, CSSValueID::kB4,
                                          CSSValueID::kB5, CSSValueID::kJisB5, CSSValueID::kJisB4, CSSValueID::kLedger,
@@ -2348,7 +2326,8 @@ std::shared_ptr<const CSSValue> Size::ParseSingleValue(CSSParserTokenStream& str
 
   if (std::shared_ptr<const CSSValue> width =
           css_parsing_utils::ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative)) {
-    std::shared_ptr<const CSSValue> height = css_parsing_utils::ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+    std::shared_ptr<const CSSValue> height =
+        css_parsing_utils::ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
     result->Append(width);
     if (height) {
       result->Append(height);
@@ -2357,7 +2336,8 @@ std::shared_ptr<const CSSValue> Size::ParseSingleValue(CSSParserTokenStream& str
   }
 
   std::shared_ptr<const CSSValue> page_size = ConsumePageSize(stream);
-  std::shared_ptr<const CSSValue> orientation = css_parsing_utils::ConsumeIdent<CSSValueID::kPortrait, CSSValueID::kLandscape>(stream);
+  std::shared_ptr<const CSSValue> orientation =
+      css_parsing_utils::ConsumeIdent<CSSValueID::kPortrait, CSSValueID::kLandscape>(stream);
   if (!page_size) {
     page_size = ConsumePageSize(stream);
   }
@@ -2377,12 +2357,6 @@ std::shared_ptr<const CSSValue> Size::ParseSingleValue(CSSParserTokenStream& str
 void Size::ApplyInitial(StyleResolverState& state) const {}
 
 void Size::ApplyInherit(StyleResolverState& state) const {}
-
-std::shared_ptr<const CSSValue> StopColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
-                                                            const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeColor(stream, context);
-}
 
 std::shared_ptr<const CSSValue> StopOpacity::ParseSingleValue(CSSParserTokenStream& stream,
                                                               const CSSParserContext& context,
@@ -2627,7 +2601,8 @@ std::shared_ptr<const CSSValue> TransitionProperty::InitialValue() const {
 }
 
 namespace {
-std::shared_ptr<const CSSIdentifierValue> ConsumeIdentNoTemplate(CSSParserTokenStream& stream, const CSSParserContext&) {
+std::shared_ptr<const CSSIdentifierValue> ConsumeIdentNoTemplate(CSSParserTokenStream& stream,
+                                                                 const CSSParserContext&) {
   return css_parsing_utils::ConsumeIdent(stream);
 }
 }  // namespace
@@ -2635,7 +2610,8 @@ std::shared_ptr<const CSSIdentifierValue> ConsumeIdentNoTemplate(CSSParserTokenS
 std::shared_ptr<const CSSValue> TransitionBehavior::ParseSingleValue(CSSParserTokenStream& stream,
                                                                      const CSSParserContext& context,
                                                                      const CSSParserLocalContext&) const {
-  std::shared_ptr<const CSSValueList> list = css_parsing_utils::ConsumeCommaSeparatedList(ConsumeIdentNoTemplate, stream, context);
+  std::shared_ptr<const CSSValueList> list =
+      css_parsing_utils::ConsumeCommaSeparatedList(ConsumeIdentNoTemplate, stream, context);
   if (!list || !css_parsing_utils::IsValidTransitionBehaviorList(*list)) {
     return nullptr;
   }
@@ -2657,43 +2633,43 @@ std::shared_ptr<const CSSValue> TransitionTimingFunction::InitialValue() const {
   return CSSIdentifierValue::Create(CSSValueID::kEase);
 }
 
-//std::shared_ptr<const CSSValue> Translate::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                            const CSSParserContext& context,
-//                                                            const CSSParserLocalContext&) const {
-//  CSSValueID id = stream.Peek().Id();
-//  if (id == CSSValueID::kNone) {
-//    return css_parsing_utils::ConsumeIdent(stream);
-//  }
+// std::shared_ptr<const CSSValue> Translate::ParseSingleValue(CSSParserTokenStream& stream,
+//                                                             const CSSParserContext& context,
+//                                                             const CSSParserLocalContext&) const {
+//   CSSValueID id = stream.Peek().Id();
+//   if (id == CSSValueID::kNone) {
+//     return css_parsing_utils::ConsumeIdent(stream);
+//   }
 //
-//  std::shared_ptr<const CSSValue> translate_x =
-//      css_parsing_utils::ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
-//  if (!translate_x) {
-//    return nullptr;
-//  }
-//  std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
-//  list->Append(translate_x);
-//  std::shared_ptr<const CSSPrimitiveValue> translate_y =
-//      css_parsing_utils::ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
-//  if (translate_y) {
-//    std::shared_ptr<const CSSPrimitiveValue> translate_z =
-//        css_parsing_utils::ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+//   std::shared_ptr<const CSSValue> translate_x =
+//       css_parsing_utils::ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+//   if (!translate_x) {
+//     return nullptr;
+//   }
+//   std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
+//   list->Append(translate_x);
+//   std::shared_ptr<const CSSPrimitiveValue> translate_y =
+//       css_parsing_utils::ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
+//   if (translate_y) {
+//     std::shared_ptr<const CSSPrimitiveValue> translate_z =
+//         css_parsing_utils::ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kAll);
 //
-//    if (translate_z && translate_z->IsZero() == CSSPrimitiveValue::BoolStatus::kTrue) {
-//      translate_z = nullptr;
-//    }
-//    if (translate_y->IsZero() == CSSPrimitiveValue::BoolStatus::kTrue && !translate_y->HasPercentage() &&
-//        !translate_z) {
-//      return list;
-//    }
+//     if (translate_z && translate_z->IsZero() == CSSPrimitiveValue::BoolStatus::kTrue) {
+//       translate_z = nullptr;
+//     }
+//     if (translate_y->IsZero() == CSSPrimitiveValue::BoolStatus::kTrue && !translate_y->HasPercentage() &&
+//         !translate_z) {
+//       return list;
+//     }
 //
-//    list->Append(translate_y);
-//    if (translate_z) {
-//      list->Append(translate_z);
-//    }
-//  }
+//     list->Append(translate_y);
+//     if (translate_z) {
+//       list->Append(translate_z);
+//     }
+//   }
 //
-//  return list;
-//}
+//   return list;
+// }
 
 std::shared_ptr<const CSSValue> VerticalAlign::ParseSingleValue(CSSParserTokenStream& stream,
                                                                 const CSSParserContext& context,
@@ -2740,20 +2716,9 @@ std::shared_ptr<const CSSValue> WebkitLineClamp::ParseSingleValue(CSSParserToken
   return css_parsing_utils::ConsumePositiveInteger(stream, context);
 }
 
-std::shared_ptr<const CSSValue> WebkitLocale::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext&,
-                                                               const CSSParserLocalContext&) const {
-  if (stream.Peek().Id() == CSSValueID::kAuto) {
-    return css_parsing_utils::ConsumeIdent(stream);
-  }
-  return css_parsing_utils::ConsumeString(stream);
-}
-
-
 // void WebkitMaskBoxImageSource::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
 //   state.StyleBuilder().SetMaskBoxImageSource(state.GetStyleImage(CSSPropertyID::kWebkitMaskBoxImageSource, value));
 // }
-
 
 // void WebkitPerspectiveOriginX::ApplyInherit(StyleResolverState& state) const {
 //   state.StyleBuilder().SetPerspectiveOriginX(state.ParentStyle()->PerspectiveOrigin().X());
@@ -2864,7 +2829,6 @@ std::shared_ptr<const CSSValue> TimelineScope::ParseSingleValue(CSSParserTokenSt
   return ConsumeCommaSeparatedList<std::shared_ptr<const CSSCustomIdentValue>(
       CSSParserTokenStream&, const CSSParserContext&)>(ConsumeCustomIdent, stream, context);
 }
-
 
 // void WebkitTransformOriginY::ApplyInherit(StyleResolverState& state) const {
 //   state.StyleBuilder().SetTransformOriginY(state.ParentStyle()->GetTransformOrigin().Y());
@@ -3048,6 +3012,182 @@ void Zoom::ApplyInherit(StyleResolverState& state) const {
 void Zoom::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
   //  state.SetZoom(StyleBuilderConverter::ConvertZoom(state, value));
 }
+
+void OverflowY::ApplyInitial(StyleResolverState& state) const {}
+void OverflowY::ApplyInherit(webf::StyleResolverState&) const {}
+void OverflowY::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+
+void OverflowX::ApplyInherit(webf::StyleResolverState&) const {}
+void OverflowX::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+void OverflowX::ApplyInitial(webf::StyleResolverState&) const {}
+
+void TextAlign::ApplyInherit(webf::StyleResolverState&) const {}
+void TextAlign::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+void TextAlign::ApplyInitial(webf::StyleResolverState&) const {}
+
+void Color::ApplyInherit(webf::StyleResolverState&) const {}
+void Color::ApplyInitial(webf::StyleResolverState&) const {}
+void Color::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+
+void LineClamp::ApplyInherit(webf::StyleResolverState&) const {}
+void LineClamp::ApplyInitial(webf::StyleResolverState&) const {}
+void LineClamp::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+
+void Direction::ApplyInherit(webf::StyleResolverState&) const {}
+void Direction::ApplyInitial(webf::StyleResolverState&) const {}
+void Direction::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+
+void Content::ApplyInherit(webf::StyleResolverState&) const {}
+void Content::ApplyInitial(webf::StyleResolverState&) const {}
+void Content::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+
+void Resize::ApplyInherit(webf::StyleResolverState&) const {}
+void Resize::ApplyInitial(webf::StyleResolverState&) const {}
+void Resize::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+
+void Filter::ApplyInherit(webf::StyleResolverState&) const {}
+void Filter::ApplyInitial(webf::StyleResolverState&) const {}
+void Filter::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+
+void Size::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+
+void BackgroundAttachment::ApplyInherit(webf::StyleResolverState&) const {}
+void BackgroundAttachment::ApplyValue(webf::StyleResolverState&,
+                                      const webf::CSSValue&,
+                                      webf::CSSProperty::ValueMode) const {}
+void BackgroundAttachment::ApplyInitial(webf::StyleResolverState&) const {}
+
+void TextDecorationColor::ApplyInherit(webf::StyleResolverState&) const {}
+void TextDecorationColor::ApplyInitial(webf::StyleResolverState&) const {}
+void TextDecorationColor::ApplyValue(webf::StyleResolverState&,
+                                     const webf::CSSValue&,
+                                     webf::CSSProperty::ValueMode) const {}
+
+void BackgroundPositionY::ApplyInherit(webf::StyleResolverState&) const {}
+void BackgroundPositionY::ApplyInitial(webf::StyleResolverState&) const {}
+void BackgroundPositionY::ApplyValue(webf::StyleResolverState&,
+                                     const webf::CSSValue&,
+                                     webf::CSSProperty::ValueMode) const {}
+
+void BackgroundPositionX::ApplyInherit(webf::StyleResolverState&) const {}
+void BackgroundPositionX::ApplyInitial(webf::StyleResolverState&) const {}
+void BackgroundPositionX::ApplyValue(webf::StyleResolverState&,
+                                     const webf::CSSValue&,
+                                     webf::CSSProperty::ValueMode) const {}
+
+void BackgroundBlendMode::ApplyInherit(webf::StyleResolverState&) const {}
+void BackgroundBlendMode::ApplyInitial(webf::StyleResolverState&) const {}
+void BackgroundBlendMode::ApplyValue(webf::StyleResolverState&,
+                                     const webf::CSSValue&,
+                                     webf::CSSProperty::ValueMode) const {}
+
+void TransitionDuration::ApplyInherit(webf::StyleResolverState&) const {}
+void TransitionDuration::ApplyInitial(webf::StyleResolverState&) const {}
+void TransitionDuration::ApplyValue(webf::StyleResolverState&,
+                                    const webf::CSSValue&,
+                                    webf::CSSProperty::ValueMode) const {}
+std::shared_ptr<const CSSValue> TransitionDuration::InitialValue() const {
+  thread_local static std::shared_ptr<const CSSValue> value =
+      (CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kSeconds));
+  return value;
+}
+
+void TextEmphasisStyle::ApplyInherit(webf::StyleResolverState&) const {}
+void TextEmphasisStyle::ApplyInitial(webf::StyleResolverState&) const {}
+void TextEmphasisStyle::ApplyValue(webf::StyleResolverState&,
+                                   const webf::CSSValue&,
+                                   webf::CSSProperty::ValueMode) const {}
+
+void BorderImageSource::ApplyInherit(webf::StyleResolverState&) const {}
+void BorderImageSource::ApplyInitial(webf::StyleResolverState&) const {}
+void BorderImageSource::ApplyValue(webf::StyleResolverState&,
+                                   const webf::CSSValue&,
+                                   webf::CSSProperty::ValueMode) const {}
+
+void BorderImageRepeat::ApplyInherit(webf::StyleResolverState&) const {}
+void BorderImageRepeat::ApplyInitial(webf::StyleResolverState&) const {}
+void BorderImageRepeat::ApplyValue(webf::StyleResolverState&,
+                                   const webf::CSSValue&,
+                                   webf::CSSProperty::ValueMode) const {}
+
+void BorderImageOutset::ApplyInherit(webf::StyleResolverState&) const {}
+void BorderImageOutset::ApplyInitial(webf::StyleResolverState&) const {}
+void BorderImageOutset::ApplyValue(webf::StyleResolverState&,
+                                   const webf::CSSValue&,
+                                   webf::CSSProperty::ValueMode) const {}
+
+void BorderImageWidth::ApplyInherit(webf::StyleResolverState&) const {}
+void BorderImageWidth::ApplyInitial(webf::StyleResolverState&) const {}
+void BorderImageWidth::ApplyValue(webf::StyleResolverState&,
+                                  const webf::CSSValue&,
+                                  webf::CSSProperty::ValueMode) const {}
+
+void BorderImageSlice::ApplyInherit(webf::StyleResolverState&) const {}
+void BorderImageSlice::ApplyInitial(webf::StyleResolverState&) const {}
+void BorderImageSlice::ApplyValue(webf::StyleResolverState&,
+                                  const webf::CSSValue&,
+                                  webf::CSSProperty::ValueMode) const {}
+
+void BackgroundRepeat::ApplyInherit(webf::StyleResolverState&) const {}
+void BackgroundRepeat::ApplyInitial(webf::StyleResolverState&) const {}
+void BackgroundRepeat::ApplyValue(webf::StyleResolverState&,
+                                  const webf::CSSValue&,
+                                  webf::CSSProperty::ValueMode) const {}
+
+void BackgroundOrigin::ApplyInherit(webf::StyleResolverState&) const {}
+void BackgroundOrigin::ApplyInitial(webf::StyleResolverState&) const {}
+void BackgroundOrigin::ApplyValue(webf::StyleResolverState&,
+                                  const webf::CSSValue&,
+                                  webf::CSSProperty::ValueMode) const {}
+
+void TransitionDelay::ApplyInherit(webf::StyleResolverState&) const {}
+void TransitionDelay::ApplyInitial(webf::StyleResolverState&) const {}
+void TransitionDelay::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {
+}
+
+std::shared_ptr<const CSSValue> TransitionDelay::InitialValue() const {
+  return nullptr;
+}
+
+void TextOrientation::ApplyInherit(webf::StyleResolverState&) const {}
+void TextOrientation::ApplyInitial(webf::StyleResolverState&) const {}
+void TextOrientation::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {
+}
+
+void BackgroundImage::ApplyInherit(webf::StyleResolverState&) const {}
+void BackgroundImage::ApplyInitial(webf::StyleResolverState&) const {}
+void BackgroundImage::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {
+}
+
+void BackgroundSize::ApplyInherit(webf::StyleResolverState&) const {}
+void BackgroundSize::ApplyInitial(webf::StyleResolverState&) const {}
+void BackgroundSize::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+
+void BackgroundClip::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+void BackgroundClip::ApplyInherit(webf::StyleResolverState&) const {}
+void BackgroundClip::ApplyInitial(webf::StyleResolverState&) const {}
+
+void VerticalAlign::ApplyInherit(webf::StyleResolverState&) const {}
+void VerticalAlign::ApplyInitial(webf::StyleResolverState&) const {}
+void VerticalAlign::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+
+void OutlineStyle::ApplyInherit(webf::StyleResolverState&) const {}
+void OutlineStyle::ApplyInitial(webf::StyleResolverState&) const {}
+void OutlineStyle::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+
+void WritingMode::ApplyInherit(webf::StyleResolverState&) const {}
+
+void ColorScheme::ApplyInitial(webf::StyleResolverState&) const {}
+void ColorScheme::ApplyInherit(webf::StyleResolverState&) const {}
+void ColorScheme::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+
+void TextIndent::ApplyInherit(webf::StyleResolverState&) const {}
+void TextIndent::ApplyInitial(webf::StyleResolverState&) const {}
+void TextIndent::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+
+void FontFamily::ApplyInitial(webf::StyleResolverState&) const {}
+void FontFamily::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+void FontFamily::ApplyInherit(webf::StyleResolverState&) const {}
 
 }  // namespace css_longhand
 }  // namespace webf

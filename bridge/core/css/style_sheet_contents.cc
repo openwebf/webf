@@ -243,25 +243,6 @@ StyleRuleBase* StyleSheetContents::RuleAt(unsigned int index) const {
   return child_rules_[index].get();
 }
 
-unsigned int StyleSheetContents::EstimatedSizeInBytes() const {
-  // Note that this does not take into account size of the strings hanging from
-  // various objects. The assumption is that nearly all of of them are atomic
-  // and would exist anyway.
-  unsigned size = sizeof(*this);
-
-  // FIXME: This ignores the children of media rules.
-  // Most rules are StyleRules.
-  size += RuleCount() * StyleRule::AverageSizeInBytes();
-
-  // TODO
-  //  for (unsigned i = 0; i < import_rules_.size(); ++i) {
-  //    if (StyleSheetContents* sheet = import_rules_[i]->GetStyleSheet()) {
-  //      size += sheet->EstimatedSizeInBytes();
-  //    }
-  //  }
-  return size;
-}
-
 bool StyleSheetContents::WrapperInsertRule(webf::StyleRuleBase*, unsigned int index) {
   return false;
 }

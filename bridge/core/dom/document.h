@@ -8,8 +8,8 @@
 #include "bindings/qjs/cppgc/local_handle.h"
 #include "container_node.h"
 #include "core/css/style_engine.h"
-#include "core/dom/document_lifecycle.h"
-#include "core/platform/url/kurl.h"
+//#include "core/dom/document_lifecycle.h"
+//#include "core/platform/url/kurl.h"
 #include "event_type_names.h"
 #include "foundation/macros.h"
 #include "scripted_animation_controller.h"
@@ -169,17 +169,17 @@ class Document : public ContainerNode, public TreeScope {
   StyleEngine& EnsureStyleEngine();
   bool IsForMarkupSanitization() const { return is_for_markup_sanitization_; }
 
-  DocumentLifecycle& Lifecycle() { return lifecycle_; }
-  const DocumentLifecycle& Lifecycle() const { return lifecycle_; }
-  bool IsActive() const { return lifecycle_.IsActive(); }
-  bool IsDetached() const {
-    return lifecycle_.GetState() >= DocumentLifecycle::kStopping;
-  }
-  bool IsStopped() const {
-    return lifecycle_.GetState() == DocumentLifecycle::kStopped;
-  }
+//  DocumentLifecycle& Lifecycle() { return lifecycle_; }
+//  const DocumentLifecycle& Lifecycle() const { return lifecycle_; }
+//  bool IsActive() const { return lifecycle_.IsActive(); }
+//  bool IsDetached() const {
+//    return lifecycle_.GetState() >= DocumentLifecycle::kStopping;
+//  }
+//  bool IsStopped() const {
+//    return lifecycle_.GetState() == DocumentLifecycle::kStopped;
+//  }
   bool InStyleRecalc() const;
-  bool InvalidationDisallowed() const;
+//  bool InvalidationDisallowed() const;
 
   bool ShouldScheduleLayoutTreeUpdate() const;
   void ScheduleLayoutTreeUpdate();
@@ -217,12 +217,12 @@ class Document : public ContainerNode, public TreeScope {
   // via layout/container-queries. That is: this function may return kNone,
   // and yet a subsequent layout may need to recalc container-query-dependent
   // styles.
-  StyleAndLayoutTreeUpdate CalculateStyleAndLayoutTreeUpdate() const;
+//  StyleAndLayoutTreeUpdate CalculateStyleAndLayoutTreeUpdate() const;
 
-  bool NeedsLayoutTreeUpdate() const {
-    return CalculateStyleAndLayoutTreeUpdate() !=
-           StyleAndLayoutTreeUpdate::kNone;
-  }
+//  bool NeedsLayoutTreeUpdate() const {
+//    return CalculateStyleAndLayoutTreeUpdate() !=
+//           StyleAndLayoutTreeUpdate::kNone;
+//  }
 
   void ScheduleLayoutTreeUpdateIfNeeded();
   // TODO(guopengfei)：
@@ -243,16 +243,16 @@ class Document : public ContainerNode, public TreeScope {
   // about:blank documents, which is the initiator's base URL at the time the
   // navigation was initiated. Separate from the base_url_* fields because the
   // fallback base URL should not take precedence over things like <base>.
-  KURL fallback_base_url_;
+//  KURL fallback_base_url_;
 
-  KURL base_element_url_;  // The URL set by the <base> element.
-  KURL cookie_url_;        // The URL to use for cookie access.
+//  KURL base_element_url_;  // The URL set by the <base> element.
+//  KURL cookie_url_;        // The URL to use for cookie access.
 
-  bool HasPendingVisualUpdate() const {
-    return lifecycle_.GetState() == DocumentLifecycle::kVisualUpdatePending;
-  }
-
-  DocumentLifecycle lifecycle_;
+//  bool HasPendingVisualUpdate() const {
+//    return lifecycle_.GetState() == DocumentLifecycle::kVisualUpdatePending;
+//  }
+//
+//  DocumentLifecycle lifecycle_;
 
   //HeapHashSet<WeakMember<const LiveNodeListBase>>
   //lists_invalidated_at_document_;
@@ -263,10 +263,10 @@ WEBF_DEFINE_COMPARISON_OPERATORS_WITH_REFERENCES(Document)
 
 inline void Document::ScheduleLayoutTreeUpdateIfNeeded() {
   // Inline early out to avoid the function calls below.
-  if (HasPendingVisualUpdate())
-    return;
-  if (ShouldScheduleLayoutTreeUpdate() && NeedsLayoutTreeUpdate())
-    ScheduleLayoutTreeUpdate();
+//  if (HasPendingVisualUpdate())
+//    return;
+//  if (ShouldScheduleLayoutTreeUpdate() && NeedsLayoutTreeUpdate())
+//    ScheduleLayoutTreeUpdate();
 }
 
 template <>

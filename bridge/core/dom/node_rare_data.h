@@ -83,11 +83,11 @@ class NodeRareData {
   };
 
   NodeRareData() = default;
-  virtual ~NodeRareData() = default;
+  ~NodeRareData() = default;
   NodeRareData(const NodeRareData&) = delete;
   NodeRareData& operator=(const NodeRareData&) = delete;
 
-  void ClearNodeLists() { node_lists_ == nullptr; }
+  void ClearNodeLists() { node_lists_ = nullptr; }
   NodeListsNodeData* NodeLists() const { return node_lists_.get(); }
   // EnsureNodeLists() and a following NodeListsNodeData functions must be
   // wrapped with a ThreadState::GCForbiddenScope in order to avoid an

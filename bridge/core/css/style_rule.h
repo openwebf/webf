@@ -303,10 +303,10 @@ class StyleRule : public StyleRuleBase {
         *this, flattened_size);
   }
 
-  static unsigned AverageSizeInBytes();
+//  static unsigned AverageSizeInBytes();
 
   // Helper function to avoid parsing lazy properties when not needed.
-  bool PropertiesHaveFailedOrCanceledSubresources() const;
+//  bool PropertiesHaveFailedOrCanceledSubresources() const;
 
   void TraceAfterDispatch(GCVisitor*) const;
 

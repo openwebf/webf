@@ -194,7 +194,6 @@ static inline bool IsColorPropertyID(CSSPropertyID property_id) {
       CSSPropertyID::kFloodColor,
       CSSPropertyID::kLightingColor,
       CSSPropertyID::kOutlineColor,
-      CSSPropertyID::kStopColor,
       CSSPropertyID::kBorderBlockEndColor,
       CSSPropertyID::kBorderBlockStartColor,
       CSSPropertyID::kBorderInlineEndColor,
@@ -1027,8 +1026,6 @@ bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(CSSPropertyID property_i
       return value_id == CSSValueID::kAuto || value_id == CSSValueID::kAlphabetic ||
              value_id == CSSValueID::kBaseline || value_id == CSSValueID::kMiddle || value_id == CSSValueID::kHanging ||
              (value_id >= CSSValueID::kBeforeEdge && value_id <= CSSValueID::kMathematical);
-    case CSSPropertyID::kBaselineSource:
-      return value_id == CSSValueID::kAuto || value_id == CSSValueID::kFirst || value_id == CSSValueID::kLast;
     case CSSPropertyID::kBorderCollapse:
       return value_id == CSSValueID::kCollapse || value_id == CSSValueID::kSeparate;
     case CSSPropertyID::kBorderTopStyle:
@@ -1082,8 +1079,6 @@ bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(CSSPropertyID property_i
 //      return value_id == CSSValueID::kNumericOnly || value_id == CSSValueID::kAllowKeywords;
     case CSSPropertyID::kIsolation:
       return value_id == CSSValueID::kAuto || value_id == CSSValueID::kIsolate;
-    case CSSPropertyID::kListStylePosition:
-      return value_id == CSSValueID::kInside || value_id == CSSValueID::kOutside;
     case CSSPropertyID::kMathShift:
       return value_id == CSSValueID::kNormal || value_id == CSSValueID::kCompact;
     case CSSPropertyID::kMathStyle:
@@ -1202,8 +1197,6 @@ bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(CSSPropertyID property_i
       return value_id == CSSValueID::kNowrap || value_id == CSSValueID::kWrap || value_id == CSSValueID::kWrapReverse;
     case CSSPropertyID::kFieldSizing:
       return value_id == CSSValueID::kFixed || value_id == CSSValueID::kContent;
-    case CSSPropertyID::kHyphens:
-      return value_id == CSSValueID::kNone || value_id == CSSValueID::kManual;
     case CSSPropertyID::kJustifyContent:
       // FIXME: Per CSS alignment, this property should accept an optional
       // <overflow-position>. We should share this parsing code with
@@ -1276,7 +1269,6 @@ CSSBitset CSSParserFastPaths::handled_by_keyword_fast_paths_properties_{{
     CSSPropertyID::kAlignmentBaseline,
     CSSPropertyID::kMixBlendMode,
     CSSPropertyID::kIsolation,
-    CSSPropertyID::kBaselineSource,
     CSSPropertyID::kBorderBottomStyle,
     CSSPropertyID::kBorderCollapse,
     CSSPropertyID::kBorderLeftStyle,
@@ -1298,9 +1290,7 @@ CSSBitset CSSParserFastPaths::handled_by_keyword_fast_paths_properties_{{
     CSSPropertyID::kFloat,
     CSSPropertyID::kFieldSizing,
     CSSPropertyID::kForcedColorAdjust,
-    CSSPropertyID::kHyphens,
     CSSPropertyID::kImageRendering,
-    CSSPropertyID::kListStylePosition,
     CSSPropertyID::kMathShift,
     CSSPropertyID::kMathStyle,
     CSSPropertyID::kObjectFit,

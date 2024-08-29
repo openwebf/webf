@@ -197,21 +197,21 @@ public:
       unsigned min_direct_adjacent) const;
 
   // TODO: Document.
-  void CollectUniversalSiblingInvalidationSet(
-      InvalidationLists&,
-      unsigned min_direct_adjacent) const;
-  void CollectNthInvalidationSet(InvalidationLists&) const;
-  void CollectPartInvalidationSet(InvalidationLists&) const;
+//  void CollectUniversalSiblingInvalidationSet(
+//      InvalidationLists&,
+//      unsigned min_direct_adjacent) const;
+//  void CollectNthInvalidationSet(InvalidationLists&) const;
+//  void CollectPartInvalidationSet(InvalidationLists&) const;
 
   // Quick tests for whether we need to consider :has() invalidation.
-  bool NeedsHasInvalidationForClass(const AtomicString& class_name) const;
-  bool NeedsHasInvalidationForAttribute(
-      const QualifiedName& attribute_name) const;
-  bool NeedsHasInvalidationForId(const AtomicString& id) const;
-  bool NeedsHasInvalidationForTagName(const AtomicString& tag_name) const;
-  bool NeedsHasInvalidationForInsertedOrRemovedElement(Element&) const;
-  bool NeedsHasInvalidationForPseudoClass(
-      CSSSelector::PseudoType pseudo_type) const;
+//  bool NeedsHasInvalidationForClass(const AtomicString& class_name) const;
+//  bool NeedsHasInvalidationForAttribute(
+//      const QualifiedName& attribute_name) const;
+//  bool NeedsHasInvalidationForId(const AtomicString& id) const;
+//  bool NeedsHasInvalidationForTagName(const AtomicString& tag_name) const;
+//  bool NeedsHasInvalidationForInsertedOrRemovedElement(Element&) const;
+//  bool NeedsHasInvalidationForPseudoClass(
+//      CSSSelector::PseudoType pseudo_type) const;
 
   inline bool NeedsHasInvalidationForClassChange() const {
     return !classes_in_has_argument_.empty();

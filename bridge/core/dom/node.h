@@ -358,20 +358,20 @@ class Node : public EventTarget {
   // This is to trigger layout tree re-attachment when we cannot detect that we
   // need to re-attach based on the computed style changes. This can happen when
   // re-slotting shadow host children, for instance.
-  void SetForceReattachLayoutTree();
-  bool GetForceReattachLayoutTree() const {
-    return GetFlag(kForceReattachLayoutTree);
-  }
+//  void SetForceReattachLayoutTree();
+//  bool GetForceReattachLayoutTree() const {
+//    return GetFlag(kForceReattachLayoutTree);
+//  }
 
-  bool NeedsLayoutSubtreeUpdate() const;
-  bool NeedsWhitespaceChildrenUpdate() const;
-  bool IsDirtyForStyleRecalc() const {
-    return NeedsStyleRecalc() || GetForceReattachLayoutTree() ||
-           NeedsLayoutSubtreeUpdate();
-  }
-  bool IsDirtyForRebuildLayoutTree() const {
-    return NeedsReattachLayoutTree() || NeedsLayoutSubtreeUpdate();
-  }
+//  bool NeedsLayoutSubtreeUpdate() const;
+//  bool NeedsWhitespaceChildrenUpdate() const;
+//  bool IsDirtyForStyleRecalc() const {
+//    return NeedsStyleRecalc() || GetForceReattachLayoutTree() ||
+//           NeedsLayoutSubtreeUpdate();
+//  }
+//  bool IsDirtyForRebuildLayoutTree() const {
+//    return NeedsReattachLayoutTree() || NeedsLayoutSubtreeUpdate();
+//  }
 
   bool NeedsReattachLayoutTree() const {
     return GetFlag(kNeedsReattachLayoutTree);
@@ -404,7 +404,7 @@ class Node : public EventTarget {
   // but in node_computed_style.h. Please include that file if you want to use
   // this function.
   inline const ComputedStyle* GetComputedStyle() const;
-  bool ShouldSkipMarkingStyleDirty() const;
+//  bool ShouldSkipMarkingStyleDirty() const;
 
   // True if the style invalidation process should traverse this node's children
   // when looking for pending invalidations.

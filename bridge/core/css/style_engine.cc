@@ -136,39 +136,39 @@ void StyleEngine::Trace(GCVisitor* visitor) {
 
 void StyleEngine::UpdateStyleInvalidationRoot(ContainerNode* ancestor,
                                               Node* dirty_node) {
-  if (GetDocument().IsActive()) {
-    if (InDOMRemoval()) {
-      ancestor = nullptr;
-      dirty_node = document_;
-    }
-    style_invalidation_root_.Update(ancestor, dirty_node);
-  }
+//  if (GetDocument().IsActive()) {
+//    if (InDOMRemoval()) {
+//      ancestor = nullptr;
+//      dirty_node = document_;
+//    }
+//    style_invalidation_root_.Update(ancestor, dirty_node);
+//  }
 }
 
 void StyleEngine::UpdateStyleRecalcRoot(ContainerNode* ancestor,
                                         Node* dirty_node) {
-  if (!GetDocument().IsActive()) {
-    return;
-  }
+//  if (!GetDocument().IsActive()) {
+//    return;
+//  }
   // We have at least one instance where we mark style dirty from style recalc
   // (from LayoutTextControl::StyleDidChange()). That means we are in the
   // process of traversing down the tree from the recalc root. Any updates to
   // the style recalc root will be cleared after the style recalc traversal
   // finishes and updating it may just trigger sanity DCHECKs in
   // StyleTraversalRoot. Just return here instead.
-  if (GetDocument().InStyleRecalc()) {
-    assert(allow_mark_style_dirty_from_recalc_);
-    return;
-  }
-  assert(!InRebuildLayoutTree());
-  if (InDOMRemoval()) {
-    ancestor = nullptr;
-    dirty_node = document_;
-  }
+//  if (GetDocument().InStyleRecalc()) {
+//    assert(allow_mark_style_dirty_from_recalc_);
+//    return;
+//  }
+//  assert(!InRebuildLayoutTree());
+//  if (InDOMRemoval()) {
+//    ancestor = nullptr;
+//    dirty_node = document_;
+//  }
 // #if DCHECK_IS_ON()
 //   DCHECK(!dirty_node || DisplayLockUtilities::AssertStyleAllowed(*dirty_node));
 // #endif
-  style_recalc_root_.Update(ancestor, dirty_node);
+//  style_recalc_root_.Update(ancestor, dirty_node);
 }
 /* // TODO(guopengfei)：先注释，暂不支持Layout
 void StyleEngine::UpdateLayoutTreeRebuildRoot(ContainerNode* ancestor,
@@ -209,10 +209,10 @@ void PossiblyScheduleNthPseudoInvalidations(webf::Node& node) {
 }
 
 void StyleEngine::ScheduleNthPseudoInvalidations(ContainerNode& nth_parent) {
-  InvalidationLists invalidation_lists;
-  GetRuleFeatureSet().CollectNthInvalidationSet(invalidation_lists);
-  pending_invalidations_.ScheduleInvalidationSetsForNode(invalidation_lists,
-                                                         nth_parent);
+//  InvalidationLists invalidation_lists;
+//  GetRuleFeatureSet().CollectNthInvalidationSet(invalidation_lists);
+//  pending_invalidations_.ScheduleInvalidationSetsForNode(invalidation_lists,
+//                                                         nth_parent);
 }
 
 bool StyleEngine::MarkReattachAllowed() const {
@@ -227,8 +227,8 @@ bool StyleEngine::MarkStyleDirtyAllowed() const {
   return !InRebuildLayoutTree();
 }
 
-const HeapVector<Member<StyleSheet>>& StyleEngine::StyleSheetsForStyleSheetList(
-    TreeScope& tree_scope) {
+//const HeapVector<Member<StyleSheet>>& StyleEngine::StyleSheetsForStyleSheetList(
+//    TreeScope& tree_scope) {
   /* // TODO(guopengfei)：注释Sheet相关
   assert(document_);
   TreeScopeStyleSheetCollection& collection =
@@ -238,7 +238,7 @@ const HeapVector<Member<StyleSheet>>& StyleEngine::StyleSheetsForStyleSheetList(
   }
   return collection.StyleSheetsForStyleSheetList();
   */
-}
+//}
 
 }  // namespace webf
 

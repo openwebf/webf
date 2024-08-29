@@ -762,12 +762,6 @@ DOMTokenList* Element::GetPart() const {
 // }
 
 const AtomicString& Element::ShadowPseudoId() const {
-  // TODO(guopengfei)：未迁移ShadowRoot
-  // if (ShadowRoot* root = ContainingShadowRoot()) {
-  //   if (root->IsUserAgent()) {
-  //     return FastGetAttribute(html_names::kPseudoAttr);
-  //   }
-  // }
   return AtomicString::Null();
 }
 

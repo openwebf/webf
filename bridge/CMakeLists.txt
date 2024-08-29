@@ -307,7 +307,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/style_sheet_contents.cc
     core/css/css_style_sheet.cc
     core/css/style_rule_import.cc
-    core/css/style_recalc_root.cc
+#    core/css/style_recalc_root.cc
     core/css/style_sheet.cc
     core/css/parser/css_parser.cc
     core/css/parser/css_parser_context.cc
@@ -393,6 +393,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 
     core/platform/text/writing_mode.cc
     core/platform/text/text_stream.cc
+    core/platform/text/text_direction.cc
     core/platform/text/writing_direction_mode.cc
     core/platform/text/string_statics.cc
     core/platform/graphics/color.cc
@@ -446,6 +447,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/static_node_list.cc
     core/dom/node_traversal.cc
     core/dom/live_node_list_base.cc
+    core/dom/live_node_list.cc
     core/dom/character_data.cc
     core/dom/comment.cc
     core/dom/text.cc
@@ -514,10 +516,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_textarea_element.cc
 
     # css invalidation
-    core/css/invalidation/invalidation_flags.cc
-    core/css/invalidation/invalidation_set.cc
-    core/css/invalidation/pending_invalidations.cc
-    core/css/invalidation/style_invalidator.cc
+#    core/css/invalidation/invalidation_flags.cc
+#    core/css/invalidation/invalidation_set.cc
+#    core/css/invalidation/pending_invalidations.cc
+#    core/css/invalidation/style_invalidator.cc
 
     # SVG files
     core/svg/svg_element.cc

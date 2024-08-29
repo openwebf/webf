@@ -38,7 +38,7 @@ Document* Document::Create(ExecutingContext* context, ExceptionState& exception_
 
 Document::Document(ExecutingContext* context)
     : ContainerNode(context, this, ConstructionType::kCreateDocument), TreeScope(*this) {
-  lifecycle_.AdvanceTo(DocumentLifecycle::kInactive);
+//  lifecycle_.AdvanceTo(DocumentLifecycle::kInactive);
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCreateDocument, nullptr, bindingObject(), nullptr);
 }
 
@@ -523,26 +523,27 @@ StyleEngine& Document::EnsureStyleEngine() {
 }
 
 bool Document::InStyleRecalc() const {
-  return lifecycle_.GetState() == DocumentLifecycle::kInStyleRecalc ||
-         style_engine_->InContainerQueryStyleRecalc() ||
-         style_engine_->InPositionTryStyleRecalc() ||
-         style_engine_->InEnsureComputedStyle();
+//  return lifecycle_.GetState() == DocumentLifecycle::kInStyleRecalc ||
+//         style_engine_->InContainerQueryStyleRecalc() ||
+//         style_engine_->InPositionTryStyleRecalc() ||
+//         style_engine_->InEnsureComputedStyle();
+return false;
 }
 
 bool Document::ShouldScheduleLayoutTreeUpdate() const {
-  if (!IsActive())
-    return false;
-  if (InStyleRecalc())
-    return false;
-  if (lifecycle_.GetState() == DocumentLifecycle::kInPerformLayout)
-    return false;
+//  if (!IsActive())
+//    return false;
+//  if (InStyleRecalc())
+//    return false;
+//  if (lifecycle_.GetState() == DocumentLifecycle::kInPerformLayout)
+//    return false;
   return true;
 }
 
 void Document::ScheduleLayoutTreeUpdate() {
-  assert(!HasPendingVisualUpdate());
+//  assert(!HasPendingVisualUpdate());
   assert(ShouldScheduleLayoutTreeUpdate());
-  assert(NeedsLayoutTreeUpdate());
+//  assert(NeedsLayoutTreeUpdate());
   /* // TODO(guopengfei)：
   if (!View()->CanThrottleRendering() && ShouldScheduleLayout()) {
     GetPage()->Animator().ScheduleVisualUpdate(GetFrame());

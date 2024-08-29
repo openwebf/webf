@@ -40,7 +40,7 @@
 #include "core/css/invalidation/pending_invalidations.h"
 //#include "core/css/layout_tree_rebuild_root.h"
 //#include "core/css/resolver/style_resolver.h"
-#include "core/css/style_invalidation_root.h"
+//#include "core/css/style_invalidation_root.h"
 #include "core/css/style_recalc_root.h"
 #include "core/dom/element.h"
 #include "core/platform/text/text_position.h"
@@ -117,8 +117,8 @@ class StyleEngine final {
    return global_rule_set_->GetRuleFeatureSet();
   }
 
- const HeapVector<Member<StyleSheet>>& StyleSheetsForStyleSheetList(
-    TreeScope&);
+// const HeapVector<Member<StyleSheet>>& StyleSheetsForStyleSheetList(
+//    TreeScope&);
 
  private:
   Member<Document> document_;
@@ -155,8 +155,8 @@ class StyleEngine final {
 
   PendingInvalidations pending_invalidations_;
 
-  StyleInvalidationRoot style_invalidation_root_;
-  StyleRecalcRoot style_recalc_root_;
+//  StyleInvalidationRoot style_invalidation_root_;
+//  StyleRecalcRoot style_recalc_root_;
   // TODO(guopengfei)：先注释
   // LayoutTreeRebuildRoot layout_tree_rebuild_root_;
 

@@ -74,7 +74,7 @@ function convertAndSetValue(property: PropertyBase) {
 
 function styleBuilderFunction(property: PropertyBase) {
   if (!property.style_builder_template) {
-    concat(
+    return concat(
       applyInitial(property, (property) => {
         let str1: string = '';
         if (property.font) {

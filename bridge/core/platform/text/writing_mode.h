@@ -37,6 +37,7 @@
 
 #include <cstdint>
 #include <iosfwd>
+#include <ostream>
 
 namespace webf {
 

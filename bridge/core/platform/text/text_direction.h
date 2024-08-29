@@ -30,6 +30,7 @@
 #ifndef WEBF_TEXT_DIRECTION_H
 #define WEBF_TEXT_DIRECTION_H
 
+#include <cassert>
 #include <cstdint>
 #include <iosfwd>
 #include "foundation/macros.h"

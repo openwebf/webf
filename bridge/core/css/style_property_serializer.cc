@@ -381,7 +381,6 @@ static bool AllowInitialInShorthand(CSSPropertyID property_id) {
     case CSSPropertyID::kGridRow:
     case CSSPropertyID::kGridArea:
     case CSSPropertyID::kGap:
-    case CSSPropertyID::kListStyle:
     case CSSPropertyID::kTextDecoration:
     case CSSPropertyID::kTextEmphasis:
     case CSSPropertyID::kWhiteSpace:
@@ -578,8 +577,6 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
       return TextDecorationValue();
     case CSSPropertyID::kTransition:
       return GetLayeredShorthandValue(transitionShorthand());
-    case CSSPropertyID::kListStyle:
-      return GetShorthandValue(listStyleShorthand());
     case CSSPropertyID::kTextEmphasis:
       return GetShorthandValue(textEmphasisShorthand());
     case CSSPropertyID::kMarker: {

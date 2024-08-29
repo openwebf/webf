@@ -2024,19 +2024,6 @@
       ],
     },
     {
-      name: "-webkit-locale",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      font: true,
-      style_builder_custom_functions: [
-        "value"
-      ],
-      priority: 1,
-    },
-    {
       name: "text-orientation",
       property_methods: [
         /* "CSSValueFromComputedStyleInternal" */
@@ -2511,7 +2498,7 @@
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+        /* "ColorIncludingFallback" */
       ],
       interpolable: true,
       compositable: true,
@@ -2687,62 +2674,13 @@
       supports_incremental_style: true,
       valid_for_page_context: true,
     },
-    {
-      name: "baseline-shift",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      field_group: "svg->misc",
-      field_template: "external",
-      type_name: "Length",
-      default_value: "Length::Fixed()",
-      style_builder_custom_functions: [
-        "inherit",
-        "value"
-      ],
-      keywords: [
-        "baseline",
-        "sub",
-        "super"
-      ],
-      typedom_types: [
-        "Keyword",
-        "Percentage",
-        "Length"
-      ],
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "baseline-source",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "box",
-      field_template: "keyword",
-      default_value: "auto",
-      keywords: [
-        "auto",
-        "first",
-        "last"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      invalidate: [
-        "layout"
-      ],
-    },
+
     {
       name: "border-bottom-color",
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+        /* "ColorIncludingFallback" */
       ],
       interpolable: true,
       field_group: "surround",
@@ -3061,7 +2999,7 @@
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+        /* "ColorIncludingFallback" */
       ],
       interpolable: true,
       field_group: "surround",
@@ -3177,7 +3115,7 @@
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+        /* "ColorIncludingFallback" */
       ],
       interpolable: true,
       field_group: "surround",
@@ -3293,7 +3231,7 @@
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+        /* "ColorIncludingFallback" */
       ],
       interpolable: true,
       field_group: "surround",
@@ -3697,7 +3635,7 @@
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+        /* "ColorIncludingFallback" */
       ],
       interpolable: true,
       inherited: true,
@@ -4444,7 +4382,7 @@
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+        /* "ColorIncludingFallback" */
       ],
       interpolable: true,
       field_group: "svg->misc",
@@ -4812,29 +4750,6 @@
       ],
     },
     {
-      name: "hyphenate-limit-chars",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      field_group: "*",
-      field_template: "external",
-      keywords: [
-        "auto"
-      ],
-      type_name: "StyleHyphenateLimitChars",
-      default_value: "StyleHyphenateLimitChars()",
-      include_paths: [
-        "third_party/blink/renderer/core/style/style_hyphenate_limit_chars.h"
-      ],
-      converter: "ConvertHyphenateLimitChars",
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
       name: "popover-show-delay",
       runtime_flag: "HTMLPopoverActionHover",
       property_methods: [
@@ -4869,30 +4784,6 @@
       converter: "ConvertTimeValue",
       default_value: "HUGE_VALF",
       supports_incremental_style: true,
-    },
-    {
-      name: "hyphens",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      field_group: "*",
-      field_template: "keyword",
-      keywords: [
-        "none",
-        "manual",
-        "auto"
-      ],
-      default_value: "manual",
-      type_name: "Hyphens",
-      typedom_types: [
-        "Keyword"
-      ],
-      valid_for_marker: true,
-      invalidate: [
-        "layout",
-        "paint"
-      ],
     },
     {
       name: "image-rendering",
@@ -5103,7 +4994,7 @@
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+        /* "ColorIncludingFallback" */
       ],
       interpolable: true,
       field_group: "svg->misc",
@@ -5159,92 +5050,6 @@
       valid_for_marker: true,
       valid_for_page_context: true,
       affected_by_zoom: true,
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "list-style-image",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      inherited: true,
-      field_group: "*",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/style/style_image.h"
-      ],
-      wrapper_pointer_name: "Member",
-      default_value: "nullptr",
-      typedom_types: [
-        "Keyword",
-        "Image"
-      ],
-      type_name: "StyleImage",
-      style_builder_custom_functions: [
-        "value"
-      ],
-      keywords: [
-        "none"
-      ],
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-      affected_by_zoom: true,
-    },
-    {
-      name: "list-style-position",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      independent: true,
-      inherited: true,
-      field_template: "keyword",
-      keywords: [
-        "outside",
-        "inside"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      default_value: "outside",
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "list-style-type",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      field_group: "*",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/keywords.h",
-        "third_party/blink/renderer/core/style/list_style_type_data.h"
-      ],
-      wrapper_pointer_name: "Member",
-      default_value: "ListStyleTypeData::CreateCounterStyle(keywords::kDisc, nullptr)",
-      type_name: "ListStyleTypeData",
-      keywords: [
-        "disc",
-        "circle",
-        "square",
-        "disclosure-open",
-        "disclosure-closed",
-        "decimal",
-        "none"
-      ],
-      style_builder_custom_functions: [
-        "value"
-      ],
       invalidate: [
         "layout",
         "paint"
@@ -5987,7 +5792,7 @@
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+        /* "ColorIncludingFallback" */
       ],
       interpolable: true,
       field_group: "*",
@@ -6554,38 +6359,6 @@
       ],
     },
     {
-      name: "position-try-fallbacks",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      style_builder_custom_functions: [
-        "value"
-      ],
-      field_group: "*",
-      field_template: "external",
-      keywords: [
-        "none",
-        "flip-block",
-        "flip-inline",
-        "flip-start"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      include_paths: [
-        "third_party/blink/renderer/core/style/position_try_fallbacks.h"
-      ],
-      wrapper_pointer_name: "Member",
-      type_name: "PositionTryFallbacks",
-      default_value: "nullptr",
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-      runtime_flag: "CSSPositionTryFallbacks",
-    },
-    {
       name: "quotes",
       property_methods: [
         "ParseSingleValue",
@@ -6732,39 +6505,39 @@
       ],
       default_value: "normal",
     },
-    {
-      name: "stop-color",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
-      ],
-      interpolable: true,
-      field_group: "svg->stop",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor(Color::kBlack)",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      style_builder_template: "color",
-      style_builder_template_args: {
-        initial_color: "ComputedStyleInitialValues::InitialStopColor",
-      },
-      converter: "ConvertStyleColor",
-      keywords: [
-        "currentcolor"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      invalidate: [
-        "paint"
-      ],
-    },
+//    {
+//      name: "stop-color",
+//      property_methods: [
+//        "ParseSingleValue",
+//        /* "CSSValueFromComputedStyleInternal", */
+//        /* "ColorIncludingFallback" */
+//      ],
+//      interpolable: true,
+//      field_group: "svg->stop",
+//      field_template: "external",
+//      include_paths: [
+//        "third_party/blink/renderer/core/css/style_color.h"
+//      ],
+//      default_value: "StyleColor(Color::kBlack)",
+//      type_name: "StyleColor",
+//      computed_style_protected_functions: [
+//        "getter"
+//      ],
+//      style_builder_template: "color",
+//      style_builder_template_args: {
+//        initial_color: "ComputedStyleInitialValues::InitialStopColor",
+//      },
+//      converter: "ConvertStyleColor",
+//      keywords: [
+//        "currentcolor"
+//      ],
+//      typedom_types: [
+//        "Keyword"
+//      ],
+//      invalidate: [
+//        "paint"
+//      ],
+//    },
     {
       name: "stop-opacity",
       property_methods: [
@@ -6991,7 +6764,7 @@
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+        /* "ColorIncludingFallback" */
       ],
       interpolable: true,
       field_group: "*",
@@ -7793,7 +7566,7 @@
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+        /* "ColorIncludingFallback" */
       ],
       interpolable: true,
       field_group: "*",
@@ -8021,7 +7794,7 @@
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+        /* "ColorIncludingFallback" */
       ],
       interpolable: true,
       inherited: true,
@@ -9642,18 +9415,6 @@
       ],
       valid_for_position_try: true,
       layout_dependent: false,
-    },
-    {
-      name: "list-style",
-      longhands: [
-        "list-style-position",
-        "list-style-image",
-        "list-style-type"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
     },
     {
       name: "margin",

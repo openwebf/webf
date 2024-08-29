@@ -44,9 +44,9 @@ const char* <%= class_name %>::GetJSPropertyName() const {
 
   <% if (!is_alias) { %>
 
-    <% if (property.surrogateFor) { %>
+    <% if (property.surrogate_for) { %>
 const CSSProperty* <%= class_name %>::SurrogateFor(WritingDirectionMode) const {
-  return &GetCSSProperty<%= upperCamelCase(property.surrogateFor.name) %>();
+  return &GetCSSProperty<%= upperCamelCase(property.surrogate_for.name) %>();
 }
     <% } %>
     <% if (property.logical_property_group) { %>

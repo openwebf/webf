@@ -50,7 +50,7 @@ struct HashTraits<AtomicString> : SimpleClassHashTraits<AtomicString> {
   // empty value (g_null_atom).
   typedef const AtomicString& PeekOutType;
 
-  static const AtomicString& EmptyValue() { return AtomicString::Empty(); }
+  static const AtomicString EmptyValue() { return AtomicString::Empty(); }
   static PeekOutType Peek(const AtomicString& value) { return value; }
 
   static bool IsEmptyValue(const AtomicString& value) { return value.IsNull(); }
