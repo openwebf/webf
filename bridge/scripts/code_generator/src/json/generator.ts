@@ -1,7 +1,7 @@
 import {JSONBlob} from './JSONBlob';
 import {JSONTemplate} from './JSONTemplate';
 import _ from 'lodash';
-import {lowerCamelCase, upperCamelCase} from "./name_utiltities";
+import {enumKeyForCSSKeywords, lowerCamelCase, upperCamelCase} from "./name_utiltities";
 
 function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[], options: GenerateJSONOptions = {}): string {
   let compiled = _.template(template.raw);
@@ -17,14 +17,6 @@ function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');
-}
-
-
-function enumKeyForCSSKeywords(keyword: any) {
-  if (keyword === '-infinity') {
-    return 'kNegative' + upperCamelCase(keyword);
-  }
-  return 'k' + upperCamelCase(keyword);
 }
 
 function generateBody(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[], options: GenerateJSONOptions = {}): string {

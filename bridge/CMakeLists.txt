@@ -315,6 +315,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_lazy_parsing_state.cc
     core/css/parser/css_parser_token.cc
     core/css/parser/css_parser_fast_path.cc
+    core/css/parser/font_variant_alternates_parser.cc
     core/css/parser/css_parser_token_range.cc
     core/css/parser/css_parser_token_stream.cc
     core/css/parser/css_tokenizer.cc
@@ -327,14 +328,23 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/properties/css_color_function_parser.cc
     core/css/css_rule.cc
     core/css/css_value.cc
+    core/css/css_content_distribution_value.cc
+    core/css/css_reflect_value.cc
+    core/css/css_border_image.cc
+    core/css/css_axis_value.cc
     core/css/properties/longhand.cc
-#    core/css/properties/shorthands/shorthands_custom.cc
+    core/css/properties/shorthands/shorthands_custom.cc
+    core/css/properties/longhands/longhands_custom.cc
     core/css/abstract_property_set_css_style_declaration.cc
     core/css/property_set_css_style_declaration.cc
     core/css/style_rule.cc
     core/css/css_property_value_set.cc
     core/css/css_property_name.cc
     core/css/css_property_value.cc
+    core/css/css_quad_value.cc
+    core/css/css_shadow_value.cc
+    core/css/css_font_style_range_value.cc
+    core/css/css_border_image_slice_value.cc
     core/css/css_primitive_value.cc
     core/css/css_image_value.cc
     core/css/css_image_generator_value.cc
@@ -348,6 +358,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_numeric_literal_value.cc
     core/css/css_math_expression_node.cc
     core/css/css_ray_value.cc
+    core/css/css_grid_auto_repeat_value.cc
+    core/css/css_grid_integer_repeat_value.cc
+    core/css/css_grid_template_areas_value.cc
     core/css/css_scroll_value.cc
     core/css/css_basic_shape_value.cc
     core/css/css_math_function_value.cc
@@ -375,6 +388,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/anchor_query.h
     core/css/css_length_resolver.cc
     core/style/scoped_css_name.cc
+    core/style/grid_area.h
 
     core/platform/text/writing_mode.cc
     core/platform/text/text_stream.cc
@@ -525,22 +539,22 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/input/touch_list.cc
     core/css/css_timing_function_value.cc
     core/platform/animation/timing_function.cc
-    gfx/animation/keyframe/timing_function.cc
-    gfx/geometry/cubic_bezier.cc
-    gfx/geometry/point_conversions.cc
-    gfx/geometry/point.cc
-    gfx/geometry/point_f.cc
-    gfx/geometry/size.cc
-    gfx/geometry/size_f.cc
-    gfx/geometry/vector2d.cc
-    gfx/geometry/vector2d_f.cc
-    gfx/geometry/insets.cc
-    gfx/geometry/insets_conversions.cc
-    gfx/geometry/insets_f.cc
-    gfx/geometry/rect.cc
-    gfx/geometry/rect_f.cc
-    gfx/geometry/rect_conversions.cc
-    gfx/geometry/size_conversions.cc
+    core/platform/gfx/animation/keyframe/timing_function.cc
+    core/platform/gfx/geometry/cubic_bezier.cc
+    core/platform/gfx/geometry/point_conversions.cc
+    core/platform/gfx/geometry/point.cc
+    core/platform/gfx/geometry/point_f.cc
+    core/platform/gfx/geometry/size.cc
+    core/platform/gfx/geometry/size_f.cc
+    core/platform/gfx/geometry/vector2d.cc
+    core/platform/gfx/geometry/vector2d_f.cc
+    core/platform/gfx/geometry/insets.cc
+    core/platform/gfx/geometry/insets_conversions.cc
+    core/platform/gfx/geometry/insets_f.cc
+    core/platform/gfx/geometry/rect.cc
+    core/platform/gfx/geometry/rect_f.cc
+    core/platform/gfx/geometry/rect_conversions.cc
+    core/platform/gfx/geometry/size_conversions.cc
 
     )
 

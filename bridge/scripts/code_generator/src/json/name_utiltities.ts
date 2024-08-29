@@ -16,6 +16,13 @@ export function idForCssPropertyAlias(propertyName: string) {
   return 'CSSPropertyAlias' + upperCamelCase(propertyName);
 }
 
+export function enumKeyForCSSKeywords(keyword: any) {
+  if (keyword === '-infinity') {
+    return 'kNegative' + upperCamelCase(keyword);
+  }
+  return 'k' + upperCamelCase(keyword);
+}
+
 export function enumKeyForCssPropertyAlias(propertyName: string) {
   return 'kAlias' + upperCamelCase(propertyName);
 }

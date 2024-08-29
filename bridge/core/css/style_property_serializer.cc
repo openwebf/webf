@@ -592,8 +592,6 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
       return GetLayeredShorthandValue(maskShorthand());
     case CSSPropertyID::kTextEmphasis:
       return GetShorthandValue(textEmphasisShorthand());
-    case CSSPropertyID::kTextSpacing:
-      return TextSpacingValue();
     case CSSPropertyID::kWebkitTextStroke:
       return GetShorthandValue(webkitTextStrokeShorthand());
     case CSSPropertyID::kMarker: {
@@ -608,30 +606,12 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
     }
     case CSSPropertyID::kBorderRadius:
       return BorderRadiusValue();
-    case CSSPropertyID::kScrollPadding:
-      return Get4Values(scrollPaddingShorthand());
-    case CSSPropertyID::kScrollPaddingBlock:
-      return Get2Values(scrollPaddingBlockShorthand());
-    case CSSPropertyID::kScrollPaddingInline:
-      return Get2Values(scrollPaddingInlineShorthand());
-    case CSSPropertyID::kScrollMargin:
-      return Get4Values(scrollMarginShorthand());
-    case CSSPropertyID::kScrollMarginBlock:
-      return Get2Values(scrollMarginBlockShorthand());
-    case CSSPropertyID::kScrollMarginInline:
-      return Get2Values(scrollMarginInlineShorthand());
-    case CSSPropertyID::kScrollTimeline:
-      return ScrollTimelineValue();
     case CSSPropertyID::kPageBreakAfter:
       return PageBreakPropertyValue(pageBreakAfterShorthand());
     case CSSPropertyID::kPageBreakBefore:
       return PageBreakPropertyValue(pageBreakBeforeShorthand());
     case CSSPropertyID::kPageBreakInside:
       return PageBreakPropertyValue(pageBreakInsideShorthand());
-    case CSSPropertyID::kViewTimeline:
-      return ViewTimelineValue();
-//    case CSSPropertyID::kWhiteSpace:
-//      return WhiteSpaceValue();
     case CSSPropertyID::kWebkitColumnBreakAfter:
     case CSSPropertyID::kWebkitColumnBreakBefore:
     case CSSPropertyID::kWebkitColumnBreakInside:
@@ -639,12 +619,6 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
       // Temporary exceptions to the NOTREACHED() below.
       // TODO(crbug.com/1316689): Write something real here.
       return std::string();
-    case CSSPropertyID::kScrollStart:
-      return ScrollStartValue();
-    case CSSPropertyID::kScrollStartTarget:
-      return ScrollStartTargetValue();
-    case CSSPropertyID::kPositionTry:
-      return PositionTryValue();
     default:
       assert(false);
       return std::string();
@@ -850,21 +824,6 @@ std::string StylePropertySerializer::TimelineValue(const StylePropertyShorthand&
   }
 
   return list->CssText();
-}
-
-std::string StylePropertySerializer::ScrollTimelineValue() const {
-  assert(scrollTimelineShorthand().length() == 2u);
-  assert(scrollTimelineShorthand().properties()[0] == &GetCSSPropertyScrollTimelineName());
-  assert(scrollTimelineShorthand().properties()[1] == &GetCSSPropertyScrollTimelineAxis());
-  return TimelineValue(scrollTimelineShorthand());
-}
-
-std::string StylePropertySerializer::ViewTimelineValue() const {
-  assert(viewTimelineShorthand().length() == 3u);
-  assert(viewTimelineShorthand().properties()[0] == &GetCSSPropertyViewTimelineName());
-  assert(viewTimelineShorthand().properties()[1] == &GetCSSPropertyViewTimelineAxis());
-  assert(viewTimelineShorthand().properties()[2] == &GetCSSPropertyViewTimelineInset());
-  return TimelineValue(viewTimelineShorthand());
 }
 
 namespace {
@@ -2024,136 +1983,6 @@ std::string StylePropertySerializer::ContainIntrinsicSizeValue() const {
   }
   // Otherwise just serialize them in sequence.
   return GetShorthandValue(containIntrinsicSizeShorthand());
-}
-
-std::string StylePropertySerializer::TextSpacingValue() const {
-  const auto* autospace_value =
-      DynamicTo<CSSIdentifierValue>(property_set_.GetPropertyCSSValue(GetCSSPropertyTextAutospace()).get());
-  assert(autospace_value);
-  const auto* spacing_trim_value =
-      DynamicTo<CSSIdentifierValue>(property_set_.GetPropertyCSSValue(GetCSSPropertyTextSpacingTrim()).get());
-  assert(spacing_trim_value);
-
-  // Check if longhands are one of pre-defined keywords.
-  const CSSValueID autospace_id = autospace_value->GetValueID();
-  const CSSValueID spacing_trim_id = spacing_trim_value->GetValueID();
-  if (autospace_id == CSSValueID::kNormal && spacing_trim_id == CSSValueID::kNormal) {
-    return getValueName(CSSValueID::kNormal);
-  }
-  if (autospace_id == CSSValueID::kNoAutospace && spacing_trim_id == CSSValueID::kSpaceAll) {
-    return getValueName(CSSValueID::kNone);
-  }
-
-  // Otherwise build a multi-value list.
-  StringBuilder result;
-  if (spacing_trim_id != CSSValueID::kNormal) {
-    result.Append(getValueName(spacing_trim_id));
-  }
-  if (autospace_id != CSSValueID::kNormal) {
-    if (!result.empty()) {
-      result.Append(' ');
-    }
-    result.Append(getValueName(autospace_id));
-  }
-  // When all longhands are initial values, it should be `normal`.
-  assert(!result.empty());
-  return result.ReleaseString();
-}
-
-//std::string StylePropertySerializer::WhiteSpaceValue() const {
-//  std::shared_ptr<const CSSValue> collapse_value =
-//      property_set_.GetPropertyCSSValue(GetCSSPropertyWhiteSpaceCollapse());
-//  std::shared_ptr<const CSSValue> wrap_value = property_set_.GetPropertyCSSValue(GetCSSPropertyTextWrap());
-//  if (!collapse_value || !wrap_value) {
-//    // If any longhands are missing, don't serialize as a shorthand.
-//    return "";
-//  }
-//
-//  // Check if longhands are one of pre-defined keywords of `white-space`.
-//  const WhiteSpaceCollapse collapse = ToWhiteSpaceCollapse(collapse_value.get());
-//  const TextWrap wrap = ToTextWrap(wrap_value);
-//  const EWhiteSpace whitespace = ToWhiteSpace(collapse, wrap);
-//  if (IsValidWhiteSpace(whitespace)) {
-//    return getValueName(PlatformEnumToCSSValueID(whitespace));
-//  }
-//
-//  // Otherwise build a multi-value list.
-//  StringBuilder result;
-//  if (collapse != ComputedStyleInitialValues::InitialWhiteSpaceCollapse()) {
-//    result.Append(getValueName(PlatformEnumToCSSValueID(collapse)));
-//  }
-//  if (wrap != ComputedStyleInitialValues::InitialTextWrap()) {
-//    if (!result.empty()) {
-//      result.Append(kSpaceCharacter);
-//    }
-//    result.Append(getValueName(PlatformEnumToCSSValueID(wrap)));
-//  }
-//  // When all longhands are initial values, it should be `normal`, covered by
-//  // `IsValidWhiteSpace()` above.
-//  assert(!result.empty());
-//  return result.ToString();
-//}
-
-std::string StylePropertySerializer::ScrollStartValue() const {
-  assert(scrollStartShorthand().length() == 2u);
-  assert(scrollStartShorthand().properties()[0] == &GetCSSPropertyScrollStartBlock());
-  assert(scrollStartShorthand().properties()[1] == &GetCSSPropertyScrollStartInline());
-
-  std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
-  std::shared_ptr<const CSSValue> block_value = property_set_.GetPropertyCSSValue(GetCSSPropertyScrollStartBlock());
-  std::shared_ptr<const CSSValue> inline_value = property_set_.GetPropertyCSSValue(GetCSSPropertyScrollStartInline());
-
-  assert(block_value);
-  assert(inline_value);
-
-  list->Append(block_value);
-
-  if (const auto* ident_value = DynamicTo<CSSIdentifierValue>(inline_value.get());
-      !ident_value || ident_value->GetValueID() != CSSValueID::kStart) {
-    list->Append(inline_value);
-  }
-
-  return list->CssText();
-}
-
-std::string StylePropertySerializer::ScrollStartTargetValue() const {
-  assert(scrollStartTargetShorthand().length() == 2u);
-  assert(scrollStartTargetShorthand().properties()[0] == &GetCSSPropertyScrollStartTargetBlock());
-  assert(scrollStartTargetShorthand().properties()[1] == &GetCSSPropertyScrollStartTargetInline());
-
-  std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
-  std::shared_ptr<const CSSValue> block_value = property_set_.GetPropertyCSSValue(GetCSSPropertyScrollStartTargetBlock());
-  std::shared_ptr<const CSSValue> inline_value = property_set_.GetPropertyCSSValue(GetCSSPropertyScrollStartTargetInline());
-
-  assert(block_value);
-  assert(inline_value);
-
-  list->Append(block_value);
-
-  if (To<CSSIdentifierValue>(*inline_value).GetValueID() != CSSValueID::kNone) {
-    list->Append(inline_value);
-  }
-
-  return list->CssText();
-}
-
-std::string StylePropertySerializer::PositionTryValue() const {
-  assert(positionTryShorthand().length() == 2u);
-  assert(positionTryShorthand().properties()[0] == &GetCSSPropertyPositionTryOrder());
-  assert(positionTryShorthand().properties()[1] == &GetCSSPropertyPositionTryOptions());
-
-  std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
-  std::shared_ptr<const CSSValue> order_value = property_set_.GetPropertyCSSValue(GetCSSPropertyPositionTryOrder());
-  std::shared_ptr<const CSSValue> options_value = property_set_.GetPropertyCSSValue(GetCSSPropertyPositionTryOptions());
-
-  assert(order_value);
-  assert(options_value);
-
-  if (To<CSSIdentifierValue>(*order_value).GetValueID() != CSSValueID::kNormal) {
-    list->Append(order_value);
-  }
-  list->Append(options_value);
-  return list->CssText();
 }
 
 }  // namespace webf

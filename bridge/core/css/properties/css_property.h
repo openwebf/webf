@@ -139,7 +139,7 @@ class CSSProperty: public CSSUnresolvedProperty {
       CSSValuePhase value_phase) const {
     return nullptr;
   }
-  const CSSValue* CSSValueFromComputedStyle(const ComputedStyle&,
+  std::shared_ptr<const CSSValue> CSSValueFromComputedStyle(const ComputedStyle&,
                                             const LayoutObject*,
                                             bool allow_visited_style,
                                             CSSValuePhase) const;

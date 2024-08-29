@@ -203,49 +203,6 @@ PhysicalMapping<4> CSSDirectionAwareResolver::PhysicalPaddingMapping() {
   return PhysicalMapping<4>(paddingShorthand());
 }
 
-LogicalMapping<4> CSSDirectionAwareResolver::LogicalScrollMarginMapping() {
-  static const CSSProperty* kProperties[] = {
-      &GetCSSPropertyScrollMarginBlockStart(), &GetCSSPropertyScrollMarginBlockEnd(),
-      &GetCSSPropertyScrollMarginInlineStart(), &GetCSSPropertyScrollMarginInlineEnd()};
-  return LogicalMapping<4>(kProperties);
-}
-
-PhysicalMapping<4> CSSDirectionAwareResolver::PhysicalScrollMarginMapping() {
-  return PhysicalMapping<4>(scrollMarginShorthand());
-}
-
-LogicalMapping<4> CSSDirectionAwareResolver::LogicalScrollPaddingMapping() {
-  static const CSSProperty* kProperties[] = {
-      &GetCSSPropertyScrollPaddingBlockStart(), &GetCSSPropertyScrollPaddingBlockEnd(),
-      &GetCSSPropertyScrollPaddingInlineStart(), &GetCSSPropertyScrollPaddingInlineEnd()};
-  return LogicalMapping<4>(kProperties);
-}
-
-PhysicalMapping<4> CSSDirectionAwareResolver::PhysicalScrollPaddingMapping() {
-  return PhysicalMapping<4>(scrollPaddingShorthand());
-}
-
-LogicalMapping<2> CSSDirectionAwareResolver::LogicalScrollStartMapping() {
-  static const CSSProperty* kProperties[] = {&GetCSSPropertyScrollStartBlock(), &GetCSSPropertyScrollStartInline()};
-  return LogicalMapping<2>(kProperties);
-}
-
-PhysicalMapping<2> CSSDirectionAwareResolver::PhysicalScrollStartMapping() {
-  static const CSSProperty* kProperties[] = {&GetCSSPropertyScrollStartX(), &GetCSSPropertyScrollStartY()};
-  return PhysicalMapping<2>(kProperties);
-}
-
-LogicalMapping<2> CSSDirectionAwareResolver::LogicalScrollStartTargetMapping() {
-  static const CSSProperty* kProperties[] = {&GetCSSPropertyScrollStartTargetBlock(),
-                                             &GetCSSPropertyScrollStartTargetInline()};
-  return LogicalMapping<2>(kProperties);
-}
-
-PhysicalMapping<2> CSSDirectionAwareResolver::PhysicalScrollStartTargetMapping() {
-  static const CSSProperty* kProperties[] = {&GetCSSPropertyScrollStartTargetX(), &GetCSSPropertyScrollStartTargetY()};
-  return PhysicalMapping<2>(kProperties);
-}
-
 LogicalMapping<2> CSSDirectionAwareResolver::LogicalSizeMapping() {
   static const CSSProperty* kProperties[] = {&GetCSSPropertyBlockSize(), &GetCSSPropertyInlineSize()};
   return LogicalMapping<2>(kProperties);
@@ -254,20 +211,6 @@ LogicalMapping<2> CSSDirectionAwareResolver::LogicalSizeMapping() {
 PhysicalMapping<2> CSSDirectionAwareResolver::PhysicalSizeMapping() {
   static const CSSProperty* kProperties[] = {&GetCSSPropertyWidth(), &GetCSSPropertyHeight()};
   return PhysicalMapping<2>(kProperties);
-}
-
-LogicalMapping<4> CSSDirectionAwareResolver::LogicalVisitedBorderColorMapping() {
-  static const CSSProperty* kProperties[] = {
-      &GetCSSPropertyInternalVisitedBorderBlockStartColor(), &GetCSSPropertyInternalVisitedBorderBlockEndColor(),
-      &GetCSSPropertyInternalVisitedBorderInlineStartColor(), &GetCSSPropertyInternalVisitedBorderInlineEndColor()};
-  return LogicalMapping<4>(kProperties);
-}
-
-PhysicalMapping<4> CSSDirectionAwareResolver::PhysicalVisitedBorderColorMapping() {
-  static const CSSProperty* kProperties[] = {
-      &GetCSSPropertyInternalVisitedBorderTopColor(), &GetCSSPropertyInternalVisitedBorderRightColor(),
-      &GetCSSPropertyInternalVisitedBorderBottomColor(), &GetCSSPropertyInternalVisitedBorderLeftColor()};
-  return PhysicalMapping<4>(kProperties);
 }
 
 const CSSProperty& CSSDirectionAwareResolver::ResolveInlineStart(WritingDirectionMode writing_direction,

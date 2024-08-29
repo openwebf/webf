@@ -91,10 +91,16 @@ class StringBuilder {
   bool HasBuffer() const { return has_buffer_; }
   void CreateBuffer8(unsigned added_size);
 
+  friend bool operator==(const StringBuilder& a, const std::string& b);
+
   unsigned length_ = 0;
   std::string string_;
   bool has_buffer_ = false;
 };
+
+inline bool operator==(const StringBuilder& a, const std::string& b) {
+  return a.string_ == b;
+}
 
 }
 

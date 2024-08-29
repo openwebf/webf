@@ -250,7 +250,7 @@ static bool IsPropertyMatch(const CSSPropertyValueMetadata& metadata, uint16_t i
 // style.
 // TODO(hjkim3323@gmail.com): Remove kInternalFontSizeDelta bypassing hack
 #if DCHECK_IS_ON()
-  DCHECK(!result || property_id == CSSPropertyID::kInternalFontSizeDelta ||
+  DCHECK(!result  ||
          CSSProperty::Get(ResolveCSSPropertyID(property_id)).IsWebExposed());
 #endif
   return result;

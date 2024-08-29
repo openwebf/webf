@@ -147,6 +147,7 @@ export class PropertyBase {
   valid_for_formatted_text_run?: boolean | undefined;
   mutable?: boolean | undefined;
   runtime_flag?: string;
+  keywords?: string[];
   computed_style_custom_functions?: string[] | undefined;
   computed_style_protected_functions?: string[] | undefined;
   field_group?: string | undefined;

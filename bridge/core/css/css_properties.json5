@@ -54,7 +54,7 @@
         "ParseSingleValue",
         "ParseShorthand",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback",
+//        "ColorIncludingFallback",
         "InitialValue"
       ],
     },
@@ -1257,7 +1257,7 @@
       property_methods: [
         "ParseSingleValue",
         /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
+//        "ColorIncludingFallback"
       ],
       interpolable: true,
       inherited: true,
@@ -2039,27 +2039,6 @@
         "value"
       ],
       priority: 1,
-    },
-    {
-      name: "math-depth",
-      default_value: 0,
-      field_group: "*",
-      field_template: "primitive",
-      inherited: true,
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      style_builder_custom_functions: [
-        "value"
-      ],
-      type_name: "short",
-      typedom_types: [
-        "Number"
-      ],
-      // Affects the computed value of 'font-size', hence needs to happen before
-      // high-priority properties.
-      priority: 2,
     },
     {
       name: "text-orientation",
@@ -3503,7 +3482,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "surround",
       field_template: "<length>",
       keywords: [
@@ -4195,134 +4174,6 @@
       valid_for_page_context: true,
     },
     {
-      name: "cursor",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      field_template: "keyword",
-      keywords: [
-        "auto",
-        "default",
-        "none",
-        "context-menu",
-        "help",
-        "pointer",
-        "progress",
-        "wait",
-        "cell",
-        "crosshair",
-        "text",
-        "vertical-text",
-        "alias",
-        "copy",
-        "move",
-        "no-drop",
-        "not-allowed",
-        "e-resize",
-        "n-resize",
-        "ne-resize",
-        "nw-resize",
-        "s-resize",
-        "se-resize",
-        "sw-resize",
-        "w-resize",
-        "ew-resize",
-        "ns-resize",
-        "nesw-resize",
-        "nwse-resize",
-        "col-resize",
-        "row-resize",
-        "all-scroll",
-        "zoom-in",
-        "zoom-out",
-        "grab",
-        "grabbing"
-      ],
-      default_value: "auto",
-      style_builder_custom_functions: [
-        "initial",
-        "inherit",
-        "value"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      valid_for_highlight_legacy: true,
-      valid_for_permission_element: true,
-    },
-    {
-      name: "cx",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      field_group: "svg->geometry",
-      field_template: "<length>",
-      default_value: "Length::Fixed()",
-      typedom_types: [
-        "Length",
-        "Percentage"
-      ],
-      converter: "ConvertLength",
-      supports_incremental_style: true,
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "cy",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      field_group: "svg->geometry",
-      field_template: "<length>",
-      default_value: "Length::Fixed()",
-      typedom_types: [
-        "Length",
-        "Percentage"
-      ],
-      converter: "ConvertLength",
-      supports_incremental_style: true,
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "d",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      field_group: "svg->geometry",
-      field_template: "pointer",
-      include_paths: [
-        "third_party/blink/renderer/core/style/style_path.h"
-      ],
-      wrapper_pointer_name: "scoped_refptr",
-      type_name: "StylePath",
-      default_value: "nullptr",
-      converter: "ConvertPathOrNone",
-      keywords: [
-        "none"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      supports_incremental_style: true,
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
       name: "display",
       property_methods: [
         "ParseSingleValue",
@@ -4424,34 +4275,6 @@
       default_value: "show",
       invalidate: [
         "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "fill",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
-      ],
-      interpolable: true,
-      inherited: true,
-      field_group: "svg->fill",
-      field_template: "external",
-      type_name: "SVGPaint",
-      include_paths: [
-        "third_party/blink/renderer/core/style/svg_paint.h"
-      ],
-      default_value: "SVGPaint(Color::kBlack)",
-      name_for_methods: "FillPaint",
-      converter: "ConvertSVGPaint",
-      style_builder_template: "color",
-      style_builder_template_args: {
-        initial_color: "ComputedStyleInitialValues::InitialFillPaint",
-      },
-      valid_for_highlight_legacy: true,
-      valid_for_highlight: true,
-      invalidate: [
         "paint"
       ],
     },
@@ -4959,7 +4782,7 @@
         /* "CSSValueFromComputedStyleInternal", */
         "InitialValue"
       ],
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "*->grid",
       field_template: "external",
       include_paths: [
@@ -4990,7 +4813,7 @@
         /* "CSSValueFromComputedStyleInternal", */
         "InitialValue"
       ],
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "*->grid",
       field_template: "external",
       include_paths: [
@@ -5021,7 +4844,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "box",
       field_template: "<length>",
       keywords: [
@@ -5180,35 +5003,6 @@
       ],
     },
     {
-      name: "dynamic-range-limit",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      inherited: true,
-      runtime_flag: "CSSDynamicRangeLimit",
-      converter: "ConvertDynamicRangeLimit",
-      type_name: "DynamicRangeLimit",
-      field_group: "*",
-      field_template: "external",
-      keywords: [
-        "standard",
-        "high",
-        "constrained-high"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      include_paths: [
-        "third_party/blink/renderer/platform/graphics/graphics_types.h"
-      ],
-      default_value: "DynamicRangeLimit(cc::PaintFlags::DynamicRangeLimit::kHigh)",
-      invalidate: [
-        "paint"
-      ],
-    },
-    {
       name: "initial-letter",
       converter: "ConvertInitialLetter",
       default_value: "StyleInitialLetter()",
@@ -5234,25 +5028,6 @@
         "layout",
         "paint"
       ],
-    },
-    {
-      name: "interpolate-size",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      field_group: "*",
-      field_template: "keyword",
-      keywords: [
-        "numeric-only",
-        "allow-keywords"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      default_value: "numeric-only",
-      invalidate: [],
-      runtime_flag: "CSSCalcSizeFunction",
     },
     {
       name: "isolation",
@@ -5337,7 +5112,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "surround",
       field_template: "<length>",
       keywords: [
@@ -5546,7 +5321,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "box",
       field_template: "<length>",
       default_value: "Length::Fixed()",
@@ -5585,7 +5360,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "box",
       field_template: "<length>",
       default_value: "Length::Fixed()",
@@ -5624,7 +5399,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "box",
       field_template: "<length>",
       default_value: "Length::Fixed()",
@@ -5663,7 +5438,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "box",
       field_template: "<length>",
       default_value: "Length::Fixed()",
@@ -6467,13 +6242,6 @@
       supports_incremental_style: false,
     },
     {
-      name: "-internal-overflow-inline",
-      logical_property_group: {
-        name: "overflow",
-        resolver: "inline",
-      },
-    },
-    {
       name: "overflow-block",
       logical_property_group: {
         name: "overflow",
@@ -6482,13 +6250,6 @@
       runtime_flag: "CSSLogicalOverflow",
       // See comment on overflow-x.
       supports_incremental_style: false,
-    },
-    {
-      name: "-internal-overflow-block",
-      logical_property_group: {
-        name: "overflow",
-        resolver: "block",
-      },
     },
     {
       name: "overflow-clip-margin",
@@ -6663,7 +6424,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "box",
       field_template: "<length>",
       default_value: "Length::Fixed()",
@@ -6697,7 +6458,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "box",
       field_template: "<length>",
       default_value: "Length::Fixed()",
@@ -6731,7 +6492,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "box",
       field_template: "<length>",
       default_value: "Length::Fixed()",
@@ -6765,7 +6526,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "box",
       field_template: "<length>",
       default_value: "Length::Fixed()",
@@ -6828,32 +6589,6 @@
       valid_for_page_context: true,
     },
     {
-      name: "paint-order",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      field_group: "svg",
-      field_template: "primitive",
-      field_size: 3,
-      type_name: "EPaintOrder",
-      default_value: "kPaintOrderNormal",
-      converter: "ConvertPaintOrder",
-      keywords: [
-        "normal",
-        "fill",
-        "stroke",
-        "markers"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      invalidate: [
-        "paint"
-      ],
-    },
-    {
       name: "perspective",
       property_methods: [
         "ParseSingleValue",
@@ -6883,7 +6618,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "*",
       field_template: "external",
       include_paths: [
@@ -6966,43 +6701,6 @@
       ],
     },
     {
-      name: "position-anchor",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      style_builder_custom_functions: [
-        "initial",
-        "inherit",
-        "value"
-      ],
-      include_paths: [
-        "third_party/blink/renderer/core/style/scoped_css_name.h"
-      ],
-      type_name: "ScopedCSSName",
-      wrapper_pointer_name: "Member",
-      default_value: "nullptr",
-      field_group: "*",
-      field_template: "external",
-      converter: "ConvertPositionAnchor",
-      keywords: [
-        "auto"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      runtime_flag: "CSSAnchorPositioning",
-      valid_for_permission_element: true,
-      valid_for_position_try: true,
-      // Needs to be applied before inset-area which in turn needs to be applied
-      // before inset properties.
-      priority: 2,
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
       name: "position-try-fallbacks",
       property_methods: [
         "ParseSingleValue",
@@ -7033,68 +6731,6 @@
         "paint"
       ],
       runtime_flag: "CSSPositionTryFallbacks",
-    },
-    {
-      name: "position-try-options",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      surrogate_for: "position-try-fallbacks",
-      runtime_flag: "CSSPositionTryOptions",
-    },
-    {
-      name: "position-try-order",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal", */
-        "InitialValue"
-      ],
-      field_group: "*",
-      field_template: "keyword",
-      keywords: [
-        "normal",
-        "most-width",
-        "most-height",
-        "most-block-size",
-        "most-inline-size"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      default_value: "normal",
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-      runtime_flag: "CSSPositionTryOrder",
-    },
-    {
-      name: "position-visibility",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_size: 3,
-      field_template: "primitive",
-      default_value: "PositionVisibility::kAlways",
-      getter: "GetPositionVisibility",
-      type_name: "PositionVisibility",
-      converter: "ConvertPositionVisibility",
-      // TODO(crbug.com/332933527): Support anchors-valid.
-      keywords: [
-        "always",
-        "anchors-visible",
-        "no-overflow"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-      runtime_flag: "CSSPositionVisibility",
     },
     {
       name: "quotes",
@@ -7149,30 +6785,6 @@
       ],
     },
     {
-      name: "reading-flow",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_template: "keyword",
-      keywords: [
-        "normal",
-        "flex-visual",
-        "flex-flow",
-        "grid-rows",
-        "grid-columns",
-        "grid-order"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      default_value: "normal",
-      invalidate: [
-        "layout"
-      ],
-      runtime_flag: "CSSReadingFlow",
-    },
-    {
       name: "resize",
       property_methods: [
         /* "CSSValueFromComputedStyleInternal" */
@@ -7208,7 +6820,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "surround",
       field_template: "<length>",
       keywords: [
@@ -7233,820 +6845,6 @@
         "inset",
         "out-of-flow",
         "scroll-anchor"
-      ],
-    },
-    {
-      name: "r",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      field_group: "svg->geometry",
-      field_template: "<length>",
-      default_value: "Length::Fixed()",
-      typedom_types: [
-        "Length",
-        "Percentage"
-      ],
-      converter: "ConvertLength",
-      supports_incremental_style: true,
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "rx",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      field_group: "svg->geometry",
-      field_template: "<length>",
-      default_value: "Length::Auto()",
-      keywords: [
-        "auto"
-      ],
-      typedom_types: [
-        "Keyword",
-        "Length",
-        "Percentage"
-      ],
-      converter: "ConvertLengthOrAuto",
-      supports_incremental_style: true,
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "ry",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      field_group: "svg->geometry",
-      field_template: "<length>",
-      default_value: "Length::Auto()",
-      keywords: [
-        "auto"
-      ],
-      typedom_types: [
-        "Keyword",
-        "Length",
-        "Percentage"
-      ],
-      converter: "ConvertLengthOrAuto",
-      supports_incremental_style: true,
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "scroll-marker-group",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_template: "keyword",
-      keywords: [
-        "none",
-        "after",
-        "before"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      default_value: "none",
-      runtime_flag: "CSSPseudoScrollMarkers",
-    },
-    {
-      interpolable: true,
-      name: "scrollbar-color",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      name_for_methods: "ScrollbarColor",
-      type_name: "StyleScrollbarColor",
-      converter: "ConvertScrollbarColor",
-      keywords: [
-        "auto"
-      ],
-      field_group: "*",
-      field_template: "pointer",
-      default_value: "nullptr",
-      wrapper_pointer_name: "Member",
-      include_paths: [
-        "third_party/blink/renderer/core/style/style_scrollbar_color.h"
-      ],
-      invalidate: [
-        "scrollbar-style",
-        "scrollbar-color"
-      ],
-      runtime_flag: "ScrollbarColor",
-    },
-    {
-      name: "scrollbar-gutter",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: false,
-      field_size: 4,
-      field_template: "primitive",
-      default_value: "kScrollbarGutterAuto",
-      name_for_methods: "ScrollbarGutter",
-      type_name: "unsigned",
-      converter: "ConvertScrollbarGutter",
-      keywords: [
-        "auto",
-        "stable",
-        "both-edges"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      invalidate: [
-        "layout"
-      ],
-    },
-    {
-      name: "scrollbar-width",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: false,
-      field_group: "*",
-      field_template: "keyword",
-      keywords: [
-        "auto",
-        "thin",
-        "none"
-      ],
-      default_value: "auto",
-      typedom_types: [
-        "Keyword"
-      ],
-      invalidate: [
-        "layout",
-        "paint",
-        "scrollbar-style"
-      ],
-      runtime_flag: "ScrollbarWidth",
-    },
-    {
-      name: "scroll-behavior",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_size: 2,
-      // FIXME: Convert this to a keyword field
-      field_template: "primitive",
-      include_paths: [
-        "third_party/blink/public/mojom/scroll/scroll_enums.mojom-blink.h"
-      ],
-      default_value: "mojom::blink::ScrollBehavior::kAuto",
-      type_name: "mojom::blink::ScrollBehavior",
-      keywords: [
-        "auto",
-        "smooth"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-    },
-    {
-      name: "scroll-margin-block-end",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      logical_property_group: {
-        name: "scroll-margin",
-        resolver: "block-end",
-      },
-      typedom_types: [
-        "Keyword",
-        "Length"
-      ],
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-margin-block-start",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      logical_property_group: {
-        name: "scroll-margin",
-        resolver: "block-start",
-      },
-      typedom_types: [
-        "Keyword",
-        "Length"
-      ],
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-margin-bottom",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_template: "primitive",
-      default_value: "0.0f",
-      type_name: "float",
-      converter: "ConvertComputedLength<float>",
-      typedom_types: [
-        "Keyword",
-        "Length"
-      ],
-      logical_property_group: {
-        name: "scroll-margin",
-        resolver: "bottom",
-      },
-      computable: false,
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-margin-inline-end",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      logical_property_group: {
-        name: "scroll-margin",
-        resolver: "inline-end",
-      },
-      typedom_types: [
-        "Keyword",
-        "Length"
-      ],
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-margin-inline-start",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      logical_property_group: {
-        name: "scroll-margin",
-        resolver: "inline-start",
-      },
-      typedom_types: [
-        "Keyword",
-        "Length"
-      ],
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-margin-left",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_template: "primitive",
-      default_value: "0.0f",
-      type_name: "float",
-      converter: "ConvertComputedLength<float>",
-      typedom_types: [
-        "Keyword",
-        "Length"
-      ],
-      logical_property_group: {
-        name: "scroll-margin",
-        resolver: "left",
-      },
-      computable: false,
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-margin-right",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_template: "primitive",
-      default_value: "0.0f",
-      type_name: "float",
-      converter: "ConvertComputedLength<float>",
-      typedom_types: [
-        "Keyword",
-        "Length"
-      ],
-      logical_property_group: {
-        name: "scroll-margin",
-        resolver: "right",
-      },
-      computable: false,
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-margin-top",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_template: "primitive",
-      default_value: "0.0f",
-      type_name: "float",
-      converter: "ConvertComputedLength<float>",
-      typedom_types: [
-        "Keyword",
-        "Length"
-      ],
-      logical_property_group: {
-        name: "scroll-margin",
-        resolver: "top",
-      },
-      computable: false,
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-padding-block-end",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      include_paths: [
-        "third_party/blink/renderer/platform/geometry/length.h"
-      ],
-      keywords: [
-        "auto"
-      ],
-      typedom_types: [
-        "Keyword",
-        "Length",
-        "Percentage"
-      ],
-      type_name: "Length",
-      converter: "ConvertLengthOrAuto",
-      logical_property_group: {
-        name: "scroll-padding",
-        resolver: "block-end",
-      },
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-padding-block-start",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      include_paths: [
-        "third_party/blink/renderer/platform/geometry/length.h"
-      ],
-      keywords: [
-        "auto"
-      ],
-      typedom_types: [
-        "Keyword",
-        "Length",
-        "Percentage"
-      ],
-      type_name: "Length",
-      converter: "ConvertLengthOrAuto",
-      logical_property_group: {
-        name: "scroll-padding",
-        resolver: "block-start",
-      },
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-padding-bottom",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_template: "<length>",
-      default_value: "Length()",
-      keywords: [
-        "auto"
-      ],
-      typedom_types: [
-        "Keyword",
-        "Length",
-        "Percentage"
-      ],
-      converter: "ConvertLengthOrAuto",
-      logical_property_group: {
-        name: "scroll-padding",
-        resolver: "bottom",
-      },
-      computable: false,
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-padding-inline-end",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      include_paths: [
-        "third_party/blink/renderer/platform/geometry/length.h"
-      ],
-      keywords: [
-        "auto"
-      ],
-      typedom_types: [
-        "Keyword",
-        "Length",
-        "Percentage"
-      ],
-      type_name: "Length",
-      converter: "ConvertLengthOrAuto",
-      logical_property_group: {
-        name: "scroll-padding",
-        resolver: "inline-end",
-      },
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-padding-inline-start",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      include_paths: [
-        "third_party/blink/renderer/platform/geometry/length.h"
-      ],
-      keywords: [
-        "auto"
-      ],
-      typedom_types: [
-        "Keyword",
-        "Length",
-        "Percentage"
-      ],
-      type_name: "Length",
-      converter: "ConvertLengthOrAuto",
-      logical_property_group: {
-        name: "scroll-padding",
-        resolver: "inline-start",
-      },
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-padding-left",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_template: "<length>",
-      default_value: "Length()",
-      keywords: [
-        "auto"
-      ],
-      typedom_types: [
-        "Keyword",
-        "Length",
-        "Percentage"
-      ],
-      converter: "ConvertLengthOrAuto",
-      logical_property_group: {
-        name: "scroll-padding",
-        resolver: "left",
-      },
-      computable: false,
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-padding-right",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_template: "<length>",
-      default_value: "Length()",
-      keywords: [
-        "auto"
-      ],
-      typedom_types: [
-        "Keyword",
-        "Length",
-        "Percentage"
-      ],
-      converter: "ConvertLengthOrAuto",
-      logical_property_group: {
-        name: "scroll-padding",
-        resolver: "right",
-      },
-      computable: false,
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-padding-top",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_template: "<length>",
-      default_value: "Length()",
-      keywords: [
-        "auto"
-      ],
-      typedom_types: [
-        "Keyword",
-        "Length",
-        "Percentage"
-      ],
-      converter: "ConvertLengthOrAuto",
-      logical_property_group: {
-        name: "scroll-padding",
-        resolver: "top",
-      },
-      computable: false,
-      valid_for_permission_element: true,
-    },
-    {
-      name: "scroll-snap-align",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_template: "external",
-      include_paths: [
-        "cc/input/scroll_snap_data.h"
-      ],
-      default_value: "cc::ScrollSnapAlign()",
-      getter: "GetScrollSnapAlign",
-      type_name: "cc::ScrollSnapAlign",
-      converter: "ConvertSnapAlign",
-      keywords: [
-        "none",
-        "start",
-        "end",
-        "center"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      computable: false,
-    },
-    {
-      name: "scroll-snap-stop",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_template: "keyword",
-      keywords: [
-        "normal",
-        "always"
-      ],
-      default_value: "normal",
-      typedom_types: [
-        "Keyword"
-      ],
-      computable: false,
-    },
-    {
-      name: "scroll-snap-type",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*",
-      field_template: "external",
-      include_paths: [
-        "cc/input/scroll_snap_data.h"
-      ],
-      default_value: "cc::ScrollSnapType()",
-      getter: "GetScrollSnapType",
-      type_name: "cc::ScrollSnapType",
-      converter: "ConvertSnapType",
-      keywords: [
-        "none",
-        "x",
-        "y",
-        "block",
-        "inline",
-        "both",
-        "mandatory",
-        "proximity"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      computable: false,
-    },
-    {
-      name: "scroll-start-x",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*->start",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/style/scroll_start_data.h"
-      ],
-      default_value: "blink::ScrollStartData()",
-      type_name: "ScrollStartData",
-      converter: "ConvertScrollStart",
-      logical_property_group: {
-        name: "scroll-start",
-        resolver: "horizontal"
-      },
-      runtime_flag: "CSSScrollStart",
-    },
-    {
-      name: "scroll-start-y",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*->start",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/style/scroll_start_data.h"
-      ],
-      default_value: "blink::ScrollStartData()",
-      type_name: "ScrollStartData",
-      converter: "ConvertScrollStart",
-      logical_property_group: {
-        name: "scroll-start",
-        resolver: "vertical"
-      },
-      runtime_flag: "CSSScrollStart",
-    },
-    {
-      name: "scroll-start-target-x",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*->target",
-      field_template: "keyword",
-      type_name: "EScrollStartTarget",
-      default_value: "none",
-      logical_property_group: {
-        name: "scroll-start-target",
-        resolver: "horizontal"
-      },
-      keywords: [
-        "none",
-        "auto"
-      ],
-      invalidate: [
-        "layout"
-      ],
-      runtime_flag: "CSSScrollStartTarget",
-    },
-    {
-      name: "scroll-start-target-y",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      field_group: "*->target",
-      field_template: "keyword",
-      type_name: "EScrollStartTarget",
-      default_value: "none",
-      logical_property_group: {
-        name: "scroll-start-target",
-        resolver: "vertical"
-      },
-      keywords: [
-        "none",
-        "auto"
-      ],
-      invalidate: [
-        "layout"
-      ],
-      runtime_flag: "CSSScrollStartTarget",
-    },
-    {
-      name: "scroll-timeline-axis",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal", */
-        "InitialValue"
-      ],
-      field_group: "*->timeline",
-      field_template: "external",
-      default_value: "Vector<TimelineAxis>()",
-      type_name: "Vector<TimelineAxis>",
-      converter: "ConvertViewTimelineAxis",
-      separator: ",",
-      runtime_flag: "ScrollTimeline",
-    },
-    {
-      name: "scroll-timeline-name",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal", */
-        "InitialValue"
-      ],
-      field_group: "*->timeline",
-      field_template: "external",
-      default_value: "nullptr",
-      type_name: "ScopedCSSNameList",
-      wrapper_pointer_name: "Member",
-      converter: "ConvertViewTimelineName",
-      separator: ",",
-      runtime_flag: "ScrollTimeline",
-    },
-    {
-      name: "shape-image-threshold",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      field_group: "*",
-      field_template: "primitive",
-      default_value: "0.0",
-      type_name: "float",
-      computed_style_custom_functions: [
-        "setter"
-      ],
-      typedom_types: [
-        "Number"
-      ],
-      accepts_numeric_literal: true,
-    },
-    {
-      name: "shape-margin",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      field_group: "*",
-      field_template: "<length>",
-      default_value: "Length::Fixed(0)",
-      converter: "ConvertLength",
-      keywords: [
-        "none"
-      ],
-      typedom_types: [
-        "Length",
-        "Percentage"
-      ],
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "shape-outside",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      field_group: "*",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/style/shape_value.h"
-      ],
-      wrapper_pointer_name: "Member",
-      default_value: "nullptr",
-      typedom_types: [
-        "Keyword",
-        "Image"
-      ],
-      type_name: "ShapeValue",
-      computed_style_custom_functions: [
-        "getter"
-      ],
-      converter: "ConvertShapeValue",
-      keywords: [
-        "none"
-      ],
-      invalidate: [
-        "paint"
-      ],
-    },
-    {
-      name: "shape-rendering",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      field_group: "svg",
-      field_template: "keyword",
-      keywords: [
-        "auto",
-        "optimizespeed",
-        "crispedges",
-        "geometricprecision"
-      ],
-      default_value: "auto",
-      typedom_types: [
-        "Keyword"
-      ],
-      invalidate: [
-        "paint"
       ],
     },
     {
@@ -8133,208 +6931,6 @@
       invalidate: [
         "paint"
       ],
-    },
-    {
-      name: "stroke",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
-      ],
-      interpolable: true,
-      inherited: true,
-      field_group: "svg->stroke",
-      field_template: "external",
-      type_name: "SVGPaint",
-      include_paths: [
-        "third_party/blink/renderer/core/style/svg_paint.h"
-      ],
-      default_value: "SVGPaint()",
-      name_for_methods: "StrokePaint",
-      converter: "ConvertSVGPaint",
-      style_builder_template: "color",
-      style_builder_template_args: {
-        initial_color: "ComputedStyleInitialValues::InitialStrokePaint",
-      },
-      valid_for_highlight_legacy: true,
-      valid_for_highlight: true,
-      invalidate: [
-        "paint",
-        "stroke"
-      ],
-    },
-    {
-      name: "stroke-dasharray",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      inherited: true,
-      field_group: "svg->stroke",
-      field_template: "pointer",
-      type_name: "SVGDashArray",
-      include_paths: [
-        "third_party/blink/renderer/core/style/svg_dash_array.h"
-      ],
-      wrapper_pointer_name: "scoped_refptr",
-      default_value: "EmptyDashArray()",
-      name_for_methods: "StrokeDashArray",
-      converter: "ConvertStrokeDasharray",
-      keywords: [
-        "none"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      invalidate: [
-        "paint",
-        "stroke"
-      ],
-      affected_by_zoom: true,
-    },
-    {
-      name: "stroke-dashoffset",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      inherited: true,
-      field_group: "svg->stroke",
-      field_template: "external",
-      type_name: "Length",
-      default_value: "Length::Fixed()",
-      name_for_methods: "StrokeDashOffset",
-      converter: "ConvertLength",
-      typedom_types: [
-        "Length",
-        "Percentage"
-      ],
-      invalidate: [
-        "paint"
-      ],
-      affected_by_zoom: true,
-    },
-    {
-      name: "stroke-linecap",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      field_group: "svg->stroke",
-      field_template: "primitive",
-      field_size: 2,
-      type_name: "LineCap",
-      default_value: "kButtCap",
-      name_for_methods: "CapStyle",
-      keywords: [
-        "butt",
-        "round",
-        "square"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "stroke-linejoin",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      field_group: "svg->stroke",
-      field_template: "primitive",
-      field_size: 2,
-      type_name: "LineJoin",
-      default_value: "kMiterJoin",
-      name_for_methods: "JoinStyle",
-      keywords: [
-        "miter",
-        "bevel",
-        "round"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "stroke-miterlimit",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      inherited: true,
-      field_group: "svg->stroke",
-      field_template: "primitive",
-      type_name: "float",
-      default_value: "4",
-      name_for_methods: "StrokeMiterLimit",
-      typedom_types: [
-        "Number"
-      ],
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "stroke-opacity",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      inherited: true,
-      field_group: "svg->stroke",
-      field_template: "primitive",
-      type_name: "float",
-      default_value: "1",
-      converter: "ConvertAlpha",
-      typedom_types: [
-        "Number"
-      ],
-      accepts_numeric_literal: true,
-      invalidate: [
-        "paint"
-      ],
-    },
-    {
-      name: "stroke-width",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      inherited: true,
-      field_group: "svg->stroke",
-      field_template: "external",
-      type_name: "UnzoomedLength",
-      include_paths: [
-        "third_party/blink/renderer/core/style/unzoomed_length.h"
-      ],
-      default_value: "UnzoomedLength(Length::Fixed(1))",
-      converter: "ConvertUnzoomedLength",
-      typedom_types: [
-        "Length",
-        "Percentage"
-      ],
-      valid_for_highlight_legacy: true,
-      valid_for_highlight: true,
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-      affected_by_zoom: true,
     },
     {
       name: "table-layout",
@@ -8467,27 +7063,6 @@
         "layout",
         "paint"
       ],
-    },
-    {
-      name: "text-autospace",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      field_group: "*",
-      field_template: "keyword",
-      keywords: [
-        "normal",
-        "no-autospace"
-      ],
-      default_value: "normal",
-      typedom_types: [
-        "Keyword"
-      ],
-      invalidate: [
-        "reshape"
-      ],
-      runtime_flag: "CSSTextAutoSpace",
     },
     {
       name: "text-box-edge",
@@ -8856,42 +7431,6 @@
       ],
     },
     {
-      name: "text-spacing",
-      longhands: [
-        "text-autospace",
-        "text-spacing-trim"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      runtime_flag: "CSSTextSpacing",
-    },
-    {
-      name: "text-spacing-trim",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      font: true,
-      priority: 1,
-      type_name: "TextSpacingTrim",
-      include_paths: [
-        "third_party/blink/renderer/platform/fonts/shaping/text_spacing_trim.h"
-      ],
-      keywords: [
-        "normal",
-        "space-all",
-        "space-first",
-        "trim-start"
-      ],
-      default_value: "TextSpacingTrim::kInitial",
-      typedom_types: [
-        "Keyword"
-      ],
-      valid_for_permission_element: true,
-    },
-    {
       name: "text-transform",
       property_methods: [
         /* "CSSValueFromComputedStyleInternal" */
@@ -9008,7 +7547,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "surround",
       field_template: "<length>",
       keywords: [
@@ -9091,7 +7630,7 @@
       ],
       interpolable: true,
       compositable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "*",
       field_template: "external",
       include_paths: [
@@ -9145,7 +7684,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "svg",
       field_template: "external",
       include_paths: [
@@ -9189,7 +7728,7 @@
       ],
       interpolable: true,
       compositable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "*",
       field_template: "pointer",
       include_paths: [
@@ -9255,34 +7794,6 @@
       ],
     },
     {
-      name: "unicode-bidi",
-      property_methods: [
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      affected_by_all: false,
-      field_template: "keyword",
-      include_paths: [
-        "third_party/blink/renderer/platform/text/unicode_bidi.h"
-      ],
-      keywords: [
-        "normal",
-        "embed",
-        "bidi-override",
-        "isolate",
-        "plaintext",
-        "isolate-override"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      default_value: "normal",
-      type_name: "UnicodeBidi",
-      valid_for_marker: true,
-      invalidate: [
-        "reshape"
-      ],
-    },
-    {
       name: "vector-effect",
       property_methods: [
         /* "CSSValueFromComputedStyleInternal" */
@@ -9330,93 +7841,7 @@
       valid_for_first_line: true,
       valid_for_page_context: true,
     },
-    {
-      name: "view-timeline-axis",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal", */
-        "InitialValue"
-      ],
-      field_group: "*->timeline",
-      field_template: "external",
-      default_value: "Vector<TimelineAxis>()",
-      type_name: "Vector<TimelineAxis>",
-      converter: "ConvertViewTimelineAxis",
-      separator: ",",
-      runtime_flag: "ScrollTimeline",
-    },
-    {
-      name: "view-timeline-inset",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal", */
-        "InitialValue"
-      ],
-      field_group: "*->timeline",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/animation/timeline_inset.h"
-      ],
-      default_value: "Vector<TimelineInset>()",
-      type_name: "Vector<TimelineInset>",
-      converter: "ConvertViewTimelineInset",
-      separator: ",",
-      runtime_flag: "ScrollTimeline",
-    },
-    {
-      name: "view-timeline-name",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal", */
-        "InitialValue"
-      ],
-      field_group: "*->timeline",
-      field_template: "external",
-      default_value: "nullptr",
-      type_name: "ScopedCSSNameList",
-      wrapper_pointer_name: "Member",
-      converter: "ConvertViewTimelineName",
-      separator: ",",
-      runtime_flag: "ScrollTimeline",
-    },
-    {
-      name: "view-transition-class",
-      field_group: "*",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      converter: "ConvertViewTransitionClass",
-      type_name: "Vector<AtomicString>",
-      default_value: "Vector<AtomicString, 0>()",
-      field_template: "external",
-      keywords: [
-        "none"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      runtime_flag: "CSSViewTransitionClass",
-    },
-    {
-      name: "view-transition-name",
-      field_group: "*",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      converter: "ConvertViewTransitionName",
-      type_name: "ScopedCSSName",
-      default_value: "nullptr",
-      field_template: "external",
-      keywords: [
-        "none"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      wrapper_pointer_name: "Member",
-    },
+
     {
       name: "visibility",
       property_methods: [
@@ -9443,50 +7868,6 @@
       invalidate: [
         "paint",
         "visibility"
-      ],
-    },
-    {
-      name: "x",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      field_group: "svg->geometry",
-      field_template: "<length>",
-      default_value: "Length::Fixed()",
-      typedom_types: [
-        "Length",
-        "Percentage"
-      ],
-      converter: "ConvertLength",
-      supports_incremental_style: true,
-      valid_for_permission_element: true,
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "y",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      interpolable: true,
-      field_group: "svg->geometry",
-      field_template: "<length>",
-      default_value: "Length::Fixed()",
-      typedom_types: [
-        "Length",
-        "Percentage"
-      ],
-      converter: "ConvertLength",
-      supports_incremental_style: true,
-      valid_for_permission_element: true,
-      invalidate: [
-        "layout",
-        "paint"
       ],
     },
     {
@@ -9961,27 +8342,6 @@
         "Keyword",
         "Length"
       ],
-      invalidate: [
-        "layout",
-        "paint"
-      ],
-    },
-    {
-      name: "hyphenate-character",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      inherited: true,
-      field_group: "*",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/platform/wtf/text/atomic_string.h"
-      ],
-      default_value: "AtomicString()",
-      name_for_methods: "HyphenationString",
-      type_name: "AtomicString",
-      converter: "ConvertString<CSSValueID::kAuto>",
       invalidate: [
         "layout",
         "paint"
@@ -10800,7 +9160,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       interpolable: true,
-      layout_dependent: true,
+      layout_dependent: false,
       field_group: "box",
       field_template: "<length>",
       keywords: [
@@ -10937,7 +9297,7 @@
       property_methods: [
         "ParseSingleValue"
       ],
-      layout_dependent: true,
+      layout_dependent: false,
       logical_property_group: {
         name: "size",
         resolver: "inline",
@@ -10959,7 +9319,7 @@
       property_methods: [
         "ParseSingleValue"
       ],
-      layout_dependent: true,
+      layout_dependent: false,
       logical_property_group: {
         name: "size",
         resolver: "block",
@@ -11053,7 +9413,7 @@
     },
     {
       name: "margin-inline-start",
-      layout_dependent: true,
+      layout_dependent: false,
       property_methods: [
         "ParseSingleValue"
       ],
@@ -11076,7 +9436,7 @@
     },
     {
       name: "margin-inline-end",
-      layout_dependent: true,
+      layout_dependent: false,
       property_methods: [
         "ParseSingleValue"
       ],
@@ -11099,7 +9459,7 @@
     },
     {
       name: "margin-block-start",
-      layout_dependent: true,
+      layout_dependent: false,
       property_methods: [
         "ParseSingleValue"
       ],
@@ -11122,7 +9482,7 @@
     },
     {
       name: "margin-block-end",
-      layout_dependent: true,
+      layout_dependent: false,
       property_methods: [
         "ParseSingleValue"
       ],
@@ -11145,7 +9505,7 @@
     },
     {
       name: "padding-inline-start",
-      layout_dependent: true,
+      layout_dependent: false,
       property_methods: [
         "ParseSingleValue"
       ],
@@ -11161,7 +9521,7 @@
     },
     {
       name: "padding-inline-end",
-      layout_dependent: true,
+      layout_dependent: false,
       property_methods: [
         "ParseSingleValue"
       ],
@@ -11177,7 +9537,7 @@
     },
     {
       name: "padding-block-start",
-      layout_dependent: true,
+      layout_dependent: false,
       property_methods: [
         "ParseSingleValue"
       ],
@@ -11193,7 +9553,7 @@
     },
     {
       name: "padding-block-end",
-      layout_dependent: true,
+      layout_dependent: false,
       property_methods: [
         "ParseSingleValue"
       ],
@@ -11206,50 +9566,6 @@
         "Percentage"
       ],
       valid_for_page_context: true,
-    },
-    {
-      name: "scroll-start-block",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      logical_property_group: {
-        name: "scroll-start",
-        resolver: "block"
-      },
-      runtime_flag: "CSSScrollStart",
-    },
-    {
-      name: "scroll-start-inline",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      logical_property_group: {
-        name: "scroll-start",
-        resolver: "inline"
-      },
-      runtime_flag: "CSSScrollStart",
-    },
-    {
-      name: "scroll-start-target-block",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      logical_property_group: {
-        name: "scroll-start-target",
-        resolver: "block",
-      },
-      runtime_flag: "CSSScrollStartTarget",
-    },
-    {
-      name: "scroll-start-target-inline",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      logical_property_group: {
-        name: "scroll-start-target",
-        resolver: "inline",
-      },
-      runtime_flag: "CSSScrollStartTarget",
     },
     {
       name: "border-inline-start-width",
@@ -11409,7 +9725,7 @@
         "Percentage"
       ],
       valid_for_position_try: true,
-      layout_dependent: true,
+      layout_dependent: false,
       valid_for_permission_element: true,
     },
     {
@@ -11426,7 +9742,7 @@
         "Percentage"
       ],
       valid_for_position_try: true,
-      layout_dependent: true,
+      layout_dependent: false,
       valid_for_permission_element: true,
     },
     {
@@ -11443,7 +9759,7 @@
         "Percentage"
       ],
       valid_for_position_try: true,
-      layout_dependent: true,
+      layout_dependent: false,
       valid_for_permission_element: true,
     },
     {
@@ -11460,7 +9776,7 @@
         "Percentage"
       ],
       valid_for_position_try: true,
-      layout_dependent: true,
+      layout_dependent: false,
       valid_for_permission_element: true,
       valid_for_page_context: true,
     },
@@ -11638,23 +9954,11 @@
       name: "-webkit-max-logical-height",
       alias_for: "max-block-size",
     },
-    // Properties that we ignore in the StyleBuilder.
-    // TODO(timloh): This seems wrong, most of these shouldn't reach the
-    // StyleBuilder
     {
       name: "all",
       affected_by_all: false,
       style_builder_template: "empty",
       computable: false,
-    },
-    // TODO(hjkim3323@gmail.com): Remove -internal-font-size-delta.
-    // fontSizeDelta execCommand does not need separate CSS property.
-    {
-      name: "-internal-font-size-delta",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      style_builder_template: "empty",
     },
     {
       name: "-webkit-text-decorations-in-effect",
@@ -11665,7 +9969,6 @@
       inherited: true,
       style_builder_template: "empty",
     },
-    // Descriptor only names
     {
       name: "font-display",
       is_descriptor: true,
@@ -11788,57 +10091,6 @@
       is_descriptor: true,
       is_property: false,
       runtime_flag: "ViewTransitionOnNavigation",
-    },
-    {
-      name: "inset-area",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      style_builder_custom_functions: [
-        "value",
-        "inherit"
-      ],
-      field_group: "*",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/style/inset_area.h"
-      ],
-      converter: "ConvertInsetArea",
-      default_value: "InsetArea()",
-      type_name: "InsetArea",
-      keywords: [
-        "none",
-        "top",
-        "bottom",
-        "center",
-        "left",
-        "right",
-        "x-start",
-        "x-end",
-        "y-start",
-        "y-end",
-        "start",
-        "end",
-        "self-start",
-        "self-end",
-        "all"
-      ],
-      typedom_types: [
-        "Keyword"
-      ],
-      valid_for_position_try: true,
-      runtime_flag: "CSSAnchorPositioning",
-      valid_for_permission_element: true,
-      // inset-area needs to be applied before inset properties since
-      // anchor() functions compute relative to the containing block that is
-      // modified by inset-area in AnchorEvaluatorImpl.
-      priority: 1,
-      invalidate: [
-        "layout",
-        "out-of-flow",
-        "paint"
-      ],
     },
     // Shorthands
     {
@@ -12439,7 +10691,7 @@
         "ParseShorthand",
         /* "CSSValueFromComputedStyleInternal" */
       ],
-      layout_dependent: true,
+      layout_dependent: false,
     },
     {
       name: "place-content",
@@ -12532,7 +10784,7 @@
         "ParseShorthand",
         /* "CSSValueFromComputedStyleInternal" */
       ],
-      layout_dependent: true,
+      layout_dependent: false,
     },
     {
       name: "inset",
@@ -12547,7 +10799,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       valid_for_position_try: true,
-      layout_dependent: true,
+      layout_dependent: false,
     },
     {
       name: "inset-block",
@@ -12560,7 +10812,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       valid_for_position_try: true,
-      layout_dependent: true,
+      layout_dependent: false,
     },
     {
       name: "inset-inline",
@@ -12573,7 +10825,7 @@
         /* "CSSValueFromComputedStyleInternal" */
       ],
       valid_for_position_try: true,
-      layout_dependent: true,
+      layout_dependent: false,
     },
     {
       name: "list-style",
@@ -12599,7 +10851,7 @@
         "ParseShorthand",
         /* "CSSValueFromComputedStyleInternal" */
       ],
-      layout_dependent: true,
+      layout_dependent: false,
       valid_for_position_try: true,
       valid_for_permission_element: true,
       valid_for_limited_page_context: true,
@@ -12615,7 +10867,7 @@
         "ParseShorthand",
         /* "CSSValueFromComputedStyleInternal" */
       ],
-      layout_dependent: true,
+      layout_dependent: false,
       valid_for_position_try: true,
       valid_for_limited_page_context: true,
       valid_for_page_context: true,
@@ -12630,7 +10882,7 @@
         "ParseShorthand",
         /* "CSSValueFromComputedStyleInternal" */
       ],
-      layout_dependent: true,
+      layout_dependent: false,
       valid_for_position_try: true,
       valid_for_limited_page_context: true,
       valid_for_page_context: true,
@@ -12710,7 +10962,7 @@
         "ParseShorthand",
         /* "CSSValueFromComputedStyleInternal" */
       ],
-      layout_dependent: true,
+      layout_dependent: false,
       supports_incremental_style: true,
       valid_for_page_context: true,
     },
@@ -12769,139 +11021,6 @@
       ],
     },
     {
-      name: "position-try",
-      longhands: [
-        "position-try-order",
-        "position-try-options"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      runtime_flag: "CSSPositionTryOrder",
-    },
-    {
-      // Variant of the "position-try" shorthand which has the new
-      // position-try-fallbacks instead of position-try-options.
-      name: "-alternative-position-try",
-      alternative_of: "position-try",
-      longhands: [
-        "position-try-order",
-        "position-try-fallbacks"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      runtime_flag: "CSSPositionTryFallbacks",
-    },
-    {
-      name: "scroll-margin",
-      longhands: [
-        "scroll-margin-top",
-        "scroll-margin-right",
-        "scroll-margin-bottom",
-        "scroll-margin-left"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-    },
-    {
-      name: "scroll-margin-block",
-      longhands: [
-        "scroll-margin-block-start",
-        "scroll-margin-block-end"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-    },
-    {
-      name: "scroll-margin-inline",
-      longhands: [
-        "scroll-margin-inline-start",
-        "scroll-margin-inline-end"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-    },
-    {
-      name: "scroll-padding",
-      longhands: [
-        "scroll-padding-top",
-        "scroll-padding-right",
-        "scroll-padding-bottom",
-        "scroll-padding-left"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-    },
-    {
-      name: "scroll-padding-block",
-      longhands: [
-        "scroll-padding-block-start",
-        "scroll-padding-block-end"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-    },
-    {
-      name: "scroll-padding-inline",
-      longhands: [
-        "scroll-padding-inline-start",
-        "scroll-padding-inline-end"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-    },
-    {
-      name: "scroll-start",
-      longhands: [
-        "scroll-start-block",
-        "scroll-start-inline"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      runtime_flag: "CSSScrollStart",
-    },
-    {
-      name: "scroll-start-target",
-      longhands: [
-        "scroll-start-target-block",
-        "scroll-start-target-inline"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      runtime_flag: "CSSScrollStartTarget",
-    },
-    {
-      name: "scroll-timeline",
-      longhands: [
-        "scroll-timeline-name",
-        "scroll-timeline-axis"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      runtime_flag: "ScrollTimeline",
-    },
-    {
       name: "text-decoration",
       longhands: [
         "text-decoration-line",
@@ -12931,19 +11050,6 @@
       ],
       // Animation properites are never incremental.
       supports_incremental_style: false,
-    },
-    {
-      name: "view-timeline",
-      longhands: [
-        "view-timeline-name",
-        "view-timeline-axis",
-        "view-timeline-inset"
-      ],
-      property_methods: [
-        "ParseShorthand",
-        /* "CSSValueFromComputedStyleInternal" */
-      ],
-      runtime_flag: "ScrollTimeline",
     },
     {
       name: "-webkit-border-after",
@@ -13088,672 +11194,6 @@
         "ParseShorthand",
         /* "CSSValueFromComputedStyleInternal" */
       ],
-    },
-    // Visited properties.
-    {
-      name: "-internal-visited-color",
-      visited_property_for: "color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      inherited: true,
-      field_group: "inherited",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor(Color::kBlack)",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      style_builder_custom_functions: [
-        "initial",
-        "inherit",
-        "value"
-      ],
-      priority: 1,
-      valid_for_first_letter: true,
-      valid_for_first_line: true,
-      valid_for_cue: true,
-      valid_for_marker: true,
-      valid_for_highlight_legacy: true,
-      valid_for_highlight: true,
-      is_visited_highlight_colors: true,
-      invalidate: [
-        "background-current-color",
-        "border-visual",
-        "color"
-      ],
-    },
-    {
-      name: "-internal-visited-caret-color",
-      visited_property_for: "caret-color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      inherited: true,
-      field_group: "*->inherited_visited",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_auto_color.h"
-      ],
-      default_value: "StyleAutoColor::AutoColor()",
-      type_name: "StyleAutoColor",
-      converter: "ConvertStyleAutoColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      style_builder_template: "visited_color",
-      style_builder_template_args: {
-        initial_color: "StyleAutoColor::AutoColor",
-      },
-      valid_for_highlight_legacy: true,
-      invalidate: [
-        "color"
-      ],
-    },
-    {
-      name: "-internal-visited-column-rule-color",
-      visited_property_for: "column-rule-color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      field_group: "*->visited",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor::CurrentColor()",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "visited_color",
-      invalidate: [
-        "paint"
-      ],
-    },
-    {
-      name: "-internal-visited-background-color",
-      visited_property_for: "background-color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      field_group: "*->visited",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor(Color::kTransparent)",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "visited_color",
-      style_builder_template_args: {
-        initial_color: "ComputedStyleInitialValues::InitialBackgroundColor",
-      },
-      valid_for_first_letter: true,
-      valid_for_first_line: true,
-      valid_for_cue: true,
-      valid_for_highlight_legacy: true,
-      valid_for_highlight: true,
-      is_visited_highlight_colors: true,
-      invalidate: [
-        "background-color"
-      ],
-    },
-    {
-      name: "-internal-visited-border-left-color",
-      visited_property_for: "border-left-color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      field_group: "*->visited",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor::CurrentColor()",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "visited_color",
-      valid_for_first_letter: true,
-      logical_property_group: {
-        name: "visited-border-color",
-        resolver: "left",
-      },
-      invalidate: [
-        "border-outline-visited-color"
-      ],
-    },
-    {
-      name: "-internal-visited-border-right-color",
-      visited_property_for: "border-right-color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      field_group: "*->visited",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor::CurrentColor()",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "visited_color",
-      valid_for_first_letter: true,
-      logical_property_group: {
-        name: "visited-border-color",
-        resolver: "right",
-      },
-      invalidate: [
-        "border-outline-visited-color"
-      ],
-    },
-    {
-      name: "-internal-visited-border-top-color",
-      visited_property_for: "border-top-color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      field_group: "*->visited",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor::CurrentColor()",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "visited_color",
-      valid_for_first_letter: true,
-      logical_property_group: {
-        name: "visited-border-color",
-        resolver: "top",
-      },
-      invalidate: [
-        "border-outline-visited-color"
-      ],
-    },
-    {
-      name: "-internal-visited-border-bottom-color",
-      visited_property_for: "border-bottom-color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      field_group: "*->visited",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor::CurrentColor()",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "visited_color",
-      valid_for_first_letter: true,
-      logical_property_group: {
-        name: "visited-border-color",
-        resolver: "bottom",
-      },
-      invalidate: [
-        "border-outline-visited-color"
-      ],
-    },
-    {
-      name: "-internal-visited-border-inline-start-color",
-      visited_property_for: "border-inline-start-color",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      logical_property_group: {
-        name: "visited-border-color",
-        resolver: "inline-start",
-      },
-      valid_for_first_letter: true,
-    },
-    {
-      name: "-internal-visited-border-inline-end-color",
-      visited_property_for: "border-inline-end-color",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      logical_property_group: {
-        name: "visited-border-color",
-        resolver: "inline-end",
-      },
-      valid_for_first_letter: true,
-    },
-    {
-      name: "-internal-visited-border-block-start-color",
-      visited_property_for: "border-block-start-color",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      logical_property_group: {
-        name: "visited-border-color",
-        resolver: "block-start",
-      },
-      valid_for_first_letter: true,
-    },
-    {
-      name: "-internal-visited-border-block-end-color",
-      visited_property_for: "border-block-end-color",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      logical_property_group: {
-        name: "visited-border-color",
-        resolver: "block-end",
-      },
-      valid_for_first_letter: true,
-    },
-    {
-      name: "-internal-visited-fill",
-      visited_property_for: "fill",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      inherited: true,
-      field_group: "svg->fill",
-      field_template: "external",
-      type_name: "SVGPaint",
-      include_paths: [
-        "third_party/blink/renderer/core/style/svg_paint.h"
-      ],
-      default_value: "SVGPaint(Color::kBlack)",
-      name_for_methods: "InternalVisitedFillPaint",
-      converter: "ConvertSVGPaint",
-      style_builder_template: "visited_color",
-      style_builder_template_args: {
-        initial_color: "ComputedStyleInitialValues::InitialFillPaint",
-      },
-      valid_for_highlight_legacy: true,
-      valid_for_highlight: true,
-    },
-    {
-      name: "-internal-visited-outline-color",
-      visited_property_for: "outline-color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      field_group: "*->visited",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor::CurrentColor()",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "visited_color",
-      valid_for_cue: true,
-      invalidate: [
-        "border-outline-visited-color"
-      ],
-    },
-    {
-      name: "-internal-visited-stroke",
-      visited_property_for: "stroke",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      inherited: true,
-      field_group: "svg->stroke",
-      field_template: "external",
-      type_name: "SVGPaint",
-      include_paths: [
-        "third_party/blink/renderer/core/style/svg_paint.h"
-      ],
-      default_value: "SVGPaint()",
-      name_for_methods: "InternalVisitedStrokePaint",
-      converter: "ConvertSVGPaint",
-      style_builder_template: "visited_color",
-      style_builder_template_args: {
-        initial_color: "ComputedStyleInitialValues::InitialStrokePaint",
-      },
-      valid_for_highlight_legacy: true,
-      valid_for_highlight: true,
-      invalidate: [
-        "paint"
-      ],
-    },
-    {
-      name: "-internal-visited-text-decoration-color",
-      visited_property_for: "text-decoration-color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      field_group: "*->visited",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor::CurrentColor()",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "visited_color",
-      valid_for_first_letter: true,
-      valid_for_first_line: true,
-      valid_for_cue: true,
-      valid_for_highlight_legacy: true,
-      valid_for_highlight: true,
-      invalidate: [
-        "color"
-      ],
-    },
-    {
-      name: "-internal-visited-text-emphasis-color",
-      visited_property_for: "text-emphasis-color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      inherited: true,
-      field_group: "*->inherited_visited",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor::CurrentColor()",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "visited_color",
-      valid_for_highlight_legacy: true,
-      valid_for_highlight: true,
-      invalidate: [
-        "color"
-      ],
-    },
-    {
-      name: "-internal-visited-text-fill-color",
-      visited_property_for: "-webkit-text-fill-color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      inherited: true,
-      field_group: "*->inherited_visited",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor::CurrentColor()",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "visited_color",
-      valid_for_highlight_legacy: true,
-      valid_for_highlight: true,
-      invalidate: [
-        "color"
-      ],
-    },
-    {
-      name: "-internal-visited-text-stroke-color",
-      visited_property_for: "-webkit-text-stroke-color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      inherited: true,
-      field_group: "*->inherited_visited",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor::CurrentColor()",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "visited_color",
-      valid_for_highlight_legacy: true,
-      valid_for_highlight: true,
-      invalidate: [
-        "color"
-      ],
-    },
-    // Forced colors properties.
-    {
-      name: "-internal-forced-background-color",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
-      ],
-      field_group: "*->forced_colors",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css_value_keywords.h",
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor(CSSValueID::kCanvas)",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "color",
-      style_builder_template_args: {
-        initial_color: "ComputedStyleInitialValues::InitialInternalForcedBackgroundColor",
-      },
-      valid_for_first_letter: true,
-      valid_for_first_line: true,
-      valid_for_cue: true,
-    },
-    {
-      name: "-internal-forced-border-color",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
-      ],
-      field_group: "*->forced_colors",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor::CurrentColor()",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "color",
-      valid_for_first_letter: true,
-    },
-    {
-      name: "-internal-forced-color",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
-      ],
-      inherited: true,
-      field_group: "*->inherited_forced_colors",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css_value_keywords.h",
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor(CSSValueID::kCanvastext)",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      style_builder_custom_functions: [
-        "initial",
-        "inherit",
-        "value"
-      ],
-      valid_for_first_letter: true,
-      valid_for_first_line: true,
-      valid_for_cue: true,
-      valid_for_marker: true,
-    },
-    {
-      name: "-internal-forced-outline-color",
-      property_methods: [
-        "ParseSingleValue",
-        /* "CSSValueFromComputedStyleInternal", */
-        "ColorIncludingFallback"
-      ],
-      field_group: "*->forced_colors",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor::CurrentColor()",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      converter: "ConvertStyleColor",
-      style_builder_template: "color",
-      valid_for_cue: true,
-    },
-    {
-      name: "-internal-forced-visited-color",
-      visited_property_for: "-internal-forced-color",
-      property_methods: [
-        "ParseSingleValue",
-        "ColorIncludingFallback"
-      ],
-      inherited: true,
-      field_group: "*->inherited_forced_colors",
-      field_template: "external",
-      include_paths: [
-        "third_party/blink/renderer/core/css_value_keywords.h",
-        "third_party/blink/renderer/core/css/style_color.h"
-      ],
-      default_value: "StyleColor(CSSValueID::kCanvastext)",
-      type_name: "StyleColor",
-      computed_style_protected_functions: [
-        "getter"
-      ],
-      style_builder_custom_functions: [
-        "initial",
-        "inherit",
-        "value"
-      ],
-      valid_for_first_letter: true,
-      valid_for_first_line: true,
-      valid_for_cue: true,
-      valid_for_marker: true,
-    },
-    // Name: -internal-empty-line-height:
-    // Value: none | fabricated
-    //    If the element is inline or contains visible text, this property has
-    //    no effect.
-    //
-    // 'none'
-    //   The box's intrinsic height is 0, and it defines no baseline.
-    // 'fabricated'
-    //   The box has intrinsic height and baseline, computed from the current
-    //   font metrics.
-    {
-      name: "-internal-empty-line-height",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      inherited: true,
-      field_group: "*",
-      field_template: "primitive",
-      type_name: "bool",
-      default_value: "false",
-      name_for_methods: "HasLineIfEmpty",
-      converter: "ConvertInternalEmptyLineHeight",
-    },
-    {
-      name: "-internal-align-content-block",
-      property_methods: [
-        "ParseSingleValue"
-      ],
-      inherited: false,
-      field_group: "*",
-      field_template: "primitive",
-      type_name: "bool",
-      default_value: "false",
-      name_for_methods: "AlignContentBlockCenter",
-      converter: "ConvertInternalAlignContentBlock",
-      invalidate: [
-        "layout"
-      ],
-    },
-    // Aliases; these map to the same CSSPropertyID
-    {
-      name: "-epub-caption-side",
-      alias_for: "caption-side",
-    },
-    {
-      name: "-epub-text-combine",
-      alias_for: "-webkit-text-combine",
-    },
-    {
-      name: "-epub-text-emphasis",
-      alias_for: "text-emphasis",
-    },
-    {
-      name: "-epub-text-emphasis-color",
-      alias_for: "text-emphasis-color",
-    },
-    {
-      name: "-epub-text-emphasis-style",
-      alias_for: "text-emphasis-style",
-    },
-    {
-      name: "-epub-text-orientation",
-      alias_for: "-webkit-text-orientation",
-    },
-    {
-      name: "-epub-text-transform",
-      alias_for: "text-transform",
-    },
-    {
-      name: "-epub-word-break",
-      alias_for: "word-break",
-    },
-    {
-      name: "-epub-writing-mode",
-      alias_for: "-webkit-writing-mode",
     },
     {
       name: "-webkit-align-content",
@@ -13940,10 +11380,6 @@
       alias_for: "font-feature-settings",
     },
     {
-      name: "-webkit-hyphenate-character",
-      alias_for: "hyphenate-character",
-    },
-    {
       name: "-webkit-justify-content",
       alias_for: "justify-content",
     },
@@ -13962,18 +11398,6 @@
     {
       name: "-webkit-perspective-origin",
       alias_for: "perspective-origin",
-    },
-    {
-      name: "-webkit-shape-image-threshold",
-      alias_for: "shape-image-threshold",
-    },
-    {
-      name: "-webkit-shape-margin",
-      alias_for: "shape-margin",
-    },
-    {
-      name: "-webkit-shape-outside",
-      alias_for: "shape-outside",
     },
     {
       name: "-webkit-text-emphasis",

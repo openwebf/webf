@@ -52,8 +52,6 @@ bool CSSFontStyleRangeValue::Equals(const CSSFontStyleRangeValue& other) const {
 }
 
 void CSSFontStyleRangeValue::TraceAfterDispatch(GCVisitor* visitor) const {
-//  visitor->Trace(font_style_value_);
-//  visitor->Trace(oblique_values_);
   CSSValue::TraceAfterDispatch(visitor);
 }
 

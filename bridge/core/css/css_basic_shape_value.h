@@ -68,24 +68,24 @@ public:
  std::string CustomCSSText() const;
  bool Equals(const CSSBasicShapeEllipseValue&) const;
 
- CSSValue* CenterX() const { return center_x_.get(); }
- CSSValue* CenterY() const { return center_y_.get(); }
- CSSValue* RadiusX() const { return radius_x_.get(); }
- CSSValue* RadiusY() const { return radius_y_.get(); }
+ const CSSValue* CenterX() const { return center_x_.get(); }
+ const CSSValue* CenterY() const { return center_y_.get(); }
+ const CSSValue* RadiusX() const { return radius_x_.get(); }
+ const CSSValue* RadiusY() const { return radius_y_.get(); }
 
  // TODO(sashab): Remove these and pass them as arguments in the constructor.
- void SetCenterX(std::shared_ptr<CSSValue> center_x) { center_x_ = center_x; }
- void SetCenterY(std::shared_ptr<CSSValue> center_y) { center_y_ = center_y; }
- void SetRadiusX(std::shared_ptr<CSSValue> radius_x) { radius_x_ = radius_x; }
- void SetRadiusY(std::shared_ptr<CSSValue> radius_y) { radius_y_ = radius_y; }
+ void SetCenterX(std::shared_ptr<const CSSValue> center_x) { center_x_ = center_x; }
+ void SetCenterY(std::shared_ptr<const CSSValue> center_y) { center_y_ = center_y; }
+ void SetRadiusX(std::shared_ptr<const CSSValue> radius_x) { radius_x_ = radius_x; }
+ void SetRadiusY(std::shared_ptr<const CSSValue> radius_y) { radius_y_ = radius_y; }
 
  void TraceAfterDispatch(GCVisitor*) const;
 
 private:
- std::shared_ptr<CSSValue> center_x_;
- std::shared_ptr<CSSValue> center_y_;
- std::shared_ptr<CSSValue> radius_x_;
- std::shared_ptr<CSSValue> radius_y_;
+ std::shared_ptr<const CSSValue> center_x_;
+ std::shared_ptr<const CSSValue> center_y_;
+ std::shared_ptr<const CSSValue> radius_x_;
+ std::shared_ptr<const CSSValue> radius_y_;
 };
 
 class CSSBasicShapeInsetValue final : public CSSValue {

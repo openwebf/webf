@@ -73,8 +73,6 @@ class StylePropertySerializer {
 //  std::string GetShorthandValueForGridTemplate(const StylePropertyShorthand&) const;
   std::string ContainerValue() const;
   std::string TimelineValue(const StylePropertyShorthand&) const;
-  std::string ScrollTimelineValue() const;
-  std::string ViewTimelineValue() const;
   std::string AnimationRangeShorthandValue() const;
   std::string FontValue() const;
   std::string FontSynthesisValue() const;
@@ -83,12 +81,8 @@ class StylePropertySerializer {
                                           StringBuilder& result) const;
   std::string OffsetValue() const;
   std::string TextDecorationValue() const;
-  std::string TextSpacingValue() const;
   std::string ContainIntrinsicSizeValue() const;
 //  std::string WhiteSpaceValue() const;
-  std::string ScrollStartValue() const;
-  std::string ScrollStartTargetValue() const;
-  std::string PositionTryValue() const;
   std::string GetPropertyText(const CSSPropertyName&,
                          const std::string& value,
                          bool is_important,

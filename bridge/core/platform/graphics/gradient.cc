@@ -26,7 +26,7 @@
  */
 
 #include "core/platform/graphics/gradient.h"
-#include "gfx/geometry/point_f.h"
+#include "core/platform/gfx/geometry/point_f.h"
 
 #include <algorithm>
 #include <optional>

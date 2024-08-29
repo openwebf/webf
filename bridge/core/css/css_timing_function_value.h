@@ -36,7 +36,7 @@
 #include "core/css/css_value.h"
 #include "core/platform/animation/timing_function.h"
 #include "foundation/casting.h"
-#include "gfx/animation/keyframe/timing_function.h"
+#include "core/platform/gfx/animation/keyframe/timing_function.h"
 
 namespace webf {
 namespace cssvalue {

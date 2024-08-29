@@ -152,7 +152,7 @@ enum class EClear : uint8_t {
 
 enum class EColorInterpolation : uint8_t {
   kAuto,
-  kSRGB,
+  kSrgb,
   kLinearrgb,
   kMaxEnumValue = kLinearrgb,
 };
@@ -661,8 +661,8 @@ enum class ETransformBox : uint8_t {
 
 enum class ETransformStyle3D : uint8_t {
   kFlat,
-  kPreserve3d,
-  kMaxEnumValue = kPreserve3d,
+  kPreserve3D,
+  kMaxEnumValue = kPreserve3D,
 };
 
 enum class EUserDrag : uint8_t {
