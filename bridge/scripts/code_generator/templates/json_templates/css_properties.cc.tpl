@@ -75,6 +75,7 @@ bool <%= class_name %>::IsInSameLogicalPropertyGroupWithDifferentMappingLogic(
 }
       <% } %>
     <% } %>
+    <%= styleBuilderFunction(property) %>
 
   <% } %> <% /* not isAlias */ %>
 <% }); %> <% /* properties */ %>

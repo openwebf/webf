@@ -1502,7 +1502,6 @@ std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
   assert(!CSSProperty::Get(property_id).IsShorthand());
   if (CSSParserFastPaths::IsHandledByKeywordFastPath(property_id)) {
     if (CSSParserFastPaths::IsValidKeywordPropertyAndValue(property_id, stream.Peek().Id(), context.Mode())) {
-      CountKeywordOnlyPropertyUsage(property_id, context, value_id);
       return ConsumeIdent(stream);
     }
     WarnInvalidKeywordPropertyUsage(property_id, context, value_id);
@@ -1516,28 +1515,6 @@ std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
   std::shared_ptr<const CSSValue> result =
       To<Longhand>(CSSProperty::Get(property_id)).ParseSingleValue(stream, context, local_context);
   return result;
-}
-
-void CountKeywordOnlyPropertyUsage(CSSPropertyID property, const CSSParserContext& context, CSSValueID value_id) {
-  if (!context.IsUseCounterRecordingEnabled()) {
-    return;
-  }
-  switch (property) {
-    case CSSPropertyID::kAppearance:
-    case CSSPropertyID::kAliasWebkitAppearance: {
-      if (value_id == CSSValueID::kSliderVertical) {
-        if (const auto* document = context.GetDocument()) {
-          WEBF_LOG(WARN) << "The keyword 'slider-vertical' specified to an 'appearance' "
-                            "property is not standardized. It will be removed in the future. "
-                            "Use <input type=range style=\"writing-mode: vertical-lr; "
-                            "direction: rtl\"> instead.";
-        }
-      }
-      break;
-    }
-    default:
-      break;
-  }
 }
 
 void WarnInvalidKeywordPropertyUsage(CSSPropertyID property, const CSSParserContext& context, CSSValueID value_id) {}
@@ -3355,33 +3332,16 @@ std::shared_ptr<const CSSValue> ConsumeBackgroundComponent(CSSPropertyID resolve
     case CSSPropertyID::kBackgroundOrigin:
       return ConsumeBackgroundBox(stream);
     case CSSPropertyID::kBackgroundImage:
-    case CSSPropertyID::kMaskImage:
-      return ConsumeImageOrNone(stream, context);
     case CSSPropertyID::kBackgroundPositionX:
-    case CSSPropertyID::kWebkitMaskPositionX:
       return ConsumePositionLonghand<CSSValueID::kLeft, CSSValueID::kRight>(stream, context);
     case CSSPropertyID::kBackgroundPositionY:
-    case CSSPropertyID::kWebkitMaskPositionY:
       return ConsumePositionLonghand<CSSValueID::kTop, CSSValueID::kBottom>(stream, context);
     case CSSPropertyID::kBackgroundSize:
       return ConsumeBackgroundSize(stream, context, ParsingStyle::kNotLegacy);
-    case CSSPropertyID::kMaskSize:
-      return ConsumeBackgroundSize(stream, context, ParsingStyle::kNotLegacy);
     case CSSPropertyID::kBackgroundColor:
       return ConsumeColor(stream, context);
-    case CSSPropertyID::kMaskClip:
-      return use_alias_parsing ? ConsumePrefixedBackgroundBox(stream, AllowTextValue::kAllow)
-                               : ConsumeCoordBoxOrNoClip(stream);
-    case CSSPropertyID::kMaskOrigin:
-      return use_alias_parsing ? ConsumePrefixedBackgroundBox(stream, AllowTextValue::kForbid)
-                               : ConsumeCoordBox(stream);
     case CSSPropertyID::kBackgroundRepeat:
-    case CSSPropertyID::kMaskRepeat:
       return ConsumeRepeatStyleValue(stream);
-    case CSSPropertyID::kMaskComposite:
-      return ConsumeMaskComposite(stream);
-    case CSSPropertyID::kMaskMode:
-      return ConsumeMaskMode(stream);
     default:
       return nullptr;
   };
@@ -3407,9 +3367,8 @@ bool ParseBackgroundOrMask(bool important,
                            const CSSParserLocalContext& local_context,
                            std::vector<CSSPropertyValue>& properties) {
   CSSPropertyID shorthand_id = local_context.CurrentShorthand();
-  DCHECK(shorthand_id == CSSPropertyID::kBackground || shorthand_id == CSSPropertyID::kMask);
-  const StylePropertyShorthand& shorthand =
-      shorthand_id == CSSPropertyID::kBackground ? backgroundShorthand() : maskShorthand();
+  DCHECK(shorthand_id == CSSPropertyID::kBackground );
+  const StylePropertyShorthand& shorthand = backgroundShorthand();
 
   const unsigned longhand_count = shorthand.length();
   std::vector<std::shared_ptr<const CSSValue>> longhands[10];
@@ -3433,15 +3392,14 @@ bool ParseBackgroundOrMask(bool important,
         std::shared_ptr<const CSSValue> value = nullptr;
         std::shared_ptr<const CSSValue> value_y = nullptr;
         const CSSProperty& property = *shorthand.properties()[i];
-        if (property.IDEquals(CSSPropertyID::kBackgroundPositionX) ||
-            property.IDEquals(CSSPropertyID::kWebkitMaskPositionX)) {
+        if (property.IDEquals(CSSPropertyID::kBackgroundPositionX)) {
           if (!ConsumePosition(stream, context, UnitlessQuirk::kForbid, value, value_y)) {
             continue;
           }
           if (value) {
             bg_position_parsed_in_current_layer = true;
           }
-        } else if (property.IDEquals(CSSPropertyID::kBackgroundSize) || property.IDEquals(CSSPropertyID::kMaskSize)) {
+        } else if (property.IDEquals(CSSPropertyID::kBackgroundSize)) {
           if (!ConsumeSlashIncludingWhitespace(stream)) {
             continue;
           }
@@ -3449,14 +3407,13 @@ bool ParseBackgroundOrMask(bool important,
           if (!value || !bg_position_parsed_in_current_layer) {
             return false;
           }
-        } else if (property.IDEquals(CSSPropertyID::kBackgroundPositionY) ||
-                   property.IDEquals(CSSPropertyID::kWebkitMaskPositionY)) {
+        } else if (property.IDEquals(CSSPropertyID::kBackgroundPositionY)) {
           continue;
         } else {
           value = ConsumeBackgroundComponent(property.PropertyID(), stream, context, local_context.UseAliasParsing());
         }
         if (value) {
-          if (property.IDEquals(CSSPropertyID::kBackgroundOrigin) || property.IDEquals(CSSPropertyID::kMaskOrigin)) {
+          if (property.IDEquals(CSSPropertyID::kBackgroundOrigin)) {
             origin_value = value;
           }
           parsed_longhand[i] = true;
@@ -3491,17 +3448,13 @@ bool ParseBackgroundOrMask(bool important,
         }
       }
       if (!parsed_longhand[i]) {
-        if ((property.IDEquals(CSSPropertyID::kBackgroundClip) || property.IDEquals(CSSPropertyID::kMaskClip)) &&
+        if ((property.IDEquals(CSSPropertyID::kBackgroundClip)) &&
             origin_value) {
           longhands[i].push_back(origin_value);
           continue;
         }
 
-        if (shorthand_id == CSSPropertyID::kMask) {
-          longhands[i].push_back(To<Longhand>(property).InitialValue());
-        } else {
-          longhands[i].push_back(CSSInitialValue::Create());
-        }
+        longhands[i].push_back(CSSInitialValue::Create());
       }
     }
   } while (ConsumeCommaIncludingWhitespace(stream));

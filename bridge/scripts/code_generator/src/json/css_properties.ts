@@ -124,7 +124,10 @@ function needs_style_builders(property_: any) {
 
 export class PropertyBase {
   name: string;
+  initial?: string;
   alias_for?: undefined | string;
+  font?: boolean;
+  independent?: boolean;
   alternative_of?: string | PropertyBase | undefined;
   longhands?: string[] | undefined;
   property_methods?: string[] | undefined;
@@ -180,6 +183,8 @@ export class PropertyBase {
   }
   anchor_mode?: string | NameStyleConverter;
   style_builder_declare?: boolean;
+  style_builder_template?: string;
+  style_builder_template_args?: string[];
   style_builder_custom_functions?: string[];
   default_value?: string;
   unwrapped_type_name?: string;

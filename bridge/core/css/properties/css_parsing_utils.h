@@ -279,8 +279,6 @@ std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
                                               const CSSParserContext& context,
                                               CSSParserTokenStream& stream);
 
-void CountKeywordOnlyPropertyUsage(CSSPropertyID, const CSSParserContext&, CSSValueID);
-
 void WarnInvalidKeywordPropertyUsage(CSSPropertyID, const CSSParserContext&, CSSValueID);
 
 bool ValidWidthOrHeightKeyword(CSSValueID id, const CSSParserContext& context);

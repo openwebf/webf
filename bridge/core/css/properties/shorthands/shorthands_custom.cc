@@ -835,12 +835,6 @@ bool BorderSpacing::ParseShorthand(bool important,
   if (!vertical_spacing) {
     vertical_spacing = horizontal_spacing;
   }
-  css_parsing_utils::AddProperty(CSSPropertyID::kWebkitBorderHorizontalSpacing, CSSPropertyID::kBorderSpacing,
-                                 horizontal_spacing, important, css_parsing_utils::IsImplicitProperty::kNotImplicit,
-                                 properties);
-  css_parsing_utils::AddProperty(CSSPropertyID::kWebkitBorderVerticalSpacing, CSSPropertyID::kBorderSpacing,
-                                 vertical_spacing, important, css_parsing_utils::IsImplicitProperty::kNotImplicit,
-                                 properties);
   return true;
 }
 //
@@ -965,14 +959,6 @@ bool Columns::ParseShorthand(bool important,
 //      value_phase);
 //}
 
-bool ContainIntrinsicSize::ParseShorthand(bool important,
-                                          CSSParserTokenStream& stream,
-                                          const CSSParserContext& context,
-                                          const CSSParserLocalContext&,
-                                          std::vector<CSSPropertyValue>& properties) const {
-  return css_parsing_utils::ConsumeShorthandVia2Longhands(containIntrinsicSizeShorthand(), important, context, stream,
-                                                          properties);
-}
 //
 // std::shared_ptr<const CSSValue> ContainIntrinsicSize::CSSValueFromComputedStyleInternal(
 //    const ComputedStyle& style,
@@ -2267,15 +2253,6 @@ bool Overflow::ParseShorthand(bool important,
 //  return list;
 //}
 
-bool OverscrollBehavior::ParseShorthand(bool important,
-                                        CSSParserTokenStream& stream,
-                                        const CSSParserContext& context,
-                                        const CSSParserLocalContext&,
-                                        std::vector<CSSPropertyValue>& properties) const {
-  return css_parsing_utils::ConsumeShorthandVia2Longhands(overscrollBehaviorShorthand(), important, context, stream,
-                                                          properties);
-}
-
 //std::shared_ptr<const CSSValue> OverscrollBehavior::CSSValueFromComputedStyleInternal(const ComputedStyle& style,
 //                                                                                      const LayoutObject*,
 //                                                                                      bool allow_visited_style,
@@ -2787,65 +2764,12 @@ bool WebkitColumnBreakInside::ParseShorthand(bool important,
   return true;
 }
 
-bool WebkitMaskBoxImage::ParseShorthand(bool important,
-                                        CSSParserTokenStream& stream,
-                                        const CSSParserContext& context,
-                                        const CSSParserLocalContext&,
-                                        std::vector<CSSPropertyValue>& properties) const {
-  std::shared_ptr<const CSSValue> source = nullptr;
-  std::shared_ptr<const CSSValue> slice = nullptr;
-  std::shared_ptr<const CSSValue> width = nullptr;
-  std::shared_ptr<const CSSValue> outset = nullptr;
-  std::shared_ptr<const CSSValue> repeat = nullptr;
-
-  if (!css_parsing_utils::ConsumeBorderImageComponents(stream, context, source, slice, width, outset, repeat,
-                                                       css_parsing_utils::DefaultFill::kFill)) {
-    return false;
-  }
-
-  css_parsing_utils::AddProperty(CSSPropertyID::kWebkitMaskBoxImageSource, CSSPropertyID::kWebkitMaskBoxImage,
-                                 source ? source : CSSInitialValue::Create(), important,
-                                 css_parsing_utils::IsImplicitProperty::kNotImplicit, properties);
-  css_parsing_utils::AddProperty(CSSPropertyID::kWebkitMaskBoxImageSlice, CSSPropertyID::kWebkitMaskBoxImage,
-                                 slice ? slice : CSSInitialValue::Create(), important,
-                                 css_parsing_utils::IsImplicitProperty::kNotImplicit, properties);
-  css_parsing_utils::AddProperty(CSSPropertyID::kWebkitMaskBoxImageWidth, CSSPropertyID::kWebkitMaskBoxImage,
-                                 width ? width : CSSInitialValue::Create(), important,
-                                 css_parsing_utils::IsImplicitProperty::kNotImplicit, properties);
-  css_parsing_utils::AddProperty(CSSPropertyID::kWebkitMaskBoxImageOutset, CSSPropertyID::kWebkitMaskBoxImage,
-                                 outset ? outset : CSSInitialValue::Create(), important,
-                                 css_parsing_utils::IsImplicitProperty::kNotImplicit, properties);
-  css_parsing_utils::AddProperty(CSSPropertyID::kWebkitMaskBoxImageRepeat, CSSPropertyID::kWebkitMaskBoxImage,
-                                 repeat ? repeat : CSSInitialValue::Create(), important,
-                                 css_parsing_utils::IsImplicitProperty::kNotImplicit, properties);
-
-  return true;
-}
-
 //std::shared_ptr<const CSSValue> WebkitMaskBoxImage::CSSValueFromComputedStyleInternal(const ComputedStyle& style,
 //                                                                                      const LayoutObject*,
 //                                                                                      bool allow_visited_style,
 //                                                                                      CSSValuePhase value_phase) const {
 //  return ComputedStyleUtils::ValueForNinePieceImage(style.MaskBoxImage(), style, allow_visited_style, value_phase);
 //}
-
-bool Mask::ParseShorthand(bool important,
-                          CSSParserTokenStream& stream,
-                          const CSSParserContext& context,
-                          const CSSParserLocalContext& local_context,
-                          std::vector<CSSPropertyValue>& properties) const {
-  return css_parsing_utils::ParseBackgroundOrMask(important, stream, context, local_context, properties);
-}
-
-bool MaskPosition::ParseShorthand(bool important,
-                                  CSSParserTokenStream& stream,
-                                  const CSSParserContext& context,
-                                  const CSSParserLocalContext& local_context,
-                                  std::vector<CSSPropertyValue>& properties) const {
-  return ParseBackgroundOrMaskPosition(
-      maskPositionShorthand(), important, stream, context,
-      properties);
-}
 
 bool TextEmphasis::ParseShorthand(bool important,
                                   CSSParserTokenStream& stream,
@@ -2854,15 +2778,6 @@ bool TextEmphasis::ParseShorthand(bool important,
                                   std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(textEmphasisShorthand(), important, context, stream,
                                                                  properties);
-}
-
-bool WebkitTextStroke::ParseShorthand(bool important,
-                                      CSSParserTokenStream& stream,
-                                      const CSSParserContext& context,
-                                      const CSSParserLocalContext&,
-                                      std::vector<CSSPropertyValue>& properties) const {
-  return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(webkitTextStrokeShorthand(), important, context,
-                                                                 stream, properties);
 }
 
 bool WhiteSpace::ParseShorthand(bool important,

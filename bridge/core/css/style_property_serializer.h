@@ -81,7 +81,6 @@ class StylePropertySerializer {
                                           StringBuilder& result) const;
   std::string OffsetValue() const;
   std::string TextDecorationValue() const;
-  std::string ContainIntrinsicSizeValue() const;
 //  std::string WhiteSpaceValue() const;
   std::string GetPropertyText(const CSSPropertyName&,
                          const std::string& value,

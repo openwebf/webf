@@ -384,8 +384,6 @@ static bool AllowInitialInShorthand(CSSPropertyID property_id) {
     case CSSPropertyID::kListStyle:
     case CSSPropertyID::kTextDecoration:
     case CSSPropertyID::kTextEmphasis:
-    case CSSPropertyID::kMask:
-    case CSSPropertyID::kWebkitTextStroke:
     case CSSPropertyID::kWhiteSpace:
       return true;
     default:
@@ -526,8 +524,6 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
       return GetShorthandValueForColumnRule(columnRuleShorthand());
     case CSSPropertyID::kColumns:
       return GetShorthandValueForColumns(columnsShorthand());
-    case CSSPropertyID::kContainIntrinsicSize:
-      return ContainIntrinsicSizeValue();
     case CSSPropertyID::kFlex:
       return GetShorthandValue(flexShorthand());
     case CSSPropertyID::kFlexFlow:
@@ -572,8 +568,6 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
       return OffsetValue();
     case CSSPropertyID::kOverflow:
       return Get2Values(overflowShorthand());
-    case CSSPropertyID::kOverscrollBehavior:
-      return Get2Values(overscrollBehaviorShorthand());
     case CSSPropertyID::kPadding:
       return Get4Values(paddingShorthand());
     case CSSPropertyID::kPaddingBlock:
@@ -586,14 +580,8 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
       return GetLayeredShorthandValue(transitionShorthand());
     case CSSPropertyID::kListStyle:
       return GetShorthandValue(listStyleShorthand());
-    case CSSPropertyID::kMaskPosition:
-      return GetLayeredShorthandValue(maskPositionShorthand());
-    case CSSPropertyID::kMask:
-      return GetLayeredShorthandValue(maskShorthand());
     case CSSPropertyID::kTextEmphasis:
       return GetShorthandValue(textEmphasisShorthand());
-    case CSSPropertyID::kWebkitTextStroke:
-      return GetShorthandValue(webkitTextStrokeShorthand());
     case CSSPropertyID::kMarker: {
       if (std::shared_ptr<const CSSValue> start = property_set_.GetPropertyCSSValue(GetCSSPropertyMarkerStart())) {
         std::shared_ptr<const CSSValue> mid = property_set_.GetPropertyCSSValue(GetCSSPropertyMarkerMid());
@@ -615,10 +603,6 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
     case CSSPropertyID::kWebkitColumnBreakAfter:
     case CSSPropertyID::kWebkitColumnBreakBefore:
     case CSSPropertyID::kWebkitColumnBreakInside:
-    case CSSPropertyID::kWebkitMaskBoxImage:
-      // Temporary exceptions to the NOTREACHED() below.
-      // TODO(crbug.com/1316689): Write something real here.
-      return std::string();
     default:
       assert(false);
       return std::string();
@@ -1442,72 +1426,8 @@ std::string StylePropertySerializer::GetLayeredShorthandValue(const StylePropert
         }
       }
 
-      if (shorthand.id() == CSSPropertyID::kMask) {
-        if (property->IDEquals(CSSPropertyID::kMaskImage)) {
-          if (auto* image_value = DynamicTo<CSSIdentifierValue>(value)) {
-            if (image_value->GetValueID() == CSSValueID::kNone) {
-              omit_value = true;
-            }
-          }
-        } else if (property->IDEquals(CSSPropertyID::kMaskOrigin)) {
-          if (auto* ident = DynamicTo<CSSIdentifierValue>(value)) {
-            mask_origin_value = ident->GetValueID();
-          }
-          // Omit this value as it is serialized alongside mask-clip.
-          omit_value = true;
-        } else if (property->IDEquals(CSSPropertyID::kMaskClip)) {
-          CSSValueID mask_clip_id = CSSValueID::kBorderBox;
-          if (auto* ident = DynamicTo<CSSIdentifierValue>(value)) {
-            mask_clip_id = ident->GetValueID();
-          }
-          SerializeMaskOriginAndClip(layer_result, mask_origin_value, mask_clip_id);
-          omit_value = true;
-        } else if (property->IDEquals(CSSPropertyID::kMaskComposite)) {
-          if (auto* ident = DynamicTo<CSSIdentifierValue>(value)) {
-            if (ident->GetValueID() == CSSValueID::kAdd) {
-              omit_value = true;
-            }
-          }
-        } else if (property->IDEquals(CSSPropertyID::kMaskMode)) {
-          if (auto* ident = DynamicTo<CSSIdentifierValue>(value)) {
-            if (ident->GetValueID() == CSSValueID::kMatchSource) {
-              omit_value = true;
-            }
-          }
-        } else if (property->IDEquals(CSSPropertyID::kMaskRepeat)) {
-          if (auto* repeat = DynamicTo<CSSRepeatStyleValue>(value)) {
-            if (repeat->IsRepeat()) {
-              omit_value = true;
-            }
-          }
-        } else if (property->IDEquals(CSSPropertyID::kMaskSize)) {
-          if (auto* size_value = DynamicTo<CSSIdentifierValue>(value)) {
-            if (size_value->GetValueID() == CSSValueID::kAuto) {
-              omit_value = true;
-            }
-          }
-        } else if (property->IDEquals(CSSPropertyID::kWebkitMaskPositionX)) {
-          omit_value = true;
-          mask_position_x = value;
-        } else if (property->IDEquals(CSSPropertyID::kWebkitMaskPositionY)) {
-          omit_value = true;
-
-          if (!IsZeroPercent(mask_position_x) || !IsZeroPercent(value)) {
-            is_position_x_serialized = true;
-            is_position_y_serialized = true;
-
-            if (!layer_result.empty()) {
-              layer_result.Append(' ');
-            }
-            layer_result.Append(mask_position_x->CssText());
-            layer_result.Append(' ');
-            layer_result.Append(value->CssText());
-          }
-        }
-      }
-
       if (!omit_value) {
-        if (property->IDEquals(CSSPropertyID::kBackgroundSize) || property->IDEquals(CSSPropertyID::kMaskSize)) {
+        if (property->IDEquals(CSSPropertyID::kBackgroundSize)) {
           if (is_position_y_serialized || is_position_x_serialized) {
             layer_result.Append(" / ");
           } else {
@@ -1530,9 +1450,6 @@ std::string StylePropertySerializer::GetLayeredShorthandValue(const StylePropert
           // specified, the second one defaults to "center", not the same value.
         }
       }
-    }
-    if (shorthand.id() == CSSPropertyID::kMask && layer_result.empty()) {
-      layer_result.Append(getValueName(CSSValueID::kNone));
     }
     if (shorthand.id() == CSSPropertyID::kTransition && layer_result.empty()) {
       // When serializing the transition shorthand, we omit all values which are
@@ -1973,16 +1890,6 @@ std::string StylePropertySerializer::PageBreakPropertyValue(const StylePropertyS
     return value->CssText();
   }
   return std::string();
-}
-
-std::string StylePropertySerializer::ContainIntrinsicSizeValue() const {
-  // If the two values are identical, we return just one.
-  std::string res = GetCommonValue(containIntrinsicSizeShorthand());
-  if (!res.empty()) {
-    return res;
-  }
-  // Otherwise just serialize them in sequence.
-  return GetShorthandValue(containIntrinsicSizeShorthand());
 }
 
 }  // namespace webf

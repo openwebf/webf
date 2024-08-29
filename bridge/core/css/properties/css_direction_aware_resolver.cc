@@ -183,16 +183,6 @@ PhysicalMapping<2> CSSDirectionAwareResolver::PhysicalOverflowMapping() {
   return PhysicalMapping<2>(overflowShorthand());
 }
 
-LogicalMapping<2> CSSDirectionAwareResolver::LogicalOverscrollBehaviorMapping() {
-  static const CSSProperty* kProperties[] = {&GetCSSPropertyOverscrollBehaviorBlock(),
-                                             &GetCSSPropertyOverscrollBehaviorInline()};
-  return LogicalMapping<2>(kProperties);
-}
-
-PhysicalMapping<2> CSSDirectionAwareResolver::PhysicalOverscrollBehaviorMapping() {
-  return PhysicalMapping<2>(overscrollBehaviorShorthand());
-}
-
 LogicalMapping<4> CSSDirectionAwareResolver::LogicalPaddingMapping() {
   static const CSSProperty* kProperties[] = {&GetCSSPropertyPaddingBlockStart(), &GetCSSPropertyPaddingBlockEnd(),
                                              &GetCSSPropertyPaddingInlineStart(), &GetCSSPropertyPaddingInlineEnd()};

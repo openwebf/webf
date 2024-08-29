@@ -865,18 +865,6 @@ std::shared_ptr<const CSSValue> ContainIntrinsicHeight::ParseSingleValue(CSSPars
   return css_parsing_utils::ConsumeIntrinsicSizeLonghand(stream, context);
 }
 
-std::shared_ptr<const CSSValue> ContainIntrinsicInlineSize::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                             const CSSParserContext& context,
-                                                                             const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeIntrinsicSizeLonghand(stream, context);
-}
-
-std::shared_ptr<const CSSValue> ContainIntrinsicBlockSize::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                            const CSSParserContext& context,
-                                                                            const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeIntrinsicSizeLonghand(stream, context);
-}
-
 std::shared_ptr<const CSSValue> ContainerName::ParseSingleValue(CSSParserTokenStream& stream,
                                                                 const CSSParserContext& context,
                                                                 const CSSParserLocalContext&) const {
@@ -977,28 +965,6 @@ std::shared_ptr<const CSSValue> Content::ParseSingleValue(CSSParserTokenStream& 
 }
 
 const int kCounterIncrementDefaultValue = 1;
-
-std::shared_ptr<const CSSValue> CounterIncrement::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
-                                                                   const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCounter(stream, context, kCounterIncrementDefaultValue);
-}
-
-const int kCounterResetDefaultValue = 0;
-
-std::shared_ptr<const CSSValue> CounterReset::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
-                                                               const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCounter(stream, context, kCounterResetDefaultValue);
-}
-
-const int kCounterSetDefaultValue = 0;
-
-std::shared_ptr<const CSSValue> CounterSet::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
-                                                             const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCounter(stream, context, kCounterSetDefaultValue);
-}
 
 // std::shared_ptr<const CSSValue> Cursor::ParseSingleValue(CSSParserTokenStream& stream,
 //                                                          const CSSParserContext& context,
@@ -2741,56 +2707,6 @@ std::shared_ptr<const CSSValue> VerticalAlign::ParseSingleValue(CSSParserTokenSt
   return parsed_value;
 }
 
-void AppRegion::ApplyInitial(StyleResolverState& state) const {}
-
-void AppRegion::ApplyInherit(StyleResolverState& state) const {}
-
-std::shared_ptr<const CSSValue> Appearance::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
-                                                             const CSSParserLocalContext& local_context) const {
-  CSSValueID id = stream.Peek().Id();
-  CSSPropertyID property = CSSPropertyID::kAppearance;
-  if (local_context.UseAliasParsing()) {
-    property = CSSPropertyID::kAliasWebkitAppearance;
-  }
-  if (CSSParserFastPaths::IsValidKeywordPropertyAndValue(property, id, context.Mode())) {
-    css_parsing_utils::CountKeywordOnlyPropertyUsage(property, context, id);
-    return css_parsing_utils::ConsumeIdent(stream);
-  }
-  css_parsing_utils::WarnInvalidKeywordPropertyUsage(property, context, id);
-  return nullptr;
-}
-
-std::shared_ptr<const CSSValue> WebkitBorderHorizontalSpacing::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                                const CSSParserContext& context,
-                                                                                const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
-}
-
-std::shared_ptr<const CSSValue> WebkitBorderImage::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
-                                                                    const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeWebkitBorderImage(stream, context);
-}
-
-std::shared_ptr<const CSSValue> WebkitBorderVerticalSpacing::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                              const CSSParserContext& context,
-                                                                              const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
-}
-
-std::shared_ptr<const CSSValue> WebkitBoxFlex::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
-                                                                const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kAll);
-}
-
-std::shared_ptr<const CSSValue> WebkitBoxOrdinalGroup::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                        const CSSParserContext& context,
-                                                                        const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumePositiveInteger(stream, context);
-}
-
 namespace {
 
 std::shared_ptr<const CSSValue> ConsumeReflect(CSSParserTokenStream& stream, const CSSParserContext& context) {
@@ -2817,12 +2733,6 @@ std::shared_ptr<const CSSValue> ConsumeReflect(CSSParserTokenStream& stream, con
 
 }  // namespace
 
-std::shared_ptr<const CSSValue> WebkitBoxReflect::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
-                                                                   const CSSParserLocalContext&) const {
-  return ConsumeReflect(stream, context);
-}
-
 std::shared_ptr<const CSSValue> WebkitLineClamp::ParseSingleValue(CSSParserTokenStream& stream,
                                                                   const CSSParserContext& context,
                                                                   const CSSParserLocalContext&) const {
@@ -2839,170 +2749,15 @@ std::shared_ptr<const CSSValue> WebkitLocale::ParseSingleValue(CSSParserTokenStr
   return css_parsing_utils::ConsumeString(stream);
 }
 
-std::shared_ptr<const CSSValue> WebkitMaskBoxImageOutset::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                           const CSSParserContext& context,
-                                                                           const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeBorderImageOutset(stream, context);
-}
-
-std::shared_ptr<const CSSValue> WebkitMaskBoxImageRepeat::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                           const CSSParserContext&,
-                                                                           const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeBorderImageRepeat(stream);
-}
-
-std::shared_ptr<const CSSValue> WebkitMaskBoxImageSlice::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                          const CSSParserContext& context,
-                                                                          const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeBorderImageSlice(stream, context, css_parsing_utils::DefaultFill::kNoFill);
-}
-
-std::shared_ptr<const CSSValue> WebkitMaskBoxImageSource::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                           const CSSParserContext& context,
-                                                                           const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeImageOrNone(stream, context);
-}
 
 // void WebkitMaskBoxImageSource::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
 //   state.StyleBuilder().SetMaskBoxImageSource(state.GetStyleImage(CSSPropertyID::kWebkitMaskBoxImageSource, value));
 // }
 
-std::shared_ptr<const CSSValue> WebkitMaskBoxImageWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                          const CSSParserContext& context,
-                                                                          const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeBorderImageWidth(stream, context);
-}
-
-std::shared_ptr<const CSSValue> MaskClip::ParseSingleValue(CSSParserTokenStream& stream,
-                                                           const CSSParserContext&,
-                                                           const CSSParserLocalContext& local_context) const {
-  if (local_context.UseAliasParsing()) {
-    return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumePrefixedBackgroundBox, stream,
-                                                        css_parsing_utils::AllowTextValue::kAllow);
-  }
-  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeCoordBoxOrNoClip, stream);
-}
-
-std::shared_ptr<const CSSValue> MaskClip::InitialValue() const {
-  return CSSIdentifierValue::Create(CSSValueID::kBorderBox);
-}
-
-std::shared_ptr<const CSSValue> MaskComposite::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext&,
-                                                                const CSSParserLocalContext& local_context) const {
-  if (local_context.UseAliasParsing()) {
-    return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumePrefixedMaskComposite, stream);
-  }
-  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeMaskComposite, stream);
-}
-
-std::shared_ptr<const CSSValue> MaskComposite::InitialValue() const {
-  return CSSIdentifierValue::Create(CSSValueID::kAdd);
-}
-
-std::shared_ptr<const CSSValue> MaskImage::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
-                                                            const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeImageOrNone, stream, context);
-}
-
-std::shared_ptr<const CSSValue> MaskMode::ParseSingleValue(CSSParserTokenStream& stream,
-                                                           const CSSParserContext&,
-                                                           const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeMaskMode, stream);
-}
-
-std::shared_ptr<const CSSValue> MaskMode::InitialValue() const {
-  return CSSIdentifierValue::Create(CSSValueID::kMatchSource);
-}
-
-std::shared_ptr<const CSSValue> MaskOrigin::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext&,
-                                                             const CSSParserLocalContext& local_context) const {
-  if (local_context.UseAliasParsing()) {
-    return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumePrefixedBackgroundBox, stream,
-                                                        css_parsing_utils::AllowTextValue::kForbid);
-  }
-  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeCoordBox, stream);
-}
-
-std::shared_ptr<const CSSValue> MaskOrigin::InitialValue() const {
-  return CSSIdentifierValue::Create(CSSValueID::kBorderBox);
-}
-
-std::shared_ptr<const CSSValue> WebkitMaskPositionX::ParseSingleValue(CSSParserTokenStream& Stream,
-                                                                      const CSSParserContext& context,
-                                                                      const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList(
-      css_parsing_utils::ConsumePositionLonghand<CSSValueID::kLeft, CSSValueID::kRight>, Stream, context);
-}
-
-std::shared_ptr<const CSSValue> WebkitMaskPositionX::InitialValue() const {
-  return CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kPercentage);
-}
-
-std::shared_ptr<const CSSValue> WebkitMaskPositionY::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                      const CSSParserContext& context,
-                                                                      const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeCommaSeparatedList(
-      css_parsing_utils::ConsumePositionLonghand<CSSValueID::kTop, CSSValueID::kBottom>, stream, context);
-}
-
-std::shared_ptr<const CSSValue> WebkitMaskPositionY::InitialValue() const {
-  return CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kPercentage);
-}
-
-std::shared_ptr<const CSSValue> MaskRepeat::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
-                                                             const CSSParserLocalContext& local_context) const {
-  return css_parsing_utils::ParseRepeatStyle(stream);
-}
-
-std::shared_ptr<const CSSValue> MaskRepeat::InitialValue() const {
-  return std::make_shared<CSSRepeatStyleValue>(CSSIdentifierValue::Create(CSSValueID::kRepeat));
-}
-
-std::shared_ptr<const CSSValue> MaskSize::ParseSingleValue(CSSParserTokenStream& stream,
-                                                           const CSSParserContext& context,
-                                                           const CSSParserLocalContext& local_context) const {
-  return css_parsing_utils::ParseMaskSize(stream, context, local_context);
-}
-
-std::shared_ptr<const CSSValue> MaskSize::InitialValue() const {
-  return CSSIdentifierValue::Create(CSSValueID::kAuto);
-}
-
-std::shared_ptr<const CSSValue> WebkitPerspectiveOriginX::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                           const CSSParserContext& context,
-                                                                           const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumePositionLonghand<CSSValueID::kLeft, CSSValueID::kRight>(stream, context);
-}
 
 // void WebkitPerspectiveOriginX::ApplyInherit(StyleResolverState& state) const {
 //   state.StyleBuilder().SetPerspectiveOriginX(state.ParentStyle()->PerspectiveOrigin().X());
 // }
-
-std::shared_ptr<const CSSValue> WebkitPerspectiveOriginY::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                           const CSSParserContext& context,
-                                                                           const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumePositionLonghand<CSSValueID::kTop, CSSValueID::kBottom>(stream, context);
-}
-
-std::shared_ptr<const CSSValue> RubyPosition::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
-                                                               const CSSParserLocalContext&) const {
-  CSSValueID value_id = stream.Peek().Id();
-  if (css_parsing_utils::IdentMatches<CSSValueID::kOver, CSSValueID::kUnder>(value_id)) {
-    return css_parsing_utils::ConsumeIdent(stream);
-  }
-  return nullptr;
-}
-
-std::shared_ptr<const CSSValue> WebkitTapHighlightColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                          const CSSParserContext& context,
-                                                                          const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeColor(stream, context);
-}
 
 std::shared_ptr<const CSSValue> TextEmphasisColor::ParseSingleValue(CSSParserTokenStream& stream,
                                                                     const CSSParserContext& context,
@@ -3098,24 +2853,6 @@ std::shared_ptr<const CSSValue> TextEmphasisStyle::ParseSingleValue(CSSParserTok
   return nullptr;
 }
 
-std::shared_ptr<const CSSValue> WebkitTextFillColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                      const CSSParserContext& context,
-                                                                      const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeColor(stream, context);
-}
-
-std::shared_ptr<const CSSValue> WebkitTextStrokeColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                        const CSSParserContext& context,
-                                                                        const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeColor(stream, context);
-}
-
-std::shared_ptr<const CSSValue> WebkitTextStrokeWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                        const CSSParserContext& context,
-                                                                        const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeLineWidth(stream, context, css_parsing_utils::UnitlessQuirk::kForbid);
-}
-
 std::shared_ptr<const CSSValue> TimelineScope::ParseSingleValue(CSSParserTokenStream& stream,
                                                                 const CSSParserContext& context,
                                                                 const CSSParserLocalContext&) const {
@@ -3128,27 +2865,10 @@ std::shared_ptr<const CSSValue> TimelineScope::ParseSingleValue(CSSParserTokenSt
       CSSParserTokenStream&, const CSSParserContext&)>(ConsumeCustomIdent, stream, context);
 }
 
-std::shared_ptr<const CSSValue> WebkitTransformOriginX::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                         const CSSParserContext& context,
-                                                                         const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumePositionLonghand<CSSValueID::kLeft, CSSValueID::kRight>(stream, context);
-}
-
-std::shared_ptr<const CSSValue> WebkitTransformOriginY::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                         const CSSParserContext& context,
-                                                                         const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumePositionLonghand<CSSValueID::kTop, CSSValueID::kBottom>(stream, context);
-}
 
 // void WebkitTransformOriginY::ApplyInherit(StyleResolverState& state) const {
 //   state.StyleBuilder().SetTransformOriginY(state.ParentStyle()->GetTransformOrigin().Y());
 // }
-
-std::shared_ptr<const CSSValue> WebkitTransformOriginZ::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                         const CSSParserContext& context,
-                                                                         const CSSParserLocalContext&) const {
-  return css_parsing_utils::ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kAll);
-}
 
 std::shared_ptr<const CSSValue> Widows::ParseSingleValue(CSSParserTokenStream& stream,
                                                          const CSSParserContext& context,

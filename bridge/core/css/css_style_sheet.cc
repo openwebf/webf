@@ -82,6 +82,14 @@ void CSSStyleSheet::ClearOwnerNode() {
   owner_node_ = nullptr;
 }
 
+std::string CSSStyleSheet::BaseURL() const {
+  return "";
+}
+
+bool CSSStyleSheet::IsLoading() const {
+  return false;
+}
+
 void CSSStyleSheet::DidMutate(webf::CSSStyleSheet::Mutation mutation) {
   if (mutation == Mutation::kRules) {
     assert(contents_->IsMutable());
