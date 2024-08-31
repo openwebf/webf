@@ -52,7 +52,7 @@ class AsyncStorageModule extends BaseModule {
 
   Future<bool> removeItem(String key) async {
     try {
-      _lazyBox.delete(key);
+      await _lazyBox.delete(key);
       return true;
     } catch (e, stack) {
       return false;

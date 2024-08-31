@@ -265,6 +265,11 @@ static JSValue parseHTML(JSContext* ctx, JSValueConst this_val, int argc, JSValu
   return JS_NULL;
 }
 
+static JSValue syncThreadBuffer(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+  auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
+  context->uiCommandBuffer()->SyncToActive();
+}
+
 static JSValue triggerGlobalError(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
 
@@ -357,6 +362,7 @@ WebFTestContext::WebFTestContext(ExecutingContext* context)
       {"__webf_environment__", environment, 0},
       {"__webf_simulate_pointer__", simulatePointer, 3},
       {"__webf_simulate_inputtext__", simulateInputText, 1},
+      {"__webf_sync_buffer__", syncThreadBuffer, 0},
       {"__webf_trigger_global_error__", triggerGlobalError, 0},
       {"__webf_parse_html__", parseHTML, 1},
   };
