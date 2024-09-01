@@ -5,7 +5,7 @@ import {MouseEventInit} from "./mouse_event_init";
 /** Events that occur due to the user interacting with a pointing device (such as a mouse). Common events using this interface include click, dblclick, mouseup, mousedown. */
 interface MouseEvent extends UIEvent {
     // readonly altKey: boolean;
-    // readonly button: number;
+    readonly button: number;
     // readonly buttons: number;
     readonly clientX: number;
     readonly clientY: number;
