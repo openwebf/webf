@@ -143,12 +143,6 @@ class Window extends EventTarget {
   }
 
   @override
-  void dispose() {
-    super.dispose();
-    _watchedViewportElements.clear();
-  }
-
-  @override
   void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false, bool builtInCallback = false}) {
     super.removeEventListener(eventType, handler, isCapture: isCapture);
     switch (eventType) {
