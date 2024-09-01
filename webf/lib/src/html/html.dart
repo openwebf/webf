@@ -19,7 +19,7 @@ class HTMLElement extends Element {
     // Add default behavior unfocus focused input or textarea elements.
     addEventListener('click', (event) async {
       FocusManager.instance.primaryFocus?.unfocus();
-    });
+    }, builtInCallback: true);
   }
 
   @override
