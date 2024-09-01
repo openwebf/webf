@@ -113,8 +113,9 @@ mixin ElementEventMixin on ElementBase {
   }
 
   @override
-  void addEventListener(String eventType, EventHandler handler, {EventListenerOptions? addEventListenerOptions}) {
-    super.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
+  void addEventListener(String eventType, EventHandler handler,
+      {EventListenerOptions? addEventListenerOptions, bool builtInCallback = false}) {
+    super.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions, builtInCallback: builtInCallback);
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox != null) {
       ensureEventResponderBound();
@@ -122,8 +123,8 @@ mixin ElementEventMixin on ElementBase {
   }
 
   @override
-  void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false}) {
-    super.removeEventListener(eventType, handler, isCapture: isCapture);
+  void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false, bool builtInCallback = false}) {
+    super.removeEventListener(eventType, handler, isCapture: isCapture, builtInCallback: builtInCallback);
     RenderBoxModel? renderBox = renderBoxModel;
     if (renderBox != null) {
       ensureEventResponderBound();
@@ -225,8 +226,8 @@ class Event {
       (_target != null && _target.pointer != null) ? _target.pointer!.address : nullptr.address,
       (_currentTarget != null && _currentTarget.pointer != null) ? _currentTarget.pointer!.address : nullptr.address,
       sharedJSProps.address, // EventProps* props
-      propLen,  // int64_t props_len
-      allocateLen   // int64_t alloc_size;
+      propLen, // int64_t props_len
+      allocateLen // int64_t alloc_size;
     ];
 
     // Allocate extra bytes to store subclass's members.
@@ -271,7 +272,7 @@ class HybridRouterChangeEvent extends Event {
   final String kind;
   final String name;
 
-  HybridRouterChangeEvent({this.state, required this.kind, required this.name}): super(EVENT_HYBRID_ROUTER_CHANGE);
+  HybridRouterChangeEvent({this.state, required this.kind, required this.name}) : super(EVENT_HYBRID_ROUTER_CHANGE);
 
   @override
   Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {

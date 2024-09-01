@@ -47,6 +47,9 @@ class EventDispatchResult extends Struct {
 
   @Bool()
   external bool propagationStopped;
+
+  @Bool()
+  external bool preventDefaulted;
 }
 
 class AddEventListenerOptions extends Struct {
