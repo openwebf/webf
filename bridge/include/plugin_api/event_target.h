@@ -39,6 +39,9 @@ using WebFEventTargetRemoveEventListener = void (*)(EventTarget* event_target,
                                                     const char*,
                                                     WebFEventListenerContext* callback_context,
                                                     SharedExceptionState* shared_exception_state);
+using WebFEventTargetDispatchEvent = bool (*)(EventTarget* event_target,
+                                              Event* event,
+                                              SharedExceptionState* shared_exception_state);
 
 using WebFEventTargetRelease = void (*)(EventTarget*);
 
@@ -52,11 +55,13 @@ struct EventTargetWebFMethods : public WebFPublicMethods {
                                   const char* event_name_str,
                                   WebFEventListenerContext* callback_context,
                                   SharedExceptionState* shared_exception_state);
+  static bool DispatchEvent(EventTarget* event_target, Event* event, SharedExceptionState* shared_exception_state);
   static void Release(EventTarget* event_target);
 
   double version{1.0};
-  WebFEventTargetAddEventListener webf_event_target_add_event_listener{AddEventListener};
+  WebFEventTargetAddEventListener event_target_add_event_listener{AddEventListener};
   WebFEventTargetRemoveEventListener event_target_remove_event_listener{RemoveEventListener};
+  WebFEventTargetDispatchEvent event_target_dispatch_event{DispatchEvent};
   WebFEventTargetRelease event_target_release{Release};
 };
 

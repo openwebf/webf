@@ -4,6 +4,7 @@
 
 use std::ffi::{c_double, c_void, CString};
 use libc::{boolean_t, c_char};
+use crate::event::Event;
 use crate::exception_state::ExceptionState;
 use crate::executing_context::{ExecutingContext, ExecutingContextRustMethods};
 use crate::{executing_context, OpaquePtr};
@@ -46,6 +47,10 @@ pub struct EventTargetRustMethods {
     event_name: *const c_char,
     callback_context: *const EventCallbackContext,
     exception_state: *const OpaquePtr) -> c_void,
+  pub dispatch_event: extern "C" fn(
+    event_target: *const OpaquePtr,
+    event: *const OpaquePtr,
+    exception_state: *const OpaquePtr) -> bool,
   pub release: extern "C" fn(event_target: *const OpaquePtr),
 }
 
@@ -166,6 +171,12 @@ impl EventTarget {
 
     Ok(())
   }
+
+  pub fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool {
+    unsafe {
+      ((*self.method_pointer).dispatch_event)(self.ptr, event.ptr, exception_state.ptr)
+    }
+  }
 }
 
 pub trait EventTargetMethods {
@@ -186,6 +197,8 @@ pub trait EventTargetMethods {
     event_name: &str,
     callback: EventListenerCallback,
     exception_state: &ExceptionState) -> Result<(), String>;
+
+  fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool;
 }
 
 impl Drop for EventTarget {
@@ -224,5 +237,9 @@ impl EventTargetMethods for EventTarget {
                            callback: EventListenerCallback,
                            exception_state: &ExceptionState) -> Result<(), String> {
     self.remove_event_listener(event_name, callback, exception_state)
+  }
+
+  fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool {
+    self.dispatch_event(event, exception_state)
   }
 }

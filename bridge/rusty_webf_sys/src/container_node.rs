@@ -4,6 +4,7 @@
 
 use std::ffi::c_double;
 use crate::document::{Document, DocumentRustMethods};
+use crate::event::Event;
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTargetMethods, EventTargetRustMethods, RustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
@@ -72,6 +73,10 @@ impl EventTargetMethods for ContainerNode {
                            callback: EventListenerCallback,
                            exception_state: &ExceptionState) -> Result<(), String> {
     self.node.remove_event_listener(event_name, callback, exception_state)
+  }
+
+  fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool {
+    self.node.dispatch_event(event, exception_state)
   }
 }
 
