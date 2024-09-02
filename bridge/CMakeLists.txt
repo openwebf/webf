@@ -577,6 +577,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_add_event_listener_options.cc
     out/qjs_event_listener_options.cc
     out/qjs_error_event.cc
+    out/color_data.cc
     out/qjs_message_event.cc
     out/qjs_message_event_init.cc
     out/qjs_close_event.cc

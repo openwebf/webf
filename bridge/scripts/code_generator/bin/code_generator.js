@@ -21,6 +21,7 @@ const {makeStylePropertyShorthand} = require("../dist/json/make_property_shortha
 const {makeCSSPropertySubClasses} = require("../dist/json/make_css_property_subclasses");
 const {makeCSSPropertyInstance} = require("../dist/json/make_css_property_instance");
 const { makeCSSValueIdMapping } = require('../dist/json/make_css_value_id_mappings');
+const { makeColorData } = require('../dist/json/make_color_data');
 
 program
   .version(packageJSON.version)
@@ -210,6 +211,15 @@ EOF`, {stdio: 'inherit'});
   let cssValueIdMappingFilePath = path.join(dist, 'css_value_id_mappings_generated');
 
   writeFileIfChanged(cssValueIdMappingFilePath + '.h', cssValueIdMapping.header);
+
+  // Generate color_data
+  let colorData = makeColorData();
+  let colorDataFilePath = path.join(dist, 'color_data');
+
+  writeFileIfChanged(colorDataFilePath + '.cc', colorData.source);
+  execSync(`cat << EOF | gperf --key-positions='*' -D -s 2 > ${colorDataFilePath + '.cc'} 
+${colorData.source}
+EOF`, {stdio: 'inherit'});
 }
 
 class DefinedPropertyCollector {
