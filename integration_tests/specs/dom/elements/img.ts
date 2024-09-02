@@ -544,7 +544,9 @@ describe('Tags img', () => {
       '100px'
     );
     BODY.appendChild(image);
-    await snapshot(0.1);
-    done();
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 });

@@ -320,6 +320,7 @@ function append(parent: HTMLElement, child: Node) {
 }
 
 async function snapshot(target?: any, filename?: String, postfix?: boolean | string) {
+  window['__webf_sync_buffer__']();
   return new Promise<void>((resolve, reject) => {
     requestAnimationFrame(async () => {
       try {
