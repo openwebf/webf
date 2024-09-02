@@ -194,7 +194,7 @@ impl Document {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Event::initialize(new_event.value, new_event.method_pointer));
+    return Ok(Event::initialize(new_event.value, event_target.context(), new_event.method_pointer));
   }
 
   /// Behavior as same as `document.querySelector()` in JavaScript.
@@ -325,6 +325,10 @@ impl EventTargetMethods for Document {
                            callback: EventListenerCallback,
                            exception_state: &ExceptionState) -> Result<(), String> {
     self.container_node.node.event_target.remove_event_listener(event_name, callback, exception_state)
+  }
+
+  fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool {
+    self.container_node.node.event_target.dispatch_event(event, exception_state)
   }
 }
 
