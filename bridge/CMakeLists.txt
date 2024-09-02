@@ -273,6 +273,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dart_methods.cc
     core/api/exception_state.cc
     core/api/event_target.cc
+    core/api/event.cc
     core/api/node.cc
     core/api/executing_context.cc
     core/api/container_node.cc
