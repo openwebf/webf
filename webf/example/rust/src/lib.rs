@@ -28,7 +28,17 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
     document.body().append_child(&div, &exception_state).unwrap();
   });
 
-  div_element.add_event_listener("click", event_handler.clone(), &event_listener_options, &exception_state).unwrap();
+  div_element.add_event_listener("custom_click", event_handler.clone(), &event_listener_options, &exception_state).unwrap();
+
+  let event = document.create_event("custom_click", &exception_state).unwrap();
+
+  let real_click_handler = Box::new(move |event_target: &EventTarget| {
+    let context = event_target.context();
+    let exception_state = context.create_exception_state();
+    let _ = event_target.dispatch_event(&event, &exception_state);
+  });
+
+  div_element.add_event_listener("click", real_click_handler, &event_listener_options, &exception_state).unwrap();
 
   let text_node = document.create_text_node("From Rust", &exception_state).unwrap();
 
@@ -46,7 +56,7 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
     let context = event_target.context();
     let exception_state = context.create_exception_state();
 
-    let _ = div_element.remove_event_listener("click", event_handler.clone(), &exception_state);
+    let _ = div_element.remove_event_listener("custom_click", event_handler.clone(), &exception_state);
   });
 
   event_cleaner_element.add_event_listener("click", event_cleaner_handler, &event_listener_options, &exception_state).unwrap();

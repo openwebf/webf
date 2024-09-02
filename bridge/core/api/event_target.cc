@@ -77,6 +77,10 @@ void EventTargetWebFMethods::RemoveEventListener(EventTarget* event_target,
   event_target->removeEventListener(event_name, listener_impl, shared_exception_state->exception_state);
 }
 
+bool EventTargetWebFMethods::DispatchEvent(EventTarget* event_target, Event* event, SharedExceptionState* shared_exception_state) {
+  return event_target->dispatchEvent(event, shared_exception_state->exception_state);
+}
+
 void EventTargetWebFMethods::Release(EventTarget* event_target) {
   event_target->ReleaseAlive();
 }

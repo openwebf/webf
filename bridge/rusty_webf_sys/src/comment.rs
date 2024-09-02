@@ -4,6 +4,7 @@
 
 use std::ffi::c_double;
 use crate::character_data::{CharacterData, CharacterDataRustMethods};
+use crate::event::Event;
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTarget, EventTargetMethods, RustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
@@ -54,5 +55,9 @@ impl EventTargetMethods for Comment {
                            callback: EventListenerCallback,
                            exception_state: &ExceptionState) -> Result<(), String> {
     self.character_data.remove_event_listener(event_name, callback, exception_state)
+  }
+
+  fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool {
+    self.character_data.dispatch_event(event, exception_state)
   }
 }
