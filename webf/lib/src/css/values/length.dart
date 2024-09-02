@@ -71,7 +71,7 @@ class CSSLengthValue {
   }
 
   bool isViewportSizeRelatedLength() {
-    return type == CSSLengthType.VH || type == CSSLengthType.VH;
+    return type == CSSLengthType.VH || type == CSSLengthType.VW;
   }
 
   String cssText() {

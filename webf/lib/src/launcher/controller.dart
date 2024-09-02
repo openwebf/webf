@@ -803,8 +803,8 @@ class WebFViewController implements WidgetsBindingObserver {
       if (shouldScrollByToCenter) {
         window.scrollBy(0, scrollOffset, false);
       }
-      window.resizeViewportRelatedElements();
     }
+    window.resizeViewportRelatedElements();
     viewport?.bottomInset = bottomInsets;
   }
 
