@@ -10,6 +10,7 @@
 #include "qjs_blob.h"
 #include "qjs_bounding_client_rect.h"
 #include "qjs_canvas_gradient.h"
+#include "qjs_css_rule.h"
 #include "qjs_html_style_element.h"
 #include "qjs_canvas_pattern.h"
 #include "qjs_canvas_rendering_context.h"

@@ -355,6 +355,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_image_set_value.cc
     core/css/css_crossfade_value.cc
     core/css/css_repeat_style_value.cc
+    core/css/css_pending_system_font_value.cc
+    core/css/css_font_variation_value.cc
+    core/css/css_font_feature_value.cc
+    core/css/css_alternate_value.cc
     core/css/css_identifier_value.cc
     core/css/css_numeric_literal_value.cc
     core/css/css_math_expression_node.cc
@@ -578,6 +582,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_event_listener_options.cc
     out/qjs_error_event.cc
     out/color_data.cc
+    out/qjs_css_rule.cc
     out/qjs_message_event.cc
     out/qjs_message_event_init.cc
     out/qjs_close_event.cc

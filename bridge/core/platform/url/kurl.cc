@@ -42,8 +42,6 @@
 
 #include "core/base/numerics/checked_math.h"
 #include "core/base/numerics/safe_conversions.h"
-//#include "core/platform/weborigin/known_ports.h"
-//#include "core/platform/weborigin/scheme_registry.h"
 #include "core/platform/math_extras.h"
 #include "core/platform/std_lib_extras.h"
 #include "foundation/ascii_types.h"
@@ -55,7 +53,6 @@
 #include "url_features.h"
 #include "url_util.h"
 #include "url_canon.h"
-#include "url_canon_internal.h"
 #ifndef NDEBUG
 #include <stdio.h>
 #endif

@@ -5547,21 +5547,21 @@ std::shared_ptr<const CSSValue> ConsumeTransformList(CSSParserTokenStream& strea
   return ConsumeTransformList(stream, context, CSSParserLocalContext());
 }
 
-template <class T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrlInternal(
-        T& range,
-        const CSSParserContext& context) {
-  CSSParserToken url = ConsumeUrlAsToken(range, context);
-  if (url.GetType() == kEOFToken) {
-    return nullptr;
-  }
-  return std::make_shared<cssvalue::CSSURIValue>(CollectUrlData(url.Value(), context));
-}
+//template <class T>
+//    requires std::is_same_v<T, CSSParserTokenStream> ||
+//    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrlInternal(
+//        T& range,
+//        const CSSParserContext& context) {
+//  CSSParserToken url = ConsumeUrlAsToken(range, context);
+//  if (url.GetType() == kEOFToken) {
+//    return nullptr;
+//  }
+//  return std::make_shared<cssvalue::CSSURIValue>(CollectUrlData(url.Value(), context));
+//}
 
-std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenStream& stream, const CSSParserContext& context) {
-  return ConsumeUrlInternal(stream, context);
-}
+//std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenStream& stream, const CSSParserContext& context) {
+//  return ConsumeUrlInternal(stream, context);
+//}
 
 std::shared_ptr<CSSFunctionValue> ConsumeFilterFunction(CSSParserTokenStream& stream, const CSSParserContext& context) {
   CSSValueID filter_type = stream.Peek().FunctionId();
