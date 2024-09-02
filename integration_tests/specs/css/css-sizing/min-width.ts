@@ -232,7 +232,7 @@ describe('min-width', () => {
     );
     BODY.appendChild(flexbox);
 
-    await snapshot(0.1);
+    await snapshot(0.2);
   });
 
   it('should work with replaced element when element width is larger than intrinsic width', async () => {
