@@ -198,7 +198,7 @@ bool CSSParserToken::ValueDataCharRawEqual(const webf::CSSParserToken& other) co
         value_length_);
 }
 
-void CSSParserToken::Serialize(std::string& builder) const {
+void CSSParserToken::Serialize(StringBuilder& builder) const {
   // This is currently only used for @supports CSSOM. To keep our implementation
   // simple we handle some of the edge cases incorrectly (see comments below).
   switch (GetType()) {
@@ -207,51 +207,46 @@ void CSSParserToken::Serialize(std::string& builder) const {
       break;
     case kFunctionToken:
       SerializeIdentifier(Value(), builder);
-      builder.append("(");
-      break;
+      return builder.Append('(');
     case kAtKeywordToken:
-      builder.append("@");
+      builder.Append('@');
       SerializeIdentifier(Value(), builder);
       break;
     case kHashToken:
-      builder.append("#");
+      builder.Append('#');
       SerializeIdentifier(Value(), builder,
                           (GetHashTokenType() == kHashTokenUnrestricted));
       break;
     case kUrlToken:
-      builder.append("url(");
+      builder.Append("url(");
       SerializeIdentifier(Value(), builder);
-      builder.append(")");
-      break;
+      return builder.Append(')');
     case kDelimiterToken:
       if (Delimiter() == '\\') {
-        builder.append("\\\n");
-        break;
+        return builder.Append("\\\n");
       }
-      builder.append(std::string(1, Delimiter()));
-      break;
+      return builder.Append(Delimiter());
     case kNumberToken:
       if (numeric_value_type_ == kIntegerValueType) {
-        builder.append(std::to_string(ClampTo<int64_t>(NumericValue())));
-        break;
+        return builder.Append(ClampTo<int64_t>(NumericValue()));
       } else {
         std::string str = std::to_string(NumericValue());
-        builder.append(str);
+        builder.Append(str);
         // This wasn't parsed as an integer, so when we serialize it back,
         // it cannot be an integer. Otherwise, we would round-trip e.g.
         // “2.0” to “2”, which could make an invalid value suddenly valid.
         if (strchr(str.c_str(), '.') == nullptr && strchr(str.c_str(), 'e') == nullptr) {
-          builder.append(".0");
+          builder.Append(".0");
         }
         return;
       }
     case kPercentageToken:
-      builder.append(std::to_string(NumericValue()));
-      builder.append("%");
-      break;
+      builder.Append(NumericValue());
+      return builder.Append('%');
     case kDimensionToken: {
+      // This will incorrectly serialize e.g. 4e3e2 as 4000e2
       std::string str = std::to_string(NumericValue());
-      builder.append(str);
+      builder.Append(str);
       // NOTE: We don't need the same “.0” treatment as we did for
       // kNumberToken, as there are no situations where e.g. 2deg
       // would be valid but 2.0deg not.
@@ -261,73 +256,55 @@ void CSSParserToken::Serialize(std::string& builder) const {
     case kUnicodeRangeToken:
       char buffer[20];
       snprintf(buffer, 20, "U+%X-%X", UnicodeRangeStart(), UnicodeRangeEnd());
-      builder.append(buffer);
+      builder.Append(buffer);
       return;
     case kStringToken:
       return SerializeString(Value(), builder);
+
     case kIncludeMatchToken:
-      builder.append("~=");
-      return;
+      return builder.Append("~=");
     case kDashMatchToken:
-      builder.append("|=");
-      return;
+      return builder.Append("|=");
     case kPrefixMatchToken:
-      builder.append("^=");
-      return;
+      return builder.Append("^=");
     case kSuffixMatchToken:
-      builder.append("$=");
-      return;
+      return builder.Append("$=");
     case kSubstringMatchToken:
-      builder.append("*=");
-      return;
+      return builder.Append("*=");
     case kColumnToken:
-      builder.append("||");
-      return;
+      return builder.Append("||");
     case kCDOToken:
-      builder.append("<!--");
-      return;
+      return builder.Append("<!--");
     case kCDCToken:
-      builder.append("-->");
-      return;
+      return builder.Append("-->");
     case kBadStringToken:
-      builder.append("'\n");
-      return;
+      return builder.Append("'\n");
     case kBadUrlToken:
-      builder.append("url(()");
-      return;
+      return builder.Append("url(()");
     case kWhitespaceToken:
-      builder.append(" ");
-      return;
+      return builder.Append(' ');
     case kColonToken:
-      builder.append(":");
-      return;
+      return builder.Append(':');
     case kSemicolonToken:
-      builder.append(";");
-      return;
+      return builder.Append(';');
     case kCommaToken:
-      builder.append(",");
-      return;
+      return builder.Append(',');
     case kLeftParenthesisToken:
-      builder.append("(");
-      return;
+      return builder.Append('(');
     case kRightParenthesisToken:
-      builder.append(")");
-      return;
+      return builder.Append(')');
     case kLeftBracketToken:
-      builder.append("[");
-      return;
+      return builder.Append('[');
     case kRightBracketToken:
-      builder.append("]");
-      return;
+      return builder.Append(']');
     case kLeftBraceToken:
-      builder.append("{");
-      return;
+      return builder.Append('{');
     case kRightBraceToken:
-      builder.append("}");
-      return;
+      return builder.Append('}');
+
     case kEOFToken:
     case kCommentToken:
-      assert(false);
+      NOTREACHED_IN_MIGRATION();
       return;
   }
 }

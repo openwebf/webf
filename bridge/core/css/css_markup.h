@@ -30,6 +30,7 @@
 #define WEBF_CORE_CSS_CSS_MARKUP_H_
 
 #include <string>
+#include "foundation/string_builder.h"
 #include "bindings/qjs/atomic_string.h"
 
 // Helper functions for converting from CSSValues to text.
@@ -40,9 +41,9 @@ namespace webf {
 // Common serializing methods. See:
 // https://drafts.csswg.org/cssom/#common-serializing-idioms
 void SerializeIdentifier(const std::string& identifier,
-                         std::string& append_to,
+                         StringBuilder& append_to,
                          bool skip_start_checks = false);
-void SerializeString(const std::string&, std::string& append_to);
+void SerializeString(const std::string&, StringBuilder& append_to);
 std::string SerializeString(const std::string&);
 std::string SerializeURI(const std::string&);
 std::string SerializeFontFamily(const std::string&);

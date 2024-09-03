@@ -662,6 +662,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_node_list.cc
     out/event_type_names.cc
     out/built_in_string.cc
+    out/global_string.cc
     out/media_type_names.cc
     out/mutation_record_types.cc
     out/binding_call_methods.cc

@@ -31,9 +31,9 @@ std::string CSSCustomIdentValue::CustomCSSText() const {
   if (IsKnownPropertyID()) {
     return CSSUnresolvedProperty::Get(property_id_).GetPropertyName();
   }
-  std::string builder;
+  StringBuilder builder;
   SerializeIdentifier(string_, builder);
-  return builder;
+  return builder.ReleaseString();
 }
 
 std::shared_ptr<const CSSCustomIdentValue> CSSCustomIdentValue::PopulateWithTreeScope(

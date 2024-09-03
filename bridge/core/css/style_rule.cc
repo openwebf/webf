@@ -30,14 +30,14 @@
 namespace webf {
 
 std::string StyleRuleBase::LayerNameAsString(const webf::StyleRuleBase::LayerName& name_parts) {
-  std::string result;
+  StringBuilder result;
   for (const auto& part : name_parts) {
     if (!result.empty()) {
-      result.append(".");
+      result.Append(".");
     }
     SerializeIdentifier(part, result);
   }
-  return result;
+  return result.ReleaseString();
 }
 
 std::shared_ptr<const StyleRuleBase> StyleRuleBase::Copy() const {

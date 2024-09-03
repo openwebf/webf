@@ -27,7 +27,7 @@
 #ifndef WEBF_CSS_SELECTOR_H
 #define WEBF_CSS_SELECTOR_H
 #include "foundation/macros.h"
-
+#include "foundation/string_builder.h"
 #include "core/css/parser/css_nesting_type.h"
 #include "core/css/parser/css_parser_mode.h"
 #include "core/base/bit_field.h"
@@ -139,6 +139,11 @@ class CSSSelector {
   ~CSSSelector();
 
   std::string SelectorText() const;
+  // Like `SelectorText`, but replaces any '&' selectors
+  // with ':is(<parent rule selector list>)'. This is needed
+  // by the :has() cache, because it uses the serialization of
+  // the selector as a key.
+  std::string SelectorTextExpandingPseudoParent() const;
   std::string SimpleSelectorTextForDebug() const;
 
   CSSSelector& operator=(const CSSSelector&) = delete;
@@ -691,8 +696,19 @@ class CSSSelector {
 
   unsigned SpecificityForOneSelector() const;
   unsigned SpecificityForPage() const;
-  bool SerializeSimpleSelector(std::string& builder) const;
-  const CSSSelector* SerializeCompound(std::string& builder) const;
+
+  template <bool expand_pseudo_parent>
+  bool SerializeSimpleSelector(StringBuilder& builder) const;
+
+  template <bool expand_pseudo_parent>
+  const CSSSelector* SerializeCompound(StringBuilder&) const;
+
+  template <bool expand_pseudo_parent>
+  static void SerializeSelectorList(const CSSSelectorList* selector_list,
+                                    StringBuilder& builder);
+
+  template <bool expand_pseudo_parent>
+  std::string SelectorTextInternal() const;
 
   struct RareData {
     explicit RareData(const std::string& value);
@@ -730,7 +746,7 @@ class CSSSelector {
     } bits_;
     QualifiedName attribute_;  // Used for attribute selector
     std::string argument_;    // Used for :contains, :lang, :dir, etc.
-    std::shared_ptr<CSSSelectorList>
+    std::shared_ptr<const CSSSelectorList>
         selector_list_;  // Used :is, :not, :-webkit-any, etc.
     std::unique_ptr<std::vector<std::string>>
         ident_list_;  // Used for ::part(), :active-view-transition-type().
@@ -803,6 +819,12 @@ inline const std::string& CSSSelector::Value() const {
   }
   return data_.value_;
 }
+
+inline const QualifiedName& CSSSelector::TagQName() const {
+  DCHECK_EQ(Match(), static_cast<unsigned>(kTag));
+  return data_.tag_q_name_;
+}
+
 
 }  // namespace webf
 

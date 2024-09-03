@@ -110,21 +110,22 @@ CSSSelector::~CSSSelector() {
   }
 }
 
-std::string CSSSelector::SelectorText() const {
+template <bool expand_pseudo_parent>
+std::string CSSSelector::SelectorTextInternal() const {
   std::string result;
   for (const CSSSelector* compound = this; compound; compound = compound->NextSimpleSelector()) {
-    std::string builder;
-    compound = compound->SerializeCompound(builder);
+    StringBuilder builder;
+    compound = compound->SerializeCompound<expand_pseudo_parent>(builder);
     if (!compound) {
-      return builder + result;
+      return builder.ReleaseString() + result;
     }
 
     RelationType relation = compound->Relation();
-    assert(relation < kSubSelector);
-    assert(relation < kScopeActivation);
+    DCHECK_NE(relation, kSubSelector);
+    DCHECK_NE(relation, kScopeActivation);
 
     const CSSSelector* next_compound = compound->NextSimpleSelector();
-    assert(next_compound);
+    DCHECK(next_compound);
 
     // Skip leading :true. This internal pseudo-class is not supposed to
     // affect serialization.
@@ -141,69 +142,321 @@ std::string CSSSelector::SelectorText() const {
 
     switch (relation) {
       case kDescendant:
-        result = " " + builder + result;
+        result = " " + builder.ReleaseString() + result;
         break;
       case kChild:
-        result = " > " + builder + result;
+        result = " > " + builder.ReleaseString() + result;
         break;
       case kDirectAdjacent:
-        result = " + " + builder + result;
+        result = " + " + builder.ReleaseString() + result;
         break;
       case kIndirectAdjacent:
-        result = " ~ " + builder + result;
+        result = " ~ " + builder.ReleaseString() + result;
         break;
       case kSubSelector:
       case kScopeActivation:
-        assert(false);
+        NOTREACHED_IN_MIGRATION();
         break;
       case kShadowPart:
       case kUAShadow:
       case kShadowSlot:
-        result = builder + result;
+        result = builder.ReleaseString() + result;
         break;
       case kRelativeDescendant:
-        return builder + result;
+        return builder.ReleaseString() + result;
       case kRelativeChild:
-        return "> " + builder + result;
+        return "> " + builder.ReleaseString() + result;
       case kRelativeDirectAdjacent:
-        return "+ " + builder + result;
+        return "+ " + builder.ReleaseString() + result;
       case kRelativeIndirectAdjacent:
-        return "~ " + builder + result;
+        return "~ " + builder.ReleaseString() + result;
     }
   }
-  assert(false);
+  NOTREACHED_IN_MIGRATION();
   return "";
 }
 
-static void SerializeIdentifierOrAny(const std::string& identifier, const std::string& any, std::string& builder) {
+constexpr bool kExpandPseudoParent = true;
+
+std::string CSSSelector::SelectorText() const {
+  return SelectorTextInternal<!kExpandPseudoParent>();
+}
+
+std::string CSSSelector::SelectorTextExpandingPseudoParent() const {
+  return SelectorTextInternal<kExpandPseudoParent>();
+}
+
+static void SerializeIdentifierOrAny(const std::string& identifier, const std::string& any, StringBuilder& builder) {
   if (identifier != any) {
     SerializeIdentifier(identifier, builder);
   } else {
-    builder.append("*");
+    builder.Append("*");
   }
 }
 
 static void SerializeNamespacePrefixIfNeeded(const std::string& prefix,
                                              const std::string& any,
-                                             std::string& builder,
+                                             StringBuilder& builder,
                                              bool is_attribute_selector) {
   if (prefix.empty() || (prefix.empty() && is_attribute_selector)) {
     return;
   }
   SerializeIdentifierOrAny(prefix, any, builder);
-  builder.append("|");
+  builder.Append("|");
+}
+
+template <bool expand_pseudo_parent>
+bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
+  bool suppress_selector_list = false;
+  if (Match() == kId) {
+    builder.Append('#');
+    SerializeIdentifier(SerializingValue(), builder);
+  } else if (Match() == kClass) {
+    builder.Append('.');
+    SerializeIdentifier(SerializingValue(), builder);
+  } else if (Match() == kPseudoClass || Match() == kPagePseudoClass) {
+    if (GetPseudoType() == kPseudoUnparsed) {
+      builder.Append(Value());
+    } else if (GetPseudoType() != kPseudoStateDeprecatedSyntax && GetPseudoType() != kPseudoParent &&
+               GetPseudoType() != kPseudoTrue) {
+      builder.Append(':');
+      builder.Append(SerializingValue());
+    }
+
+    switch (GetPseudoType()) {
+      case kPseudoNthChild:
+      case kPseudoNthLastChild:
+      case kPseudoNthOfType:
+      case kPseudoNthLastOfType: {
+        builder.Append('(');
+
+        // https://drafts.csswg.org/css-syntax/#serializing-anb
+        int a = data_.rare_data_->NthAValue();
+        int b = data_.rare_data_->NthBValue();
+        if (a == 0) {
+          builder.Append(b);
+        } else {
+          if (a == 1) {
+            builder.Append('n');
+          } else if (a == -1) {
+            builder.Append("-n");
+          } else {
+            char buffer[10];
+            snprintf(buffer, 10, "%dn", a);
+            builder.Append(buffer);
+          }
+
+          if (b < 0) {
+            builder.Append(b);
+          } else if (b > 0) {
+            char buffer[10];
+            snprintf(buffer, 10, "+%d", b);
+            builder.Append(buffer);
+          }
+        }
+
+        // Only relevant for :nth-child, not :nth-of-type.
+        if (data_.rare_data_->selector_list_ != nullptr) {
+          builder.Append(" of ");
+          SerializeSelectorList<expand_pseudo_parent>(data_.rare_data_->selector_list_.get(), builder);
+          suppress_selector_list = true;
+        }
+
+        builder.Append(')');
+        break;
+      }
+      case kPseudoDir:
+      case kPseudoLang:
+      case kPseudoState:
+        builder.Append('(');
+        SerializeIdentifier(Argument(), builder);
+        builder.Append(')');
+        break;
+      case kPseudoHas:
+      case kPseudoNot:
+        DCHECK(SelectorList());
+        break;
+      case kPseudoStateDeprecatedSyntax:
+        builder.Append(':');
+        SerializeIdentifier(SerializingValue(), builder);
+        break;
+      case kPseudoHost:
+      case kPseudoHostContext:
+      case kPseudoAny:
+      case kPseudoIs:
+      case kPseudoWhere:
+        break;
+      case kPseudoParent:
+        if constexpr (expand_pseudo_parent) {
+          // Replace parent pseudo with equivalent :is() pseudo.
+          builder.Append(":is");
+          if (auto* parent = SelectorListOrParent()) {
+            builder.Append('(');
+            builder.Append(parent->SelectorTextExpandingPseudoParent());
+            builder.Append(')');
+          }
+        } else {
+          builder.Append('&');
+        }
+        break;
+      case kPseudoRelativeAnchor:
+        NOTREACHED_IN_MIGRATION();
+        return false;
+      case kPseudoActiveViewTransitionType: {
+        CHECK(!IdentList().empty());
+        std::string separator = "(";
+        for (std::string type : IdentList()) {
+          builder.Append(separator);
+          if (separator == "(") {
+            separator = ", ";
+          }
+          SerializeIdentifier(type, builder);
+        }
+        builder.Append(')');
+        break;
+      }
+      default:
+        break;
+    }
+  } else if (Match() == kPseudoElement) {
+    builder.Append("::");
+    SerializeIdentifier(SerializingValue(), builder);
+    switch (GetPseudoType()) {
+      case kPseudoPart: {
+        char separator = '(';
+        for (std::string part : IdentList()) {
+          builder.Append(separator);
+          if (separator == '(') {
+            separator = ' ';
+          }
+          SerializeIdentifier(part, builder);
+        }
+        builder.Append(')');
+        break;
+      }
+      case kPseudoHighlight: {
+        builder.Append('(');
+        builder.Append(Argument());
+        builder.Append(')');
+        break;
+      }
+      case kPseudoViewTransitionGroup:
+      case kPseudoViewTransitionImagePair:
+      case kPseudoViewTransitionNew:
+      case kPseudoViewTransitionOld: {
+        builder.Append('(');
+        bool first = true;
+        for (const std::string& name_or_class : IdentList()) {
+          if (!first) {
+            builder.Append('.');
+          }
+
+          first = false;
+          if (name_or_class == UniversalSelectorAtom()) {
+            builder.Append(global_string_stdstring::kstar_atom);
+          } else {
+            SerializeIdentifier(name_or_class, builder);
+          }
+        }
+        builder.Append(')');
+        break;
+      }
+      default:
+        break;
+    }
+  } else if (IsAttributeSelector()) {
+    builder.Append('[');
+    SerializeNamespacePrefixIfNeeded(Attribute().Prefix(), global_string_stdstring::kstar_atom, builder,
+                                     IsAttributeSelector());
+    SerializeIdentifier(Attribute().LocalName(), builder);
+    switch (Match()) {
+      case kAttributeExact:
+        builder.Append('=');
+        break;
+      case kAttributeSet:
+        // set has no operator or value, just the attrName
+        builder.Append(']');
+        break;
+      case kAttributeList:
+        builder.Append("~=");
+        break;
+      case kAttributeHyphen:
+        builder.Append("|=");
+        break;
+      case kAttributeBegin:
+        builder.Append("^=");
+        break;
+      case kAttributeEnd:
+        builder.Append("$=");
+        break;
+      case kAttributeContain:
+        builder.Append("*=");
+        break;
+      default:
+        break;
+    }
+    if (Match() != kAttributeSet) {
+      SerializeString(SerializingValue(), builder);
+      if (AttributeMatch() == AttributeMatchType::kCaseInsensitive) {
+        builder.Append(" i");
+      } else if (AttributeMatch() == AttributeMatchType::kCaseSensitiveAlways) {
+        builder.Append(" s");
+      }
+      builder.Append(']');
+    }
+  }
+
+  if (SelectorList() && !suppress_selector_list) {
+    builder.Append('(');
+    SerializeSelectorList<expand_pseudo_parent>(SelectorList(), builder);
+    builder.Append(')');
+  }
+  return true;
 }
 
 std::string CSSSelector::SimpleSelectorTextForDebug() const {
-  std::string builder;
+  StringBuilder builder;
   if (Match() == kTag && !IsImplicit()) {
     SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), global_string_stdstring::kstar_atom, builder,
                                      IsAttributeSelector());
     SerializeIdentifierOrAny(TagQName().LocalName(), UniversalSelectorAtom(), builder);
   } else {
-    SerializeSimpleSelector(builder);
+    SerializeSimpleSelector<!kExpandPseudoParent>(builder);
   }
-  return builder;
+  return builder.ReleaseString();
+}
+
+template <bool expand_pseudo_parent>
+const CSSSelector* CSSSelector::SerializeCompound(StringBuilder& builder) const {
+  if (Match() == kTag && !IsImplicit()) {
+    SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), global_string_stdstring::kstar_atom, builder,
+                                     IsAttributeSelector());
+    SerializeIdentifierOrAny(TagQName().LocalName(), UniversalSelectorAtom(), builder);
+  }
+
+  for (const CSSSelector* simple_selector = this; simple_selector;
+       simple_selector = simple_selector->NextSimpleSelector()) {
+    if (!simple_selector->SerializeSimpleSelector<expand_pseudo_parent>(builder)) {
+      return nullptr;
+    }
+    if (simple_selector->Relation() != kSubSelector && simple_selector->Relation() != kScopeActivation) {
+      return simple_selector;
+    }
+  }
+  return nullptr;
+}
+
+// static
+template <bool expand_pseudo_parent>
+void CSSSelector::SerializeSelectorList(const CSSSelectorList* selector_list, StringBuilder& builder) {
+  const CSSSelector* first_sub_selector = selector_list->First();
+  for (const CSSSelector* sub_selector = first_sub_selector; sub_selector;
+       sub_selector = CSSSelectorList::Next(*sub_selector)) {
+    if (sub_selector != first_sub_selector) {
+      builder.Append(", ");
+    }
+    builder.Append(sub_selector->SelectorTextInternal<expand_pseudo_parent>());
+  }
 }
 
 CSSSelector::RelationType ConvertRelationToRelative(CSSSelector::RelationType relation) {

@@ -9,6 +9,7 @@
 #ifndef WEBF_CSS_PARSER_TOKEN_H
 #define WEBF_CSS_PARSER_TOKEN_H
 
+#include "foundation/string_builder.h"
 #include "foundation/string_view.h"
 #include "foundation/macros.h"
 #include "core/css/css_primitive_value.h"
@@ -162,7 +163,7 @@ class CSSParserToken {
       CSSParserMode mode = kHTMLStandardMode) const;
 //  AtRuleDescriptorID ParseAsAtRuleDescriptorID() const;
 
-  void Serialize(std::string&) const;
+  void Serialize(StringBuilder&) const;
 
   CSSParserToken CopyWithUpdatedString(const StringView&) const;
 
@@ -189,9 +190,9 @@ class CSSParserToken {
     } else if (token.GetType() == kCommentToken) {
       return stream << "/* comment */";
     } else {
-      std::string sb;
+      StringBuilder sb;
       token.Serialize(sb);
-      return stream << sb;
+      return stream << sb.ReleaseString();
     }
   }
 

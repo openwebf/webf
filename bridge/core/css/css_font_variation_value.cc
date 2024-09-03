@@ -17,11 +17,11 @@ CSSFontVariationValue::CSSFontVariationValue(const std::string& tag,
     : CSSValue(kFontVariationClass), tag_(tag), value_(value) {}
 
 std::string CSSFontVariationValue::CustomCSSText() const {
-  std::string builder;
+  StringBuilder builder;
   SerializeString(tag_, builder);
-  builder+=' ';
-  builder+=value_;
-  return builder;
+  builder.Append(' ');
+  builder.Append(value_);
+  return builder.ReleaseString();
 }
 
 bool CSSFontVariationValue::Equals(const CSSFontVariationValue& other) const {

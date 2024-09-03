@@ -108,14 +108,14 @@ bool NeedsInsertedComment(const CSSParserToken& a, const CSSParserToken& b) {
 
 
 std::string CSSParserTokenRange::Serialize() const {
-  std::string result;
+  StringBuilder result;
   for (const CSSParserToken* it = first_; it != last_; ++it) {
     if (it != first_ && NeedsInsertedComment(*(it - 1), *it)) {
-      result += "/**/";
+      result.Append("/**/");
     }
     it->Serialize(result);
   }
-  return result;
+  return result.ReleaseString();
 }
 
 

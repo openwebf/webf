@@ -221,20 +221,21 @@ StylePropertySerializer::StylePropertySerializer(std::shared_ptr<const CSSProper
 
 std::string StylePropertySerializer::GetCustomPropertyText(const PropertyValueForSerializer& property,
                                                            bool is_not_first_decl) const {
-  assert(property.Name().Id() == CSSPropertyID::kVariable);
-  std::string result;
+  DCHECK_EQ(property.Name().Id(), CSSPropertyID::kVariable);
+  StringBuilder result;
   if (is_not_first_decl) {
-    result.append(" ");
+    result.Append(' ');
   }
   const std::shared_ptr<const CSSValue>* value = property.Value();
-  SerializeIdentifier(property.Name().ToString(), result, is_not_first_decl);
-  result.append(": ");
-  result.append(value->get()->CssText());
+  SerializeIdentifier(property.Name().ToString(), result,
+                      is_not_first_decl);
+  result.Append(": ");
+  result.Append(value->get()->CssText());
   if (property.IsImportant()) {
-    result.append(" !important");
+    result.Append(" !important");
   }
-  result.append(";");
-  return result;
+  result.Append(';');
+  return result.ReleaseString();
 }
 
 std::string StylePropertySerializer::GetPropertyText(const CSSPropertyName& name,

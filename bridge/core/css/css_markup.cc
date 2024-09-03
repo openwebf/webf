@@ -42,16 +42,16 @@ static bool IsCSSTokenizerIdentifier(const StringView& string) {
   return true;
 }
 
-static void SerializeCharacterAsCodePoint(int32_t c, std::string& append_to) {
+static void SerializeCharacterAsCodePoint(int32_t c, StringBuilder& append_to) {
   char s[10];
   snprintf(s, 10, "\\%x ", c);
 
-  append_to.append(s);
+  append_to.Append(s);
 }
 
-static void SerializeCharacter(int32_t c, std::string& append_to) {
-  append_to.append(std::string(2, '\\'));
-  append_to.append(std::string(1, (char)c));
+static void SerializeCharacter(int32_t c, StringBuilder& append_to) {
+  append_to.Append('\\');
+  append_to.Append(c);
 }
 
 /**
@@ -63,13 +63,13 @@ static void SerializeCharacter(int32_t c, std::string& append_to) {
  */
 #define U16_LENGTH(c) ((uint32_t)(c) <= 0xffff ? 1 : 2)
 
-void SerializeIdentifier(const std::string& identifier, std::string& append_to, bool skip_start_checks) {
+void SerializeIdentifier(const std::string& identifier, StringBuilder& append_to, bool skip_start_checks) {
   bool is_first = !skip_start_checks;
   bool is_second = false;
   bool is_first_char_hyphen = false;
   unsigned index = 0;
   while (index < identifier.length()) {
-    char c = identifier.at(index);
+    uint8_t c = identifier.at(index);
     if (c == 0) {
       // Check for lone surrogate which characterStartingAt does not return.
       c = identifier[index];
@@ -78,15 +78,17 @@ void SerializeIdentifier(const std::string& identifier, std::string& append_to, 
     index += U16_LENGTH(c);
 
     if (c == 0) {
-      append_to.append(std::string(1, (char)0xfffd));
+      append_to.Append(0xfffd);
     } else if (c <= 0x1f || c == 0x7f ||
-               (0x30 <= c && c <= 0x39 && (is_first || (is_second && is_first_char_hyphen)))) {
+               (0x30 <= c && c <= 0x39 &&
+                (is_first || (is_second && is_first_char_hyphen)))) {
       SerializeCharacterAsCodePoint(c, append_to);
     } else if (c == 0x2d && is_first && index == identifier.length()) {
       SerializeCharacter(c, append_to);
-    } else if (0x80 <= c || c == 0x2d || c == 0x5f || (0x30 <= c && c <= 0x39) || (0x41 <= c && c <= 0x5a) ||
+    } else if (0x80 <= c || c == 0x2d || c == 0x5f ||
+               (0x30 <= c && c <= 0x39) || (0x41 <= c && c <= 0x5a) ||
                (0x61 <= c && c <= 0x7a)) {
-      append_to.append(std::string(1, c));
+      append_to.Append(c);
     } else {
       SerializeCharacter(c, append_to);
     }
@@ -101,12 +103,12 @@ void SerializeIdentifier(const std::string& identifier, std::string& append_to, 
   }
 }
 
-void SerializeString(const std::string& string, std::string& append_to) {
-  append_to.append(1, '\"');
+void SerializeString(const std::string& string, StringBuilder& append_to) {
+  append_to.Append('\"');
 
   unsigned index = 0;
   while (index < string.length()) {
-    int32_t c = string.at(index);
+    uint8_t c = string.at(index);
     index += U16_LENGTH(c);
 
     if (c <= 0x1f || c == 0x7f) {
@@ -114,17 +116,17 @@ void SerializeString(const std::string& string, std::string& append_to) {
     } else if (c == 0x22 || c == 0x5c) {
       SerializeCharacter(c, append_to);
     } else {
-      append_to.append(1, c);
+      append_to.Append(c);
     }
   }
 
-  append_to.append(1, '\"');
+  append_to.Append('\"');
 }
 
 std::string SerializeString(const std::string& string) {
-  std::string builder;
+  StringBuilder builder;
   SerializeString(string, builder);
-  return builder;
+  return builder.ReleaseString();
 }
 
 std::string SerializeURI(const std::string& string) {
