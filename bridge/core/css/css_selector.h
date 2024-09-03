@@ -427,7 +427,7 @@ class CSSSelector {
   // within this simple selector (including inner selector lists).
   //
   // See also StyleRule::Reparent().
-  void Reparent(StyleRule* old_parent, StyleRule* new_parent);
+//  void Reparent(std::shared_ptr<const StyleRule> new_parent);
 
   // Selectors are kept in an array by CSSSelectorList. The next component of
   // the selector is the next item in the array.
@@ -440,7 +440,7 @@ class CSSSelector {
 
   static const std::string& UniversalSelectorAtom() { return global_string_stdstring::knull_atom; }
   const QualifiedName& TagQName() const;
-  const StyleRule* ParentRule() const;  // Only valid for kPseudoParent.
+//  const StyleRule* ParentRule() const;  // Only valid for kPseudoParent.
   const std::string& Value() const;
   const std::string& SerializingValue() const;
 
@@ -484,14 +484,13 @@ class CSSSelector {
 
   bool IsASCIILower(const std::string& value);
   void SetValue(const std::string&, bool match_lower_case = false);
-  void SetAttribute(const QualifiedName&, AttributeMatchType);
   void SetArgument(const std::string&);
-  void SetSelectorList(CSSSelectorList*);
+  void SetSelectorList(std::shared_ptr<const CSSSelectorList>);
   void SetIdentList(std::unique_ptr<std::vector<std::string>>);
   void SetContainsPseudoInsideHasPseudoClass();
   void SetContainsComplexLogicalCombinationsInsideHasPseudoClass();
 
-  void SetNth(int a, int b, CSSSelectorList* sub_selector);
+  void SetNth(int a, int b, std::shared_ptr<const CSSSelectorList> sub_selector);
   bool MatchNth(unsigned count) const;
 
   static bool IsAdjacentRelation(RelationType relation) {
@@ -644,8 +643,6 @@ class CSSSelector {
 
   static std::string FormatPseudoTypeForDebugging(PseudoType);
 
-
-
  private:
   // Trace() branches on the match/pseudo_type flags,
   // RuleData bucketing sets is_covered_by_bucketing,
@@ -687,6 +684,12 @@ class CSSSelector {
       IsImplicitlyAddedField::DefineNextValue<bool, 1>;
   using SignalField = IsCoveredByBucketingField::DefineNextValue<unsigned, 2>;
   using IsInvisibleField = SignalField::DefineNextValue<bool, 1>;
+  // Used for attribute selector (with value). Real type is AttributeMatchType.
+  using AttributeMatchField =
+      IsCoveredByBucketingField::DefineNextValue<unsigned, 2>;
+  using IsCaseSensitiveAttributeField =
+      AttributeMatchField::DefineNextValue<bool, 1>;
+
   BitField bits_;
 
   void SetPseudoType(PseudoType pseudo_type) {
@@ -751,7 +754,7 @@ class CSSSelector {
     std::unique_ptr<std::vector<std::string>>
         ident_list_;  // Used for ::part(), :active-view-transition-type().
 
-    void Trace(GCVisitor* visitor) const;
+    void Trace(GCVisitor* visitor) const {};
   };
   void CreateRareData();
 
@@ -825,6 +828,46 @@ inline const QualifiedName& CSSSelector::TagQName() const {
   return data_.tag_q_name_;
 }
 
+inline const QualifiedName& CSSSelector::Attribute() const {
+  DCHECK(IsAttributeSelector());
+  if (HasRareData()) {
+    return data_.rare_data_->attribute_;
+  } else {
+    DCHECK_EQ(Match(), kAttributeSet);
+    return data_.tag_q_name_;
+  }
+}
+
+inline const std::string& CSSSelector::SerializingValue() const {
+  DCHECK_NE(Match(), static_cast<unsigned>(kTag));
+  if (HasRareData()) {
+    return data_.rare_data_->serializing_value_;
+  }
+  return data_.value_;
+}
+
+
+inline CSSSelector::AttributeMatchType CSSSelector::AttributeMatch() const {
+  DCHECK(IsAttributeSelector());
+  return static_cast<AttributeMatchType>(bits_.get<AttributeMatchField>());
+}
+
+inline bool CSSSelector::IsCaseSensitiveAttribute() const {
+  DCHECK(IsAttributeSelector());
+  return bits_.get<IsCaseSensitiveAttributeField>();
+}
+
+inline bool CSSSelector::IsUserActionPseudoClass() const {
+  return GetPseudoType() == kPseudoHover || GetPseudoType() == kPseudoActive ||
+         GetPseudoType() == kPseudoFocus || GetPseudoType() == kPseudoDrag ||
+         GetPseudoType() == kPseudoFocusWithin ||
+         GetPseudoType() == kPseudoFocusVisible;
+}
+
+inline bool CSSSelector::IsIdClassOrAttributeSelector() const {
+  return IsAttributeSelector() || Match() == CSSSelector::kId ||
+         Match() == CSSSelector::kClass;
+}
 
 }  // namespace webf
 

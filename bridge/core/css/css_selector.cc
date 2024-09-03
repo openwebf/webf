@@ -176,7 +176,26 @@ std::string CSSSelector::SelectorTextInternal() const {
   return "";
 }
 
+namespace {
+
+unsigned MaximumSpecificity(const CSSSelectorList* list) {
+  if (!list) {
+    return 0;
+  }
+  return list->MaximumSpecificity();
+}
+
 constexpr bool kExpandPseudoParent = true;
+
+}  // namespace
+
+unsigned MaximumSpecificity(const CSSSelector* first_selector) {
+  unsigned specificity = 0;
+  for (const CSSSelector* s = first_selector; s; s = CSSSelectorList::Next(*s)) {
+    specificity = std::max(specificity, s->Specificity());
+  }
+  return specificity;
+}
 
 std::string CSSSelector::SelectorText() const {
   return SelectorTextInternal<!kExpandPseudoParent>();
@@ -653,6 +672,15 @@ PseudoId CSSSelector::GetPseudoId(PseudoType type) {
   assert_m(false, "NOTREACHED_IN_MIGRATION");
   return kPseudoIdNone;
 }
+
+// void CSSSelector::Reparent(std::shared_ptr<const StyleRule> new_parent) {
+//   if (GetPseudoType() == CSSSelector::kPseudoParent) {
+//     data_.parent_rule_ = new_parent;
+//   } else if (HasRareData() && data_.rare_data_->selector_list_) {
+//     data_.rare_data_->selector_list_->Reparent(new_parent);
+//   }
+// }
+
 // Could be made smaller and faster by replacing pointer with an
 // offset into a string buffer and making the bit fields smaller but
 // that could not be maintained by hand.
@@ -1068,11 +1096,36 @@ void CSSSelector::SetUnparsedPlaceholder(CSSNestingType unparsed_nesting_type, c
   data_.rare_data_->bits_.unparsed_nesting_type_ = unparsed_nesting_type;
 }
 
+CSSNestingType CSSSelector::GetNestingType() const {
+  switch (GetPseudoType()) {
+    case CSSSelector::kPseudoParent:
+      return CSSNestingType::kNesting;
+    case CSSSelector::kPseudoUnparsed:
+      return data_.rare_data_->bits_.unparsed_nesting_type_;
+    case CSSSelector::kPseudoScope:
+      // TODO(crbug.com/1280240): Handle unparsed :scope.
+      return CSSNestingType::kScope;
+    default:
+      return CSSNestingType::kNone;
+  }
+}
+
 void CSSSelector::SetTrue() {
   SetMatch(kPseudoClass);
   SetPseudoType(kPseudoTrue);
   bits_.set<IsImplicitlyAddedField>(true);
 }
+
+void CSSSelector::UpdatePseudoPage(const std::string& value, const Document* document) {
+  DCHECK_EQ(Match(), kPagePseudoClass);
+  SetValue(value);
+  PseudoType type = CSSSelectorParser::ParsePseudoType(value, false, document);
+  if (type != kPseudoFirstPage && type != kPseudoLeftPage && type != kPseudoRightPage) {
+    type = kPseudoUnknown;
+  }
+  bits_.set<PseudoTypeField>(type);
+}
+
 void CSSSelector::CreateRareData() {
   assert(Match() != kTag);
   if (HasRareData()) {
@@ -1103,10 +1156,460 @@ void CSSSelector::SetValue(const std::string& value, bool match_lower_case) {
   data_.rare_data_->serializing_value_ = value;
 }
 
+void CSSSelector::SetArgument(const std::string& value) {
+  CreateRareData();
+  data_.rare_data_->argument_ = value;
+}
+
+void CSSSelector::SetSelectorList(std::shared_ptr<const CSSSelectorList> selector_list) {
+  CreateRareData();
+  data_.rare_data_->selector_list_ = selector_list;
+}
+
+void CSSSelector::SetContainsPseudoInsideHasPseudoClass() {
+  CreateRareData();
+  data_.rare_data_->bits_.has_.contains_pseudo_ = true;
+}
+
+void CSSSelector::SetIdentList(std::unique_ptr<std::vector<std::string>> ident_list) {
+  CreateRareData();
+  data_.rare_data_->ident_list_ = std::move(ident_list);
+}
+
+void CSSSelector::SetNth(int a, int b, std::shared_ptr<const CSSSelectorList> sub_selectors) {
+  CreateRareData();
+  data_.rare_data_->bits_.nth_.a_ = a;
+  data_.rare_data_->bits_.nth_.b_ = b;
+  data_.rare_data_->selector_list_ = sub_selectors;
+}
+
+bool CSSSelector::MatchNth(unsigned count) const {
+  DCHECK(HasRareData());
+  return data_.rare_data_->MatchNth(count);
+}
+
+void CSSSelector::SetContainsComplexLogicalCombinationsInsideHasPseudoClass() {
+  CreateRareData();
+  data_.rare_data_->bits_.has_.contains_complex_logical_combinations_ = true;
+}
+
+bool CSSSelector::IsOrContainsHostPseudoClass() const {
+  if (IsHostPseudoClass()) {
+    return true;
+  }
+  // Accept selector lists like :is(:host, .foo).
+  for (const CSSSelector* sub_selector = SelectorListOrParent(); sub_selector;
+       sub_selector = CSSSelectorList::Next(*sub_selector)) {
+    if (sub_selector->IsOrContainsHostPseudoClass()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool ValidateSubSelector(const CSSSelector* selector) {
+  switch (selector->Match()) {
+    case CSSSelector::kTag:
+    case CSSSelector::kId:
+    case CSSSelector::kClass:
+    case CSSSelector::kAttributeExact:
+    case CSSSelector::kAttributeSet:
+    case CSSSelector::kAttributeList:
+    case CSSSelector::kAttributeHyphen:
+    case CSSSelector::kAttributeContain:
+    case CSSSelector::kAttributeBegin:
+    case CSSSelector::kAttributeEnd:
+      return true;
+    case CSSSelector::kPseudoElement:
+    case CSSSelector::kUnknown:
+      return false;
+    case CSSSelector::kPagePseudoClass:
+    case CSSSelector::kPseudoClass:
+      break;
+    case CSSSelector::kInvalidList:
+      NOTREACHED_IN_MIGRATION();
+  }
+
+  switch (selector->GetPseudoType()) {
+    case CSSSelector::kPseudoEmpty:
+    case CSSSelector::kPseudoLink:
+    case CSSSelector::kPseudoVisited:
+    case CSSSelector::kPseudoTarget:
+    case CSSSelector::kPseudoEnabled:
+    case CSSSelector::kPseudoDisabled:
+    case CSSSelector::kPseudoChecked:
+    case CSSSelector::kPseudoIndeterminate:
+    case CSSSelector::kPseudoNthChild:
+    case CSSSelector::kPseudoNthLastChild:
+    case CSSSelector::kPseudoNthOfType:
+    case CSSSelector::kPseudoNthLastOfType:
+    case CSSSelector::kPseudoFirstChild:
+    case CSSSelector::kPseudoLastChild:
+    case CSSSelector::kPseudoFirstOfType:
+    case CSSSelector::kPseudoLastOfType:
+    case CSSSelector::kPseudoOnlyOfType:
+    case CSSSelector::kPseudoHost:
+    case CSSSelector::kPseudoHostContext:
+    case CSSSelector::kPseudoNot:
+    case CSSSelector::kPseudoSpatialNavigationFocus:
+    case CSSSelector::kPseudoHasDatalist:
+    case CSSSelector::kPseudoIsHtml:
+    case CSSSelector::kPseudoListBox:
+    case CSSSelector::kPseudoHostHasNonAutoAppearance:
+      // TODO(https://crbug.com/1346456): Many pseudos should probably be
+      // added to this list.  The default: case below should also be removed
+      // so that those adding new pseudos know they need to choose one path or
+      // the other here.
+      //
+      // However, it's not clear why a pseudo should be in one list or the
+      // other.  It's also entirely possible that this entire switch() should
+      // be removed and all cases should return true.
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool CSSSelector::IsCompound() const {
+  if (!ValidateSubSelector(this)) {
+    return false;
+  }
+
+  const CSSSelector* prev_sub_selector = this;
+  const CSSSelector* sub_selector = NextSimpleSelector();
+
+  while (sub_selector) {
+    if (prev_sub_selector->Relation() != kSubSelector) {
+      return false;
+    }
+    if (!ValidateSubSelector(sub_selector)) {
+      return false;
+    }
+
+    prev_sub_selector = sub_selector;
+    sub_selector = sub_selector->NextSimpleSelector();
+  }
+
+  return true;
+}
+
+bool CSSSelector::HasLinkOrVisited() const {
+  for (const CSSSelector* current = this; current; current = current->NextSimpleSelector()) {
+    CSSSelector::PseudoType pseudo = current->GetPseudoType();
+    if (pseudo == CSSSelector::kPseudoLink || pseudo == CSSSelector::kPseudoVisited) {
+      return true;
+    }
+    if (const CSSSelectorList* list = current->SelectorList()) {
+      for (const CSSSelector* sub_selector = list->First(); sub_selector;
+           sub_selector = CSSSelectorList::Next(*sub_selector)) {
+        if (sub_selector->HasLinkOrVisited()) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+bool CSSSelector::MatchesPseudoElement() const {
+  for (const CSSSelector* current = this; current; current = current->NextSimpleSelector()) {
+    if (current->Match() == kPseudoElement) {
+      return true;
+    }
+    if (current->Relation() != kSubSelector) {
+      return false;
+    }
+  }
+  return false;
+}
+
+bool CSSSelector::IsTreeAbidingPseudoElement() const {
+  return Match() == CSSSelector::kPseudoElement &&
+         (GetPseudoType() == kPseudoBefore || GetPseudoType() == kPseudoAfter || GetPseudoType() == kPseudoMarker ||
+          GetPseudoType() == kPseudoPlaceholder || GetPseudoType() == kPseudoFileSelectorButton ||
+          GetPseudoType() == kPseudoBackdrop || GetPseudoType() == kPseudoSelectFallbackButton ||
+          GetPseudoType() == kPseudoSelectFallbackButtonText || GetPseudoType() == kPseudoSelectFallbackDatalist);
+}
+
+bool CSSSelector::IsAllowedAfterPart() const {
+  if (Match() != CSSSelector::kPseudoElement && Match() != CSSSelector::kPseudoClass) {
+    return false;
+  }
+  switch (GetPseudoType()) {
+    // Pseudo-elements
+    //
+    // TODO(https://crbug.com/40825557): Eventually all pseudo-elements other
+    // than ::part() should be allowed after part.  However, this list
+    // restricts it to what has been tested.
+    case kPseudoBefore:
+    case kPseudoAfter:
+    case kPseudoPlaceholder:
+    case kPseudoFileSelectorButton:
+    case kPseudoFirstLine:
+    case kPseudoFirstLetter:
+    case kPseudoSelectFallbackButton:
+    case kPseudoSelectFallbackButtonText:
+    case kPseudoSelectFallbackDatalist:
+    case kPseudoSelection:
+    case kPseudoSearchText:
+    case kPseudoTargetText:
+    case kPseudoHighlight:
+    case kPseudoSpellingError:
+    case kPseudoGrammarError:
+      return true;
+
+    case kPseudoBackdrop:
+    case kPseudoCue:
+    case kPseudoMarker:
+    case kPseudoResizer:
+    case kPseudoScrollbar:
+    case kPseudoScrollbarButton:
+    case kPseudoScrollbarCorner:
+    case kPseudoScrollbarThumb:
+    case kPseudoScrollbarTrack:
+    case kPseudoScrollbarTrackPiece:
+    case kPseudoScrollMarker:
+    case kPseudoScrollMarkerGroup:
+    case kPseudoScrollNextButton:
+    case kPseudoScrollPrevButton:
+    case kPseudoWebKitCustomElement:
+    case kPseudoBlinkInternalElement:
+    case kPseudoSlotted:
+    case kPseudoViewTransition:
+    case kPseudoViewTransitionGroup:
+    case kPseudoViewTransitionImagePair:
+    case kPseudoViewTransitionNew:
+    case kPseudoViewTransitionOld:
+    case kPseudoDetailsContent:
+      return false;
+
+    case kPseudoPart:
+      return false;
+
+    // Pseudo-classes
+    //
+    // TODO(https://crbug.com/40623497): Eventually all non-structural
+    // pseudo-classes should be allowed, and structural pseudo-classes should
+    // be forbidden.
+    case kPseudoAutofill:
+    case kPseudoAutofillPreviewed:
+    case kPseudoAutofillSelected:
+    case kPseudoWebKitAutofill:
+      return true;
+
+    case kPseudoActive:
+    case kPseudoAnyLink:
+    case kPseudoChecked:
+    case kPseudoDefault:
+    case kPseudoDialogInTopLayer:
+    case kPseudoDisabled:
+    case kPseudoDrag:
+    case kPseudoEnabled:
+    case kPseudoFocus:
+    case kPseudoFocusVisible:
+    case kPseudoFocusWithin:
+    case kPseudoFullPageMedia:
+    case kPseudoHover:
+    case kPseudoIndeterminate:
+    case kPseudoInvalid:
+    case kPseudoLang:
+    case kPseudoLink:
+    case kPseudoModal:
+    case kPseudoOptional:
+    case kPseudoPermissionGranted:
+    case kPseudoPlaceholderShown:
+    case kPseudoReadOnly:
+    case kPseudoReadWrite:
+    case kPseudoRequired:
+    case kPseudoSelectorFragmentAnchor:
+    case kPseudoState:
+    case kPseudoStateDeprecatedSyntax:
+    case kPseudoTarget:
+    case kPseudoUserInvalid:
+    case kPseudoUserValid:
+    case kPseudoValid:
+    case kPseudoVisited:
+    case kPseudoWebkitAnyLink:
+    case kPseudoWindowInactive:
+    case kPseudoFullScreen:
+    case kPseudoFullScreenAncestor:
+    case kPseudoFullscreen:
+    case kPseudoInRange:
+    case kPseudoOutOfRange:
+    case kPseudoPaused:
+    case kPseudoPictureInPicture:
+    case kPseudoPlaying:
+    case kPseudoXrOverlay:
+    case kPseudoClosed:
+    case kPseudoDefined:
+    case kPseudoDir:
+    case kPseudoFutureCue:
+    case kPseudoIsHtml:
+    case kPseudoListBox:
+    case kPseudoMultiSelectFocus:
+    case kPseudoOpen:
+    case kPseudoPastCue:
+    case kPseudoPopoverInTopLayer:
+    case kPseudoPopoverOpen:
+    case kPseudoRelativeAnchor:
+    case kPseudoSpatialNavigationFocus:
+    case kPseudoVideoPersistent:
+    case kPseudoVideoPersistentAncestor:
+      return true;
+
+    // IsSimpleSelectorValidAfterPseudoElement allows these selectors after
+    // ::part() regardless of what we do here.  However, since they are in
+    // fact allowed, tell the truth here.
+    case kPseudoIs:
+    case kPseudoNot:
+    case kPseudoWhere:
+      return true;
+
+    // :-webkit-any() should in theory be allowed too like :is() and :where(),
+    // but it's a legacy feature so just leave it disallowed.
+    case kPseudoAny:
+      return false;
+
+    // TODO(https://crbug.com/40623497): Figure out what to do with this.
+    case kPseudoParent:
+      return false;
+
+    // These are supported only after ::webkit-scrollbar, which *maybe* makes
+    // them structural?  Leave them unsupported for now
+    case kPseudoHorizontal:
+    case kPseudoVertical:
+    case kPseudoDecrement:
+    case kPseudoIncrement:
+    case kPseudoStart:
+    case kPseudoEnd:
+    case kPseudoDoubleButton:
+    case kPseudoSingleButton:
+    case kPseudoNoButton:
+    case kPseudoCornerPresent:
+    // Likewise, this matches only after ::search-text.
+    case kPseudoCurrent:
+      return false;
+
+    // These are supported only on @page, so not allowed after ::part().
+    case kPseudoFirstPage:
+    case kPseudoLeftPage:
+    case kPseudoRightPage:
+      return false;
+
+    // These are structural pseudo-classes, which should not be allowed.
+    case kPseudoEmpty:
+    case kPseudoFirstChild:
+    case kPseudoFirstOfType:
+    case kPseudoLastChild:
+    case kPseudoLastOfType:
+    case kPseudoNthChild:
+    case kPseudoNthLastChild:
+    case kPseudoNthLastOfType:
+    case kPseudoNthOfType:
+    case kPseudoOnlyChild:
+    case kPseudoOnlyOfType:
+    case kPseudoRoot:
+      return false;
+
+    // These specifically match only the root element, which makes them
+    // structural or matching based on tree information.
+    case kPseudoActiveViewTransition:
+    case kPseudoActiveViewTransitionType:
+      return false;
+
+    // These are other pseudo-classes that match based on tree information
+    // rather than local element information, which should not be allowed.
+    case kPseudoHas:
+    case kPseudoHasDatalist:
+    case kPseudoHost:
+    case kPseudoHostContext:
+    case kPseudoHostHasNonAutoAppearance:
+    case kPseudoScope:
+      return false;
+
+    case kPseudoTrue:
+    case kPseudoUnparsed:
+    case kPseudoUnknown:
+      return false;
+  }
+}
+
+bool CSSSelector::FollowsPart() const {
+  const CSSSelector* previous = NextSimpleSelector();
+  if (!previous) {
+    return false;
+  }
+  return previous->GetPseudoType() == kPseudoPart;
+}
+
+bool CSSSelector::FollowsSlotted() const {
+  const CSSSelector* previous = NextSimpleSelector();
+  if (!previous) {
+    return false;
+  }
+  return previous->GetPseudoType() == kPseudoSlotted;
+}
+
+bool CSSSelector::IsChildIndexedSelector() const {
+  switch (GetPseudoType()) {
+    case kPseudoFirstChild:
+    case kPseudoFirstOfType:
+    case kPseudoLastChild:
+    case kPseudoLastOfType:
+    case kPseudoNthChild:
+    case kPseudoNthLastChild:
+    case kPseudoNthLastOfType:
+    case kPseudoNthOfType:
+    case kPseudoOnlyChild:
+    case kPseudoOnlyOfType:
+      return true;
+    default:
+      return false;
+  }
+}
+
+void CSSSelector::Trace(webf::GCVisitor* visitor) const {
+
+}
+
 CSSSelector& CSSSelector::operator=(CSSSelector&& other) {
   this->~CSSSelector();
   new (this) CSSSelector(std::move(other));
   return *this;
+}
+
+unsigned CSSSelector::Specificity() const {
+  if (IsForPage()) {
+    return SpecificityForPage() & CSSSelector::kMaxValueMask;
+  }
+
+  unsigned total = 0;
+  unsigned temp = 0;
+
+  for (const CSSSelector* selector = this; selector; selector = selector->NextSimpleSelector()) {
+    temp = total + selector->SpecificityForOneSelector();
+    // Clamp each component to its max in the case of overflow.
+    if ((temp & kIdMask) < (total & kIdMask)) {
+      total |= kIdMask;
+    } else if ((temp & kClassMask) < (total & kClassMask)) {
+      total |= kClassMask;
+    } else if ((temp & kElementMask) < (total & kElementMask)) {
+      total |= kElementMask;
+    } else {
+      total = temp;
+    }
+  }
+  return total;
+}
+
+std::array<uint8_t, 3> CSSSelector::SpecificityTuple() const {
+  unsigned specificity = Specificity();
+
+  uint8_t a = (specificity & kIdMask) >> 16;
+  uint8_t b = (specificity & kClassMask) >> 8;
+  uint8_t c = (specificity & kElementMask);
+
+  return {a, b, c};
 }
 
 bool CSSSelector::IsASCIILower(const std::string& value) {
@@ -1116,6 +1619,21 @@ bool CSSSelector::IsASCIILower(const std::string& value) {
     }
   }
   return true;
+}
+
+const CSSSelector* CSSSelector::SelectorListOrParent() const {
+  if (Match() == kPseudoClass && GetPseudoType() == kPseudoParent) {
+    //    if (ParentRule()) {
+    //      return ParentRule()->FirstSelector();
+    //    } else {
+    //      return nullptr;
+    //    }
+    return nullptr;
+  } else if (HasRareData() && data_.rare_data_->selector_list_) {
+    return data_.rare_data_->selector_list_->First();
+  } else {
+    return nullptr;
+  }
 }
 
 std::string CSSSelector::FormatPseudoTypeForDebugging(PseudoType type) {
@@ -1133,6 +1651,138 @@ std::string CSSSelector::FormatPseudoTypeForDebugging(PseudoType type) {
   builder.Append("pseudo-");
   builder.Append(std::to_string(static_cast<int>(type)));
   return builder.ReleaseString();
+}
+
+inline unsigned CSSSelector::SpecificityForOneSelector() const {
+  // FIXME: Pseudo-elements and pseudo-classes do not have the same specificity.
+  // This function isn't quite correct.
+  // http://www.w3.org/TR/selectors/#specificity
+  switch (Match()) {
+    case kId:
+      return kIdSpecificity;
+    case kPseudoClass:
+      switch (GetPseudoType()) {
+        case kPseudoWhere:
+          return 0;
+        case kPseudoHost:
+          if (!SelectorList()) {
+            return kClassLikeSpecificity;
+          }
+          [[fallthrough]];
+        case kPseudoHostContext:
+          DCHECK(SelectorList()->HasOneSelector());
+          return kClassLikeSpecificity + SelectorList()->First()->Specificity();
+        case kPseudoNot:
+          DCHECK(SelectorList());
+          [[fallthrough]];
+        case kPseudoIs:
+          return MaximumSpecificity(SelectorList());
+        case kPseudoHas:
+          return MaximumSpecificity(SelectorList());
+        case kPseudoParent:
+          if (data_.parent_rule_ == nullptr) {
+            // & in a non-nesting context matches nothing.
+            return 0;
+          }
+          return MaximumSpecificity(data_.parent_rule_->FirstSelector());
+        case kPseudoNthChild:
+        case kPseudoNthLastChild:
+          if (SelectorList()) {
+            return kClassLikeSpecificity + MaximumSpecificity(SelectorList());
+          } else {
+            return kClassLikeSpecificity;
+          }
+        case kPseudoRelativeAnchor:
+          return 0;
+        case kPseudoTrue:
+          // The :true pseudo-class should never be web-exposed, and should
+          // therefore not affect specificity either.
+          return 0;
+        case kPseudoScope:
+          if (IsImplicit()) {
+            // Implicit :scope pseudo-classes are added to selectors
+            // within @scope. Such pseudo-classes must not have any effect
+            // on the specificity of the scoped selector.
+            //
+            // https://drafts.csswg.org/css-cascade-6/#scope-effects
+            return 0;
+          }
+          break;
+        // FIXME: PseudoAny should base the specificity on the sub-selectors.
+        // See http://lists.w3.org/Archives/Public/www-style/2010Sep/0530.html
+        case kPseudoAny:
+        default:
+          break;
+      }
+      return kClassLikeSpecificity;
+    case kPseudoElement:
+      switch (GetPseudoType()) {
+        case kPseudoSlotted:
+          DCHECK(SelectorList()->HasOneSelector());
+          return kTagSpecificity + SelectorList()->First()->Specificity();
+        case kPseudoViewTransitionGroup:
+        case kPseudoViewTransitionImagePair:
+        case kPseudoViewTransitionOld:
+        case kPseudoViewTransitionNew: {
+          CHECK(!IdentList().empty());
+          return (IdentList().size() == 1u && IdentList()[0].empty()) ? 0 : kTagSpecificity;
+        }
+        default:
+          break;
+      }
+      return kTagSpecificity;
+    case kClass:
+    case kAttributeExact:
+    case kAttributeSet:
+    case kAttributeList:
+    case kAttributeHyphen:
+    case kAttributeContain:
+    case kAttributeBegin:
+    case kAttributeEnd:
+      return kClassLikeSpecificity;
+    case kTag:
+      if (TagQName().LocalName() == UniversalSelectorAtom()) {
+        return 0;
+      }
+      return kTagSpecificity;
+    case kInvalidList:
+    case kPagePseudoClass:
+      NOTREACHED_IN_MIGRATION();
+      return 0;
+    case kUnknown:
+      return 0;
+  }
+  NOTREACHED_IN_MIGRATION();
+  return 0;
+}
+
+unsigned CSSSelector::SpecificityForPage() const {
+  // See https://drafts.csswg.org/css-page/#cascading-and-page-context
+  unsigned s = 0;
+
+  for (const CSSSelector* component = this; component; component = component->NextSimpleSelector()) {
+    switch (component->Match()) {
+      case kTag:
+        s += TagQName().LocalName() == UniversalSelectorAtom() ? 0 : 4;
+        break;
+      case kPagePseudoClass:
+        switch (component->GetPseudoType()) {
+          case kPseudoFirstPage:
+            s += 2;
+            break;
+          case kPseudoLeftPage:
+          case kPseudoRightPage:
+            s += 1;
+            break;
+          default:
+            NOTREACHED_IN_MIGRATION();
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  return s;
 }
 
 CSSSelector::RareData::RareData(const std::string& value)

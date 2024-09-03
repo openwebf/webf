@@ -334,6 +334,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/properties/css_color_function_parser.cc
     core/css/css_rule.cc
     core/css/css_selector.cc
+    core/css/css_selector_list.cc
     core/css/css_value.cc
     core/css/css_content_distribution_value.cc
     core/css/css_reflect_value.cc

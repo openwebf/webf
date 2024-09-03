@@ -130,12 +130,10 @@ class CSSSelectorList {
   unsigned MaximumSpecificity() const;
 
   // See CSSSelector::Reparent.
-  static void Reparent(CSSSelector* selector_list,
-                       std::shared_ptr<StyleRule> old_parent,
-                       std::shared_ptr<StyleRule> new_parent);
+  static void Reparent(CSSSelector* selector_list, std::shared_ptr<StyleRule> new_parent);;
 
-  void Reparent(std::shared_ptr<StyleRule> old_parent, std::shared_ptr<StyleRule> new_parent) {
-    CSSSelectorList::Reparent(first_selector_, old_parent, new_parent);
+  void Reparent(const std::shared_ptr<StyleRule> new_parent) {
+    CSSSelectorList::Reparent(first_selector_, new_parent);
   }
 
   CSSSelectorList(const CSSSelectorList&) = delete;
