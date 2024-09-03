@@ -13,7 +13,7 @@
 #include <stdlib.h>
 
 #include <string>
-#include <format>
+#include "core/base/strings/string_number_conversions.h"
 
 #include "url_canon.h"
 
@@ -133,10 +133,8 @@ char CanonicalSchemeChar(char16_t ch);
 template <typename UINCHAR, typename OUTCHAR>
 inline void AppendEscapedChar(UINCHAR ch, CanonOutputT<OUTCHAR>* output) {
   output->push_back('%');
-  std::string hex = std::format("{:X}", ch);
-  // NOTE(xiezuobing): [base::AppendHexEncodedByte] replace to [std:format]
-  // base::AppendHexEncodedByte(static_cast<uint8_t>(ch), hex);
-
+  std::string hex;
+  base::AppendHexEncodedByte(static_cast<uint8_t>(ch), hex);
   output->push_back(static_cast<OUTCHAR>(hex[0]));
   output->push_back(static_cast<OUTCHAR>(hex[1]));
 }

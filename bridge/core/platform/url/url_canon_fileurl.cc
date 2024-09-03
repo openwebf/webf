@@ -134,7 +134,6 @@ bool DoFileCanonicalizePath(const CHAR* spec,
 template<typename CHAR, typename UCHAR>
 bool DoCanonicalizeFileURL(const URLComponentSource<CHAR>& source,
                            const Parsed& parsed,
-                           CharsetConverter* query_converter,
                            CanonOutput* output,
                            Parsed* new_parsed) {
   DCHECK(!parsed.has_opaque_path);
@@ -175,7 +174,7 @@ bool DoCanonicalizeFileURL(const URLComponentSource<CHAR>& source,
   success &= DoFileCanonicalizePath<CHAR, UCHAR>(source.path, parsed.path,
                                                  output, &new_parsed->path);
 
-  CanonicalizeQuery(source.query, parsed.query, query_converter,
+  CanonicalizeQuery(source.query, parsed.query,
                     output, &new_parsed->query);
   CanonicalizeRef(source.ref, parsed.ref, output, &new_parsed->ref);
 
@@ -195,22 +194,20 @@ int FindWindowsDriveLetter(const char16_t* spec, int begin, int end) {
 bool CanonicalizeFileURL(const char* spec,
                          int spec_len,
                          const Parsed& parsed,
-                         CharsetConverter* query_converter,
                          CanonOutput* output,
                          Parsed* new_parsed) {
   return DoCanonicalizeFileURL<char, unsigned char>(
-      URLComponentSource<char>(spec), parsed, query_converter,
+      URLComponentSource<char>(spec), parsed,
       output, new_parsed);
 }
 
 bool CanonicalizeFileURL(const char16_t* spec,
                          int spec_len,
                          const Parsed& parsed,
-                         CharsetConverter* query_converter,
                          CanonOutput* output,
                          Parsed* new_parsed) {
   return DoCanonicalizeFileURL<char16_t, char16_t>(
-      URLComponentSource<char16_t>(spec), parsed, query_converter, output,
+      URLComponentSource<char16_t>(spec), parsed, output,
       new_parsed);
 }
 
@@ -233,20 +230,18 @@ bool FileCanonicalizePath(const char16_t* spec,
 bool ReplaceFileURL(const char* base,
                     const Parsed& base_parsed,
                     const Replacements<char>& replacements,
-                    CharsetConverter* query_converter,
                     CanonOutput* output,
                     Parsed* new_parsed) {
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupOverrideComponents(base, replacements, &source, &parsed);
   return DoCanonicalizeFileURL<char, unsigned char>(
-      source, parsed, query_converter, output, new_parsed);
+      source, parsed, output, new_parsed);
 }
 
 bool ReplaceFileURL(const char* base,
                     const Parsed& base_parsed,
                     const Replacements<char16_t>& replacements,
-                    CharsetConverter* query_converter,
                     CanonOutput* output,
                     Parsed* new_parsed) {
   RawCanonOutput<1024> utf8;
@@ -254,7 +249,7 @@ bool ReplaceFileURL(const char* base,
   Parsed parsed(base_parsed);
   SetupUTF16OverrideComponents(base, replacements, &utf8, &source, &parsed);
   return DoCanonicalizeFileURL<char, unsigned char>(
-      source, parsed, query_converter, output, new_parsed);
+      source, parsed, output, new_parsed);
 }
 
 }  // namespace url

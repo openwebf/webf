@@ -12,7 +12,6 @@
 
 #include <string>
 #include <string_view>
-#include "gurl.h"
 
 
 namespace webf {
@@ -102,13 +101,6 @@ class  SchemeHostPort {
                  uint16_t port,
                  ConstructPolicy policy);
 
-  // Creates a (scheme, host, port) tuple from |url|, as described at
-  // https://tools.ietf.org/html/rfc6454#section-4
-  //
-  // If |url| is invalid or non-standard, the result will be an invalid
-  // SchemeHostPort object.
-  SchemeHostPort(const GURL& url);
-
   // Copyable and movable.
   SchemeHostPort(const SchemeHostPort&) = default;
   SchemeHostPort& operator=(const SchemeHostPort&) = default;
@@ -132,13 +124,6 @@ class  SchemeHostPort {
   // SchemeHostPort tuples serialize to the empty string, rather than being
   // serialized as would an opaque Origin.
   std::string Serialize() const;
-
-  // Efficiently returns what GURL(Serialize()) would return, without needing to
-  // re-parse the URL. Note: this still performs allocations to copy data into
-  // GURL, so please avoid using this method if you only need to work on
-  // schemes, hosts, or ports individually.
-  // For example, see crrev.com/c/3637099/comments/782360d0_e14757be.
-  GURL GetURL() const;
 
   // Estimates dynamic memory usage.
   // See base/trace_event/memory_usage_estimator.h for more info.

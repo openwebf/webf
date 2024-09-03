@@ -179,35 +179,6 @@ SchemeHostPort::SchemeHostPort(std::string_view scheme,
                      port,
                      ConstructPolicy::CHECK_CANONICALIZATION) {}
 
-SchemeHostPort::SchemeHostPort(const GURL& url) {
-  if (!url.is_valid())
-    return;
-
-  std::string_view scheme = url.scheme_piece();
-  std::string_view host = url.host_piece();
-
-  // A valid GURL never returns PORT_INVALID.
-  int port = url.EffectiveIntPort();
-  if (port == PORT_UNSPECIFIED) {
-    port = 0;
-  } else {
-    DCHECK_GE(port, 0);
-    DCHECK_LE(port, 65535);
-  }
-
-  if (ShouldDiscardHostAndPort(scheme)) {
-    host = "";
-    port = 0;
-  }
-
-  if (!IsValidInput(scheme, host, port, ALREADY_CANONICALIZED))
-    return;
-
-  scheme_ = std::string(scheme);
-  host_ = std::string(host);
-  port_ = port;
-}
-
 SchemeHostPort::~SchemeHostPort() = default;
 
 bool SchemeHostPort::IsValid() const {
@@ -223,38 +194,6 @@ std::string SchemeHostPort::Serialize() const {
   // just filling it in and discarding it here.
   url::Parsed parsed;
   return SerializeInternal(&parsed);
-}
-
-GURL SchemeHostPort::GetURL() const {
-  url::Parsed parsed;
-  std::string serialized = SerializeInternal(&parsed);
-
-  if (!IsValid())
-    return GURL(std::move(serialized), parsed, false);
-
-  // SchemeHostPort does not have enough information to determine if an empty
-  // host is valid or not for the given scheme. Force re-parsing.
-  DCHECK(!scheme_.empty());
-  if (host_.empty())
-    return GURL(serialized);
-
-  // If the serialized string is passed to GURL for parsing, it will append an
-  // empty path "/" for standard URLs. Add that here. Note: per RFC 6454 we
-  // cannot do this for normal Origin serialization.
-  DCHECK(!parsed.path.is_valid());
-  if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
-    // Append "/" only if the URL is standard. If the flag is enabled,
-    // non-special URLs can have an empty path and GURL doesn't append "/" to
-    // that.
-    if (IsStandardScheme(scheme_)) {
-      parsed.path = Component(serialized.length(), 1);
-      serialized.append("/");
-    }
-  } else {
-    parsed.path = Component(serialized.length(), 1);
-    serialized.append("/");
-  }
-  return GURL(std::move(serialized), parsed, true);
 }
 
 size_t SchemeHostPort::EstimateMemoryUsage() const {

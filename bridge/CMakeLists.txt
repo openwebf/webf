@@ -395,6 +395,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/style/scoped_css_name.cc
     core/style/grid_area.h
 
+    ## Core Platform
     core/platform/text/writing_mode.cc
     core/platform/text/text_stream.cc
     core/platform/text/text_direction.cc
@@ -411,29 +412,29 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/geometry/dom_matrix_readonly.cc
     core/platform/geometry/length_functions.cc
     core/platform/geometry/calculation_value.cc
-#    core/css/css_bracketed_value_list.cc
-#    core/css/css_value_clamping_utils.cc
-#    core/css/css_custom_ident_value.cc
-#    core/css/css_numeric_literal_value.cc
-#    core/css/css_math_function_value.cc
-#    core/css/css_math_expression_node.cc
-#    core/css/css_math_operator.cc
-#    core/css/css_primitive_value.cc
-#    core/css/css_length_resolver.cc
-#    core/css/css_at_rule_id.cc
-#    core/css/media_list.cc
-#    core/css/media_query_parser.cc
-#    core/css/css_property_names.cc
-#    core/css/css_selector.cc
-#    core/css/css_selector_list.cc
-#    core/css/pending_sheet_type.cc
-#    core/css/style_rule_keyframe.cc
-#    core/platform/text/text_position.cc
-#    core/css/parser/css_lazy_property_parser_impl.cc
-#    core/css/parser/css_parser_observer.cc
-#    core/css/parser/css_selector_parser.cc
-#    core/css/parser/css_variable_parser.cc
-#    core/css/css_keyframe_shorthand_value.cc
+    core/platform/url/kurl.cc
+    core/platform/url/scheme_host_port.cc
+    core/platform/url/scheme_registry.cc
+    core/platform/url/url_canon_etc.cc
+    core/platform/url/url_canon_filesystemurl.cc
+    core/platform/url/url_canon_fileurl.cc
+    core/platform/url/url_canon_host.cc
+    core/platform/url/url_canon_ip.cc
+    core/platform/url/url_canon_mailtourl.cc
+    core/platform/url/url_canon_non_special_url.cc
+    core/platform/url/url_canon_path.cc
+    core/platform/url/url_canon_pathurl.cc
+    core/platform/url/url_canon_query.cc
+    core/platform/url/url_canon_relative.cc
+    core/platform/url/url_canon_stdstring.cc
+    core/platform/url/url_parse.cc
+    core/platform/url/url_parse_file.cc
+    core/platform/url/url_util.cc
+    core/platform/url/url_canon_internal.cc
+    core/platform/url/url_canon.cc
+    core/platform/url/url_canon_stdurl.cc
+
+    ## DOM
     core/dom/node_lists_node_data.cc
     core/dom/node_rare_data.cc
     core/dom/frame_request_callback_collection.cc

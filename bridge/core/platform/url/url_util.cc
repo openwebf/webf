@@ -6,7 +6,6 @@
 
 #include "url_util.h"
 
-
 #include <stddef.h>
 #include <string.h>
 
@@ -14,8 +13,8 @@
 #include <ostream>
 
 #include "core/base/compiler_specific.h"
-#include "core/base/ranges/algorithm.h"
 #include "core/base/no_destructor.h"
+#include "core/base/ranges/algorithm.h"
 #include "core/base/strings/string_util.h"
 #include "url_canon_internal.h"
 #include "url_constants.h"
@@ -25,7 +24,6 @@
 #include "url_util_internal.h"
 
 namespace webf {
-
 
 namespace url {
 
@@ -60,9 +58,8 @@ struct SchemeRegistry {
       // canonicalization.
       {kFileScheme, SCHEME_WITH_HOST},
       {kFtpScheme, SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION},
-      {kWssScheme,
-       SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION},  // WebSocket secure.
-      {kWsScheme, SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION},  // WebSocket.
+      {kWssScheme, SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION},  // WebSocket secure.
+      {kWsScheme, SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION},   // WebSocket.
       {kFileSystemScheme, SCHEME_WITHOUT_AUTHORITY},
   };
 
@@ -170,20 +167,16 @@ enum WhitespaceRemovalPolicy {
 
 // Given a string and a range inside the string, compares it to the given
 // lower-case |compare_to| buffer.
-template<typename CHAR>
-inline bool DoCompareSchemeComponent(const CHAR* spec,
-                                     const Component& component,
-                                     const char* compare_to) {
+template <typename CHAR>
+inline bool DoCompareSchemeComponent(const CHAR* spec, const Component& component, const char* compare_to) {
   if (component.is_empty())
     return compare_to[0] == 0;  // When component is empty, match empty scheme.
-  return base::EqualsCaseInsensitiveASCII(
-      std::basic_string_view(&spec[component.begin], component.len),
-      compare_to);
+  return base::EqualsCaseInsensitiveASCII(std::basic_string_view(&spec[component.begin], component.len), compare_to);
 }
 
 // Returns true and sets |type| to the SchemeType of the given scheme
 // identified by |scheme| within |spec| if in |schemes|.
-template<typename CHAR>
+template <typename CHAR>
 bool DoIsInSchemes(const CHAR* spec,
                    const Component& scheme,
                    SchemeType* type,
@@ -192,9 +185,8 @@ bool DoIsInSchemes(const CHAR* spec,
     return false;  // Empty or invalid schemes are non-standard.
 
   for (const SchemeWithType& scheme_with_type : schemes) {
-    if (base::EqualsCaseInsensitiveASCII(
-            std::basic_string_view(&spec[scheme.begin], scheme.len),
-            scheme_with_type.scheme)) {
+    if (base::EqualsCaseInsensitiveASCII(std::basic_string_view(&spec[scheme.begin], scheme.len),
+                                         scheme_with_type.scheme)) {
       *type = scheme_with_type.type;
       return true;
     }
@@ -202,10 +194,9 @@ bool DoIsInSchemes(const CHAR* spec,
   return false;
 }
 
-template<typename CHAR>
+template <typename CHAR>
 bool DoIsStandard(const CHAR* spec, const Component& scheme, SchemeType* type) {
-  return DoIsInSchemes(spec, scheme, type,
-                       GetSchemeRegistry().standard_schemes);
+  return DoIsInSchemes(spec, scheme, type, GetSchemeRegistry().standard_schemes);
 }
 
 template <typename CHAR>
@@ -214,25 +205,20 @@ bool DoIsOpaqueNonSpecial(const CHAR* spec, const Component& scheme) {
     return false;
   }
   for (const std::string& s : GetSchemeRegistry().opaque_non_special_schemes) {
-    if (base::EqualsCaseInsensitiveASCII(
-            std::basic_string_view(&spec[scheme.begin], scheme.len), s)) {
+    if (base::EqualsCaseInsensitiveASCII(std::basic_string_view(&spec[scheme.begin], scheme.len), s)) {
       return true;
     }
   }
   return false;
 }
 
-template<typename CHAR>
-bool DoFindAndCompareScheme(const CHAR* str,
-                            int str_len,
-                            const char* compare,
-                            Component* found_scheme) {
+template <typename CHAR>
+bool DoFindAndCompareScheme(const CHAR* str, int str_len, const char* compare, Component* found_scheme) {
   // Before extracting scheme, canonicalize the URL to remove any whitespace.
   // This matches the canonicalization done in DoCanonicalize function.
   STACK_UNINITIALIZED RawCanonOutputT<CHAR> whitespace_buffer;
   int spec_len;
-  const CHAR* spec =
-      RemoveURLWhitespace(str, str_len, &whitespace_buffer, &spec_len, nullptr);
+  const CHAR* spec = RemoveURLWhitespace(str, str_len, &whitespace_buffer, &spec_len, nullptr);
 
   Component our_scheme;
   if (!ExtractScheme(spec, spec_len, &our_scheme)) {
@@ -251,7 +237,6 @@ bool DoCanonicalize(const CHAR* spec,
                     int spec_len,
                     bool trim_path_end,
                     WhitespaceRemovalPolicy whitespace_policy,
-                    CharsetConverter* charset_converter,
                     CanonOutput* output,
                     Parsed* output_parsed) {
   // Trim leading C0 control characters and spaces.
@@ -267,8 +252,8 @@ bool DoCanonicalize(const CHAR* spec,
   // Possibly this will result in copying to the new buffer.
   STACK_UNINITIALIZED RawCanonOutputT<CHAR> whitespace_buffer;
   if (whitespace_policy == REMOVE_WHITESPACE) {
-    spec = RemoveURLWhitespace(spec, spec_len, &whitespace_buffer, &spec_len,
-                               &output_parsed->potentially_dangling_markup);
+    spec =
+        RemoveURLWhitespace(spec, spec_len, &whitespace_buffer, &spec_len, &output_parsed->potentially_dangling_markup);
   }
 
 #ifdef WIN32
@@ -282,11 +267,9 @@ bool DoCanonicalize(const CHAR* spec,
   // has no meaning as an absolute path name. This is because browsers on Mac
   // & Unix don't generally do this, so there is no compatibility reason for
   // doing so.
-  if (DoesBeginUNCPath(spec, 0, spec_len, false) ||
-      DoesBeginWindowsDriveSpec(spec, 0, spec_len)) {
-    return CanonicalizeFileURL(
-        spec, spec_len, ParseFileURL(std::basic_string_view(spec, spec_len)),
-        charset_converter, output, output_parsed);
+  if (DoesBeginUNCPath(spec, 0, spec_len, false) || DoesBeginWindowsDriveSpec(spec, 0, spec_len)) {
+    return CanonicalizeFileURL(spec, spec_len, ParseFileURL(std::basic_string_view(spec, spec_len)),
+                               output, output_parsed);
   }
 #endif
 
@@ -300,20 +283,17 @@ bool DoCanonicalize(const CHAR* spec,
   SchemeType scheme_type = SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION;
   if (DoCompareSchemeComponent(spec, scheme, url::kFileScheme)) {
     // File URLs are special.
-    success = CanonicalizeFileURL(
-        spec, spec_len, ParseFileURL(std::basic_string_view(spec, spec_len)),
-        charset_converter, output, output_parsed);
+    success = CanonicalizeFileURL(spec, spec_len, ParseFileURL(std::basic_string_view(spec, spec_len)), output,
+                                  output_parsed);
   } else if (DoCompareSchemeComponent(spec, scheme, url::kFileSystemScheme)) {
     // Filesystem URLs are special.
-    success = CanonicalizeFileSystemURL(
-        spec, ParseFileSystemURL(std::basic_string_view(spec, spec_len)),
-        charset_converter, output, output_parsed);
+    success = CanonicalizeFileSystemURL(spec, ParseFileSystemURL(std::basic_string_view(spec, spec_len)), output,
+                                        output_parsed);
 
   } else if (DoIsStandard(spec, scheme, &scheme_type)) {
     // All "normal" URLs.
-    success = CanonicalizeStandardURL(
-        spec, ParseStandardURL(std::basic_string_view(spec, spec_len)),
-        scheme_type, charset_converter, output, output_parsed);
+    success = CanonicalizeStandardURL(spec, ParseStandardURL(std::basic_string_view(spec, spec_len)), scheme_type,
+                                      output, output_parsed);
 
   } else if (!url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
              DoCompareSchemeComponent(spec, scheme, url::kMailToScheme)) {
@@ -322,53 +302,43 @@ bool DoCanonicalize(const CHAR* spec,
     //
     // TODO(crbug.com/40063064): Remove the special handling of 'mailto:" scheme
     // URLs. "mailto:" is simply one of non-special URLs.
-    success = CanonicalizeMailtoURL(
-        spec, spec_len, ParseMailtoURL(std::basic_string_view(spec, spec_len)),
-        output, output_parsed);
+    success = CanonicalizeMailtoURL(spec, spec_len, ParseMailtoURL(std::basic_string_view(spec, spec_len)), output,
+                                    output_parsed);
 
   } else {
     // Non-special scheme URLs like data: and javascript:.
-    if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
-        !DoIsOpaqueNonSpecial(spec, scheme)) {
+    if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() && !DoIsOpaqueNonSpecial(spec, scheme)) {
       success = CanonicalizeNonSpecialURL(
-          spec, spec_len,
-          ParseNonSpecialURLInternal(std::basic_string_view(spec, spec_len),
-                                     trim_path_end),
-          charset_converter, *output, *output_parsed);
+          spec, spec_len, ParseNonSpecialURLInternal(std::basic_string_view(spec, spec_len), trim_path_end), *output,
+          *output_parsed);
     } else {
-      success = CanonicalizePathURL(
-          spec, spec_len,
-          ParsePathURL(std::basic_string_view(spec, spec_len), trim_path_end),
-          output, output_parsed);
+      success = CanonicalizePathURL(spec, spec_len, ParsePathURL(std::basic_string_view(spec, spec_len), trim_path_end),
+                                    output, output_parsed);
     }
   }
   return success;
 }
 
-template<typename CHAR>
+template <typename CHAR>
 bool DoResolveRelative(const char* base_spec,
                        int base_spec_len,
                        const Parsed& base_parsed,
                        const CHAR* in_relative,
                        int in_relative_length,
-                       CharsetConverter* charset_converter,
                        CanonOutput* output,
                        Parsed* output_parsed) {
   // Remove any whitespace from the middle of the relative URL, possibly
   // copying to the new buffer.
   STACK_UNINITIALIZED RawCanonOutputT<CHAR> whitespace_buffer;
   int relative_length;
-  const CHAR* relative = RemoveURLWhitespace(
-      in_relative, in_relative_length, &whitespace_buffer, &relative_length,
-      &output_parsed->potentially_dangling_markup);
+  const CHAR* relative = RemoveURLWhitespace(in_relative, in_relative_length, &whitespace_buffer, &relative_length,
+                                             &output_parsed->potentially_dangling_markup);
 
   bool base_is_authority_based = false;
   bool base_is_hierarchical = false;
-  if (base_spec &&
-      base_parsed.scheme.is_nonempty()) {
+  if (base_spec && base_parsed.scheme.is_nonempty()) {
     int after_scheme = base_parsed.scheme.end() + 1;  // Skip past the colon.
-    int num_slashes = CountConsecutiveSlashes(base_spec, after_scheme,
-                                              base_spec_len);
+    int num_slashes = CountConsecutiveSlashes(base_spec, after_scheme, base_spec_len);
     base_is_authority_based = num_slashes > 1;
     base_is_hierarchical = num_slashes > 0;
   }
@@ -376,19 +346,16 @@ bool DoResolveRelative(const char* base_spec,
   bool is_hierarchical_base;
 
   if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
-    is_hierarchical_base =
-        base_parsed.scheme.is_nonempty() && !base_parsed.has_opaque_path;
+    is_hierarchical_base = base_parsed.scheme.is_nonempty() && !base_parsed.has_opaque_path;
   } else {
     SchemeType unused_scheme_type = SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION;
     is_hierarchical_base =
-        base_parsed.scheme.is_nonempty() &&
-        DoIsStandard(base_spec, base_parsed.scheme, &unused_scheme_type);
+        base_parsed.scheme.is_nonempty() && DoIsStandard(base_spec, base_parsed.scheme, &unused_scheme_type);
   }
 
   bool is_relative;
   Component relative_component;
-  if (!IsRelativeURL(base_spec, base_parsed, relative, relative_length,
-                     (base_is_hierarchical || is_hierarchical_base),
+  if (!IsRelativeURL(base_spec, base_parsed, relative, relative_length, (base_is_hierarchical || is_hierarchical_base),
                      &is_relative, &relative_component)) {
     // Error resolving.
     return false;
@@ -401,43 +368,35 @@ bool DoResolveRelative(const char* base_spec,
   // non-standard URLs are treated as PathURLs, but if the base has an
   // authority we would like to preserve it.
   if (is_relative && base_is_authority_based && !is_hierarchical_base) {
-    Parsed base_parsed_authority =
-        ParseStandardURL(std::string_view(base_spec, base_spec_len));
+    Parsed base_parsed_authority = ParseStandardURL(std::string_view(base_spec, base_spec_len));
     if (base_parsed_authority.host.is_nonempty()) {
       STACK_UNINITIALIZED RawCanonOutputT<char> temporary_output;
-      bool did_resolve_succeed =
-          ResolveRelativeURL(base_spec, base_parsed_authority, false, relative,
-                             relative_component, charset_converter,
-                             &temporary_output, output_parsed);
+      bool did_resolve_succeed = ResolveRelativeURL(base_spec, base_parsed_authority, false, relative,
+                                                    relative_component, &temporary_output, output_parsed);
       // The output_parsed is incorrect at this point (because it was built
       // based on base_parsed_authority instead of base_parsed) and needs to be
       // re-created.
-      DoCanonicalize(temporary_output.data(), temporary_output.length(), true,
-                     REMOVE_WHITESPACE, charset_converter, output,
+      DoCanonicalize(temporary_output.data(), temporary_output.length(), true, REMOVE_WHITESPACE, output,
                      output_parsed);
       return did_resolve_succeed;
     }
   } else if (is_relative) {
     // Relative, resolve and canonicalize.
-    bool file_base_scheme = base_parsed.scheme.is_nonempty() &&
-                            DoCompareSchemeComponent(base_spec, base_parsed.scheme, kFileScheme);
-    return ResolveRelativeURL(base_spec, base_parsed, file_base_scheme,
-                              relative, relative_component, charset_converter,
-                              output, output_parsed);
+    bool file_base_scheme =
+        base_parsed.scheme.is_nonempty() && DoCompareSchemeComponent(base_spec, base_parsed.scheme, kFileScheme);
+    return ResolveRelativeURL(base_spec, base_parsed, file_base_scheme, relative, relative_component, output,
+                              output_parsed);
   }
 
   // Not relative, canonicalize the input.
-  return DoCanonicalize(relative, relative_length, true,
-                        DO_NOT_REMOVE_WHITESPACE, charset_converter, output,
-                        output_parsed);
+  return DoCanonicalize(relative, relative_length, true, DO_NOT_REMOVE_WHITESPACE, output, output_parsed);
 }
 
-template<typename CHAR>
+template <typename CHAR>
 bool DoReplaceComponents(const char* spec,
                          int spec_len,
                          const Parsed& parsed,
                          const Replacements<CHAR>& replacements,
-                         CharsetConverter* charset_converter,
                          CanonOutput* output,
                          Parsed* out_parsed) {
   // If the scheme is overridden, just do a simple string substitution and
@@ -458,25 +417,21 @@ bool DoReplaceComponents(const char* spec,
     // the existing spec.
     STACK_UNINITIALIZED RawCanonOutput<128> scheme_replaced;
     Component scheme_replaced_parsed;
-    CanonicalizeScheme(replacements.sources().scheme,
-                       replacements.components().scheme,
-                       &scheme_replaced, &scheme_replaced_parsed);
+    CanonicalizeScheme(replacements.sources().scheme, replacements.components().scheme, &scheme_replaced,
+                       &scheme_replaced_parsed);
 
     // We can assume that the input is canonicalized, which means it always has
     // a colon after the scheme (or where the scheme would be).
-    int spec_after_colon = parsed.scheme.is_valid() ? parsed.scheme.end() + 1
-                                                    : 1;
+    int spec_after_colon = parsed.scheme.is_valid() ? parsed.scheme.end() + 1 : 1;
     if (spec_len - spec_after_colon > 0) {
-      scheme_replaced.Append(&spec[spec_after_colon],
-                             spec_len - spec_after_colon);
+      scheme_replaced.Append(&spec[spec_after_colon], spec_len - spec_after_colon);
     }
 
     // We now need to completely re-parse the resulting string since its meaning
     // may have changed with the different scheme.
     STACK_UNINITIALIZED RawCanonOutput<128> recanonicalized;
     Parsed recanonicalized_parsed;
-    DoCanonicalize(scheme_replaced.data(), scheme_replaced.length(), true,
-                   REMOVE_WHITESPACE, charset_converter, &recanonicalized,
+    DoCanonicalize(scheme_replaced.data(), scheme_replaced.length(), true, REMOVE_WHITESPACE, &recanonicalized,
                    &recanonicalized_parsed);
 
     // Recurse using the version with the scheme already replaced. This will now
@@ -501,9 +456,8 @@ bool DoReplaceComponents(const char* spec,
     if (parsed.potentially_dangling_markup) {
       out_parsed->potentially_dangling_markup = true;
     }
-    return DoReplaceComponents(recanonicalized.data(), recanonicalized.length(),
-                               recanonicalized_parsed, replacements_no_scheme,
-                               charset_converter, output, out_parsed);
+    return DoReplaceComponents(recanonicalized.data(), recanonicalized.length(), recanonicalized_parsed,
+                               replacements_no_scheme, output, out_parsed);
   }
 
   // TODO(csharrison): We could be smarter about size to reserve if this is done
@@ -515,17 +469,14 @@ bool DoReplaceComponents(const char* spec,
   // If we get here, then we know the scheme doesn't need to be replaced, so can
   // just key off the scheme in the spec to know how to do the replacements.
   if (DoCompareSchemeComponent(spec, parsed.scheme, url::kFileScheme)) {
-    return ReplaceFileURL(spec, parsed, replacements, charset_converter, output,
-                          out_parsed);
+    return ReplaceFileURL(spec, parsed, replacements, output, out_parsed);
   }
   if (DoCompareSchemeComponent(spec, parsed.scheme, url::kFileSystemScheme)) {
-    return ReplaceFileSystemURL(spec, parsed, replacements, charset_converter,
-                                output, out_parsed);
+    return ReplaceFileSystemURL(spec, parsed, replacements, output, out_parsed);
   }
   SchemeType scheme_type = SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION;
   if (DoIsStandard(spec, parsed.scheme, &scheme_type)) {
-    return ReplaceStandardURL(spec, parsed, replacements, scheme_type,
-                              charset_converter, output, out_parsed);
+    return ReplaceStandardURL(spec, parsed, replacements, scheme_type, output, out_parsed);
   }
   if (!IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
       DoCompareSchemeComponent(spec, parsed.scheme, url::kMailToScheme)) {
@@ -533,8 +484,7 @@ bool DoReplaceComponents(const char* spec,
   }
 
   if (IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
-    return ReplaceNonSpecialURL(spec, parsed, replacements, charset_converter,
-                                *output, *out_parsed);
+    return ReplaceNonSpecialURL(spec, parsed, replacements, *output, *out_parsed);
   }
   return ReplacePathURL(spec, parsed, replacements, output, out_parsed);
 }
@@ -545,9 +495,11 @@ void DoSchemeModificationPreamble() {
   //
   // This normally means you're trying to set up a new scheme too late or using
   // the SchemeRegistry too early in your application's init process.
-  assert_m(!g_scheme_registries_used.load(), "Trying to add a scheme after the lists have been used. Make sure that you haven't added any static GURL initializers in tests.");
-//      << "Trying to add a scheme after the lists have been used. "
-//         "Make sure that you haven't added any static GURL initializers in tests.";
+  assert_m(!g_scheme_registries_used.load(),
+           "Trying to add a scheme after the lists have been used. Make sure that you haven't added any static GURL "
+           "initializers in tests.");
+  //      << "Trying to add a scheme after the lists have been used. "
+  //         "Make sure that you haven't added any static GURL initializers in tests.";
 
   // If this assert triggers, it means you've called Add*Scheme after
   // LockSchemeRegistries has been called (see the header file for
@@ -557,19 +509,17 @@ void DoSchemeModificationPreamble() {
   // application's init process. Locate where your app does this initialization
   // and calls LockSchemeRegistries, and add your new scheme there.
   assert_m(!scheme_registries_locked, "Trying to add a scheme after the lists have been locked.");
-//      << "Trying to add a scheme after the lists have been locked.";
+  //      << "Trying to add a scheme after the lists have been locked.";
 }
 
-void DoAddSchemeWithHandler(const char* new_scheme,
-                            const char* handler,
-                            std::vector<SchemeWithHandler>* schemes) {
+void DoAddSchemeWithHandler(const char* new_scheme, const char* handler, std::vector<SchemeWithHandler>* schemes) {
   DoSchemeModificationPreamble();
   assert(schemes);
   assert(strlen(new_scheme) > 0);
   assert(strlen(handler) > 0);
   assert(base::ToLowerASCII(new_scheme) == new_scheme);
   assert(ranges::find(*schemes, new_scheme, &SchemeWithHandler::scheme) == std::ranges::end(*schemes));
-//  assert(!base::Contains(*schemes, new_scheme, &SchemeWithHandler::scheme));
+  //  assert(!base::Contains(*schemes, new_scheme, &SchemeWithHandler::scheme));
   schemes->push_back({new_scheme, handler});
 }
 
@@ -580,39 +530,36 @@ void DoAddScheme(const char* new_scheme, std::vector<std::string>* schemes) {
 
   assert(base::ToLowerASCII(new_scheme) == new_scheme);
   assert(ranges::find(*schemes, new_scheme) == std::ranges::end(*schemes));
-//  assert(!base::Contains(*schemes, new_scheme));
+  //  assert(!base::Contains(*schemes, new_scheme));
   schemes->push_back(new_scheme);
 }
 
-void DoAddSchemeWithType(const char* new_scheme,
-                         SchemeType type,
-                         std::vector<SchemeWithType>* schemes) {
+void DoAddSchemeWithType(const char* new_scheme, SchemeType type, std::vector<SchemeWithType>* schemes) {
   DoSchemeModificationPreamble();
   assert(schemes);
   assert(strlen(new_scheme) > 0);
   assert(base::ToLowerASCII(new_scheme) == new_scheme);
   assert(ranges::find(*schemes, new_scheme, &SchemeWithType::scheme) == std::ranges::end(*schemes));
-//  assert(!base::Contains(*schemes, new_scheme, &SchemeWithType::scheme));
+  //  assert(!base::Contains(*schemes, new_scheme, &SchemeWithType::scheme));
   schemes->push_back({new_scheme, type});
 }
 
 }  // namespace
 
 void ClearSchemesForTests() {
-  assert_m(!g_scheme_registries_used.load(), "Schemes already used  (use ScopedSchemeRegistryForTests to relax for tests).");
-//      << "Schemes already used "
-//      << "(use ScopedSchemeRegistryForTests to relax for tests).";
+  assert_m(!g_scheme_registries_used.load(),
+           "Schemes already used  (use ScopedSchemeRegistryForTests to relax for tests).");
+  //      << "Schemes already used "
+  //      << "(use ScopedSchemeRegistryForTests to relax for tests).";
   assert_m(!scheme_registries_locked, "Schemes already locked (use ScopedSchemeRegistryForTests to relax for tests).");
-//      << "Schemes already locked "
-//      << "(use ScopedSchemeRegistryForTests to relax for tests).";
+  //      << "Schemes already locked "
+  //      << "(use ScopedSchemeRegistryForTests to relax for tests).";
   *GetSchemeRegistryWithoutLocking() = SchemeRegistry();
 }
 
 class ScopedSchemeRegistryInternal {
  public:
-  ScopedSchemeRegistryInternal()
-      : registry_(std::make_unique<SchemeRegistry>(
-            *GetSchemeRegistryWithoutLocking())) {
+  ScopedSchemeRegistryInternal() : registry_(std::make_unique<SchemeRegistry>(*GetSchemeRegistryWithoutLocking())) {
     g_scheme_registries_used.store(false);
     scheme_registries_locked = false;
   }
@@ -641,8 +588,7 @@ bool AllowNonStandardSchemesForAndroidWebView() {
 }
 
 void AddStandardScheme(const char* new_scheme, SchemeType type) {
-  DoAddSchemeWithType(new_scheme, type,
-                      &GetSchemeRegistryWithoutLocking()->standard_schemes);
+  DoAddSchemeWithType(new_scheme, type, &GetSchemeRegistryWithoutLocking()->standard_schemes);
 }
 
 std::vector<std::string> GetStandardSchemes() {
@@ -655,8 +601,7 @@ std::vector<std::string> GetStandardSchemes() {
 }
 
 void AddReferrerScheme(const char* new_scheme, SchemeType type) {
-  DoAddSchemeWithType(new_scheme, type,
-                      &GetSchemeRegistryWithoutLocking()->referrer_schemes);
+  DoAddSchemeWithType(new_scheme, type, &GetSchemeRegistryWithoutLocking()->referrer_schemes);
 }
 
 void AddSecureScheme(const char* new_scheme) {
@@ -676,8 +621,7 @@ const std::vector<std::string>& GetLocalSchemes() {
 }
 
 void AddNoAccessScheme(const char* new_scheme) {
-  DoAddScheme(new_scheme,
-              &GetSchemeRegistryWithoutLocking()->no_access_schemes);
+  DoAddScheme(new_scheme, &GetSchemeRegistryWithoutLocking()->no_access_schemes);
 }
 
 const std::vector<std::string>& GetNoAccessSchemes() {
@@ -685,8 +629,7 @@ const std::vector<std::string>& GetNoAccessSchemes() {
 }
 
 void AddCorsEnabledScheme(const char* new_scheme) {
-  DoAddScheme(new_scheme,
-              &GetSchemeRegistryWithoutLocking()->cors_enabled_schemes);
+  DoAddScheme(new_scheme, &GetSchemeRegistryWithoutLocking()->cors_enabled_schemes);
 }
 
 const std::vector<std::string>& GetCorsEnabledSchemes() {
@@ -694,8 +637,7 @@ const std::vector<std::string>& GetCorsEnabledSchemes() {
 }
 
 void AddWebStorageScheme(const char* new_scheme) {
-  DoAddScheme(new_scheme,
-              &GetSchemeRegistryWithoutLocking()->web_storage_schemes);
+  DoAddScheme(new_scheme, &GetSchemeRegistryWithoutLocking()->web_storage_schemes);
 }
 
 const std::vector<std::string>& GetWebStorageSchemes() {
@@ -703,8 +645,7 @@ const std::vector<std::string>& GetWebStorageSchemes() {
 }
 
 void AddCSPBypassingScheme(const char* new_scheme) {
-  DoAddScheme(new_scheme,
-              &GetSchemeRegistryWithoutLocking()->csp_bypassing_schemes);
+  DoAddScheme(new_scheme, &GetSchemeRegistryWithoutLocking()->csp_bypassing_schemes);
 }
 
 const std::vector<std::string>& GetCSPBypassingSchemes() {
@@ -712,8 +653,7 @@ const std::vector<std::string>& GetCSPBypassingSchemes() {
 }
 
 void AddEmptyDocumentScheme(const char* new_scheme) {
-  DoAddScheme(new_scheme,
-              &GetSchemeRegistryWithoutLocking()->empty_document_schemes);
+  DoAddScheme(new_scheme, &GetSchemeRegistryWithoutLocking()->empty_document_schemes);
 }
 
 const std::vector<std::string>& GetEmptyDocumentSchemes() {
@@ -721,16 +661,13 @@ const std::vector<std::string>& GetEmptyDocumentSchemes() {
 }
 
 void AddPredefinedHandlerScheme(const char* new_scheme, const char* handler) {
-  DoAddSchemeWithHandler(
-      new_scheme, handler,
-      &GetSchemeRegistryWithoutLocking()->predefined_handler_schemes);
+  DoAddSchemeWithHandler(new_scheme, handler, &GetSchemeRegistryWithoutLocking()->predefined_handler_schemes);
 }
 
 std::vector<std::pair<std::string, std::string>> GetPredefinedHandlerSchemes() {
   std::vector<std::pair<std::string, std::string>> result;
   result.reserve(GetSchemeRegistry().predefined_handler_schemes.size());
-  for (const SchemeWithHandler& entry :
-       GetSchemeRegistry().predefined_handler_schemes) {
+  for (const SchemeWithHandler& entry : GetSchemeRegistry().predefined_handler_schemes) {
     result.emplace_back(entry.scheme, entry.handler);
   }
   return result;
@@ -746,19 +683,14 @@ bool IsStandard(const char* spec, const Component& scheme) {
 }
 
 bool IsStandardScheme(std::string_view scheme) {
-  return IsStandard(scheme.data(),
-                    Component(0, base::checked_cast<int>(scheme.size())));
+  return IsStandard(scheme.data(), Component(0, base::checked_cast<int>(scheme.size())));
 }
 
-bool GetStandardSchemeType(const char* spec,
-                           const Component& scheme,
-                           SchemeType* type) {
+bool GetStandardSchemeType(const char* spec, const Component& scheme, SchemeType* type) {
   return DoIsStandard(spec, scheme, type);
 }
 
-bool GetStandardSchemeType(const char16_t* spec,
-                           const Component& scheme,
-                           SchemeType* type) {
+bool GetStandardSchemeType(const char16_t* spec, const Component& scheme, SchemeType* type) {
   return DoIsStandard(spec, scheme, type);
 }
 
@@ -769,26 +701,18 @@ bool IsStandard(const char16_t* spec, const Component& scheme) {
 
 bool IsReferrerScheme(const char* spec, const Component& scheme) {
   SchemeType unused_scheme_type;
-  return DoIsInSchemes(spec, scheme, &unused_scheme_type,
-                       GetSchemeRegistry().referrer_schemes);
+  return DoIsInSchemes(spec, scheme, &unused_scheme_type, GetSchemeRegistry().referrer_schemes);
 }
 
-bool FindAndCompareScheme(const char* str,
-                          int str_len,
-                          const char* compare,
-                          Component* found_scheme) {
+bool FindAndCompareScheme(const char* str, int str_len, const char* compare, Component* found_scheme) {
   return DoFindAndCompareScheme(str, str_len, compare, found_scheme);
 }
 
-bool FindAndCompareScheme(const char16_t* str,
-                          int str_len,
-                          const char* compare,
-                          Component* found_scheme) {
+bool FindAndCompareScheme(const char16_t* str, int str_len, const char* compare, Component* found_scheme) {
   return DoFindAndCompareScheme(str, str_len, compare, found_scheme);
 }
 
-bool DomainIs(std::string_view canonical_host,
-              std::string_view canonical_domain) {
+bool DomainIs(std::string_view canonical_host, std::string_view canonical_domain) {
   if (canonical_host.empty() || canonical_domain.empty())
     return false;
 
@@ -803,11 +727,9 @@ bool DomainIs(std::string_view canonical_host,
 
   // |host_first_pos| is the start of the compared part of the host name, not
   // start of the whole host name.
-  const char* host_first_pos =
-      canonical_host.data() + host_len - canonical_domain.length();
+  const char* host_first_pos = canonical_host.data() + host_len - canonical_domain.length();
 
-  if (std::string_view(host_first_pos, canonical_domain.length()) !=
-      canonical_domain) {
+  if (std::string_view(host_first_pos, canonical_domain.length()) != canonical_domain) {
     return false;
   }
 
@@ -815,8 +737,7 @@ bool DomainIs(std::string_view canonical_host,
   // if the host name is longer than the input domain name, then the character
   // immediately before the compared part should be a dot. For example,
   // www.google.com has domain "google.com", but www.iamnotgoogle.com does not.
-  if (canonical_domain[0] != '.' && host_len > canonical_domain.length() &&
-      *(host_first_pos - 1) != '.') {
+  if (canonical_domain[0] != '.' && host_len > canonical_domain.length() && *(host_first_pos - 1) != '.') {
     return false;
   }
 
@@ -826,29 +747,16 @@ bool DomainIs(std::string_view canonical_host,
 bool HostIsIPAddress(std::string_view host) {
   STACK_UNINITIALIZED url::RawCanonOutputT<char, 128> ignored_output;
   url::CanonHostInfo host_info;
-  url::CanonicalizeIPAddress(host.data(), Component(0, host.length()),
-                             &ignored_output, &host_info);
+  url::CanonicalizeIPAddress(host.data(), Component(0, host.length()), &ignored_output, &host_info);
   return host_info.IsIPAddress();
 }
 
-bool Canonicalize(const char* spec,
-                  int spec_len,
-                  bool trim_path_end,
-                  CharsetConverter* charset_converter,
-                  CanonOutput* output,
-                  Parsed* output_parsed) {
-  return DoCanonicalize(spec, spec_len, trim_path_end, REMOVE_WHITESPACE,
-                        charset_converter, output, output_parsed);
+bool Canonicalize(const char* spec, int spec_len, bool trim_path_end, CanonOutput* output, Parsed* output_parsed) {
+  return DoCanonicalize(spec, spec_len, trim_path_end, REMOVE_WHITESPACE, output, output_parsed);
 }
 
-bool Canonicalize(const char16_t* spec,
-                  int spec_len,
-                  bool trim_path_end,
-                  CharsetConverter* charset_converter,
-                  CanonOutput* output,
-                  Parsed* output_parsed) {
-  return DoCanonicalize(spec, spec_len, trim_path_end, REMOVE_WHITESPACE,
-                        charset_converter, output, output_parsed);
+bool Canonicalize(const char16_t* spec, int spec_len, bool trim_path_end, CanonOutput* output, Parsed* output_parsed) {
+  return DoCanonicalize(spec, spec_len, trim_path_end, REMOVE_WHITESPACE, output, output_parsed);
 }
 
 bool ResolveRelative(const char* base_spec,
@@ -856,12 +764,9 @@ bool ResolveRelative(const char* base_spec,
                      const Parsed& base_parsed,
                      const char* relative,
                      int relative_length,
-                     CharsetConverter* charset_converter,
                      CanonOutput* output,
                      Parsed* output_parsed) {
-  return DoResolveRelative(base_spec, base_spec_len, base_parsed,
-                           relative, relative_length,
-                           charset_converter, output, output_parsed);
+  return DoResolveRelative(base_spec, base_spec_len, base_parsed, relative, relative_length, output, output_parsed);
 }
 
 bool ResolveRelative(const char* base_spec,
@@ -869,39 +774,30 @@ bool ResolveRelative(const char* base_spec,
                      const Parsed& base_parsed,
                      const char16_t* relative,
                      int relative_length,
-                     CharsetConverter* charset_converter,
                      CanonOutput* output,
                      Parsed* output_parsed) {
-  return DoResolveRelative(base_spec, base_spec_len, base_parsed,
-                           relative, relative_length,
-                           charset_converter, output, output_parsed);
+  return DoResolveRelative(base_spec, base_spec_len, base_parsed, relative, relative_length, output, output_parsed);
 }
 
 bool ReplaceComponents(const char* spec,
                        int spec_len,
                        const Parsed& parsed,
                        const Replacements<char>& replacements,
-                       CharsetConverter* charset_converter,
                        CanonOutput* output,
                        Parsed* out_parsed) {
-  return DoReplaceComponents(spec, spec_len, parsed, replacements,
-                             charset_converter, output, out_parsed);
+  return DoReplaceComponents(spec, spec_len, parsed, replacements, output, out_parsed);
 }
 
 bool ReplaceComponents(const char* spec,
                        int spec_len,
                        const Parsed& parsed,
                        const Replacements<char16_t>& replacements,
-                       CharsetConverter* charset_converter,
                        CanonOutput* output,
                        Parsed* out_parsed) {
-  return DoReplaceComponents(spec, spec_len, parsed, replacements,
-                             charset_converter, output, out_parsed);
+  return DoReplaceComponents(spec, spec_len, parsed, replacements, output, out_parsed);
 }
 
-void DecodeURLEscapeSequences(std::string_view input,
-                              DecodeURLMode mode,
-                              CanonOutputW* output) {
+void DecodeURLEscapeSequences(std::string_view input, DecodeURLMode mode, CanonOutputW* output) {
   if (input.empty()) {
     return;
   }
@@ -936,8 +832,7 @@ void DecodeURLEscapeSequences(std::string_view input,
       // character.
       size_t next_character = i;
       int32_t code_point;
-      if (ReadUTFCharLossy(unescaped_chars.data(), &next_character,
-                           unescaped_length, &code_point)) {
+      if (ReadUTFCharLossy(unescaped_chars.data(), &next_character, unescaped_length, &code_point)) {
         // Valid UTF-8 character, convert to UTF-16.
         AppendUTF16Value(code_point, output);
         i = next_character;
@@ -973,15 +868,11 @@ bool IsURIComponentChar(char c) {
   return IsComponentChar(c);
 }
 
-bool CompareSchemeComponent(const char* spec,
-                            const Component& component,
-                            const char* compare_to) {
+bool CompareSchemeComponent(const char* spec, const Component& component, const char* compare_to) {
   return DoCompareSchemeComponent(spec, component, compare_to);
 }
 
-bool CompareSchemeComponent(const char16_t* spec,
-                            const Component& component,
-                            const char* compare_to) {
+bool CompareSchemeComponent(const char16_t* spec, const Component& component, const char* compare_to) {
   return DoCompareSchemeComponent(spec, component, compare_to);
 }
 
@@ -998,8 +889,7 @@ bool HasInvalidURLEscapeSequences(std::string_view input) {
 }
 
 bool IsAndroidWebViewHackEnabledScheme(std::string_view scheme) {
-  return AllowNonStandardSchemesForAndroidWebView() &&
-         !IsStandardScheme(scheme);
+  return AllowNonStandardSchemesForAndroidWebView() && !IsStandardScheme(scheme);
 }
 
 }  // namespace url

@@ -10,6 +10,7 @@ namespace webf {
 
 namespace url {
 
+template class CanonOutputT<char>;
 //template class CanonOutputT<char>;
 //template class CanonOutputT<char16_t>;
 

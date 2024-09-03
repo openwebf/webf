@@ -199,8 +199,8 @@ class RawCanonOutputT : public CanonOutputT<T> {
 };
 
 // Explicitely instantiate commonly used instatiations.
-extern template class CanonOutputT<char>;
-extern template class CanonOutputT<char16_t>;
+//extern template class CanonOutputT<char>;
+//extern template class CanonOutputT<char16_t>;
 
 // Normally, all canonicalization output is in narrow characters. We support
 // the templates so it can also be used internally if a wide buffer is
@@ -675,13 +675,11 @@ bool FileCanonicalizePath(const char16_t* spec,
 
 void CanonicalizeQuery(const char* spec,
                        const Component& query,
-                       CharsetConverter* converter,
                        CanonOutput* output,
                        Component* out_query);
 
 void CanonicalizeQuery(const char16_t* spec,
                        const Component& query,
-                       CharsetConverter* converter,
                        CanonOutput* output,
                        Component* out_query);
 
@@ -717,14 +715,12 @@ void CanonicalizeRef(const char16_t* spec,
 bool CanonicalizeStandardURL(const char* spec,
                              const Parsed& parsed,
                              SchemeType scheme_type,
-                             CharsetConverter* query_converter,
                              CanonOutput* output,
                              Parsed* new_parsed);
 
 bool CanonicalizeStandardURL(const char16_t* spec,
                              const Parsed& parsed,
                              SchemeType scheme_type,
-                             CharsetConverter* query_converter,
                              CanonOutput* output,
                              Parsed* new_parsed);
 
@@ -733,14 +729,12 @@ bool CanonicalizeStandardURL(const char16_t* spec,
 bool CanonicalizeNonSpecialURL(const char* spec,
                                int spec_len,
                                const Parsed& parsed,
-                               CharsetConverter* query_converter,
                                CanonOutput& output,
                                Parsed& new_parsed);
 
 bool CanonicalizeNonSpecialURL(const char16_t* spec,
                                int spec_len,
                                const Parsed& parsed,
-                               CharsetConverter* query_converter,
                                CanonOutput& output,
                                Parsed& new_parsed);
 
@@ -749,14 +743,12 @@ bool CanonicalizeNonSpecialURL(const char16_t* spec,
 bool CanonicalizeFileURL(const char* spec,
                          int spec_len,
                          const Parsed& parsed,
-                         CharsetConverter* query_converter,
                          CanonOutput* output,
                          Parsed* new_parsed);
 
 bool CanonicalizeFileURL(const char16_t* spec,
                          int spec_len,
                          const Parsed& parsed,
-                         CharsetConverter* query_converter,
                          CanonOutput* output,
                          Parsed* new_parsed);
 
@@ -764,13 +756,11 @@ bool CanonicalizeFileURL(const char16_t* spec,
 
 bool CanonicalizeFileSystemURL(const char* spec,
                                const Parsed& parsed,
-                               CharsetConverter* query_converter,
                                CanonOutput* output,
                                Parsed* new_parsed);
 
 bool CanonicalizeFileSystemURL(const char16_t* spec,
                                const Parsed& parsed,
-                               CharsetConverter* query_converter,
                                CanonOutput* output,
                                Parsed* new_parsed);
 
@@ -1008,7 +998,6 @@ bool ReplaceStandardURL(const char* base,
                         const Parsed& base_parsed,
                         const Replacements<char>& replacements,
                         SchemeType scheme_type,
-                        CharsetConverter* query_converter,
                         CanonOutput* output,
                         Parsed* new_parsed);
 
@@ -1016,7 +1005,6 @@ bool ReplaceStandardURL(const char* base,
                         const Parsed& base_parsed,
                         const Replacements<char16_t>& replacements,
                         SchemeType scheme_type,
-                        CharsetConverter* query_converter,
                         CanonOutput* output,
                         Parsed* new_parsed);
 
@@ -1025,14 +1013,12 @@ bool ReplaceStandardURL(const char* base,
 bool ReplaceNonSpecialURL(const char* base,
                           const Parsed& base_parsed,
                           const Replacements<char>& replacements,
-                          CharsetConverter* query_converter,
                           CanonOutput& output,
                           Parsed& new_parsed);
 
 bool ReplaceNonSpecialURL(const char* base,
                           const Parsed& base_parsed,
                           const Replacements<char16_t>& replacements,
-                          CharsetConverter* query_converter,
                           CanonOutput& output,
                           Parsed& new_parsed);
 
@@ -1042,14 +1028,12 @@ bool ReplaceNonSpecialURL(const char* base,
 bool ReplaceFileSystemURL(const char* base,
                           const Parsed& base_parsed,
                           const Replacements<char>& replacements,
-                          CharsetConverter* query_converter,
                           CanonOutput* output,
                           Parsed* new_parsed);
 
 bool ReplaceFileSystemURL(const char* base,
                           const Parsed& base_parsed,
                           const Replacements<char16_t>& replacements,
-                          CharsetConverter* query_converter,
                           CanonOutput* output,
                           Parsed* new_parsed);
 
@@ -1059,14 +1043,12 @@ bool ReplaceFileSystemURL(const char* base,
 bool ReplaceFileURL(const char* base,
                     const Parsed& base_parsed,
                     const Replacements<char>& replacements,
-                    CharsetConverter* query_converter,
                     CanonOutput* output,
                     Parsed* new_parsed);
 
 bool ReplaceFileURL(const char* base,
                     const Parsed& base_parsed,
                     const Replacements<char16_t>& replacements,
-                    CharsetConverter* query_converter,
                     CanonOutput* output,
                     Parsed* new_parsed);
 
@@ -1154,7 +1136,6 @@ bool ResolveRelativeURL(const char* base_url,
                         bool base_is_file,
                         const char* relative_url,
                         const Component& relative_component,
-                        CharsetConverter* query_converter,
                         CanonOutput* output,
                         Parsed* out_parsed);
 
@@ -1163,7 +1144,6 @@ bool ResolveRelativeURL(const char* base_url,
                         bool base_is_file,
                         const char16_t* relative_url,
                         const Component& relative_component,
-                        CharsetConverter* query_converter,
                         CanonOutput* output,
                         Parsed* out_parsed);
 

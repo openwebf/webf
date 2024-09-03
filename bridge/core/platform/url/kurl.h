@@ -37,7 +37,6 @@
 #include "url_parse.h"
 #include "url_canon.h"
 #include "url_util.h"
-#include "gurl.h"
 
 // KURL stands for the URL parser in KDE's HTML Widget (KHTML). The name hasn't
 // changed since Blink forked WebKit, which in turn forked KHTML.
@@ -65,10 +64,6 @@ class KURL {
 public:
  KURL();
  KURL(const KURL&);
-
- // This should only be used to convert a GURL returned from a layer which
- // operates in the base terms (e.g. from common/* code).
- explicit KURL(const GURL&);
 
  KURL& operator=(const KURL&);
 
@@ -240,11 +235,6 @@ public:
  bool PotentiallyDanglingMarkup() const {
    return parsed_.potentially_dangling_markup;
  }
-
- // Returns a GURL with the same properties. This can be used in platform/ and
- // web/. However, in core/ and modules/, this should only be used to pass
- // a GURL to a layer that is expecting one instead of a KURL or a WebURL.
- explicit operator GURL() const;
 
 // void WriteIntoTrace(perfetto::TracedValue context) const;
 

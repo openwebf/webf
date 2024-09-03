@@ -233,14 +233,12 @@ bool DomainIs(std::string_view canonical_host,
 bool Canonicalize(const char* spec,
                   int spec_len,
                   bool trim_path_end,
-                  CharsetConverter* charset_converter,
                   CanonOutput* output,
                   Parsed* output_parsed);
 
 bool Canonicalize(const char16_t* spec,
                   int spec_len,
                   bool trim_path_end,
-                  CharsetConverter* charset_converter,
                   CanonOutput* output,
                   Parsed* output_parsed);
 
@@ -260,7 +258,6 @@ bool ResolveRelative(const char* base_spec,
                      const Parsed& base_parsed,
                      const char* relative,
                      int relative_length,
-                     CharsetConverter* charset_converter,
                      CanonOutput* output,
                      Parsed* output_parsed);
 
@@ -269,7 +266,6 @@ bool ResolveRelative(const char* base_spec,
                      const Parsed& base_parsed,
                      const char16_t* relative,
                      int relative_length,
-                     CharsetConverter* charset_converter,
                      CanonOutput* output,
                      Parsed* output_parsed);
 
@@ -282,7 +278,6 @@ bool ReplaceComponents(const char* spec,
                        int spec_len,
                        const Parsed& parsed,
                        const Replacements<char>& replacements,
-                       CharsetConverter* charset_converter,
                        CanonOutput* output,
                        Parsed* out_parsed);
 
@@ -290,7 +285,6 @@ bool ReplaceComponents(const char* spec,
                        int spec_len,
                        const Parsed& parsed,
                        const Replacements<char16_t>& replacements,
-                       CharsetConverter* charset_converter,
                        CanonOutput* output,
                        Parsed* out_parsed);
 

@@ -26,7 +26,6 @@ template <typename CHAR>
 bool DoCanonicalizeFileSystemURL(const CHAR* spec,
                                  const URLComponentSource<CHAR>& source,
                                  const Parsed& parsed,
-                                 CharsetConverter* charset_converter,
                                  CanonOutput* output,
                                  Parsed* new_parsed) {
   // filesystem only uses {scheme, path, query, ref} -- clear the rest.
@@ -63,7 +62,7 @@ bool DoCanonicalizeFileSystemURL(const CHAR* spec,
     }
     success =
         CanonicalizeStandardURL(spec, *inner_parsed, inner_scheme_type,
-                                charset_converter, output, &new_inner_parsed);
+                                output, &new_inner_parsed);
   } else {
     // TODO(ericu): The URL is wrong, but should we try to output more of what
     // we were given?  Echoing back filesystem:mailto etc. doesn't seem all that
@@ -77,7 +76,7 @@ bool DoCanonicalizeFileSystemURL(const CHAR* spec,
                               &new_parsed->path);
 
   // Ignore failures for query/ref since the URL can probably still be loaded.
-  CanonicalizeQuery(source.query, parsed.query, charset_converter,
+  CanonicalizeQuery(source.query, parsed.query,
                     output, &new_parsed->query);
   CanonicalizeRef(source.ref, parsed.ref, output, &new_parsed->ref);
   if (success)
@@ -90,46 +89,42 @@ bool DoCanonicalizeFileSystemURL(const CHAR* spec,
 
 bool CanonicalizeFileSystemURL(const char* spec,
                                const Parsed& parsed,
-                               CharsetConverter* charset_converter,
                                CanonOutput* output,
                                Parsed* new_parsed) {
   return DoCanonicalizeFileSystemURL(spec, URLComponentSource(spec), parsed,
-                                     charset_converter, output, new_parsed);
+                                     output, new_parsed);
 }
 
 bool CanonicalizeFileSystemURL(const char16_t* spec,
                                const Parsed& parsed,
-                               CharsetConverter* charset_converter,
                                CanonOutput* output,
                                Parsed* new_parsed) {
   return DoCanonicalizeFileSystemURL(spec, URLComponentSource(spec), parsed,
-                                     charset_converter, output, new_parsed);
+                                     output, new_parsed);
 }
 
 bool ReplaceFileSystemURL(const char* base,
                           const Parsed& base_parsed,
                           const Replacements<char>& replacements,
-                          CharsetConverter* charset_converter,
                           CanonOutput* output,
                           Parsed* new_parsed) {
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupOverrideComponents(base, replacements, &source, &parsed);
-  return DoCanonicalizeFileSystemURL(base, source, parsed, charset_converter,
+  return DoCanonicalizeFileSystemURL(base, source, parsed,
                                      output, new_parsed);
 }
 
 bool ReplaceFileSystemURL(const char* base,
                           const Parsed& base_parsed,
                           const Replacements<char16_t>& replacements,
-                          CharsetConverter* charset_converter,
                           CanonOutput* output,
                           Parsed* new_parsed) {
   RawCanonOutput<1024> utf8;
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupUTF16OverrideComponents(base, replacements, &utf8, &source, &parsed);
-  return DoCanonicalizeFileSystemURL(base, source, parsed, charset_converter,
+  return DoCanonicalizeFileSystemURL(base, source, parsed,
                                      output, new_parsed);
 }
 

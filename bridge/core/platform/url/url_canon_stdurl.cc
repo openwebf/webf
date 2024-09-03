@@ -28,7 +28,6 @@ template <typename CHAR>
 bool DoCanonicalizeStandardURL(const URLComponentSource<CHAR>& source,
                                const Parsed& parsed,
                                SchemeType scheme_type,
-                               CharsetConverter* query_converter,
                                CanonOutput* output,
                                Parsed* new_parsed) {
   DCHECK(!parsed.has_opaque_path);
@@ -110,7 +109,7 @@ bool DoCanonicalizeStandardURL(const URLComponentSource<CHAR>& source,
   }
 
   // Query
-  CanonicalizeQuery(source.query, parsed.query, query_converter,
+  CanonicalizeQuery(source.query, parsed.query,
                     output, &new_parsed->query);
 
   // Ref: ignore failure for this, since the page can probably still be loaded.
@@ -158,22 +157,20 @@ int DefaultPortForScheme(const char* scheme, int scheme_len) {
 bool CanonicalizeStandardURL(const char* spec,
                              const Parsed& parsed,
                              SchemeType scheme_type,
-                             CharsetConverter* query_converter,
                              CanonOutput* output,
                              Parsed* new_parsed) {
   return DoCanonicalizeStandardURL(URLComponentSource(spec), parsed,
-                                   scheme_type, query_converter, output,
+                                   scheme_type, output,
                                    new_parsed);
 }
 
 bool CanonicalizeStandardURL(const char16_t* spec,
                              const Parsed& parsed,
                              SchemeType scheme_type,
-                             CharsetConverter* query_converter,
                              CanonOutput* output,
                              Parsed* new_parsed) {
   return DoCanonicalizeStandardURL(URLComponentSource(spec), parsed,
-                                   scheme_type, query_converter, output,
+                                   scheme_type, output,
                                    new_parsed);
 }
 
@@ -190,14 +187,12 @@ bool ReplaceStandardURL(const char* base,
                         const Parsed& base_parsed,
                         const Replacements<char>& replacements,
                         SchemeType scheme_type,
-                        CharsetConverter* query_converter,
                         CanonOutput* output,
                         Parsed* new_parsed) {
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupOverrideComponents(base, replacements, &source, &parsed);
-  return DoCanonicalizeStandardURL(source, parsed, scheme_type, query_converter,
-                                   output, new_parsed);
+  return DoCanonicalizeStandardURL(source, parsed, scheme_type, output, new_parsed);
 }
 
 // For 16-bit replacements, we turn all the replacements into UTF-8 so the
@@ -206,15 +201,13 @@ bool ReplaceStandardURL(const char* base,
                         const Parsed& base_parsed,
                         const Replacements<char16_t>& replacements,
                         SchemeType scheme_type,
-                        CharsetConverter* query_converter,
                         CanonOutput* output,
                         Parsed* new_parsed) {
   RawCanonOutput<1024> utf8;
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupUTF16OverrideComponents(base, replacements, &utf8, &source, &parsed);
-  return DoCanonicalizeStandardURL(source, parsed, scheme_type, query_converter,
-                                   output, new_parsed);
+  return DoCanonicalizeStandardURL(source, parsed, scheme_type, output, new_parsed);
 }
 
 }  // namespace url

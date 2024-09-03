@@ -20,7 +20,6 @@ namespace {
 template <typename CHAR>
 bool DoCanonicalizeNonSpecialURL(const URLComponentSource<CHAR>& source,
                                  const Parsed& parsed,
-                                 CharsetConverter* query_converter,
                                  CanonOutput& output,
                                  Parsed& new_parsed) {
   // The implementation is similar to `DoCanonicalizeStandardURL()`, but there
@@ -169,7 +168,7 @@ bool DoCanonicalizeNonSpecialURL(const URLComponentSource<CHAR>& source,
   }
 
   // Query
-  CanonicalizeQuery(source.query, parsed.query, query_converter, &output,
+  CanonicalizeQuery(source.query, parsed.query, &output,
                     &new_parsed.query);
 
   // Ref: ignore failure for this, since the page can probably still be loaded.
@@ -188,7 +187,6 @@ bool DoCanonicalizeNonSpecialURL(const URLComponentSource<CHAR>& source,
 bool CanonicalizeNonSpecialURL(const char* spec,
                                int spec_len,
                                const Parsed& parsed,
-                               CharsetConverter* query_converter,
                                CanonOutput& output,
                                Parsed& new_parsed) {
   // Carry over the flag.
@@ -198,13 +196,12 @@ bool CanonicalizeNonSpecialURL(const char* spec,
     return CanonicalizePathURL(spec, spec_len, parsed, &output, &new_parsed);
   }
   return DoCanonicalizeNonSpecialURL(URLComponentSource(spec), parsed,
-                                     query_converter, output, new_parsed);
+                                     output, new_parsed);
 }
 
 bool CanonicalizeNonSpecialURL(const char16_t* spec,
                                int spec_len,
                                const Parsed& parsed,
-                               CharsetConverter* query_converter,
                                CanonOutput& output,
                                Parsed& new_parsed) {
   // Carry over the flag.
@@ -214,13 +211,12 @@ bool CanonicalizeNonSpecialURL(const char16_t* spec,
     return CanonicalizePathURL(spec, spec_len, parsed, &output, &new_parsed);
   }
   return DoCanonicalizeNonSpecialURL(URLComponentSource(spec), parsed,
-                                     query_converter, output, new_parsed);
+                                     output, new_parsed);
 }
 
 bool ReplaceNonSpecialURL(const char* base,
                           const Parsed& base_parsed,
                           const Replacements<char>& replacements,
-                          CharsetConverter* query_converter,
                           CanonOutput& output,
                           Parsed& new_parsed) {
   if (base_parsed.has_opaque_path) {
@@ -231,7 +227,7 @@ bool ReplaceNonSpecialURL(const char* base,
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupOverrideComponents(base, replacements, &source, &parsed);
-  return DoCanonicalizeNonSpecialURL(source, parsed, query_converter, output,
+  return DoCanonicalizeNonSpecialURL(source, parsed, output,
                                      new_parsed);
 }
 
@@ -240,7 +236,6 @@ bool ReplaceNonSpecialURL(const char* base,
 bool ReplaceNonSpecialURL(const char* base,
                           const Parsed& base_parsed,
                           const Replacements<char16_t>& replacements,
-                          CharsetConverter* query_converter,
                           CanonOutput& output,
                           Parsed& new_parsed) {
   if (base_parsed.has_opaque_path) {
@@ -252,7 +247,7 @@ bool ReplaceNonSpecialURL(const char* base,
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupUTF16OverrideComponents(base, replacements, &utf8, &source, &parsed);
-  return DoCanonicalizeNonSpecialURL(source, parsed, query_converter, output,
+  return DoCanonicalizeNonSpecialURL(source, parsed, output,
                                      new_parsed);
 }
 

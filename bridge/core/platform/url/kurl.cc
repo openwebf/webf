@@ -48,7 +48,6 @@
 #include "core/base/strings/string_util.h"
 #include "core/base/strings/string_number_conversions.h"
 #include "scheme_registry.h"
-#include "gurl.h"
 #include "url_constants.h"
 #include "url_features.h"
 #include "url_util.h"
@@ -100,31 +99,6 @@ static bool IsSchemeChar(char c) {
 static bool IsUnicodeEncoding() {
  return true;
 }
-
-
-namespace {
-
-class KURint8_tsetConverter final : public url::CharsetConverter {
-  WEBF_DISALLOW_NEW();
-
- public:
-  // The encoding parameter may be 0, but in this case the object must not be
-  // called.
-  explicit KURint8_tsetConverter() {}
-
-  void ConvertFromUTF16(const char16_t* input,
-                        int input_length,
-                        url::CanonOutput* output) override {
-
-    url::ConvertUTF16ToUTF8(input, input_length, output);
-    std::string encoded = output->data();
-    output->Append(encoded);
-  }
-
- private:
-};
-
-}  // namespace
 
 bool IsValidProtocol(const std::string& protocol) {
  // RFC3986: ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
@@ -189,6 +163,30 @@ const KURL& SrcdocURL() {
   return srcdoc_url;
 }
 
+namespace {
+
+// static
+bool IsAboutPath(std::string_view actual_path,
+                       std::string_view allowed_path) {
+  if (!base::StartsWith(actual_path, allowed_path))
+    return false;
+
+  if (actual_path.size() == allowed_path.size()) {
+    DCHECK_EQ(actual_path, allowed_path);
+    return true;
+  }
+
+  if ((actual_path.size() == allowed_path.size() + 1) &&
+      actual_path.back() == '/') {
+    DCHECK_EQ(actual_path, std::string(allowed_path) + '/');
+    return true;
+  }
+
+  return false;
+}
+
+}
+
 bool KURL::IsAboutURL(const char* allowed_path) const {
  if (!ProtocolIsAbout())
    return false;
@@ -203,7 +201,7 @@ bool KURL::IsAboutURL(const char* allowed_path) const {
 
  std::string path = ComponentStringView(parsed_.path);
  std::string_view path_utf8(path);
- return GURL::IsAboutPath(path_utf8, allowed_path);
+ return IsAboutPath(path_utf8, allowed_path);
 }
 
 bool KURL::IsAboutBlankURL() const {
@@ -250,12 +248,6 @@ KURL::KURL(const std::string& url) {
    protocol_is_in_http_family_ = false;
    has_idna2008_deviation_character_ = false;
  }
-}
-
-// Initializes with a GURL. This is used to covert from a GURL to a KURL.
-KURL::KURL(const GURL& gurl) {
- Init(NullURL() /* base */, std::string(gurl.spec()));
- AssertStringSpecIsASCII();
 }
 
 // Constructs a new URL given a base URL and a possibly relative input URL.
@@ -905,13 +897,7 @@ void KURL::Init(const KURL& base,
  // per HTML5 2.5.3 (resolving URL). The URL canonicalizer will be more
  // efficient with no charset converter object because it can do UTF-8
  // internally with no extra copies.
-
  std::string base_utf8(base.GetString());
-
- // We feel free to make the charset converter object every time since it's
- // just a wrapper around a reference.
- KURint8_tsetConverter charset_converter_object;
- KURint8_tsetConverter* charset_converter = &charset_converter_object;
 
  // Clamp to int max to avoid overflow.
  url::RawCanonOutputT<char> output;
@@ -934,7 +920,7 @@ void KURL::Init(const KURL& base,
    is_valid_ = url::ResolveRelative(base_utf8.data(), base_utf8.size(),
                                     base.parsed_, relative_utf8.data(),
                                     ClampTo<int>(relative_utf8.size()),
-                                    charset_converter, &output, &parsed_);
+                                    &output, &parsed_);
  }
 
  InitProtocolMetadata();
@@ -1059,7 +1045,7 @@ void KURL::ReplaceComponents(const url::Replacements<CHAR>& replacements,
  std::string utf8(string_);
  bool replacements_valid =
      url::ReplaceComponents(utf8.data(), utf8.size(), parsed_, replacements,
-                            nullptr, &output, &new_parsed);
+                            &output, &new_parsed);
  if (replacements_valid || !preserve_validity) {
    is_valid_ = replacements_valid;
    parsed_ = new_parsed;
@@ -1072,11 +1058,6 @@ void KURL::ReplaceComponents(const url::Replacements<CHAR>& replacements,
 //void KURL::WriteIntoTrace(perfetto::TracedValue context) const {
 // return perfetto::WriteIntoTracedValue(std::move(context), GetString());
 //}
-
-KURL::operator GURL() const {
- std::string utf8(string_);
- return GURL(utf8.data(), utf8.size(), parsed_, is_valid_);
-}
 bool operator==(const KURL& a, const KURL& b) {
  return a.GetString() == b.GetString();
 }

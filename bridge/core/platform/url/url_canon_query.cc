@@ -93,26 +93,15 @@ void RunConverter(const char16_t* spec,
 template <typename CHAR, typename UCHAR>
 void DoConvertToQueryEncoding(const CHAR* spec,
                               const Component& query,
-                              CharsetConverter* converter,
                               CanonOutput* output) {
-  if (converter) {
-    // Run the converter to get an 8-bit string, then append it, escaping
-    // necessary values.
-    RawCanonOutput<1024> eight_bit;
-    RunConverter(spec, query, converter, &eight_bit);
-    AppendRaw8BitQueryString(eight_bit.data(), eight_bit.length(), output);
-
-  } else {
-    // No converter, do our own UTF-8 conversion.
-    AppendStringOfType(&spec[query.begin], static_cast<size_t>(query.len),
-                       CHAR_QUERY, output);
-  }
+  // No converter, do our own UTF-8 conversion.
+  AppendStringOfType(&spec[query.begin], static_cast<size_t>(query.len),
+                     CHAR_QUERY, output);
 }
 
 template<typename CHAR, typename UCHAR>
 void DoCanonicalizeQuery(const CHAR* spec,
                          const Component& query,
-                         CharsetConverter* converter,
                          CanonOutput* output,
                          Component* out_query) {
   if (!query.is_valid()) {
@@ -123,7 +112,7 @@ void DoCanonicalizeQuery(const CHAR* spec,
   output->push_back('?');
   out_query->begin = output->length();
 
-  DoConvertToQueryEncoding<CHAR, UCHAR>(spec, query, converter, output);
+  DoConvertToQueryEncoding<CHAR, UCHAR>(spec, query, output);
 
   out_query->len = output->length() - out_query->begin;
 }
@@ -132,27 +121,18 @@ void DoCanonicalizeQuery(const CHAR* spec,
 
 void CanonicalizeQuery(const char* spec,
                        const Component& query,
-                       CharsetConverter* converter,
                        CanonOutput* output,
                        Component* out_query) {
-  DoCanonicalizeQuery<char, unsigned char>(spec, query, converter,
+  DoCanonicalizeQuery<char, unsigned char>(spec, query,
                                            output, out_query);
 }
 
 void CanonicalizeQuery(const char16_t* spec,
                        const Component& query,
-                       CharsetConverter* converter,
                        CanonOutput* output,
                        Component* out_query) {
-  DoCanonicalizeQuery<char16_t, char16_t>(spec, query, converter, output,
+  DoCanonicalizeQuery<char16_t, char16_t>(spec, query, output,
                                           out_query);
-}
-
-void ConvertUTF16ToQueryEncoding(const char16_t* input,
-                                 const Component& query,
-                                 CharsetConverter* converter,
-                                 CanonOutput* output) {
-  DoConvertToQueryEncoding<char16_t, char16_t>(input, query, converter, output);
 }
 
 }  // namespace url
