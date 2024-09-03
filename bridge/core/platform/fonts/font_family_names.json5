@@ -1,43 +1,40 @@
 {
   metadata: {
-//    namespace: "font_family_names",
     "templates": [
       {
-        "template": "font_family_names",
+        "template": "make_names",
         "filename": "font_family_names",
         "options": {
           "add_atom_prefix": false
         }
       }
     ]
-//    export: "PLATFORM_EXPORT",
   },
 
   data: [
-    "-webkit-standard",
-    "system-ui",
-
+    ["WebKitStandard", "-webkit-standard"],
+    ["SystemUI", "system-ui"],
     "Arial",
     "Calibri",
-    "Courier New",
+    ["CourierNew", "Courier New"],
     "Courier",
     "Helvetica",
-    "Helvetica Neue",
-    "Lucida Grande",
-    "Microsoft Sans Serif",
-    "MS Sans Serif",
-    "MS Serif",
-    "MS UI Gothic",
+    ["HelveticaNeue", "Helvetica Neue"],
+    ["LucidaGrande", "Lucida Grande"],
+    ["MicrosoftSansSerif","Microsoft Sans Serif"],
+    ["MSSansSerif", "MS Sans Serif"],
+    ["MSSerif", "MS Serif"],
+    ["MSUIGothic", "MS UI Gothic"],
     "Roboto",
     "Sans",
-    "Segoe UI",
-    "Times New Roman",
+    ["SegoeUI", "Segoe UI"],
+    ["TimesNewRoman", "Times New Roman"],
     "Times",
 
     "cursive",
     "fantasy",
     "monospace",
-    "sans-serif",
+    ["sansSerif", "sans-serif"],
     "serif",
     "math",
 

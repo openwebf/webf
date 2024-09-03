@@ -62,7 +62,7 @@ std::string FontFamily::ToString() const {
 }
 
 /*static*/ FontFamily::Type FontFamily::InferredTypeFor(
-    const AtomicString& family_name) {
+    const std::string& family_name) {
   return (family_name == font_family_names::kcursive ||
           family_name == font_family_names::kfantasy ||
           family_name == font_family_names::kmonospace ||

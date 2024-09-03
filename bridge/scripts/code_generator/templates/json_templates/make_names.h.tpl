@@ -36,6 +36,19 @@ void Dispose();
 
 }
 
+namespace <%= name %>_stdstring {
+
+<% _.forEach(data, function(name, index) { %>
+  <% if (_.isArray(name)) { %>
+    const std::string k<%= name[0] %> = "<%= name[1] %>";
+  <% } else if (_.isObject(name)) { %>
+    const std::string  k<%= name.name %> = "<%= name.name %>";
+  <% } else { %>
+     const std::string  k<%= name %> = "<%= name %>";
+  <% } %>
+<% }) %>
+}
+
 } // webf
 
 #endif  // #define <%= _.snakeCase(name).toUpperCase() %>

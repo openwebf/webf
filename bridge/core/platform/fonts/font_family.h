@@ -79,7 +79,7 @@ class FontFamily {
   // Return kGenericFamily if family_name is equal to one of the supported
   // <generic-family> keyword from the CSS fonts module spec and kFamilyName
   // otherwise.
-  static Type InferredTypeFor(const AtomicString& family_name);
+  static Type InferredTypeFor(const std::string& family_name);
 
  private:
   std::string family_name_;

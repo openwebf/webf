@@ -601,7 +601,7 @@ bool IsContentPositionOrLeftOrRightKeyword(CSSValueID);
 bool IsCSSWideKeyword(CSSValueID);
 bool IsCSSWideKeyword(const std::string&);
 bool IsRevertKeyword(const std::string&);
-bool IsDefaultKeyword(StringView);
+bool IsDefaultKeyword(const std::string&);
 bool IsHashIdentifier(const CSSParserToken&);
 bool IsDashedIdent(const CSSParserToken&);
 

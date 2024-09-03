@@ -29,6 +29,8 @@ namespace webf {
 
 void CSSImageGeneratorValue::TraceAfterDispatch(webf::GCVisitor*) const {}
 
-CSSImageGeneratorValue::CSSImageGeneratorValue(webf::CSSValue::ClassType class_type) : CSSValue(class_type) {}
+//CSSImageGeneratorValue::CSSImageGeneratorValue(webf::CSSValue::ClassType class_type) : CSSValue(class_type) {}
+
+CSSImageGeneratorValue::CSSImageGeneratorValue(webf::CSSValue::ClassType class_type): CSSValue(class_type) {}
 
 }  // namespace webf

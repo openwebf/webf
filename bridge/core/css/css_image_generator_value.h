@@ -80,8 +80,6 @@ class CSSImageGeneratorValue : public CSSValue {
 public:
 // using ContainerSizes = CSSToLengthConversionData::ContainerSizes;
 
- ~CSSImageGeneratorValue();
-
 // void AddClient(const ImageResourceObserver*);
 //
 // void RemoveClient(const ImageResourceObserver*);

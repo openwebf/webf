@@ -378,9 +378,14 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_revert_value.cc
     core/css/css_initial_value.cc
     core/css/css_inherit_value.cc
+    core/css/css_bracketed_value_list.cc
     core/css/css_custom_ident_value.cc
     core/css/css_value_list.cc
     core/css/style_property_serializer.cc
+    core/css/style_property_shorthand_custom.cc
+    core/css/css_value_clamping_utils.cc
+    core/css/style_change_reason.cc
+    core/css/css_markup.cc
 
     core/css/css_function_value.cc
     core/css/css_appearance_auto_base_select_value_pair.cc
