@@ -25,8 +25,10 @@ describe('Opacity', () => {
         opacity: 0.5,
       });
 
-      await snapshot(0.5);
-      done();
+      requestAnimationFrame(async () => {
+        await snapshot();
+        done();
+      });
     });
   });
 

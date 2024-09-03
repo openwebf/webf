@@ -46,6 +46,7 @@ describe('Link Element', () => {
     document.head.appendChild(link2);
 
     link2.addEventListener('load', async () => {
+      console.log('trigger link load');
       await snapshot();
       done();
     });
