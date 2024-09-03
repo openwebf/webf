@@ -71,7 +71,7 @@ bool IsTokenAllowedForAnyValue(const CSSParserToken& token) {
   }
 }
 
-void Complete4Sides(CSSValue* side[4]) {
+void Complete4Sides(std::shared_ptr<const CSSValue> side[4]) {
   if (side[3]) {
     return;
   }
@@ -2528,6 +2528,36 @@ static std::shared_ptr<const CSSImageValue> CreateCSSImageValueWithReferrer(cons
   return image_value;
 }
 
+template <typename T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSCustomIdentValue> ConsumeDashedIdent(
+        T& stream,
+        const CSSParserContext& context) {
+  if (stream.Peek().GetType() != kIdentToken) {
+    return nullptr;
+  }
+
+  if (!stream.Peek().Value().starts_with("--")) {
+    return nullptr;
+  }
+
+  return ConsumeCustomIdent(stream, context);
+}
+
+template std::shared_ptr<const CSSCustomIdentValue> ConsumeDashedIdent(CSSParserTokenStream&, const CSSParserContext&);
+template std::shared_ptr<const CSSCustomIdentValue> ConsumeDashedIdent(CSSParserTokenRange&, const CSSParserContext&);
+
+std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenStream& stream) {
+  if (stream.Peek().GetType() != kStringToken) {
+    return nullptr;
+  }
+  return std::make_shared<CSSStringValue>(stream.ConsumeIncludingWhitespace().Value());
+}
+
+std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenRange&) {
+
+}
+
 // With the streaming parser, we cannot return a StringView, since the token
 // will go out of scope when we exit the function and the StringView might
 // point into the token.
@@ -3367,7 +3397,7 @@ bool ParseBackgroundOrMask(bool important,
                            const CSSParserLocalContext& local_context,
                            std::vector<CSSPropertyValue>& properties) {
   CSSPropertyID shorthand_id = local_context.CurrentShorthand();
-  DCHECK(shorthand_id == CSSPropertyID::kBackground );
+  DCHECK(shorthand_id == CSSPropertyID::kBackground);
   const StylePropertyShorthand& shorthand = backgroundShorthand();
 
   const unsigned longhand_count = shorthand.length();
@@ -3448,8 +3478,7 @@ bool ParseBackgroundOrMask(bool important,
         }
       }
       if (!parsed_longhand[i]) {
-        if ((property.IDEquals(CSSPropertyID::kBackgroundClip)) &&
-            origin_value) {
+        if ((property.IDEquals(CSSPropertyID::kBackgroundClip)) && origin_value) {
           longhands[i].push_back(origin_value);
           continue;
         }
@@ -5547,21 +5576,21 @@ std::shared_ptr<const CSSValue> ConsumeTransformList(CSSParserTokenStream& strea
   return ConsumeTransformList(stream, context, CSSParserLocalContext());
 }
 
-//template <class T>
-//    requires std::is_same_v<T, CSSParserTokenStream> ||
-//    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrlInternal(
-//        T& range,
-//        const CSSParserContext& context) {
-//  CSSParserToken url = ConsumeUrlAsToken(range, context);
-//  if (url.GetType() == kEOFToken) {
-//    return nullptr;
-//  }
-//  return std::make_shared<cssvalue::CSSURIValue>(CollectUrlData(url.Value(), context));
-//}
+template <class T>
+    requires std::is_same_v<T, CSSParserTokenStream> ||
+    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrlInternal(
+        T& range,
+        const CSSParserContext& context) {
+  CSSParserToken url = ConsumeUrlAsToken(range, context);
+  if (url.GetType() == kEOFToken) {
+    return nullptr;
+  }
+  return std::make_shared<cssvalue::CSSURIValue>(CollectUrlData(url.Value(), context));
+}
 
-//std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenStream& stream, const CSSParserContext& context) {
-//  return ConsumeUrlInternal(stream, context);
-//}
+std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenStream& stream, const CSSParserContext& context) {
+  return ConsumeUrlInternal(stream, context);
+}
 
 std::shared_ptr<CSSFunctionValue> ConsumeFilterFunction(CSSParserTokenStream& stream, const CSSParserContext& context) {
   CSSValueID filter_type = stream.Peek().FunctionId();
@@ -5857,7 +5886,6 @@ std::shared_ptr<const CSSValue> ConsumeAxis(CSSParserTokenStream& stream, const 
                                                   std::static_pointer_cast<const CSSPrimitiveValue>(z_dimension));
 }
 
-
 // none | [ underline || overline || line-through || blink ] | spelling-error |
 // grammar-error
 std::shared_ptr<const CSSValue> ConsumeTextDecorationLine(CSSParserTokenStream& stream) {
@@ -5916,21 +5944,17 @@ std::shared_ptr<const CSSValue> ConsumeTextDecorationLine(CSSParserTokenStream& 
 
 // Consume the `text-box-edge` production.
 std::shared_ptr<const CSSValue> ConsumeTextBoxEdge(CSSParserTokenStream& stream) {
-  if (auto auto_value =
-          ConsumeIdent<CSSValueID::kAuto>(stream)) {
+  if (auto auto_value = ConsumeIdent<CSSValueID::kAuto>(stream)) {
     return auto_value;
   }
 
-  auto over_type =
-      ConsumeIdent<CSSValueID::kText, CSSValueID::kCap, CSSValueID::kEx>(
-          stream);
+  auto over_type = ConsumeIdent<CSSValueID::kText, CSSValueID::kCap, CSSValueID::kEx>(stream);
   if (!over_type) {
     return nullptr;
   }
   // The second parameter is optional, the first parameter will be used for
   // both if the second parameter is not provided.
-  if (auto under_type =
-          ConsumeIdent<CSSValueID::kText, CSSValueID::kAlphabetic>(stream)) {
+  if (auto under_type = ConsumeIdent<CSSValueID::kText, CSSValueID::kAlphabetic>(stream)) {
     // Align with the CSS specification: "If only one value is specified,
     // both edges are assigned that same keyword if possible; else 'text' is
     // assumed as the missing value.".
@@ -5941,8 +5965,7 @@ std::shared_ptr<const CSSValue> ConsumeTextBoxEdge(CSSParserTokenStream& stream)
     // In all cases above, the `under_type` of `text` can be omitted for
     // serialization.
     if (under_type->GetValueID() == CSSValueID::kText) {
-      if (over_type->GetValueID() == CSSValueID::kText ||
-          over_type->GetValueID() == CSSValueID::kCap ||
+      if (over_type->GetValueID() == CSSValueID::kText || over_type->GetValueID() == CSSValueID::kCap ||
           over_type->GetValueID() == CSSValueID::kEx) {
         return over_type;
       }

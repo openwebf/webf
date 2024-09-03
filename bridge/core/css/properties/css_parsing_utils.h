@@ -201,6 +201,24 @@ std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenRange&);
 template <CSSValueID... allowedIdents>
 std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenStream&);
 
+template <CSSValueID... names>
+std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenRange& range) {
+  if (range.Peek().GetType() != kIdentToken ||
+      !IdentMatches<names...>(range.Peek().Id())) {
+    return nullptr;
+  }
+  return CSSIdentifierValue::Create(range.ConsumeIncludingWhitespace().Id());
+}
+
+template <CSSValueID... names>
+std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenStream& stream) {
+  if (stream.Peek().GetType() != kIdentToken ||
+      !IdentMatches<names...>(stream.Peek().Id())) {
+    return nullptr;
+  }
+  return CSSIdentifierValue::Create(stream.ConsumeIncludingWhitespace().Id());
+}
+
 std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenRange&, const CSSParserContext&);
 std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenStream&, const CSSParserContext&);
 
@@ -209,11 +227,9 @@ template <typename T>
     std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSCustomIdentValue> ConsumeDashedIdent(
         T&,
         const CSSParserContext&);
-std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenRange&);
 std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenStream&);
 std::string ConsumeStringAsString(CSSParserTokenStream& stream);
-// cssvalue::CSSURIValue* ConsumeUrl(CSSParserTokenRange&, const CSSParserContext&);
-// cssvalue::CSSURIValue* ConsumeUrl(CSSParserTokenStream&, const CSSParserContext&);
+std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenStream&, const CSSParserContext&);
 
 // Some properties accept non-standard colors, like rgb values without a
 // preceding hash, in quirks mode.

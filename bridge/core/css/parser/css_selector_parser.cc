@@ -869,7 +869,7 @@ bool CSSSelectorParser::ConsumePartialComplexSelector(
 
 // static
 CSSSelector::PseudoType CSSSelectorParser::ParsePseudoType(
-    const AtomicString& name,
+    const std::string& name,
     bool has_arguments,
     const Document* document) {
   CSSSelector::PseudoType pseudo_type =

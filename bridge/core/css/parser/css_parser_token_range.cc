@@ -10,6 +10,8 @@
 
 namespace webf {
 
+DEFINE_GLOBAL(CSSParserToken, g_static_eof_token);
+
 CSSParserTokenRange CSSParserTokenRange::MakeSubRange(const webf::CSSParserToken* first,
                                                       const webf::CSSParserToken* last) const {
   if (first == &g_static_eof_token) {

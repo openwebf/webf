@@ -35,9 +35,6 @@ double CSSTokenizerInputStream::GetDouble(unsigned start, unsigned end) const {
     if (string_.Is8Bit()) {
       result = CharactersToDouble(string_.Characters8() + offset_ + start,
                                   end - start, &is_result_ok);
-    } else {
-      result = CharactersToDouble(string_.Characters16() + offset_ + start,
-                                  end - start, &is_result_ok);
     }
   }
   return is_result_ok ? result : 0.0;

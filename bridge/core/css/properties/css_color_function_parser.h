@@ -39,7 +39,6 @@ class ColorFunctionParser {
   enum class ChannelType { kNone, kPercentage, kNumber, kRelative };
   bool ConsumeChannel(CSSParserTokenRange& args, const CSSParserContext& context, int index);
   bool ConsumeAlpha(CSSParserTokenRange& args, const CSSParserContext& context);
-  bool MakePerColorSpaceAdjustments();
 
   static std::optional<double> TryResolveColorChannel(const std::shared_ptr<const CSSValue>& value,
                                                       ChannelType channel_type,

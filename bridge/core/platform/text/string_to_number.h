@@ -151,7 +151,6 @@ uint64_t CharactersToUInt64(const char16_t*,
 // A small absolute numbers which a double can't represent is accepted, and
 // 0 is returned
 double CharactersToDouble(const char*, size_t, bool* ok);
-double CharactersToDouble(const char16_t*, size_t, bool* ok);
 
 // |parsed_length| will have the length of characters which was parsed as a
 // double number. It will be 0 if the input string isn't a number. It will be

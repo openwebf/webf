@@ -384,15 +384,12 @@ template <class T>
     alpha_ = color_channel_map_.at(CSSValueID::kAlpha);
   }
 
-  if (!MakePerColorSpaceAdjustments()) {
-    return nullptr;
-  }
-
   Color result = Color::FromColor(channels_[0], channels_[1], channels_[2], alpha_);
   // The parsing was successful, so we need to consume the input.
   savepoint.Release();
 
   return cssvalue::CSSColor::Create(result);
 }
+
 
 }  // namespace webf

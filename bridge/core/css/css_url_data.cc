@@ -33,20 +33,15 @@ namespace webf {
 
 CSSUrlData::CSSUrlData(const std::string& unresolved_url,
                        const KURL& resolved_url
-//                       const Referrer& referrer, OriginClean origin_clean, bool is_ad_related
                        )
     : relative_url_(unresolved_url),
       absolute_url_(resolved_url.GetString()),
-//      referrer_(referrer),
-//      is_from_origin_clean_style_sheet_(origin_clean == OriginClean::kTrue),
-//      is_ad_related_(is_ad_related),
       is_local_(unresolved_url.starts_with('#')),
       potentially_dangling_markup_(resolved_url.PotentiallyDanglingMarkup()) {}
 
 CSSUrlData::CSSUrlData(const std::string& resolved_url)
     : CSSUrlData(resolved_url,
                  KURL(resolved_url)
-//                 Referrer(), OriginClean::kTrue, /*is_ad_related=*/false
                  ) {}
 
 KURL CSSUrlData::ResolveUrl(const Document& document) const {

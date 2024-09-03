@@ -5,6 +5,7 @@
 #include "document.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_message.h"
+#include "core/css/style_engine.h"
 #include "core/dom/comment.h"
 #include "core/dom/document_fragment.h"
 #include "core/dom/element.h"
@@ -18,7 +19,6 @@
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
 #include "core/html/html_unknown_element.h"
-#include "core/css/style_engine.h"
 #include "core/svg/svg_element.h"
 #include "element_namespace_uris.h"
 #include "element_traversal.h"
@@ -38,7 +38,7 @@ Document* Document::Create(ExecutingContext* context, ExceptionState& exception_
 
 Document::Document(ExecutingContext* context)
     : ContainerNode(context, this, ConstructionType::kCreateDocument), TreeScope(*this) {
-//  lifecycle_.AdvanceTo(DocumentLifecycle::kInactive);
+  //  lifecycle_.AdvanceTo(DocumentLifecycle::kInactive);
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCreateDocument, nullptr, bindingObject(), nullptr);
 }
 
@@ -272,103 +272,115 @@ bool Document::hidden() {
   return NativeValueConverter<NativeTypeBool>::FromNativeValue(dart_result);
 }
 
-// TODO(xiezuobing):
 void Document::UpdateBaseURL() {
-//  KURL old_base_url = base_url_;
-//  // DOM 3 Core: When the Document supports the feature "HTML" [DOM Level 2
-//  // HTML], the base URI is computed using first the value of the href attribute
-//  // of the HTML BASE element if any, and the value of the documentURI attribute
-//  // from the Document interface otherwise (which we store, preparsed, in
-//  // |url_|).
-//  if (!base_element_url_.IsEmpty())
-//    base_url_ = base_element_url_;
-//  else if (!base_url_override_.IsEmpty())
-//    base_url_ = base_url_override_;
-//  else
-//    base_url_ = FallbackBaseURL();
-//  /
-////  GetSelectorQueryCache().Invalidate();
-//
-//  if (!base_url_.IsValid())
-//    base_url_ = KURL();
-//
-////  if (elem_sheet_) {
-////    // Element sheet is silly. It never contains anything.
-////    DCHECK(!elem_sheet_->Contents()->RuleCount());
-////    elem_sheet_ = nullptr;
-////  }
-//
-////  GetStyleEngine().BaseURLChanged();
-//
-//  if (!EqualIgnoringFragmentIdentifier(old_base_url, base_url_)) {
-//    // Base URL change changes any relative visited links.
-//    // FIXME: There are other URLs in the tree that would need to be
-//    // re-evaluated on dynamic base URL change. Style should be invalidated too.
-//    for (HTMLAnchorElement& anchor :
-//         Traversal<HTMLAnchorElement>::StartsAfter(*this))
-//      anchor.InvalidateCachedVisitedLinkHash();
-//  }
-//
-//  for (Element* element : *scripts()) {
-//    auto* script = To<HTMLScriptElement>(element);
-//    script->Loader()->DocumentBaseURLChanged();
-//  }
-//
-//  if (auto* document_rules = DocumentSpeculationRules::FromIfExists(*this)) {
-//    document_rules->DocumentBaseURLChanged();
-//  }
+  KURL old_base_url = base_url_;
+  // DOM 3 Core: When the Document supports the feature "HTML" [DOM Level 2
+  // HTML], the base URI is computed using first the value of the href attribute
+  // of the HTML BASE element if any, and the value of the documentURI attribute
+  // from the Document interface otherwise (which we store, preparsed, in
+  // |url_|).
+  if (!base_element_url_.IsEmpty())
+    base_url_ = base_element_url_;
+  else if (!base_url_override_.IsEmpty())
+    base_url_ = base_url_override_;
+  else
+    base_url_ = FallbackBaseURL();
+
+  //  GetSelectorQueryCache().Invalidate();
+
+  if (!base_url_.IsValid())
+    base_url_ = KURL();
+
+  //  if (elem_sheet_) {
+  //    // Element sheet is silly. It never contains anything.
+  //    DCHECK(!elem_sheet_->Contents()->RuleCount());
+  //    elem_sheet_ = nullptr;
+  //  }
+
+  //  GetStyleEngine().BaseURLChanged();
+  //
+  //  if (!EqualIgnoringFragmentIdentifier(old_base_url, base_url_)) {
+  //    // Base URL change changes any relative visited links.
+  //    // FIXME: There are other URLs in the tree that would need to be
+  //    // re-evaluated on dynamic base URL change. Style should be invalidated too.
+  //    for (HTMLAnchorElement& anchor : Traversal<HTMLAnchorElement>::StartsAfter(*this))
+  //      anchor.InvalidateCachedVisitedLinkHash();
+  //  }
+
+  //  for (Element* element : *scripts()) {
+  //    auto* script = To<HTMLScriptElement>(element);
+  //    script->Loader()->DocumentBaseURLChanged();
+  //  }
+
+  //  if (auto* document_rules = DocumentSpeculationRules::FromIfExists(*this)) {
+  //    document_rules->DocumentBaseURLChanged();
+  //  }
 }
 
-//const KURL& Document::BaseURL() const {
-//  if (!base_url_.IsNull())
-//    return base_url_;
-//  return BlankURL();
-//}
+const KURL& Document::BaseURL() const {
+  if (!base_url_.IsNull())
+    return base_url_;
+  return BlankURL();
+}
+
+KURL Document::CompleteURL(const std::string& url, const CompleteURLPreloadStatus preload_status) const {
+  return CompleteURLWithOverride(url, base_url_, preload_status);
+}
+
+KURL Document::CompleteURLWithOverride(const std::string& url,
+                                       const KURL& base_url_override,
+                                       CompleteURLPreloadStatus preload_status) const {
+  DCHECK(base_url_override.IsEmpty() || base_url_override.IsValid());
+
+  // Always return a null URL when passed a null string.
+  // FIXME: Should we change the KURL constructor to have this behavior?
+  // See also [CSS]StyleSheet::completeURL(const String&)
+  if (url.empty())
+    return KURL();
+
+  KURL result = KURL(base_url_override, url);
+  // If the conditions are met for
+  // `should_record_sandboxed_srcdoc_baseurl_metrics_` to be set, we should
+  // only record the metric if there's no `base_element_url_` set via a base
+  // element. We must also check the preload status below, since a
+  // PreloadRequest could call this function before `base_element_url_` is set.
+  //  if (should_record_sandboxed_srcdoc_baseurl_metrics_ &&
+  //      base_element_url_.IsEmpty() && preload_status != kIsPreload) {
+  //    // Compute the same thing assuming an empty base url, to see if it changes.
+  //    // This will allow us to ignore trivial changes, such as 'https://foo.com'
+  //    // resolving as 'https://foo.com/', which happens whether the base url is
+  //    // specified or not.
+  //    // While the following computation is non-trivial overhead, it's not
+  //    // expected to be needed often enough to be problematic, and it will be
+  //    // removed once we've collected data for https://crbug.com/330744612.
+  //    KURL empty_baseurl_result = KURL(KURL(), url);
+  //    if (result != empty_baseurl_result) {
+  ////      CountUse(WebFeature::kSandboxedSrcdocFrameResolvesRelativeURL);
+  //      // Let's not repeat the parallel computation again now we've found a
+  //      // instance to record.
+  ////      should_record_sandboxed_srcdoc_baseurl_metrics_ = false;
+  //    }
+  //  }
+  return result;
+}
 
 
-//KURL Document::CompleteURL(
-//    const std::string& url,
-//    const CompleteURLPreloadStatus preload_status) const {
-//  return CompleteURLWithOverride(url, base_url_, preload_status);
-//}
-//
-//KURL Document::CompleteURLWithOverride(
-//    const std::string& url,
-//    const KURL& base_url_override,
-//    CompleteURLPreloadStatus preload_status) const {
-//  DCHECK(base_url_override.IsEmpty() || base_url_override.IsValid());
-//
-//  // Always return a null URL when passed a null string.
-//  // FIXME: Should we change the KURL constructor to have this behavior?
-//  // See also [CSS]StyleSheet::completeURL(const String&)
-//  if (url.empty())
-//    return KURL();
-//
-//  KURL result = KURL(base_url_override, url);
-//  // If the conditions are met for
-//  // `should_record_sandboxed_srcdoc_baseurl_metrics_` to be set, we should
-//  // only record the metric if there's no `base_element_url_` set via a base
-//  // element. We must also check the preload status below, since a
-//  // PreloadRequest could call this function before `base_element_url_` is set.
-////  if (should_record_sandboxed_srcdoc_baseurl_metrics_ &&
-////      base_element_url_.IsEmpty() && preload_status != kIsPreload) {
-////    // Compute the same thing assuming an empty base url, to see if it changes.
-////    // This will allow us to ignore trivial changes, such as 'https://foo.com'
-////    // resolving as 'https://foo.com/', which happens whether the base url is
-////    // specified or not.
-////    // While the following computation is non-trivial overhead, it's not
-////    // expected to be needed often enough to be problematic, and it will be
-////    // removed once we've collected data for https://crbug.com/330744612.
-////    KURL empty_baseurl_result = KURL(KURL(), url);
-////    if (result != empty_baseurl_result) {
-//////      CountUse(WebFeature::kSandboxedSrcdocFrameResolvesRelativeURL);
-////      // Let's not repeat the parallel computation again now we've found a
-////      // instance to record.
-//////      should_record_sandboxed_srcdoc_baseurl_metrics_ = false;
-////    }
-////  }
-//  return result;
-//}
+// [spec] https://html.spec.whatwg.org/C/#fallback-base-url
+KURL Document::FallbackBaseURL() const {
+  // TODO(https://github.com/whatwg/html/issues/9025): Don't let a sandboxed
+  // iframe (without 'allow-same-origin') inherit a fallback base url.
+  // https://chromium-review.googlesource.com/c/chromium/src/+/4324738
+
+  // Return the base_url value that was sent from the initiator along with the
+  // srcdoc attribute's value.
+  if (fallback_base_url_.IsValid()) {
+    return fallback_base_url_;
+  }
+
+  // [spec] 3. Return document's URL.
+  return BlankURL();
+}
+
 
 template <typename CharType>
 static inline bool IsValidNameASCII(const CharType* characters, unsigned length) {
@@ -523,27 +535,27 @@ StyleEngine& Document::EnsureStyleEngine() {
 }
 
 bool Document::InStyleRecalc() const {
-//  return lifecycle_.GetState() == DocumentLifecycle::kInStyleRecalc ||
-//         style_engine_->InContainerQueryStyleRecalc() ||
-//         style_engine_->InPositionTryStyleRecalc() ||
-//         style_engine_->InEnsureComputedStyle();
-return false;
+  //  return lifecycle_.GetState() == DocumentLifecycle::kInStyleRecalc ||
+  //         style_engine_->InContainerQueryStyleRecalc() ||
+  //         style_engine_->InPositionTryStyleRecalc() ||
+  //         style_engine_->InEnsureComputedStyle();
+  return false;
 }
 
 bool Document::ShouldScheduleLayoutTreeUpdate() const {
-//  if (!IsActive())
-//    return false;
-//  if (InStyleRecalc())
-//    return false;
-//  if (lifecycle_.GetState() == DocumentLifecycle::kInPerformLayout)
-//    return false;
+  //  if (!IsActive())
+  //    return false;
+  //  if (InStyleRecalc())
+  //    return false;
+  //  if (lifecycle_.GetState() == DocumentLifecycle::kInPerformLayout)
+  //    return false;
   return true;
 }
 
 void Document::ScheduleLayoutTreeUpdate() {
-//  assert(!HasPendingVisualUpdate());
+  //  assert(!HasPendingVisualUpdate());
   assert(ShouldScheduleLayoutTreeUpdate());
-//  assert(NeedsLayoutTreeUpdate());
+  //  assert(NeedsLayoutTreeUpdate());
   /* // TODO(guopengfei)：
   if (!View()->CanThrottleRendering() && ShouldScheduleLayout()) {
     GetPage()->Animator().ScheduleVisualUpdate(GetFrame());
@@ -582,15 +594,14 @@ void Document::UnregisterNodeList(const LiveNodeListBase* list) {
 }
 
 void Document::RegisterNodeListWithIdNameCache(const LiveNodeListBase* list) {
-  //node_lists_.Add(list, kInvalidateOnIdNameAttrChange);
+  // node_lists_.Add(list, kInvalidateOnIdNameAttrChange);
 }
 
 void Document::UnregisterNodeListWithIdNameCache(const LiveNodeListBase* list) {
-  //node_lists_.Remove(list, kInvalidateOnIdNameAttrChange);
+  // node_lists_.Remove(list, kInvalidateOnIdNameAttrChange);
 }
 
-bool Document::ShouldInvalidateNodeListCaches(
-    const QualifiedName* attr_name) const {
+bool Document::ShouldInvalidateNodeListCaches(const QualifiedName* attr_name) const {
   /*
   if (attr_name) {
     return node_lists_.NeedsInvalidateOnAttributeChange() &&
@@ -606,8 +617,8 @@ bool Document::ShouldInvalidateNodeListCaches(
 }
 
 void Document::InvalidateNodeListCaches(const QualifiedName* attr_name) {
-  //for (const LiveNodeListBase* list : lists_invalidated_at_document_)
-  //  list->InvalidateCacheForAttribute(attr_name);
+  // for (const LiveNodeListBase* list : lists_invalidated_at_document_)
+  //   list->InvalidateCacheForAttribute(attr_name);
 }
 
 }  // namespace webf

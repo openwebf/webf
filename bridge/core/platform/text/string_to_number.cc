@@ -18,30 +18,24 @@
 namespace webf {
 
 template <int base>
-bool IsCharacterAllowedInBase(uint16_t);
+bool IsCharacterAllowedInBase(uint8_t);
 
 template <>
-bool IsCharacterAllowedInBase<10>(uint16_t c) {
+bool IsCharacterAllowedInBase<10>(uint8_t c) {
   return IsASCIIDigit(c);
 }
 
 template <>
-bool IsCharacterAllowedInBase<16>(uint16_t c) {
+bool IsCharacterAllowedInBase<16>(uint8_t c) {
   return IsASCIIHexDigit(c);
 }
 
-inline bool IsSpaceOrNewline(uint16_t c) {
-  if (c <= 0x7F) {
-    // 使用标准库函数处理ASCII字符
-    return std::isspace(c);
-  } else {
-    // 使用ICU库函数处理非ASCII字符
-    return u_isspace(c);
-  }
+inline bool IsSpaceOrNewline(uint8_t c) {
+  return std::isspace(c);
 }
 
-template <typename IntegralType, typename CharType, int base>
-static inline IntegralType ToIntegralType(const CharType* data,
+template <typename IntegralType, int base>
+static inline IntegralType ToIntegralType(const unsigned char* data,
                                           size_t length,
                                           NumberParsingOptions options,
                                           NumberParsingResult* parsing_result) {
@@ -86,7 +80,7 @@ static inline IntegralType ToIntegralType(const CharType* data,
   while (length && IsCharacterAllowedInBase<base>(*data)) {
     --length;
     IntegralType digit_value;
-    CharType c = *data;
+    uint8_t c = *data;
     if (IsASCIIDigit(c))
       digit_value = c - '0';
     else if (c >= 'a')
@@ -150,13 +144,13 @@ bye:
   return result == NumberParsingResult::kSuccess ? value : 0;
 }
 
-template <typename IntegralType, typename CharType, int base>
-static inline IntegralType ToIntegralType(const CharType* data,
+template <typename IntegralType, int base>
+static inline IntegralType ToIntegralType(const uint8_t* data,
                                           size_t length,
                                           NumberParsingOptions options,
                                           bool* ok) {
   NumberParsingResult result;
-  IntegralType value = ToIntegralType<IntegralType, CharType, base>(
+  IntegralType value = ToIntegralType<IntegralType, base>(
       data, length, options, &result);
   if (ok)
     *ok = result == NumberParsingResult::kSuccess;
@@ -167,56 +161,29 @@ unsigned CharactersToUInt(const unsigned char* data,
                           size_t length,
                           NumberParsingOptions options,
                           NumberParsingResult* result) {
-  return ToIntegralType<unsigned, unsigned char, 10>(data, length, options, result);
+  return ToIntegralType<unsigned, 10>(data, length, options, result);
 }
 
-unsigned CharactersToUInt(const uint16_t* data,
-                          size_t length,
-                          NumberParsingOptions options,
-                          NumberParsingResult* result) {
-  return ToIntegralType<unsigned, uint16_t, 10>(data, length, options, result);
-}
 
 unsigned HexCharactersToUInt(const unsigned char* data,
                              size_t length,
                              NumberParsingOptions options,
                              bool* ok) {
-  return ToIntegralType<unsigned, unsigned char, 16>(data, length, options, ok);
-}
-
-unsigned HexCharactersToUInt(const uint16_t* data,
-                             size_t length,
-                             NumberParsingOptions options,
-                             bool* ok) {
-  return ToIntegralType<unsigned, uint16_t, 16>(data, length, options, ok);
+  return ToIntegralType<unsigned, 16>(data, length, options, ok);
 }
 
 uint64_t HexCharactersToUInt64(const unsigned char* data,
                                size_t length,
                                NumberParsingOptions options,
                                bool* ok) {
-  return ToIntegralType<uint64_t, unsigned char, 16>(data, length, options, ok);
-}
-
-uint64_t HexCharactersToUInt64(const uint16_t* data,
-                               size_t length,
-                               NumberParsingOptions options,
-                               bool* ok) {
-  return ToIntegralType<uint64_t, uint16_t, 16>(data, length, options, ok);
+  return ToIntegralType<uint64_t, 16>(data, length, options, ok);
 }
 
 int CharactersToInt(const unsigned char* data,
                     size_t length,
                     NumberParsingOptions options,
                     bool* ok) {
-  return ToIntegralType<int, unsigned char, 10>(data, length, options, ok);
-}
-
-int CharactersToInt(const uint16_t* data,
-                    size_t length,
-                    NumberParsingOptions options,
-                    bool* ok) {
-  return ToIntegralType<int, uint16_t, 10>(data, length, options, ok);
+  return ToIntegralType<int, 10>(data, length, options, ok);
 }
 
 int CharactersToInt(const StringView& string,
@@ -232,78 +199,35 @@ unsigned CharactersToUInt(const unsigned char* data,
                           size_t length,
                           NumberParsingOptions options,
                           bool* ok) {
-  return ToIntegralType<unsigned, unsigned char, 10>(data, length, options, ok);
-}
-
-unsigned CharactersToUInt(const uint16_t* data,
-                          size_t length,
-                          NumberParsingOptions options,
-                          bool* ok) {
-  return ToIntegralType<unsigned, uint16_t, 10>(data, length, options, ok);
+  return ToIntegralType<unsigned, 10>(data, length, options, ok);
 }
 
 int64_t CharactersToInt64(const unsigned char* data,
                           size_t length,
                           NumberParsingOptions options,
                           bool* ok) {
-  return ToIntegralType<int64_t, unsigned char, 10>(data, length, options, ok);
-}
-
-int64_t CharactersToInt64(const uint16_t* data,
-                          size_t length,
-                          NumberParsingOptions options,
-                          bool* ok) {
-  return ToIntegralType<int64_t, uint16_t, 10>(data, length, options, ok);
+  return ToIntegralType<int64_t, 10>(data, length, options, ok);
 }
 
 uint64_t CharactersToUInt64(const unsigned char* data,
                             size_t length,
                             NumberParsingOptions options,
                             bool* ok) {
-  return ToIntegralType<uint64_t, unsigned char, 10>(data, length, options, ok);
+  return ToIntegralType<uint64_t, 10>(data, length, options, ok);
 }
 
-uint64_t CharactersToUInt64(const uint16_t* data,
-                            size_t length,
-                            NumberParsingOptions options,
-                            bool* ok) {
-  return ToIntegralType<uint64_t, uint16_t, 10>(data, length, options, ok);
-}
-
-
-// 使用标准库函数实现从窄字符字符串解析为双精度浮点数
-double ParseDouble(const char* string, size_t length, size_t& parsed_length) {
-  std::string str(string, length);
-  try {
-    size_t idx;
-    double d = std::stod(str, &idx);
-    parsed_length = idx;
-    return d;
-  } catch (const std::invalid_argument&) {
-    parsed_length = 0;
-    return 0.0; // 或者抛出异常
-  } catch (const std::out_of_range&) {
-    parsed_length = 0;
-    return 0.0; // 或者抛出异常
-  }
-}
-
-// 使用标准库函数实现从宽字符字符串解析为双精度浮点数
-double ParseDouble(const uint16_t * string, size_t length, size_t& parsed_length) {
-  const size_t kConversionBufferSize = 64;
-  if (length > kConversionBufferSize) {
-    // 当字符串长度超过缓冲区大小时，调用其他函数处理
-    return ParseDoubleFromLongString(string, length, parsed_length);
-  }
-  char conversion_buffer[kConversionBufferSize];
-  std::wcstombs(conversion_buffer, string, length);
-  return ParseDouble(conversion_buffer, length, parsed_length);
+double ParseDouble(const unsigned char* string, size_t length, size_t& parsed_length) {
+  std::string str(reinterpret_cast<const char*>(string), length);
+  size_t idx;
+  double d = std::stod(str, &idx);
+  parsed_length = idx;
+  return d;
 }
 
 enum TrailingJunkPolicy { kDisallowTrailingJunk, kAllowTrailingJunk };
 
-template <typename CharType, TrailingJunkPolicy policy>
-static inline double ToDoubleType(const CharType* data,
+template <TrailingJunkPolicy policy>
+static inline double ToDoubleType(const unsigned char* data,
                                   size_t length,
                                   bool* ok,
                                   size_t& parsed_length) {
@@ -326,29 +250,16 @@ static inline double ToDoubleType(const CharType* data,
   return number;
 }
 
-double CharactersToDouble(const unsigned char* data, size_t length, bool* ok) {
+double CharactersToDouble(const char* data, size_t length, bool* ok) {
   size_t parsed_length;
-  return ToDoubleType<unsigned char, kDisallowTrailingJunk>(data, length, ok,
-                                                    parsed_length);
-}
-
-double CharactersToDouble(const uint16_t* data, size_t length, bool* ok) {
-  size_t parsed_length;
-  return ToDoubleType<uint16_t, kDisallowTrailingJunk>(data, length, ok,
+  return ToDoubleType<kDisallowTrailingJunk>(reinterpret_cast<const unsigned char*>(data), length, ok,
                                                     parsed_length);
 }
 
 double CharactersToDouble(const unsigned char* data,
                           size_t length,
                           size_t& parsed_length) {
-  return ToDoubleType<unsigned char, kAllowTrailingJunk>(data, length, nullptr,
-                                                 parsed_length);
-}
-
-double CharactersToDouble(const uint16_t* data,
-                          size_t length,
-                          size_t& parsed_length) {
-  return ToDoubleType<uint16_t, kAllowTrailingJunk>(data, length, nullptr,
+  return ToDoubleType<kAllowTrailingJunk>(data, length, nullptr,
                                                  parsed_length);
 }
 
@@ -356,15 +267,7 @@ float CharactersToFloat(const unsigned char* data, size_t length, bool* ok) {
   // FIXME: This will return ok even when the string fits into a double but
   // not a float.
   size_t parsed_length;
-  return static_cast<float>(ToDoubleType<unsigned char, kDisallowTrailingJunk>(
-      data, length, ok, parsed_length));
-}
-
-float CharactersToFloat(const uint16_t* data, size_t length, bool* ok) {
-  // FIXME: This will return ok even when the string fits into a double but
-  // not a float.
-  size_t parsed_length;
-  return static_cast<float>(ToDoubleType<uint16_t, kDisallowTrailingJunk>(
+  return static_cast<float>(ToDoubleType<kDisallowTrailingJunk>(
       data, length, ok, parsed_length));
 }
 
@@ -373,16 +276,7 @@ float CharactersToFloat(const unsigned char* data,
                         size_t& parsed_length) {
   // FIXME: This will return ok even when the string fits into a double but
   // not a float.
-  return static_cast<float>(ToDoubleType<unsigned char, kAllowTrailingJunk>(
-      data, length, nullptr, parsed_length));
-}
-
-float CharactersToFloat(const uint16_t* data,
-                        size_t length,
-                        size_t& parsed_length) {
-  // FIXME: This will return ok even when the string fits into a double but
-  // not a float.
-  return static_cast<float>(ToDoubleType<uint16_t, kAllowTrailingJunk>(
+  return static_cast<float>(ToDoubleType<kAllowTrailingJunk>(
       data, length, nullptr, parsed_length));
 }
 

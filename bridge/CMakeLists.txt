@@ -322,12 +322,14 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_tokenizer.cc
     core/css/parser/css_property_parser.cc
     core/css/parser/css_tokenizer_input_stream.cc
+    core/css/parser/css_selector_parser.cc
     core/css/properties/css_direction_aware_resolver.cc
     core/css/properties/css_unresolved_property.cc
     core/css/properties/css_property.cc
     core/css/properties/css_parsing_utils.cc
     core/css/properties/css_color_function_parser.cc
     core/css/css_rule.cc
+    core/css/css_selector.cc
     core/css/css_value.cc
     core/css/css_content_distribution_value.cc
     core/css/css_reflect_value.cc
@@ -355,6 +357,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_image_set_value.cc
     core/css/css_crossfade_value.cc
     core/css/css_repeat_style_value.cc
+    core/css/css_font_family_value.cc
+    core/css/css_uri_value.cc
+    core/css/css_url_data.cc
     core/css/css_pending_system_font_value.cc
     core/css/css_font_variation_value.cc
     core/css/css_font_feature_value.cc
@@ -406,6 +411,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/text/text_direction.cc
     core/platform/text/writing_direction_mode.cc
     core/platform/text/string_statics.cc
+    core/platform/text/string_to_number.cc
     core/platform/graphics/color.cc
     core/platform/graphics/color_conversions.cc
     core/platform/graphics/graphic_types.cc
@@ -707,6 +713,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/defined_properties.cc
     out/element_attribute_names.cc
     out/element_namespace_uris.cc
+    out/font_family_names.cc
 
     # SVG generated
     out/svg_names.cc

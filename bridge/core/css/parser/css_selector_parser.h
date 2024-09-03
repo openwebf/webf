@@ -58,7 +58,7 @@ class CSSSelectorParser {
   static bool SupportsComplexSelector(CSSParserTokenStream&,
                                       std::shared_ptr<const CSSParserContext>);
 
-  static CSSSelector::PseudoType ParsePseudoType(const AtomicString& name,
+  static CSSSelector::PseudoType ParsePseudoType(const std::string& name,
                                                  bool has_arguments,
                                                  const Document*);
 
