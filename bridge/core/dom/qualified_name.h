@@ -24,19 +24,19 @@
 #ifndef WEBF_QUALIFIED_NAME_H
 #define WEBF_QUALIFIED_NAME_H
 
-#include "bindings/qjs/atomic_string.h"
-#include "core/platform/static_constructors.h"
-#include "core/platform/hash_traits.h"
 #include <built_in_string.h>
+#include "bindings/qjs/atomic_string.h"
+#include "core/base/hash/hash.h"
+#include "core/platform/hash_traits.h"
+#include "core/platform/static_constructors.h"
 
 namespace webf {
 
-
 struct QualifiedNameComponents {
   WEBF_DISALLOW_NEW();
-  AtomicString* prefix_;
-  AtomicString* local_name_;
-  AtomicString* namespace_;
+  std::string prefix_;
+  std::string local_name_;
+  std::string namespace_;
 };
 
 // This struct is used to pass data between QualifiedName and the
@@ -48,154 +48,130 @@ struct QualifiedNameData {
   bool is_static_;
 };
 
-
-// Global init routines
-extern const class QualifiedName& g_any_name;
-extern const class QualifiedName& g_null_name;
-
 class QualifiedName {
   USING_FAST_MALLOC(QualifiedName);
 
+ public:
+  class QualifiedNameImpl {
    public:
-    class QualifiedNameImpl {
-     public:
-      static std::shared_ptr<QualifiedNameImpl> Create(AtomicString prefix,
-                                                     AtomicString local_name,
-                                                     AtomicString namespace_uri,
+    static std::shared_ptr<QualifiedNameImpl> Create(const std::string& prefix,
+                                                     const std::string& local_name,
+                                                     const std::string& namespace_uri,
                                                      bool is_static) {
-        return std::make_shared<QualifiedNameImpl>(prefix, local_name, namespace_uri, is_static);
-      }
+      return std::make_shared<QualifiedNameImpl>(prefix, local_name, namespace_uri, is_static);
+    }
 
-      ~QualifiedNameImpl();
-
-      unsigned ComputeHash() const;
-
-
-      // We rely on StringHasher's HashMemory clearing out the top 8 bits when
-      // doing hashing and use one of the bits for the is_static_ value.
-      mutable unsigned existing_hash_ : 24;
-      unsigned is_static_ : 1;
-      const AtomicString prefix_;
-      const AtomicString local_name_;
-      const AtomicString namespace_;
-      mutable AtomicString local_name_upper_;
-      QualifiedNameImpl(AtomicString prefix,
-                        AtomicString local_name,
-                        AtomicString namespace_uri,
-                        bool is_static)
-          : existing_hash_(0),
-            is_static_(is_static),
-            prefix_(prefix),
-            local_name_(local_name),
-            namespace_(namespace_uri)
-
-      {
-        assert(!namespace_.IsEmpty() || namespace_.IsNull());
-      }
-
-     private:
-
+    struct KeyHasher {
+      std::size_t operator()(const QualifiedNameImpl& k) const { return k.ComputeHash(); }
     };
 
-    [[nodiscard]] std::size_t hash() const { return impl_->ComputeHash(); }
-
-    // 为了在 std::unordered_map 和 std::unordered_set 中使用
-    // struct KeyHasher {
-    //   std::size_t operator()(const QualifiedName& k) const { return k.impl_->ComputeHash(); }
-    // };
-
-    QualifiedName(const AtomicString& prefix,
-                  const AtomicString& local_name,
-                  const AtomicString& namespace_uri);
-    // Creates a QualifiedName instance with null prefix, the specified local
-    // name, and null namespace.
-    explicit QualifiedName(const AtomicString& local_name);
-    ~QualifiedName();
-
-    QualifiedName(const QualifiedName& other) = default;
-    const QualifiedName& operator=(const QualifiedName& other) {
-      impl_ = other.impl_;
-      return *this;
-    }
-    QualifiedName(QualifiedName&& other) = default;
-    QualifiedName& operator=(QualifiedName&& other) = default;
-
-    bool operator==(const QualifiedName& other) const {
-      return impl_ == other.impl_;
-    }
-    bool operator!=(const QualifiedName& other) const {
-      return !(*this == other);
+    bool operator==(const QualifiedNameImpl& other) const {
+      return other.ComputeHash() == ComputeHash();
     }
 
-    bool Matches(const QualifiedName& other) const {
-      return impl_ == other.impl_ || (LocalName() == other.LocalName() &&
-                                      NamespaceURI() == other.NamespaceURI());
+    ~QualifiedNameImpl();
+
+    unsigned ComputeHash() const;
+
+    // We rely on StringHasher's HashMemory clearing out the top 8 bits when
+    // doing hashing and use one of the bits for the is_static_ value.
+    mutable unsigned existing_hash_ : 24;
+    unsigned is_static_ : 1;
+    const std::string prefix_;
+    const std::string local_name_;
+    const std::string namespace_;
+    mutable std::string local_name_upper_;
+    QualifiedNameImpl(std::string prefix, std::string local_name, std::string namespace_uri, bool is_static)
+        : existing_hash_(0),
+          is_static_(is_static),
+          prefix_(std::move(prefix)),
+          local_name_(std::move(local_name)),
+          namespace_(std::move(namespace_uri)) {
+      assert(!namespace_.empty());
     }
-
-    bool HasPrefix() const { return impl_->prefix_ != built_in_string::knull; }
-    void SetPrefix(const AtomicString& prefix) {
-      *this = QualifiedName(prefix, LocalName(), NamespaceURI());
-    }
-
-    const AtomicString& Prefix() const { return impl_->prefix_; }
-    const AtomicString& LocalName() const { return impl_->local_name_; }
-    const AtomicString& NamespaceURI() const { return impl_->namespace_; }
-
-    // Uppercased localName, cached for efficiency
-    const AtomicString& LocalNameUpper() const {
-      if (!impl_->local_name_upper_.IsNull())
-        return impl_->local_name_upper_;
-      return LocalNameUpperSlow();
-    }
-
-    const AtomicString& LocalNameUpperSlow() const;
-
-    // Returns true if this is a built-in name. That is, one of the names defined
-    // at build time (such as <img>).
-    bool IsDefinedName() const { return impl_ && impl_->is_static_; }
-
-    [[nodiscard]] std::string ToString() const;
-
-    QualifiedNameImpl* Impl() const { return impl_.get(); }
-
-    // Init routine for globals
-    static void InitAndReserveCapacityForSize(unsigned size);
-
-    static const QualifiedName& Null() { return g_null_name; }
-
-    // The below methods are only for creating static global QNames that need no
-    // ref counting.
-    static void CreateStatic(void* target_address, AtomicString* name);
-    static void CreateStatic(void* target_address,
-                             AtomicString* name,
-                             const AtomicString& name_namespace);
 
    private:
-    friend struct HashTraits<QualifiedName>;
+  };
 
-    // This constructor is used only to create global/static QNames that don't
-    // require any ref counting.
-    QualifiedName(const AtomicString& prefix,
-                  const AtomicString& local_name,
-                  const AtomicString& namespace_uri,
-                  bool is_static);
+  [[nodiscard]] std::size_t hash() const { return impl_->ComputeHash(); }
 
-    std::shared_ptr<QualifiedNameImpl> impl_;
+  struct KeyHasher {
+    std::size_t operator()(const QualifiedName& k) const { return k.hash(); }
+  };
+
+  QualifiedName(const std::string& prefix, const std::string& local_name, const std::string& namespace_uri);
+  // Creates a QualifiedName instance with null prefix, the specified local
+  // name, and null namespace.
+  explicit QualifiedName(const std::string& local_name);
+  ~QualifiedName();
+
+  QualifiedName(const QualifiedName& other) = default;
+  const QualifiedName& operator=(const QualifiedName& other) {
+    impl_ = other.impl_;
+    return *this;
+  }
+  QualifiedName(QualifiedName&& other) = default;
+  QualifiedName& operator=(QualifiedName&& other) = default;
+
+  bool operator==(const QualifiedName& other) const { return impl_ == other.impl_; }
+  bool operator!=(const QualifiedName& other) const { return !(*this == other); }
+
+  bool Matches(const QualifiedName& other) const {
+    return impl_ == other.impl_ || (LocalName() == other.LocalName() && NamespaceURI() == other.NamespaceURI());
+  }
+
+  bool HasPrefix() const { return impl_->prefix_ != built_in_string_stdstring::knull; }
+  void SetPrefix(const std::string& prefix) { *this = QualifiedName(prefix, LocalName(), NamespaceURI()); }
+
+  [[nodiscard]] const std::string& Prefix() const { return impl_->prefix_; }
+  [[nodiscard]] const std::string& LocalName() const { return impl_->local_name_; }
+  [[nodiscard]] const std::string& NamespaceURI() const { return impl_->namespace_; }
+
+  // Uppercased localName, cached for efficiency
+  [[nodiscard]] const std::string& LocalNameUpper() const {
+    if (!impl_->local_name_upper_.empty())
+      return impl_->local_name_upper_;
+    return LocalNameUpperSlow();
+  }
+
+  [[nodiscard]] const std::string& LocalNameUpperSlow() const;
+
+  // Returns true if this is a built-in name. That is, one of the names defined
+  // at build time (such as <img>).
+  bool IsDefinedName() const { return impl_ && impl_->is_static_; }
+
+  [[nodiscard]] std::string ToString() const;
+
+  QualifiedNameImpl* Impl() const { return impl_.get(); }
+
+  // Init routine for globals
+  static void InitAndReserveCapacityForSize(unsigned size);
+
+  static const QualifiedName Null() { return QualifiedName("", "", ""); }
+
+  // The below methods are only for creating static global QNames that need no
+  // ref counting.
+  static void CreateStatic(void* target_address, std::string* name);
+  static void CreateStatic(void* target_address, std::string* name, const std::string& name_namespace);
+
+ private:
+  friend struct HashTraits<QualifiedName>;
+
+  // This constructor is used only to create global/static QNames that don't
+  // require any ref counting.
+  QualifiedName(const std::string& prefix,
+                const std::string& local_name,
+                const std::string& namespace_uri,
+                bool is_static);
+
+  std::shared_ptr<QualifiedNameImpl> impl_ = nullptr;
 };
-
-inline unsigned HashComponents(const QualifiedNameComponents& buf) {
-  // TODO(guopengfei)：return 0xFFFFFF for Compile
-  // return StringHasher::HashMemory<sizeof(QualifiedNameComponents)>(&buf) &
-  //        0xFFFFFF;
-  return 0xFFFFFF;
-}
 
 DEFINE_GLOBAL(QualifiedName, g_any_name);
 DEFINE_GLOBAL(QualifiedName, g_null_name);
 
 template <>
-struct HashTraits<QualifiedName::QualifiedNameImpl*>
-    : GenericHashTraits<QualifiedName::QualifiedNameImpl*> {
+struct HashTraits<QualifiedName::QualifiedNameImpl*> : GenericHashTraits<QualifiedName::QualifiedNameImpl*> {
   static unsigned GetHash(const QualifiedName::QualifiedNameImpl* name) {
     if (!name->existing_hash_) {
       name->existing_hash_ = name->ComputeHash();
@@ -212,27 +188,27 @@ struct HashTraits<webf::QualifiedName> : GenericHashTraits<webf::QualifiedName> 
   static constexpr bool kSafeToCompareToEmptyOrDeleted = false;
 
   static constexpr bool kEmptyValueIsZero = false;
-  static const webf::QualifiedName& EmptyValue() { return webf::QualifiedName::Null(); }
+  static const webf::QualifiedName EmptyValue() { return webf::QualifiedName::Null(); }
 
   static bool IsDeletedValue(const QualifiedName& value) {
     return HashTraits<std::shared_ptr<QualifiedNameImpl>>::IsDeletedValue(value.impl_);
   }
   static void ConstructDeletedValue(QualifiedName& slot) {
-    HashTraits<std::shared_ptr<QualifiedNameImpl>>::ConstructDeletedValue(
-        slot.impl_);
+    HashTraits<std::shared_ptr<QualifiedNameImpl>>::ConstructDeletedValue(slot.impl_);
   }
-
 };
+
+inline unsigned HashComponents(const QualifiedNameComponents& buf) {
+  return SuperFastHash((const char*) &buf, sizeof(QualifiedNameComponents)) & 0xFFFFFF;
+}
 
 }  // namespace webf
 
 namespace std {
 template <>
 struct hash<webf::QualifiedName> {
-  std::size_t operator()(const webf::QualifiedName& q) const noexcept {
-    return q.hash();
-  }
+  std::size_t operator()(const webf::QualifiedName& q) const noexcept { return q.hash(); }
 };
-}
+}  // namespace std
 
 #endif  // WEBF_QUALIFIED_NAME_H

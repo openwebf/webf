@@ -12,6 +12,11 @@ namespace webf {
 
 DEFINE_GLOBAL(CSSParserToken, g_static_eof_token);
 
+void CSSParserTokenRange::InitStaticEOFToken() {
+  new ((void*)&g_static_eof_token) CSSParserToken(kEOFToken);
+}
+
+
 CSSParserTokenRange CSSParserTokenRange::MakeSubRange(const webf::CSSParserToken* first,
                                                       const webf::CSSParserToken* last) const {
   if (first == &g_static_eof_token) {
@@ -108,7 +113,7 @@ std::string CSSParserTokenRange::Serialize() const {
     if (it != first_ && NeedsInsertedComment(*(it - 1), *it)) {
       result += "/**/";
     }
-//    it->Serialize(builder);
+    it->Serialize(result);
   }
   return result;
 }

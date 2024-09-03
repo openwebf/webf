@@ -33,7 +33,10 @@ Element::Element(const AtomicString& namespace_uri,
                  const AtomicString& prefix,
                  Document* document,
                  Node::ConstructionType construction_type)
-    : ContainerNode(document, construction_type), local_name_(local_name), namespace_uri_(namespace_uri), tag_name_(local_name) {
+    : ContainerNode(document, construction_type),
+      local_name_(local_name),
+      namespace_uri_(namespace_uri),
+      tag_name_(local_name.ToStdString(document->ctx())) {
   auto buffer = GetExecutingContext()->uiCommandBuffer();
   if (namespace_uri == element_namespace_uris::khtml) {
     buffer->AddCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())), bindingObject(),
@@ -360,8 +363,7 @@ AtomicString Element::LocalNameForSelectorMatching() const {
   return AtomicString::Empty();
 }
 
-bool Element::HasAttributeIgnoringNamespace(
-    const AtomicString& local_name) const {
+bool Element::HasAttributeIgnoringNamespace(const AtomicString& local_name) const {
   if (!HasElementData()) {
     return false;
   }
@@ -761,25 +763,6 @@ DOMTokenList* Element::GetPart() const {
 //   return *part;
 // }
 
-const AtomicString& Element::ShadowPseudoId() const {
-  return AtomicString::Null();
-}
-
-
-void Element::SetShadowPseudoId(const AtomicString& id) {
-  {
-    // NOTE: This treats "cue" as kPseudoWebKitCustomElement, so "cue"
-    // is allowed here.
-    CSSSelector::PseudoType type = CSSSelectorParser::ParsePseudoType(id, false, &GetDocument());
-    assert(type == CSSSelector::kPseudoWebKitCustomElement || type == CSSSelector::kPseudoBlinkInternalElement ||
-           type == CSSSelector::kPseudoDetailsContent || type == CSSSelector::kPseudoSelectFallbackButtonIcon ||
-           type == CSSSelector::kPseudoSelectFallbackButton || type == CSSSelector::kPseudoSelectFallbackButtonText ||
-           type == CSSSelector::kPseudoSelectFallbackDatalist);
-  }
-
-  setAttribute(html_names::kPseudoAttr, id);
-}
-
 void Element::SetAnimationStyleChange(bool animation_style_change) {
   if (animation_style_change && GetDocument().InStyleRecalc()) {
     return;
@@ -818,8 +801,8 @@ void Element::SetNeedsAnimationStyleRecalc() {
 
 bool Element::ChildStyleRecalcBlockedByDisplayLock() const {
   // TODO(guopengfei)：暂不支持
-  //auto* context = GetDisplayLockContext();
-  //return context && !context->ShouldStyleChildren();
+  // auto* context = GetDisplayLockContext();
+  // return context && !context->ShouldStyleChildren();
   return false;
 }
 

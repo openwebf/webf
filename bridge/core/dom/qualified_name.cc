@@ -25,87 +25,45 @@
 #include "core/dom/qualified_name.h"
 #include <unordered_set>
 
-//TODO(xiezuobing): qualified实现
 namespace webf {
 
-// Global init routines
-//DEFINE_GLOBAL(QualifiedName, g_any_name);
-//DEFINE_GLOBAL(QualifiedName, g_null_name);
-
-using QualifiedNameCache = std::unordered_set<QualifiedName::QualifiedNameImpl*>;
+using QualifiedNameCache = std::unordered_set<std::shared_ptr<QualifiedName::QualifiedNameImpl>>;
 
 static QualifiedNameCache& GetQualifiedNameCache() {
-  // This code is lockless and thus assumes it all runs on one thread!
-  // TODO(guopengfei)：注释IsMainThread
-  //DCHECK(IsMainThread());
-  thread_local static QualifiedNameCache* g_name_cache = new QualifiedNameCache;
-  return *g_name_cache;
+  thread_local static QualifiedNameCache g_name_cache;
+  return g_name_cache;
 }
 
-struct QNameComponentsTranslator {
-  static unsigned GetHash(const QualifiedNameData& data) {
-    return HashComponents(data.components_);
-  }
-  static bool Equal(QualifiedName::QualifiedNameImpl* name,
-                    const QualifiedNameData& data) {
-    return data.components_.prefix_ == &(name->prefix_) &&
-           data.components_.local_name_ == &(name->local_name_) &&
-           data.components_.namespace_ == &(name->namespace_);
-  }
-  static void Store(QualifiedName::QualifiedNameImpl*& location,
-                    const QualifiedNameData& data,
-                    unsigned) {
-    const QualifiedNameComponents& components = data.components_;
-    auto name = QualifiedName::QualifiedNameImpl::Create(
-        *components.prefix_, *components.local_name_, *components.namespace_,
-        data.is_static_);
-    location = name.get();
-  }
-};
-
-QualifiedName::QualifiedName(const AtomicString& p,
-                             const AtomicString& l,
-                             const AtomicString& n) {
-                             /* // TODO(guopengfei)：注释release
-  QualifiedNameData data = {{p, l, n.IsEmpty() ? g_null_atom : n}, false};
-  QualifiedNameCache::AddResult add_result =
-      GetQualifiedNameCache().AddWithTranslator<QNameComponentsTranslator>(
-          data);
-  impl_ = *add_result.stored_value;
-  if (add_result.is_new_entry)
-    impl_->release();
-
-                              */
+QualifiedName::QualifiedName(const std::string& p, const std::string& l, const std::string& n) {
+  std::shared_ptr<QualifiedNameImpl> data = std::make_shared<QualifiedNameImpl>(p, l, n.empty() ? "" : n, false);
+  QualifiedNameCache& cache = GetQualifiedNameCache();
+  auto result = cache.insert(data);
+  impl_ = data;
 }
 
-QualifiedName::QualifiedName(const AtomicString& local_name)
-    : QualifiedName(g_null_atom, local_name, g_null_atom) {}
+QualifiedName::QualifiedName(const std::string& local_name) : QualifiedName("", local_name, "") {}
 
-QualifiedName::QualifiedName(const AtomicString& p,
-                             const AtomicString& l,
-                             const AtomicString& n,
-                             bool is_static) {
-                             /* //TODO(guopengfei)：
-  QualifiedNameData data = {{p.Impl(), l.Impl(), n.Impl()}, is_static};
-  QualifiedNameCache::AddResult add_result =
-      GetQualifiedNameCache().AddWithTranslator<QNameComponentsTranslator>(
-          data);
-  impl_ = *add_result.stored_value;
-  if (add_result.is_new_entry)
-    impl_->Release();
-
-                              */
+QualifiedName::QualifiedName(const std::string& p, const std::string& l, const std::string& n, bool is_static) {
+  std::shared_ptr<QualifiedNameImpl> data = std::make_shared<QualifiedNameImpl>(p, l, n.empty() ? "" : n, is_static);
+  QualifiedNameCache& cache = GetQualifiedNameCache();
+  auto result = cache.insert(data);
+  impl_ = data;
 }
 
 QualifiedName::~QualifiedName() = default;
 
 std::string QualifiedName::ToString() const {
-  //TODO(guopengfei)：
+  // TODO(guopengfei)：
   JSContext* ctx = nullptr;
-  std::string local = LocalName().ToStdString(ctx);
+  std::string local = LocalName();
   if (HasPrefix())
-    return Prefix().ToStdString(ctx) + ":" + local;
+    return Prefix() + ":" + local;
   return local;
+}
+
+unsigned QualifiedName::QualifiedNameImpl::ComputeHash() const {
+  QualifiedNameComponents components = {prefix_, local_name_, namespace_};
+  return HashComponents(components);
 }
 
 }  // namespace webf

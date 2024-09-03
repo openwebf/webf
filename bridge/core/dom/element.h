@@ -208,12 +208,6 @@ class Element : public ContainerNode {
   // ShadowRoot* AuthorShadowRoot() const;
   // ShadowRoot* UserAgentShadowRoot() const;
 
-  virtual const AtomicString& ShadowPseudoId() const;
-  // The specified string must start with "-webkit-" or "-internal-". The
-  // former can be used as a selector in any places, and the latter can be
-  // used only in UA stylesheet.
-  void SetShadowPseudoId(const AtomicString&);
-
   AtomicString LocalNameForSelectorMatching() const;
 
   // Call this to get the value of the id attribute for style resolution

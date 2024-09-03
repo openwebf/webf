@@ -44,7 +44,6 @@
 
 #include "core/dom/attribute.h"
 #include "bindings/qjs/heap_vector.h"
-//#include "third_party/blink/renderer/platform/wtf/text/atomic_string_table.h"
 
 namespace webf {
 
@@ -174,36 +173,19 @@ class MutableAttributeCollection
             attributes) {}
 
   // These functions do no error/duplicate checking.
-  void Append(const QualifiedName&, const AtomicString& value);
+  void Append(const QualifiedName&, const std::string& value);
   void Remove(unsigned index);
 };
 
 inline void MutableAttributeCollection::Append(const QualifiedName& name,
-                                               const AtomicString& value) {
+                                               const std::string& value) {
   attributes_.push_back(Attribute(name, value));
 }
 
 inline void MutableAttributeCollection::Remove(unsigned index) {
   attributes_.erase_at(index);
 }
-/* // TODO(guopengfei)：
-template <typename Container, typename ContainerMemberType>
-inline typename AttributeCollectionGeneric<Container,
-                                           ContainerMemberType>::iterator
-AttributeCollectionGeneric<Container, ContainerMemberType>::Find(
-    const AtomicString& name) const {
-  return FindHinted(name, webf::WeakResult(name.Impl()));
-}
 
-template <typename Container, typename ContainerMemberType>
-inline uint32_t
-AttributeCollectionGeneric<Container, ContainerMemberType>::FindIndexHinted(
-    const StringView& name,
-    WTF::AtomicStringTable::WeakResult hint) const {
-  iterator it = FindHinted(name, hint);
-  return it ? uint32_t(it - begin()) : kNotFound;
-}
-*/
 template <typename Container, typename ContainerMemberType>
 inline uint32_t
 AttributeCollectionGeneric<Container, ContainerMemberType>::FindIndex(
@@ -216,46 +198,7 @@ AttributeCollectionGeneric<Container, ContainerMemberType>::FindIndex(
   }
   return kNotFound;
 }
-/* // TODO(guopengfei)：
-template <typename Container, typename ContainerMemberType>
-inline uint32_t
-AttributeCollectionGeneric<Container, ContainerMemberType>::FindIndex(
-    const AtomicString& name) const {
-  return FindIndexHinted(name, WeakResult(name.Impl()));
-}
 
-template <typename Container, typename ContainerMemberType>
-inline typename AttributeCollectionGeneric<Container,
-                                           ContainerMemberType>::iterator
-AttributeCollectionGeneric<Container, ContainerMemberType>::FindHinted(
-    const StringView& name,
-    WeakResult hint) const {
-  // A slow check is required if there are any attributes with prefixes
-  // and no unprefixed name matches.
-  bool has_attributes_with_prefixes = false;
-
-  // Optimize for the case where the attribute exists and its name exactly
-  // matches.
-  iterator end = this->end();
-  for (iterator it = begin(); it != end; ++it) {
-    // FIXME: Why check the prefix? Namespaces should be all that matter.
-    // Most attributes (all of HTML and CSS) have no namespace.
-    if (!it->GetName().HasPrefix()) {
-      if (hint == it->LocalName()) {
-        return it;
-      }
-    } else {
-      has_attributes_with_prefixes = true;
-    }
-  }
-
-  // Note that if the attribute has a prefix, the match has to be case
-  // sensitive therefore |name| must be used.
-  if (has_attributes_with_prefixes)
-    return FindWithPrefix(name);
-  return nullptr;
-}
-*/
 template <typename Container, typename ContainerMemberType>
 inline typename AttributeCollectionGeneric<Container,
                                            ContainerMemberType>::iterator

@@ -25,13 +25,14 @@
 #define WEBF_CORE_DOM_NODE_LISTS_NODE_DATA_H_
 
 #include <unordered_map>
+#include "bindings/qjs/atomic_string.h"
+#include "bindings/qjs/cppgc/garbage_collected.h"
 #include "core/dom/child_node_list.h"
 #include "core/dom/empty_node_list.h"
 #include "core/dom/qualified_name.h"
 #include "core/dom/tag_collection.h"
 #include "core/html/collection_type.h"
-#include "bindings/qjs/cppgc/garbage_collected.h"
-#include "bindings/qjs/atomic_string.h"
+#include "global_string.h"
 
 namespace webf {
 
@@ -58,34 +59,36 @@ class NodeListsNodeData final {
     return list;
   }
 
-  using NamedNodeListKey = std::pair<CollectionType, AtomicString>;
+  using NamedNodeListKey = std::pair<CollectionType, std::string>;
   struct NodeListAtomicCacheMapEntryHashTraits {
-
     NodeListAtomicCacheMapEntryHashTraits() = default;
 
     struct Hash {
       size_t operator()(const NamedNodeListKey& entry) const {
-        size_t hash1 = entry.second == CSSSelector::UniversalSelectorAtom() ? g_star_atom.Hash() : entry.second.Hash();
+        size_t hash1 = entry.second == CSSSelector::UniversalSelectorAtom()
+                           ? global_string::kstar_atom.Hash()
+                           : SuperFastHash(entry.second.c_str(), entry.second.length());
         size_t hash2 = std::hash<CollectionType>()(entry.first);
-        return hash1 ^ (hash2 << 1); // Combine the two hash values
+        return hash1 ^ (hash2 << 1);  // Combine the two hash values
       }
     };
 
     struct Equal {
-      bool operator()(const NamedNodeListKey& lhs, const NamedNodeListKey& rhs) const {
-        return lhs == rhs;
-      }
+      bool operator()(const NamedNodeListKey& lhs, const NamedNodeListKey& rhs) const { return lhs == rhs; }
     };
 
     static constexpr bool kSafeToCompareToEmptyOrDeleted = true;
   };
 
-  typedef std::unordered_map<NamedNodeListKey, std::shared_ptr<LiveNodeListBase>,
-    NodeListAtomicCacheMapEntryHashTraits::Hash, NodeListAtomicCacheMapEntryHashTraits::Equal> NodeListAtomicNameCacheMap;
+  typedef std::unordered_map<NamedNodeListKey,
+                             std::shared_ptr<LiveNodeListBase>,
+                             NodeListAtomicCacheMapEntryHashTraits::Hash,
+                             NodeListAtomicCacheMapEntryHashTraits::Equal>
+      NodeListAtomicNameCacheMap;
   typedef std::unordered_map<QualifiedName, Member<TagCollectionNS>> TagCollectionNSCache;
 
   template <typename T>
-  T* AddCache(ContainerNode& node, CollectionType collection_type, const AtomicString& name) {
+  T* AddCache(ContainerNode& node, CollectionType collection_type, const std::string& name) {
     NamedNodeListKey key(collection_type, name);
     auto result = atomic_name_caches_.insert({key, nullptr});
     if (!result.second) {
@@ -117,7 +120,8 @@ class NodeListsNodeData final {
   }
 
   TagCollectionNS* AddCache(ContainerNode& node, const AtomicString& namespace_uri, const AtomicString& local_name) {
-    QualifiedName name(g_null_atom, local_name, namespace_uri);
+    QualifiedName name(global_string_stdstring::knull_atom, local_name.ToStdString(node.ctx()),
+                       namespace_uri.ToStdString(node.ctx()));
     auto result = tag_collection_ns_caches_.insert({name, nullptr});
     if (!result.second) {  // result.second 表示插入是否成功
       return result.first->second.Get();

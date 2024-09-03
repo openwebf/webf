@@ -8,6 +8,7 @@
 #ifndef WEBF_BIT_FIELD_H
 #define WEBF_BIT_FIELD_H
 
+#include <cassert>
 #include <cstddef>
 #include <functional>
 #include "foundation/macros.h"

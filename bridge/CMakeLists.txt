@@ -297,6 +297,10 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/timing/performance_entry.cc
     core/timing/performance_measure.cc
 
+    ## Base
+    core/base/hash/hash.cc
+    core/core_initializer.cc
+
     ## CSS
     core/css/css_style_declaration.cc
     core/css/inline_css_style_declaration.cc
@@ -410,7 +414,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/text/text_stream.cc
     core/platform/text/text_direction.cc
     core/platform/text/writing_direction_mode.cc
-    core/platform/text/string_statics.cc
     core/platform/text/string_to_number.cc
     core/platform/graphics/color.cc
     core/platform/graphics/color_conversions.cc
@@ -472,6 +475,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/parent_node.cc
     core/dom/element_data.cc
     core/dom/document.cc
+    core/dom/qualified_name.cc
     core/dom/dom_token_list.cc
     core/dom/dom_string_map.cc
     core/dom/space_split_string.cc

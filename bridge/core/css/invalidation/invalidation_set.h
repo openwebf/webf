@@ -38,6 +38,7 @@
 #include <memory>
 #include <unordered_set>
 
+#include "global_string.h"
 #include "core/css/invalidation/invalidation_flags.h"
 //#include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
 #include "foundation/casting.h"
@@ -319,7 +320,7 @@ class InvalidationSet {
       bool operator!=(const Iterator& other) const { return !(*this == other); }
       void operator++() {
         if (type_ == Type::kString) {
-          string_ = g_null_atom;
+          string_ = global_string::knull_atom;
         } else {
           ++hash_set_iterator_;
         }
@@ -353,7 +354,7 @@ class InvalidationSet {
       Iterator begin =
           IsHashSet(flags) ? Iterator(hash_set_->begin()) : Iterator(string_);
       Iterator end =
-          IsHashSet(flags) ? Iterator(hash_set_->end()) : Iterator(g_null_atom);
+          IsHashSet(flags) ? Iterator(hash_set_->end()) : Iterator(global_string::knull_atom);
       return Range(begin, end);
     }
 

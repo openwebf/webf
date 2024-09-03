@@ -456,7 +456,7 @@ void CSSSelectorParser::AddPlaceholderSelectorIfNeeded(
     ExecutingContext* context;
     placeholder_selector.SetUnparsedPlaceholder(
         nesting_type,
-        stream.StringRangeAt(start, end - start).ToAtomicString(context->ctx()));
+        stream.StringRangeAt(start, end - start).Characters8ToStdString());
     placeholder_selector.SetLastInComplexSelector(true);
     output_.push_back(placeholder_selector);
   }
@@ -614,7 +614,7 @@ std::span<CSSSelector> CSSSelectorParser::ConsumeRelativeSelector(
   selector.SetMatch(CSSSelector::kPseudoClass);
   //TODO(xiezuobing): 需要传入ExecutingContext
   ExecutingContext* context;
-  selector.UpdatePseudoType(AtomicString(context->ctx(), "-internal-relative-anchor"),
+  selector.UpdatePseudoType("-internal-relative-anchor",
                             *context_, false /*has_arguments*/,
                             context_->Mode());
   assert(selector.GetPseudoType() == CSSSelector::kPseudoRelativeAnchor);
@@ -678,7 +678,7 @@ static CSSSelector CreateImplicitAnchor(
   assert(nesting_type == CSSNestingType::kScope);
   //TODO(xiezuobing): 需要传入ExecutingContext
   ExecutingContext* context;
-  return CSSSelector(AtomicString(context->ctx(), "scope"), /*is_implicit=*/true);
+  return CSSSelector("scope", /*is_implicit=*/true);
 }
 
 // Within @scope, each compound that contains either :scope or '&' is prepended
@@ -872,17 +872,16 @@ CSSSelector::PseudoType CSSSelectorParser::ParsePseudoType(
     const std::string& name,
     bool has_arguments,
     const Document* document) {
-  CSSSelector::PseudoType pseudo_type =
-      CSSSelector::NameToPseudoType(name, has_arguments, document);
-
-  if (pseudo_type != CSSSelector::PseudoType::kPseudoUnknown) {
-    return pseudo_type;
-  }
-
-  std::string tmp = name.ToStdString(document->ctx());
-  if (tmp.rfind("-webkit-", 0) == 0) {
-    return CSSSelector::PseudoType::kPseudoWebKitCustomElement;
-  }
+//  CSSSelector::PseudoType pseudo_type =
+//      CSSSelector::NameToPseudoType(name, has_arguments, document);
+//
+//  if (pseudo_type != CSSSelector::PseudoType::kPseudoUnknown) {
+//    return pseudo_type;
+//  }
+//
+//  if (tmp.rfind("-webkit-", 0) == 0) {
+//    return CSSSelector::PseudoType::kPseudoWebKitCustomElement;
+//  }
   return CSSSelector::PseudoType::kPseudoUnknown;
 }
 
@@ -907,7 +906,7 @@ PseudoId ParsePseudoElementLegacy(const std::string& selector_string,
     CSSParserToken selector_name_token = range.Consume();
     PseudoId pseudo_id =
         CSSSelector::GetPseudoId(CSSSelectorParser::ParsePseudoType(
-            selector_name_token.Value().ToAtomicString(parent->ctx()),
+            selector_name_token.Value(),
             selector_name_token.GetType() == kFunctionToken,
             parent ? &parent->GetDocument() : nullptr));
 
@@ -954,7 +953,7 @@ AtomicString ParsePseudoElementArgument(const std::string& selector_string) {
 // static
 PseudoId CSSSelectorParser::ParsePseudoElement(const std::string& selector_string,
                                                const Node* parent,
-                                               AtomicString& argument) {
+                                               std::string& argument) {
 //  if (!RuntimeEnabledFeatures::
 //          CSSComputedStyleFullPseudoElementParserEnabled()) {
 //    PseudoId pseudo_id = ParsePseudoElementLegacy(selector_string, parent);

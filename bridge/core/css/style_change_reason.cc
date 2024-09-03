@@ -5,7 +5,7 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "core/css/style_change_reason.h"
-//#include "third_party/blink/renderer/platform/wtf/static_constructors.h"
+// #include "third_party/blink/renderer/platform/wtf/static_constructors.h"
 
 namespace webf {
 
@@ -29,10 +29,8 @@ const char kFonts[] = "Fonts";
 const char kFrame[] = "Frame";
 const char kFullscreen[] = "Fullscreen";
 const char kFunctionRuleChange[] = "@function rule change";
-const char kInheritedStyleChangeFromParentFrame[] =
-    "InheritedStyleChangeFromParentFrame";
-const char kInlineCSSStyleMutated[] =
-    "Inline CSS style declaration was mutated";
+const char kInheritedStyleChangeFromParentFrame[] = "InheritedStyleChangeFromParentFrame";
+const char kInlineCSSStyleMutated[] = "Inline CSS style declaration was mutated";
 const char kInspector[] = "Inspector";
 const char kKeyframesRuleChange[] = "@keyframes rule change";
 const char kLanguage[] = "Language";
@@ -60,41 +58,34 @@ const char kVisuallyOrdered[] = "VisuallyOrdered";
 const char kWritingModeChange[] = "WritingModeChange";
 const char kZoom[] = "Zoom";
 }  // namespace style_change_reason
-/*
+
 namespace style_change_extra_data {
-DEFINE_GLOBAL(AtomicString, g_active);
-DEFINE_GLOBAL(AtomicString, g_active_view_transition);
-DEFINE_GLOBAL(AtomicString, g_active_view_transition_type);
-DEFINE_GLOBAL(AtomicString, g_disabled);
-DEFINE_GLOBAL(AtomicString, g_drag);
-DEFINE_GLOBAL(AtomicString, g_focus);
-DEFINE_GLOBAL(AtomicString, g_focus_visible);
-DEFINE_GLOBAL(AtomicString, g_focus_within);
-DEFINE_GLOBAL(AtomicString, g_hover);
-DEFINE_GLOBAL(AtomicString, g_past);
-DEFINE_GLOBAL(AtomicString, g_unresolved);
+DEFINE_GLOBAL(std::string, g_active);
+DEFINE_GLOBAL(std::string, g_active_view_transition);
+DEFINE_GLOBAL(std::string, g_active_view_transition_type);
+DEFINE_GLOBAL(std::string, g_disabled);
+DEFINE_GLOBAL(std::string, g_drag);
+DEFINE_GLOBAL(std::string, g_focus);
+DEFINE_GLOBAL(std::string, g_focus_visible);
+DEFINE_GLOBAL(std::string, g_focus_within);
+DEFINE_GLOBAL(std::string, g_hover);
+DEFINE_GLOBAL(std::string, g_past);
+DEFINE_GLOBAL(std::string, g_unresolved);
 
 void Init() {
-  assert(IsMainThread());
-
-  new (WTF::NotNullTag::kNotNull, (void*)&g_active) AtomicString(":active");
-  new (WTF::NotNullTag::kNotNull, (void*)&g_active_view_transition)
-      AtomicString(":active_view_transition");
-  new (WTF::NotNullTag::kNotNull, (void*)&g_active_view_transition_type)
-      AtomicString(":active_view_transition_type");
-  new (WTF::NotNullTag::kNotNull, (void*)&g_disabled) AtomicString(":disabled");
-  new (WTF::NotNullTag::kNotNull, (void*)&g_drag) AtomicString(":-webkit-drag");
-  new (WTF::NotNullTag::kNotNull, (void*)&g_focus) AtomicString(":focus");
-  new (WTF::NotNullTag::kNotNull, (void*)&g_focus_visible)
-      AtomicString(":focus-visible");
-  new (WTF::NotNullTag::kNotNull, (void*)&g_focus_within)
-      AtomicString(":focus-within");
-  new (WTF::NotNullTag::kNotNull, (void*)&g_hover) AtomicString(":hover");
-  new (WTF::NotNullTag::kNotNull, (void*)&g_past) AtomicString(":past");
-  new (WTF::NotNullTag::kNotNull, (void*)&g_unresolved)
-      AtomicString(":unresolved");
+  new ((void*)&g_active) std::string(":active");
+  new ((void*)&g_active_view_transition) std::string(":active_view_transition");
+  new ((void*)&g_active_view_transition_type) std::string(":active_view_transition_type");
+  new ((void*)&g_disabled) std::string(":disabled");
+  new ((void*)&g_drag) std::string(":-webkit-drag");
+  new ((void*)&g_focus) std::string(":focus");
+  new ((void*)&g_focus_visible) std::string(":focus-visible");
+  new ((void*)&g_focus_within) std::string(":focus-within");
+  new ((void*)&g_hover) std::string(":hover");
+  new ((void*)&g_past) std::string(":past");
+  new ((void*)&g_unresolved) std::string(":unresolved");
 }
 
 }  // namespace style_change_extra_data
-*/
+
 }  // namespace webf
