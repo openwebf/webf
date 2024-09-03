@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/launcher.dart';
 import 'package:webf/module.dart';
 import 'package:webf/bridge.dart';
 
@@ -97,7 +98,7 @@ abstract class WebFBundle {
   Uint8List? data;
 
   // Indicate the bundle is resolved.
-  bool get isResolved => _uri != null;
+  bool get isResolved => _uri != null && data != null;
   bool get isDataObtained => data != null;
 
   bool _hitCache = false;
@@ -134,19 +135,19 @@ abstract class WebFBundle {
   }
 
   @mustCallSuper
-  Future<void> resolve({ String? baseUrl, UriParser? uriParser }) async {
+  Future<void> resolve(double? contextId) async {
     if (isResolved) return;
 
     // Source is input by user, do not trust it's a valid URL.
     _uri = Uri.tryParse(url);
 
-    if (baseUrl != null && _uri != null) {
-      uriParser ??= UriParser();
-      _uri = uriParser.resolve(Uri.parse(baseUrl), _uri!);
+    if (contextId != null && _uri != null) {
+      WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
+      if (controller != null) {
+        _uri = controller.uriParser!.resolve(Uri.parse(controller.url), _uri!);
+      }
     }
   }
-
-  Future<void> obtainData([double contextId]);
 
   // Dispose the memory obtained by bundle.
   @mustCallSuper
@@ -234,9 +235,6 @@ class DataBundle extends WebFBundle {
     data = uriData.contentAsBytes();
     _contentType = contentType ?? ContentType.parse('${uriData.mimeType}; charset=${uriData.charset}');
   }
-
-  @override
-  Future<void> obtainData([double contextId = 0]) async {}
 }
 
 // The bundle that source from http or https.
@@ -250,8 +248,8 @@ class NetworkBundle extends WebFBundle {
   Map<String, String>? additionalHttpHeaders = {};
 
   @override
-  Future<void> obtainData([double contextId = 0]) async {
-    if (data != null) return;
+  Future<void> resolve(double? contextId) async {
+    super.resolve(contextId);
 
     NetworkOpItem? currentProfileOp;
     if (enableWebFProfileTracking) {
@@ -269,7 +267,7 @@ class NetworkBundle extends WebFBundle {
     // Prepare request headers.
     request.headers.set('Accept', _acceptHeader());
     additionalHttpHeaders?.forEach(request.headers.set);
-    WebFHttpOverrides.setContextHeader(request.headers, contextId);
+    WebFHttpOverrides.setContextHeader(request.headers, contextId!);
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackNetworkStep(currentProfileOp!, 'request.close()');
