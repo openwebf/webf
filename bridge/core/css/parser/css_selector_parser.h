@@ -27,7 +27,6 @@ class StyleSheetContents;
 class CSSParserObserver;
 class CSSSelectorList;
 
-
 class CSSSelectorParser {
   WEBF_STACK_ALLOCATED();
  public:
@@ -53,7 +52,7 @@ class CSSSelectorParser {
       std::vector<CSSSelector>&);
 
   static bool ConsumeANPlusB(CSSParserTokenStream&, std::pair<int, int>&);
-  CSSSelectorList* ConsumeNthChildOfSelectors(CSSParserTokenStream&);
+  std::shared_ptr<const CSSSelectorList> ConsumeNthChildOfSelectors(CSSParserTokenStream&);
 
   static bool SupportsComplexSelector(CSSParserTokenStream&,
                                       std::shared_ptr<const CSSParserContext>);
@@ -63,21 +62,6 @@ class CSSSelectorParser {
                                                  const Document*);
 
   static PseudoId ParsePseudoElement(const std::string& selector_string, const Node* parent, std::string& argument);
-
-  // https://drafts.csswg.org/css-cascade-6/#typedef-scope-start
-  // https://drafts.csswg.org/css-cascade-6/#typedef-scope-end
-  //
-  // Parse errors are signalled by returning std::nullopt. Empty spans are
-  // normal and expected, since <scope-start> / <scope-end> are forgiving
-  // selector lists.
-  static std::optional<std::span<CSSSelector>> ParseScopeBoundary(
-      CSSParserTokenStream&,
-      std::shared_ptr<const CSSParserContext>,
-      CSSNestingType,
-      std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-      bool is_within_scope,
-      std::shared_ptr<StyleSheetContents>,
-      std::vector<CSSSelector>&);
 
  private:
   CSSSelectorParser(std::shared_ptr<const CSSParserContext>,
@@ -111,7 +95,7 @@ class CSSSelectorParser {
   // Consumes a complex selector list if inside_compound_pseudo_ is false,
   // otherwise consumes a compound selector list.
   std::shared_ptr<CSSSelectorList> ConsumeNestedSelectorList(CSSParserTokenStream&);
-  CSSSelectorList* ConsumeForgivingNestedSelectorList(CSSParserTokenStream&);
+  std::shared_ptr<CSSSelectorList> ConsumeForgivingNestedSelectorList(CSSParserTokenStream&);
   // https://drafts.csswg.org/selectors/#typedef-forgiving-selector-list
   std::optional<std::span<CSSSelector>> ConsumeForgivingComplexSelectorList(
       CSSParserTokenStream&,
@@ -152,8 +136,8 @@ class CSSSelectorParser {
       CSSNestingType);
 
   bool ConsumeName(CSSParserTokenStream&,
-                   AtomicString& name,
-                   AtomicString& namespace_prefix);
+                   std::string& name,
+                   std::string& namespace_prefix);
 
   // These will return true iff the selector is valid;
   // otherwise, the vector will be pushed onto output_.
@@ -174,17 +158,12 @@ class CSSSelectorParser {
   CSSSelector::MatchType ConsumeAttributeMatch(CSSParserTokenStream&);
   CSSSelector::AttributeMatchType ConsumeAttributeFlags(CSSParserTokenStream&);
 
-  const AtomicString& DefaultNamespace() const;
-  const AtomicString& DetermineNamespace(const AtomicString& prefix);
-  void PrependTypeSelectorIfNeeded(const AtomicString& namespace_prefix,
+  void PrependTypeSelectorIfNeeded(const std::string& namespace_prefix,
                                    bool has_element_name,
-                                   const AtomicString& element_name,
-                                   uint32_t start_index_of_compound_selector);
+                                   const std::string& element_name,
+                                   size_t start_index_of_compound_selector);
   void SplitCompoundAtImplicitShadowCrossingCombinator(
       std::span<CSSSelector> compound_selector);
-  void RecordUsageAndDeprecations(std::span<CSSSelector>);
-  static bool ContainsUnknownWebkitPseudoElements(
-      std::span<CSSSelector> selectors);
 
   void SetInSupportsParsing() { in_supports_parsing_ = true; }
 

@@ -79,7 +79,7 @@ CSSSelector::CSSSelector(CSSSelector&& o) : data_(DataUnion::kConstructUninitial
   memset(&o, 0, sizeof(o));
 }
 
-CSSSelector::CSSSelector(std::shared_ptr<const StyleRule> parent_rule, bool is_implicit)
+inline CSSSelector::CSSSelector(std::shared_ptr<const StyleRule> parent_rule, bool is_implicit)
     : bits_(RelationField::encode(kSubSelector) | MatchField::encode(kPseudoClass) |
             PseudoTypeField::encode(kPseudoParent) | IsLastInSelectorListField::encode(false) |
             IsLastInComplexSelectorField::encode(false) | HasRareDataField::encode(false) |
@@ -88,7 +88,43 @@ CSSSelector::CSSSelector(std::shared_ptr<const StyleRule> parent_rule, bool is_i
             IsInvisibleField::encode(false)),
       data_(std::move(parent_rule)) {}
 
-CSSSelector::CSSSelector(const std::string& pseudo_name, bool is_implicit)
+CSSSelector::CSSSelector(MatchType match_type, const QualifiedName& attribute, AttributeMatchType case_sensitivity)
+    : bits_(RelationField::encode(kSubSelector) | MatchField::encode(match_type) |
+            PseudoTypeField::encode(kPseudoUnknown) | IsLastInSelectorListField::encode(false) |
+            IsLastInComplexSelectorField::encode(false) | HasRareDataField::encode(false) |
+            IsForPageField::encode(false) | IsImplicitlyAddedField::encode(false) |
+            IsCoveredByBucketingField::encode(false) |
+            AttributeMatchField::encode(static_cast<unsigned>(case_sensitivity)) |
+            IsCaseSensitiveAttributeField::encode(false)),
+      data_(attribute) {
+  DCHECK_EQ(match_type, kAttributeSet);
+}
+
+CSSSelector::CSSSelector(MatchType match_type,
+                         const QualifiedName& attribute,
+                         AttributeMatchType case_sensitivity,
+                         const std::string& value)
+    : bits_(RelationField::encode(kSubSelector) | MatchField::encode(static_cast<unsigned>(match_type)) |
+            PseudoTypeField::encode(kPseudoUnknown) | IsLastInSelectorListField::encode(false) |
+            IsLastInComplexSelectorField::encode(false) | HasRareDataField::encode(true) |
+            IsForPageField::encode(false) | IsImplicitlyAddedField::encode(false) |
+            IsCoveredByBucketingField::encode(false) |
+            AttributeMatchField::encode(static_cast<unsigned>(case_sensitivity)) |
+            IsCaseSensitiveAttributeField::encode(false)),
+      data_(std::make_shared<RareData>(value)) {
+  DCHECK(IsAttributeSelector());
+  data_.rare_data_->attribute_ = attribute;
+}
+
+inline CSSSelector::CSSSelector(const QualifiedName& tag_q_name, bool tag_is_implicit)
+    : bits_(RelationField::encode(kSubSelector) | MatchField::encode(kTag) | PseudoTypeField::encode(kPseudoUnknown) |
+            IsLastInSelectorListField::encode(false) | IsLastInComplexSelectorField::encode(false) |
+            HasRareDataField::encode(false) | IsForPageField::encode(false) |
+            IsImplicitlyAddedField::encode(tag_is_implicit) | IsCoveredByBucketingField::encode(false) |
+            AttributeMatchField::encode(0) | IsCaseSensitiveAttributeField::encode(false)),
+      data_(tag_q_name) {}
+
+inline CSSSelector::CSSSelector(const std::string& pseudo_name, bool is_implicit)
     : bits_(RelationField::encode(kSubSelector) | MatchField::encode(kPseudoClass) |
             PseudoTypeField::encode(NameToPseudoType(pseudo_name,
                                                      /* has_arguments */ false,
@@ -1568,9 +1604,7 @@ bool CSSSelector::IsChildIndexedSelector() const {
   }
 }
 
-void CSSSelector::Trace(webf::GCVisitor* visitor) const {
-
-}
+void CSSSelector::Trace(webf::GCVisitor* visitor) const {}
 
 CSSSelector& CSSSelector::operator=(CSSSelector&& other) {
   this->~CSSSelector();

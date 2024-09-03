@@ -132,7 +132,14 @@ class CSSSelector {
   CSSSelector(const CSSSelector&);
 
   CSSSelector(CSSSelector&&);
-  //  explicit CSSSelector(const QualifiedName&, bool tag_is_implicit = false);
+  explicit CSSSelector(const QualifiedName&, bool tag_is_implicit = false);
+  explicit CSSSelector(MatchType match_type,
+                       const QualifiedName& attribute,
+                       AttributeMatchType case_sensitivity);
+  explicit CSSSelector(MatchType match_type,
+                       const QualifiedName& attribute,
+                       AttributeMatchType case_sensitivity,
+                       const std::string& value);
   explicit CSSSelector(std::shared_ptr<const StyleRule> parent_rule, bool is_implicit);
   explicit CSSSelector(const std::string& pseudo_name, bool is_implicit);
 
@@ -794,6 +801,8 @@ class CSSSelector {
 
     explicit DataUnion(std::shared_ptr<const StyleRule> parent_rule)
         : parent_rule_(parent_rule) {}
+
+    explicit DataUnion(std::shared_ptr<RareData> rare_data) : rare_data_(rare_data) {}
 
     ~DataUnion() {}
 
