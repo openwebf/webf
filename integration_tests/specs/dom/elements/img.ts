@@ -465,8 +465,10 @@ describe('Tags img', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
-    done();
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   it('works with padding border width exist and height not exist', async (done) => {

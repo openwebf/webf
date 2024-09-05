@@ -50,8 +50,9 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-height-002-ref', async () => {
+  it('replaced-height-002-ref', async (done) => {
     let p;
+    let img;
     let div;
     p = createElement(
       'p',
@@ -90,7 +91,7 @@ describe('absolute-non', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '100',
           height: '100',
@@ -102,7 +103,11 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    img.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
+
   });
   it('replaced-height-002', async () => {
     let p;
@@ -178,9 +183,11 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-height-003-ref', async () => {
+  it('replaced-height-003-ref', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -210,7 +217,7 @@ describe('absolute-non', () => {
         },
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/1x1-white.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -219,7 +226,7 @@ describe('absolute-non', () => {
             width: '100%',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/blue15x15.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -233,7 +240,10 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.2);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.2);
+      done();
+    });
   });
   it('replaced-height-003', async () => {
     let p;
@@ -413,9 +423,11 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-height-006-ref', async () => {
+  it('replaced-height-006-ref', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -439,7 +451,7 @@ describe('absolute-non', () => {
         },
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/1x1-white.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -448,7 +460,7 @@ describe('absolute-non', () => {
             width: '100%',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/blue15x15.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -462,7 +474,10 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.5);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.5);
+      done();
+    });
   });
   it('replaced-height-006', async () => {
     let p;
@@ -534,9 +549,11 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-height-007-ref', async () => {
+  it('replaced-height-007-ref', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -562,7 +579,7 @@ describe('absolute-non', () => {
         style: {},
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/swatch-orange.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -570,7 +587,7 @@ describe('absolute-non', () => {
             width: '100px',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/blue15x15.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -583,7 +600,10 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   it('replaced-height-007', async () => {
@@ -650,10 +670,11 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-height-008-ref', async () => {
+  it('replaced-height-008-ref', async (done) => {
     let p;
     let blue;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -669,7 +690,7 @@ describe('absolute-non', () => {
         style: {},
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/swatch-orange.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -696,7 +717,10 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onDoubleImageLoad(img, blue, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('replaced-height-008', async () => {
     let p;
@@ -745,9 +769,11 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-height-009-ref', async () => {
+  it('replaced-height-009-ref', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -775,7 +801,7 @@ describe('absolute-non', () => {
         },
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/swatch-orange.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -783,7 +809,7 @@ describe('absolute-non', () => {
             width: '100px',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/blue15x15.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -796,7 +822,10 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   it('replaced-height-009', async () => {
@@ -1143,9 +1172,10 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-max-height-002-ref', async () => {
+  it('replaced-max-height-002-ref', async (done) => {
     let p;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -1175,7 +1205,7 @@ describe('absolute-non', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '100',
           height: '50',
@@ -1189,7 +1219,11 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot();
+    onImageLoad(img, async () => {
+      await snapshot();
+      done();
+    });
+
   });
   it('replaced-max-height-002', async () => {
     let p;
@@ -1252,9 +1286,10 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-max-height-003-ref', async () => {
+  it('replaced-max-height-003-ref', async (done) => {
     let p;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -1284,7 +1319,7 @@ describe('absolute-non', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '288',
           height: '48',
@@ -1298,7 +1333,11 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot();
+    onImageLoad(img, async () => {
+      await snapshot()
+      done();
+    })
+   ;
   });
   it('replaced-max-height-003', async () => {
     let p;
@@ -1541,9 +1580,11 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-max-height-007-ref', async () => {
+  it('replaced-max-height-007-ref', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -1571,7 +1612,7 @@ describe('absolute-non', () => {
         },
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '50',
           height: '50',
@@ -1580,7 +1621,7 @@ describe('absolute-non', () => {
             'vertical-align': 'top',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/swatch-orange.png',
           width: '50',
           height: '50',
@@ -1594,7 +1635,10 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('replaced-max-height-007', async () => {
     let p;
@@ -1670,9 +1714,11 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-max-height-008-ref', async () => {
+  it('replaced-max-height-008-ref', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -1692,7 +1738,7 @@ describe('absolute-non', () => {
         style: {},
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/swatch-orange.png',
           width: '96',
           height: '48',
@@ -1704,7 +1750,7 @@ describe('absolute-non', () => {
         createElement('br', {
           style: {},
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '96',
           height: '240',
@@ -1718,7 +1764,10 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('replaced-max-height-008', async () => {
     let p;
@@ -1772,9 +1821,11 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-max-height-009-ref', async () => {
+  it('replaced-max-height-009-ref', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -1802,7 +1853,7 @@ describe('absolute-non', () => {
         },
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/swatch-orange.png',
           width: '100',
           height: '50',
@@ -1811,7 +1862,7 @@ describe('absolute-non', () => {
             'vertical-align': 'top',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '100',
           height: '50',
@@ -1825,7 +1876,10 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('replaced-max-height-009', async () => {
     let p;
@@ -2154,9 +2208,10 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-width-002-ref', async () => {
+  it('replaced-width-002-ref', async (done) => {
     let p;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -2195,7 +2250,7 @@ describe('absolute-non', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '100',
           height: '100',
@@ -2207,7 +2262,10 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   // @TODO: Support direction.
@@ -2284,9 +2342,10 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-width-003-ref', async () => {
+  it('replaced-width-003-ref', async (done) => {
     let p;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -2325,7 +2384,7 @@ describe('absolute-non', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '100',
           height: '100',
@@ -2337,7 +2396,10 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('replaced-width-003', async () => {
     let p;
@@ -2719,9 +2781,10 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-width-008-ref', async () => {
+  it('replaced-width-008-ref', async (done) => {
     let p;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -2759,7 +2822,7 @@ describe('absolute-non', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '100',
           height: '100',
@@ -2771,7 +2834,10 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   it('replaced-width-008', async () => {
@@ -3303,9 +3369,10 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-width-015-ref', async () => {
+  it('replaced-width-015-ref', async (done) => {
     let p;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -3344,7 +3411,7 @@ describe('absolute-non', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '100',
           height: '100',
@@ -3356,7 +3423,10 @@ describe('absolute-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('replaced-width-015', async () => {
     let p;
@@ -4321,9 +4391,10 @@ describe('absolute-non', () => {
 
     await snapshot();
   });
-  it('replaced-width-028', async () => {
+  it('replaced-width-028', async (done) => {
     let p;
     let p_1;
+    let img;
     let div;
     p = createElement(
       'p',
@@ -4369,7 +4440,7 @@ describe('absolute-non', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/green-60-60.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -4383,6 +4454,9 @@ describe('absolute-non', () => {
     BODY.appendChild(p_1);
     BODY.appendChild(div);
 
-    await snapshot(0.5);
+    onImageLoad(img, async () => {
+      await snapshot(0.5);
+      done();
+    });
   });
 });

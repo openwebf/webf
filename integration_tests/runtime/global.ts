@@ -315,6 +315,23 @@ async function simulatePointUp(x: number, y: number, pointer: number = 0) {
   });
 }
 
+function onDoubleImageLoad(img1: HTMLImageElement, img2: HTMLImageElement, onLoadCallback: () => Promise<void>) {
+  let count = 0;
+  async function onLoad() {
+    count++;
+    if (count >= 2) {
+      await onLoadCallback();
+    }
+  }
+
+  img1.addEventListener('load', onLoad);
+  img2.addEventListener('load', onLoad);
+}
+
+function onImageLoad(img: HTMLImageElement, onLoadCallback: () => Promise<void>) {
+  img.addEventListener('load', onLoadCallback);
+}
+
 function append(parent: HTMLElement, child: Node) {
   parent.appendChild(child);
 }
