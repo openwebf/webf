@@ -331,8 +331,8 @@ class AssetsBundle extends WebFBundle {
   AssetsBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
 
   @override
-  Future<void> obtainData([double contextId = 0]) async {
-    if (data != null) return;
+  Future<WebFBundle> resolve(double? contextId) async {
+    super.resolve(contextId);
 
     final Uri? _resolvedUri = resolvedUri;
     if (_resolvedUri != null) {
@@ -342,6 +342,7 @@ class AssetsBundle extends WebFBundle {
     } else {
       _failedToResolveBundle(url);
     }
+    return this;
   }
 
   /// Get flutter asset name from uri scheme asset.
@@ -363,8 +364,8 @@ class FileBundle extends WebFBundle {
   FileBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
 
   @override
-  Future<void> obtainData([double contextId = 0]) async {
-    if (data != null) return;
+  Future<WebFBundle> resolve(double? contextId) async {
+    super.resolve(contextId);
 
     Uri uri = _uri!;
     final String path = uri.path;
@@ -375,5 +376,6 @@ class FileBundle extends WebFBundle {
     } else {
       _failedToResolveBundle(url);
     }
+    return this;
   }
 }
