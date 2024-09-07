@@ -191,8 +191,9 @@ describe('max-width', () => {
     await snapshot();
   });
 
-  it('should work with replaced element when element width is smaller than intrinsic width', async () => {
+  it('should work with replaced element when element width is smaller than intrinsic width', async (done) => {
     let flexbox;
+    let img;
     flexbox = createElement(
       'div',
       {
@@ -204,7 +205,7 @@ describe('max-width', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/100x100-green.png',
           style: {
             'background-color': 'green',
@@ -217,11 +218,15 @@ describe('max-width', () => {
     );
     BODY.appendChild(flexbox);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('should work with replaced element when element width is larger than intrinsic width', async () => {
+  it('should work with replaced element when element width is larger than intrinsic width', async (done) => {
     let flexbox;
+    let img;
     flexbox = createElement(
       'div',
       {
@@ -233,7 +238,7 @@ describe('max-width', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/100x100-green.png',
           style: {
             'background-color': 'green',
@@ -246,7 +251,10 @@ describe('max-width', () => {
     );
     BODY.appendChild(flexbox);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   it('should work with percentage in flow layout', async () => {
