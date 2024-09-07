@@ -5,9 +5,13 @@
 #include "dom_timer.h"
 
 #include <utility>
+#include "core/executing_context.h"
+
+#if WEBF_QUICKJS_JS_ENGINE
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/qjs_engine_patch.h"
-#include "core/executing_context.h"
+#elif WEBF_V8_JS_ENGINE
+#endif
 
 #if UNIT_TEST
 #include "webf_test_env.h"

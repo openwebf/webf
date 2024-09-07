@@ -203,7 +203,7 @@ int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
   }
 
     // Create a timer object to keep track timer callback.
-    auto timer = DOMTimer::create(context, handler, DOMTimer::TimerKind::kOnce);
+    auto timer = DOMTimer::create(context, callback, DOMTimer::TimerKind::kOnce);
     auto timer_id = context->dartMethodPtr()->setTimeout(context->isDedicated(), timer.get(), context->contextId(),
                                                          handleTransientCallbackWrapper, timeout);
 
