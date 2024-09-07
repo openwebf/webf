@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.10.0)
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 13.3)
 project(WebF)
 
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 13.3)
 # MSBuild are slower than Clang/GCC to support new CXX standards.
 if(MSVC)
   set(CMAKE_CXX_STANDARD 20)
