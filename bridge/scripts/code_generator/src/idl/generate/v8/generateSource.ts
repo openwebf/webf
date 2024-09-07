@@ -391,7 +391,9 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
   isInstanceMethod: false
 }) {
   if (options.isConstructor && declaration.returnType.value == FunctionArgumentType.void) {
-    return 'return JS_ThrowTypeError(ctx, "Illegal constructor");';
+    // TODO V8 handle "Illegal constructor"
+    // return 'return JS_ThrowTypeError(ctx, "Illegal constructor");';
+    return 'return';
   }
 
   let minimalRequiredArgc = 0;

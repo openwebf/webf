@@ -12,14 +12,14 @@
 #include "bindings/v8/v8_throw_exception.h"
 #include "defined_properties.h"
 #include "core/executing_context.h"
-#include "core/dom/element.h"
-#include "core/dom/text.h"
-#include "core/dom/document.h"
-#include "core/dom/document_fragment.h"
-#include "core/dom/comment.h"
-#include "core/input/touch_list.h"
-#include "core/dom/static_node_list.h"
-#include "core/html/html_all_collection.h"
+//#include "core/dom/element.h"
+//#include "core/dom/text.h"
+//#include "core/dom/document.h"
+//#include "core/dom/document_fragment.h"
+//#include "core/dom/comment.h"
+//#include "core/input/touch_list.h"
+//#include "core/dom/static_node_list.h"
+//#include "core/html/html_all_collection.h"
 
 namespace webf {
 

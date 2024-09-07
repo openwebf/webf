@@ -12,7 +12,6 @@
 #include "bindings/v8/exception_state.h"
 #endif
 
-#include "bindings/qjs/qjs_function.h"
 #include "core/executing_context.h"
 #include "foundation/function.h"
 
