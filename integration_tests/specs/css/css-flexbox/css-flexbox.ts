@@ -143,9 +143,12 @@ describe('css-flexbox', () => {
     await snapshot();
   });
 
-  it('img-expand-evenly-ref', async () => {
+  it('img-expand-evenly-ref', async (done) => {
     let p;
     let flexbox;
+    let img1;
+    let img2;
+    let img3;
     p = createElement(
       'p',
       {
@@ -167,7 +170,7 @@ describe('css-flexbox', () => {
         },
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/solidblue.png',
           style: {
             width: '98px',
@@ -177,7 +180,7 @@ describe('css-flexbox', () => {
             'box-sizing': 'border-box',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/solidblue.png',
           style: {
             width: '98px',
@@ -187,7 +190,7 @@ describe('css-flexbox', () => {
             'box-sizing': 'border-box',
           },
         }),
-        createElement('img', {
+        img3 = createElement('img', {
           src: 'assets/solidblue.png',
           style: {
             width: '98px',
@@ -202,6 +205,9 @@ describe('css-flexbox', () => {
     BODY.appendChild(p);
     BODY.appendChild(flexbox);
 
-    await snapshot(0.1);
+    onTripleImageLoad(img1, img2, img3, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 });

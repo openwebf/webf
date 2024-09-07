@@ -140,7 +140,7 @@ describe('Tags img', () => {
       );
       BODY.appendChild(image);
 
-      requestAnimationFrame(async () => {
+      image.addEventListener('load', async () => {
         image.style.objectPosition = '';
         await snapshot(0.1);
         done();
