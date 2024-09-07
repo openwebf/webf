@@ -485,9 +485,10 @@ describe('Tags img', () => {
       },
     );
     BODY.appendChild(image);
-
-    await snapshot(0.1);
-    done();
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   it('works with padding border height exist and width not exist', async (done) => {
@@ -504,9 +505,10 @@ describe('Tags img', () => {
       },
     );
     BODY.appendChild(image);
-
-    await snapshot(0.1);
-    done();
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   it('works with padding border width height both exist', async (done) => {
@@ -525,8 +527,10 @@ describe('Tags img', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
-    done();
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   it('works with width/height attribute', async (done) => {
