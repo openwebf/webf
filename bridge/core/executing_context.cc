@@ -530,6 +530,7 @@ DOMTimerCoordinator* ExecutingContext::Timers() {
   return &timers_;
 }
 
+/*
 ModuleListenerContainer* ExecutingContext::ModuleListeners() {
   return &module_listener_container_;
 }
