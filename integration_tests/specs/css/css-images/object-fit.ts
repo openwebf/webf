@@ -230,7 +230,7 @@ describe('object-fit', () => {
   });
 
 
-  it('should work with none', async () => {
+  it('should work with none', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -247,7 +247,10 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.2);
+    onImageLoad(image, async () => {
+      await snapshot(0.2);
+      done();
+    });
   });
 
   it('should work with scale-down when it behaves as none', async (done) => {
@@ -628,7 +631,7 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    requestAnimationFrame(async () => {
+    onImageLoad(image, async () => {
       image.style.objectFit = '';
       await snapshot(0.1);
       done();
