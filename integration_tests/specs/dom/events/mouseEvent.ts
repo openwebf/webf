@@ -242,7 +242,7 @@ describe('MouseEvent', () => {
     });
     document.body.appendChild(div);
     await simulateClick(10.0, 10.0, 0);
-    await sleep(0.05);
+    await sleep(0.1);
     await simulateClick(10.0, 10.0, 1);
   });
 
