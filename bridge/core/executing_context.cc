@@ -632,6 +632,7 @@ void ExecutingContext::promiseRejectTracker(JSContext* ctx,
     context->rejected_promises_.TrackUnhandledPromiseRejection(context, promise, reason);
   }
 }
+*/
 
 DOMTimerCoordinator* ExecutingContext::Timers() {
   return &timers_;
