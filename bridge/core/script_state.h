@@ -37,7 +37,6 @@ class ScriptState {
   }
 #elif WEBF_V8_JS_ENGINE
   ScriptState(DartIsolateContext* dart_context, v8::Local<v8::Context> context);
-  // TODO fix ctx() return v8::Isolate
   inline v8::Local<v8::Context> ctx() {
     assert(!ctx_invalid_ && "executingContext has been released");
     v8::Isolate* isolate = dart_isolate_context_->isolate();

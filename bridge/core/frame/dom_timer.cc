@@ -15,6 +15,7 @@
 
 namespace webf {
 
+#if WEBF_QUICKJS_JS_ENGINE
 std::shared_ptr<DOMTimer> DOMTimer::create(ExecutingContext* context,
                                            const std::shared_ptr<QJSFunction>& callback,
                                            TimerKind timer_kind) {
@@ -42,6 +43,41 @@ void DOMTimer::Terminate() {
   callback_ = nullptr;
   status_ = TimerStatus::kTerminated;
 }
+#elif WEBF_V8_JS_ENGINE
+std::shared_ptr<DOMTimer> DOMTimer::create(ExecutingContext* context,
+                                           v8::Local<v8::Function> callback,
+                                           TimerKind timer_kind) {
+  return std::make_shared<DOMTimer>(context, callback, timer_kind);
+}
+
+DOMTimer::DOMTimer(ExecutingContext* context, v8::Local<v8::Function> callback, TimerKind timer_kind)
+    : context_(context), callback_(context->ctx() ,callback), status_(TimerStatus::kPending), kind_(timer_kind) {}
+
+void DOMTimer::Fire() {
+  if (status_ == TimerStatus::kTerminated)
+    return;
+
+  if (callback_.IsEmpty())
+    return;
+
+  v8::Isolate* isolate = context_->ctx();
+  v8::HandleScope handle_scope(isolate);
+
+  v8::Local<v8::Function> localCallback = v8::Local<v8::Function>::New(isolate, callback_);
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
+  v8::MaybeLocal<v8::Value> result = localCallback->Call(context, v8::Undefined(isolate), 0, nullptr);
+
+  if (result.IsEmpty()) {
+    // TODO handle exception
+//    context_->HandleException(&returnValue);
+  }
+}
+
+void DOMTimer::Terminate() {
+  callback_.Reset();
+  status_ = TimerStatus::kTerminated;
+}
+#endif
 
 void DOMTimer::setTimerId(int32_t timerId) {
   timer_id_ = timerId;
