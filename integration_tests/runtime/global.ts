@@ -342,6 +342,25 @@ function onTripleImageLoad(img1: HTMLImageElement, img2: HTMLImageElement, img3:
   img3.addEventListener('load', onLoad);
 }
 
+function onFourfoldImageLoad(img1: HTMLImageElement,
+                             img2: HTMLImageElement,
+                             img3: HTMLImageElement,
+                             img4: HTMLImageElement,
+                             onLoadCallback: () => Promise<void>) {
+  let count = 0;
+  async function onLoad() {
+    count++;
+    if (count >= 4) {
+      await onLoadCallback();
+    }
+  }
+
+  img1.addEventListener('load', onLoad);
+  img2.addEventListener('load', onLoad);
+  img3.addEventListener('load', onLoad);
+  img4.addEventListener('load', onLoad);
+}
+
 function onImageLoad(img: HTMLImageElement, onLoadCallback: () => Promise<void>) {
   img.addEventListener('load', onLoadCallback);
 }
@@ -459,5 +478,6 @@ Object.assign(global, {
   getSnapshot,
   onTripleImageLoad,
   onImageLoad,
+  onFourfoldImageLoad,
   onDoubleImageLoad
 });
