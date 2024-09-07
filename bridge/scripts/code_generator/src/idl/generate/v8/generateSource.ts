@@ -511,7 +511,7 @@ function generateReturnValueResult(blob: IDLBlob, type: ParameterType, mode?: Pa
     return `return_value->${method}()`;
   }
 
-  return `Converter<${generateIDLTypeConverter(type)}>::ToValue(isolate, std::move(return_value))`;
+  return `Converter<${generateIDLTypeConverter(type)}>::ToValue(isolate, return_value)`;
 }
 
 type GenFunctionBodyOptions = { isConstructor?: boolean, isInstanceMethod?: boolean };

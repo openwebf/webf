@@ -768,8 +768,8 @@ list(APPEND BRIDGE_SOURCE
 #  core/fileapi/blob_part.cc
 #  core/fileapi/blob_property_bag.cc
 #  core/frame/console.cc
-#  core/frame/dom_timer.cc
-#  core/frame/dom_timer_coordinator.cc
+  core/frame/dom_timer.cc
+  core/frame/dom_timer_coordinator.cc
   core/frame/window_or_worker_global_scope.cc
 #  core/frame/module_listener.cc
 #  core/frame/module_listener_container.cc

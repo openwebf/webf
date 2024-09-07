@@ -265,7 +265,7 @@ ExecutingContext* ExecutingContext::From(v8::Isolate* isolate) {
 
 v8::Isolate* ExecutingContext::ctx() {
   assert(IsCtxValid());
-  return script_state_.ctx();
+  return script_state_.isolate();
 }
 
 #endif
