@@ -21,6 +21,7 @@ const {makeStylePropertyShorthand} = require("../dist/json/make_property_shortha
 const {makeCSSPropertySubClasses} = require("../dist/json/make_css_property_subclasses");
 const {makeCSSPropertyInstance} = require("../dist/json/make_css_property_instance");
 const { makeCSSValueIdMapping } = require('../dist/json/make_css_value_id_mappings');
+const { makeCSSPrimitiveValueUnitTrie } = require('../dist/json/make_css_primitive_value_unit_trie');
 const { makeColorData } = require('../dist/json/make_color_data');
 
 program
@@ -220,6 +221,10 @@ EOF`, {stdio: 'inherit'});
   execSync(`cat << EOF | gperf --key-positions='*' -D -s 2 > ${colorDataFilePath + '.cc'} 
 ${colorData.source}
 EOF`, {stdio: 'inherit'});
+
+  let cssPrimitiveValueUnitTrie = makeCSSPrimitiveValueUnitTrie();
+  let cssPrimitiveValueFilePath = path.join(dist, 'css_primitive_value_unit_trie');
+  writeFileIfChanged(cssPrimitiveValueFilePath + '.cc', cssPrimitiveValueUnitTrie.source);
 }
 
 class DefinedPropertyCollector {

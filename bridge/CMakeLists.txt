@@ -733,6 +733,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/shorthands.cc
     out/css_property_instance.cc
     out/style_property_shorthand.cc
+    out/css_primitive_value_unit_trie.cc
 
     # SVG files
     out/qjs_svg_element.cc

@@ -1,10 +1,6 @@
 {
   "metadata": {
     "templates": [
-      {
-        "template": "make_names",
-        "filename": "global_string"
-      }
     ]
   },
   "data": [
