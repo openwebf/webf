@@ -1,8 +1,9 @@
 /*auto generated*/
 describe('position-static', () => {
-  it('001-ref', async () => {
+  it('001-ref', async (done) => {
     let p;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -31,7 +32,7 @@ describe('position-static', () => {
         createElement('br', {
           style: {},
         }),
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/swatch-blue.png',
           width: '192',
           height: '172',
@@ -43,7 +44,10 @@ describe('position-static', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('001', async () => {
     let p;
