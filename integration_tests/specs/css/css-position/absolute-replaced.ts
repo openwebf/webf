@@ -172,7 +172,6 @@ describe('absolute-replaced', () => {
     let p;
     let div;
     let img1;
-    let img2;
     p = createElement(
       'p',
       {
@@ -215,7 +214,7 @@ describe('absolute-replaced', () => {
             'box-sizing': 'border-box',
           },
         }),
-        img2 = createElement('div', {
+        createElement('div', {
           style: {
             position: 'absolute',
             background: 'orange',
@@ -231,7 +230,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    onDoubleImageLoad(img1, img2, async () => {
+    onImageLoad(img1,async () => {
       await snapshot(0.1);
       done();
     });
@@ -240,7 +239,6 @@ describe('absolute-replaced', () => {
     let p;
     let div;
     let img1;
-    let img2;
     p = createElement(
       'p',
       {
@@ -283,7 +281,7 @@ describe('absolute-replaced', () => {
             'box-sizing': 'border-box',
           },
         }),
-        img2 = createElement('div', {
+        createElement('div', {
           style: {
             position: 'absolute',
             background: 'blue',
@@ -299,7 +297,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    onDoubleImageLoad(img1, img2, async () => {
+    onImageLoad(img1, async () => {
       await snapshot(0.1);
       done();
     });
