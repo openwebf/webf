@@ -28,13 +28,15 @@ describe('Canvas Tag', () => {
 
   it('dynamic create multiple 2d context from single canvas element', async (done) => {
     let count = 1;
-    const timer = setInterval(async () => {
+    const timer = setTimeout(async function f()  {
       drawRect();
       await snapshot();
       count++;
       if (count == 5) {
         clearTimeout(timer);
         done();
+      } else {
+        setTimeout(f, 100);
       }
     }, 100);
 

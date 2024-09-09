@@ -2546,9 +2546,11 @@ describe('absolute-replaced', () => {
 
     await snapshot(0.1);
   });
-  it('width-002-ref', async () => {
+  it('width-002-ref', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -2572,7 +2574,7 @@ describe('absolute-replaced', () => {
         },
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/blue15x15.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -2581,7 +2583,7 @@ describe('absolute-replaced', () => {
             width: '200px',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/swatch-orange.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -2595,7 +2597,16 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    let count = 0;
+    async function onImageLoad() {
+      count++;
+      if (count >= 2) {
+        await snapshot(0.1);
+        done();
+      }
+    }
+    img1.addEventListener('load', onImageLoad);
+    img2.addEventListener('load', onImageLoad);
   });
   it('width-003-ref', async () => {
     let p;
@@ -3318,9 +3329,10 @@ describe('absolute-replaced', () => {
 
     await snapshot(0.1);
   });
-  it('width-022', async () => {
+  it('width-022', async (done) => {
     let p;
     let div1;
+    let img;
     p = createElement(
       'p',
       {
@@ -3350,7 +3362,7 @@ describe('absolute-replaced', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           alt: 'blue 96x96',
           src: 'assets/blue96x96.png',
           style: {
@@ -3377,7 +3389,10 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    img.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('width-023-ref', async () => {
     let p;

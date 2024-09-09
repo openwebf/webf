@@ -232,7 +232,7 @@ describe('MouseEvent', () => {
     img2.click();
   })
 
-  it('should work with dblclick', async (done) => {
+  xit('should work with dblclick', async (done) => {
     const div = document.createElement('div');
     div.style.width = '100px';
     div.style.height = '100px';

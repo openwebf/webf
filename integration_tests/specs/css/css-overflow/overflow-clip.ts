@@ -1,5 +1,5 @@
 describe('clip', () => {
-  it('should works with basic', async () => {
+  it('should works with basic', async (done) => {
     let image;
     let container = createElement('div', {
       style: {
@@ -15,8 +15,11 @@ describe('clip', () => {
     ]);
   
     document.body.appendChild(container);
-  
-    await snapshot(0.1);
+
+    onImageLoad(image, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   it('should works with children of appear event', async () => {

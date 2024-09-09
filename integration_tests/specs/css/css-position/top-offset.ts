@@ -106,9 +106,13 @@ describe('top-offset', () => {
 
     await snapshot();
   });
-  it('003-ref', async () => {
+  it('003-ref', async (done) => {
     let p;
     let inlineBlock;
+    let img1;
+    let img2;
+    let img3;
+    let img4;
     p = createElement(
       'p',
       {
@@ -138,7 +142,7 @@ describe('top-offset', () => {
             style: {},
           },
           [
-            createElement('img', {
+            img1 = createElement('img', {
               src: 'assets/blue15x15.png',
               width: '48',
               height: '48',
@@ -147,7 +151,7 @@ describe('top-offset', () => {
                 'vertical-align': 'top',
               },
             }),
-            createElement('img', {
+            img2 = createElement('img', {
               src: 'assets/blue15x15.png',
               width: '48',
               height: '48',
@@ -164,7 +168,7 @@ describe('top-offset', () => {
             style: {},
           },
           [
-            createElement('img', {
+            img3 = createElement('img', {
               src: 'assets/1x1-white.png',
               width: '48',
               height: '48',
@@ -173,7 +177,7 @@ describe('top-offset', () => {
                 'vertical-align': 'top',
               },
             }),
-            createElement('img', {
+            img4 = createElement('img', {
               src: 'assets/blue15x15.png',
               width: '48',
               height: '48',
@@ -189,7 +193,10 @@ describe('top-offset', () => {
     BODY.appendChild(p);
     BODY.appendChild(inlineBlock);
 
-    await snapshot(0.1);
+    onFourfoldImageLoad(img1, img2, img3, img4, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('003', async () => {
     let p;
@@ -251,9 +258,10 @@ describe('top-offset', () => {
 
     await snapshot();
   });
-  it('percentage-001-ref', async () => {
+  it('percentage-001-ref', async (done) => {
     let p;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -285,7 +293,7 @@ describe('top-offset', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/1x1-green.png',
           width: '50',
           height: '50',
@@ -299,7 +307,10 @@ describe('top-offset', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('percentage-001', async () => {
     let p;

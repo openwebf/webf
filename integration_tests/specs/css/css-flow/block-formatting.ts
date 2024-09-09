@@ -508,9 +508,11 @@ describe('block-formatting', () => {
 
     await snapshot();
   });
-  it('contexts-015-ref', async () => {
+  it('contexts-015-ref', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -534,7 +536,7 @@ describe('block-formatting', () => {
         },
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '50',
           height: '50',
@@ -543,7 +545,7 @@ describe('block-formatting', () => {
             'box-sizing': 'border-box',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/swatch-orange.png',
           width: '50',
           height: '50',
@@ -557,6 +559,16 @@ describe('block-formatting', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    let count = 0;
+    async function onImageLoad() {
+      count++;
+      if (count >= 2) {
+        await snapshot(0.1);
+        done();
+      }
+    }
+
+    img1.addEventListener('load', onImageLoad);
+    img2.addEventListener('load', onImageLoad);
   });
 });

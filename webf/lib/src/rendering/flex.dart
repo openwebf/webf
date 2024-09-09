@@ -2086,8 +2086,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     // The absolutely-positioned box is considered to be “fixed-size”, a value of stretch
     // is treated the same as flex-start.
     // https://www.w3.org/TR/css-flexbox-1/#abspos-items
-    final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-    if (child is! RenderBoxModel || child is RenderLineBreak || (childParentData.isPositioned)) {
+    final ParentData? childParentData = child.parentData;
+    if (child is! RenderBoxModel || child is RenderLineBreak || (childParentData is RenderLayoutParentData && childParentData.isPositioned)) {
       return false;
     }
 
