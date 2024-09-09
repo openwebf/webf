@@ -1171,6 +1171,7 @@ describe('align-items', () => {
   });
 
   it('should works with img with no size set', async () => {
+    let img;
     const container = createElement(
       'div',
       {
@@ -1181,7 +1182,7 @@ describe('align-items', () => {
         },
       },
       [
-        (createElement('img', {
+        img = (createElement('img', {
           src: 'assets/100x100-green.png',
           style: {
             "marginLeft": "20px",
@@ -1191,7 +1192,9 @@ describe('align-items', () => {
     );
 
     document.body.appendChild(container);
-    await snapshot(0.2);
+    onImageLoad(img, async () => {
+      await snapshot(0.2);
+    });
   });
 });
 
