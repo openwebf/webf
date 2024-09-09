@@ -1,8 +1,9 @@
 /*auto generated*/
 describe('absolute-replaced', () => {
-  it('height-001-ref', async () => {
+  it('height-001-ref', async (done) => {
     let p;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -33,7 +34,7 @@ describe('absolute-replaced', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/blue15x15.png',
           alt: 'Image download support must be enabled',
           style: {},
@@ -43,11 +44,15 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
-  it('height-001', async () => {
+  it('height-001', async (done) => {
     let p;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -83,7 +88,7 @@ describe('absolute-replaced', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           alt: 'blue 15x15',
           src: 'assets/blue15x15.png',
           style: {
@@ -98,11 +103,16 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
-  it('height-002-ref', async () => {
+  it('height-002-ref', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -134,14 +144,14 @@ describe('absolute-replaced', () => {
         },
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/blue15x15.png',
           alt: 'Image download support must be enabled',
           style: {
             'box-sizing': 'border-box',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/swatch-orange.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -153,11 +163,16 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
-  it('height-002', async () => {
+  it('height-002', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -190,7 +205,7 @@ describe('absolute-replaced', () => {
         },
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           alt: 'blue 15x15',
           src: 'assets/blue15x15.png',
           style: {
@@ -200,7 +215,7 @@ describe('absolute-replaced', () => {
             'box-sizing': 'border-box',
           },
         }),
-        createElement('div', {
+        img2 = createElement('div', {
           style: {
             position: 'absolute',
             background: 'orange',
@@ -216,11 +231,16 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
-  it('height-003', async () => {
+  it('height-003', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -253,7 +273,7 @@ describe('absolute-replaced', () => {
         },
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           alt: 'Image download support must be enabled',
           src: 'assets/swatch-orange.png',
           style: {
@@ -263,7 +283,7 @@ describe('absolute-replaced', () => {
             'box-sizing': 'border-box',
           },
         }),
-        createElement('div', {
+        img2 = createElement('div', {
           style: {
             position: 'absolute',
             background: 'blue',
@@ -279,7 +299,10 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('height-004-ref', async () => {
     let p;
@@ -477,9 +500,11 @@ describe('absolute-replaced', () => {
 
     await snapshot();
   });
-  it('height-006-ref', async () => {
+  it('height-006-ref', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -505,7 +530,7 @@ describe('absolute-replaced', () => {
         style: {},
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/blue15x15.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -513,7 +538,7 @@ describe('absolute-replaced', () => {
             width: '200px',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/swatch-orange.png',
           alt: 'Image download support must be enabled',
           style: {
@@ -526,7 +551,10 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    onDoubleImageLoad(img1, img2, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('height-007-ref', async () => {
     let p;
