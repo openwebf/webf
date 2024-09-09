@@ -101,19 +101,11 @@ void ParseAfterSpecialScheme(const char* spec,
                              int spec_len,
                              int after_scheme,
                              Parsed* parsed);
-void ParseAfterSpecialScheme(const char16_t* spec,
-                             int spec_len,
-                             int after_scheme,
-                             Parsed* parsed);
 
 // Given a spec and a pointer to the character after the colon following the
 // non-special scheme, this parses it and fills in the structure, Every item in
 // the parsed structure is filled EXCEPT for the scheme, which is untouched.
 void ParseAfterNonSpecialScheme(const char* spec,
-                                int spec_len,
-                                int after_scheme,
-                                Parsed* parsed);
-void ParseAfterNonSpecialScheme(const char16_t* spec,
                                 int spec_len,
                                 int after_scheme,
                                 Parsed* parsed);

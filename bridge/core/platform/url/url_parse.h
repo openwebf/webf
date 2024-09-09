@@ -317,15 +317,12 @@ void ParsePathURL(const char* url,
 // FileURL is for file URLs. There are some special rules for interpreting
 // these.
  Parsed ParseFileURL(std::string_view url);
- Parsed ParseFileURL(std::u16string_view url);
 
 // Filesystem URLs are structured differently than other URLs.
  Parsed ParseFileSystemURL(std::string_view url);
- Parsed ParseFileSystemURL(std::u16string_view url);
 
 // MailtoURL is for mailto: urls. They are made up scheme,path,query
  Parsed ParseMailtoURL(std::string_view url);
- Parsed ParseMailtoURL(std::u16string_view url);
 
 // Helper functions -----------------------------------------------------------
 
@@ -352,17 +349,12 @@ void ParsePathURL(const char* url,
 
 bool ExtractScheme(std::string_view url, Component* scheme);
 
-bool ExtractScheme(std::u16string_view url, Component* scheme);
-// Deprecated (crbug.com/325408566): Prefer using the overloads above.
-
 bool ExtractScheme(const char* url, int url_len, Component* scheme);
-
-bool ExtractScheme(const char16_t* url, int url_len, Component* scheme);
 
 // Returns true if ch is a character that terminates the authority segment
 // of a URL.
 
-bool IsAuthorityTerminator(char16_t ch, ParserMode parser_mode);
+bool IsAuthorityTerminator(char ch, ParserMode parser_mode);
 
 // Deprecated. Please pass `ParserMode` explicitly.
 //
@@ -370,13 +362,6 @@ bool IsAuthorityTerminator(char16_t ch, ParserMode parser_mode);
 // functions requires several steps.
 
 void ParseAuthority(const char* spec,
-                    const Component& auth,
-                    Component* username,
-                    Component* password,
-                    Component* hostname,
-                    Component* port_num);
-
-void ParseAuthority(const char16_t* spec,
                     const Component& auth,
                     Component* username,
                     Component* password,
@@ -427,10 +412,6 @@ int ParsePort(const char16_t* url, const Component& port);
 // The 8-bit version requires UTF-8 encoding.
 
 void ExtractFileName(const char* url,
-                     const Component& path,
-                     Component* file_name);
-
-void ExtractFileName(const char16_t* url,
                      const Component& path,
                      Component* file_name);
 

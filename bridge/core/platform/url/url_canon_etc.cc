@@ -117,8 +117,7 @@ inline bool IsSchemeFirstChar(unsigned char c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
-template <typename CHAR, typename UCHAR>
-bool DoScheme(const CHAR* spec,
+bool DoScheme(const char* spec,
               const Component& scheme,
               CanonOutput* output,
               Component* out_scheme) {
@@ -141,7 +140,7 @@ bool DoScheme(const CHAR* spec,
   size_t begin = static_cast<size_t>(scheme.begin);
   size_t end = static_cast<size_t>(scheme.end());
   for (size_t i = begin; i < end; i++) {
-    UCHAR ch = static_cast<UCHAR>(spec[i]);
+    char ch = static_cast<char>(spec[i]);
     char replacement = 0;
     if (ch < 0x80) {
       if (i == begin) {
@@ -182,10 +181,9 @@ bool DoScheme(const CHAR* spec,
 // *_spec strings. Typically, these specs will be the same (we're
 // canonicalizing a single source string), but may be different when
 // replacing components.
-template <typename CHAR, typename UCHAR>
-bool DoUserInfo(const CHAR* username_spec,
+bool DoUserInfo(const char* username_spec,
                 const Component& username,
-                const CHAR* password_spec,
+                const char* password_spec,
                 const Component& password,
                 CanonOutput* output,
                 Component* out_username,
@@ -230,8 +228,7 @@ inline void WritePortInt(char* output, int output_len, int port) {
 }
 
 // This function will prepend the colon if there will be a port.
-template <typename CHAR, typename UCHAR>
-bool DoPort(const CHAR* spec,
+bool DoPort(const char* spec,
             const Component& port,
             int default_port_for_scheme,
             CanonOutput* output,
@@ -305,8 +302,7 @@ const bool kShouldEscapeCharInFragment[0x80] = {
 };
 // clang-format on
 
-template <typename CHAR, typename UCHAR>
-void DoCanonicalizeRef(const CHAR* spec,
+void DoCanonicalizeRef(const char* spec,
                        const Component& ref,
                        CanonOutput* output,
                        Component* out_ref) {
@@ -324,7 +320,7 @@ void DoCanonicalizeRef(const CHAR* spec,
   // Now iterate through all the characters, converting to UTF-8 and validating.
   size_t end = static_cast<size_t>(ref.end());
   for (size_t i = static_cast<size_t>(ref.begin); i < end; i++) {
-    UCHAR current_char = static_cast<UCHAR>(spec[i]);
+    char current_char = static_cast<char>(spec[i]);
     if (current_char < 0x80) {
       if (kShouldEscapeCharInFragment[current_char])
         AppendEscapedChar(static_cast<unsigned char>(spec[i]), output);
@@ -358,9 +354,7 @@ const char16_t* RemoveURLWhitespace(const char16_t* input,
                                potentially_dangling_markup);
 }
 
-char CanonicalSchemeChar(char16_t ch) {
-  if (ch >= 0x80)
-    return 0;  // Non-ASCII is not supported by schemes.
+char CanonicalSchemeChar(char ch) {
   return kSchemeCanonical[ch];
 }
 
@@ -368,14 +362,7 @@ bool CanonicalizeScheme(const char* spec,
                         const Component& scheme,
                         CanonOutput* output,
                         Component* out_scheme) {
-  return DoScheme<char, unsigned char>(spec, scheme, output, out_scheme);
-}
-
-bool CanonicalizeScheme(const char16_t* spec,
-                        const Component& scheme,
-                        CanonOutput* output,
-                        Component* out_scheme) {
-  return DoScheme<char16_t, char16_t>(spec, scheme, output, out_scheme);
+  return DoScheme(spec, scheme, output, out_scheme);
 }
 
 bool CanonicalizeUserInfo(const char* username_source,
@@ -385,21 +372,9 @@ bool CanonicalizeUserInfo(const char* username_source,
                           CanonOutput* output,
                           Component* out_username,
                           Component* out_password) {
-  return DoUserInfo<char, unsigned char>(username_source, username,
+  return DoUserInfo(username_source, username,
                                          password_source, password, output,
                                          out_username, out_password);
-}
-
-bool CanonicalizeUserInfo(const char16_t* username_source,
-                          const Component& username,
-                          const char16_t* password_source,
-                          const Component& password,
-                          CanonOutput* output,
-                          Component* out_username,
-                          Component* out_password) {
-  return DoUserInfo<char16_t, char16_t>(username_source, username,
-                                        password_source, password, output,
-                                        out_username, out_password);
 }
 
 bool CanonicalizePort(const char* spec,
@@ -407,31 +382,15 @@ bool CanonicalizePort(const char* spec,
                       int default_port_for_scheme,
                       CanonOutput* output,
                       Component* out_port) {
-  return DoPort<char, unsigned char>(spec, port, default_port_for_scheme,
+  return DoPort(spec, port, default_port_for_scheme,
                                      output, out_port);
-}
-
-bool CanonicalizePort(const char16_t* spec,
-                      const Component& port,
-                      int default_port_for_scheme,
-                      CanonOutput* output,
-                      Component* out_port) {
-  return DoPort<char16_t, char16_t>(spec, port, default_port_for_scheme, output,
-                                    out_port);
 }
 
 void CanonicalizeRef(const char* spec,
                      const Component& ref,
                      CanonOutput* output,
                      Component* out_ref) {
-  DoCanonicalizeRef<char, unsigned char>(spec, ref, output, out_ref);
-}
-
-void CanonicalizeRef(const char16_t* spec,
-                     const Component& ref,
-                     CanonOutput* output,
-                     Component* out_ref) {
-  DoCanonicalizeRef<char16_t, char16_t>(spec, ref, output, out_ref);
+  DoCanonicalizeRef(spec, ref, output, out_ref);
 }
 
 }  // namespace url

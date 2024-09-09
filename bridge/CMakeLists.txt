@@ -299,6 +299,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 
     ## Base
     core/base/hash/hash.cc
+    core/base/strings/string_util.cc
+    core/base/strings/string_number_conversions.cc
+    core/base/strings/utf_string_conversion_utils.cc
     core/core_initializer.cc
 
     ## CSS
@@ -582,6 +585,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/gfx/geometry/rect_f.cc
     core/platform/gfx/geometry/rect_conversions.cc
     core/platform/gfx/geometry/size_conversions.cc
+    core/platform/fonts/font_family.cc
 
     )
 
@@ -720,6 +724,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/element_attribute_names.cc
     out/element_namespace_uris.cc
     out/font_family_names.cc
+    out/qjs_css_style_sheet.cc
 
     # SVG generated
     out/svg_names.cc

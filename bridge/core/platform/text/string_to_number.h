@@ -58,19 +58,6 @@ enum class NumberParsingResult {
   kOverflowMax,
 };
 
-// string -> int.
-int CharactersToInt(const char*,
-                               size_t,
-                               NumberParsingOptions,
-                               bool* ok);
-int CharactersToInt(const char16_t *,
-                               size_t,
-                               NumberParsingOptions,
-                               bool* ok);
-int CharactersToInt(const StringView&,
-                               NumberParsingOptions,
-                               bool* ok);
-
 // string -> unsigned.
 unsigned HexCharactersToUInt(const char*,
                                         size_t,

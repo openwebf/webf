@@ -156,17 +156,7 @@ bool FindAndCompareScheme(const char* str,
                           const char* compare,
                           Component* found_scheme);
 
-bool FindAndCompareScheme(const char16_t* str,
-                          int str_len,
-                          const char* compare,
-                          Component* found_scheme);
 inline bool FindAndCompareScheme(const std::string& str,
-                                 const char* compare,
-                                 Component* found_scheme) {
-  return FindAndCompareScheme(str.data(), static_cast<int>(str.size()),
-                              compare, found_scheme);
-}
-inline bool FindAndCompareScheme(const std::u16string& str,
                                  const char* compare,
                                  Component* found_scheme) {
   return FindAndCompareScheme(str.data(), static_cast<int>(str.size()),
@@ -177,8 +167,6 @@ inline bool FindAndCompareScheme(const std::u16string& str,
 // the list of known standard-format schemes (see AddStandardScheme).
 
 bool IsStandard(const char* spec, const Component& scheme);
-
-bool IsStandard(const char16_t* spec, const Component& scheme);
 
 bool IsStandardScheme(std::string_view scheme);
 
@@ -192,10 +180,6 @@ bool IsReferrerScheme(const char* spec, const Component& scheme);
 // standard-format schemes (see AddStandardScheme).
 
 bool GetStandardSchemeType(const char* spec,
-                           const Component& scheme,
-                           SchemeType* type);
-
-bool GetStandardSchemeType(const char16_t* spec,
                            const Component& scheme,
                            SchemeType* type);
 
@@ -236,12 +220,6 @@ bool Canonicalize(const char* spec,
                   CanonOutput* output,
                   Parsed* output_parsed);
 
-bool Canonicalize(const char16_t* spec,
-                  int spec_len,
-                  bool trim_path_end,
-                  CanonOutput* output,
-                  Parsed* output_parsed);
-
 // Resolves a potentially relative URL relative to the given parsed base URL.
 // The base MUST be valid. The resulting canonical URL and parsed information
 // will be placed in to the given out variables.
@@ -261,14 +239,6 @@ bool ResolveRelative(const char* base_spec,
                      CanonOutput* output,
                      Parsed* output_parsed);
 
-bool ResolveRelative(const char* base_spec,
-                     int base_spec_len,
-                     const Parsed& base_parsed,
-                     const char16_t* relative,
-                     int relative_length,
-                     CanonOutput* output,
-                     Parsed* output_parsed);
-
 // Replaces components in the given VALID input URL. The new canonical URL info
 // is written to output and out_parsed.
 //
@@ -280,14 +250,6 @@ bool ReplaceComponents(const char* spec,
                        const Replacements<char>& replacements,
                        CanonOutput* output,
                        Parsed* out_parsed);
-
-bool ReplaceComponents(const char* spec,
-                       int spec_len,
-                       const Parsed& parsed,
-                       const Replacements<char16_t>& replacements,
-                       CanonOutput* output,
-                       Parsed* out_parsed);
-
 // String helper functions -----------------------------------------------------
 
 enum class DecodeURLMode {
@@ -299,10 +261,6 @@ enum class DecodeURLMode {
 };
 
 // Unescapes the given string using URL escaping rules.
-
-void DecodeURLEscapeSequences(std::string_view input,
-                              DecodeURLMode mode,
-                              CanonOutputW* output);
 
 // Escapes the given string as defined by the JS method encodeURIComponent. See
 // https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/encodeURIComponent

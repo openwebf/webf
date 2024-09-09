@@ -228,8 +228,7 @@ std::string KURL::ElidedString() const {
 
 KURL::KURL()
    : is_valid_(false),
-     protocol_is_in_http_family_(false),
-     has_idna2008_deviation_character_(false) {}
+     protocol_is_in_http_family_(false) {}
 
 // Initializes with a string representing an absolute URL. No encoding
 // information is specified. This generally happens when a KURL is converted
@@ -246,7 +245,6 @@ KURL::KURL(const std::string& url) {
    // empty string, which is what Init() will create.
    is_valid_ = false;
    protocol_is_in_http_family_ = false;
-   has_idna2008_deviation_character_ = false;
  }
 }
 
@@ -271,7 +269,6 @@ KURL::KURL(const std::string& canonical_string,
           bool is_valid)
    : is_valid_(is_valid),
      protocol_is_in_http_family_(false),
-     has_idna2008_deviation_character_(false),
      parsed_(parsed),
      string_(canonical_string) {
  InitProtocolMetadata();
@@ -285,8 +282,6 @@ KURL::KURL(const std::string& canonical_string,
 KURL::KURL(const KURL& other)
    : is_valid_(other.is_valid_),
      protocol_is_in_http_family_(other.protocol_is_in_http_family_),
-     has_idna2008_deviation_character_(
-         other.has_idna2008_deviation_character_),
      protocol_(other.protocol_),
      parsed_(other.parsed_),
      string_(other.string_) {
@@ -299,7 +294,6 @@ KURL::~KURL() = default;
 KURL& KURL::operator=(const KURL& other) {
  is_valid_ = other.is_valid_;
  protocol_is_in_http_family_ = other.protocol_is_in_http_family_;
- has_idna2008_deviation_character_ = other.has_idna2008_deviation_character_;
  protocol_ = other.protocol_;
  parsed_ = other.parsed_;
  string_ = other.string_;
@@ -334,9 +328,6 @@ bool KURL::ProtocolIsInHTTPFamily() const {
  return protocol_is_in_http_family_;
 }
 
-bool KURL::HasIDNA2008DeviationCharacter() const {
- return has_idna2008_deviation_character_;
-}
 
 bool KURL::HasPath() const {
  // Note that http://www.google.com/" has a path, the path is "/". This can
@@ -555,11 +546,11 @@ bool IsEndOfHostSpecial(char ch) {
  return IsEndOfHost(ch) || ch == '\\';
 }
 
-uint32_t FindHostEnd(const std::string& host, bool is_special) {
-  uint32_t end = base::Find(reinterpret_cast<const int8_t*>(host.data()), host.length(), (is_special ? IsEndOfHostSpecial : IsEndOfHost), 0);
-  if (end == UINT_MAX)
-    end = host.length();
-  return end;
+size_t FindHostEnd(const std::string& host, bool is_special) {
+  auto it = std::find_if(host.begin(), host.end(), is_special ? IsEndOfHostSpecial : IsEndOfHost);
+  if (it == host.end())
+    return host.length();
+  return std::distance(host.begin(), it);
 }
 
 }  // namespace
@@ -588,10 +579,13 @@ void KURL::SetHostAndPort(const std::string& input) {
  // //third_party/mozilla/url_parse.cc. There's a slight behaviour
  // difference for compatibility with the tests: the first colon after the
  // address is considered to start the port, instead of the last.
- uint32_t ipv6_terminator = base::ReverseFind(host_and_port.data(), host_and_port.length(), ']');
- if (ipv6_terminator == UINT_MAX) {
+ auto it = std::find(host_and_port.rbegin(), host_and_port.rend(), ']');
+ uint32_t ipv6_terminator = UINT_MAX;
+ if (it == host_and_port.rend()) {
    ipv6_terminator =
        host_and_port.starts_with('[') ? host_and_port.length() : 0;
+ } else {
+   ipv6_terminator = *it;
  }
 
  uint32_t colon = host_and_port.find(':', ipv6_terminator);
@@ -644,9 +638,8 @@ void KURL::SetPort(const std::string& input) {
    return;
  }
 
- unsigned port_value;
- bool to_uint_ok = base::StringToUint(parsed_port, &port_value);
- if (port_value > UINT16_MAX || !to_uint_ok) {
+ unsigned port_value = std::stoul(parsed_port);
+ if (port_value > UINT16_MAX) {
    return;
  }
  SetPort(port_value);
@@ -674,7 +667,7 @@ void KURL::SetPort(uint16_t port) {
    return;
  }
 
- std::string port_string = base::NumberToString(port);
+ std::string port_string = std::to_string(port);
 
  url::Replacements<char> replacements;
  replacements.SetPort(reinterpret_cast<const char*>(port_string.data()),
@@ -934,19 +927,6 @@ void KURL::Init(const KURL& base,
    // "javascript://^", which is an invalid URL.
    DCHECK(!::webf::ProtocolIsJavaScript(string_) || ProtocolIsJavaScript());
  }
-
- // Check for deviation characters in the string. See
- // https://unicode.org/reports/tr46/#Table_Deviation_Characters
-
- std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-
- has_idna2008_deviation_character_ =
-     base.has_idna2008_deviation_character_ ||
-     relative.find(converter.to_bytes(L"\u00DF"), 0) != std::string::npos ||  // Sharp-s
-     relative.find(converter.to_bytes(L"\u03C2"), 0) != std::string::npos ||  // Greek final sigma
-     relative.find(converter.to_bytes(L"\u200D"), 0) != std::string::npos ||  // Zero width joiner
-     relative.find(converter.to_bytes(L"\u200C"), 0) != std::string::npos;    // Zero width non-joiner
-
 }
 
 void KURL::InitInnerURL() {

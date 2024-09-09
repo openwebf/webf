@@ -201,10 +201,6 @@ namespace url {
     return DoParseFileURL(url);
   }
 
-  Parsed ParseFileURL(std::u16string_view url) {
-    return DoParseFileURL(url);
-  }
-
 }  // namespace url
 
 

@@ -69,8 +69,6 @@ class QualifiedName {
       return other.ComputeHash() == ComputeHash();
     }
 
-    ~QualifiedNameImpl();
-
     unsigned ComputeHash() const;
 
     // We rely on StringHasher's HashMemory clearing out the top 8 bits when

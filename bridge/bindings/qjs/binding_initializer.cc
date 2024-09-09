@@ -99,6 +99,7 @@
 #include "qjs_ui_event.h"
 #include "qjs_widget_element.h"
 #include "qjs_window.h"
+#include "qjs_css_style_sheet.h"
 #include "qjs_window_or_worker_global_scope.h"
 
 namespace webf {
@@ -156,6 +157,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSImage::Install(context);
   QJSHTMLScriptElement::Install(context);
   QJSHTMLLinkElement::Install(context);
+  QJSCSSStyleSheet::Install(context);
 
   QJSHTMLUnknownElement::Install(context);
   QJSHTMLTemplateElement::Install(context);

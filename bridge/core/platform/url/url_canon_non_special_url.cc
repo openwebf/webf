@@ -17,8 +17,7 @@ namespace url {
 
 namespace {
 
-template <typename CHAR>
-bool DoCanonicalizeNonSpecialURL(const URLComponentSource<CHAR>& source,
+bool DoCanonicalizeNonSpecialURL(const URLComponentSource<char>& source,
                                  const Parsed& parsed,
                                  CanonOutput& output,
                                  Parsed& new_parsed) {
@@ -199,21 +198,6 @@ bool CanonicalizeNonSpecialURL(const char* spec,
                                      output, new_parsed);
 }
 
-bool CanonicalizeNonSpecialURL(const char16_t* spec,
-                               int spec_len,
-                               const Parsed& parsed,
-                               CanonOutput& output,
-                               Parsed& new_parsed) {
-  // Carry over the flag.
-  new_parsed.has_opaque_path = parsed.has_opaque_path;
-
-  if (parsed.has_opaque_path) {
-    return CanonicalizePathURL(spec, spec_len, parsed, &output, &new_parsed);
-  }
-  return DoCanonicalizeNonSpecialURL(URLComponentSource(spec), parsed,
-                                     output, new_parsed);
-}
-
 bool ReplaceNonSpecialURL(const char* base,
                           const Parsed& base_parsed,
                           const Replacements<char>& replacements,
@@ -227,26 +211,6 @@ bool ReplaceNonSpecialURL(const char* base,
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupOverrideComponents(base, replacements, &source, &parsed);
-  return DoCanonicalizeNonSpecialURL(source, parsed, output,
-                                     new_parsed);
-}
-
-// For 16-bit replacements, we turn all the replacements into UTF-8 so the
-// regular code path can be used.
-bool ReplaceNonSpecialURL(const char* base,
-                          const Parsed& base_parsed,
-                          const Replacements<char16_t>& replacements,
-                          CanonOutput& output,
-                          Parsed& new_parsed) {
-  if (base_parsed.has_opaque_path) {
-    return ReplacePathURL(base, base_parsed, replacements, &output,
-                          &new_parsed);
-  }
-
-  RawCanonOutput<1024> utf8;
-  URLComponentSource<char> source(base);
-  Parsed parsed(base_parsed);
-  SetupUTF16OverrideComponents(base, replacements, &utf8, &source, &parsed);
   return DoCanonicalizeNonSpecialURL(source, parsed, output,
                                      new_parsed);
 }

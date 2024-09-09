@@ -24,8 +24,7 @@ namespace url {
 
 namespace {
 
-template <typename CHAR>
-bool DoCanonicalizeStandardURL(const URLComponentSource<CHAR>& source,
+bool DoCanonicalizeStandardURL(const URLComponentSource<char>& source,
                                const Parsed& parsed,
                                SchemeType scheme_type,
                                CanonOutput* output,
@@ -164,16 +163,6 @@ bool CanonicalizeStandardURL(const char* spec,
                                    new_parsed);
 }
 
-bool CanonicalizeStandardURL(const char16_t* spec,
-                             const Parsed& parsed,
-                             SchemeType scheme_type,
-                             CanonOutput* output,
-                             Parsed* new_parsed) {
-  return DoCanonicalizeStandardURL(URLComponentSource(spec), parsed,
-                                   scheme_type, output,
-                                   new_parsed);
-}
-
 // It might be nice in the future to optimize this so unchanged components don't
 // need to be recanonicalized. This is especially true since the common case for
 // ReplaceComponents is removing things we don't want, like reference fragments
@@ -192,21 +181,6 @@ bool ReplaceStandardURL(const char* base,
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupOverrideComponents(base, replacements, &source, &parsed);
-  return DoCanonicalizeStandardURL(source, parsed, scheme_type, output, new_parsed);
-}
-
-// For 16-bit replacements, we turn all the replacements into UTF-8 so the
-// regular code path can be used.
-bool ReplaceStandardURL(const char* base,
-                        const Parsed& base_parsed,
-                        const Replacements<char16_t>& replacements,
-                        SchemeType scheme_type,
-                        CanonOutput* output,
-                        Parsed* new_parsed) {
-  RawCanonOutput<1024> utf8;
-  URLComponentSource<char> source(base);
-  Parsed parsed(base_parsed);
-  SetupUTF16OverrideComponents(base, replacements, &utf8, &source, &parsed);
   return DoCanonicalizeStandardURL(source, parsed, scheme_type, output, new_parsed);
 }
 

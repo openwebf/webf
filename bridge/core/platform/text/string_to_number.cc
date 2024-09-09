@@ -179,43 +179,6 @@ uint64_t HexCharactersToUInt64(const unsigned char* data,
   return ToIntegralType<uint64_t, 16>(data, length, options, ok);
 }
 
-int CharactersToInt(const unsigned char* data,
-                    size_t length,
-                    NumberParsingOptions options,
-                    bool* ok) {
-  return ToIntegralType<int, 10>(data, length, options, ok);
-}
-
-int CharactersToInt(const StringView& string,
-                    NumberParsingOptions options,
-                    bool* ok) {
-  return VisitCharacters(
-      string, [&](const auto* chars, uint32_t length) {
-        return CharactersToInt(chars, length, options, ok);
-      });
-}
-
-unsigned CharactersToUInt(const unsigned char* data,
-                          size_t length,
-                          NumberParsingOptions options,
-                          bool* ok) {
-  return ToIntegralType<unsigned, 10>(data, length, options, ok);
-}
-
-int64_t CharactersToInt64(const unsigned char* data,
-                          size_t length,
-                          NumberParsingOptions options,
-                          bool* ok) {
-  return ToIntegralType<int64_t, 10>(data, length, options, ok);
-}
-
-uint64_t CharactersToUInt64(const unsigned char* data,
-                            size_t length,
-                            NumberParsingOptions options,
-                            bool* ok) {
-  return ToIntegralType<uint64_t, 10>(data, length, options, ok);
-}
-
 double ParseDouble(const unsigned char* string, size_t length, size_t& parsed_length) {
   std::string str(reinterpret_cast<const char*>(string), length);
   size_t idx;

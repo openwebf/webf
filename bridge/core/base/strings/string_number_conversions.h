@@ -17,9 +17,6 @@
 #include <vector>
 #include <span>
 
-//#include "base/containers/span.h"
-//#include "build/build_config.h"
-
 
 // ----------------------------------------------------------------------------
 // IMPORTANT MESSAGE FROM YOUR SPONSOR
@@ -42,19 +39,12 @@ namespace base {
 
 // Ignores locale! see warning above.
  std::string NumberToString(int value);
- std::u16string NumberToString16(int value);
  std::string NumberToString(unsigned int value);
- std::u16string NumberToString16(unsigned int value);
  std::string NumberToString(long value);
- std::u16string NumberToString16(long value);
  std::string NumberToString(unsigned long value);
- std::u16string NumberToString16(unsigned long value);
  std::string NumberToString(long long value);
- std::u16string NumberToString16(long long value);
  std::string NumberToString(unsigned long long value);
- std::u16string NumberToString16(unsigned long long value);
  std::string NumberToString(double value);
- std::u16string NumberToString16(double value);
 
 // String -> number conversions ------------------------------------------------
 
@@ -75,19 +65,14 @@ namespace base {
 // WARNING: Will write to |output| even when returning false.
 //          Read the comments above carefully.
  bool StringToInt(std::string_view input, int* output);
- bool StringToInt(std::u16string_view input, int* output);
 
  bool StringToUint(std::string_view input, unsigned* output);
- bool StringToUint(std::u16string_view input, unsigned* output);
 
  bool StringToInt64(std::string_view input, int64_t* output);
- bool StringToInt64(std::u16string_view input, int64_t* output);
 
  bool StringToUint64(std::string_view input, uint64_t* output);
- bool StringToUint64(std::u16string_view input, uint64_t* output);
 
  bool StringToSizeT(std::string_view input, size_t* output);
- bool StringToSizeT(std::u16string_view input, size_t* output);
 
 // For floating-point conversions, only conversions of input strings in decimal
 // form are defined to work.  Behavior with strings representing floating-point
@@ -98,7 +83,6 @@ namespace base {
 // WARNING: Will write to |output| even when returning false.
 //          Read the comments here and above StringToInt() carefully.
  bool StringToDouble(std::string_view input, double* output);
- bool StringToDouble(std::u16string_view input, double* output);
 
 // Hex encoding ----------------------------------------------------------------
 
@@ -110,7 +94,6 @@ namespace base {
 //   std::numeric_limits<size_t>::max() / 2
  std::string HexEncode(std::span<const uint8_t> bytes);
  std::string HexEncode(std::string_view chars);
-// TODO(crbug.com/40284755): The pointer-based overload should be removed.
  std::string HexEncode(const void* bytes, size_t size);
 
 // Appends a hex representation of `byte`, as two uppercase (by default)

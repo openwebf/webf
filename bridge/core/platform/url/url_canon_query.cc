@@ -63,35 +63,7 @@ void AppendRaw8BitQueryString(const CHAR* source, int length,
   }
 }
 
-// Runs the converter on the given UTF-8 input. Since the converter expects
-// UTF-16, we have to convert first. The converter must be non-NULL.
-void RunConverter(const char* spec,
-                  const Component& query,
-                  CharsetConverter* converter,
-                  CanonOutput* output) {
-  DCHECK(query.is_valid());
-  // This function will replace any misencoded values with the invalid
-  // character. This is what we want so we don't have to check for error.
-  RawCanonOutputW<1024> utf16;
-  ConvertUTF8ToUTF16(&spec[query.begin], static_cast<size_t>(query.len),
-                     &utf16);
-  converter->ConvertFromUTF16(utf16.data(), utf16.length(), output);
-}
-
-// Runs the converter with the given UTF-16 input. We don't have to do
-// anything, but this overridden function allows us to use the same code
-// for both UTF-8 and UTF-16 input.
-void RunConverter(const char16_t* spec,
-                  const Component& query,
-                  CharsetConverter* converter,
-                  CanonOutput* output) {
-  DCHECK(query.is_valid());
-  converter->ConvertFromUTF16(&spec[query.begin],
-                              static_cast<size_t>(query.len), output);
-}
-
-template <typename CHAR, typename UCHAR>
-void DoConvertToQueryEncoding(const CHAR* spec,
+void DoConvertToQueryEncoding(const char* spec,
                               const Component& query,
                               CanonOutput* output) {
   // No converter, do our own UTF-8 conversion.
@@ -99,8 +71,7 @@ void DoConvertToQueryEncoding(const CHAR* spec,
                      CHAR_QUERY, output);
 }
 
-template<typename CHAR, typename UCHAR>
-void DoCanonicalizeQuery(const CHAR* spec,
+void DoCanonicalizeQuery(const char* spec,
                          const Component& query,
                          CanonOutput* output,
                          Component* out_query) {
@@ -112,7 +83,7 @@ void DoCanonicalizeQuery(const CHAR* spec,
   output->push_back('?');
   out_query->begin = output->length();
 
-  DoConvertToQueryEncoding<CHAR, UCHAR>(spec, query, output);
+  DoConvertToQueryEncoding(spec, query, output);
 
   out_query->len = output->length() - out_query->begin;
 }
@@ -123,16 +94,8 @@ void CanonicalizeQuery(const char* spec,
                        const Component& query,
                        CanonOutput* output,
                        Component* out_query) {
-  DoCanonicalizeQuery<char, unsigned char>(spec, query,
+  DoCanonicalizeQuery(spec, query,
                                            output, out_query);
-}
-
-void CanonicalizeQuery(const char16_t* spec,
-                       const Component& query,
-                       CanonOutput* output,
-                       Component* out_query) {
-  DoCanonicalizeQuery<char16_t, char16_t>(spec, query, output,
-                                          out_query);
 }
 
 }  // namespace url

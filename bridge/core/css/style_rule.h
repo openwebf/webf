@@ -286,7 +286,7 @@ class StyleRule : public StyleRuleBase {
     }
     return SelectorIndex(*next);
   }
-  AtomicString SelectorsText() const { return CSSSelectorList::SelectorsText(FirstSelector()); }
+  std::string SelectorsText() const { return CSSSelectorList::SelectorsText(FirstSelector()); }
 
   const CSSPropertyValueSet& Properties() const;
   // TODO(xiezuobing): MutableCSSPropertyValueSet

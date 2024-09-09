@@ -167,8 +167,7 @@ enum WhitespaceRemovalPolicy {
 
 // Given a string and a range inside the string, compares it to the given
 // lower-case |compare_to| buffer.
-template <typename CHAR>
-inline bool DoCompareSchemeComponent(const CHAR* spec, const Component& component, const char* compare_to) {
+inline bool DoCompareSchemeComponent(const char* spec, const Component& component, const char* compare_to) {
   if (component.is_empty())
     return compare_to[0] == 0;  // When component is empty, match empty scheme.
   return base::EqualsCaseInsensitiveASCII(std::basic_string_view(&spec[component.begin], component.len), compare_to);
@@ -176,8 +175,7 @@ inline bool DoCompareSchemeComponent(const CHAR* spec, const Component& componen
 
 // Returns true and sets |type| to the SchemeType of the given scheme
 // identified by |scheme| within |spec| if in |schemes|.
-template <typename CHAR>
-bool DoIsInSchemes(const CHAR* spec,
+bool DoIsInSchemes(const char* spec,
                    const Component& scheme,
                    SchemeType* type,
                    const std::vector<SchemeWithType>& schemes) {
@@ -194,13 +192,11 @@ bool DoIsInSchemes(const CHAR* spec,
   return false;
 }
 
-template <typename CHAR>
-bool DoIsStandard(const CHAR* spec, const Component& scheme, SchemeType* type) {
+bool DoIsStandard(const char* spec, const Component& scheme, SchemeType* type) {
   return DoIsInSchemes(spec, scheme, type, GetSchemeRegistry().standard_schemes);
 }
 
-template <typename CHAR>
-bool DoIsOpaqueNonSpecial(const CHAR* spec, const Component& scheme) {
+bool DoIsOpaqueNonSpecial(const char* spec, const Component& scheme) {
   if (scheme.is_empty()) {
     return false;
   }
@@ -212,13 +208,12 @@ bool DoIsOpaqueNonSpecial(const CHAR* spec, const Component& scheme) {
   return false;
 }
 
-template <typename CHAR>
-bool DoFindAndCompareScheme(const CHAR* str, int str_len, const char* compare, Component* found_scheme) {
+bool DoFindAndCompareScheme(const char* str, int str_len, const char* compare, Component* found_scheme) {
   // Before extracting scheme, canonicalize the URL to remove any whitespace.
   // This matches the canonicalization done in DoCanonicalize function.
-  STACK_UNINITIALIZED RawCanonOutputT<CHAR> whitespace_buffer;
+  STACK_UNINITIALIZED RawCanonOutputT<char> whitespace_buffer;
   int spec_len;
-  const CHAR* spec = RemoveURLWhitespace(str, str_len, &whitespace_buffer, &spec_len, nullptr);
+  const char* spec = RemoveURLWhitespace(str, str_len, &whitespace_buffer, &spec_len, nullptr);
 
   Component our_scheme;
   if (!ExtractScheme(spec, spec_len, &our_scheme)) {
@@ -232,8 +227,7 @@ bool DoFindAndCompareScheme(const CHAR* str, int str_len, const char* compare, C
   return DoCompareSchemeComponent(spec, our_scheme, compare);
 }
 
-template <typename CHAR>
-bool DoCanonicalize(const CHAR* spec,
+bool DoCanonicalize(const char* spec,
                     int spec_len,
                     bool trim_path_end,
                     WhitespaceRemovalPolicy whitespace_policy,
@@ -250,7 +244,7 @@ bool DoCanonicalize(const CHAR* spec,
 
   // Remove any whitespace from the middle of the relative URL if necessary.
   // Possibly this will result in copying to the new buffer.
-  STACK_UNINITIALIZED RawCanonOutputT<CHAR> whitespace_buffer;
+  STACK_UNINITIALIZED RawCanonOutputT<char> whitespace_buffer;
   if (whitespace_policy == REMOVE_WHITESPACE) {
     spec =
         RemoveURLWhitespace(spec, spec_len, &whitespace_buffer, &spec_len, &output_parsed->potentially_dangling_markup);
@@ -319,19 +313,18 @@ bool DoCanonicalize(const CHAR* spec,
   return success;
 }
 
-template <typename CHAR>
 bool DoResolveRelative(const char* base_spec,
                        int base_spec_len,
                        const Parsed& base_parsed,
-                       const CHAR* in_relative,
+                       const char* in_relative,
                        int in_relative_length,
                        CanonOutput* output,
                        Parsed* output_parsed) {
   // Remove any whitespace from the middle of the relative URL, possibly
   // copying to the new buffer.
-  STACK_UNINITIALIZED RawCanonOutputT<CHAR> whitespace_buffer;
+  STACK_UNINITIALIZED RawCanonOutputT<char> whitespace_buffer;
   int relative_length;
-  const CHAR* relative = RemoveURLWhitespace(in_relative, in_relative_length, &whitespace_buffer, &relative_length,
+  const char* relative = RemoveURLWhitespace(in_relative, in_relative_length, &whitespace_buffer, &relative_length,
                                              &output_parsed->potentially_dangling_markup);
 
   bool base_is_authority_based = false;
@@ -392,11 +385,10 @@ bool DoResolveRelative(const char* base_spec,
   return DoCanonicalize(relative, relative_length, true, DO_NOT_REMOVE_WHITESPACE, output, output_parsed);
 }
 
-template <typename CHAR>
 bool DoReplaceComponents(const char* spec,
                          int spec_len,
                          const Parsed& parsed,
-                         const Replacements<CHAR>& replacements,
+                         const Replacements<char>& replacements,
                          CanonOutput* output,
                          Parsed* out_parsed) {
   // If the scheme is overridden, just do a simple string substitution and
@@ -447,7 +439,7 @@ bool DoReplaceComponents(const char* spec,
     // after this call to check validity (this assumes replacing the scheme is
     // much much less common than other types of replacements, like clearing the
     // ref).
-    Replacements<CHAR> replacements_no_scheme = replacements;
+    Replacements<char> replacements_no_scheme = replacements;
     replacements_no_scheme.SetScheme(NULL, Component());
     // If the input URL has potentially dangling markup, set the flag on the
     // output too. Note that in some cases the replacement gets rid of the
@@ -690,25 +682,12 @@ bool GetStandardSchemeType(const char* spec, const Component& scheme, SchemeType
   return DoIsStandard(spec, scheme, type);
 }
 
-bool GetStandardSchemeType(const char16_t* spec, const Component& scheme, SchemeType* type) {
-  return DoIsStandard(spec, scheme, type);
-}
-
-bool IsStandard(const char16_t* spec, const Component& scheme) {
-  SchemeType unused_scheme_type;
-  return DoIsStandard(spec, scheme, &unused_scheme_type);
-}
-
 bool IsReferrerScheme(const char* spec, const Component& scheme) {
   SchemeType unused_scheme_type;
   return DoIsInSchemes(spec, scheme, &unused_scheme_type, GetSchemeRegistry().referrer_schemes);
 }
 
 bool FindAndCompareScheme(const char* str, int str_len, const char* compare, Component* found_scheme) {
-  return DoFindAndCompareScheme(str, str_len, compare, found_scheme);
-}
-
-bool FindAndCompareScheme(const char16_t* str, int str_len, const char* compare, Component* found_scheme) {
   return DoFindAndCompareScheme(str, str_len, compare, found_scheme);
 }
 
@@ -755,10 +734,6 @@ bool Canonicalize(const char* spec, int spec_len, bool trim_path_end, CanonOutpu
   return DoCanonicalize(spec, spec_len, trim_path_end, REMOVE_WHITESPACE, output, output_parsed);
 }
 
-bool Canonicalize(const char16_t* spec, int spec_len, bool trim_path_end, CanonOutput* output, Parsed* output_parsed) {
-  return DoCanonicalize(spec, spec_len, trim_path_end, REMOVE_WHITESPACE, output, output_parsed);
-}
-
 bool ResolveRelative(const char* base_spec,
                      int base_spec_len,
                      const Parsed& base_parsed,
@@ -769,15 +744,6 @@ bool ResolveRelative(const char* base_spec,
   return DoResolveRelative(base_spec, base_spec_len, base_parsed, relative, relative_length, output, output_parsed);
 }
 
-bool ResolveRelative(const char* base_spec,
-                     int base_spec_len,
-                     const Parsed& base_parsed,
-                     const char16_t* relative,
-                     int relative_length,
-                     CanonOutput* output,
-                     Parsed* output_parsed) {
-  return DoResolveRelative(base_spec, base_spec_len, base_parsed, relative, relative_length, output, output_parsed);
-}
 
 bool ReplaceComponents(const char* spec,
                        int spec_len,
@@ -786,72 +752,6 @@ bool ReplaceComponents(const char* spec,
                        CanonOutput* output,
                        Parsed* out_parsed) {
   return DoReplaceComponents(spec, spec_len, parsed, replacements, output, out_parsed);
-}
-
-bool ReplaceComponents(const char* spec,
-                       int spec_len,
-                       const Parsed& parsed,
-                       const Replacements<char16_t>& replacements,
-                       CanonOutput* output,
-                       Parsed* out_parsed) {
-  return DoReplaceComponents(spec, spec_len, parsed, replacements, output, out_parsed);
-}
-
-void DecodeURLEscapeSequences(std::string_view input, DecodeURLMode mode, CanonOutputW* output) {
-  if (input.empty()) {
-    return;
-  }
-
-  STACK_UNINITIALIZED RawCanonOutputT<char> unescaped_chars;
-  for (size_t i = 0; i < input.length(); i++) {
-    if (input[i] == '%') {
-      unsigned char ch;
-      if (DecodeEscaped(input.data(), &i, input.length(), &ch)) {
-        unescaped_chars.push_back(ch);
-      } else {
-        // Invalid escape sequence, copy the percent literal.
-        unescaped_chars.push_back('%');
-      }
-    } else {
-      // Regular non-escaped 8-bit character.
-      unescaped_chars.push_back(input[i]);
-    }
-  }
-
-  int output_initial_length = output->length();
-  // Convert that 8-bit to UTF-16. It's not clear IE does this at all to
-  // JavaScript URLs, but Firefox and Safari do.
-  size_t unescaped_length = unescaped_chars.length();
-  for (size_t i = 0; i < unescaped_length; i++) {
-    unsigned char uch = static_cast<unsigned char>(unescaped_chars.at(i));
-    if (uch < 0x80) {
-      // Non-UTF-8, just append directly
-      output->push_back(uch);
-    } else {
-      // next_ch will point to the last character of the decoded
-      // character.
-      size_t next_character = i;
-      int32_t code_point;
-      if (ReadUTFCharLossy(unescaped_chars.data(), &next_character, unescaped_length, &code_point)) {
-        // Valid UTF-8 character, convert to UTF-16.
-        AppendUTF16Value(code_point, output);
-        i = next_character;
-      } else if (mode == DecodeURLMode::kUTF8) {
-        DCHECK_EQ(code_point, 0xFFFD);
-        AppendUTF16Value(code_point, output);
-        i = next_character;
-      } else {
-        // If there are any sequences that are not valid UTF-8, we
-        // revert |output| changes, and promote any bytes to UTF-16. We
-        // copy all characters from the beginning to the end of the
-        // identified sequence.
-        output->set_length(output_initial_length);
-        for (size_t j = 0; j < unescaped_chars.length(); ++j)
-          output->push_back(static_cast<unsigned char>(unescaped_chars.at(j)));
-        break;
-      }
-    }
-  }
 }
 
 void EncodeURIComponent(std::string_view input, CanonOutput* output) {
@@ -869,10 +769,6 @@ bool IsURIComponentChar(char c) {
 }
 
 bool CompareSchemeComponent(const char* spec, const Component& component, const char* compare_to) {
-  return DoCompareSchemeComponent(spec, component, compare_to);
-}
-
-bool CompareSchemeComponent(const char16_t* spec, const Component& component, const char* compare_to) {
   return DoCompareSchemeComponent(spec, component, compare_to);
 }
 

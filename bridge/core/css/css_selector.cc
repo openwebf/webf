@@ -79,7 +79,7 @@ CSSSelector::CSSSelector(CSSSelector&& o) : data_(DataUnion::kConstructUninitial
   memset(&o, 0, sizeof(o));
 }
 
-inline CSSSelector::CSSSelector(std::shared_ptr<const StyleRule> parent_rule, bool is_implicit)
+CSSSelector::CSSSelector(std::shared_ptr<const StyleRule> parent_rule, bool is_implicit)
     : bits_(RelationField::encode(kSubSelector) | MatchField::encode(kPseudoClass) |
             PseudoTypeField::encode(kPseudoParent) | IsLastInSelectorListField::encode(false) |
             IsLastInComplexSelectorField::encode(false) | HasRareDataField::encode(false) |
@@ -116,7 +116,7 @@ CSSSelector::CSSSelector(MatchType match_type,
   data_.rare_data_->attribute_ = attribute;
 }
 
-inline CSSSelector::CSSSelector(const QualifiedName& tag_q_name, bool tag_is_implicit)
+CSSSelector::CSSSelector(const QualifiedName& tag_q_name, bool tag_is_implicit)
     : bits_(RelationField::encode(kSubSelector) | MatchField::encode(kTag) | PseudoTypeField::encode(kPseudoUnknown) |
             IsLastInSelectorListField::encode(false) | IsLastInComplexSelectorField::encode(false) |
             HasRareDataField::encode(false) | IsForPageField::encode(false) |
@@ -124,7 +124,7 @@ inline CSSSelector::CSSSelector(const QualifiedName& tag_q_name, bool tag_is_imp
             AttributeMatchField::encode(0) | IsCaseSensitiveAttributeField::encode(false)),
       data_(tag_q_name) {}
 
-inline CSSSelector::CSSSelector(const std::string& pseudo_name, bool is_implicit)
+CSSSelector::CSSSelector(const std::string& pseudo_name, bool is_implicit)
     : bits_(RelationField::encode(kSubSelector) | MatchField::encode(kPseudoClass) |
             PseudoTypeField::encode(NameToPseudoType(pseudo_name,
                                                      /* has_arguments */ false,
@@ -1827,6 +1827,34 @@ CSSSelector::RareData::RareData(const std::string& value)
       argument_(global_string_stdstring::knull_atom) {}
 
 CSSSelector::RareData::~RareData() = default;
+
+// a helper function for checking nth-arguments
+bool CSSSelector::RareData::MatchNth(unsigned unsigned_count) {
+  // These very large values for aN + B or count can't ever match, so
+  // give up immediately if we see them.
+  int max_value = std::numeric_limits<int>::max() / 2;
+  int min_value = std::numeric_limits<int>::min() / 2;
+  if (unsigned_count > static_cast<unsigned>(max_value) ||
+      NthAValue() > max_value || NthAValue() < min_value ||
+      NthBValue() > max_value || NthBValue() < min_value) [[unlikely]] {
+    return false;
+  }
+
+  int count = static_cast<int>(unsigned_count);
+  if (!NthAValue()) {
+    return count == NthBValue();
+  }
+  if (NthAValue() > 0) {
+    if (count < NthBValue()) {
+      return false;
+    }
+    return (count - NthBValue()) % NthAValue() == 0;
+  }
+  if (count > NthBValue()) {
+    return false;
+  }
+  return (NthBValue() - count) % (-NthAValue()) == 0;
+}
 
 QualifiedName::~QualifiedName() = default;
 

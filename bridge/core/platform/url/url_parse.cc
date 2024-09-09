@@ -72,8 +72,7 @@ inline bool IsPortDigit(char16_t ch) {
 // Returns the offset of the next authority terminator in the input starting
 // from start_offset. If no terminator is found, the return value will be equal
 // to spec_len.
-template <typename CHAR>
-int FindNextAuthorityTerminator(const CHAR* spec,
+int FindNextAuthorityTerminator(const char* spec,
                                 int start_offset,
                                 int spec_len,
                                 ParserMode parser_mode) {
@@ -337,8 +336,7 @@ bool DoExtractScheme(std::basic_string_view<CharT> url, Component* scheme) {
 // (*) Interestingly, although IE fails to load these URLs, its history
 // canonicalizer handles them, meaning if you've been to the corresponding
 // "http://foo.com/" link, it will be colored.
-template <typename CHAR>
-void DoParseAfterSpecialScheme(const CHAR* spec,
+void DoParseAfterSpecialScheme(const char* spec,
                                int spec_len,
                                int after_scheme,
                                Parsed* parsed) {
@@ -388,8 +386,7 @@ Parsed DoParseStandardURL(std::basic_string_view<CharT> url) {
   return parsed;
 }
 
-template <typename CHAR>
-void DoParseAfterNonSpecialScheme(const CHAR* spec,
+void DoParseAfterNonSpecialScheme(const char* spec,
                                   int spec_len,
                                   int after_scheme,
                                   Parsed* parsed) {
@@ -498,8 +495,7 @@ Parsed DoParseNonSpecialURL(std::basic_string_view<CharT> url,
   return parsed;
 }
 
-template <typename CharT>
-Parsed DoParseFileSystemURL(std::basic_string_view<CharT> url) {
+Parsed DoParseFileSystemURL(std::basic_string_view<char> url) {
   // Strip leading & trailing spaces and control characters.
   int begin = 0;
   int url_len = base::checked_cast<int>(url.size());
@@ -939,17 +935,10 @@ bool ExtractScheme(std::string_view url, Component* scheme) {
   return DoExtractScheme(url, scheme);
 }
 
-bool ExtractScheme(std::u16string_view url, Component* scheme) {
-  return DoExtractScheme(url, scheme);
-}
-
 bool ExtractScheme(const char* url, int url_len, Component* scheme) {
   return DoExtractScheme(std::string_view(url, url_len), scheme);
 }
 
-bool ExtractScheme(const char16_t* url, int url_len, Component* scheme) {
-  return DoExtractScheme(std::u16string_view(url, url_len), scheme);
-}
 
 // This handles everything that may be an authority terminator.
 //
@@ -958,7 +947,7 @@ bool ExtractScheme(const char16_t* url, int url_len, Component* scheme) {
 // >> 2. Otherwise, if one of the following is true:
 // >>    - c is the EOF code point, U+002F (/), U+003F (?), or U+0023 (#)
 // >>    - url is special and c is U+005C (\)
-bool IsAuthorityTerminator(char16_t ch, ParserMode parser_mode) {
+bool IsAuthorityTerminator(char ch, ParserMode parser_mode) {
   if (parser_mode == ParserMode::kSpecialURL) {
     return IsSlashOrBackslash(ch) || ch == '?' || ch == '#';
   }
@@ -971,12 +960,6 @@ void ExtractFileName(const char* url,
   DoExtractFileName(url, path, file_name);
 }
 
-void ExtractFileName(const char16_t* url,
-                     const Component& path,
-                     Component* file_name) {
-  DoExtractFileName(url, path, file_name);
-}
-
 bool ExtractQueryKeyValue(std::string_view url,
                           Component* query,
                           Component* key,
@@ -984,13 +967,6 @@ bool ExtractQueryKeyValue(std::string_view url,
   return DoExtractQueryKeyValue(url, query, key, value);
 }
 
-bool ExtractQueryKeyValue(std::u16string_view url,
-                          Component* query,
-                          Component* key,
-                          Component* value) {
-  return DoExtractQueryKeyValue(url, query, key, value);
-}
-
 void ParseAuthority(const char* spec,
                     const Component& auth,
                     Component* username,
@@ -1022,30 +998,12 @@ void ParseAuthority(const char* spec,
                    port_num);
 }
 
-void ParseAuthority(const char16_t* spec,
-                    const Component& auth,
-                    ParserMode parser_mode,
-                    Component* username,
-                    Component* password,
-                    Component* hostname,
-                    Component* port_num) {
-  DoParseAuthority(spec, auth, parser_mode, username, password, hostname,
-                   port_num);
-}
 
 int ParsePort(const char* url, const Component& port) {
   return DoParsePort(url, port);
 }
 
-int ParsePort(const char16_t* url, const Component& port) {
-  return DoParsePort(url, port);
-}
-
 Parsed ParseStandardURL(std::string_view url) {
-  return DoParseStandardURL(url);
-}
-
-Parsed ParseStandardURL(std::u16string_view url) {
   return DoParseStandardURL(url);
 }
 
@@ -1058,23 +1016,12 @@ Parsed ParseNonSpecialURL(std::string_view url) {
   return DoParseNonSpecialURL(url, /*trim_path_end=*/true);
 }
 
-Parsed ParseNonSpecialURL(std::u16string_view url) {
-  return DoParseNonSpecialURL(url, /*trim_path_end=*/true);
-}
 
 Parsed ParseNonSpecialURLInternal(std::string_view url, bool trim_path_end) {
   return DoParseNonSpecialURL(url, trim_path_end);
 }
 
-Parsed ParseNonSpecialURLInternal(std::u16string_view url, bool trim_path_end) {
-  return DoParseNonSpecialURL(url, trim_path_end);
-}
-
 Parsed ParsePathURL(std::string_view url, bool trim_path_end) {
-  return DoParsePathURL(url, trim_path_end);
-}
-
-Parsed ParsePathURL(std::u16string_view url, bool trim_path_end) {
   return DoParsePathURL(url, trim_path_end);
 }
 
@@ -1090,15 +1037,7 @@ Parsed ParseFileSystemURL(std::string_view url) {
   return DoParseFileSystemURL(url);
 }
 
-Parsed ParseFileSystemURL(std::u16string_view url) {
-  return DoParseFileSystemURL(url);
-}
-
 Parsed ParseMailtoURL(std::string_view url) {
-  return DoParseMailtoURL(url);
-}
-
-Parsed ParseMailtoURL(std::u16string_view url) {
   return DoParseMailtoURL(url);
 }
 
@@ -1125,21 +1064,8 @@ void ParseAfterSpecialScheme(const char* spec,
   DoParseAfterSpecialScheme(spec, spec_len, after_scheme, parsed);
 }
 
-void ParseAfterSpecialScheme(const char16_t* spec,
-                             int spec_len,
-                             int after_scheme,
-                             Parsed* parsed) {
-  DoParseAfterSpecialScheme(spec, spec_len, after_scheme, parsed);
-}
 
 void ParseAfterNonSpecialScheme(const char* spec,
-                                int spec_len,
-                                int after_scheme,
-                                Parsed* parsed) {
-  DoParseAfterNonSpecialScheme(spec, spec_len, after_scheme, parsed);
-}
-
-void ParseAfterNonSpecialScheme(const char16_t* spec,
                                 int spec_len,
                                 int after_scheme,
                                 Parsed* parsed) {

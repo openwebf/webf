@@ -22,9 +22,8 @@ namespace {
 
 // We use the URLComponentSource for the outer URL, as it can have replacements,
 // whereas the inner_url can't, so it uses spec.
-template <typename CHAR>
-bool DoCanonicalizeFileSystemURL(const CHAR* spec,
-                                 const URLComponentSource<CHAR>& source,
+bool DoCanonicalizeFileSystemURL(const char* spec,
+                                 const URLComponentSource<char>& source,
                                  const Parsed& parsed,
                                  CanonOutput* output,
                                  Parsed* new_parsed) {
@@ -95,14 +94,6 @@ bool CanonicalizeFileSystemURL(const char* spec,
                                      output, new_parsed);
 }
 
-bool CanonicalizeFileSystemURL(const char16_t* spec,
-                               const Parsed& parsed,
-                               CanonOutput* output,
-                               Parsed* new_parsed) {
-  return DoCanonicalizeFileSystemURL(spec, URLComponentSource(spec), parsed,
-                                     output, new_parsed);
-}
-
 bool ReplaceFileSystemURL(const char* base,
                           const Parsed& base_parsed,
                           const Replacements<char>& replacements,
@@ -111,19 +102,6 @@ bool ReplaceFileSystemURL(const char* base,
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupOverrideComponents(base, replacements, &source, &parsed);
-  return DoCanonicalizeFileSystemURL(base, source, parsed,
-                                     output, new_parsed);
-}
-
-bool ReplaceFileSystemURL(const char* base,
-                          const Parsed& base_parsed,
-                          const Replacements<char16_t>& replacements,
-                          CanonOutput* output,
-                          Parsed* new_parsed) {
-  RawCanonOutput<1024> utf8;
-  URLComponentSource<char> source(base);
-  Parsed parsed(base_parsed);
-  SetupUTF16OverrideComponents(base, replacements, &utf8, &source, &parsed);
   return DoCanonicalizeFileSystemURL(base, source, parsed,
                                      output, new_parsed);
 }

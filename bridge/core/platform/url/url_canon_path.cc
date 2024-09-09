@@ -185,8 +185,7 @@ void BackUpToPreviousSlash(size_t path_begin_in_output, CanonOutput* output) {
 // We do not collapse multiple slashes in a row to a single slash. It seems
 // no web browsers do this, and we don't want incompatibilities, even though
 // it would be correct for most systems.
-template <typename CHAR, typename UCHAR>
-bool DoPartialPathInternal(const CHAR* spec,
+bool DoPartialPathInternal(const char* spec,
                            const Component& path,
                            size_t path_begin_in_output,
                            CanonMode canon_mode,
@@ -198,8 +197,8 @@ bool DoPartialPathInternal(const CHAR* spec,
 
   bool success = true;
   for (size_t i = static_cast<size_t>(path.begin); i < end; i++) {
-    UCHAR uch = static_cast<UCHAR>(spec[i]);
-    if (sizeof(CHAR) > 1 && uch >= 0x80) {
+    char uch = static_cast<char>(spec[i]);
+    if (sizeof(char) > 1 && uch >= 0x80) {
       // We only need to test wide input for having non-ASCII characters. For
       // narrow input, we'll always just use the lookup table. We don't try to
       // do anything tricky with decoding/validating UTF-8. This function will
@@ -224,7 +223,7 @@ bool DoPartialPathInternal(const CHAR* spec,
               output->at(output->length() - 1) == '/') {
             // Slash followed by a dot, check to see if this is means relative
             size_t consumed_len;
-            switch (ClassifyAfterDot<CHAR>(spec, i + dotlen, end,
+            switch (ClassifyAfterDot<char>(spec, i + dotlen, end,
                                            &consumed_len)) {
               case NOT_A_DIRECTORY:
                 // Copy the dot to the output, it means nothing special.
@@ -290,13 +289,12 @@ bool DoPartialPathInternal(const CHAR* spec,
 // Perform the same logic as in DoPartialPathInternal(), but updates the
 // publicly exposed CanonOutput structure similar to DoPath().  Returns
 // true if successful.
-template <typename CHAR, typename UCHAR>
-bool DoPartialPath(const CHAR* spec,
+bool DoPartialPath(const char* spec,
                    const Component& path,
                    CanonOutput* output,
                    Component* out_path) {
   out_path->begin = output->length();
-  bool success = DoPartialPathInternal<CHAR, UCHAR>(
+  bool success = DoPartialPathInternal(
       spec, path, out_path->begin,
       // TODO(crbug.com/40063064): Support Non-special URLs.
       CanonMode::kSpecialURL, output);
@@ -304,8 +302,7 @@ bool DoPartialPath(const CHAR* spec,
   return success;
 }
 
-template <typename CHAR, typename UCHAR>
-bool DoPath(const CHAR* spec,
+bool DoPath(const char* spec,
             const Component& path,
             CanonMode canon_mode,
             CanonOutput* output,
@@ -325,7 +322,7 @@ bool DoPath(const CHAR* spec,
       output->push_back('/');
     }
 
-    success = DoPartialPathInternal<CHAR, UCHAR>(spec, path, out_path->begin,
+    success = DoPartialPathInternal(spec, path, out_path->begin,
                                                  canon_mode, output);
   } else if (canon_mode == CanonMode::kSpecialURL) {
     // No input, canonical path is a slash for special URLs, but it is empty for
@@ -351,45 +348,22 @@ bool CanonicalizePath(const char* spec,
                       CanonMode canon_mode,
                       CanonOutput* output,
                       Component* out_path) {
-  return DoPath<char, unsigned char>(spec, path, canon_mode, output, out_path);
-}
-
-bool CanonicalizePath(const char16_t* spec,
-                      const Component& path,
-                      CanonMode canon_mode,
-                      CanonOutput* output,
-                      Component* out_path) {
-  return DoPath<char16_t, char16_t>(spec, path, canon_mode, output, out_path);
+  return DoPath(spec, path, canon_mode, output, out_path);
 }
 
 bool CanonicalizePath(const char* spec,
                       const Component& path,
                       CanonOutput* output,
                       Component* out_path) {
-  return DoPath<char, unsigned char>(spec, path, CanonMode::kSpecialURL, output,
+  return DoPath(spec, path, CanonMode::kSpecialURL, output,
                                      out_path);
-}
-
-bool CanonicalizePath(const char16_t* spec,
-                      const Component& path,
-                      CanonOutput* output,
-                      Component* out_path) {
-  return DoPath<char16_t, char16_t>(spec, path, CanonMode::kSpecialURL, output,
-                                    out_path);
 }
 
 bool CanonicalizePartialPath(const char* spec,
                              const Component& path,
                              CanonOutput* output,
                              Component* out_path) {
-  return DoPartialPath<char, unsigned char>(spec, path, output, out_path);
-}
-
-bool CanonicalizePartialPath(const char16_t* spec,
-                             const Component& path,
-                             CanonOutput* output,
-                             Component* out_path) {
-  return DoPartialPath<char16_t, char16_t>(spec, path, output, out_path);
+  return DoPartialPath(spec, path, output, out_path);
 }
 
 bool CanonicalizePartialPathInternal(const char* spec,
@@ -397,16 +371,7 @@ bool CanonicalizePartialPathInternal(const char* spec,
                                      size_t path_begin_in_output,
                                      CanonMode canon_mode,
                                      CanonOutput* output) {
-  return DoPartialPathInternal<char, unsigned char>(
-      spec, path, path_begin_in_output, canon_mode, output);
-}
-
-bool CanonicalizePartialPathInternal(const char16_t* spec,
-                                     const Component& path,
-                                     size_t path_begin_in_output,
-                                     CanonMode canon_mode,
-                                     CanonOutput* output) {
-  return DoPartialPathInternal<char16_t, char16_t>(
+  return DoPartialPathInternal(
       spec, path, path_begin_in_output, canon_mode, output);
 }
 

@@ -83,10 +83,6 @@ void AppendStringOfType(const char* source,
                         size_t length,
                         SharedCharTypes type,
                         CanonOutput* output);
-void AppendStringOfType(const char16_t* source,
-                        size_t length,
-                        SharedCharTypes type,
-                        CanonOutput* output);
 
 // This lookup table allows fast conversion between ASCII hex letters and their
 // corresponding numerical value. The 8-bit range is divided up into 8
@@ -124,7 +120,7 @@ inline size_t IsDot(const CHAR* spec, size_t offset, size_t end) {
 // required for relative URL resolving to test for scheme equality.
 //
 // Returns 0 if the input character is not a valid scheme character.
-char CanonicalSchemeChar(char16_t ch);
+char CanonicalSchemeChar(char ch);
 
 // Write a single character, escaped, to the output. This always escapes: it
 // does no checking that thee character requires escaping.
@@ -214,67 +210,6 @@ inline void AppendUTF8EscapedValue(int32_t char_value,
   DoAppendUTF8<CanonOutput, AppendEscapedChar>(char_value, output);
 }
 
-// UTF-16 functions -----------------------------------------------------------
-
-// Reads one character in UTF-16 starting at |*begin| in |str|, places
-// the decoded value into |*code_point|, and returns true on success.
-// Otherwise, we'll return false and put the kUnicodeReplacementCharacter
-// into |*code_point|.
-//
-// |*begin| will be updated to point to the last character consumed so it
-// can be incremented in a loop and will be ready for the next character.
-// (for a single-16-bit-word character, it will not be changed).
-
-bool ReadUTFCharLossy(const char16_t* str,
-                      size_t* begin,
-                      size_t length,
-                      int32_t* code_point_out);
-
-// Equivalent to U16_APPEND_UNSAFE in ICU but uses our output method.
-inline void AppendUTF16Value( int32_t code_point,
-                             CanonOutputT<char16_t>* output) {
-  if (code_point > 0xffff) {
-    output->push_back(static_cast<char16_t>((code_point >> 10) + 0xd7c0));
-    output->push_back(static_cast<char16_t>((code_point & 0x3ff) | 0xdc00));
-  } else {
-    output->push_back(static_cast<char16_t>(code_point));
-  }
-}
-
-// Escaping functions ---------------------------------------------------------
-
-// Writes the given character to the output as UTF-8, escaped. Call this
-// function only when the input is wide. Returns true on success. Failure
-// means there was some problem with the encoding, we'll still try to
-// update the |*begin| pointer and add a placeholder character to the
-// output so processing can continue.
-//
-// We will append the character starting at ch[begin] with the buffer ch
-// being |length|. |*begin| will be updated to point to the last character
-// consumed (we may consume more than one for UTF-16) so that if called in
-// a loop, incrementing the pointer will move to the next character.
-//
-// Every single output character will be escaped. This means that if you
-// give it an ASCII character as input, it will be escaped. Some code uses
-// this when it knows that a character is invalid according to its rules
-// for validity. If you don't want escaping for ASCII characters, you will
-// have to filter them out prior to calling this function.
-//
-// Assumes that ch[begin] is within range in the array, but does not assume
-// that any following characters are.
-inline bool AppendUTF8EscapedChar(const char16_t* str,
-                                  size_t* begin,
-                                  size_t length,
-                                  CanonOutput* output) {
-  // UTF-16 input. ReadUTFCharLossy will handle invalid characters for us and
-  // give us the kUnicodeReplacementCharacter, so we don't have to do special
-  // checking after failure, just pass through the failure to the caller.
-  int32_t char_value;
-  bool success = ReadUTFCharLossy(str, begin, length, &char_value);
-  AppendUTF8EscapedValue(char_value, output);
-  return success;
-}
-
 // Handles UTF-8 input. See the wide version above for usage.
 inline bool AppendUTF8EscapedChar(const char* str,
                                   size_t* begin,
@@ -348,36 +283,9 @@ void AppendInvalidNarrowString(const char* spec,
                                size_t begin,
                                size_t end,
                                CanonOutput* output);
-void AppendInvalidNarrowString(const char16_t* spec,
-                               size_t begin,
-                               size_t end,
-                               CanonOutput* output);
 
 // Misc canonicalization helpers ----------------------------------------------
 
-// Converts between UTF-8 and UTF-16, returning true on successful conversion.
-// The output will be appended to the given canonicalizer output (so make sure
-// it's empty if you want to replace).
-//
-// On invalid input, this will still write as much output as possible,
-// replacing the invalid characters with the "invalid character". It will
-// return false in the failure case, and the caller should not continue as
-// normal.
-
-bool ConvertUTF16ToUTF8(const char16_t* input,
-                        size_t input_len,
-                        CanonOutput* output);
-
-bool ConvertUTF8ToUTF16(const char* input,
-                        size_t input_len,
-                        CanonOutputT<char16_t>* output);
-
-// Converts from UTF-16 to 8-bit using the character set converter. If the
-// converter is NULL, this will use UTF-8.
-void ConvertUTF16ToQueryEncoding(const char16_t* input,
-                                 const Component& query,
-                                 CharsetConverter* converter,
-                                 CanonOutput* output);
 
 // Applies the replacements to the given component source. The component source
 // should be pre-initialized to the "old" base. That is, all pointers will
@@ -393,36 +301,10 @@ void SetupOverrideComponents(const char* base,
                              URLComponentSource<char>* source,
                              Parsed* parsed);
 
-// Like the above 8-bit version, except that it additionally converts the
-// UTF-16 input to UTF-8 before doing the overrides.
-//
-// The given utf8_buffer is used to store the converted components. They will
-// be appended one after another, with the parsed structure identifying the
-// appropriate substrings. This buffer is a parameter because the source has
-// no storage, so the buffer must have the same lifetime as the source
-// parameter owned by the caller.
-//
-// THE CALLER MUST NOT ADD TO THE |utf8_buffer| AFTER THIS CALL. Members of
-// |source| will point into this buffer, which could be invalidated if
-// additional data is added and the CanonOutput resizes its buffer.
-//
-// Returns true on success. False means that the input was not valid UTF-16,
-// although we will have still done the override with "invalid characters" in
-// place of errors.
-bool SetupUTF16OverrideComponents(const char* base,
-                                  const Replacements<char16_t>& repl,
-                                  CanonOutput* utf8_buffer,
-                                  URLComponentSource<char>* source,
-                                  Parsed* parsed);
 
 // Implemented in url_canon_path.cc, these are required by the relative URL
 // resolver as well, so we declare them here.
 bool CanonicalizePartialPathInternal(const char* spec,
-                                     const Component& path,
-                                     size_t path_begin_in_output,
-                                     CanonMode canon_mode,
-                                     CanonOutput* output);
-bool CanonicalizePartialPathInternal(const char16_t* spec,
                                      const Component& path,
                                      size_t path_begin_in_output,
                                      CanonMode canon_mode,
@@ -436,8 +318,6 @@ bool CanonicalizePartialPathInternal(const char16_t* spec,
 // Exported for tests.
 
 int FindWindowsDriveLetter(const char* spec, int begin, int end);
-
-int FindWindowsDriveLetter(const char16_t* spec, int begin, int end);
 
 #ifndef WIN32
 

@@ -140,39 +140,6 @@ void DoOverrideComponent(const char* override_source,
   }
 }
 
-// Similar to DoOverrideComponent except that it takes a UTF-16 input and does
-// not actually set the output character pointer.
-//
-// The input is converted to UTF-8 at the end of the given buffer as a temporary
-// holding place. The component identifying the portion of the buffer used in
-// the |utf8_buffer| will be specified in |*dest_component|.
-//
-// This will not actually set any |dest| pointer like DoOverrideComponent
-// does because all of the pointers will point into the |utf8_buffer|, which
-// may get resized while we're overriding a subsequent component. Instead, the
-// caller should use the beginning of the |utf8_buffer| as the string pointer
-// for all components once all overrides have been prepared.
-bool PrepareUTF16OverrideComponent(const char16_t* override_source,
-                                   const Component& override_component,
-                                   CanonOutput* utf8_buffer,
-                                   Component* dest_component) {
-  bool success = true;
-  if (override_source) {
-    if (!override_component.is_valid()) {
-      // Non-"valid" component (means delete), so we need to preserve that.
-      *dest_component = Component();
-    } else {
-      // Convert to UTF-8.
-      dest_component->begin = utf8_buffer->length();
-      success = ConvertUTF16ToUTF8(&override_source[override_component.begin],
-                                   static_cast<size_t>(override_component.len),
-                                   utf8_buffer);
-      dest_component->len = utf8_buffer->length() - dest_component->begin;
-    }
-  }
-  return success;
-}
-
 }  // namespace
 
 // See the header file for this array's declaration.
@@ -307,25 +274,8 @@ void AppendStringOfType(const char* source,
   DoAppendStringOfType<char, unsigned char>(source, length, type, output);
 }
 
-void AppendStringOfType(const char16_t* source,
-                        size_t length,
-                        SharedCharTypes type,
-                        CanonOutput* output) {
-  DoAppendStringOfType<char16_t, char16_t>(source, length, type, output);
-}
 // TODO(xiezuobing):
 bool ReadUTFCharLossy(const char* str,
-                      size_t* begin,
-                      size_t length,
-                      int32_t* code_point_out) {
-  if (!base::ReadUnicodeCharacter(str, length, begin, code_point_out)) {
-    *code_point_out = kUnicodeReplacementCharacter;
-    return false;
-  }
-  return true;
-}
-// TODO(xiezuobing):
-bool ReadUTFCharLossy(const char16_t* str,
                       size_t* begin,
                       size_t length,
                       int32_t* code_point_out) {
@@ -341,37 +291,6 @@ void AppendInvalidNarrowString(const char* spec,
                                size_t end,
                                CanonOutput* output) {
   DoAppendInvalidNarrowString<char, unsigned char>(spec, begin, end, output);
-}
-
-void AppendInvalidNarrowString(const char16_t* spec,
-                               size_t begin,
-                               size_t end,
-                               CanonOutput* output) {
-  DoAppendInvalidNarrowString<char16_t, char16_t>(spec, begin, end, output);
-}
-
-bool ConvertUTF16ToUTF8(const char16_t* input,
-                        size_t input_len,
-                        CanonOutput* output) {
-  bool success = true;
-  for (size_t i = 0; i < input_len; i++) {
-    int32_t code_point;
-    success &= ReadUTFCharLossy(input, &i, input_len, &code_point);
-    AppendUTF8Value(code_point, output);
-  }
-  return success;
-}
-
-bool ConvertUTF8ToUTF16(const char* input,
-                        size_t input_len,
-                        CanonOutputT<char16_t>* output) {
-  bool success = true;
-  for (size_t i = 0; i < input_len; i++) {
-    int32_t code_point;
-    success &= ReadUTFCharLossy(input, &i, input_len, &code_point);
-    AppendUTF16Value(code_point, output);
-  }
-  return success;
 }
 
 void SetupOverrideComponents(const char* base,
@@ -407,59 +326,6 @@ void SetupOverrideComponents(const char* base,
                       &parsed->query);
   DoOverrideComponent(repl_source.ref, repl_parsed.ref, &source->ref,
                       &parsed->ref);
-}
-
-bool SetupUTF16OverrideComponents(const char* base,
-                                  const Replacements<char16_t>& repl,
-                                  CanonOutput* utf8_buffer,
-                                  URLComponentSource<char>* source,
-                                  Parsed* parsed) {
-  bool success = true;
-
-  // Get the source and parsed structures of the things we are replacing.
-  const URLComponentSource<char16_t>& repl_source = repl.sources();
-  const Parsed& repl_parsed = repl.components();
-
-  success &= PrepareUTF16OverrideComponent(
-      repl_source.scheme, repl_parsed.scheme, utf8_buffer, &parsed->scheme);
-  success &=
-      PrepareUTF16OverrideComponent(repl_source.username, repl_parsed.username,
-                                    utf8_buffer, &parsed->username);
-  success &=
-      PrepareUTF16OverrideComponent(repl_source.password, repl_parsed.password,
-                                    utf8_buffer, &parsed->password);
-  success &= PrepareUTF16OverrideComponent(repl_source.host, repl_parsed.host,
-                                           utf8_buffer, &parsed->host);
-  success &= PrepareUTF16OverrideComponent(repl_source.port, repl_parsed.port,
-                                           utf8_buffer, &parsed->port);
-  success &= PrepareUTF16OverrideComponent(repl_source.path, repl_parsed.path,
-                                           utf8_buffer, &parsed->path);
-  success &= PrepareUTF16OverrideComponent(repl_source.query, repl_parsed.query,
-                                           utf8_buffer, &parsed->query);
-  success &= PrepareUTF16OverrideComponent(repl_source.ref, repl_parsed.ref,
-                                           utf8_buffer, &parsed->ref);
-
-  // PrepareUTF16OverrideComponent will not have set the data pointer since the
-  // buffer could be resized, invalidating the pointers. We set the data
-  // pointers for affected components now that the buffer is finalized.
-  if (repl_source.scheme)
-    source->scheme = utf8_buffer->data();
-  if (repl_source.username)
-    source->username = utf8_buffer->data();
-  if (repl_source.password)
-    source->password = utf8_buffer->data();
-  if (repl_source.host)
-    source->host = utf8_buffer->data();
-  if (repl_source.port)
-    source->port = utf8_buffer->data();
-  if (repl_source.path)
-    source->path = utf8_buffer->data();
-  if (repl_source.query)
-    source->query = utf8_buffer->data();
-  if (repl_source.ref)
-    source->ref = utf8_buffer->data();
-
-  return success;
 }
 
 #ifndef WIN32

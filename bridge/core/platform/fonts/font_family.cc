@@ -26,7 +26,6 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "font_family.h"
-
 #include "font_family_names.h"
 //#include "core/platform/fonts/font_cache.h"
 
@@ -63,13 +62,13 @@ std::string FontFamily::ToString() const {
 
 /*static*/ FontFamily::Type FontFamily::InferredTypeFor(
     const std::string& family_name) {
-  return (family_name == font_family_names::kcursive ||
-          family_name == font_family_names::kfantasy ||
-          family_name == font_family_names::kmonospace ||
-          family_name == font_family_names::ksansSerif ||
-          family_name == font_family_names::kserif ||
-          family_name == font_family_names::ksystemUi ||
-          family_name == font_family_names::kmath)
+  return (family_name == font_family_names_stdstring::kcursive ||
+          family_name == font_family_names_stdstring::kfantasy ||
+          family_name == font_family_names_stdstring::kmonospace ||
+          family_name == font_family_names_stdstring::ksansSerif ||
+          family_name == font_family_names_stdstring::kserif ||
+          family_name == font_family_names_stdstring::kSystemUI ||
+          family_name == font_family_names_stdstring::kmath)
              ? Type::kGenericFamily
              : Type::kFamilyName;
 }

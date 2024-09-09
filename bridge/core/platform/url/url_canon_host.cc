@@ -202,7 +202,6 @@ constexpr size_t kMaxHostBufferLength = kMaxHostLength * 5;
 
 constexpr size_t kTempHostBufferLen = 1024;
 using StackBuffer = RawCanonOutputT<char, kTempHostBufferLen>;
-using StackBufferW = RawCanonOutputT<char16_t, kTempHostBufferLen>;
 
 // Scans a host name and fills in the output flags according to what we find.
 // |has_non_ascii| will be true if there are any non-7-bit characters, and
@@ -314,15 +313,14 @@ bool DoHostSubstring(const CHAR* spec,
   return success;
 }
 
-template <typename CharT>
-bool DoOpaqueHost(const std::basic_string_view<CharT> host,
+bool DoOpaqueHost(const std::basic_string_view<char> host,
                   CanonOutput& output) {
   // URL Standard: https://url.spec.whatwg.org/#concept-opaque-host-parser
 
   size_t host_len = host.size();
 
   for (size_t i = 0; i < host_len; ++i) {
-    char16_t ch = host[i];
+    char ch = host[i];
     // The characters '[', ':', and ']', are checked later in
     // `CanonicalizeIPv6Address` function.
     if (ch != '[' && ch != ']' && ch != ':' && IsForbiddenHostCodePoint(ch)) {
@@ -431,14 +429,6 @@ bool CanonicalizeHost(const char* spec,
   return CanonicalizeSpecialHost(spec, host, *output, *out_host);
 }
 
-bool CanonicalizeHost(const char16_t* spec,
-                      const Component& host,
-                      CanonOutput* output,
-                      Component* out_host) {
-  DCHECK(output);
-  DCHECK(out_host);
-  return CanonicalizeSpecialHost(spec, host, *output, *out_host);
-}
 
 bool CanonicalizeSpecialHost(const char* spec,
                              const Component& host,
@@ -447,17 +437,6 @@ bool CanonicalizeSpecialHost(const char* spec,
   CanonHostInfo host_info;
   DoHost<char, unsigned char, CanonMode::kSpecialURL>(spec, host, output,
                                                       host_info);
-  out_host = host_info.out_host;
-  return (host_info.family != CanonHostInfo::BROKEN);
-}
-
-bool CanonicalizeSpecialHost(const char16_t* spec,
-                             const Component& host,
-                             CanonOutput& output,
-                             Component& out_host) {
-  CanonHostInfo host_info;
-  DoHost<char16_t, char16_t, CanonMode::kSpecialURL>(spec, host, output,
-                                                     host_info);
   out_host = host_info.out_host;
   return (host_info.family != CanonHostInfo::BROKEN);
 }
@@ -473,27 +452,8 @@ bool CanonicalizeNonSpecialHost(const char* spec,
   return (host_info.family != CanonHostInfo::BROKEN);
 }
 
-bool CanonicalizeNonSpecialHost(const char16_t* spec,
-                                const Component& host,
-                                CanonOutput& output,
-                                Component& out_host) {
-  CanonHostInfo host_info;
-  DoHost<char16_t, char16_t, CanonMode::kNonSpecialURL>(spec, host, output,
-                                                        host_info);
-  out_host = host_info.out_host;
-  return (host_info.family != CanonHostInfo::BROKEN);
-}
 
 void CanonicalizeHostVerbose(const char* spec,
-                             const Component& host,
-                             CanonOutput* output,
-                             CanonHostInfo* host_info) {
-  DCHECK(output);
-  DCHECK(host_info);
-  CanonicalizeSpecialHostVerbose(spec, host, *output, *host_info);
-}
-
-void CanonicalizeHostVerbose(const char16_t* spec,
                              const Component& host,
                              CanonOutput* output,
                              CanonHostInfo* host_info) {
@@ -510,24 +470,10 @@ void CanonicalizeSpecialHostVerbose(const char* spec,
                                                       host_info);
 }
 
-void CanonicalizeSpecialHostVerbose(const char16_t* spec,
-                                    const Component& host,
-                                    CanonOutput& output,
-                                    CanonHostInfo& host_info) {
-  DoHost<char16_t, char16_t, CanonMode::kSpecialURL>(spec, host, output,
-                                                     host_info);
-}
-
 bool CanonicalizeHostSubstring(const char* spec,
                                const Component& host,
                                CanonOutput* output) {
   return DoHostSubstring<char, unsigned char>(spec, host, output);
-}
-
-bool CanonicalizeHostSubstring(const char16_t* spec,
-                               const Component& host,
-                               CanonOutput* output) {
-  return DoHostSubstring<char16_t, char16_t>(spec, host, output);
 }
 
 void CanonicalizeNonSpecialHostVerbose(const char* spec,
@@ -536,14 +482,6 @@ void CanonicalizeNonSpecialHostVerbose(const char* spec,
                                        CanonHostInfo& host_info) {
   DoHost<char, unsigned char, CanonMode::kNonSpecialURL>(spec, host, output,
                                                          host_info);
-}
-
-void CanonicalizeNonSpecialHostVerbose(const char16_t* spec,
-                                       const Component& host,
-                                       CanonOutput& output,
-                                       CanonHostInfo& host_info) {
-  DoHost<char16_t, char16_t, CanonMode::kNonSpecialURL>(spec, host, output,
-                                                        host_info);
 }
 
 }  // namespace url

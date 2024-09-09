@@ -87,7 +87,7 @@ class CSSSelectorList {
   static std::shared_ptr<CSSSelectorList> AdoptSelectorVector(std::span<CSSSelector> selector_vector);
   static void AdoptSelectorVector(std::span<CSSSelector> selector_vector, CSSSelector* selector_array);
 
-  CSSSelectorList* Copy() const;
+  std::shared_ptr<CSSSelectorList> Copy() const;
 
   bool IsValid() const {
     return first_selector_[0].Match() != CSSSelector::kInvalidList;
@@ -119,8 +119,8 @@ class CSSSelectorList {
     return SelectorIndex(*next);
   }
 
-  AtomicString SelectorsText() const { return SelectorsText(First()); }
-  static AtomicString SelectorsText(const CSSSelector* first);
+  std::string SelectorsText() const { return SelectorsText(First()); }
+  static std::string SelectorsText(const CSSSelector* first);
 
   // Selector lists don't know their length, computing it is O(n) and should be
   // avoided when possible. Instead iterate from first() and using next().
@@ -149,6 +149,19 @@ class CSSSelectorList {
   // array is indicated by is_last_in_selector_list_ bit in the last item.
   CSSSelector first_selector_[1];
 };
+
+inline const CSSSelector* CSSSelectorList::Next(const CSSSelector& current) {
+  return Next(const_cast<CSSSelector&>(current));
+}
+
+inline CSSSelector* CSSSelectorList::Next(CSSSelector& current) {
+  // Skip subparts of compound selectors.
+  CSSSelector* last = &current;
+  while (!last->IsLastInComplexSelector()) {
+    last++;
+  }
+  return last->IsLastInSelectorList() ? nullptr : last + 1;
+}
 
 }  // namespace webf
 

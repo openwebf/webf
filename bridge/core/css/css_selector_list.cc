@@ -45,6 +45,21 @@ void CSSSelectorList::AdoptSelectorVector(std::span<CSSSelector> selector_vector
   selector_array[selector_vector.size() - 1].SetLastInSelectorList(true);
 }
 
+std::shared_ptr<CSSSelectorList> CSSSelectorList::Copy() const {
+  if (!IsValid()) {
+    return CSSSelectorList::Empty();
+  }
+
+  unsigned length = ComputeLength();
+  DCHECK(length);
+  auto list = std::make_shared<CSSSelectorList>(webf::PassKey<CSSSelectorList>());
+  for (unsigned i = 0; i < length; ++i) {
+    new (&list->first_selector_[i]) CSSSelector(first_selector_[i]);
+  }
+
+  return list;
+}
+
 std::shared_ptr<CSSSelectorList> CSSSelectorList::AdoptSelectorVector(std::span<CSSSelector> selector_vector) {
   if (selector_vector.empty()) {
     return CSSSelectorList::Empty();
@@ -65,12 +80,37 @@ unsigned CSSSelectorList::MaximumSpecificity() const {
   return specificity;
 }
 
+std::string CSSSelectorList::SelectorsText(const CSSSelector* first) {
+  StringBuilder result;
+
+  for (const CSSSelector* s = first; s; s = Next(*s)) {
+    if (s != first) {
+      result.Append(", ");
+    }
+    result.Append(s->SelectorText());
+  }
+
+  return result.ReleaseString();
+}
+
+
+unsigned CSSSelectorList::ComputeLength() const {
+  if (!IsValid()) {
+    return 0;
+  }
+  const CSSSelector* current = First();
+  while (!current->IsLastInSelectorList()) {
+    ++current;
+  }
+  return SelectorIndex(*current) + 1;
+}
+
 void CSSSelectorList::Reparent(CSSSelector* selector_list, std::shared_ptr<StyleRule> new_parent) {
-//  DCHECK(selector_list);
-//  CSSSelector* current = selector_list;
-//  do {
-//    current->Reparent(new_parent);
-//  } while (!(current++)->IsLastInSelectorList());
+  //  DCHECK(selector_list);
+  //  CSSSelector* current = selector_list;
+  //  do {
+  //    current->Reparent(new_parent);
+  //  } while (!(current++)->IsLastInSelectorList());
 }
 
 }  // namespace webf

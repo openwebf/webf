@@ -26,8 +26,7 @@ namespace {
 // Canonicalize the given |component| from |source| into |output| and
 // |new_component|. If |separator| is non-zero, it is pre-pended to |output|
 // prior to the canonicalized component; i.e. for the '?' or '#' characters.
-template <typename CHAR, typename UCHAR>
-void DoCanonicalizePathComponent(const CHAR* source,
+void DoCanonicalizePathComponent(const char* source,
                                  const Component& component,
                                  char separator,
                                  CanonOutput* output,
@@ -44,7 +43,7 @@ void DoCanonicalizePathComponent(const CHAR* source,
     new_component->begin = output->length();
     size_t end = static_cast<size_t>(component.end());
     for (size_t i = static_cast<size_t>(component.begin); i < end; i++) {
-      UCHAR uch = static_cast<UCHAR>(source[i]);
+      char uch = static_cast<char>(source[i]);
       if (IsInC0ControlPercentEncodeSet(uch)) {
         AppendUTF8EscapedChar(source, &i, end, output);
       } else {
@@ -78,7 +77,7 @@ bool DoCanonicalizePathURL(const URLComponentSource<CHAR>& source,
   //
   // Note: parsing the path part should never cause a failure, see
   // https://url.spec.whatwg.org/#cannot-be-a-base-url-path-state
-  DoCanonicalizePathComponent<CHAR, UCHAR>(source.path, parsed.path, '\0',
+  DoCanonicalizePathComponent(source.path, parsed.path, '\0',
                                            output, &new_parsed->path);
 
   // Similar to mailto:, always use the default UTF-8 charset converter for
@@ -102,29 +101,12 @@ bool CanonicalizePathURL(const char* spec,
       URLComponentSource<char>(spec), parsed, output, new_parsed);
 }
 
-bool CanonicalizePathURL(const char16_t* spec,
-                         int spec_len,
-                         const Parsed& parsed,
-                         CanonOutput* output,
-                         Parsed* new_parsed) {
-  return DoCanonicalizePathURL<char16_t, char16_t>(
-      URLComponentSource<char16_t>(spec), parsed, output, new_parsed);
-}
-
 void CanonicalizePathURLPath(const char* source,
                              const Component& component,
                              CanonOutput* output,
                              Component* new_component) {
-  DoCanonicalizePathComponent<char, unsigned char>(source, component, '\0',
+  DoCanonicalizePathComponent(source, component, '\0',
                                                    output, new_component);
-}
-
-void CanonicalizePathURLPath(const char16_t* source,
-                             const Component& component,
-                             CanonOutput* output,
-                             Component* new_component) {
-  DoCanonicalizePathComponent<char16_t, char16_t>(source, component, '\0',
-                                                  output, new_component);
 }
 
 bool ReplacePathURL(const char* base,
@@ -135,19 +117,6 @@ bool ReplacePathURL(const char* base,
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupOverrideComponents(base, replacements, &source, &parsed);
-  return DoCanonicalizePathURL<char, unsigned char>(
-      source, parsed, output, new_parsed);
-}
-
-bool ReplacePathURL(const char* base,
-                    const Parsed& base_parsed,
-                    const Replacements<char16_t>& replacements,
-                    CanonOutput* output,
-                    Parsed* new_parsed) {
-  RawCanonOutput<1024> utf8;
-  URLComponentSource<char> source(base);
-  Parsed parsed(base_parsed);
-  SetupUTF16OverrideComponents(base, replacements, &utf8, &source, &parsed);
   return DoCanonicalizePathURL<char, unsigned char>(
       source, parsed, output, new_parsed);
 }
