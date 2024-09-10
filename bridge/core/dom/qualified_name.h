@@ -165,8 +165,8 @@ class QualifiedName {
   std::shared_ptr<QualifiedNameImpl> impl_ = nullptr;
 };
 
-DEFINE_GLOBAL(QualifiedName, g_any_name);
-DEFINE_GLOBAL(QualifiedName, g_null_name);
+extern const QualifiedName& g_any_name;
+extern const QualifiedName& g_null_name;
 
 template <>
 struct HashTraits<QualifiedName::QualifiedNameImpl*> : GenericHashTraits<QualifiedName::QualifiedNameImpl*> {

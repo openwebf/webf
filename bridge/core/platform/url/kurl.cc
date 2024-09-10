@@ -49,7 +49,6 @@
 #include "core/base/strings/string_number_conversions.h"
 #include "scheme_registry.h"
 #include "url_constants.h"
-#include "url_features.h"
 #include "url_util.h"
 #include "url_canon.h"
 #ifndef NDEBUG
@@ -803,16 +802,10 @@ bool KURL::CanSetPathname() const {
 }
 
 bool KURL::CanRemoveHost() const {
- if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
-   return IsHierarchical() && !IncludesCredentials() && !HasPort();
- }
  return false;
 }
 
 bool KURL::IsHierarchical() const {
- if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
-   return IsStandard() || (IsValid() && !HasOpaquePath());
- }
  return IsStandard();
 }
 
@@ -920,13 +913,11 @@ void KURL::Init(const KURL& base,
  InitInnerURL();
  AssertStringSpecIsASCII();
 
- if (!url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
-   // This assertion implicitly assumes that "javascript:" scheme URL is always
-   // valid, but that is no longer true when
-   // kStandardCompliantNonSpecialSchemeURLParsing feature is enabled. e.g.
-   // "javascript://^", which is an invalid URL.
-   DCHECK(!::webf::ProtocolIsJavaScript(string_) || ProtocolIsJavaScript());
- }
+ // This assertion implicitly assumes that "javascript:" scheme URL is always
+ // valid, but that is no longer true when
+ // kStandardCompliantNonSpecialSchemeURLParsing feature is enabled. e.g.
+ // "javascript://^", which is an invalid URL.
+ DCHECK(!::webf::ProtocolIsJavaScript(string_) || ProtocolIsJavaScript());
 }
 
 void KURL::InitInnerURL() {

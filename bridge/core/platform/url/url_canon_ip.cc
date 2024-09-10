@@ -12,7 +12,6 @@
 #include <limits>
 
 #include "url_canon_internal.h"
-#include "url_features.h"
 
 namespace webf {
 

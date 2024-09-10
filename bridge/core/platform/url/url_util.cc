@@ -18,7 +18,6 @@
 #include "core/base/strings/string_util.h"
 #include "url_canon_internal.h"
 #include "url_constants.h"
-#include "url_features.h"
 #include "url_file.h"
 #include "url_parse_internal.h"
 #include "url_util_internal.h"
@@ -289,8 +288,7 @@ bool DoCanonicalize(const char* spec,
     success = CanonicalizeStandardURL(spec, ParseStandardURL(std::basic_string_view(spec, spec_len)), scheme_type,
                                       output, output_parsed);
 
-  } else if (!url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
-             DoCompareSchemeComponent(spec, scheme, url::kMailToScheme)) {
+  } else if (DoCompareSchemeComponent(spec, scheme, url::kMailToScheme)) {
     // Mailto URLs are treated like standard URLs, with only a scheme, path,
     // and query.
     //
@@ -301,7 +299,7 @@ bool DoCanonicalize(const char* spec,
 
   } else {
     // Non-special scheme URLs like data: and javascript:.
-    if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing() && !DoIsOpaqueNonSpecial(spec, scheme)) {
+    if (!DoIsOpaqueNonSpecial(spec, scheme)) {
       success = CanonicalizeNonSpecialURL(
           spec, spec_len, ParseNonSpecialURLInternal(std::basic_string_view(spec, spec_len), trim_path_end), *output,
           *output_parsed);
@@ -338,9 +336,7 @@ bool DoResolveRelative(const char* base_spec,
 
   bool is_hierarchical_base;
 
-  if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
-    is_hierarchical_base = base_parsed.scheme.is_nonempty() && !base_parsed.has_opaque_path;
-  } else {
+  {
     SchemeType unused_scheme_type = SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION;
     is_hierarchical_base =
         base_parsed.scheme.is_nonempty() && DoIsStandard(base_spec, base_parsed.scheme, &unused_scheme_type);
@@ -470,14 +466,10 @@ bool DoReplaceComponents(const char* spec,
   if (DoIsStandard(spec, parsed.scheme, &scheme_type)) {
     return ReplaceStandardURL(spec, parsed, replacements, scheme_type, output, out_parsed);
   }
-  if (!IsUsingStandardCompliantNonSpecialSchemeURLParsing() &&
-      DoCompareSchemeComponent(spec, parsed.scheme, url::kMailToScheme)) {
+  if (DoCompareSchemeComponent(spec, parsed.scheme, url::kMailToScheme)) {
     return ReplaceMailtoURL(spec, parsed, replacements, output, out_parsed);
   }
 
-  if (IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
-    return ReplaceNonSpecialURL(spec, parsed, replacements, *output, *out_parsed);
-  }
   return ReplacePathURL(spec, parsed, replacements, output, out_parsed);
 }
 

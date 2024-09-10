@@ -27,6 +27,9 @@
 
 namespace webf {
 
+DEFINE_GLOBAL(QualifiedName, g_any_name);
+DEFINE_GLOBAL(QualifiedName, g_null_name);
+
 using QualifiedNameCache = std::unordered_set<std::shared_ptr<QualifiedName::QualifiedNameImpl>>;
 
 static QualifiedNameCache& GetQualifiedNameCache() {

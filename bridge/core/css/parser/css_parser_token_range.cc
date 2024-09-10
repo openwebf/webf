@@ -7,6 +7,7 @@
  */
 
 #include "css_parser_token_range.h"
+#include "core/platform/static_constructors.h"
 
 namespace webf {
 

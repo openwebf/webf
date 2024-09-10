@@ -36,6 +36,7 @@
 #include "core/style/computed_style_constants.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/dom/qualified_name.h"
+#include "global_string.h"
 
 namespace webf {
 

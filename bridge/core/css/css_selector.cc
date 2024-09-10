@@ -1856,6 +1856,4 @@ bool CSSSelector::RareData::MatchNth(unsigned unsigned_count) {
   return (NthBValue() - count) % (-NthAValue()) == 0;
 }
 
-QualifiedName::~QualifiedName() = default;
-
 }  // namespace webf

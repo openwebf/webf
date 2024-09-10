@@ -130,10 +130,6 @@ class __thisIsHereToForceASemicolonAfterThisMacro;
     return !(a == b);                                          \
   }
 
-#define DEFINE_GLOBAL(type, name)                                    \
-  std::aligned_storage_t<sizeof(type), alignof(type)> name##Storage; \
-  const type& name = *std::launder(reinterpret_cast<type*>(&name##Storage))
-
 #define USING_FAST_MALLOC(type) USING_FAST_MALLOC_INTERNAL(type)
 
 #define USING_FAST_MALLOC_WITH_TYPE_NAME(type) USING_FAST_MALLOC_INTERNAL(type)

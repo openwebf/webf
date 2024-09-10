@@ -22,7 +22,6 @@
 #include "core/base/bits.h"
 #include "core/base/numerics/safe_conversions.h"
 #include "core/base/strings/utf_string_conversion_utils.h"
-#include "core/platform/url/url_features.h"
 
 namespace webf {
 
@@ -310,12 +309,10 @@ void SetupOverrideComponents(const char* base,
 
   DoOverrideComponent(repl_source.host, repl_parsed.host, &source->host,
                       &parsed->host);
-  if (!url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
-    // For backward compatibility, the following is probably required while the
-    // flag is disabled by default.
-    if (parsed->host.len == -1) {
-      parsed->host.len = 0;
-    }
+  // For backward compatibility, the following is probably required while the
+  // flag is disabled by default.
+  if (parsed->host.len == -1) {
+    parsed->host.len = 0;
   }
 
   DoOverrideComponent(repl_source.port, repl_parsed.port, &source->port,

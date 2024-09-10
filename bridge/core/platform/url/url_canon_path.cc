@@ -15,7 +15,6 @@
 
 #include "url_canon.h"
 #include "url_canon_internal.h"
-#include "url_features.h"
 #include "url_parse_internal.h"
 
 namespace webf {

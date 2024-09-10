@@ -18,7 +18,6 @@
 #include "core/css/css_primitive_value.h"
 #include "core/platform/gfx/geometry/point_f.h"
 #include "core/platform/gfx/geometry/size_f.h"
-// #include "core/css/css_primitive_value_mappings.h"
 #include "core/css/css_quad_value.h"
 #include "core/css/css_ratio_value.h"
 #include "core/css/css_reflect_value.h"
@@ -52,23 +51,6 @@
 #include "core/css/style_engine.h"
 // #include "core/css/zoom_adjusted_pixel_value.h"
 #include "css_value_keywords.h"
-// #include "core/frame/deprecation/deprecation.h"
-// #include "core/frame/settings.h"
-// #include "core/frame/web_feature.h"
-// #include "core/inspector/console_message.h"
-// #include "core/keywords.h"
-// #include "core/layout/layout_box.h"
-// #include "core/layout/layout_object.h"
-// #include "core/style/computed_style.h"
-// #include "core/style/coord_box_offset_path_operation.h"
-// #include "core/style/geometry_box_clip_path_operation.h"
-// #include "core/style/grid_area.h"
-// #include "core/style/paint_order_array.h"
-// #include "core/style/reference_clip_path_operation.h"
-// #include "core/style/reference_offset_path_operation.h"
-// #include "core/style/shape_clip_path_operation.h"
-// #include "core/style/shape_offset_path_operation.h"
-// #include "core/style/style_overflow_clip_margin.h"
 #include "core/platform/geometry/layout_unit.h"
 #include "core/platform/geometry/length.h"
 #include "core/platform/graphics/color.h"
@@ -3021,32 +3003,22 @@ void OverflowX::ApplyInherit(webf::StyleResolverState&) const {}
 void OverflowX::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
 void OverflowX::ApplyInitial(webf::StyleResolverState&) const {}
 
-void TextAlign::ApplyInherit(webf::StyleResolverState&) const {}
 void TextAlign::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
-void TextAlign::ApplyInitial(webf::StyleResolverState&) const {}
 
 void Color::ApplyInherit(webf::StyleResolverState&) const {}
 void Color::ApplyInitial(webf::StyleResolverState&) const {}
 void Color::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
 
-void LineClamp::ApplyInherit(webf::StyleResolverState&) const {}
 void LineClamp::ApplyInitial(webf::StyleResolverState&) const {}
-void LineClamp::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
 
-void Direction::ApplyInherit(webf::StyleResolverState&) const {}
-void Direction::ApplyInitial(webf::StyleResolverState&) const {}
 void Direction::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
 
 void Content::ApplyInherit(webf::StyleResolverState&) const {}
 void Content::ApplyInitial(webf::StyleResolverState&) const {}
 void Content::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
 
-void Resize::ApplyInherit(webf::StyleResolverState&) const {}
-void Resize::ApplyInitial(webf::StyleResolverState&) const {}
 void Resize::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
 
-void Filter::ApplyInherit(webf::StyleResolverState&) const {}
-void Filter::ApplyInitial(webf::StyleResolverState&) const {}
 void Filter::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
 
 void Size::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
@@ -3056,12 +3028,6 @@ void BackgroundAttachment::ApplyValue(webf::StyleResolverState&,
                                       const webf::CSSValue&,
                                       webf::CSSProperty::ValueMode) const {}
 void BackgroundAttachment::ApplyInitial(webf::StyleResolverState&) const {}
-
-void TextDecorationColor::ApplyInherit(webf::StyleResolverState&) const {}
-void TextDecorationColor::ApplyInitial(webf::StyleResolverState&) const {}
-void TextDecorationColor::ApplyValue(webf::StyleResolverState&,
-                                     const webf::CSSValue&,
-                                     webf::CSSProperty::ValueMode) const {}
 
 void BackgroundPositionY::ApplyInherit(webf::StyleResolverState&) const {}
 void BackgroundPositionY::ApplyInitial(webf::StyleResolverState&) const {}
@@ -3081,11 +3047,6 @@ void BackgroundBlendMode::ApplyValue(webf::StyleResolverState&,
                                      const webf::CSSValue&,
                                      webf::CSSProperty::ValueMode) const {}
 
-void TransitionDuration::ApplyInherit(webf::StyleResolverState&) const {}
-void TransitionDuration::ApplyInitial(webf::StyleResolverState&) const {}
-void TransitionDuration::ApplyValue(webf::StyleResolverState&,
-                                    const webf::CSSValue&,
-                                    webf::CSSProperty::ValueMode) const {}
 std::shared_ptr<const CSSValue> TransitionDuration::InitialValue() const {
   thread_local static std::shared_ptr<const CSSValue> value =
       (CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kSeconds));
@@ -3098,32 +3059,26 @@ void TextEmphasisStyle::ApplyValue(webf::StyleResolverState&,
                                    const webf::CSSValue&,
                                    webf::CSSProperty::ValueMode) const {}
 
-void BorderImageSource::ApplyInherit(webf::StyleResolverState&) const {}
-void BorderImageSource::ApplyInitial(webf::StyleResolverState&) const {}
 void BorderImageSource::ApplyValue(webf::StyleResolverState&,
                                    const webf::CSSValue&,
                                    webf::CSSProperty::ValueMode) const {}
 
 void BorderImageRepeat::ApplyInherit(webf::StyleResolverState&) const {}
-void BorderImageRepeat::ApplyInitial(webf::StyleResolverState&) const {}
 void BorderImageRepeat::ApplyValue(webf::StyleResolverState&,
                                    const webf::CSSValue&,
                                    webf::CSSProperty::ValueMode) const {}
 
 void BorderImageOutset::ApplyInherit(webf::StyleResolverState&) const {}
-void BorderImageOutset::ApplyInitial(webf::StyleResolverState&) const {}
 void BorderImageOutset::ApplyValue(webf::StyleResolverState&,
                                    const webf::CSSValue&,
                                    webf::CSSProperty::ValueMode) const {}
 
 void BorderImageWidth::ApplyInherit(webf::StyleResolverState&) const {}
-void BorderImageWidth::ApplyInitial(webf::StyleResolverState&) const {}
 void BorderImageWidth::ApplyValue(webf::StyleResolverState&,
                                   const webf::CSSValue&,
                                   webf::CSSProperty::ValueMode) const {}
 
 void BorderImageSlice::ApplyInherit(webf::StyleResolverState&) const {}
-void BorderImageSlice::ApplyInitial(webf::StyleResolverState&) const {}
 void BorderImageSlice::ApplyValue(webf::StyleResolverState&,
                                   const webf::CSSValue&,
                                   webf::CSSProperty::ValueMode) const {}
@@ -3139,11 +3094,6 @@ void BackgroundOrigin::ApplyInitial(webf::StyleResolverState&) const {}
 void BackgroundOrigin::ApplyValue(webf::StyleResolverState&,
                                   const webf::CSSValue&,
                                   webf::CSSProperty::ValueMode) const {}
-
-void TransitionDelay::ApplyInherit(webf::StyleResolverState&) const {}
-void TransitionDelay::ApplyInitial(webf::StyleResolverState&) const {}
-void TransitionDelay::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {
-}
 
 std::shared_ptr<const CSSValue> TransitionDelay::InitialValue() const {
   return nullptr;
@@ -3168,7 +3118,7 @@ void BackgroundClip::ApplyInherit(webf::StyleResolverState&) const {}
 void BackgroundClip::ApplyInitial(webf::StyleResolverState&) const {}
 
 void VerticalAlign::ApplyInherit(webf::StyleResolverState&) const {}
-void VerticalAlign::ApplyInitial(webf::StyleResolverState&) const {}
+//void VerticalAlign::ApplyInitial(webf::StyleResolverState&) const {}
 void VerticalAlign::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
 
 void OutlineStyle::ApplyInherit(webf::StyleResolverState&) const {}
@@ -3181,12 +3131,9 @@ void ColorScheme::ApplyInitial(webf::StyleResolverState&) const {}
 void ColorScheme::ApplyInherit(webf::StyleResolverState&) const {}
 void ColorScheme::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
 
-void TextIndent::ApplyInherit(webf::StyleResolverState&) const {}
-void TextIndent::ApplyInitial(webf::StyleResolverState&) const {}
 void TextIndent::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
 
 void FontFamily::ApplyInitial(webf::StyleResolverState&) const {}
-void FontFamily::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
 void FontFamily::ApplyInherit(webf::StyleResolverState&) const {}
 
 }  // namespace css_longhand

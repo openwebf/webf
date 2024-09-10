@@ -17,7 +17,6 @@
 #include "url_canon.h"
 #include "url_canon_stdstring.h"
 #include "url_constants.h"
-#include "url_features.h"
 #include "url_util.h"
 
 namespace webf {
@@ -79,13 +78,7 @@ bool IsValidInput(const std::string_view& scheme,
     //
     // TODO: Migrate "content:" and "externalfile:" to be standard schemes, and
     // remove this local scheme exception.
-    if (url::IsUsingStandardCompliantNonSpecialSchemeURLParsing()) {
-      // If the flag is enabled, a host can be empty for non-special URLs.
-      // Therefore, we don't check a host nor port.
-      if (Contains(GetLocalSchemes(), scheme)) {
-        return true;
-      }
-    } else {
+    {
       if (Contains(GetLocalSchemes(), scheme) && host.empty() &&
           port == 0) {
         return true;
@@ -242,8 +235,7 @@ std::string SchemeHostPort::SerializeInternal(url::Parsed* parsed) const {
 }
 
 bool SchemeHostPort::ShouldDiscardHostAndPort(const std::string_view scheme) {
-  return IsAndroidWebViewHackEnabledScheme(scheme) &&
-         IsUsingStandardCompliantNonSpecialSchemeURLParsing();
+  return IsAndroidWebViewHackEnabledScheme(scheme);
 }
 
 std::ostream& operator<<(std::ostream& out,

@@ -31,6 +31,7 @@
 #include "core/platform/geometry/blend.h"
 #include "core/platform/geometry/calculation_value.h"
 #include "foundation/macros.h"
+#include "core/platform/static_constructors.h"
 
 namespace webf {
 
