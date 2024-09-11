@@ -4,21 +4,23 @@
 
 use std::ffi::{c_double, c_void, CString};
 use libc::{boolean_t, c_char};
-use crate::event::Event;
+use crate::element::Element;
+use crate::event::{Event, EventRustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::{ExecutingContext, ExecutingContextRustMethods};
 use crate::{executing_context, OpaquePtr};
 
 #[repr(C)]
 struct EventCallbackContext {
-  pub callback: extern "C" fn(event_callback_context: *const OpaquePtr, event: *const OpaquePtr, exception_state: *const OpaquePtr) -> *const c_void,
+  pub callback: extern "C" fn(event_callback_context: *const OpaquePtr,
+                              event: *const OpaquePtr,
+                              event_method_pointer: *const EventRustMethods,
+                              exception_state: *const OpaquePtr) -> *const c_void,
   pub free_ptr: extern "C" fn(event_callback_context_ptr: *const OpaquePtr) -> *const c_void,
   pub ptr: *const EventCallbackContextData,
 }
 
 struct EventCallbackContextData {
-  event_target_ptr: *const OpaquePtr,
-  event_target_method_pointer: *const EventTargetRustMethods,
   executing_context_ptr: *const OpaquePtr,
   executing_context_method_pointer: *const ExecutingContextRustMethods,
   func: EventListenerCallback,
@@ -63,12 +65,13 @@ pub struct EventTarget {
   method_pointer: *const EventTargetRustMethods,
 }
 
-pub type EventListenerCallback = Box<dyn Fn(&EventTarget)>;
+pub type EventListenerCallback = Box<dyn Fn(&Event)>;
 
 // Define the callback function
 extern "C" fn handle_event_listener_callback(
   event_callback_context_ptr: *const OpaquePtr,
-  event: *const OpaquePtr,
+  event_ptr: *const OpaquePtr,
+  event_method_pointer: *const EventRustMethods,
   exception_state: *const OpaquePtr,
 ) -> *const c_void {
   // Reconstruct the Box and drop it to free the memory
@@ -83,8 +86,8 @@ extern "C" fn handle_event_listener_callback(
     let func = &(*callback_context_data).func;
     let callback_data = &(*callback_context_data);
     let executing_context = ExecutingContext::initialize(callback_data.executing_context_ptr, callback_data.executing_context_method_pointer);
-    let event_target = EventTarget::initialize(callback_data.event_target_ptr, &executing_context, callback_data.event_target_method_pointer);
-    func(&event_target);
+    let event = Event::initialize(event_ptr, &executing_context, event_method_pointer);
+    func(&event);
   }
 
   std::ptr::null()
@@ -116,8 +119,6 @@ impl EventTarget {
     exception_state: &ExceptionState,
   ) -> Result<(), String> {
     let callback_context_data = Box::new(EventCallbackContextData {
-      event_target_ptr: self.ptr(),
-      event_target_method_pointer: self.method_pointer,
       executing_context_ptr: self.context().ptr,
       executing_context_method_pointer: self.context().method_pointer(),
       func: callback,
@@ -148,8 +149,6 @@ impl EventTarget {
     exception_state: &ExceptionState,
   ) -> Result<(), String> {
     let callback_context_data = Box::new(EventCallbackContextData {
-      event_target_ptr: self.ptr(),
-      event_target_method_pointer: self.method_pointer,
       executing_context_ptr: self.context().ptr,
       executing_context_method_pointer: self.context().method_pointer(),
       func: callback,

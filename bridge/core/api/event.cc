@@ -37,7 +37,8 @@ WebFValue<EventTarget, EventTargetWebFMethods> EventWebFMethods::SrcElement(Even
 WebFValue<EventTarget, EventTargetWebFMethods> EventWebFMethods::Target(Event* event) {
   EventTarget* target = event->target();
   target->KeepAlive();
-  return {.value = target, .method_pointer = To<EventTargetWebFMethods>(target->publicMethodPointer())};
+  auto* method_pointer = To<EventTargetWebFMethods>(target->publicMethodPointer());
+  return {.value = target, .method_pointer = method_pointer};
 }
 
 bool EventWebFMethods::IsTrusted(Event* event) {
@@ -62,6 +63,10 @@ void EventWebFMethods::StopImmediatePropagation(Event* event, SharedExceptionSta
 
 void EventWebFMethods::StopPropagation(Event* event, SharedExceptionState* shared_exception_state) {
   event->stopPropagation(shared_exception_state->exception_state);
+}
+
+void EventWebFMethods::Release(Event* event) {
+  event->ReleaseAlive();
 }
 
 }  // namespace webf
