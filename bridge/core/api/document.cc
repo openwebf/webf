@@ -237,18 +237,22 @@ WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::ElementFromPoint(
 }
 
 WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::DocumentElement(webf::Document* document) {
-  return {.value = document->documentElement(),
-          .method_pointer = To<ElementWebFMethods>(document->documentElement()->publicMethodPointer())};
+  auto* document_element = document->documentElement();
+  document_element->KeepAlive();
+  return {.value = document_element,
+          .method_pointer = To<ElementWebFMethods>(document_element->publicMethodPointer())};
 }
 
 WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::Head(webf::Document *document) {
   auto* head = document->head();
+  head->KeepAlive();
   return {.value = head,
           .method_pointer = To<ElementWebFMethods>(head->publicMethodPointer())};
 }
 
 WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::Body(webf::Document *document) {
   auto* body = document->body();
+  body->KeepAlive();
   return {.value = body,
           .method_pointer = To<ElementWebFMethods>(body->publicMethodPointer())};
 }

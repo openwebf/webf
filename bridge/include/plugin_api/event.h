@@ -2,8 +2,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#ifndef WEBF_CORE_RUST_API_EVENT_H_
-#define WEBF_CORE_RUST_API_EVENT_H_
+#ifndef WEBF_CORE_WEBF_API_EVENT_H_
+#define WEBF_CORE_WEBF_API_EVENT_H_
 
 #include "webf_value.h"
 #include "event_target.h"
@@ -27,6 +27,7 @@ using WebFEventGetType = const char* (*)(Event*);
 using WebFEventPreventDefault = void (*)(Event*, SharedExceptionState*);
 using WebFEventStopImmediatePropagation = void (*)(Event*, SharedExceptionState*);
 using WebFEventStopPropagation = void (*)(Event*, SharedExceptionState*);
+using WebFEventRelease = void (*)(Event*);
 
 struct EventWebFMethods : public WebFPublicMethods {
 
@@ -42,6 +43,7 @@ struct EventWebFMethods : public WebFPublicMethods {
   static void PreventDefault(Event* event, SharedExceptionState* shared_exception_state);
   static void StopImmediatePropagation(Event* event, SharedExceptionState* shared_exception_state);
   static void StopPropagation(Event* event, SharedExceptionState* shared_exception_state);
+  static void Release(Event* event);
   double version{1.0};
 
   WebFEventGetBubbles event_get_bubbles{Bubbles};
@@ -56,8 +58,9 @@ struct EventWebFMethods : public WebFPublicMethods {
   WebFEventPreventDefault event_prevent_default{PreventDefault};
   WebFEventStopImmediatePropagation event_stop_immediate_propagation{StopImmediatePropagation};
   WebFEventStopPropagation event_stop_propagation{StopPropagation};
+  WebFEventRelease event_release{Release};
 };
 
 }  // namespace webf
 
-#endif  // WEBF_CORE_RUST_API_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_EVENT_H_

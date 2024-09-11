@@ -13,6 +13,7 @@ typedef struct EventTarget EventTarget;
 typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
 typedef struct Event Event;
+typedef struct EventWebFMethods EventWebFMethods;
 typedef struct WebFEventListenerContext WebFEventListenerContext;
 
 struct WebFAddEventListenerOptions {
@@ -21,7 +22,10 @@ struct WebFAddEventListenerOptions {
   bool capture;
 };
 
-using WebFImplEventCallback = void (*)(WebFEventListenerContext* callback_context, Event* event, SharedExceptionState* shared_exception_state);
+using WebFImplEventCallback = void (*)(WebFEventListenerContext* callback_context,
+                                       Event* event,
+                                       EventWebFMethods* event_methods,
+                                       SharedExceptionState* shared_exception_state);
 using FreePtrFn = void(*)(WebFEventListenerContext* callback_context);
 
 struct WebFEventListenerContext {

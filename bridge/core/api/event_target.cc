@@ -6,6 +6,7 @@
 #include "plugin_api/exception_state.h"
 #include "bindings/qjs/atomic_string.h"
 #include "core/dom/events/event_target.h"
+#include "core/dom/events/event.h"
 
 namespace webf {
 
@@ -27,7 +28,8 @@ class WebFPublicPluginEventListener : public EventListener {
   [[nodiscard]] bool IsPublicPluginEventHandler() const override { return true; }
 
   void Invoke(ExecutingContext* context, Event* event, ExceptionState& exception_state) override {
-    callback_context_->callback(callback_context_, event, shared_exception_state_);
+    event->KeepAlive();
+    callback_context_->callback(callback_context_, event, To<EventWebFMethods>(event->publicMethodPointer()), shared_exception_state_);
   }
 
   [[nodiscard]] bool Matches(const EventListener& other) const override {

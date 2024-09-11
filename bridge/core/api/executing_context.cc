@@ -10,9 +10,11 @@
 namespace webf {
 
 WebFValue<Document, DocumentWebFMethods> ExecutingContextWebFMethods::document(webf::ExecutingContext* context) {
+  auto* document = context->document();
+  document->KeepAlive();
   return {
-      .value = context->document(),
-      .method_pointer = To<DocumentWebFMethods>(context->document()->publicMethodPointer()),
+      .value = document,
+      .method_pointer = To<DocumentWebFMethods>(document->publicMethodPointer()),
   };
 }
 

@@ -1,6 +1,7 @@
 use std::ffi::{c_void, CString};
+use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{initialize_webf_api, RustValue};
+use webf_sys::{element, initialize_webf_api, RustValue};
 use webf_sys::event_target::{AddEventListenerOptions, EventTarget, EventTargetMethods};
 use webf_sys::node::NodeMethods;
 
@@ -10,6 +11,9 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   let exception_state = context.create_exception_state();
   let document = context.document();
 
+  let click_event = document.create_event("custom_click", &exception_state).unwrap();
+  document.dispatch_event(&click_event, &exception_state);
+
   let div_element = document.create_element("div", &exception_state).unwrap();
 
   let event_listener_options = AddEventListenerOptions {
@@ -18,8 +22,8 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
     capture: 0,
   };
 
-  let event_handler = Box::new(|event_target: &EventTarget| {
-    let context = event_target.context();
+  let event_handler = Box::new(|event: &Event| {
+    let context = event.context();
     let exception_state = context.create_exception_state();
     let document = context.document();
     let div = document.create_element("div", &exception_state).unwrap();
@@ -30,12 +34,14 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
 
   div_element.add_event_listener("custom_click", event_handler.clone(), &event_listener_options, &exception_state).unwrap();
 
-  let event = document.create_event("custom_click", &exception_state).unwrap();
-
-  let real_click_handler = Box::new(move |event_target: &EventTarget| {
-    let context = event_target.context();
+  let real_click_handler = Box::new(move |event: &Event| {
+    let context = event.context();
     let exception_state = context.create_exception_state();
-    let _ = event_target.dispatch_event(&event, &exception_state);
+    let document = context.document();
+    let custom_click_event = document.create_event("custom_click", &exception_state).unwrap();
+    let event_target = event.target();
+
+    let _ = event_target.dispatch_event(&custom_click_event, &exception_state);
   });
 
   div_element.add_event_listener("click", real_click_handler, &event_listener_options, &exception_state).unwrap();
@@ -52,8 +58,8 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
 
   event_cleaner_element.append_child(&event_cleaner_text_node, &exception_state).unwrap();
 
-  let event_cleaner_handler = Box::new(move |event_target: &EventTarget| {
-    let context = event_target.context();
+  let event_cleaner_handler = Box::new(move |event: &Event| {
+    let context = event.context();
     let exception_state = context.create_exception_state();
 
     let _ = div_element.remove_event_listener("custom_click", event_handler.clone(), &exception_state);

@@ -2,7 +2,7 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::{c_char, c_double, c_void};
-use crate::{event_target::{EventTarget, EventTargetMethods, EventTargetRustMethods}, exception_state::ExceptionState, executing_context::ExecutingContext, OpaquePtr, RustValue};
+use crate::{element::Element, event_target::{EventTarget, EventTargetMethods, EventTargetRustMethods}, exception_state::ExceptionState, executing_context::ExecutingContext, OpaquePtr, RustValue};
 
 #[repr(C)]
 pub struct EventRustMethods {
@@ -19,6 +19,7 @@ pub struct EventRustMethods {
   pub prevent_default: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
   pub stop_immediate_propagation: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
   pub stop_propagation: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
+  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
 }
 
 pub struct Event {
@@ -33,8 +34,17 @@ impl Event {
     Event {
       ptr,
       context,
-      method_pointer
+      method_pointer,
     }
+  }
+
+  fn ptr(&self) -> *const OpaquePtr {
+    self.ptr
+  }
+
+  pub fn context<'a>(&self) -> &'a ExecutingContext {
+    assert!(!self.context.is_null(), "Context PTR must not be null");
+    unsafe { &*self.context }
   }
 
   pub fn bubbles(&self) -> bool {
@@ -72,11 +82,11 @@ impl Event {
     EventTarget::initialize(value.value, self.context, value.method_pointer)
   }
 
-  pub fn target(&self) -> EventTarget {
+  pub fn target(&self) -> Element {
     let value = unsafe {
       ((*self.method_pointer).target)(self.ptr)
     };
-    EventTarget::initialize(value.value, self.context, value.method_pointer)
+    Element::initialize(value.value, self.context, value.method_pointer)
   }
 
   pub fn is_trusted(&self) -> bool {
@@ -119,5 +129,12 @@ impl Event {
       ((*self.method_pointer).stop_propagation)(self.ptr, exception_state.ptr);
     }
   }
+}
 
+impl Drop for Event {
+  fn drop(&mut self) {
+    unsafe {
+      ((*self.method_pointer).release)(self.ptr);
+    }
+  }
 }
