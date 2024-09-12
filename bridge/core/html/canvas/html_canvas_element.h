@@ -28,7 +28,6 @@ class HTMLCanvasElement : public HTMLElement {
   const HTMLCanvasElementPublicMethods* htmlCanvasElementPublicMethods();
 
  private:
-  HTMLCanvasElementPublicMethods html_canvas_element_public_methods_;
 };
 
 }  // namespace webf

@@ -256,6 +256,7 @@ bool EventTarget::IsEventTarget() const {
 }
 
 const EventTargetPublicMethods* EventTarget::eventTargetPublicMethods() {
+  static EventTargetPublicMethods event_target_public_methods;
   return &event_target_public_methods;
 }
 

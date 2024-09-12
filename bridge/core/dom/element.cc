@@ -345,7 +345,8 @@ void Element::Trace(GCVisitor* visitor) const {
 }
 
 const ElementPublicMethods* Element::elementPublicMethods() {
-  return &element_public_methods_;
+  static ElementPublicMethods element_public_methods;
+  return &element_public_methods;
 }
 
 // https://dom.spec.whatwg.org/#concept-element-qualified-name

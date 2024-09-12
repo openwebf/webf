@@ -3,6 +3,7 @@
 */
 
 use std::ffi::c_double;
+use crate::comment::CommentRustMethods;
 use crate::container_node::{ContainerNode, ContainerNodeMethods};
 use crate::element::{Element, ElementMethods, ElementRustMethods};
 use crate::event::Event;
@@ -17,6 +18,8 @@ pub struct HTMLElementRustMethods {
   pub version: c_double,
   pub element: ElementRustMethods,
 }
+
+impl RustMethods for HTMLElementRustMethods {}
 
 pub struct HTMLElement {
   element: Element,
@@ -81,4 +84,6 @@ impl EventTargetMethods for HTMLElement {
   }
 }
 
-impl HTMLElementMethods for HTMLElement {}
+impl HTMLElementMethods for HTMLElement {
+
+}

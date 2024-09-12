@@ -10,7 +10,10 @@ use crate::exception_state::ExceptionState;
 use crate::executing_context::{ExecutingContext, ExecutingContextRustMethods};
 use crate::{executing_context, OpaquePtr, RustValue};
 use crate::container_node::{ContainerNode, ContainerNodeRustMethods};
+use crate::document::{Document, DocumentRustMethods};
+use crate::html_element::{HTMLElement, HTMLElementRustMethods};
 use crate::node::{Node, NodeRustMethods};
+use crate::window::{Window, WindowRustMethods};
 
 #[repr(C)]
 struct EventCallbackContext {
@@ -226,6 +229,36 @@ impl EventTarget {
       return Err("The type value of event_target does not belong to the ContainerNode type.")
     }
     Ok(ContainerNode::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const ContainerNodeRustMethods))
+  }
+
+  pub fn as_window(&self) -> Result<Window, &str> {
+    let raw_ptr = unsafe {
+      ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::Window)
+    };
+    if (raw_ptr.value == std::ptr::null()) {
+      return Err("The type value of event_target does not belong to the Window type.")
+    }
+    Ok(Window::initialize(raw_ptr.value, raw_ptr.method_pointer as *const WindowRustMethods))
+  }
+
+  pub fn as_document(&self) -> Result<Document, &str> {
+    let raw_ptr = unsafe {
+      ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::Document)
+    };
+    if (raw_ptr.value == std::ptr::null()) {
+      return Err("The type value of event_target does not belong to the Document type.")
+    }
+    Ok(Document::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const DocumentRustMethods))
+  }
+
+  pub fn as_html_element(&self) -> Result<HTMLElement, &str> {
+    let raw_ptr = unsafe {
+      ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::HTMLElement)
+    };
+    if raw_ptr.value == std::ptr::null() {
+      return Err("The type value of event_target does not belong to the HTMLElement type.")
+    }
+    Ok(HTMLElement::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const HTMLElementRustMethods))
   }
 }
 

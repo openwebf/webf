@@ -715,7 +715,8 @@ void Node::Trace(GCVisitor* visitor) const {
 }
 
 const NodePublicMethods* Node::nodePublicMethods() {
-  return &public_methods_;
+  static NodePublicMethods node_public_methods;
+  return &node_public_methods;
 }
 
 }  // namespace webf

@@ -49,6 +49,7 @@ CharacterData::CharacterData(TreeScope& tree_scope, const AtomicString& text, No
 }
 
 const CharacterDataPublicMethods* CharacterData::characterDataPublicMethods() {
+  static CharacterDataPublicMethods character_data_public_methods;
   return &character_data_public_methods;
 }
 
