@@ -29,13 +29,14 @@ class CharacterData : public Node {
   bool IsCharacterDataNode() const override;
   void setNodeValue(const AtomicString&, ExceptionState&) override;
 
-  WebFPublicMethods* publicMethodPointer() override;
+  const CharacterDataPublicMethods* characterDataPublicMethods();
 
  protected:
   CharacterData(TreeScope& tree_scope, const AtomicString& text, ConstructionType type);
 
  private:
   AtomicString data_;
+  CharacterDataPublicMethods character_data_public_methods;
 };
 
 template <>

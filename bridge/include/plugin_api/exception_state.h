@@ -17,13 +17,13 @@ struct SharedExceptionState {
   webf::ExceptionState exception_state;
 };
 
-using WebFExceptionStateHasException = bool (*)(SharedExceptionState* shared_exception_state);
-using WebFExceptionStateStringify = void (*)(ExecutingContext* context,
+using PublicExceptionStateHasException = bool (*)(SharedExceptionState* shared_exception_state);
+using PublicExceptionStateStringify = void (*)(ExecutingContext* context,
                                              SharedExceptionState* shared_exception_state,
                                              char** errmsg,
                                              uint32_t* strlen);
 
-struct ExceptionStateWebFMethods : public WebFPublicMethods {
+struct ExceptionStatePublicMethods : public WebFPublicMethods {
   static bool HasException(SharedExceptionState* shared_exception_state);
   static void Stringify(ExecutingContext* context,
                         SharedExceptionState* shared_exception_state,
@@ -31,8 +31,8 @@ struct ExceptionStateWebFMethods : public WebFPublicMethods {
                         uint32_t* strlen);
 
   double version{1.0};
-  WebFExceptionStateHasException has_exception_{HasException};
-  WebFExceptionStateStringify stringify_{Stringify};
+  PublicExceptionStateHasException has_exception_{HasException};
+  PublicExceptionStateStringify stringify_{Stringify};
 };
 
 }  // namespace webf

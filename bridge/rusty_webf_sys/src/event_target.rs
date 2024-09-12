@@ -4,11 +4,13 @@
 
 use std::ffi::{c_double, c_void, CString};
 use libc::{boolean_t, c_char};
-use crate::element::Element;
+use crate::element::{Element, ElementRustMethods};
 use crate::event::{Event, EventRustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::{ExecutingContext, ExecutingContextRustMethods};
-use crate::{executing_context, OpaquePtr};
+use crate::{executing_context, OpaquePtr, RustValue};
+use crate::container_node::{ContainerNode, ContainerNodeRustMethods};
+use crate::node::{Node, NodeRustMethods};
 
 #[repr(C)]
 struct EventCallbackContext {
@@ -35,6 +37,24 @@ pub struct AddEventListenerOptions {
 
 pub trait RustMethods {}
 
+
+enum EventTargetType {
+  EventTarget = 0,
+  Node = 1,
+  ContainerNode = 2,
+  Window = 3,
+  Document = 4,
+  Element = 5,
+  HTMLElement = 6,
+  HTMLImageElement = 7,
+  HTMLCanvasElement = 8,
+  HTMLDivElement = 9,
+  HTMLScriptElement = 10,
+  DocumentFragment = 11,
+  Text = 12,
+  Comment = 13,
+}
+
 #[repr(C)]
 pub struct EventTargetRustMethods {
   pub version: c_double,
@@ -54,6 +74,7 @@ pub struct EventTargetRustMethods {
     event: *const OpaquePtr,
     exception_state: *const OpaquePtr) -> bool,
   pub release: extern "C" fn(event_target: *const OpaquePtr),
+  pub dynamic_to: extern "C" fn(event_target: *const OpaquePtr, event_target_type: EventTargetType) -> RustValue<c_void>,
 }
 
 impl RustMethods for EventTargetRustMethods {}
@@ -124,7 +145,7 @@ impl EventTarget {
       func: callback,
     });
     let callback_context_data_ptr = Box::into_raw(callback_context_data);
-    let callback_context = Box::new(EventCallbackContext { callback: handle_event_listener_callback, free_ptr: handle_callback_data_free, ptr: callback_context_data_ptr});
+    let callback_context = Box::new(EventCallbackContext { callback: handle_event_listener_callback, free_ptr: handle_callback_data_free, ptr: callback_context_data_ptr });
     let callback_context_ptr = Box::into_raw(callback_context);
     let c_event_name = CString::new(event_name).unwrap();
     unsafe {
@@ -154,7 +175,7 @@ impl EventTarget {
       func: callback,
     });
     let callback_context_data_ptr = Box::into_raw(callback_context_data);
-    let callback_context = Box::new(EventCallbackContext { callback: handle_event_listener_callback, free_ptr: handle_callback_data_free, ptr: callback_context_data_ptr});
+    let callback_context = Box::new(EventCallbackContext { callback: handle_event_listener_callback, free_ptr: handle_callback_data_free, ptr: callback_context_data_ptr });
     let callback_context_ptr = Box::into_raw(callback_context);
     let c_event_name = CString::new(event_name).unwrap();
     unsafe {
@@ -175,6 +196,36 @@ impl EventTarget {
     unsafe {
       ((*self.method_pointer).dispatch_event)(self.ptr, event.ptr, exception_state.ptr)
     }
+  }
+
+  pub fn as_node(&self) -> Result<Node, &str> {
+    let raw_ptr = unsafe {
+      ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::Node)
+    };
+    if (raw_ptr.value == std::ptr::null()) {
+      return Err("The type value of event_target does not belong to the Node type.");
+    }
+    Ok(Node::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const NodeRustMethods))
+  }
+
+  pub fn as_element(&self) -> Result<Element, &str> {
+    let raw_ptr = unsafe {
+      ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::Element)
+    };
+    if (raw_ptr.value == std::ptr::null()) {
+      return Err("The type value of event_target does not belong to the Element type.")
+    }
+    Ok(Element::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const ElementRustMethods))
+  }
+
+  pub fn as_container_node(&self) -> Result<ContainerNode, &str> {
+    let raw_ptr = unsafe {
+      ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::ContainerNode)
+    };
+    if (raw_ptr.value == std::ptr::null()) {
+      return Err("The type value of event_target does not belong to the ContainerNode type.")
+    }
+    Ok(ContainerNode::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const ContainerNodeRustMethods))
   }
 }
 

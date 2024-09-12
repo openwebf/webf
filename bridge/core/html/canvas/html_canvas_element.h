@@ -8,6 +8,8 @@
 #include <vector>
 #include "canvas_rendering_context.h"
 #include "core/html/html_element.h"
+#include "plugin_api/html_canvas_element.h"
+#include "html_names.h"
 
 namespace webf {
 
@@ -22,6 +24,11 @@ class HTMLCanvasElement : public HTMLElement {
   void Trace(GCVisitor* visitor) const override;
 
   std::vector<Member<CanvasRenderingContext>> running_context_2ds_;
+
+  const HTMLCanvasElementPublicMethods* htmlCanvasElementPublicMethods();
+
+ private:
+  HTMLCanvasElementPublicMethods html_canvas_element_public_methods_;
 };
 
 }  // namespace webf

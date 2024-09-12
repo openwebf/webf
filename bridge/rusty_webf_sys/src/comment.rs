@@ -14,7 +14,7 @@ use crate::OpaquePtr;
 #[repr(C)]
 pub struct CommentRustMethods {
   pub version: c_double,
-  pub character_data: *const CharacterDataRustMethods,
+  pub character_data: CharacterDataRustMethods,
 }
 
 impl RustMethods for CommentRustMethods {}
@@ -32,7 +32,7 @@ impl EventTargetMethods for Comment {
   fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> Self where Self: Sized {
     unsafe {
       Comment {
-        character_data: CharacterData::initialize(ptr, context, (method_pointer as *const CommentRustMethods).as_ref().unwrap().character_data),
+        character_data: CharacterData::initialize(ptr, context, &(method_pointer as *const CommentRustMethods).as_ref().unwrap().character_data),
         method_pointer: method_pointer as *const CommentRustMethods,
       }
     }

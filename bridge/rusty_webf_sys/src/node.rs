@@ -38,7 +38,7 @@ impl NodeType {
 #[repr(C)]
 pub struct NodeRustMethods {
   pub version: c_double,
-  pub event_target: *const EventTargetRustMethods,
+  pub event_target: EventTargetRustMethods,
   pub append_child: extern "C" fn(self_node: *const OpaquePtr, new_node: *const OpaquePtr, exception_state: *const OpaquePtr) -> RustValue<NodeRustMethods>,
   pub remove_node: extern "C" fn(self_node: *const OpaquePtr, target_node: *const OpaquePtr, exception_state: *const OpaquePtr) -> RustValue<NodeRustMethods>,
 }
@@ -52,7 +52,7 @@ pub struct Node {
 
 impl Node {
   /// The appendChild() method of the Node interface adds a node to the end of the list of children of a specified parent node.
-  pub fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  pub fn append_child(&self, new_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     let event_target: &EventTarget = &self.event_target;
     let returned_result = unsafe {
       ((*self.method_pointer).append_child)(event_target.ptr, new_node.ptr(), exception_state.ptr)
@@ -61,11 +61,11 @@ impl Node {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(T::initialize(returned_result.value, event_target.context(), returned_result.method_pointer));
+    return Ok(Node::initialize(returned_result.value, event_target.context(), returned_result.method_pointer));
   }
 
   /// The removeChild() method of the Node interface removes a child node from the DOM and returns the removed node.
-  pub fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  pub fn remove_child(&self, target_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     let event_target: &EventTarget = &self.event_target;
     let returned_result = unsafe {
       ((*self.method_pointer).remove_node)(event_target.ptr, target_node.ptr(), exception_state.ptr)
@@ -74,13 +74,13 @@ impl Node {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(T::initialize(returned_result.value, event_target.context(), returned_result.method_pointer));
+    return Ok(Node::initialize(returned_result.value, event_target.context(), returned_result.method_pointer));
   }
 }
 
 pub trait NodeMethods: EventTargetMethods {
-  fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String>;
-  fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String>;
+  fn append_child(&self, new_node: &Node, exception_state: &ExceptionState) -> Result<Node, String>;
+  fn remove_child(&self, target_node: &Node, exception_state: &ExceptionState) -> Result<Node, String>;
 
   fn as_node(&self) -> &Node;
 }
@@ -93,7 +93,7 @@ impl EventTargetMethods for Node {
         event_target: EventTarget::initialize(
           ptr,
           context,
-          (method_pointer as *const NodeRustMethods).as_ref().unwrap().event_target,
+          &(method_pointer as *const NodeRustMethods).as_ref().unwrap().event_target,
         ),
         method_pointer: method_pointer as *const NodeRustMethods,
       }
@@ -127,11 +127,11 @@ impl EventTargetMethods for Node {
 }
 
 impl NodeMethods for Node {
-  fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  fn append_child(&self, new_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     self.append_child(new_node, exception_state)
   }
 
-  fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  fn remove_child(&self, target_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     self.remove_child(target_node, exception_state)
   }
 

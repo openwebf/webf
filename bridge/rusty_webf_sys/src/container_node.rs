@@ -14,7 +14,7 @@ use crate::OpaquePtr;
 #[repr(C)]
 pub struct ContainerNodeRustMethods {
   pub version: c_double,
-  pub node: *const NodeRustMethods,
+  pub node: NodeRustMethods,
 }
 
 impl RustMethods for ContainerNodeRustMethods {}
@@ -32,11 +32,11 @@ pub trait ContainerNodeMethods : NodeMethods {
 }
 
 impl NodeMethods for ContainerNode {
-  fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  fn append_child(&self, new_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     self.node.append_child(new_node, exception_state)
   }
 
-  fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  fn remove_child(&self, target_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     self.node.remove_child(target_node, exception_state)
   }
 
@@ -50,7 +50,7 @@ impl EventTargetMethods for ContainerNode {
   fn initialize<T>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> Self where Self: Sized {
     unsafe {
       ContainerNode {
-        node: Node::initialize(ptr, context, (method_pointer as *const ContainerNodeRustMethods).as_ref().unwrap().node),
+        node: Node::initialize(ptr, context, &(method_pointer as *const ContainerNodeRustMethods).as_ref().unwrap().node),
         method_pointer: method_pointer as *const ContainerNodeRustMethods
       }
     }

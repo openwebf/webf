@@ -15,7 +15,7 @@ use crate::OpaquePtr;
 #[repr(C)]
 pub struct DocumentFragmentRustMethods {
   pub version: c_double,
-  pub container_node: *const ContainerNodeRustMethods,
+  pub container_node: ContainerNodeRustMethods,
 }
 
 impl RustMethods for DocumentFragmentRustMethods {}
@@ -32,11 +32,11 @@ pub trait DocumentFragmentMethods: ContainerNodeMethods {}
 impl ContainerNodeMethods for DocumentFragment {}
 
 impl NodeMethods for DocumentFragment {
-  fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  fn append_child(&self, new_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     self.container_node.node.append_child(new_node, exception_state)
   }
 
-  fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  fn remove_child(&self, target_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     self.container_node.node.remove_child(target_node, exception_state)
   }
 
@@ -53,7 +53,7 @@ impl EventTargetMethods for DocumentFragment {
         container_node: ContainerNode::initialize(
           ptr,
           context,
-          (method_pointer as *const DocumentFragmentRustMethods).as_ref().unwrap().container_node
+          &(method_pointer as *const DocumentFragmentRustMethods).as_ref().unwrap().container_node
         ),
         method_pointer: method_pointer as *const DocumentFragmentRustMethods,
       }

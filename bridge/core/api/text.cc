@@ -7,7 +7,4 @@
 
 namespace webf {
 
-TextNodeWebFMethods::TextNodeWebFMethods(CharacterDataWebFMethods* super_method)
-    : character_data(super_method) {}
-
 }  // namespace webf

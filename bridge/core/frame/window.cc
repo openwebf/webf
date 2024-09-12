@@ -270,9 +270,8 @@ void Window::Trace(GCVisitor* visitor) const {
   EventTargetWithInlineData::Trace(visitor);
 }
 
-WebFPublicMethods* Window::publicMethodPointer() {
-  auto* super_method = EventTarget::publicMethodPointer();
-  return new WindowWebFMethods(static_cast<EventTargetWebFMethods*>(super_method));
+const WindowPublicMethods* Window::windowPublicMethods() {
+  return &window_public_methods_;
 }
 
 JSValue Window::ToQuickJS() const {

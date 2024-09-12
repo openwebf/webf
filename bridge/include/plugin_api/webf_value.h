@@ -11,7 +11,7 @@ template <typename T, typename U>
 /// Simple struct value both contains the value returned to external native plugin and related C function pointers.
 struct WebFValue {
   T* value;
-  U* method_pointer;
+  const U* method_pointer;
 };
 
 // Memory aligned and readable from external C/C++/Rust side.

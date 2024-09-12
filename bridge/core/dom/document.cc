@@ -413,10 +413,8 @@ void Document::Trace(GCVisitor* visitor) const {
   ContainerNode::Trace(visitor);
 }
 
-WebFPublicMethods* Document::publicMethodPointer() {
-  auto* super_method = ContainerNode::publicMethodPointer();
-  static auto* rust_method = new DocumentWebFMethods(static_cast<ContainerNodeWebFMethods*>(super_method));
-  return rust_method;
+const DocumentPublicMethods* Document::documentPublicMethods() {
+  return &document_public_methods_;
 }
 
 }  // namespace webf

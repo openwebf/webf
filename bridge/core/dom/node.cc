@@ -714,9 +714,8 @@ void Node::Trace(GCVisitor* visitor) const {
   EventTarget::Trace(visitor);
 }
 
-WebFPublicMethods* Node::publicMethodPointer() {
-  auto* super_methods = EventTarget::publicMethodPointer();
-  return new NodeWebFMethods(reinterpret_cast<EventTargetWebFMethods*>(super_methods));
+const NodePublicMethods* Node::nodePublicMethods() {
+  return &public_methods_;
 }
 
 }  // namespace webf

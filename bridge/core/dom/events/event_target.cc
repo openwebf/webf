@@ -255,9 +255,8 @@ bool EventTarget::IsEventTarget() const {
   return true;
 }
 
-WebFPublicMethods* EventTarget::publicMethodPointer() {
-  static auto* public_methods = new EventTargetWebFMethods();
-  return public_methods;
+const EventTargetPublicMethods* EventTarget::eventTargetPublicMethods() {
+  return &event_target_public_methods;
 }
 
 void EventTarget::Trace(GCVisitor* visitor) const {

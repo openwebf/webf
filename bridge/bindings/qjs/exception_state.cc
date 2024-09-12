@@ -7,8 +7,8 @@
 
 namespace webf {
 
-ExceptionStateWebFMethods* ExceptionState::publicMethodPointer() {
-  return new ExceptionStateWebFMethods();
+ExceptionStatePublicMethods* ExceptionState::publicMethodPointer() {
+  return new ExceptionStatePublicMethods();
 }
 
 void ExceptionState::ThrowException(JSContext* ctx, ErrorType type, const std::string& message) {

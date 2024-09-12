@@ -8,6 +8,7 @@
 
 #include "core/dom/element.h"
 #include "core/dom/global_event_handlers.h"
+#include "plugin_api/html_element.h"
 
 namespace webf {
 
@@ -17,6 +18,13 @@ class HTMLElement : public Element {
  public:
   using ImplType = HTMLElement*;
   HTMLElement(const AtomicString& tag_name, Document* document, ConstructionType = kCreateHTMLElement);
+
+  const HTMLElementPublicMethods* htmlElementPublicMethods() {
+    return &html_element_public_methods_;
+  }
+
+ private:
+  HTMLElementPublicMethods html_element_public_methods_;
 };
 
 template <typename T>
@@ -32,6 +40,7 @@ inline bool IsElementOfType<const HTMLElement>(const Node& node) {
 template <>
 struct DowncastTraits<HTMLElement> {
   static bool AllowFrom(const Node& node) { return node.IsHTMLElement(); }
+  static bool AllowFrom(const EventTarget& event_target) { return event_target.IsNode() && To<Node>(event_target).IsHTMLElement(); }
 };
 
 }  // namespace webf

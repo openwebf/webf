@@ -140,7 +140,7 @@ class EventTarget : public BindingObject {
   virtual bool IsNode() const { return false; }
   bool IsEventTarget() const override;
 
-  virtual WebFPublicMethods* publicMethodPointer();
+  const EventTargetPublicMethods* eventTargetPublicMethods();
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,
@@ -168,6 +168,7 @@ class EventTarget : public BindingObject {
 
  private:
   RegisteredEventListener* GetAttributeRegisteredEventListener(const AtomicString& event_type);
+  EventTargetPublicMethods event_target_public_methods;
 
   bool FireEventListeners(Event&, EventTargetData*, EventListenerVector&, ExceptionState&);
 };

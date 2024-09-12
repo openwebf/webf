@@ -152,7 +152,7 @@ class ContainerNode : public Node {
   Collection* EnsureCachedCollection(CollectionType);
 
   void Trace(GCVisitor* visitor) const override;
-  WebFPublicMethods* publicMethodPointer() override;
+  const ContainerNodePublicMethods* containerNodePublicMethods();
 
  protected:
   ContainerNode(TreeScope* tree_scope, ConstructionType = kCreateContainer);
@@ -193,6 +193,8 @@ class ContainerNode : public Node {
 
   Member<Node> first_child_;
   Member<Node> last_child_;
+  ContainerNodePublicMethods container_node_public_methods_;
+
 };
 
 inline Node* Node::firstChild() const {

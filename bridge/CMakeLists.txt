@@ -279,6 +279,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/api/container_node.cc
     core/api/document.cc
     core/api/element.cc
+    core/api/html_element.cc
+    core/api/html_image_element.cc
+    core/api/html_canvas_element.cc
     core/api/document_fragment.cc
     core/api/window.cc
     core/api/text.cc
