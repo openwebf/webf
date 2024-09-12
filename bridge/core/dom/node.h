@@ -354,7 +354,6 @@ class Node : public EventTarget {
   TreeScope* tree_scope_;
   std::unique_ptr<EventTargetDataObject> event_target_data_;
   std::unique_ptr<NodeData> node_data_;
-  NodePublicMethods public_methods_;
 };
 
 template <>

@@ -414,7 +414,8 @@ void Document::Trace(GCVisitor* visitor) const {
 }
 
 const DocumentPublicMethods* Document::documentPublicMethods() {
-  return &document_public_methods_;
+  static DocumentPublicMethods document_public_methods;
+  return &document_public_methods;
 }
 
 }  // namespace webf

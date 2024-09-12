@@ -20,11 +20,11 @@ class HTMLElement : public Element {
   HTMLElement(const AtomicString& tag_name, Document* document, ConstructionType = kCreateHTMLElement);
 
   const HTMLElementPublicMethods* htmlElementPublicMethods() {
-    return &html_element_public_methods_;
+    static HTMLElementPublicMethods html_element_public_methods;
+    return &html_element_public_methods;
   }
 
  private:
-  HTMLElementPublicMethods html_element_public_methods_;
 };
 
 template <typename T>

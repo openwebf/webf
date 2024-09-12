@@ -32,7 +32,6 @@ class Text : public CharacterData {
  private:
   std::string nodeName() const override;
   Node* Clone(Document&, CloneChildrenFlag) const override;
-  TextNodePublicMethods text_node_public_methods_;
 };
 
 template <>

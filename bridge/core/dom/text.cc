@@ -25,7 +25,8 @@ Node::NodeType Text::nodeType() const {
 }
 
 const TextNodePublicMethods* Text::textNodePublicMethods() {
-  return &text_node_public_methods_;
+  static TextNodePublicMethods text_node_public_methods;
+  return &text_node_public_methods;
 }
 
 std::string Text::nodeName() const {
