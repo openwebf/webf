@@ -79,7 +79,7 @@ class CalculationValueHandleMap {
     // FIXME calc(): https://bugs.webkit.org/show_bug.cgi?id=80489
     // This monotonically increasing handle generation scheme is potentially
     // wasteful of the handle space. Consider reusing empty handles.
-    while (map_.contains(index_))
+    while (map_.count(index_) > 0)
       index_++;
 
     map_.insert(std::make_pair(index_, std::move(calc_value)));
@@ -88,12 +88,12 @@ class CalculationValueHandleMap {
   }
 
   void Remove(int index) {
-    DCHECK(map_.contains(index));
+    DCHECK(map_.count(index) > 0);
     map_.erase(index);
   }
 
   std::shared_ptr<const CalculationValue> Get(int index) {
-    DCHECK(map_.contains(index));
+    DCHECK(map_.count(index) > 0);
     return map_.at(index);
   }
 

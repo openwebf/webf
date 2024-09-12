@@ -2,16 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef WEBF_BASE_NUMERICS_CHECKED_MATH_H_
-#define WEBF_BASE_NUMERICS_CHECKED_MATH_H_
+#ifndef BASE_NUMERICS_CHECKED_MATH_H_
+#define BASE_NUMERICS_CHECKED_MATH_H_
 
-#include <stdint.h>
+#include <stddef.h>
+
 #include <limits>
 #include <type_traits>
 
-#include "core/base/numerics/checked_math_impl.h"  // IWYU pragma: export
-#include "core/base/numerics/safe_conversions.h"
-#include "core/base/numerics/safe_math_shared_impl.h"  // IWYU pragma: export
+#include "core/base/numerics/checked_math_impl.h"
 
 namespace base {
 namespace internal {
@@ -42,8 +41,8 @@ class CheckedNumeric {
 
   // This is not an explicit constructor because we implicitly upgrade regular
   // numerics to CheckedNumerics to make them easier to use.
-  template <typename Src>
-    requires(std::is_arithmetic_v<Src>)
+  template <typename Src,
+            typename = std::enable_if_t<std::is_arithmetic_v<Src>>>
   // NOLINTNEXTLINE(google-explicit-constructor)
   constexpr CheckedNumeric(Src value) : state_(value) {}
 
@@ -212,7 +211,9 @@ class CheckedNumeric {
 
   // These perform the actual math operations on the CheckedNumerics.
   // Binary arithmetic operations.
-  template <template <typename, typename> class M, typename L, typename R>
+  template <template <typename, typename, typename> class M,
+            typename L,
+            typename R>
   static constexpr CheckedNumeric MathOp(const L lhs, const R rhs) {
     using Math = typename MathWrapper<M, L, R>::math;
     T result = 0;
@@ -223,7 +224,7 @@ class CheckedNumeric {
   }
 
   // Assignment arithmetic operations.
-  template <template <typename, typename> class M, typename R>
+  template <template <typename, typename, typename> class M, typename R>
   constexpr CheckedNumeric& MathOp(const R rhs) {
     using Math = typename MathWrapper<M, T, R>::math;
     T result = 0;  // Using T as the destination saves a range check.
@@ -302,7 +303,9 @@ constexpr CheckedNumeric<typename UnderlyingType<T>::type> MakeCheckedNum(
 }
 
 // These implement the variadic wrapper for the math operations.
-template <template <typename, typename> class M, typename L, typename R>
+template <template <typename, typename, typename> class M,
+          typename L,
+          typename R>
 constexpr CheckedNumeric<typename MathWrapper<M, L, R>::type> CheckMathOp(
     const L lhs,
     const R rhs) {
@@ -312,7 +315,7 @@ constexpr CheckedNumeric<typename MathWrapper<M, L, R>::type> CheckMathOp(
 }
 
 // General purpose wrapper template for arithmetic operations.
-template <template <typename, typename> class M,
+template <template <typename, typename, typename> class M,
           typename L,
           typename R,
           typename... Args>
@@ -374,4 +377,4 @@ using internal::ValueOrDieForType;
 
 }  // namespace base
 
-#endif  // WEBF_BASE_NUMERICS_CHECKED_MATH_H_
+#endif  // BASE_NUMERICS_CHECKED_MATH_H_

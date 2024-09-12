@@ -37,7 +37,6 @@
 #include "foundation/macros.h"
 #include "core/base/memory/stack_allocated.h"
 
-// TODO(guopengfei)：copy from third_party/blink/renderer/platform/wtf/hash_table_deleted_value_type.h
 namespace webf {
 
 enum HashTableDeletedValueType { kHashTableDeletedValue };
@@ -80,8 +79,6 @@ namespace webf {
 //
 template <typename T>
 struct HashTraits;
-
-class String;
 
 namespace internal {
 
@@ -232,24 +229,26 @@ struct EnumHashTraits : internal::IntOrEnumHashTraits<T, -128, -127> {
   static_assert(std::is_enum_v<T>);
 };
 
-template <typename T>
+template <typename T, typename Enable = void>
 struct GenericHashTraits : internal::GenericHashTraitsBase<T> {
-  static_assert(!std::is_integral_v<T>);
-  static_assert(!std::is_enum_v<T>);
-  static_assert(!std::is_floating_point_v<T>);
+  static_assert(!std::is_integral<T>::value, "T should not be an integral type.");
+  static_assert(!std::is_enum<T>::value, "T should not be an enum type.");
+  static_assert(!std::is_floating_point<T>::value, "T should not be a floating point type.");
 };
 
+// Specialization for integral types
 template <typename T>
-  requires std::integral<T>
-struct GenericHashTraits<T> : IntHashTraits<T> {};
+struct GenericHashTraits<T, std::enable_if_t<std::is_integral_v<T>>>
+    : IntHashTraits<T> {};
+
+// Specialization for enum types
+template <typename T>
+struct GenericHashTraits<T, std::enable_if_t<std::is_enum_v<T>>>
+    : EnumHashTraits<T> {};
 
 template <typename T>
-  requires std::is_enum_v<T>
-struct GenericHashTraits<T> : EnumHashTraits<T> {};
-
-template <typename T>
-  requires std::floating_point<T>
-struct GenericHashTraits<T> : internal::GenericHashTraitsBase<T> {
+struct GenericHashTraits<T, std::enable_if_t<std::is_floating_point_v<T>>>
+    : internal::GenericHashTraitsBase<T> {
   static unsigned GetHash(T key) { return HashFloat(key); }
   static bool Equal(T a, T b) { return FloatEqualForHash(a, b); }
   static constexpr T EmptyValue() { return std::numeric_limits<T>::infinity(); }
@@ -424,7 +423,7 @@ struct SimpleClassHashTraits : GenericHashTraits<T> {
 
 // Defined in string_hash.h.
 template <>
-struct HashTraits<String>;
+struct HashTraits<std::string>;
 
 namespace internal {
 

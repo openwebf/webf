@@ -6,11 +6,11 @@
 #define WEBF_CORE_CSS_PROPERTIES_CSS_COLOR_FUNCTION_PARSER_H_
 
 #include <array>
+#include "core/css/css_color_channel_map.h"
 #include "core/css/css_value.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_parser_token_stream.h"
-#include "core/css/css_color_channel_map.h"
 #include "core/platform/graphics/color.h"
 #include "foundation/macros.h"
 
@@ -25,16 +25,16 @@ class ColorFunctionParser {
   // oklab(), lch(), oklch() and color(). https://www.w3.org/TR/css-color-4/
   std::shared_ptr<const CSSValue> ConsumeFunctionalSyntaxColor(CSSParserTokenRange& input_range,
                                                                const CSSParserContext& context);
-  std::shared_ptr<const CSSValue> ConsumeFunctionalSyntaxColor(CSSParserTokenStream& input_stream, const CSSParserContext& context);
+  std::shared_ptr<const CSSValue> ConsumeFunctionalSyntaxColor(CSSParserTokenStream& input_stream,
+                                                               const CSSParserContext& context);
 
   struct FunctionMetadata;
 
  private:
   template <class T>
-      requires std::is_same_v<T, CSSParserTokenStream> ||
-      std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeFunctionalSyntaxColorInternal(
-          T& input_range,
-          const CSSParserContext& context);
+  typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                          std::shared_ptr<const CSSValue>>::type
+  ConsumeFunctionalSyntaxColorInternal(T& input_range, const CSSParserContext& context);
 
   enum class ChannelType { kNone, kPercentage, kNumber, kRelative };
   bool ConsumeChannel(CSSParserTokenRange& args, const CSSParserContext& context, int index);

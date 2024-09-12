@@ -496,11 +496,11 @@ size_t StyleRuleBase::ChildRuleVector::AdjustedIndex(size_t index) const {
   return rules_.size();
 }
 
-StyleRule::StyleRule(webf::PassKey<StyleRule>, std::span<CSSSelector> selector_vector, std::shared_ptr<CSSPropertyValueSet> properties)
+StyleRule::StyleRule(webf::PassKey<StyleRule>, tcb::span<CSSSelector> selector_vector, std::shared_ptr<CSSPropertyValueSet> properties)
     : StyleRuleBase(kStyle), properties_(properties) {}
 
 StyleRule::StyleRule(webf::PassKey<StyleRule>,
-                     std::span<CSSSelector> selector_vector,
+                     tcb::span<CSSSelector> selector_vector,
                      std::shared_ptr<CSSLazyPropertyParser> lazy_property_parser)
     : StyleRuleBase(kStyle), lazy_property_parser_(std::move(lazy_property_parser)) {
   CSSSelectorList::AdoptSelectorVector(selector_vector, SelectorArray());

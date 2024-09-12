@@ -9,7 +9,6 @@
 #include <cfloat>
 #include <numeric>
 
-#include "core/base/ranges/algorithm.h"
 #include "core/platform/geometry/length.h"
 #include "core/platform/geometry/length_functions.h"
 #include "core/platform/geometry/math_functions.h"

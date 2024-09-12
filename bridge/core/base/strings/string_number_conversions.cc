@@ -88,25 +88,23 @@ bool StringToDouble(std::string_view input, double* output) {
 }
 
 std::string HexEncode(const void* bytes, size_t size) {
-  return HexEncode(std::span(static_cast<const uint8_t*>(bytes), size));
+  return HexEncode(static_cast<const uint8_t*>(bytes), size);
 }
 
-std::string HexEncode(std::span<const uint8_t> bytes) {
+std::string HexEncode(const uint8_t* bytes, size_t length) {
   // Each input byte creates two output hex characters.
   std::string ret;
-  ret.reserve(bytes.size() * 2);
+  ret.reserve(length * 2);
 
-  for (uint8_t byte : bytes) {
-    AppendHexEncodedByte(byte, ret);
+  for (int i = 0; i < length; i++) {
+    AppendHexEncodedByte(bytes[i], ret);
   }
+
   return ret;
 }
 
 std::string HexEncode(std::string_view chars) {
-  // NOTE(xiezuobing): base::as_byte_span -> below handle(std::span<const uint8_t>).
-  std::span<const uint8_t> bytes =
-      std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(chars.data()), chars.size());
-  return HexEncode(bytes);
+  return HexEncode(reinterpret_cast<const uint8_t*>(chars.data()), chars.size());
 }
 
 bool HexStringToInt(std::string_view input, int* output) {
@@ -147,11 +145,11 @@ bool HexStringToString(std::string_view input, std::string* output) {
   return internal::HexStringToByteContainer<char>(input, std::back_inserter(*output));
 }
 
-bool HexStringToSpan(std::string_view input, std::span<uint8_t> output) {
-  if (input.size() / 2 != output.size())
-    return false;
-
-  return internal::HexStringToByteContainer<uint8_t>(input, output.begin());
-}
+//bool HexStringToSpan(std::string_view input, tcb::span<uint8_t> output) {
+//  if (input.size() / 2 != output.size())
+//    return false;
+//
+//  return internal::HexStringToByteContainer<uint8_t>(input, output.begin());
+//}
 
 }  // namespace base

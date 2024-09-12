@@ -12,7 +12,6 @@
 #include <string>
 #include <string_view>
 
-#include "core/base/containers/span.h"
 #include "third_party/cityhash/city.h"
 
 namespace webf {

@@ -31,7 +31,6 @@
 #include <cassert>
 #include "foundation/macros.h"
 //#include "base/memory/scoped_refptr.h"
-#include "core/base/ranges/algorithm.h"
 //#include "third_party/blink/renderer/platform/wtf/casting.h"
 #include "foundation/casting.h"
 //#include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
@@ -108,7 +107,8 @@ class LinearTimingFunction final : public TimingFunction {
   bool IsTrivial() const { return linear_->IsTrivial(); }
 
   bool operator==(const LinearTimingFunction& other) const {
-    return webf::ranges::equal(Points(), other.Points());
+    return std::equal(Points().begin(), Points().end(), other.Points().begin(),
+               other.Points().end());
   }
 
 public:

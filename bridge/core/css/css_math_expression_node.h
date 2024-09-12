@@ -594,8 +594,8 @@ class CSSMathExpressionOperation final : public CSSMathExpressionNode {
   static double EvaluateOperator(const std::vector<double>& operands, CSSMathOperator op);
 
   // Helper for iterating from the 2nd to the last operands
-  std::span<const std::shared_ptr<const CSSMathExpressionNode>> SecondToLastOperands() const {
-    std::span<const std::shared_ptr<const CSSMathExpressionNode>> span(operands_.begin() + 1, operands_.end());
+  tcb::span<const std::shared_ptr<const CSSMathExpressionNode>> SecondToLastOperands() const {
+    tcb::span<const std::shared_ptr<const CSSMathExpressionNode>> span(operands_.data() + 1, operands_.size() - 1);
     return span;
   }
 

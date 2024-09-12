@@ -241,7 +241,7 @@ class CSSParserTokenStream {
     // ignore garbage after a declaration, and there usually is no such
     // garbage.)
     if (next_.IsEOF() || TokenMarksEnd<Types...>(next_)) {
-      return CSSParserTokenRange(std::span<CSSParserToken>{});
+      return CSSParserTokenRange(tcb::span<CSSParserToken>{});
     }
 
     buffer_.shrink_to_fit();

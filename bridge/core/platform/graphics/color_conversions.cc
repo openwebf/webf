@@ -4,7 +4,7 @@
 
 #include "color_conversions.h"
 #include "core/base/numerics/angle_conversion.h"
-#include <numeric>
+#include <tuple>
 
 namespace webf {
 
@@ -53,13 +53,15 @@ std::tuple<float, float, float> HSLToSRGB(float h, float s, float l) {
 
 std::tuple<float, float, float> SRGBToHSL(float r, float g, float b) {
   // See https://www.w3.org/TR/css-color-4/#rgb-to-hsl
-  auto [min, max] = std::minmax({r, g, b});
-  float hue = 0.0f, saturation = 0.0f, lightness = std::midpoint(min, max);
+  float max = std::max({r, g, b});
+  float min = std::min({r, g, b});
+  float hue = 0.0f, saturation = 0.0f, ligth = (max + min) / 2.0f;
   float d = max - min;
 
   if (d != 0.0f) {
-    saturation =
-        (lightness == 0.0f || lightness == 1.0f) ? 0.0f : (max - lightness) / std::min(lightness, 1 - lightness);
+    saturation = (ligth == 0.0f || ligth == 1.0f)
+                     ? 0.0f
+                     : (max - ligth) / std::min(ligth, 1 - ligth);
     if (max == r) {
       hue = (g - b) / d + (g < b ? 6.0f : 0.0f);
     } else if (max == g) {
@@ -70,7 +72,7 @@ std::tuple<float, float, float> SRGBToHSL(float r, float g, float b) {
     hue *= 60.0f;
   }
 
-  return std::make_tuple(hue, saturation, lightness);
+  return std::make_tuple(hue, saturation, ligth);
 }
 
 std::tuple<float, float, float> HWBToSRGB(float h, float w, float b) {

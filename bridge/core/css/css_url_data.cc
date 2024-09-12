@@ -36,7 +36,7 @@ CSSUrlData::CSSUrlData(const std::string& unresolved_url,
                        )
     : relative_url_(unresolved_url),
       absolute_url_(resolved_url.GetString()),
-      is_local_(unresolved_url.starts_with('#')),
+      is_local_(!unresolved_url.empty() && unresolved_url[0] == '#'),
       potentially_dangling_markup_(resolved_url.PotentiallyDanglingMarkup()) {}
 
 CSSUrlData::CSSUrlData(const std::string& resolved_url)

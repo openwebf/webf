@@ -33,7 +33,7 @@
   };
 
   static const StylePropertyShorthand shorthand(
-      CSSPropertyID::<%= property.enum_key %>, longhands);
+      CSSPropertyID::<%= property.enum_key %>, longhands, std::size(longhands));
 <% } %>
 
 

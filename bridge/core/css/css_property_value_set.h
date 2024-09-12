@@ -27,8 +27,8 @@
 
 #include <span>
 #include "bindings/qjs/cppgc/gc_visitor.h"
-#include "core/base/compiler_specific.h"
 #include "core/base/bits.h"
+#include "core/base/compiler_specific.h"
 #include "core/css/css_property_value.h"
 #include "core/css/parser/css_parser_mode.h"
 #include "core/css/properties/css_property.h"
@@ -202,12 +202,10 @@ inline const std::shared_ptr<const CSSValue>* ImmutableCSSPropertyValueSet::Valu
 }
 
 inline const CSSPropertyValueMetadata* ImmutableCSSPropertyValueSet::MetadataArray() const {
-  static_assert(sizeof(ImmutableCSSPropertyValueSet) % alignof(CSSPropertyValueMetadata) == 0,
+  static_assert(sizeof(ImmutableCSSPropertyValueSet) % alignof(CSSPropertyValueMetadata) == 0 &&
+                    sizeof(Member<CSSValue>) % alignof(CSSPropertyValueMetadata) == 0,
                 "MetadataArray may be improperly aligned");
-  // Size of Member<> can be smaller than that of CSSPropertyValueMetadata.
-  // Align it up.
-  return reinterpret_cast<const CSSPropertyValueMetadata*>(
-      AlignUp(reinterpret_cast<const uint8_t*>(ValueArray() + array_size_), alignof(CSSPropertyValueMetadata)));
+  return reinterpret_cast<const CSSPropertyValueMetadata*>(ValueArray() + array_size_);
 }
 
 template <>
@@ -292,7 +290,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   template <typename T>
   bool RemoveProperty(const T& property, std::string* return_text = nullptr);
 
-  bool RemovePropertiesInSet(std::span<const CSSProperty* const> set);
+  bool RemovePropertiesInSet(const CSSProperty* const set[], unsigned length);
   void RemoveEquivalentProperties(const CSSPropertyValueSet*);
   void RemoveEquivalentProperties(const CSSStyleDeclaration*);
 

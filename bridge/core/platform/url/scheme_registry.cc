@@ -1,47 +1,43 @@
 /*
-* Copyright (C) 2010 Apple Inc. All Rights Reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions
-* are met:
-* 1. Redistributions of source code must retain the above copyright
-*    notice, this list of conditions and the following disclaimer.
-* 2. Redistributions in binary form must reproduce the above copyright
-*    notice, this list of conditions and the following disclaimer in the
-*    documentation and/or other materials provided with the distribution.
-*
-* THIS SOFTWARE IS PROVIDED BY APPLE, INC. ``AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-* PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE COMPUTER, INC. OR
-* CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-* EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-* PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-* PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-* OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*
-*/
+ * Copyright (C) 2010 Apple Inc. All Rights Reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY APPLE, INC. ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE COMPUTER, INC. OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
 
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
-
 
 #include "scheme_registry.h"
 
 #include <algorithm>
 
-#include "url_util.h"
 #include "core/base/strings/string_util.h"
+#include "url_util.h"
 
 namespace webf {
 
-
 // Function defined in third_party/blink/public/web/blink.h.
-void SetDomainRelaxationForbiddenForTest(bool forbidden,
-                                         const std::string& scheme) {
-  SchemeRegistry::SetDomainRelaxationForbiddenForURLSchemeForTest(
-      forbidden, std::string(scheme));
+void SetDomainRelaxationForbiddenForTest(bool forbidden, const std::string& scheme) {
+  SchemeRegistry::SetDomainRelaxationForbiddenForURLSchemeForTest(forbidden, std::string(scheme));
 }
 
 // Function defined in third_party/blink/public/web/blink.h.
@@ -53,9 +49,7 @@ namespace {
 
 struct PolicyAreasHashTraits : HashTraits<SchemeRegistry::PolicyAreas> {
   static const bool kEmptyValueIsZero = true;
-  static SchemeRegistry::PolicyAreas EmptyValue() {
-    return SchemeRegistry::kPolicyAreaNone;
-  }
+  static SchemeRegistry::PolicyAreas EmptyValue() { return SchemeRegistry::kPolicyAreaNone; }
 };
 
 class URLSchemesRegistry final {
@@ -72,8 +66,7 @@ class URLSchemesRegistry final {
     for (auto& scheme : url::GetCorsEnabledSchemes())
       cors_enabled_schemes.insert(scheme.c_str());
     for (auto& scheme : url::GetCSPBypassingSchemes()) {
-      content_security_policy_bypassing_schemes.insert({
-          scheme.c_str(), SchemeRegistry::kPolicyAreaAll});
+      content_security_policy_bypassing_schemes.insert({scheme.c_str(), SchemeRegistry::kPolicyAreaAll});
     }
     for (auto& scheme : url::GetEmptyDocumentSchemes())
       empty_document_schemes.insert(scheme.c_str());
@@ -95,8 +88,7 @@ class URLSchemesRegistry final {
   URLSchemesSet fetch_api_schemes;
   URLSchemesSet first_party_when_top_level_schemes;
   URLSchemesSet first_party_when_top_level_with_secure_embedded_schemes;
-  URLSchemesMap<SchemeRegistry::PolicyAreas>
-      content_security_policy_bypassing_schemes;
+  URLSchemesMap<SchemeRegistry::PolicyAreas> content_security_policy_bypassing_schemes;
   URLSchemesSet secure_context_bypassing_schemes;
   URLSchemesSet allowed_in_referrer_schemes;
   URLSchemesSet error_schemes;
@@ -121,7 +113,6 @@ const URLSchemesRegistry& GetURLSchemesRegistry() {
 }
 
 URLSchemesRegistry& GetMutableURLSchemesRegistry() {
-
   return URLSchemesRegistry::GetInstance();
 }
 
@@ -139,16 +130,15 @@ void SchemeRegistry::RegisterURLSchemeAsDisplayIsolated(const std::string& schem
   GetMutableURLSchemesRegistry().display_isolated_url_schemes.insert(scheme);
 }
 
-bool SchemeRegistry::ShouldTreatURLSchemeAsDisplayIsolated(
-    const std::string& scheme) {
+bool SchemeRegistry::ShouldTreatURLSchemeAsDisplayIsolated(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   if (scheme.empty())
     return false;
-  return GetURLSchemesRegistry().display_isolated_url_schemes.contains(scheme);
+  return GetURLSchemesRegistry().display_isolated_url_schemes.find(scheme) !=
+         GetURLSchemesRegistry().display_isolated_url_schemes.end();
 }
 
-bool SchemeRegistry::ShouldTreatURLSchemeAsRestrictingMixedContent(
-    const std::string& scheme) {
+bool SchemeRegistry::ShouldTreatURLSchemeAsRestrictingMixedContent(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   return scheme == "https";
 }
@@ -157,37 +147,32 @@ bool SchemeRegistry::ShouldLoadURLSchemeAsEmptyDocument(const std::string& schem
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   if (scheme.empty())
     return false;
-  return GetURLSchemesRegistry().empty_document_schemes.contains(scheme);
+  return GetURLSchemesRegistry().empty_document_schemes.find(scheme) !=
+         GetURLSchemesRegistry().empty_document_schemes.end();
 }
 
-void SchemeRegistry::SetDomainRelaxationForbiddenForURLSchemeForTest(
-    bool forbidden,
-    const std::string& scheme) {
+void SchemeRegistry::SetDomainRelaxationForbiddenForURLSchemeForTest(bool forbidden, const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   if (scheme.empty())
     return;
 
   if (forbidden) {
-    GetMutableURLSchemesRegistryForTest()
-        .schemes_forbidden_from_domain_relaxation.insert(scheme);
+    GetMutableURLSchemesRegistryForTest().schemes_forbidden_from_domain_relaxation.insert(scheme);
   } else {
-    GetMutableURLSchemesRegistryForTest()
-        .schemes_forbidden_from_domain_relaxation.erase(scheme);
+    GetMutableURLSchemesRegistryForTest().schemes_forbidden_from_domain_relaxation.erase(scheme);
   }
 }
 
 void SchemeRegistry::ResetDomainRelaxationForTest() {
-  GetMutableURLSchemesRegistryForTest()
-      .schemes_forbidden_from_domain_relaxation.clear();
+  GetMutableURLSchemesRegistryForTest().schemes_forbidden_from_domain_relaxation.clear();
 }
 
-bool SchemeRegistry::IsDomainRelaxationForbiddenForURLScheme(
-    const std::string& scheme) {
+bool SchemeRegistry::IsDomainRelaxationForbiddenForURLScheme(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   if (scheme.empty())
     return false;
-  return GetURLSchemesRegistry()
-      .schemes_forbidden_from_domain_relaxation.contains(scheme);
+  return GetURLSchemesRegistry().schemes_forbidden_from_domain_relaxation.find(scheme) !=
+         GetURLSchemesRegistry().schemes_forbidden_from_domain_relaxation.end();
 }
 
 bool SchemeRegistry::CanDisplayOnlyIfCanRequest(const std::string& scheme) {
@@ -195,53 +180,46 @@ bool SchemeRegistry::CanDisplayOnlyIfCanRequest(const std::string& scheme) {
   return scheme == "blob" || scheme == "filesystem";
 }
 
-void SchemeRegistry::RegisterURLSchemeAsNotAllowingJavascriptURLs(
-    const std::string& scheme) {
+void SchemeRegistry::RegisterURLSchemeAsNotAllowingJavascriptURLs(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
-  GetMutableURLSchemesRegistry().not_allowing_javascript_urls_schemes.insert(
-      scheme);
+  GetMutableURLSchemesRegistry().not_allowing_javascript_urls_schemes.insert(scheme);
 }
 
-void SchemeRegistry::RemoveURLSchemeAsNotAllowingJavascriptURLs(
-    const std::string& scheme) {
-  GetMutableURLSchemesRegistry().not_allowing_javascript_urls_schemes.erase(
-      scheme);
+void SchemeRegistry::RemoveURLSchemeAsNotAllowingJavascriptURLs(const std::string& scheme) {
+  GetMutableURLSchemesRegistry().not_allowing_javascript_urls_schemes.erase(scheme);
 }
 
-bool SchemeRegistry::ShouldTreatURLSchemeAsNotAllowingJavascriptURLs(
-    const std::string& scheme) {
+bool SchemeRegistry::ShouldTreatURLSchemeAsNotAllowingJavascriptURLs(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   if (scheme.empty())
     return false;
-  return GetURLSchemesRegistry().not_allowing_javascript_urls_schemes.contains(
-      scheme);
+  return GetURLSchemesRegistry().not_allowing_javascript_urls_schemes.find(scheme) !=
+         GetURLSchemesRegistry().not_allowing_javascript_urls_schemes.end();
 }
 
 bool SchemeRegistry::ShouldTreatURLSchemeAsCorsEnabled(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   if (scheme.empty())
     return false;
-  return GetURLSchemesRegistry().cors_enabled_schemes.contains(scheme);
+  return GetURLSchemesRegistry().cors_enabled_schemes.find(scheme) !=
+         GetURLSchemesRegistry().cors_enabled_schemes.end();
 }
 
 std::string SchemeRegistry::ListOfCorsEnabledURLSchemes() {
-  std::vector<std::string> sorted_schemes(GetURLSchemesRegistry().cors_enabled_schemes.begin(), GetURLSchemesRegistry().cors_enabled_schemes.end());
+  std::vector<std::string> sorted_schemes(GetURLSchemesRegistry().cors_enabled_schemes.begin(),
+                                          GetURLSchemesRegistry().cors_enabled_schemes.end());
   std::sort(sorted_schemes.begin(), sorted_schemes.end(),
-            [](const std::string& a, const std::string& b) {
-//              return CodeUnitCompareLessThan(a, b);
-                return a < b;
-            });
-
+            [](const std::string& a, const std::string& b) { return a < b; });
 
   std::string builder;
   bool add_separator = false;
   for (const auto& scheme : sorted_schemes) {
     if (add_separator)
-      builder+=", ";
+      builder += ", ";
     else
       add_separator = true;
 
-    builder+=scheme;
+    builder += scheme;
   }
   return builder;
 }
@@ -262,75 +240,63 @@ bool SchemeRegistry::ShouldTrackUsageMetricsForScheme(const std::string& scheme)
   return scheme == "http" || scheme == "https";
 }
 
-void SchemeRegistry::RegisterURLSchemeAsAllowingServiceWorkers(
-    const std::string& scheme) {
+void SchemeRegistry::RegisterURLSchemeAsAllowingServiceWorkers(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   GetMutableURLSchemesRegistry().service_worker_schemes.insert(scheme);
 }
 
-bool SchemeRegistry::ShouldTreatURLSchemeAsAllowingServiceWorkers(
-    const std::string& scheme) {
+bool SchemeRegistry::ShouldTreatURLSchemeAsAllowingServiceWorkers(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   if (scheme.empty())
     return false;
-  return GetURLSchemesRegistry().service_worker_schemes.contains(scheme);
+  return GetURLSchemesRegistry().service_worker_schemes.find(scheme) !=
+         GetURLSchemesRegistry().service_worker_schemes.end();
 }
 
-void SchemeRegistry::RegisterURLSchemeAsSupportingFetchAPI(
-    const std::string& scheme) {
+void SchemeRegistry::RegisterURLSchemeAsSupportingFetchAPI(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   GetMutableURLSchemesRegistry().fetch_api_schemes.insert(scheme);
 }
 
-bool SchemeRegistry::ShouldTreatURLSchemeAsSupportingFetchAPI(
-    const std::string& scheme) {
+bool SchemeRegistry::ShouldTreatURLSchemeAsSupportingFetchAPI(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   if (scheme.empty())
     return false;
-  return GetURLSchemesRegistry().fetch_api_schemes.contains(scheme);
+  return GetURLSchemesRegistry().fetch_api_schemes.find(scheme) != GetURLSchemesRegistry().fetch_api_schemes.end();
 }
 
 // https://url.spec.whatwg.org/#special-scheme
 bool SchemeRegistry::IsSpecialScheme(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
-  return scheme == "ftp" || scheme == "file" || scheme == "http" ||
-         scheme == "https" || scheme == "ws" || scheme == "wss";
+  return scheme == "ftp" || scheme == "file" || scheme == "http" || scheme == "https" || scheme == "ws" ||
+         scheme == "wss";
 }
 
-void SchemeRegistry::RegisterURLSchemeAsFirstPartyWhenTopLevel(
-    const std::string& scheme) {
+void SchemeRegistry::RegisterURLSchemeAsFirstPartyWhenTopLevel(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
-  GetMutableURLSchemesRegistry().first_party_when_top_level_schemes.insert(
-      scheme);
+  GetMutableURLSchemesRegistry().first_party_when_top_level_schemes.insert(scheme);
 }
 
-void SchemeRegistry::RemoveURLSchemeAsFirstPartyWhenTopLevel(
-    const std::string& scheme) {
+void SchemeRegistry::RemoveURLSchemeAsFirstPartyWhenTopLevel(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
-  GetMutableURLSchemesRegistry().first_party_when_top_level_schemes.erase(
-      scheme);
+  GetMutableURLSchemesRegistry().first_party_when_top_level_schemes.erase(scheme);
 }
 
-bool SchemeRegistry::ShouldTreatURLSchemeAsFirstPartyWhenTopLevel(
-    const std::string& scheme) {
+bool SchemeRegistry::ShouldTreatURLSchemeAsFirstPartyWhenTopLevel(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   if (scheme.empty())
     return false;
-  return GetURLSchemesRegistry().first_party_when_top_level_schemes.contains(
-      scheme);
+  return GetURLSchemesRegistry().first_party_when_top_level_schemes.find(scheme) !=
+         GetURLSchemesRegistry().first_party_when_top_level_schemes.end();
 }
 
-void SchemeRegistry::RegisterURLSchemeAsFirstPartyWhenTopLevelEmbeddingSecure(
-    const std::string& scheme) {
+void SchemeRegistry::RegisterURLSchemeAsFirstPartyWhenTopLevelEmbeddingSecure(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
-  GetMutableURLSchemesRegistry()
-      .first_party_when_top_level_with_secure_embedded_schemes.insert(scheme);
+  GetMutableURLSchemesRegistry().first_party_when_top_level_with_secure_embedded_schemes.insert(scheme);
 }
 
-bool SchemeRegistry::
-    ShouldTreatURLSchemeAsFirstPartyWhenTopLevelEmbeddingSecure(
-        const std::string& top_level_scheme,
-        const std::string& child_scheme) {
+bool SchemeRegistry::ShouldTreatURLSchemeAsFirstPartyWhenTopLevelEmbeddingSecure(const std::string& top_level_scheme,
+                                                                                 const std::string& child_scheme) {
   DCHECK_EQ(top_level_scheme, base::ToLowerASCII(top_level_scheme));
   DCHECK_EQ(child_scheme, base::ToLowerASCII(child_scheme));
   // Matches GURL::SchemeIsCryptographic used by
@@ -339,13 +305,11 @@ bool SchemeRegistry::
     return false;
   if (top_level_scheme.empty())
     return false;
-  return GetURLSchemesRegistry()
-      .first_party_when_top_level_with_secure_embedded_schemes.contains(
-          top_level_scheme);
+  return GetURLSchemesRegistry().first_party_when_top_level_with_secure_embedded_schemes.find(top_level_scheme) !=
+         GetURLSchemesRegistry().first_party_when_top_level_with_secure_embedded_schemes.end();
 }
 
-void SchemeRegistry::RegisterURLSchemeAsAllowedForReferrer(
-    const std::string& scheme) {
+void SchemeRegistry::RegisterURLSchemeAsAllowedForReferrer(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   GetMutableURLSchemesRegistry().allowed_in_referrer_schemes.insert(scheme);
 }
@@ -354,12 +318,12 @@ void SchemeRegistry::RemoveURLSchemeAsAllowedForReferrer(const std::string& sche
   GetMutableURLSchemesRegistry().allowed_in_referrer_schemes.erase(scheme);
 }
 
-bool SchemeRegistry::ShouldTreatURLSchemeAsAllowedForReferrer(
-    const std::string& scheme) {
+bool SchemeRegistry::ShouldTreatURLSchemeAsAllowedForReferrer(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   if (scheme.empty())
     return false;
-  return GetURLSchemesRegistry().allowed_in_referrer_schemes.contains(scheme);
+  return GetURLSchemesRegistry().allowed_in_referrer_schemes.find(scheme) !=
+         GetURLSchemesRegistry().allowed_in_referrer_schemes.end();
 }
 
 void SchemeRegistry::RegisterURLSchemeAsError(const std::string& scheme) {
@@ -371,73 +335,59 @@ bool SchemeRegistry::ShouldTreatURLSchemeAsError(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   if (scheme.empty())
     return false;
-  return GetURLSchemesRegistry().error_schemes.contains(scheme);
+  return GetURLSchemesRegistry().error_schemes.find(scheme) != GetURLSchemesRegistry().error_schemes.end();
 }
 
-void SchemeRegistry::RegisterURLSchemeAsAllowingSharedArrayBuffers(
-    const std::string& scheme) {
+void SchemeRegistry::RegisterURLSchemeAsAllowingSharedArrayBuffers(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
-  GetMutableURLSchemesRegistry().allowing_shared_array_buffer_schemes.insert(
-      scheme);
+  GetMutableURLSchemesRegistry().allowing_shared_array_buffer_schemes.insert(scheme);
 }
 
-bool SchemeRegistry::ShouldTreatURLSchemeAsAllowingSharedArrayBuffers(
-    const std::string& scheme) {
+bool SchemeRegistry::ShouldTreatURLSchemeAsAllowingSharedArrayBuffers(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   if (scheme.empty())
     return false;
-  return GetURLSchemesRegistry().allowing_shared_array_buffer_schemes.contains(
-      scheme);
+  return GetURLSchemesRegistry().allowing_shared_array_buffer_schemes.find(scheme) !=
+         GetURLSchemesRegistry().allowing_shared_array_buffer_schemes.end();
 }
 
-void SchemeRegistry::RegisterURLSchemeAsBypassingContentSecurityPolicy(
-    const std::string& scheme,
-    PolicyAreas policy_areas) {
+void SchemeRegistry::RegisterURLSchemeAsBypassingContentSecurityPolicy(const std::string& scheme,
+                                                                       PolicyAreas policy_areas) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
-  GetMutableURLSchemesRegistry()
-      .content_security_policy_bypassing_schemes.insert({scheme, policy_areas});
+  GetMutableURLSchemesRegistry().content_security_policy_bypassing_schemes.insert({scheme, policy_areas});
 }
 
-void SchemeRegistry::RemoveURLSchemeRegisteredAsBypassingContentSecurityPolicy(
-    const std::string& scheme) {
+void SchemeRegistry::RemoveURLSchemeRegisteredAsBypassingContentSecurityPolicy(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
-  GetMutableURLSchemesRegistry()
-      .content_security_policy_bypassing_schemes.erase(scheme);
+  GetMutableURLSchemesRegistry().content_security_policy_bypassing_schemes.erase(scheme);
 }
 
-bool SchemeRegistry::SchemeShouldBypassContentSecurityPolicy(
-    const std::string& scheme,
-    PolicyAreas policy_areas) {
+bool SchemeRegistry::SchemeShouldBypassContentSecurityPolicy(const std::string& scheme, PolicyAreas policy_areas) {
   DCHECK_NE(policy_areas, kPolicyAreaNone);
   if (scheme.empty() || policy_areas == kPolicyAreaNone)
     return false;
 
-  const auto& bypassing_schemes =
-      GetURLSchemesRegistry().content_security_policy_bypassing_schemes;
+  const auto& bypassing_schemes = GetURLSchemesRegistry().content_security_policy_bypassing_schemes;
   const auto it = bypassing_schemes.find(scheme);
   if (it == bypassing_schemes.end())
     return false;
   return (it->second & policy_areas) == policy_areas;
 }
 
-void SchemeRegistry::RegisterURLSchemeBypassingSecureContextCheck(
-    const std::string& scheme) {
+void SchemeRegistry::RegisterURLSchemeBypassingSecureContextCheck(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
-  GetMutableURLSchemesRegistry().secure_context_bypassing_schemes.insert(
-      scheme);
+  GetMutableURLSchemesRegistry().secure_context_bypassing_schemes.insert(scheme);
 }
 
-bool SchemeRegistry::SchemeShouldBypassSecureContextCheck(
-    const std::string& scheme) {
+bool SchemeRegistry::SchemeShouldBypassSecureContextCheck(const std::string& scheme) {
   if (scheme.empty())
     return false;
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
-  return GetURLSchemesRegistry().secure_context_bypassing_schemes.contains(
-      scheme);
+  return GetURLSchemesRegistry().secure_context_bypassing_schemes.find(scheme) !=
+         GetURLSchemesRegistry().secure_context_bypassing_schemes.end();
 }
 
-void SchemeRegistry::RegisterURLSchemeAsAllowingWasmEvalCSP(
-    const std::string& scheme) {
+void SchemeRegistry::RegisterURLSchemeAsAllowingWasmEvalCSP(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   GetMutableURLSchemesRegistry().wasm_eval_csp_schemes.insert(scheme);
 }
@@ -446,7 +396,8 @@ bool SchemeRegistry::SchemeSupportsWasmEvalCSP(const std::string& scheme) {
   if (scheme.empty())
     return false;
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
-  return GetURLSchemesRegistry().wasm_eval_csp_schemes.contains(scheme);
+  return GetURLSchemesRegistry().wasm_eval_csp_schemes.find(scheme) !=
+         GetURLSchemesRegistry().wasm_eval_csp_schemes.end();
 }
 
 void SchemeRegistry::RegisterURLSchemeAsWebUI(const std::string& scheme) {
@@ -462,7 +413,7 @@ bool SchemeRegistry::IsWebUIScheme(const std::string& scheme) {
   if (scheme.empty())
     return false;
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
-  return GetURLSchemesRegistry().web_ui_schemes.contains(scheme);
+  return GetURLSchemesRegistry().web_ui_schemes.find(scheme) != GetURLSchemesRegistry().web_ui_schemes.end();
 }
 
 void SchemeRegistry::RegisterURLSchemeAsWebUIForTest(const std::string& scheme) {
@@ -474,14 +425,12 @@ void SchemeRegistry::RemoveURLSchemeAsWebUIForTest(const std::string& scheme) {
   GetMutableURLSchemesRegistryForTest().web_ui_schemes.erase(scheme);
 }
 
-void SchemeRegistry::RegisterURLSchemeAsCodeCacheWithHashing(
-    const std::string& scheme) {
+void SchemeRegistry::RegisterURLSchemeAsCodeCacheWithHashing(const std::string& scheme) {
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
   GetMutableURLSchemesRegistry().code_cache_with_hashing_schemes.insert(scheme);
 }
 
-void SchemeRegistry::RemoveURLSchemeAsCodeCacheWithHashing(
-    const std::string& scheme) {
+void SchemeRegistry::RemoveURLSchemeAsCodeCacheWithHashing(const std::string& scheme) {
   GetMutableURLSchemesRegistry().code_cache_with_hashing_schemes.erase(scheme);
 }
 
@@ -489,8 +438,9 @@ bool SchemeRegistry::SchemeSupportsCodeCacheWithHashing(const std::string& schem
   if (scheme.empty())
     return false;
   DCHECK_EQ(scheme, base::ToLowerASCII(scheme));
-  return GetURLSchemesRegistry().code_cache_with_hashing_schemes.contains(
-      scheme);
+
+  return GetURLSchemesRegistry().code_cache_with_hashing_schemes.find(scheme) !=
+         GetURLSchemesRegistry().code_cache_with_hashing_schemes.end();
 }
 
 }  // namespace webf

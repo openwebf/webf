@@ -16,8 +16,8 @@ namespace base {
 // Note that std::unique_ptr<T> has very different semantics from
 // std::unique_ptr<T[]>: do not use this helper for array allocations.
 template <typename T>
-  requires(std::is_object_v<T> && !std::is_array_v<T>)
-std::unique_ptr<T> WrapUnique(T* ptr) {
+typename std::enable_if<std::is_object<T>::value && !std::is_array<T>::value, std::unique_ptr<T>>::type WrapUnique(
+    T* ptr) {
   return std::unique_ptr<T>(ptr);
 }
 

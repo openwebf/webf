@@ -22,9 +22,9 @@ namespace webf {
 //
 // Rewind happens automatically in the destructor, unless you've called
 // Release() to commit to the position in the stream.
-template <class T>
-  requires std::is_same_v<T, CSSParserTokenStream> ||
-           std::is_same_v<T, CSSParserTokenRange>
+template <class T, typename = typename std::enable_if<
+                       std::is_same<T, CSSParserTokenStream>::value ||
+                       std::is_same<T, CSSParserTokenRange>::value>::type>
 class CSSParserSavePoint;
 
 // Deduction guide to pick the correct template.
@@ -41,13 +41,12 @@ class CSSParserSavePoint<CSSParserTokenStream> {
 
   ~CSSParserSavePoint() {
     if (!released_) {
-      stream_.EnsureLookAhead();
       stream_.Restore(savepoint_);
     }
   }
 
   void Release() {
-    assert(!released_);
+    DCHECK(!released_);
     released_ = true;
   }
 
@@ -72,7 +71,7 @@ class CSSParserSavePoint<CSSParserTokenRange> {
   }
 
   void Release() {
-    assert(!released_);
+    DCHECK(!released_);
     released_ = true;
   }
 
@@ -81,6 +80,7 @@ class CSSParserSavePoint<CSSParserTokenRange> {
   CSSParserTokenRange saved_range_;
   bool released_ = false;
 };
+
 
 }  // namespace webf
 

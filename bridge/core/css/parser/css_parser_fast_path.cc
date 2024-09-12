@@ -1397,7 +1397,7 @@ static std::shared_ptr<const CSSValue> ParseKeywordValue(CSSPropertyID property_
       return nullptr;
     }
 
-    if (!shorthandForProperty(property_id).properties().empty()) {
+    if (shorthandForProperty(property_id).length() != 0) {
       // CSS-wide keyword shorthands must be parsed using the CSSPropertyParser.
       return nullptr;
     }

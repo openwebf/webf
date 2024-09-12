@@ -10,6 +10,7 @@
 #define WEBF_CSS_SELECTOR_PARSER_H
 
 #include <span>
+#include "core/base/containers/span.h"
 #include "foundation/macros.h"
 #include "css_parser_token.h"
 #include "css_nesting_type.h"
@@ -30,7 +31,7 @@ class CSSSelectorList;
 class CSSSelectorParser {
   WEBF_STACK_ALLOCATED();
  public:
-  static std::span<CSSSelector> ParseSelector(
+  static tcb::span<CSSSelector> ParseSelector(
       CSSParserTokenStream&,
       std::shared_ptr<const CSSParserContext>,
       CSSNestingType,
@@ -40,7 +41,7 @@ class CSSSelectorParser {
       std::shared_ptr<StyleSheetContents>,
       std::vector<CSSSelector>&);
 
-  static std::span<CSSSelector> ConsumeSelector(
+  static tcb::span<CSSSelector> ConsumeSelector(
       CSSParserTokenStream&,
       std::shared_ptr<const CSSParserContext>,
       CSSNestingType,
@@ -85,9 +86,9 @@ class CSSSelectorParser {
   //
   // CSSNestingType::kScope is similar, but will prepend relative selectors with
   // :scope instead of &.
-  std::span<CSSSelector> ConsumeComplexSelectorList(CSSParserTokenStream& stream,
+  tcb::span<CSSSelector> ConsumeComplexSelectorList(CSSParserTokenStream& stream,
                                                      CSSNestingType);
-  std::span<CSSSelector> ConsumeComplexSelectorList(
+  tcb::span<CSSSelector> ConsumeComplexSelectorList(
       CSSParserTokenStream& stream,
       std::shared_ptr<CSSParserObserver> observer,
       CSSNestingType);
@@ -97,7 +98,7 @@ class CSSSelectorParser {
   std::shared_ptr<CSSSelectorList> ConsumeNestedSelectorList(CSSParserTokenStream&);
   std::shared_ptr<CSSSelectorList> ConsumeForgivingNestedSelectorList(CSSParserTokenStream&);
   // https://drafts.csswg.org/selectors/#typedef-forgiving-selector-list
-  std::optional<std::span<CSSSelector>> ConsumeForgivingComplexSelectorList(
+  std::optional<tcb::span<CSSSelector>> ConsumeForgivingComplexSelectorList(
       CSSParserTokenStream&,
       CSSNestingType);
   std::shared_ptr<CSSSelectorList> ConsumeForgivingCompoundSelectorList(CSSParserTokenStream&);
@@ -106,11 +107,11 @@ class CSSSelectorParser {
   std::shared_ptr<CSSSelectorList> ConsumeRelativeSelectorList(CSSParserTokenStream&);
   void AddPlaceholderSelectorIfNeeded(CSSParserTokenStream& argument);
 
-  std::span<CSSSelector> ConsumeNestedRelativeSelector(
+  tcb::span<CSSSelector> ConsumeNestedRelativeSelector(
       CSSParserTokenStream& stream,
       CSSNestingType);
-  std::span<CSSSelector> ConsumeRelativeSelector(CSSParserTokenStream&);
-  std::span<CSSSelector> ConsumeComplexSelector(
+  tcb::span<CSSSelector> ConsumeRelativeSelector(CSSParserTokenStream&);
+  tcb::span<CSSSelector> ConsumeComplexSelector(
       CSSParserTokenStream& stream,
       CSSNestingType,
       bool first_in_complex_selector_list);
@@ -150,7 +151,7 @@ class CSSSelectorParser {
   bool ConsumeSimpleSelector(CSSParserTokenStream&);
 
   // Returns an empty range on error.
-  std::span<CSSSelector> ConsumeCompoundSelector(CSSParserTokenStream&,
+  tcb::span<CSSSelector> ConsumeCompoundSelector(CSSParserTokenStream&,
                                                   CSSNestingType);
 
   bool PeekIsCombinator(CSSParserTokenStream& stream);
@@ -163,7 +164,7 @@ class CSSSelectorParser {
                                    const std::string& element_name,
                                    size_t start_index_of_compound_selector);
   void SplitCompoundAtImplicitShadowCrossingCombinator(
-      std::span<CSSSelector> compound_selector);
+      tcb::span<CSSSelector> compound_selector);
 
   void SetInSupportsParsing() { in_supports_parsing_ = true; }
 
@@ -263,16 +264,16 @@ class CSSSelectorParser {
       }
     }
 
-    std::span<CSSSelector> AddedElements() {
+    tcb::span<CSSSelector> AddedElements() {
       assert(vector_.size() >= initial_size_);
-      return {vector_.begin() + initial_size_, vector_.end()};
+      return tcb::span<CSSSelector>(vector_.data() + initial_size_, vector_.size() - initial_size_);
     }
 
     // Make sure the added elements are left on the vector after
     // destruction, contrary to common behavior. This is used after
     // a successful parse where we intend to actually return the
     // given elements. Returns AddedElements() for convenience.
-    std::span<CSSSelector> CommitAddedElements() {
+    tcb::span<CSSSelector> CommitAddedElements() {
       committed_ = true;
       return AddedElements();
     }

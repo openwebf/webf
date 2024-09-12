@@ -433,8 +433,8 @@ bool DoResolveRelativePath(const char* base_url,
     // > url.href
     // => The result should be "git:/.//path", instead of "git://path".
     if (!base_parsed.host.is_valid() && out_parsed->path.is_valid() &&
-        out_parsed->path.as_string_view_on(output->view().data())
-            .starts_with("//")) {
+        out_parsed->path.as_string_view_on(output->view().data()).size() >= 2 &&
+        out_parsed->path.as_string_view_on(output->view().data()).substr(0, 2) == "//") {
       size_t prior_output_length = output->length();
       output->Insert(out_parsed->path.begin, "/.");
       // Adjust path.

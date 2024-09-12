@@ -14,7 +14,6 @@
 
 #include "core/base/compiler_specific.h"
 #include "core/base/no_destructor.h"
-#include "core/base/ranges/algorithm.h"
 #include "core/base/strings/string_util.h"
 #include "url_canon_internal.h"
 #include "url_constants.h"
@@ -502,7 +501,8 @@ void DoAddSchemeWithHandler(const char* new_scheme, const char* handler, std::ve
   assert(strlen(new_scheme) > 0);
   assert(strlen(handler) > 0);
   assert(base::ToLowerASCII(new_scheme) == new_scheme);
-  assert(ranges::find(*schemes, new_scheme, &SchemeWithHandler::scheme) == std::ranges::end(*schemes));
+//  assert(ranges::find(*schemes, new_scheme, &SchemeWithHandler::scheme) == std::ranges::end(*schemes));
+
   //  assert(!base::Contains(*schemes, new_scheme, &SchemeWithHandler::scheme));
   schemes->push_back({new_scheme, handler});
 }
@@ -513,7 +513,7 @@ void DoAddScheme(const char* new_scheme, std::vector<std::string>* schemes) {
   assert(strlen(new_scheme) > 0);
 
   assert(base::ToLowerASCII(new_scheme) == new_scheme);
-  assert(ranges::find(*schemes, new_scheme) == std::ranges::end(*schemes));
+//  assert(ranges::find(*schemes, new_scheme) == std::ranges::end(*schemes));
   //  assert(!base::Contains(*schemes, new_scheme));
   schemes->push_back(new_scheme);
 }
@@ -523,7 +523,7 @@ void DoAddSchemeWithType(const char* new_scheme, SchemeType type, std::vector<Sc
   assert(schemes);
   assert(strlen(new_scheme) > 0);
   assert(base::ToLowerASCII(new_scheme) == new_scheme);
-  assert(ranges::find(*schemes, new_scheme, &SchemeWithType::scheme) == std::ranges::end(*schemes));
+//  assert(ranges::find(*schemes, new_scheme, &SchemeWithType::scheme) == std::ranges::end(*schemes));
   //  assert(!base::Contains(*schemes, new_scheme, &SchemeWithType::scheme));
   schemes->push_back({new_scheme, type});
 }

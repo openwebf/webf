@@ -42,7 +42,7 @@ size_t FindInitialQuerySafeString(const char* source, size_t length) {
 #if defined(__SSE2__) || defined(__aarch64__)
   constexpr size_t kChunkSize = 16;
   size_t i;
-  for (i = 0; i < webf::AlignDown(length, kChunkSize); i += kChunkSize) {
+  for (i = 0; i < base::bits::AlignDown(length, kChunkSize); i += kChunkSize) {
     char b __attribute__((vector_size(16)));
     memcpy(&b, source + i, sizeof(b));
 

@@ -54,8 +54,8 @@ std::shared_ptr<StyleScope> StyleScope::Parse(CSSParserTokenRange prelude,
                            std::shared_ptr<StyleSheetContents>& style_sheet) {
   std::vector<CSSSelector> arena;
 
-  std::optional<std::span<CSSSelector>> from;
-  std::optional<std::span<CSSSelector>> to;
+  std::optional<tcb::span<CSSSelector>> from;
+  std::optional<tcb::span<CSSSelector>> to;
 
   prelude.ConsumeWhitespace();
 

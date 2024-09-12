@@ -27,6 +27,7 @@
 
 #include "css_property_value_set.h"
 #include <span>
+#include "core/css/properties/css_property.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_markup.h"
 #include "core/css/parser/css_parser.h"
@@ -58,7 +59,7 @@ const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValue(
 
 static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> property_set, CSSPropertyID property_id) {
   StylePropertyShorthand shorthand = shorthandForProperty(property_id);
-  if (shorthand.properties().empty()) {
+  if (shorthand.length() == 0) {
     return "";
   }
 
@@ -115,12 +116,12 @@ bool CSSPropertyValueSet::PropertyIsImportantWithHint(const std::string& propert
 bool CSSPropertyValueSet::ShorthandIsImportant(CSSPropertyID property_id) const {
   StylePropertyShorthand shorthand = shorthandForProperty(property_id);
   const StylePropertyShorthand::Properties longhands = shorthand.properties();
-  if (longhands.empty()) {
+  if (shorthand.length() == 0) {
     return false;
   }
 
-  for (const CSSProperty* const longhand : longhands) {
-    if (!PropertyIsImportant(longhand->PropertyID())) {
+  for(int i = 0; i < shorthand.length(); i ++) {
+    if (!PropertyIsImportant(longhands[i]->PropertyID())) {
       return false;
     }
   }
@@ -338,17 +339,17 @@ void MutableCSSPropertyValueSet::SetProperty(CSSPropertyID property_id,
   DCHECK_NE(property_id, CSSPropertyID::kVariable);
   DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);
   StylePropertyShorthand shorthand = shorthandForProperty(property_id);
-  if (shorthand.properties().empty()) {
+  if (shorthand.length() == 0) {
     SetLonghandProperty(CSSPropertyValue(CSSPropertyName(property_id), std::move(value), important));
     return;
   }
 
-  RemovePropertiesInSet(shorthand.properties());
+  RemovePropertiesInSet(shorthand.properties(), shorthand.length());
 
   // The simple shorthand expansion below doesn't work for `white-space`.
   DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);
-  for (const CSSProperty* const longhand : shorthand.properties()) {
-    CSSPropertyName longhand_name(longhand->PropertyID());
+  for (int i = 0; i < shorthand.length(); i ++) {
+    CSSPropertyName longhand_name(shorthand.properties()[i]->PropertyID());
     property_vector_.emplace_back(CSSPropertyValue(longhand_name, value, important));
   }
 }
@@ -397,7 +398,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCus
 
 MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::SetLonghandProperty(CSSPropertyValue property) {
   const CSSPropertyID id = property.Id();
-  DCHECK_EQ(shorthandForProperty(id).properties().size(), 0u);
+  DCHECK_EQ(shorthandForProperty(id).length(), 0u);
   CSSPropertyValue* to_replace;
   if (id == CSSPropertyID::kVariable) {
     to_replace = const_cast<CSSPropertyValue*>(FindPropertyPointer(property.Name().ToString()));
@@ -418,7 +419,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::SetLonghandPro
 }
 
 void MutableCSSPropertyValueSet::SetLonghandProperty(CSSPropertyID property_id, std::shared_ptr<const CSSValue> value) {
-  DCHECK_EQ(shorthandForProperty(property_id).properties().size(), 0u);
+  DCHECK_EQ(shorthandForProperty(property_id).length(), 0u);
   CSSPropertyValue* to_replace = FindInsertionPointForID(property_id);
   if (to_replace) {
     *to_replace = CSSPropertyValue(CSSPropertyName(property_id), value);
@@ -448,28 +449,27 @@ bool MutableCSSPropertyValueSet::RemoveProperty(const T& property, std::string* 
   return RemovePropertyAtIndex(found_property_index, return_text);
 }
 
-inline bool ContainsId(const std::span<const CSSProperty* const>& set, CSSPropertyID id) {
-  for (const CSSProperty* const property : set) {
-    if (property->IDEquals(id)) {
+inline bool ContainsId(const CSSProperty* const set[],
+                       unsigned length,
+                       CSSPropertyID id) {
+  for (unsigned i = 0; i < length; ++i) {
+    if (set[i]->IDEquals(id))
       return true;
-    }
   }
   return false;
 }
 
-bool MutableCSSPropertyValueSet::RemovePropertiesInSet(std::span<const CSSProperty* const> set) {
-  if (property_vector_.empty()) {
+bool MutableCSSPropertyValueSet::RemovePropertiesInSet(const CSSProperty* const set[], unsigned length) {
+  if (property_vector_.empty())
     return false;
-  }
 
   CSSPropertyValue* properties = property_vector_.data();
   unsigned old_size = property_vector_.size();
   unsigned new_index = 0;
   for (unsigned old_index = 0; old_index < old_size; ++old_index) {
     const CSSPropertyValue& property = properties[old_index];
-    if (ContainsId(set, property.Id())) {
+    if (ContainsId(set, length, property.Id()))
       continue;
-    }
     // Modify property_vector_ in-place since this method is
     // performance-sensitive.
     properties[new_index++] = properties[old_index];
@@ -621,11 +621,11 @@ bool MutableCSSPropertyValueSet::RemovePropertyAtIndex(int property_index, std::
 
 bool MutableCSSPropertyValueSet::RemoveShorthandProperty(CSSPropertyID property_id) {
   StylePropertyShorthand shorthand = shorthandForProperty(property_id);
-  if (shorthand.properties().empty()) {
+  if (shorthand.length() == 0) {
     return false;
   }
 
-  return RemovePropertiesInSet(shorthand.properties());
+  return RemovePropertiesInSet(shorthand.properties(), shorthand.length());
 }
 
 CSSPropertyValue* MutableCSSPropertyValueSet::FindCSSPropertyWithName(const CSSPropertyName& name) {

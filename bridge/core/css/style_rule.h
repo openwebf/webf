@@ -225,10 +225,10 @@ class StyleRuleBase : public std::enable_shared_from_this<StyleRuleBase> {
 // partially implemented using its static member functions.
 class StyleRule : public StyleRuleBase {
  public:
-  static std::shared_ptr<StyleRule> Create(std::span<CSSSelector> selectors, std::shared_ptr<CSSPropertyValueSet> properties) {
+  static std::shared_ptr<StyleRule> Create(tcb::span<CSSSelector> selectors, std::shared_ptr<CSSPropertyValueSet> properties) {
     return std::make_shared<StyleRule>(webf::PassKey<StyleRule>(), selectors, properties);
   }
-  static std::shared_ptr<StyleRule> Create(std::span<CSSSelector> selectors,
+  static std::shared_ptr<StyleRule> Create(tcb::span<CSSSelector> selectors,
                                            std::shared_ptr<CSSLazyPropertyParser> lazy_property_parser) {
     return std::make_shared<StyleRule>(
         //        AdditionalBytesForSelectors(selectors.size()),
@@ -236,14 +236,14 @@ class StyleRule : public StyleRuleBase {
   }
 
   // See comment on the corresponding constructor.
-  static std::shared_ptr<StyleRule> Create(std::span<CSSSelector> selectors) {
+  static std::shared_ptr<StyleRule> Create(tcb::span<CSSSelector> selectors) {
     return std::make_shared<StyleRule>(
         //        AdditionalBytesForSelectors(selectors.size()),
         webf::PassKey<StyleRule>(), selectors);
   }
 
   // Creates a StyleRule with the selectors changed (used by setSelectorText()).
-  static std::shared_ptr<StyleRule> Create(std::span<CSSSelector> selectors, StyleRule&& other) {
+  static std::shared_ptr<StyleRule> Create(tcb::span<CSSSelector> selectors, StyleRule&& other) {
     return std::make_shared<StyleRule>(
         //        AdditionalBytesForSelectors(selectors.size()),
         webf::PassKey<StyleRule>(), selectors, std::move(other));
@@ -255,12 +255,12 @@ class StyleRule : public StyleRuleBase {
   // selectors). Do not call them directly; they are public only so that
   // MakeGarbageCollected() can call them. Instead, use Create() above or
   // Copy() below, as appropriate.
-  StyleRule(webf::PassKey<StyleRule>, std::span<CSSSelector> selector_vector, std::shared_ptr<CSSPropertyValueSet>);
-  StyleRule(webf::PassKey<StyleRule>, std::span<CSSSelector> selector_vector, std::shared_ptr<CSSLazyPropertyParser>);
+  StyleRule(webf::PassKey<StyleRule>, tcb::span<CSSSelector> selector_vector, std::shared_ptr<CSSPropertyValueSet>);
+  StyleRule(webf::PassKey<StyleRule>, tcb::span<CSSSelector> selector_vector, std::shared_ptr<CSSLazyPropertyParser>);
   // If you use this constructor, the object will not be fully constructed until
   // you call SetProperties().
-  StyleRule(webf::PassKey<StyleRule>, std::span<CSSSelector> selector_vector);
-  StyleRule(webf::PassKey<StyleRule>, std::span<CSSSelector> selector_vector, StyleRule&&);
+  StyleRule(webf::PassKey<StyleRule>, tcb::span<CSSSelector> selector_vector);
+  StyleRule(webf::PassKey<StyleRule>, tcb::span<CSSSelector> selector_vector, StyleRule&&);
   StyleRule(const StyleRule&, size_t flattened_size);
   StyleRule(const StyleRule&) = delete;
   ~StyleRule();
@@ -337,7 +337,7 @@ class StyleRule : public StyleRuleBase {
   bool HasParsedProperties() const;
 
   CSSSelector* SelectorArray() {
-    return reinterpret_cast<CSSSelector*>(webf::AlignUp(reinterpret_cast<uint8_t*>(this + 1), alignof(CSSSelector)));
+    return reinterpret_cast<CSSSelector*>(base::bits::AlignUp(reinterpret_cast<uint8_t*>(this + 1), alignof(CSSSelector)));
   }
   const CSSSelector* SelectorArray() const { return const_cast<StyleRule*>(this)->SelectorArray(); }
 

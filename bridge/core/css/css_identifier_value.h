@@ -8,7 +8,7 @@
 #define WEBF_CORE_CSS_CSS_IDENTIFIER_VALUE_H_
 
 #include "core/css/css_value.h"
-//#include "core/css/css_value_id_mappings.h"
+#include "core/css/css_value_id_mappings.h"
 #include "css_value_keywords.h"
 #include "foundation/casting.h"
 
@@ -51,8 +51,6 @@ class CSSIdentifierValue : public CSSValue {
   inline T ConvertTo() const {  // Overridden for special cases in CSSPrimitiveValueMappings.h
     return CssValueIDToPlatformEnum<T>(value_id_);
   }
-
-  bool WasQuirky() const { return was_quirky_; }
 
   void TraceAfterDispatch(GCVisitor*) const;
 

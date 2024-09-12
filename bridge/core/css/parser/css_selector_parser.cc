@@ -96,14 +96,14 @@ bool NeedsImplicitShadowCombinatorForMatching(const CSSSelector& selector) {
 // be more complex selectors after this, since we are often dealing with
 // lists of complex selectors. Those are marked using SetLastInSelectorList(),
 // which happens in CSSSelectorList::AdoptSelectorVector.)
-void MarkAsEntireComplexSelector(std::span<CSSSelector> selectors) {
+void MarkAsEntireComplexSelector(tcb::span<CSSSelector> selectors) {
   selectors.back().SetLastInComplexSelector(true);
 }
 
 }  // namespace
 
 // static
-std::span<CSSSelector> CSSSelectorParser::ParseSelector(CSSParserTokenStream& stream,
+tcb::span<CSSSelector> CSSSelectorParser::ParseSelector(CSSParserTokenStream& stream,
                                                         std::shared_ptr<const CSSParserContext> context,
                                                         CSSNestingType nesting_type,
                                                         std::shared_ptr<const StyleRule> parent_rule_for_nesting,
@@ -114,7 +114,7 @@ std::span<CSSSelector> CSSSelectorParser::ParseSelector(CSSParserTokenStream& st
   CSSSelectorParser parser(std::move(context), std::move(parent_rule_for_nesting), is_within_scope,
                            semicolon_aborts_nested_selector, std::move(style_sheet), arena);
   stream.ConsumeWhitespace();
-  std::span<CSSSelector> result = parser.ConsumeComplexSelectorList(stream, nesting_type);
+  tcb::span<CSSSelector> result = parser.ConsumeComplexSelectorList(stream, nesting_type);
   if (!stream.AtEnd()) {
     return {};
   }
@@ -123,7 +123,7 @@ std::span<CSSSelector> CSSSelectorParser::ParseSelector(CSSParserTokenStream& st
 }
 
 // static
-std::span<CSSSelector> CSSSelectorParser::ConsumeSelector(CSSParserTokenStream& stream,
+tcb::span<CSSSelector> CSSSelectorParser::ConsumeSelector(CSSParserTokenStream& stream,
                                                           std::shared_ptr<const CSSParserContext> context,
                                                           CSSNestingType nesting_type,
                                                           std::shared_ptr<const StyleRule> parent_rule_for_nesting,
@@ -135,7 +135,7 @@ std::span<CSSSelector> CSSSelectorParser::ConsumeSelector(CSSParserTokenStream& 
   CSSSelectorParser parser(context, parent_rule_for_nesting, is_within_scope, semicolon_aborts_nested_selector,
                            style_sheet, arena);
   stream.ConsumeWhitespace();
-  std::span<CSSSelector> result = parser.ConsumeComplexSelectorList(stream, observer, nesting_type);
+  tcb::span<CSSSelector> result = parser.ConsumeComplexSelectorList(stream, observer, nesting_type);
   return result;
 }
 
@@ -240,7 +240,7 @@ std::shared_ptr<const CSSSelectorList> CSSSelectorParser::ConsumeNthChildOfSelec
   stream.ConsumeWhitespace();
 
   ResetVectorAfterScope reset_vector(output_);
-  std::span<CSSSelector> selectors = ConsumeComplexSelectorList(stream, CSSNestingType::kNone);
+  tcb::span<CSSSelector> selectors = ConsumeComplexSelectorList(stream, CSSNestingType::kNone);
   if (selectors.empty()) {
     return nullptr;
   }
@@ -248,7 +248,7 @@ std::shared_ptr<const CSSSelectorList> CSSSelectorParser::ConsumeNthChildOfSelec
 }
 
 // static
-// std::optional<std::span<CSSSelector>> CSSSelectorParser::ParseScopeBoundary(
+// std::optional<tcb::span<CSSSelector>> CSSSelectorParser::ParseScopeBoundary(
 //    CSSParserTokenStream& stream,
 //    std::shared_ptr<const CSSParserContext> context,
 //    CSSNestingType nesting_type,
@@ -262,7 +262,7 @@ std::shared_ptr<const CSSSelectorList> CSSSelectorParser::ConsumeNthChildOfSelec
 //  DisallowPseudoElementsScope disallow_pseudo_elements(&parser);
 //
 //  stream.ConsumeWhitespace();
-//  std::optional<std::span<CSSSelector>> result =
+//  std::optional<tcb::span<CSSSelector>> result =
 //      parser.ConsumeForgivingComplexSelectorList(stream, nesting_type);
 //  assert(result.has_value());
 //  if (!stream.AtEnd()) {
@@ -279,7 +279,7 @@ bool CSSSelectorParser::SupportsComplexSelector(CSSParserTokenStream& stream,
   CSSSelectorParser parser(context, /*parent_rule_for_nesting=*/nullptr, /*is_within_scope=*/false,
                            /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
   parser.SetInSupportsParsing();
-  std::span<CSSSelector> selectors = parser.ConsumeComplexSelector(stream, CSSNestingType::kNone,
+  tcb::span<CSSSelector> selectors = parser.ConsumeComplexSelector(stream, CSSNestingType::kNone,
                                                                    /*first_in_complex_selector_list=*/true);
   if (parser.failed_parsing_ || !stream.AtEnd() || selectors.empty()) {
     return false;
@@ -305,7 +305,7 @@ static bool AtEndOfComplexSelector(CSSParserTokenStream& stream) {
   return stream.AtEnd() || token.GetType() == kLeftBraceToken || token.GetType() == kCommaToken;
 }
 
-std::span<CSSSelector> CSSSelectorParser::ConsumeComplexSelectorList(CSSParserTokenStream& stream,
+tcb::span<CSSSelector> CSSSelectorParser::ConsumeComplexSelectorList(CSSParserTokenStream& stream,
                                                                      CSSNestingType nesting_type) {
   ResetVectorAfterScope reset_vector(output_);
   if (ConsumeComplexSelector(stream, nesting_type,
@@ -329,7 +329,7 @@ std::span<CSSSelector> CSSSelectorParser::ConsumeComplexSelectorList(CSSParserTo
   return reset_vector.CommitAddedElements();
 }
 
-std::span<CSSSelector> CSSSelectorParser::ConsumeComplexSelectorList(CSSParserTokenStream& stream,
+tcb::span<CSSSelector> CSSSelectorParser::ConsumeComplexSelectorList(CSSParserTokenStream& stream,
                                                                      std::shared_ptr<CSSParserObserver> observer,
                                                                      CSSNestingType nesting_type) {
   ResetVectorAfterScope reset_vector(output_);
@@ -373,7 +373,7 @@ std::span<CSSSelector> CSSSelectorParser::ConsumeComplexSelectorList(CSSParserTo
 std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeCompoundSelectorList(CSSParserTokenStream& stream) {
   ResetVectorAfterScope reset_vector(output_);
 
-  std::span<CSSSelector> selector = ConsumeCompoundSelector(stream, CSSNestingType::kNone);
+  tcb::span<CSSSelector> selector = ConsumeCompoundSelector(stream, CSSNestingType::kNone);
   stream.ConsumeWhitespace();
   if (selector.empty()) {
     return nullptr;
@@ -402,7 +402,7 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeNestedSelectorList(CS
   }
 
   ResetVectorAfterScope reset_vector(output_);
-  std::span<CSSSelector> result = ConsumeComplexSelectorList(stream, CSSNestingType::kNone);
+  tcb::span<CSSSelector> result = ConsumeComplexSelectorList(stream, CSSNestingType::kNone);
   if (result.empty()) {
     return {};
   } else {
@@ -416,7 +416,7 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeForgivingNestedSelect
     return ConsumeForgivingCompoundSelectorList(stream);
   }
   ResetVectorAfterScope reset_vector(output_);
-  std::optional<std::span<CSSSelector>> forgiving_list =
+  std::optional<tcb::span<CSSSelector>> forgiving_list =
       ConsumeForgivingComplexSelectorList(stream, CSSNestingType::kNone);
   if (!forgiving_list.has_value()) {
     return nullptr;
@@ -430,7 +430,7 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeForgivingNestedSelect
 //     return ConsumeForgivingCompoundSelectorList(stream);
 //   }
 //   ResetVectorAfterScope reset_vector(output_);
-//   std::optional<std::span<CSSSelector>> forgiving_list =
+//   std::optional<tcb::span<CSSSelector>> forgiving_list =
 //       ConsumeForgivingComplexSelectorList(stream, CSSNestingType::kNone);
 //   if (!forgiving_list.has_value()) {
 //     return nullptr;
@@ -438,11 +438,11 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeForgivingNestedSelect
 //   return CSSSelectorList::AdoptSelectorVector(forgiving_list.value());
 // }
 
-std::optional<std::span<CSSSelector>> CSSSelectorParser::ConsumeForgivingComplexSelectorList(
+std::optional<tcb::span<CSSSelector>> CSSSelectorParser::ConsumeForgivingComplexSelectorList(
     CSSParserTokenStream& stream,
     CSSNestingType nesting_type) {
   if (in_supports_parsing_) {
-    std::span<CSSSelector> selectors = ConsumeComplexSelectorList(stream, nesting_type);
+    tcb::span<CSSSelector> selectors = ConsumeComplexSelectorList(stream, nesting_type);
     if (selectors.empty()) {
       return std::nullopt;
     } else {
@@ -457,7 +457,7 @@ std::optional<std::span<CSSSelector>> CSSSelectorParser::ConsumeForgivingComplex
     webf::AutoReset<bool> reset_failure(&failed_parsing_, false);
     CSSParserTokenStream::State state = stream.Save();
     uint32_t subpos = output_.size();
-    std::span<CSSSelector> selector = ConsumeComplexSelector(stream, nesting_type, first_in_complex_selector_list);
+    tcb::span<CSSSelector> selector = ConsumeComplexSelector(stream, nesting_type, first_in_complex_selector_list);
     if (selector.empty() || failed_parsing_ || !AtEndOfComplexSelector(stream)) {
       output_.resize(subpos);  // Drop what we parsed so far.
       stream.Restore(state);
@@ -473,7 +473,7 @@ std::optional<std::span<CSSSelector>> CSSSelectorParser::ConsumeForgivingComplex
 
   if (reset_vector.AddedElements().empty()) {
     //  Parsed nothing that was supported.
-    return std::span<CSSSelector>();
+    return tcb::span<CSSSelector>();
   }
 
   return reset_vector.CommitAddedElements();
@@ -551,7 +551,7 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeForgivingCompoundSele
   while (!stream.AtEnd()) {
     webf::AutoReset<bool> reset_failure(&failed_parsing_, false);
     uint32_t subpos = output_.size();
-    std::span<CSSSelector> selector = ConsumeCompoundSelector(stream, CSSNestingType::kNone);
+    tcb::span<CSSSelector> selector = ConsumeCompoundSelector(stream, CSSNestingType::kNone);
     stream.ConsumeWhitespace();
     if (selector.empty() || failed_parsing_ || (!stream.AtEnd() && stream.Peek().GetType() != kCommaToken)) {
       output_.resize(subpos);  // Drop what we parsed so far.
@@ -585,7 +585,7 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeForgivingRelativeSele
     webf::AutoReset<bool> reset_failure(&failed_parsing_, false);
     CSSParserTokenStream::BlockGuard guard(stream);
     uint32_t subpos = output_.size();
-    std::span<CSSSelector> selector = ConsumeRelativeSelector(stream);
+    tcb::span<CSSSelector> selector = ConsumeRelativeSelector(stream);
 
     if (selector.empty() || failed_parsing_ || (!stream.AtEnd() && stream.Peek().GetType() != kCommaToken)) {
       output_.resize(subpos);  // Drop what we parsed so far.
@@ -657,7 +657,7 @@ unsigned ExtractCompoundFlags(const CSSSelector& simple_selector, CSSParserMode 
   return kHasPseudoElementForRightmostCompound;
 }
 
-unsigned ExtractCompoundFlags(const std::span<CSSSelector> compound_selector, CSSParserMode parser_mode) {
+unsigned ExtractCompoundFlags(const tcb::span<CSSSelector> compound_selector, CSSParserMode parser_mode) {
   unsigned compound_flags = 0;
   for (const CSSSelector& simple : compound_selector) {
     if (compound_flags) {
@@ -670,7 +670,7 @@ unsigned ExtractCompoundFlags(const std::span<CSSSelector> compound_selector, CS
 
 }  // namespace
 
-std::span<CSSSelector> CSSSelectorParser::ConsumeRelativeSelector(CSSParserTokenStream& stream) {
+tcb::span<CSSSelector> CSSSelectorParser::ConsumeRelativeSelector(CSSParserTokenStream& stream) {
   ResetVectorAfterScope reset_vector(output_);
 
   CSSSelector selector;
@@ -777,7 +777,7 @@ static std::optional<CSSSelector> MaybeCreateImplicitDescendantAnchor(
 // compound in front, which for CSSNestingType::kNesting is the nesting
 // selector (&) and for CSSNestingType::kScope is the :scope pseudo class.
 // E.g. given CSSNestingType::kNesting, “> .a” is parsed as “& > .a” ().
-std::span<CSSSelector> CSSSelectorParser::ConsumeNestedRelativeSelector(CSSParserTokenStream& stream,
+tcb::span<CSSSelector> CSSSelectorParser::ConsumeNestedRelativeSelector(CSSParserTokenStream& stream,
                                                                         CSSNestingType nesting_type) {
   assert(nesting_type != CSSNestingType::kNone);
 
@@ -798,7 +798,7 @@ std::span<CSSSelector> CSSSelectorParser::ConsumeNestedRelativeSelector(CSSParse
   return reset_vector.CommitAddedElements();
 }
 
-std::span<CSSSelector> CSSSelectorParser::ConsumeComplexSelector(CSSParserTokenStream& stream,
+tcb::span<CSSSelector> CSSSelectorParser::ConsumeComplexSelector(CSSParserTokenStream& stream,
                                                                  CSSNestingType nesting_type,
                                                                  bool first_in_complex_selector_list) {
   if (nesting_type != CSSNestingType::kNone && PeekIsCombinator(stream)) {
@@ -809,7 +809,7 @@ std::span<CSSSelector> CSSSelectorParser::ConsumeComplexSelector(CSSParserTokenS
   }
 
   ResetVectorAfterScope reset_vector(output_);
-  std::span<CSSSelector> compound_selector = ConsumeCompoundSelector(stream, nesting_type);
+  tcb::span<CSSSelector> compound_selector = ConsumeCompoundSelector(stream, nesting_type);
   if (compound_selector.empty()) {
     return {};
   }
@@ -882,7 +882,7 @@ bool CSSSelectorParser::ConsumePartialComplexSelector(CSSParserTokenStream& stre
                                                       unsigned previous_compound_flags,
                                                       CSSNestingType nesting_type) {
   do {
-    std::span<CSSSelector> compound_selector = ConsumeCompoundSelector(stream, nesting_type);
+    tcb::span<CSSSelector> compound_selector = ConsumeCompoundSelector(stream, nesting_type);
     if (compound_selector.empty()) {
       // No more selectors. If we ended with some explicit combinator
       // (e.g. “a >” and then nothing), that's a parse error.
@@ -916,10 +916,10 @@ CSSSelector::PseudoType CSSSelectorParser::ParsePseudoType(const std::string& na
     return pseudo_type;
   }
 
-  if (name.starts_with("-webkit-")) {
+  if (name.compare(0, 8, "-webkit-") == 0) {
     return CSSSelector::PseudoType::kPseudoWebKitCustomElement;
   }
-  if (name.starts_with("-internal-")) {
+  if (name.compare(0, 10, "-internal-") == 0) {
     return CSSSelector::PseudoType::kPseudoBlinkInternalElement;
   }
   return CSSSelector::PseudoType::kPseudoUnknown;
@@ -1540,7 +1540,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
 
       {
         ResetVectorAfterScope reset_vector(output_);
-        std::span<CSSSelector> inner_selector = ConsumeCompoundSelector(stream, CSSNestingType::kNone);
+        tcb::span<CSSSelector> inner_selector = ConsumeCompoundSelector(stream, CSSNestingType::kNone);
         stream.ConsumeWhitespace();
         if (inner_selector.empty() || !stream.AtEnd()) {
           return false;
@@ -1687,7 +1687,7 @@ bool CSSSelectorParser::ConsumeSimpleSelector(CSSParserTokenStream& stream) {
   return true;
 }
 
-std::span<CSSSelector> CSSSelectorParser::ConsumeCompoundSelector(CSSParserTokenStream& stream,
+tcb::span<CSSSelector> CSSSelectorParser::ConsumeCompoundSelector(CSSParserTokenStream& stream,
                                                                   CSSNestingType nesting_type) {
   ResetVectorAfterScope reset_vector(output_);
   size_t start_pos = output_.size();
@@ -1907,7 +1907,7 @@ void CSSSelectorParser::PrependTypeSelectorIfNeeded(const std::string& namespace
 // not the video element itself, but an element somewhere down in <video>'s
 // shadow DOM tree. Note that since we store compounds right-to-left, this may
 // require rearranging elements in memory (see the comment below).
-void CSSSelectorParser::SplitCompoundAtImplicitShadowCrossingCombinator(std::span<CSSSelector> selectors) {
+void CSSSelectorParser::SplitCompoundAtImplicitShadowCrossingCombinator(tcb::span<CSSSelector> selectors) {
   // The simple selectors are stored in an array that stores
   // combinator-separated compound selectors from right-to-left. Yet, within a
   // single compound selector, stores the simple selectors from left-to-right.
@@ -1937,7 +1937,7 @@ void CSSSelectorParser::SplitCompoundAtImplicitShadowCrossingCombinator(std::spa
       CSSSelector::RelationType relation = GetImplicitShadowCombinatorForMatching(selectors[i].GetPseudoType());
       std::rotate(selectors.begin(), selectors.begin() + i, selectors.end());
 
-      std::span<CSSSelector> remaining = selectors.first(selectors.size() - i);
+      tcb::span<CSSSelector> remaining = selectors.first(selectors.size() - i);
       // We might need to split the compound twice, since ::placeholder is
       // allowed after ::slotted and they both need an implicit combinator for
       // matching.

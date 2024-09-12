@@ -27,7 +27,6 @@
 #include <built_in_string.h>
 #include "bindings/qjs/atomic_string.h"
 #include "core/base/hash/hash.h"
-#include "core/platform/hash_traits.h"
 #include "core/platform/static_constructors.h"
 
 namespace webf {
@@ -153,8 +152,6 @@ class QualifiedName {
   static void CreateStatic(void* target_address, std::string* name, const std::string& name_namespace);
 
  private:
-  friend struct HashTraits<QualifiedName>;
-
   // This constructor is used only to create global/static QNames that don't
   // require any ref counting.
   QualifiedName(const std::string& prefix,
@@ -167,34 +164,6 @@ class QualifiedName {
 
 extern const QualifiedName& g_any_name;
 extern const QualifiedName& g_null_name;
-
-template <>
-struct HashTraits<QualifiedName::QualifiedNameImpl*> : GenericHashTraits<QualifiedName::QualifiedNameImpl*> {
-  static unsigned GetHash(const QualifiedName::QualifiedNameImpl* name) {
-    if (!name->existing_hash_) {
-      name->existing_hash_ = name->ComputeHash();
-    }
-    return name->existing_hash_;
-  }
-  static constexpr bool kSafeToCompareToEmptyOrDeleted = false;
-};
-
-template <>
-struct HashTraits<webf::QualifiedName> : GenericHashTraits<webf::QualifiedName> {
-  using QualifiedNameImpl = webf::QualifiedName::QualifiedNameImpl;
-  static unsigned GetHash(const webf::QualifiedName& name) { return webf::GetHash(name.Impl()); }
-  static constexpr bool kSafeToCompareToEmptyOrDeleted = false;
-
-  static constexpr bool kEmptyValueIsZero = false;
-  static const webf::QualifiedName EmptyValue() { return webf::QualifiedName::Null(); }
-
-  static bool IsDeletedValue(const QualifiedName& value) {
-    return HashTraits<std::shared_ptr<QualifiedNameImpl>>::IsDeletedValue(value.impl_);
-  }
-  static void ConstructDeletedValue(QualifiedName& slot) {
-    HashTraits<std::shared_ptr<QualifiedNameImpl>>::ConstructDeletedValue(slot.impl_);
-  }
-};
 
 inline unsigned HashComponents(const QualifiedNameComponents& buf) {
   return SuperFastHash((const char*) &buf, sizeof(QualifiedNameComponents)) & 0xFFFFFF;

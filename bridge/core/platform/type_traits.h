@@ -163,8 +163,24 @@ inline constexpr WeakHandlingFlag kWeakHandlingTrait =
 
 // This is used to check that DISALLOW_NEW objects are not
 // stored in off-heap Vectors, HashTables etc.
+// This is used to check that DISALLOW_NEW objects are not
+// stored in off-heap Vectors, HashTables etc.
 template <typename T>
-concept IsDisallowNew = requires { typename T::IsDisallowNewMarker; };
+struct IsDisallowNew {
+ private:
+  using YesType = char;
+  struct NoType {
+    char padding[8];
+  };
+
+  template <typename U>
+  static YesType CheckMarker(typename U::IsDisallowNewMarker*);
+  template <typename U>
+  static NoType CheckMarker(...);
+
+ public:
+  static const bool value = sizeof(CheckMarker<T>(nullptr)) == sizeof(YesType);
+};
 
 template <>
 class IsGarbageCollectedType<void> {
@@ -188,9 +204,13 @@ class IsPointerToGarbageCollectedType<T*, false> {
   static const bool value = IsGarbageCollectedType<T>::value;
 };
 
+template <typename T, typename = void>
+struct IsStackAllocatedType : std::false_type {};
+
 template <typename T>
-concept IsStackAllocatedType =
-    requires { typename T::IsStackAllocatedTypeMarker; };
+struct IsStackAllocatedType<T,
+                            std::void_t<typename T::IsStackAllocatedTypeMarker>>
+    : std::true_type {};
 
 template <typename T>
 struct IsPointerToGced {

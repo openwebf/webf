@@ -398,7 +398,7 @@ std::shared_ptr<CSSMathExpressionNode> MaybeSimplifySumNode(
     CSSPrimitiveValue::UnitType unit_type = node->ResolvedUnitType();
     // Skip already used unit types, as they have been already combined.
     if (IsNumericNodeWithDoubleValue(node.get())) {
-      if (used_units.contains(unit_type)) {
+      if (used_units.count(unit_type) > 0) {
         continue;
       }
       used_units.insert(unit_type);
@@ -930,7 +930,7 @@ class CSSMathExpressionNodeParser {
       // For relative color syntax. Swap in the associated value of a color
       // channel here. e.g. color(from color(srgb 1 0 0) calc(r * 2) 0 0) should
       // swap in "1" for the value of "r" in the calc expression.
-      if (color_channel_map_.contains(token.Id())) {
+      if (color_channel_map_.count(token.Id()) > 0) {
         return CSSMathExpressionNumericLiteral::Create(color_channel_map_.at(token.Id()),
                                                        CSSPrimitiveValue::UnitType::kNumber);
       }

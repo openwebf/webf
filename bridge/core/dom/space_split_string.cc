@@ -54,6 +54,11 @@
 
 namespace webf {
 
+template <typename CharType>
+inline bool IsNotHTMLSpace(CharType character) {
+  return !IsHTMLSpace<CharType>(character);
+}
+
 void SpaceSplitString::Set(JSContext* ctx, const AtomicString& value) {
   if (value.IsNull()) {
     Clear();

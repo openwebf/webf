@@ -31,21 +31,26 @@ namespace webf {
 
 class StylePropertyShorthand {
  public:
-  using Properties = std::span<const CSSProperty* const>;
+  using Properties = const CSSProperty**;
   constexpr StylePropertyShorthand()
-      : shorthand_id_(CSSPropertyID::kInvalid) {}
+        : properties_(0),
+          length_(0),
+          shorthand_id_(CSSPropertyID::kInvalid) {}
 
   constexpr StylePropertyShorthand(CSSPropertyID id,
-                                   Properties properties)
-      : properties_(properties),
-        shorthand_id_(id) {}
+                                     const CSSProperty** properties,
+                                     unsigned numProperties)
+        : properties_(properties),
+          length_(numProperties),
+          shorthand_id_(id) {}
 
-  Properties properties() const { return properties_; }
+  const CSSProperty** properties() const { return properties_; }
   CSSPropertyID id() const { return shorthand_id_; }
-  size_t length() const { return properties_.size(); }
+  unsigned length() const { return length_; }
 
  private:
   Properties properties_;
+  unsigned length_;
   CSSPropertyID shorthand_id_;
 };
 

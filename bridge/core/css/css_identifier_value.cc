@@ -32,7 +32,6 @@ CSSIdentifierValue::CSSIdentifierValue(CSSValueID value_id)
 CSSIdentifierValue::CSSIdentifierValue(CSSValueID value_id, bool was_quirky)
     : CSSValue(kIdentifierClass), value_id_(value_id) {
   assert(value_id != CSSValueID::kInvalid);
-  was_quirky_ = was_quirky;
 }
 
 CSSIdentifierValue::CSSIdentifierValue(const Length& length)

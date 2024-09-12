@@ -132,8 +132,8 @@ bool DoCanonicalizeNonSpecialURL(const URLComponentSource<char>& source,
           CanonicalizePath(source.path, parsed.path, CanonMode::kNonSpecialURL,
                            &output, &new_parsed.path);
       if (!parsed.host.is_valid() && new_parsed.path.is_valid() &&
-          new_parsed.path.as_string_view_on(output.view().data())
-              .starts_with("//")) {
+          new_parsed.path.as_string_view_on(output.view().data()).size() >= 2 &&
+          new_parsed.path.as_string_view_on(output.view().data()).substr(0, 2) == "//") {
         // To avoid path being treated as the host, prepend "/." to the path".
         //
         // Examples:

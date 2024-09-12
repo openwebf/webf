@@ -9,16 +9,17 @@
 #include "string_util.h"
 #include <string_view>
 #include "foundation/ascii_types.h"
-#include "core/base/ranges/algorithm.h"
 
 namespace base {
 
 bool StartsWith(std::string_view str, std::string_view search_for) {
-  return str.starts_with(search_for);
+  return str.size() >= search_for.size() &&
+         str.substr(0, search_for.size()) == search_for;
 }
 
 bool EndsWith(std::string_view str, std::string_view search_for) {
-  return str.ends_with(search_for);
+  return str.size() >= search_for.size() &&
+         str.substr(str.size() - search_for.size()) == search_for;
 }
 
 size_t Find(const std::string_view needle, const std::string_view& haystack) {

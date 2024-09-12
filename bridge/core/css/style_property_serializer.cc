@@ -303,7 +303,7 @@ std::string StylePropertySerializer::AsText() const {
     for (const StylePropertyShorthand& shorthand : shorthands) {
       // Some aliases are implemented as a shorthand, in which case
       // we prefer to not use the shorthand.
-      if (shorthand.properties().size() == 1) {
+      if (shorthand.length() == 1) {
         continue;
       }
 
@@ -316,7 +316,7 @@ std::string StylePropertySerializer::AsText() const {
 
       shorthand_appeared.set(shorthand_property_index);
       bool serialized_other_longhand = false;
-      for (unsigned i = 0; i < shorthand.properties().size(); i++) {
+      for (unsigned i = 0; i < shorthand.length(); i++) {
         if (longhand_serialized.test(GetCSSPropertyIDIndex(shorthand.properties()[i]->PropertyID()))) {
           serialized_other_longhand = true;
           break;
@@ -334,7 +334,7 @@ std::string StylePropertySerializer::AsText() const {
       result.Append(GetPropertyText(CSSProperty::Get(shorthand_property).GetCSSPropertyName(), shorthand_result,
                                     property.IsImportant(), num_decls++));
       serialized_as_shorthand = true;
-      for (unsigned i = 0; i < shorthand.properties().size(); i++) {
+      for (unsigned i = 0; i < shorthand.length(); i++) {
         longhand_serialized.set(GetCSSPropertyIDIndex(shorthand.properties()[i]->PropertyID()));
       }
       break;

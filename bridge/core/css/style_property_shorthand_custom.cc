@@ -33,7 +33,7 @@ const StylePropertyShorthand& transitionShorthandForParsing() {
       &GetCSSPropertyTransitionBehavior(), &GetCSSPropertyTransitionDuration(),
       &GetCSSPropertyTransitionTimingFunction(), &GetCSSPropertyTransitionDelay(), &GetCSSPropertyTransitionProperty()};
   static StylePropertyShorthand transition_longhands_with_animation_type(CSSPropertyID::kTransition,
-                                                                         kTransitionPropertiesWithAnimationType);
+                                                                         kTransitionPropertiesWithAnimationType, std::size(kTransitionPropertiesWithAnimationType));
 
   return transition_longhands_with_animation_type;
 }

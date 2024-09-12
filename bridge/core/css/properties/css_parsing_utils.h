@@ -17,7 +17,6 @@
 #include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_primitive_value.h"
 #include "core/css/css_repeat_style_value.h"
-#include "core/style/grid_area.h"
 #include "core/css/css_string_value.h"
 #include "core/css/css_uri_value.h"
 #include "core/css/css_value_list.h"
@@ -26,6 +25,7 @@
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_property_parser.h"
+#include "core/style/grid_area.h"
 // #include "core/style/grid_area.h"
 #include "css_property_names.h"
 #include "css_value_keywords.h"
@@ -100,12 +100,13 @@ std::shared_ptr<const CSSPrimitiveValue> ConsumeInteger(CSSParserTokenStream&,
                                                         const CSSParserContext&,
                                                         double minimum_value = -std::numeric_limits<double>::max(),
                                                         const bool is_percentage_allowed = true);
+
 template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSPrimitiveValue> ConsumeIntegerOrNumberCalc(
-        T&,
-        const CSSParserContext&,
-        CSSPrimitiveValue::ValueRange = CSSPrimitiveValue::ValueRange::kInteger);
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSPrimitiveValue>>::type
+ConsumeIntegerOrNumberCalc(T& range,
+                           const CSSParserContext& context,
+                           CSSPrimitiveValue::ValueRange value_range = CSSPrimitiveValue::ValueRange::kInteger);
 std::shared_ptr<const CSSPrimitiveValue> ConsumePositiveInteger(CSSParserTokenStream&, const CSSParserContext&);
 std::shared_ptr<const CSSPrimitiveValue> ConsumePositiveInteger(CSSParserTokenRange&, const CSSParserContext&);
 bool ConsumeNumberRaw(CSSParserTokenStream&, const CSSParserContext& context, double& result);
@@ -168,15 +169,14 @@ std::shared_ptr<const CSSPrimitiveValue> ConsumeAngle(CSSParserTokenStream&,
                                                       double maximum_value);
 
 template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSPrimitiveValue>
-    ConsumeTime(T&, const CSSParserContext&, CSSPrimitiveValue::ValueRange);
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSPrimitiveValue>>::type
+ConsumeTime(T& range, const CSSParserContext& context, CSSPrimitiveValue::ValueRange value_range);
 
 template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSPrimitiveValue> ConsumeResolution(
-        T&,
-        const CSSParserContext&);
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSPrimitiveValue>>::type
+ConsumeResolution(T& range, const CSSParserContext& context);
 
 std::shared_ptr<const CSSValue> ConsumeRatio(CSSParserTokenStream&, const CSSParserContext&);
 std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenRange&);
@@ -203,8 +203,7 @@ std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenStream&);
 
 template <CSSValueID... names>
 std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenRange& range) {
-  if (range.Peek().GetType() != kIdentToken ||
-      !IdentMatches<names...>(range.Peek().Id())) {
+  if (range.Peek().GetType() != kIdentToken || !IdentMatches<names...>(range.Peek().Id())) {
     return nullptr;
   }
   return CSSIdentifierValue::Create(range.ConsumeIncludingWhitespace().Id());
@@ -212,8 +211,7 @@ std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenRange& rang
 
 template <CSSValueID... names>
 std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenStream& stream) {
-  if (stream.Peek().GetType() != kIdentToken ||
-      !IdentMatches<names...>(stream.Peek().Id())) {
+  if (stream.Peek().GetType() != kIdentToken || !IdentMatches<names...>(stream.Peek().Id())) {
     return nullptr;
   }
   return CSSIdentifierValue::Create(stream.ConsumeIncludingWhitespace().Id());
@@ -223,10 +221,9 @@ std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenRang
 std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenStream&, const CSSParserContext&);
 
 template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSCustomIdentValue> ConsumeDashedIdent(
-        T&,
-        const CSSParserContext&);
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSCustomIdentValue>>::type
+ConsumeDashedIdent(T& range, const CSSParserContext& context);
 std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenStream&);
 std::string ConsumeStringAsString(CSSParserTokenStream& stream);
 std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenStream&, const CSSParserContext&);
@@ -237,8 +234,9 @@ std::shared_ptr<const CSSValue> ConsumeColorMaybeQuirky(CSSParserTokenStream&, c
 
 // https://drafts.csswg.org/css-color-5/#typedef-color
 template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeColor(T&, const CSSParserContext&);
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSValue>>::type
+ConsumeColor(T& range, const CSSParserContext& context);
 
 // https://drafts.csswg.org/css-color-5/#absolute-color
 std::shared_ptr<const CSSValue> ConsumeAbsoluteColor(CSSParserTokenRange&, const CSSParserContext&);
@@ -247,10 +245,10 @@ std::shared_ptr<const CSSValue> ConsumeLineWidth(CSSParserTokenRange&, const CSS
 std::shared_ptr<const CSSValue> ConsumeLineWidth(CSSParserTokenStream&, const CSSParserContext&, UnitlessQuirk);
 
 template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValuePair> ConsumePosition(T&,
-                                                                                               const CSSParserContext&,
-                                                                                               UnitlessQuirk);
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSValuePair>>::type
+ConsumePosition(T& range, const CSSParserContext& context, UnitlessQuirk unitless);
+
 bool ConsumePosition(CSSParserTokenRange&,
                      const CSSParserContext&,
                      UnitlessQuirk,
@@ -263,13 +261,13 @@ bool ConsumePosition(CSSParserTokenStream&,
                      std::shared_ptr<const CSSValue>& result_y);
 
 template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> bool ConsumeOneOrTwoValuedPosition(
-        T&,
-        const CSSParserContext&,
-        UnitlessQuirk,
-        std::shared_ptr<const CSSValue>& result_x,
-        std::shared_ptr<const CSSValue>& result_y);
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        bool>::type
+ConsumeOneOrTwoValuedPosition(T& range,
+                              const CSSParserContext& context,
+                              UnitlessQuirk unitless,
+                              std::shared_ptr<const CSSValue>& result_x,
+                              std::shared_ptr<const CSSValue>& result_y);
 
 bool ConsumeBorderShorthand(CSSParserTokenStream&,
                             const CSSParserContext&,
@@ -438,10 +436,9 @@ bool ConsumeRadii(std::shared_ptr<const CSSValue> horizontal_radii[4],
                   bool use_legacy_parsing);
 
 template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeSingleContainerName(
-        T&,
-        const CSSParserContext&);
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSValue>>::type
+ConsumeSingleContainerName(T& range, const CSSParserContext& context);
 std::shared_ptr<const CSSValue> ConsumeContainerName(CSSParserTokenStream&, const CSSParserContext&);
 
 std::shared_ptr<const CSSValue> ConsumeContainerType(CSSParserTokenStream& stream);
@@ -475,51 +472,57 @@ std::shared_ptr<const CSSValueList> ConsumeFontFamily(CSSParserTokenStream&);
 std::shared_ptr<const CSSValueList> ConsumeNonGenericFamilyNameList(CSSParserTokenStream& stream);
 std::shared_ptr<const CSSValue> ConsumeGenericFamily(CSSParserTokenRange&);
 std::shared_ptr<const CSSValue> ConsumeGenericFamily(CSSParserTokenStream&);
-template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeFamilyName(T&);
-template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::string ConcatenateFamilyName(T&);
-template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSIdentifierValue> ConsumeFontStretchKeywordOnly(
-        T&,
-        const CSSParserContext&);
-template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeFontStretch(T&,
-                                                                                              const CSSParserContext&);
-template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeFontStyle(T&,
-                                                                                            const CSSParserContext&);
-template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeFontWeight(T&,
-                                                                                             const CSSParserContext&);
-template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue> ConsumeFontFeatureSettings(
-        T&,
-        const CSSParserContext&);
-template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const cssvalue::CSSFontFeatureValue> ConsumeFontFeatureTag(
-        T&,
-        const CSSParserContext&);
-template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSIdentifierValue> ConsumeFontVariantCSS21(T&);
-template <typename T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSIdentifierValue> ConsumeFontFormatIdent(T&);
 
+template <typename T>
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSValue>>::type
+ConsumeFamilyName(T& range);
+
+template <typename T>
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::string>::type
+ConcatenateFamilyName(T& range);
+
+template <typename T>
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSIdentifierValue>>::type
+ConsumeFontStretchKeywordOnly(T& range, const CSSParserContext& context);
+
+template <typename T>
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSValue>>::type
+ConsumeFontStretch(T& range, const CSSParserContext& context);
+template <typename T>
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSValue>>::type
+ConsumeFontStyle(T& range, const CSSParserContext& context);
+template <typename T>
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSValue>>::type
+ConsumeFontWeight(T& range, const CSSParserContext& context);
+template <typename T>
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSValue>>::type
+ConsumeFontFeatureSettings(T& range, const CSSParserContext& context);
+template <typename T>
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const cssvalue::CSSFontFeatureValue>>::type
+ConsumeFontFeatureTag(T& range, const CSSParserContext& context);
+
+template <typename T>
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSIdentifierValue>>::type
+ConsumeFontVariantCSS21(T& range);
+
+template <typename T>
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSIdentifierValue>>::type
+ConsumeFontFormatIdent(T& range);
 
 template <typename Func, typename... Args>
 std::shared_ptr<const CSSValueList> ConsumeSpaceSeparatedList(Func callback,
-                                        CSSParserTokenStream& stream,
-                                        Args&&... args) {
+                                                              CSSParserTokenStream& stream,
+                                                              Args&&... args) {
   std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
   do {
     std::shared_ptr<CSSValue> value = callback(stream, std::forward<Args>(args)...);
@@ -683,8 +686,7 @@ std::shared_ptr<const CSSValue> ConsumeBasicShape(CSSParserTokenStream&,
 std::shared_ptr<const CSSValue> ConsumeIntrinsicSizeLonghand(CSSParserTokenStream& stream,
                                                              const CSSParserContext& context);
 
-std::shared_ptr<const CSSValue> ConsumeFontSizeAdjust(CSSParserTokenStream& stream,
-                                                      const CSSParserContext& context);
+std::shared_ptr<const CSSValue> ConsumeFontSizeAdjust(CSSParserTokenStream& stream, const CSSParserContext& context);
 
 std::shared_ptr<const CSSValue> ConsumeAxis(CSSParserTokenStream&, const CSSParserContext& context);
 
@@ -692,8 +694,8 @@ std::shared_ptr<const CSSValue> ConsumeTextDecorationLine(CSSParserTokenStream&)
 std::shared_ptr<const CSSValue> ConsumeTextBoxEdge(CSSParserTokenStream&);
 
 std::shared_ptr<const CSSValue> ConsumeTransformList(CSSParserTokenStream&,
-                               const CSSParserContext&,
-                               const CSSParserLocalContext&);
+                                                     const CSSParserContext&,
+                                                     const CSSParserLocalContext&);
 
 template <typename T>
 bool ConsumeIfIdent(T& range_or_stream, const char* ident) {

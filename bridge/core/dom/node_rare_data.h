@@ -58,7 +58,10 @@ class NodeMutationObserverData final {
 
   const HeapVector<Member<MutationObserverRegistration>>& Registry() { return registry_; }
 
-  const std::unordered_set<Member<MutationObserverRegistration>, Member<MutationObserverRegistration>::KeyHasher>& TransientRegistry() { return transient_registry_; }
+  const std::unordered_set<Member<MutationObserverRegistration>, Member<MutationObserverRegistration>::KeyHasher>&
+  TransientRegistry() {
+    return transient_registry_;
+  }
 
   void AddTransientRegistration(MutationObserverRegistration* registration);
   void RemoveTransientRegistration(MutationObserverRegistration* registration);
@@ -75,14 +78,14 @@ class NodeMutationObserverData final {
 
 class NodeRareData {
  public:
-  enum {
+  enum : uint32_t {
     kConnectedFrameCountBits = 10,  // Must fit Page::maxNumberOfFrames.
     kNumberOfElementFlags = 8,
     kNumberOfDynamicRestyleFlags = 14
     // 0 bits remaining.
   };
 
-  NodeRareData() = default;
+  NodeRareData() : restyle_flags_(0u), connected_frame_count_(0u), element_flags_(0u) {};
   ~NodeRareData() = default;
   NodeRareData(const NodeRareData&) = delete;
   NodeRareData& operator=(const NodeRareData&) = delete;
@@ -127,26 +130,15 @@ class NodeRareData {
   void SetRestyleFlag(DynamicRestyleFlags mask) { restyle_flags_ |= static_cast<uint16_t>(mask); }
   bool HasRestyleFlags() const { return restyle_flags_; }
   void ClearRestyleFlags() { restyle_flags_ = 0u; }
-  // TODO(guopengfei)：ScrollTimeline not support
-  // void RegisterScrollTimeline(ScrollTimeline*);
-  // void UnregisterScrollTimeline(ScrollTimeline*);
-  // void InvalidateAssociatedAnimationEffects();
-
-  // TODO(guopengfei)：Part not support
-  // void AddDOMPart(Part& part);
-  // void RemoveDOMPart(Part& part);
-  // PartsList* GetDOMParts() const;
-
   virtual void Trace(GCVisitor*) const;
 
-  // TODO(guopengfei)：copy from core/dom/node_data.h
   ChildNodeList* EnsureChildNodeList(ContainerNode& node);
   EmptyNodeList* EnsureEmptyChildNodeList(Node& node);
 
  protected:
-  uint32_t restyle_flags_ : kNumberOfDynamicRestyleFlags = 0u;
-  uint32_t connected_frame_count_ : kConnectedFrameCountBits = 0u;
-  uint32_t element_flags_ : kNumberOfElementFlags = 0u;
+  uint32_t restyle_flags_;
+  uint32_t connected_frame_count_;
+  uint32_t element_flags_;
 
  private:
   NodeListsNodeData& CreateNodeLists();

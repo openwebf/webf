@@ -177,7 +177,6 @@ std::shared_ptr<const CSSValue> ConsumeRelativeColorChannel(CSSParserTokenRange&
   return nullptr;
 }
 
-
 }  // namespace
 
 bool ColorFunctionParser::ConsumeChannel(CSSParserTokenRange& args, const CSSParserContext& context, int i) {
@@ -309,14 +308,14 @@ std::shared_ptr<const CSSValue> ColorFunctionParser::ConsumeFunctionalSyntaxColo
 }
 
 std::shared_ptr<const CSSValue> ColorFunctionParser::ConsumeFunctionalSyntaxColor(CSSParserTokenStream& input_stream,
-                                                            const CSSParserContext& context) {
+                                                                                  const CSSParserContext& context) {
   return ConsumeFunctionalSyntaxColorInternal(input_stream, context);
 }
 
 template <class T>
-    requires std::is_same_v<T, CSSParserTokenStream> ||
-    std::is_same_v<T, CSSParserTokenRange> std::shared_ptr<const CSSValue>
-    ColorFunctionParser::ConsumeFunctionalSyntaxColorInternal(T& range, const CSSParserContext& context) {
+typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
+                        std::shared_ptr<const CSSValue>>::type
+ColorFunctionParser::ConsumeFunctionalSyntaxColorInternal(T& range, const CSSParserContext& context) {
   CSSParserSavePoint savepoint(range);
 
   CSSValueID function_id = range.Peek().FunctionId();
@@ -390,6 +389,5 @@ template <class T>
 
   return cssvalue::CSSColor::Create(result);
 }
-
 
 }  // namespace webf

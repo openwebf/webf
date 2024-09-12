@@ -174,7 +174,7 @@ bool ParseBackgroundOrMaskPosition(const StylePropertyShorthand& shorthand,
     return false;
   }
   const StylePropertyShorthand::Properties& longhands = shorthand.properties();
-  DCHECK_EQ(2u, longhands.size());
+  DCHECK_EQ(2u, shorthand.length());
   css_parsing_utils::AddProperty(longhands[0]->PropertyID(), shorthand.id(), result_x, important,
                                  css_parsing_utils::IsImplicitProperty::kNotImplicit, properties);
   css_parsing_utils::AddProperty(longhands[1]->PropertyID(), shorthand.id(), result_y, important,

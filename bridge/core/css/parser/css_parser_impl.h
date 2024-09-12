@@ -139,7 +139,7 @@ class CSSParserImpl {
 //                              CSSNestingType,
 //                              std::shared_ptr<StyleRule> parent_rule_for_nesting,
 //                              bool semicolon_aborts_nested_selector);
-//  std::shared_ptr<StyleRule> ConsumeStyleRuleContents(std::span<CSSSelector> selector_vector,
+//  std::shared_ptr<StyleRule> ConsumeStyleRuleContents(tcb::span<CSSSelector> selector_vector,
 //                                      CSSParserTokenStream& stream);
 //  void ConsumeErroneousAtRule(CSSParserTokenStream& stream, CSSAtRuleID id);
   [[nodiscard]] std::shared_ptr<const CSSParserContext> GetContext() const { return context_; }

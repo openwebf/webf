@@ -32,6 +32,7 @@
 
 #include <memory>
 #include <span>
+#include "core/base/containers/span.h"
 #include "core/css/css_selector.h"
 #include "core/base/types/pass_key.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
@@ -84,8 +85,8 @@ class CSSSelectorList {
   }
   ~CSSSelectorList() = default;
 
-  static std::shared_ptr<CSSSelectorList> AdoptSelectorVector(std::span<CSSSelector> selector_vector);
-  static void AdoptSelectorVector(std::span<CSSSelector> selector_vector, CSSSelector* selector_array);
+  static std::shared_ptr<CSSSelectorList> AdoptSelectorVector(tcb::span<CSSSelector> selector_vector);
+  static void AdoptSelectorVector(tcb::span<CSSSelector> selector_vector, CSSSelector* selector_array);
 
   std::shared_ptr<CSSSelectorList> Copy() const;
 

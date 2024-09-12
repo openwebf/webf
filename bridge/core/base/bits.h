@@ -1,51 +1,33 @@
-// Copyright 2013 The Chromium Authors
+// Copyright (c) 2013 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Copyright (C) 2022-present The WebF authors. All rights reserved.
+// This file defines some bit utilities.
 
+#ifndef BASE_BITS_H_
+#define BASE_BITS_H_
 
-#ifndef WEBF_BITS_H
-#define WEBF_BITS_H
-
-#include <cstdint>
-#include <cstddef>
-
-#include <bit>
-#include <concepts>
 #include <cassert>
+#include <limits.h>
+#include <stddef.h>
+#include <stdint.h>
 
-namespace webf {
+#include <type_traits>
 
+#include "foundation/macros.h"
+#include "core/base/compiler_specific.h"
+#include "core/base/build_config.h"
 
-// Bit functions in <bit> are restricted to a specific set of types of unsigned
-// integer; restrict functions in this file that are related to those in that
-// header to match for consistency.
-template <typename T>
-concept UnsignedInteger =
-    std::unsigned_integral<T> && !std::same_as<T, bool> &&
-    !std::same_as<T, char> && !std::same_as<T, char8_t> &&
-    !std::same_as<T, char16_t> && !std::same_as<T, char32_t> &&
-    !std::same_as<T, wchar_t>;
+#if defined(COMPILER_MSVC)
+#include <intrin.h>
+#endif
 
-// We want to migrate all users of these functions to use the unsigned type
-// versions of the functions, but until they are all moved over, create a
-// concept that captures all the types that must be supported for compatibility
-// but that we want to remove.
-//
-// TODO(crbug.com/40256225): Switch uses to supported functions and
-// remove.
-template <typename T>
-concept SignedIntegerDeprecatedDoNotUse =
-    std::integral<T> && !UnsignedInteger<T>;
+namespace base {
+namespace bits {
 
-// Returns true iff |value| is a power of 2. DEPRECATED; use
-// std::has_single_bit() instead.
-//
-// TODO(crbug.com/40256225): Switch uses and remove.
-template <typename T>
-requires SignedIntegerDeprecatedDoNotUse<T>
-    constexpr bool IsPowerOfTwoDeprecatedDoNotUse(T value) {
+// Returns true iff |value| is a power of 2.
+template <typename T, typename = std::enable_if_t<std::is_integral<T>::value>>
+constexpr bool IsPowerOfTwo(T value) {
   // From "Hacker's Delight": Section 2.1 Manipulating Rightmost Bits.
   //
   // Only positive integers with a single bit set are powers of two. If only one
@@ -56,96 +38,202 @@ requires SignedIntegerDeprecatedDoNotUse<T>
 }
 
 // Round down |size| to a multiple of alignment, which must be a power of two.
-template <typename T>
-requires UnsignedInteger<T>
-    inline constexpr T AlignDown(T size, T alignment) {
-  assert(std::has_single_bit(alignment));
-  return size & ~(alignment - 1);
-}
-
-// Round down |size| to a multiple of alignment, which must be a power of two.
-// DEPRECATED; use the UnsignedInteger version.
-//
-// TODO(crbug.com/40256225): Switch uses and remove.
-template <typename T>
-requires SignedIntegerDeprecatedDoNotUse<T>
-    inline constexpr T AlignDownDeprecatedDoNotUse(T size, T alignment) {
-  DCHECK(IsPowerOfTwoDeprecatedDoNotUse(alignment));
+inline constexpr size_t AlignDown(size_t size, size_t alignment) {
+  DCHECK(IsPowerOfTwo(alignment));
   return size & ~(alignment - 1);
 }
 
 // Move |ptr| back to the previous multiple of alignment, which must be a power
 // of two. Defined for types where sizeof(T) is one byte.
-template <typename T>
-requires(sizeof(T) == 1)
-    inline T* AlignDown(T* ptr, uintptr_t alignment) {
+template <typename T, typename = typename std::enable_if<sizeof(T) == 1>::type>
+inline T* AlignDown(T* ptr, size_t alignment) {
   return reinterpret_cast<T*>(
-      AlignDown(reinterpret_cast<uintptr_t>(ptr), alignment));
+      AlignDown(reinterpret_cast<size_t>(ptr), alignment));
 }
 
 // Round up |size| to a multiple of alignment, which must be a power of two.
-template <typename T>
-requires UnsignedInteger<T>
-    inline constexpr T AlignUp(T size, T alignment) {
-  assert(std::has_single_bit(alignment));
-  return (size + alignment - 1) & ~(alignment - 1);
-}
-
-// Round up |size| to a multiple of alignment, which must be a power of two.
-// DEPRECATED; use the UnsignedInteger version.
-//
-// TODO(crbug.com/40256225): Switch uses and remove.
-template <typename T>
-requires SignedIntegerDeprecatedDoNotUse<T>
-    inline constexpr T AlignUpDeprecatedDoNotUse(T size, T alignment) {
-  DCHECK(IsPowerOfTwoDeprecatedDoNotUse(alignment));
+inline constexpr size_t AlignUp(size_t size, size_t alignment) {
+  DCHECK(IsPowerOfTwo(alignment));
   return (size + alignment - 1) & ~(alignment - 1);
 }
 
 // Advance |ptr| to the next multiple of alignment, which must be a power of
 // two. Defined for types where sizeof(T) is one byte.
-template <typename T>
-requires(sizeof(T) == 1)
-    inline T* AlignUp(T* ptr, uintptr_t alignment) {
+template <typename T, typename = typename std::enable_if<sizeof(T) == 1>::type>
+inline T* AlignUp(T* ptr, size_t alignment) {
   return reinterpret_cast<T*>(
-      AlignUp(reinterpret_cast<uintptr_t>(ptr), alignment));
+      AlignUp(reinterpret_cast<size_t>(ptr), alignment));
 }
 
-// Returns the integer i such as 2^i <= n < 2^(i+1).
+// CountLeadingZeroBits(value) returns the number of zero bits following the
+// most significant 1 bit in |value| if |value| is non-zero, otherwise it
+// returns {sizeof(T) * 8}.
+// Example: 00100010 -> 2
 //
-// A common use for this function is to measure the number of bits required to
-// contain a value; for that case use std::bit_width().
+// CountTrailingZeroBits(value) returns the number of zero bits preceding the
+// least significant 1 bit in |value| if |value| is non-zero, otherwise it
+// returns {sizeof(T) * 8}.
+// Example: 00100010 -> 1
 //
-// A common use for this function is to take its result and use it to left-shift
-// a bit; instead of doing so, use std::bit_floor().
+// C does not have an operator to do this, but fortunately the various
+// compilers have built-ins that map to fast underlying processor instructions.
+//
+// Prefer the clang path on Windows, as _BitScanReverse() and friends are not
+// constexpr.
+#if defined(COMPILER_MSVC) && !defined(__clang__)
+
+template <typename T, unsigned bits = sizeof(T) * 8>
+ALWAYS_INLINE
+    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 4,
+                            unsigned>::type
+    CountLeadingZeroBits(T x) {
+  static_assert(bits > 0, "invalid instantiation");
+  unsigned long index;
+  return LIKELY(_BitScanReverse(&index, static_cast<uint32_t>(x)))
+             ? (31 - index - (32 - bits))
+             : bits;
+}
+
+template <typename T, unsigned bits = sizeof(T) * 8>
+ALWAYS_INLINE
+    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) == 8,
+                            unsigned>::type
+    CountLeadingZeroBits(T x) {
+  static_assert(bits > 0, "invalid instantiation");
+  unsigned long index;
+// MSVC only supplies _BitScanReverse64 when building for a 64-bit target.
+#if defined(ARCH_CPU_64_BITS)
+  return LIKELY(_BitScanReverse64(&index, static_cast<uint64_t>(x)))
+             ? (63 - index)
+             : 64;
+#else
+  uint32_t left = static_cast<uint32_t>(x >> 32);
+  if (LIKELY(_BitScanReverse(&index, left)))
+    return 31 - index;
+
+  uint32_t right = static_cast<uint32_t>(x);
+  if (LIKELY(_BitScanReverse(&index, right)))
+    return 63 - index;
+
+  return 64;
+#endif
+}
+
+template <typename T, unsigned bits = sizeof(T) * 8>
+ALWAYS_INLINE
+    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 4,
+                            unsigned>::type
+    CountTrailingZeroBits(T x) {
+  static_assert(bits > 0, "invalid instantiation");
+  unsigned long index;
+  return LIKELY(_BitScanForward(&index, static_cast<uint32_t>(x))) ? index
+                                                                   : bits;
+}
+
+template <typename T, unsigned bits = sizeof(T) * 8>
+ALWAYS_INLINE
+    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) == 8,
+                            unsigned>::type
+    CountTrailingZeroBits(T x) {
+  static_assert(bits > 0, "invalid instantiation");
+  unsigned long index;
+// MSVC only supplies _BitScanForward64 when building for a 64-bit target.
+#if defined(ARCH_CPU_64_BITS)
+  return LIKELY(_BitScanForward64(&index, static_cast<uint64_t>(x))) ? index
+                                                                     : 64;
+#else
+  uint32_t right = static_cast<uint32_t>(x);
+  if (LIKELY(_BitScanForward(&index, right)))
+    return index;
+
+  uint32_t left = static_cast<uint32_t>(x >> 32);
+  if (LIKELY(_BitScanForward(&index, left)))
+    return 32 + index;
+
+  return 64;
+#endif
+}
+
+ALWAYS_INLINE uint32_t CountLeadingZeroBits32(uint32_t x) {
+  return CountLeadingZeroBits(x);
+}
+
+ALWAYS_INLINE uint64_t CountLeadingZeroBits64(uint64_t x) {
+  return CountLeadingZeroBits(x);
+}
+
+#elif defined(COMPILER_GCC) || defined(__clang__)
+
+// __builtin_clz has undefined behaviour for an input of 0, even though there's
+// clearly a return value that makes sense, and even though some processor clz
+// instructions have defined behaviour for 0. We could drop to raw __asm__ to
+// do better, but we'll avoid doing that unless we see proof that we need to.
+template <typename T, unsigned bits = sizeof(T) * 8>
+ALWAYS_INLINE constexpr
+    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 8,
+                            unsigned>::type
+    CountLeadingZeroBits(T value) {
+  static_assert(bits > 0, "invalid instantiation");
+  return LIKELY(value)
+             ? bits == 64
+                   ? __builtin_clzll(static_cast<uint64_t>(value))
+                   : __builtin_clz(static_cast<uint32_t>(value)) - (32 - bits)
+             : bits;
+}
+
+template <typename T, unsigned bits = sizeof(T) * 8>
+ALWAYS_INLINE constexpr
+    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 8,
+                            unsigned>::type
+    CountTrailingZeroBits(T value) {
+  return LIKELY(value) ? bits == 64
+                             ? __builtin_ctzll(static_cast<uint64_t>(value))
+                             : __builtin_ctz(static_cast<uint32_t>(value))
+                       : bits;
+}
+
+ALWAYS_INLINE constexpr uint32_t CountLeadingZeroBits32(uint32_t x) {
+  return CountLeadingZeroBits(x);
+}
+
+ALWAYS_INLINE constexpr uint64_t CountLeadingZeroBits64(uint64_t x) {
+  return CountLeadingZeroBits(x);
+}
+
+#endif
+
+ALWAYS_INLINE constexpr size_t CountLeadingZeroBitsSizeT(size_t x) {
+  return CountLeadingZeroBits(x);
+}
+
+ALWAYS_INLINE constexpr size_t CountTrailingZeroBitsSizeT(size_t x) {
+  return CountTrailingZeroBits(x);
+}
+
+// Returns the integer i such as 2^i <= n < 2^(i+1)
 constexpr int Log2Floor(uint32_t n) {
-  return 31 - std::countl_zero(n);
+  return 31 - CountLeadingZeroBits(n);
 }
 
-// Returns the integer i such as 2^(i-1) < n <= 2^i.
-//
-// A common use for this function is to measure the number of bits required to
-// contain a value; for that case use std::bit_width().
-//
-// A common use for this function is to take its result and use it to left-shift
-// a bit; instead of doing so, use std::bit_ceil().
+// Returns the integer i such as 2^(i-1) < n <= 2^i
 constexpr int Log2Ceiling(uint32_t n) {
   // When n == 0, we want the function to return -1.
   // When n == 0, (n - 1) will underflow to 0xFFFFFFFF, which is
   // why the statement below starts with (n ? 32 : -1).
-  return (n ? 32 : -1) - std::countl_zero(n - 1);
+  return (n ? 32 : -1) - CountLeadingZeroBits(n - 1);
 }
 
 // Returns a value of type T with a single bit set in the left-most position.
-// Can be used instead of manually shifting a 1 to the left. Unlike the other
-// functions in this file, usable for any integral type.
+// Can be used instead of manually shifting a 1 to the left.
 template <typename T>
-requires std::integral<T>
-    constexpr T LeftmostBit() {
+constexpr T LeftmostBit() {
+  static_assert(std::is_integral<T>::value,
+                "This function can only be used with integral types.");
   T one(1u);
-  return one << (8 * sizeof(T) - 1);
+  return one << ((CHAR_BIT * sizeof(T) - 1));
 }
 
-}  // namespace webf
+}  // namespace bits
+}  // namespace base
 
-#endif  // WEBF_BITS_H
+#endif  // BASE_BITS_H_

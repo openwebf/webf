@@ -15,6 +15,7 @@
 #include <numbers>
 
 #include "core/base/numerics/angle_conversion.h"
+#include "core/base/numerics/math_constants.h"
 
 namespace gfx {
 
@@ -48,11 +49,10 @@ inline SinCos SinCosDegrees(double degrees) {
     double n45degrees = degrees / 45.0;
     int octant = static_cast<int>(n45degrees);
     if (octant == n45degrees) {
-      constexpr SinCos kSinCosN45[] = {
-          {0, 1},  {std::numbers::sqrt2 / 2, std::numbers::sqrt2 / 2},
-          {1, 0},  {std::numbers::sqrt2 / 2, -std::numbers::sqrt2 / 2},
-          {0, -1}, {-std::numbers::sqrt2 / 2, -std::numbers::sqrt2 / 2},
-          {-1, 0}, {-std::numbers::sqrt2 / 2, std::numbers::sqrt2 / 2}};
+      constexpr SinCos kSinCosN45[] = {{0, 1},  {base::kSqrtHalfDouble, base::kSqrtHalfDouble},
+                                       {1, 0},  {base::kSqrtHalfDouble, -base::kSqrtHalfDouble},
+                                       {0, -1}, {-base::kSqrtHalfDouble, -base::kSqrtHalfDouble},
+                                       {-1, 0}, {-base::kSqrtHalfDouble, base::kSqrtHalfDouble}};
 
       return kSinCosN45[octant & 7];
     }

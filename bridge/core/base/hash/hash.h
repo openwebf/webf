@@ -14,13 +14,14 @@
 #include <string>
 #include <string_view>
 #include <utility>
-#include "core/base/containers/span.h"
 
 //#include "base/containers/span.h"
 
 namespace webf {
 
 uint32_t SuperFastHash(const char* data, int len);
+
+
 
 }  // namespace base
 

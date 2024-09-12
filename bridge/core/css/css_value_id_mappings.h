@@ -7,6 +7,7 @@
 #ifndef WEBF_CORE_CSS_CSS_VALUE_ID_MAPPINGS_H_
 #define WEBF_CORE_CSS_CSS_VALUE_ID_MAPPINGS_H_
 
+#include "core/css/white_space.h"
 #include "css_value_keywords.h"
 #include "css_value_id_mappings_generated.h"
 
@@ -56,35 +57,82 @@ inline ETextAlign CssValueIDToPlatformEnum(CSSValueID v) {
   }
   return detail::cssValueIDToPlatformEnumGenerated<ETextAlign>(v);
 }
-//
-//template <>
-//inline CSSValueID PlatformEnumToCSSValueID(EffectModel::CompositeOperation v) {
-//  switch (v) {
-//    case EffectModel::kCompositeReplace:
-//      return CSSValueID::kReplace;
-//    case EffectModel::kCompositeAdd:
-//      return CSSValueID::kAdd;
-//    case EffectModel::kCompositeAccumulate:
-//      return CSSValueID::kAccumulate;
-//  }
-//  NOTREACHED_IN_MIGRATION();
-//  return CSSValueID::kReplace;
-//}
-//
-//template <>
-//inline EffectModel::CompositeOperation CssValueIDToPlatformEnum(CSSValueID v) {
-//  switch (v) {
-//    case CSSValueID::kReplace:
-//      return EffectModel::kCompositeReplace;
-//    case CSSValueID::kAdd:
-//      return EffectModel::kCompositeAdd;
-//    case CSSValueID::kAccumulate:
-//      return EffectModel::kCompositeAccumulate;
-//    default:
-//      NOTREACHED_IN_MIGRATION();
-//      return EffectModel::kCompositeReplace;
-//  }
-//}
+
+
+template <>
+inline EWhiteSpace CssValueIDToPlatformEnum(CSSValueID v) {
+  switch (v) {
+    case CSSValueID::kNormal:
+      return EWhiteSpace::kNormal;
+    case CSSValueID::kPre:
+      return EWhiteSpace::kPre;
+    case CSSValueID::kPreWrap:
+      return EWhiteSpace::kPreWrap;
+    case CSSValueID::kPreLine:
+      return EWhiteSpace::kPreLine;
+    case CSSValueID::kNowrap:
+      return EWhiteSpace::kNowrap;
+    case CSSValueID::kBreakSpaces:
+      return EWhiteSpace::kBreakSpaces;
+    default:
+      NOTREACHED_IN_MIGRATION();
+      return EWhiteSpace::kNormal;
+  }
+}
+
+template <>
+inline CSSValueID PlatformEnumToCSSValueID(EWhiteSpace v) {
+  switch (v) {
+    case EWhiteSpace::kNormal:
+      return CSSValueID::kNormal;
+    case EWhiteSpace::kNowrap:
+      return CSSValueID::kNowrap;
+    case EWhiteSpace::kPre:
+      return CSSValueID::kPre;
+    case EWhiteSpace::kPreLine:
+      return CSSValueID::kPreLine;
+    case EWhiteSpace::kPreWrap:
+      return CSSValueID::kPreWrap;
+    case EWhiteSpace::kBreakSpaces:
+      return CSSValueID::kBreakSpaces;
+  }
+  NOTREACHED_IN_MIGRATION();
+  return CSSValueID::kNone;
+}
+
+template <>
+inline WhiteSpaceCollapse CssValueIDToPlatformEnum(CSSValueID v) {
+  switch (v) {
+    case CSSValueID::kCollapse:
+      return WhiteSpaceCollapse::kCollapse;
+    case CSSValueID::kPreserve:
+      return WhiteSpaceCollapse::kPreserve;
+    case CSSValueID::kPreserveBreaks:
+      return WhiteSpaceCollapse::kPreserveBreaks;
+    case CSSValueID::kBreakSpaces:
+      return WhiteSpaceCollapse::kBreakSpaces;
+    default:
+      NOTREACHED_IN_MIGRATION();
+      return WhiteSpaceCollapse::kCollapse;
+  }
+}
+
+
+template <>
+inline CSSValueID PlatformEnumToCSSValueID(WhiteSpaceCollapse v) {
+  switch (v) {
+    case WhiteSpaceCollapse::kCollapse:
+      return CSSValueID::kCollapse;
+    case WhiteSpaceCollapse::kPreserveBreaks:
+      return CSSValueID::kPreserveBreaks;
+    case WhiteSpaceCollapse::kPreserve:
+      return CSSValueID::kPreserve;
+    case WhiteSpaceCollapse::kBreakSpaces:
+      return CSSValueID::kBreakSpaces;
+  }
+  NOTREACHED_IN_MIGRATION();
+  return CSSValueID::kNone;
+}
 
 template <>
 inline ETextOrientation CssValueIDToPlatformEnum(CSSValueID v) {
@@ -325,180 +373,6 @@ inline CSSValueID PlatformEnumToCSSValueID(EDisplay v) {
   NOTREACHED_IN_MIGRATION();
   return CSSValueID::kInline;
 }
-//
-//template <>
-//inline PageOrientation CssValueIDToPlatformEnum(CSSValueID v) {
-//  if (v == CSSValueID::kUpright) {
-//    return PageOrientation::kUpright;
-//  }
-//  if (v == CSSValueID::kRotateLeft) {
-//    return PageOrientation::kRotateLeft;
-//  }
-//  if (v == CSSValueID::kRotateRight) {
-//    return PageOrientation::kRotateRight;
-//  }
-//
-//  NOTREACHED_IN_MIGRATION();
-//  return PageOrientation::kUpright;
-//}
-
-template <>
-inline ScrollbarGutter CssValueIDToPlatformEnum(CSSValueID v) {
-  if (v == CSSValueID::kAuto) {
-    return kScrollbarGutterAuto;
-  }
-  if (v == CSSValueID::kStable) {
-    return kScrollbarGutterStable;
-  }
-  if (v == CSSValueID::kBothEdges) {
-    return kScrollbarGutterBothEdges;
-  }
-
-  NOTREACHED_IN_MIGRATION();
-  return kScrollbarGutterAuto;
-}
-
-template <>
-inline EWhiteSpace CssValueIDToPlatformEnum(CSSValueID v) {
-  switch (v) {
-    case CSSValueID::kNormal:
-      return EWhiteSpace::kNormal;
-    case CSSValueID::kPre:
-      return EWhiteSpace::kPre;
-    case CSSValueID::kPreWrap:
-      return EWhiteSpace::kPreWrap;
-    case CSSValueID::kPreLine:
-      return EWhiteSpace::kPreLine;
-    case CSSValueID::kNowrap:
-      return EWhiteSpace::kNowrap;
-    case CSSValueID::kBreakSpaces:
-      return EWhiteSpace::kBreakSpaces;
-    default:
-      NOTREACHED_IN_MIGRATION();
-      return EWhiteSpace::kNormal;
-  }
-}
-
-template <>
-inline CSSValueID PlatformEnumToCSSValueID(EWhiteSpace v) {
-  switch (v) {
-    case EWhiteSpace::kNormal:
-      return CSSValueID::kNormal;
-    case EWhiteSpace::kNowrap:
-      return CSSValueID::kNowrap;
-    case EWhiteSpace::kPre:
-      return CSSValueID::kPre;
-    case EWhiteSpace::kPreLine:
-      return CSSValueID::kPreLine;
-    case EWhiteSpace::kPreWrap:
-      return CSSValueID::kPreWrap;
-    case EWhiteSpace::kBreakSpaces:
-      return CSSValueID::kBreakSpaces;
-  }
-  NOTREACHED_IN_MIGRATION();
-  return CSSValueID::kNone;
-}
-
-template <>
-inline WhiteSpaceCollapse CssValueIDToPlatformEnum(CSSValueID v) {
-  switch (v) {
-    case CSSValueID::kCollapse:
-      return WhiteSpaceCollapse::kCollapse;
-    case CSSValueID::kPreserve:
-      return WhiteSpaceCollapse::kPreserve;
-    case CSSValueID::kPreserveBreaks:
-      return WhiteSpaceCollapse::kPreserveBreaks;
-    case CSSValueID::kBreakSpaces:
-      return WhiteSpaceCollapse::kBreakSpaces;
-    default:
-      NOTREACHED_IN_MIGRATION();
-      return WhiteSpaceCollapse::kCollapse;
-  }
-}
-
-template <>
-inline CSSValueID PlatformEnumToCSSValueID(WhiteSpaceCollapse v) {
-  switch (v) {
-    case WhiteSpaceCollapse::kCollapse:
-      return CSSValueID::kCollapse;
-    case WhiteSpaceCollapse::kPreserveBreaks:
-      return CSSValueID::kPreserveBreaks;
-    case WhiteSpaceCollapse::kPreserve:
-      return CSSValueID::kPreserve;
-    case WhiteSpaceCollapse::kBreakSpaces:
-      return CSSValueID::kBreakSpaces;
-  }
-  NOTREACHED_IN_MIGRATION();
-  return CSSValueID::kNone;
-}
-//
-//template <>
-//inline TextBoxEdge::Type CssValueIDToPlatformEnum(CSSValueID id) {
-//  switch (id) {
-//    case CSSValueID::kLeading:
-//      return TextBoxEdge::Type::kLeading;
-//    case CSSValueID::kText:
-//      return TextBoxEdge::Type::kText;
-//    case CSSValueID::kCap:
-//      return TextBoxEdge::Type::kCap;
-//    case CSSValueID::kEx:
-//      return TextBoxEdge::Type::kEx;
-//    case CSSValueID::kAlphabetic:
-//      return TextBoxEdge::Type::kAlphabetic;
-//    default:
-//      NOTREACHED_NORETURN();
-//  }
-//}
-//
-//template <>
-//inline CSSValueID PlatformEnumToCSSValueID(TextBoxEdge::Type type) {
-//  using enum TextBoxEdge::Type;
-//  switch (type) {
-//    case kLeading:
-//      return CSSValueID::kLeading;
-//    case kText:
-//      return CSSValueID::kText;
-//    case kCap:
-//      return CSSValueID::kCap;
-//    case kEx:
-//      return CSSValueID::kEx;
-//    case kAlphabetic:
-//      return CSSValueID::kAlphabetic;
-//  }
-//}
-//
-//template <>
-//inline TextSpacingTrim CssValueIDToPlatformEnum(CSSValueID v) {
-//  switch (v) {
-//    case CSSValueID::kNormal:
-//      return TextSpacingTrim::kNormal;
-//    case CSSValueID::kTrimStart:
-//      return TextSpacingTrim::kTrimStart;
-//    case CSSValueID::kSpaceAll:
-//      return TextSpacingTrim::kSpaceAll;
-//    case CSSValueID::kSpaceFirst:
-//      return TextSpacingTrim::kSpaceFirst;
-//    default:
-//      NOTREACHED_IN_MIGRATION();
-//      return TextSpacingTrim::kNormal;
-//  }
-//}
-//
-//template <>
-//inline CSSValueID PlatformEnumToCSSValueID(TextSpacingTrim v) {
-//  switch (v) {
-//    case TextSpacingTrim::kNormal:
-//      return CSSValueID::kNormal;
-//    case TextSpacingTrim::kTrimStart:
-//      return CSSValueID::kTrimStart;
-//    case TextSpacingTrim::kSpaceAll:
-//      return CSSValueID::kSpaceAll;
-//    case TextSpacingTrim::kSpaceFirst:
-//      return CSSValueID::kSpaceFirst;
-//  }
-//  NOTREACHED_IN_MIGRATION();
-//  return CSSValueID::kNone;
-//}
 
 template <>
 inline TextWrap CssValueIDToPlatformEnum(CSSValueID v) {
@@ -509,10 +383,7 @@ inline TextWrap CssValueIDToPlatformEnum(CSSValueID v) {
       return TextWrap::kNoWrap;
     case CSSValueID::kBalance:
       return TextWrap::kBalance;
-    case CSSValueID::kPretty:
-      return TextWrap::kPretty;
     default:
-      NOTREACHED_IN_MIGRATION();
       return TextWrap::kWrap;
   }
 }
@@ -526,40 +397,8 @@ inline CSSValueID PlatformEnumToCSSValueID(TextWrap v) {
       return CSSValueID::kNowrap;
     case TextWrap::kBalance:
       return CSSValueID::kBalance;
-    case TextWrap::kPretty:
-      return CSSValueID::kPretty;
-  }
-  NOTREACHED_IN_MIGRATION();
-  return CSSValueID::kNone;
-}
-
-template <>
-inline TryTactic CssValueIDToPlatformEnum(CSSValueID v) {
-  switch (v) {
-    case CSSValueID::kFlipBlock:
-      return TryTactic::kFlipBlock;
-    case CSSValueID::kFlipInline:
-      return TryTactic::kFlipInline;
-    case CSSValueID::kFlipStart:
-      return TryTactic::kFlipStart;
     default:
-      NOTREACHED_IN_MIGRATION();
-      return TryTactic::kNone;
-  }
-}
-
-template <>
-inline CSSValueID PlatformEnumToCSSValueID(TryTactic v) {
-  switch (v) {
-    case TryTactic::kNone:
-      NOTREACHED_IN_MIGRATION();
       return CSSValueID::kNone;
-    case TryTactic::kFlipBlock:
-      return CSSValueID::kFlipBlock;
-    case TryTactic::kFlipInline:
-      return CSSValueID::kFlipInline;
-    case TryTactic::kFlipStart:
-      return CSSValueID::kFlipStart;
   }
 }
 

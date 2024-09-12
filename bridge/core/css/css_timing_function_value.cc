@@ -29,9 +29,8 @@
  */
 // TODO:: 修改点，使用std::string 平替String、WTF::StringBuilder；by pengfei
 
-#include <cstdint>
 #include "core/css/css_timing_function_value.h"
-#include "core/base/ranges/algorithm.h"
+#include <cstdint>
 
 namespace webf::cssvalue {
 
@@ -51,20 +50,18 @@ std::string CSSLinearTimingFunctionValue::CustomCSSText() const {
   return std::move(builder);
 }
 
-bool CSSLinearTimingFunctionValue::Equals(
-    const CSSLinearTimingFunctionValue& other) const {
-  return webf::ranges::equal(points_, other.points_);
+bool CSSLinearTimingFunctionValue::Equals(const CSSLinearTimingFunctionValue& other) const {
+  return std::equal(points_.begin(), points_.end(), other.points_.begin(), other.points_.end(),
+                    [](const auto& a, const auto& b) { return a.input == b.input && a.output == b.output; });
 }
 
 std::string CSSCubicBezierTimingFunctionValue::CustomCSSText() const {
-  return "cubic-bezier(" + std::to_string(x1_) + ", " + std::to_string(y1_) +
-         ", " + std::to_string(x2_) + ", " + std::to_string(y2_) + ")";
+  return "cubic-bezier(" + std::to_string(x1_) + ", " + std::to_string(y1_) + ", " + std::to_string(x2_) + ", " +
+         std::to_string(y2_) + ")";
 }
 
-bool CSSCubicBezierTimingFunctionValue::Equals(
-    const CSSCubicBezierTimingFunctionValue& other) const {
-  return x1_ == other.x1_ && x2_ == other.x2_ && y1_ == other.y1_ &&
-         y2_ == other.y2_;
+bool CSSCubicBezierTimingFunctionValue::Equals(const CSSCubicBezierTimingFunctionValue& other) const {
+  return x1_ == other.x1_ && x2_ == other.x2_ && y1_ == other.y1_ && y2_ == other.y2_;
 }
 
 std::string CSSStepsTimingFunctionValue::CustomCSSText() const {
@@ -104,9 +101,8 @@ std::string CSSStepsTimingFunctionValue::CustomCSSText() const {
   return "steps(" + std::to_string(steps_) + ", " + step_position_string + ')';
 }
 
-bool CSSStepsTimingFunctionValue::Equals(
-    const CSSStepsTimingFunctionValue& other) const {
+bool CSSStepsTimingFunctionValue::Equals(const CSSStepsTimingFunctionValue& other) const {
   return steps_ == other.steps_ && step_position_ == other.step_position_;
 }
 
-}  // namespace blink::cssvalue
+}  // namespace webf::cssvalue

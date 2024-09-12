@@ -17,6 +17,7 @@
 #include <initializer_list>
 
 #include "css_property_names.h"
+#include "core/base/bits.h"
 
 namespace webf {
 
@@ -118,7 +119,7 @@ class CSSBitsetBase {
         }
         chunk_ = chunks_[chunk_index_];
       }
-      index_ = chunk_index_ * 64 + std::countr_zero(chunk_);
+      index_ = chunk_index_ * 64 + base::bits::CountTrailingZeroBits(chunk_);
       chunk_ &= chunk_ - 1;  // Clear the lowest bit.
     }
 

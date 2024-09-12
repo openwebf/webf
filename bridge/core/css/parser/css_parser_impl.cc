@@ -417,7 +417,7 @@ ParseSheetResult CSSParserImpl::ParseStyleSheet(const std::string& string,
 //  }
 //
 //  // Parse the prelude of the style rule
-//  std::span<CSSSelector> selector_vector =
+//  tcb::span<CSSSelector> selector_vector =
 //      CSSSelectorParser::ConsumeSelector(stream, context_, nesting_type, parent_rule_for_nesting, is_within_scope_,
 //                                         semicolon_aborts_nested_selector, style_sheet_, observer_, arena_);
 //
@@ -578,7 +578,7 @@ ParseSheetResult CSSParserImpl::ParseStyleSheet(const std::string& string,
 //  return result;
 //}
 //
-//std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRuleContents(std::span<CSSSelector> selector_vector,
+//std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRuleContents(tcb::span<CSSSelector> selector_vector,
 //                                                                   CSSParserTokenStream& stream) {
 //  std::shared_ptr<StyleRule> style_rule = StyleRule::Create(selector_vector);
 //  std::vector<Member<StyleRuleBase>> child_rules;

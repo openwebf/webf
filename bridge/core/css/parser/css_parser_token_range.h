@@ -15,6 +15,7 @@
 #include <vector>
 #include <span>
 #include <cassert>
+#include "core/base/containers/span.h"
 #include "css_parser_token.h"
 #include "bindings/qjs/atomic_string.h"
 
@@ -31,7 +32,7 @@ class CSSParserTokenRange {
  public:
   CSSParserTokenRange(const std::vector<CSSParserToken>& vector)
       : first_(&vector.front()), last_(&vector.back()) {}
-  explicit CSSParserTokenRange(std::span<CSSParserToken> tokens)
+  explicit CSSParserTokenRange(tcb::span<CSSParserToken> tokens)
       : first_(tokens.data()), last_(tokens.data() + tokens.size()) {}
 
   // This should be called on a range with tokens returned by that range.
@@ -49,7 +50,7 @@ class CSSParserTokenRange {
     return *(first_ + offset);
   }
 
-  std::span<const CSSParserToken> RemainingSpan() const {
+  tcb::span<const CSSParserToken> RemainingSpan() const {
     return {first_, last_};
   }
 
@@ -105,7 +106,7 @@ class CSSParserTokenOffsets {
       : first_(&vector.front()), offsets_(std::move(offsets)), string_(string) {
     assert(vector.size() + 1 == offsets_.size());
   }
-  CSSParserTokenOffsets(std::span<const CSSParserToken> tokens,
+  CSSParserTokenOffsets(tcb::span<const CSSParserToken> tokens,
                         std::vector<uint32_t> offsets,
                         StringView string)
       : first_(tokens.data()), offsets_(std::move(offsets)), string_(string) {

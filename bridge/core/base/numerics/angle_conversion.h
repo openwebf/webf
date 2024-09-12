@@ -11,15 +11,15 @@
 namespace base {
 
 template <typename T>
-requires std::floating_point<T>
-    constexpr T DegToRad(T deg) {
-  return deg * std::numbers::pi_v<T> / 180;
+constexpr typename std::enable_if<std::is_floating_point<T>::value, T>::type DegToRad(T deg) {
+  constexpr T pi = static_cast<T>(3.14159265358979323846);  // Manually define pi
+  return deg * pi / 180;
 }
 
 template <typename T>
-requires std::floating_point<T>
-    constexpr T RadToDeg(T rad) {
-  return rad * 180 / std::numbers::pi_v<T>;
+constexpr typename std::enable_if<std::is_floating_point<T>::value, T>::type RadToDeg(T rad) {
+  constexpr T pi = static_cast<T>(3.14159265358979323846);  // Manually define pi
+  return rad * 180 / pi;
 }
 
 }  // namespace base

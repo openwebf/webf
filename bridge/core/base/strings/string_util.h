@@ -88,9 +88,9 @@ std::string ToLowerASCII(const std::string& string);
 
 // ASCII-specific toupper.  The standard library's toupper is locale sensitive,
 // so we don't want to use it here.
-template <typename CharT>
-requires(std::integral<CharT>)
-    CharT ToUpperASCII(CharT c) {
+template <typename CharT,
+          typename = std::enable_if_t<std::is_integral_v<CharT>>>
+CharT ToUpperASCII(CharT c) {
   return (c >= 'a' && c <= 'z') ? static_cast<CharT>(c + 'A' - 'a') : c;
 }
 

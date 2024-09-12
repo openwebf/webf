@@ -40,11 +40,7 @@
 
 #include "global_string.h"
 #include "core/css/invalidation/invalidation_flags.h"
-//#include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
 #include "foundation/casting.h"
-//#include "core/platform/forward.h"
-#include "core/platform/text/atomic_string_hash.h"
-//#include "third_party/blink/renderer/platform/wtf/text/string_hash.h"
 
 namespace webf {
 
