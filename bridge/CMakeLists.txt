@@ -154,9 +154,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   add_library(modb STATIC
     third_party/modp_b64/modp_b64.cc
   )
-  add_library(lz4 STATIC
-    third_party/lz4/lz4.c
-  )
 
   if (NOT MSVC)
     list(APPEND QUICK_JS_SOURCE third_party/quickjs/src/libbf.c)
@@ -241,10 +238,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
 
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
-  list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lz4)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
   list(APPEND BRIDGE_LINK_LIBS modb)
-  list(APPEND BRIDGE_LINK_LIBS lz4)
 
   list(APPEND BRIDGE_SOURCE
     # Binding files

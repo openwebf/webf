@@ -9,7 +9,6 @@
 #include "core/page.h"
 #include "foundation/wbc.h"
 #include "multiple_threading/dispatcher.h"
-#include "third_party/lz4/lz4.h"
 
 namespace webf {
 
@@ -100,35 +99,21 @@ void evaluateWbcInternal(void* page_,
 
   page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
 
-  size_t dataBlockSize;
+  size_t dataBlockStart;
+  size_t dataBlockEnd;
   bool is_success;
   webf::Wbc wbc = webf::Wbc();
-  uint8_t* dataBlockBytes = wbc.prepareWbc(bytes, byte_len, &dataBlockSize);
-  if (dataBlockBytes == nullptr) {
+  bool prepareWbcRes = wbc.prepareWbc(bytes, byte_len, &dataBlockStart, &dataBlockEnd);
+  if (!prepareWbcRes) {
 #if ENABLE_LOG
     WEBF_LOG(ERROR) << "prepareWbc error" << std::endl;
 #endif
     is_success = false;
   } else {
-    std::vector<char> decompressedBytes;
-    decompressedBytes.reserve(webf::Wbc::NODE_LZ4_BLOCK_MAX_SIZE);
-    int decompressedSize = LZ4_decompress_safe(reinterpret_cast<const char*>(dataBlockBytes), &decompressedBytes[0],
-                                               dataBlockSize, webf::Wbc::NODE_LZ4_BLOCK_MAX_SIZE);
-
-    free(dataBlockBytes);
-    dataBlockBytes = NULL;
-
-    if (decompressedSize < 0) {
 #if ENABLE_LOG
-      WEBF_LOG(ERROR) << "LZ4 decompression failed with error code: " << decompressedSize << std::endl;
+      WEBF_LOG(VERBOSE) << "prepareWbc success! " << std::endl;
 #endif
-      is_success = false;
-    } else {
-#if ENABLE_LOG
-      WEBF_LOG(VERBOSE) << "LZ4 decompression success! " << decompressedSize << std::endl;
-#endif
-      is_success = page->evaluateByteCode(reinterpret_cast<uint8_t*>(decompressedBytes.data()), decompressedSize);
-    }
+    is_success = page->evaluateByteCode(bytes + dataBlockStart, dataBlockEnd-dataBlockStart);
   }
 
   page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);

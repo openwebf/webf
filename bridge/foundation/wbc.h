@@ -33,20 +33,20 @@ class Wbc {
   static const int32_t WBC_BODY_CHECKSUM_LENGTH = 4;
 
   // The length of node-lz4 file signature
-  static const int32_t NODE_LZ4_MAGIC = 4;
+  // static const int32_t NODE_LZ4_MAGIC = 4;
 
   // The file descriptor length of node-lz4
-  static const int32_t NODE_LZ4_DESCRIPTOR = 2;
+  // static const int32_t NODE_LZ4_DESCRIPTOR = 2;
 
   // File CHECKSUM length of node-lz4
-  static const int32_t NODE_LZ4_DESCRIPTOR_CHECKSUM = 1;
+  // static const int32_t NODE_LZ4_DESCRIPTOR_CHECKSUM = 1;
 
   // The length of node-lz4’s real compressed content size
-  static const int32_t NODE_LZ4_DATABLOCK_SIZE = 4;
+  // static const int32_t NODE_LZ4_DATABLOCK_SIZE = 4;
 
   // Check whether the wbc file is correct and return dataBlockBytes
   // https://github.com/openwebf/rfc/blob/main/working/wbc1.en-US.md
-  uint8_t* prepareWbc(const uint8_t* bytes, size_t length, size_t* targetSize);
+  bool prepareWbc(const uint8_t *bytes, size_t length, size_t *targetStart, size_t *targetEnd);
 
   // Function to check if the beginning of `bytes` matches the `WBC_SIGNATURE`
   bool verifySignature(const uint8_t* bytes);
