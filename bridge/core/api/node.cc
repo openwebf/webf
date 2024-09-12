@@ -9,9 +9,9 @@
 
 namespace webf {
 
-NodeWebFMethods::NodeWebFMethods(EventTargetWebFMethods* super_webf_methods) : event_target(super_webf_methods) {}
+NodePublicMethods::NodePublicMethods() {}
 
-WebFValue<Node, NodeWebFMethods> NodeWebFMethods::AppendChild(Node* self_node,
+WebFValue<Node, NodePublicMethods> NodePublicMethods::AppendChild(Node* self_node,
                                                               Node* new_node,
                                                               SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{self_node->GetExecutingContext()};
@@ -22,10 +22,10 @@ WebFValue<Node, NodeWebFMethods> NodeWebFMethods::AppendChild(Node* self_node,
 
   returned_node->KeepAlive();
 
-  return {.value = returned_node, .method_pointer = To<NodeWebFMethods>(returned_node->publicMethodPointer())};
+  return {.value = returned_node, .method_pointer = returned_node->nodePublicMethods()};
 }
 
-WebFValue<Node, NodeWebFMethods> NodeWebFMethods::RemoveChild(webf::Node* self_node,
+WebFValue<Node, NodePublicMethods> NodePublicMethods::RemoveChild(webf::Node* self_node,
                                                               webf::Node* target_node,
                                                               webf::SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{self_node->GetExecutingContext()};
@@ -36,7 +36,7 @@ WebFValue<Node, NodeWebFMethods> NodeWebFMethods::RemoveChild(webf::Node* self_n
 
   returned_node->KeepAlive();
 
-  return {.value = returned_node, .method_pointer = To<NodeWebFMethods>(returned_node->publicMethodPointer())};
+  return {.value = returned_node, .method_pointer = returned_node->nodePublicMethods()};
 }
 
 }  // namespace webf

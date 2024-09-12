@@ -13,7 +13,7 @@
 
 namespace webf {
 
-class ExceptionStateWebFMethods;
+class ExceptionStatePublicMethods;
 
 enum ErrorType { TypeError, InternalError, RangeError, ReferenceError, SyntaxError };
 
@@ -23,7 +23,7 @@ class ExceptionState {
   WEBF_DISALLOW_NEW();
 
  public:
-  static ExceptionStateWebFMethods* publicMethodPointer();
+  static ExceptionStatePublicMethods* publicMethodPointer();
 
   void ThrowException(JSContext* ctx, ErrorType type, const std::string& message);
   void ThrowException(JSContext* ctx, JSValue exception);

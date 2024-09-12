@@ -37,4 +37,8 @@ Node* Comment::Clone(Document& factory, CloneChildrenFlag flag) const {
   return copy;
 }
 
+const CommentPublicMethods* Comment::commentPublicMethods() {
+  return &comment_public_methods_;
+}
+
 }  // namespace webf

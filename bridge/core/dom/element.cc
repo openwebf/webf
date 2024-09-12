@@ -344,9 +344,8 @@ void Element::Trace(GCVisitor* visitor) const {
   ContainerNode::Trace(visitor);
 }
 
-WebFPublicMethods* Element::publicMethodPointer() {
-  auto* super_methods = ContainerNode::publicMethodPointer();
-  return new ElementWebFMethods(reinterpret_cast<ContainerNodeWebFMethods*>(super_methods));
+const ElementPublicMethods* Element::elementPublicMethods() {
+  return &element_public_methods_;
 }
 
 // https://dom.spec.whatwg.org/#concept-element-qualified-name

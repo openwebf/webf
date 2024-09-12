@@ -10,62 +10,61 @@
 
 namespace webf {
 
-bool EventWebFMethods::Bubbles(Event* event) {
+bool EventPublicMethods::Bubbles(Event* event) {
   return event->bubbles();
 }
 
-bool EventWebFMethods::Cancelable(Event* event) {
+bool EventPublicMethods::Cancelable(Event* event) {
   return event->cancelable();
 }
 
-WebFValue<EventTarget, EventTargetWebFMethods> EventWebFMethods::CurrentTarget(Event* event) {
+WebFValue<EventTarget, EventTargetPublicMethods> EventPublicMethods::CurrentTarget(Event* event) {
   EventTarget* current_target = event->currentTarget();
   current_target->KeepAlive();
-  return {.value = current_target, .method_pointer = To<EventTargetWebFMethods>(current_target->publicMethodPointer())};
+  return {.value = current_target, .method_pointer = current_target->eventTargetPublicMethods()};
 }
 
-bool EventWebFMethods::DefaultPrevented(Event* event) {
+bool EventPublicMethods::DefaultPrevented(Event* event) {
   return event->defaultPrevented();
 }
 
-WebFValue<EventTarget, EventTargetWebFMethods> EventWebFMethods::SrcElement(Event* event) {
+WebFValue<EventTarget, EventTargetPublicMethods> EventPublicMethods::SrcElement(Event* event) {
   EventTarget* src_element = event->srcElement();
   src_element->KeepAlive();
-  return {.value = src_element, .method_pointer = To<EventTargetWebFMethods>(src_element->publicMethodPointer())};
+  return {.value = src_element, .method_pointer = src_element->eventTargetPublicMethods()};
 }
 
-WebFValue<EventTarget, EventTargetWebFMethods> EventWebFMethods::Target(Event* event) {
+WebFValue<EventTarget, EventTargetPublicMethods> EventPublicMethods::Target(Event* event) {
   EventTarget* target = event->target();
   target->KeepAlive();
-  auto* method_pointer = To<EventTargetWebFMethods>(target->publicMethodPointer());
-  return {.value = target, .method_pointer = method_pointer};
+  return {.value = target, .method_pointer = target->eventTargetPublicMethods()};
 }
 
-bool EventWebFMethods::IsTrusted(Event* event) {
+bool EventPublicMethods::IsTrusted(Event* event) {
   return event->isTrusted();
 }
 
-double EventWebFMethods::TimeStamp(Event* event) {
+double EventPublicMethods::TimeStamp(Event* event) {
   return event->timeStamp();
 }
 
-const char* EventWebFMethods::Type(Event* event) {
+const char* EventPublicMethods::Type(Event* event) {
   return event->type().ToStringView().Characters8();
 }
 
-void EventWebFMethods::PreventDefault(Event* event, SharedExceptionState* shared_exception_state) {
+void EventPublicMethods::PreventDefault(Event* event, SharedExceptionState* shared_exception_state) {
   event->preventDefault(shared_exception_state->exception_state);
 }
 
-void EventWebFMethods::StopImmediatePropagation(Event* event, SharedExceptionState* shared_exception_state) {
+void EventPublicMethods::StopImmediatePropagation(Event* event, SharedExceptionState* shared_exception_state) {
   event->stopImmediatePropagation(shared_exception_state->exception_state);
 }
 
-void EventWebFMethods::StopPropagation(Event* event, SharedExceptionState* shared_exception_state) {
+void EventPublicMethods::StopPropagation(Event* event, SharedExceptionState* shared_exception_state) {
   event->stopPropagation(shared_exception_state->exception_state);
 }
 
-void EventWebFMethods::Release(Event* event) {
+void EventPublicMethods::Release(Event* event) {
   event->ReleaseAlive();
 }
 

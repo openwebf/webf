@@ -14,11 +14,9 @@ typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
 typedef struct Event Event;
 
-struct CommentWebFMethods : WebFPublicMethods {
-  CommentWebFMethods(CharacterDataWebFMethods* super_rust_method);
-
+struct CommentPublicMethods : WebFPublicMethods {
   double version{1.0};
-  CharacterDataWebFMethods* character_data;
+  CharacterDataPublicMethods character_data;
 };
 
 }  // namespace webf

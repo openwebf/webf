@@ -61,13 +61,14 @@ class Window : public EventTargetWithInlineData {
   bool IsWindowOrWorkerGlobalScope() const override;
 
   void Trace(GCVisitor* visitor) const override;
-  WebFPublicMethods* publicMethodPointer() override;
+  const WindowPublicMethods* windowPublicMethods();
 
   // Override default ToQuickJS() to return Global object when access `window` property.
   JSValue ToQuickJS() const override;
 
  private:
   Member<Screen> screen_;
+  WindowPublicMethods window_public_methods_;
 };
 
 template <>

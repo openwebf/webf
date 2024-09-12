@@ -15,10 +15,7 @@
 
 namespace webf {
 
-DocumentWebFMethods::DocumentWebFMethods(ContainerNodeWebFMethods* super_method)
-    : container_node(super_method) {}
-
-WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::CreateElement(
+WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElement(
     webf::Document* ptr,
     const char* tag_name,
     webf::SharedExceptionState* shared_exception_state) {
@@ -32,10 +29,10 @@ WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::CreateElement(
 
   // Hold the reference until rust side notify this element was released.
   new_element->KeepAlive();
-  return {.value = new_element, .method_pointer = To<ElementWebFMethods>(new_element->publicMethodPointer())};
+  return {.value = new_element, .method_pointer = new_element->elementPublicMethods()};
 }
 
-WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::CreateElementWithElementCreationOptions(
+WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElementWithElementCreationOptions(
     webf::Document* ptr,
     const char* tag_name,
     WebFElementCreationOptions& options,
@@ -59,10 +56,10 @@ WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::CreateElementWithEle
 
   // Hold the reference until rust side notify this element was released.
   new_element->KeepAlive();
-  return {.value = new_element, .method_pointer = To<ElementWebFMethods>(new_element->publicMethodPointer())};
+  return {.value = new_element, .method_pointer = new_element->elementPublicMethods()};
 }
 
-WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::CreateElementNS(
+WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElementNS(
     webf::Document* ptr,
     const char* uri,
     const char* tag_name,
@@ -78,10 +75,10 @@ WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::CreateElementNS(
 
   // Hold the reference until rust side notify this element was released.
   new_element->KeepAlive();
-  return {.value = new_element, .method_pointer = To<ElementWebFMethods>(new_element->publicMethodPointer())};
+  return {.value = new_element, .method_pointer = new_element->elementPublicMethods()};
 }
 
-WebFValue <Element, ElementWebFMethods> DocumentWebFMethods::CreateElementNSWithElementCreationOptions(
+WebFValue <Element, ElementPublicMethods> DocumentPublicMethods::CreateElementNSWithElementCreationOptions(
     webf::Document* ptr,
     const char* uri,
     const char* tag_name,
@@ -108,10 +105,10 @@ WebFValue <Element, ElementWebFMethods> DocumentWebFMethods::CreateElementNSWith
 
   // Hold the reference until rust side notify this element was released.
   new_element->KeepAlive();
-  return {.value = new_element, .method_pointer = To<ElementWebFMethods>(new_element->publicMethodPointer())};
+  return {.value = new_element, .method_pointer = new_element->elementPublicMethods()};
 }
 
-WebFValue<Text, TextNodeWebFMethods> DocumentWebFMethods::CreateTextNode(
+WebFValue<Text, TextNodePublicMethods> DocumentPublicMethods::CreateTextNode(
     webf::Document* ptr,
     const char* data,
     webf::SharedExceptionState* shared_exception_state) {
@@ -126,10 +123,10 @@ WebFValue<Text, TextNodeWebFMethods> DocumentWebFMethods::CreateTextNode(
 
   text_node->KeepAlive();
 
-  return {.value = text_node, .method_pointer = To<TextNodeWebFMethods>(text_node->publicMethodPointer())};
+  return {.value = text_node, .method_pointer = text_node->textNodePublicMethods()};
 }
 
-WebFValue<DocumentFragment, DocumentFragmentWebFMethods> DocumentWebFMethods::CreateDocumentFragment(
+WebFValue<DocumentFragment, DocumentFragmentPublicMethods> DocumentPublicMethods::CreateDocumentFragment(
     webf::Document* ptr,
     webf::SharedExceptionState* shared_exception_state) {
   auto* document = static_cast<webf::Document*>(ptr);
@@ -143,10 +140,10 @@ WebFValue<DocumentFragment, DocumentFragmentWebFMethods> DocumentWebFMethods::Cr
   document_fragment->KeepAlive();
 
   return {.value = document_fragment,
-          .method_pointer = To<DocumentFragmentWebFMethods>(document_fragment->publicMethodPointer())};
+          .method_pointer = document_fragment->documentFragmentPublicMethods()};
 }
 
-WebFValue<Comment, CommentWebFMethods> DocumentWebFMethods::CreateComment(
+WebFValue<Comment, CommentPublicMethods> DocumentPublicMethods::CreateComment(
     webf::Document* ptr,
     const char* data,
     webf::SharedExceptionState* shared_exception_state) {
@@ -161,10 +158,10 @@ WebFValue<Comment, CommentWebFMethods> DocumentWebFMethods::CreateComment(
 
   comment->KeepAlive();
 
-  return {.value = comment, .method_pointer = To<CommentWebFMethods>(comment->publicMethodPointer())};
+  return {.value = comment, .method_pointer = comment->commentPublicMethods()};
 }
 
-WebFValue<Event, EventWebFMethods> DocumentWebFMethods::CreateEvent(
+WebFValue<Event, EventPublicMethods> DocumentPublicMethods::CreateEvent(
     webf::Document* ptr,
     const char* type,
     webf::SharedExceptionState* shared_exception_state) {
@@ -179,10 +176,10 @@ WebFValue<Event, EventWebFMethods> DocumentWebFMethods::CreateEvent(
 
   event->KeepAlive();
 
-  return {.value = event, .method_pointer = To<EventWebFMethods>(event->publicMethodPointer())};
+  return {.value = event, .method_pointer = event->eventPublicMethods()};
 }
 
-WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::QuerySelector(
+WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::QuerySelector(
     webf::Document* ptr,
     const char* selectors,
     webf::SharedExceptionState* shared_exception_state) {
@@ -197,10 +194,10 @@ WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::QuerySelector(
 
   element->KeepAlive();
 
-  return {.value = element, .method_pointer = To<ElementWebFMethods>(element->publicMethodPointer())};
+  return {.value = element, .method_pointer = element->elementPublicMethods()};
 }
 
-WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::GetElementById(
+WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::GetElementById(
     webf::Document* ptr,
     const char* id,
     webf::SharedExceptionState* shared_exception_state) {
@@ -215,10 +212,10 @@ WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::GetElementById(
 
   element->KeepAlive();
 
-  return {.value = element, .method_pointer = To<ElementWebFMethods>(element->publicMethodPointer())};
+  return {.value = element, .method_pointer = element->elementPublicMethods()};
 }
 
-WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::ElementFromPoint(
+WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::ElementFromPoint(
     webf::Document* ptr,
     double x,
     double y,
@@ -233,28 +230,28 @@ WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::ElementFromPoint(
 
   element->KeepAlive();
 
-  return {.value = element, .method_pointer = To<ElementWebFMethods>(element->publicMethodPointer())};
+  return {.value = element, .method_pointer = element->elementPublicMethods()};
 }
 
-WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::DocumentElement(webf::Document* document) {
+WebFValue<Element, HTMLElementPublicMethods> DocumentPublicMethods::DocumentElement(webf::Document* document) {
   auto* document_element = document->documentElement();
   document_element->KeepAlive();
   return {.value = document_element,
-          .method_pointer = To<ElementWebFMethods>(document_element->publicMethodPointer())};
+          .method_pointer = document_element->htmlElementPublicMethods()};
 }
 
-WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::Head(webf::Document *document) {
+WebFValue<Element, HTMLElementPublicMethods> DocumentPublicMethods::Head(webf::Document *document) {
   auto* head = document->head();
   head->KeepAlive();
   return {.value = head,
-          .method_pointer = To<ElementWebFMethods>(head->publicMethodPointer())};
+          .method_pointer = head->htmlElementPublicMethods()};
 }
 
-WebFValue<Element, ElementWebFMethods> DocumentWebFMethods::Body(webf::Document *document) {
+WebFValue<Element, HTMLElementPublicMethods> DocumentPublicMethods::Body(webf::Document *document) {
   auto* body = document->body();
   body->KeepAlive();
   return {.value = body,
-          .method_pointer = To<ElementWebFMethods>(body->publicMethodPointer())};
+          .method_pointer = body->htmlElementPublicMethods()};
 }
 
 }  // namespace webf

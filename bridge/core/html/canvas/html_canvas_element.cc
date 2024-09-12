@@ -41,4 +41,8 @@ void HTMLCanvasElement::Trace(GCVisitor* visitor) const {
   HTMLElement::Trace(visitor);
 }
 
+const HTMLCanvasElementPublicMethods* HTMLCanvasElement::htmlCanvasElementPublicMethods() {
+  return &html_canvas_element_public_methods_;
+}
+
 }  // namespace webf

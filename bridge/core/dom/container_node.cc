@@ -573,9 +573,8 @@ void ContainerNode::Trace(GCVisitor* visitor) const {
   Node::Trace(visitor);
 }
 
-WebFPublicMethods* ContainerNode::publicMethodPointer() {
-  auto* super_method = Node::publicMethodPointer();
-  return new ContainerNodeWebFMethods(reinterpret_cast<NodeWebFMethods*>(super_method));
+const ContainerNodePublicMethods* ContainerNode::containerNodePublicMethods() {
+  return &container_node_public_methods_;
 }
 
 }  // namespace webf

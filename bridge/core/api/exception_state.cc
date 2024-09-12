@@ -8,11 +8,11 @@
 
 namespace webf {
 
-bool ExceptionStateWebFMethods::HasException(SharedExceptionState* shared_exception_state) {
+bool ExceptionStatePublicMethods::HasException(SharedExceptionState* shared_exception_state) {
   return shared_exception_state->exception_state.HasException();
 }
 
-void ExceptionStateWebFMethods::Stringify(webf::ExecutingContext* context,
+void ExceptionStatePublicMethods::Stringify(webf::ExecutingContext* context,
                                           webf::SharedExceptionState* shared_exception_state,
                                           char** errmsg,
                                           uint32_t* strlen) {

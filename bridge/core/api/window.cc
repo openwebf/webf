@@ -7,6 +7,4 @@
 
 namespace webf {
 
-WindowWebFMethods::WindowWebFMethods(EventTargetWebFMethods* super_method) : event_target(super_method) {}
-
 }  // namespace webf

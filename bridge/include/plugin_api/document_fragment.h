@@ -15,11 +15,9 @@ typedef struct ExecutingContext ExecutingContext;
 typedef struct DocumentFragment DocumentFragment;
 typedef struct Document Document;
 
-struct DocumentFragmentWebFMethods : WebFPublicMethods {
-  DocumentFragmentWebFMethods(ContainerNodeWebFMethods* super_rust_methods);
-
+struct DocumentFragmentPublicMethods : WebFPublicMethods {
   double version{1.0};
-  ContainerNodeWebFMethods* container_node;
+  ContainerNodePublicMethods container_node;
 };
 
 }  // namespace webf

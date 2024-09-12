@@ -48,9 +48,8 @@ CharacterData::CharacterData(TreeScope& tree_scope, const AtomicString& text, No
   assert(type == kCreateOther || type == kCreateText);
 }
 
-WebFPublicMethods* CharacterData::publicMethodPointer() {
-  auto* super_method = Node::publicMethodPointer();
-  return new ContainerNodeWebFMethods(reinterpret_cast<NodeWebFMethods*>(super_method));
+const CharacterDataPublicMethods* CharacterData::characterDataPublicMethods() {
+  return &character_data_public_methods;
 }
 
 }  // namespace webf

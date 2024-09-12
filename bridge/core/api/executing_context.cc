@@ -9,20 +9,20 @@
 
 namespace webf {
 
-WebFValue<Document, DocumentWebFMethods> ExecutingContextWebFMethods::document(webf::ExecutingContext* context) {
+WebFValue<Document, DocumentPublicMethods> ExecutingContextWebFMethods::document(webf::ExecutingContext* context) {
   auto* document = context->document();
   document->KeepAlive();
   return {
       .value = document,
-      .method_pointer = To<DocumentWebFMethods>(document->publicMethodPointer()),
+      .method_pointer = document->documentPublicMethods(),
   };
 }
 
-WebFValue<Window, WindowWebFMethods> ExecutingContextWebFMethods::window(webf::ExecutingContext* context) {
-  return {.value = context->window(), .method_pointer = To<WindowWebFMethods>(context->window()->publicMethodPointer())};
+WebFValue<Window, WindowPublicMethods> ExecutingContextWebFMethods::window(webf::ExecutingContext* context) {
+  return {.value = context->window(), .method_pointer = context->window()->windowPublicMethods()};
 }
 
-WebFValue<SharedExceptionState, ExceptionStateWebFMethods> ExecutingContextWebFMethods::CreateExceptionState() {
+WebFValue<SharedExceptionState, ExceptionStatePublicMethods> ExecutingContextWebFMethods::CreateExceptionState() {
   return {.value = new SharedExceptionState{webf::ExceptionState()},
           .method_pointer = ExceptionState::publicMethodPointer()};
 }

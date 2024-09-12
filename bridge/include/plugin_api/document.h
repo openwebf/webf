@@ -9,6 +9,7 @@
 #include "document_fragment.h"
 #include "container_node.h"
 #include "text.h"
+#include "html_element.h"
 #include "comment.h"
 #include "event.h"
 
@@ -28,79 +29,77 @@ struct WebFElementCreationOptions {
   const char* is;
 };
 
-using WebFDocumentCreateElement =
-    WebFValue<Element, ElementWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
-using WebFDocumentCreateElementWithElementCreationOptions =
-    WebFValue<Element, ElementWebFMethods> (*)(Document*, const char*, WebFElementCreationOptions&,
+using PublicDocumentCreateElement =
+    WebFValue<Element, ElementPublicMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+using PublicDocumentCreateElementWithElementCreationOptions =
+    WebFValue<Element, ElementPublicMethods> (*)(Document*, const char*, WebFElementCreationOptions&,
                                                SharedExceptionState* shared_exception_state);
-using WebFDocumentCreateElementNS =
-    WebFValue<Element, ElementWebFMethods> (*)(Document*, const char*, const char*, SharedExceptionState* shared_exception_state);
-using WebFDocumentCreateElementNSWithElementCreationOptions =
-    WebFValue<Element, ElementWebFMethods> (*)(Document*, const char*, const char*, WebFElementCreationOptions&,
+using PublicDocumentCreateElementNS =
+    WebFValue<Element, ElementPublicMethods> (*)(Document*, const char*, const char*, SharedExceptionState* shared_exception_state);
+using PublicDocumentCreateElementNSWithElementCreationOptions =
+    WebFValue<Element, ElementPublicMethods> (*)(Document*, const char*, const char*, WebFElementCreationOptions&,
                                                SharedExceptionState* shared_exception_state);
-using WebFDocumentCreateTextNode =
-    WebFValue<Text, TextNodeWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
-using WebFDocumentCreateDocumentFragment =
-    WebFValue<DocumentFragment, DocumentFragmentWebFMethods> (*)(Document*, SharedExceptionState* shared_exception_state);
-using WebFDocumentCreateComment =
-    WebFValue<Comment, CommentWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
-using WebFDocumentCreateEvent = WebFValue<Event, EventWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
-using WebFDocumentQuerySelector = WebFValue<Element, ElementWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
-using WebFDocumentGetElementById = WebFValue<Element, ElementWebFMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
-using WebFDocumentElementFromPoint = WebFValue<Element, ElementWebFMethods> (*)(Document*, double, double, SharedExceptionState* shared_exception_state);
-using WebFDocumentGetDocumentElement = WebFValue<Element, ElementWebFMethods> (*)(Document*);
-using WebFDocumentGetDocumentHeader = WebFValue<Element, ElementWebFMethods> (*)(Document*);
-using WebFDocumentGetDocumentBody = WebFValue<Element, ElementWebFMethods> (*)(Document*);
+using PublicDocumentCreateTextNode =
+    WebFValue<Text, TextNodePublicMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+using PublicDocumentCreateDocumentFragment =
+    WebFValue<DocumentFragment, DocumentFragmentPublicMethods> (*)(Document*, SharedExceptionState* shared_exception_state);
+using PublicDocumentCreateComment =
+    WebFValue<Comment, CommentPublicMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+using PublicDocumentCreateEvent = WebFValue<Event, EventPublicMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+using PublicDocumentQuerySelector = WebFValue<Element, ElementPublicMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+using PublicDocumentGetElementById = WebFValue<Element, ElementPublicMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+using PublicDocumentElementFromPoint = WebFValue<Element, ElementPublicMethods> (*)(Document*, double, double, SharedExceptionState* shared_exception_state);
+using PublicDocumentGetDocumentElement = WebFValue<Element, HTMLElementPublicMethods> (*)(Document*);
+using PublicDocumentGetDocumentHeader = WebFValue<Element, HTMLElementPublicMethods> (*)(Document*);
+using PublicDocumentGetDocumentBody = WebFValue<Element, HTMLElementPublicMethods> (*)(Document*);
 
-struct DocumentWebFMethods : public WebFPublicMethods {
-  DocumentWebFMethods(ContainerNodeWebFMethods* super_rust_method);
-
-  static WebFValue<Element, ElementWebFMethods> CreateElement(Document* document,
+struct DocumentPublicMethods : public WebFPublicMethods {
+  static WebFValue<Element, ElementPublicMethods> CreateElement(Document* document,
                                                               const char* tag_name,
                                                               SharedExceptionState* shared_exception_state);
-  static WebFValue<Element, ElementWebFMethods> CreateElementWithElementCreationOptions(Document* document,
+  static WebFValue<Element, ElementPublicMethods> CreateElementWithElementCreationOptions(Document* document,
                                                                 const char* tag_name,
                                                                 WebFElementCreationOptions& options,
                                                                 SharedExceptionState* shared_exception_state);
-  static WebFValue<Element, ElementWebFMethods> CreateElementNS(Document* document,
+  static WebFValue<Element, ElementPublicMethods> CreateElementNS(Document* document,
                                                               const char* uri,
                                                               const char* tag_name,
                                                               SharedExceptionState* shared_exception_state);
-  static WebFValue<Element, ElementWebFMethods> CreateElementNSWithElementCreationOptions(Document* document,
+  static WebFValue<Element, ElementPublicMethods> CreateElementNSWithElementCreationOptions(Document* document,
                                                               const char* uri,
                                                               const char* tag_name,
                                                               WebFElementCreationOptions& options,
                                                               SharedExceptionState* shared_exception_state);
-  static WebFValue<Text, TextNodeWebFMethods> CreateTextNode(Document* document,
+  static WebFValue<Text, TextNodePublicMethods> CreateTextNode(Document* document,
                                                              const char* data,
                                                              SharedExceptionState* shared_exception_state);
-  static WebFValue<DocumentFragment, DocumentFragmentWebFMethods> CreateDocumentFragment(Document* document,
+  static WebFValue<DocumentFragment, DocumentFragmentPublicMethods> CreateDocumentFragment(Document* document,
                                                                                          SharedExceptionState* shared_exception_state);
-  static WebFValue<Comment, CommentWebFMethods> CreateComment(Document* document, const char* data, SharedExceptionState* shared_exception_state);
-  static WebFValue<Event, EventWebFMethods> CreateEvent(Document* document, const char* type, SharedExceptionState* shared_exception_state);
-  static WebFValue<Element, ElementWebFMethods> QuerySelector(Document* document, const char* selectors, SharedExceptionState* shared_exception_state);
-  static WebFValue<Element, ElementWebFMethods> GetElementById(Document* document, const char* id, SharedExceptionState* shared_exception_state);
-  static WebFValue<Element, ElementWebFMethods> ElementFromPoint(Document* document, double x, double y, SharedExceptionState* shared_exception_state);
-  static WebFValue<Element, ElementWebFMethods> DocumentElement(Document* document);
-  static WebFValue<Element, ElementWebFMethods> Head(Document* document);
-  static WebFValue<Element, ElementWebFMethods> Body(Document* document);
+  static WebFValue<Comment, CommentPublicMethods> CreateComment(Document* document, const char* data, SharedExceptionState* shared_exception_state);
+  static WebFValue<Event, EventPublicMethods> CreateEvent(Document* document, const char* type, SharedExceptionState* shared_exception_state);
+  static WebFValue<Element, ElementPublicMethods> QuerySelector(Document* document, const char* selectors, SharedExceptionState* shared_exception_state);
+  static WebFValue<Element, ElementPublicMethods> GetElementById(Document* document, const char* id, SharedExceptionState* shared_exception_state);
+  static WebFValue<Element, ElementPublicMethods> ElementFromPoint(Document* document, double x, double y, SharedExceptionState* shared_exception_state);
+  static WebFValue<Element, HTMLElementPublicMethods> DocumentElement(Document* document);
+  static WebFValue<Element, HTMLElementPublicMethods> Head(Document* document);
+  static WebFValue<Element, HTMLElementPublicMethods> Body(Document* document);
 
   double version{1.0};
-  ContainerNodeWebFMethods* container_node;
-  WebFDocumentCreateElement document_create_element{CreateElement};
-  WebFDocumentCreateElementWithElementCreationOptions document_create_element_with_element_creation_options{CreateElementWithElementCreationOptions};
-  WebFDocumentCreateElementNS document_create_element_ns{CreateElementNS};
-  WebFDocumentCreateElementNSWithElementCreationOptions document_create_element_ns_with_element_creation_options{CreateElementNSWithElementCreationOptions};
-  WebFDocumentCreateTextNode document_create_text_node{CreateTextNode};
-  WebFDocumentCreateDocumentFragment document_create_document_fragment{CreateDocumentFragment};
-  WebFDocumentCreateComment document_create_comment{CreateComment};
-  WebFDocumentCreateEvent document_create_event{CreateEvent};
-  WebFDocumentQuerySelector document_query_selector{QuerySelector};
-  WebFDocumentGetElementById document_get_element_by_id{GetElementById};
-  WebFDocumentElementFromPoint document_element_from_point{ElementFromPoint};
-  WebFDocumentGetDocumentElement document_get_document_element{DocumentElement};
-  WebFDocumentGetDocumentHeader document_get_document_header{Head};
-  WebFDocumentGetDocumentBody document_get_document_body{Body};
+  ContainerNodePublicMethods container_node;
+  PublicDocumentCreateElement document_create_element{CreateElement};
+  PublicDocumentCreateElementWithElementCreationOptions document_create_element_with_element_creation_options{CreateElementWithElementCreationOptions};
+  PublicDocumentCreateElementNS document_create_element_ns{CreateElementNS};
+  PublicDocumentCreateElementNSWithElementCreationOptions document_create_element_ns_with_element_creation_options{CreateElementNSWithElementCreationOptions};
+  PublicDocumentCreateTextNode document_create_text_node{CreateTextNode};
+  PublicDocumentCreateDocumentFragment document_create_document_fragment{CreateDocumentFragment};
+  PublicDocumentCreateComment document_create_comment{CreateComment};
+  PublicDocumentCreateEvent document_create_event{CreateEvent};
+  PublicDocumentQuerySelector document_query_selector{QuerySelector};
+  PublicDocumentGetElementById document_get_element_by_id{GetElementById};
+  PublicDocumentElementFromPoint document_element_from_point{ElementFromPoint};
+  PublicDocumentGetDocumentElement document_get_document_element{DocumentElement};
+  PublicDocumentGetDocumentHeader document_get_document_header{Head};
+  PublicDocumentGetDocumentBody document_get_document_body{Body};
 };
 
 }  // namespace webf

@@ -7,7 +7,4 @@
 
 namespace webf {
 
-ElementWebFMethods::ElementWebFMethods(ContainerNodeWebFMethods* super_methods)
-    : container_node(super_methods) {}
-
 }  // namespace webf

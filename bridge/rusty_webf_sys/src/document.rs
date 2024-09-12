@@ -15,6 +15,7 @@ use crate::{OpaquePtr, RustValue};
 use crate::text::{Text, TextNodeRustMethods};
 use crate::comment::{Comment, CommentRustMethods};
 use crate::event::{Event, EventRustMethods};
+use crate::html_element::HTMLElement;
 
 #[repr(C)]
 pub struct ElementCreationOptions {
@@ -24,7 +25,7 @@ pub struct ElementCreationOptions {
 #[repr(C)]
 pub struct DocumentRustMethods {
   pub version: c_double,
-  pub container_node: *const ContainerNodeRustMethods,
+  pub container_node: ContainerNodeRustMethods,
   pub create_element: extern "C" fn(document: *const OpaquePtr, tag_name: *const c_char, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub create_element_with_element_creation_options: extern "C" fn(
     document: *const OpaquePtr,
@@ -246,45 +247,45 @@ impl Document {
 
   /// Document.documentElement returns the Element that is the root element of the document
   /// (for example, the <html> element for HTML documents).
-  pub fn document_element(&self) -> Element {
+  pub fn document_element(&self) -> HTMLElement {
     let event_target: &EventTarget = &self.container_node.node.event_target;
     let html_element_value = unsafe {
       ((*self.method_pointer).document_element)(event_target.ptr)
     };
 
-    return Element::initialize(html_element_value.value, event_target.context(), html_element_value.method_pointer);
+    return HTMLElement::initialize(html_element_value.value, event_target.context(), html_element_value.method_pointer);
   }
 
   /// The Document.head property represents the <head> or of the current document,
   /// or null if no such element exists.
-  pub fn head(&self) -> Element {
+  pub fn head(&self) -> HTMLElement {
     let event_target: &EventTarget = &self.container_node.node.event_target;
     let head_element_value = unsafe {
       ((*self.method_pointer).head)(event_target.ptr)
     };
-    return Element::initialize(head_element_value.value, event_target.context(), head_element_value.method_pointer);
+    return HTMLElement::initialize(head_element_value.value, event_target.context(), head_element_value.method_pointer);
   }
 
 
   /// The Document.body property represents the <body> or of the current document,
   /// or null if no such element exists.
-  pub fn body(&self) -> Element {
+  pub fn body(&self) -> HTMLElement {
     let event_target: &EventTarget = &self.container_node.node.event_target;
     let body_element_value = unsafe {
       ((*self.method_pointer).body)(event_target.ptr)
     };
-    return Element::initialize(body_element_value.value, event_target.context(), body_element_value.method_pointer);
+    return HTMLElement::initialize(body_element_value.value, event_target.context(), body_element_value.method_pointer);
   }
 }
 
 trait DocumentMethods : ContainerNodeMethods {}
 
 impl NodeMethods for Document {
-  fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  fn append_child(&self, new_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     self.container_node.node.append_child(new_node, exception_state)
   }
 
-  fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  fn remove_child(&self, target_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     self.container_node.node.remove_child(target_node, exception_state)
   }
 
@@ -301,7 +302,7 @@ impl EventTargetMethods for Document {
         container_node: ContainerNode::initialize(
           ptr,
           context,
-          (method_pointer as *const DocumentRustMethods).as_ref().unwrap().container_node
+          &(method_pointer as *const DocumentRustMethods).as_ref().unwrap().container_node
         ),
         method_pointer: method_pointer as *const DocumentRustMethods,
       }
