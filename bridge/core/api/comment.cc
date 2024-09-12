@@ -7,7 +7,4 @@
 
 namespace webf {
 
-CommentWebFMethods::CommentWebFMethods(CharacterDataWebFMethods* super_method)
-    : character_data(super_method) {}
-
 }  // namespace webf

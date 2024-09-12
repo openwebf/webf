@@ -14,7 +14,7 @@ use crate::text::{Text, TextNodeRustMethods};
 #[repr(C)]
 pub struct CharacterDataRustMethods {
   pub version: c_double,
-  pub node: *const NodeRustMethods
+  pub node: NodeRustMethods
 }
 
 impl RustMethods for CharacterDataRustMethods {}
@@ -31,7 +31,7 @@ impl EventTargetMethods for CharacterData {
   fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> Self where Self: Sized {
     unsafe {
       CharacterData {
-        node: Node::initialize(ptr, context, (method_pointer as *const CharacterDataRustMethods).as_ref().unwrap().node),
+        node: Node::initialize(ptr, context, &(method_pointer as *const CharacterDataRustMethods).as_ref().unwrap().node),
         method_pointer: method_pointer as *const CharacterDataRustMethods,
       }
     }

@@ -27,17 +27,19 @@ class Text : public CharacterData {
   }
 
   NodeType nodeType() const override;
-  WebFPublicMethods* publicMethodPointer() override;
+  const TextNodePublicMethods* textNodePublicMethods();
 
  private:
   std::string nodeName() const override;
   Node* Clone(Document&, CloneChildrenFlag) const override;
+  TextNodePublicMethods text_node_public_methods_;
 };
 
 template <>
 struct DowncastTraits<Text> {
   static bool AllowFrom(const Node& node) { return node.IsTextNode(); };
   static bool AllowFrom(const CharacterData& character_data) { return character_data.IsTextNode(); }
+  static bool AllowFrom(const EventTarget& event_target) { return event_target.IsNode() && To<Node>(event_target).IsTextNode(); }
 };
 
 }  // namespace webf

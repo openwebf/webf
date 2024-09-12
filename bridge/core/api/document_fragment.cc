@@ -7,7 +7,4 @@
 
 namespace webf {
 
-DocumentFragmentWebFMethods::DocumentFragmentWebFMethods(ContainerNodeWebFMethods* super_methods)
-    : container_node(super_methods) {}
-
 }  // namespace webf

@@ -5,7 +5,7 @@
 #ifndef WEBF_CORE_RUST_API_NODE_H_
 #define WEBF_CORE_RUST_API_NODE_H_
 
-#include "event_target.h"
+#include "plugin_api/event_target.h"
 
 namespace webf {
 
@@ -15,24 +15,29 @@ typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
 typedef struct Event Event;
 
-struct NodeWebFMethods;
+struct NodePublicMethods;
 
-using WebFNodeAppendChild = WebFValue<Node, NodeWebFMethods> (*)(Node* self_node,
+using PublicNodeAppendChild = WebFValue<Node, NodePublicMethods> (*)(Node* self_node,
                                                                  Node* new_node,
                                                                  SharedExceptionState* shared_exception_state);
-struct NodeWebFMethods : WebFPublicMethods {
-  explicit NodeWebFMethods(EventTargetWebFMethods* super_rust_methods);
 
-  static WebFValue<Node, NodeWebFMethods> AppendChild(Node* self_node,
+using PublicNodeRemoveChild = WebFValue<Node, NodePublicMethods> (*)(Node* self_node,
+                                                                     Node* target_node,
+                                                                     SharedExceptionState* shared_exception_state);
+
+struct NodePublicMethods : WebFPublicMethods {
+  explicit NodePublicMethods();
+
+  static WebFValue<Node, NodePublicMethods> AppendChild(Node* self_node,
                                                       Node* new_node,
                                                       SharedExceptionState* shared_exception_state);
-  static WebFValue<Node, NodeWebFMethods> RemoveChild(Node* self_node,
+  static WebFValue<Node, NodePublicMethods> RemoveChild(Node* self_node,
                                                       Node* target_node,
                                                       SharedExceptionState* shared_exception_state);
   double version{1.0};
-  EventTargetWebFMethods* event_target;
-
-  WebFNodeAppendChild rust_node_append_child{AppendChild};
+  EventTargetPublicMethods event_target;
+  PublicNodeAppendChild rust_node_append_child{AppendChild};
+  PublicNodeRemoveChild public_node_remove_child{RemoveChild};
 };
 
 }  // namespace webf

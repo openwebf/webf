@@ -144,7 +144,7 @@ class Element : public ContainerNode {
   virtual bool IsWidgetElement() const;
 
   void Trace(GCVisitor* visitor) const override;
-  WebFPublicMethods* publicMethodPointer() override;
+  const ElementPublicMethods* elementPublicMethods();
 
  protected:
   void SetAttributeInternal(const AtomicString&,
@@ -176,6 +176,7 @@ class Element : public ContainerNode {
   mutable std::unique_ptr<ElementData> element_data_;
   mutable Member<ElementAttributes> attributes_;
   Member<InlineCssStyleDeclaration> cssom_wrapper_;
+  ElementPublicMethods element_public_methods_;
 };
 
 template <typename T>

@@ -14,7 +14,7 @@ use crate::OpaquePtr;
 #[repr(C)]
 pub struct TextNodeRustMethods {
   pub version: c_double,
-  pub character_data: *const CharacterDataRustMethods,
+  pub character_data: CharacterDataRustMethods,
 }
 
 impl RustMethods for TextNodeRustMethods {}
@@ -28,11 +28,11 @@ impl Text {
 }
 
 impl NodeMethods for Text {
-  fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  fn append_child(&self, new_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     self.character_data.node.append_child(new_node, exception_state)
   }
 
-  fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  fn remove_child(&self, target_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     self.character_data.node.remove_child(target_node, exception_state)
   }
 
@@ -47,7 +47,7 @@ impl EventTargetMethods for Text {
   fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> Self where Self: Sized {
     unsafe {
       Text {
-        character_data: CharacterData::initialize(ptr, context, (method_pointer as *const TextNodeRustMethods).as_ref().unwrap().character_data),
+        character_data: CharacterData::initialize(ptr, context, &(method_pointer as *const TextNodeRustMethods).as_ref().unwrap().character_data),
         method_pointer: method_pointer as *const TextNodeRustMethods,
       }
     }

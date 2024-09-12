@@ -26,10 +26,13 @@ class DocumentFragment : public ContainerNode {
 
   AtomicString nodeValue() const override;
 
+  const DocumentFragmentPublicMethods* documentFragmentPublicMethods();
+
  protected:
   std::string nodeName() const final;
 
  private:
+  DocumentFragmentPublicMethods document_fragment_public_methods_;
   NodeType nodeType() const final;
   Node* Clone(Document&, CloneChildrenFlag) const override;
   bool ChildTypeAllowed(NodeType) const override;
@@ -38,6 +41,7 @@ class DocumentFragment : public ContainerNode {
 template <>
 struct DowncastTraits<DocumentFragment> {
   static bool AllowFrom(const Node& node) { return node.IsDocumentFragment(); }
+  static bool AllowFrom(const EventTarget& event_target) { return event_target.IsNode() && To<Node>(event_target).IsDocumentFragment(); }
 };
 
 }  // namespace webf

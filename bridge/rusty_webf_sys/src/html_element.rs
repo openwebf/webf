@@ -15,7 +15,7 @@ use crate::OpaquePtr;
 #[repr(C)]
 pub struct HTMLElementRustMethods {
   pub version: c_double,
-  pub element: *const ElementRustMethods,
+  pub element: ElementRustMethods,
 }
 
 pub struct HTMLElement {
@@ -30,11 +30,11 @@ impl ElementMethods for HTMLElement {}
 impl ContainerNodeMethods for HTMLElement {}
 
 impl NodeMethods for HTMLElement {
-  fn append_child<T: NodeMethods>(&self, new_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  fn append_child(&self, new_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     self.element.append_child(new_node, exception_state)
   }
 
-  fn remove_child<T: NodeMethods>(&self, target_node: &T, exception_state: &ExceptionState) -> Result<T, String> {
+  fn remove_child(&self, target_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
     self.element.remove_child(target_node, exception_state)
   }
 
@@ -50,7 +50,7 @@ impl EventTargetMethods for HTMLElement {
         element: Element::initialize(
           ptr,
           context,
-          (method_pointer as *const HTMLElementRustMethods).as_ref().unwrap().element,
+          &(method_pointer as *const HTMLElementRustMethods).as_ref().unwrap().element,
         ),
         method_pointer: method_pointer as *const HTMLElementRustMethods,
       }

@@ -365,9 +365,8 @@ void Event::Trace(GCVisitor* visitor) const {
   }
 }
 
-WebFPublicMethods* Event::publicMethodPointer() {
-  static auto* public_methods = new EventWebFMethods();
-  return public_methods;
+const EventPublicMethods* Event::eventPublicMethods() {
+  return &event_public_methods;
 }
 
 }  // namespace webf

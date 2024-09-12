@@ -82,11 +82,11 @@ impl Event {
     EventTarget::initialize(value.value, self.context, value.method_pointer)
   }
 
-  pub fn target(&self) -> Element {
+  pub fn target(&self) -> EventTarget {
     let value = unsafe {
       ((*self.method_pointer).target)(self.ptr)
     };
-    Element::initialize(value.value, self.context, value.method_pointer)
+    EventTarget::initialize(value.value, self.context, value.method_pointer)
   }
 
   pub fn is_trusted(&self) -> bool {

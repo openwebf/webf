@@ -5,7 +5,7 @@
 #ifndef WEBF_CORE_RUST_API_ELEMENT_H_
 #define WEBF_CORE_RUST_API_ELEMENT_H_
 
-#include "container_node.h"
+#include "plugin_api/container_node.h"
 
 namespace webf {
 
@@ -15,11 +15,9 @@ typedef struct ExecutingContext ExecutingContext;
 typedef struct Element Element;
 typedef struct Document Document;
 
-struct ElementWebFMethods : WebFPublicMethods {
-  ElementWebFMethods(ContainerNodeWebFMethods* super_rust_methods);
-
+struct ElementPublicMethods : WebFPublicMethods {
   double version{1.0};
-  ContainerNodeWebFMethods* container_node;
+  ContainerNodePublicMethods container_node;
 };
 
 }  // namespace webf

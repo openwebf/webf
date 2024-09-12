@@ -15,28 +15,28 @@ typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
 typedef struct Event Event;
 
-using WebFEventGetBubbles = bool (*)(Event*);
-using WebFEventGetCancelable = bool (*)(Event*);
-using WebFEventGetCurrentTarget = WebFValue<EventTarget, EventTargetWebFMethods> (*)(Event*);
-using WebFEventGetDefaultPrevented = bool (*)(Event*);
-using WebFEventGetSrcElement = WebFValue<EventTarget, EventTargetWebFMethods> (*)(Event*);
-using WebFEventGetTarget = WebFValue<EventTarget, EventTargetWebFMethods> (*)(Event*);
-using WebFEventGetIsTrusted = bool (*)(Event*);
-using WebFEventGetTimeStamp = double (*)(Event*);
-using WebFEventGetType = const char* (*)(Event*);
-using WebFEventPreventDefault = void (*)(Event*, SharedExceptionState*);
-using WebFEventStopImmediatePropagation = void (*)(Event*, SharedExceptionState*);
-using WebFEventStopPropagation = void (*)(Event*, SharedExceptionState*);
-using WebFEventRelease = void (*)(Event*);
+using PublicEventGetBubbles = bool (*)(Event*);
+using PublicEventGetCancelable = bool (*)(Event*);
+using PublicEventGetCurrentTarget = WebFValue<EventTarget, EventTargetPublicMethods> (*)(Event*);
+using PublicEventGetDefaultPrevented = bool (*)(Event*);
+using PublicEventGetSrcElement = WebFValue<EventTarget, EventTargetPublicMethods> (*)(Event*);
+using PublicEventGetTarget = WebFValue<EventTarget, EventTargetPublicMethods> (*)(Event*);
+using PublicEventGetIsTrusted = bool (*)(Event*);
+using PublicEventGetTimeStamp = double (*)(Event*);
+using PublicEventGetType = const char* (*)(Event*);
+using PublicEventPreventDefault = void (*)(Event*, SharedExceptionState*);
+using PublicEventStopImmediatePropagation = void (*)(Event*, SharedExceptionState*);
+using PublicEventStopPropagation = void (*)(Event*, SharedExceptionState*);
+using PublicEventRelease = void (*)(Event*);
 
-struct EventWebFMethods : public WebFPublicMethods {
+struct EventPublicMethods : public WebFPublicMethods {
 
   static bool Bubbles(Event* event);
   static bool Cancelable(Event* event);
-  static WebFValue<EventTarget, EventTargetWebFMethods> CurrentTarget(Event* event);
+  static WebFValue<EventTarget, EventTargetPublicMethods> CurrentTarget(Event* event);
   static bool DefaultPrevented(Event* event);
-  static WebFValue<EventTarget, EventTargetWebFMethods> SrcElement(Event* event);
-  static WebFValue<EventTarget, EventTargetWebFMethods> Target(Event* event);
+  static WebFValue<EventTarget, EventTargetPublicMethods> SrcElement(Event* event);
+  static WebFValue<EventTarget, EventTargetPublicMethods> Target(Event* event);
   static bool IsTrusted(Event* event);
   static double TimeStamp(Event* event);
   static const char* Type(Event* event);
@@ -46,19 +46,19 @@ struct EventWebFMethods : public WebFPublicMethods {
   static void Release(Event* event);
   double version{1.0};
 
-  WebFEventGetBubbles event_get_bubbles{Bubbles};
-  WebFEventGetCancelable event_get_cancelable{Cancelable};
-  WebFEventGetCurrentTarget event_get_current_target{CurrentTarget};
-  WebFEventGetDefaultPrevented event_get_default_prevented{DefaultPrevented};
-  WebFEventGetSrcElement event_get_src_element{SrcElement};
-  WebFEventGetTarget event_get_target{Target};
-  WebFEventGetIsTrusted event_get_is_trusted{IsTrusted};
-  WebFEventGetTimeStamp event_get_time_stamp{TimeStamp};
-  WebFEventGetType event_get_type{Type};
-  WebFEventPreventDefault event_prevent_default{PreventDefault};
-  WebFEventStopImmediatePropagation event_stop_immediate_propagation{StopImmediatePropagation};
-  WebFEventStopPropagation event_stop_propagation{StopPropagation};
-  WebFEventRelease event_release{Release};
+  PublicEventGetBubbles event_get_bubbles{Bubbles};
+  PublicEventGetCancelable event_get_cancelable{Cancelable};
+  PublicEventGetCurrentTarget event_get_current_target{CurrentTarget};
+  PublicEventGetDefaultPrevented event_get_default_prevented{DefaultPrevented};
+  PublicEventGetSrcElement event_get_src_element{SrcElement};
+  PublicEventGetTarget event_get_target{Target};
+  PublicEventGetIsTrusted event_get_is_trusted{IsTrusted};
+  PublicEventGetTimeStamp event_get_time_stamp{TimeStamp};
+  PublicEventGetType event_get_type{Type};
+  PublicEventPreventDefault event_prevent_default{PreventDefault};
+  PublicEventStopImmediatePropagation event_stop_immediate_propagation{StopImmediatePropagation};
+  PublicEventStopPropagation event_stop_propagation{StopPropagation};
+  PublicEventRelease event_release{Release};
 };
 
 }  // namespace webf

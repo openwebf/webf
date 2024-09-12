@@ -9,7 +9,7 @@ use crate::OpaquePtr;
 #[repr(C)]
 pub struct WindowRustMethods {
   pub version: c_double,
-  pub event_target: *const EventTargetRustMethods,
+  pub event_target: EventTargetRustMethods,
 }
 
 impl RustMethods for WindowRustMethods {}
