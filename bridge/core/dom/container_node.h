@@ -193,7 +193,6 @@ class ContainerNode : public Node {
 
   Member<Node> first_child_;
   Member<Node> last_child_;
-  ContainerNodePublicMethods container_node_public_methods_;
 
 };
 

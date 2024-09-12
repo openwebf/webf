@@ -26,12 +26,12 @@ class HTMLImageElement : public HTMLElement {
   ScriptPromise decode(ExceptionState& exception_state) const;
 
   const HTMLImageElementPublicMethods* htmlImageElementPublicMethods() {
-    return &html_image_element_public_methods_;
+    static HTMLImageElementPublicMethods html_image_element_public_methods;
+    return &html_image_element_public_methods;
   }
 
  private:
-  bool keep_alive = true;
-  HTMLImageElementPublicMethods html_image_element_public_methods_;
+  bool keep_alive = false;
 };
 
 template <>

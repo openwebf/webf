@@ -271,7 +271,8 @@ void Window::Trace(GCVisitor* visitor) const {
 }
 
 const WindowPublicMethods* Window::windowPublicMethods() {
-  return &window_public_methods_;
+  static WindowPublicMethods window_public_methods;
+  return &window_public_methods;
 }
 
 JSValue Window::ToQuickJS() const {

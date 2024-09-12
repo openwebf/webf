@@ -68,7 +68,6 @@ class Window : public EventTargetWithInlineData {
 
  private:
   Member<Screen> screen_;
-  WindowPublicMethods window_public_methods_;
 };
 
 template <>

@@ -36,7 +36,6 @@ class CharacterData : public Node {
 
  private:
   AtomicString data_;
-  CharacterDataPublicMethods character_data_public_methods;
 };
 
 template <>

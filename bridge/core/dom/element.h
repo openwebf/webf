@@ -176,7 +176,6 @@ class Element : public ContainerNode {
   mutable std::unique_ptr<ElementData> element_data_;
   mutable Member<ElementAttributes> attributes_;
   Member<InlineCssStyleDeclaration> cssom_wrapper_;
-  ElementPublicMethods element_public_methods_;
 };
 
 template <typename T>

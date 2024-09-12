@@ -133,7 +133,6 @@ class Document : public ContainerNode, public TreeScope {
   int node_count_{0};
   ScriptAnimationController script_animation_controller_;
   MutationObserverOptions mutation_observer_types_;
-  DocumentPublicMethods document_public_methods_;
 };
 
 template <>

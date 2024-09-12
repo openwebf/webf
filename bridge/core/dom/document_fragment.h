@@ -32,7 +32,6 @@ class DocumentFragment : public ContainerNode {
   std::string nodeName() const final;
 
  private:
-  DocumentFragmentPublicMethods document_fragment_public_methods_;
   NodeType nodeType() const final;
   Node* Clone(Document&, CloneChildrenFlag) const override;
   bool ChildTypeAllowed(NodeType) const override;

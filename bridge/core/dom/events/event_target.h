@@ -168,7 +168,6 @@ class EventTarget : public BindingObject {
 
  private:
   RegisteredEventListener* GetAttributeRegisteredEventListener(const AtomicString& event_type);
-  EventTargetPublicMethods event_target_public_methods;
 
   bool FireEventListeners(Event&, EventTargetData*, EventListenerVector&, ExceptionState&);
 };
