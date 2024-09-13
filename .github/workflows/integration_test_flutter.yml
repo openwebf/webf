@@ -91,7 +91,7 @@ jobs:
         flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: macos_bridge_binary
         path: bridge/build/macos/
@@ -118,7 +118,7 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: macos_bridge_binary
         path: bridge/build/macos/
@@ -145,7 +145,7 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: macos_bridge_binary
         path: bridge/build/macos/
@@ -171,7 +171,7 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: macos_bridge_binary
         path: bridge/build/macos/
@@ -198,7 +198,7 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: macos_bridge_binary
         path: bridge/build/macos/
