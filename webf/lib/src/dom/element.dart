@@ -387,7 +387,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
         RenderBoxModel.detachRenderBox(previousRenderBoxModel);
 
-        if (parentRenderObject != null) {
+        if (parentRenderObject != null && parentRenderObject.attached) {
           RenderBoxModel.attachRenderBox(parentRenderObject, nextRenderBoxModel, after: after);
         }
 

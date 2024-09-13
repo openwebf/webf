@@ -58,6 +58,8 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
       assert(childRenderer.parent == parentRenderer);
       if (childRenderer.parentData is BoxParentData) {
         offset += (childRenderer.parentData as BoxParentData).offset;
+      } else if (childRenderer.parentData is SliverPhysicalContainerParentData) {
+        offset += (childRenderer.parentData as SliverPhysicalContainerParentData).paintOffset;
       }
     }
   }
@@ -174,9 +176,7 @@ mixin RenderBoxContainerDefaultsMixin<ChildType extends RenderBox,
   List<ChildType> getChildren() {
     final List<ChildType> result = <ChildType>[];
     visitChildren((child) {
-      if (child is! RenderPositionPlaceholder) {
-        result.add(child as ChildType);
-      }
+      result.add(child as ChildType);
     });
     return result;
   }
