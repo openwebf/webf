@@ -21,18 +21,22 @@ class HybridRouterChangeEvent : public Event {
   static HybridRouterChangeEvent* Create(ExecutingContext* context, ExceptionState& exception_state);
 
   static HybridRouterChangeEvent* Create(ExecutingContext* context,
-                               const AtomicString& type,
-                               const std::shared_ptr<HybridRouterChangeEventInit>& initializer,
-                               ExceptionState& exception_state);
-
-  explicit HybridRouterChangeEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
+                                         const AtomicString& type,
+                                         const std::shared_ptr<HybridRouterChangeEventInit>& initializer,
+                                         ExceptionState& exception_state);
 
   explicit HybridRouterChangeEvent(ExecutingContext* context,
-                         const AtomicString& type,
-                         const std::shared_ptr<HybridRouterChangeEventInit>& initializer,
-                         ExceptionState& exception_state);
+                                   const AtomicString& type,
+                                   ExceptionState& exception_state);
 
-  explicit HybridRouterChangeEvent(ExecutingContext* context, const AtomicString& type, NativeHybridRouterChangeEvent* native_ui_event);
+  explicit HybridRouterChangeEvent(ExecutingContext* context,
+                                   const AtomicString& type,
+                                   const std::shared_ptr<HybridRouterChangeEventInit>& initializer,
+                                   ExceptionState& exception_state);
+
+  explicit HybridRouterChangeEvent(ExecutingContext* context,
+                                   const AtomicString& type,
+                                   NativeHybridRouterChangeEvent* native_ui_event);
 
   ScriptValue state() const;
   AtomicString kind() const;
