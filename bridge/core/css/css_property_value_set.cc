@@ -27,6 +27,7 @@
 
 #include "css_property_value_set.h"
 #include <span>
+#include "core/base/memory/shared_ptr.h"
 #include "core/css/properties/css_property.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_markup.h"
@@ -152,7 +153,7 @@ std::shared_ptr<const ImmutableCSSPropertyValueSet> CSSPropertyValueSet::Immutab
   auto* immutable_property_set =
       DynamicTo<ImmutableCSSPropertyValueSet>(const_cast<CSSPropertyValueSet*>(shared_from_this().get()));
   if (immutable_property_set) {
-    return std::reinterpret_pointer_cast<const ImmutableCSSPropertyValueSet>(shared_from_this());
+    return reinterpret_pointer_cast<const ImmutableCSSPropertyValueSet>(shared_from_this());
   }
 
   const auto* mutable_this = To<MutableCSSPropertyValueSet>(this);

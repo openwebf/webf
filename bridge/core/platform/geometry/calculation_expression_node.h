@@ -7,6 +7,7 @@
 #ifndef WEBF_GEOMETRY_CALCULATION_EXPRESSION_NODE_H_
 #define WEBF_GEOMETRY_CALCULATION_EXPRESSION_NODE_H_
 
+#include <vector>
 #include "core/platform/geometry/length.h"
 #include "foundation/casting.h"
 

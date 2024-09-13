@@ -31,6 +31,7 @@
 
 #include <iostream>
 #include <unordered_set>
+#include <unordered_map>
 
 #include "core/platform/hash_traits.h"
 #include "foundation/macros.h"

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "css_math_function_value.h"
+#include "core/base/memory/shared_ptr.h"
 
 namespace webf {
 
@@ -249,7 +250,7 @@ const std::shared_ptr<const CSSMathFunctionValue> CSSMathFunctionValue::Transfor
   if (transformed != expression_) {
     return std::make_shared<CSSMathFunctionValue>(transformed, value_range_in_target_context_);
   }
-  return std::reinterpret_pointer_cast<const CSSMathFunctionValue>(shared_from_this());
+  return reinterpret_pointer_cast<const CSSMathFunctionValue>(shared_from_this());
 }
 
 }  // namespace webf

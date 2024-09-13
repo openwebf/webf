@@ -9,6 +9,7 @@
 #ifndef WEBF_CSS_PARSER_IMPL_H
 #define WEBF_CSS_PARSER_IMPL_H
 
+#include <vector>
 #include <span>
 
 #include "foundation/macros.h"

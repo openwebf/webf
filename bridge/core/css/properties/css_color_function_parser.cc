@@ -147,7 +147,6 @@ std::shared_ptr<const CSSValue> ConsumeRelativeColorChannel(CSSParserTokenRange&
   // replacements. e.g. In "color(from magenta srgb calc(r / 2) 0 0)", the
   // "calc" should substitute "1" for "r" (magenta has a full red channel).
   if (token.GetType() == kFunctionToken) {
-    using enum CSSMathExpressionNode::Flag;
     using Flags = CSSMathExpressionNode::Flags;
 
     // Don't consume the range if the parsing fails.
@@ -155,7 +154,7 @@ std::shared_ptr<const CSSValue> ConsumeRelativeColorChannel(CSSParserTokenRange&
     auto calc_value =
         CSSMathFunctionValue::Create(CSSMathExpressionNode::ParseMathFunction(
                                          token.FunctionId(), css_parsing_utils::ConsumeFunction(calc_range), context,
-                                         Flags({AllowPercent}), kCSSAnchorQueryTypesNone, color_channel_map),
+                                         Flags({CSSMathExpressionNode::Flag::AllowPercent}), kCSSAnchorQueryTypesNone, color_channel_map),
                                      CSSPrimitiveValue::ValueRange::kAll);
     if (calc_value) {
       const CalculationResultCategory category = calc_value->Category();

@@ -269,12 +269,11 @@ ConsumeIntegerInternal(T& range,
     value_range = CSSPrimitiveValue::ValueRange::kPositiveInteger;
   }
 
-  using enum CSSMathExpressionNode::Flag;
   using Flags = CSSMathExpressionNode::Flags;
 
   Flags parsing_flags;
   if (is_percentage_allowed) {
-    parsing_flags.Put(AllowPercent);
+    parsing_flags.Put(CSSMathExpressionNode::Flag::AllowPercent);
   }
 
   MathFunctionParser<T> math_parser(range, context, value_range, parsing_flags);
@@ -612,7 +611,6 @@ ConsumeLengthOrPercentInternal(T& range,
                                UnitlessQuirk unitless,
                                CSSAnchorQueryTypes allowed_anchor_queries,
                                AllowCalcSize allow_calc_size) {
-  using enum CSSMathExpressionNode::Flag;
   using Flags = CSSMathExpressionNode::Flags;
 
   const CSSParserToken& token = range.Peek();
@@ -622,16 +620,16 @@ ConsumeLengthOrPercentInternal(T& range,
   if (token.GetType() == kPercentageToken) {
     return ConsumePercent(range, context, value_range);
   }
-  Flags parsing_flags({AllowPercent});
+  Flags parsing_flags({CSSMathExpressionNode::Flag::AllowPercent});
   switch (allow_calc_size) {
     case AllowCalcSize::kAllowWithAutoAndContent:
-      parsing_flags.Put(AllowContentInCalcSize);
+      parsing_flags.Put(CSSMathExpressionNode::Flag::AllowContentInCalcSize);
       [[fallthrough]];
     case AllowCalcSize::kAllowWithAuto:
-      parsing_flags.Put(AllowAutoInCalcSize);
+      parsing_flags.Put(CSSMathExpressionNode::Flag::AllowAutoInCalcSize);
       [[fallthrough]];
     case AllowCalcSize::kAllowWithoutAuto:
-      parsing_flags.Put(AllowCalcSize);
+      parsing_flags.Put(CSSMathExpressionNode::Flag::AllowCalcSize);
       [[fallthrough]];
     case AllowCalcSize::kForbid:
       break;
@@ -1103,7 +1101,7 @@ static void PositionFromThreeOrFourValues(const std::shared_ptr<const CSSValue>*
                                           std::shared_ptr<const CSSValue>& result_y) {
   std::shared_ptr<const CSSIdentifierValue> center = nullptr;
   for (int i = 0; values[i]; i++) {
-    auto current_value = std::reinterpret_pointer_cast<const CSSIdentifierValue>(values[i]);
+    auto current_value = reinterpret_pointer_cast<const CSSIdentifierValue>(values[i]);
     CSSValueID id = current_value->GetValueID();
 
     if (id == CSSValueID::kCenter) {

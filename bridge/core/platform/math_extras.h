@@ -117,11 +117,13 @@ constexpr float Grad2turn(float g) {
 }
 
 constexpr double RoundHalfTowardsPositiveInfinity(double value) {
-  return std::floor(value + 0.5);
+  return (value > 0) ? static_cast<double>(static_cast<long long>(value + 0.5))
+                     : static_cast<double>(static_cast<long long>(value));
 }
 
 constexpr float RoundHalfTowardsPositiveInfinity(float value) {
-  return std::floor(value + 0.5f);
+  return (value > 0) ? static_cast<float>(static_cast<int>(value + 0.5f))
+                     : static_cast<float>(static_cast<int>(value));
 }
 
 // ClampTo() is implemented by templated helper classes (to allow for partial

@@ -12,7 +12,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <numbers>
 
 #include "core/base/numerics/angle_conversion.h"
 #include "core/base/numerics/math_constants.h"

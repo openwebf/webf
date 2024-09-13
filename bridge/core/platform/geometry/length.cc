@@ -27,6 +27,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include <unordered_map>
 #include "length.h"
 #include "core/platform/geometry/blend.h"
 #include "core/platform/geometry/calculation_value.h"

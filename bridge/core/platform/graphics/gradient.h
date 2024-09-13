@@ -29,6 +29,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_PLATFORM_GRAPHICS_GRADIENT_H_
 #define THIRD_PARTY_BLINK_RENDERER_PLATFORM_GRAPHICS_GRADIENT_H_
 
+#include <vector>
 #include "core/platform/graphics/color.h"
 #include "core/platform/graphics/graphic_types.h"
 #include "core/platform/gfx/geometry/point.h"

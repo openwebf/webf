@@ -32,6 +32,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "core/base/memory/shared_ptr.h"
 #include "css_math_expression_node.h"
 #include "core/base/containers/enum_set.h"
 #include "core/css/anchor_query.h"
@@ -1067,7 +1068,7 @@ class CSSMathExpressionNodeParser {
 
     if (auto* operation = DynamicTo<CSSMathExpressionOperation>(result.get())) {
       if (operation->IsAddOrSubtract()) {
-        result = MaybeSimplifySumNode(std::reinterpret_pointer_cast<CSSMathExpressionOperation>(result));
+        result = MaybeSimplifySumNode(reinterpret_pointer_cast<CSSMathExpressionOperation>(result));
       }
     }
 
@@ -2277,7 +2278,7 @@ inline std::shared_ptr<const CSSMathExpressionOperation> DynamicToCalcSize(
   if (!operation || !operation->IsCalcSize()) {
     return nullptr;
   }
-  return std::reinterpret_pointer_cast<const CSSMathExpressionOperation>(node);
+  return reinterpret_pointer_cast<const CSSMathExpressionOperation>(node);
 }
 
 inline bool CanArithmeticOperationBeSimplified(const CSSMathExpressionNode* left_side,
@@ -3121,7 +3122,7 @@ std::string CSSMathExpressionOperation::CustomCSSText() const {
       const CSSMathExpressionOperation* operation = this;
       if (IsAddOrSubtract()) {
         std::shared_ptr<const CSSMathExpressionNode> node =
-            MaybeSortSumNode(std::reinterpret_pointer_cast<const CSSMathExpressionOperation>(shared_from_this()));
+            MaybeSortSumNode(reinterpret_pointer_cast<const CSSMathExpressionOperation>(shared_from_this()));
         // Note: we can hit here, since CSS Typed OM doesn't currently follow
         // the same simplifications as CSS Values spec.
         // https://github.com/w3c/csswg-drafts/issues/9451

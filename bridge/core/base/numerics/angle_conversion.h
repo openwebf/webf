@@ -6,7 +6,6 @@
 #define WEBF_BASE_NUMERICS_ANGLE_CONVERSIONS_H_
 
 #include <concepts>
-#include <numbers>
 
 namespace base {
 

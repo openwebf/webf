@@ -35,9 +35,11 @@
 #ifndef WEBF_CSS_MATH_EXPRESSION_NODE_H
 #define WEBF_CSS_MATH_EXPRESSION_NODE_H
 
+#include <memory>
 #include <optional>
 #include <span>
 
+#include "core/base/memory/shared_ptr.h"
 #include "core/base/containers/enum_set.h"
 #include "core/css/anchor_query.h"
 #include "core/css/css_anchor_query_enums.h"
@@ -621,7 +623,7 @@ class CSSMathExpressionContainerFeature final : public CSSMathExpressionNode {
   std::shared_ptr<const CSSMathExpressionNode> PopulateWithTreeScope(const TreeScope* tree_scope) const final {
     std::shared_ptr<const CSSCustomIdentValue> container_name =
         container_name_
-            ? std::reinterpret_pointer_cast<const CSSCustomIdentValue>(container_name_->EnsureScopedValue(tree_scope))
+            ? reinterpret_pointer_cast<const CSSCustomIdentValue>(container_name_->EnsureScopedValue(tree_scope))
             : nullptr;
     return std::make_shared<CSSMathExpressionContainerFeature>(size_feature_, container_name);
   }
