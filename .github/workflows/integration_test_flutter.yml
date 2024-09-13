@@ -35,7 +35,7 @@ jobs:
         cmake-version: ${{ env.cmakeVersion }}
     - run: npm i
     - run: npm run build:bridge:macos
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: macos_bridge_binary
         path: bridge/build/macos/
@@ -100,7 +100,7 @@ jobs:
       run: cd integration_tests && CI=true SPEC_SCOPE="${{ matrix.value }}" npm run integration
       id: test
       continue-on-error: true
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       if: steps.test.outcome != 'success'
       with:
         name: integration_${{ matrix.value }}_snapshots
