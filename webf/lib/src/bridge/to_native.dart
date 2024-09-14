@@ -307,7 +307,8 @@ void handleEvaluateScriptsResult(Object handle, int result) {
   }
 }
 
-void handleEvaluateScriptByIdResult(_EvaluateScriptsByIdContext context, int result) {
+void handleEvaluateScriptByIdResult(Object handle, int result) {
+  _EvaluateScriptsByIdContext context = handle as _EvaluateScriptsByIdContext;
   context.completer.complete(result == 1);
 }
 
@@ -464,7 +465,8 @@ class EvaluateWbcByIdContext {
   EvaluateWbcByIdContext(this.completer);
 }
 
-void handleEvaluateWbcByIdResult(EvaluateWbcByIdContext context, int result) {
+void handleEvaluateWbcByIdResult(Object handle, int result) {
+  EvaluateWbcByIdContext context = handle as EvaluateWbcByIdContext;
   context.completer.complete(result == 1);
 }
 
