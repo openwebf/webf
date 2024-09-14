@@ -157,11 +157,11 @@ describe('MouseEvent', () => {
 
     div.addEventListener('click', () => {
       events.push('click');
-    });
+    }, false);
 
     div.addEventListener('dblclick', () => {
       events.push('dblclick');
-    });
+    }, false);
 
     document.body.appendChild(div);
 
