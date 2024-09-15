@@ -94,7 +94,7 @@ class ScriptRunner {
     return _syncScriptTasks.isNotEmpty;
   }
 
-  void _queueScriptForExecution(ScriptElement element, {bool isInline = false, required String contentType}) async {
+  void _queueScriptForExecution(ScriptElement element, {bool isInline = false, bool isInlineContent = false, required String contentType}) async {
     // Increment load event delay count before eval.
     _document.incrementDOMContentLoadedEventDelayCount();
 
@@ -120,6 +120,12 @@ class ScriptRunner {
       }
 
       bundle = DataBundle.fromScriptId(int.parse(scriptId), contentType: contentType);
+    } else if (isInlineContent) {
+      String? scriptCode = element.collectElementChildText();
+      if (scriptCode == null) {
+        return;
+      }
+      bundle = WebFBundle.fromContent(scriptCode);
     } else {
       String url = element.src.toString();
       bundle = _document.controller.getPreloadBundleFromUrl(url) ?? WebFBundle.fromUrl(url);
@@ -352,6 +358,8 @@ class ScriptElement extends Element {
       SchedulerBinding.instance.scheduleFrame();
     } else if (hasAttribute(__INLINE_SCRIPT_ID__)) {
       ownerDocument.scriptRunner._queueScriptForExecution(this, isInline: true, contentType: _type);
+    } else if (childNodes.isNotEmpty) {
+      ownerDocument.scriptRunner._queueScriptForExecution(this, isInlineContent: true, contentType: _type);
     }
   }
 
