@@ -5,6 +5,7 @@
 #include <string>
 
 namespace webf {
+
 class Wbc {
  public:
   // The WBC1 file signature is a fixed sequence of 9 bytes:
@@ -57,6 +58,7 @@ class Wbc {
   // Calculate Adler32 value of array
   uint32_t calculateAdler32(const uint8_t* array, size_t len, uint32_t adler = 1);
 };
+
 }  // namespace webf
 
 #endif  // BRIDGE_WBC_H

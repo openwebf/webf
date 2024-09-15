@@ -128,6 +128,7 @@ class ScriptRunner {
     element.readyState = ScriptReadyState.interactive;
     // The bundle execution task.
     Future<void> task(bool async) async {
+      print('bundle: ${bundle.url}');
       // If bundle is not resolved, should wait for it resolve to prevent the next script running.
       assert(bundle.isResolved, '${bundle.url} is not resolved');
 
