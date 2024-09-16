@@ -137,6 +137,37 @@ void CanvasRenderingContext2D::setStrokeStyle(const std::shared_ptr<QJSUnionDomS
   stroke_style_ = style;
 }
 
+void CanvasRenderingContext2D::fill(webf::ExceptionState& exception_state) {
+  InvokeBindingMethod(binding_call_methods::kfill, 0, nullptr, FlushUICommandReason::kDependentsOnElement,
+                      exception_state);
+}
+
+void CanvasRenderingContext2D::fill(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern,
+                                    webf::ExceptionState& exception_state) {
+  if (pathOrPattern->IsDomString()) {
+    NativeValue arguments[] = {
+        NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), pathOrPattern->GetAsDomString())};
+    InvokeBindingMethod(binding_call_methods::kfill, sizeof(arguments) / sizeof(NativeValue), arguments,
+                        FlushUICommandReason::kDependentsOnElement, exception_state);
+  } else if (pathOrPattern->IsPath2D()) {
+    NativeValue arguments[] = {
+        NativeValueConverter<NativeTypePointer<Path2D>>::ToNativeValue(pathOrPattern->GetAsPath2D())};
+    InvokeBindingMethod(binding_call_methods::kfill, sizeof(arguments) / sizeof(NativeValue), arguments,
+                        FlushUICommandReason::kDependentsOnElement, exception_state);
+  }
+}
+
+void CanvasRenderingContext2D::fill(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern,
+                                    const webf::AtomicString& fillRule,
+                                    webf::ExceptionState& exception_state) {
+  assert(pathOrPattern->IsPath2D());
+  NativeValue arguments[] = {
+      NativeValueConverter<NativeTypePointer<Path2D>>::ToNativeValue(pathOrPattern->GetAsPath2D()),
+      NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), fillRule)};
+  InvokeBindingMethod(binding_call_methods::kfill, sizeof(arguments) / sizeof(NativeValue), arguments,
+                      FlushUICommandReason::kDependentsOnElement, exception_state);
+}
+
 void CanvasRenderingContext2D::Trace(GCVisitor* visitor) const {
   if (fill_style_ != nullptr)
     fill_style_->Trace(visitor);

@@ -519,6 +519,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_promise_rejection_event_init.cc
     out/qjs_unionevent_listener_options_boolean.cc
     out/qjs_unionadd_event_listener_options_boolean.cc
+    out/qjs_unionpath_2_d_dom_string.cc
     out/qjs_html_template_element.cc
     out/qjs_html_unknown_element.cc
     out/qjs_performance.cc
