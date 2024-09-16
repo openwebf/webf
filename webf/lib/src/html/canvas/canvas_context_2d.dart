@@ -206,16 +206,23 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
       }
     });
     methods['fill'] = BindingObjectMethodSync(call: (args) {
-      if (args.isNotEmpty && args[0] is Path2D) {
-        PathFillType fillType = (args.length == 2 && args[1] == EVENODD)
+      if (args.isEmpty) {
+        return fill(PathFillType.nonZero);
+      } else if (args.length == 1) {
+        if (args[0] is Path2D) {
+          return fill(PathFillType.nonZero, path: args[0]);
+        } else {
+          PathFillType fillType = args[0] == EVENODD
+              ? PathFillType.evenOdd
+              : PathFillType.nonZero;
+          return fill(fillType);
+        }
+      } else if (args.length == 2) {
+        assert(args[0] is Path2D);
+        PathFillType fillType = (args[1] == EVENODD)
             ? PathFillType.evenOdd
             : PathFillType.nonZero;
         return fill(fillType, path: args[0]);
-      } else {
-        PathFillType fillType = (args.length == 1 && args[0] == EVENODD)
-            ? PathFillType.evenOdd
-            : PathFillType.nonZero;
-        return fill(fillType);
       }
     });
     methods['lineTo'] = BindingObjectMethodSync(
@@ -602,7 +609,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
       if (fillStyle is! Color) {
         return;
       }
-      
+
       Paint paint = Paint()
         ..color = fillStyle as Color
         ..style = PaintingStyle.fill;
