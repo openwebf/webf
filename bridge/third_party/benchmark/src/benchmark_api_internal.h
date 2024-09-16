@@ -36,6 +36,7 @@ class BenchmarkInstance {
   const std::vector<Statistics>& statistics() const { return statistics_; }
   int repetitions() const { return repetitions_; }
   double min_time() const { return min_time_; }
+  double min_warmup_time() const { return min_warmup_time_; }
   IterationCount iterations() const { return iterations_; }
   int threads() const { return threads_; }
   void Setup() const;
@@ -43,7 +44,8 @@ class BenchmarkInstance {
 
   State Run(IterationCount iters, int thread_id, internal::ThreadTimer* timer,
             internal::ThreadManager* manager,
-            internal::PerfCountersMeasurement* perf_counters_measurement) const;
+            internal::PerfCountersMeasurement* perf_counters_measurement,
+            ProfilerManager* profiler_manager) const;
 
  private:
   BenchmarkName name_;
@@ -62,6 +64,7 @@ class BenchmarkInstance {
   const std::vector<Statistics>& statistics_;
   int repetitions_;
   double min_time_;
+  double min_warmup_time_;
   IterationCount iterations_;
   int threads_;  // Number of concurrent threads to us
 
@@ -76,6 +79,7 @@ bool FindBenchmarksInternal(const std::string& re,
 
 bool IsZero(double n);
 
+BENCHMARK_EXPORT
 ConsoleReporter::OutputOptions GetOutputOptions(bool force_no_color = false);
 
 }  // end namespace internal
