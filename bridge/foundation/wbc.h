@@ -12,14 +12,36 @@ class Wbc {
   // 0x89 0x57 0x42 0x43 0x31 0x0D 0x0A 0x1A 0x0A
   constexpr static const uint8_t WBC_SIGNATURE[] = {0x89, 0x57, 0x42, 0x43, 0x31, 0x0D, 0x0A, 0x1A, 0x0A};
 
-  // node-lz4 default maximum block size
-  static const int32_t NODE_LZ4_BLOCK_MAX_SIZE = 4 * 1024 * 1024;
-
   //The length of the header field in the wbc file format.
   static const int32_t WBC_HEADER_LENGTH = 4;
 
+  // ASCII value for the letter `WBHD` (0x57 0x42 0x48 0x44 in hexadecimal)
+  static const int32_t WBC_HEADER_CHUNK_TYPE_LENGTH = 4;
+
+  // Specifies the compression method used. Currently, only the value 0 is allowed, representing the LZ4 deflate/inflate compression method.
+  static const int32_t WBC_HEADER_COMPRESSION_METHOD = 1;
+
+  // Specifies the compile level when produce the QuickJS bytecodes, different compile level would lead to different bytecode size and optimization level.
+  // Default to 0.
+  static const int32_t WBC_HEADER_COMPILE_LEVEL = 1;
+
+  // The bytecode versions contains in this file.H
+  // QuickJS bytecode = 0
+  // V8 bytecode = 1
+  // Default to 0.
+  static const int32_t WBC_HEADER_BYTECODE_VERSION = 1;
+
+  static const int32_t WBC_QUICKJS_BYTECODE = 0;
+  static const int32_t WBC_V8_BYTECODE_v1 = 1;
+
+  // Preallocated space for other usage in the future.
+  static const int32_t WBC_HEADER_ADDITIONAL_DATA = 3;
+
   // The length of the CHECKSUM field of HEADER in the wbc file format
   static const int32_t WBC_HEADER_CHECKSUM_LENGTH = 4;
+
+  // The bytecode version of WBC file format.
+  static const int32_t WBC_HEADER_BYTECODE_VERSION_LENGTH = 1;
 
   // The length of the body field in the wbc file format.
   // This value varies depending on the size of the QuickJS bytecode size contained on the chunk.
@@ -32,18 +54,6 @@ class Wbc {
   // The length of the CHECKSUM field of BODY in the wbc file format,
   // calculated from the body, to verify the integrity of the this chunk
   static const int32_t WBC_BODY_CHECKSUM_LENGTH = 4;
-
-  // The length of node-lz4 file signature
-  // static const int32_t NODE_LZ4_MAGIC = 4;
-
-  // The file descriptor length of node-lz4
-  // static const int32_t NODE_LZ4_DESCRIPTOR = 2;
-
-  // File CHECKSUM length of node-lz4
-  // static const int32_t NODE_LZ4_DESCRIPTOR_CHECKSUM = 1;
-
-  // The length of node-lz4’s real compressed content size
-  // static const int32_t NODE_LZ4_DATABLOCK_SIZE = 4;
 
   // Check whether the wbc file is correct and return dataBlockBytes
   // https://github.com/openwebf/rfc/blob/main/working/wbc1.en-US.md

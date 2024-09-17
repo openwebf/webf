@@ -78,6 +78,13 @@ bool Wbc::prepareWbc(const uint8_t *bytes, size_t length, size_t *targetStart, s
 
   uint32_t headerLength = convertBigEndianToUint32(bytes, signatureSize);
   uint32_t bodyOffset = signatureSize + headerLength;
+  uint32_t bytecodeVersion = bytes[bodyOffset - WBC_HEADER_CHECKSUM_LENGTH - WBC_HEADER_ADDITIONAL_DATA - WBC_HEADER_BYTECODE_VERSION];
+
+  // We only support quickjs bytecode format from now on.
+  if (bytecodeVersion != Wbc::WBC_QUICKJS_BYTECODE) {
+    return false;
+  }
+
   uint32_t headerChecksumOffset = bodyOffset - Wbc::WBC_HEADER_CHECKSUM_LENGTH;
 
   // Calculating Adler32 checksum for header content
