@@ -318,7 +318,11 @@ void StyleSheetContents::StartMutation() {
   is_mutable_ = true;
 }
 
-void StyleSheetContents::Trace(webf::GCVisitor* gc_visitor) const {}
+void StyleSheetContents::Trace(webf::GCVisitor* gc_visitor) const {
+  if (parser_context_ != nullptr) {
+    parser_context_->Trace(gc_visitor);
+  }
+}
 
 void StyleSheetContents::NotifyRemoveFontFaceRule(const webf::StyleRuleFontFace*) {}
 

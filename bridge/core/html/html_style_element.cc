@@ -60,4 +60,9 @@ AtomicString HTMLStyleElement::type() const {
   return built_in_string::kempty_string;
 }
 
+void HTMLStyleElement::Trace(webf::GCVisitor* visitor) const {
+  HTMLElement::Trace(visitor);
+  StyleElement::Trace(visitor);
+}
+
 }  // namespace webf

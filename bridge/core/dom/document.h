@@ -47,6 +47,9 @@ class Document : public ContainerNode, public TreeScope {
   using ImplType = Document*;
 
   explicit Document(ExecutingContext* context);
+  ~Document() {
+    WEBF_LOG(VERBOSE) << " Delte Document";
+  }
 
   static Document* Create(ExecutingContext* context, ExceptionState& exception_state);
 

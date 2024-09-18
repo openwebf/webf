@@ -29,6 +29,8 @@ class HTMLStyleElement: public HTMLElement, private StyleElement {
   AtomicString type() const;
   bool IsSameObject(const Node& node) const override { return this == &node; }
 
+  void Trace(webf::GCVisitor *visitor) const override;
+
  protected:
   NativeValue HandleParseAuthorStyleSheet(int32_t argc, const NativeValue* argv, Dart_Handle dart_object);
 };

@@ -53,10 +53,6 @@ class StyleElement {
 
   CSSStyleSheet* sheet() const { return sheet_.Get(); }
 
-  bool IsLoading() const;
-  bool SheetLoaded(Document&);
-  void SetToPendingState(Document&, Element& element);
-
   void RemovedFrom(Element&, ContainerNode& insertion_point);
 
   ProcessingResult ProcessStyleSheet(Document&, Element&);

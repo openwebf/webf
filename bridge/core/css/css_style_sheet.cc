@@ -142,4 +142,14 @@ Document* CSSStyleSheet::OwnerDocument() const {
   return ownerNode() ? &ownerNode()->GetDocument() : nullptr;
 }
 
+void CSSStyleSheet::Trace(GCVisitor* visitor) const {
+  visitor->TraceMember(owner_node_);
+  visitor->TraceMember(owner_parent_or_shadow_host_element_);
+  visitor->TraceMember(constructor_document_);
+  visitor->TraceMember(owner_rule_);
+  if (contents_ != nullptr) {
+    contents_->Trace(visitor);
+  }
+}
+
 }  // namespace webf

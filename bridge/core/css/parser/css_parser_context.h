@@ -65,6 +65,7 @@ class CSSParserContext final {
     AutoReset<CSSParserMode> mode_reset_;
   };
 
+  void Trace(GCVisitor* visitor) const;
 
  private:
   KURL base_url_;

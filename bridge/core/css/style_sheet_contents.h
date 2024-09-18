@@ -207,12 +207,6 @@ class StyleSheetContents final {
 
   std::shared_ptr<StyleRuleImport> owner_rule_;
   std::shared_ptr<const CSSParserContext> parser_context_;
-  //
-  //  Member<RuleSet> rule_set_;
-  //  // If we have modified the style sheet since last creating
-  //  // a rule set, this will be nonempty and contain the relevant
-  //  // diffs (see RuleSetDiff). Constructed by StartMutation().
-  //  Member<RuleSetDiff> rule_set_diff_;
 
   std::unordered_set<CSSStyleSheet*> loading_clients_;
   std::unordered_set<CSSStyleSheet*> completed_clients_;

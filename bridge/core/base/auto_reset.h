@@ -46,11 +46,6 @@ class [[maybe_unused, nodiscard]] AutoReset {
   }
 
  private:
-  // `scoped_variable_` is not a raw_ptr<T> for performance reasons: Large
-  // number of non-PartitionAlloc pointees + AutoReset is typically short-lived
-  // (e.g. allocated on the stack).
-  // TODO(xiezuobing): 静态检查相关
-  // RAW_PTR_EXCLUSION  T* scoped_variable_;
   T* scoped_variable_;
 
   T original_value_;

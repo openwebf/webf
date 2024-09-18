@@ -81,4 +81,8 @@ std::shared_ptr<const CSSParserContext> StrictCSSParserContext(SecureContextMode
   return nullptr;
 }
 
+void CSSParserContext::Trace(webf::GCVisitor* visitor) const {
+  visitor->TraceMember(document_);
+}
+
 }  // namespace webf

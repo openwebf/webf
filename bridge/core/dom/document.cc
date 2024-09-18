@@ -522,12 +522,14 @@ std::shared_ptr<EventListener> Document::GetWindowAttributeEventListener(const A
 
 void Document::Trace(GCVisitor* visitor) const {
   script_animation_controller_.Trace(visitor);
+  if (style_engine_ != nullptr) {
+    style_engine_->Trace(visitor);
+  }
   ContainerNode::Trace(visitor);
 }
 
 StyleEngine& Document::EnsureStyleEngine() {
   if (style_engine_ == nullptr) {
-    new StyleEngine(*this);
     style_engine_ = std::make_shared<StyleEngine>(*this);
   }
   assert(style_engine_.get());

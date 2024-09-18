@@ -58,13 +58,13 @@ class LayoutTreeRebuildRoot;
 class StyleEngine final {
  public:
   explicit StyleEngine(Document& document);
-  ~StyleEngine() { WEBF_LOG(VERBOSE) << 1; }
+  ~StyleEngine() {
+    WEBF_LOG(VERBOSE) << 1;
+  }
   CSSStyleSheet* CreateSheet(Element&, const std::string& text);
   Document& GetDocument() const;
   void Trace(GCVisitor* visitor);
   CSSStyleSheet* ParseSheet(Element&, const std::string& text);
-
-  void AddPendingBlockingSheet(Node& style_sheet_candidate_node, PendingSheetType type);
 
   bool InRebuildLayoutTree() const { return in_layout_tree_rebuild_; }
   bool InDOMRemoval() const { return in_dom_removal_; }
@@ -104,8 +104,6 @@ class StyleEngine final {
 
   void UpdateStyleInvalidationRoot(ContainerNode* ancestor, Node* dirty_node);
   void UpdateStyleRecalcRoot(ContainerNode* ancestor, Node* dirty_node);
-  // TODO(guopengfei)：先注释
-  // void UpdateLayoutTreeRebuildRoot(ContainerNode* ancestor, Node* dirty_node);
 
   bool MarkReattachAllowed() const;
   bool MarkStyleDirtyAllowed() const;
@@ -118,7 +116,7 @@ class StyleEngine final {
   }
 
  private:
-  Member<Document> document_;
+  Document* document_;
   std::unordered_map<std::string, std::shared_ptr<StyleSheetContents>> text_to_sheet_cache_;
   AtomicString preferred_stylesheet_set_name_;
 
@@ -152,10 +150,8 @@ class StyleEngine final {
 
   PendingInvalidations pending_invalidations_;
   std::shared_ptr<StyleResolver> resolver_;
-  Member<CSSGlobalRuleSet> global_rule_set_;
+  std::shared_ptr<CSSGlobalRuleSet> global_rule_set_;
 };
-
-void PossiblyScheduleNthPseudoInvalidations(Node& node);
 
 }  // namespace webf
 

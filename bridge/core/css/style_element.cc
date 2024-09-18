@@ -45,21 +45,10 @@ StyleElement::StyleElement(Document* document, bool created_by_parser)
 
 StyleElement::~StyleElement() = default;
 
-bool StyleElement::IsLoading() const {
-  if (loading_) {
-    return true;
-  }
-
-  sheet_->Contents();
-//  return sheet_ ? sheet_->IsLoading() : false;
-}
-
 StyleElement::ProcessingResult StyleElement::ProcessStyleSheet(Document& document, Element& element) {
   assert(element.isConnected());
 
   registered_as_candidate_ = true;
-  // TODO(xiezuobing): 添加候选样式节点
-  //  document.GetStyleEngine().AddStyleSheetCandidateNode(element);
 
   return Process(element);
 }
@@ -92,7 +81,6 @@ StyleElement::ProcessingResult StyleElement::FinishParsingChildren(Element& elem
 }
 
 StyleElement::ProcessingResult StyleElement::Process(Element& element) {
-  WEBF_LOG(VERBOSE) << " IS CONNECTED: " << element.isConnected();
   if (!element.isConnected()) {
     return kProcessingSuccessful;
   }
@@ -100,20 +88,8 @@ StyleElement::ProcessingResult StyleElement::Process(Element& element) {
 }
 
 void StyleElement::ClearSheet(Element& owner_element) {
-  //  assert(sheet_);
-
-  // TODO(xiezuobing): 是否loading中
-  //  if (sheet_->IsLoading()) {
-  //    assert(IsSameObject(owner_element));
-  //    if (pending_sheet_type_ != PendingSheetType::kNonBlocking) {
-  //      // TODO(xiezuobing):
-  //      owner_element.GetDocument().GetStyleEngine().RemovePendingBlockingSheet(
-  //          owner_element, pending_sheet_type_);
-  //    }
-  //    pending_sheet_type_ = PendingSheetType::kNone;
-  //  }
-  //
-  //  sheet_.Release()->ClearOwnerNode();
+  DCHECK(sheet_);
+  sheet_.Release()->ClearOwnerNode();
 }
 
 StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const std::string& text) {
@@ -130,15 +106,8 @@ StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const
 
   loading_ = true;
 
-  CSSStyleSheet* new_sheet = document.EnsureStyleEngine().CreateSheet(element, text);
-
-  loading_ = false;
-
+  auto* new_sheet = document.EnsureStyleEngine().CreateSheet(element, text);//
   sheet_ = new_sheet;
-
-  if (sheet_) {
-    sheet_->Contents()->CheckLoaded();
-  }
 
   return kProcessingSuccessful;
 }
@@ -166,14 +135,6 @@ StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const
 //   return true;
 // }
 
-void StyleElement::SetToPendingState(Document& document, Element& element) {
-  //  assert(IsSameObject(element));
-  //  assert(pending_sheet_type_ < PendingSheetType::kBlocking);
-  //  pending_sheet_type_ = PendingSheetType::kBlocking;
-  //  document.GetStyleEngine().AddPendingBlockingSheet(element,
-  //                                                    pending_sheet_type_);
-}
-
 // void StyleElement::BlockingAttributeChanged(Element& element) {
 //   // If this is a dynamically inserted style element, and the `blocking`
 //   // has changed so that the element is no longer render-blocking, then unblock
@@ -193,7 +154,7 @@ void StyleElement::SetToPendingState(Document& document, Element& element) {
 // }
 
 void StyleElement::Trace(GCVisitor* visitor) const {
-  //  visitor->TraceMember(sheet_);
+  visitor->TraceMember(sheet_);
 }
 
 }  // namespace webf

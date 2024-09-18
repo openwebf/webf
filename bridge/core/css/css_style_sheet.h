@@ -7,6 +7,7 @@
 
 #include "core/dom/element.h"
 #include "core/dom/node.h"
+#include "core/dom/document.h"
 #include "core/platform/text/text_position.h"
 #include "style_sheet.h"
 
@@ -49,11 +50,7 @@ class CSSStyleSheet final : public StyleSheet {
   std::string BaseURL() const override;
   bool IsLoading() const override;
 
-  void Trace(GCVisitor* visitor) const override {
-    visitor->TraceMember(owner_node_);
-    visitor->TraceMember(owner_parent_or_shadow_host_element_);
-  }
-
+  void Trace(GCVisitor* visitor) const override;
 
   CSSStyleSheet* parentStyleSheet() const override;
   Document* OwnerDocument() const;
