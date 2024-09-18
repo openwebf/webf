@@ -419,13 +419,6 @@ class Node : public EventTarget {
   }
   void MarkAncestorsWithChildNeedsStyleInvalidation();
 
-  // crbug.com/569532: containingShadowRoot() can return nullptr even if
-  // isInShadowTree() returns true.
-  // This can happen when handling queued events (e.g. during execCommand())
-  ShadowRoot* ContainingShadowRoot() const;
-  ShadowRoot* GetShadowRoot() const;
-  bool IsInUserAgentShadowRoot() const;
-
  private:
   enum NodeFlags : uint32_t {
     kHasDataFlag = 1,

@@ -84,7 +84,6 @@ class QualifiedName {
           prefix_(std::move(prefix)),
           local_name_(std::move(local_name)),
           namespace_(std::move(namespace_uri)) {
-      assert(!namespace_.empty());
     }
 
    private:
@@ -117,7 +116,7 @@ class QualifiedName {
     return impl_ == other.impl_ || (LocalName() == other.LocalName() && NamespaceURI() == other.NamespaceURI());
   }
 
-  bool HasPrefix() const { return impl_->prefix_ != built_in_string_stdstring::knull; }
+  bool HasPrefix() const { return impl_->prefix_ != ""; }
   void SetPrefix(const std::string& prefix) { *this = QualifiedName(prefix, LocalName(), NamespaceURI()); }
 
   [[nodiscard]] const std::string& Prefix() const { return impl_->prefix_; }

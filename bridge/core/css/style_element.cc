@@ -116,11 +116,6 @@ void StyleElement::ClearSheet(Element& owner_element) {
   //  sheet_.Release()->ClearOwnerNode();
 }
 
-// static bool IsInUserAgentShadowDOM(const Element& element) {
-//   ShadowRoot* root = element.ContainingShadowRoot();
-//   return root && root->IsUserAgent();
-// }
-
 StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const std::string& text) {
   assert(element.isConnected());
   assert(IsSameObject(element));

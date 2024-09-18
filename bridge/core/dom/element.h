@@ -201,13 +201,6 @@ class Element : public ContainerNode {
   // ElementRareDataVector* GetElementRareData() const;
   // ElementRareDataVector& EnsureElementRareData();
 
-  // Returns the shadow root attached to this element if it is a shadow host.
-  ShadowRoot* GetShadowRoot() const;
-  // ShadowRoot* OpenShadowRoot() const;
-  // ShadowRoot* ClosedShadowRoot() const;
-  // ShadowRoot* AuthorShadowRoot() const;
-  // ShadowRoot* UserAgentShadowRoot() const;
-
   AtomicString LocalNameForSelectorMatching() const;
 
   // Call this to get the value of the id attribute for style resolution

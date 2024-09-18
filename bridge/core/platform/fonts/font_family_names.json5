@@ -2,7 +2,7 @@
   metadata: {
     "templates": [
       {
-        "template": "make_names",
+        "template": "make_std_names",
         "filename": "font_family_names",
         "options": {
           "add_atom_prefix": false

@@ -117,9 +117,6 @@ class StyleEngine final {
    return global_rule_set_->GetRuleFeatureSet();
   }
 
-// const HeapVector<Member<StyleSheet>>& StyleSheetsForStyleSheetList(
-//    TreeScope&);
-
  private:
   Member<Document> document_;
   std::unordered_map<std::string, std::shared_ptr<StyleSheetContents>> text_to_sheet_cache_;
@@ -154,16 +151,7 @@ class StyleEngine final {
   bool allow_skip_style_recalc_{false};
 
   PendingInvalidations pending_invalidations_;
-
-//  StyleInvalidationRoot style_invalidation_root_;
-//  StyleRecalcRoot style_recalc_root_;
-  // TODO(guopengfei)：先注释
-  // LayoutTreeRebuildRoot layout_tree_rebuild_root_;
-
   std::shared_ptr<StyleResolver> resolver_;
-  // TODO(guopengfei)：先注释
-  // Member<ViewportStyleResolver> viewport_resolver_;
-  // Member<MediaQueryEvaluator> media_query_evaluator_;
   Member<CSSGlobalRuleSet> global_rule_set_;
 };
 

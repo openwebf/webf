@@ -30,7 +30,7 @@ CSSStyleSheet::CSSStyleSheet(std::shared_ptr<StyleSheetContents> contents,
       owner_parent_or_shadow_host_element_(owner_node.ParentOrShadowHostElement()),
       start_position_(start_position),
       is_inline_stylesheet_(is_inline_stylesheet) {
-  //  contents_->RegisterClient(this);
+  contents_->RegisterClient(this);
 }
 
 CSSStyleSheet::~CSSStyleSheet() {}
@@ -40,8 +40,7 @@ CSSStyleSheet* CSSStyleSheet::CreateInline(Node& owner_node,
                                            const TextPosition& start_position) {
   Document& owner_node_document = owner_node.GetDocument();
 
-  std::shared_ptr<CSSParserContext> parser_context =
-      std::make_shared<CSSParserContext>(owner_node_document, "");
+  std::shared_ptr<CSSParserContext> parser_context = std::make_shared<CSSParserContext>(owner_node_document, "");
   std::shared_ptr<StyleSheetContents> sheet = std::make_shared<StyleSheetContents>(parser_context, base_url);
   return MakeGarbageCollected<CSSStyleSheet>(sheet, owner_node, true, start_position);
 }
@@ -93,39 +92,39 @@ bool CSSStyleSheet::IsLoading() const {
 void CSSStyleSheet::DidMutate(webf::CSSStyleSheet::Mutation mutation) {
   if (mutation == Mutation::kRules) {
     assert(contents_->IsMutable());
-    assert(contents_->ClientSize() <  1u);
+    assert(contents_->ClientSize() < 1u);
   }
   Document* document = OwnerDocument();
   if (!document) {
     return;
   }
-//  if (!custom_element_tag_names_.empty()) {
-//    document->GetStyleEngine().ScheduleCustomElementInvalidations(
-//        custom_element_tag_names_);
-//  }
-//  bool invalidate_matched_properties_cache = false;
-//  if (ownerNode() && ownerNode()->isConnected()) {
-//    document->GetStyleEngine().SetNeedsActiveStyleUpdate(
-//        ownerNode()->GetTreeScope());
-//    invalidate_matched_properties_cache = true;
-//  } else if (!adopted_tree_scopes_.empty()) {
-//    for (auto tree_scope : adopted_tree_scopes_.Keys()) {
-//      // It is currently required that adopted sheets can not be moved between
-//      // documents.
-//      DCHECK(tree_scope->GetDocument() == document);
-//      if (!tree_scope->RootNode().isConnected()) {
-//        continue;
-//      }
-//      document->GetStyleEngine().SetNeedsActiveStyleUpdate(*tree_scope);
-//      invalidate_matched_properties_cache = true;
-//    }
-//  }
-//  if (mutation == Mutation::kRules) {
-//    if (invalidate_matched_properties_cache) {
-//      document->GetStyleResolver().InvalidateMatchedPropertiesCache();
-//    }
-//    probe::DidMutateStyleSheet(document, this);
-//  }
+  //  if (!custom_element_tag_names_.empty()) {
+  //    document->GetStyleEngine().ScheduleCustomElementInvalidations(
+  //        custom_element_tag_names_);
+  //  }
+  //  bool invalidate_matched_properties_cache = false;
+  //  if (ownerNode() && ownerNode()->isConnected()) {
+  //    document->GetStyleEngine().SetNeedsActiveStyleUpdate(
+  //        ownerNode()->GetTreeScope());
+  //    invalidate_matched_properties_cache = true;
+  //  } else if (!adopted_tree_scopes_.empty()) {
+  //    for (auto tree_scope : adopted_tree_scopes_.Keys()) {
+  //      // It is currently required that adopted sheets can not be moved between
+  //      // documents.
+  //      DCHECK(tree_scope->GetDocument() == document);
+  //      if (!tree_scope->RootNode().isConnected()) {
+  //        continue;
+  //      }
+  //      document->GetStyleEngine().SetNeedsActiveStyleUpdate(*tree_scope);
+  //      invalidate_matched_properties_cache = true;
+  //    }
+  //  }
+  //  if (mutation == Mutation::kRules) {
+  //    if (invalidate_matched_properties_cache) {
+  //      document->GetStyleResolver().InvalidateMatchedPropertiesCache();
+  //    }
+  //    probe::DidMutateStyleSheet(document, this);
+  //  }
 }
 
 CSSStyleSheet* CSSStyleSheet::parentStyleSheet() const {

@@ -9,11 +9,15 @@
 
 namespace webf {
 
+// Patch for NDK 22.1.7171670
+#if ANDROID
 template <typename T, typename U>
 std::shared_ptr<T> reinterpret_pointer_cast(const std::shared_ptr<U>& r) noexcept {
   auto p = reinterpret_cast<typename std::shared_ptr<T>::element_type*>(r.get());
   return std::shared_ptr<T>(r, p);
 }
+
+#endif
 
 }
 

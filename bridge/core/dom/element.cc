@@ -719,14 +719,6 @@ void Element::FinishParsingChildren() {
   //   parentElement(), previousSibling(), *this);
 }
 
-ShadowRoot* Element::GetShadowRoot() const {
-  // TODO(guopengfei)：未迁移ElementRareDataVector、ShadowRoot
-  // if (const ElementRareDataVector* data = GetElementRareData()) {
-  //   return data->GetShadowRoot();
-  // }
-  return nullptr;
-}
-//
 // inline ElementRareDataVector* Element::GetElementRareData() const {
 //   return static_cast<ElementRareDataVector*>(RareData());
 // }
