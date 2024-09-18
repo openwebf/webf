@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
@@ -26,7 +27,7 @@ mixin ResizeObserverMixin on RenderBox {
   }
 
   void removeResizeListener(ResizeChangeCallback callback) {
-    if (_listeners != null && _listeners!.contains(callback)) {
+    if( _listeners != null && _listeners!.contains(callback)) {
       _listeners!.remove(callback);
     }
   }

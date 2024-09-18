@@ -6,11 +6,13 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
@@ -1029,7 +1031,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (parentElement?.renderStyle.display == CSSDisplay.sliver) {
       // Sliver should not create renderer here, but need to trigger
       // render sliver list dynamical rebuild child by element tree.
-      parentElement?._renderLayoutBox?.markNeedsLayout();
+      (parentElement?._renderLayoutBox as RenderSliverListLayout).markContentLayout();
     } else {
       willAttachRenderer();
     }
@@ -1096,6 +1098,25 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
 
     renderBoxModel = null;
+  }
+
+  void _unmountSliverRenderBox(int referenceIndex, {bool containSelf = false}) {
+    int removeIndex = referenceIndex;
+    if(!containSelf) {
+      removeIndex += 1;
+    }
+    while(removeIndex < childNodes.length) {
+      Node reference = childNodes.elementAt(removeIndex);
+      if(reference.isRendererAttached && reference is Element) {
+        if(reference.renderer != null &&
+            reference.renderer!.parent != null &&
+            reference.renderer!.parent is RenderSliverRepaintProxy) {
+          (renderer as RenderSliverListLayout).remove(reference.renderer!.parent as RenderSliverRepaintProxy);
+        }
+        reference.unmountRenderObject(deep: true);
+      }
+      removeIndex++;
+    }
   }
 
   @override
@@ -1168,6 +1189,12 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('Element.removeChild');
     }
+
+    int referenceIndex = childNodes.toList(growable: false).indexOf(child);
+    if(renderStyle.display == CSSDisplay.sliver) {
+      _unmountSliverRenderBox(referenceIndex, containSelf: true);
+    }
+
     super.removeChild(child);
 
     // Update renderStyle tree.
@@ -1189,6 +1216,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       WebFProfiler.instance.startTrackUICommandStep('Element.insertBefore');
     }
     Node? originalPreviousSibling = referenceNode.previousSibling;
+    int referenceIndex = childNodes.toList(growable: false).indexOf(referenceNode);
     Node? node = super.insertBefore(child, referenceNode);
     // Update renderStyle tree.
     if (child is Element) {
@@ -1757,6 +1785,24 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         WebFProfiler.instance.finishTrackUICommandStep();
       }
     }
+  }
+
+  bool recommendDeferredLoading() {
+    WebFScrollable? scrollable;
+    Element? next = this;
+    while (next != null && next.parentElement != null && next.parentElement is! HTMLElement &&
+        next.parentElement!.renderStyle.display != CSSDisplay.sliver) {
+      next = next.parentElement;
+    }
+    if(next?.parentElement != null &&
+        next?.parentElement!.renderStyle.display == CSSDisplay.sliver &&
+        next?.parentElement!.renderer != null) {
+      scrollable = (next?.parentElement!.renderer as RenderSliverListLayout).scrollable;
+    }
+    if(scrollable != null && scrollable.position != null) {
+      return scrollable.position!.recommendDeferredLoading(ownerDocument.controller.buildContext);
+    }
+    return false;
   }
 
   void _removeInlineStyle() {

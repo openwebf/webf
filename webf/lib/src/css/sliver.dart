@@ -5,6 +5,7 @@
 
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/rendering.dart';
 
 mixin CSSSliverMixin on RenderStyle {
   @override
@@ -13,6 +14,9 @@ mixin CSSSliverMixin on RenderStyle {
   set sliverDirection(Axis? value) {
     if (_sliverDirection == value) return;
     _sliverDirection = value;
+    if(renderBoxModel!=null && renderBoxModel is RenderSliverListLayout) {
+      (renderBoxModel as RenderSliverListLayout).refreshAxis();
+    }
     renderBoxModel?.markNeedsLayout();
   }
 
