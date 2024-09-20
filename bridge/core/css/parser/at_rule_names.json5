@@ -1,0 +1,75 @@
+// Copyright 2017 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+{
+  // This file specifies names and metadata for the left-hand-sides of
+  // declarations that can appear inside an @rule (e.g. @font-face).
+  metadata: {
+    "templates": [
+    ]
+  },
+  data: [
+    {
+      name: "ascent-override",
+    },
+    {
+      name: "base-palette",
+    },
+    {
+      name: "descent-override",
+    },
+    {
+      name: "font-display",
+    },
+    {
+      name: "font-family",
+    },
+    {
+      name: "font-feature-settings",
+      alias: "-webkit-font-feature-settings",
+    },
+    {
+      name: "font-stretch",
+    },
+    {
+      name: "font-style",
+    },
+    {
+      name: "font-variant",
+    },
+    {
+      name: "font-weight",
+    },
+    {
+      name: "inherits"
+    },
+    {
+      name: "initial-value"
+    },
+    {
+      name: "line-gap-override",
+    },
+    {
+      name: "override-colors",
+    },
+    {
+      name: "navigation",
+    },
+    {
+      name: "types",
+    },
+    {
+      name: "size-adjust",
+    },
+    {
+      name: "src",
+    },
+    {
+      name: "syntax"
+    },
+    {
+      name: "unicode-range",
+    },
+  ],
+}

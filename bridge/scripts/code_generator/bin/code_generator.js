@@ -22,6 +22,7 @@ const {makeCSSPropertySubClasses} = require("../dist/json/make_css_property_subc
 const {makeCSSPropertyInstance} = require("../dist/json/make_css_property_instance");
 const { makeCSSValueIdMapping } = require('../dist/json/make_css_value_id_mappings');
 const { makeCSSPrimitiveValueUnitTrie } = require('../dist/json/make_css_primitive_value_unit_trie');
+const { makeAtRuleNames } = require('../dist/json/make_atrule_names');
 const { makeColorData } = require('../dist/json/make_color_data');
 
 program
@@ -225,6 +226,13 @@ EOF`, {stdio: 'inherit'});
   let cssPrimitiveValueUnitTrie = makeCSSPrimitiveValueUnitTrie();
   let cssPrimitiveValueFilePath = path.join(dist, 'css_primitive_value_unit_trie');
   writeFileIfChanged(cssPrimitiveValueFilePath + '.cc', cssPrimitiveValueUnitTrie.source);
+
+  let ruleData = makeAtRuleNames();
+  let atRuleDescriptorsFilePath = path.join(dist, 'at_rule_descriptors');
+  writeFileIfChanged(atRuleDescriptorsFilePath + '.h', ruleData.header);
+  execSync(`cat << EOF | gperf --key-positions='*' -P -n -m 50 -D > ${atRuleDescriptorsFilePath + '.cc'} 
+${ruleData.source}
+EOF`, {stdio: 'inherit'});
 }
 
 class DefinedPropertyCollector {

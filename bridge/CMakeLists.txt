@@ -334,6 +334,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/properties/css_unresolved_property.cc
     core/css/properties/css_property.cc
     core/css/properties/css_parsing_utils.cc
+    core/css/css_at_rule_id.cc
     core/css/properties/css_color_function_parser.cc
     core/css/css_rule.cc
     core/css/css_selector.cc
@@ -666,6 +667,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_screen.cc
     out/qjs_node_list.cc
     out/event_type_names.cc
+    out/at_rule_descriptors.cc
     out/built_in_string.cc
     out/global_string.cc
     out/media_type_names.cc
