@@ -923,6 +923,10 @@ if (${IS_ANDROID})
   list(APPEND BRIDGE_LINK_LIBS ${log-lib})
 elseif(${IS_IOS})
   add_definitions(-DIS_IOS=1)
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  if(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
+    target_compile_definitions(webf PRIVATE V8_COMPRESS_POINTERS=1 V8_ENABLE_SANDBOX=1)
+  endif()
 endif()
 
 
