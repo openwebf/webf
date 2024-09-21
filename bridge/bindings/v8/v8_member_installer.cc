@@ -11,7 +11,8 @@ namespace webf {
 void MemberInstaller::InstallFunctions(ExecutingContext* context,
                                        std::initializer_list<FunctionConfig> config) {
   v8::Isolate* isolate = context->ctx();
-  v8::Local<v8::Context> v8_context = isolate->GetCurrentContext();
+  v8::Local<v8::Context> v8_context = v8::Context::New(isolate);
+  v8::Context::Scope context_scope(v8_context);
   v8::Local<v8::Object> global = v8_context->Global();
 
   for (const auto& function : config) {
