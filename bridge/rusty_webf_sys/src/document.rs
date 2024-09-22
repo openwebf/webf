@@ -202,9 +202,9 @@ impl Document {
   /// Returns the first element that is a descendant of the element on which it is invoked that matches the specified group of selectors.
   pub fn query_selector(&self, selectors: &str, exception_state: &ExceptionState) -> Result<Element, String> {
     let event_target: &EventTarget = &self.container_node.node.event_target;
-    let selectors_c_string = CString::new(selectors).unwrap();
+    let selectoc_string = CString::new(selectors).unwrap();
     let element_value = unsafe {
-      ((*self.method_pointer).query_selector)(event_target.ptr, selectors_c_string.as_ptr(), exception_state.ptr)
+      ((*self.method_pointer).query_selector)(event_target.ptr, selectoc_string.as_ptr(), exception_state.ptr)
     };
 
     if exception_state.has_exception() {
