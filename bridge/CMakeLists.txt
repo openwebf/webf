@@ -273,7 +273,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dart_methods.cc
     core/api/exception_state.cc
     core/api/event_target.cc
-    core/api/event.cc
     core/api/node.cc
     core/api/executing_context.cc
     core/api/container_node.cc
@@ -573,6 +572,20 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_svg_ellipse_element.cc
     out/qjs_svg_style_element.cc
     out/qjs_svg_line_element.cc
+
+    # plugin api
+    out/plugin_api_event.cc
+    out/plugin_api_animation_event.cc
+    out/plugin_api_close_event.cc
+    out/plugin_api_focus_event.cc
+    out/plugin_api_gesture_event.cc
+    out/plugin_api_hashchange_event.cc
+    out/plugin_api_input_event.cc
+    out/plugin_api_intersection_change_event.cc
+    out/plugin_api_mouse_event.cc
+    out/plugin_api_pointer_event.cc
+    out/plugin_api_transition_event.cc
+    out/plugin_api_ui_event.cc
     )
 
 

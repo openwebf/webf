@@ -238,7 +238,7 @@ impl EventTarget {
     if (raw_ptr.value == std::ptr::null()) {
       return Err("The type value of event_target does not belong to the Window type.")
     }
-    Ok(Window::initialize(raw_ptr.value, raw_ptr.method_pointer as *const WindowRustMethods))
+    Ok(Window::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const WindowRustMethods))
   }
 
   pub fn as_document(&self) -> Result<Document, &str> {
