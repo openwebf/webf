@@ -5,7 +5,7 @@
 #ifndef WEBF_CORE_RUST_API_ELEMENT_H_
 #define WEBF_CORE_RUST_API_ELEMENT_H_
 
-#include "plugin_api/container_node.h"
+#include "container_node.h"
 
 namespace webf {
 
