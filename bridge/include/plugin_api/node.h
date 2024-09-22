@@ -5,7 +5,7 @@
 #ifndef WEBF_CORE_RUST_API_NODE_H_
 #define WEBF_CORE_RUST_API_NODE_H_
 
-#include "plugin_api/event_target.h"
+#include "event_target.h"
 
 namespace webf {
 

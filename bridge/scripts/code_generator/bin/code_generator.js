@@ -13,6 +13,8 @@ const { generatorSource } = require('../dist/idl/generator')
 const { generateUnionTypes, generateUnionTypeFileName } = require('../dist/idl/generateUnionTypes')
 const { generateJSONTemplate } = require('../dist/json/generator');
 const { generateNamesInstaller } = require("../dist/json/generator");
+const { generatePluginAPI } = require("../dist/idl/pluginAPIGenerator/cppGen");
+const { generateRustSource } = require("../dist/idl/pluginAPIGenerator/rsGen");
 const { union } = require("lodash");
 
 program
@@ -170,5 +172,94 @@ let definedPropertyCollector = new DefinedPropertyCollector();
 let unionTypeCollector = new UnionTypeCollector();
 let names_needs_install = new Set();
 
+const pluginApiList = [
+  'dom/events/event.d.ts',
+  'events/animation_event.d.ts',
+  'events/close_event.d.ts',
+  'events/focus_event.d.ts',
+  'events/gesture_event.d.ts',
+  'events/hashchange_event.d.ts',
+  'events/input_event.d.ts',
+  'events/intersection_change_event.d.ts',
+  'events/mouse_event.d.ts',
+  'events/pointer_event.d.ts',
+  'events/transition_event.d.ts',
+  'events/ui_event.d.ts',
+];
+
 genCodeFromTypeDefine();
 genCodeFromJSONData();
+genPluginAPICodeFromTypeDefine();
+genRustCodeFromTypeDefine();
+
+function genPluginAPICodeFromTypeDefine() {
+  // Generate code from type defines.
+  // let typeFiles = glob.sync("**/*.d.ts", {
+  //   cwd: source,
+  // });
+
+  let typeFiles = pluginApiList;
+
+  let blobs = typeFiles.map(file => {
+    let filename = 'plugin_api_' + file.split('/').slice(-1)[0].replace('.d.ts', '');
+    let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
+    return new IDLBlob(path.join(source, file), dist, filename, implement);
+  });
+
+  // Analyze all files first.
+  for (let i = 0; i < blobs.length; i ++) {
+    let b = blobs[i];
+    analyzer(b, definedPropertyCollector, unionTypeCollector);
+  }
+
+  for (let i = 0; i < blobs.length; i ++) {
+    let b = blobs[i];
+    let result = generatePluginAPI(b);
+
+    if (!fs.existsSync(b.dist)) {
+      fs.mkdirSync(b.dist, {recursive: true});
+    }
+
+    let headerFilePath = path.join(b.dist, '../include/plugin_api', b.filename.replace('plugin_api_', ''));
+    let genFilePath = path.join(b.dist, b.filename);
+
+    wirteFileIfChanged(headerFilePath + '.h', result.header);
+    wirteFileIfChanged(genFilePath + '.cc', result.source);
+  }
+
+}
+
+function genRustCodeFromTypeDefine() {
+  // Generate code from type defines.
+  // let typeFiles = glob.sync("**/*.d.ts", {
+  //   cwd: source,
+  // });
+
+  let typeFiles = pluginApiList;
+
+  let blobs = typeFiles.map(file => {
+    let filename = file.split('/').slice(-1)[0].replace('.d.ts', '');
+    let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
+    return new IDLBlob(path.join(source, file), dist, filename, implement);
+  });
+
+  // Analyze all files first.
+  for (let i = 0; i < blobs.length; i ++) {
+    let b = blobs[i];
+    analyzer(b, definedPropertyCollector, unionTypeCollector);
+  }
+
+  for (let i = 0; i < blobs.length; i ++) {
+    let b = blobs[i];
+    let result = generateRustSource(b);
+
+    if (!fs.existsSync(b.dist)) {
+      fs.mkdirSync(b.dist, {recursive: true});
+    }
+
+    let genFilePath = path.join(b.dist, '../rusty_webf_sys/src', b.filename);
+
+    wirteFileIfChanged(genFilePath + '.rs', result);
+  }
+
+}
