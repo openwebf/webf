@@ -23,13 +23,13 @@ class FontVariantAlternatesParser {
   enum class ParseResult { kConsumedValue, kDisallowedValue, kUnknownValue };
 
   ParseResult ConsumeAlternates(CSSParserTokenStream& stream,
-                                const CSSParserContext& context);
+                                std::shared_ptr<const CSSParserContext> context);
 
   std::shared_ptr<const CSSValue> FinalizeValue();
 
  private:
   bool ConsumeAlternate(CSSParserTokenStream& stream,
-                        const CSSParserContext& context);
+                        std::shared_ptr<const CSSParserContext> context);
 
   bool ConsumeHistoricalForms(CSSParserTokenStream& stream);
 

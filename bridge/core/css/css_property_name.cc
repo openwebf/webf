@@ -29,7 +29,7 @@ bool CSSPropertyName::operator==(const CSSPropertyName& other) const {
   return custom_property_name_ == other.custom_property_name_;
 }
 
-const std::string& CSSPropertyName::ToString() const {
+const std::string CSSPropertyName::ToString() const {
   if (IsCustomProperty()) {
     return custom_property_name_;
   }

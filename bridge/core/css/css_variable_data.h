@@ -1,6 +1,6 @@
-//
-// Created by 谢作兵 on 15/08/24.
-//
+// Copyright 2022 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #ifndef WEBF_CSS_VARIABLE_DATA_H
 #define WEBF_CSS_VARIABLE_DATA_H
@@ -12,7 +12,6 @@
 
 namespace webf {
 
-class CSSSyntaxDefinition;
 enum class SecureContextMode;
 
 class CSSVariableData : public GarbageCollected<CSSVariableData> {
@@ -53,8 +52,6 @@ class CSSVariableData : public GarbageCollected<CSSVariableData> {
     }
 
     return std::make_shared<CSSVariableData>(
-//        AdditionalBytes(original_text.Is8Bit() ? original_text.length()
-//                                               : 2 * original_text.length()),
         PassKey(), original_text, is_animation_tainted,
         needs_variable_resolution, has_font_units, has_root_font_units,
         has_line_height_units);

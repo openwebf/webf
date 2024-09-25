@@ -60,7 +60,7 @@ class CSSPropertyName {
 
   bool IsCustomProperty() const { return Id() == CSSPropertyID::kVariable; }
 
-  const std::string& ToString() const;
+  const std::string ToString() const;
 
  private:
   // For HashTraits::EmptyValue().

@@ -15,6 +15,7 @@
 #include "core/css/css_primitive_value.h"
 #include "css_value_keywords.h"
 #include "css_property_names.h"
+#include "at_rule_descriptors.h"
 
 namespace webf {
 
@@ -161,7 +162,7 @@ class CSSParserToken {
   CSSPropertyID ParseAsUnresolvedCSSPropertyID(
       const ExecutingContext* execution_context,
       CSSParserMode mode = kHTMLStandardMode) const;
-//  AtRuleDescriptorID ParseAsAtRuleDescriptorID() const;
+  AtRuleDescriptorID ParseAsAtRuleDescriptorID() const;
 
   void Serialize(StringBuilder&) const;
 

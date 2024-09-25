@@ -27,6 +27,7 @@
 #include "foundation/native_value_converter.h"
 #include "html_element_factory.h"
 #include "svg_element_factory.h"
+#include "core/css/css_style_sheet.h"
 
 namespace webf {
 
@@ -258,6 +259,12 @@ AtomicString Document::compatMode() {
   NativeValue dart_result = GetBindingProperty(binding_call_methods::kcompatMode,
                                                FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
   return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
+}
+
+CSSStyleSheet& Document::ElementSheet() {
+  if (!elem_sheet_)
+    elem_sheet_ = CSSStyleSheet::CreateInline(*this, base_url_);
+  return *elem_sheet_;
 }
 
 AtomicString Document::readyState() {
@@ -525,6 +532,7 @@ void Document::Trace(GCVisitor* visitor) const {
   if (style_engine_ != nullptr) {
     style_engine_->Trace(visitor);
   }
+  visitor->TraceMember(elem_sheet_);
   ContainerNode::Trace(visitor);
 }
 

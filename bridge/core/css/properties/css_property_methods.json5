@@ -26,12 +26,12 @@
     {
       name: "ParseSingleValue",
       return_type: "std::shared_ptr<const CSSValue>",
-      parameters: "(CSSParserTokenStream&, const CSSParserContext&, const CSSParserLocalContext&)",
+      parameters: "(CSSParserTokenStream&, std::shared_ptr<const CSSParserContext> context, const CSSParserLocalContext&)",
     },
     {
       name: "ParseShorthand",
       return_type: "bool",
-      parameters: "(bool, CSSParserTokenStream&, const CSSParserContext&, const CSSParserLocalContext&, std::vector<CSSPropertyValue>&)",
+      parameters: "(bool, CSSParserTokenStream&, std::shared_ptr<const CSSParserContext> context, const CSSParserLocalContext&, std::vector<CSSPropertyValue>&)",
     },
     {
       name: "CSSValueFromComputedStyleInternal",

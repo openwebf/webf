@@ -406,7 +406,7 @@ class CSSSelector {
   }
 
   void UpdatePseudoType(const std::string&,
-                        const CSSParserContext&,
+                        std::shared_ptr<const CSSParserContext> context,
                         bool has_arguments,
                         CSSParserMode);
   void SetUnparsedPlaceholder(CSSNestingType, const std::string&);

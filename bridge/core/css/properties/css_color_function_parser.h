@@ -24,9 +24,9 @@ class ColorFunctionParser {
   // Parses the color inputs rgb(), rgba(), hsl(), hsla(), hwb(), lab(),
   // oklab(), lch(), oklch() and color(). https://www.w3.org/TR/css-color-4/
   std::shared_ptr<const CSSValue> ConsumeFunctionalSyntaxColor(CSSParserTokenRange& input_range,
-                                                               const CSSParserContext& context);
+                                                               std::shared_ptr<const CSSParserContext> context);
   std::shared_ptr<const CSSValue> ConsumeFunctionalSyntaxColor(CSSParserTokenStream& input_stream,
-                                                               const CSSParserContext& context);
+                                                               std::shared_ptr<const CSSParserContext> context);
 
   struct FunctionMetadata;
 
@@ -34,11 +34,11 @@ class ColorFunctionParser {
   template <class T>
   typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
                           std::shared_ptr<const CSSValue>>::type
-  ConsumeFunctionalSyntaxColorInternal(T& input_range, const CSSParserContext& context);
+  ConsumeFunctionalSyntaxColorInternal(T& input_range, std::shared_ptr<const CSSParserContext> context);
 
   enum class ChannelType { kNone, kPercentage, kNumber, kRelative };
-  bool ConsumeChannel(CSSParserTokenRange& args, const CSSParserContext& context, int index);
-  bool ConsumeAlpha(CSSParserTokenRange& args, const CSSParserContext& context);
+  bool ConsumeChannel(CSSParserTokenRange& args, std::shared_ptr<const CSSParserContext> context, int index);
+  bool ConsumeAlpha(CSSParserTokenRange& args, std::shared_ptr<const CSSParserContext> context);
 
   static std::optional<double> TryResolveColorChannel(const std::shared_ptr<const CSSValue>& value,
                                                       ChannelType channel_type,

@@ -153,7 +153,7 @@ class CalculationExpressionSizingKeywordNode final : public CalculationExpressio
     kSize,
     kAny,
     kAuto,
-    kContent,
+//    kContent,
     // The keywords below should match those accepted by
     // css_parsing_utils::ValidWidthOrHeightKeyword.
     kMinContent,

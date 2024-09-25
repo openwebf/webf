@@ -57,7 +57,7 @@ CSSRule::CSSRule(webf::CSSStyleSheet* parent)
 
 const CSSParserContext* CSSRule::ParserContext() const {
   CSSStyleSheet* style_sheet = parentStyleSheet();
-  return style_sheet->Contents()->ParserContext();
+  return style_sheet->Contents()->ParserContext().get();
 }
 
 bool CSSRule::VerifyParentIsCSSRule() const {

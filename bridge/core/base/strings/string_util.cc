@@ -67,6 +67,7 @@ bool ContainsOnlyASCIIOrEmpty(const std::string& string) {
 std::string ToLowerASCII(const std::string& string) {
   std::string result = string;
   std::transform(result.begin(), result.end(), result.begin(), tolower);
+  return result;
 }
 
 

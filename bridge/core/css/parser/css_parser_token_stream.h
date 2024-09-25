@@ -9,6 +9,7 @@
 #ifndef WEBF_CSS_PARSER_TOKEN_STREAM_H
 #define WEBF_CSS_PARSER_TOKEN_STREAM_H
 
+#include <string_view>
 #include "foundation/macros.h"
 #include "css_tokenizer.h"
 #include "css_parser_token.h"

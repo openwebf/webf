@@ -55,7 +55,6 @@ class CSSStyleSheet final : public StyleSheet {
   CSSStyleSheet* parentStyleSheet() const override;
   Document* OwnerDocument() const;
   Node* ownerNode() const override { return owner_node_.Get(); }
-
   bool IsConstructed() const { return ConstructorDocument(); }
   Document* ConstructorDocument() const { return constructor_document_.Get(); }
 

@@ -7,7 +7,7 @@
 
 #include <memory>
 
-namespace webf {
+namespace std {
 
 // Patch for NDK 22.1.7171670
 #if ANDROID

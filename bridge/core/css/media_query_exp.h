@@ -142,7 +142,7 @@ class MediaQueryExpValue {
       const String& lower_media_feature,
       CSSParserTokenRange&,
       const CSSParserTokenOffsets&,
-      const CSSParserContext&);
+      std::shared_ptr<const CSSParserContext> context);
 
  private:
   enum class Type { kInvalid, kId, kNumeric, kRatio, kCSSValue };
@@ -259,7 +259,7 @@ class MediaQueryExp {
   static MediaQueryExp Create(const String& media_feature,
                               CSSParserTokenRange&,
                               const CSSParserTokenOffsets&,
-                              const CSSParserContext&);
+                              std::shared_ptr<const CSSParserContext> context);
   static MediaQueryExp Create(const String& media_feature,
                               const MediaQueryExpBounds&);
   static MediaQueryExp Invalid() {

@@ -71,7 +71,7 @@ void AppendIntegerOrAutoIfZero(unsigned value, CSSValueList* list) {
 }
 
 std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdentExcludingNone(CSSParserTokenStream& stream,
-                                                                           const CSSParserContext& context) {
+                                                                           std::shared_ptr<const CSSParserContext> context) {
   if (stream.Peek().Id() == CSSValueID::kNone) {
     return nullptr;
   }
@@ -83,14 +83,14 @@ std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdentExcludingNone(CSSPa
 namespace css_longhand {
 
 std::shared_ptr<const CSSValue> AlignContent::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeContentDistributionOverflowPosition(stream,
                                                                        css_parsing_utils::IsContentPositionKeyword);
 }
 
 std::shared_ptr<const CSSValue> AlignItems::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   // align-items property does not allow the 'auto' value.
   if (css_parsing_utils::IdentMatches<CSSValueID::kAuto>(stream.Peek().Id())) {
@@ -100,14 +100,14 @@ std::shared_ptr<const CSSValue> AlignItems::ParseSingleValue(CSSParserTokenStrea
 }
 
 std::shared_ptr<const CSSValue> AlignSelf::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeSelfPositionOverflowPosition(stream, css_parsing_utils::IsSelfPositionKeyword);
 }
 
 // anchor-name: none | <dashed-ident>#
 std::shared_ptr<const CSSValue> AnchorName::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   if (std::shared_ptr<const CSSValue> value = css_parsing_utils::ConsumeIdent<CSSValueID::kNone>(stream)) {
     return value;
@@ -117,7 +117,7 @@ std::shared_ptr<const CSSValue> AnchorName::ParseSingleValue(CSSParserTokenStrea
 }
 
 std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   if (std::shared_ptr<const CSSValue> value =
           css_parsing_utils::ConsumeIdent<CSSValueID::kNone, CSSValueID::kAll>(stream)) {
@@ -128,7 +128,7 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
 }
 //
 // std::shared_ptr<const CSSValue> AnimationComposition::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                                       const CSSParserContext& context,
+//                                                                       std::shared_ptr<const CSSParserContext> context,
 //                                                                       const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const
 //  CSSIdentifierValue>(CSSParserTokenStream&)>(
@@ -136,17 +136,17 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
 //}
 //
 // std::shared_ptr<const CSSValue> AnimationDelay::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                                 const CSSParserContext& context,
+//                                                                 std::shared_ptr<const CSSParserContext> context,
 //                                                                 const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(
-//      static_cast<std::shared_ptr<const CSSPrimitiveValue> (*)(CSSParserTokenStream&, const CSSParserContext&,
+//      static_cast<std::shared_ptr<const CSSPrimitiveValue> (*)(CSSParserTokenStream&, std::shared_ptr<const CSSParserContext> context,
 //                                                               CSSPrimitiveValue::ValueRange)>(
 //          css_parsing_utils::ConsumeTime),
 //      stream, context, CSSPrimitiveValue::ValueRange::kAll);
 //}
 //
 // std::shared_ptr<const CSSValue> AnimationDirection::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                                     const CSSParserContext&,
+//                                                                     std::shared_ptr<const CSSParserContext> context,
 //                                                                     const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const
 //  CSSIdentifierValue>(CSSParserTokenStream&)>(
@@ -160,13 +160,13 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
 //}
 //
 // std::shared_ptr<const CSSValue> AnimationDuration::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                                    const CSSParserContext& context,
+//                                                                    std::shared_ptr<const CSSParserContext> context,
 //                                                                    const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationDuration, stream, context);
 //}
 //
 // std::shared_ptr<const CSSValue> AnimationFillMode::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                                    const CSSParserContext&,
+//                                                                    std::shared_ptr<const CSSParserContext> context,
 //                                                                    const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const
 //  CSSIdentifierValue>(CSSParserTokenStream&)>(
@@ -180,14 +180,14 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
 //}
 //
 // std::shared_ptr<const CSSValue> AnimationIterationCount::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                                          const CSSParserContext& context,
+//                                                                          std::shared_ptr<const CSSParserContext> context,
 //                                                                          const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationIterationCount, stream,
 //                                                      context);
 //}
 //
 // std::shared_ptr<const CSSValue> AnimationName::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                                const CSSParserContext& context,
+//                                                                std::shared_ptr<const CSSParserContext> context,
 //                                                                const CSSParserLocalContext& local_context) const {
 //  // Allow quoted name if this is an alias property.
 //  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationName, stream, context,
@@ -199,7 +199,7 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
 //}
 //
 // std::shared_ptr<const CSSValue> AnimationPlayState::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                                     const CSSParserContext&,
+//                                                                     std::shared_ptr<const CSSParserContext> context,
 //                                                                     const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList<std::shared_ptr<const
 //  CSSIdentifierValue>(CSSParserTokenStream&)>(
@@ -211,7 +211,7 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
 //}
 //
 // std::shared_ptr<const CSSValue> AnimationRangeStart::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                                      const CSSParserContext& context,
+//                                                                      std::shared_ptr<const CSSParserContext> context,
 //                                                                      const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationRange, stream, context,
 //                                                      /* default_offset_percent */ 0.0);
@@ -222,7 +222,7 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
 //}
 //
 // std::shared_ptr<const CSSValue> AnimationRangeEnd::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                                    const CSSParserContext& context,
+//                                                                    std::shared_ptr<const CSSParserContext> context,
 //                                                                    const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationRange, stream, context,
 //                                                      /* default_offset_percent */ 100.0);
@@ -233,7 +233,7 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
 //}
 //
 // std::shared_ptr<const CSSValue> AnimationTimeline::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                                    const CSSParserContext& context,
+//                                                                    std::shared_ptr<const CSSParserContext> context,
 //                                                                    const CSSParserLocalContext& local_context) const
 //                                                                    {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationTimeline, stream, context);
@@ -244,7 +244,7 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
 //}
 //
 // std::shared_ptr<const CSSValue> AnimationTimingFunction::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                                          const CSSParserContext& context,
+//                                                                          std::shared_ptr<const CSSParserContext> context,
 //                                                                          const CSSParserLocalContext&) const {
 //  return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationTimingFunction, stream,
 //                                                      context);
@@ -255,7 +255,7 @@ std::shared_ptr<const CSSValue> AnchorScope::ParseSingleValue(CSSParserTokenStre
 //}
 
 std::shared_ptr<const CSSValue> AspectRatio::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   // Syntax: auto | auto 1/2 | 1/2 auto | 1/2
   std::shared_ptr<const CSSValue> auto_value = nullptr;
@@ -281,7 +281,7 @@ std::shared_ptr<const CSSValue> AspectRatio::ParseSingleValue(CSSParserTokenStre
 }
 
 std::shared_ptr<const CSSValue> BackdropFilter::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeFilterFunctionList(stream, context);
 }
@@ -289,141 +289,141 @@ std::shared_ptr<const CSSValue> BackdropFilter::ParseSingleValue(CSSParserTokenS
 void BackdropFilter::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {}
 
 std::shared_ptr<const CSSValue> BackgroundAttachment::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                       const CSSParserContext&,
+                                                                       std::shared_ptr<const CSSParserContext> context,
                                                                        const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeBackgroundAttachment, stream);
 }
 
 std::shared_ptr<const CSSValue> BackgroundBlendMode::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                      const CSSParserContext&,
+                                                                      std::shared_ptr<const CSSParserContext> context,
                                                                       const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeBackgroundBlendMode, stream);
 }
 
 std::shared_ptr<const CSSValue> BackgroundClip::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext&,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeBackgroundBoxOrText, stream);
 }
 
 std::shared_ptr<const CSSValue> BackgroundColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColorMaybeQuirky(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BackgroundImage::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeImageOrNone, stream, context);
 }
 
 std::shared_ptr<const CSSValue> BackgroundOrigin::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext&,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ParseBackgroundBox(stream, local_context, css_parsing_utils::AllowTextValue::kForbid);
 }
 
 std::shared_ptr<const CSSValue> BackgroundPositionX::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                      const CSSParserContext& context,
+                                                                      std::shared_ptr<const CSSParserContext> context,
                                                                       const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeCommaSeparatedList(
       css_parsing_utils::ConsumePositionLonghand<CSSValueID::kLeft, CSSValueID::kRight>, stream, context);
 }
 
 std::shared_ptr<const CSSValue> BackgroundPositionY::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                      const CSSParserContext& context,
+                                                                      std::shared_ptr<const CSSParserContext> context,
                                                                       const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeCommaSeparatedList(
       css_parsing_utils::ConsumePositionLonghand<CSSValueID::kTop, CSSValueID::kBottom>, stream, context);
 }
 
 std::shared_ptr<const CSSValue> BackgroundSize::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ParseBackgroundSize(stream, context, local_context);
 }
 
 std::shared_ptr<const CSSValue> BackgroundRepeat::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ParseRepeatStyle(stream);
 }
 
 std::shared_ptr<const CSSValue> BlockSize::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeWidthOrHeight(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderBlockEndColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                      const CSSParserContext& context,
+                                                                      std::shared_ptr<const CSSParserContext> context,
                                                                       const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColor(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderBlockEndWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                      const CSSParserContext& context,
+                                                                      std::shared_ptr<const CSSParserContext> context,
                                                                       const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeBorderWidth(stream, context, css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> BorderBlockStartColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                        const CSSParserContext& context,
+                                                                        std::shared_ptr<const CSSParserContext> context,
                                                                         const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColor(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderBlockStartWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                        const CSSParserContext& context,
+                                                                        std::shared_ptr<const CSSParserContext> context,
                                                                         const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeBorderWidth(stream, context, css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> BorderBottomColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
+                                                                    std::shared_ptr<const CSSParserContext> context,
                                                                     const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ConsumeBorderColorSide(stream, context, local_context);
 }
 
 std::shared_ptr<const CSSValue> BorderBottomLeftRadius::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                         const CSSParserContext& context,
+                                                                         std::shared_ptr<const CSSParserContext> context,
                                                                          const CSSParserLocalContext&) const {
   return css_parsing_utils::ParseBorderRadiusCorner(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderBottomRightRadius::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                          const CSSParserContext& context,
+                                                                          std::shared_ptr<const CSSParserContext> context,
                                                                           const CSSParserLocalContext&) const {
   return css_parsing_utils::ParseBorderRadiusCorner(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderBottomStyle::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
+                                                                    std::shared_ptr<const CSSParserContext> context,
                                                                     const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ParseBorderStyleSide(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderBottomWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
+                                                                    std::shared_ptr<const CSSParserContext> context,
                                                                     const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ParseBorderWidthSide(stream, context, local_context);
 }
 
 std::shared_ptr<const CSSValue> BorderEndEndRadius::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                     const CSSParserContext& context,
+                                                                     std::shared_ptr<const CSSParserContext> context,
                                                                      const CSSParserLocalContext&) const {
   return css_parsing_utils::ParseBorderRadiusCorner(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderEndStartRadius::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                       const CSSParserContext& context,
+                                                                       std::shared_ptr<const CSSParserContext> context,
                                                                        const CSSParserLocalContext&) const {
   return css_parsing_utils::ParseBorderRadiusCorner(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderImageOutset::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
+                                                                    std::shared_ptr<const CSSParserContext> context,
                                                                     const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeBorderImageOutset(stream, context);
 }
@@ -435,7 +435,7 @@ std::shared_ptr<const CSSValue> BorderImageOutset::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> BorderImageRepeat::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext&,
+                                                                    std::shared_ptr<const CSSParserContext> context,
                                                                     const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeBorderImageRepeat(stream);
 }
@@ -445,7 +445,7 @@ std::shared_ptr<const CSSValue> BorderImageRepeat::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> BorderImageSlice::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeBorderImageSlice(stream, context, css_parsing_utils::DefaultFill::kNoFill);
 }
@@ -457,7 +457,7 @@ std::shared_ptr<const CSSValue> BorderImageSlice::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> BorderImageSource::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
+                                                                    std::shared_ptr<const CSSParserContext> context,
                                                                     const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeImageOrNone(stream, context);
 }
@@ -467,7 +467,7 @@ std::shared_ptr<const CSSValue> BorderImageSource::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> BorderImageWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeBorderImageWidth(stream, context);
 }
@@ -479,109 +479,109 @@ std::shared_ptr<const CSSValue> BorderImageWidth::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> BorderInlineEndColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                       const CSSParserContext& context,
+                                                                       std::shared_ptr<const CSSParserContext> context,
                                                                        const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColor(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderInlineEndWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                       const CSSParserContext& context,
+                                                                       std::shared_ptr<const CSSParserContext> context,
                                                                        const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeBorderWidth(stream, context, css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> BorderInlineStartColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                         const CSSParserContext& context,
+                                                                         std::shared_ptr<const CSSParserContext> context,
                                                                          const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColor(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderInlineStartWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                         const CSSParserContext& context,
+                                                                         std::shared_ptr<const CSSParserContext> context,
                                                                          const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeBorderWidth(stream, context, css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> BorderLeftColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ConsumeBorderColorSide(stream, context, local_context);
 }
 
 std::shared_ptr<const CSSValue> BorderLeftStyle::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ParseBorderStyleSide(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderLeftWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ParseBorderWidthSide(stream, context, local_context);
 }
 
 std::shared_ptr<const CSSValue> BorderRightColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ConsumeBorderColorSide(stream, context, local_context);
 }
 
 std::shared_ptr<const CSSValue> BorderRightStyle::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ParseBorderStyleSide(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderRightWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ParseBorderWidthSide(stream, context, local_context);
 }
 
 std::shared_ptr<const CSSValue> BorderStartStartRadius::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                         const CSSParserContext& context,
+                                                                         std::shared_ptr<const CSSParserContext> context,
                                                                          const CSSParserLocalContext&) const {
   return css_parsing_utils::ParseBorderRadiusCorner(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderStartEndRadius::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                       const CSSParserContext& context,
+                                                                       std::shared_ptr<const CSSParserContext> context,
                                                                        const CSSParserLocalContext&) const {
   return css_parsing_utils::ParseBorderRadiusCorner(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderTopColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ConsumeBorderColorSide(stream, context, local_context);
 }
 
 std::shared_ptr<const CSSValue> BorderTopLeftRadius::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                      const CSSParserContext& context,
+                                                                      std::shared_ptr<const CSSParserContext> context,
                                                                       const CSSParserLocalContext&) const {
   return css_parsing_utils::ParseBorderRadiusCorner(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderTopRightRadius::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                       const CSSParserContext& context,
+                                                                       std::shared_ptr<const CSSParserContext> context,
                                                                        const CSSParserLocalContext&) const {
   return css_parsing_utils::ParseBorderRadiusCorner(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderTopStyle::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ParseBorderStyleSide(stream, context);
 }
 
 std::shared_ptr<const CSSValue> BorderTopWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ParseBorderWidthSide(stream, context, local_context);
 }
 
 std::shared_ptr<const CSSValue> Bottom::ParseSingleValue(CSSParserTokenStream& stream,
-                                                         const CSSParserContext& context,
+                                                         std::shared_ptr<const CSSParserContext> context,
                                                          const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context,
                                                   css_parsing_utils::UnitlessUnlessShorthand(local_context),
@@ -589,13 +589,13 @@ std::shared_ptr<const CSSValue> Bottom::ParseSingleValue(CSSParserTokenStream& s
 }
 
 std::shared_ptr<const CSSValue> BoxShadow::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeShadow(stream, context, css_parsing_utils::AllowInsetAndSpread::kAllow);
 }
 
 std::shared_ptr<const CSSValue> CaretColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kAuto) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -605,7 +605,7 @@ std::shared_ptr<const CSSValue> CaretColor::ParseSingleValue(CSSParserTokenStrea
 
 namespace {
 
-std::shared_ptr<const CSSValue> ConsumeClipComponent(CSSParserTokenStream& stream, const CSSParserContext& context) {
+std::shared_ptr<const CSSValue> ConsumeClipComponent(CSSParserTokenStream& stream, std::shared_ptr<const CSSParserContext> context) {
   if (stream.Peek().Id() == CSSValueID::kAuto) {
     return css_parsing_utils::ConsumeIdent(stream);
   }
@@ -616,7 +616,7 @@ std::shared_ptr<const CSSValue> ConsumeClipComponent(CSSParserTokenStream& strea
 }  // namespace
 
 std::shared_ptr<const CSSValue> Clip::ParseSingleValue(CSSParserTokenStream& stream,
-                                                       const CSSParserContext& context,
+                                                       std::shared_ptr<const CSSParserContext> context,
                                                        const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kAuto) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -653,7 +653,7 @@ std::shared_ptr<const CSSValue> Clip::ParseSingleValue(CSSParserTokenStream& str
 }
 
 std::shared_ptr<const CSSValue> ClipPath::ParseSingleValue(CSSParserTokenStream& stream,
-                                                           const CSSParserContext& context,
+                                                           std::shared_ptr<const CSSParserContext> context,
                                                            const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNone) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -685,13 +685,13 @@ std::shared_ptr<const CSSValue> ClipPath::ParseSingleValue(CSSParserTokenStream&
 }
 
 std::shared_ptr<const CSSValue> Color::ParseSingleValue(CSSParserTokenStream& stream,
-                                                        const CSSParserContext& context,
+                                                        std::shared_ptr<const CSSParserContext> context,
                                                         const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColorMaybeQuirky(stream, context);
 }
 
 std::shared_ptr<const CSSValue> ColorScheme::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNormal) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -741,44 +741,44 @@ std::shared_ptr<const CSSValue> ColorScheme::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> ColumnCount::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColumnCount(stream, context);
 }
 
 std::shared_ptr<const CSSValue> ColumnGap::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeGapLength(stream, context);
 }
 
 std::shared_ptr<const CSSValue> ColumnRuleColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColor(stream, context);
 }
 
 std::shared_ptr<const CSSValue> ColumnRuleWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeLineWidth(stream, context, css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> ColumnSpan::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeIdent<CSSValueID::kAll, CSSValueID::kNone>(stream);
 }
 
 std::shared_ptr<const CSSValue> ColumnWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColumnWidth(stream, context);
 }
 
 // none | strict | content | [ size || layout || style || paint ]
 std::shared_ptr<const CSSValue> Contain::ParseSingleValue(CSSParserTokenStream& stream,
-                                                          const CSSParserContext& context,
+                                                          std::shared_ptr<const CSSParserContext> context,
                                                           const CSSParserLocalContext&) const {
   CSSValueID id = stream.Peek().Id();
   if (id == CSSValueID::kNone) {
@@ -831,32 +831,32 @@ std::shared_ptr<const CSSValue> Contain::ParseSingleValue(CSSParserTokenStream& 
 }
 
 std::shared_ptr<const CSSValue> ContainIntrinsicWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                        const CSSParserContext& context,
+                                                                        std::shared_ptr<const CSSParserContext> context,
                                                                         const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeIntrinsicSizeLonghand(stream, context);
 }
 
 std::shared_ptr<const CSSValue> ContainIntrinsicHeight::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                         const CSSParserContext& context,
+                                                                         std::shared_ptr<const CSSParserContext> context,
                                                                          const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeIntrinsicSizeLonghand(stream, context);
 }
 
 std::shared_ptr<const CSSValue> ContainerName::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeContainerName(stream, context);
 }
 
 std::shared_ptr<const CSSValue> ContainerType::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeContainerType(stream);
 }
 
 namespace {
 
-std::shared_ptr<const CSSValue> ConsumeAttr(CSSParserTokenStream& stream, const CSSParserContext& context) {
+std::shared_ptr<const CSSValue> ConsumeAttr(CSSParserTokenStream& stream, std::shared_ptr<const CSSParserContext> context) {
   std::string attr_name;
   {
     CSSParserTokenStream::BlockGuard guard(stream);
@@ -883,7 +883,7 @@ std::shared_ptr<const CSSValue> ConsumeAttr(CSSParserTokenStream& stream, const 
 }  // namespace
 
 std::shared_ptr<const CSSValue> Content::ParseSingleValue(CSSParserTokenStream& stream,
-                                                          const CSSParserContext& context,
+                                                          std::shared_ptr<const CSSParserContext> context,
                                                           const CSSParserLocalContext&) const {
   if (css_parsing_utils::IdentMatches<CSSValueID::kNone, CSSValueID::kNormal>(stream.Peek().Id())) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -944,7 +944,7 @@ std::shared_ptr<const CSSValue> Content::ParseSingleValue(CSSParserTokenStream& 
 const int kCounterIncrementDefaultValue = 1;
 
 // std::shared_ptr<const CSSValue> Cursor::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                          const CSSParserContext& context,
+//                                                          std::shared_ptr<const CSSParserContext> context,
 //                                                          const CSSParserLocalContext&) const {
 //   bool in_quirks_mode = IsQuirksModeBehavior(context.Mode());
 //   std::shared_ptr<CSSValueList> list = nullptr;
@@ -1156,7 +1156,7 @@ std::shared_ptr<const CSSValue> ParseDisplayMultipleKeywords(
 //   [<display-outside>? && [ flow | flow-root ]? && list-item] |
 //   <display-internal> | <display-box> | <display-legacy>
 std::shared_ptr<const CSSValue> Display::ParseSingleValue(CSSParserTokenStream& stream,
-                                                          const CSSParserContext& context,
+                                                          std::shared_ptr<const CSSParserContext> context,
                                                           const CSSParserLocalContext&) const {
   CSSValueID id = stream.Peek().Id();
   if (id != CSSValueID::kInvalid) {
@@ -1249,19 +1249,19 @@ void Display::ApplyValue(StyleResolverState& state, const CSSValue& value, Value
 }
 
 std::shared_ptr<const CSSValue> FillOpacity::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeAlphaValue(stream, context);
 }
 
 std::shared_ptr<const CSSValue> Filter::ParseSingleValue(CSSParserTokenStream& stream,
-                                                         const CSSParserContext& context,
+                                                         std::shared_ptr<const CSSParserContext> context,
                                                          const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeFilterFunctionList(stream, context);
 }
 
 std::shared_ptr<const CSSValue> FlexBasis::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSParserLocalContext&) const {
   // TODO(https://crbug.com/353538495): This should really use
   // css_parsing_utils::ValidWidthOrHeightKeyword.
@@ -1279,13 +1279,13 @@ std::shared_ptr<const CSSValue> FlexDirection::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> FlexGrow::ParseSingleValue(CSSParserTokenStream& stream,
-                                                           const CSSParserContext& context,
+                                                           std::shared_ptr<const CSSParserContext> context,
                                                            const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
 }
 
 std::shared_ptr<const CSSValue> FlexShrink::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
 }
@@ -1295,61 +1295,61 @@ std::shared_ptr<const CSSValue> FlexWrap::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> FloodColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColor(stream, context);
 }
 
 std::shared_ptr<const CSSValue> FloodOpacity::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeAlphaValue(stream, context);
 }
 
 std::shared_ptr<const CSSValue> FontFamily::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext&,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeFontFamily(stream);
 }
 
 std::shared_ptr<const CSSValue> FontFeatureSettings::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                      const CSSParserContext& context,
+                                                                      std::shared_ptr<const CSSParserContext> context,
                                                                       const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeFontFeatureSettings(stream, context);
 }
 
 std::shared_ptr<const CSSValue> FontPalette::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeFontPalette(stream, context);
 }
 
 std::shared_ptr<const CSSValue> FontSizeAdjust::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeFontSizeAdjust(stream, context);
 }
 
 std::shared_ptr<const CSSValue> FontSize::ParseSingleValue(CSSParserTokenStream& stream,
-                                                           const CSSParserContext& context,
+                                                           std::shared_ptr<const CSSParserContext> context,
                                                            const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeFontSize(stream, context, css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> FontStretch::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeFontStretch(stream, context);
 }
 
 std::shared_ptr<const CSSValue> FontStyle::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeFontStyle(stream, context);
 }
 
 std::shared_ptr<const CSSValue> FontVariantCaps::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeIdent<CSSValueID::kNormal, CSSValueID::kSmallCaps, CSSValueID::kAllSmallCaps,
                                          CSSValueID::kPetiteCaps, CSSValueID::kAllPetiteCaps, CSSValueID::kUnicase,
@@ -1357,7 +1357,7 @@ std::shared_ptr<const CSSValue> FontVariantCaps::ParseSingleValue(CSSParserToken
 }
 
 std::shared_ptr<const CSSValue> FontVariantEastAsian::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                       const CSSParserContext& context,
+                                                                       std::shared_ptr<const CSSParserContext> context,
                                                                        const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNormal) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -1381,7 +1381,7 @@ std::shared_ptr<const CSSValue> FontVariantEastAsian::ParseSingleValue(CSSParser
 }
 
 std::shared_ptr<const CSSValue> FontVariantLigatures::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                       const CSSParserContext& context,
+                                                                       std::shared_ptr<const CSSParserContext> context,
                                                                        const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNormal || stream.Peek().Id() == CSSValueID::kNone) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -1405,7 +1405,7 @@ std::shared_ptr<const CSSValue> FontVariantLigatures::ParseSingleValue(CSSParser
 }
 
 std::shared_ptr<const CSSValue> FontVariantNumeric::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                     const CSSParserContext& context,
+                                                                     std::shared_ptr<const CSSParserContext> context,
                                                                      const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNormal) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -1429,7 +1429,7 @@ std::shared_ptr<const CSSValue> FontVariantNumeric::ParseSingleValue(CSSParserTo
 }
 
 std::shared_ptr<const CSSValue> FontVariantAlternates::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                        const CSSParserContext& context,
+                                                                        std::shared_ptr<const CSSParserContext> context,
                                                                         const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNormal) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -1456,7 +1456,7 @@ std::shared_ptr<const CSSValue> FontVariantAlternates::ParseSingleValue(CSSParse
 namespace {
 
 std::shared_ptr<const cssvalue::CSSFontVariationValue> ConsumeFontVariationTag(CSSParserTokenStream& stream,
-                                                                               const CSSParserContext& context) {
+                                                                               std::shared_ptr<const CSSParserContext> context) {
   // Feature tag name consists of 4-letter characters.
   static const size_t kTagNameLength = 4;
 
@@ -1489,7 +1489,7 @@ std::shared_ptr<const cssvalue::CSSFontVariationValue> ConsumeFontVariationTag(C
 }  // namespace
 
 std::shared_ptr<const CSSValue> FontVariationSettings::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                        const CSSParserContext& context,
+                                                                        std::shared_ptr<const CSSParserContext> context,
                                                                         const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNormal) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -1507,13 +1507,13 @@ std::shared_ptr<const CSSValue> FontVariationSettings::ParseSingleValue(CSSParse
 }
 
 std::shared_ptr<const CSSValue> FontWeight::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeFontWeight(stream, context);
 }
 
 std::shared_ptr<const CSSValue> GridAutoColumns::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeGridTrackList(stream, context, css_parsing_utils::TrackListType::kGridAuto);
 }
@@ -1523,7 +1523,7 @@ std::shared_ptr<const CSSValue> GridAutoColumns::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> GridAutoFlow::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   std::shared_ptr<const CSSIdentifierValue> row_or_column_value =
       css_parsing_utils::ConsumeIdent<CSSValueID::kRow, CSSValueID::kColumn>(stream);
@@ -1553,7 +1553,7 @@ std::shared_ptr<const CSSValue> GridAutoFlow::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> GridAutoRows::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeGridTrackList(stream, context, css_parsing_utils::TrackListType::kGridAuto);
 }
@@ -1563,31 +1563,31 @@ std::shared_ptr<const CSSValue> GridAutoRows::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> GridColumnEnd::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeGridLine(stream, context);
 }
 
 std::shared_ptr<const CSSValue> GridColumnStart::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeGridLine(stream, context);
 }
 
 std::shared_ptr<const CSSValue> GridRowEnd::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeGridLine(stream, context);
 }
 
 std::shared_ptr<const CSSValue> GridRowStart::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeGridLine(stream, context);
 }
 
 std::shared_ptr<const CSSValue> GridTemplateAreas::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext&,
+                                                                    std::shared_ptr<const CSSParserContext> context,
                                                                     const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNone) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -1617,7 +1617,7 @@ std::shared_ptr<const CSSValue> GridTemplateAreas::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> GridTemplateColumns::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                      const CSSParserContext& context,
+                                                                      std::shared_ptr<const CSSParserContext> context,
                                                                       const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeGridTemplatesRowsOrColumns(stream, context);
 }
@@ -1627,7 +1627,7 @@ std::shared_ptr<const CSSValue> GridTemplateColumns::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> GridTemplateRows::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeGridTemplatesRowsOrColumns(stream, context);
 }
@@ -1637,71 +1637,71 @@ std::shared_ptr<const CSSValue> GridTemplateRows::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> Height::ParseSingleValue(CSSParserTokenStream& stream,
-                                                         const CSSParserContext& context,
+                                                         std::shared_ptr<const CSSParserContext> context,
                                                          const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeWidthOrHeight(stream, context, css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> PopoverShowDelay::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ConsumeTime(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
 }
 
 std::shared_ptr<const CSSValue> PopoverHideDelay::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ConsumeTime(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
 }
 
 std::shared_ptr<const CSSValue> ImageOrientation::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeIdent<CSSValueID::kFromImage, CSSValueID::kNone>(stream);
 }
 
 std::shared_ptr<const CSSValue> InitialLetter::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeInitialLetter(stream, context);
 }
 
 std::shared_ptr<const CSSValue> InlineSize::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeWidthOrHeight(stream, context);
 }
 
 std::shared_ptr<const CSSValue> InsetBlockEnd::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context, css_parsing_utils::UnitlessQuirk::kForbid,
                                                   static_cast<CSSAnchorQueryTypes>(CSSAnchorQueryType::kAnchor));
 }
 
 std::shared_ptr<const CSSValue> InsetBlockStart::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context, css_parsing_utils::UnitlessQuirk::kForbid,
                                                   static_cast<CSSAnchorQueryTypes>(CSSAnchorQueryType::kAnchor));
 }
 
 std::shared_ptr<const CSSValue> InsetInlineEnd::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context, css_parsing_utils::UnitlessQuirk::kForbid,
                                                   static_cast<CSSAnchorQueryTypes>(CSSAnchorQueryType::kAnchor));
 }
 
 std::shared_ptr<const CSSValue> InsetInlineStart::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context, css_parsing_utils::UnitlessQuirk::kForbid,
                                                   static_cast<CSSAnchorQueryTypes>(CSSAnchorQueryType::kAnchor));
 }
 
 std::shared_ptr<const CSSValue> JustifyContent::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext&) const {
   // justify-content property does not allow the <baseline-position> values.
   if (css_parsing_utils::IdentMatches<CSSValueID::kFirst, CSSValueID::kLast, CSSValueID::kBaseline>(
@@ -1713,7 +1713,7 @@ std::shared_ptr<const CSSValue> JustifyContent::ParseSingleValue(CSSParserTokenS
 }
 
 std::shared_ptr<const CSSValue> JustifyItems::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   CSSParserTokenStream::State savepoint = stream.Save();
   // justify-items property does not allow the 'auto' value.
@@ -1741,14 +1741,14 @@ std::shared_ptr<const CSSValue> JustifyItems::ParseSingleValue(CSSParserTokenStr
 }
 
 std::shared_ptr<const CSSValue> JustifySelf::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeSelfPositionOverflowPosition(stream,
                                                                 css_parsing_utils::IsSelfPositionOrLeftOrRightKeyword);
 }
 
 std::shared_ptr<const CSSValue> Left::ParseSingleValue(CSSParserTokenStream& stream,
-                                                       const CSSParserContext& context,
+                                                       std::shared_ptr<const CSSParserContext> context,
                                                        const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context,
                                                   css_parsing_utils::UnitlessUnlessShorthand(local_context),
@@ -1756,19 +1756,19 @@ std::shared_ptr<const CSSValue> Left::ParseSingleValue(CSSParserTokenStream& str
 }
 
 std::shared_ptr<const CSSValue> LetterSpacing::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   return css_parsing_utils::ParseSpacing(stream, context);
 }
 
 std::shared_ptr<const CSSValue> LightingColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColor(stream, context);
 }
 
 std::shared_ptr<const CSSValue> LineClamp::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNone || stream.Peek().Id() == CSSValueID::kAuto) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -1778,61 +1778,61 @@ std::shared_ptr<const CSSValue> LineClamp::ParseSingleValue(CSSParserTokenStream
 }
 
 std::shared_ptr<const CSSValue> LineHeight::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeLineHeight(stream, context);
 }
 
 std::shared_ptr<const CSSValue> MarginBlockEnd::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context, css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> MarginBlockStart::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context, css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> MarginBottom::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context, css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> MarginInlineEnd::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context, css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> MarginInlineStart::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
+                                                                    std::shared_ptr<const CSSParserContext> context,
                                                                     const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context, css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> MarginLeft::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context, css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> MarginRight::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context, css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> MarginTop::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context, css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> MarkerEnd::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNone) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -1841,7 +1841,7 @@ std::shared_ptr<const CSSValue> MarkerEnd::ParseSingleValue(CSSParserTokenStream
 }
 
 std::shared_ptr<const CSSValue> MarkerMid::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNone) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -1850,7 +1850,7 @@ std::shared_ptr<const CSSValue> MarkerMid::ParseSingleValue(CSSParserTokenStream
 }
 
 std::shared_ptr<const CSSValue> MarkerStart::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNone) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -1859,61 +1859,61 @@ std::shared_ptr<const CSSValue> MarkerStart::ParseSingleValue(CSSParserTokenStre
 }
 
 std::shared_ptr<const CSSValue> MaxBlockSize::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMaxWidthOrHeight(stream, context);
 }
 
 std::shared_ptr<const CSSValue> MaxHeight::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMaxWidthOrHeight(stream, context, css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> MaxInlineSize::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMaxWidthOrHeight(stream, context);
 }
 
 std::shared_ptr<const CSSValue> MaxWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                           const CSSParserContext& context,
+                                                           std::shared_ptr<const CSSParserContext> context,
                                                            const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeMaxWidthOrHeight(stream, context, css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> MinBlockSize::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeWidthOrHeight(stream, context);
 }
 
 std::shared_ptr<const CSSValue> MinHeight::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeWidthOrHeight(stream, context, css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> MinInlineSize::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeWidthOrHeight(stream, context);
 }
 
 std::shared_ptr<const CSSValue> MinWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                           const CSSParserContext& context,
+                                                           std::shared_ptr<const CSSParserContext> context,
                                                            const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeWidthOrHeight(stream, context, css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> ObjectPosition::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext&) const {
   return ConsumePosition(stream, context, css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> ObjectViewBox::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNone) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -1929,7 +1929,7 @@ std::shared_ptr<const CSSValue> ObjectViewBox::ParseSingleValue(CSSParserTokenSt
 }
 
 std::shared_ptr<const CSSValue> OffsetAnchor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   CSSValueID id = stream.Peek().Id();
   if (id == CSSValueID::kAuto) {
@@ -1939,19 +1939,19 @@ std::shared_ptr<const CSSValue> OffsetAnchor::ParseSingleValue(CSSParserTokenStr
 }
 
 std::shared_ptr<const CSSValue> OffsetDistance::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kAll);
 }
 
 std::shared_ptr<const CSSValue> OffsetPath::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeOffsetPath(stream, context);
 }
 
 std::shared_ptr<const CSSValue> OffsetPosition::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext&) const {
   CSSValueID id = stream.Peek().Id();
   if (id == CSSValueID::kAuto) {
@@ -1965,37 +1965,37 @@ std::shared_ptr<const CSSValue> OffsetPosition::ParseSingleValue(CSSParserTokenS
 }
 
 std::shared_ptr<const CSSValue> OffsetRotate::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeOffsetRotate(stream, context);
 }
 
 std::shared_ptr<const CSSValue> Opacity::ParseSingleValue(CSSParserTokenStream& stream,
-                                                          const CSSParserContext& context,
+                                                          std::shared_ptr<const CSSParserContext> context,
                                                           const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeAlphaValue(stream, context);
 }
 
 std::shared_ptr<const CSSValue> Order::ParseSingleValue(CSSParserTokenStream& stream,
-                                                        const CSSParserContext& context,
+                                                        std::shared_ptr<const CSSParserContext> context,
                                                         const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeInteger(stream, context);
 }
 
 std::shared_ptr<const CSSValue> Orphans::ParseSingleValue(CSSParserTokenStream& stream,
-                                                          const CSSParserContext& context,
+                                                          std::shared_ptr<const CSSParserContext> context,
                                                           const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumePositiveInteger(stream, context);
 }
 
 std::shared_ptr<const CSSValue> OutlineColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColor(stream, context);
 }
 
 std::shared_ptr<const CSSValue> AccentColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kAuto) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -2004,19 +2004,19 @@ std::shared_ptr<const CSSValue> AccentColor::ParseSingleValue(CSSParserTokenStre
 }
 
 std::shared_ptr<const CSSValue> OutlineOffset::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kAll);
 }
 
 std::shared_ptr<const CSSValue> OutlineWidth::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeLineWidth(stream, context, css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> OverflowClipMargin::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                     const CSSParserContext& context,
+                                                                     std::shared_ptr<const CSSParserContext> context,
                                                                      const CSSParserLocalContext&) const {
   std::shared_ptr<const CSSPrimitiveValue> length;
   std::shared_ptr<const CSSIdentifierValue> reference_box;
@@ -2058,63 +2058,63 @@ std::shared_ptr<const CSSValue> OverflowClipMargin::ParseSingleValue(CSSParserTo
 }
 
 std::shared_ptr<const CSSValue> PaddingBlockEnd::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext&) const {
   return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative,
                                 css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> PaddingBlockStart::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
+                                                                    std::shared_ptr<const CSSParserContext> context,
                                                                     const CSSParserLocalContext&) const {
   return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative,
                                 css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> PaddingBottom::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative,
                                 css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> PaddingInlineEnd::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                   const CSSParserContext& context,
+                                                                   std::shared_ptr<const CSSParserContext> context,
                                                                    const CSSParserLocalContext&) const {
   return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative,
                                 css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> PaddingInlineStart::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                     const CSSParserContext& context,
+                                                                     std::shared_ptr<const CSSParserContext> context,
                                                                      const CSSParserLocalContext&) const {
   return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative,
                                 css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> PaddingLeft::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative,
                                 css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> PaddingRight::ParseSingleValue(CSSParserTokenStream& stream,
-                                                               const CSSParserContext& context,
+                                                               std::shared_ptr<const CSSParserContext> context,
                                                                const CSSParserLocalContext&) const {
   return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative,
                                 css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> PaddingTop::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative,
                                 css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> Page::ParseSingleValue(CSSParserTokenStream& stream,
-                                                       const CSSParserContext& context,
+                                                       std::shared_ptr<const CSSParserContext> context,
                                                        const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kAuto) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -2123,7 +2123,7 @@ std::shared_ptr<const CSSValue> Page::ParseSingleValue(CSSParserTokenStream& str
 }
 
 std::shared_ptr<const CSSValue> Perspective::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext& localContext) const {
   if (stream.Peek().Id() == CSSValueID::kNone) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -2142,13 +2142,13 @@ std::shared_ptr<const CSSValue> Perspective::ParseSingleValue(CSSParserTokenStre
 }
 
 std::shared_ptr<const CSSValue> PerspectiveOrigin::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
+                                                                    std::shared_ptr<const CSSParserContext> context,
                                                                     const CSSParserLocalContext&) const {
   return ConsumePosition(stream, context, css_parsing_utils::UnitlessQuirk::kForbid);
 }
 
 std::shared_ptr<const CSSValue> Quotes::ParseSingleValue(CSSParserTokenStream& stream,
-                                                         const CSSParserContext& context,
+                                                         std::shared_ptr<const CSSParserContext> context,
                                                          const CSSParserLocalContext&) const {
   if (auto value = css_parsing_utils::ConsumeIdent<CSSValueID::kAuto, CSSValueID::kNone>(stream)) {
     return value;
@@ -2174,7 +2174,7 @@ std::shared_ptr<const CSSValue> Quotes::ParseSingleValue(CSSParserTokenStream& s
 }
 
 std::shared_ptr<const CSSValue> Right::ParseSingleValue(CSSParserTokenStream& stream,
-                                                        const CSSParserContext& context,
+                                                        std::shared_ptr<const CSSParserContext> context,
                                                         const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context,
                                                   css_parsing_utils::UnitlessUnlessShorthand(local_context),
@@ -2182,7 +2182,7 @@ std::shared_ptr<const CSSValue> Right::ParseSingleValue(CSSParserTokenStream& st
 }
 
 std::shared_ptr<const CSSValue> Rotate::ParseSingleValue(CSSParserTokenStream& stream,
-                                                         const CSSParserContext& context,
+                                                         std::shared_ptr<const CSSParserContext> context,
                                                          const CSSParserLocalContext&) const {
   CSSValueID id = stream.Peek().Id();
   if (id == CSSValueID::kNone) {
@@ -2215,13 +2215,13 @@ std::shared_ptr<const CSSValue> Rotate::ParseSingleValue(CSSParserTokenStream& s
 }
 
 std::shared_ptr<const CSSValue> RowGap::ParseSingleValue(CSSParserTokenStream& stream,
-                                                         const CSSParserContext& context,
+                                                         std::shared_ptr<const CSSParserContext> context,
                                                          const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeGapLength(stream, context);
 }
 
 std::shared_ptr<const CSSValue> Scale::ParseSingleValue(CSSParserTokenStream& stream,
-                                                        const CSSParserContext& context,
+                                                        std::shared_ptr<const CSSParserContext> context,
                                                         const CSSParserLocalContext&) const {
   CSSValueID id = stream.Peek().Id();
   if (id == CSSValueID::kNone) {
@@ -2297,7 +2297,7 @@ static gfx::SizeF GetPageSizeFromName(const CSSIdentifierValue& page_size_name) 
 }
 
 std::shared_ptr<const CSSValue> Size::ParseSingleValue(CSSParserTokenStream& stream,
-                                                       const CSSParserContext& context,
+                                                       std::shared_ptr<const CSSParserContext> context,
                                                        const CSSParserLocalContext&) const {
   std::shared_ptr<CSSValueList> result = CSSValueList::CreateSpaceSeparated();
 
@@ -2341,19 +2341,19 @@ void Size::ApplyInitial(StyleResolverState& state) const {}
 void Size::ApplyInherit(StyleResolverState& state) const {}
 
 std::shared_ptr<const CSSValue> StopOpacity::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeAlphaValue(stream, context);
 }
 
 std::shared_ptr<const CSSValue> ContentVisibility::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
+                                                                    std::shared_ptr<const CSSParserContext> context,
                                                                     const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeIdent<CSSValueID::kVisible, CSSValueID::kAuto, CSSValueID::kHidden>(stream);
 }
 
 std::shared_ptr<const CSSValue> TabSize::ParseSingleValue(CSSParserTokenStream& stream,
-                                                          const CSSParserContext& context,
+                                                          std::shared_ptr<const CSSParserContext> context,
                                                           const CSSParserLocalContext&) const {
   std::shared_ptr<const CSSPrimitiveValue> parsed_value =
       css_parsing_utils::ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
@@ -2364,25 +2364,25 @@ std::shared_ptr<const CSSValue> TabSize::ParseSingleValue(CSSParserTokenStream& 
 }
 
 std::shared_ptr<const CSSValue> TextBoxEdge::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeTextBoxEdge(stream);
 }
 
 std::shared_ptr<const CSSValue> TextDecorationColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                      const CSSParserContext& context,
+                                                                      std::shared_ptr<const CSSParserContext> context,
                                                                       const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColor(stream, context);
 }
 
 std::shared_ptr<const CSSValue> TextDecorationLine::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                     const CSSParserContext&,
+                                                                     std::shared_ptr<const CSSParserContext> context,
                                                                      const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeTextDecorationLine(stream);
 }
 
 std::shared_ptr<const CSSValue> TextDecorationThickness::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                          const CSSParserContext& context,
+                                                                          std::shared_ptr<const CSSParserContext> context,
                                                                           const CSSParserLocalContext&) const {
   if (auto ident = css_parsing_utils::ConsumeIdent<CSSValueID::kFromFont, CSSValueID::kAuto>(stream)) {
     return ident;
@@ -2391,7 +2391,7 @@ std::shared_ptr<const CSSValue> TextDecorationThickness::ParseSingleValue(CSSPar
 }
 
 std::shared_ptr<const CSSValue> TextIndent::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   // [ <length> | <percentage> ]
   auto length_percentage = css_parsing_utils::ConsumeLengthOrPercent(
@@ -2406,13 +2406,13 @@ std::shared_ptr<const CSSValue> TextIndent::ParseSingleValue(CSSParserTokenStrea
 }
 
 std::shared_ptr<const CSSValue> TextShadow::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeShadow(stream, context, css_parsing_utils::AllowInsetAndSpread::kForbid);
 }
 
 std::shared_ptr<const CSSValue> TextSizeAdjust::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext& context,
+                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                  const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kAuto) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -2426,7 +2426,7 @@ std::shared_ptr<const CSSValue> TextSizeAdjust::ParseSingleValue(CSSParserTokenS
 // https://drafts.csswg.org/css-text-decor-4/#text-underline-position-property
 // auto | [ from-font | under ] || [ left | right ] - default: auto
 std::shared_ptr<const CSSValue> TextUnderlinePosition::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                        const CSSParserContext& context,
+                                                                        std::shared_ptr<const CSSParserContext> context,
                                                                         const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kAuto) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -2453,7 +2453,7 @@ std::shared_ptr<const CSSValue> TextUnderlinePosition::ParseSingleValue(CSSParse
 }
 
 std::shared_ptr<const CSSValue> TextUnderlineOffset::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                      const CSSParserContext& context,
+                                                                      std::shared_ptr<const CSSParserContext> context,
                                                                       const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kAuto) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -2462,7 +2462,7 @@ std::shared_ptr<const CSSValue> TextUnderlineOffset::ParseSingleValue(CSSParserT
 }
 
 std::shared_ptr<const CSSValue> Top::ParseSingleValue(CSSParserTokenStream& stream,
-                                                      const CSSParserContext& context,
+                                                      std::shared_ptr<const CSSParserContext> context,
                                                       const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ConsumeMarginOrOffset(stream, context,
                                                   css_parsing_utils::UnitlessUnlessShorthand(local_context),
@@ -2491,7 +2491,7 @@ static bool ConsumePan(CSSParserTokenStream& stream,
 }  // namespace
 
 std::shared_ptr<const CSSValue> TouchAction::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
   CSSValueID id = stream.Peek().Id();
@@ -2522,13 +2522,13 @@ std::shared_ptr<const CSSValue> TouchAction::ParseSingleValue(CSSParserTokenStre
 }
 
 std::shared_ptr<const CSSValue> Transform::ParseSingleValue(CSSParserTokenStream& stream,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSParserLocalContext& local_context) const {
   return css_parsing_utils::ConsumeTransformList(stream, context, local_context);
 }
 
 std::shared_ptr<const CSSValue> TransformOrigin::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext&) const {
   std::shared_ptr<const CSSValue> result_x = nullptr;
   std::shared_ptr<const CSSValue> result_y = nullptr;
@@ -2548,27 +2548,27 @@ std::shared_ptr<const CSSValue> TransformOrigin::ParseSingleValue(CSSParserToken
 }
 
 std::shared_ptr<const CSSValue> TransitionDelay::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeCommaSeparatedList(
-      static_cast<std::shared_ptr<const CSSPrimitiveValue> (*)(CSSParserTokenStream&, const CSSParserContext&,
+      static_cast<std::shared_ptr<const CSSPrimitiveValue> (*)(CSSParserTokenStream&, std::shared_ptr<const CSSParserContext> context,
                                                                CSSPrimitiveValue::ValueRange)>(
           css_parsing_utils::ConsumeTime),
       stream, context, CSSPrimitiveValue::ValueRange::kAll);
 }
 
 std::shared_ptr<const CSSValue> TransitionDuration::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                     const CSSParserContext& context,
+                                                                     std::shared_ptr<const CSSParserContext> context,
                                                                      const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeCommaSeparatedList(
-      static_cast<std::shared_ptr<const CSSPrimitiveValue> (*)(CSSParserTokenStream&, const CSSParserContext&,
+      static_cast<std::shared_ptr<const CSSPrimitiveValue> (*)(CSSParserTokenStream&, std::shared_ptr<const CSSParserContext> context,
                                                                CSSPrimitiveValue::ValueRange)>(
           css_parsing_utils::ConsumeTime),
       stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
 }
 
 std::shared_ptr<const CSSValue> TransitionProperty::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                     const CSSParserContext& context,
+                                                                     std::shared_ptr<const CSSParserContext> context,
                                                                      const CSSParserLocalContext&) const {
   std::shared_ptr<const CSSValueList> list =
       css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeTransitionProperty, stream, context);
@@ -2584,13 +2584,13 @@ std::shared_ptr<const CSSValue> TransitionProperty::InitialValue() const {
 
 namespace {
 std::shared_ptr<const CSSIdentifierValue> ConsumeIdentNoTemplate(CSSParserTokenStream& stream,
-                                                                 const CSSParserContext&) {
+                                                                 std::shared_ptr<const CSSParserContext> context) {
   return css_parsing_utils::ConsumeIdent(stream);
 }
 }  // namespace
 
 std::shared_ptr<const CSSValue> TransitionBehavior::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                     const CSSParserContext& context,
+                                                                     std::shared_ptr<const CSSParserContext> context,
                                                                      const CSSParserLocalContext&) const {
   std::shared_ptr<const CSSValueList> list =
       css_parsing_utils::ConsumeCommaSeparatedList(ConsumeIdentNoTemplate, stream, context);
@@ -2605,7 +2605,7 @@ std::shared_ptr<const CSSValue> TransitionBehavior::InitialValue() const {
 }
 
 std::shared_ptr<const CSSValue> TransitionTimingFunction::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                           const CSSParserContext& context,
+                                                                           std::shared_ptr<const CSSParserContext> context,
                                                                            const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeCommaSeparatedList(css_parsing_utils::ConsumeAnimationTimingFunction, stream,
                                                       context);
@@ -2616,7 +2616,7 @@ std::shared_ptr<const CSSValue> TransitionTimingFunction::InitialValue() const {
 }
 
 // std::shared_ptr<const CSSValue> Translate::ParseSingleValue(CSSParserTokenStream& stream,
-//                                                             const CSSParserContext& context,
+//                                                             std::shared_ptr<const CSSParserContext> context,
 //                                                             const CSSParserLocalContext&) const {
 //   CSSValueID id = stream.Peek().Id();
 //   if (id == CSSValueID::kNone) {
@@ -2654,7 +2654,7 @@ std::shared_ptr<const CSSValue> TransitionTimingFunction::InitialValue() const {
 // }
 
 std::shared_ptr<const CSSValue> VerticalAlign::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   std::shared_ptr<const CSSValue> parsed_value =
       css_parsing_utils::ConsumeIdentRange(stream, CSSValueID::kBaseline, CSSValueID::kWebkitBaselineMiddle);
@@ -2667,7 +2667,7 @@ std::shared_ptr<const CSSValue> VerticalAlign::ParseSingleValue(CSSParserTokenSt
 
 namespace {
 
-std::shared_ptr<const CSSValue> ConsumeReflect(CSSParserTokenStream& stream, const CSSParserContext& context) {
+std::shared_ptr<const CSSValue> ConsumeReflect(CSSParserTokenStream& stream, std::shared_ptr<const CSSParserContext> context) {
   std::shared_ptr<const CSSIdentifierValue> direction =
       css_parsing_utils::ConsumeIdent<CSSValueID::kAbove, CSSValueID::kBelow, CSSValueID::kLeft, CSSValueID::kRight>(
           stream);
@@ -2692,7 +2692,7 @@ std::shared_ptr<const CSSValue> ConsumeReflect(CSSParserTokenStream& stream, con
 }  // namespace
 
 std::shared_ptr<const CSSValue> WebkitLineClamp::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                  const CSSParserContext& context,
+                                                                  std::shared_ptr<const CSSParserContext> context,
                                                                   const CSSParserLocalContext&) const {
   // When specifying number of lines, don't allow 0 as a valid value.
   return css_parsing_utils::ConsumePositiveInteger(stream, context);
@@ -2707,7 +2707,7 @@ std::shared_ptr<const CSSValue> WebkitLineClamp::ParseSingleValue(CSSParserToken
 // }
 
 std::shared_ptr<const CSSValue> TextEmphasisColor::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
+                                                                    std::shared_ptr<const CSSParserContext> context,
                                                                     const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeColor(stream, context);
 }
@@ -2715,7 +2715,7 @@ std::shared_ptr<const CSSValue> TextEmphasisColor::ParseSingleValue(CSSParserTok
 // [ over | under ] && [ right | left ]?
 // If [ right | left ] is omitted, it defaults to right.
 std::shared_ptr<const CSSValue> TextEmphasisPosition::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                       const CSSParserContext& context,
+                                                                       std::shared_ptr<const CSSParserContext> context,
                                                                        const CSSParserLocalContext&) const {
   std::shared_ptr<const CSSIdentifierValue> values[2] = {
       css_parsing_utils::ConsumeIdent<CSSValueID::kOver, CSSValueID::kUnder, CSSValueID::kRight, CSSValueID::kLeft>(
@@ -2766,7 +2766,7 @@ std::shared_ptr<const CSSValue> TextEmphasisPosition::ParseSingleValue(CSSParser
 }
 
 std::shared_ptr<const CSSValue> TextEmphasisStyle::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                    const CSSParserContext& context,
+                                                                    std::shared_ptr<const CSSParserContext> context,
                                                                     const CSSParserLocalContext&) const {
   CSSValueID id = stream.Peek().Id();
   if (id == CSSValueID::kNone) {
@@ -2801,7 +2801,7 @@ std::shared_ptr<const CSSValue> TextEmphasisStyle::ParseSingleValue(CSSParserTok
 }
 
 std::shared_ptr<const CSSValue> TimelineScope::ParseSingleValue(CSSParserTokenStream& stream,
-                                                                const CSSParserContext& context,
+                                                                std::shared_ptr<const CSSParserContext> context,
                                                                 const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kNone) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -2809,7 +2809,7 @@ std::shared_ptr<const CSSValue> TimelineScope::ParseSingleValue(CSSParserTokenSt
   using css_parsing_utils::ConsumeCommaSeparatedList;
   using css_parsing_utils::ConsumeCustomIdent;
   return ConsumeCommaSeparatedList<std::shared_ptr<const CSSCustomIdentValue>(
-      CSSParserTokenStream&, const CSSParserContext&)>(ConsumeCustomIdent, stream, context);
+      CSSParserTokenStream&, std::shared_ptr<const CSSParserContext> context)>(ConsumeCustomIdent, stream, context);
 }
 
 // void WebkitTransformOriginY::ApplyInherit(StyleResolverState& state) const {
@@ -2817,19 +2817,19 @@ std::shared_ptr<const CSSValue> TimelineScope::ParseSingleValue(CSSParserTokenSt
 // }
 
 std::shared_ptr<const CSSValue> Widows::ParseSingleValue(CSSParserTokenStream& stream,
-                                                         const CSSParserContext& context,
+                                                         std::shared_ptr<const CSSParserContext> context,
                                                          const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumePositiveInteger(stream, context);
 }
 
 std::shared_ptr<const CSSValue> Width::ParseSingleValue(CSSParserTokenStream& stream,
-                                                        const CSSParserContext& context,
+                                                        std::shared_ptr<const CSSParserContext> context,
                                                         const CSSParserLocalContext&) const {
   return css_parsing_utils::ConsumeWidthOrHeight(stream, context, css_parsing_utils::UnitlessQuirk::kAllow);
 }
 
 std::shared_ptr<const CSSValue> WillChange::ParseSingleValue(CSSParserTokenStream& stream,
-                                                             const CSSParserContext& context,
+                                                             std::shared_ptr<const CSSParserContext> context,
                                                              const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kAuto) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -2842,10 +2842,10 @@ std::shared_ptr<const CSSValue> WillChange::ParseSingleValue(CSSParserTokenStrea
     if (stream.Peek().GetType() != kIdentToken) {
       return nullptr;
     }
-    CSSPropertyID unresolved_property = UnresolvedCSSPropertyID(context.GetExecutingContext(), stream.Peek().Value());
+    CSSPropertyID unresolved_property = UnresolvedCSSPropertyID(context->GetExecutingContext(), stream.Peek().Value());
     if (unresolved_property != CSSPropertyID::kInvalid && unresolved_property != CSSPropertyID::kVariable) {
 #if DCHECK_IS_ON()
-      DCHECK(CSSProperty::Get(ResolveCSSPropertyID(unresolved_property)).IsWebExposed(context.GetExecutingContext()));
+      DCHECK(CSSProperty::Get(ResolveCSSPropertyID(unresolved_property)).IsWebExposed(context->GetExecutingContext()));
 #endif
       // Now "all" is used by both CSSValue and CSSPropertyValue.
       // Need to return nullptr when currentValue is CSSPropertyID::kAll.
@@ -2924,7 +2924,7 @@ void WillChange::ApplyValue(StyleResolverState& state, const CSSValue& value, Va
 }
 
 std::shared_ptr<const CSSValue> WordSpacing::ParseSingleValue(CSSParserTokenStream& stream,
-                                                              const CSSParserContext& context,
+                                                              std::shared_ptr<const CSSParserContext> context,
                                                               const CSSParserLocalContext&) const {
   return css_parsing_utils::ParseSpacing(stream, context);
 }
@@ -2950,7 +2950,7 @@ void TextSizeAdjust::ApplyValue(StyleResolverState& state, const CSSValue& value
 }
 
 std::shared_ptr<const CSSValue> ZIndex::ParseSingleValue(CSSParserTokenStream& stream,
-                                                         const CSSParserContext& context,
+                                                         std::shared_ptr<const CSSParserContext> context,
                                                          const CSSParserLocalContext&) const {
   if (stream.Peek().Id() == CSSValueID::kAuto) {
     return css_parsing_utils::ConsumeIdent(stream);
@@ -2960,7 +2960,7 @@ std::shared_ptr<const CSSValue> ZIndex::ParseSingleValue(CSSParserTokenStream& s
 }
 
 std::shared_ptr<const CSSValue> Zoom::ParseSingleValue(CSSParserTokenStream& stream,
-                                                       const CSSParserContext& context,
+                                                       std::shared_ptr<const CSSParserContext> context,
                                                        const CSSParserLocalContext&) const {
   const CSSParserToken token = stream.Peek();
   std::shared_ptr<const CSSValue> zoom = nullptr;

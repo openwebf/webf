@@ -28,6 +28,9 @@ enum class Enum : size_t {
 
 struct TimelineOffset {
   using NamedRange = Enum;
+
+  static std::string TimelineRangeNameToString(NamedRange range_name);
+
 };
 
 }  // namespace webf

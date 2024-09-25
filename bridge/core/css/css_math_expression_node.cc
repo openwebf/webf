@@ -436,7 +436,7 @@ class CSSMathExpressionNodeParser {
     State& operator=(const State&) = default;
   };
 
-  CSSMathExpressionNodeParser(const CSSParserContext& context,
+  CSSMathExpressionNodeParser(std::shared_ptr<const CSSParserContext> context,
                               const Flags parsing_flags,
                               CSSAnchorQueryTypes allowed_anchor_queries,
                               const CSSColorChannelMap& color_channel_map)
@@ -1092,7 +1092,7 @@ class CSSMathExpressionNodeParser {
     return ParseAdditiveValueExpression(tokens, state);
   }
 
-  const CSSParserContext& context_;
+  std::shared_ptr<const CSSParserContext> context_;
   const CSSAnchorQueryTypes allowed_anchor_queries_;
   const Flags parsing_flags_;
   const CSSColorChannelMap& color_channel_map_;
@@ -1141,7 +1141,6 @@ CSSValueID SizingKeywordToCSSValueID(CalculationExpressionSizingKeywordNode::Key
     KEYWORD_CASE(kAny)
     KEYWORD_CASE(kSize)
     KEYWORD_CASE(kAuto)
-    KEYWORD_CASE(kContent)
     KEYWORD_CASE(kMinContent)
     KEYWORD_CASE(kWebkitMinContent)
     KEYWORD_CASE(kMaxContent)
@@ -1341,7 +1340,7 @@ std::shared_ptr<const CalculationValue> CSSMathExpressionNode::ToCalcValue(
 std::shared_ptr<const CSSMathExpressionNode> CSSMathExpressionNode::ParseMathFunction(
     CSSValueID function_id,
     CSSParserTokenRange tokens,
-    const CSSParserContext& context,
+    std::shared_ptr<const CSSParserContext> context,
     const CSSMathExpressionNode::Flags parsing_flags,
     CSSAnchorQueryTypes allowed_anchor_queries,
     const std::unordered_map<CSSValueID, double>& color_channel_map) {
@@ -1606,7 +1605,6 @@ CalculationExpressionSizingKeywordNode::Keyword CSSValueIDToSizingKeyword(CSSVal
     KEYWORD_CASE(kAny)
     KEYWORD_CASE(kSize)
     KEYWORD_CASE(kAuto)
-    KEYWORD_CASE(kContent)
     KEYWORD_CASE(kMinContent)
     KEYWORD_CASE(kWebkitMinContent)
     KEYWORD_CASE(kMaxContent)
@@ -1634,7 +1632,6 @@ CSSValueID SizingKeywordToCSSValueID(CalculationExpressionSizingKeywordNode::Key
     KEYWORD_CASE(kAny)
     KEYWORD_CASE(kSize)
     KEYWORD_CASE(kAuto)
-    KEYWORD_CASE(kContent)
     KEYWORD_CASE(kMinContent)
     KEYWORD_CASE(kWebkitMinContent)
     KEYWORD_CASE(kMaxContent)

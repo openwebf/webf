@@ -70,9 +70,18 @@ class CSSPropertyParser {
                          StyleRule::RuleType);
 
   // Parses a non-shorthand CSS property
-  static const CSSValue* ParseSingleValue(CSSPropertyID,
+  static std::shared_ptr<const CSSValue> ParseSingleValue(CSSPropertyID,
                                           CSSParserTokenStream&,
-                                          const CSSParserContext*);
+                                          std::shared_ptr<const CSSParserContext>);
+
+  // Tries to parse an entire value consisting solely of a CSS-wide
+  // keyword (and potentially !important). Returns nullptr on failure,
+  // and then leaves the stream position untouched (but “important”
+  // in an undeterminate state). Unlike the ParseFoo() functions,
+  // this is static, so does not touch parsed_properties_.
+  static std::shared_ptr<const CSSValue> ConsumeCSSWideKeyword(CSSParserTokenStream& stream,
+                                                               bool allow_important_annotation,
+                                                               bool& important);
 
  private:
   CSSPropertyParser(CSSParserTokenStream&,
@@ -83,8 +92,6 @@ class CSSPropertyParser {
   bool ParseValueStart(CSSPropertyID unresolved_property,
                        bool allow_important_annotation,
                        StyleRule::RuleType rule_type);
-//  bool ConsumeCSSWideKeyword(CSSPropertyID unresolved_property,
-//                             bool allow_important_annotation);
 //
 //  bool ParseFontFaceDescriptor(CSSPropertyID);
 

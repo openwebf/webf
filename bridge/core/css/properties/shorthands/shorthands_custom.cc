@@ -45,7 +45,7 @@ bool IsResetOnlyAnimationProperty(CSSPropertyID property) {
 // Legacy parsing allows <string>s for animation-name.
 std::shared_ptr<const CSSValue> ConsumeAnimationValue(CSSPropertyID property,
                                                       CSSParserTokenStream& stream,
-                                                      const CSSParserContext& context,
+                                                      std::shared_ptr<const CSSParserContext> context,
                                                       bool use_legacy_parsing) {
 //  switch (property) {
 //    case CSSPropertyID::kAnimationDelay:
@@ -82,7 +82,7 @@ std::shared_ptr<const CSSValue> ConsumeAnimationValue(CSSPropertyID property,
 bool ParseAnimationShorthand(const StylePropertyShorthand& shorthand,
                              bool important,
                              CSSParserTokenStream& stream,
-                             const CSSParserContext& context,
+                             std::shared_ptr<const CSSParserContext> context,
                              const CSSParserLocalContext& local_context,
                              std::vector<CSSPropertyValue>& properties) {
   const unsigned longhand_count = shorthand.length();
@@ -165,7 +165,7 @@ bool ParseAnimationShorthand(const StylePropertyShorthand& shorthand,
 bool ParseBackgroundOrMaskPosition(const StylePropertyShorthand& shorthand,
                                    bool important,
                                    CSSParserTokenStream& stream,
-                                   const CSSParserContext& context,
+                                   std::shared_ptr<const CSSParserContext> context,
                                    std::vector<CSSPropertyValue>& properties) {
   std::shared_ptr<const CSSValue> result_x = nullptr;
   std::shared_ptr<const CSSValue> result_y = nullptr;
@@ -187,7 +187,7 @@ bool ParseBackgroundOrMaskPosition(const StylePropertyShorthand& shorthand,
 // bool Animation::ParseShorthand(
 //    bool important,
 //    CSSParserTokenStream& stream,
-//    const CSSParserContext& context,
+//    std::shared_ptr<const CSSParserContext> context,
 //    const CSSParserLocalContext& local_context,
 //    std::vector<CSSPropertyValue>& properties) const {
 //  return ParseAnimationShorthand(animationShorthand(), important, stream,
@@ -206,7 +206,7 @@ bool ParseBackgroundOrMaskPosition(const StylePropertyShorthand& shorthand,
 // bool AlternativeAnimationWithTimeline::ParseShorthand(
 //    bool important,
 //    CSSParserTokenStream& stream,
-//    const CSSParserContext& context,
+//    std::shared_ptr<const CSSParserContext> context,
 //    const CSSParserLocalContext& local_context,
 //    std::vector<CSSPropertyValue>& properties) const {
 //  return ParseAnimationShorthand(alternativeAnimationWithTimelineShorthand(),
@@ -230,7 +230,7 @@ bool ParseBackgroundOrMaskPosition(const StylePropertyShorthand& shorthand,
 //// <animation-range-end>, and append the result to `start_list` and
 //// `end_list` respectively.
 // bool ConsumeAnimationRangeItemInto(CSSParserTokenStream& stream,
-//                                    const CSSParserContext& context,
+//                                    std::shared_ptr<const CSSParserContext> context,
 //                                    CSSValueList* start_list,
 //                                    CSSValueList* end_list) {
 //   using css_parsing_utils::ConsumeAnimationRange;
@@ -274,7 +274,7 @@ bool ParseBackgroundOrMaskPosition(const StylePropertyShorthand& shorthand,
 // bool AnimationRange::ParseShorthand(
 //     bool important,
 //     CSSParserTokenStream& stream,
-//     const CSSParserContext& context,
+//     std::shared_ptr<const CSSParserContext> context,
 //     const CSSParserLocalContext& local_context,
 //     std::vector<CSSPropertyValue>& properties) const {
 //   DCHECK(RuntimeEnabledFeatures::ScrollTimelineEnabled());
@@ -361,7 +361,7 @@ bool ParseBackgroundOrMaskPosition(const StylePropertyShorthand& shorthand,
 
 bool Background::ParseShorthand(bool important,
                                 CSSParserTokenStream& stream,
-                                const CSSParserContext& context,
+                                std::shared_ptr<const CSSParserContext> context,
                                 const CSSParserLocalContext& local_context,
                                 std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ParseBackgroundOrMask(important, stream, context, local_context, properties);
@@ -378,7 +378,7 @@ bool Background::ParseShorthand(bool important,
 
 bool BackgroundPosition::ParseShorthand(bool important,
                                         CSSParserTokenStream& stream,
-                                        const CSSParserContext& context,
+                                        std::shared_ptr<const CSSParserContext> context,
                                         const CSSParserLocalContext&,
                                         std::vector<CSSPropertyValue>& properties) const {
   return ParseBackgroundOrMaskPosition(backgroundPositionShorthand(), important, stream, context, properties);
@@ -395,7 +395,7 @@ bool BackgroundPosition::ParseShorthand(bool important,
 
 bool BorderBlockColor::ParseShorthand(bool important,
                                       CSSParserTokenStream& stream,
-                                      const CSSParserContext& context,
+                                      std::shared_ptr<const CSSParserContext> context,
                                       const CSSParserLocalContext&,
                                       std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia2Longhands(borderBlockColorShorthand(), important, context, stream,
@@ -414,7 +414,7 @@ bool BorderBlockColor::ParseShorthand(bool important,
 
 bool BorderBlock::ParseShorthand(bool important,
                                  CSSParserTokenStream& stream,
-                                 const CSSParserContext& context,
+                                 std::shared_ptr<const CSSParserContext> context,
                                  const CSSParserLocalContext& local_context,
                                  std::vector<CSSPropertyValue>& properties) const {
   std::shared_ptr<const CSSValue> width = nullptr;
@@ -451,7 +451,7 @@ bool BorderBlock::ParseShorthand(bool important,
 
 bool BorderBlockEnd::ParseShorthand(bool important,
                                     CSSParserTokenStream& stream,
-                                    const CSSParserContext& context,
+                                    std::shared_ptr<const CSSParserContext> context,
                                     const CSSParserLocalContext&,
                                     std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(borderBlockEndShorthand(), important, context, stream,
@@ -460,7 +460,7 @@ bool BorderBlockEnd::ParseShorthand(bool important,
 
 bool BorderBlockStart::ParseShorthand(bool important,
                                       CSSParserTokenStream& stream,
-                                      const CSSParserContext& context,
+                                      std::shared_ptr<const CSSParserContext> context,
                                       const CSSParserLocalContext&,
                                       std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(borderBlockStartShorthand(), important, context,
@@ -469,7 +469,7 @@ bool BorderBlockStart::ParseShorthand(bool important,
 
 bool BorderBlockStyle::ParseShorthand(bool important,
                                       CSSParserTokenStream& stream,
-                                      const CSSParserContext& context,
+                                      std::shared_ptr<const CSSParserContext> context,
                                       const CSSParserLocalContext&,
                                       std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia2Longhands(borderBlockStyleShorthand(), important, context, stream,
@@ -488,7 +488,7 @@ bool BorderBlockStyle::ParseShorthand(bool important,
 
 bool BorderBlockWidth::ParseShorthand(bool important,
                                       CSSParserTokenStream& stream,
-                                      const CSSParserContext& context,
+                                      std::shared_ptr<const CSSParserContext> context,
                                       const CSSParserLocalContext&,
                                       std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia2Longhands(borderBlockWidthShorthand(), important, context, stream,
@@ -507,7 +507,7 @@ bool BorderBlockWidth::ParseShorthand(bool important,
 
 bool BorderBottom::ParseShorthand(bool important,
                                   CSSParserTokenStream& stream,
-                                  const CSSParserContext& context,
+                                  std::shared_ptr<const CSSParserContext> context,
                                   const CSSParserLocalContext&,
                                   std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(borderBottomShorthand(), important, context, stream,
@@ -526,7 +526,7 @@ bool BorderBottom::ParseShorthand(bool important,
 
 bool BorderColor::ParseShorthand(bool important,
                                  CSSParserTokenStream& stream,
-                                 const CSSParserContext& context,
+                                 std::shared_ptr<const CSSParserContext> context,
                                  const CSSParserLocalContext&,
                                  std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia4Longhands(borderColorShorthand(), important, context, stream,
@@ -545,7 +545,7 @@ bool BorderColor::ParseShorthand(bool important,
 
 bool Border::ParseShorthand(bool important,
                             CSSParserTokenStream& stream,
-                            const CSSParserContext& context,
+                            std::shared_ptr<const CSSParserContext> context,
                             const CSSParserLocalContext& local_context,
                             std::vector<CSSPropertyValue>& properties) const {
   std::shared_ptr<const CSSValue> width = nullptr;
@@ -587,7 +587,7 @@ bool Border::ParseShorthand(bool important,
 
 bool BorderImage::ParseShorthand(bool important,
                                  CSSParserTokenStream& stream,
-                                 const CSSParserContext& context,
+                                 std::shared_ptr<const CSSParserContext> context,
                                  const CSSParserLocalContext&,
                                  std::vector<CSSPropertyValue>& properties) const {
   std::shared_ptr<const CSSValue> source = nullptr;
@@ -632,7 +632,7 @@ bool BorderImage::ParseShorthand(bool important,
 
 bool BorderInlineColor::ParseShorthand(bool important,
                                        CSSParserTokenStream& stream,
-                                       const CSSParserContext& context,
+                                       std::shared_ptr<const CSSParserContext> context,
                                        const CSSParserLocalContext&,
                                        std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia2Longhands(borderInlineColorShorthand(), important, context, stream,
@@ -651,7 +651,7 @@ bool BorderInlineColor::ParseShorthand(bool important,
 
 bool BorderInline::ParseShorthand(bool important,
                                   CSSParserTokenStream& stream,
-                                  const CSSParserContext& context,
+                                  std::shared_ptr<const CSSParserContext> context,
                                   const CSSParserLocalContext& local_context,
                                   std::vector<CSSPropertyValue>& properties) const {
   std::shared_ptr<const CSSValue> width = nullptr;
@@ -688,7 +688,7 @@ bool BorderInline::ParseShorthand(bool important,
 
 bool BorderInlineEnd::ParseShorthand(bool important,
                                      CSSParserTokenStream& stream,
-                                     const CSSParserContext& context,
+                                     std::shared_ptr<const CSSParserContext> context,
                                      const CSSParserLocalContext&,
                                      std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(borderInlineEndShorthand(), important, context, stream,
@@ -697,7 +697,7 @@ bool BorderInlineEnd::ParseShorthand(bool important,
 
 bool BorderInlineStart::ParseShorthand(bool important,
                                        CSSParserTokenStream& stream,
-                                       const CSSParserContext& context,
+                                       std::shared_ptr<const CSSParserContext> context,
                                        const CSSParserLocalContext&,
                                        std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(borderInlineStartShorthand(), important, context,
@@ -706,7 +706,7 @@ bool BorderInlineStart::ParseShorthand(bool important,
 
 bool BorderInlineStyle::ParseShorthand(bool important,
                                        CSSParserTokenStream& stream,
-                                       const CSSParserContext& context,
+                                       std::shared_ptr<const CSSParserContext> context,
                                        const CSSParserLocalContext&,
                                        std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia2Longhands(borderInlineStyleShorthand(), important, context, stream,
@@ -725,7 +725,7 @@ bool BorderInlineStyle::ParseShorthand(bool important,
 
 bool BorderInlineWidth::ParseShorthand(bool important,
                                        CSSParserTokenStream& stream,
-                                       const CSSParserContext& context,
+                                       std::shared_ptr<const CSSParserContext> context,
                                        const CSSParserLocalContext&,
                                        std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia2Longhands(borderInlineWidthShorthand(), important, context, stream,
@@ -744,7 +744,7 @@ bool BorderInlineWidth::ParseShorthand(bool important,
 
 bool BorderLeft::ParseShorthand(bool important,
                                 CSSParserTokenStream& stream,
-                                const CSSParserContext& context,
+                                std::shared_ptr<const CSSParserContext> context,
                                 const CSSParserLocalContext&,
                                 std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(borderLeftShorthand(), important, context, stream,
@@ -763,7 +763,7 @@ bool BorderLeft::ParseShorthand(bool important,
 
 bool BorderRadius::ParseShorthand(bool important,
                                   CSSParserTokenStream& stream,
-                                  const CSSParserContext& context,
+                                  std::shared_ptr<const CSSParserContext> context,
                                   const CSSParserLocalContext& local_context,
                                   std::vector<CSSPropertyValue>& properties) const {
   std::shared_ptr<const CSSValue> horizontal_radii[4] = {nullptr};
@@ -803,7 +803,7 @@ bool BorderRadius::ParseShorthand(bool important,
 
 bool BorderRight::ParseShorthand(bool important,
                                  CSSParserTokenStream& stream,
-                                 const CSSParserContext& context,
+                                 std::shared_ptr<const CSSParserContext> context,
                                  const CSSParserLocalContext&,
                                  std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(borderRightShorthand(), important, context, stream,
@@ -822,7 +822,7 @@ bool BorderRight::ParseShorthand(bool important,
 
 bool BorderSpacing::ParseShorthand(bool important,
                                    CSSParserTokenStream& stream,
-                                   const CSSParserContext& context,
+                                   std::shared_ptr<const CSSParserContext> context,
                                    const CSSParserLocalContext&,
                                    std::vector<CSSPropertyValue>& properties) const {
   std::shared_ptr<const CSSValue> horizontal_spacing = ConsumeLength(
@@ -851,7 +851,7 @@ bool BorderSpacing::ParseShorthand(bool important,
 
 bool BorderStyle::ParseShorthand(bool important,
                                  CSSParserTokenStream& stream,
-                                 const CSSParserContext& context,
+                                 std::shared_ptr<const CSSParserContext> context,
                                  const CSSParserLocalContext&,
                                  std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia4Longhands(borderStyleShorthand(), important, context, stream,
@@ -870,7 +870,7 @@ bool BorderStyle::ParseShorthand(bool important,
 
 bool BorderTop::ParseShorthand(bool important,
                                CSSParserTokenStream& stream,
-                               const CSSParserContext& context,
+                               std::shared_ptr<const CSSParserContext> context,
                                const CSSParserLocalContext&,
                                std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(borderTopShorthand(), important, context, stream,
@@ -889,7 +889,7 @@ bool BorderTop::ParseShorthand(bool important,
 
 bool BorderWidth::ParseShorthand(bool important,
                                  CSSParserTokenStream& stream,
-                                 const CSSParserContext& context,
+                                 std::shared_ptr<const CSSParserContext> context,
                                  const CSSParserLocalContext&,
                                  std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia4Longhands(borderWidthShorthand(), important, context, stream,
@@ -908,7 +908,7 @@ bool BorderWidth::ParseShorthand(bool important,
 
 bool ColumnRule::ParseShorthand(bool important,
                                 CSSParserTokenStream& stream,
-                                const CSSParserContext& context,
+                                std::shared_ptr<const CSSParserContext> context,
                                 const CSSParserLocalContext&,
                                 std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(columnRuleShorthand(), important, context, stream,
@@ -927,7 +927,7 @@ bool ColumnRule::ParseShorthand(bool important,
 
 bool Columns::ParseShorthand(bool important,
                              CSSParserTokenStream& stream,
-                             const CSSParserContext& context,
+                             std::shared_ptr<const CSSParserContext> context,
                              const CSSParserLocalContext&,
                              std::vector<CSSPropertyValue>& properties) const {
   std::shared_ptr<const CSSValue> column_width = nullptr;
@@ -978,7 +978,7 @@ bool Columns::ParseShorthand(bool important,
 
 bool Container::ParseShorthand(bool important,
                                CSSParserTokenStream& stream,
-                               const CSSParserContext& context,
+                               std::shared_ptr<const CSSParserContext> context,
                                const CSSParserLocalContext&,
                                std::vector<CSSPropertyValue>& properties) const {
   std::shared_ptr<const CSSValue> name = css_parsing_utils::ConsumeContainerName(stream, context);
@@ -1013,7 +1013,7 @@ bool Container::ParseShorthand(bool important,
 
 bool Flex::ParseShorthand(bool important,
                           CSSParserTokenStream& stream,
-                          const CSSParserContext& context,
+                          std::shared_ptr<const CSSParserContext> context,
                           const CSSParserLocalContext&,
                           std::vector<CSSPropertyValue>& properties) const {
   static const double kUnsetValue = -1;
@@ -1113,7 +1113,7 @@ bool Flex::ParseShorthand(bool important,
 
 bool FlexFlow::ParseShorthand(bool important,
                               CSSParserTokenStream& stream,
-                              const CSSParserContext& context,
+                              std::shared_ptr<const CSSParserContext> context,
                               const CSSParserLocalContext&,
                               std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(flexFlowShorthand(), important, context, stream,
@@ -1144,7 +1144,7 @@ bool ConsumeSystemFont(bool important, CSSParserTokenStream& stream, std::vector
 
 bool ConsumeFont(bool important,
                  CSSParserTokenStream& stream,
-                 const CSSParserContext& context,
+                 std::shared_ptr<const CSSParserContext> context,
                  std::vector<CSSPropertyValue>& properties) {
   // Optional font-style, font-variant, font-stretch and font-weight.
   // Each may be normal.
@@ -1292,7 +1292,7 @@ bool ConsumeFont(bool important,
 
 bool Font::ParseShorthand(bool important,
                           CSSParserTokenStream& stream,
-                          const CSSParserContext& context,
+                          std::shared_ptr<const CSSParserContext> context,
                           const CSSParserLocalContext&,
                           std::vector<CSSPropertyValue>& properties) const {
   const CSSParserToken& token = stream.Peek();
@@ -1312,7 +1312,7 @@ bool Font::ParseShorthand(bool important,
 
 bool FontVariant::ParseShorthand(bool important,
                                  CSSParserTokenStream& stream,
-                                 const CSSParserContext& context,
+                                 std::shared_ptr<const CSSParserContext> context,
                                  const CSSParserLocalContext&,
                                  std::vector<CSSPropertyValue>& properties) const {
   if (css_parsing_utils::IdentMatches<CSSValueID::kNormal, CSSValueID::kNone>(stream.Peek().Id())) {
@@ -1452,7 +1452,7 @@ bool FontVariant::ParseShorthand(bool important,
 
 bool FontSynthesis::ParseShorthand(bool important,
                                    CSSParserTokenStream& stream,
-                                   const CSSParserContext&,
+                                   std::shared_ptr<const CSSParserContext> context,
                                    const CSSParserLocalContext&,
                                    std::vector<CSSPropertyValue>& properties) const {
   if (stream.Peek().Id() == CSSValueID::kNone) {
@@ -1542,7 +1542,7 @@ bool FontSynthesis::ParseShorthand(bool important,
 
 bool Gap::ParseShorthand(bool important,
                          CSSParserTokenStream& stream,
-                         const CSSParserContext& context,
+                         std::shared_ptr<const CSSParserContext> context,
                          const CSSParserLocalContext&,
                          std::vector<CSSPropertyValue>& properties) const {
   DCHECK_EQ(shorthandForProperty(CSSPropertyID::kGap).length(), 2u);
@@ -1572,7 +1572,7 @@ bool Gap::ParseShorthand(bool important,
 
 bool GridArea::ParseShorthand(bool important,
                               CSSParserTokenStream& stream,
-                              const CSSParserContext& context,
+                              std::shared_ptr<const CSSParserContext> context,
                               const CSSParserLocalContext&,
                               std::vector<CSSPropertyValue>& properties) const {
   DCHECK_EQ(gridAreaShorthand().length(), 4u);
@@ -1638,7 +1638,7 @@ bool GridArea::ParseShorthand(bool important,
 
 bool GridColumn::ParseShorthand(bool important,
                                 CSSParserTokenStream& stream,
-                                const CSSParserContext& context,
+                                std::shared_ptr<const CSSParserContext> context,
                                 const CSSParserLocalContext&,
                                 std::vector<CSSPropertyValue>& properties) const {
   const StylePropertyShorthand& shorthand = shorthandForProperty(CSSPropertyID::kGridColumn);
@@ -1699,7 +1699,7 @@ std::shared_ptr<const CSSValueList> ConsumeImplicitAutoFlow(CSSParserTokenStream
 
 bool Grid::ParseShorthand(bool important,
                           CSSParserTokenStream& stream,
-                          const CSSParserContext& context,
+                          std::shared_ptr<const CSSParserContext> context,
                           const CSSParserLocalContext&,
                           std::vector<CSSPropertyValue>& properties) const {
   DCHECK_EQ(shorthandForProperty(CSSPropertyID::kGrid).length(), 6u);
@@ -1830,7 +1830,7 @@ bool Grid::ParseShorthand(bool important,
 
 bool GridRow::ParseShorthand(bool important,
                              CSSParserTokenStream& stream,
-                             const CSSParserContext& context,
+                             std::shared_ptr<const CSSParserContext> context,
                              const CSSParserLocalContext&,
                              std::vector<CSSPropertyValue>& properties) const {
   const StylePropertyShorthand& shorthand = shorthandForProperty(CSSPropertyID::kGridRow);
@@ -1860,7 +1860,7 @@ bool GridRow::ParseShorthand(bool important,
 
 bool GridTemplate::ParseShorthand(bool important,
                                   CSSParserTokenStream& stream,
-                                  const CSSParserContext& context,
+                                  std::shared_ptr<const CSSParserContext> context,
                                   const CSSParserLocalContext&,
                                   std::vector<CSSPropertyValue>& properties) const {
   std::shared_ptr<const CSSValue> template_rows = nullptr;
@@ -1899,7 +1899,7 @@ bool GridTemplate::ParseShorthand(bool important,
 
 bool InsetBlock::ParseShorthand(bool important,
                                 CSSParserTokenStream& stream,
-                                const CSSParserContext& context,
+                                std::shared_ptr<const CSSParserContext> context,
                                 const CSSParserLocalContext&,
                                 std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia2Longhands(insetBlockShorthand(), important, context, stream,
@@ -1920,7 +1920,7 @@ bool InsetBlock::ParseShorthand(bool important,
 
 bool Inset::ParseShorthand(bool important,
                            CSSParserTokenStream& stream,
-                           const CSSParserContext& context,
+                           std::shared_ptr<const CSSParserContext> context,
                            const CSSParserLocalContext&,
                            std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia4Longhands(insetShorthand(), important, context, stream, properties);
@@ -1940,7 +1940,7 @@ bool Inset::ParseShorthand(bool important,
 
 bool InsetInline::ParseShorthand(bool important,
                                  CSSParserTokenStream& stream,
-                                 const CSSParserContext& context,
+                                 std::shared_ptr<const CSSParserContext> context,
                                  const CSSParserLocalContext&,
                                  std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia2Longhands(insetInlineShorthand(), important, context, stream,
@@ -1961,7 +1961,7 @@ bool InsetInline::ParseShorthand(bool important,
 
 bool MarginBlock::ParseShorthand(bool important,
                                  CSSParserTokenStream& stream,
-                                 const CSSParserContext& context,
+                                 std::shared_ptr<const CSSParserContext> context,
                                  const CSSParserLocalContext&,
                                  std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia2Longhands(marginBlockShorthand(), important, context, stream,
@@ -1982,7 +1982,7 @@ bool MarginBlock::ParseShorthand(bool important,
 
 bool Margin::ParseShorthand(bool important,
                             CSSParserTokenStream& stream,
-                            const CSSParserContext& context,
+                            std::shared_ptr<const CSSParserContext> context,
                             const CSSParserLocalContext&,
                             std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia4Longhands(marginShorthand(), important, context, stream, properties);
@@ -2004,7 +2004,7 @@ bool Margin::ParseShorthand(bool important,
 
 bool MarginInline::ParseShorthand(bool important,
                                   CSSParserTokenStream& stream,
-                                  const CSSParserContext& context,
+                                  std::shared_ptr<const CSSParserContext> context,
                                   const CSSParserLocalContext&,
                                   std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia2Longhands(marginInlineShorthand(), important, context, stream,
@@ -2025,7 +2025,7 @@ bool MarginInline::ParseShorthand(bool important,
 
 bool Marker::ParseShorthand(bool important,
                             CSSParserTokenStream& stream,
-                            const CSSParserContext& context,
+                            std::shared_ptr<const CSSParserContext> context,
                             const CSSParserLocalContext&,
                             std::vector<CSSPropertyValue>& properties) const {
   std::shared_ptr<const CSSValue> marker =
@@ -2057,7 +2057,7 @@ bool Marker::ParseShorthand(bool important,
 
 bool Offset::ParseShorthand(bool important,
                             CSSParserTokenStream& stream,
-                            const CSSParserContext& context,
+                            std::shared_ptr<const CSSParserContext> context,
                             const CSSParserLocalContext&,
                             std::vector<CSSPropertyValue>& properties) const {
   // TODO(meade): The propertyID parameter isn't used - it can be removed
@@ -2130,7 +2130,7 @@ bool Offset::ParseShorthand(bool important,
 
 bool Outline::ParseShorthand(bool important,
                              CSSParserTokenStream& stream,
-                             const CSSParserContext& context,
+                             std::shared_ptr<const CSSParserContext> context,
                              const CSSParserLocalContext&,
                              std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(outlineShorthand(), important, context, stream,
@@ -2147,7 +2147,7 @@ bool Outline::ParseShorthand(bool important,
 
 bool Overflow::ParseShorthand(bool important,
                               CSSParserTokenStream& stream,
-                              const CSSParserContext& context,
+                              std::shared_ptr<const CSSParserContext> context,
                               const CSSParserLocalContext&,
                               std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia2Longhands(overflowShorthand(), important, context, stream, properties);
@@ -2181,7 +2181,7 @@ bool Overflow::ParseShorthand(bool important,
 
 bool PaddingBlock::ParseShorthand(bool important,
                                   CSSParserTokenStream& stream,
-                                  const CSSParserContext& context,
+                                  std::shared_ptr<const CSSParserContext> context,
                                   const CSSParserLocalContext&,
                                   std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia2Longhands(paddingBlockShorthand(), important, context, stream,
@@ -2198,7 +2198,7 @@ bool PaddingBlock::ParseShorthand(bool important,
 
 bool Padding::ParseShorthand(bool important,
                              CSSParserTokenStream& stream,
-                             const CSSParserContext& context,
+                             std::shared_ptr<const CSSParserContext> context,
                              const CSSParserLocalContext&,
                              std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia4Longhands(paddingShorthand(), important, context, stream, properties);
@@ -2220,7 +2220,7 @@ bool Padding::ParseShorthand(bool important,
 
 bool PaddingInline::ParseShorthand(bool important,
                                    CSSParserTokenStream& stream,
-                                   const CSSParserContext& context,
+                                   std::shared_ptr<const CSSParserContext> context,
                                    const CSSParserLocalContext&,
                                    std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandVia2Longhands(paddingInlineShorthand(), important, context, stream,
@@ -2237,7 +2237,7 @@ bool PaddingInline::ParseShorthand(bool important,
 
 bool PageBreakAfter::ParseShorthand(bool important,
                                     CSSParserTokenStream& stream,
-                                    const CSSParserContext&,
+                                    std::shared_ptr<const CSSParserContext> context,
                                     const CSSParserLocalContext&,
                                     std::vector<CSSPropertyValue>& properties) const {
   CSSValueID value;
@@ -2261,7 +2261,7 @@ bool PageBreakAfter::ParseShorthand(bool important,
 
 bool PageBreakBefore::ParseShorthand(bool important,
                                      CSSParserTokenStream& stream,
-                                     const CSSParserContext&,
+                                     std::shared_ptr<const CSSParserContext> context,
                                      const CSSParserLocalContext&,
                                      std::vector<CSSPropertyValue>& properties) const {
   CSSValueID value;
@@ -2285,7 +2285,7 @@ bool PageBreakBefore::ParseShorthand(bool important,
 
 bool PageBreakInside::ParseShorthand(bool important,
                                      CSSParserTokenStream& stream,
-                                     const CSSParserContext&,
+                                     std::shared_ptr<const CSSParserContext> context,
                                      const CSSParserLocalContext&,
                                      std::vector<CSSPropertyValue>& properties) const {
   CSSValueID value;
@@ -2308,7 +2308,7 @@ bool PageBreakInside::ParseShorthand(bool important,
 
 bool PlaceContent::ParseShorthand(bool important,
                                   CSSParserTokenStream& stream,
-                                  const CSSParserContext& context,
+                                  std::shared_ptr<const CSSParserContext> context,
                                   const CSSParserLocalContext& local_context,
                                   std::vector<CSSPropertyValue>& properties) const {
   DCHECK_EQ(shorthandForProperty(CSSPropertyID::kPlaceContent).length(), 2u);
@@ -2361,7 +2361,7 @@ bool PlaceContent::ParseShorthand(bool important,
 
 bool PlaceItems::ParseShorthand(bool important,
                                 CSSParserTokenStream& stream,
-                                const CSSParserContext& context,
+                                std::shared_ptr<const CSSParserContext> context,
                                 const CSSParserLocalContext& local_context,
                                 std::vector<CSSPropertyValue>& properties) const {
   DCHECK_EQ(shorthandForProperty(CSSPropertyID::kPlaceItems).length(), 2u);
@@ -2410,7 +2410,7 @@ bool PlaceItems::ParseShorthand(bool important,
 
 bool PlaceSelf::ParseShorthand(bool important,
                                CSSParserTokenStream& stream,
-                               const CSSParserContext& context,
+                               std::shared_ptr<const CSSParserContext> context,
                                const CSSParserLocalContext& local_context,
                                std::vector<CSSPropertyValue>& properties) const {
   DCHECK_EQ(shorthandForProperty(CSSPropertyID::kPlaceSelf).length(), 2u);
@@ -2462,7 +2462,7 @@ namespace {
 // https://drafts.csswg.org/scroll-animations-1/#view-timeline-shorthand
 // https://drafts.csswg.org/scroll-animations-1/#scroll-timeline-shorthand
 bool ConsumeTimelineItemInto(CSSParserTokenStream& stream,
-                             const CSSParserContext& context,
+                             std::shared_ptr<const CSSParserContext> context,
                              const std::shared_ptr<CSSValueList>& name_list,
                              const std::shared_ptr<CSSValueList>& axis_list,
                              const std::shared_ptr<CSSValueList>& inset_list) {
@@ -2515,7 +2515,7 @@ bool ParseTimelineShorthand(CSSPropertyID shorthand_id,
                             const StylePropertyShorthand& shorthand,
                             bool important,
                             CSSParserTokenStream& stream,
-                            const CSSParserContext& context,
+                            std::shared_ptr<const CSSParserContext> context,
                             const CSSParserLocalContext&,
                             std::vector<CSSPropertyValue>& properties) {
   using css_parsing_utils::AddProperty;
@@ -2557,7 +2557,7 @@ bool ParseTimelineShorthand(CSSPropertyID shorthand_id,
 
 bool TextDecoration::ParseShorthand(bool important,
                                     CSSParserTokenStream& stream,
-                                    const CSSParserContext& context,
+                                    std::shared_ptr<const CSSParserContext> context,
                                     const CSSParserLocalContext&,
                                     std::vector<CSSPropertyValue>& properties) const {
   // Use RuntimeEnabledFeature-aware shorthandForProperty() method until
@@ -2570,7 +2570,7 @@ namespace {
 
 std::shared_ptr<const CSSValue> ConsumeTransitionValue(CSSPropertyID property,
                                  CSSParserTokenStream& stream,
-                                 const CSSParserContext& context,
+                                 std::shared_ptr<const CSSParserContext> context,
                                  bool use_legacy_parsing) {
   switch (property) {
     case CSSPropertyID::kTransitionDelay:
@@ -2596,7 +2596,7 @@ std::shared_ptr<const CSSValue> ConsumeTransitionValue(CSSPropertyID property,
 
 bool Transition::ParseShorthand(bool important,
                                 CSSParserTokenStream& stream,
-                                const CSSParserContext& context,
+                                std::shared_ptr<const CSSParserContext> context,
                                 const CSSParserLocalContext& local_context,
                                 std::vector<CSSPropertyValue>& properties) const {
   const StylePropertyShorthand shorthand = transitionShorthandForParsing();
@@ -2631,7 +2631,7 @@ bool Transition::ParseShorthand(bool important,
 
 bool WebkitColumnBreakAfter::ParseShorthand(bool important,
                                             CSSParserTokenStream& stream,
-                                            const CSSParserContext&,
+                                            std::shared_ptr<const CSSParserContext> context,
                                             const CSSParserLocalContext&,
                                             std::vector<CSSPropertyValue>& properties) const {
   CSSValueID value;
@@ -2647,7 +2647,7 @@ bool WebkitColumnBreakAfter::ParseShorthand(bool important,
 
 bool WebkitColumnBreakBefore::ParseShorthand(bool important,
                                              CSSParserTokenStream& stream,
-                                             const CSSParserContext&,
+                                             std::shared_ptr<const CSSParserContext> context,
                                              const CSSParserLocalContext&,
                                              std::vector<CSSPropertyValue>& properties) const {
   CSSValueID value;
@@ -2663,7 +2663,7 @@ bool WebkitColumnBreakBefore::ParseShorthand(bool important,
 
 bool WebkitColumnBreakInside::ParseShorthand(bool important,
                                              CSSParserTokenStream& stream,
-                                             const CSSParserContext&,
+                                             std::shared_ptr<const CSSParserContext> context,
                                              const CSSParserLocalContext&,
                                              std::vector<CSSPropertyValue>& properties) const {
   CSSValueID value;
@@ -2686,7 +2686,7 @@ bool WebkitColumnBreakInside::ParseShorthand(bool important,
 
 bool TextEmphasis::ParseShorthand(bool important,
                                   CSSParserTokenStream& stream,
-                                  const CSSParserContext& context,
+                                  std::shared_ptr<const CSSParserContext> context,
                                   const CSSParserLocalContext&,
                                   std::vector<CSSPropertyValue>& properties) const {
   return css_parsing_utils::ConsumeShorthandGreedilyViaLonghands(textEmphasisShorthand(), important, context, stream,
@@ -2695,7 +2695,7 @@ bool TextEmphasis::ParseShorthand(bool important,
 
 bool WhiteSpace::ParseShorthand(bool important,
                                 CSSParserTokenStream& stream,
-                                const CSSParserContext& context,
+                                std::shared_ptr<const CSSParserContext> context,
                                 const CSSParserLocalContext&,
                                 std::vector<CSSPropertyValue>& properties) const {
   CSSParserTokenStream::State savepoint = stream.Save();

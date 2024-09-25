@@ -29,7 +29,7 @@ class CSSParserContext final {
   explicit CSSParserContext(const CSSParserContext*, const StyleSheetContents*);
   explicit CSSParserContext(const Document&, const std::string& base_url_override);
   explicit CSSParserContext(const std::string& base_url, CSSParserMode mode, const Document* use_counter_document);
-
+  explicit CSSParserContext(const ExecutingContext* context);
 
   const KURL& BaseURL() const { return base_url_; }
 
@@ -57,9 +57,9 @@ class CSSParserContext final {
     WEBF_STACK_ALLOCATED();
 
    public:
-    ParserModeOverridingScope(const CSSParserContext& context,
+    ParserModeOverridingScope(std::shared_ptr<const CSSParserContext> context,
                               CSSParserMode mode)
-        : mode_reset_(const_cast<CSSParserMode*>(&context.mode_), mode) {}
+        : mode_reset_(const_cast<CSSParserMode*>(&context->mode_), mode) {}
 
    private:
     AutoReset<CSSParserMode> mode_reset_;

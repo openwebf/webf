@@ -163,6 +163,11 @@ CSSPropertyID CSSParserToken::ParseAsUnresolvedCSSPropertyID(
   return UnresolvedCSSPropertyID(execution_context, Value(), mode);
 }
 
+AtRuleDescriptorID CSSParserToken::ParseAsAtRuleDescriptorID() const {
+  DCHECK_EQ(type_, static_cast<unsigned>(kIdentToken));
+  return AsAtRuleDescriptorID(Value());
+}
+
 void CSSParserToken::ConvertToDimensionWithUnit(StringView unit) {
   assert(type_ == static_cast<unsigned>(kNumberToken));
   type_ = kDimensionToken;

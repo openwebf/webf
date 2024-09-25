@@ -38,24 +38,24 @@ struct KeyframeOffset {
 class StyleRuleKeyframe final : public StyleRuleBase {
  public:
   StyleRuleKeyframe(std::unique_ptr<std::vector<KeyframeOffset>>,
-                    CSSPropertyValueSet*);
+                    std::shared_ptr<const CSSPropertyValueSet>);
 
   // Exposed to JavaScript.
-  AtomicString KeyText() const;
-  bool SetKeyText(const ExecutingContext*, const AtomicString&);
+  std::string KeyText() const;
+  bool SetKeyText(const ExecutingContext*, const std::string&);
 
   // Used by StyleResolver.
   const std::vector<KeyframeOffset>& Keys() const;
 
   const CSSPropertyValueSet& Properties() const { return *properties_; }
-  MutableCSSPropertyValueSet& MutableProperties();
+  const MutableCSSPropertyValueSet& MutableProperties();
 
-  AtomicString CssText() const;
+  std::string CssText() const;
 
   void TraceAfterDispatch(GCVisitor*) const;
 
  private:
-  std::shared_ptr<CSSPropertyValueSet> properties_;
+  std::shared_ptr<const CSSPropertyValueSet> properties_;
   std::vector<KeyframeOffset> keys_;
 };
 }  // namespace webf

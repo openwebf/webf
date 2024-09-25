@@ -7,14 +7,12 @@
 #ifndef WEBF_CSS_UNPARSED_DECLARATION_VALUE_H
 #define WEBF_CSS_UNPARSED_DECLARATION_VALUE_H
 
-
 #include "core/css/css_value.h"
 #include "core/css/css_variable_data.h"
 #include "core/css/parser/css_parser_context.h"
 #include "foundation/casting.h"
 
 namespace webf {
-
 
 // This represents a CSS declaration value that we haven't fully parsed into
 // a CSSValue, but left basically as untyped text (potentially for further
@@ -37,14 +35,14 @@ namespace webf {
 // https://drafts.csswg.org/css-variables/#defining-variables
 class CSSUnparsedDeclarationValue final : public CSSValue {
  public:
-  explicit CSSUnparsedDeclarationValue(CSSVariableData* data)
-      : CSSValue(kUnparsedDeclarationClass), data_(data) {}
+  explicit CSSUnparsedDeclarationValue(std::shared_ptr<CSSVariableData> data)
+      : CSSValue(kUnparsedDeclarationClass), data_(std::move(data)) {}
 
-  CSSUnparsedDeclarationValue(std::shared_ptr<CSSVariableData>& data,
+  explicit CSSUnparsedDeclarationValue(std::shared_ptr<CSSVariableData> data,
                               std::shared_ptr<const CSSParserContext>& context)
       : CSSValue(kUnparsedDeclarationClass),
         parser_context_(context),
-        data_(data) {}
+        data_(std::move(data)) {}
 
   std::shared_ptr<CSSVariableData> VariableDataValue() const { return data_; }
   std::shared_ptr<const CSSParserContext> ParserContext() const {

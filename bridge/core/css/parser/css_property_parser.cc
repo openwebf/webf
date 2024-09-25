@@ -9,6 +9,7 @@
 #include "css_property_parser.h"
 #include "core/css/hash_tools.h"
 #include "core/css/properties/css_bitset.h"
+#include "core/css/properties/css_parsing_utils.h"
 #include "core/css/property_bitsets.h"
 
 namespace webf {
@@ -47,21 +48,20 @@ bool CSSPropertyParser::ParseValue(CSSPropertyID unresolved_property,
   return parse_success;
 }
 
-const CSSValue* CSSPropertyParser::ParseSingleValue(CSSPropertyID property,
+std::shared_ptr<const CSSValue> CSSPropertyParser::ParseSingleValue(CSSPropertyID property,
                                                     CSSParserTokenStream& stream,
-                                                    const CSSParserContext* context) {
+                                                    std::shared_ptr<const CSSParserContext> context) {
   assert(context);
   stream.ConsumeWhitespace();
 
-  //  const CSSValue* value = css_parsing_utils::ConsumeCSSWideKeyword(stream);
-  //  if (!value) {
-  //    value = ParseLonghand(property, CSSPropertyID::kInvalid, *context, stream);
-  //  }
-  //  if (!value || !stream.AtEnd()) {
-  //    return nullptr;
-  //  }
-  //  return value;
-  return nullptr;
+  std::shared_ptr<const CSSValue> value = css_parsing_utils::ConsumeCSSWideKeyword(stream);
+  if (!value) {
+    value = css_parsing_utils::ParseLonghand(property, CSSPropertyID::kInvalid, context, stream);
+  }
+  if (!value || !stream.AtEnd()) {
+    return nullptr;
+  }
+  return value;
 }
 
 // Take the given string, lowercase it (with possible caveats;
@@ -174,6 +174,29 @@ CSSValueID CssValueKeywordID(const std::string& string) {
   assert(hash_table_entry == FindValue(buffer, length));
 #endif
   return hash_table_entry ? static_cast<CSSValueID>(hash_table_entry->id) : CSSValueID::kInvalid;
+}
+
+std::shared_ptr<const CSSValue> CSSPropertyParser::ConsumeCSSWideKeyword(CSSParserTokenStream& stream,
+                                                                         bool allow_important_annotation,
+                                                                         bool& important) {
+  CSSParserTokenStream::State savepoint = stream.Save();
+
+  std::shared_ptr<const CSSValue> value = css_parsing_utils::ConsumeCSSWideKeyword(stream);
+  if (!value) {
+    // No need to Restore(), we are at the right spot anyway.
+    // (We do this instead of relying on CSSParserTokenStream's
+    // Restore() optimization, as this path is so hot.)
+    return nullptr;
+  }
+
+  important = css_parsing_utils::MaybeConsumeImportant(stream, allow_important_annotation);
+
+  if (!stream.AtEnd()) {
+    stream.Restore(savepoint);
+    return nullptr;
+  }
+
+  return value;
 }
 
 }  // namespace webf

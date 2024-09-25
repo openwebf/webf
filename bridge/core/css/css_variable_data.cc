@@ -1,11 +1,9 @@
-//
-// Created by 谢作兵 on 15/08/24.
-//
+// Copyright 2022 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "css_variable_data.h"
 
-#include "core/base/ranges/algorithm.h"
-//#include "core/css/css_syntax_definition.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_tokenizer.h"
@@ -46,8 +44,7 @@ static bool IsRootFontUnitToken(CSSParserToken token) {
 }
 
 static bool IsLineHeightUnitToken(CSSParserToken token) {
-  return token.GetType() == kDimensionToken &&
-         token.GetUnitType() == CSSPrimitiveValue::UnitType::kLhs;
+  return token.GetType() == kDimensionToken && token.GetUnitType() == CSSPrimitiveValue::UnitType::kLhs;
 }
 
 void CSSVariableData::ExtractFeatures(const CSSParserToken& token,
@@ -60,33 +57,31 @@ void CSSVariableData::ExtractFeatures(const CSSParserToken& token,
 }
 
 std::shared_ptr<CSSVariableData> CSSVariableData::Create(CSSTokenizedValue value,
-                                         bool is_animation_tainted,
-                                         bool needs_variable_resolution) {
+                                                         bool is_animation_tainted,
+                                                         bool needs_variable_resolution) {
   bool has_font_units = false;
   bool has_root_font_units = false;
   bool has_line_height_units = false;
   while (!value.range.AtEnd()) {
-    ExtractFeatures(value.range.Consume(), has_font_units, has_root_font_units,
-                    has_line_height_units);
+    ExtractFeatures(value.range.Consume(), has_font_units, has_root_font_units, has_line_height_units);
   }
-  return Create(value.text, is_animation_tainted, needs_variable_resolution,
-                has_font_units, has_root_font_units, has_line_height_units);
+  return Create(value.text.Characters8ToStdString(), is_animation_tainted, needs_variable_resolution, has_font_units,
+                has_root_font_units, has_line_height_units);
 }
 
 std::shared_ptr<CSSVariableData> CSSVariableData::Create(const std::string& original_text,
-                                         bool is_animation_tainted,
-                                         bool needs_variable_resolution) {
+                                                         bool is_animation_tainted,
+                                                         bool needs_variable_resolution) {
   bool has_font_units = false;
   bool has_root_font_units = false;
   bool has_line_height_units = false;
   CSSTokenizer tokenizer(original_text);
   CSSParserTokenStream stream(tokenizer);
   while (!stream.AtEnd()) {
-    ExtractFeatures(stream.ConsumeRaw(), has_font_units, has_root_font_units,
-                    has_line_height_units);
+    ExtractFeatures(stream.ConsumeRaw(), has_font_units, has_root_font_units, has_line_height_units);
   }
-  return Create(original_text, is_animation_tainted, needs_variable_resolution,
-                has_font_units, has_root_font_units, has_line_height_units);
+  return Create(original_text, is_animation_tainted, needs_variable_resolution, has_font_units, has_root_font_units,
+                has_line_height_units);
 }
 
 std::string CSSVariableData::Serialize() const {
@@ -100,8 +95,8 @@ std::string CSSVariableData::Serialize() const {
     // since we're working with the original string, we need to deal with them
     // ourselves.
     std::string serialized_text;
-    serialized_text+=OriginalText();
-//    serialized_text.Resize(serialized_text.length() - 1);
+    serialized_text += OriginalText();
+    //    serialized_text.Resize(serialized_text.length() - 1);
 
     CSSTokenizer tokenizer(OriginalText().data());
     CSSParserTokenStream stream(tokenizer);
@@ -117,16 +112,16 @@ std::string CSSVariableData::Serialize() const {
     char16_t kReplacementCharacter = 0xFFFD;
 
     if (last_token_type != kStringToken) {
-      serialized_text+=kReplacementCharacter;
+      serialized_text += kReplacementCharacter;
     }
 
     // Certain token types implicitly include terminators when serialized.
     // https://drafts.csswg.org/cssom/#common-serializing-idioms
     if (last_token_type == kStringToken) {
-      serialized_text+='"';
+      serialized_text += '"';
     }
     if (last_token_type == kUrlToken) {
-      serialized_text+=')';
+      serialized_text += ')';
     }
 
     return serialized_text;
@@ -154,21 +149,7 @@ CSSVariableData::CSSVariableData(PassKey,
       has_root_font_units_(has_root_font_units),
       has_line_height_units_(has_line_height_units),
       unused_(0) {
-  webf::ranges::copy(original_text,
-                     reinterpret_cast<char*>(this + 1));
+  std::copy(original_text.begin(), original_text.end(), reinterpret_cast<char*>(this + 1));
 }
 
-//const CSSValue* CSSVariableData::ParseForSyntax(
-//    const CSSSyntaxDefinition& syntax,
-//    SecureContextMode secure_context_mode) const {
-//  DCHECK(!NeedsVariableResolution());
-//  // TODO(timloh): This probably needs a proper parser context for
-//  // relative URL resolution.
-//  CSSTokenizer tokenizer(OriginalText().data());
-//  std::vector<CSSParserToken> tokens = tokenizer.TokenizeToEOF();
-//  CSSParserTokenRange range(tokens);
-//  return syntax.Parse(CSSTokenizedValue{range, OriginalText()},
-//                      *StrictCSSParserContext(secure_context_mode),
-//                      is_animation_tainted_);
-//}
 }  // namespace webf

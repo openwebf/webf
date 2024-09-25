@@ -321,6 +321,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_parser_idioms.cc
     core/css/parser/css_parser_impl.cc
     core/css/parser/css_lazy_parsing_state.cc
+    core/css/parser/at_rule_descriptor_parser.cc
+    core/css/parser/css_variable_parser.cc
+    core/css/parser/css_supports_parser.cc
     core/css/parser/css_parser_token.cc
     core/css/parser/css_parser_fast_path.cc
     core/css/parser/font_variant_alternates_parser.cc
@@ -344,12 +347,14 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_reflect_value.cc
     core/css/css_border_image.cc
     core/css/css_axis_value.cc
+    core/css/css_font_face_src_value.cc
     core/css/properties/longhand.cc
     core/css/properties/shorthands/shorthands_custom.cc
     core/css/properties/longhands/longhands_custom.cc
     core/css/abstract_property_set_css_style_declaration.cc
     core/css/property_set_css_style_declaration.cc
     core/css/style_rule.cc
+    core/animation/timeline_offset.cc
     core/css/css_property_value_set.cc
     core/css/css_property_name.cc
     core/css/css_property_value.cc
@@ -383,6 +388,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_scroll_value.cc
     core/css/css_basic_shape_value.cc
     core/css/css_math_function_value.cc
+    core/css/css_unparsed_declaration_value.cc
+    core/css/css_variable_data.cc
+    core/css/style_rule_keyframe.cc
     core/css/css_math_operator.cc
     core/css/css_ratio_value.cc
     core/css/css_unset_value.cc

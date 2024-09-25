@@ -461,6 +461,14 @@ std::shared_ptr<StyleRuleBase::ChildRuleVector> StyleRuleBase::ChildRuleVector::
   return child_rule_vector;
 }
 
+void StyleRule::AddChildRule(std::shared_ptr<StyleRuleBase> child) {
+  EnsureChildRules();
+  if (child->IsSignaling()) {
+    SetHasSignalingChildRule(true);
+  }
+  child_rule_vector_->AddChildRule(child);
+}
+
 void StyleRuleBase::ChildRuleVector::AddChildRule(const std::shared_ptr<const StyleRuleBase>& rule) {
   if (rule->IsInvisible()) {
     // Note that invisible rules can not be removed.
@@ -496,7 +504,9 @@ size_t StyleRuleBase::ChildRuleVector::AdjustedIndex(size_t index) const {
   return rules_.size();
 }
 
-StyleRule::StyleRule(webf::PassKey<StyleRule>, tcb::span<CSSSelector> selector_vector, std::shared_ptr<CSSPropertyValueSet> properties)
+StyleRule::StyleRule(webf::PassKey<StyleRule>,
+                     tcb::span<CSSSelector> selector_vector,
+                     std::shared_ptr<const CSSPropertyValueSet> properties)
     : StyleRuleBase(kStyle), properties_(properties) {}
 
 StyleRule::StyleRule(webf::PassKey<StyleRule>,

@@ -122,7 +122,7 @@ std::optional<Color> TryResolveAtParseTime(const CSSValue& value) {
 // e.g. lab(from magenta l a b), consume the "magenta" after the from. The
 // result needs to be a blink::Color as we need actual values for the color
 // parameters.
-bool ConsumeRelativeOriginColor(CSSParserTokenRange& args, const CSSParserContext& context, Color& result) {
+bool ConsumeRelativeOriginColor(CSSParserTokenRange& args, std::shared_ptr<const CSSParserContext> context, Color& result) {
   if (auto css_color = css_parsing_utils::ConsumeColor(args, context)) {
     if (auto absolute_color = TryResolveAtParseTime(*css_color)) {
       result = absolute_color.value();
@@ -138,7 +138,7 @@ bool ConsumeRelativeOriginColor(CSSParserTokenRange& args, const CSSParserContex
 }
 
 std::shared_ptr<const CSSValue> ConsumeRelativeColorChannel(CSSParserTokenRange& input_range,
-                                                            const CSSParserContext& context,
+                                                            std::shared_ptr<const CSSParserContext> context,
                                                             const CSSColorChannelMap& color_channel_map,
                                                             CalculationResultCategorySet expected_categories,
                                                             const double percentage_base = 0) {
@@ -178,7 +178,7 @@ std::shared_ptr<const CSSValue> ConsumeRelativeColorChannel(CSSParserTokenRange&
 
 }  // namespace
 
-bool ColorFunctionParser::ConsumeChannel(CSSParserTokenRange& args, const CSSParserContext& context, int i) {
+bool ColorFunctionParser::ConsumeChannel(CSSParserTokenRange& args, std::shared_ptr<const CSSParserContext> context, int i) {
   if (css_parsing_utils::ConsumeIdent<CSSValueID::kNone>(args)) {
     channel_types_[i] = ChannelType::kNone;
     has_none_ = true;
@@ -201,7 +201,7 @@ bool ColorFunctionParser::ConsumeChannel(CSSParserTokenRange& args, const CSSPar
   return false;
 }
 
-bool ColorFunctionParser::ConsumeAlpha(CSSParserTokenRange& args, const CSSParserContext& context) {
+bool ColorFunctionParser::ConsumeAlpha(CSSParserTokenRange& args, std::shared_ptr<const CSSParserContext> context) {
   if ((unresolved_alpha_ = css_parsing_utils::ConsumeNumber(args, context, CSSPrimitiveValue::ValueRange::kAll))) {
     alpha_channel_type_ = ChannelType::kNumber;
     return true;
@@ -302,19 +302,19 @@ std::optional<double> ColorFunctionParser::TryResolveRelativeChannelValue(const 
 }
 
 std::shared_ptr<const CSSValue> ColorFunctionParser::ConsumeFunctionalSyntaxColor(CSSParserTokenRange& input_range,
-                                                                                  const CSSParserContext& context) {
+                                                                                  std::shared_ptr<const CSSParserContext> context) {
   return ConsumeFunctionalSyntaxColorInternal(input_range, context);
 }
 
 std::shared_ptr<const CSSValue> ColorFunctionParser::ConsumeFunctionalSyntaxColor(CSSParserTokenStream& input_stream,
-                                                                                  const CSSParserContext& context) {
+                                                                                  std::shared_ptr<const CSSParserContext> context) {
   return ConsumeFunctionalSyntaxColorInternal(input_stream, context);
 }
 
 template <class T>
 typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
                         std::shared_ptr<const CSSValue>>::type
-ColorFunctionParser::ConsumeFunctionalSyntaxColorInternal(T& range, const CSSParserContext& context) {
+ColorFunctionParser::ConsumeFunctionalSyntaxColorInternal(T& range, std::shared_ptr<const CSSParserContext> context) {
   CSSParserSavePoint savepoint(range);
 
   CSSValueID function_id = range.Peek().FunctionId();

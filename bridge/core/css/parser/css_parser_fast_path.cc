@@ -1380,7 +1380,7 @@ static inline std::shared_ptr<const CSSValue> ParseCSSWideKeywordValue(const uin
 
 static std::shared_ptr<const CSSValue> ParseKeywordValue(CSSPropertyID property_id,
                                                          const std::string& string,
-                                                         const CSSParserContext* context) {
+                                                         std::shared_ptr<const CSSParserContext> context) {
   assert(!string.empty());
 
   std::shared_ptr<const CSSValue> css_wide_keyword =
@@ -1429,7 +1429,7 @@ static std::shared_ptr<const CSSValue> ParseKeywordValue(CSSPropertyID property_
   if (CSSParserFastPaths::IsValidKeywordPropertyAndValue(property_id, value_id, context->Mode())) {
     return CSSIdentifierValue::Create(value_id);
   }
-  css_parsing_utils::WarnInvalidKeywordPropertyUsage(property_id, *context, value_id);
+  css_parsing_utils::WarnInvalidKeywordPropertyUsage(property_id, context, value_id);
   return nullptr;
 }
 
@@ -1684,7 +1684,7 @@ static std::shared_ptr<const CSSValue> ParseSimpleTransform(CSSPropertyID proper
 
 std::shared_ptr<const CSSValue> CSSParserFastPaths::MaybeParseValue(CSSPropertyID property_id,
                                                                     const std::string& string,
-                                                                    const CSSParserContext* context) {
+                                                                    std::shared_ptr<const CSSParserContext> context) {
   if (auto length = ParseSimpleLengthValue(property_id, string, context->Mode())) {
     return length;
   }

@@ -677,7 +677,7 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeRelativeSelector(CSSParserToken
   selector.SetMatch(CSSSelector::kPseudoClass);
   // TODO(xiezuobing): 需要传入ExecutingContext
   ExecutingContext* context;
-  selector.UpdatePseudoType("-internal-relative-anchor", *context_, false /*has_arguments*/, context_->Mode());
+  selector.UpdatePseudoType("-internal-relative-anchor", context_, false /*has_arguments*/, context_->Mode());
   assert(selector.GetPseudoType() == CSSSelector::kPseudoRelativeAnchor);
   output_.push_back(selector);
 
@@ -1309,7 +1309,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
   selector.SetMatch(colons == 1 ? CSSSelector::kPseudoClass : CSSSelector::kPseudoElement);
 
   bool has_arguments = token.GetType() == kFunctionToken;
-  selector.UpdatePseudoType(token.Value(), *context_, has_arguments, context_->Mode());
+  selector.UpdatePseudoType(token.Value(), context_, has_arguments, context_->Mode());
 
   if (selector.Match() == CSSSelector::kPseudoElement) {
     switch (selector.GetPseudoType()) {

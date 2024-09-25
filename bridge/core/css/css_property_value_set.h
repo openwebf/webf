@@ -262,7 +262,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   SetResult ParseAndSetProperty(CSSPropertyID unresolved_property,
                                 const std::string& value,
                                 bool important,
-                                StyleSheetContents* context_style_sheet = nullptr);
+                                std::shared_ptr<StyleSheetContents> context_style_sheet = nullptr);
 
   // Similar to ParseAndSetProperty(), but for custom properties instead.
   // (By implementation quirk, it attempts shorthand expansion, even though
@@ -271,7 +271,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   SetResult ParseAndSetCustomProperty(const std::string& custom_property_name,
                                       const std::string& value,
                                       bool important,
-                                      StyleSheetContents* context_style_sheet,
+                                      std::shared_ptr<StyleSheetContents> context_style_sheet,
                                       bool is_animation_tainted);
 
   // This one does not expand longhands, but is the second-most efficient form
@@ -297,7 +297,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   void MergeAndOverrideOnConflict(const CSSPropertyValueSet*);
 
   void Clear();
-  void ParseDeclarationList(const std::string& style_declaration, StyleSheetContents* context_style_sheet);
+  void ParseDeclarationList(const std::string& style_declaration, std::shared_ptr<StyleSheetContents> context_style_sheet);
 
   CSSStyleDeclaration* EnsureCSSStyleDeclaration(ExecutingContext* execution_context);
 

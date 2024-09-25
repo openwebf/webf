@@ -39,7 +39,7 @@ class Shorthand : public CSSProperty {
   virtual bool ParseShorthand(
       bool important,
       CSSParserTokenStream&,
-      const CSSParserContext&,
+      std::shared_ptr<const CSSParserContext> context,
       const CSSParserLocalContext&,
       std::vector<CSSPropertyValue>& properties) const {
     assert_m(false, "NOTREACHED_IN_MIGRATION");

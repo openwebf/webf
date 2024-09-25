@@ -36,7 +36,7 @@ class Longhand : public CSSProperty {
 //   by the caller (after potentially consuming “!important”).
   virtual std::shared_ptr<const CSSValue> ParseSingleValue(
       CSSParserTokenStream& stream,
-      const CSSParserContext& context,
+      std::shared_ptr<const CSSParserContext> context,
       const CSSParserLocalContext& local_tokenizer) const {
     return nullptr;
   }

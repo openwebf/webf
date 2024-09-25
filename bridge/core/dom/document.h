@@ -86,7 +86,9 @@ class Document : public ContainerNode, public TreeScope {
   void setDomain(const AtomicString& value, ExceptionState& exception_state);
   AtomicString compatMode();
 
-  AtomicString readyState();
+  CSSStyleSheet& ElementSheet();
+
+      AtomicString readyState();
   DEFINE_DOCUMENT_ATTRIBUTE_EVENT_LISTENER(readystatechange, kreadystatechange);
 
   bool hidden();
@@ -197,6 +199,7 @@ class Document : public ContainerNode, public TreeScope {
 
  private:
   int node_count_{0};
+  Member<CSSStyleSheet> elem_sheet_;
   ScriptAnimationController script_animation_controller_;
   MutationObserverOptions mutation_observer_types_;
   std::shared_ptr<StyleEngine> style_engine_{nullptr};

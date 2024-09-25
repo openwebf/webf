@@ -45,9 +45,9 @@ class StyleSheetContents final {
   StyleSheetContents() = delete;
   ~StyleSheetContents();
 
-  const CSSParserContext* ParserContext() const {
+  const std::shared_ptr<const CSSParserContext>& ParserContext() const {
     assert(parser_context_ != nullptr);
-    return parser_context_.get();
+    return parser_context_;
   }
 
   ParseSheetResult ParseString(const std::string& sheet_text,

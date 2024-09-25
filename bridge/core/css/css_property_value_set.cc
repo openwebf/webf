@@ -368,7 +368,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetPro
     CSSPropertyID unresolved_property,
     const std::string& value,
     bool important,
-    StyleSheetContents* context_style_sheet) {
+    std::shared_ptr<StyleSheetContents> context_style_sheet) {
   DCHECK_GE(unresolved_property, kFirstCSSProperty);
 
   // Setting the value to an empty string just removes the property in both IE
@@ -388,7 +388,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCus
     const std::string& custom_property_name,
     const std::string& value,
     bool important,
-    StyleSheetContents* context_style_sheet,
+    std::shared_ptr<StyleSheetContents> context_style_sheet,
     bool is_animation_tainted) {
   if (value.empty()) {
     return RemoveProperty(custom_property_name) ? kChangedPropertySet : kUnchanged;
@@ -526,12 +526,12 @@ void MutableCSSPropertyValueSet::Clear() {
 }
 
 void MutableCSSPropertyValueSet::ParseDeclarationList(const std::string& style_declaration,
-                                                      StyleSheetContents* context_style_sheet) {
+                                                      std::shared_ptr<StyleSheetContents> context_style_sheet) {
   property_vector_.clear();
 
   std::shared_ptr<CSSParserContext> context;
   if (context_style_sheet) {
-    context = std::make_shared<CSSParserContext>(context_style_sheet->ParserContext(), context_style_sheet);
+    context = std::make_shared<CSSParserContext>(context_style_sheet->ParserContext().get(), context_style_sheet.get());
     context->SetMode(CssParserMode());
   } else {
     context = std::make_shared<CSSParserContext>(CssParserMode());

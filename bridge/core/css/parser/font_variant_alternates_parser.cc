@@ -15,7 +15,7 @@ FontVariantAlternatesParser::FontVariantAlternatesParser() = default;
 
 FontVariantAlternatesParser::ParseResult FontVariantAlternatesParser::ConsumeAlternates(
     CSSParserTokenStream& stream,
-    const CSSParserContext& context) {
+    std::shared_ptr<const CSSParserContext> context) {
   // Handled in longhand parsing imstream.
   DCHECK(stream.Peek().Id() != CSSValueID::kNormal);
   if (!ConsumeHistoricalForms(stream) && !ConsumeAlternate(stream, context)) {
@@ -24,7 +24,7 @@ FontVariantAlternatesParser::ParseResult FontVariantAlternatesParser::ConsumeAlt
   return ParseResult::kConsumedValue;
 }
 
-bool FontVariantAlternatesParser::ConsumeAlternate(CSSParserTokenStream& stream, const CSSParserContext& context) {
+bool FontVariantAlternatesParser::ConsumeAlternate(CSSParserTokenStream& stream, std::shared_ptr<const CSSParserContext> context) {
   auto peek = stream.Peek().FunctionId();
   std::shared_ptr<cssvalue::CSSAlternateValue>* value_to_set = nullptr;
   switch (peek) {
@@ -72,7 +72,7 @@ bool FontVariantAlternatesParser::ConsumeAlternate(CSSParserTokenStream& stream,
     CSSParserTokenStream::RestoringBlockGuard guard(stream);
     stream.ConsumeWhitespace();
     aliases = ConsumeCommaSeparatedList<std::shared_ptr<const CSSCustomIdentValue>(
-        CSSParserTokenStream&, const CSSParserContext&)>(ConsumeCustomIdent, stream, context);
+        CSSParserTokenStream&, std::shared_ptr<const CSSParserContext> context)>(ConsumeCustomIdent, stream, context);
     // At least one argument is required:
     // https://drafts.csswg.org/css-fonts-4/#font-variant-alternates-prop
     if (!aliases || !stream.AtEnd()) {

@@ -151,7 +151,7 @@
 //  SyntaxLevel syntax_level_;
 //  // A fake CSSParserContext for use counter only.
 //  // TODO(xiaochengh): Plumb the real CSSParserContext from the document.
-//  const CSSParserContext& fake_context_;
+//  std::shared_ptr<const CSSParserContext> context fake_context_;
 //};
 //
 //}  // namespace webf

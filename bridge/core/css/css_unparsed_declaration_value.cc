@@ -8,12 +8,9 @@
 
 namespace webf {
 
-
 void CSSUnparsedDeclarationValue::TraceAfterDispatch(
     GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
-//  visitor->Trace(parser_context_);
-//  visitor->Trace(data_);
 }
 
 std::string CSSUnparsedDeclarationValue::CustomCSSText() const {

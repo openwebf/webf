@@ -110,7 +110,7 @@ class CSSMathExpressionNode : public std::enable_shared_from_this<CSSMathExpress
   static std::shared_ptr<const CSSMathExpressionNode> ParseMathFunction(
       CSSValueID function_id,
       CSSParserTokenRange tokens,
-      const CSSParserContext&,
+      std::shared_ptr<const CSSParserContext> context,
       const Flags parsing_flags,
       CSSAnchorQueryTypes allowed_anchor_queries,
       // Variable substitutions for relative color syntax.

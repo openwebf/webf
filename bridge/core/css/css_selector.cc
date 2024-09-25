@@ -940,13 +940,13 @@ CSSSelector::PseudoType CSSSelector::NameToPseudoType(const std::string& name,
 }
 
 void CSSSelector::UpdatePseudoType(const std::string& value,
-                                   const CSSParserContext& context,
+                                   std::shared_ptr<const CSSParserContext> context,
                                    bool has_arguments,
                                    CSSParserMode mode) {
   assert(Match() == kPseudoClass || Match() == kPseudoElement);
   // TODO(xiezuobing): 源代码 [ AtomicString lower_value = value.LowerASCII() ]
   std::string lower_value = value;
-  PseudoType pseudo_type = CSSSelectorParser::ParsePseudoType(lower_value, has_arguments, context.GetDocument());
+  PseudoType pseudo_type = CSSSelectorParser::ParsePseudoType(lower_value, has_arguments, context->GetDocument());
   SetPseudoType(pseudo_type);
   SetValue(pseudo_type == kPseudoStateDeprecatedSyntax ? value : lower_value);
 

@@ -62,7 +62,6 @@ class StyleRuleBase : public std::enable_shared_from_this<StyleRuleBase> {
     kLayerStatement,
     kNamespace,
     kContainer,
-    kCounterStyle,
     kScope,
     kSupports,
     kStartingStyle,
@@ -81,7 +80,6 @@ class StyleRuleBase : public std::enable_shared_from_this<StyleRuleBase> {
 
   bool IsCharsetRule() const { return GetType() == kCharset; }
   bool IsContainerRule() const { return GetType() == kContainer; }
-  bool IsCounterStyleRule() const { return GetType() == kCounterStyle; }
   bool IsFontFaceRule() const { return GetType() == kFontFace; }
   bool IsFontPaletteValuesRule() const { return GetType() == kFontPaletteValues; }
   bool IsFontFeatureValuesRule() const { return GetType() == kFontFeatureValues; }
@@ -225,7 +223,8 @@ class StyleRuleBase : public std::enable_shared_from_this<StyleRuleBase> {
 // partially implemented using its static member functions.
 class StyleRule : public StyleRuleBase {
  public:
-  static std::shared_ptr<StyleRule> Create(tcb::span<CSSSelector> selectors, std::shared_ptr<CSSPropertyValueSet> properties) {
+  static std::shared_ptr<StyleRule> Create(tcb::span<CSSSelector> selectors,
+                                           std::shared_ptr<const CSSPropertyValueSet> properties) {
     return std::make_shared<StyleRule>(webf::PassKey<StyleRule>(), selectors, properties);
   }
   static std::shared_ptr<StyleRule> Create(tcb::span<CSSSelector> selectors,
@@ -255,7 +254,9 @@ class StyleRule : public StyleRuleBase {
   // selectors). Do not call them directly; they are public only so that
   // MakeGarbageCollected() can call them. Instead, use Create() above or
   // Copy() below, as appropriate.
-  StyleRule(webf::PassKey<StyleRule>, tcb::span<CSSSelector> selector_vector, std::shared_ptr<CSSPropertyValueSet>);
+  StyleRule(webf::PassKey<StyleRule>,
+            tcb::span<CSSSelector> selector_vector,
+            std::shared_ptr<const CSSPropertyValueSet>);
   StyleRule(webf::PassKey<StyleRule>, tcb::span<CSSSelector> selector_vector, std::shared_ptr<CSSLazyPropertyParser>);
   // If you use this constructor, the object will not be fully constructed until
   // you call SetProperties().
@@ -265,7 +266,7 @@ class StyleRule : public StyleRuleBase {
   StyleRule(const StyleRule&) = delete;
   ~StyleRule();
 
-  void SetProperties(std::shared_ptr<CSSPropertyValueSet> properties) {
+  void SetProperties(std::shared_ptr<const CSSPropertyValueSet> properties) {
     assert(properties_.get() == nullptr);
     properties_ = properties;
   }
@@ -303,10 +304,10 @@ class StyleRule : public StyleRuleBase {
         *this, flattened_size);
   }
 
-//  static unsigned AverageSizeInBytes();
+  //  static unsigned AverageSizeInBytes();
 
   // Helper function to avoid parsing lazy properties when not needed.
-//  bool PropertiesHaveFailedOrCanceledSubresources() const;
+  //  bool PropertiesHaveFailedOrCanceledSubresources() const;
 
   void TraceAfterDispatch(GCVisitor*) const;
 
@@ -322,7 +323,7 @@ class StyleRule : public StyleRuleBase {
 
   // Note that if `child` is invisible (see CSSSelector::IsInvisible),
   // then the added child rule won't be visible through `ChildRules`.
-  void AddChildRule(StyleRuleBase*);
+  void AddChildRule(std::shared_ptr<StyleRuleBase>);
 
   void WrapperInsertRule(unsigned index, const std::shared_ptr<const StyleRuleBase>& rule) {
     EnsureChildRules();
@@ -337,13 +338,23 @@ class StyleRule : public StyleRuleBase {
   bool HasParsedProperties() const;
 
   CSSSelector* SelectorArray() {
-    return reinterpret_cast<CSSSelector*>(base::bits::AlignUp(reinterpret_cast<uint8_t*>(this + 1), alignof(CSSSelector)));
+    return reinterpret_cast<CSSSelector*>(
+        base::bits::AlignUp(reinterpret_cast<uint8_t*>(this + 1), alignof(CSSSelector)));
   }
   const CSSSelector* SelectorArray() const { return const_cast<StyleRule*>(this)->SelectorArray(); }
 
-  mutable std::shared_ptr<CSSPropertyValueSet> properties_;
+  mutable std::shared_ptr<const CSSPropertyValueSet> properties_;
   mutable std::shared_ptr<CSSLazyPropertyParser> lazy_property_parser_;
   std::shared_ptr<ChildRuleVector> child_rule_vector_;
+};
+
+// This should only be used within the CSS Parser
+class StyleRuleCharset : public StyleRuleBase {
+ public:
+  StyleRuleCharset() : StyleRuleBase(kCharset) {}
+  void TraceAfterDispatch(GCVisitor* visitor) const { StyleRuleBase::TraceAfterDispatch(visitor); }
+
+ private:
 };
 
 template <>

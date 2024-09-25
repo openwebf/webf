@@ -9,10 +9,10 @@
 #ifndef WEBF_CSS_AT_RULE_ID_H
 #define WEBF_CSS_AT_RULE_ID_H
 
+#include <string>
 
 namespace webf {
 
-class StringView;
 class CSSParserContext;
 
 enum class CSSAtRuleID {
@@ -64,8 +64,8 @@ enum class CSSAtRuleID {
   kCSSAtRuleFunction,
 };
 
-CSSAtRuleID CssAtRuleID(StringView name);
-StringView CssAtRuleIDToString(CSSAtRuleID id);
+CSSAtRuleID CssAtRuleID(const std::string& name);
+std::string CssAtRuleIDToString(CSSAtRuleID id);
 
 
 }  // namespace webf
