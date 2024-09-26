@@ -134,8 +134,7 @@ Length CSSMathFunctionValue::ConvertToLength(const CSSLengthResolver& length_res
   if (IsResolvableLength()) {
     return Length::Fixed(ComputeLengthPx(length_resolver));
   }
-  return g_auto_length;
-  //  return Length(ToCalcValue(length_resolver));
+  return Length(ToCalcValue(length_resolver));
 }
 
 static std::string BuildCSSText(const std::string& expression) {

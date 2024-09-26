@@ -516,4 +516,58 @@ StyleRule::StyleRule(webf::PassKey<StyleRule>,
   CSSSelectorList::AdoptSelectorVector(selector_vector, SelectorArray());
 }
 
+StyleRule::StyleRule(webf::PassKey<StyleRule>,
+                     tcb::span<CSSSelector> selector_vector)
+    : StyleRuleBase(kStyle) {
+  CSSSelectorList::AdoptSelectorVector(selector_vector, SelectorArray());
+}
+
+StyleRule::StyleRule(webf::PassKey<StyleRule>,
+                     tcb::span<CSSSelector> selector_vector,
+                     StyleRule&& other)
+    : StyleRuleBase(kStyle),
+      properties_(other.properties_),
+      lazy_property_parser_(other.lazy_property_parser_),
+      child_rule_vector_(std::move(other.child_rule_vector_)) {
+  CSSSelectorList::AdoptSelectorVector(selector_vector, SelectorArray());
+}
+
+
+StyleRule::StyleRule(const StyleRule& other, size_t flattened_size)
+    : StyleRuleBase(kStyle), properties_(other.Properties().MutableCopy()) {
+  for (unsigned i = 0; i < flattened_size; ++i) {
+    new (&SelectorArray()[i]) CSSSelector(other.SelectorArray()[i]);
+  }
+  if (other.child_rule_vector_ != nullptr) {
+    // Since we are getting copied, we also need to copy any child rules
+    // so that both old and new can be freely mutated. This also
+    // parses them eagerly (see comment in StyleSheetContents'
+    // copy constructor).
+    child_rule_vector_ = other.child_rule_vector_->Copy();
+  }
+  SetHasSignalingChildRule(other.HasSignalingChildRule());
+}
+
+StyleRule::~StyleRule() {
+  // Clean up any RareData that the selectors may be owning.
+  CSSSelector* selector = SelectorArray();
+  for (;;) {
+    bool is_last = selector->IsLastInSelectorList();
+    selector->~CSSSelector();
+    if (is_last) {
+      break;
+    } else {
+      ++selector;
+    }
+  }
+}
+
+const CSSPropertyValueSet& StyleRule::Properties() const {
+  if (!properties_) {
+    properties_ = lazy_property_parser_->ParseProperties();
+    lazy_property_parser_ = nullptr;
+  }
+  return *properties_;
+}
+
 }  // namespace webf

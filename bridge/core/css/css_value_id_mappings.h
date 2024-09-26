@@ -9,6 +9,7 @@
 
 #include "core/css/white_space.h"
 #include "css_value_keywords.h"
+#include "core/animation/timeline_offset.h"
 #include "css_value_id_mappings_generated.h"
 
 namespace webf {
@@ -57,7 +58,6 @@ inline ETextAlign CssValueIDToPlatformEnum(CSSValueID v) {
   }
   return detail::cssValueIDToPlatformEnumGenerated<ETextAlign>(v);
 }
-
 
 template <>
 inline EWhiteSpace CssValueIDToPlatformEnum(CSSValueID v) {

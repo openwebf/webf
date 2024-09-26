@@ -1051,6 +1051,11 @@ ConsumeColorInternal(T& range,
   return nullptr;
 }
 
+std::shared_ptr<const CSSValue> ConsumeAbsoluteColor(CSSParserTokenRange& range,
+                                                     std::shared_ptr<const CSSParserContext> context) {
+  return ConsumeColorInternal(range, std::move(context), false /* accept_quirky_colors */, AllowedColors::kAbsolute);
+}
+
 std::shared_ptr<const CSSValue> ConsumeLineWidth(CSSParserTokenRange& range,
                                                  std::shared_ptr<const CSSParserContext> context,
                                                  UnitlessQuirk unitless) {
@@ -1542,9 +1547,7 @@ std::shared_ptr<const CSSValue> ParseLonghand(CSSPropertyID unresolved_property,
 
 void WarnInvalidKeywordPropertyUsage(CSSPropertyID property,
                                      std::shared_ptr<const CSSParserContext> context,
-                                     CSSValueID value_id) {
-
-}
+                                     CSSValueID value_id) {}
 
 bool ValidWidthOrHeightKeyword(CSSValueID id, std::shared_ptr<const CSSParserContext> context) {
   // The keywords supported here should be kept in sync with
@@ -2232,12 +2235,15 @@ std::shared_ptr<const CSSValue> ConsumeAnimationDuration(CSSParserTokenStream& s
 
 template <typename T>
 typename std::enable_if<std::is_same_v<T, CSSParserTokenStream> || std::is_same_v<T, CSSParserTokenRange>,
-                        std::shared_ptr<CSSIdentifierValue>>::type
+                        std::shared_ptr<const CSSIdentifierValue>>::type
 ConsumeFontTechIdent(T& stream) {
   return ConsumeIdent<CSSValueID::kFeaturesOpentype, CSSValueID::kFeaturesAat, CSSValueID::kFeaturesGraphite,
                       CSSValueID::kColorSbix, CSSValueID::kVariations, CSSValueID::kPalettes, CSSValueID::kIncremental>(
       stream);
 }
+
+template std::shared_ptr<const CSSIdentifierValue> ConsumeFontTechIdent(CSSParserTokenStream&);
+template std::shared_ptr<const CSSIdentifierValue> ConsumeFontTechIdent(CSSParserTokenRange&);
 
 bool ConsumeAnimationShorthand(const StylePropertyShorthand& shorthand,
                                std::vector<std::shared_ptr<CSSValueList>>& longhands,

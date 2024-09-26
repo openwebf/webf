@@ -35,6 +35,7 @@
 #include "css_tokenizer.h"
 #include "css_variable_parser.h"
 #include "find_length_of_declaration_list-inl.h"
+#include "css_value_id_mappings_generated.h"
 #include "foundation/casting.h"
 
 namespace webf {
@@ -1292,6 +1293,29 @@ std::shared_ptr<StyleRuleCharset> CSSParserImpl::ConsumeCharsetRule(CSSParserTok
     return nullptr;  // Parse error, expected a single string
   }
   return std::make_shared<StyleRuleCharset>();
+}
+
+
+std::shared_ptr<const CSSPropertyValueSet> CSSParserImpl::ParseDeclarationListForLazyStyle(
+    const std::string& string,
+    size_t offset,
+    std::shared_ptr<const CSSParserContext> context) {
+  // NOTE: Lazy parsing does not support nested rules (it happens
+  // only after matching, which means that we cannot insert child rules
+  // we encounter during parsing -- we never match against them),
+  // so parent_rule_for_nesting is always nullptr here. The parser
+  // explicitly makes sure we do not invoke lazy parsing for rules
+  // with child rules in them.
+  CSSTokenizer tokenizer(string, offset);
+  CSSParserTokenStream stream(tokenizer);
+  CSSParserTokenStream::BlockGuard guard(stream);
+  CSSParserImpl parser(context);
+  parser.ConsumeDeclarationList(stream, StyleRule::kStyle,
+                                CSSNestingType::kNone,
+                                /*parent_rule_for_nesting=*/nullptr,
+                                /*child_rules=*/nullptr);
+  return CreateCSSPropertyValueSet(parser.parsed_properties_, context->Mode(),
+                                   context->GetDocument());
 }
 
 }  // namespace webf

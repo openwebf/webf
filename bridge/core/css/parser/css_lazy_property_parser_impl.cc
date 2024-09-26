@@ -7,5 +7,18 @@
  */
 
 #include "css_lazy_property_parser_impl.h"
+#include "core/css/parser/css_parser_impl.h"
+#include "core/css/parser/css_lazy_parsing_state.h"
 
-namespace webf {}  // namespace webf
+namespace webf {
+
+CSSLazyPropertyParserImpl::CSSLazyPropertyParserImpl(uint32_t offset,
+                                                     std::shared_ptr<CSSLazyParsingState> state)
+    : CSSLazyPropertyParser(), offset_(offset), lazy_state_(state) {}
+
+std::shared_ptr<const CSSPropertyValueSet> CSSLazyPropertyParserImpl::ParseProperties() {
+  return CSSParserImpl::ParseDeclarationListForLazyStyle(
+      lazy_state_->SheetText(), offset_, lazy_state_->Context());
+}
+
+}  // namespace webf

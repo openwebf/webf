@@ -33,7 +33,7 @@ class CSSLazyParsingState final {
                       const std::string& sheet_text,
                       std::shared_ptr<StyleSheetContents>);
 
-  const CSSParserContext* Context();
+  std::shared_ptr<const CSSParserContext> Context();
   const std::string& SheetText() const { return sheet_text_; }
 
   void Trace(GCVisitor*) const;

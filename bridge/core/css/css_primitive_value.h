@@ -32,6 +32,7 @@
 #include "core/css/css_value.h"
 #include "core/platform/geometry/length.h"
 #include "foundation/casting.h"
+#include "core/css/css_primitive_value_mapping.h"
 #include "core/platform/math_extras.h"
 #include "foundation/string_view.h"
 

@@ -324,6 +324,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/at_rule_descriptor_parser.cc
     core/css/parser/css_variable_parser.cc
     core/css/parser/css_supports_parser.cc
+    core/css/parser/css_lazy_property_parser_impl.cc
     core/css/parser/css_parser_token.cc
     core/css/parser/css_parser_fast_path.cc
     core/css/parser/font_variant_alternates_parser.cc

@@ -30,7 +30,6 @@ bool CSSParser::ParseDeclarationList(std::shared_ptr<CSSParserContext> context,
 void CSSParser::ParseDeclarationListForInspector(std::shared_ptr<CSSParserContext> context,
                                                  const std::string& declaration,
                                                  CSSParserObserver& observer) {
-  CSSParserImpl::ParseDeclarationListForInspector(declaration, context, observer);
 }
 
 tcb::span<CSSSelector> CSSParser::ParseSelector(std::shared_ptr<const CSSParserContext> context,

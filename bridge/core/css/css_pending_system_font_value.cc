@@ -25,14 +25,12 @@ std::shared_ptr<CSSPendingSystemFontValue> CSSPendingSystemFontValue::Create(
 }
 
 const AtomicString& CSSPendingSystemFontValue::ResolveFontFamily() const {
-  // TODO(xiezuobing): resolve font-family
-//  return LayoutThemeFontProvider::SystemFontFamily(system_font_id_);
+  return AtomicString::Empty();
 }
 
 float CSSPendingSystemFontValue::ResolveFontSize(
     const Document* document) const {
-  // TODO(xiezuobing):resolve font-size
-//  return LayoutThemeFontProvider::SystemFontSize(system_font_id_, document);
+  return 14;
 }
 
 std::string CSSPendingSystemFontValue::CustomCSSText() const {

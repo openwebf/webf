@@ -167,7 +167,7 @@ class CSSLazyPropertyParser {
   CSSLazyPropertyParser(const CSSLazyPropertyParser&) = delete;
   CSSLazyPropertyParser& operator=(const CSSLazyPropertyParser&) = delete;
   virtual ~CSSLazyPropertyParser() = default;
-  virtual CSSPropertyValueSet* ParseProperties() = 0;
+  virtual std::shared_ptr<const CSSPropertyValueSet> ParseProperties() = 0;
   virtual void Trace(GCVisitor*) const;
 };
 

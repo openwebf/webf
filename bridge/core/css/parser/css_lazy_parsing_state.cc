@@ -21,11 +21,11 @@ CSSLazyParsingState::CSSLazyParsingState(std::shared_ptr<const CSSParserContext>
       owning_contents_(contents),
       should_use_count_(context_->IsUseCounterRecordingEnabled()){}
 
-const CSSParserContext* CSSLazyParsingState::Context() {
+std::shared_ptr<const CSSParserContext> CSSLazyParsingState::Context() {
   assert(owning_contents_);
   if (!should_use_count_) {
     assert(!context_->IsUseCounterRecordingEnabled());
-    return context_.get();
+    return context_;
   }
 
   // Try as good as possible to grab a valid Document if the old Document has
@@ -34,7 +34,7 @@ const CSSParserContext* CSSLazyParsingState::Context() {
     document_ = owning_contents_->AnyOwnerDocument();
   }
 
-  return context_.get();
+  return context_;
 }
 
 void CSSLazyParsingState::Trace(GCVisitor* visitor) const {

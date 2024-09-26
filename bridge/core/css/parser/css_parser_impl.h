@@ -103,12 +103,6 @@ class CSSParserImpl {
                                                   std::shared_ptr<StyleSheetContents>,
                                                   AllowedRulesType);
 
-
-
-  static void ParseDeclarationListForInspector(const std::string&,
-                                               std::shared_ptr<const CSSParserContext>,
-                                               CSSParserObserver&);
-
   static ParseSheetResult ParseStyleSheet(const std::string&,
                                           const std::shared_ptr<const CSSParserContext>&,
                                           const std::shared_ptr<StyleSheetContents>&,
@@ -122,6 +116,11 @@ class CSSParserImpl {
   static std::unique_ptr<std::vector<KeyframeOffset>> ParseKeyframeKeyList(
       std::shared_ptr<const CSSParserContext>,
       const std::string&);
+
+  static std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationListForLazyStyle(
+      const std::string&,
+      size_t offset,
+      std::shared_ptr<const CSSParserContext>);
 
   std::shared_ptr<StyleRuleBase> ConsumeAtRule(CSSParserTokenStream&,
                                                AllowedRulesType,
@@ -183,8 +182,6 @@ class CSSParserImpl {
       const std::string&,
       CSSParserMode,
       const Document*);
-  // NOTE: This function can c
-
   // Creates an invisible rule containing the declarations
   // in parsed_properties_ within the range [start_index,end_index).
   //

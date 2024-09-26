@@ -367,7 +367,7 @@ std::shared_ptr<const CSSValue> ConsumeAnimationDuration(CSSParserTokenStream&,
 
 template <typename T>
 typename std::enable_if<std::is_same_v<T, CSSParserTokenStream> || std::is_same_v<T, CSSParserTokenRange>,
-                        std::shared_ptr<CSSIdentifierValue>>::type
+                        std::shared_ptr<const CSSIdentifierValue>>::type
 ConsumeFontTechIdent(T& stream);
 
 bool ConsumeAnimationShorthand(const StylePropertyShorthand&,
