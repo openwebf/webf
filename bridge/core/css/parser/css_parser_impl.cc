@@ -871,7 +871,7 @@ void CSSParserImpl::ConsumeDeclarationValue(CSSParserTokenStream& stream,
                                             StyleRule::RuleType rule_type) {
   const bool allow_important_annotation =
       is_in_declaration_list && rule_type != StyleRule::kKeyframe && rule_type != StyleRule::kPositionTry;
-  CSSPropertyParser::ParseValue(unresolved_property, allow_important_annotation, stream, context_.get(),
+  CSSPropertyParser::ParseValue(unresolved_property, allow_important_annotation, stream, context_,
                                 parsed_properties_, rule_type);
 }
 

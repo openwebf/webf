@@ -31,6 +31,13 @@
 
 namespace webf {
 
+CSSValuePool::CSSValuePool() {
+  identifier_value_cache_.reserve(kMaximumCacheableIntegerValue);
+  pixel_value_cache_.reserve(kMaximumCacheableIntegerValue);
+  percent_value_cache_.reserve(kMaximumCacheableIntegerValue);
+  number_value_cache_.reserve(kMaximumCacheableIntegerValue);
+}
+
 CSSValuePool& CssValuePool() {
   thread_local static CSSValuePool pool;
   return pool;

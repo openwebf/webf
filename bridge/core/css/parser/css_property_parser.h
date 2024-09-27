@@ -65,7 +65,7 @@ class CSSPropertyParser {
   static bool ParseValue(CSSPropertyID,
                          bool allow_important_annotation,
                          CSSParserTokenStream&,
-                         const CSSParserContext*,
+                         std::shared_ptr<const CSSParserContext>,
                          std::vector<CSSPropertyValue>&,
                          StyleRule::RuleType);
 
@@ -85,7 +85,7 @@ class CSSPropertyParser {
 
  private:
   CSSPropertyParser(CSSParserTokenStream&,
-                    const CSSParserContext*,
+                    std::shared_ptr<const CSSParserContext>,
                     std::vector<CSSPropertyValue>*);
 
   // TODO(timloh): Rename once the CSSParserValue-based parseValue is removed

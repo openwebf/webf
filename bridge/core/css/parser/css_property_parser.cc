@@ -49,7 +49,7 @@ bool IsPropertyAllowedInRule(const CSSProperty& property, StyleRule::RuleType ru
 }  // namespace
 
 CSSPropertyParser::CSSPropertyParser(CSSParserTokenStream& stream,
-                                     const CSSParserContext* context,
+                                     std::shared_ptr<const CSSParserContext> context,
                                      std::vector<CSSPropertyValue>* parsed_properties)
     : stream_(stream), context_(context), parsed_properties_(parsed_properties) {
   // Strip initial whitespace/comments from stream_.
@@ -218,7 +218,7 @@ bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
 bool CSSPropertyParser::ParseValue(CSSPropertyID unresolved_property,
                                    bool allow_important_annotation,
                                    CSSParserTokenStream& stream,
-                                   const CSSParserContext* context,
+                                   std::shared_ptr<const CSSParserContext> context,
                                    std::vector<CSSPropertyValue>& parsed_properties,
                                    StyleRule::RuleType rule_type) {
   CSSPropertyParser parser(stream, context, &parsed_properties);

@@ -106,7 +106,7 @@ StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const
 
   loading_ = true;
 
-  auto* new_sheet = document.EnsureStyleEngine().CreateSheet(element, text);//
+  auto* new_sheet = document.EnsureStyleEngine().CreateSheet(element, text);
   sheet_ = new_sheet;
 
   return kProcessingSuccessful;
