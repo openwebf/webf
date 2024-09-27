@@ -130,6 +130,25 @@ MutableCSSPropertyValueSet::SetResult CSSParserImpl::ParseVariableValue(MutableC
   return declaration->AddParsedProperties(parser.parsed_properties_);
 }
 
+
+CSSTokenizedValue CSSParserImpl::ConsumeRestrictedPropertyValue(
+    CSSParserTokenStream& stream) {
+  if (stream.Peek().GetType() == kLeftBraceToken) {
+    // '{}' must be the whole value, hence we simply consume a component
+    // value from the stream, and consider this the whole value.
+    return ConsumeValue(stream, [](CSSParserTokenStream& stream) {
+      return stream.ConsumeComponentValueIncludingWhitespace();
+    });
+  }
+  // Otherwise, we consume until we're AtEnd() (which in the normal case
+  // means we hit a kSemicolonToken), or until we see kLeftBraceToken.
+  // The latter is a kind of error state, which is dealt with via additional
+  // AtEnd() checks at the call site.
+  return ConsumeValue(stream, [](CSSParserTokenStream& stream) {
+    return stream.ConsumeUntilPeekedTypeIs<kLeftBraceToken>();
+  });
+}
+
 static inline void FilterProperties(bool important,
                                     const std::vector<CSSPropertyValue>& input,
                                     std::vector<CSSPropertyValue>& output,
@@ -527,12 +546,6 @@ void CSSParserImpl::ConsumeDeclarationList(CSSParserTokenStream& stream,
                                            std::vector<std::shared_ptr<StyleRuleBase>>* child_rules) {
   DCHECK(parsed_properties_.empty());
 
-  bool is_observer_rule_type = rule_type == StyleRule::kStyle || rule_type == StyleRule::kProperty ||
-                               rule_type == StyleRule::kPage || rule_type == StyleRule::kContainer ||
-                               rule_type == StyleRule::kFontPaletteValues || rule_type == StyleRule::kKeyframe ||
-                               rule_type == StyleRule::kScope || rule_type == StyleRule::kViewTransition ||
-                               rule_type == StyleRule::kPositionTry;
-
   // Whenever we hit a nested rule, we emit a invisible rule from the
   // declarations in [parsed_properties_.begin() + invisible_rule_start_index,
   // parsed_properties_.end()>, and update invisible_rule_start_index to prepare
@@ -721,7 +734,7 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRuleContents(tcb::span<CSS
   child_rules.reserve(4);
   ConsumeDeclarationList(stream, StyleRule::kStyle, CSSNestingType::kNesting,
                          /*parent_rule_for_nesting=*/style_rule, &child_rules);
-  for (auto child_rule : child_rules) {
+  for (auto &&child_rule : child_rules) {
     style_rule->AddChildRule(child_rule);
   }
   style_rule->SetProperties(CreateCSSPropertyValueSet(parsed_properties_, context_->Mode(), context_->GetDocument()));
@@ -1205,7 +1218,7 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRule(CSSParserTokenStream&
   }
 
   assert(stream.Peek().GetType() == kLeftBraceToken);
-  bool is_css_lazy_parsing_fast_path_enabled_ = true;
+  bool is_css_lazy_parsing_fast_path_enabled_ = false;
 
   if (is_css_lazy_parsing_fast_path_enabled_) {
     if (selector_vector.empty() || custom_property_ambiguity) {

@@ -382,7 +382,7 @@ enum class IsImplicitProperty { kNotImplicit, kImplicit };
 
 void AddProperty(CSSPropertyID resolved_property,
                  CSSPropertyID current_shorthand,
-                 const std::shared_ptr<const CSSValue>& value,
+                 std::shared_ptr<const CSSValue> value,
                  bool important,
                  IsImplicitProperty implicit,
                  std::vector<CSSPropertyValue>& properties);

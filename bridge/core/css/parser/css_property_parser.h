@@ -92,13 +92,14 @@ class CSSPropertyParser {
   bool ParseValueStart(CSSPropertyID unresolved_property,
                        bool allow_important_annotation,
                        StyleRule::RuleType rule_type);
-//
-//  bool ParseFontFaceDescriptor(CSSPropertyID);
+  bool ParseCSSWideKeyword(CSSPropertyID unresolved_property,
+                           bool allow_important_annotation);
+  bool ParseFontFaceDescriptor(CSSPropertyID);
 
  private:
   // Inputs:
   CSSParserTokenStream& stream_;
-  const CSSParserContext* context_;
+  std::shared_ptr<const CSSParserContext> context_;
   // Outputs:
   std::vector<CSSPropertyValue>* parsed_properties_;
 };

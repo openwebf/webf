@@ -13,7 +13,6 @@ namespace cssvalue {
 void CSSPendingSubstitutionValue::TraceAfterDispatch(
     GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
-//  visitor->Trace(shorthand_value_);
 }
 
 std::string CSSPendingSubstitutionValue::CustomCSSText() const {

@@ -90,6 +90,16 @@ class CSSParserImpl {
                                                                   bool important,
                                                                   std::shared_ptr<const CSSParserContext>,
                                                                   bool is_animation_tainted);
+
+  // A value for a standard property has the following restriction:
+  // it can not contain braces unless it's the whole value [1].
+  // This function makes use of that restriction to early-out of the
+  // streaming tokenizer as soon as possible.
+  //
+  // [1] https://github.com/w3c/csswg-drafts/issues/9317
+  static CSSTokenizedValue ConsumeRestrictedPropertyValue(
+      CSSParserTokenStream&);
+
   // NOTE: This function can currently only be used to parse a
   // declaration list with no nested rules, not a full style rule
   // (it is only used for things like inline style).

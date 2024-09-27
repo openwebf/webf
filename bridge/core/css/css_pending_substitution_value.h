@@ -20,10 +20,10 @@ namespace cssvalue {
 class CSSPendingSubstitutionValue : public CSSValue {
  public:
   CSSPendingSubstitutionValue(CSSPropertyID shorthand_property_id,
-                              CSSUnparsedDeclarationValue* shorthand_value)
+                              std::shared_ptr<CSSUnparsedDeclarationValue> shorthand_value)
       : CSSValue(kPendingSubstitutionValueClass),
         shorthand_property_id_(shorthand_property_id),
-        shorthand_value_(shorthand_value) {}
+        shorthand_value_(std::move(shorthand_value)) {}
 
   CSSUnparsedDeclarationValue* ShorthandValue() const {
     return shorthand_value_.get();

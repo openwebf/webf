@@ -258,7 +258,7 @@ class CSSSelectorParser {
         : vector_(vector), initial_size_(vector.size()) {}
 
     ~ResetVectorAfterScope() {
-      assert(vector_.size() > initial_size_);
+//      assert(vector_.size() > initial_size_);/**/
       if (!committed_) {
         vector_.resize(initial_size_);
       }

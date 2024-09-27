@@ -389,6 +389,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_scroll_value.cc
     core/css/css_basic_shape_value.cc
     core/css/css_math_function_value.cc
+    core/css/css_pending_substitution_value.cc
     core/css/css_unparsed_declaration_value.cc
     core/css/css_variable_data.cc
     core/css/style_rule_keyframe.cc
