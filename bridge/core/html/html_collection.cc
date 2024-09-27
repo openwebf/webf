@@ -140,8 +140,6 @@ static NodeListInvalidationType InvalidationTypeExcludingIdAndNameAttributes(
       return kInvalidateForFormControls;
     case kClassCollectionType:
       return kInvalidateOnClassAttrChange;
-    case kPopoverInvokers:
-      return kInvalidateOnPopoverInvokerAttrChange;
     case kNameNodeListType:
     case kRadioNodeListType:
     case kRadioImgNodeListType:

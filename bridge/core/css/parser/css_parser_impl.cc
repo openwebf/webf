@@ -10,6 +10,7 @@
 
 #include <cassert>
 #include <vector>
+#include "core/base/memory/shared_ptr.h"
 #include "at_rule_descriptors.h"
 #include "core/base/auto_reset.h"
 #include "core/base/strings/string_util.h"

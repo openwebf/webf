@@ -104,9 +104,6 @@ class StrongAlias {
 
   constexpr explicit operator const UnderlyingType&() const& { return value_; }
 
-  friend bool operator==(const StrongAlias& lhs,
-                         const StrongAlias& rhs) = default;
-
   // Hasher to use in std::unordered_map, std::unordered_set, etc.
   //
   // Example usage:

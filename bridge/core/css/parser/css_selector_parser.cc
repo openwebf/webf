@@ -77,7 +77,6 @@ CSSSelector::RelationType GetImplicitShadowCombinatorForMatching(CSSSelector::Ps
     case CSSSelector::PseudoType::kPseudoPlaceholder:
     case CSSSelector::PseudoType::kPseudoFileSelectorButton:
     case CSSSelector::PseudoType::kPseudoSelectFallbackButton:
-    case CSSSelector::PseudoType::kPseudoSelectFallbackButtonIcon:
     case CSSSelector::PseudoType::kPseudoSelectFallbackButtonText:
     case CSSSelector::PseudoType::kPseudoSelectFallbackDatalist:
       return CSSSelector::RelationType::kUAShadow;
@@ -1077,7 +1076,6 @@ bool IsPseudoClassValidAfterPseudoElement(CSSSelector::PseudoType pseudo_class,
     case CSSSelector::kPseudoPart:
     // TODO(crbug.com/1511354): Add tests for the PseudoSelect cases here
     case CSSSelector::kPseudoSelectFallbackButton:
-    case CSSSelector::kPseudoSelectFallbackButtonIcon:
     case CSSSelector::kPseudoSelectFallbackButtonText:
     case CSSSelector::kPseudoSelectFallbackDatalist:
       return IsUserActionPseudoClass(pseudo_class) || pseudo_class == CSSSelector::kPseudoState ||

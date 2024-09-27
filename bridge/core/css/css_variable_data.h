@@ -14,7 +14,7 @@ namespace webf {
 
 enum class SecureContextMode;
 
-class CSSVariableData : public GarbageCollected<CSSVariableData> {
+class CSSVariableData {
  public:
   CSSVariableData()
       : length_(0),

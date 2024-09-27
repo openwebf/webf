@@ -221,7 +221,7 @@ bool CSSPropertyParser::ParseValue(CSSPropertyID unresolved_property,
                                    std::shared_ptr<const CSSParserContext> context,
                                    std::vector<CSSPropertyValue>& parsed_properties,
                                    StyleRule::RuleType rule_type) {
-  CSSPropertyParser parser(stream, context, &parsed_properties);
+  CSSPropertyParser parser(stream, std::move(context), &parsed_properties);
   CSSPropertyID resolved_property = ResolveCSSPropertyID(unresolved_property);
 
   bool parse_success;
@@ -242,7 +242,7 @@ std::shared_ptr<const CSSValue> CSSPropertyParser::ParseSingleValue(CSSPropertyI
 
   std::shared_ptr<const CSSValue> value = css_parsing_utils::ConsumeCSSWideKeyword(stream);
   if (!value) {
-    value = css_parsing_utils::ParseLonghand(property, CSSPropertyID::kInvalid, context, stream);
+    value = css_parsing_utils::ParseLonghand(property, CSSPropertyID::kInvalid, std::move(context), stream);
   }
   if (!value || !stream.AtEnd()) {
     return nullptr;

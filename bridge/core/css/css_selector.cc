@@ -629,7 +629,6 @@ PseudoId CSSSelector::GetPseudoId(PseudoType type) {
     case kPseudoHorizontal:
     case kPseudoHost:
     case kPseudoHostContext:
-    case kPseudoHostHasAppearance:
     case kPseudoHover:
     case kPseudoInRange:
     case kPseudoIncrement:
@@ -675,7 +674,6 @@ PseudoId CSSSelector::GetPseudoId(PseudoType type) {
     case kPseudoRoot:
     case kPseudoScope:
     case kPseudoSelectFallbackButton:
-    case kPseudoSelectFallbackButtonIcon:
     case kPseudoSelectFallbackButtonText:
     case kPseudoSelectFallbackDatalist:
     case kPseudoSelectorFragmentAnchor:
@@ -738,7 +736,6 @@ const static NameToPseudoStruct kPseudoTypeWithoutArgumentsMap[] = {
     {"-internal-popover-in-top-layer", CSSSelector::kPseudoPopoverInTopLayer},
     {"-internal-relative-anchor", CSSSelector::kPseudoRelativeAnchor},
     {"-internal-selector-fragment-anchor", CSSSelector::kPseudoSelectorFragmentAnchor},
-    {"-internal-shadow-host-has-appearance", CSSSelector::kPseudoHostHasAppearance},
     {"-internal-spatial-navigation-focus", CSSSelector::kPseudoSpatialNavigationFocus},
     {"-internal-video-persistent", CSSSelector::kPseudoVideoPersistent},
     {"-internal-video-persistent-ancestor", CSSSelector::kPseudoVideoPersistentAncestor},
@@ -825,7 +822,6 @@ const static NameToPseudoStruct kPseudoTypeWithoutArgumentsMap[] = {
     {"scroll-marker-group", CSSSelector::kPseudoScrollMarkerGroup},
     {"search-text", CSSSelector::kPseudoSearchText},
     {"select-fallback-button", CSSSelector::kPseudoSelectFallbackButton},
-    {"select-fallback-button-icon", CSSSelector::kPseudoSelectFallbackButtonIcon},
     {"select-fallback-button-text", CSSSelector::kPseudoSelectFallbackButtonText},
     {"select-fallback-datalist", CSSSelector::kPseudoSelectFallbackDatalist},
     {"selection", CSSSelector::kPseudoSelection},
@@ -926,7 +922,6 @@ CSSSelector::PseudoType CSSSelector::NameToPseudoType(const std::string& name,
   }
 
   if ((match->type == CSSSelector::kPseudoSelectFallbackButton ||
-       match->type == CSSSelector::kPseudoSelectFallbackButtonIcon ||
        match->type == CSSSelector::kPseudoSelectFallbackButtonText ||
        match->type == CSSSelector::kPseudoSelectFallbackDatalist)) {
     return CSSSelector::kPseudoUnknown;
@@ -979,7 +974,6 @@ void CSSSelector::UpdatePseudoType(const std::string& value,
     case kPseudoScrollMarker:
     case kPseudoScrollMarkerGroup:
     case kPseudoSelectFallbackButton:
-    case kPseudoSelectFallbackButtonIcon:
     case kPseudoSelectFallbackButtonText:
     case kPseudoSelectFallbackDatalist:
     case kPseudoSelection:
@@ -1006,7 +1000,6 @@ void CSSSelector::UpdatePseudoType(const std::string& value,
       }
       break;
     case kPseudoHasDatalist:
-    case kPseudoHostHasAppearance:
     case kPseudoIsHtml:
     case kPseudoListBox:
     case kPseudoMultiSelectFocus:
@@ -1291,7 +1284,6 @@ static bool ValidateSubSelector(const CSSSelector* selector) {
     case CSSSelector::kPseudoHasDatalist:
     case CSSSelector::kPseudoIsHtml:
     case CSSSelector::kPseudoListBox:
-    case CSSSelector::kPseudoHostHasNonAutoAppearance:
       // TODO(https://crbug.com/1346456): Many pseudos should probably be
       // added to this list.  The default: case below should also be removed
       // so that those adding new pseudos know they need to choose one path or
@@ -1406,8 +1398,6 @@ bool CSSSelector::IsAllowedAfterPart() const {
     case kPseudoScrollbarTrackPiece:
     case kPseudoScrollMarker:
     case kPseudoScrollMarkerGroup:
-    case kPseudoScrollNextButton:
-    case kPseudoScrollPrevButton:
     case kPseudoWebKitCustomElement:
     case kPseudoBlinkInternalElement:
     case kPseudoSlotted:
@@ -1559,7 +1549,6 @@ bool CSSSelector::IsAllowedAfterPart() const {
     case kPseudoHasDatalist:
     case kPseudoHost:
     case kPseudoHostContext:
-    case kPseudoHostHasNonAutoAppearance:
     case kPseudoScope:
       return false;
 

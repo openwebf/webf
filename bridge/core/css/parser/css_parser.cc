@@ -9,6 +9,7 @@
 #include "css_parser.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_fast_path.h"
+#include "core/base/memory/shared_ptr.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_property_parser.h"
 #include "core/css/parser/css_selector_parser.h"

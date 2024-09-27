@@ -227,7 +227,7 @@ std::string CssAtRuleIDToString(CSSAtRuleID id) {
     case CSSAtRuleID::kCSSAtRuleFunction:
       return "@function";
     case CSSAtRuleID::kCSSAtRuleInvalid:
-      assert_m(false, 'NOTREACHED_IN_MIGRATION');
+      assert_m(false, "NOTREACHED_IN_MIGRATION");
       //      NOTREACHED_IN_MIGRATION();
       return "";
   };

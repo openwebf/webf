@@ -623,7 +623,7 @@ class CSSMathExpressionContainerFeature final : public CSSMathExpressionNode {
   std::shared_ptr<const CSSMathExpressionNode> PopulateWithTreeScope(const TreeScope* tree_scope) const final {
     std::shared_ptr<const CSSCustomIdentValue> container_name =
         container_name_
-            ? reinterpret_pointer_cast<const CSSCustomIdentValue>(container_name_->EnsureScopedValue(tree_scope))
+            ? std::reinterpret_pointer_cast<const CSSCustomIdentValue>(container_name_->EnsureScopedValue(tree_scope))
             : nullptr;
     return std::make_shared<CSSMathExpressionContainerFeature>(size_feature_, container_name);
   }

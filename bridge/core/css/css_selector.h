@@ -304,7 +304,6 @@ class CSSSelector {
     kPseudoScrollbarTrackPiece,
     kPseudoSearchText,
     kPseudoSelectFallbackButton,
-    kPseudoSelectFallbackButtonIcon,
     kPseudoSelectFallbackButtonText,
     kPseudoSelectFallbackDatalist,
     kPseudoSelection,
@@ -359,8 +358,6 @@ class CSSSelector {
     kPseudoHighlight,
     kPseudoHost,
     kPseudoHostContext,
-    kPseudoHostHasNonAutoAppearance,
-    kPseudoHostHasAppearance,
     kPseudoIsHtml,
     kPseudoListBox,
     kPseudoMultiSelectFocus,
@@ -391,8 +388,6 @@ class CSSSelector {
     kPseudoScrollMarker,
     kPseudoScrollMarkerGroup,
     // Scroll button pseudos for Carousel
-    kPseudoScrollNextButton,
-    kPseudoScrollPrevButton,
   };
 
   enum class AttributeMatchType : int {
