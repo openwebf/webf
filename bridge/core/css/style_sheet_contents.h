@@ -34,7 +34,7 @@ namespace webf {
 class StyleRuleImport;
 enum class ParseSheetResult;
 
-class StyleSheetContents final {
+class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContents> {
  public:
   static const Document* SingleOwnerDocument(const StyleSheetContents*);
 

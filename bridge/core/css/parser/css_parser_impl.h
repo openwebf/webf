@@ -43,7 +43,7 @@ class CSSParserImpl {
   WEBF_STACK_ALLOCATED();
 
  public:
-  explicit CSSParserImpl(const std::shared_ptr<const CSSParserContext>&, std::shared_ptr<StyleSheetContents> = nullptr);
+  explicit CSSParserImpl(std::shared_ptr<const CSSParserContext>, std::shared_ptr<StyleSheetContents> = nullptr);
   CSSParserImpl(const CSSParserImpl&) = delete;
   CSSParserImpl& operator=(const CSSParserImpl&) = delete;
 

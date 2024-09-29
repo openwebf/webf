@@ -69,9 +69,9 @@ std::string ConsumeStringOrURI(CSSParserTokenStream& stream) {
 }
 }  // namespace
 
-CSSParserImpl::CSSParserImpl(const std::shared_ptr<const CSSParserContext>& context,
+CSSParserImpl::CSSParserImpl(std::shared_ptr<const CSSParserContext> context,
                              std::shared_ptr<StyleSheetContents> style_sheet)
-    : context_(context), style_sheet_(std::move(style_sheet)), lazy_state_(nullptr) {}
+    : context_(std::move(context)), style_sheet_(std::move(style_sheet)), lazy_state_(nullptr) {}
 
 StyleRule::RuleType RuleTypeForMutableDeclaration(MutableCSSPropertyValueSet* declaration) {
   switch (declaration->CssParserMode()) {

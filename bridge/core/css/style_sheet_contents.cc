@@ -85,7 +85,7 @@ ParseSheetResult StyleSheetContents::ParseString(const std::string& sheet_text,
                                                  bool allow_import_rules,
                                                  CSSDeferPropertyParsing defer_property_parsing) {
   std::shared_ptr<CSSParserContext> context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-  return CSSParser::ParseSheet(context, std::make_shared<StyleSheetContents>(*this), sheet_text, defer_property_parsing,
+  return CSSParser::ParseSheet(context, shared_from_this(), sheet_text, defer_property_parsing,
                                allow_import_rules);
 }
 
@@ -195,26 +195,16 @@ Document* StyleSheetContents::ClientSingleOwnerDocument() const {
 }
 
 void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
-  // TODO(xiezuobing): @layer[StyleRuleLayerStatement] rule handler 需要补全
-
-  // TODO(xiezuobing): 这里需要判断StyleRuleBase与StyleRuleImport的继承关系哟
-  if (auto import_rule = std::static_pointer_cast<StyleRuleImport>(rule)) {
+  if (auto import_rule = DynamicTo<StyleRuleImport>(rule.get())) {
     // Parser enforces that @import rules come before anything else other than
     // empty layer statements
     assert(child_rules_.empty());
-    // TODO(xiezuobing): mediaQueries
-    //    if (import_rule->MediaQueries()) {
-    //      SetHasMediaQueries();
-    //    }
-
-    import_rules_.push_back(import_rule);
+    import_rules_.push_back(std::static_pointer_cast<StyleRuleImport>(rule));
     import_rules_.back()->SetParentStyleSheet(this);
-    // TODO(xiezuobing): 请求@import
     import_rules_.back()->RequestStyleSheet();
     return;
   }
 
-  // TODO(xiezuobing): @namespace[StyleRuleNamespace] rule handler 需要补全
   child_rules_.push_back(rule);
 }
 

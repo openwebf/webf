@@ -34,7 +34,6 @@ TEST(HTMLStyleElement, appendStyleToDocument) {
   const div = document.createElement('div');
   div.className = 'container';
   document.body.appendChild(div);
-
 )";
  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
