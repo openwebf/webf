@@ -120,7 +120,7 @@ class NodeListsNodeData final {
   }
 
   TagCollectionNS* AddCache(ContainerNode& node, const AtomicString& namespace_uri, const AtomicString& local_name) {
-    QualifiedName name(global_string_stdstring::knull_atom, local_name.ToStdString(node.ctx()),
+    QualifiedName name("", local_name.ToStdString(node.ctx()),
                        namespace_uri.ToStdString(node.ctx()));
     auto result = tag_collection_ns_caches_.insert({name, nullptr});
     if (!result.second) {  // result.second 表示插入是否成功

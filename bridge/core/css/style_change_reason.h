@@ -95,7 +95,7 @@ class StyleChangeReasonForTracing {
  public:
   static StyleChangeReasonForTracing Create(
       StyleChangeReasonString reason_string) {
-    return StyleChangeReasonForTracing(reason_string, global_string_stdstring::knull_atom);
+    return StyleChangeReasonForTracing(reason_string, "");
   }
 
   static StyleChangeReasonForTracing CreateWithExtraData(

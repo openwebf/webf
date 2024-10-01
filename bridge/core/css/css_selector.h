@@ -441,7 +441,7 @@ class CSSSelector {
     return IsLastInComplexSelector() ? nullptr : this + 1;
   }
 
-  static const std::string& UniversalSelectorAtom() { return global_string_stdstring::knull_atom; }
+  static const std::string UniversalSelectorAtom() { return ""; }
   const QualifiedName& TagQName() const;
 //  const StyleRule* ParentRule() const;  // Only valid for kPseudoParent.
   const std::string& Value() const;
@@ -459,8 +459,8 @@ class CSSSelector {
   // would have an argument of en-US.
   // Note that :nth-* selectors don't store an argument and just store the
   // numbers.
-  const std::string& Argument() const {
-    return HasRareData() ? data_.rare_data_->argument_ : global_string_stdstring::knull_atom;
+  const std::string Argument() const {
+    return HasRareData() ? data_.rare_data_->argument_ : "";
   }
   const CSSSelectorList* SelectorList() const {
     return HasRareData() ? data_.rare_data_->selector_list_.get() : nullptr;

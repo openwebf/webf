@@ -1176,8 +1176,8 @@ static bool SelectorListRequiresScopeActivation(const CSSSelectorList& list) {
 }  // namespace
 
 bool CSSSelectorParser::ConsumeName(CSSParserTokenStream& stream, std::string& name, std::string& namespace_prefix) {
-  name = global_string_stdstring::knull_atom;
-  namespace_prefix = global_string_stdstring::knull_atom;
+  name = "";
+  namespace_prefix = "";
 
   const CSSParserToken& first_token = stream.Peek();
   if (first_token.GetType() == kIdentToken) {
@@ -1188,7 +1188,7 @@ bool CSSSelectorParser::ConsumeName(CSSParserTokenStream& stream, std::string& n
     stream.Consume();
   } else if (first_token.GetType() == kDelimiterToken && first_token.Delimiter() == '|') {
     // This is an empty namespace, which'll get assigned this value below
-    name = global_string_stdstring::kempty_atom;
+    name = "";
   } else {
     return false;
   }
@@ -1200,15 +1200,15 @@ bool CSSSelectorParser::ConsumeName(CSSParserTokenStream& stream, std::string& n
   CSSParserSavePoint savepoint(stream);
   stream.Consume();
 
-  namespace_prefix = name == CSSSelector::UniversalSelectorAtom() ? global_string_stdstring::kstar_atom : name;
+  namespace_prefix = name == CSSSelector::UniversalSelectorAtom() ? "*" : name;
   if (stream.Peek().GetType() == kIdentToken) {
     name = stream.Consume().Value();
   } else if (stream.Peek().GetType() == kDelimiterToken && stream.Peek().Delimiter() == '*') {
     stream.Consume();
     name = CSSSelector::UniversalSelectorAtom();
   } else {
-    name = global_string_stdstring::knull_atom;
-    namespace_prefix = global_string_stdstring::knull_atom;
+    name = "";
+    namespace_prefix = "";
     return false;
   }
 
@@ -1263,7 +1263,7 @@ bool CSSSelectorParser::ConsumeAttribute(CSSParserTokenStream& stream) {
 
   QualifiedName qualified_name =
       namespace_prefix.empty() ? QualifiedName(attribute_name)
-                               : QualifiedName(namespace_prefix, attribute_name, global_string_stdstring::knull_atom);
+                               : QualifiedName(namespace_prefix, attribute_name, "");
 
   if (stream.AtEnd()) {
     CSSSelector selector(CSSSelector::kAttributeSet, qualified_name, CSSSelector::AttributeMatchType::kCaseSensitive);
@@ -1744,8 +1744,8 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeCompoundSelector(CSSParserToken
       return {};
     }
     DCHECK(has_q_name);
-    namespace_prefix = global_string_stdstring::knull_atom;
-    output_.push_back(CSSSelector(QualifiedName(namespace_prefix, element_name, global_string_stdstring::knull_atom)));
+    namespace_prefix = "";
+    output_.push_back(CSSSelector(QualifiedName(namespace_prefix, element_name, "")));
     return reset_vector.CommitAddedElements();
   }
 
@@ -1872,8 +1872,8 @@ void CSSSelectorParser::PrependTypeSelectorIfNeeded(const std::string& namespace
   }
 
   std::string determined_element_name = !has_q_name ? CSSSelector::UniversalSelectorAtom() : element_name;
-  std::string determined_prefix = global_string_stdstring::knull_atom;
-  QualifiedName tag = QualifiedName(determined_prefix, determined_element_name, global_string_stdstring::knull_atom);
+  std::string determined_prefix = "";
+  QualifiedName tag = QualifiedName(determined_prefix, determined_element_name, "");
 
   // *:host/*:host-context never matches, so we can't discard the *,
   // otherwise we can't tell the difference between *:host and just :host.
@@ -1888,7 +1888,7 @@ void CSSSelectorParser::PrependTypeSelectorIfNeeded(const std::string& namespace
     return;
   }
   if (tag != AnyQName() || is_host_pseudo || NeedsImplicitShadowCombinatorForMatching(compound_selector)) {
-    const bool is_implicit = determined_prefix == global_string_stdstring::knull_atom &&
+    const bool is_implicit = determined_prefix == "" &&
                              determined_element_name == CSSSelector::UniversalSelectorAtom() && !is_host_pseudo;
 
     output_.insert(output_.begin() + start_index_of_compound_selector, CSSSelector(tag, is_implicit));

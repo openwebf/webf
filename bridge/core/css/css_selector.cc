@@ -408,7 +408,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
 
           first = false;
           if (name_or_class == UniversalSelectorAtom()) {
-            builder.Append(global_string_stdstring::kstar_atom);
+            builder.Append("*");
           } else {
             SerializeIdentifier(name_or_class, builder);
           }
@@ -421,7 +421,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
     }
   } else if (IsAttributeSelector()) {
     builder.Append('[');
-    SerializeNamespacePrefixIfNeeded(Attribute().Prefix(), global_string_stdstring::kstar_atom, builder,
+    SerializeNamespacePrefixIfNeeded(Attribute().Prefix(), "*", builder,
                                      IsAttributeSelector());
     SerializeIdentifier(Attribute().LocalName(), builder);
     switch (Match()) {
@@ -472,7 +472,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
 std::string CSSSelector::SimpleSelectorTextForDebug() const {
   StringBuilder builder;
   if (Match() == kTag && !IsImplicit()) {
-    SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), global_string_stdstring::kstar_atom, builder,
+    SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), "*", builder,
                                      IsAttributeSelector());
     SerializeIdentifierOrAny(TagQName().LocalName(), UniversalSelectorAtom(), builder);
   } else {
@@ -484,7 +484,7 @@ std::string CSSSelector::SimpleSelectorTextForDebug() const {
 template <bool expand_pseudo_parent>
 const CSSSelector* CSSSelector::SerializeCompound(StringBuilder& builder) const {
   if (Match() == kTag && !IsImplicit()) {
-    SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), global_string_stdstring::kstar_atom, builder,
+    SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), "*", builder,
                                      IsAttributeSelector());
     SerializeIdentifierOrAny(TagQName().LocalName(), UniversalSelectorAtom(), builder);
   }
@@ -1813,7 +1813,7 @@ CSSSelector::RareData::RareData(const std::string& value)
       serializing_value_(value),
       bits_(),
       attribute_(AnyQName()),
-      argument_(global_string_stdstring::knull_atom) {}
+      argument_("") {}
 
 CSSSelector::RareData::~RareData() = default;
 

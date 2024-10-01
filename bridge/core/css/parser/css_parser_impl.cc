@@ -309,7 +309,7 @@ std::shared_ptr<const CSSSelectorList> CSSParserImpl::ParsePageSelector(
   std::vector<CSSSelector> selectors;
   if (!type_selector.empty()) {
     selectors.push_back(CSSSelector(
-        QualifiedName(global_string_stdstring::knull_atom, type_selector, global_string_stdstring::kstar_atom)));
+        QualifiedName("", type_selector, "*")));
   }
   if (!pseudo.empty()) {
     CSSSelector selector;

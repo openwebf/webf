@@ -95,13 +95,13 @@ static_assert(sizeof(Attribute) == sizeof(QualifiedName) + sizeof(std::string),
 inline bool Attribute::Matches(const QualifiedName& qualified_name) const {
   if (qualified_name.LocalName() != LocalName())
     return false;
-  return qualified_name.Prefix() == global_string_stdstring::kstar_atom ||
+  return qualified_name.Prefix() == "*" ||
          qualified_name.NamespaceURI() == NamespaceURI();
 }
 
 inline bool Attribute::MatchesCaseInsensitive(const QualifiedName& qualified_name) const {
   return qualified_name.LocalNameUpper() == name_.LocalNameUpper() &&
-         (qualified_name.Prefix() == global_string_stdstring::kstar_atom ||
+         (qualified_name.Prefix() == "*" ||
           qualified_name.NamespaceURI() == NamespaceURI());
 }
 
