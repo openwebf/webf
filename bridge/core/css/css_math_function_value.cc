@@ -249,7 +249,7 @@ const std::shared_ptr<const CSSMathFunctionValue> CSSMathFunctionValue::Transfor
   if (transformed != expression_) {
     return std::make_shared<CSSMathFunctionValue>(transformed, value_range_in_target_context_);
   }
-  return reinterpret_pointer_cast<const CSSMathFunctionValue>(shared_from_this());
+  return std::reinterpret_pointer_cast<const CSSMathFunctionValue>(shared_from_this());
 }
 
 }  // namespace webf

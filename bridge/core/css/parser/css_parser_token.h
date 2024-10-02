@@ -94,7 +94,7 @@ class CSSParserToken {
         padding_(0)             // Don't care.
   {}
 
-  CSSParserToken(CSSParserTokenType type, StringView value, BlockType block_type = kNotBlock)
+  CSSParserToken(CSSParserTokenType type, std::string_view value, BlockType block_type = kNotBlock)
       : type_(type), block_type_(block_type) {
     InitValueFromStringView(value);
     id_ = -1;
@@ -105,7 +105,7 @@ class CSSParserToken {
   CSSParserToken(CSSParserTokenType, double, NumericValueType, NumericSign);  // for NumberToken
 
   CSSParserToken(CSSParserTokenType, unsigned char);  // for DelimiterToken
-  CSSParserToken(HashTokenType, StringView);
+  CSSParserToken(HashTokenType, std::string_view);
 
   bool operator==(const CSSParserToken& other) const;
   bool operator!=(const CSSParserToken& other) const {
@@ -113,7 +113,7 @@ class CSSParserToken {
   }
 
   // Converts NumberToken to DimensionToken.
-  void ConvertToDimensionWithUnit(StringView);
+  void ConvertToDimensionWithUnit(std::string_view);
 
   // Converts NumberToken to PercentageToken.
   void ConvertToPercentage();
@@ -163,7 +163,7 @@ class CSSParserToken {
 
   void Serialize(StringBuilder&) const;
 
-  CSSParserToken CopyWithUpdatedString(const StringView&) const;
+  CSSParserToken CopyWithUpdatedString(const std::string_view&) const;
 
   static CSSParserTokenType ClosingTokenType(CSSParserTokenType opening_type) {
     switch (opening_type) {
@@ -196,13 +196,13 @@ class CSSParserToken {
 
 
  private:
-  void InitValueFromStringView(StringView string) {
+  void InitValueFromStringView(std::string_view string) {
     value_length_ = string.length();
     if (value_length_ <= sizeof(value_data_char_inline_)) {
-      memcpy(value_data_char_inline_, string.Bytes(), value_length_);
+      memcpy(value_data_char_inline_, string.data(), value_length_);
       value_is_inline_ = true;
     } else {
-      value_data_char_raw_ = string.Bytes();
+      value_data_char_raw_ = string.data();
       value_is_inline_ = false;
     }
   }

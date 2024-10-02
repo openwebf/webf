@@ -380,7 +380,7 @@ bool CSSPropertyParser::ParseFontFaceDescriptor(CSSPropertyID resolved_property)
   size_t start_offset = stream_.LookAheadOffset();
   CSSParserTokenRange range = stream_.ConsumeUntilPeekedTypeIs();
   size_t end_offset = stream_.Offset();
-  StringView original_text = stream_.StringRangeAt(start_offset, end_offset - start_offset);
+  std::string_view original_text = stream_.StringRangeAt(start_offset, end_offset - start_offset);
 
   auto parsed_value = AtRuleDescriptorParser::ParseFontFaceDescriptor(id, {range, original_text}, context_);
   if (!parsed_value) {

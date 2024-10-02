@@ -443,8 +443,8 @@ class CSSPrimitiveValue : public CSSValue {
   double ComputePercentage(const CSSLengthResolver&) const;
 
   static const char* UnitTypeToString(UnitType);
-  static UnitType StringToUnitType(StringView string) {
-    return StringToUnitType(reinterpret_cast<const unsigned char*>(string.Characters8()), string.length());
+  static UnitType StringToUnitType(std::string_view string) {
+    return StringToUnitType(reinterpret_cast<const unsigned char*>(string.data()), string.length());
   }
 
   std::string CustomCSSText() const;

@@ -25,6 +25,7 @@ class CSSTokenizer {
   // (Most places, we probably don't need to do that, but fixing that would
   // require manual inspection.)
   explicit CSSTokenizer(const std::string&, uint32_t offset = 0);
+  explicit CSSTokenizer(std::string&&, uint32_t offset = 0);
   CSSTokenizer(const CSSTokenizer&) = delete;
   CSSTokenizer& operator=(const CSSTokenizer&) = delete;
 
@@ -44,8 +45,8 @@ class CSSTokenizer {
 
   [[nodiscard]] uint32_t Offset() const { return input_.Offset(); }
   [[nodiscard]] uint32_t PreviousOffset() const { return prev_offset_; }
-  [[nodiscard]] StringView StringRangeFrom(size_t start) const;
-  [[nodiscard]] StringView StringRangeAt(size_t start, size_t length) const;
+  [[nodiscard]] std::string_view StringRangeFrom(size_t start) const;
+  [[nodiscard]] std::string_view StringRangeAt(size_t start, size_t length) const;
   [[nodiscard]] const std::vector<std::string>& StringPool() const { return string_pool_; }
   CSSParserToken TokenizeSingle();
   CSSParserToken TokenizeSingleWithComments();
@@ -91,13 +92,13 @@ class CSSTokenizer {
   template <bool SkipComments, bool StoreOffset>
   inline CSSParserToken NextToken();
 
-  char16_t Consume();
-  void Reconsume(char16_t);
+  char Consume();
+  void Reconsume(char);
 
   CSSParserToken ConsumeNumericToken();
   CSSParserToken ConsumeIdentLikeToken();
   CSSParserToken ConsumeNumber();
-  CSSParserToken ConsumeStringTokenUntil(char16_t);
+  CSSParserToken ConsumeStringTokenUntil(char);
   CSSParserToken ConsumeUnicodeRange();
   CSSParserToken ConsumeUrlToken();
 
@@ -105,50 +106,50 @@ class CSSTokenizer {
   void ConsumeSingleWhitespaceIfNext();
   void ConsumeUntilCommentEndFound();
 
-  bool ConsumeIfNext(char16_t);
-  StringView ConsumeName();
+  bool ConsumeIfNext(char);
+  std::string_view ConsumeName();
   int32_t ConsumeEscape();
 
   bool NextTwoCharsAreValidEscape();
-  bool NextCharsAreNumber(char16_t);
+  bool NextCharsAreNumber(char);
   bool NextCharsAreNumber();
-  bool NextCharsAreIdentifier(char16_t);
+  bool NextCharsAreIdentifier(char);
   bool NextCharsAreIdentifier();
 
   CSSParserToken BlockStart(CSSParserTokenType);
   CSSParserToken BlockStart(CSSParserTokenType block_type,
                             CSSParserTokenType,
-                            StringView);
+                            std::string_view);
   CSSParserToken BlockEnd(CSSParserTokenType, CSSParserTokenType start_type);
 
-  CSSParserToken WhiteSpace(char16_t);
-  CSSParserToken LeftParenthesis(char16_t);
-  CSSParserToken RightParenthesis(char16_t);
-  CSSParserToken LeftBracket(char16_t);
-  CSSParserToken RightBracket(char16_t);
-  CSSParserToken LeftBrace(char16_t);
-  CSSParserToken RightBrace(char16_t);
-  CSSParserToken PlusOrFullStop(char16_t);
-  CSSParserToken Comma(char16_t);
-  CSSParserToken HyphenMinus(char16_t);
-  CSSParserToken Asterisk(char16_t);
-  CSSParserToken LessThan(char16_t);
-  CSSParserToken Colon(char16_t);
-  CSSParserToken SemiColon(char16_t);
-  CSSParserToken Hash(char16_t);
-  CSSParserToken CircumflexAccent(char16_t);
-  CSSParserToken DollarSign(char16_t);
-  CSSParserToken VerticalLine(char16_t);
-  CSSParserToken Tilde(char16_t);
-  CSSParserToken CommercialAt(char16_t);
-  CSSParserToken ReverseSolidus(char16_t);
-  CSSParserToken AsciiDigit(char16_t);
-  CSSParserToken LetterU(char16_t);
-  CSSParserToken NameStart(char16_t);
-  CSSParserToken StringStart(char16_t);
-  CSSParserToken EndOfFile(char16_t);
+  CSSParserToken WhiteSpace(char);
+  CSSParserToken LeftParenthesis(char);
+  CSSParserToken RightParenthesis(char);
+  CSSParserToken LeftBracket(char);
+  CSSParserToken RightBracket(char);
+  CSSParserToken LeftBrace(char);
+  CSSParserToken RightBrace(char);
+  CSSParserToken PlusOrFullStop(char);
+  CSSParserToken Comma(char);
+  CSSParserToken HyphenMinus(char);
+  CSSParserToken Asterisk(char);
+  CSSParserToken LessThan(char);
+  CSSParserToken Colon(char);
+  CSSParserToken SemiColon(char);
+  CSSParserToken Hash(char);
+  CSSParserToken CircumflexAccent(char);
+  CSSParserToken DollarSign(char);
+  CSSParserToken VerticalLine(char);
+  CSSParserToken Tilde(char);
+  CSSParserToken CommercialAt(char);
+  CSSParserToken ReverseSolidus(char);
+  CSSParserToken AsciiDigit(char);
+  CSSParserToken LetterU(char);
+  CSSParserToken NameStart(char);
+  CSSParserToken StringStart(char);
+  CSSParserToken EndOfFile(char);
 
-  StringView RegisterString(const std::string&);
+  std::string_view RegisterString(const std::string&);
 
   friend class CSSParserTokenStream;
 

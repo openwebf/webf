@@ -892,13 +892,13 @@ bool CSSParserImpl::RemoveImportantAnnotationIfPresent(CSSTokenizedValue& tokeni
       tokenized_value.range = tokenized_value.range.MakeSubRange(first, last);
 
       // Truncate the text to remove the delimiter and everything after it.
-      if (!tokenized_value.text.Empty()) {
-        DCHECK_NE(tokenized_value.text.Characters8ToStdString().find('!'), std::string::npos);
+      if (!tokenized_value.text.empty()) {
+        DCHECK_NE(std::string(tokenized_value.text).find('!'), std::string::npos);
         unsigned truncated_length = tokenized_value.text.length() - 1;
         while (tokenized_value.text[truncated_length] != '!') {
           --truncated_length;
         }
-        tokenized_value.text = StringView(tokenized_value.text, 0, truncated_length);
+        tokenized_value.text = std::string_view(tokenized_value.text.data() + 0, truncated_length);
       }
       return true;
     }
@@ -1229,7 +1229,7 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRule(CSSParserTokenStream&
     if (lazy_state_) {
       assert(style_sheet_);
 
-      uint32_t len = static_cast<uint32_t>(FindLengthOfDeclarationList(StringView(stream.RemainingText(), 1)));
+      uint32_t len = static_cast<uint32_t>(FindLengthOfDeclarationList(std::string_view(stream.RemainingText().data() + 1)));
       if (len != 0) {
         uint32_t block_start_offset = stream.Offset();
         stream.SkipToEndOfBlock(len + 2);  // +2 for { and }.

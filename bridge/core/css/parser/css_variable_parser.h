@@ -84,7 +84,7 @@ class CSSVariableParser {
   // NOTE: We have to strip both leading and trailing whitespace (and comments)
   // from values as per spec, but we assume the tokenizer has already done the
   // leading ones for us; see comment on CSSPropertyParser::ParseValue().
-  static StringView StripTrailingWhitespaceAndComments(StringView);
+  static std::string_view StripTrailingWhitespaceAndComments(std::string_view);
 };
 
 }  // namespace webf

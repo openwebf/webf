@@ -364,9 +364,9 @@ ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin,
 
 #endif
 
-ALWAYS_INLINE static size_t FindLengthOfDeclarationList(webf::StringView str) {
-  return FindLengthOfDeclarationList(reinterpret_cast<const uint8_t*>(str.Characters8()),
-                                     reinterpret_cast<const uint8_t*>(str.Characters8() + str.length()));
+ALWAYS_INLINE static size_t FindLengthOfDeclarationList(std::string_view str) {
+  return FindLengthOfDeclarationList(reinterpret_cast<const uint8_t*>(str.data()),
+                                     reinterpret_cast<const uint8_t*>(str.data() + str.length()));
 }
 
 #endif  // WEBF_CORE_CSS_PARSER_FIND_LENGTH_OF_DECLARATION_LIST_INL_H_

@@ -15,7 +15,7 @@ struct CSSTokenizedValue {
 
  public:
   CSSParserTokenRange range;
-  StringView text;
+  std::string_view text;
 };
 
 }  // namespace blink

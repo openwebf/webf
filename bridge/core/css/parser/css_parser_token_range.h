@@ -102,13 +102,13 @@ class CSSParserTokenOffsets {
   template <uint32_t InlineBuffer>
   CSSParserTokenOffsets(const std::vector<CSSParserToken>& vector,
                         std::vector<uint32_t> offsets,
-                        StringView string)
+                        std::string_view string)
       : first_(&vector.front()), offsets_(std::move(offsets)), string_(string) {
     assert(vector.size() + 1 == offsets_.size());
   }
   CSSParserTokenOffsets(tcb::span<const CSSParserToken> tokens,
                         std::vector<uint32_t> offsets,
-                        StringView string)
+                        std::string_view string)
       : first_(tokens.data()), offsets_(std::move(offsets)), string_(string) {
     assert(tokens.size() + 1 == offsets_.size());
   }
@@ -120,17 +120,17 @@ class CSSParserTokenOffsets {
     return offsets_[token_index];
   }
 
-  StringView StringForTokens(const CSSParserToken* begin,
+  std::string_view StringForTokens(const CSSParserToken* begin,
                              const CSSParserToken* end) const {
     uint32_t begin_offset = OffsetFor(begin);
     uint32_t end_offset = OffsetFor(end);
-    return StringView(string_, begin_offset, end_offset - begin_offset);
+    return std::string_view(string_.begin() + begin_offset, end_offset - begin_offset);
   }
 
  private:
   const CSSParserToken* first_;
   std::vector<uint32_t> offsets_;
-  StringView string_;
+  std::string_view string_;
 };
 
 bool NeedsInsertedComment(const CSSParserToken& a, const CSSParserToken& b);

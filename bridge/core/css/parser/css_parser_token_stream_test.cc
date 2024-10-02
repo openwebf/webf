@@ -9,13 +9,11 @@
 
 namespace webf {
 
-
 static std::string String(const std::string string) {
   return string;
 }
 
 namespace {
-
 
 TEST(CSSParserTokenStreamTest, EmptyStream) {
   CSSTokenizer tokenizer("");

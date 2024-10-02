@@ -531,7 +531,7 @@ void CSSSelectorParser::AddPlaceholderSelectorIfNeeded(CSSParserTokenStream& str
     // TODO(xiezuobing): 需要传入ExecutingContext
     ExecutingContext* context;
     placeholder_selector.SetUnparsedPlaceholder(nesting_type,
-                                                stream.StringRangeAt(start, end - start).Characters8ToStdString());
+                                                stream.StringRangeAt(start, end - start).data());
     placeholder_selector.SetLastInComplexSelector(true);
     output_.push_back(placeholder_selector);
   }

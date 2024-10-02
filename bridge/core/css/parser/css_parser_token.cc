@@ -23,7 +23,7 @@ CSSParserToken::CSSParserToken(CSSParserTokenType type, unsigned char c)
   assert(type_ == static_cast<unsigned>(kDelimiterToken));
 }
 
-CSSParserToken::CSSParserToken(HashTokenType type, StringView value)
+CSSParserToken::CSSParserToken(HashTokenType type, std::string_view value)
     : type_(kHashToken),
       block_type_(kNotBlock),
       value_is_inline_(false),
@@ -150,7 +150,7 @@ bool CSSParserToken::HasStringBacking() const {
 }
 
 CSSParserToken CSSParserToken::CopyWithUpdatedString(
-    const StringView& string) const {
+    const std::string_view& string) const {
   CSSParserToken copy(*this);
   copy.InitValueFromStringView(string);
   return copy;
@@ -168,7 +168,7 @@ AtRuleDescriptorID CSSParserToken::ParseAsAtRuleDescriptorID() const {
   return AsAtRuleDescriptorID(Value());
 }
 
-void CSSParserToken::ConvertToDimensionWithUnit(StringView unit) {
+void CSSParserToken::ConvertToDimensionWithUnit(std::string_view unit) {
   assert(type_ == static_cast<unsigned>(kNumberToken));
   type_ = kDimensionToken;
   InitValueFromStringView(unit);

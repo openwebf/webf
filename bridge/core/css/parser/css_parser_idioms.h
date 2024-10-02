@@ -46,7 +46,7 @@ class CSSTokenizerInputStream;
 // TODO: ---------------这个处理本来在html_parser_idioms中[start]--------------------
 const char kEndOfFileMarker = 0;
 // https://html.spec.whatwg.org/C/#parse-error-unexpected-null-character
-const char16_t kReplacementCharacter = 0xFFFD;
+const char kReplacementCharacter = 0xFF;
 
 // Space characters as defined by the HTML specification.
 template <typename CharType>
@@ -71,11 +71,11 @@ inline bool IsHTMLSpace(CharType character) {
 
 // Space characters as defined by the CSS specification.
 // http://www.w3.org/TR/css3-syntax/#whitespace
-inline bool IsCSSSpace(char16_t c) {
+inline bool IsCSSSpace(char c) {
   return c == ' ' || c == '\t' || c == '\n';
 }
 
-inline bool IsCSSNewLine(char16_t cc) {
+inline bool IsCSSNewLine(char cc) {
   // We check \r and \f here, since we have no preprocessing stage
   return (cc == '\r' || cc == '\n' || cc == '\f');
 }
@@ -93,7 +93,7 @@ bool IsNameCodePoint(CharacterType c) {
 }
 
 // https://drafts.csswg.org/css-syntax/#check-if-two-code-points-are-a-valid-escape
-inline bool TwoCharsAreValidEscape(char16_t first, char16_t second) {
+inline bool TwoCharsAreValidEscape(char first, char second) {
   return first == '\\' && !IsCSSNewLine(second);
 }
 
@@ -111,7 +111,7 @@ int32_t ConsumeEscape(CSSTokenizerInputStream&);
 std::string ConsumeName(CSSTokenizerInputStream&);
 
 // https://drafts.csswg.org/css-syntax/#would-start-an-identifier
-bool NextCharsAreIdentifier(char16_t, const CSSTokenizerInputStream&);
+bool NextCharsAreIdentifier(char, const CSSTokenizerInputStream&);
 
 }  // namespace webf
 
