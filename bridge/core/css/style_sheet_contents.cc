@@ -55,6 +55,7 @@ StyleSheetContents::StyleSheetContents(const std::shared_ptr<const CSSParserCont
       is_mutable_(false),
       has_font_face_rule_(false),
       has_viewport_rule_(false),
+      has_single_owner_document_(true),
       has_media_queries_(false),
       is_used_from_text_cache_(false),
       parser_context_(context) {}

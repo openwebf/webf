@@ -193,8 +193,7 @@ bool CSSParserToken::ValueDataCharRawEqual(const webf::CSSParserToken& other) co
     return false;
   }
 
-  if (ValueDataCharRaw() == other.ValueDataCharRaw() &&
-      value_is_8bit_ == other.value_is_8bit_) {
+  if (ValueDataCharRaw() == other.ValueDataCharRaw()) {
     return true;
   }
 

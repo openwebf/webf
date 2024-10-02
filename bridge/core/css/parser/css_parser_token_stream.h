@@ -10,10 +10,11 @@
 #define WEBF_CSS_PARSER_TOKEN_STREAM_H
 
 #include <string_view>
-#include "foundation/macros.h"
-#include "css_tokenizer.h"
+#include "core/base/auto_reset.h"
 #include "css_parser_token.h"
 #include "css_parser_token_range.h"
+#include "css_tokenizer.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -47,11 +48,11 @@ class CSSParserTokenStream {
   // scope, the rest of the block is consumed.
   class BlockGuard {
     WEBF_STACK_ALLOCATED();
+
    public:
-    explicit BlockGuard(CSSParserTokenStream& stream)
-        : stream_(stream), boundaries_(stream.boundaries_) {
+    explicit BlockGuard(CSSParserTokenStream& stream) : stream_(stream), boundaries_(stream.boundaries_) {
       const CSSParserToken next = stream.ConsumeInternal();
-      assert(next.GetBlockType()== CSSParserToken::kBlockStart);
+      assert(next.GetBlockType() == CSSParserToken::kBlockStart);
       // Boundaries do not apply within blocks.
       stream.boundaries_ = FlagForTokenType(kEOFToken);
     }
@@ -92,11 +93,11 @@ class CSSParserTokenStream {
 
    public:
     Boundary(CSSParserTokenStream& stream, CSSParserTokenType boundary_type)
-        : auto_reset_(stream.boundaries_ | FlagForTokenType(boundary_type)) {}
+        : auto_reset_(&stream.boundaries_, stream.boundaries_ | FlagForTokenType(boundary_type)) {}
     ~Boundary() = default;
 
    private:
-    uint64_t auto_reset_;
+    webf::AutoReset<uint64_t> auto_reset_;
   };
 
   // We found that this value works well empirically by printing out the
@@ -106,8 +107,9 @@ class CSSParserTokenStream {
   // only needed for declarations which are easier to think about?
   static constexpr int kInitialBufferSize = 128;
 
-  explicit CSSParserTokenStream(CSSTokenizer& tokenizer)
-      : tokenizer_(tokenizer), next_(kEOFToken) {};
+  explicit CSSParserTokenStream(CSSTokenizer& tokenizer) : tokenizer_(tokenizer), next_(kEOFToken){
+    buffer_.reserve(kInitialBufferSize);
+  };
 
   CSSParserTokenStream(CSSParserTokenStream&&) = default;
   CSSParserTokenStream(const CSSParserTokenStream&) = delete;
@@ -190,8 +192,7 @@ class CSSParserTokenStream {
 
   inline bool UncheckedAtEnd() const {
     assert(HasLookAhead());
-    return (boundaries_ & FlagForTokenType(next_.GetType())) ||
-           next_.GetBlockType() == CSSParserToken::kBlockEnd;
+    return (boundaries_ & FlagForTokenType(next_.GetType())) || next_.GetBlockType() == CSSParserToken::kBlockEnd;
   }
 
   // Get the index of the character in the original string to be consumed next.
@@ -245,6 +246,7 @@ class CSSParserTokenStream {
       return CSSParserTokenRange(tcb::span<CSSParserToken>{});
     }
 
+    buffer_.clear();
     buffer_.shrink_to_fit();
 
     // Process the lookahead token.
@@ -258,8 +260,7 @@ class CSSParserTokenStream {
     // return condition. (The termination condition is within the loop.)
     while (true) {
       buffer_.push_back(tokenizer_.TokenizeSingle());
-      if (buffer_.back().IsEOF() ||
-          (nesting_level == 0 && TokenMarksEnd<Types...>(buffer_.back()))) {
+      if (buffer_.back().IsEOF() || (nesting_level == 0 && TokenMarksEnd<Types...>(buffer_.back()))) {
         // Undo the token we just pushed; it goes into the lookahead slot
         // instead.
         next_ = buffer_.back();
@@ -301,8 +302,7 @@ class CSSParserTokenStream {
     // return condition. (The termination condition is within the loop.)
     while (true) {
       CSSParserToken token = tokenizer_.TokenizeSingle();
-      if (token.IsEOF() ||
-          (nesting_level == 0 && TokenMarksEnd<Types...>(token))) {
+      if (token.IsEOF() || (nesting_level == 0 && TokenMarksEnd<Types...>(token))) {
         next_ = token;
         offset_ = tokenizer_.PreviousOffset();
         return;
@@ -514,9 +514,7 @@ class CSSParserTokenStream {
 
    public:
     explicit RestoringBlockGuard(CSSParserTokenStream& stream)
-        : stream_(stream),
-          boundaries_(ResetStreamBoundaries(stream)),
-          state_(stream.Save()) {
+        : stream_(stream), boundaries_(ResetStreamBoundaries(stream)), state_(stream.Save()) {
       const CSSParserToken next = stream.ConsumeInternal();
       assert(next.GetBlockType() == CSSParserToken::kBlockStart);
     }
@@ -546,8 +544,7 @@ class CSSParserTokenStream {
     //  which means that we have unknown trailing tokens.
     bool Release() {
       stream_.EnsureLookAhead();
-      if (stream_.next_.IsEOF() ||
-          stream_.next_.GetBlockType() == CSSParserToken::kBlockEnd) {
+      if (stream_.next_.IsEOF() || stream_.next_.GetBlockType() == CSSParserToken::kBlockEnd) {
         released_ = true;
         return true;
       }
@@ -560,8 +557,7 @@ class CSSParserTokenStream {
         // The guard has been released, nothing to do except move past
         // the block-end.
         const CSSParserToken& token = stream_.UncheckedConsumeInternal();
-        assert(token.GetType() == kEOFToken ||
-               token.GetBlockType() == CSSParserToken::kBlockEnd);
+        assert(token.GetType() == kEOFToken || token.GetBlockType() == CSSParserToken::kBlockEnd);
       } else {
         // The guard has not been released, and we need to restore to the
         // pre-guard state.
@@ -585,8 +581,7 @@ class CSSParserTokenStream {
  private:
   template <CSSParserTokenType... EndTypes>
   inline bool TokenMarksEnd(const CSSParserToken& token) {
-    return (boundaries_ & FlagForTokenType(token.GetType())) ||
-           token.GetBlockType() == CSSParserToken::kBlockEnd ||
+    return (boundaries_ & FlagForTokenType(token.GetType())) || token.GetBlockType() == CSSParserToken::kBlockEnd ||
            detail::IsTokenTypeOneOf<EndTypes...>(token.GetType());
   }
 

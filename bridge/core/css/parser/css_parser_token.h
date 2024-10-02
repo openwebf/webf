@@ -91,7 +91,6 @@ class CSSParserToken {
         numeric_sign_(0),        // Don't care.
         unit_(0),                // Don't care.
         value_is_inline_(false),
-        value_is_8bit_(false),  // Don't care.
         padding_(0)             // Don't care.
   {}
 
@@ -123,11 +122,9 @@ class CSSParserToken {
 
   std::string Value() const {
     if (value_is_inline_) {
-      assert(value_is_8bit_);
       return {reinterpret_cast<const char*>(value_data_char_inline_),
                         value_length_};
     }
-    assert(value_is_8bit_);
     return {reinterpret_cast<const char*>(value_data_char_raw_),
             value_length_};
   }
@@ -201,8 +198,7 @@ class CSSParserToken {
  private:
   void InitValueFromStringView(StringView string) {
     value_length_ = string.length();
-    value_is_8bit_ = string.Is8Bit();
-    if (value_is_8bit_ && value_length_ <= sizeof(value_data_char_inline_)) {
+    if (value_length_ <= sizeof(value_data_char_inline_)) {
       memcpy(value_data_char_inline_, string.Bytes(), value_length_);
       value_is_inline_ = true;
     } else {
@@ -234,10 +230,6 @@ class CSSParserToken {
   // is set to mark that the buffer contains the string itself instead of
   // a pointer to the string. It also guarantees value_is_8bit_ == true.
   unsigned value_is_inline_ : 1;
-
-  // value_... is an unpacked StringView so that we can pack it
-  // tightly with the rest of this object for a smaller object size.
-  unsigned value_is_8bit_ : 1;
 
   // These are free bits. You may take from them if you need.
   unsigned padding_ : 12;

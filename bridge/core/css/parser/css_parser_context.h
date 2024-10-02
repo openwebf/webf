@@ -73,8 +73,6 @@ class CSSParserContext final {
   Member<const Document> document_;
 };
 
-std::shared_ptr<const CSSParserContext> StrictCSSParserContext(SecureContextMode);
-
 }  // namespace webf
 
 #endif  // WEBF_CSS_PARSER_CONTEXT_H

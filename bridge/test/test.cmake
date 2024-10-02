@@ -38,6 +38,9 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/timing/performance_test.cc
   ./core/css/style_engine_test.cc
   ./core/css/css_initial_test.cc
+
+  # CSS Parser
+  ./core/css/parser/css_parser_token_stream_test.cc
 )
 
 ### webf_unit_test executable

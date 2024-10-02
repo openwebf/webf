@@ -395,7 +395,6 @@ bool CSSParserImpl::ConsumeRuleList(CSSParserTokenStream& stream,
     uint32_t offset = stream.Offset();
     std::shared_ptr<StyleRuleBase> rule = nullptr;
     switch (stream.UncheckedPeek().GetType()) {
-      // NOTE: 空白
       case kWhitespaceToken:
         stream.UncheckedConsume();
         continue;
@@ -412,7 +411,6 @@ bool CSSParserImpl::ConsumeRuleList(CSSParserTokenStream& stream,
         }
         [[fallthrough]];
       default:
-        // NOTE: 其他规则
         rule = ConsumeQualifiedRule(stream, allowed_rules, nesting_type, parent_rule_for_nesting);
         break;
     }
@@ -1219,7 +1217,7 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRule(CSSParserTokenStream&
   }
 
   assert(stream.Peek().GetType() == kLeftBraceToken);
-  bool is_css_lazy_parsing_fast_path_enabled_ = false;
+  bool is_css_lazy_parsing_fast_path_enabled_ = true;
 
   if (is_css_lazy_parsing_fast_path_enabled_) {
     if (selector_vector.empty() || custom_property_ambiguity) {

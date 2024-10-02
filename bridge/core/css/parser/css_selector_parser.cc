@@ -976,7 +976,7 @@ PseudoId CSSSelectorParser::ParsePseudoElement(const std::string& selector_strin
   // A restart is OK here, since this function is called only from
   // getComputedStyle() and similar, not the main parsing path.
   std::vector<CSSSelector> arena;
-  CSSSelectorParser parser(StrictCSSParserContext(SecureContextMode::kInsecureContext),
+  CSSSelectorParser parser(std::make_shared<CSSParserContext>(kHTMLStandardMode),
                            /*parent_rule_for_nesting=*/nullptr,
                            /*is_within_scope=*/false, /*semicolon_aborts_nested_selector=*/false,
                            /*style_sheet=*/nullptr, arena);

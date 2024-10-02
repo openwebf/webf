@@ -49,7 +49,7 @@ CSSStyleSheet* CSSStyleSheet::CreateInline(std::shared_ptr<StyleSheetContents> s
                                            Node& owner_node,
                                            const TextPosition& start_position) {
   assert(sheet);
-  return MakeGarbageCollected<CSSStyleSheet>(sheet, owner_node, true, start_position);
+  return MakeGarbageCollected<CSSStyleSheet>(std::move(sheet), owner_node, true, start_position);
 }
 
 bool CSSStyleSheet::disabled() const {
