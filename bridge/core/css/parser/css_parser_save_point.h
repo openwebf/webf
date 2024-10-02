@@ -41,6 +41,7 @@ class CSSParserSavePoint<CSSParserTokenStream> {
 
   ~CSSParserSavePoint() {
     if (!released_) {
+      stream_.EnsureLookAhead();
       stream_.Restore(savepoint_);
     }
   }
@@ -80,7 +81,6 @@ class CSSParserSavePoint<CSSParserTokenRange> {
   CSSParserTokenRange saved_range_;
   bool released_ = false;
 };
-
 
 }  // namespace webf
 

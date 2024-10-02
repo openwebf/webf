@@ -67,11 +67,11 @@ class StringBuilder {
 
   void Append(unsigned char c) {
     EnsureBuffer8(1);
-    string_.append(std::string(1, c));
+    string_.push_back(c);
     ++length_;
   }
 
-  void Append(int32_t c) {
+  void Append(uint32_t c) {
     if (U_IS_BMP(c)) {
       Append(static_cast<char16_t>(c));
       return;
@@ -84,11 +84,22 @@ class StringBuilder {
     Append(std::to_string(v));
   }
 
+  void Append(int32_t v) {
+    Append(std::to_string(v));
+  }
+
   void Append(const std::string& string_view) {
     EnsureBuffer8(1);
     string_.append(string_view);
     length_ += string_view.size();
   }
+
+  void Append(char c) {
+    EnsureBuffer8(1);
+    string_.push_back(c);
+    length_ += 1;
+  }
+
 
   void Append(double v) {
     Append(std::to_string(v));
@@ -108,8 +119,6 @@ class StringBuilder {
   bool empty() const { return string_.empty(); }
 
   size_t length() const { return string_.length(); }
-
-  void Append(char c) { Append(static_cast<char>(c)); }
 
   void Reserve(unsigned new_size);
 

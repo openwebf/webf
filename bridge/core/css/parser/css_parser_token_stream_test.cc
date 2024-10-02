@@ -608,7 +608,7 @@ void TokenizeInto(CSSParserTokenStream& stream,
       saved_state = stream.Save();
     }
 
-    if (saved_state.has_value() && restart_offset == stream.Offset()) {
+    if (saved_state.has_value() && restart_offset <= stream.Offset()) {
       stream.Restore(saved_state.value());
       saved_state.reset();
       // Do not restart again:
@@ -787,6 +787,8 @@ TEST_P(RestartTest, All) {
 
   std::string ref(param.ref);
   std::vector<CSSParserToken> ref_tokens = TokenizeAll(ref);
+
+  WEBF_LOG(VERBOSE) << "tokens: " << CSSParserTokenRange(ref_tokens).Serialize();
 
   std::string input(param.input);
   CSSTokenizer tokenizer(input);

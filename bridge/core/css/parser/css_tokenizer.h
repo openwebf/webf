@@ -24,8 +24,8 @@ class CSSTokenizer {
   // The overload with const String& holds on to a reference to the string.
   // (Most places, we probably don't need to do that, but fixing that would
   // require manual inspection.)
-  explicit CSSTokenizer(const std::string&, uint32_t offset = 0);
-  explicit CSSTokenizer(std::string&&, uint32_t offset = 0);
+  explicit CSSTokenizer(const std::string&, size_t offset = 0);
+  explicit CSSTokenizer(std::string&&, size_t offset = 0);
   CSSTokenizer(const CSSTokenizer&) = delete;
   CSSTokenizer& operator=(const CSSTokenizer&) = delete;
 
@@ -108,7 +108,7 @@ class CSSTokenizer {
 
   bool ConsumeIfNext(char);
   std::string_view ConsumeName();
-  int32_t ConsumeEscape();
+  uint32_t ConsumeEscape();
 
   bool NextTwoCharsAreValidEscape();
   bool NextCharsAreNumber(char);
