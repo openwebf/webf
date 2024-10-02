@@ -97,7 +97,8 @@ void CSSParserTokenStream::UncheckedSkipToEndOfBlock() {
 CSSParserTokenRange CSSParserTokenStream::ConsumeComponentValue() {
   EnsureLookAhead();
 
-  buffer_.reserve(0);
+  buffer_.clear();
+  buffer_.shrink_to_fit();
 
   if (AtEnd()) {
     return {std::vector<CSSParserToken>()};
