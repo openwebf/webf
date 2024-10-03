@@ -31,7 +31,17 @@
 
 namespace webf {
 
-CSSValuePool::CSSValuePool() {
+CSSValuePool::CSSValuePool()
+    : inherited_value_(std::make_shared<CSSInheritedValue>()),
+      initial_value_(std::make_shared<CSSInitialValue>()),
+      unset_value_(std::make_shared<CSSUnsetValue>(PassKey())),
+      revert_value_(std::make_shared<CSSRevertValue>(PassKey())),
+      revert_layer_value_(std::make_shared<CSSRevertLayerValue>(PassKey())),
+      invalid_variable_value_(std::make_shared<CSSInvalidVariableValue>()),
+      initial_color_value_(std::make_shared<CSSInitialColorValue>(PassKey())),
+      color_transparent_(std::make_shared<cssvalue::CSSColor>(Color::kTransparent)),
+      color_white_(std::make_shared<cssvalue::CSSColor>(Color::kWhite)),
+      color_black_(std::make_shared<cssvalue::CSSColor>(Color::kBlack)) {
   identifier_value_cache_.reserve(kMaximumCacheableIntegerValue);
   pixel_value_cache_.reserve(kMaximumCacheableIntegerValue);
   percent_value_cache_.reserve(kMaximumCacheableIntegerValue);

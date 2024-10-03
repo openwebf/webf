@@ -185,7 +185,8 @@ std::shared_ptr<const CSSValue> CSSParser::ParseSingleValue(CSSPropertyID proper
   if (string.empty()) {
     return nullptr;
   }
-  if (std::shared_ptr<const CSSValue> value = CSSParserFastPaths::MaybeParseValue(property_id, string, context)) {
+  std::shared_ptr<const CSSValue> value = CSSParserFastPaths::MaybeParseValue(property_id, string, context);
+  if (value != nullptr) {
     return value;
   }
   CSSTokenizer tokenizer(string);

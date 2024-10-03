@@ -4,6 +4,7 @@ list(APPEND WEBF_TEST_SOURCE
   polyfill/dist/testframework.cc
 )
 
+set(CMAKE_CXX_STANDARD 20)
 set(gtest_disable_pthreads ON)
 
 add_subdirectory(./third_party/googletest)
@@ -42,6 +43,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   # CSS Parser
   ./core/css/parser/css_parser_token_stream_test.cc
   ./core/css/parser/css_parser_local_context_test.cc
+  ./core/css/parser/css_property_parser_test.cc
 )
 
 ### webf_unit_test executable
