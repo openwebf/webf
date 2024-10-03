@@ -400,8 +400,8 @@ std::shared_ptr<const CSSPrimitiveValue> ConsumeNumber(CSSParserTokenRange& rang
     return CSSNumericLiteralValue::Create(range.ConsumeIncludingWhitespace().NumericValue(), token.GetUnitType());
   }
   MathFunctionParser math_parser(range, context, value_range);
-  if (auto* calculation = math_parser.Value()) {
-    if (calculation->get()->Category() != kCalcNumber) {
+  if (auto calculation = *math_parser.Value()) {
+    if (calculation->Category() != kCalcNumber) {
       return nullptr;
     }
     return math_parser.ConsumeValue();
@@ -523,7 +523,7 @@ ConsumeLengthInternal(T& range,
     return nullptr;
   }
   MathFunctionParser math_parser(range, context, value_range);
-  if (math_parser.Value() && math_parser.Value()->get()->Category() == kCalcLength) {
+  if (math_parser.Value()->get() && math_parser.Value()->get()->Category() == kCalcLength) {
     return math_parser.ConsumeValue();
   }
   return nullptr;
@@ -558,8 +558,8 @@ ConsumePercentInternal(T& range,
                                           CSSPrimitiveValue::UnitType::kPercentage);
   }
   MathFunctionParser math_parser(range, context, value_range);
-  if (auto* calculation = math_parser.Value()) {
-    if (calculation->get()->Category() == kCalcPercent) {
+  if (auto calculation = *math_parser.Value()) {
+    if (calculation->Category() == kCalcPercent) {
       return math_parser.ConsumeValue();
     }
   }
@@ -645,8 +645,8 @@ ConsumeLengthOrPercentInternal(T& range,
       break;
   }
   MathFunctionParser math_parser(range, context, value_range, parsing_flags, allowed_anchor_queries);
-  if (auto* calculation = math_parser.Value()) {
-    if (CanConsumeCalcValue(calculation->get()->Category(), context->Mode())) {
+  if (auto calculation = *math_parser.Value()) {
+    if (CanConsumeCalcValue(calculation->Category(), context->Mode())) {
       return math_parser.ConsumeValue();
     }
   }
@@ -702,8 +702,8 @@ static
                             std::shared_ptr<const CSSPrimitiveValue>>::type
     ConsumeMathFunctionAngle(T& range, std::shared_ptr<const CSSParserContext> context) {
   MathFunctionParser<T> math_parser(range, context, CSSPrimitiveValue::ValueRange::kAll);
-  if (auto calculation = math_parser.Value()) {
-    if (calculation->get()->Category() != kCalcAngle) {
+  if (auto calculation = *math_parser.Value()) {
+    if (calculation->Category() != kCalcAngle) {
       return nullptr;
     }
   }
@@ -719,8 +719,8 @@ static
                              double minimum_value,
                              double maximum_value) {
   MathFunctionParser math_parser(range, context, CSSPrimitiveValue::ValueRange::kAll);
-  if (auto calculation = math_parser.Value()) {
-    if (calculation->get()->Category() != kCalcAngle) {
+  if (auto calculation = *math_parser.Value()) {
+    if (calculation->Category() != kCalcAngle) {
       return nullptr;
     }
   }
@@ -792,8 +792,8 @@ ConsumeTime(T& stream, std::shared_ptr<const CSSParserContext> context, CSSPrimi
     return nullptr;
   }
   MathFunctionParser math_parser(stream, context, value_range);
-  if (auto calculation = math_parser.Value()) {
-    if (calculation->get()->Category() == kCalcTime) {
+  if (auto calculation = *math_parser.Value()) {
+    if (calculation->Category() == kCalcTime) {
       return math_parser.ConsumeValue();
     }
   }
@@ -822,8 +822,8 @@ ConsumeResolution(T& range, std::shared_ptr<const CSSParserContext> context) {
   }
 
   MathFunctionParser math_parser(range, context, CSSPrimitiveValue::ValueRange::kNonNegative);
-  auto math_value = math_parser.Value();
-  if (math_value && math_value->get()->IsResolution()) {
+  auto math_value = *math_parser.Value();
+  if (math_value && math_value->IsResolution()) {
     return math_parser.ConsumeValue();
   }
 
@@ -2563,17 +2563,21 @@ CSSParserToken ConsumeUrlAsToken(CSSParserTokenStream& stream, std::shared_ptr<c
   if (token.GetType() == kUrlToken) {
     stream.ConsumeIncludingWhitespace();
   } else if (token.FunctionId() == CSSValueID::kUrl) {
-    CSSParserSavePoint savepoint(stream);
-    CSSParserTokenRange url_args{tcb::span<CSSParserToken>()};
     {
-      CSSParserTokenStream::BlockGuard guard(stream);
-      url_args = stream.ConsumeUntilPeekedTypeIs<>();
+      CSSParserTokenStream::RestoringBlockGuard guard(stream);
+      stream.ConsumeWhitespace();
+      // If the block doesn't start with a quote, then the tokenizer
+      // would return a kUrlToken or kBadUrlToken instead of a
+      // kFunctionToken. Note also that this Peek() placates the
+      // DCHECK that we Peek() before Consume().
+      DCHECK(stream.Peek().GetType() == kStringToken ||
+             stream.Peek().GetType() == kBadStringToken);
+      token = stream.ConsumeIncludingWhitespace();
+      if (token.GetType() == kBadStringToken || !stream.AtEnd()) {
+        return CSSParserToken(kEOFToken);
+      }
+      guard.Release();
     }
-    token = url_args.ConsumeIncludingWhitespace();
-    if (token.GetType() == kBadStringToken || !url_args.AtEnd()) {
-      return CSSParserToken(kEOFToken);
-    }
-    savepoint.Release();
     DCHECK_EQ(token.GetType(), kStringToken);
     stream.ConsumeWhitespace();
   } else {
@@ -3062,8 +3066,8 @@ static std::shared_ptr<const CSSPrimitiveValue> ConsumeGradientAngleOrPercent(
     return ConsumePercent(stream, context, value_range);
   }
   MathFunctionParser math_parser(stream, context, value_range);
-  if (const std::shared_ptr<const CSSMathFunctionValue>* calculation = math_parser.Value()) {
-    CalculationResultCategory category = calculation->get()->Category();
+  if (auto calculation = *math_parser.Value()) {
+    CalculationResultCategory category = calculation->Category();
     // TODO(fs): Add and support kCalcPercentAngle?
     if (category == kCalcAngle || category == kCalcPercent) {
       return math_parser.ConsumeValue();

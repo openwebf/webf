@@ -56,7 +56,7 @@ class CSSImageValue : public CSSValue {
 //
 //  void ReResolveURL(const Document&) const;
 //
-//  std::string CustomCSSText() const;
+  std::string CustomCSSText() const;
 //
 //  bool HasFailedOrCanceledSubresources() const;
 //

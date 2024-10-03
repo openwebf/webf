@@ -31,7 +31,7 @@ std::shared_ptr<const CSSInitialValue> CSSInitialValue::Create() {
   return CssValuePool().InitialValue();
 }
 
-std::string CSSInitialValue::CustomCSSText(JSContext* ctx) const {
+std::string CSSInitialValue::CustomCSSText() const {
   return "initial";
 }
 

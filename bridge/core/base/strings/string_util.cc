@@ -61,7 +61,7 @@ bool ContainsOnlyASCIIOrEmpty(const std::string& string) {
     is_ascii |= webf::IsASCII(string[i]);
   }
 
-  return is_ascii;
+  return is_ascii || string.empty();
 }
 
 std::string ToLowerASCII(const std::string& string) {

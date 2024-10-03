@@ -37,7 +37,7 @@ class CSSInitialValue : public CSSValue {
 
   CSSInitialValue() : CSSValue(kInitialClass) {}
 
-  std::string CustomCSSText(JSContext* ctx) const;
+  std::string CustomCSSText() const;
 
   bool Equals(const CSSInitialValue&) const { return true; }
 

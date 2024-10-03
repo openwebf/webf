@@ -23,10 +23,12 @@ namespace webf {
 
 CSSImageValue::CSSImageValue(CSSUrlData url_data, StyleImage* image)
    : CSSValue(kImageClass)
-//     url_data_(std::move(url_data)),
-//     cached_image_(image)
 {}
 
 CSSImageValue::~CSSImageValue() = default;
+
+std::string CSSImageValue::CustomCSSText() const {
+  return "";
+}
 
 }  // namespace blink
