@@ -21,7 +21,7 @@ void CSSMathFunctionValue::TraceAfterDispatch(GCVisitor* visitor) const {
 CSSMathFunctionValue::CSSMathFunctionValue(std::shared_ptr<const CSSMathExpressionNode> expression,
                                            CSSPrimitiveValue::ValueRange range)
     : CSSPrimitiveValue(kMathFunctionClass), expression_(std::move(expression)), value_range_in_target_context_(range) {
-  needs_tree_scope_population_ = !expression->IsScopedValue();
+  needs_tree_scope_population_ = !expression_->IsScopedValue();
 }
 
 // static
