@@ -409,6 +409,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_bracketed_value_list.cc
     core/css/css_custom_ident_value.cc
     core/css/css_value_list.cc
+    core/css/css_syntax_definition.cc
+    core/css/css_syntax_string_parser.cc
     core/css/style_property_serializer.cc
     core/css/style_property_shorthand_custom.cc
     core/css/css_value_clamping_utils.cc
