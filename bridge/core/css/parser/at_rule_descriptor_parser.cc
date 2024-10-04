@@ -275,12 +275,12 @@ std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseFontFaceDescriptor(
       parsed_value = ConsumeFontDisplay(range);
       break;
     case AtRuleDescriptorID::FontStretch: {
-      CSSParserContext::ParserModeOverridingScope scope(context, kCSSFontFaceRuleMode);
+      CSSParserContext::ParserModeOverridingScope scope(*context, kCSSFontFaceRuleMode);
       parsed_value = css_parsing_utils::ConsumeFontStretch(range, context);
       break;
     }
     case AtRuleDescriptorID::FontStyle: {
-      CSSParserContext::ParserModeOverridingScope scope(context, kCSSFontFaceRuleMode);
+      CSSParserContext::ParserModeOverridingScope scope(*context, kCSSFontFaceRuleMode);
       parsed_value = css_parsing_utils::ConsumeFontStyle(range, context);
       break;
     }
@@ -288,7 +288,7 @@ std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseFontFaceDescriptor(
       parsed_value = ConsumeFontVariantList(range);
       break;
     case AtRuleDescriptorID::FontWeight: {
-      CSSParserContext::ParserModeOverridingScope scope(context, kCSSFontFaceRuleMode);
+      CSSParserContext::ParserModeOverridingScope scope(*context, kCSSFontFaceRuleMode);
       parsed_value = css_parsing_utils::ConsumeFontWeight(range, context);
       break;
     }

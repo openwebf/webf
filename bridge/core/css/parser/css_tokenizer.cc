@@ -509,7 +509,7 @@ CSSParserToken CSSTokenizer::ConsumeNumericToken() {
 CSSParserToken CSSTokenizer::ConsumeIdentLikeToken() {
   std::string_view name = ConsumeName();
   if (ConsumeIfNext('(')) {
-    if (EqualIgnoringASCIICase(name.data(), "url")) {
+    if (EqualIgnoringASCIICase(std::string(name), "url")) {
       // The spec is slightly different so as to avoid dropping whitespace
       // tokens, but they wouldn't be used and this is easier.
       input_.AdvanceUntilNonWhitespace();

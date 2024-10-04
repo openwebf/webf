@@ -1601,7 +1601,7 @@ std::shared_ptr<const CSSValue> ConsumeScrollPadding(CSSParserTokenStream& strea
   if (stream.Peek().Id() == CSSValueID::kAuto) {
     return ConsumeIdent(stream);
   }
-  CSSParserContext::ParserModeOverridingScope scope(context, kHTMLStandardMode);
+  CSSParserContext::ParserModeOverridingScope scope(*context, kHTMLStandardMode);
   return ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative, UnitlessQuirk::kForbid);
 }
 
@@ -2329,7 +2329,7 @@ std::shared_ptr<const CSSValue> ConsumeColumnWidth(CSSParserTokenStream& stream,
   }
   // Always parse lengths in strict mode here, since it would be ambiguous
   // otherwise when used in the 'columns' shorthand property.
-  CSSParserContext::ParserModeOverridingScope scope(context, kHTMLStandardMode);
+  CSSParserContext::ParserModeOverridingScope scope(*context, kHTMLStandardMode);
   std::shared_ptr<const CSSPrimitiveValue> column_width =
       ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
   if (!column_width) {
@@ -2570,8 +2570,7 @@ CSSParserToken ConsumeUrlAsToken(CSSParserTokenStream& stream, std::shared_ptr<c
       // would return a kUrlToken or kBadUrlToken instead of a
       // kFunctionToken. Note also that this Peek() placates the
       // DCHECK that we Peek() before Consume().
-      DCHECK(stream.Peek().GetType() == kStringToken ||
-             stream.Peek().GetType() == kBadStringToken);
+      DCHECK(stream.Peek().GetType() == kStringToken || stream.Peek().GetType() == kBadStringToken);
       token = stream.ConsumeIncludingWhitespace();
       if (token.GetType() == kBadStringToken || !stream.AtEnd()) {
         return CSSParserToken(kEOFToken);
@@ -3838,7 +3837,7 @@ std::shared_ptr<const CSSValue> ConsumeBorderImageWidth(CSSParserTokenStream& st
   for (size_t index = 0; index < 4; ++index) {
     value = ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
     if (!value) {
-      CSSParserContext::ParserModeOverridingScope scope(context, kHTMLStandardMode);
+      CSSParserContext::ParserModeOverridingScope scope(*context, kHTMLStandardMode);
       value =
           ConsumeLengthOrPercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative, UnitlessQuirk::kForbid);
     }
@@ -3865,7 +3864,7 @@ std::shared_ptr<const CSSValue> ConsumeBorderImageOutset(CSSParserTokenStream& s
   for (size_t index = 0; index < 4; ++index) {
     value = ConsumeNumber(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
     if (!value) {
-      CSSParserContext::ParserModeOverridingScope scope(context, kHTMLStandardMode);
+      CSSParserContext::ParserModeOverridingScope scope(*context, kHTMLStandardMode);
       value = ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
     }
     if (!value) {
@@ -5824,7 +5823,7 @@ std::shared_ptr<CSSFunctionValue> ConsumeFilterFunction(CSSParserTokenStream& st
       } else if (filter_type == CSSValueID::kHueRotate) {
         parsed_value = ConsumeAngle(stream, context);
       } else if (filter_type == CSSValueID::kBlur) {
-        CSSParserContext::ParserModeOverridingScope scope(context, kHTMLStandardMode);
+        CSSParserContext::ParserModeOverridingScope scope(*context, kHTMLStandardMode);
         parsed_value = ConsumeLength(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
       } else {
         // FIXME (crbug.com/397061): Support calc expressions like

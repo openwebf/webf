@@ -38,7 +38,7 @@ class CSSVariableParser {
   // this function.
   //
   // https://drafts.css-houdini.org/css-properties-values-api-1/#universal-syntax-definition
-  static std::shared_ptr<const CSSUnparsedDeclarationValue> ParseUniversalSyntaxValue(CSSTokenizedValue,
+  static std::shared_ptr<const CSSUnparsedDeclarationValue> ParseUniversalSyntaxValue(const std::string&,
                                                                                       std::shared_ptr<const CSSParserContext>&,
                                                                                       bool is_animation_tainted);
 

@@ -57,9 +57,9 @@ class CSSParserContext final {
     WEBF_STACK_ALLOCATED();
 
    public:
-    ParserModeOverridingScope(std::shared_ptr<const CSSParserContext> context,
+    ParserModeOverridingScope(const CSSParserContext& context,
                               CSSParserMode mode)
-        : mode_reset_(const_cast<CSSParserMode*>(&context->mode_), mode) {}
+        : mode_reset_(const_cast<CSSParserMode*>(&context.mode_), mode) {}
 
    private:
     AutoReset<CSSParserMode> mode_reset_;

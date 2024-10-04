@@ -238,19 +238,25 @@ std::shared_ptr<const CSSUnparsedDeclarationValue> CSSVariableParser::ParseDecla
 }
 
 std::shared_ptr<const CSSUnparsedDeclarationValue> CSSVariableParser::ParseUniversalSyntaxValue(
-    CSSTokenizedValue value,
+    const std::string& text,
     std::shared_ptr<const CSSParserContext>& context,
     bool is_animation_tainted) {
   bool has_references;
   bool has_positioned_braces_ignored;
-  if (!IsValidVariable(value.range, has_references, has_positioned_braces_ignored, context->GetExecutingContext())) {
+  CSSTokenizer tokenizer(text);
+  CSSParserTokenStream stream(tokenizer);
+  stream.EnsureLookAhead();
+
+  bool important;
+  if (CSSPropertyParser::ConsumeCSSWideKeyword(stream, /*allow_important_annotation=*/false, important)) {
     return nullptr;
   }
-  if (ParseCSSWideValue(value.range)) {
-    return nullptr;
-  }
-  return std::make_shared<CSSUnparsedDeclarationValue>(
-      CSSVariableData::Create(value, is_animation_tainted, has_references), context);
+
+  std::shared_ptr<CSSVariableData> variable_data = CSSVariableParser::ConsumeUnparsedDeclaration(
+      stream, /*allow_important_annotation=*/false, is_animation_tainted,
+      /*must_contain_variable_reference=*/false,
+      /*restricted_value=*/false, /*comma_ends_declaration=*/false, important, context->GetExecutingContext());
+  return std::make_shared<CSSUnparsedDeclarationValue>(variable_data, context);
 }
 
 std::string_view CSSVariableParser::StripTrailingWhitespaceAndComments(std::string_view text) {

@@ -44,6 +44,8 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/css/parser/css_parser_token_stream_test.cc
   ./core/css/parser/css_parser_local_context_test.cc
   ./core/css/parser/css_property_parser_test.cc
+#  ./core/css/css_primitive_value_test.cc
+  ./core/css/css_test_helpers.cc
 )
 
 ### webf_unit_test executable

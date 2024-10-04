@@ -80,7 +80,7 @@ class CSSImageValue : public CSSValue {
 //  SVGResource* EnsureSVGResource() const;
 
  private:
-//  CSSUrlData url_data_;
+  CSSUrlData url_data_;
 //  AtomicString initiator_name_;
 
   // Cached image data.
