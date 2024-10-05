@@ -333,11 +333,11 @@ static CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* execution_c
   return ExposedProperty(property_id, execution_context, mode);
 }
 
-CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* context, const std::string& string, CSSParserMode mode) {
-  return UnresolvedCSSPropertyID(context, string.c_str(), string.length(), mode);
+CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* context, const std::string_view& string, CSSParserMode mode) {
+  return UnresolvedCSSPropertyID(context, string.data(), string.length(), mode);
 }
 
-CSSValueID CssValueKeywordID(const std::string& string) {
+CSSValueID CssValueKeywordID(const std::string_view& string) {
   unsigned length = string.length();
   if (!length) {
     return CSSValueID::kInvalid;
@@ -347,7 +347,7 @@ CSSValueID CssValueKeywordID(const std::string& string) {
   }
 
   char buffer[maxCSSValueKeywordLength + 1];  // 1 for null character
-  if (!QuasiLowercaseIntoBuffer(string.c_str(), length, buffer)) {
+  if (!QuasiLowercaseIntoBuffer(string.data(), length, buffer)) {
     return CSSValueID::kInvalid;
   }
 
@@ -355,7 +355,7 @@ CSSValueID CssValueKeywordID(const std::string& string) {
 #if DDEBUG
   // Verify that we get the same answer with standard lowercasing.
   for (unsigned i = 0; i < length; ++i) {
-    buffer[i] = ToASCIILower(string.c_str()[i]);
+    buffer[i] = ToASCIILower(string.data()[i]);
   }
   assert(hash_table_entry == FindValue(buffer, length));
 #endif

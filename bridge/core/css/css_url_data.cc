@@ -31,10 +31,10 @@
 
 namespace webf {
 
-CSSUrlData::CSSUrlData(const std::string& unresolved_url,
+CSSUrlData::CSSUrlData(std::string unresolved_url,
                        const KURL& resolved_url
                        )
-    : relative_url_(unresolved_url),
+    : relative_url_(std::move(unresolved_url)),
       absolute_url_(resolved_url.GetString()),
       is_local_(!unresolved_url.empty() && unresolved_url[0] == '#'),
       potentially_dangling_markup_(resolved_url.PotentiallyDanglingMarkup()) {}

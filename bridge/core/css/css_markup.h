@@ -40,10 +40,10 @@ namespace webf {
 
 // Common serializing methods. See:
 // https://drafts.csswg.org/cssom/#common-serializing-idioms
-void SerializeIdentifier(const std::string& identifier,
+void SerializeIdentifier(const std::string_view& identifier,
                          StringBuilder& append_to,
                          bool skip_start_checks = false);
-void SerializeString(const std::string&, StringBuilder& append_to);
+void SerializeString(const std::string_view&, StringBuilder& append_to);
 std::string SerializeString(const std::string&);
 std::string SerializeURI(const std::string&);
 std::string SerializeFontFamily(const std::string&);

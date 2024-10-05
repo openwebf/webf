@@ -63,7 +63,7 @@ static void SerializeCharacter(int32_t c, StringBuilder& append_to) {
  */
 #define U16_LENGTH(c) ((uint32_t)(c) <= 0xffff ? 1 : 2)
 
-void SerializeIdentifier(const std::string& identifier, StringBuilder& append_to, bool skip_start_checks) {
+void SerializeIdentifier(const std::string_view& identifier, StringBuilder& append_to, bool skip_start_checks) {
   bool is_first = !skip_start_checks;
   bool is_second = false;
   bool is_first_char_hyphen = false;
@@ -103,7 +103,7 @@ void SerializeIdentifier(const std::string& identifier, StringBuilder& append_to
   }
 }
 
-void SerializeString(const std::string& string, StringBuilder& append_to) {
+void SerializeString(const std::string_view& string, StringBuilder& append_to) {
   append_to.Append('\"');
 
   unsigned index = 0;

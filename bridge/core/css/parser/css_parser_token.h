@@ -106,6 +106,9 @@ class CSSParserToken {
 
   CSSParserToken(CSSParserTokenType, unsigned char);  // for DelimiterToken
   CSSParserToken(HashTokenType, std::string_view);
+  ~CSSParserToken() {
+    WEBF_LOG(VERBOSE) << " token released";
+  }
 
   bool operator==(const CSSParserToken& other) const;
   bool operator!=(const CSSParserToken& other) const {
@@ -120,7 +123,7 @@ class CSSParserToken {
 
   CSSParserTokenType GetType() const { return static_cast<CSSParserTokenType>(type_); }
 
-  std::string Value() const {
+  std::string_view Value() const {
     if (value_is_inline_) {
       return {reinterpret_cast<const char*>(value_data_char_inline_),
                         value_length_};

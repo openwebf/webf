@@ -907,7 +907,7 @@ std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenRang
       range.Peek().Id() == CSSValueID::kDefault) {
     return nullptr;
   }
-  return std::make_shared<CSSCustomIdentValue>(range.ConsumeIncludingWhitespace().Value());
+  return std::make_shared<CSSCustomIdentValue>(std::string(range.ConsumeIncludingWhitespace().Value()));
 }
 
 std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenStream& stream,
@@ -916,7 +916,7 @@ std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenStre
       stream.Peek().Id() == CSSValueID::kDefault) {
     return nullptr;
   }
-  return std::make_shared<CSSCustomIdentValue>(stream.ConsumeIncludingWhitespace().Value());
+  return std::make_shared<CSSCustomIdentValue>(std::string(stream.ConsumeIncludingWhitespace().Value()));
 }
 
 template <class T>
@@ -970,7 +970,7 @@ static
         snprintf(buffer, 5, "%d", static_cast<int>(token.NumericValue()));
         color = buffer;
       } else {  // e.g. 0001FF
-        color = std::to_string(static_cast<int>(token.NumericValue())) + token.Value();
+        color = std::to_string(static_cast<int>(token.NumericValue())) + std::string(token.Value());
       }
       while (color.length() < 6) {
         color = "0" + color;
@@ -1854,7 +1854,7 @@ std::shared_ptr<const CSSValue> ConsumeAnimationName(CSSParserTokenStream& strea
     if (EqualIgnoringASCIICase(token.Value(), "none")) {
       return CSSIdentifierValue::Create(CSSValueID::kNone);
     }
-    return std::make_shared<CSSCustomIdentValue>(token.Value());
+    return std::make_shared<CSSCustomIdentValue>(std::string(token.Value()));
   }
 
   return ConsumeCustomIdent(stream, context);
@@ -2590,7 +2590,7 @@ CSSUrlData CollectUrlData(const std::string& url, std::shared_ptr<const CSSParse
 }
 
 static std::shared_ptr<const CSSImageValue> CreateCSSImageValueWithReferrer(
-    const std::string& uri,
+    std::string uri,
     std::shared_ptr<const CSSParserContext> context) {
   auto image_value = std::make_shared<CSSImageValue>(CollectUrlData(uri, context));
   return image_value;
@@ -2620,14 +2620,14 @@ std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenStream& stream
   if (stream.Peek().GetType() != kStringToken) {
     return nullptr;
   }
-  return std::make_shared<CSSStringValue>(stream.ConsumeIncludingWhitespace().Value());
+  return std::make_shared<CSSStringValue>(std::string(stream.ConsumeIncludingWhitespace().Value()));
 }
 
 std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenRange& range) {
   if (range.Peek().GetType() != kStringToken) {
     return nullptr;
   }
-  return std::make_shared<CSSStringValue>(range.ConsumeIncludingWhitespace().Value());
+  return std::make_shared<CSSStringValue>(std::string(range.ConsumeIncludingWhitespace().Value()));
 }
 
 // With the streaming parser, we cannot return a StringView, since the token
@@ -2638,7 +2638,7 @@ std::string ConsumeStringAsString(CSSParserTokenStream& stream) {
     return "";
   }
 
-  return stream.ConsumeIncludingWhitespace().Value();
+  return std::string(stream.ConsumeIncludingWhitespace().Value());
 }
 
 bool IsImageSet(const CSSValueID id) {
@@ -3152,12 +3152,13 @@ std::shared_ptr<const CSSValue> ConsumeImage(CSSParserTokenStream& stream,
                                              const ConsumeImageSetImagePolicy image_set_image_policy) {
   CSSParserToken uri = ConsumeUrlAsToken(stream, context);
   if (uri.GetType() != kEOFToken) {
-    return CreateCSSImageValueWithReferrer(uri.Value(), context);
+    return CreateCSSImageValueWithReferrer(std::string(uri.Value()), context);
   }
   if (string_url_image_policy == ConsumeStringUrlImagePolicy::kAllow) {
     std::string uri_string = ConsumeStringAsString(stream);
-    if (!uri_string.empty()) {
-      return CreateCSSImageValueWithReferrer(uri_string, context);
+    if (uri_string.data() != nullptr) {
+      std::string refer = std::string(uri_string.data(), uri_string.length());
+      return CreateCSSImageValueWithReferrer(refer, context);
     }
   }
   if (stream.Peek().GetType() == kFunctionToken) {
@@ -4251,7 +4252,7 @@ typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_
                         std::shared_ptr<const CSSValue>>::type
 ConsumeFamilyName(T& range) {
   if (range.Peek().GetType() == kStringToken) {
-    return CSSFontFamilyValue::Create(range.ConsumeIncludingWhitespace().Value());
+    return CSSFontFamilyValue::Create(std::string(range.ConsumeIncludingWhitespace().Value()));
   }
   if (range.Peek().GetType() != kIdentToken) {
     return nullptr;
@@ -4264,7 +4265,7 @@ ConsumeFamilyName(T& range) {
 }
 
 // https://drafts.csswg.org/css-values-4/#css-wide-keywords
-bool IsCSSWideKeyword(const std::string& keyword) {
+bool IsCSSWideKeyword(const std::string_view& keyword) {
   return EqualIgnoringASCIICase(keyword, "initial") || EqualIgnoringASCIICase(keyword, "inherit") ||
          EqualIgnoringASCIICase(keyword, "unset") || EqualIgnoringASCIICase(keyword, "revert") ||
          EqualIgnoringASCIICase(keyword, "revert-layer");
@@ -4272,12 +4273,12 @@ bool IsCSSWideKeyword(const std::string& keyword) {
 }
 
 // https://drafts.csswg.org/css-cascade/#default
-bool IsRevertKeyword(const std::string& keyword) {
+bool IsRevertKeyword(const std::string_view& keyword) {
   return EqualIgnoringASCIICase(keyword, "revert");
 }
 
 // https://drafts.csswg.org/css-values-4/#identifier-value
-bool IsDefaultKeyword(const std::string& keyword) {
+bool IsDefaultKeyword(const std::string_view& keyword) {
   return EqualIgnoringASCIICase(keyword, "default");
 }
 
@@ -4521,7 +4522,7 @@ ConsumeFontFeatureTag(T& stream, std::shared_ptr<const CSSParserContext> context
   if (token.Value().length() != kTagNameLength) {
     return nullptr;
   }
-  std::string tag = token.Value();
+  std::string tag = std::string(token.Value());
   stream.ConsumeIncludingWhitespace();
   for (unsigned i = 0; i < kTagNameLength; ++i) {
     // Limits the stream of characters to 0x20-0x7E, following the tag name
@@ -5113,7 +5114,7 @@ bool ConsumeGridTemplateRowsAndAreasAndColumns(bool important,
 
     // Handle a template-area's row.
     if (stream.Peek().GetType() != kStringToken ||
-        !ParseGridTemplateAreasRow(stream.ConsumeIncludingWhitespace().Value(), grid_area_map, row_count,
+        !ParseGridTemplateAreasRow(std::string(stream.ConsumeIncludingWhitespace().Value()), grid_area_map, row_count,
                                    column_count)) {
       return false;
     }
@@ -5738,7 +5739,7 @@ ConsumeUrlInternal(T& range, std::shared_ptr<const CSSParserContext> context) {
   if (url.GetType() == kEOFToken) {
     return nullptr;
   }
-  return std::make_shared<cssvalue::CSSURIValue>(CollectUrlData(url.Value(), context));
+  return std::make_shared<cssvalue::CSSURIValue>(CollectUrlData(std::string(url.Value()), context));
 }
 
 std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenStream& stream,

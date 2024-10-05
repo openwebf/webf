@@ -185,7 +185,7 @@ class Color {
   Color Blend(const Color&) const;
   Color BlendWithWhite() const;
 
-  static bool ParseHexColor(const std::string&, Color&);
+  static bool ParseHexColor(const std::string_view&, Color&);
   static bool ParseHexColor(const char*, unsigned, Color&);
 
   static const Color kBlack;

@@ -48,7 +48,7 @@ std::string ConsumeStringOrURI(CSSParserTokenStream& stream) {
   const CSSParserToken& token = stream.Peek();
 
   if (token.GetType() == kStringToken || token.GetType() == kUrlToken) {
-    return stream.ConsumeIncludingWhitespace().Value();
+    return std::string(stream.ConsumeIncludingWhitespace().Value());
   }
 
   if (token.GetType() != kFunctionToken || !EqualIgnoringASCIICase(token.Value(), "url")) {
@@ -516,7 +516,7 @@ std::string CSSParserImpl::ParseCustomPropertyName(const std::string& name_text)
   if (!CSSVariableParser::IsValidVariableName(name_token)) {
     return {};
   }
-  return name_token.Value();
+  return std::string(name_token.Value());
 }
 
 // This function is used for two different but very similarly specified actions
@@ -566,7 +566,7 @@ void CSSParserImpl::ConsumeDeclarationList(CSSParserTokenStream& stream,
         break;
       case kAtKeywordToken: {
         CSSParserToken name_token = stream.ConsumeIncludingWhitespace();
-        const std::string name = name_token.Value();
+        const std::string_view name = name_token.Value();
         const CSSAtRuleID id = CssAtRuleID(name);
         std::shared_ptr<StyleRuleBase> child =
             ConsumeNestedRule(id, rule_type, stream, nesting_type, parent_rule_for_nesting);
@@ -969,7 +969,7 @@ bool CSSParserImpl::ConsumeDeclaration(CSSParserTokenStream& stream, StyleRule::
         if (important && (rule_type == StyleRule::kKeyframe)) {
           return false;
         }
-        std::string variable_name = lhs.Value();
+        std::string variable_name = std::string(lhs.Value());
         bool allow_important_annotation = (rule_type != StyleRule::kKeyframe);
         bool is_animation_tainted = rule_type == StyleRule::kKeyframe;
         if (!ConsumeVariableValue(stream, variable_name, allow_important_annotation, is_animation_tainted)) {
@@ -1022,7 +1022,7 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeAtRule(CSSParserTokenStream
                                                             std::shared_ptr<const StyleRule> parent_rule_for_nesting) {
   assert(stream.Peek().GetType() == kAtKeywordToken);
   CSSParserToken name_token = stream.ConsumeIncludingWhitespace();  // Must live until CssAtRuleID().
-  const std::string name = name_token.Value();
+  const std::string_view name = name_token.Value();
   const CSSAtRuleID id = CssAtRuleID(name);
   return ConsumeAtRuleContents(id, stream, allowed_rules, nesting_type, parent_rule_for_nesting);
 }

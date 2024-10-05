@@ -278,10 +278,10 @@ bool Color::ParseHexColor(const char* name, unsigned length, Color& color) {
   return ParseHexColorInternal(name, length, color);
 }
 
-bool Color::ParseHexColor(const std::string& name, Color& color) {
+bool Color::ParseHexColor(const std::string_view& name, Color& color) {
   if (name.empty())
     return false;
-  return ParseHexColor(name.c_str(), name.length(), color);
+  return ParseHexColor(name.data(), name.length(), color);
 }
 
 int DifferenceSquared(const Color& c1, const Color& c2) {

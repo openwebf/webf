@@ -195,7 +195,7 @@ bool CSSVariableParser::IsValidVariableName(const CSSParserToken& token) {
   return IsValidVariableName(token.Value());
 }
 
-bool CSSVariableParser::IsValidVariableName(const std::string string) {
+bool CSSVariableParser::IsValidVariableName(const std::string_view& string) {
   return string.length() >= 3 && string[0] == '-' && string[1] == '-';
 }
 

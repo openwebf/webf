@@ -13,7 +13,7 @@
 
 namespace webf {
 
-CSSAtRuleID CssAtRuleID(const std::string& name) {
+CSSAtRuleID CssAtRuleID(const std::string_view& name) {
   if (EqualIgnoringASCIICase(name, "charset")) {
     return CSSAtRuleID::kCSSAtRuleCharset;
   }

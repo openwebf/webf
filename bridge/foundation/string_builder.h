@@ -80,18 +80,38 @@ class StringBuilder {
     Append(U16_TRAIL(c));
   }
 
+  void Append(std::string_view view) {
+    if (view.empty()) {
+      return;
+    }
+
+    // If we're appending to an empty builder, and there is not a buffer
+    // (reserveCapacity has not been called), then share the impl if
+    // possible.
+    //
+    // This is important to avoid string copies inside dom operations like
+    // Node::textContent when there's only a single Text node child, or
+    // inside the parser in the common case when flushing buffered text to
+    // a Text node.
+    const char* impl = view.data();
+    if (!length_ && !HasBuffer() && impl != nullptr) {
+      string_ = impl;
+      length_ = view.length();
+      return;
+    }
+
+
+    EnsureBuffer8(view.length());
+    string_.append(view);
+    length_ += view.length();
+  }
+
   void Append(int64_t v) {
     Append(std::to_string(v));
   }
 
   void Append(int32_t v) {
     Append(std::to_string(v));
-  }
-
-  void Append(const std::string& string_view) {
-    EnsureBuffer8(1);
-    string_.append(string_view);
-    length_ += string_view.size();
   }
 
   void Append(char c) {

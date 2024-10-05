@@ -104,7 +104,12 @@ class CSSValuePool {
     identifier_value_cache_[static_cast<int>(ident)] = css_value;
     return css_value;
   }
-  std::shared_ptr<const CSSNumericLiteralValue> PixelCacheValue(int int_value) { return pixel_value_cache_[int_value]; }
+  std::shared_ptr<const CSSNumericLiteralValue> PixelCacheValue(int int_value) {
+    if (pixel_value_cache_.size() <= static_cast<size_t>(int_value)) {
+      return nullptr;
+    }
+    return pixel_value_cache_[int_value];
+  }
   std::shared_ptr<const CSSNumericLiteralValue> SetPixelCacheValue(
       int int_value,
       std::shared_ptr<const CSSNumericLiteralValue> css_value) {
@@ -112,6 +117,9 @@ class CSSValuePool {
     return css_value;
   }
   std::shared_ptr<const CSSNumericLiteralValue> PercentCacheValue(int int_value) {
+    if (percent_value_cache_.size() <= static_cast<size_t>(int_value)) {
+      return nullptr;
+    }
     return percent_value_cache_[int_value];
   }
   std::shared_ptr<const CSSNumericLiteralValue> SetPercentCacheValue(
@@ -121,6 +129,9 @@ class CSSValuePool {
     return css_value;
   }
   std::shared_ptr<const CSSNumericLiteralValue> NumberCacheValue(int int_value) {
+    if (number_value_cache_.size() <= static_cast<size_t>(int_value)) {
+      return nullptr;
+    }
     return number_value_cache_[int_value];
   }
   std::shared_ptr<const CSSNumericLiteralValue> SetNumberCacheValue(

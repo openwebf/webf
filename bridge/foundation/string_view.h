@@ -101,7 +101,7 @@ inline void StringView::Clear() {
   bytes_ = nullptr;
 }
 
-bool EqualIgnoringASCIICase(const std::string&, const std::string&);
+bool EqualIgnoringASCIICase(const std::string_view&, const std::string_view&);
 
 
 }  // namespace webf

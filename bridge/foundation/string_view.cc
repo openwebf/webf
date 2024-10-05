@@ -78,12 +78,12 @@ inline bool EqualIgnoringASCIICase(const char* a,
 }
 }
 
-bool EqualIgnoringASCIICase(const std::string& a, const std::string& b) {
+bool EqualIgnoringASCIICase(const std::string_view& a, const std::string_view& b) {
   if (a.length() != b.length())
     return false;
   if (a.data() == b.data())
     return true;
-  return EqualIgnoringASCIICase(a.c_str(), b.c_str(), a.length());
+  return EqualIgnoringASCIICase(a.data(), b.data(), a.length());
 }
 
 }  // namespace webf

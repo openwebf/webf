@@ -120,10 +120,10 @@ LayoutUnit ValueForLength(const Length& length,
     case Length::kDeviceWidth:
     case Length::kDeviceHeight:
     case Length::kNone:
-      assert_m(false, 'NOTREACHED_IN_MIGRATION');
+      assert_m(false, "NOTREACHED_IN_MIGRATION");
       return LayoutUnit();
   }
-  assert_m(false, 'NOTREACHED_IN_MIGRATION');
+  assert_m(false, "NOTREACHED_IN_MIGRATION");
   return LayoutUnit();
 }
 

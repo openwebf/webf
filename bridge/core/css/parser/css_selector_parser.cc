@@ -952,7 +952,7 @@ PseudoId CSSSelectorParser::ParsePseudoElement(const std::string& selector_strin
       }
 
       CSSSelector::PseudoType pseudo_type =
-          ParsePseudoType(selector_name_token.Value(),
+          ParsePseudoType(std::string(selector_name_token.Value()),
                           /*has_arguments=*/false, parent ? &parent->GetDocument() : nullptr);
 
       PseudoId pseudo_id = CSSSelector::GetPseudoId(pseudo_type);
@@ -1223,7 +1223,7 @@ bool CSSSelectorParser::ConsumeId(CSSParserTokenStream& stream) {
   }
   CSSSelector selector;
   selector.SetMatch(CSSSelector::kId);
-  std::string value = stream.Consume().Value();
+  std::string value = std::string(stream.Consume().Value());
   selector.SetValue(value, IsQuirksModeBehavior(context_->Mode()));
   output_.push_back(std::move(selector));
   return true;
@@ -1238,7 +1238,7 @@ bool CSSSelectorParser::ConsumeClass(CSSParserTokenStream& stream) {
   }
   CSSSelector selector;
   selector.SetMatch(CSSSelector::kClass);
-  std::string value = stream.Consume().Value();
+  std::string value = std::string(stream.Consume().Value());
   selector.SetValue(value, IsQuirksModeBehavior(context_->Mode()));
   output_.push_back(std::move(selector));
   return true;
@@ -1283,7 +1283,7 @@ bool CSSSelectorParser::ConsumeAttribute(CSSParserTokenStream& stream) {
     return false;
   }
 
-  CSSSelector selector(match_type, qualified_name, case_sensitivity, attribute_value.Value());
+  CSSSelector selector(match_type, qualified_name, case_sensitivity, std::string(attribute_value.Value()));
   output_.push_back(std::move(selector));
   return true;
 }
@@ -1307,7 +1307,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
   selector.SetMatch(colons == 1 ? CSSSelector::kPseudoClass : CSSSelector::kPseudoElement);
 
   bool has_arguments = token.GetType() == kFunctionToken;
-  selector.UpdatePseudoType(token.Value(), context_, has_arguments, context_->Mode());
+  selector.UpdatePseudoType(std::string(token.Value()), context_, has_arguments, context_->Mode());
 
   if (selector.Match() == CSSSelector::kPseudoElement) {
     switch (selector.GetPseudoType()) {
@@ -1452,7 +1452,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
       if (ident.GetType() != kIdentToken) {
         return false;
       }
-      selector.SetArgument(ident.Value());
+      selector.SetArgument(std::string(ident.Value()));
       stream.ConsumeIncludingWhitespace();
       if (!stream.AtEnd()) {
         return false;
@@ -1467,7 +1467,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
         if (ident.GetType() != kIdentToken) {
           return false;
         }
-        parts.push_back(ident.Value());
+        parts.push_back(std::string(ident.Value()));
         stream.ConsumeIncludingWhitespace();
       } while (!stream.AtEnd());
       selector.SetIdentList(std::make_unique<std::vector<std::string>>(parts));
@@ -1481,7 +1481,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
         if (ident.GetType() != kIdentToken) {
           return false;
         }
-        types.push_back(ident.Value());
+        types.push_back(std::string(ident.Value()));
         stream.ConsumeIncludingWhitespace();
 
         if (stream.AtEnd()) {
@@ -1510,7 +1510,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
       if (name_and_classes->empty()) {
         const CSSParserToken& ident = stream.Peek();
         if (ident.GetType() == kIdentToken) {
-          name_and_classes->push_back(ident.Value());
+          name_and_classes->push_back(std::string(ident.Value()));
           stream.Consume();
         } else if (ident.GetType() == kDelimiterToken && ident.Delimiter() == '*') {
           name_and_classes->push_back(CSSSelector::UniversalSelectorAtom());
@@ -1555,7 +1555,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
       if (ident.GetType() != kIdentToken) {
         return false;
       }
-      selector.SetArgument(ident.Value());
+      selector.SetArgument(std::string(ident.Value()));
       stream.ConsumeIncludingWhitespace();
       if (!stream.AtEnd()) {
         return false;
@@ -1602,7 +1602,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
       if (ident.GetType() != kIdentToken) {
         return false;
       }
-      selector.SetArgument(ident.Value());
+      selector.SetArgument(std::string(ident.Value()));
       stream.ConsumeIncludingWhitespace();
       if (!stream.AtEnd()) {
         return false;

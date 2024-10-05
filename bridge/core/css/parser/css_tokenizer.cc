@@ -766,7 +766,7 @@ std::string_view CSSTokenizer::ConsumeName() {
       return RegisterString(webf::ConsumeName(input_));
     } else {
       input_.Advance(size);
-      return std::string_view(buffer.data() + 0, size);
+      return {buffer.data() + 0, size};
     }
   }
 #endif  // SIMD

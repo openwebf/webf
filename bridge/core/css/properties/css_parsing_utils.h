@@ -93,7 +93,7 @@ CSSParserTokenRange ConsumeFunction(CSSParserTokenStream&);
 bool ConsumeAnyValue(CSSParserTokenRange&);
 
 inline bool AtIdent(const CSSParserToken& token, const char* ident) {
-  return token.GetType() == kIdentToken && EqualIgnoringASCIICase(token.Value(), ident);
+  return token.GetType() == kIdentToken && EqualIgnoringASCIICase(std::string(token.Value()), ident);
 }
 
 std::shared_ptr<const CSSPrimitiveValue> ConsumeInteger(CSSParserTokenRange&,
@@ -681,9 +681,9 @@ bool IsSelfPositionKeyword(CSSValueID);
 bool IsSelfPositionOrLeftOrRightKeyword(CSSValueID);
 bool IsContentPositionOrLeftOrRightKeyword(CSSValueID);
 bool IsCSSWideKeyword(CSSValueID);
-bool IsCSSWideKeyword(const std::string&);
-bool IsRevertKeyword(const std::string&);
-bool IsDefaultKeyword(const std::string&);
+bool IsCSSWideKeyword(const std::string_view&);
+bool IsRevertKeyword(const std::string_view&);
+bool IsDefaultKeyword(const std::string_view&);
 bool IsHashIdentifier(const CSSParserToken&);
 bool IsDashedIdent(const CSSParserToken&);
 

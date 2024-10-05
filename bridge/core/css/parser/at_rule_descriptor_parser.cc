@@ -143,7 +143,7 @@ std::shared_ptr<const CSSValue> ConsumeFontFaceSrcLocal(CSSParserTokenRange& ran
     if (!args.AtEnd()) {
       return nullptr;
     }
-    return CSSFontFaceSrcValue::CreateLocal(arg.Value());
+    return CSSFontFaceSrcValue::CreateLocal(std::string(arg.Value()));
   }
   if (args.Peek().GetType() == kIdentToken) {
     std::string family_name = css_parsing_utils::ConcatenateFamilyName(args);

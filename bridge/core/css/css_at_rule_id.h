@@ -64,7 +64,7 @@ enum class CSSAtRuleID {
   kCSSAtRuleFunction,
 };
 
-CSSAtRuleID CssAtRuleID(const std::string& name);
+CSSAtRuleID CssAtRuleID(const std::string_view& name);
 std::string CssAtRuleIDToString(CSSAtRuleID id);
 
 

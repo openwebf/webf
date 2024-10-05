@@ -35,7 +35,7 @@ class KURL;
 // Stores data for a <url> value (url(), src()).
 class CSSUrlData {
  public:
-  CSSUrlData(const std::string& unresolved_url,
+  CSSUrlData(std::string unresolved_url,
              const KURL& resolved_url
 //             const Referrer&, OriginClean, bool is_ad_related
             );
