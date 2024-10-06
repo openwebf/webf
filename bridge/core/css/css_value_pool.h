@@ -96,11 +96,17 @@ class CSSValuePool {
 
   // Vector caches.
   const std::shared_ptr<const CSSIdentifierValue>& IdentifierCacheValue(CSSValueID ident) {
+    if (identifier_value_cache_.size() <= static_cast<int>(ident)) {
+      return nullptr;
+    }
     return identifier_value_cache_[static_cast<int>(ident)];
   }
   std::shared_ptr<const CSSIdentifierValue> SetIdentifierCacheValue(
       CSSValueID ident,
       std::shared_ptr<const CSSIdentifierValue> css_value) {
+    if (static_cast<int>(ident) >= identifier_value_cache_.size()) {
+      identifier_value_cache_.resize(static_cast<int>(ident) + 1);
+    }
     identifier_value_cache_[static_cast<int>(ident)] = css_value;
     return css_value;
   }

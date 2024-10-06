@@ -2633,12 +2633,16 @@ std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenRange& range) 
 // With the streaming parser, we cannot return a StringView, since the token
 // will go out of scope when we exit the function and the StringView might
 // point into the token.
-std::string ConsumeStringAsString(CSSParserTokenStream& stream) {
+std::string ConsumeStringAsString(CSSParserTokenStream& stream, bool* is_string_null) {
   if (stream.Peek().GetType() != CSSParserTokenType::kStringToken) {
+    *is_string_null = true;
     return "";
   }
 
-  return std::string(stream.ConsumeIncludingWhitespace().Value());
+  CSSParserToken token = stream.ConsumeIncludingWhitespace();
+  std::string_view view = token.Value();
+  *is_string_null = view.data() == nullptr;
+  return std::string(view);
 }
 
 bool IsImageSet(const CSSValueID id) {
@@ -3155,10 +3159,10 @@ std::shared_ptr<const CSSValue> ConsumeImage(CSSParserTokenStream& stream,
     return CreateCSSImageValueWithReferrer(std::string(uri.Value()), context);
   }
   if (string_url_image_policy == ConsumeStringUrlImagePolicy::kAllow) {
-    std::string uri_string = ConsumeStringAsString(stream);
-    if (uri_string.data() != nullptr) {
-      std::string refer = std::string(uri_string.data(), uri_string.length());
-      return CreateCSSImageValueWithReferrer(refer, context);
+    bool is_uri_null = false;
+    std::string uri_string = ConsumeStringAsString(stream, &is_uri_null);
+    if (!is_uri_null) {
+      return CreateCSSImageValueWithReferrer(uri_string, context);
     }
   }
   if (stream.Peek().GetType() == kFunctionToken) {
@@ -3183,8 +3187,9 @@ static std::shared_ptr<const CSSImageSetTypeValue> ConsumeImageSetType(CSSParser
     CSSParserTokenStream::RestoringBlockGuard guard(stream);
     stream.ConsumeWhitespace();
 
-    type = ConsumeStringAsString(stream);
-    if (type.empty() || !stream.AtEnd()) {
+    bool is_type_null = false;
+    type = ConsumeStringAsString(stream, &is_type_null);
+    if (is_type_null || !stream.AtEnd()) {
       return nullptr;
     }
 

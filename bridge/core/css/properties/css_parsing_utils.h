@@ -238,7 +238,7 @@ typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_
 ConsumeDashedIdent(T& range, std::shared_ptr<const CSSParserContext>);
 std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenStream&);
 std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenRange& range);
-std::string ConsumeStringAsString(CSSParserTokenStream& stream);
+std::string ConsumeStringAsString(CSSParserTokenStream& stream, bool* is_string_null);
 std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenStream&,
                                                   std::shared_ptr<const CSSParserContext> context);
 
