@@ -25,6 +25,7 @@
 
 #include "core/platform/graphics/color.h"
 #include <sstream>
+#include "foundation/string_builder.h"
 #include "core/platform/geometry/blend.h"
 #include "core/platform/graphics/color_conversions.h"
 #include "core/platform/hash_functions.h"
@@ -310,22 +311,22 @@ std::string doubleToString(double value, int precision) {
 }  // namespace
 
 static std::string ColorParamToString(float param, int precision = 6) {
-  std::string result;
+  StringBuilder result;
   if (!isfinite(param)) {
     // https://www.w3.org/TR/css-values-4/#calc-serialize
-    result.append("calc(");
+    result.Append("calc(");
     if (isinf(param)) {
       // "Infinity" gets capitalized, so we can't use AppendNumber().
-      (param < 0) ? result.append("-infinity") : result.append("infinity");
+      (param < 0) ? result.Append("-infinity") : result.Append("infinity");
     } else {
-      result.append(doubleToString(param, precision));
+      result.Append(param, precision);
     }
-    result.append(")");
-    return result;
+    result.Append(")");
+    return result.ReleaseString();
   }
 
-  result.append(doubleToString(param, precision));
-  return result;
+  result.Append(param, precision);
+  return result.ReleaseString();
 }
 
 std::string Color::SerializeAsCanvasColor() const {
@@ -339,24 +340,24 @@ std::string Color::SerializeAsCanvasColor() const {
 }
 
 std::string Color::SerializeLegacyColorAsCSSColor() const {
-  std::string result;
+  StringBuilder result;
   if (IsOpaque() && isfinite(alpha_)) {
-    result.append("rgb(");
+    result.Append("rgb(");
   } else {
-    result.append("rgba(");
+    result.Append("rgba(");
   }
 
   constexpr float kEpsilon = 1e-07;
   auto [r, g, b] = std::make_tuple(param0_, param1_, param2_);
 
-  result.append(std::to_string(round(ClampTo(r, 0.0, 255.0))));
-  result.append(", ");
-  result.append(std::to_string(round(ClampTo(g, 0.0, 255.0))));
-  result.append(", ");
-  result.append(std::to_string(round(ClampTo(b, 0.0, 255.0))));
+  result.Append(round(ClampTo(r, 0.0, 255.0)), 0);
+  result.Append(", ");
+  result.Append(round(ClampTo(g, 0.0, 255.0)), 0);
+  result.Append(", ");
+  result.Append(round(ClampTo(b, 0.0, 255.0)), 0);
 
   if (!IsOpaque()) {
-    result.append(", ");
+    result.Append(", ");
 
     // See <alphavalue> section in
     // https://www.w3.org/TR/cssom/#serializing-css-values
@@ -368,38 +369,41 @@ std::string Color::SerializeLegacyColorAsCSSColor() const {
     // integer we calculated above, used that.
     float two_decimal_rounded_alpha = round(int_alpha * 100.0 / 255.0) / 100.0;
     if (round(two_decimal_rounded_alpha * 255) == int_alpha) {
-      result.append(ColorParamToString(two_decimal_rounded_alpha, 2));
+      result.Append(ColorParamToString(two_decimal_rounded_alpha, 2));
     } else {
       // Otherwise, round to 3 decimals.
       float three_decimal_rounded_alpha = round(int_alpha * 1000.0 / 255.0) / 1000.0;
-      result.append(ColorParamToString(three_decimal_rounded_alpha, 3));
+      result.Append(ColorParamToString(three_decimal_rounded_alpha, 3));
     }
   }
 
-  result.append(")");
-  return result;
+  result.Append(")");
+  return result.ReleaseString();
 }
 
 std::string Color::SerializeInternal() const {
-  std::string result;
-  result.append("color(");
+  StringBuilder result;
+  result.Append("color(");
 
-  param0_is_none_ ? result.append("none") : result.append(ColorParamToString(param0_));
-  result.append(" ");
-  param1_is_none_ ? result.append("none") : result.append(ColorParamToString(param1_));
-  result.append(" ");
-  param2_is_none_ ? result.append("none") : result.append(ColorParamToString(param2_));
+  param0_is_none_ ? result.Append("none")
+                  : result.Append(ColorParamToString(param0_));
+  result.Append(" ");
+  param1_is_none_ ? result.Append("none")
+                  : result.Append(ColorParamToString(param1_));
+  result.Append(" ");
+  param2_is_none_ ? result.Append("none")
+                  : result.Append(ColorParamToString(param2_));
 
   if (alpha_ != 1.0 || alpha_is_none_) {
-    result.append(" / ");
-    alpha_is_none_ ? result.append("none") : result.append(std::to_string(alpha_));
+    result.Append(" / ");
+    alpha_is_none_ ? result.Append("none") : result.Append(alpha_);
   }
-  result.append(")");
-  return result;
+  result.Append(")");
+  return result.ReleaseString();
 }
 
 std::string Color::SerializeAsCSSColor() const {
-  return SerializeInternal();
+  return SerializeLegacyColorAsCSSColor();
 }
 
 std::string Color::NameForLayoutTreeAsText() const {

@@ -8,6 +8,8 @@
 
 #include <codecvt>
 #include <string>
+#include <sstream>
+#include <iomanip>
 #include <vector>
 #include "foundation/macros.h"
 #include "foundation/string_view.h"
@@ -120,9 +122,10 @@ class StringBuilder {
     length_ += 1;
   }
 
-
-  void Append(double v) {
-    Append(std::to_string(v));
+  void Append(double v, unsigned precision = 6) {
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(precision) << v;
+    Append(out.str());
   }
 
   const char* Characters8() const {
