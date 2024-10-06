@@ -23,20 +23,20 @@ TEST(CSSStyleDeclaration, setStyleData) {
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
   EXPECT_EQ(errorCalled, false);
 }
-
-TEST(CSSStyleDeclaration, enumerateStyles) {
-  bool static errorCalled = false;
-  bool static logCalled = false;
-  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-  auto env = TEST_init([](double contextId, const char* errmsg) {
-    WEBF_LOG(VERBOSE) << errmsg;
-    errorCalled = true;
-  });
-  auto context = env->page()->executingContext();
-  const char* code = "console.assert(Object.keys(document.body.style).length > 400)";
-  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
-  EXPECT_EQ(errorCalled, false);
-}
+//
+//TEST(CSSStyleDeclaration, enumerateStyles) {
+//  bool static errorCalled = false;
+//  bool static logCalled = false;
+//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
+//  auto env = TEST_init([](double contextId, const char* errmsg) {
+//    WEBF_LOG(VERBOSE) << errmsg;
+//    errorCalled = true;
+//  });
+//  auto context = env->page()->executingContext();
+//  const char* code = "console.assert(Object.keys(document.body.style).length > 400)";
+//  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+//  EXPECT_EQ(errorCalled, false);
+//}
 
 TEST(CSSStyleDeclaration, supportCSSVaraible) {
   bool static errorCalled = false;

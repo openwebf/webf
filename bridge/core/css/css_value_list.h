@@ -69,7 +69,12 @@ class CSSValueList : public CSSValue {
   const_reverse_iterator rend() const { return values_.rend(); }
 
   size_t length() const { return values_.size(); }
-  std::shared_ptr<const CSSValue> Item(uint32_t index) const { return values_[index]; }
+  std::shared_ptr<const CSSValue> Item(uint32_t index) const {
+    if (index >= values_.size()) {
+      return nullptr;
+    }
+    return values_[index];
+  }
   std::shared_ptr<const CSSValue> First() const { return values_.front(); }
   std::shared_ptr<const CSSValue> Last() const { return values_.back(); }
 

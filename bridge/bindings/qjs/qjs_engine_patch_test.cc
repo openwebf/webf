@@ -88,7 +88,7 @@ TEST(JS_NewUnicodeString, fromChieseCode) {
   uint8_t input[] = {0x61, 0x00, 0x60, 0x4f, 0x84, 0x76, 0x0d, 0x54, 0x57, 0x5b,
                      0x31, 0x00, 0x32, 0x00, 0x33, 0x00, 0x34, 0x00, 0x35, 0x00};
 
-  JSValue result = JS_NewUnicodeString(ctx, (uint16_t*)&input, 12);
+  JSValue result = JS_NewUnicodeString(ctx, (uint16_t*)&input, std::size(input) / 2);
   uint32_t length;
   uint16_t* buffer = JS_ToUnicode(ctx, result, &length);
 

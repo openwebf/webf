@@ -95,7 +95,7 @@ class CSSValuePool {
   const std::shared_ptr<const CSSInitialColorValue>& InitialColorValue() { return initial_color_value_; }
 
   // Vector caches.
-  const std::shared_ptr<const CSSIdentifierValue>& IdentifierCacheValue(CSSValueID ident) {
+  const std::shared_ptr<const CSSIdentifierValue> IdentifierCacheValue(CSSValueID ident) {
     if (identifier_value_cache_.size() <= static_cast<int>(ident)) {
       return nullptr;
     }

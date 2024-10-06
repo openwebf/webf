@@ -5,7 +5,6 @@
 #ifndef BRIDGE_GC_VISITOR_H
 #define BRIDGE_GC_VISITOR_H
 
-#include <bindings/qjs/script_wrappable.h>
 #include <quickjs/quickjs.h>
 
 #include "foundation/macros.h"

@@ -7,14 +7,15 @@
 #ifndef WEBF_CORE_DOM_ELEMENT_RARE_DATA_FIELD_H_
 #define WEBF_CORE_DOM_ELEMENT_RARE_DATA_FIELD_H_
 
-#include "bindings/qjs/cppgc/garbage_collected.h"
-//#include "third_party/blink/renderer/platform/wtf/casting.h"
-
 namespace webf {
 
-class ElementRareDataField : public GarbageCollectedMixin {
+class ScriptWrappable;
+
+class ElementRareDataField : public ScriptWrappable {
  public:
-  void Trace(GCVisitor* visitor) const override {}
+  void Trace(GCVisitor* visitor) const {
+    ScriptWrappable::Trace(visitor);
+  }
 };
 
 }  // namespace webf

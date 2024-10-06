@@ -499,6 +499,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/qualified_name.cc
     core/dom/dom_token_list.cc
     core/dom/dom_string_map.cc
+    core/dom/element_rare_data_vector.cc
     core/dom/space_split_string.cc
     core/dom/scripted_animation_controller.cc
     #core/dom/node_data.cc

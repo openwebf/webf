@@ -42,8 +42,9 @@
 #include "node_traversal.h"
 #include "qjs_node.h"
 #include "text.h"
+#include "core/dom/node_lists_node_data.h"
 #include "core/svg/svg_element.h"
-//#include "core/dom/element_rare_data_vector.h"
+#include "core/dom/element_rare_data_vector.h"
 
 namespace webf {
 
@@ -75,11 +76,9 @@ ContainerNode* Node::parentNode() const {
 NodeList* Node::childNodes() {
   auto* this_node = DynamicTo<ContainerNode>(this);
   if (this_node) {
-    // return EnsureRareData().EnsureNodeLists().EnsureChildNodeList(*this_node);
-    return EnsureRareData().EnsureChildNodeList(*this_node);
+    return EnsureRareData().EnsureNodeLists().EnsureChildNodeList(*this_node);
   }
-  // return EnsureRareData().EnsureNodeLists().EnsureEmptyChildNodeList(*this)
-  return EnsureRareData().EnsureEmptyChildNodeList(*this);
+  return EnsureRareData().EnsureNodeLists().EnsureEmptyChildNodeList(*this);
 }
 
 //// Helper object to allocate EventTargetData which is otherwise only used
@@ -209,8 +208,7 @@ void Node::NotifyMutationObserversNodeWillDetach() {
 
 NodeRareData& Node::CreateRareData() {
   if (IsElementNode()) {
-    // TODO(guopengfei)：ElementRareDataVector未迁移
-    // data_ = std::make_unique<ElementRareDataVector>();
+    data_ = std::make_unique<ElementRareDataVector>();
   } else {
     data_ = std::make_unique<NodeRareData>();
   }
