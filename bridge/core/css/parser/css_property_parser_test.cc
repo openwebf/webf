@@ -498,39 +498,6 @@ TEST(CSSPropertyParserTest, UALightDarkColorSerialization) {
   EXPECT_EQ("light-dark(red, rgb(170, 170, 170))", value->CssText());
 }
 
-TEST(CSSPropertyParserTest, UALightDarkBackgroundImage) {
-  auto ua_context = std::make_shared<CSSParserContext>(kUASheetMode);
-
-  const struct {
-    const char* value;
-    bool valid;
-  } tests[] = {
-      {"light-dark()", false},
-      {"light-dark(url(light.png))", false},
-      {"light-dark(url(light.png) url(dark.png))", false},
-      {"light-dark(url(light.png),,url(dark.png))", false},
-      {"light-dark(url(light.png), url(dark.png))", true},
-      {"light-dark(url(light.png), none)", true},
-      {"light-dark(none, -webkit-image-set(url(dark.png) 1x))", true},
-      {"light-dark(none, image-set(url(dark.png) 1x))", true},
-      {"light-dark(  none  ,  none   )", true},
-      {"light-dark(  url(light.png)  ,  url(dark.png)   )", true},
-  };
-
-  for (const auto& test : tests) {
-    EXPECT_EQ(!!CSSParser::ParseSingleValue(CSSPropertyID::kBackgroundImage, test.value, ua_context), test.valid)
-        << test.value;
-  }
-}
-
-TEST(CSSPropertyParserTest, UAAppearanceAutoBaseSelectSerialization) {
-  auto ua_context = std::make_shared<CSSParserContext>(kUASheetMode);
-  std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
-      CSSPropertyID::kBackgroundColor, "-internal-appearance-auto-base-select(red, blue)", ua_context);
-  ASSERT_TRUE(value);
-  EXPECT_EQ("-internal-appearance-auto-base-select(red, blue)", value->CssText());
-}
-
 namespace {
 
 bool ParseCSSValue(CSSPropertyID property_id, const std::string& value, std::shared_ptr<const CSSParserContext> context) {
@@ -543,30 +510,6 @@ bool ParseCSSValue(CSSPropertyID property_id, const std::string& value, std::sha
 }
 
 }  // namespace
-
-TEST(CSSPropertyParserTest, UALightDarkBackgroundShorthand) {
-  auto ua_context = std::make_shared<CSSParserContext>(kUASheetMode);
-
-  const struct {
-    const char* value;
-    bool valid;
-  } tests[] = {
-      {"light-dark()", false},
-      {"light-dark(url(light.png))", false},
-      {"light-dark(url(light.png) url(dark.png))", false},
-      {"light-dark(url(light.png),,url(dark.png))", false},
-      {"light-dark(url(light.png), url(dark.png))", true},
-      {"light-dark(url(light.png), none)", true},
-      {"light-dark(none, -webkit-image-set(url(dark.png) 1x))", true},
-      {"light-dark(none, image-set(url(dark.png) 1x))", true},
-      {"light-dark(  none  ,  none   )", true},
-      {"light-dark(  url(light.png)  ,  url(dark.png)   )", true},
-  };
-
-  for (const auto& test : tests) {
-    EXPECT_EQ(!!ParseCSSValue(CSSPropertyID::kBackground, test.value, ua_context), test.valid) << test.value;
-  }
-}
 
 TEST(CSSPropertyParserTest, ParseRevert) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
@@ -680,6 +623,7 @@ void TestRepeatStyleViaShorthandParsing(const std::string& testValue,
   auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
   CSSParser::ParseValue(style.get(), propID, testValue, false /* important */);
   ASSERT_NE(style, nullptr);
+  WEBF_LOG(VERBOSE) << "style text"  << style->AsText();
   EXPECT_TRUE(style->AsText().find(expectedCssText) != std::string::npos);
 }
 

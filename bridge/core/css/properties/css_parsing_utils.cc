@@ -3447,7 +3447,7 @@ std::shared_ptr<const CSSValue> ConsumeBackgroundComponent(CSSPropertyID resolve
       return ConsumeBackgroundBox(stream);
     case CSSPropertyID::kBackgroundImage:
     case CSSPropertyID::kBackgroundPositionX:
-      return ConsumePositionLonghand<CSSValueID::kLeft, CSSValueID::kRight>(stream, context);
+      return ConsumeImageOrNone(stream, context);
     case CSSPropertyID::kBackgroundPositionY:
       return ConsumePositionLonghand<CSSValueID::kTop, CSSValueID::kBottom>(stream, context);
     case CSSPropertyID::kBackgroundSize:
