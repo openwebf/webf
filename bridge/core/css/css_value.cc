@@ -281,13 +281,10 @@ void CSSValue::ReResolveUrl(const Document& document) const {
 
 std::shared_ptr<const CSSValue> CSSValue::PopulateWithTreeScope(const webf::TreeScope* tree_scope) const {
   switch (GetClassType()) {
-//    case kCounterClass:
-//      return To<cssvalue::CSSCounterValue>(this)->PopulateWithTreeScope(
-//          tree_scope);
-//    case kCustomIdentClass:
-//      return To<CSSCustomIdentValue>(this)->PopulateWithTreeScope(tree_scope);
-//    case kMathFunctionClass:
-//      return To<CSSMathFunctionValue>(this)->PopulateWithTreeScope(tree_scope);
+    case kCustomIdentClass:
+      return To<CSSCustomIdentValue>(this)->PopulateWithTreeScope(tree_scope);
+    case kMathFunctionClass:
+      return To<CSSMathFunctionValue>(this)->PopulateWithTreeScope(tree_scope);
     case kValueListClass:
       return To<CSSValueList>(this)->PopulateWithTreeScope(tree_scope);
     default:

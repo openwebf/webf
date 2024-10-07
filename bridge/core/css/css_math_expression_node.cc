@@ -32,9 +32,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "core/base/memory/shared_ptr.h"
 #include "css_math_expression_node.h"
 #include "core/base/containers/enum_set.h"
+#include "core/base/memory/shared_ptr.h"
 #include "core/css/anchor_query.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/properties/css_parsing_utils.h"
@@ -1710,8 +1710,7 @@ std::optional<PixelsAndPercent> CSSMathExpressionKeywordLiteral::ToPixelsAndPerc
   }
 }
 
-double CSSMathExpressionKeywordLiteral::ComputeDouble(
-    const CSSLengthResolver& length_resolver) const {
+double CSSMathExpressionKeywordLiteral::ComputeDouble(const CSSLengthResolver& length_resolver) const {
   switch (context_) {
     case CSSMathExpressionKeywordLiteral::Context::kMediaProgress: {
       switch (keyword_) {
@@ -2441,8 +2440,8 @@ std::shared_ptr<const CSSMathExpressionNode> UnnestCalcSize(
 
   size_t substitution_count = 1;
   do {
-    std::tie(current_result, substitution_count) =
-        SubstituteForSizeKeyword(calculation_stack.back(), current_result, std::max(substitution_count, static_cast<size_t>(1u)));
+    std::tie(current_result, substitution_count) = SubstituteForSizeKeyword(
+        calculation_stack.back(), current_result, std::max(substitution_count, static_cast<size_t>(1u)));
     if (!current_result) {
       // too much expansion
       return nullptr;
@@ -2452,7 +2451,6 @@ std::shared_ptr<const CSSMathExpressionNode> UnnestCalcSize(
 
   return CSSMathExpressionOperation::CreateCalcSizeOperation(innermost_basis, current_result);
 }
-
 
 // static
 std::shared_ptr<CSSMathExpressionNode> CSSMathExpressionOperation::CreateArithmeticOperationAndSimplifyCalcSize(
@@ -3116,7 +3114,8 @@ std::string CSSMathExpressionOperation::CustomCSSText() const {
       // As per
       // https://drafts.csswg.org/css-values-4/#sort-a-calculations-children
       // we should sort the dimensions of the sum node.
-      const CSSMathExpressionOperation* operation = this;
+      std::shared_ptr<const CSSMathExpressionOperation> operation =
+          std::static_pointer_cast<const CSSMathExpressionOperation>(shared_from_this());
       if (IsAddOrSubtract()) {
         std::shared_ptr<const CSSMathExpressionNode> node =
             MaybeSortSumNode(reinterpret_pointer_cast<const CSSMathExpressionOperation>(shared_from_this()));
@@ -3126,7 +3125,7 @@ std::string CSSMathExpressionOperation::CustomCSSText() const {
         if (!node->IsOperation()) {
           return node->CustomCSSText();
         }
-        operation = To<CSSMathExpressionOperation>(node.get());
+        operation = std::static_pointer_cast<const CSSMathExpressionOperation>(node);
       }
       CSSMathOperator op = operation->OperatorType();
       const Operands& operands = operation->GetOperands();
@@ -3360,9 +3359,7 @@ bool CSSMathExpressionOperation::HasInvalidAnchorFunctions(const CSSLengthResolv
   return false;
 }
 
-void CSSMathExpressionOperation::Trace(webf::GCVisitor* visitor) const {
-
-}
+void CSSMathExpressionOperation::Trace(webf::GCVisitor* visitor) const {}
 
 #if DCHECK_IS_ON()
 bool CSSMathExpressionOperation::InvolvesPercentageComparisons() const {

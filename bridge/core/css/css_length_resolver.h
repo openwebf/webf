@@ -61,11 +61,6 @@ class CSSLengthResolver {
   // https://drafts.csswg.org/css-scoping-1/#css-tree-scoped-reference
   virtual void ReferenceTreeScope() const = 0;
 
-  // Called when anchor() or anchor-size() functions are evaluated.
-  //
-  // https://drafts.csswg.org/css-anchor-position-1/
-  virtual void ReferenceAnchor() const = 0;
-
   // The AnchorEvaluator used to evaluate anchor()/anchor-size() queries.
   virtual AnchorEvaluator* GetAnchorEvaluator() const { return nullptr; }
   virtual const ScopedCSSName* GetPositionAnchor() const { return nullptr; }

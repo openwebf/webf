@@ -24,3 +24,17 @@
 */
 
 #include "font_description.h"
+
+namespace webf {
+
+FontDescription::FontDescription() {}
+
+FontDescription::FontDescription(const FontDescription&) = default;
+
+FontDescription& FontDescription::operator=(const FontDescription&) = default;
+
+bool FontDescription::operator==(const webf::FontDescription& other) const {
+  return other.family_list_ == family_list_;
+}
+
+}

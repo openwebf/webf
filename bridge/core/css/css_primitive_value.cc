@@ -29,9 +29,9 @@
 #include "core/css/css_markup.h"
 #include "core/css/css_math_expression_node.h"
 #include "core/css/css_math_function_value.h"
-#include "core/css/css_resolution_units.h"
 #include "core/css/css_math_operator.h"
 #include "core/css/css_numeric_literal_value.h"
+#include "core/css/css_resolution_units.h"
 #include "core/css/css_value_clamping_utils.h"
 #include "core/css/css_value_pool.h"
 #include "core/platform/geometry/layout_unit.h"
@@ -237,17 +237,17 @@ std::shared_ptr<const CSSPrimitiveValue> CSSPrimitiveValue::CreateFromLength(con
       return CSSNumericLiteralValue::Create(length.Percent(), UnitType::kPercentage);
     case Length::kFixed:
       return CSSNumericLiteralValue::Create(length.Value() / zoom, UnitType::kPixels);
-      //    case Length::kCalculated: {
-      //      const CalculationValue& calc = length.GetCalculationValue();
-      //      if (calc.IsExpression() || calc.Pixels()) {
-      //        return CSSMathFunctionValue::Create(length, zoom);
-      //      }
-      //      double num = calc.Percent();
-      //      if (num < 0 && calc.IsNonNegative()) {
-      //        num = 0;
-      //      }
-      //      return CSSNumericLiteralValue::Create(num, UnitType::kPercentage);
-      //    }
+    case Length::kCalculated: {
+      std::shared_ptr<const CalculationValue> calc = length.GetCalculationValue();
+      if (calc->IsExpression() || calc->Pixels()) {
+        return CSSMathFunctionValue::Create(length, zoom);
+      }
+      double num = calc->Percent();
+      if (num < 0 && calc->IsNonNegative()) {
+        num = 0;
+      }
+      return CSSNumericLiteralValue::Create(num, UnitType::kPercentage);
+    }
     case Length::kFlex:
       return CSSNumericLiteralValue::Create(length.GetFloatValue(), UnitType::kFlex);
     default:
@@ -260,10 +260,8 @@ std::shared_ptr<const CSSPrimitiveValue> CSSPrimitiveValue::CreateFromLength(con
 // TODO(crbug.com/1133390): When we support <frequency>, we must clamp like
 // <time>.
 double CSSPrimitiveValue::ComputeSeconds() const {
-  //  double result = IsCalculated()
-  //                      ? To<CSSMathFunctionValue>(this)->ComputeSeconds()
-  //                      : To<CSSNumericLiteralValue>(this)->ComputeSeconds();
-  double result = To<CSSNumericLiteralValue>(this)->ComputeSeconds();
+  double result = IsCalculated() ? To<CSSMathFunctionValue>(this)->ComputeSeconds()
+                                 : To<CSSNumericLiteralValue>(this)->ComputeSeconds();
   return CSSValueClampingUtils::ClampTime(result);
 }
 
@@ -284,11 +282,8 @@ double CSSPrimitiveValue::ComputeDotsPerPixel() const {
 }
 
 double CSSPrimitiveValue::ComputeDegrees(const CSSLengthResolver& length_resolver) const {
-  //  double result =
-  //      IsCalculated()
-  //          ? To<CSSMathFunctionValue>(this)->ComputeDegrees(length_resolver)
-  //          : To<CSSNumericLiteralValue>(this)->ComputeDegrees();
-  double result = To<CSSNumericLiteralValue>(this)->ComputeDegrees();
+  double result = IsCalculated() ? To<CSSMathFunctionValue>(this)->ComputeDegrees(length_resolver)
+                                 : To<CSSNumericLiteralValue>(this)->ComputeDegrees();
   return CSSValueClampingUtils::ClampAngle(result);
 }
 
@@ -354,6 +349,14 @@ double CSSPrimitiveValue::ComputePercentage(const CSSLengthResolver& length_reso
   assert(IsPercentage());
   return IsCalculated() ? To<CSSMathFunctionValue>(this)->ComputePercentage(length_resolver)
                         : To<CSSNumericLiteralValue>(this)->ComputePercentage();
+}
+
+double CSSPrimitiveValue::ComputeValueInCanonicalUnit(const CSSLengthResolver& length_resolver) const {
+  // Don't use it for mix of length and percentage, as it would compute 10px +
+  // 10% to 20.
+  DCHECK(!IsCalculatedPercentageWithLength());
+  return IsCalculated() ? To<CSSMathFunctionValue>(this)->ComputeValueInCanonicalUnit(length_resolver)
+                        : To<CSSNumericLiteralValue>(this)->ComputeInCanonicalUnit(length_resolver);
 }
 
 double CSSPrimitiveValue::ComputeLengthDouble(const CSSLengthResolver& length_resolver) const {
@@ -488,23 +491,19 @@ double CSSPrimitiveValue::GetDoubleValueWithoutClamping() const {
 }
 
 CSSPrimitiveValue::BoolStatus CSSPrimitiveValue::IsZero() const {
-  return IsCalculated() ? To<CSSMathFunctionValue>(this)->IsZero()
-                        : To<CSSNumericLiteralValue>(this)->IsZero();
+  return IsCalculated() ? To<CSSMathFunctionValue>(this)->IsZero() : To<CSSNumericLiteralValue>(this)->IsZero();
 }
 
 CSSPrimitiveValue::BoolStatus CSSPrimitiveValue::IsOne() const {
-  return IsCalculated() ? To<CSSMathFunctionValue>(this)->IsOne()
-                        : To<CSSNumericLiteralValue>(this)->IsOne();
+  return IsCalculated() ? To<CSSMathFunctionValue>(this)->IsOne() : To<CSSNumericLiteralValue>(this)->IsOne();
 }
 
 CSSPrimitiveValue::BoolStatus CSSPrimitiveValue::IsHundred() const {
-  return IsCalculated() ? To<CSSMathFunctionValue>(this)->IsHundred()
-                        : To<CSSNumericLiteralValue>(this)->IsHundred();
+  return IsCalculated() ? To<CSSMathFunctionValue>(this)->IsHundred() : To<CSSNumericLiteralValue>(this)->IsHundred();
 }
 
 CSSPrimitiveValue::BoolStatus CSSPrimitiveValue::IsNegative() const {
-  return IsCalculated() ? To<CSSMathFunctionValue>(this)->IsNegative()
-                        : To<CSSNumericLiteralValue>(this)->IsNegative();
+  return IsCalculated() ? To<CSSMathFunctionValue>(this)->IsNegative() : To<CSSNumericLiteralValue>(this)->IsNegative();
 }
 
 CSSPrimitiveValue::UnitType CSSPrimitiveValue::CanonicalUnitTypeForCategory(UnitCategory category) {
@@ -933,13 +932,14 @@ void CSSPrimitiveValue::TraceAfterDispatch(GCVisitor* visitor) const {
 
 namespace {
 
-const std::shared_ptr<CSSMathExpressionNode> CreateExpressionNodeFromDouble(double value, CSSPrimitiveValue::UnitType unit_type) {
+const std::shared_ptr<CSSMathExpressionNode> CreateExpressionNodeFromDouble(double value,
+                                                                            CSSPrimitiveValue::UnitType unit_type) {
   return CSSMathExpressionNumericLiteral::Create(value, unit_type);
 }
 
 std::shared_ptr<CSSPrimitiveValue> CreateValueFromOperation(const std::shared_ptr<const CSSMathExpressionNode>& left,
-                                            const std::shared_ptr<const CSSMathExpressionNode>& right,
-                                            CSSMathOperator op) {
+                                                            const std::shared_ptr<const CSSMathExpressionNode>& right,
+                                                            CSSMathOperator op) {
   const std::shared_ptr<CSSMathExpressionNode> operation =
       CSSMathExpressionOperation::CreateArithmeticOperationSimplified(left, right, op);
   if (!operation) {

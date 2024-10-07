@@ -35,14 +35,12 @@ std::shared_ptr<CSSMathFunctionValue> CSSMathFunctionValue::Create(
 }
 
 // static
-// std::shared_ptr<CSSMathFunctionValue> CSSMathFunctionValue::Create(const Length& length,
-//                                                   float zoom) {
-//  assert(length.IsCalculated());
-//  auto calc = length.GetCalculationValue().Zoom(1.0 / zoom);
-//  return Create(
-//      CSSMathExpressionNode::Create(*calc),
-//      CSSPrimitiveValue::ValueRangeForLengthValueRange(calc->GetValueRange()));
-//}
+std::shared_ptr<CSSMathFunctionValue> CSSMathFunctionValue::Create(const Length& length, float zoom) {
+  assert(length.IsCalculated());
+  auto calc = length.GetCalculationValue()->Zoom(1.0 / zoom);
+  return Create(CSSMathExpressionNode::Create(*calc),
+                CSSPrimitiveValue::ValueRangeForLengthValueRange(calc->GetValueRange()));
+}
 
 bool CSSMathFunctionValue::MayHaveRelativeUnit() const {
   UnitType resolved_type = expression_->ResolvedUnitType();

@@ -441,6 +441,7 @@ class CSSPrimitiveValue : public CSSValue {
   int ComputeInteger(const CSSLengthResolver&) const;
   double ComputeNumber(const CSSLengthResolver&) const;
   double ComputePercentage(const CSSLengthResolver&) const;
+  double ComputeValueInCanonicalUnit(const CSSLengthResolver&) const;
 
   static const char* UnitTypeToString(UnitType);
   static UnitType StringToUnitType(std::string_view string) {

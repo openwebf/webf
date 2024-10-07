@@ -34,9 +34,6 @@ class FontSizeStyle {
 
   const Font& GetFont() const { return font_; }
   const Length& SpecifiedLineHeight() const { return specified_line_height_; }
-  float SpecifiedFontSize() const {
-    return font_.GetFontDescription().SpecifiedSize();
-  }
   float EffectiveZoom() const { return effective_zoom_; }
 
  private:

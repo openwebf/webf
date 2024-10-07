@@ -383,6 +383,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_numeric_literal_value.cc
     core/css/css_math_expression_node.cc
     core/css/css_ray_value.cc
+    core/css/css_to_length_conversion_data.cc
     core/css/css_grid_auto_repeat_value.cc
     core/css/css_grid_integer_repeat_value.cc
     core/css/css_grid_template_areas_value.cc
@@ -606,6 +607,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/fonts/font_family.cc
     core/platform/fonts/font_selection_types.cc
     core/platform/fonts/font.cc
+    core/platform/fonts/font_description.cc
 
     )
 

@@ -19,7 +19,7 @@ class WritingDirectionMode;
 // hierarchy.
 class CSSMathFunctionValue : public CSSPrimitiveValue {
  public:
-  //  static std::shared_ptr<CSSMathFunctionValue> Create(const Length&, float zoom);
+  static std::shared_ptr<CSSMathFunctionValue> Create(const Length&, float zoom);
   static std::shared_ptr<CSSMathFunctionValue> Create(std::shared_ptr<const CSSMathExpressionNode> expression,
                                                       ValueRange = ValueRange::kAll);
 
