@@ -604,6 +604,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/gfx/geometry/rect_conversions.cc
     core/platform/gfx/geometry/size_conversions.cc
     core/platform/fonts/font_family.cc
+    core/platform/fonts/font_selection_types.cc
+    core/platform/fonts/font.cc
 
     )
 

@@ -32,6 +32,8 @@
 #define WEBF_CORE_CSS_CSS_TO_LENGTH_CONVERSION_DATA_H_
 
 #include "core/css/css_length_resolver.h"
+#include "core/platform/fonts/font.h"
+#include "core/style/font_size_style.h"
 
 #include <optional>
 
