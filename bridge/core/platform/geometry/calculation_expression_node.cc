@@ -320,7 +320,7 @@ CalculationExpressionOperationNode::CalculationExpressionOperationNode(Children&
     : children_(std::move(children)), operator_(op) {
 #if DCHECK_IS_ON()
   result_type_ = ResolvedResultType();
-  assert(result_type_ < ResultType::kInvalid);
+  DCHECK_NE(result_type_, ResultType::kInvalid);
 #endif
   if (op == CalculationOperator::kCalcSize) {
     // "A calc-size() is treated, in all respects, as if it were its

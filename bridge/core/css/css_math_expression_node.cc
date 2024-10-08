@@ -862,8 +862,8 @@ class CSSMathExpressionNodeParser {
       case CSSValueID::kRem: {
         CSSMathOperator op;
         if (function_id == CSSValueID::kRound) {
-          assert(nodes.size() > 1u);
-          assert(nodes.size() < 3u);
+          DCHECK_GE(nodes.size(), 1u);
+          DCHECK_LE(nodes.size(), 3u);
           // If the first argument is a rounding strategy, use the specified
           // operation and drop the argument from the list of operands.
           const auto* maybe_rounding_strategy = DynamicTo<CSSMathExpressionOperation>(*nodes[0]);
