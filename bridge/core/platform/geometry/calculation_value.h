@@ -119,7 +119,6 @@ class CalculationValue {
   std::shared_ptr<const CalculationValue> Zoom(double factor) const;
 
  private:
-
   union DataUnion {
     explicit DataUnion(PixelsAndPercent value) : value(value) {}
     explicit DataUnion(

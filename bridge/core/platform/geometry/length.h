@@ -141,13 +141,23 @@ class Length {
     value_ = ClampTo<float>(v);
   }
 
-  Length(const Length& length) { memcpy(this, &length, sizeof(Length)); }
+  Length(const Length& length) {
+    value_ = length.value_;
+    type_ = length.type_;
+    quirk_ = length.quirk_;
+    if (length.IsCalculated())
+      calc_value_ = length.GetCalculationValue();
+  }
   Length& operator=(const Length& length) {
-    memcpy(this, &length, sizeof(Length));
+    value_ = length.value_;
+    type_ = length.type_;
+    quirk_ = length.quirk_;
+    if (length.IsCalculated())
+      calc_value_ = length.GetCalculationValue();
     return *this;
   }
 
-  ~Length() {}
+  ~Length() = default;
 
   bool operator==(const Length& o) const {
     if (type_ != o.type_ || quirk_ != o.quirk_) {
@@ -357,18 +367,8 @@ class Length {
   Length BlendMixedTypes(const Length& from, double progress, ValueRange) const;
   Length BlendSameTypes(const Length& from, double progress, ValueRange) const;
 
-  int CalculationHandle() const {
-    assert(IsCalculated());
-    return calculation_handle_;
-  }
-
-  union {
-    // If kType == kCalculated.
-    int calculation_handle_;
-
-    // Otherwise. Must be zero if not in use (e.g., for kAuto or kNone).
-    float value_;
-  };
+  float value_;
+  std::shared_ptr<const CalculationValue> calc_value_;
   bool quirk_ = false;
   unsigned char type_;
 };

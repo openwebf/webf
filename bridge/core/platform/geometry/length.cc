@@ -67,50 +67,7 @@ PixelsAndPercent Length::GetPixelsAndPercent() const {
   }
 }
 
-class CalculationValueHandleMap {
-  USING_FAST_MALLOC(CalculationValueHandleMap);
-
- public:
-  CalculationValueHandleMap() = default;
-  CalculationValueHandleMap(const CalculationValueHandleMap&) = delete;
-  CalculationValueHandleMap& operator=(const CalculationValueHandleMap&) = delete;
-
-  int insert(std::shared_ptr<const CalculationValue> calc_value) {
-    DCHECK(index_);
-    // FIXME calc(): https://bugs.webkit.org/show_bug.cgi?id=80489
-    // This monotonically increasing handle generation scheme is potentially
-    // wasteful of the handle space. Consider reusing empty handles.
-    while (map_.count(index_) > 0)
-      index_++;
-
-    map_.insert(std::make_pair(index_, std::move(calc_value)));
-
-    return index_;
-  }
-
-  void Remove(int index) {
-    DCHECK(map_.count(index) > 0);
-    map_.erase(index);
-  }
-
-  std::shared_ptr<const CalculationValue> Get(int index) {
-    DCHECK(map_.count(index) > 0);
-    return map_.at(index);
-  }
-
- private:
-  int index_ = 1;
-  std::unordered_map<int, std::shared_ptr<const CalculationValue>> map_;
-};
-
-static CalculationValueHandleMap& CalcHandles() {
-  thread_local static CalculationValueHandleMap handle_map;
-  return handle_map;
-}
-
-Length::Length(std::shared_ptr<const CalculationValue> calc) : quirk_(false), type_(kCalculated) {
-  calculation_handle_ = CalcHandles().insert(std::move(calc));
-}
+Length::Length(std::shared_ptr<const CalculationValue> calc) : quirk_(false), type_(kCalculated), calc_value_(std::move(calc)) {}
 
 bool Length::HasAuto() const {
   if (GetType() == kCalculated) {
@@ -190,7 +147,7 @@ Length Length::SubtractFromOneHundredPercent() const {
 
 std::shared_ptr<const CalculationValue> Length::GetCalculationValue() const {
   DCHECK(IsCalculated());
-  return CalcHandles().Get(CalculationHandle());
+  return calc_value_;
 }
 
 std::shared_ptr<const CalculationValue> Length::AsCalculationValue() const {
@@ -200,15 +157,14 @@ std::shared_ptr<const CalculationValue> Length::AsCalculationValue() const {
 }
 
 Length Length::Add(const webf::Length& other) const {
-  assert(IsSpecified());
+  CHECK(IsSpecified());
   if (IsFixed() && other.IsFixed()) {
     return Length::Fixed(Pixels() + other.Pixels());
   }
   if (IsPercent() && other.IsPercent()) {
     return Length::Percent(Percent() + other.Percent());
   }
-  auto aa = AsCalculationValue()->Add(*other.AsCalculationValue());
-  Length(*new_length);
+  return Length(AsCalculationValue()->Add(*other.AsCalculationValue()));
 }
 
 float Length::NonNanCalculatedValue(float max_value, const EvaluationInput& input) const {
@@ -259,7 +215,7 @@ std::string Length::ToString() const {
     builder.append("?");
   builder.append(", ");
   if (IsCalculated()) {
-    builder.append(std::to_string(calculation_handle_));
+    builder.append(std::to_string((uint64_t) calc_value_.get()));
   } else {
     builder.append(std::to_string(value_));
   }

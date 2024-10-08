@@ -60,10 +60,10 @@ float FloatValueForLength(const Length& length,
     case Length::kDeviceWidth:
     case Length::kDeviceHeight:
     case Length::kNone:
-    assert_m(false, 'NOTREACHED_IN_MIGRATION');
+    assert_m(false, "NOTREACHED_IN_MIGRATION");
       return 0;
   }
-  assert_m(false, 'NOTREACHED_IN_MIGRATION');
+  assert_m(false, "NOTREACHED_IN_MIGRATION");
   return 0;
 }
 

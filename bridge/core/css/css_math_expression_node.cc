@@ -723,9 +723,6 @@ class CSSMathExpressionNodeParser {
     if (!IsSupportedMathFunction(function_id)) {
       return nullptr;
     }
-    //    if (auto anchor_query = ParseAnchorQuery(function_id, tokens)) {
-    //      return anchor_query;
-    //    }
     if (auto progress = ParseProgressNotation(function_id, tokens, state)) {
       return progress;
     }

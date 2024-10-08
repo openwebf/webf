@@ -46,6 +46,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/css/parser/css_property_parser_test.cc
   ./core/css/css_primitive_value_test.cc
   ./core/css/css_test_helpers.cc
+  ./core/css/css_math_expression_node_test.cc
 )
 
 ### webf_unit_test executable
