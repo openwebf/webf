@@ -73,7 +73,7 @@ jobs:
     - run: cd webf && flutter test
 
   integration_test:
-    runs-on: 'macos-14'
+    runs-on: self-hosted
     needs: [ setup, build_bridge ]
     strategy:
       fail-fast: false
