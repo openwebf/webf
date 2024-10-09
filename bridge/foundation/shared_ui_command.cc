@@ -23,12 +23,21 @@ void SharedUICommand::AddCommand(UICommand type,
                                  void* nativePtr2,
                                  bool request_ui_update) {
   if (!context_->isDedicated()) {
+    bool should_request_batch_update = active_buffer->size() > 1;
     active_buffer->addCommand(type, std::move(args_01), native_binding_object, nativePtr2, request_ui_update);
+    if (should_request_batch_update) {
+      context_->dartMethodPtr()->requestBatchUpdate(false, context_->contextId());
+    }
     return;
   }
 
   if (type == UICommand::kFinishRecordingCommand || ui_command_sync_strategy_->ShouldSync()) {
+    bool should_request_batch_update = reserve_buffer_->size() + waiting_buffer_->size() > 1;
+
     SyncToActive();
+    if (should_request_batch_update) {
+      context_->dartMethodPtr()->requestBatchUpdate(true, context_->contextId());
+    }
   }
 
   ui_command_sync_strategy_->RecordUICommand(type, args_01, native_binding_object, nativePtr2, request_ui_update);
@@ -103,7 +112,6 @@ void SharedUICommand::SyncToActive() {
     return;
 
   ui_command_sync_strategy_->Reset();
-  context_->dartMethodPtr()->requestBatchUpdate(context_->isDedicated(), context_->contextId());
 
   size_t reserve_size = reserve_buffer_->size();
   size_t origin_active_size = active_buffer->size();
