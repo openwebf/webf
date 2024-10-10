@@ -11,7 +11,7 @@
 #include "text.h"
 #include "html_element.h"
 #include "comment.h"
-#include "event.h"
+#include "plugin_api_event.h"
 
 namespace webf {
 

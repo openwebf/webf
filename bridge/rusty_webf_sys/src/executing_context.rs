@@ -60,7 +60,7 @@ impl ExecutingContext {
     let result = unsafe {
       ((*self.method_pointer).get_window)(self.ptr)
     };
-    return Window::initialize(result.value, result.method_pointer);
+    return Window::initialize(result.value, self, result.method_pointer);
   }
 
   /// Obtain the document instance from ExecutingContext.
@@ -78,4 +78,3 @@ impl ExecutingContext {
     ExceptionState::initialize(result.value, result.method_pointer)
   }
 }
-

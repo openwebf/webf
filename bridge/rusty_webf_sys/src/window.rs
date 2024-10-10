@@ -4,6 +4,7 @@
 
 use std::ffi::c_double;
 use crate::event_target::{EventTargetRustMethods, RustMethods};
+use crate::executing_context::ExecutingContext;
 use crate::OpaquePtr;
 
 #[repr(C)]
@@ -21,7 +22,7 @@ pub struct Window {
 
 
 impl Window {
-  pub fn initialize(ptr: *const OpaquePtr, method_pointer: *const WindowRustMethods) -> Window {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const WindowRustMethods) -> Window {
     Window {
       ptr,
       method_pointer

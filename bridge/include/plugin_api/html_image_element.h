@@ -5,7 +5,7 @@
 #ifndef WEBF_CORE_RUST_API_HTML_IMAGE_ELEMENT_H_
 #define WEBF_CORE_RUST_API_HTML_IMAGE_ELEMENT_H_
 
-#include "plugin_api/html_element.h"
+#include "html_element.h"
 
 namespace webf {
 

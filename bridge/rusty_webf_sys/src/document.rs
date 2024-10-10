@@ -14,7 +14,7 @@ use crate::node::{Node, NodeMethods};
 use crate::{OpaquePtr, RustValue};
 use crate::text::{Text, TextNodeRustMethods};
 use crate::comment::{Comment, CommentRustMethods};
-use crate::event::{Event, EventRustMethods};
+use crate::rs_event::{Event, EventRustMethods};
 use crate::html_element::HTMLElement;
 
 #[repr(C)]

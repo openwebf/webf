@@ -5,7 +5,7 @@
 use std::ffi::{c_double, c_void, CString};
 use libc::{boolean_t, c_char};
 use crate::element::{Element, ElementRustMethods};
-use crate::event::{Event, EventRustMethods};
+use crate::rs_event::{Event, EventRustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::{ExecutingContext, ExecutingContextRustMethods};
 use crate::{executing_context, OpaquePtr, RustValue};
@@ -238,7 +238,7 @@ impl EventTarget {
     if (raw_ptr.value == std::ptr::null()) {
       return Err("The type value of event_target does not belong to the Window type.")
     }
-    Ok(Window::initialize(raw_ptr.value, raw_ptr.method_pointer as *const WindowRustMethods))
+    Ok(Window::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const WindowRustMethods))
   }
 
   pub fn as_document(&self) -> Result<Document, &str> {

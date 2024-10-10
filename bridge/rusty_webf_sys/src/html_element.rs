@@ -6,7 +6,7 @@ use std::ffi::c_double;
 use crate::comment::CommentRustMethods;
 use crate::container_node::{ContainerNode, ContainerNodeMethods};
 use crate::element::{Element, ElementMethods, ElementRustMethods};
-use crate::event::Event;
+use crate::rs_event::Event;
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTargetMethods, RustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
