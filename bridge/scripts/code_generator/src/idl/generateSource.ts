@@ -312,7 +312,7 @@ function generateNativeValueTypeConverter(type: ParameterType): string {
 function generateRequiredInitBody(argument: FunctionArguments, argsIndex: number) {
   let type = generateIDLTypeConverter(argument.type, !argument.required);
 
-  let hasArgumentCheck = type.indexOf('Element') >= 0 || type.indexOf('Node') >= 0 || type === 'EventTarget' || type.indexOf('DOMMatrix') >= 0;
+  let hasArgumentCheck = type.indexOf('Element') >= 0 || type.indexOf('Node') >= 0 || type === 'EventTarget' || type.indexOf('DOMMatrix') >= 0 || type.indexOf('Path2D') >= 0;
 
   let body = '';
   if (argument.isDotDotDot) {
