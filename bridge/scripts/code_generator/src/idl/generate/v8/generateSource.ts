@@ -1,4 +1,4 @@
-import {IDLBlob} from "./IDLBlob";
+import {IDLBlob} from "../../IDLBlob";
 import {
   ClassObject,
   FunctionArguments,
@@ -7,21 +7,20 @@ import {
   FunctionObject,
   ParameterMode,
   PropsDeclaration,
-} from "./declaration";
-import {addIndent, getClassName, getWrapperTypeInfoNameOfClassName} from "./utils";
-import {ParameterType} from "./analyzer";
+} from "../../declaration";
+import {addIndent, getClassName, getWrapperTypeInfoNameOfClassName} from "../../utils";
+import {ParameterType} from "../../analyzer";
 import _ from 'lodash';
 import fs from 'fs';
 import path from 'path';
 import {getTemplateKind, TemplateKind} from "./generateHeader";
-import {GenerateOptions} from "./generator";
+import {GenerateOptions, generateUnionTypeFileName} from "../../generator";
 import {
   generateTypeRawChecker,
   generateUnionConstructorImpl,
   generateUnionMemberName,
   generateUnionTypeClassName,
   generateUnionTypeClear,
-  generateUnionTypeFileName,
   generateUnionTypeSetter,
   getUnionTypeName
 } from "./generateUnionTypes";
@@ -40,8 +39,11 @@ function generateMethodArgumentsCheck(m: FunctionDeclaration) {
     return '';
   }
 
-  return `  if (argc < ${requiredArgsCount}) {
-    return JS_ThrowTypeError(ctx, "Failed to execute '${m.name}' : ${requiredArgsCount} argument required, but %d present.", argc);
+  return `  if (args.Length() < ${requiredArgsCount}) {
+    v8::Isolate* isolate = args.GetIsolate();
+    std::string error_message = std::format("Failed to execute '${m.name}' : ${requiredArgsCount} argument required, but {} present.", args.Length());
+    V8ThrowException::ThrowError(isolate, error_message);
+    args.GetReturnValue().SetUndefined();
   }
 `;
 }
@@ -316,16 +318,17 @@ function generateRequiredInitBody(argument: FunctionArguments, argsIndex: number
 
   let body = '';
   if (argument.isDotDotDot) {
-    body = `Converter<${type}>::FromValue(ctx, argv + ${argsIndex}, argc - ${argsIndex}, exception_state)`
+    body = `Converter<${type}>::FromValue(isolate, args + ${argsIndex}, args - ${argsIndex}, exception_state)`
   } else if (hasArgumentCheck) {
     body = `Converter<${type}>::ArgumentsValue(context, argv[${argsIndex}], ${argsIndex}, exception_state)`;
   } else {
-    body = `Converter<${type}>::FromValue(ctx, argv[${argsIndex}], exception_state)`;
+    body = `Converter<${type}>::FromValue(isolate, args[${argsIndex}], exception_state)`;
   }
 
-  return `auto&& args_${argument.name} = ${body};
+  return `auto args_${argument.name} = ${body};
 if (UNLIKELY(exception_state.HasException())) {
-  return exception_state.ToQuickJS();
+  args.GetReturnValue().SetUndefined();
+  return;
 }`;
 }
 
@@ -371,12 +374,13 @@ ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...pre
   }
 
 
-  return `auto&& args_${argument.name} = Converter<IDLOptional<${generateIDLTypeConverter(argument.type)}>>::FromValue(ctx, argv[${argsIndex}], exception_state);
+  return `auto args_${argument.name} = Converter<IDLOptional<${generateIDLTypeConverter(argument.type)}>>::FromValue(isolate, args[${argsIndex}], exception_state);
 if (UNLIKELY(exception_state.HasException())) {
-  return exception_state.ToQuickJS();
+  args.GetReturnValue().SetUndefined();
+  return;
 }
 
-if (argc <= ${argsIndex + 1}) {
+if (args.Length() <= ${argsIndex + 1}) {
   ${call}
   break;
 }`;
@@ -387,7 +391,9 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
   isInstanceMethod: false
 }) {
   if (options.isConstructor && declaration.returnType.value == FunctionArgumentType.void) {
-    return 'return JS_ThrowTypeError(ctx, "Illegal constructor");';
+    // TODO V8 handle "Illegal constructor"
+    // return 'return JS_ThrowTypeError(ctx, "Illegal constructor");';
+    return 'return';
   }
 
   let minimalRequiredArgc = 0;
@@ -428,7 +434,7 @@ ${returnValueAssignment} self->${generateCallMethodName(declaration.name)}(${min
     call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declaration.name)}(context, ${requiredArguments.join(',')});`;
   }
 
-  let minimalRequiredCall = (declaration.args.length == 0 || (declaration.args[0].isDotDotDot)) ? call : `if (argc <= ${minimalRequiredArgc}) {
+  let minimalRequiredCall = (declaration.args.length == 0 || (declaration.args[0].isDotDotDot)) ? call : `if (args.Length() <= ${minimalRequiredArgc}) {
   ${call}
   break;
 }`;
@@ -507,7 +513,7 @@ function generateReturnValueResult(blob: IDLBlob, type: ParameterType, mode?: Pa
     return `return_value->${method}()`;
   }
 
-  return `Converter<${generateIDLTypeConverter(type)}>::ToValue(ctx, std::move(return_value))`;
+  return `Converter<${generateIDLTypeConverter(type)}>::ToValue(isolate, return_value)`;
 }
 
 type GenFunctionBodyOptions = { isConstructor?: boolean, isInstanceMethod?: boolean };
@@ -521,41 +527,47 @@ function generateFunctionBody(blob: IDLBlob, declare: FunctionDeclaration, optio
   let returnValueInit = generateReturnValueInit(blob, declare.returnType, options);
   let returnValueResult = generateReturnValueResult(blob, declare.returnType, declare.returnTypeMode, options);
 
-  let constructorPrototypeInit = (options.isConstructor && returnValueInit.length > 0) ? `JSValue proto = JS_GetPropertyStr(ctx, this_val, "prototype");
-  JS_SetPrototype(ctx, return_value->ToQuickJSUnsafe(), proto);
-  JS_FreeValue(ctx, proto);` : '';
+  // let constructorPrototypeInit = (options.isConstructor && returnValueInit.length > 0) ? `JSValue proto = JS_GetPropertyStr(ctx, this_val, "prototype");
+  // JS_SetPrototype(ctx, return_value->ToQuickJSUnsafe(), proto);
+  // JS_FreeValue(ctx, proto);` : '';
+  let constructorPrototypeInit = '';
 
   return `${paramCheck}
 
   ExceptionState exception_state;
-  ExecutingContext* context = ExecutingContext::From(ctx);
-  if (!context->IsContextValid()) return JS_NULL;
+  v8::Isolate* isolate = args.GetIsolate();
+  ExecutingContext* context = ExecutingContext::From(isolate);
+  if (!context->IsContextValid()) {
+    args.GetReturnValue().SetUndefined();
+    return;
+  }
   
-  context->dartIsolateContext()->profiler()->StartTrackSteps("${getClassName(blob)}::${declare.name}");
+  // context->dartIsolateContext()->profiler()->StartTrackSteps("${getClassName(blob)}::${declare.name}");
   
-  MemberMutationScope scope{context};
+  v8::HandleScope handle_scope(isolate);
   ${returnValueInit}
 
   do {  // Dummy loop for use of 'break'.
 ${addIndent(callBody, 4)}
   } while (false);
   
-   context->dartIsolateContext()->profiler()->FinishTrackSteps();
+  // context->dartIsolateContext()->profiler()->FinishTrackSteps();
 
   if (UNLIKELY(exception_state.HasException())) {
-    return exception_state.ToQuickJS();
+    args.GetReturnValue().SetUndefined();
+    return;
   }
   ${constructorPrototypeInit}
-  return ${returnValueResult};
+  args.GetReturnValue().Set(${returnValueResult});
 `;
 }
 
 function readTemplate(name: string) {
-  return fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/' + name + '.cc.tpl'), {encoding: 'utf-8'});
+  return fs.readFileSync(path.join(__dirname, '../../../../templates/idl_templates/v8/' + name + '.cc.tpl'), {encoding: 'utf-8'});
 }
 
-export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
-  const baseTemplate = fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/base.cc.tpl'), {encoding: 'utf-8'});
+export function generateV8CppSource(blob: IDLBlob, options: GenerateOptions) {
+  const baseTemplate = fs.readFileSync(path.join(__dirname, '../../../../templates/idl_templates/v8/base.cc.tpl'), {encoding: 'utf-8'});
   const className = getClassName(blob)
 
   const contents = blob.objects.map(object => {
@@ -678,7 +690,7 @@ const WrapperTypeInfo& ${className}::wrapper_type_info_ = QJS${className}::wrapp
       }
       case TemplateKind.globalFunction: {
         object = object as FunctionObject;
-        options.globalFunctionInstallList.push(` {"${object.declare.name}", ${object.declare.name}, ${object.declare.args.length}}`);
+        options.globalFunctionInstallList.push(` {"${object.declare.name}", ${object.declare.name}}`);
         return _.template(readTemplate('global_function'))({
           className,
           blob: blob,
