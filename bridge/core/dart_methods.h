@@ -14,6 +14,7 @@
 #include "foundation/native_string.h"
 #include "foundation/native_value.h"
 #include "include/dart_api.h"
+#include "plugin_api/executing_context.h"
 
 #if defined(_WIN32)
 #define WEBF_EXPORT_C extern "C" __declspec(dllexport)
@@ -34,6 +35,9 @@ using AsyncModuleCallback = NativeValue* (*)(void* callback_context,
                                              NativeValue* value,
                                              Dart_PersistentHandle persistent_handle,
                                              InvokeModuleResultCallback result_callback);
+
+using PluginLibraryEntryPoint = void* (*)(WebFValue<ExecutingContext, ExecutingContextWebFMethods> handle_context);
+using LoadNativeLibraryCallback = void (*)(PluginLibraryEntryPoint entry_point, void* initialize_data, double context_id, void* imported_data);
 
 using AsyncBlobCallback =
     void (*)(void* callback_context, double context_id, char* error, uint8_t* bytes, int32_t length);
@@ -72,6 +76,11 @@ typedef void (*OnJSLog)(double context_id, int32_t level, const char*);
 typedef void (*FlushUICommand)(double context_id, void* native_binding_object);
 typedef void (
     *CreateBindingObject)(double context_id, void* native_binding_object, int32_t type, void* args, int32_t argc);
+typedef void (*LoadNativeLibrary)(double context_id,
+                                  SharedNativeString* lib_name,
+                                  void* initialize_data,
+                                  void* import_data,
+                                  LoadNativeLibraryCallback callback);
 typedef int8_t (*GetWidgetElementShape)(double context_id, void* native_binding_object, NativeValue* value);
 
 using MatchImageSnapshotCallback = void (*)(void* callback_context, double context_id, int8_t, char* errmsg);
@@ -179,6 +188,12 @@ class DartMethodPointer {
                            int32_t type,
                            void* args,
                            int32_t argc);
+  void loadNativeLibrary(bool is_dedicated,
+                         double context_id,
+                         SharedNativeString* lib_name,
+                         void* initialize_data,
+                         void* import_data,
+                         LoadNativeLibraryCallback callback);
   bool getWidgetElementShape(bool is_dedicated, double context_id, void* native_binding_object, NativeValue* value);
 
   void onJSError(bool is_dedicated, double context_id, const char*);
@@ -230,6 +245,7 @@ class DartMethodPointer {
   ToBlob to_blob_{nullptr};
   FlushUICommand flush_ui_command_{nullptr};
   CreateBindingObject create_binding_object_{nullptr};
+  LoadNativeLibrary load_native_library_{nullptr};
   GetWidgetElementShape get_widget_element_shape_{nullptr};
   OnJSError on_js_error_{nullptr};
   OnJSLog on_js_log_{nullptr};

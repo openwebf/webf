@@ -236,6 +236,8 @@ class Event : public ScriptWrappable {
 
   void Trace(GCVisitor* visitor) const override;
 
+  const EventPublicMethods* eventPublicMethods();
+
  protected:
   PassiveMode HandlingPassive() const { return handling_passive_; }
 
@@ -266,6 +268,7 @@ class Event : public ScriptWrappable {
   Member<EventTarget> target_;
   Member<EventTarget> current_target_;
   std::vector<ScriptValue> customized_event_props_;
+  EventPublicMethods event_public_methods;
   friend void set_event_prop(JSContext* ctx,
                              EventProp* prop,
                              Event* event,

@@ -18,7 +18,7 @@ if(MSVC)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+#  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
 endif()
 
 if(WIN32)
@@ -138,6 +138,7 @@ list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/include
   ${CMAKE_CURRENT_LIST_DIR}/polyfill/dist
+  ${CMAKE_CURRENT_LIST_DIR}/core_rs/include
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart
   ${ADDITIONAL_INCLUDE_DIRS}
   )
@@ -265,12 +266,27 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/union_base.cc
     # Core sources
     webf_bridge.cc
-    core/api/api.cc
     core/executing_context.cc
     core/script_forbidden_scope.cc
     core/script_state.cc
     core/page.cc
     core/dart_methods.cc
+    core/api/exception_state.cc
+    core/api/event_target.cc
+    core/api/event.cc
+    core/api/node.cc
+    core/api/executing_context.cc
+    core/api/container_node.cc
+    core/api/document.cc
+    core/api/element.cc
+    core/api/html_element.cc
+    core/api/html_image_element.cc
+    core/api/html_canvas_element.cc
+    core/api/document_fragment.cc
+    core/api/window.cc
+    core/api/text.cc
+    core/api/comment.cc
+    core/api/character_data.cc
     core/dart_isolate_context.cc
     core/dart_context_data.cc
     core/executing_context_data.cc
@@ -379,6 +395,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
 
+    core/native/native_loader.cc
+
     # SVG files
     core/svg/svg_element.cc
     core/svg/svg_graphics_element.cc
@@ -475,6 +493,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_css_style_declaration.cc
     out/qjs_inline_css_style_declaration.cc
     out/qjs_computed_css_style_declaration.cc
+    out/qjs_native_loader.cc
     out/qjs_text.cc
     out/qjs_screen.cc
     out/qjs_node_list.cc

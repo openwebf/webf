@@ -42,6 +42,7 @@ class FirstPageState extends State<FirstPage> {
     super.didChangeDependencies();
     controller = WebFController(
       context,
+      runningThread: FlutterUIThread(),
       devToolsService: ChromeDevToolsService(),
     );
     controller.preload(WebFBundle.fromUrl('assets:assets/bundle.html'));

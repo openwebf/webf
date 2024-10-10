@@ -296,20 +296,19 @@ void ScriptWrappable::InitializeQuickJSObject() {
 }
 
 void ScriptWrappable::KeepAlive() {
-  if (is_alive)
-    return;
-
-  context_->RegisterActiveScriptWrappers(this);
-  JS_DupValue(ctx_, jsObject_);
-  is_alive = true;
+  if (alive_count == 0) {
+    context_->RegisterActiveScriptWrappers(this);
+    JS_DupValue(ctx_, jsObject_);
+  }
+  alive_count++;
 }
 
 void ScriptWrappable::ReleaseAlive() {
-  if (!is_alive)
-    return;
-  context_->InActiveScriptWrappers(this);
-  JS_FreeValue(ctx_, jsObject_);
-  is_alive = false;
+  alive_count--;
+  if (alive_count == 0) {
+    context_->InActiveScriptWrappers(this);
+    JS_FreeValue(ctx_, jsObject_);
+  }
 }
 
 }  // namespace webf
