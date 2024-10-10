@@ -113,4 +113,36 @@ describe('script element', () => {
       done();
     });
   });
+
+  it('should run by element\'s place order with innerHTML', async (done) => {
+    const scriptA = document.createElement('script');
+    scriptA.src = 'assets:///assets/defineA.js';
+
+    const inlineScriptA = document.createElement('script');
+    inlineScriptA.innerHTML = 'window.C = window.A;';
+
+    const scriptB = document.createElement('script');
+    scriptB.src = 'assets:///assets/defineB.js';
+
+    const inlineScriptB = document.createElement('script');
+    inlineScriptB.innerHTML = 'window.D = window.B';
+
+    document.body.appendChild(scriptA);
+    document.body.appendChild(inlineScriptA);
+    document.body.appendChild(scriptB);
+    document.body.appendChild(inlineScriptB);
+
+    Promise.all([
+      waitForLoad(scriptA),
+      waitForLoad(scriptB),
+      waitForLoad(inlineScriptA),
+      waitForLoad(inlineScriptB)
+    ]).then(() => {
+      // @ts-ignore
+      expect(window.C).toBe(window.A);
+      // @ts-ignore
+      expect(window.D).toBe(window.B);
+      done();
+    });
+  });
 });

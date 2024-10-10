@@ -111,6 +111,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/dart_readable.cc
   foundation/ui_command_buffer.cc
   foundation/ui_command_strategy.cc
+  foundation/wbc.cc
   polyfill/dist/polyfill.cc
   multiple_threading/dispatcher.cc
   multiple_threading/looper.cc

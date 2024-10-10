@@ -1326,7 +1326,7 @@ class WebFController {
       }
       _preloadStatus = PreloadingStatus.done;
       controllerPreloadingCompleter.complete();
-    } else if (_entrypoint!.isHTML) {
+    } else if (_entrypoint!.isHTML || _entrypoint!.isBHTML) {
       EvaluateOpItem? evaluateOpItem;
       if (enableWebFProfileTracking) {
         evaluateOpItem = WebFProfiler.instance.startTrackEvaluate('parseHTML');
@@ -1614,7 +1614,7 @@ class WebFController {
         await evaluateScripts(contextId, data, url: url, profileOp: evaluateOpItem);
       } else if (entrypoint.isBytecode) {
         await evaluateQuickjsByteCode(contextId, data, profileOp: evaluateOpItem);
-      } else if (entrypoint.isHTML) {
+      } else if (entrypoint.isHTML || entrypoint.isBHTML) {
         assert(isValidUTF8String(data), 'The HTML codes should be in UTF-8 encoding format');
         await parseHTML(contextId, data, profileOp: evaluateOpItem);
       } else if (entrypoint.contentType.primaryType == 'text') {

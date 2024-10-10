@@ -38,6 +38,7 @@
 #include "document.h"
 #include "document_fragment.h"
 #include "element.h"
+#include "element_attribute_names.h"
 #include "empty_node_list.h"
 #include "node_data.h"
 #include "node_traversal.h"
@@ -523,6 +524,16 @@ void Node::setTextContent(const AtomicString& text, ExceptionState& exception_st
       // No need to do anything if the text is identical.
       if (container->HasOneTextChild() && To<Text>(container->firstChild())->data() == text && !text.IsEmpty())
         return;
+
+      // Note: optimization for script element
+      if (container->IsHTMLElement() && To<HTMLElement>(container)->localName() == html_names::kscript) {
+        auto* html_script_element = To<HTMLScriptElement>(container);
+        std::string text_code_utf8 = text.ToStdString(ctx());
+        uint32_t script_id = html_script_element->StoreUTF8String(text_code_utf8.c_str(), text_code_utf8.length());
+        html_script_element->setAttribute(element_attribute_names::k__script_id__,
+                                          AtomicString(ctx(), std::to_string(script_id)));
+        return;
+      }
 
       ChildListMutationScope mutation(*this);
 
