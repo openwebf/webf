@@ -12,9 +12,6 @@
 #include "core/css/css_selector_list.h"
 #include "core/css/parser/css_nesting_type.h"
 #include "core/css/parser/css_parser_token_range.h"
-//#include "third_party/blink/renderer/platform/heap/garbage_collected.h"
-//#include "third_party/blink/renderer/platform/heap/member.h"
-//#include "third_party/blink/renderer/platform/heap/visitor.h"
 
 namespace webf {
 

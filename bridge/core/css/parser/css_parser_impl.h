@@ -127,7 +127,7 @@ class CSSParserImpl {
       std::shared_ptr<const CSSParserContext>,
       const std::string&);
 
-  static std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationListForLazyStyle(
+  static std::shared_ptr<CSSPropertyValueSet> ParseDeclarationListForLazyStyle(
       const std::string&,
       size_t offset,
       std::shared_ptr<const CSSParserContext>);

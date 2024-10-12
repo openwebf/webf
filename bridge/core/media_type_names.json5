@@ -2,8 +2,11 @@
   "metadata": {
     "templates": [
       {
-        "template": "make_names",
-        "filename": "media_type_names"
+        "template": "make_std_names",
+        "filename": "media_type_names",
+        "options": {
+          "camelcase": true
+        }
       }
     ]
   },

@@ -100,6 +100,8 @@
 #include "qjs_widget_element.h"
 #include "qjs_window.h"
 #include "qjs_css_style_sheet.h"
+#include "qjs_media_list.h"
+#include "qjs_css_rule.h"
 #include "qjs_window_or_worker_global_scope.h"
 
 namespace webf {
@@ -173,6 +175,8 @@ void InstallBindings(ExecutingContext* context) {
   QJSComputedCssStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
   QJSScreen::Install(context);
+  QJSCSSStyleSheet::Install(context);
+  QJSMediaList::Install(context);
   QJSBlob::Install(context);
   QJSTouch::Install(context);
   QJSTouchList::Install(context);

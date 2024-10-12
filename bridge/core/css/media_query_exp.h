@@ -30,20 +30,22 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#ifndef WEBF_CORE_CSS_MEDIA_QUERY_EXP_H_
+#define WEBF_CORE_CSS_MEDIA_QUERY_EXP_H_
 
 #include <optional>
 
+#include "foundation/macros.h"
+#include "foundation/string_builder.h"
+#include "core/base/memory/values_equivalent.h"
 #include "core/css/css_primitive_value.h"
+#include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_value.h"
-#include "core/css/media_feature_names.h"
-#include "core/css/css_value_keywords.h"
+#include "core/css/css_ratio_value.h"
 #include "core/layout/geometry/axis.h"
 #include "foundation/casting.h"
 
 namespace webf {
-
-class StringBuilder;
-
 
 class CSSParserContext;
 class CSSParserTokenRange;
@@ -51,50 +53,87 @@ class CSSParserTokenOffsets;
 
 class MediaQueryExpValue {
   WEBF_DISALLOW_NEW();
-
  public:
   // Type::kInvalid
   MediaQueryExpValue() = default;
 
   explicit MediaQueryExpValue(CSSValueID id) : type_(Type::kId), id_(id) {}
-  MediaQueryExpValue(double value, CSSPrimitiveValue::UnitType unit)
-      : type_(Type::kNumeric), numeric_({value, unit}) {}
-  MediaQueryExpValue(double numerator, double denominator)
-      : type_(Type::kRatio), ratio_({numerator, denominator}) {}
-  explicit MediaQueryExpValue(const CSSValue& value)
-      : type_(Type::kCSSValue), css_value_(&value) {}
-  void Trace(Visitor* visitor) const { visitor->Trace(css_value_); }
+  explicit MediaQueryExpValue(std::shared_ptr<const CSSValue> value)
+      : type_(Type::kValue), value_(std::move(value)) {}
+  MediaQueryExpValue(const CSSPrimitiveValue& numerator,
+                     const CSSPrimitiveValue& denominator)
+      : type_(Type::kRatio),
+        ratio_(std::make_shared<cssvalue::CSSRatioValue>(numerator,
+                                                             denominator)) {}
+  void Trace(GCVisitor* visitor) const {}
 
   bool IsValid() const { return type_ != Type::kInvalid; }
   bool IsId() const { return type_ == Type::kId; }
-  bool IsNumeric() const { return type_ == Type::kNumeric; }
   bool IsRatio() const { return type_ == Type::kRatio; }
-  bool IsCSSValue() const { return type_ == Type::kCSSValue; }
-  bool IsResolution() const;
+  bool IsValue() const { return type_ == Type::kValue; }
+
+  bool IsPrimitiveValue() const {
+    return IsValue() && value_->IsPrimitiveValue();
+  }
+  bool IsNumber() const {
+    return IsPrimitiveValue() && To<CSSPrimitiveValue>(*value_).IsNumber();
+  }
+  bool IsResolution() const {
+    return IsPrimitiveValue() && To<CSSPrimitiveValue>(*value_).IsResolution();
+  }
+  bool IsNumericLiteralValue() const {
+    return IsValue() && value_->IsNumericLiteralValue();
+  }
+  bool IsDotsPerCentimeter() const {
+    return IsNumericLiteralValue() &&
+           To<CSSNumericLiteralValue>(*value_).GetType() ==
+               CSSPrimitiveValue::UnitType::kDotsPerCentimeter;
+  }
 
   CSSValueID Id() const {
     DCHECK(IsId());
     return id_;
   }
 
-  double Value() const;
-
-  CSSPrimitiveValue::UnitType Unit() const;
-
-  double Numerator() const {
-    DCHECK(IsRatio());
-    return ratio_.numerator;
+  double GetDoubleValue() const {
+    DCHECK(IsNumericLiteralValue());
+    return To<CSSNumericLiteralValue>(*value_).GetDoubleValue();
   }
 
-  double Denominator() const {
-    DCHECK(IsRatio());
-    return ratio_.denominator;
+  CSSPrimitiveValue::UnitType GetUnitType() const {
+    DCHECK(IsNumericLiteralValue());
+    return To<CSSNumericLiteralValue>(*value_).GetType();
   }
 
   const CSSValue& GetCSSValue() const {
-    DCHECK(IsCSSValue());
-    DCHECK(css_value_);
-    return *css_value_;
+    DCHECK(IsValue());
+    return *value_;
+  }
+
+  const CSSValue& Numerator() const {
+    DCHECK(IsRatio());
+    return ratio_->First();
+  }
+
+  const CSSValue& Denominator() const {
+    DCHECK(IsRatio());
+    return ratio_->Second();
+  }
+
+  double Value(const CSSLengthResolver& length_resolver) const {
+    DCHECK(IsValue());
+    return To<CSSPrimitiveValue>(*value_).ComputeValueInCanonicalUnit(
+        length_resolver);
+  }
+
+  double Numerator(const CSSLengthResolver& length_resolver) const {
+    DCHECK(IsRatio());
+    return ratio_->First().ComputeValueInCanonicalUnit(length_resolver);
+  }
+
+  double Denominator(const CSSLengthResolver& length_resolver) const {
+    DCHECK(IsRatio());
+    return ratio_->Second().ComputeValueInCanonicalUnit(length_resolver);
   }
 
   enum UnitFlags {
@@ -110,7 +149,7 @@ class MediaQueryExpValue {
 
   unsigned GetUnitFlags() const;
 
-  String CssText() const;
+  std::string CssText() const;
   bool operator==(const MediaQueryExpValue& other) const {
     if (type_ != other.type_) {
       return false;
@@ -120,14 +159,10 @@ class MediaQueryExpValue {
         return true;
       case Type::kId:
         return id_ == other.id_;
-      case Type::kNumeric:
-        return (numeric_.value == other.numeric_.value) &&
-               (numeric_.unit == other.numeric_.unit);
+      case Type::kValue:
+        return webf::ValuesEquivalent(value_, other.value_);
       case Type::kRatio:
-        return (ratio_.numerator == other.ratio_.numerator) &&
-               (ratio_.denominator == other.ratio_.denominator);
-      case Type::kCSSValue:
-        return base::ValuesEquivalent(css_value_, other.css_value_);
+        return webf::ValuesEquivalent(ratio_, other.ratio_);
     }
   }
   bool operator!=(const MediaQueryExpValue& other) const {
@@ -139,32 +174,21 @@ class MediaQueryExpValue {
   //
   // std::nullopt is returned on errors.
   static std::optional<MediaQueryExpValue> Consume(
-      const String& lower_media_feature,
+      const std::string& lower_media_feature,
       CSSParserTokenRange&,
       const CSSParserTokenOffsets&,
-      std::shared_ptr<const CSSParserContext> context);
+      std::shared_ptr<const CSSParserContext>);
 
  private:
-  enum class Type { kInvalid, kId, kNumeric, kRatio, kCSSValue };
+  enum class Type { kInvalid, kId, kValue, kRatio };
 
   Type type_ = Type::kInvalid;
 
-  // Used when the value can't be represented by the union below (e.g. math
-  // functions). Also used for style features in style container queries.
-  Member<const CSSValue> css_value_;
-
-  union {
-    CSSValueID id_;
-    struct {
-      double value;
-      CSSPrimitiveValue::UnitType unit;
-    } numeric_;
-    struct {
-      double numerator;
-      double denominator;
-    } ratio_;
-  };
+  CSSValueID id_;
+  std::shared_ptr<const CSSValue> value_;
+  std::shared_ptr<const cssvalue::CSSRatioValue> ratio_;
 };
+
 
 // https://drafts.csswg.org/mediaqueries-4/#mq-syntax
 enum class MediaQueryOperator {
@@ -185,14 +209,14 @@ enum class MediaQueryOperator {
 //         ^^^^^^^
 //
 struct MediaQueryExpComparison {
-  DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
   MediaQueryExpComparison() = default;
   explicit MediaQueryExpComparison(const MediaQueryExpValue& value)
       : value(value) {}
   MediaQueryExpComparison(const MediaQueryExpValue& value,
                           MediaQueryOperator op)
       : value(value), op(op) {}
-  void Trace(Visitor* visitor) const { visitor->Trace(value); }
+  void Trace(GCVisitor* visitor) const { }
 
   bool operator==(const MediaQueryExpComparison& o) const {
     return value == o.value && op == o.op;
@@ -225,16 +249,16 @@ struct MediaQueryExpComparison {
 //
 // https://drafts.csswg.org/mediaqueries-4/#typedef-media-feature
 struct MediaQueryExpBounds {
-  DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
   MediaQueryExpBounds() = default;
   explicit MediaQueryExpBounds(const MediaQueryExpComparison& right)
       : right(right) {}
   MediaQueryExpBounds(const MediaQueryExpComparison& left,
                       const MediaQueryExpComparison& right)
       : left(left), right(right) {}
-  void Trace(Visitor* visitor) const {
-    visitor->Trace(left);
-    visitor->Trace(right);
+  void Trace(GCVisitor* visitor) const {
+//    visitor->Trace(left);
+//    visitor->Trace(right);
   }
 
   bool IsRange() const {
@@ -252,29 +276,29 @@ struct MediaQueryExpBounds {
 };
 
 class MediaQueryExp {
-  DISALLOW_NEW();
+  WEBF_DISALLOW_NEW();
 
  public:
   // Returns an invalid MediaQueryExp if the arguments are invalid.
-  static MediaQueryExp Create(const String& media_feature,
+  static MediaQueryExp Create(const std::string& media_feature,
                               CSSParserTokenRange&,
                               const CSSParserTokenOffsets&,
-                              std::shared_ptr<const CSSParserContext> context);
-  static MediaQueryExp Create(const String& media_feature,
+                              std::shared_ptr<const CSSParserContext>);
+  static MediaQueryExp Create(const std::string& media_feature,
                               const MediaQueryExpBounds&);
   static MediaQueryExp Invalid() {
-    return MediaQueryExp(String(), MediaQueryExpValue());
+    return MediaQueryExp("", MediaQueryExpValue());
   }
 
   MediaQueryExp(const MediaQueryExp& other);
   ~MediaQueryExp();
-  void Trace(Visitor*) const;
+  void Trace(GCVisitor*) const;
 
-  const String& MediaFeature() const { return media_feature_; }
+  const std::string& MediaFeature() const { return media_feature_; }
 
   const MediaQueryExpBounds& Bounds() const { return bounds_; }
 
-  bool IsValid() const { return !media_feature_.IsNull(); }
+  bool IsValid() const { return !media_feature_.empty(); }
 
   bool operator==(const MediaQueryExp& other) const;
   bool operator!=(const MediaQueryExp& other) const {
@@ -290,26 +314,25 @@ class MediaQueryExp {
   bool IsInlineSizeDependent() const;
   bool IsBlockSizeDependent() const;
 
-  String Serialize() const;
+  std::string Serialize() const;
 
   // Return the union of GetUnitFlags() from the expr values.
   unsigned GetUnitFlags() const;
 
  private:
-  MediaQueryExp(const String&, const MediaQueryExpValue&);
-  MediaQueryExp(const String&, const MediaQueryExpBounds&);
+  MediaQueryExp(const std::string&, const MediaQueryExpValue&);
+  MediaQueryExp(const std::string&, const MediaQueryExpBounds&);
 
-  String media_feature_;
+  std::string media_feature_;
   MediaQueryExpBounds bounds_;
 };
 
 // MediaQueryExpNode representing a tree of MediaQueryExp objects capable of
 // nested/compound expressions.
-class MediaQueryExpNode
-    : public GarbageCollected<MediaQueryExpNode> {
+class MediaQueryExpNode {
  public:
   virtual ~MediaQueryExpNode() = default;
-  virtual void Trace(Visitor*) const {}
+  virtual void Trace(GCVisitor*) const {}
 
   enum class Type { kFeature, kNested, kFunction, kNot, kAnd, kOr, kUnknown };
 
@@ -326,32 +349,32 @@ class MediaQueryExpNode
 
   using FeatureFlags = unsigned;
 
-  String Serialize() const;
+  std::string Serialize() const;
 
   bool HasUnknown() const { return CollectFeatureFlags() & kFeatureUnknown; }
 
   virtual Type GetType() const = 0;
-  virtual void SerializeTo(WTF::StringBuilder&) const = 0;
-  virtual void CollectExpressions(HeapVector<MediaQueryExp>&) const = 0;
+  virtual void SerializeTo(StringBuilder&) const = 0;
+  virtual void CollectExpressions(std::vector<MediaQueryExp>&) const = 0;
   virtual FeatureFlags CollectFeatureFlags() const = 0;
 
   // These helper functions return nullptr if any argument is nullptr.
-  static const MediaQueryExpNode* Not(const MediaQueryExpNode*);
-  static const MediaQueryExpNode* Nested(const MediaQueryExpNode*);
-  static const MediaQueryExpNode* Function(const MediaQueryExpNode*,
-                                           const AtomicString& name);
-  static const MediaQueryExpNode* And(const MediaQueryExpNode*,
-                                      const MediaQueryExpNode*);
-  static const MediaQueryExpNode* Or(const MediaQueryExpNode*,
-                                     const MediaQueryExpNode*);
+  static std::shared_ptr<const MediaQueryExpNode> Not(std::shared_ptr<const MediaQueryExpNode>);
+  static std::shared_ptr<const MediaQueryExpNode> Nested(std::shared_ptr<const MediaQueryExpNode>);
+  static std::shared_ptr<const MediaQueryExpNode> Function(std::shared_ptr<const MediaQueryExpNode>,
+                                           const std::string& name);
+  static std::shared_ptr<const MediaQueryExpNode> And(std::shared_ptr<const MediaQueryExpNode>,
+                                      std::shared_ptr<const MediaQueryExpNode>);
+  static std::shared_ptr<const MediaQueryExpNode> Or(std::shared_ptr<const MediaQueryExpNode>,
+                                                     std::shared_ptr<const MediaQueryExpNode>);
 };
 
 class MediaQueryFeatureExpNode : public MediaQueryExpNode {
  public:
   explicit MediaQueryFeatureExpNode(const MediaQueryExp& exp) : exp_(exp) {}
-  void Trace(Visitor*) const override;
+  void Trace(GCVisitor*) const override;
 
-  const String& Name() const { return exp_.MediaFeature(); }
+  const std::string& Name() const { return exp_.MediaFeature(); }
   const MediaQueryExpBounds& Bounds() const { return exp_.Bounds(); }
 
   unsigned GetUnitFlags() const;
@@ -363,8 +386,8 @@ class MediaQueryFeatureExpNode : public MediaQueryExpNode {
   bool IsBlockSizeDependent() const;
 
   Type GetType() const override { return Type::kFeature; }
-  void SerializeTo(WTF::StringBuilder&) const override;
-  void CollectExpressions(HeapVector<MediaQueryExp>&) const override;
+  void SerializeTo(StringBuilder&) const override;
+  void CollectExpressions(std::vector<MediaQueryExp>&) const override;
   FeatureFlags CollectFeatureFlags() const override;
 
  private:
@@ -373,103 +396,103 @@ class MediaQueryFeatureExpNode : public MediaQueryExpNode {
 
 class MediaQueryUnaryExpNode : public MediaQueryExpNode {
  public:
-  explicit MediaQueryUnaryExpNode(const MediaQueryExpNode* operand)
+  explicit MediaQueryUnaryExpNode(std::shared_ptr<const MediaQueryExpNode> operand)
       : operand_(operand) {
     DCHECK(operand_);
   }
-  void Trace(Visitor*) const override;
+  void Trace(GCVisitor*) const override;
 
-  void CollectExpressions(HeapVector<MediaQueryExp>&) const override;
+  void CollectExpressions(std::vector<MediaQueryExp>&) const override;
   FeatureFlags CollectFeatureFlags() const override;
   const MediaQueryExpNode& Operand() const { return *operand_; }
 
  private:
-  Member<const MediaQueryExpNode> operand_;
+  std::shared_ptr<const MediaQueryExpNode> operand_;
 };
 
 class MediaQueryNestedExpNode : public MediaQueryUnaryExpNode {
  public:
-  explicit MediaQueryNestedExpNode(const MediaQueryExpNode* operand)
+  explicit MediaQueryNestedExpNode(std::shared_ptr<const MediaQueryExpNode> operand)
       : MediaQueryUnaryExpNode(operand) {}
 
   Type GetType() const override { return Type::kNested; }
-  void SerializeTo(WTF::StringBuilder&) const override;
+  void SerializeTo(StringBuilder&) const override;
 };
 
 class MediaQueryFunctionExpNode : public MediaQueryUnaryExpNode {
  public:
-  explicit MediaQueryFunctionExpNode(const MediaQueryExpNode* operand,
-                                     const AtomicString& name)
+  explicit MediaQueryFunctionExpNode(std::shared_ptr<const MediaQueryExpNode> operand,
+                                     const std::string& name)
       : MediaQueryUnaryExpNode(operand), name_(name) {}
 
   Type GetType() const override { return Type::kFunction; }
-  void SerializeTo(WTF::StringBuilder&) const override;
+  void SerializeTo(StringBuilder&) const override;
   FeatureFlags CollectFeatureFlags() const override;
 
  private:
-  AtomicString name_;
+  std::string name_;
 };
 
 class MediaQueryNotExpNode : public MediaQueryUnaryExpNode {
  public:
-  explicit MediaQueryNotExpNode(const MediaQueryExpNode* operand)
+  explicit MediaQueryNotExpNode(std::shared_ptr<const MediaQueryExpNode> operand)
       : MediaQueryUnaryExpNode(operand) {}
 
   Type GetType() const override { return Type::kNot; }
-  void SerializeTo(WTF::StringBuilder&) const override;
+  void SerializeTo(StringBuilder&) const override;
 };
 
 class MediaQueryCompoundExpNode : public MediaQueryExpNode {
  public:
-  MediaQueryCompoundExpNode(const MediaQueryExpNode* left,
-                            const MediaQueryExpNode* right)
-      : left_(left), right_(right) {
+  MediaQueryCompoundExpNode(std::shared_ptr<const MediaQueryExpNode> left,
+                            std::shared_ptr<const MediaQueryExpNode> right)
+      : left_(std::move(left)), right_(std::move(right)) {
     DCHECK(left_);
     DCHECK(right_);
   }
-  void Trace(Visitor*) const override;
+  void Trace(GCVisitor*) const override;
 
-  void CollectExpressions(HeapVector<MediaQueryExp>&) const override;
+  void CollectExpressions(std::vector<MediaQueryExp>&) const override;
   FeatureFlags CollectFeatureFlags() const override;
   const MediaQueryExpNode& Left() const { return *left_; }
   const MediaQueryExpNode& Right() const { return *right_; }
 
  private:
-  Member<const MediaQueryExpNode> left_;
-  Member<const MediaQueryExpNode> right_;
+  std::shared_ptr<const MediaQueryExpNode> left_;
+  std::shared_ptr<const MediaQueryExpNode> right_;
 };
 
 class MediaQueryAndExpNode : public MediaQueryCompoundExpNode {
  public:
-  MediaQueryAndExpNode(const MediaQueryExpNode* left,
-                       const MediaQueryExpNode* right)
-      : MediaQueryCompoundExpNode(left, right) {}
+  MediaQueryAndExpNode(std::shared_ptr<const MediaQueryExpNode> left,
+                       std::shared_ptr<const MediaQueryExpNode> right)
+      : MediaQueryCompoundExpNode(std::move(left), std::move(right)) {}
 
   Type GetType() const override { return Type::kAnd; }
-  void SerializeTo(WTF::StringBuilder&) const override;
+  void SerializeTo(StringBuilder&) const override;
 };
 
 class MediaQueryOrExpNode : public MediaQueryCompoundExpNode {
  public:
-  MediaQueryOrExpNode(const MediaQueryExpNode* left,
-                      const MediaQueryExpNode* right)
+  MediaQueryOrExpNode(std::shared_ptr<const MediaQueryExpNode> left,
+                      std::shared_ptr<const MediaQueryExpNode> right)
       : MediaQueryCompoundExpNode(left, right) {}
 
   Type GetType() const override { return Type::kOr; }
-  void SerializeTo(WTF::StringBuilder&) const override;
+  void SerializeTo(StringBuilder&) const override;
 };
 
 class MediaQueryUnknownExpNode : public MediaQueryExpNode {
  public:
-  explicit MediaQueryUnknownExpNode(String string) : string_(string) {}
+  explicit MediaQueryUnknownExpNode(std::string string) : string_(string) {}
 
   Type GetType() const override { return Type::kUnknown; }
-  void SerializeTo(WTF::StringBuilder&) const override;
-  void CollectExpressions(HeapVector<MediaQueryExp>&) const override;
+  void SerializeTo(StringBuilder&) const override;
+  void CollectExpressions(std::vector<MediaQueryExp>&) const override;
   FeatureFlags CollectFeatureFlags() const override;
 
  private:
-  String string_;
+  std::string string_;
 };
 
 template <>
@@ -520,7 +543,6 @@ struct DowncastTraits<MediaQueryUnknownExpNode> {
     return node.GetType() == MediaQueryExpNode::Type::kUnknown;
   }
 };
-
 
 }  // namespace webf
 

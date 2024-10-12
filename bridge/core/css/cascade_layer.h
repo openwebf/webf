@@ -10,10 +10,10 @@
 #define WEBF_CASCADE_LAYER_H
 
 #include "core/css/style_rule.h"
-#include "bindings/qjs/atomic_string.h"
 
 namespace webf {
 
+class CascadeLayer;
 
 struct CascadeLayerKeyHasher {
   std::size_t operator()(const std::shared_ptr<const CascadeLayer>& k) const {
@@ -53,11 +53,11 @@ using LayerMap = std::unordered_map<
 class CascadeLayer final {
  public:
 
-  explicit CascadeLayer(const AtomicString& name = built_in_string::kempty_string)
+  explicit CascadeLayer(const std::string& name = "")
       : name_(name) {}
   ~CascadeLayer() = default;
 
-  const AtomicString& GetName() const { return name_; }
+  const std::string& GetName() const { return name_; }
   const std::vector<std::shared_ptr<CascadeLayer>>& GetDirectSubLayers() const {
     return direct_sub_layers_;
   }
@@ -85,14 +85,13 @@ class CascadeLayer final {
   friend class CascadeLayerTest;
   friend class RuleSetCascadeLayerTest;
 
-  AtomicString ToStringForTesting() const;
-  void ToStringInternal(StringBuilder&, const StringView&) const;
+  std::string ToStringForTesting() const;
+  void ToStringInternal(StringBuilder&, const std::string&) const;
 
-  std::shared_ptr<CascadeLayer> FindDirectSubLayer(const AtomicString&) const;
-  void ComputeLayerOrderInternal(unsigned* next);
+  std::shared_ptr<CascadeLayer> FindDirectSubLayer(const std::string&) const;
 
   std::optional<unsigned> order_;
-  AtomicString name_;
+  std::string name_;
   std::vector<std::shared_ptr<CascadeLayer>> direct_sub_layers_;
 };
 

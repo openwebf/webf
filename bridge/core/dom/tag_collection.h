@@ -26,8 +26,8 @@
 #ifndef WEBF_CORE_DOM_TAG_COLLECTION_H_
 #define WEBF_CORE_DOM_TAG_COLLECTION_H_
 
-#include "core/html/html_collection.h"
 #include "bindings/qjs/atomic_string.h"
+#include "core/html/html_collection.h"
 
 namespace webf {
 

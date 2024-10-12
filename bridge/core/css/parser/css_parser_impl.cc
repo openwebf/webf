@@ -696,7 +696,7 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeNestedRule(std::optional<CS
   return child;
 }
 
-static std::shared_ptr<const ImmutableCSSPropertyValueSet> CreateCSSPropertyValueSet(
+static std::shared_ptr<ImmutableCSSPropertyValueSet> CreateCSSPropertyValueSet(
     std::vector<CSSPropertyValue>& parsed_properties,
     CSSParserMode mode,
     const Document* document) {
@@ -1308,7 +1308,7 @@ std::shared_ptr<StyleRuleCharset> CSSParserImpl::ConsumeCharsetRule(CSSParserTok
 }
 
 
-std::shared_ptr<const CSSPropertyValueSet> CSSParserImpl::ParseDeclarationListForLazyStyle(
+std::shared_ptr<CSSPropertyValueSet> CSSParserImpl::ParseDeclarationListForLazyStyle(
     const std::string& string,
     size_t offset,
     std::shared_ptr<const CSSParserContext> context) {

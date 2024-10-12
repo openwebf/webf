@@ -47,13 +47,13 @@ class MediaQueryExpNode;
 
 using ExpressionHeapVector = std::vector<MediaQueryExp>;
 
-class MediaQuery : public GarbageCollected<MediaQuery> {
+class MediaQuery {
  public:
   enum class RestrictorType : uint8_t { kOnly, kNot, kNone };
 
   static std::shared_ptr<MediaQuery> CreateNotAll();
 
-  MediaQuery(RestrictorType, AtomicString media_type, std::shared_ptr<const MediaQueryExpNode>);
+  MediaQuery(RestrictorType, std::string media_type, std::shared_ptr<const MediaQueryExpNode>);
   MediaQuery(const MediaQuery&);
   MediaQuery& operator=(const MediaQuery&) = delete;
   ~MediaQuery();
@@ -62,13 +62,13 @@ class MediaQuery : public GarbageCollected<MediaQuery> {
   bool HasUnknown() const { return has_unknown_; }
   RestrictorType Restrictor() const;
   const MediaQueryExpNode* ExpNode() const;
-  const AtomicString& MediaType() const;
+  const std::string& MediaType() const;
   bool operator==(const MediaQuery& other) const;
-  AtomicString CssText() const;
+  std::string CssText() const;
 
  private:
-  AtomicString media_type_;
-  AtomicString serialization_cache_;
+  std::string media_type_;
+  std::string serialization_cache_;
   std::shared_ptr<const MediaQueryExpNode> exp_node_;
 
   RestrictorType restrictor_;
@@ -81,9 +81,8 @@ class MediaQuery : public GarbageCollected<MediaQuery> {
   // testing purposes.
   bool has_unknown_;
 
-  AtomicString Serialize() const;
+  std::string Serialize() const;
 };
-
 
 }  // namespace webf
 

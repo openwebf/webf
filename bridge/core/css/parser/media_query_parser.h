@@ -42,8 +42,7 @@ class MediaQueryParser {
     virtual bool IsAllowed(const std::string& feature) const = 0;
 
     // Returns true if the feature can be queried without a value.
-    virtual bool IsAllowedWithoutValue(const std::string& feature,
-                                       const ExecutingContext*) const = 0;
+    virtual bool IsAllowedWithoutValue(const std::string& feature) const = 0;
 
     // Returns true is the feature name is case sensitive.
     virtual bool IsCaseSensitive(const std::string& feature) const = 0;

@@ -21,7 +21,7 @@ class CSSLazyPropertyParserImpl : public CSSLazyPropertyParser {
   CSSLazyPropertyParserImpl(uint32_t offset, std::shared_ptr<CSSLazyParsingState>);
 
   // CSSLazyPropertyParser:
-  std::shared_ptr<const CSSPropertyValueSet> ParseProperties() override;
+  std::shared_ptr<CSSPropertyValueSet> ParseProperties() override;
 
   void Trace(GCVisitor* visitor) const override {
     CSSLazyPropertyParser::Trace(visitor);

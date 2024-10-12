@@ -530,8 +530,7 @@ void CSSSelectorParser::AddPlaceholderSelectorIfNeeded(CSSParserTokenStream& str
     placeholder_selector.SetMatch(CSSSelector::kPseudoClass);
     // TODO(xiezuobing): 需要传入ExecutingContext
     ExecutingContext* context;
-    placeholder_selector.SetUnparsedPlaceholder(nesting_type,
-                                                stream.StringRangeAt(start, end - start).data());
+    placeholder_selector.SetUnparsedPlaceholder(nesting_type, stream.StringRangeAt(start, end - start).data());
     placeholder_selector.SetLastInComplexSelector(true);
     output_.push_back(placeholder_selector);
   }
@@ -1022,6 +1021,28 @@ PseudoId CSSSelectorParser::ParsePseudoElement(const std::string& selector_strin
   }
 }
 
+// static
+std::optional<tcb::span<CSSSelector>> CSSSelectorParser::ParseScopeBoundary(
+    CSSParserTokenStream& stream,
+    std::shared_ptr<const CSSParserContext> context,
+    CSSNestingType nesting_type,
+    std::shared_ptr<const StyleRule> parent_rule_for_nesting,
+    bool is_within_scope,
+    std::shared_ptr<StyleSheetContents> style_sheet,
+    std::vector<CSSSelector>& arena) {
+  CSSSelectorParser parser(std::move(context), parent_rule_for_nesting, is_within_scope,
+                           /*semicolon_aborts_nested_selector=*/false, std::move(style_sheet), arena);
+  DisallowPseudoElementsScope disallow_pseudo_elements(&parser);
+
+  stream.ConsumeWhitespace();
+  std::optional<tcb::span<CSSSelector>> result = parser.ConsumeForgivingComplexSelectorList(stream, nesting_type);
+  DCHECK(result.has_value());
+  if (!stream.AtEnd()) {
+    return std::nullopt;
+  }
+  return result;
+}
+
 namespace {
 
 bool IsScrollbarPseudoClass(CSSSelector::PseudoType pseudo) {
@@ -1262,8 +1283,7 @@ bool CSSSelectorParser::ConsumeAttribute(CSSParserTokenStream& stream) {
   std::transform(attribute_name.begin(), attribute_name.end(), attribute_name.begin(), tolower);
 
   QualifiedName qualified_name =
-      namespace_prefix.empty() ? QualifiedName(attribute_name)
-                               : QualifiedName(namespace_prefix, attribute_name, "");
+      namespace_prefix.empty() ? QualifiedName(attribute_name) : QualifiedName(namespace_prefix, attribute_name, "");
 
   if (stream.AtEnd()) {
     CSSSelector selector(CSSSelector::kAttributeSet, qualified_name, CSSSelector::AttributeMatchType::kCaseSensitive);
@@ -1888,8 +1908,8 @@ void CSSSelectorParser::PrependTypeSelectorIfNeeded(const std::string& namespace
     return;
   }
   if (tag != AnyQName() || is_host_pseudo || NeedsImplicitShadowCombinatorForMatching(compound_selector)) {
-    const bool is_implicit = determined_prefix == "" &&
-                             determined_element_name == CSSSelector::UniversalSelectorAtom() && !is_host_pseudo;
+    const bool is_implicit =
+        determined_prefix == "" && determined_element_name == CSSSelector::UniversalSelectorAtom() && !is_host_pseudo;
 
     output_.insert(output_.begin() + start_index_of_compound_selector, CSSSelector(tag, is_implicit));
   }

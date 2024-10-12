@@ -27,30 +27,27 @@
 #define WEBF_CORE_CSS_RESOLVER_MEDIA_QUERY_RESULT_H_
 
 #include "foundation/macros.h"
-//#include "third_party/blink/renderer/core/css/media_list.h"
-//#include "third_party/blink/renderer/core/css/media_query_exp.h"
-//#include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
-//#include "third_party/blink/renderer/platform/wtf/vector_traits.h"
+#include "core/css/media_list.h"
 
 namespace webf {
-/*  // TODO(guopengfei)：
+
 class MediaQuerySetResult {
   WEBF_DISALLOW_NEW();
 
  public:
   MediaQuerySetResult(const MediaQuerySet& media_queries, bool result)
       : media_queries_(&media_queries), result_(result) {}
-  void Trace(Visitor* visitor) const { visitor->Trace(media_queries_); }
+  void Trace(GCVisitor* visitor) const {}
 
   const MediaQuerySet& MediaQueries() const { return *media_queries_; }
 
   bool Result() const { return result_; }
 
  private:
-  Member<const MediaQuerySet> media_queries_;
+  std::shared_ptr<const MediaQuerySet> media_queries_;
   bool result_;
 };
-*/
+
 struct MediaQueryResultFlags {
   WEBF_DISALLOW_NEW();
 
@@ -87,7 +84,5 @@ struct MediaQueryResultFlags {
 };
 
 }  // namespace webf
-// TODO(guopengfei)：
-//WTF_ALLOW_MOVE_AND_INIT_WITH_MEM_FUNCTIONS(blink::MediaQuerySetResult)
 
 #endif  // WEBF_CORE_CSS_RESOLVER_MEDIA_QUERY_RESULT_H_

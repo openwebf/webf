@@ -10,11 +10,11 @@
 #define WEBF_CSS_PARSER_CONTEXT_H
 
 #include "bindings/qjs/atomic_string.h"
+#include "core/base/auto_reset.h"
 #include "core/dom/document.h"
 #include "core/executing_context.h"
-#include "core/base/auto_reset.h"
-#include "css_parser_mode.h"
 #include "core/platform/url/kurl.h"
+#include "css_parser_mode.h"
 
 namespace webf {
 

@@ -35,27 +35,32 @@ namespace webf {
 class CSSRule;
 class CSSStyleSheet;
 class ExceptionState;
-class ExecutingContext;
 class MediaList;
 class MediaQuery;
 class MediaQuerySetOwner;
 
-class MediaQuerySet {
+class MediaQuerySet : std::enable_shared_from_this<MediaQuerySet> {
  public:
-  static std::shared_ptr<MediaQuerySet> Create() { return std::make_shared<MediaQuerySet>(); }
-  static std::shared_ptr<MediaQuerySet> Create(const AtomicString& media_string, const ExecutingContext*);
+  static std::shared_ptr<MediaQuerySet> Create() {
+    return std::make_shared<MediaQuerySet>();
+  }
+  static std::shared_ptr<MediaQuerySet> Create(const std::string& media_string,
+                               const ExecutingContext*);
 
   MediaQuerySet();
   MediaQuerySet(const MediaQuerySet&);
   explicit MediaQuerySet(std::vector<std::shared_ptr<const MediaQuery>>);
   void Trace(GCVisitor*) const;
 
-  const MediaQuerySet* CopyAndAdd(const AtomicString&, const ExecutingContext*) const;
-  const MediaQuerySet* CopyAndRemove(const AtomicString&, const ExecutingContext*) const;
+  std::shared_ptr<const MediaQuerySet> CopyAndAdd(const std::string&, const ExecutingContext*) const;
+  std::shared_ptr<const MediaQuerySet> CopyAndRemove(const std::string&,
+                                     const ExecutingContext*) const;
 
-  const std::vector<std::shared_ptr<const MediaQuery>>& QueryVector() const { return queries_; }
+  const std::vector<std::shared_ptr<const MediaQuery>>& QueryVector() const {
+    return queries_;
+  }
 
-  AtomicString MediaText() const;
+  std::string MediaText() const;
 
  private:
   std::vector<std::shared_ptr<const MediaQuery>> queries_;
@@ -65,12 +70,15 @@ class MediaList final : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+  using ImplType = MediaList*;
   explicit MediaList(CSSStyleSheet* parent_sheet);
   explicit MediaList(CSSRule* parent_rule);
 
   unsigned length() const { return Queries()->QueryVector().size(); }
   AtomicString item(unsigned index) const;
-  void deleteMedium(const ExecutingContext*, const AtomicString& old_medium, ExceptionState&);
+  void deleteMedium(const ExecutingContext*,
+                    const AtomicString& old_medium,
+                    ExceptionState&);
   void appendMedium(const ExecutingContext*, const AtomicString& new_medium);
 
   // Note that this getter doesn't require the ExecutingContext (except for
@@ -80,14 +88,14 @@ class MediaList final : public ScriptWrappable {
   //
   // Prefer MediaTextInternal for internal use. (Avoids use-counter).
   AtomicString mediaText(ExecutingContext*) const;
-  void setMediaText(const ExecutingContext*, const AtomicString&);
-  AtomicString MediaTextInternal() const { return Queries()->MediaText(); }
+  void setMediaText(ExecutingContext*, const AtomicString&);
+  AtomicString MediaTextInternal() const { return AtomicString(ctx(), Queries()->MediaText()); }
 
   // Not part of CSSOM.
   CSSRule* ParentRule() const { return parent_rule_.Get(); }
   CSSStyleSheet* ParentStyleSheet() const { return parent_style_sheet_.Get(); }
 
-  const MediaQuerySet* Queries() const;
+  std::shared_ptr<const MediaQuerySet> Queries() const;
 
   void Trace(GCVisitor*) const override;
 
@@ -98,6 +106,7 @@ class MediaList final : public ScriptWrappable {
   Member<CSSStyleSheet> parent_style_sheet_;
   Member<CSSRule> parent_rule_;
 };
+
 
 }  // namespace webf
 

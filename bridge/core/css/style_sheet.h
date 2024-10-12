@@ -31,6 +31,7 @@ namespace webf {
 
 class Node;
 class CSSRule;
+class KURL;
 class MediaList;
 
 class StyleSheet : public ScriptWrappable {
@@ -44,13 +45,13 @@ class StyleSheet : public ScriptWrappable {
   virtual void setDisabled(bool) = 0;
   virtual Node* ownerNode() const = 0;
   virtual StyleSheet* parentStyleSheet() const { return nullptr; }
-  virtual std::string href() const = 0;
+  virtual AtomicString href() const = 0;
   virtual MediaList* media() { return nullptr; }
-  virtual std::string type() const = 0;
+  virtual AtomicString type() const = 0;
 
   virtual CSSRule* ownerRule() const { return nullptr; }
   virtual void ClearOwnerNode() = 0;
-  virtual std::string BaseURL() const = 0;
+  virtual KURL BaseURL() const = 0;
   virtual bool IsLoading() const = 0;
   virtual bool IsCSSStyleSheet() const { return false; }
 };

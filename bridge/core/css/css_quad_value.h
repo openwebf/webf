@@ -25,10 +25,9 @@
 #ifndef WEBF_CSS_QUAD_VALUE_H_
 #define WEBF_CSS_QUAD_VALUE_H_
 
-
+#include "bindings/qjs/atomic_string.h"
 #include "core/css/css_value.h"
 #include "foundation/casting.h"
-#include "bindings/qjs/atomic_string.h"
 
 namespace webf {
 

@@ -21,7 +21,6 @@ class HTMLLinkElement : public HTMLElement {
 
  protected:
   NativeValue HandleParseAuthorStyleSheet(int32_t argc, const NativeValue* argv, Dart_Handle dart_object);
-
 };
 
 }  // namespace webf

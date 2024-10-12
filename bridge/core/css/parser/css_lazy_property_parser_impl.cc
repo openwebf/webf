@@ -16,7 +16,7 @@ CSSLazyPropertyParserImpl::CSSLazyPropertyParserImpl(uint32_t offset,
                                                      std::shared_ptr<CSSLazyParsingState> state)
     : CSSLazyPropertyParser(), offset_(offset), lazy_state_(state) {}
 
-std::shared_ptr<const CSSPropertyValueSet> CSSLazyPropertyParserImpl::ParseProperties() {
+std::shared_ptr<CSSPropertyValueSet> CSSLazyPropertyParserImpl::ParseProperties() {
   return CSSParserImpl::ParseDeclarationListForLazyStyle(
       lazy_state_->SheetText(), offset_, lazy_state_->Context());
 }

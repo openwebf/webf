@@ -86,6 +86,20 @@ bool ConsumeSlashIncludingWhitespace(CSSParserTokenStream&);
 CSSParserTokenRange ConsumeFunction(CSSParserTokenRange&);
 CSSParserTokenRange ConsumeFunction(CSSParserTokenStream&);
 
+inline bool AtDelimiter(const CSSParserToken& token, char c) {
+  return token.GetType() == kDelimiterToken && token.Delimiter() == c;
+}
+
+template <typename T>
+bool ConsumeIfDelimiter(T& range_or_stream, char c) {
+  if (!AtDelimiter(range_or_stream.Peek(), c)) {
+    return false;
+  }
+  range_or_stream.ConsumeIncludingWhitespace();
+  return true;
+}
+
+
 // https://drafts.csswg.org/css-syntax/#typedef-any-value
 //
 // Consumes component values until it reaches a token that is not allowed

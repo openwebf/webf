@@ -8,7 +8,6 @@
 #define WEBF_CORE_CSS_CSS_LENGTH_RESOLVER_H_
 
 #include "core/css/css_primitive_value.h"
-//#include "core/style/inset_area.h"
 #include "core/style/scoped_css_name.h"
 #include "core/platform/geometry/length.h"
 #include "core/platform/text/writing_mode.h"
@@ -60,13 +59,6 @@ class CSSLengthResolver {
   //
   // https://drafts.csswg.org/css-scoping-1/#css-tree-scoped-reference
   virtual void ReferenceTreeScope() const = 0;
-
-  // The AnchorEvaluator used to evaluate anchor()/anchor-size() queries.
-  virtual AnchorEvaluator* GetAnchorEvaluator() const { return nullptr; }
-  virtual const ScopedCSSName* GetPositionAnchor() const { return nullptr; }
-//  virtual std::optional<InsetAreaOffsets> GetInsetAreaOffsets() const {
-//    return std::nullopt;
-//  }
 
   float Zoom() const { return zoom_; }
   void SetZoom(float zoom) {

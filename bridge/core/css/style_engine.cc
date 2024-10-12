@@ -86,7 +86,7 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const std::string& tex
 
     contents->SetIsUsedFromTextCache();
 
-    style_sheet = CSSStyleSheet::CreateInline(contents, element);
+    style_sheet = CSSStyleSheet::CreateInline(element.GetExecutingContext(), contents, element);
   }
 
   assert(style_sheet);
@@ -96,7 +96,7 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const std::string& tex
 
 CSSStyleSheet* StyleEngine::ParseSheet(Element& element, const std::string& text) {
   CSSStyleSheet* style_sheet = nullptr;
-  style_sheet = CSSStyleSheet::CreateInline(element, "");
+  style_sheet = CSSStyleSheet::CreateInline(element, KURL(""));
   style_sheet->Contents()->ParseString(text);
   return style_sheet;
 }

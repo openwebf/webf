@@ -53,20 +53,16 @@ class SizeFeatureSet : public MediaQueryParser::FeatureSet {
            feature == media_feature_names_stdstring::kInlineSize ||
            feature == media_feature_names_stdstring::kMinInlineSize ||
            feature == media_feature_names_stdstring::kMaxInlineSize ||
-           feature == media_feature_names_stdstring::kBlockSize ||
            feature == media_feature_names_stdstring::kMinBlockSize ||
            feature == media_feature_names_stdstring::kMaxBlockSize ||
            feature == media_feature_names_stdstring::kAspectRatio ||
            feature == media_feature_names_stdstring::kMinAspectRatio ||
-           feature == media_feature_names_stdstring::kMaxAspectRatio ||
-           feature == media_feature_names_stdstring::kOrientation;
+           feature == media_feature_names_stdstring::kMaxAspectRatio;
   }
   bool IsAllowedWithoutValue(const std::string& feature) const override {
     return feature == media_feature_names_stdstring::kWidth || feature == media_feature_names_stdstring::kHeight ||
            feature == media_feature_names_stdstring::kInlineSize ||
-           feature == media_feature_names_stdstring::kBlockSize ||
-           feature == media_feature_names_stdstring::kAspectRatio ||
-           feature == media_feature_names_stdstring::kOrientation;
+           feature == media_feature_names_stdstring::kAspectRatio;
   }
   bool IsCaseSensitive(const std::string& feature) const override { return false; }
   bool SupportsRange() const override { return true; }
@@ -93,7 +89,7 @@ class StateFeatureSet : public MediaQueryParser::FeatureSet {
 
  public:
   bool IsAllowed(const std::string& feature) const override {
-    return (feature == media_feature_names_stdstring::kStuck) || (feature == media_feature_names_stdstring::kSnapped);
+    return false;
   }
   bool IsAllowedWithoutValue(const std::string& feature) const override { return true; }
   bool IsCaseSensitive(const std::string& feature) const override { return false; }

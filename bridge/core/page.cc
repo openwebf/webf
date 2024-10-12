@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+#include "page.h"
 #include <atomic>
 #include <unordered_map>
 #include "bindings/qjs/atomic_string.h"
@@ -14,7 +15,6 @@
 #include "event_factory.h"
 #include "foundation/logging.h"
 #include "foundation/native_value_converter.h"
-#include "page.h"
 #include "polyfill.h"
 
 namespace webf {

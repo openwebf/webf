@@ -29,66 +29,26 @@ class MediaQueryFeatureSet : public MediaQueryParser::FeatureSet {
     if (feature == media_feature_names_stdstring::kInlineSize ||
         feature == media_feature_names_stdstring::kMinInlineSize ||
         feature == media_feature_names_stdstring::kMaxInlineSize ||
-        feature == media_feature_names_stdstring::kBlockSize ||
         feature == media_feature_names_stdstring::kMinBlockSize ||
         feature == media_feature_names_stdstring::kMaxBlockSize ||
-        feature == media_feature_names_stdstring::kStuck ||
-        feature == media_feature_names_stdstring::kSnapped ||
         CSSVariableParser::IsValidVariableName(feature)) {
       return false;
     }
     return true;
   }
   bool IsAllowedWithoutValue(
-      const std::string& feature,
-      const ExecutingContext* execution_context) const override {
+      const std::string& feature) const override {
     // Media features that are prefixed by min/max cannot be used without a
     // value.
-    return feature == media_feature_names_stdstring::kMonochrome ||
-           feature == media_feature_names_stdstring::kColor ||
-           feature == media_feature_names_stdstring::kColorIndex ||
+    return feature == media_feature_names_stdstring::kColor ||
            feature == media_feature_names_stdstring::kGrid ||
            feature == media_feature_names_stdstring::kHeight ||
            feature == media_feature_names_stdstring::kWidth ||
-           feature == media_feature_names_stdstring::kBlockSize ||
            feature == media_feature_names_stdstring::kInlineSize ||
            feature == media_feature_names_stdstring::kDeviceHeight ||
            feature == media_feature_names_stdstring::kDeviceWidth ||
-           feature == media_feature_names_stdstring::kOrientation ||
            feature == media_feature_names_stdstring::kAspectRatio ||
-           feature == media_feature_names_stdstring::kDeviceAspectRatio ||
-           feature == media_feature_names_stdstring::kHover ||
-           feature == media_feature_names_stdstring::kAnyHover ||
-           feature == media_feature_names_stdstring::kWebkitTransform3D ||
-           feature == media_feature_names_stdstring::kPointer ||
-           feature == media_feature_names_stdstring::kAnyPointer ||
-           feature == media_feature_names_stdstring::kWebkitDevicePixelRatio ||
-           feature == media_feature_names_stdstring::kResolution ||
-           feature == media_feature_names_stdstring::kDisplayMode ||
-           feature == media_feature_names_stdstring::kScan ||
-           feature == media_feature_names_stdstring::kColorGamut ||
-           feature == media_feature_names_stdstring::kPrefersColorScheme ||
-           feature == media_feature_names_stdstring::kPrefersContrast ||
-           feature == media_feature_names_stdstring::kPrefersReducedMotion ||
-           feature == media_feature_names_stdstring::kOverflowInline ||
-           feature == media_feature_names_stdstring::kOverflowBlock ||
-           feature == media_feature_names_stdstring::kUpdate ||
-           (feature == media_feature_names_stdstring::kPrefersReducedData) ||
-           feature ==
-               media_feature_names_stdstring::kPrefersReducedTransparency ||
-           (feature == media_feature_names_stdstring::kForcedColors) ||
-           (feature == media_feature_names_stdstring::kNavigationControls) ||
-           (feature == media_feature_names_stdstring::kOriginTrialTest) ||
-           (feature ==
-                media_feature_names_stdstring::kHorizontalViewportSegments) ||
-           (feature ==
-                media_feature_names_stdstring::kVerticalViewportSegments) ||
-           (feature == media_feature_names_stdstring::kDevicePosture) ||
-           (feature == media_feature_names_stdstring::kInvertedColors) ||
-           CSSVariableParser::IsValidVariableName(feature) ||
-           feature == media_feature_names_stdstring::kScripting ||
-           (feature == media_feature_names_stdstring::kDisplayState) ||
-           (feature == media_feature_names_stdstring::kResizable);
+           feature == media_feature_names_stdstring::kDeviceAspectRatio;
   }
 
   bool IsCaseSensitive(const std::string& feature) const override { return false; }
@@ -332,7 +292,7 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeFeature(
   if (range.AtEnd()) {
     std::string feature_name = ConsumeAllowedName(segment1, feature_set);
     if (feature_name.empty() || !segment1.AtEnd() ||
-        !feature_set.IsAllowedWithoutValue(feature_name, execution_context_)) {
+        !feature_set.IsAllowedWithoutValue(feature_name)) {
       return nullptr;
     }
     return std::make_shared<MediaQueryFeatureExpNode>(

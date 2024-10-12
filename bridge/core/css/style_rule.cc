@@ -25,6 +25,11 @@
 
 #include "style_rule.h"
 #include "core/css/css_markup.h"
+#include "core/css/css_style_sheet.h"
+#include "core/css/parser/css_parser.h"
+#include "core/css/parser/container_query_parser.h"
+#include "core/css/parser/css_tokenizer.h"
+#include "core/css/style_sheet_contents.h"
 #include "css_selector_list.h"
 
 namespace webf {
@@ -94,7 +99,6 @@ std::shared_ptr<const StyleRuleBase> StyleRuleBase::Copy() const {
   //    case kPositionTry:
   //      return To<StyleRulePositionTry>(this)->Copy();
   //  }
-  assert(false);
   return shared_from_this();
 }
 
@@ -217,7 +221,7 @@ CSSRule* StyleRuleBase::CreateCSSOMWrapper(uint32_t position_hint,
   return nullptr;
 }
 
-void StyleRuleBase::Reparent(webf::StyleRule* old_parent, webf::StyleRule* new_parent) {
+void StyleRuleBase::Reparent(webf::StyleRule* new_parent) {
   //  switch (GetType()) {
   //    case kStyle:
   //      CSSSelectorList::Reparent(To<StyleRule>(this)->SelectorArray(),
@@ -469,6 +473,13 @@ void StyleRule::AddChildRule(std::shared_ptr<StyleRuleBase> child) {
   child_rule_vector_->AddChildRule(child);
 }
 
+bool StyleRule::HasParsedProperties() const {
+  // StyleRule should only have one of {lazy_property_parser_, properties_} set.
+  DCHECK(lazy_property_parser_ || properties_);
+  DCHECK(!lazy_property_parser_ || !properties_);
+  return !lazy_property_parser_;
+}
+
 void StyleRuleBase::ChildRuleVector::AddChildRule(const std::shared_ptr<const StyleRuleBase>& rule) {
   if (rule->IsInvisible()) {
     // Note that invisible rules can not be removed.
@@ -516,22 +527,17 @@ StyleRule::StyleRule(webf::PassKey<StyleRule>,
   CSSSelectorList::AdoptSelectorVector(selector_vector, SelectorArray());
 }
 
-StyleRule::StyleRule(webf::PassKey<StyleRule>,
-                     tcb::span<CSSSelector> selector_vector)
-    : StyleRuleBase(kStyle) {
+StyleRule::StyleRule(webf::PassKey<StyleRule>, tcb::span<CSSSelector> selector_vector) : StyleRuleBase(kStyle) {
   CSSSelectorList::AdoptSelectorVector(selector_vector, SelectorArray());
 }
 
-StyleRule::StyleRule(webf::PassKey<StyleRule>,
-                     tcb::span<CSSSelector> selector_vector,
-                     StyleRule&& other)
+StyleRule::StyleRule(webf::PassKey<StyleRule>, tcb::span<CSSSelector> selector_vector, StyleRule&& other)
     : StyleRuleBase(kStyle),
       properties_(other.properties_),
       lazy_property_parser_(other.lazy_property_parser_),
       child_rule_vector_(std::move(other.child_rule_vector_)) {
   CSSSelectorList::AdoptSelectorVector(selector_vector, SelectorArray());
 }
-
 
 StyleRule::StyleRule(const StyleRule& other, size_t flattened_size)
     : StyleRuleBase(kStyle), properties_(other.Properties().MutableCopy()) {
@@ -568,6 +574,261 @@ const CSSPropertyValueSet& StyleRule::Properties() const {
     lazy_property_parser_ = nullptr;
   }
   return *properties_;
+}
+
+MutableCSSPropertyValueSet& StyleRule::MutableProperties() {
+  // Ensure properties_ is initialized.
+  if (!Properties().IsMutable()) {
+    properties_ = std::const_pointer_cast<MutableCSSPropertyValueSet>(properties_->MutableCopy());
+  }
+  return *To<MutableCSSPropertyValueSet>(const_cast<CSSPropertyValueSet*>(properties_.get()));
+}
+
+bool StyleRule::PropertiesHaveFailedOrCanceledSubresources() const {
+  return properties_ && properties_->HasFailedOrCanceledSubresources();
+}
+
+void StyleRule::TraceAfterDispatch(GCVisitor* visitor) const {
+  StyleRuleBase::TraceAfterDispatch(visitor);
+}
+
+MutableCSSPropertyValueSet& StyleRuleFontFace::MutableProperties() {
+  if (!properties_->IsMutable()) {
+    properties_ = std::const_pointer_cast<MutableCSSPropertyValueSet>(properties_->MutableCopy());
+  }
+  return *To<MutableCSSPropertyValueSet>(properties_.get());
+}
+
+void StyleRuleFontFace::TraceAfterDispatch(webf::GCVisitor*) const {}
+
+StyleRuleProperty::StyleRuleProperty(const std::string& name, std::shared_ptr<CSSPropertyValueSet> properties)
+    : StyleRuleBase(kProperty), name_(name), properties_(std::move(properties)) {}
+
+StyleRuleProperty::StyleRuleProperty(const StyleRuleProperty& property_rule)
+    : StyleRuleBase(property_rule), name_(property_rule.name_), properties_(property_rule.properties_->MutableCopy()) {}
+
+MutableCSSPropertyValueSet& StyleRuleProperty::MutableProperties() {
+  if (!properties_->IsMutable()) {
+    properties_ = properties_->MutableCopy();
+  }
+  return *To<MutableCSSPropertyValueSet>(const_cast<CSSPropertyValueSet*>(properties_.get()));
+}
+
+const std::shared_ptr<const CSSValue>* StyleRuleProperty::GetSyntax() const {
+  return properties_->GetPropertyCSSValue(CSSPropertyID::kSyntax);
+}
+
+const std::shared_ptr<const CSSValue>* StyleRuleProperty::Inherits() const {
+  return properties_->GetPropertyCSSValue(CSSPropertyID::kInherits);
+}
+
+const std::shared_ptr<const CSSValue>* StyleRuleProperty::GetInitialValue() const {
+  return properties_->GetPropertyCSSValue(CSSPropertyID::kInitialValue);
+}
+
+bool StyleRuleProperty::SetNameText(const ExecutingContext* execution_context, const std::string& name_text) {
+  DCHECK(!name_text.empty());
+  std::string name = CSSParser::ParseCustomPropertyName(name_text);
+  if (name.empty())
+    return false;
+
+  name_ = name;
+  return true;
+}
+
+void StyleRuleProperty::TraceAfterDispatch(webf::GCVisitor*) const {}
+
+StyleRuleGroup::StyleRuleGroup(RuleType type, std::vector<std::shared_ptr<StyleRuleBase>> rules)
+    : StyleRuleBase(type), child_rule_vector_(std::make_shared<ChildRuleVector>()) {
+  for (auto&& rule : rules) {
+    if (rule->IsSignaling()) {
+      SetHasSignalingChildRule(true);
+    }
+    child_rule_vector_->AddChildRule(rule);
+  }
+}
+
+StyleRuleGroup::StyleRuleGroup(const StyleRuleGroup& group_rule)
+    : StyleRuleBase(group_rule), child_rule_vector_(group_rule.child_rule_vector_->Copy()) {
+  SetHasSignalingChildRule(group_rule.HasSignalingChildRule());
+}
+
+void StyleRuleGroup::WrapperInsertRule(CSSStyleSheet* parent_sheet,
+                                       unsigned index,
+                                       const std::shared_ptr<const StyleRuleBase> rule) {
+  child_rule_vector_->WrapperInsertRule(index, rule);
+  if (parent_sheet) {
+    parent_sheet->Contents()->NotifyRuleChanged(const_cast<StyleRuleBase*>(rule.get()));
+  }
+}
+
+void StyleRuleGroup::WrapperRemoveRule(CSSStyleSheet* parent_sheet, unsigned index) {
+  if (parent_sheet) {
+    parent_sheet->Contents()->NotifyRuleChanged(const_cast<StyleRuleBase*>((*child_rule_vector_)[index].get()));
+  }
+  child_rule_vector_->WrapperRemoveRule(index);
+}
+
+void StyleRuleGroup::TraceAfterDispatch(webf::GCVisitor*) const {}
+
+StyleRulePage::StyleRulePage(std::shared_ptr<CSSSelectorList> selector_list,
+                             std::shared_ptr<CSSPropertyValueSet> properties,
+                             std::vector<std::shared_ptr<StyleRuleBase>> child_rules)
+    : StyleRuleGroup(kPage, std::move(child_rules)),
+      properties_(std::move(properties)),
+      selector_list_(std::move(selector_list)) {}
+
+StyleRulePage::StyleRulePage(const StyleRulePage& page_rule)
+    : StyleRuleGroup(page_rule),
+      properties_(page_rule.properties_->MutableCopy()),
+      selector_list_(page_rule.selector_list_->Copy()) {}
+
+MutableCSSPropertyValueSet& StyleRulePage::MutableProperties() {
+  if (!properties_->IsMutable()) {
+    properties_ = properties_->MutableCopy();
+  }
+  return *To<MutableCSSPropertyValueSet>(const_cast<CSSPropertyValueSet*>(properties_.get()));
+}
+
+void StyleRulePage::TraceAfterDispatch(webf::GCVisitor* visitor) const {}
+
+StyleRuleScope::StyleRuleScope(const StyleScope& style_scope, std::vector<std::shared_ptr<StyleRuleBase>> rules)
+    : StyleRuleGroup(kScope, std::move(rules)), style_scope_(&style_scope) {}
+
+StyleRuleScope::StyleRuleScope(const StyleRuleScope& other)
+    : StyleRuleGroup(other), style_scope_(std::make_shared<StyleScope>(*other.style_scope_)) {}
+
+void StyleRuleScope::TraceAfterDispatch(GCVisitor* visitor) const {
+  StyleRuleGroup::TraceAfterDispatch(visitor);
+}
+
+void StyleRuleScope::SetPreludeText(const ExecutingContext* execution_context,
+                                    std::string value,
+                                    CSSNestingType nesting_type,
+                                    std::shared_ptr<const StyleRule> parent_rule_for_nesting,
+                                    bool is_within_scope,
+                                    std::shared_ptr<StyleSheetContents> style_sheet) {
+  auto parser_context = std::make_shared<CSSParserContext>(execution_context);
+  CSSTokenizer tokenizer(value);
+  std::vector<CSSParserToken> tokens = tokenizer.TokenizeToEOF();
+  tokens.reserve(32);
+
+  style_scope_ =
+      StyleScope::Parse(tokens, parser_context, nesting_type, parent_rule_for_nesting, is_within_scope, style_sheet);
+
+  // Reparent rules within the @scope's body.
+  Reparent(style_scope_->RuleForNesting());
+}
+
+StyleRulePageMargin::StyleRulePageMargin(CSSAtRuleID id, std::shared_ptr<CSSPropertyValueSet> properties)
+    : StyleRuleBase(kPageMargin), id_(id), properties_(properties) {}
+
+StyleRulePageMargin::StyleRulePageMargin(const StyleRulePageMargin& page_margin_rule)
+    : StyleRuleBase(page_margin_rule), properties_(page_margin_rule.properties_->MutableCopy()) {}
+
+MutableCSSPropertyValueSet& StyleRulePageMargin::MutableProperties() {
+  if (!properties_->IsMutable()) {
+    properties_ = properties_->MutableCopy();
+  }
+  return *To<MutableCSSPropertyValueSet>(const_cast<CSSPropertyValueSet*>(properties_.get()));
+}
+
+void StyleRulePageMargin::TraceAfterDispatch(webf::GCVisitor*) const {}
+
+StyleRuleLayerBlock::StyleRuleLayerBlock(LayerName&& name, std::vector<std::shared_ptr<StyleRuleBase>> rules)
+    : StyleRuleGroup(kLayerBlock, std::move(rules)), name_(std::move(name)) {}
+
+StyleRuleLayerBlock::StyleRuleLayerBlock(const StyleRuleLayerBlock& other) = default;
+
+void StyleRuleLayerBlock::TraceAfterDispatch(GCVisitor* visitor) const {
+  StyleRuleGroup::TraceAfterDispatch(visitor);
+}
+
+StyleRuleLayerStatement::StyleRuleLayerStatement(std::vector<LayerName>&& names)
+    : StyleRuleBase(kLayerStatement), names_(std::move(names)) {}
+
+StyleRuleLayerStatement::StyleRuleLayerStatement(const StyleRuleLayerStatement& other) = default;
+
+void StyleRuleLayerStatement::TraceAfterDispatch(GCVisitor* visitor) const {
+  StyleRuleBase::TraceAfterDispatch(visitor);
+}
+
+StyleRuleCondition::StyleRuleCondition(RuleType type, std::vector<std::shared_ptr<StyleRuleBase>> rules)
+    : StyleRuleGroup(type, std::move(rules)) {}
+
+StyleRuleCondition::StyleRuleCondition(RuleType type,
+                                       const std::string& condition_text,
+                                       std::vector<std::shared_ptr<StyleRuleBase>> rules)
+    : StyleRuleGroup(type, std::move(rules)), condition_text_(condition_text) {}
+
+StyleRuleCondition::StyleRuleCondition(const StyleRuleCondition& condition_rule) = default;
+
+StyleRuleMedia::StyleRuleMedia(std::shared_ptr<const MediaQuerySet> media,
+                               std::vector<std::shared_ptr<StyleRuleBase>> rules)
+    : StyleRuleCondition(kMedia, std::move(rules)), media_queries_(media) {}
+
+void StyleRuleMedia::TraceAfterDispatch(GCVisitor* visitor) const {}
+
+StyleRuleContainer::StyleRuleContainer(ContainerQuery& container_query,
+                                       std::vector<std::shared_ptr<StyleRuleBase>> rules)
+    : StyleRuleCondition(kContainer, container_query.ToString(), std::move(rules)),
+      container_query_(&container_query) {}
+
+StyleRuleContainer::StyleRuleContainer(const StyleRuleContainer& container_rule) : StyleRuleCondition(container_rule) {
+  DCHECK(container_rule.container_query_);
+  container_query_ = std::make_shared<ContainerQuery>(*container_rule.container_query_);
+}
+
+void StyleRuleContainer::SetConditionText(const ExecutingContext* execution_context, const std::string value) {
+  auto context = std::make_shared<CSSParserContext>(execution_context);
+  ContainerQueryParser parser(*context);
+
+  if (std::shared_ptr<const MediaQueryExpNode> exp_node = parser.ParseCondition(value)) {
+    condition_text_ = exp_node->Serialize();
+
+    ContainerSelector selector(container_query_->Selector().Name(), *exp_node);
+    container_query_ = std::make_shared<ContainerQuery>(std::move(selector), exp_node);
+  }
+}
+
+void StyleRuleContainer::TraceAfterDispatch(GCVisitor* visitor) const {
+  StyleRuleCondition::TraceAfterDispatch(visitor);
+}
+
+StyleRuleStartingStyle::StyleRuleStartingStyle(
+    std::vector<std::shared_ptr<StyleRuleBase>> rules)
+    : StyleRuleGroup(kStartingStyle, std::move(rules)) {}
+
+
+StyleRuleFunction::StyleRuleFunction(
+    const std::string& name,
+    std::vector<StyleRuleFunction::Parameter> parameters,
+    std::shared_ptr<CSSVariableData> function_body,
+    StyleRuleFunction::Type return_type)
+    : StyleRuleBase(kFunction),
+      name_(name),
+      parameters_(std::move(parameters)),
+      function_body_(std::move(function_body)),
+      return_type_(return_type) {}
+
+void StyleRuleFunction::TraceAfterDispatch(GCVisitor* visitor) const {
+  StyleRuleBase::TraceAfterDispatch(visitor);
+}
+
+StyleRuleMixin::StyleRuleMixin(const std::string& name, std::shared_ptr<StyleRule> fake_parent_rule)
+    : StyleRuleBase(RuleType::kMixin),
+      name_(std::move(name)),
+      fake_parent_rule_(std::move(fake_parent_rule)) {}
+
+void StyleRuleMixin::TraceAfterDispatch(GCVisitor* visitor) const {
+  StyleRuleBase::TraceAfterDispatch(visitor);
+}
+
+StyleRuleApplyMixin::StyleRuleApplyMixin(const std::string& name)
+    : StyleRuleBase(kApplyMixin), name_(name) {}
+
+void StyleRuleApplyMixin::TraceAfterDispatch(GCVisitor* visitor) const {
+  StyleRuleBase::TraceAfterDispatch(visitor);
 }
 
 }  // namespace webf

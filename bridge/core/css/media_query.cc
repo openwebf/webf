@@ -34,7 +34,8 @@
 
 #include <algorithm>
 #include "core/css/media_query_exp.h"
-//#include "core/html/parser/html_parser_idioms.h"
+#include "core/base/strings/string_util.h"
+#include "media_type_names.h"
 #include "media_type_names.h"
 #include "foundation/string_builder.h"
 
@@ -42,7 +43,7 @@ namespace webf {
 
 
 // https://drafts.csswg.org/cssom/#serialize-a-media-query
-AtomicString MediaQuery::Serialize() const {
+std::string MediaQuery::Serialize() const {
   StringBuilder result;
   switch (Restrictor()) {
     case RestrictorType::kOnly:
@@ -62,7 +63,7 @@ AtomicString MediaQuery::Serialize() const {
     return result.ReleaseString();
   }
 
-  if (MediaType() != media_type_names::kAll ||
+  if (MediaType() != media_type_names_stdstring::kAll ||
       Restrictor() != RestrictorType::kNone) {
     result.Append(MediaType());
     result.Append(" and ");
@@ -77,13 +78,13 @@ AtomicString MediaQuery::Serialize() const {
 
 std::shared_ptr<MediaQuery> MediaQuery::CreateNotAll() {
   return std::make_shared<MediaQuery>(
-      RestrictorType::kNot, media_type_names::kAll, nullptr /* exp_node */);
+      RestrictorType::kNot, media_type_names_stdstring::kAll, nullptr /* exp_node */);
 }
 
 MediaQuery::MediaQuery(RestrictorType restrictor,
-                       AtomicString media_type,
+                       std::string media_type,
                        std::shared_ptr<const MediaQueryExpNode> exp_node)
-    : media_type_(AttemptStaticStringCreation(media_type.LowerASCII())),
+    : media_type_(base::ToLowerASCII(media_type)),
       exp_node_(exp_node),
       restrictor_(restrictor),
       has_unknown_(exp_node_ ? exp_node_->HasUnknown() : false) {}
@@ -109,7 +110,7 @@ const MediaQueryExpNode* MediaQuery::ExpNode() const {
   return exp_node_.get();
 }
 
-const AtomicString& MediaQuery::MediaType() const {
+const std::string& MediaQuery::MediaType() const {
   return media_type_;
 }
 
@@ -119,8 +120,8 @@ bool MediaQuery::operator==(const MediaQuery& other) const {
 }
 
 // https://drafts.csswg.org/cssom/#serialize-a-list-of-media-queries
-AtomicString MediaQuery::CssText() const {
-  if (serialization_cache_.IsNull()) {
+std::string MediaQuery::CssText() const {
+  if (serialization_cache_.empty()) {
     const_cast<MediaQuery*>(this)->serialization_cache_ = Serialize();
   }
 

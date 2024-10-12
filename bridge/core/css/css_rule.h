@@ -88,7 +88,7 @@ class CSSRule : public ScriptWrappable {
     return type > Type::kViewportRule ? 0 : static_cast<int>(type);
   }
 
-  virtual std::string cssText() const = 0;
+  virtual AtomicString cssText() const = 0;
   virtual void Reattach(StyleRuleBase*) = 0;
 
   virtual CSSRuleList* cssRules() const { return nullptr; }

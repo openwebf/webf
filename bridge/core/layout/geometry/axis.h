@@ -7,7 +7,7 @@
 #ifndef WEBF_CORE_LAYOUT_GEOMETRY_AXIS_H_
 #define WEBF_CORE_LAYOUT_GEOMETRY_AXIS_H_
 
-#include "foundation/strong_alias.h"
+#include "core/base/types/strong_alias.h"
 #include "core/platform/text/writing_mode.h"
 
 namespace webf {

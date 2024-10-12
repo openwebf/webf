@@ -41,12 +41,28 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/css/css_initial_test.cc
 
   # CSS Parser
-  ./core/css/parser/css_parser_token_stream_test.cc
-  ./core/css/parser/css_parser_local_context_test.cc
-  ./core/css/parser/css_property_parser_test.cc
   ./core/css/css_primitive_value_test.cc
   ./core/css/css_test_helpers.cc
   ./core/css/css_math_expression_node_test.cc
+  ./core/css/parser/css_parser_token_stream_test.cc
+  ./core/css/parser/css_parser_local_context_test.cc
+  ./core/css/parser/css_property_parser_test.cc
+  ./core/css/parser/css_lazy_parsing_test.cc
+#  "parser/css_lazy_parsing_test.cc",
+#  "parser/css_parser_fast_paths_test.cc",
+#  "parser/css_parser_impl_test.cc",
+#  "parser/css_parser_local_context_test.cc",
+#  "parser/css_parser_token_stream_test.cc",
+#  "parser/css_parser_token_test.cc",
+#  "parser/css_property_parser_test.cc",
+#  "parser/css_selector_parser_test.cc",
+#  "parser/css_supports_parser_test.cc",
+#  "parser/css_tokenizer_test.cc",
+#  "parser/css_variable_parser_test.cc",
+#  "parser/find_length_of_declaration_list_test.cc",
+#  "parser/media_condition_test.cc",
+#  "parser/sizes_attribute_parser_test.cc",
+#  "parser/sizes_math_function_parser_test.cc",
 )
 
 ### webf_unit_test executable

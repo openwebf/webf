@@ -11,13 +11,13 @@
 #define WEBF_CSS_PARSER_TOKEN_RANGE_H
 
 #include <algorithm>
+#include <cassert>
+#include <span>
 #include <utility>
 #include <vector>
-#include <span>
-#include <cassert>
+#include "bindings/qjs/atomic_string.h"
 #include "core/base/containers/span.h"
 #include "css_parser_token.h"
-#include "bindings/qjs/atomic_string.h"
 
 namespace webf {
 
@@ -101,13 +101,13 @@ class CSSParserTokenOffsets {
  public:
   template <uint32_t InlineBuffer>
   CSSParserTokenOffsets(const std::vector<CSSParserToken>& vector,
-                        std::vector<uint32_t> offsets,
+                        std::vector<size_t> offsets,
                         std::string_view string)
       : first_(&vector.front()), offsets_(std::move(offsets)), string_(string) {
     assert(vector.size() + 1 == offsets_.size());
   }
   CSSParserTokenOffsets(tcb::span<const CSSParserToken> tokens,
-                        std::vector<uint32_t> offsets,
+                        std::vector<size_t> offsets,
                         std::string_view string)
       : first_(tokens.data()), offsets_(std::move(offsets)), string_(string) {
     assert(tokens.size() + 1 == offsets_.size());
@@ -129,7 +129,7 @@ class CSSParserTokenOffsets {
 
  private:
   const CSSParserToken* first_;
-  std::vector<uint32_t> offsets_;
+  std::vector<size_t> offsets_;
   std::string_view string_;
 };
 

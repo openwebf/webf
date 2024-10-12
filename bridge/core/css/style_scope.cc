@@ -128,10 +128,6 @@ std::shared_ptr<StyleScope> StyleScope::Parse(CSSParserTokenRange prelude,
 }
 
 void StyleScope::Trace(GCVisitor* visitor) const {
-  //visitor->Trace(contents_);
-  //visitor->Trace(from_);
-  //visitor->Trace(to_);
-  //visitor->Trace(parent_);
 }
 
 }  // namespace webf

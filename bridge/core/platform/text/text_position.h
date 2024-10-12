@@ -31,8 +31,8 @@
 #define WEBF_TEXT_POSITION_H
 
 #include <memory>
-#include "foundation/macros.h"
 #include "bindings/qjs/atomic_string.h"
+#include "foundation/macros.h"
 
 namespace webf {
 

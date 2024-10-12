@@ -139,7 +139,7 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
   // JavaScript binding (which needs to use this value for security).
   std::string OriginalURL() const { return original_url_; }
   // The response URL after redirects and service worker interception.
-  //  const KURL& BaseURL() const { return parser_context_->BaseURL(); }
+  const KURL& BaseURL() const { return parser_context_->BaseURL(); }
 
   unsigned RuleCount() const;
   StyleRuleBase* RuleAt(unsigned index) const;
@@ -155,8 +155,8 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
   bool HasOneClient() { return ClientSize() == 1; }
   size_t ClientSize() const { return loading_clients_.size() + completed_clients_.size(); }
 
-  void ClientLoadCompleted(CSSStyleSheet*);
-  void ClientLoadStarted(CSSStyleSheet*);
+//  void ClientLoadCompleted(CSSStyleSheet*);
+//  void ClientLoadStarted(CSSStyleSheet*);
 
   bool IsMutable() const { return is_mutable_; }
   void StartMutation();
@@ -175,13 +175,13 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
 
   bool DidLoadErrorOccur() const { return did_load_error_occur_; }
 
-  //  RuleSet& GetRuleSet() {
-  //    DCHECK(rule_set_);
-  //    return *rule_set_.Get();
-  //  }
-  //  bool HasRuleSet() { return rule_set_.Get(); }
-  //  RuleSet& EnsureRuleSet(const MediaQueryEvaluator&);
-  //  void ClearRuleSet();
+//  RuleSet& GetRuleSet() {
+//    DCHECK(rule_set_);
+//    return *rule_set_.Get();
+//  }
+//  bool HasRuleSet() { return rule_set_.Get(); }
+//  RuleSet& EnsureRuleSet(const MediaQueryEvaluator&);
+//  void ClearRuleSet();
 
   void Trace(GCVisitor*) const;
 

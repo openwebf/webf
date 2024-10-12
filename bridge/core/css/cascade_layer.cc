@@ -11,9 +11,9 @@
 
 namespace webf {
 
-std::shared_ptr<CascadeLayer> CascadeLayer::FindDirectSubLayer(const AtomicString& name) const {
+std::shared_ptr<CascadeLayer> CascadeLayer::FindDirectSubLayer(const std::string& name) const {
   // Anonymous layers are all distinct.
-  if (name == built_in_string::kempty_string) {
+  if (name == "") {
     return nullptr;
   }
   for (const auto& sub_layer : direct_sub_layers_) {
@@ -24,10 +24,9 @@ std::shared_ptr<CascadeLayer> CascadeLayer::FindDirectSubLayer(const AtomicStrin
   return nullptr;
 }
 
-std::shared_ptr<CascadeLayer> CascadeLayer::GetOrAddSubLayer(
-    const StyleRuleBase::LayerName& name) {
+std::shared_ptr<CascadeLayer> CascadeLayer::GetOrAddSubLayer(const StyleRuleBase::LayerName& name) {
   std::shared_ptr<CascadeLayer> layer = std::make_shared<CascadeLayer>(*this);
-  for (const AtomicString& name_part : name) {
+  for (const std::string& name_part : name) {
     std::shared_ptr<CascadeLayer> direct_sub_layer = layer->FindDirectSubLayer(name_part);
     if (!direct_sub_layer) {
       direct_sub_layer = std::make_shared<CascadeLayer>(name_part);
@@ -38,17 +37,15 @@ std::shared_ptr<CascadeLayer> CascadeLayer::GetOrAddSubLayer(
   return layer;
 }
 
-AtomicString CascadeLayer::ToStringForTesting() const {
+std::string CascadeLayer::ToStringForTesting() const {
   StringBuilder result;
   ToStringInternal(result, "");
   return result.ReleaseString();
 }
 
-void CascadeLayer::ToStringInternal(StringBuilder& result,
-                                    const StringView& prefix) const {
+void CascadeLayer::ToStringInternal(StringBuilder& result, const std::string& prefix) const {
   for (const auto& sub_layer : direct_sub_layers_) {
-    StringView name =
-        sub_layer->name_.length() ? sub_layer->name_ : StringView("(anonymous)");
+    std::string name = sub_layer->name_.length() ? sub_layer->name_ : "(anonymous)";
     if (result.length()) {
       result.Append(",");
     }
@@ -65,7 +62,5 @@ void CascadeLayer::Merge(const CascadeLayer& other, LayerMap& mapping) {
   }
 }
 
-void CascadeLayer::Trace(GCVisitor* visitor) const {
-
-}
+void CascadeLayer::Trace(GCVisitor* visitor) const {}
 }  // namespace webf

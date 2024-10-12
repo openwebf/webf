@@ -324,6 +324,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/at_rule_descriptor_parser.cc
     core/css/parser/css_variable_parser.cc
     core/css/parser/css_supports_parser.cc
+    core/css/parser/media_query_parser.cc
+    core/css/parser/container_query_parser.cc
     core/css/parser/css_lazy_property_parser_impl.cc
     core/css/parser/css_parser_token.cc
     core/css/parser/css_parser_fast_path.cc
@@ -341,9 +343,19 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_at_rule_id.cc
     core/css/properties/css_color_function_parser.cc
     core/css/css_rule.cc
+    core/css/css_rule_list.cc
     core/css/css_selector.cc
     core/css/css_selector_list.cc
     core/css/css_value.cc
+    core/css/media_list.cc
+    core/css/media_values.cc
+    core/css/style_scope.cc
+    core/css/cascade_layer.cc
+    core/css/container_selector.cc
+    core/css/container_query.cc
+    core/css/media_query_exp.cc
+    core/css/media_query.cc
+    core/css/media_query_evaluator.cc
     core/css/css_content_distribution_value.cc
     core/css/css_reflect_value.cc
     core/css/css_border_image.cc
@@ -739,6 +751,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/performance_entry_names.cc
     out/qjs_performance_measure_options.cc
     out/qjs_performance_mark_options.cc
+    out/qjs_css_rule_list.cc
+    out/qjs_media_list.cc
     out/performance_mark_constants.cc
     out/html_element_factory.cc
     out/html_names.cc
@@ -747,6 +761,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/element_attribute_names.cc
     out/element_namespace_uris.cc
     out/font_family_names.cc
+    out/media_feature_names.cc
     out/qjs_css_style_sheet.cc
 
     # SVG generated

@@ -221,7 +221,7 @@ ImmutableCSSPropertyValueSet::ImmutableCSSPropertyValueSet(const CSSPropertyValu
   }
 }
 
-std::shared_ptr<const ImmutableCSSPropertyValueSet> ImmutableCSSPropertyValueSet::Create(
+std::shared_ptr<ImmutableCSSPropertyValueSet> ImmutableCSSPropertyValueSet::Create(
     const CSSPropertyValue* properties,
     unsigned count,
     CSSParserMode css_parser_mode,

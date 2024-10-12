@@ -167,7 +167,7 @@ class CSSLazyPropertyParser {
   CSSLazyPropertyParser(const CSSLazyPropertyParser&) = delete;
   CSSLazyPropertyParser& operator=(const CSSLazyPropertyParser&) = delete;
   virtual ~CSSLazyPropertyParser() = default;
-  virtual std::shared_ptr<const CSSPropertyValueSet> ParseProperties() = 0;
+  virtual std::shared_ptr<CSSPropertyValueSet> ParseProperties() = 0;
   virtual void Trace(GCVisitor*) const;
 };
 
@@ -179,7 +179,7 @@ class alignas(std::max(alignof(std::shared_ptr<const CSSValue>),
                                CSSParserMode,
                                bool contains_cursor_hand = false);
 
-  static std::shared_ptr<const ImmutableCSSPropertyValueSet> Create(const CSSPropertyValue* properties,
+  static std::shared_ptr<ImmutableCSSPropertyValueSet> Create(const CSSPropertyValue* properties,
                                                                     unsigned count,
                                                                     CSSParserMode,
                                                                     bool contains_cursor_hand = false);

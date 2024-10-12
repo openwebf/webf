@@ -64,6 +64,21 @@ class CSSSelectorParser {
 
   static PseudoId ParsePseudoElement(const std::string& selector_string, const Node* parent, std::string& argument);
 
+  // https://drafts.csswg.org/css-cascade-6/#typedef-scope-start
+  // https://drafts.csswg.org/css-cascade-6/#typedef-scope-end
+  //
+  // Parse errors are signalled by returning std::nullopt. Empty spans are
+  // normal and expected, since <scope-start> / <scope-end> are forgiving
+  // selector lists.
+  static std::optional<tcb::span<CSSSelector>> ParseScopeBoundary(
+      CSSParserTokenStream&,
+      std::shared_ptr<const CSSParserContext>,
+      CSSNestingType,
+      std::shared_ptr<const StyleRule> parent_rule_for_nesting,
+      bool is_within_scope,
+      std::shared_ptr<StyleSheetContents>,
+      std::vector<CSSSelector>&);
+
  private:
   CSSSelectorParser(std::shared_ptr<const CSSParserContext>,
                     std::shared_ptr<const StyleRule> parent_rule_for_nesting,
