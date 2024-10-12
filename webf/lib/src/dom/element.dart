@@ -4,6 +4,7 @@
  */
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -18,7 +19,11 @@ import 'package:webf/src/bridge/native_types.dart';
 import 'package:webf/src/svg/rendering/container.dart';
 import 'package:webf/svg.dart';
 import 'package:webf/widget.dart';
-import 'package:webf/src/css/query_selector.dart' as QuerySelector;
+
+import '../../bridge.dart';
+import '../rendering/custom_scroll_layout.dart';
+import 'intersection_observer.dart';
+import 'intersection_observer_entry.dart';
 
 final RegExp classNameSplitRegExp = RegExp(r'\s+');
 const String _ONE_SPACE = ' ';
@@ -112,6 +117,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   String? _id;
 
   String? get id => _id;
+
+  RenderLayoutBox? renderLayoutBox;
+
+  final Set<IntersectionObserver> _intersectionObserverList = HashSet();
 
   set id(String? id) {
     final isNeedRecalculate = _checkRecalculateStyle([id, _id]);
@@ -1978,7 +1987,34 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
     return style;
   }
+
+  void _handleIntersectionChange(IntersectionObserverEntry entry) async {
+    // TODO(pengfei12.guo): 若存在多个IntersectionObserver，无法区分IntersectionObserver
+    for (var observer in _intersectionObserverList) {
+      observer.addEntry(DartIntersectionObserverEntry(entry.isIntersecting, this));
+    }
+  }
+
+  // IntersectionObserver 相关
+  void addIntersectionObserver(IntersectionObserver observer) {
+    if (_intersectionObserverList.isEmpty) {
+      renderBoxModel?.addIntersectionChangeListener(_handleIntersectionChange);
+    }
+
+    _intersectionObserverList.add(observer);
+  }
+
+  void removeIntersectionObserver(IntersectionObserver observer) {
+    _intersectionObserverList.remove(observer);
+
+    if (_intersectionObserverList.isEmpty) {
+      renderBoxModel?.removeIntersectionChangeListener(_handleIntersectionChange);
+    }
+  }
 }
+
+Element? _findCustomScrollLayout(Element child) {
+  Element? parent = child.parentElement;
 
 // https://www.w3.org/TR/css-position-3/#def-cb
 Element? _findContainingBlock(Element child, Element viewportElement) {

@@ -24,6 +24,15 @@ static void ReturnEventResultToDart(Dart_Handle persistent_handle,
   Dart_DeletePersistentHandle_DL(persistent_handle);
 }
 
+// typedef DartInvokeBindingMethodsFromDart = void Function(
+//     Pointer<NativeBindingObject> binding_object,
+//     int profileId,
+//     Pointer<NativeValue> method,
+//     int argc,
+//     Pointer<NativeValue> argv,
+//     Object bindingDartObject,
+//     Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
+
 static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
                                           int64_t profile_id,
                                           NativeValue* method,
@@ -47,6 +56,16 @@ static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
 NativeBindingObject::NativeBindingObject(BindingObject* target)
     : binding_target_(target), invoke_binding_methods_from_dart(HandleCallFromDartSideWrapper) {}
 
+// typedef DartInvokeBindingMethodsFromDart = void Function(
+//     Pointer<NativeBindingObject> binding_object,
+//     int profileId,
+//     Pointer<NativeValue> method,
+//     int argc,
+//     Pointer<NativeValue> argv,
+//     Object bindingDartObject,
+//     Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
+// f(pointer!, currentProfileOp?.hashCode ?? 0, nullptr, dispatchEntryArguments.length, allocatedNativeArguments,
+//     context, resultCallback);
 void NativeBindingObject::HandleCallFromDartSide(DartIsolateContext* dart_isolate_context,
                                                  NativeBindingObject* binding_object,
                                                  int64_t profile_id,
@@ -60,9 +79,11 @@ void NativeBindingObject::HandleCallFromDartSide(DartIsolateContext* dart_isolat
 
   dart_isolate_context->profiler()->StartTrackEvaluation(profile_id);
 
-  AtomicString method = AtomicString(
-      binding_object->binding_target_->ctx(),
-      std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_method->u.ptr)));
+  auto context = binding_object->binding_target_->ctx();
+  AtomicString method = native_method != nullptr
+                            ? AtomicString(context, std::unique_ptr<AutoFreeNativeString>(
+                                                        reinterpret_cast<AutoFreeNativeString*>(native_method->u.ptr)))
+                            : AtomicString(context, "");
   NativeValue result = binding_object->binding_target_->HandleCallFromDartSide(method, argc, argv, dart_object);
 
   auto* return_value = new NativeValue();
@@ -427,6 +448,10 @@ bool BindingObject::IsComputedCssStyleDeclaration() const {
 }
 
 bool BindingObject::IsCanvasGradient() const {
+  return false;
+}
+
+bool BindingObject::IsIntersectionObserverEntry() const {
   return false;
 }
 

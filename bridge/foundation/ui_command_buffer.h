@@ -44,6 +44,9 @@ enum class UICommand {
   kCreateSVGElement,
   kCreateElementNS,
   kFinishRecordingCommand,
+  kAddIntersectionObserver,
+  kRemoveIntersectionObserver,
+  kDisconnectIntersectionObserver,
 };
 
 #define MAXIMUM_UI_COMMAND_SIZE 2048

@@ -120,8 +120,9 @@ class NativeBindingObject extends Struct {
   @Bool()
   external bool disposed;
   external Pointer<Void> instance;
+  // Shared method called by dart side, webf::HandleCallFromDartSideWrapper
   external Pointer<NativeFunction<InvokeBindingMethodsFromDart>> invokeBindingMethodFromDart;
-  // Shared method called by JS side.
+  // Shared method called by JS side, invokeBindingMethodFromNativeImpl
   external Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> invokeBindingMethodFromNative;
   external Pointer<Void> extra;
 }
