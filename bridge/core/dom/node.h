@@ -9,6 +9,7 @@
 #include <set>
 #include <utility>
 
+#include "plugin_api/node.h"
 #include "events/event_target.h"
 #include "foundation/macros.h"
 #include "mutation_observer.h"
@@ -259,6 +260,7 @@ class Node : public EventTarget {
   const MutationObserverRegistrationSet* TransientMutationObserverRegistry();
 
   void Trace(GCVisitor*) const override;
+  const NodePublicMethods* nodePublicMethods();
 
  private:
   enum NodeFlags : uint32_t {

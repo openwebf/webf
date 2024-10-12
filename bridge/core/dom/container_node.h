@@ -10,6 +10,7 @@
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/heap_vector.h"
 #include "core/html/collection_type.h"
+#include "plugin_api/container_node.h"
 #include "node.h"
 
 namespace webf {
@@ -151,6 +152,7 @@ class ContainerNode : public Node {
   Collection* EnsureCachedCollection(CollectionType);
 
   void Trace(GCVisitor* visitor) const override;
+  const ContainerNodePublicMethods* containerNodePublicMethods();
 
  protected:
   ContainerNode(TreeScope* tree_scope, ConstructionType = kCreateContainer);
@@ -191,6 +193,7 @@ class ContainerNode : public Node {
 
   Member<Node> first_child_;
   Member<Node> last_child_;
+
 };
 
 inline Node* Node::firstChild() const {

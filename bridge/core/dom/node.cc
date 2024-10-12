@@ -29,6 +29,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "plugin_api/node.h"
 #include "node.h"
 #include <unordered_map>
 #include "character_data.h"
@@ -711,6 +712,11 @@ void Node::Trace(GCVisitor* visitor) const {
     event_target_data_->Trace(visitor);
   }
   EventTarget::Trace(visitor);
+}
+
+const NodePublicMethods* Node::nodePublicMethods() {
+  static NodePublicMethods node_public_methods;
+  return &node_public_methods;
 }
 
 }  // namespace webf

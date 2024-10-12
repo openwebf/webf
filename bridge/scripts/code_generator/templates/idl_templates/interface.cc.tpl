@@ -137,7 +137,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
       return success;
     };
   <% } %>
- <% } %>
+<% } %>
 
 <% _.forEach(filtedMethods, function(method, index) { %>
 

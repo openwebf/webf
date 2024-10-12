@@ -10,6 +10,7 @@
 #include "bindings/qjs/qjs_function.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
+#include "plugin_api/event_target.h"
 #include "event_listener_map.h"
 #include "foundation/logging.h"
 #include "foundation/native_string.h"
@@ -105,6 +106,10 @@ class EventTarget : public BindingObject {
   bool addEventListener(const AtomicString& event_type,
                         const std::shared_ptr<EventListener>& event_listener,
                         ExceptionState& exception_state);
+  bool addEventListener(const AtomicString& event_type,
+                        const std::shared_ptr<EventListener>& event_listener,
+                        const std::shared_ptr<AddEventListenerOptions>& options,
+                        ExceptionState& exception_state);
   bool removeEventListener(const AtomicString& event_type,
                            const std::shared_ptr<EventListener>& event_listener,
                            ExceptionState& exception_state);
@@ -134,6 +139,8 @@ class EventTarget : public BindingObject {
   virtual bool IsWindowOrWorkerGlobalScope() const { return false; }
   virtual bool IsNode() const { return false; }
   bool IsEventTarget() const override;
+
+  const EventTargetPublicMethods* eventTargetPublicMethods();
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,
