@@ -159,7 +159,6 @@ void InstallBindings(ExecutingContext* context) {
   QJSImage::Install(context);
   QJSHTMLScriptElement::Install(context);
   QJSHTMLLinkElement::Install(context);
-  QJSCSSStyleSheet::Install(context);
 
   QJSHTMLUnknownElement::Install(context);
   QJSHTMLTemplateElement::Install(context);
