@@ -48,6 +48,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/css/parser/css_parser_local_context_test.cc
   ./core/css/parser/css_property_parser_test.cc
   ./core/css/parser/css_lazy_parsing_test.cc
+  ./core/css/parser/container_query_parser_test.cc
 #  "parser/css_lazy_parsing_test.cc",
 #  "parser/css_parser_fast_paths_test.cc",
 #  "parser/css_parser_impl_test.cc",

@@ -281,8 +281,8 @@ ConsumeIntegerInternal(T& range,
   }
 
   MathFunctionParser<T> math_parser(range, context, value_range, parsing_flags);
-  if (const std::shared_ptr<const CSSMathFunctionValue>* math_value = math_parser.Value()) {
-    if (math_value->get()->Category() != kCalcNumber) {
+  if (const std::shared_ptr<const CSSMathFunctionValue> math_value = *math_parser.Value()) {
+    if (math_value->Category() != kCalcNumber) {
       return nullptr;
     }
     return math_parser.ConsumeValue();
@@ -342,8 +342,8 @@ ConsumeIntegerOrNumberCalc(T& range,
   }
 
   MathFunctionParser math_parser(range, context, value_range);
-  if (auto* calculation = math_parser.Value()) {
-    if (calculation->get()->Category() != kCalcNumber) {
+  if (auto calculation = *math_parser.Value()) {
+    if (calculation->Category() != kCalcNumber) {
       return nullptr;
     }
     return math_parser.ConsumeValue();
@@ -420,8 +420,8 @@ std::shared_ptr<const CSSPrimitiveValue> ConsumeNumber(CSSParserTokenStream& str
     return CSSNumericLiteralValue::Create(stream.ConsumeIncludingWhitespace().NumericValue(), token.GetUnitType());
   }
   MathFunctionParser math_parser(stream, context, value_range);
-  if (auto* calculation = math_parser.Value()) {
-    if (calculation->get()->Category() != kCalcNumber) {
+  if (auto calculation = *math_parser.Value()) {
+    if (calculation->Category() != kCalcNumber) {
       return nullptr;
     }
     return math_parser.ConsumeValue();
