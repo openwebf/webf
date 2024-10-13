@@ -856,6 +856,13 @@ void KURL::Init(const KURL& base, const std::string& relative) {
   // Clamp to int max to avoid overflow.
   url::RawCanonOutputT<char> output;
 
+  if (!relative.empty()) {
+    is_valid_ = url::ResolveRelative(base_utf8.data(), base_utf8.size(),
+                                     base.parsed_, relative.data(),
+                                     ClampTo<int>(relative.size()),
+                                     &output, &parsed_);
+  }
+
   // Constructing an Atomicstd::string will re-hash the raw output and check the
   // AtomicStringTable (addWithTranslator) for the string. This can be very
   // expensive for large URLs. However, since many URLs are generated from

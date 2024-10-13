@@ -21,4 +21,15 @@ std::shared_ptr<T> reinterpret_pointer_cast(const std::shared_ptr<U>& r) noexcep
 
 }
 
+namespace webf {
+
+template <typename T, typename... Args>
+std::shared_ptr<T> MakeSharedPtrWithAdditionalBytes(size_t additional_bytes, Args&&... args) {
+  void* memory = malloc(sizeof(T) + additional_bytes);
+  memset(memory, 0, sizeof(T) + additional_bytes);
+  return std::shared_ptr<T>(::new(memory) T(std::forward<Args>(args)...));
+}
+
+}
+
 #endif

@@ -1194,7 +1194,7 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRule(CSSParserTokenStream&
 
   // Parse the prelude of the style rule
   tcb::span<CSSSelector> selector_vector =
-      CSSSelectorParser::ConsumeSelector(stream, context_, nesting_type, parent_rule_for_nesting, is_within_scope_,
+      CSSSelectorParser::ConsumeSelector(stream, context_, nesting_type, std::move(parent_rule_for_nesting), is_within_scope_,
                                          semicolon_aborts_nested_selector, style_sheet_, nullptr, arena_);
 
   if (selector_vector.empty()) {

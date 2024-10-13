@@ -26,6 +26,7 @@
 #define WEBF_CSS_PROPERTY_VALUE_SET_H
 
 #include <span>
+#include "core/base/bits.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/base/bits.h"
 #include "core/base/compiler_specific.h"
@@ -50,8 +51,6 @@ class CSSPropertyValueSet : public std::enable_shared_from_this<CSSPropertyValue
  public:
   CSSPropertyValueSet(const CSSPropertyValueSet&) = delete;
   CSSPropertyValueSet& operator=(const CSSPropertyValueSet&) = delete;
-
-  void FinalizeGarbageCollectedObject();
 
   class PropertyReference {
     WEBF_STACK_ALLOCATED();
@@ -196,14 +195,14 @@ class alignas(std::max(alignof(std::shared_ptr<const CSSValue>),
 };
 
 inline const std::shared_ptr<const CSSValue>* ImmutableCSSPropertyValueSet::ValueArray() const {
-  static_assert(sizeof(ImmutableCSSPropertyValueSet) % alignof(Member<const CSSValue>) == 0,
+  static_assert(sizeof(ImmutableCSSPropertyValueSet) % alignof(std::shared_ptr<const CSSValue>) == 0,
                 "ValueArray may be improperly aligned");
-  return reinterpret_cast<const std::shared_ptr<const CSSValue>*>(this + 1);
+  return (const std::shared_ptr<const CSSValue>*)(this + 1);
 }
 
 inline const CSSPropertyValueMetadata* ImmutableCSSPropertyValueSet::MetadataArray() const {
   static_assert(sizeof(ImmutableCSSPropertyValueSet) % alignof(CSSPropertyValueMetadata) == 0 &&
-                    sizeof(Member<CSSValue>) % alignof(CSSPropertyValueMetadata) == 0,
+                    sizeof(std::shared_ptr<CSSValue>) % alignof(CSSPropertyValueMetadata) == 0,
                 "MetadataArray may be improperly aligned");
   return reinterpret_cast<const CSSPropertyValueMetadata*>(ValueArray() + array_size_);
 }

@@ -29,13 +29,14 @@
 #include <cstdint>
 #include <span>
 #include "core/base/bits.h"
+#include "core/base/memory/shared_ptr.h"
 #include "core/base/types/pass_key.h"
-#include "core/css/css_selector.h"
-#include "core/css/media_list.h"
 #include "core/css/container_query.h"
-#include "core/css/style_scope.h"
-#include "core/css/css_variable_data.h"
+#include "core/css/css_selector.h"
 #include "core/css/css_syntax_definition.h"
+#include "core/css/css_variable_data.h"
+#include "core/css/media_list.h"
+#include "core/css/style_scope.h"
 #include "css_at_rule_id.h"
 #include "css_property_value_set.h"
 #include "css_selector_list.h"
@@ -230,24 +231,34 @@ class StyleRuleBase : public std::enable_shared_from_this<StyleRuleBase> {
 // for us.) StyleRule provides an API that is a subset of CSSSelectorList,
 // partially implemented using its static member functions.
 class StyleRule : public StyleRuleBase {
+  static size_t AdditionalBytesForSelectors(size_t flattened_size) {
+    constexpr size_t padding_bytes = base::bits::AlignUp(sizeof(StyleRule), alignof(CSSSelector)) - sizeof(StyleRule);
+    return (sizeof(CSSSelector) * flattened_size) + padding_bytes;
+  }
+
  public:
   static std::shared_ptr<StyleRule> Create(tcb::span<CSSSelector> selectors,
                                            std::shared_ptr<const CSSPropertyValueSet> properties) {
-    return std::make_shared<StyleRule>(webf::PassKey<StyleRule>(), selectors, std::move(properties));
+    return MakeSharedPtrWithAdditionalBytes<StyleRule>(AdditionalBytesForSelectors(selectors.size()),
+                                                       webf::PassKey<StyleRule>(), selectors, std::move(properties));
   }
   static std::shared_ptr<StyleRule> Create(tcb::span<CSSSelector> selectors,
                                            std::shared_ptr<CSSLazyPropertyParser> lazy_property_parser) {
-    return std::make_shared<StyleRule>(webf::PassKey<StyleRule>(), selectors, std::move(lazy_property_parser));
+    return MakeSharedPtrWithAdditionalBytes<StyleRule>(AdditionalBytesForSelectors(selectors.size()),
+                                                       webf::PassKey<StyleRule>(), selectors,
+                                                       std::move(lazy_property_parser));
   }
 
   // See comment on the corresponding constructor.
   static std::shared_ptr<StyleRule> Create(tcb::span<CSSSelector> selectors) {
-    return std::make_shared<StyleRule>(webf::PassKey<StyleRule>(), selectors);
+    return MakeSharedPtrWithAdditionalBytes<StyleRule>(AdditionalBytesForSelectors(selectors.size()),
+                                                       webf::PassKey<StyleRule>(), selectors);
   }
 
   // Creates a StyleRule with the selectors changed (used by setSelectorText()).
   static std::shared_ptr<StyleRule> Create(tcb::span<CSSSelector> selectors, StyleRule&& other) {
-    return std::make_shared<StyleRule>(webf::PassKey<StyleRule>(), selectors, std::move(other));
+    return MakeSharedPtrWithAdditionalBytes<StyleRule>(AdditionalBytesForSelectors(selectors.size()),
+                                                       webf::PassKey<StyleRule>(), selectors, std::move(other));
   }
 
   // Constructors. Note that these expect that the StyleRule has been
@@ -556,15 +567,11 @@ class StyleRuleSupports : public StyleRuleCondition {
   StyleRuleSupports(const StyleRuleSupports&);
 
   bool ConditionIsSupported() const { return condition_is_supported_; }
-  std::shared_ptr<StyleRuleSupports> Copy() const {
-    return std::make_shared<StyleRuleSupports>(*this);
-  }
+  std::shared_ptr<StyleRuleSupports> Copy() const { return std::make_shared<StyleRuleSupports>(*this); }
 
   void SetConditionText(const ExecutingContext*, std::string);
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-    StyleRuleCondition::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const { StyleRuleCondition::TraceAfterDispatch(visitor); }
 
  private:
   bool condition_is_supported_;
@@ -577,9 +584,7 @@ class StyleRuleContainer : public StyleRuleCondition {
 
   ContainerQuery& GetContainerQuery() const { return *container_query_; }
 
-  std::shared_ptr<StyleRuleContainer> Copy() const {
-    return std::make_shared<StyleRuleContainer>(*this);
-  }
+  std::shared_ptr<StyleRuleContainer> Copy() const { return std::make_shared<StyleRuleContainer>(*this); }
 
   void SetConditionText(const ExecutingContext*, std::string);
 
@@ -594,13 +599,9 @@ class StyleRuleStartingStyle : public StyleRuleGroup {
   explicit StyleRuleStartingStyle(std::vector<std::shared_ptr<StyleRuleBase>> rules);
   StyleRuleStartingStyle(const StyleRuleStartingStyle&) = default;
 
-  std::shared_ptr<StyleRuleStartingStyle> Copy() const {
-    return std::make_shared<StyleRuleStartingStyle>(*this);
-  }
+  std::shared_ptr<StyleRuleStartingStyle> Copy() const { return std::make_shared<StyleRuleStartingStyle>(*this); }
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-    StyleRuleGroup::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const { StyleRuleGroup::TraceAfterDispatch(visitor); }
 };
 
 // An @function rule, representing a CSS function.
@@ -675,7 +676,6 @@ class StyleRuleApplyMixin : public StyleRuleBase {
  private:
   std::string name_;
 };
-
 
 template <>
 struct DowncastTraits<StyleRule> {

@@ -28,26 +28,18 @@
 #include "css_property_value_set.h"
 #include <span>
 #include "core/base/memory/shared_ptr.h"
-#include "core/css/properties/css_property.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_markup.h"
 #include "core/css/parser/css_parser.h"
+#include "core/css/properties/css_property.h"
+#include "core/css/property_set_css_style_declaration.h"
 #include "core/css/style_property_serializer.h"
 #include "core/css/style_sheet_contents.h"
-#include "core/css/property_set_css_style_declaration.h"
 #include "foundation/macros.h"
 #include "property_bitsets.h"
 #include "style_property_shorthand.h"
 
 namespace webf {
-
-void CSSPropertyValueSet::FinalizeGarbageCollectedObject() {
-  if (is_mutable_) {
-    To<MutableCSSPropertyValueSet>(this)->~MutableCSSPropertyValueSet();
-  } else {
-    To<ImmutableCSSPropertyValueSet>(this)->~ImmutableCSSPropertyValueSet();
-  }
-}
 
 template <typename T>
 const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValue(const T& property) const {
@@ -58,7 +50,8 @@ const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValue(
   return PropertyAt(found_property_index).Value();
 }
 
-static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> property_set, CSSPropertyID property_id) {
+static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> property_set,
+                                      CSSPropertyID property_id) {
   StylePropertyShorthand shorthand = shorthandForProperty(property_id);
   if (shorthand.length() == 0) {
     return "";
@@ -121,7 +114,7 @@ bool CSSPropertyValueSet::ShorthandIsImportant(CSSPropertyID property_id) const 
     return false;
   }
 
-  for(int i = 0; i < shorthand.length(); i ++) {
+  for (int i = 0; i < shorthand.length(); i++) {
     if (!PropertyIsImportant(longhands[i]->PropertyID())) {
       return false;
     }
@@ -213,7 +206,8 @@ ImmutableCSSPropertyValueSet::ImmutableCSSPropertyValueSet(const CSSPropertyValu
                                                            bool contains_query_hand)
     : CSSPropertyValueSet(css_parser_mode, length, contains_query_hand) {
   auto* metadata_array = const_cast<CSSPropertyValueMetadata*>(MetadataArray());
-  auto* value_array = const_cast<std::shared_ptr<const CSSValue>*>(ValueArray());
+  auto* value_array = (const_cast<std::shared_ptr<const CSSValue>*>(ValueArray()));
+
   for (unsigned i = 0; i < array_size_; ++i) {
     new (metadata_array + i) CSSPropertyValueMetadata();
     metadata_array[i] = properties[i].Metadata();
@@ -221,13 +215,16 @@ ImmutableCSSPropertyValueSet::ImmutableCSSPropertyValueSet(const CSSPropertyValu
   }
 }
 
-std::shared_ptr<ImmutableCSSPropertyValueSet> ImmutableCSSPropertyValueSet::Create(
-    const CSSPropertyValue* properties,
-    unsigned count,
-    CSSParserMode css_parser_mode,
-    bool contains_cursor_hand) {
+std::shared_ptr<ImmutableCSSPropertyValueSet> ImmutableCSSPropertyValueSet::Create(const CSSPropertyValue* properties,
+                                                                                   unsigned count,
+                                                                                   CSSParserMode css_parser_mode,
+                                                                                   bool contains_cursor_hand) {
   assert(count < static_cast<unsigned>(kMaxArraySize));
-  return std::make_shared<ImmutableCSSPropertyValueSet>(properties, count, css_parser_mode, contains_cursor_hand);
+  size_t addition_bytes =
+      base::bits::AlignUp(sizeof(std::shared_ptr<CSSValue>) * count, alignof(CSSPropertyValueMetadata)) +
+      sizeof(CSSPropertyValueMetadata) * count;
+  return MakeSharedPtrWithAdditionalBytes<ImmutableCSSPropertyValueSet>(addition_bytes, properties, count,
+                                                                        css_parser_mode, contains_cursor_hand);
 }
 
 // Convert property into an uint16_t for comparison with metadata's property id
@@ -252,8 +249,7 @@ static bool IsPropertyMatch(const CSSPropertyValueMetadata& metadata, uint16_t i
 // style.
 // TODO(hjkim3323@gmail.com): Remove kInternalFontSizeDelta bypassing hack
 #if DCHECK_IS_ON()
-  DCHECK(!result  ||
-         CSSProperty::Get(ResolveCSSPropertyID(property_id)).IsWebExposed());
+  DCHECK(!result || CSSProperty::Get(ResolveCSSPropertyID(property_id)).IsWebExposed());
 #endif
   return result;
 }
@@ -349,7 +345,7 @@ void MutableCSSPropertyValueSet::SetProperty(CSSPropertyID property_id,
 
   // The simple shorthand expansion below doesn't work for `white-space`.
   DCHECK_NE(property_id, CSSPropertyID::kWhiteSpace);
-  for (int i = 0; i < shorthand.length(); i ++) {
+  for (int i = 0; i < shorthand.length(); i++) {
     CSSPropertyName longhand_name(shorthand.properties()[i]->PropertyID());
     property_vector_.emplace_back(CSSPropertyValue(longhand_name, value, important));
   }
@@ -450,9 +446,7 @@ bool MutableCSSPropertyValueSet::RemoveProperty(const T& property, std::string* 
   return RemovePropertyAtIndex(found_property_index, return_text);
 }
 
-inline bool ContainsId(const CSSProperty* const set[],
-                       unsigned length,
-                       CSSPropertyID id) {
+inline bool ContainsId(const CSSProperty* const set[], unsigned length, CSSPropertyID id) {
   for (unsigned i = 0; i < length; ++i) {
     if (set[i]->IDEquals(id))
       return true;
@@ -549,8 +543,8 @@ CSSStyleDeclaration* MutableCSSPropertyValueSet::EnsureCSSStyleDeclaration(Execu
     //    DCHECK(!cssom_wrapper_->ParentElement());
     return cssom_wrapper_.get();
   }
-//  new PropertySetCSSStyleDeclaration(execution_context, shared_from_this());
-//  cssom_wrapper_ = std::make_shared<PropertySetCSSStyleDeclaration>(execution_context, shared_from_this());
+  //  new PropertySetCSSStyleDeclaration(execution_context, shared_from_this());
+  //  cssom_wrapper_ = std::make_shared<PropertySetCSSStyleDeclaration>(execution_context, shared_from_this());
   return cssom_wrapper_.get();
 }
 

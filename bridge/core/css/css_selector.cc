@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <memory>
+#include "core/base/strings/string_util.h"
 #include "core/css/css_markup.h"
 #include "core/css/css_selector_list.h"
 #include "core/css/parser/css_parser_context.h"
@@ -66,7 +67,7 @@ CSSSelector::CSSSelector(const CSSSelector& o) : bits_(o.bits_), data_(DataUnion
   } else if (o.HasRareData()) {
     data_.rare_data_ = o.data_.rare_data_;  // Oilpan-managed.
   } else {
-    data_.value_ = o.data_.value_;
+    new (&data_.value_) std::string(o.data_.value_);
   }
 }
 
@@ -889,7 +890,7 @@ CSSSelector::PseudoType CSSSelector::NameToPseudoType(const std::string& name,
         // before |entry|.
         return strncmp(entry.string, reinterpret_cast<const char*>(name.c_str()), name.length()) < 0;
       });
-  if (match == pseudo_type_map_end || match->string != reinterpret_cast<const char*>(name.c_str())) {
+  if (match == pseudo_type_map_end || match->string != name) {
     return CSSSelector::kPseudoUnknown;
   }
 
@@ -940,7 +941,7 @@ void CSSSelector::UpdatePseudoType(const std::string& value,
                                    CSSParserMode mode) {
   assert(Match() == kPseudoClass || Match() == kPseudoElement);
   // TODO(xiezuobing): 源代码 [ AtomicString lower_value = value.LowerASCII() ]
-  std::string lower_value = value;
+  std::string lower_value = base::ToLowerASCII(value);
   PseudoType pseudo_type = CSSSelectorParser::ParsePseudoType(lower_value, has_arguments, context->GetDocument());
   SetPseudoType(pseudo_type);
   SetValue(pseudo_type == kPseudoStateDeprecatedSyntax ? value : lower_value);

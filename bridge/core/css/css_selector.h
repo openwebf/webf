@@ -793,12 +793,12 @@ class CSSSelector {
     explicit DataUnion(const std::string& value) : value_(value) {}
 
     explicit DataUnion(const QualifiedName& tag_q_name)
-        : tag_q_name_(tag_q_name) {}
+        : tag_q_name_(std::move(tag_q_name)) {}
 
     explicit DataUnion(std::shared_ptr<const StyleRule> parent_rule)
-        : parent_rule_(parent_rule) {}
+        : parent_rule_(std::move(parent_rule)) {}
 
-    explicit DataUnion(std::shared_ptr<RareData> rare_data) : rare_data_(rare_data) {}
+    explicit DataUnion(std::shared_ptr<RareData> rare_data) : rare_data_(std::move(rare_data)) {}
 
     ~DataUnion() {}
 
