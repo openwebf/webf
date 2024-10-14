@@ -54,9 +54,6 @@ namespace mojom {
 enum class ColorScheme : int32_t;
 }
 
-namespace cssvalue {
-class CSSColorMixValue;
-}  // namespace cssvalue
 
 class StyleColor {
   WEBF_DISALLOW_NEW();

@@ -44,7 +44,7 @@ class CSSValueList : public CSSValue {
     return std::make_shared<CSSValueList>(kCommaSeparator);
   }
   static std::shared_ptr<CSSValueList> CreateSpaceSeparated() {
-    return std::make_shared<CSSValueList>(kCommaSeparator);
+    return std::make_shared<CSSValueList>(kSpaceSeparator);
   }
   static std::shared_ptr<CSSValueList> CreateSlashSeparated() {
     return std::make_shared<CSSValueList>(kSlashSeparator);

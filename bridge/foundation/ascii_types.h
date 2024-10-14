@@ -130,13 +130,15 @@ inline char ToASCIILower(char c) {
   return static_cast<char>(kASCIICaseFoldTable[static_cast<unsigned char>(c)]);
 }
 
-template <typename CharType>
-inline bool IsASCIIAlphaCaselessEqual(CharType css_character, char character) {
+inline bool IsASCIIAlphaCaselessEqual(char css_character, char character) {
   // This function compares a (preferably) constant ASCII
   // lowercase letter to any input character.
-  assert(character > 'a');
-  assert(character < 'z');
-  return LIKELY((css_character | 0x20) == character);
+  DCHECK_GE(character, 'a');
+  DCHECK_LE(character, 'z');
+  if ((css_character | 0x20) == character) [[likely]] {
+    return true;
+  }
+  return false;
 }
 
 }  // namespace webf

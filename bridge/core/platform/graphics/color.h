@@ -53,6 +53,43 @@ class Color {
   WEBF_DISALLOW_NEW();
 
  public:
+  // This enum represent the color space of the color itself. This is also used
+  // for serialization purposes and for initialization. Don't change the order
+  // of this enum, as how it's ordered helps performance (the compiler can
+  // decide that the first few elements are for ColorFunctionSpace and the last
+  // few elements are for RGB-like serialization.)
+  // For details on serialization, see:
+  // https://www.w3.org/TR/css-color-4/#serializing-color-values
+  // https://www.w3.org/TR/css-color-5/#serial-relative-color
+  enum class ColorSpace : uint8_t {
+    // All these are to be serialized with the color() syntax of a given
+    // predefined color space. The
+    // values of `params0_`, `params1_`, and `params2_` are red, green, and blue
+    // values in the color space specified by `color_space_`.
+    kSRGB,
+    // Serializes to rgb() or rgba().
+    // The values of `params0_`, `params1_`, and `params2_` are red, green, and
+    // blue sRGB values, and are guaranteed to be present and in the [0, 1]
+    // interval.
+    kSRGBLegacy,
+    // Serializes to rgb() or rgba() for non-relative colors and to hsl() for
+    // unresolved relative colors.
+    // The values of `params0_`, `params1_`, and `params2_` are Hue, Saturation,
+    // and Ligthness. These can be none. Hue is a namber in the range from 0.0
+    // to 6.0, and the rest are in the rance from 0.0 to 1.0.
+    // interval.
+    kHSL,
+    // Serializes to rgb() or rgba() for non-relative colors and to hwb() for
+    // unresolved relative colors.
+    // The values of `params0_`, `params1_`, and `params2_` are Hue, White,
+    // and Black. These can be none. Hue is a namber in the range from 0.0
+    // to 6.0, and the rest are in the rance from 0.0 to 1.0.
+    // interval.
+    kHWB,
+    // An uninitialized color.
+    kNone,
+  };
+
   struct KeyHasher {
     std::size_t operator()(const Color& c) const { return c.GetHash(); }
   };
@@ -96,19 +133,34 @@ class Color {
   // [0, 1] interval. For colorspaces with Luminance the first channel will be
   // clamped to be non-negative. For colorspaces with chroma in param1 that
   // parameter will also be clamped to be non-negative.
-  static Color FromColor(std::optional<float> param0,
+  static Color FromColorSpace(ColorSpace color_space,
+                              std::optional<float> param0,
                          std::optional<float> param1,
                          std::optional<float> param2,
                          std::optional<float> alpha);
-  static Color FromColor(std::optional<float> param0, std::optional<float> param1, std::optional<float> param2) {
-    return FromColor(param0, param1, param2, 1.0f);
+  static Color FromColorSpace(ColorSpace color_space, std::optional<float> param0, std::optional<float> param1, std::optional<float> param2) {
+    return FromColorSpace(color_space, param0, param1, param2, 1.0f);
   }
+
+  ColorSpace GetColorSpace() const { return color_space_; }
+  void ConvertToColorSpace(ColorSpace destination_color_space,
+                           bool resolve_missing_components = true);
+
 
   // Create a color using the hsl() syntax.
   static Color FromHSLA(std::optional<float> h, std::optional<float> s, std::optional<float> l, std::optional<float> a);
 
   // Create a color using the hwb() syntax.
   static Color FromHWBA(std::optional<float> h, std::optional<float> w, std::optional<float> b, std::optional<float> a);
+
+  // https://www.w3.org/TR/css-color-4/#legacy-color-syntax
+  // Returns true if the color is of a type that predates CSS Color 4. Includes
+  // rgb(), rgba(), hex color, named color, hsl() and hwb() types. These colors
+  // interpolate and serialize differently from other color types.
+  static bool IsLegacyColorSpace(ColorSpace color_space) {
+    return color_space == ColorSpace::kSRGBLegacy ||
+           color_space == ColorSpace::kHSL || color_space == ColorSpace::kHWB;
+  }
 
   enum class HueInterpolationMethod : uint8_t {
     kShorter,
@@ -251,6 +303,8 @@ class Color {
 
   // The alpha value for the color is guaranteed to be in the [0, 1] interval.
   float alpha_ = 0.f;
+
+  ColorSpace color_space_;
 };
 
 // For unit tests and similar.

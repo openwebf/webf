@@ -16,9 +16,9 @@
 
 namespace webf {
 
-class ColorFunctionParser {
-  WEBF_STACK_ALLOCATED();
+class CSSValue;
 
+class ColorFunctionParser {
  public:
   ColorFunctionParser() = default;
   // Parses the color inputs rgb(), rgba(), hsl(), hsla(), hwb(), lab(),
@@ -37,27 +37,24 @@ class ColorFunctionParser {
   ConsumeFunctionalSyntaxColorInternal(T& input_range, std::shared_ptr<const CSSParserContext> context);
 
   enum class ChannelType { kNone, kPercentage, kNumber, kRelative };
-  bool ConsumeChannel(CSSParserTokenRange& args, std::shared_ptr<const CSSParserContext> context, int index);
+  bool ConsumeColorSpaceAndOriginColor(CSSParserTokenRange& args,
+                                       CSSValueID function_id,
+                                       std::shared_ptr<const CSSParserContext> context);
+  bool ConsumeChannel(CSSParserTokenRange& args,
+                      std::shared_ptr<const CSSParserContext> context,
+                      int index);
   bool ConsumeAlpha(CSSParserTokenRange& args, std::shared_ptr<const CSSParserContext> context);
+  bool MakePerColorSpaceAdjustments();
 
-  static std::optional<double> TryResolveColorChannel(const std::shared_ptr<const CSSValue>& value,
-                                                      ChannelType channel_type,
-                                                      double percentage_base,
-                                                      const CSSColorChannelMap& color_channel_map);
-  static std::optional<double> TryResolveAlpha(const std::shared_ptr<const CSSValue>& value,
-                                               ChannelType channel_type,
-                                               const CSSColorChannelMap& color_channel_map);
-  static std::optional<double> TryResolveRelativeChannelValue(const std::shared_ptr<const CSSValue>& value,
-                                                              ChannelType channel_type,
-                                                              double percentage_base,
-                                                              const CSSColorChannelMap& color_channel_map);
-
-  std::array<std::shared_ptr<const CSSValue>, 3> unresolved_channels_;
-  std::array<std::optional<double>, 3> channels_;
-  std::array<ChannelType, 3> channel_types_;
-  std::shared_ptr<const CSSValue> unresolved_alpha_;
-  ChannelType alpha_channel_type_;
+  Color::ColorSpace color_space_ = Color::ColorSpace::kNone;
+  std::optional<double> channels_[3];
+  ChannelType channel_types_[3];
   std::optional<double> alpha_ = 1.0;
+
+  // Metadata about the current function being parsed. Set by
+  // `ConsumeColorSpaceAndOriginColor()` after parsing the preamble of the
+  // function.
+  const FunctionMetadata* function_metadata_ = nullptr;
 
   // Legacy colors have commas separating their channels. This syntax is
   // incompatible with CSSColor4 features like "none" or alpha with a slash.
@@ -69,6 +66,7 @@ class ColorFunctionParser {
   Color origin_color_;
   CSSColorChannelMap color_channel_map_;
 };
+
 
 }  // namespace webf
 

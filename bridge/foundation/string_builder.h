@@ -42,6 +42,52 @@ namespace webf {
  */
 #define U16_TRAIL(supplementary) (char16_t)(((supplementary) & 0x3ff) | 0xdc00)
 
+class StringBuilder;
+
+
+static inline std::string FormatStringTruncatingTrailingZerosIfNeeded(
+    const std::string& string) {
+  size_t length = string.length();
+  std::string buffer = string;
+
+  // If there is an exponent, stripping trailing zeros would be incorrect.
+  // FIXME: Zeros should be stripped before the 'e'.
+  if (memchr(buffer.c_str(), 'e', length))
+    return buffer;
+
+  int decimal_point_position = 0;
+  for (; decimal_point_position < length; ++decimal_point_position) {
+    if (buffer[decimal_point_position] == '.')
+      break;
+  }
+
+  if (decimal_point_position == length)
+    return buffer;
+
+  int truncated_length = length - 1;
+  for (; truncated_length > decimal_point_position; --truncated_length) {
+    if (buffer[truncated_length] != '0')
+      break;
+  }
+
+  // No trailing zeros found to strip.
+  if (truncated_length == length - 1)
+    return buffer;
+
+  // If we removed all trailing zeros, remove the decimal point as well.
+  if (truncated_length == decimal_point_position) {
+    DCHECK_GT(truncated_length, 0);
+    --truncated_length;
+  }
+
+  // Truncate the StringBuilder, and return the final result.
+  std::string result = buffer;
+  result[truncated_length + 1] = '\0';
+  return result;
+}
+
+
+
 class StringBuilder {
   WEBF_STACK_ALLOCATED();
 
@@ -125,7 +171,7 @@ class StringBuilder {
   void Append(double v, unsigned precision = 6) {
     std::ostringstream out;
     out << std::fixed << std::setprecision(precision) << v;
-    Append(out.str());
+    Append(FormatStringTruncatingTrailingZerosIfNeeded(out.str()));
   }
 
   const char* Characters8() const {

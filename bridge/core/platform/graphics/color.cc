@@ -25,11 +25,11 @@
 
 #include "core/platform/graphics/color.h"
 #include <sstream>
-#include "foundation/string_builder.h"
 #include "core/platform/geometry/blend.h"
 #include "core/platform/graphics/color_conversions.h"
 #include "core/platform/hash_functions.h"
 #include "core/platform/math_extras.h"
+#include "foundation/string_builder.h"
 
 namespace webf {
 
@@ -154,11 +154,13 @@ Color Color::FromRGBALegacy(std::optional<int> r, std::optional<int> g, std::opt
 }
 
 // static
-Color Color::FromColor(std::optional<float> param0,
-                       std::optional<float> param1,
-                       std::optional<float> param2,
-                       std::optional<float> alpha) {
+Color Color::FromColorSpace(ColorSpace color_space,
+                            std::optional<float> param0,
+                            std::optional<float> param1,
+                            std::optional<float> param2,
+                            std::optional<float> alpha) {
   Color result;
+  result.color_space_ = color_space;
   result.param0_is_none_ = !param0;
   result.param1_is_none_ = !param1;
   result.param2_is_none_ = !param2;
@@ -173,21 +175,87 @@ Color Color::FromColor(std::optional<float> param0,
     result.alpha_ = 0.0f;
   }
 
-  if (!isnan(result.param0_)) {
-    result.param0_ = std::min(1.f, std::max(result.param0_, 0.f));
+  return result;
+}
+
+void Color::ConvertToColorSpace(webf::Color::ColorSpace destination_color_space, bool resolve_missing_components) {
+  if (color_space_ == destination_color_space) {
+    return;
   }
 
-  return result;
+  if (resolve_missing_components) {
+    ResolveMissingComponents();
+  }
+
+  switch (destination_color_space) {
+    case ColorSpace::kSRGB:
+    case ColorSpace::kSRGBLegacy: {
+      if (color_space_ == ColorSpace::kHSL) {
+        std::tie(param0_, param1_, param2_) = HSLToSRGB(param0_, param1_, param2_);
+      } else if (color_space_ == ColorSpace::kHWB) {
+        std::tie(param0_, param1_, param2_) = HWBToSRGB(param0_, param1_, param2_);
+      } else if (color_space_ == ColorSpace::kSRGBLegacy) {
+        std::tie(param0_, param1_, param2_) = SRGBLegacyToSRGB(param0_, param1_, param2_);
+      }
+
+      // All the above conversions result in non-legacy srgb.
+      if (destination_color_space == ColorSpace::kSRGBLegacy) {
+        std::tie(param0_, param1_, param2_) = SRGBToSRGBLegacy(param0_, param1_, param2_);
+      }
+
+      color_space_ = destination_color_space;
+      return;
+    }
+    case ColorSpace::kHSL: {
+      if (color_space_ == ColorSpace::kSRGBLegacy) {
+        std::tie(param0_, param1_, param2_) = SRGBLegacyToSRGB(param0_, param1_, param2_);
+      }
+      if (color_space_ == ColorSpace::kSRGB || color_space_ == ColorSpace::kSRGBLegacy) {
+        std::tie(param0_, param1_, param2_) = SRGBToHSL(param0_, param1_, param2_);
+      } else if (color_space_ == ColorSpace::kHWB) {
+        std::tie(param0_, param1_, param2_) = HWBToSRGB(param0_, param1_, param2_);
+        std::tie(param0_, param1_, param2_) = SRGBToHSL(param0_, param1_, param2_);
+      }
+
+      // Hue component is powerless for fully transparent or achromatic (s==0)
+      // colors.
+      if (IsFullyTransparent() || param1_ == 0) {
+        param0_is_none_ = true;
+      }
+
+      color_space_ = ColorSpace::kHSL;
+      return;
+    }
+    case ColorSpace::kHWB: {
+      if (color_space_ == ColorSpace::kSRGBLegacy) {
+        std::tie(param0_, param1_, param2_) = SRGBLegacyToSRGB(param0_, param1_, param2_);
+      }
+      if (color_space_ == ColorSpace::kSRGB || color_space_ == ColorSpace::kSRGBLegacy) {
+        std::tie(param0_, param1_, param2_) = SRGBToHWB(param0_, param1_, param2_);
+      } else if (color_space_ == ColorSpace::kHSL) {
+        std::tie(param0_, param1_, param2_) = HSLToSRGB(param0_, param1_, param2_);
+        std::tie(param0_, param1_, param2_) = SRGBToHWB(param0_, param1_, param2_);
+      }
+
+      // Hue component is powerless for fully transparent or achromatic colors.
+      if (IsFullyTransparent() || param1_ + param2_ >= 1) {
+        param0_is_none_ = true;
+      }
+
+      color_space_ = ColorSpace::kHWB;
+      return;
+    }
+  }
 }
 
 // static
 Color Color::FromHSLA(std::optional<float> h, std::optional<float> s, std::optional<float> l, std::optional<float> a) {
-  return FromColor(h, s, l, a);
+  return FromColorSpace(ColorSpace::kHSL, h, s, l, a);
 }
 
 // static
 Color Color::FromHWBA(std::optional<float> h, std::optional<float> w, std::optional<float> b, std::optional<float> a) {
-  return FromColor(h, w, b, a);
+  return FromColorSpace(ColorSpace::kHWB, h, w, b, a);
 }
 // https://www.w3.org/TR/css-color-4/#missing:
 // "[Except for interpolations] a missing component behaves as a zero value, in
@@ -350,6 +418,22 @@ std::string Color::SerializeLegacyColorAsCSSColor() const {
   constexpr float kEpsilon = 1e-07;
   auto [r, g, b] = std::make_tuple(param0_, param1_, param2_);
 
+  if (color_space_ == Color::ColorSpace::kHWB ||
+      color_space_ == Color::ColorSpace::kHSL) {
+    // hsl and hwb colors need to be serialized in srgb.
+    if (color_space_ == Color::ColorSpace::kHSL) {
+      std::tie(r, g, b) = HSLToSRGB(param0_, param1_, param2_);
+    } else if (color_space_ == Color::ColorSpace::kHWB) {
+      std::tie(r, g, b) = HWBToSRGB(param0_, param1_, param2_);
+    }
+    // Legacy color channels get serialized with integers in the range [0,255].
+    // Channels that have a value of exactly 0.5 can get incorrectly rounded
+    // down to 127 when being converted to an integer. Add a small epsilon to
+    // avoid this. See crbug.com/1425856.
+    std::tie(r, g, b) =
+        SRGBToSRGBLegacy(r + kEpsilon, g + kEpsilon, b + kEpsilon);
+  }
+
   result.Append(round(ClampTo(r, 0.0, 255.0)), 0);
   result.Append(", ");
   result.Append(round(ClampTo(g, 0.0, 255.0)), 0);
@@ -372,12 +456,13 @@ std::string Color::SerializeLegacyColorAsCSSColor() const {
       result.Append(ColorParamToString(two_decimal_rounded_alpha, 2));
     } else {
       // Otherwise, round to 3 decimals.
-      float three_decimal_rounded_alpha = round(int_alpha * 1000.0 / 255.0) / 1000.0;
+      float three_decimal_rounded_alpha =
+          round(int_alpha * 1000.0 / 255.0) / 1000.0;
       result.Append(ColorParamToString(three_decimal_rounded_alpha, 3));
     }
   }
 
-  result.Append(")");
+  result.Append(')');
   return result.ReleaseString();
 }
 
@@ -385,14 +470,11 @@ std::string Color::SerializeInternal() const {
   StringBuilder result;
   result.Append("color(");
 
-  param0_is_none_ ? result.Append("none")
-                  : result.Append(ColorParamToString(param0_));
+  param0_is_none_ ? result.Append("none") : result.Append(ColorParamToString(param0_));
   result.Append(" ");
-  param1_is_none_ ? result.Append("none")
-                  : result.Append(ColorParamToString(param1_));
+  param1_is_none_ ? result.Append("none") : result.Append(ColorParamToString(param1_));
   result.Append(" ");
-  param2_is_none_ ? result.Append("none")
-                  : result.Append(ColorParamToString(param2_));
+  param2_is_none_ ? result.Append("none") : result.Append(ColorParamToString(param2_));
 
   if (alpha_ != 1.0 || alpha_is_none_) {
     result.Append(" / ");
@@ -403,7 +485,11 @@ std::string Color::SerializeInternal() const {
 }
 
 std::string Color::SerializeAsCSSColor() const {
-  return SerializeLegacyColorAsCSSColor();
+  if (IsLegacyColorSpace(color_space_)) {
+    return SerializeLegacyColorAsCSSColor();
+  }
+
+  return SerializeInternal();
 }
 
 std::string Color::NameForLayoutTreeAsText() const {
