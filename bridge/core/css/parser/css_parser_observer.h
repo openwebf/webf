@@ -54,7 +54,7 @@ class CSSParserObserver {
   virtual void ObserveErroneousAtRule(
       unsigned start_offset,
       CSSAtRuleID id,
-      const std::vector<CSSPropertyID>& invalid_properties) = 0;
+      const std::vector<CSSPropertyID>& invalid_properties = {}) = 0;
 
 
 };

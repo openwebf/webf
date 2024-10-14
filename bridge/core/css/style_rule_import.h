@@ -32,21 +32,61 @@
 
 namespace webf {
 
+
+class MediaQuerySet;
+class StyleSheetContents;
+
 class StyleRuleImport : public StyleRuleBase {
  public:
-  void RequestStyleSheet();
+  StyleRuleImport(const std::string& href,
+                  LayerName&& layer,
+                  bool supported,
+                  std::string&& supports,
+                  std::shared_ptr<const MediaQuerySet>);
+  ~StyleRuleImport();
 
-  void SetPositionHint(const TextPosition& position_hint) { position_hint_ = position_hint; }
+  const StyleSheetContents* ParentStyleSheet() const {
+    return parent_style_sheet_.get();
+  }
+  void SetParentStyleSheet(std::shared_ptr<const StyleSheetContents> sheet) {
+    DCHECK(sheet);
+    parent_style_sheet_ = std::move(sheet);
+  }
+  void ClearParentStyleSheet() { parent_style_sheet_ = nullptr; }
 
-  void SetParentStyleSheet(StyleSheetContents* sheet) {
-    assert(sheet);
-    parent_style_sheet_ = std::shared_ptr<StyleSheetContents>(sheet);
+  std::string Href() const { return str_href_; }
+  StyleSheetContents* GetStyleSheet() const { return style_sheet_.get(); }
+
+  bool IsLoading() const;
+
+  const MediaQuerySet* MediaQueries() const { return media_queries_.get(); }
+  void SetMediaQueries(std::shared_ptr<const MediaQuerySet> media_queries) {
+    media_queries_ = media_queries;
   }
 
-  StyleSheetContents* ParentStyleSheet() const { return parent_style_sheet_.get(); }
+  void SetPositionHint(const TextPosition& position_hint) {
+    position_hint_ = position_hint;
+  }
+  void RequestStyleSheet();
+
+  bool IsLayered() const { return layer_.size(); }
+  const LayerName& GetLayerName() const { return layer_; }
+  std::string GetLayerNameAsString() const;
+
+  bool IsSupported() const { return supported_; }
+  std::string GetSupportsString() const { return supports_string_; }
+
+  void TraceAfterDispatch(GCVisitor*) const;
 
  private:
-  std::shared_ptr<StyleSheetContents> parent_style_sheet_;
+  std::shared_ptr<const StyleSheetContents> parent_style_sheet_;
+  std::string str_href_;
+  LayerName layer_;
+  std::string supports_string_;
+  std::shared_ptr<const MediaQuerySet> media_queries_;
+  std::shared_ptr<StyleSheetContents> style_sheet_;
+  bool loading_;
+  bool supported_;
 
   // If set, this holds the position of the import rule (start of the `@import`)
   // in the stylesheet text. The position is used to encode accurate initiator
@@ -56,8 +96,11 @@ class StyleRuleImport : public StyleRuleBase {
 
 template <>
 struct DowncastTraits<StyleRuleImport> {
-  static bool AllowFrom(const StyleRuleBase& rule) { return rule.IsImportRule(); }
+  static bool AllowFrom(const StyleRuleBase& rule) {
+    return rule.IsImportRule();
+  }
 };
+
 
 }  // namespace webf
 

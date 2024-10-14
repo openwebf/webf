@@ -165,8 +165,15 @@ bool StyleSheetContents::HasSingleOwnerNode() const {
   return RootStyleSheet()->HasOneClient();
 }
 
+void StyleSheetContents::SetHasMediaQueries() {
+  has_media_queries_ = true;
+  if (ParentStyleSheet()) {
+    ParentStyleSheet()->SetHasMediaQueries();
+  }
+}
+
 bool StyleSheetContents::LoadCompleted() const {
-  StyleSheetContents* parent_sheet = ParentStyleSheet();
+  const StyleSheetContents* parent_sheet = ParentStyleSheet();
   if (parent_sheet) {
     return parent_sheet->LoadCompleted();
   }
@@ -201,7 +208,7 @@ void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
     // empty layer statements
     assert(child_rules_.empty());
     import_rules_.push_back(std::static_pointer_cast<StyleRuleImport>(rule));
-    import_rules_.back()->SetParentStyleSheet(this);
+    import_rules_.back()->SetParentStyleSheet(shared_from_this());
     import_rules_.back()->RequestStyleSheet();
     return;
   }
@@ -215,7 +222,7 @@ size_t StyleSheetContents::ReplaceRuleIfExists(StyleRuleBase* old_rule, StyleRul
 
 //
 StyleSheetContents* StyleSheetContents::ParentStyleSheet() const {
-  return owner_rule_ ? owner_rule_->ParentStyleSheet() : nullptr;
+  return owner_rule_ ? const_cast<StyleSheetContents*>(owner_rule_->ParentStyleSheet()) : nullptr;
 }
 
 unsigned int StyleSheetContents::RuleCount() const {
