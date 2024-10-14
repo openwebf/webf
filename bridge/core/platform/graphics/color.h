@@ -304,7 +304,7 @@ class Color {
   // The alpha value for the color is guaranteed to be in the [0, 1] interval.
   float alpha_ = 0.f;
 
-  ColorSpace color_space_;
+  ColorSpace color_space_ = ColorSpace::kSRGBLegacy;
 };
 
 // For unit tests and similar.
