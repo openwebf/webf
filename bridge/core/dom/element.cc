@@ -11,6 +11,10 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_promise_resolver.h"
+#include "core/css/css_property_value_set.h"
+#include "core/css/parser/css_parser.h"
+#include "core/css/inline_css_style_declaration.h"
+#include "core/css/css_style_sheet.h"
 #include "built_in_string.h"
 #include "child_list_mutation_scope.h"
 #include "comment.h"
@@ -270,34 +274,28 @@ Element* Element::closest(const AtomicString& selectors, ExceptionState& excepti
 InlineCssStyleDeclaration* Element::style() {
   if (!IsStyledElement())
     return nullptr;
-  return &EnsureCSSStyleDeclaration();
-}
-
-InlineCssStyleDeclaration& Element::EnsureCSSStyleDeclaration() {
-  if (cssom_wrapper_ == nullptr) {
-    cssom_wrapper_ = MakeGarbageCollected<InlineCssStyleDeclaration>(GetExecutingContext(), this);
-  }
-  return *cssom_wrapper_;
+  CSSStyleDeclaration& style = EnsureElementRareData().EnsureInlineCSSStyleDeclaration(this);
+  return To<InlineCssStyleDeclaration>(&style);
 }
 
 DOMTokenList* Element::classList() {
-  ElementData& element_data = EnsureElementData();
-  if (element_data.GetClassList() == nullptr) {
+  ElementRareDataVector& rare_data = EnsureElementRareData();
+  if (rare_data.GetClassList() == nullptr) {
     auto* class_list = MakeGarbageCollected<DOMTokenList>(this, html_names::kClassAttr);
     AtomicString classValue = getAttribute(html_names::kClassAttr, ASSERT_NO_EXCEPTION());
     class_list->DidUpdateAttributeValue(built_in_string::kNULL, classValue);
-    element_data.SetClassList(class_list);
+    rare_data.SetClassList(class_list);
   }
-  return element_data.GetClassList();
+  return rare_data.GetClassList();
 }
 
 DOMStringMap* Element::dataset() {
-  ElementData& element_data = EnsureElementData();
-  if (element_data.DataSet() == nullptr) {
+  ElementRareDataVector& rare_data = EnsureElementRareData();
+  if (rare_data.Dataset() == nullptr) {
     auto* data_set = MakeGarbageCollected<DOMStringMap>(this);
-    element_data.SetDataSet(data_set);
+    rare_data.SetDataset(data_set);
   }
-  return element_data.DataSet();
+  return rare_data.Dataset();
 }
 
 Element& Element::CloneWithChildren(CloneChildrenFlag flag, Document* document) const {
@@ -320,15 +318,70 @@ Element& Element::CloneWithoutChildren(Document* document) const {
   return clone;
 }
 
+void Element::NotifyInlineStyleMutation() {
+
+}
+
+std::shared_ptr<const MutableCSSPropertyValueSet> Element::EnsureMutableInlineStyle() {
+  DCHECK(IsStyledElement());
+  std::shared_ptr<const CSSPropertyValueSet>& inline_style = EnsureUniqueElementData().inline_style_;
+  if (!inline_style) {
+    CSSParserMode mode = kHTMLStandardMode;
+    inline_style = std::make_shared<MutableCSSPropertyValueSet>(mode);
+  } else if (!inline_style->IsMutable()) {
+    inline_style = inline_style->MutableCopy();
+  }
+  return std::reinterpret_pointer_cast<const MutableCSSPropertyValueSet>(inline_style);
+}
+
+void Element::ClearMutableInlineStyleIfEmpty() {
+  if (EnsureMutableInlineStyle()->IsEmpty()) {
+    EnsureUniqueElementData().inline_style_ = nullptr;
+  }
+}
+
+std::shared_ptr<CSSPropertyValueSet> Element::CreatePresentationAttributeStyle() {
+  assert(false);
+//  auto style = std::make_shared<MutableCSSPropertyValueSet>(
+//      IsSVGElement() ? kSVGAttributeMode : kHTMLStandardMode);
+//  AttributeCollection attributes = AttributesWithoutUpdate();
+//  for (const Attribute& attr : attributes) {
+//    CollectStyleForPresentationAttribute(attr.GetName(), attr.Value(), style);
+//  }
+//  CollectExtraStyleForPresentationAttribute(style);
+//  return style;
+  return nullptr;
+}
+
+void Element::DetachAllAttrNodesFromElement() {
+}
+
+
 void Element::CloneAttributesFrom(const Element& other) {
+  if (GetElementRareData()) {
+    DetachAllAttrNodesFromElement();
+  }
+
   if (other.attributes_ != nullptr) {
     EnsureElementAttributes().CopyWith(other.attributes_);
   }
-  if (other.cssom_wrapper_ != nullptr) {
-    EnsureCSSStyleDeclaration().CopyWith(other.cssom_wrapper_);
+
+  // If 'other' has a mutable ElementData, convert it to an immutable one so we
+  // can share it between both elements.
+  // We can only do this if there are no presentation attributes and sharing the
+  // data won't result in different case sensitivity of class or id.
+  auto* unique_element_data =
+      DynamicTo<UniqueElementData>(other.element_data_.get());
+  if (unique_element_data &&
+      !other.element_data_->PresentationAttributeStyle()) {
+    const_cast<Element&>(other).element_data_ =
+        unique_element_data->MakeShareableCopy();
   }
-  if (other.element_data_ != nullptr) {
-    EnsureElementData().CopyWith(other.element_data_.get());
+
+  if (!other.element_data_->IsUnique()) {
+    element_data_ = other.element_data_;
+  } else {
+    element_data_ = other.element_data_->MakeUniqueCopy();
   }
 }
 
@@ -346,7 +399,6 @@ bool Element::IsDocumentElement() const {
 
 void Element::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(attributes_);
-  visitor->TraceMember(cssom_wrapper_);
   if (element_data_ != nullptr) {
     element_data_->Trace(visitor);
   }
@@ -396,7 +448,7 @@ const AtomicString Element::getUppercasedQualifiedName() const {
 
 ElementData& Element::EnsureElementData() {
   if (element_data_ == nullptr) {
-    element_data_ = std::make_unique<ElementData>();
+    element_data_ = std::make_shared<ElementData>();
   }
   return *element_data_;
 }
@@ -562,8 +614,9 @@ void Element::SetAttributeInternal(const webf::AtomicString& name,
 }
 
 void Element::SynchronizeAttribute(const AtomicString& name) {
-  if (!cssom_wrapper_)
+  if (!HasElementData()) {
     return;
+  }
 
   if (UNLIKELY(name == html_names::kStyleAttr && EnsureElementData().style_attribute_is_dirty())) {
     assert(IsStyledElement());
@@ -572,8 +625,16 @@ void Element::SynchronizeAttribute(const AtomicString& name) {
   }
 }
 
-void Element::InvalidateStyleAttribute() {
-  EnsureElementData().SetStyleAttributeIsDirty(true);
+void Element::InvalidateStyleAttribute(bool only_changed_independent_properties) {
+  DCHECK(HasElementData());
+  GetElementData()->SetStyleAttributeIsDirty(true);
+  SetNeedsStyleRecalc(only_changed_independent_properties
+                          ? kInlineIndependentStyleChange
+                          : kLocalStyleChange,
+                      StyleChangeReasonForTracing::Create(
+                          style_change_reason::kInlineCSSStyleMutated));
+//  GetDocument().GetStyleEngine().AttributeChangedForElement(
+//      html_names::kStyleAttr, *this);
 }
 
 void Element::AttributeChanged(const AttributeModificationParams& params) {
@@ -594,15 +655,39 @@ void Element::StyleAttributeChanged(const AtomicString& new_style_string,
                                     AttributeModificationReason modification_reason) {
   assert(IsStyledElement());
 
-  if (new_style_string.IsNull() && cssom_wrapper_ != nullptr) {
-    EnsureCSSStyleDeclaration().Clear();
+  if (new_style_string.IsNull()) {
+    EnsureUniqueElementData().inline_style_ = nullptr;
   } else {
     SetInlineStyleFromString(new_style_string);
   }
 }
 
 void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_string) {
-  EnsureCSSStyleDeclaration().SetCSSTextInternal(new_style_string);
+  DCHECK(IsStyledElement());
+  std::shared_ptr<const CSSPropertyValueSet>& inline_style = GetElementData()->inline_style_;
+
+  // Avoid redundant work if we're using shared attribute data with already
+  // parsed inline style.
+  if (inline_style && !GetElementData()->IsUnique()) {
+    return;
+  }
+
+  // We reconstruct the property set instead of mutating if there is no CSSOM
+  // wrapper.  This makes wrapperless property sets immutable and so cacheable.
+  if (inline_style && !inline_style->IsMutable()) {
+    inline_style = nullptr;
+  }
+
+  if (!inline_style) {
+    inline_style =
+        CSSParser::ParseInlineStyleDeclaration(reinterpret_cast<const char*>(new_style_string.Character8()), this);
+  } else {
+    DCHECK(inline_style->IsMutable());
+    static_cast<MutableCSSPropertyValueSet*>(const_cast<CSSPropertyValueSet*>(inline_style.get()))
+        ->ParseDeclarationList(
+            reinterpret_cast<const char*>(new_style_string.Character8()),
+            GetDocument().ElementSheet().Contents());
+  }
 }
 
 std::string Element::outerHTML() {
@@ -613,8 +698,8 @@ std::string Element::outerHTML() {
   if (attributes_ != nullptr) {
     s += " " + attributes_->ToString();
   }
-  if (cssom_wrapper_ != nullptr) {
-    s += " style=\"" + cssom_wrapper_->ToString();
+  if (GetElementData()->inline_style_ != nullptr) {
+    s += " style=\"" + GetElementData()->inline_style_->AsText();
   }
 
   s += ">";
@@ -796,6 +881,16 @@ bool Element::ChildStyleRecalcBlockedByDisplayLock() const {
   // auto* context = GetDisplayLockContext();
   // return context && !context->ShouldStyleChildren();
   return false;
+}
+
+void Element::CreateUniqueElementData() {
+  if (!element_data_) {
+    element_data_ = std::make_unique<UniqueElementData>();
+  } else {
+    DCHECK(!IsA<UniqueElementData>(element_data_.get()));
+    element_data_ =
+        To<ShareableElementData>(element_data_.get())->MakeUniqueCopy();
+  }
 }
 
 }  // namespace webf

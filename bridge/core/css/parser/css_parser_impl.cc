@@ -24,6 +24,7 @@
 #include "core/css/parser/media_query_parser.h"
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/style_rule.h"
+#include "core/css/css_keyframes_rule.h"
 #include "core/css/style_rule_import.h"
 #include "core/css/style_rule_keyframe.h"
 #include "core/css/style_sheet_contents.h"
@@ -333,11 +334,11 @@ std::unique_ptr<std::vector<KeyframeOffset>> CSSParserImpl::ParseKeyframeKeyList
     std::shared_ptr<const CSSParserContext> context,
     const std::string& key_list) {
   CSSTokenizer tokenizer(key_list);
-  return ConsumeKeyframeKeyList(context, CSSParserTokenRange(tokenizer.TokenizeToEOF()));
+  return ConsumeKeyframeKeyList(std::move(context), CSSParserTokenRange(tokenizer.TokenizeToEOF()));
 }
 
 static CSSParserImpl::AllowedRulesType ComputeNewAllowedRules(CSSParserImpl::AllowedRulesType allowed_rules,
-                                                              std::shared_ptr<StyleRuleBase> rule) {
+                                                              const StyleRuleBase* rule) {
   if (!rule || allowed_rules == CSSParserImpl::kKeyframeRules || allowed_rules == CSSParserImpl::kFontFeatureRules ||
       allowed_rules == CSSParserImpl::kNoRules) {
     return allowed_rules;
@@ -417,7 +418,7 @@ bool CSSParserImpl::ConsumeRuleList(CSSParserTokenStream& stream,
       first_rule_valid = (rule != nullptr);
     }
     if (rule) {
-      allowed_rules = ComputeNewAllowedRules(allowed_rules, rule);
+      allowed_rules = ComputeNewAllowedRules(allowed_rules, rule.get());
       callback(rule, offset);
     }
     assert(stream.Offset() > offset);
@@ -669,11 +670,12 @@ bool CSSParserImpl::ConsumeSupportsDeclaration(CSSParserTokenStream& stream) {
   return result;
 }
 
-std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeNestedRule(std::optional<CSSAtRuleID> id,
-                                                                StyleRule::RuleType parent_rule_type,
-                                                                CSSParserTokenStream& stream,
-                                                                CSSNestingType nesting_type,
-                                                                std::shared_ptr<const StyleRule> parent_rule_for_nesting) {
+std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeNestedRule(
+    std::optional<CSSAtRuleID> id,
+    StyleRule::RuleType parent_rule_type,
+    CSSParserTokenStream& stream,
+    CSSNestingType nesting_type,
+    std::shared_ptr<const StyleRule> parent_rule_for_nesting) {
   // A nested style rule. Recurse into the parser; we need to move the parsed
   // properties out of the way while we're parsing the child rule, though.
   // TODO(sesse): The spec says that any properties after a nested rule
@@ -1075,9 +1077,10 @@ std::shared_ptr<const MediaQuerySet> CSSParserImpl::CachedMediaQuerySet(std::str
   return media;
 }
 
-std::shared_ptr<StyleRuleMedia> CSSParserImpl::ConsumeMediaRule(CSSParserTokenStream& stream,
-                                                                CSSNestingType nesting_type,
-                                                                std::shared_ptr<const StyleRule> parent_rule_for_nesting) {
+std::shared_ptr<StyleRuleMedia> CSSParserImpl::ConsumeMediaRule(
+    CSSParserTokenStream& stream,
+    CSSNestingType nesting_type,
+    std::shared_ptr<const StyleRule> parent_rule_for_nesting) {
   size_t prelude_offset_start = stream.LookAheadOffset();
   CSSParserTokenRange prelude = ConsumeAtRulePrelude(stream);
   size_t prelude_offset_end = stream.LookAheadOffset();
@@ -1115,6 +1118,86 @@ std::shared_ptr<StyleRuleMedia> CSSParserImpl::ConsumeMediaRule(CSSParserTokenSt
   // NOTE: There will be a copy of rules here, to deal with the different inline
   // size.
   return std::make_shared<StyleRuleMedia>(media, std::move(rules));
+}
+
+std::shared_ptr<StyleRuleFontFace> CSSParserImpl::ConsumeFontFaceRule(CSSParserTokenStream& stream) {
+  size_t prelude_offset_start = stream.LookAheadOffset();
+  CSSParserTokenRange prelude = ConsumeAtRulePrelude(stream);
+  size_t prelude_offset_end = stream.LookAheadOffset();
+  if (!ConsumeEndOfPreludeForAtRuleWithBlock(stream)) {
+    return nullptr;
+  }
+  CSSParserTokenStream::BlockGuard guard(stream);
+
+  if (!prelude.AtEnd()) {
+    return nullptr;  // Parse error; @font-face prelude should be empty
+  }
+
+  if (observer_) {
+    observer_->StartRuleHeader(StyleRule::kFontFace, prelude_offset_start);
+    observer_->EndRuleHeader(prelude_offset_end);
+    observer_->StartRuleBody(prelude_offset_end);
+    observer_->EndRuleBody(prelude_offset_end);
+  }
+
+  if (style_sheet_) {
+    style_sheet_->SetHasFontFaceRule();
+  }
+
+  ConsumeDeclarationList(stream, StyleRule::kFontFace, CSSNestingType::kNone,
+                         /*parent_rule_for_nesting=*/nullptr,
+                         /*child_rules=*/nullptr);
+  return std::make_shared<StyleRuleFontFace>(
+      CreateCSSPropertyValueSet(parsed_properties_, kCSSFontFaceRuleMode, context_->GetDocument()));
+}
+
+std::shared_ptr<StyleRuleKeyframes> CSSParserImpl::ConsumeKeyframesRule(
+    bool webkit_prefixed,
+    CSSParserTokenStream& stream) {
+  size_t prelude_offset_start = stream.LookAheadOffset();
+  CSSParserTokenRange prelude = ConsumeAtRulePrelude(stream);
+  size_t prelude_offset_end = stream.LookAheadOffset();
+  if (!ConsumeEndOfPreludeForAtRuleWithBlock(stream)) {
+    return nullptr;
+  }
+  CSSParserTokenStream::BlockGuard guard(stream);
+
+  const CSSParserToken& name_token = prelude.ConsumeIncludingWhitespace();
+  if (!prelude.AtEnd()) {
+    return nullptr;  // Parse error; expected single non-whitespace token in
+                     // @keyframes header
+  }
+
+  std::string name;
+  if (name_token.GetType() == kIdentToken) {
+    name = std::string(name_token.Value());
+  } else if (name_token.GetType() == kStringToken && webkit_prefixed) {
+    name = std::string(name_token.Value());
+  } else {
+    return nullptr;  // Parse error; expected ident token in @keyframes header
+  }
+
+  if (observer_) {
+    observer_->StartRuleHeader(StyleRule::kKeyframes, prelude_offset_start);
+    observer_->EndRuleHeader(prelude_offset_end);
+    observer_->StartRuleBody(stream.Offset());
+  }
+
+  auto keyframe_rule = std::make_shared<StyleRuleKeyframes>();
+  ConsumeRuleList(
+      stream, kKeyframesRuleList, CSSNestingType::kNone,
+      /*parent_rule_for_nesting=*/nullptr,
+      [keyframe_rule](std::shared_ptr<StyleRuleBase> keyframe, size_t) {
+        keyframe_rule->ParserAppendKeyframe(std::reinterpret_pointer_cast<StyleRuleKeyframe>(keyframe));
+      });
+  keyframe_rule->SetName(name);
+  keyframe_rule->SetVendorPrefixed(webkit_prefixed);
+
+  if (observer_) {
+    observer_->EndRuleBody(stream.Offset());
+  }
+
+  return keyframe_rule;
 }
 
 std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeAtRuleContents(
@@ -1173,16 +1256,16 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeAtRuleContents(
         //      case CSSAtRuleID::kCSSAtRuleStartingStyle:
         //        return ConsumeStartingStyleRule(stream, nesting_type,
         //                                        parent_rule_for_nesting);
-        //      case CSSAtRuleID::kCSSAtRuleFontFace:
-        //        return ConsumeFontFaceRule(stream);
+      case CSSAtRuleID::kCSSAtRuleFontFace:
+        return ConsumeFontFaceRule(stream);
         //      case CSSAtRuleID::kCSSAtRuleFontPaletteValues:
         //        return ConsumeFontPaletteValuesRule(stream);
         //      case CSSAtRuleID::kCSSAtRuleFontFeatureValues:
         //        return ConsumeFontFeatureValuesRule(stream);
-        //      case CSSAtRuleID::kCSSAtRuleWebkitKeyframes:
-        //        return ConsumeKeyframesRule(true, stream);
-        //      case CSSAtRuleID::kCSSAtRuleKeyframes:
-        //        return ConsumeKeyframesRule(false, stream);
+      case CSSAtRuleID::kCSSAtRuleWebkitKeyframes:
+        return ConsumeKeyframesRule(true, stream);
+      case CSSAtRuleID::kCSSAtRuleKeyframes:
+        return ConsumeKeyframesRule(false, stream);
       case CSSAtRuleID::kCSSAtRuleInvalid:
       case CSSAtRuleID::kCSSAtRuleCharset:
       case CSSAtRuleID::kCSSAtRuleImport:
@@ -1561,9 +1644,10 @@ CSSSelector::Signal SignalForImplicitNestedRule(CSSNestingType nesting_type,
   return CSSSelector::Signal::kNestedGroupRuleSpecificity;
 }
 
-std::shared_ptr<StyleRule> CSSParserImpl::CreateImplicitNestedRule(CSSNestingType nesting_type,
-                                                                   std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-                                                                   CSSSelector::Signal signal) {
+std::shared_ptr<StyleRule> CSSParserImpl::CreateImplicitNestedRule(
+    CSSNestingType nesting_type,
+    std::shared_ptr<const StyleRule> parent_rule_for_nesting,
+    CSSSelector::Signal signal) {
   constexpr bool kNotImplicit = false;  // The rule is implicit, but the &/:scope is not.
 
   std::vector<CSSSelector> selectors;

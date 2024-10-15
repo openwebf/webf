@@ -26,104 +26,279 @@
 
 #include "abstract_property_set_css_style_declaration.h"
 #include "core/css/css_property_value_set.h"
+#include "core/css/css_style_sheet.h"
+#include "core/css/parser/css_property_parser.h"
+#include "core/css/style_attribute_mutation_scope.h"
 
 namespace webf {
 
-void AbstractPropertySetCSSStyleDeclaration::Trace(webf::GCVisitor*) const {}
-
-std::string AbstractPropertySetCSSStyleDeclaration::GetPropertyValueInternal(webf::CSSPropertyID property_id) {
-  return PropertySet().GetPropertyValue(property_id);
+unsigned AbstractPropertySetCSSStyleDeclaration::length() const {
+  return PropertySet().PropertyCount();
 }
 
-void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(webf::CSSPropertyID,
-                                                                 const std::string& custom_property_name,
-                                                                 webf::StringView value,
+AtomicString AbstractPropertySetCSSStyleDeclaration::item(unsigned i) const {
+  if (i >= PropertySet().PropertyCount()) {
+    return AtomicString::Empty();
+  }
+  return AtomicString(ctx(), PropertySet().PropertyAt(i).Name().ToString());
+}
+
+AtomicString AbstractPropertySetCSSStyleDeclaration::cssText() const {
+  return AtomicString(ctx(), PropertySet().AsText());
+}
+
+void AbstractPropertySetCSSStyleDeclaration::setCssText(const AtomicString& text, ExceptionState&) {
+  StyleAttributeMutationScope mutation_scope(this);
+  WillMutate();
+  PropertySet().ParseDeclarationList(reinterpret_cast<const char*>(text.Character8()), ContextStyleSheet());
+
+  DidMutate(kPropertyChanged);
+
+  mutation_scope.EnqueueMutationRecord();
+}
+
+AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyValue(const AtomicString& property_name, ExceptionState& exception_state) {
+  CSSPropertyID property_id =
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+  if (!IsValidCSSPropertyID(property_id)) {
+    return AtomicString();
+  }
+  if (property_id == CSSPropertyID::kVariable) {
+    return AtomicString(ctx(), PropertySet().GetPropertyValue(property_name.ToStdString(ctx())));
+  }
+  return AtomicString(ctx(), PropertySet().GetPropertyValue(property_id));
+}
+
+AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyPriority(const AtomicString& property_name) {
+  CSSPropertyID property_id =
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+  if (!IsValidCSSPropertyID(property_id)) {
+    return AtomicString::Empty();
+  }
+
+  bool important = false;
+  if (property_id == CSSPropertyID::kVariable) {
+    important = PropertySet().PropertyIsImportant(property_name.ToStdString(ctx()));
+  } else {
+    important = PropertySet().PropertyIsImportant(property_id);
+  }
+  return important ? AtomicString(ctx(), "important") : AtomicString::Empty();
+}
+
+AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyShorthand(const AtomicString& property_name) {
+  CSSPropertyID property_id =
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+
+  // Custom properties don't have shorthands, so we can ignore them here.
+  if (!IsValidCSSPropertyID(property_id) || !CSSProperty::Get(property_id).IsLonghand()) {
+    return AtomicString::Empty();
+  }
+  CSSPropertyID shorthand_id = PropertySet().GetPropertyShorthand(property_id);
+  if (!IsValidCSSPropertyID(shorthand_id)) {
+    return AtomicString::Empty();
+  }
+  return CSSProperty::Get(shorthand_id).GetPropertyNameString();
+}
+
+bool AbstractPropertySetCSSStyleDeclaration::IsPropertyImplicit(const AtomicString& property_name) {
+  CSSPropertyID property_id =
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+
+  // Custom properties don't have shorthands, so we can ignore them here.
+  if (property_id < kFirstCSSProperty) {
+    return false;
+  }
+  return PropertySet().IsPropertyImplicit(property_id);
+}
+
+void AbstractPropertySetCSSStyleDeclaration::setProperty(const ExecutingContext* execution_context,
+                                                         const AtomicString& property_name,
+                                                         const AtomicString& value,
+                                                         const AtomicString& priority,
+                                                         ExceptionState& exception_state) {
+  CSSPropertyID property_id =
+      UnresolvedCSSPropertyID(execution_context, reinterpret_cast<const char*>(property_name.Character8()));
+  if (!IsValidCSSPropertyID(property_id) || !IsPropertyValid(property_id)) {
+    return;
+  }
+
+  bool important = EqualIgnoringASCIICase(reinterpret_cast<const char*>(priority.Character8()), "important");
+  if (!important && !priority.IsEmpty()) {
+    return;
+  }
+
+  SetPropertyInternal(property_id, property_name, value, important, exception_state);
+}
+
+AtomicString AbstractPropertySetCSSStyleDeclaration::removeProperty(const AtomicString& property_name,
+                                                                    ExceptionState& exception_state) {
+  CSSPropertyID property_id =
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+  if (!IsValidCSSPropertyID(property_id)) {
+    return AtomicString::Empty();
+  }
+
+  StyleAttributeMutationScope mutation_scope(this);
+  WillMutate();
+
+  std::string result;
+  bool changed = false;
+  if (property_id == CSSPropertyID::kVariable) {
+    changed = PropertySet().RemoveProperty(property_name.ToStdString(ctx()), &result);
+  } else {
+    changed = PropertySet().RemoveProperty(property_id, &result);
+  }
+
+  DidMutate(changed ? kPropertyChanged : kNoChanges);
+
+  if (changed) {
+    mutation_scope.EnqueueMutationRecord();
+  }
+  return AtomicString(ctx(), result);
+}
+
+const std::shared_ptr<const CSSValue>* AbstractPropertySetCSSStyleDeclaration::GetPropertyCSSValueInternal(
+    CSSPropertyID property_id) {
+  return PropertySet().GetPropertyCSSValue(property_id);
+}
+
+const std::shared_ptr<const CSSValue>* AbstractPropertySetCSSStyleDeclaration::GetPropertyCSSValueInternal(
+    const AtomicString& custom_property_name) {
+  DCHECK_EQ(CSSPropertyID::kVariable,
+            CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(custom_property_name.Character8())));
+  return PropertySet().GetPropertyCSSValue(custom_property_name.ToStdString(ctx()));
+}
+
+AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyValueInternal(CSSPropertyID property_id) {
+  return AtomicString(ctx(), PropertySet().GetPropertyValue(property_id));
+}
+
+AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyValueWithHint(const AtomicString& property_name,
+                                                                              unsigned index) {
+  CSSPropertyID property_id =
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+  if (!IsValidCSSPropertyID(property_id)) {
+    return AtomicString::Empty();
+  }
+  if (property_id == CSSPropertyID::kVariable) {
+    return AtomicString(ctx(), PropertySet().GetPropertyValueWithHint(
+                                   reinterpret_cast<const char*>(property_name.Character8()), index));
+  }
+  return AtomicString(ctx(), PropertySet().GetPropertyValue(property_id));
+}
+
+AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyPriorityWithHint(const AtomicString& property_name,
+                                                                                 unsigned index) {
+  CSSPropertyID property_id =
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+  if (!IsValidCSSPropertyID(property_id)) {
+    return AtomicString::Empty();
+  }
+  bool important = false;
+  if (property_id == CSSPropertyID::kVariable) {
+    important =
+        PropertySet().PropertyIsImportantWithHint(reinterpret_cast<const char*>(property_name.Character8()), index);
+  } else {
+    important = PropertySet().PropertyIsImportant(property_id);
+  }
+  return important ? AtomicString(ctx(), "important") : AtomicString::Empty();
+}
+
+void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(CSSPropertyID unresolved_property,
+                                                                 const AtomicString& custom_property_name,
+                                                                 StringView value,
                                                                  bool important,
-                                                                 webf::ExceptionState&) {
-//  StyleAttributeMutationScope mutation_scope(this);
-//  WillMutate();
-//
-//  MutableCSSPropertyValueSet::SetResult result;
-//  if (unresolved_property == CSSPropertyID::kVariable) {
-//    AtomicString atomic_name(custom_property_name);
-//
-//    bool is_animation_tainted = IsKeyframeStyle();
-//    result = PropertySet().ParseAndSetCustomProperty(
-//        atomic_name, value, important, secure_context_mode, ContextStyleSheet(),
-//        is_animation_tainted);
-//  } else {
-//    result = PropertySet().ParseAndSetProperty(unresolved_property, value,
-//                                               important, secure_context_mode,
-//                                               ContextStyleSheet());
-//  }
-//
-//  if (result == MutableCSSPropertyValueSet::kParseError ||
-//      result == MutableCSSPropertyValueSet::kUnchanged) {
-//    DidMutate(kNoChanges);
-//    return;
-//  }
-//
-//  CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
-//
-//  if (result == MutableCSSPropertyValueSet::kModifiedExisting &&
-//      CSSProperty::Get(property_id).SupportsIncrementalStyle()) {
-//    DidMutate(kIndependentPropertyChanged);
-//  } else {
-//    DidMutate(kPropertyChanged);
-//  }
-//
-//  mutation_scope.EnqueueMutationRecord();
+                                                                 ExceptionState&) {
+  StyleAttributeMutationScope mutation_scope(this);
+  WillMutate();
+
+  MutableCSSPropertyValueSet::SetResult result;
+  if (unresolved_property == CSSPropertyID::kVariable) {
+    AtomicString atomic_name(custom_property_name);
+
+    bool is_animation_tainted = IsKeyframeStyle();
+    result = PropertySet().ParseAndSetCustomProperty(reinterpret_cast<const char*>(atomic_name.Character8()),
+                                                     value.Characters8(), important, ContextStyleSheet(),
+                                                     is_animation_tainted);
+  } else {
+    result =
+        PropertySet().ParseAndSetProperty(unresolved_property, value.Characters8(), important, ContextStyleSheet());
+  }
+
+  if (result == MutableCSSPropertyValueSet::kParseError || result == MutableCSSPropertyValueSet::kUnchanged) {
+    DidMutate(kNoChanges);
+    return;
+  }
+
+  CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
+
+  if (result == MutableCSSPropertyValueSet::kModifiedExisting &&
+      CSSProperty::Get(property_id).SupportsIncrementalStyle()) {
+    DidMutate(kIndependentPropertyChanged);
+  } else {
+    DidMutate(kPropertyChanged);
+  }
+
+  mutation_scope.EnqueueMutationRecord();
 }
 
+bool AbstractPropertySetCSSStyleDeclaration::FastPathSetProperty(CSSPropertyID unresolved_property, double value) {
+  if (unresolved_property == CSSPropertyID::kVariable) {
+    // We don't bother with the fast path for custom properties,
+    // even though we could.
+    return false;
+  }
+  if (!std::isfinite(value)) {
+    // Just to be on the safe side.
+    return false;
+  }
+  CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
+  const CSSProperty& property = CSSProperty::Get(property_id);
+  if (!property.AcceptsNumericLiteral()) {
+    // Not all properties are prepared to accept numeric literals;
+    // e.g. widths could accept doubles but want to convert them
+    // to lengths, and shorthand properties may want to do their
+    // own things. We don't support either yet, only specifically
+    // allowlisted properties.
+    return false;
+  }
 
-bool AbstractPropertySetCSSStyleDeclaration::FastPathSetProperty(
-    CSSPropertyID unresolved_property,
-    double value) {
-//  if (unresolved_property == CSSPropertyID::kVariable) {
-//    // We don't bother with the fast path for custom properties,
-//    // even though we could.
-//    return false;
-//  }
-//  if (!std::isfinite(value)) {
-//    // Just to be on the safe side.
-//    return false;
-//  }
-//  CSSPropertyID property_id = ResolveCSSPropertyID(unresolved_property);
-//  const CSSProperty& property = CSSProperty::Get(property_id);
-//  if (!property.AcceptsNumericLiteral()) {
-//    // Not all properties are prepared to accept numeric literals;
-//    // e.g. widths could accept doubles but want to convert them
-//    // to lengths, and shorthand properties may want to do their
-//    // own things. We don't support either yet, only specifically
-//    // allowlisted properties.
-//    return false;
-//  }
-//
-//  StyleAttributeMutationScope mutation_scope(this);
-//  WillMutate();
-//
-//  const CSSValue* css_value = CSSNumericLiteralValue::Create(
-//      value, CSSPrimitiveValue::UnitType::kNumber);
-//  MutableCSSPropertyValueSet::SetResult result =
-//      PropertySet().SetLonghandProperty(
-//          CSSPropertyValue(CSSPropertyName(property_id), *css_value,
-//                           /*important=*/false));
-//
-//  if (result == MutableCSSPropertyValueSet::kParseError ||
-//      result == MutableCSSPropertyValueSet::kUnchanged) {
-//    DidMutate(kNoChanges);
-//    return true;
-//  }
-//
-//  if (result == MutableCSSPropertyValueSet::kModifiedExisting &&
-//      property.SupportsIncrementalStyle()) {
-//    DidMutate(kIndependentPropertyChanged);
-//  } else {
-//    DidMutate(kPropertyChanged);
-//  }
-//
-//  mutation_scope.EnqueueMutationRecord();
-//  return true;
+  StyleAttributeMutationScope mutation_scope(this);
+  WillMutate();
+
+  std::shared_ptr<const CSSValue> css_value =
+      CSSNumericLiteralValue::Create(value, CSSPrimitiveValue::UnitType::kNumber);
+  MutableCSSPropertyValueSet::SetResult result =
+      PropertySet().SetLonghandProperty(CSSPropertyValue(CSSPropertyName(property_id), css_value,
+                                                         /*important=*/false));
+
+  if (result == MutableCSSPropertyValueSet::kParseError || result == MutableCSSPropertyValueSet::kUnchanged) {
+    DidMutate(kNoChanges);
+    return true;
+  }
+
+  if (result == MutableCSSPropertyValueSet::kModifiedExisting && property.SupportsIncrementalStyle()) {
+    DidMutate(kIndependentPropertyChanged);
+  } else {
+    DidMutate(kPropertyChanged);
+  }
+
+  mutation_scope.EnqueueMutationRecord();
+  return true;
+}
+
+std::shared_ptr<StyleSheetContents> AbstractPropertySetCSSStyleDeclaration::ContextStyleSheet() const {
+  CSSStyleSheet* css_style_sheet = ParentStyleSheet();
+  return css_style_sheet ? css_style_sheet->Contents() : nullptr;
+}
+
+bool AbstractPropertySetCSSStyleDeclaration::CssPropertyMatches(CSSPropertyID property_id,
+                                                                const CSSValue& property_value) const {
+  return PropertySet().PropertyMatches(property_id, property_value);
+}
+
+void AbstractPropertySetCSSStyleDeclaration::Trace(GCVisitor* visitor) const {
+  CSSStyleDeclaration::Trace(visitor);
 }
 
 }  // namespace webf

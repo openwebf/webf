@@ -38,6 +38,8 @@ class CSSRuleList : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+  CSSRuleList(JSContext* ctx): ScriptWrappable(ctx) {};
+
   CSSRuleList(const CSSRuleList&) = delete;
   CSSRuleList& operator=(const CSSRuleList&) = delete;
 
@@ -57,13 +59,13 @@ class CSSRuleList : public ScriptWrappable {
   }
 
  protected:
-  CSSRuleList(JSContext* ctx): ScriptWrappable(ctx) {};
+
 };
 
 template <class Rule>
 class LiveCSSRuleList final : public CSSRuleList {
  public:
-  LiveCSSRuleList(Rule* rule) : rule_(rule) {}
+  LiveCSSRuleList(Rule* rule) : rule_(rule), CSSRuleList(rule->ctx()) {}
 
   void Trace(GCVisitor* visitor) const override {
     visitor->TraceMember(rule_);

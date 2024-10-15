@@ -89,7 +89,7 @@ class CSSRule : public ScriptWrappable {
   }
 
   virtual AtomicString cssText() const = 0;
-  virtual void Reattach(StyleRuleBase*) = 0;
+  virtual void Reattach(std::shared_ptr<StyleRuleBase>) = 0;
 
   virtual CSSRuleList* cssRules() const { return nullptr; }
   virtual MediaQuerySetOwner* GetMediaQuerySetOwner() { return nullptr; }
@@ -124,7 +124,7 @@ class CSSRule : public ScriptWrappable {
     has_cached_selector_text_ = has_cached_selector_text;
   }
 
-  const CSSParserContext* ParserContext() const;
+  std::shared_ptr<CSSParserContext> ParserContext() const;
 
  private:
   bool VerifyParentIsCSSRule() const;

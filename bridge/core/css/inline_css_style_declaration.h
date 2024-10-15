@@ -12,6 +12,7 @@
 #include "bindings/qjs/script_value.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/css/abstract_property_set_css_style_declaration.h"
+#include "core/dom/element_rare_data_field.h"
 
 namespace webf {
 
@@ -23,43 +24,19 @@ class InlineCssStyleDeclaration : public AbstractPropertySetCSSStyleDeclaration 
  public:
   using ImplType = InlineCssStyleDeclaration*;
   static InlineCssStyleDeclaration* Create(ExecutingContext* context, ExceptionState& exception_state);
-  explicit InlineCssStyleDeclaration(ExecutingContext* context, Element* owner_element_);
+  explicit InlineCssStyleDeclaration(Element* parent_element);
 
-  ScriptValue item(const AtomicString& key, ExceptionState& exception_state) override;
-  bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
-  bool DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) override;
-  void Clear();
-  [[nodiscard]] unsigned length() const override;
-
-  AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
-  void setProperty(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
-  AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) override;
-
-  [[nodiscard]] std::string ToString() const;
-
-  void InlineStyleChanged();
-
-  bool NamedPropertyQuery(const AtomicString&, ExceptionState&) override;
-  void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) override;
-
-  void CopyWith(InlineCssStyleDeclaration* inline_style);
-
-  AtomicString cssText() const override;
-  void setCssText(const AtomicString& value, ExceptionState& exception_state) override;
-  void SetCSSTextInternal(const AtomicString& value);
-
-  void Trace(GCVisitor* visitor) const override;
+  bool IsPropertyValid(CSSPropertyID) const override { return true; }
+  void Trace(GCVisitor*) const override;
 
  private:
-
   MutableCSSPropertyValueSet& PropertySet() const override;
+  CSSStyleSheet* ParentStyleSheet() const override;
+  Element* ParentElement() const override { return parent_element_.Get(); }
 
-  AtomicString InternalGetPropertyValue(std::string& name);
-  bool InternalSetProperty(std::string& name, const AtomicString& value);
-  AtomicString InternalRemoveProperty(std::string& name);
-  void InternalClearProperty();
-  std::unordered_map<std::string, AtomicString> properties_;
-  Member<Element> owner_element_;
+  void DidMutate(MutationType) override;
+
+  Member<Element> parent_element_;
 };
 
 }  // namespace webf

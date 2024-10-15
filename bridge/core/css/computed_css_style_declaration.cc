@@ -15,34 +15,22 @@ ComputedCssStyleDeclaration::ComputedCssStyleDeclaration(ExecutingContext* conte
                                                          NativeBindingObject* native_binding_object)
     : CSSStyleDeclaration(context->ctx(), native_binding_object) {}
 
-ScriptValue ComputedCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
-  if (IsPrototypeMethods(key)) {
-    return ScriptValue::Undefined(ctx());
-  }
+//ScriptValue ComputedCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
+//  if (IsPrototypeMethods(key)) {
+//    return ScriptValue::Undefined(ctx());
+//  }
+//
+//  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key)};
+//
+//  NativeValue result = InvokeBindingMethod(
+//      binding_call_methods::kgetPropertyValue, 1, arguments,
+//      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
+//  return ScriptValue(ctx(), NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result)));
+//}
 
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key)};
-
-  NativeValue result = InvokeBindingMethod(
-      binding_call_methods::kgetPropertyValue, 1, arguments,
-      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
-  return ScriptValue(ctx(), NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result)));
-}
-
-bool ComputedCssStyleDeclaration::SetItem(const AtomicString& key,
-                                          const ScriptValue& value,
-                                          ExceptionState& exception_state) {
-  NativeValue arguments[] = {
-      NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key),
-      NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value.ToLegacyDOMString(ctx()))};
-  InvokeBindingMethod(binding_call_methods::ksetProperty, 2, arguments,
-                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
-                      exception_state);
-  return true;
-}
-
-bool ComputedCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
-  return true;
-}
+//bool ComputedCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
+//  return true;
+//}
 
 unsigned ComputedCssStyleDeclaration::length() const {
   NativeValue result = GetBindingProperty(
@@ -53,12 +41,6 @@ unsigned ComputedCssStyleDeclaration::length() const {
 
 AtomicString ComputedCssStyleDeclaration::getPropertyValue(const AtomicString& key, ExceptionState& exception_state) {
   return item(key, exception_state).ToLegacyDOMString(ctx());
-}
-
-void ComputedCssStyleDeclaration::setProperty(const AtomicString& key,
-                                              const ScriptValue& value,
-                                              ExceptionState& exception_state) {
-  SetItem(key, value, exception_state);
 }
 
 AtomicString ComputedCssStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {

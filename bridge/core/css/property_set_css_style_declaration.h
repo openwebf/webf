@@ -47,9 +47,9 @@ class PropertySetCSSStyleDeclaration : public AbstractPropertySetCSSStyleDeclara
   void Trace(GCVisitor*) const override;
 
  protected:
-  const MutableCSSPropertyValueSet& PropertySet() const final {
+  MutableCSSPropertyValueSet& PropertySet() const final {
     assert(property_set_);
-    return *property_set_;
+    return const_cast<MutableCSSPropertyValueSet&>(*property_set_);
   }
 
   std::shared_ptr<const MutableCSSPropertyValueSet> property_set_;  // Cannot be null

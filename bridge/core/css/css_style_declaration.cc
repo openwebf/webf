@@ -129,13 +129,23 @@ void CSSStyleDeclaration::Trace(GCVisitor* visitor) const {
 
 CSSStyleDeclaration::CSSStyleDeclaration(ExecutingContext* context) : BindingObject(context->ctx()) {}
 
-std::string CSSStyleDeclaration::AnonymousNamedGetter(const webf::AtomicString& name) {
+ScriptValue CSSStyleDeclaration::item(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
+  AtomicString result = AnonymousNamedGetter(key);
+  return ScriptValue(ctx(), result);
+}
+
+ScriptValue CSSStyleDeclaration::item(webf::AtomicString&& key, webf::ExceptionState& exception_state) {
+  AtomicString result = AnonymousNamedGetter(key);
+  return ScriptValue(ctx(), result);
+}
+
+AtomicString CSSStyleDeclaration::AnonymousNamedGetter(const webf::AtomicString& name) {
   // Search the style declaration.
   CSSPropertyID unresolved_property = CssPropertyInfo(GetExecutingContext(), name);
 
   // Do not handle non-property names.
   if (!IsValidCSSPropertyID(unresolved_property)) {
-    return "";
+    return AtomicString::Empty();
   }
 
   return GetPropertyValueInternal(ResolveCSSPropertyID(unresolved_property));
@@ -165,7 +175,7 @@ bool CSSStyleDeclaration::AnonymousNamedSetter(const webf::AtomicString& name, c
     if (string.length() <= 128 && string.Is8Bit()) {
       uint8_t buffer[128];
       int len = string.length();
-      SetPropertyInternal(unresolved_property, "", StringView(buffer, len), false, exception_state);
+      SetPropertyInternal(unresolved_property, AtomicString::Empty(), StringView(buffer, len), false, exception_state);
       if (exception_state.HasException()) {
         return true;
       }
@@ -177,7 +187,7 @@ bool CSSStyleDeclaration::AnonymousNamedSetter(const webf::AtomicString& name, c
   // IDL [LegacyNullToEmptyString] DOMString only after we've confirmed that
   // the property name is a valid CSS attribute name (see bug 1310062).
   auto&& string_value = value.ToLegacyDOMString(ctx());
-  SetPropertyInternal(unresolved_property, "", string_value, false,
+  SetPropertyInternal(unresolved_property, AtomicString::Empty(), string_value, false,
                       exception_state);
   if (exception_state.HasException()) {
     return true;

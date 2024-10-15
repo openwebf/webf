@@ -25,6 +25,7 @@
 #include "core/css/css_rule.h"
 #include "core/css/media_query_set_owner.h"
 #include "core/css/style_rule_import.h"
+#include "core/css/css_style_sheet.h"
 
 namespace webf {
 
@@ -39,7 +40,7 @@ class CSSImportRule final : public CSSRule, public MediaQuerySetOwner {
   ~CSSImportRule() override;
 
   AtomicString cssText() const override;
-  void Reattach(StyleRuleBase*) override;
+  void Reattach(std::shared_ptr<StyleRuleBase>) override;
 
   AtomicString href() const;
   MediaList* media();
@@ -58,7 +59,7 @@ class CSSImportRule final : public CSSRule, public MediaQuerySetOwner {
   std::shared_ptr<const MediaQuerySet> MediaQueries() const override;
   void SetMediaQueries(std::shared_ptr<const MediaQuerySet>) override;
 
-  Member<StyleRuleImport> import_rule_;
+  std::shared_ptr<StyleRuleImport> import_rule_;
   mutable Member<MediaList> media_cssom_wrapper_;
   mutable Member<CSSStyleSheet> style_sheet_cssom_wrapper_;
 };

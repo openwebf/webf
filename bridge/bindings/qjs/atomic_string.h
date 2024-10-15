@@ -13,6 +13,7 @@
 #include "foundation/macros.h"
 #include "foundation/native_string.h"
 #include "foundation/string_view.h"
+#include "foundation/ascii_types.h"
 #include "native_string_utils.h"
 #include "qjs_engine_patch.h"
 

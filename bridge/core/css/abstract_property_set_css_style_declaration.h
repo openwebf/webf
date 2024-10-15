@@ -39,32 +39,53 @@ class CSSRule;
 class CSSValue;
 class Element;
 class ExceptionState;
-class ExecutingContext;
 class MutableCSSPropertyValueSet;
 class StyleSheetContents;
 
 class AbstractPropertySetCSSStyleDeclaration : public CSSStyleDeclaration {
  public:
   virtual Element* ParentElement() const { return nullptr; }
-//  StyleSheetContents* ContextStyleSheet() const;
+  std::shared_ptr<StyleSheetContents> ContextStyleSheet() const;
   explicit AbstractPropertySetCSSStyleDeclaration(ExecutingContext* context) : CSSStyleDeclaration(context->ctx()) {}
 
   // Some subclasses only allow a subset of the properties, for example
   // CSSPositionTryDescriptors only allows inset and sizing properties.
-  virtual bool IsPropertyValid(CSSPropertyID) const { return false; };
+  virtual bool IsPropertyValid(CSSPropertyID) const = 0;
 
-  std::string GetPropertyValueInternal(CSSPropertyID) final;
+  void Trace(GCVisitor*) const override;
+
+  AtomicString GetPropertyValueInternal(CSSPropertyID) final;
   void SetPropertyInternal(CSSPropertyID,
-                           const std::string& custom_property_name,
+                           const AtomicString& custom_property_name,
                            StringView value,
                            bool important,
                            ExceptionState&) final;
 
-  void Trace(GCVisitor*) const override;
+  AtomicString cssText() const final;
 
  private:
   bool IsAbstractPropertySet() const final { return true; }
   CSSRule* parentRule() const override { return nullptr; }
+  unsigned length() const final;
+  AtomicString item(unsigned index) const;
+
+  AtomicString getPropertyValue(const AtomicString& property_name, ExceptionState& exception_state) override;
+  AtomicString getPropertyPriority(const AtomicString& property_name) final;
+  AtomicString GetPropertyShorthand(const AtomicString& property_name) final;
+  bool IsPropertyImplicit(const AtomicString& property_name) final;
+  void setProperty(const ExecutingContext*,
+                   const AtomicString& property_name,
+                   const AtomicString& value,
+                   const AtomicString& priority,
+                   ExceptionState&) final;
+  AtomicString removeProperty(const AtomicString& property_name, ExceptionState&) final;
+  void setCssText(const AtomicString&, ExceptionState&) final;
+  const std::shared_ptr<const CSSValue>* GetPropertyCSSValueInternal(CSSPropertyID) final;
+  const std::shared_ptr<const CSSValue>* GetPropertyCSSValueInternal(const AtomicString& custom_property_name) final;
+  AtomicString GetPropertyValueWithHint(const AtomicString& property_name, unsigned index) final;
+  AtomicString GetPropertyPriorityWithHint(const AtomicString& property_name, unsigned index) final;
+
+  bool CssPropertyMatches(CSSPropertyID, const CSSValue&) const final;
 
  protected:
   enum MutationType {
@@ -78,7 +99,7 @@ class AbstractPropertySetCSSStyleDeclaration : public CSSStyleDeclaration {
   };
   virtual void WillMutate() {}
   virtual void DidMutate(MutationType) {}
-  virtual const MutableCSSPropertyValueSet& PropertySet() const = 0;
+  virtual MutableCSSPropertyValueSet& PropertySet() const = 0;
   virtual bool IsKeyframeStyle() const { return false; }
   bool FastPathSetProperty(CSSPropertyID unresolved_property, double value) override;
 };

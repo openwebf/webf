@@ -33,29 +33,41 @@ class CSSStyleDeclaration : public BindingObject {
   explicit CSSStyleDeclaration(JSContext* ctx);
   explicit CSSStyleDeclaration(JSContext* ctx, NativeBindingObject* native_binding_object);
 
-  virtual ScriptValue item(const AtomicString& key, ExceptionState& exception_state) = 0;
-  virtual bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) = 0;
-  virtual bool DeleteItem(const AtomicString& key, ExceptionState& exception_state) = 0;
-  virtual unsigned length() const = 0;
+
+  virtual bool IsAbstractPropertySet() const { return false; }
+
+  virtual CSSRule* parentRule() const = 0;
+
   virtual AtomicString cssText() const = 0;
   virtual void setCssText(const AtomicString& value, ExceptionState& exception_state) = 0;
 
-  virtual AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) = 0;
-  virtual void setProperty(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) = 0;
-  virtual AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) = 0;
+  ScriptValue item(const AtomicString& key, ExceptionState& exception_state);
+  ScriptValue item(AtomicString&& key, ExceptionState& exception_state);
 
-  virtual bool NamedPropertyQuery(const AtomicString&, ExceptionState&) = 0;
-  virtual void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) = 0;
+  virtual unsigned length() const = 0;
+
+  virtual AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) = 0;
+  virtual AtomicString getPropertyPriority(const AtomicString& property_name) = 0;
+  virtual AtomicString GetPropertyShorthand(const AtomicString& property_name) = 0;
+
+  virtual bool IsPropertyImplicit(const AtomicString& property_name) = 0;
+  virtual void setProperty(const ExecutingContext*,
+                           const AtomicString& property_name,
+                           const AtomicString& value,
+                           const AtomicString& priority,
+                           ExceptionState&) = 0;
+  virtual AtomicString removeProperty(const AtomicString& property_name,
+                                ExceptionState&) = 0;
 
   // CSSPropertyID versions of the CSSOM functions to support bindings and
   // editing.
   // Use the non-virtual methods in the concrete subclasses when possible.
   // The CSSValue returned by this function should not be exposed to the web as
   // it may be used by multiple documents at the same time.
-//  virtual std::shared_ptr<const CSSValue> GetPropertyCSSValueInternal(CSSPropertyID) = 0;
-//  virtual std::shared_ptr<const CSSValue> GetPropertyCSSValueInternal(
-//      const AtomicString& custom_property_name) = 0;
-  virtual std::string GetPropertyValueInternal(CSSPropertyID) { return ""; };
+  virtual const std::shared_ptr<const CSSValue>* GetPropertyCSSValueInternal(CSSPropertyID) = 0;
+  virtual const std::shared_ptr<const CSSValue>* GetPropertyCSSValueInternal(
+      const AtomicString& custom_property_name) = 0;
+  virtual AtomicString GetPropertyValueInternal(CSSPropertyID) = 0;
 
   // When determining the index of a css property in CSSPropertyValueSet,
   // the value and priority can be obtained directly through the index.
@@ -63,25 +75,31 @@ class CSSStyleDeclaration : public BindingObject {
   // getPropertyValue and getPropertyPriority are O(n),
   // because the array needs to be traversed to find the index.
   // See https://crbug.com/1339812 for more details.
-//  virtual std::string GetPropertyValueWithHint(const std::string& property_name,
-//                                          unsigned index) = 0;
-//  virtual std::string GetPropertyPriorityWithHint(const std::string& property_name,
-//                                             unsigned index) = 0;
+  virtual AtomicString GetPropertyValueWithHint(const AtomicString& property_name,
+                                          unsigned index) = 0;
+  virtual AtomicString GetPropertyPriorityWithHint(const AtomicString& property_name,
+                                             unsigned index) = 0;
+
   virtual void SetPropertyInternal(CSSPropertyID,
-                                   const std::string& property_name,
+                                   const AtomicString& property_value,
                                    StringView value,
                                    bool important,
-                                   ExceptionState&) {};
+                                   ExceptionState&) = 0;
 
-  virtual bool CssPropertyMatches(CSSPropertyID, const CSSValue&) const { return false; };
+
+  virtual bool CssPropertyMatches(CSSPropertyID, const CSSValue&) const = 0;
   virtual CSSStyleSheet* ParentStyleSheet() const { return nullptr; }
+
+  //  virtual bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) = 0;
+  //  virtual bool DeleteItem(const AtomicString& key, ExceptionState& exception_state) = 0;
+  //  virtual void setProperty(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) = 0;
+
+  virtual bool NamedPropertyQuery(const AtomicString&, ExceptionState&);
+  virtual void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&);
 
   void Trace(GCVisitor* visitor) const override;
 
-  virtual bool IsAbstractPropertySet() const { return false; }
-  virtual CSSRule* parentRule() const { return nullptr; };
-
-  std::string AnonymousNamedGetter(const AtomicString& name);
+  AtomicString AnonymousNamedGetter(const AtomicString& name);
   // Note: AnonymousNamedSetter() can end up throwing an exception via
   // SetPropertyInternal() even though it does not take an |ExceptionState| as
   // an argument (see bug 829408).

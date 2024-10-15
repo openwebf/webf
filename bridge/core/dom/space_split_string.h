@@ -15,6 +15,9 @@ class SpaceSplitString {
  public:
   SpaceSplitString() = default;
   explicit SpaceSplitString(JSContext* ctx, const AtomicString& string) { Set(ctx, string); };
+  SpaceSplitString(const SpaceSplitString& other) : data_(other.data_) {}
+  SpaceSplitString(SpaceSplitString&&) = default;
+  ~SpaceSplitString() = default;
 
   bool operator!=(const SpaceSplitString& other) const { return data_ != other.data_; }
 
@@ -89,13 +92,13 @@ class SpaceSplitString {
   };
 
   static std::unordered_map<JSAtom, Data*>& SharedDataMap();
-  void EnsureUnique() {
+  void EnsureShared() {
     if (data_ != nullptr) {
-      data_ = std::make_unique<Data>(*data_);
+      data_ = std::make_shared<Data>(*data_);
     }
   }
 
-  std::unique_ptr<Data> data_ = nullptr;
+  std::shared_ptr<Data> data_ = nullptr;
 };
 
 }  // namespace webf

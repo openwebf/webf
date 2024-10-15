@@ -408,6 +408,12 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/style_rule_keyframe.cc
     core/css/css_math_operator.cc
     core/css/css_ratio_value.cc
+    core/css/css_keyframes_rule.cc
+    core/css/css_keyframe_rule.cc
+    core/css/css_import_rule.cc
+    core/css/style_rule_css_style_declaration.cc
+    core/css/keyframe_style_rule_css_style_declaration.cc
+    core/css/style_attribute_mutation_scope.cc
     core/css/css_unset_value.cc
     core/css/css_value_pair.cc
     core/css/css_light_dart_value_pair.cc
@@ -735,6 +741,9 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_button_element.cc
     out/qjs_html_input_element.cc
     out/qjs_html_form_element.cc
+    out/qjs_css_import_rule.cc
+    out/qjs_css_keyframe_rule.cc
+    out/qjs_css_keyframes_rule.cc
     out/qjs_html_textarea_element.cc
     out/qjs_html_script_element.cc
     out/qjs_html_style_element.cc

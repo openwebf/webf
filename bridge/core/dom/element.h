@@ -9,6 +9,7 @@
 #include "bindings/qjs/script_promise.h"
 #include "container_node.h"
 #include "core/css/inline_css_style_declaration.h"
+#include "core/dom/element_rare_data_vector.h"
 #include "element_data.h"
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
@@ -110,7 +111,7 @@ class Element : public ContainerNode {
   void SynchronizeStyleAttributeInternal();
   void SynchronizeAttribute(const AtomicString& name);
 
-  void InvalidateStyleAttribute();
+  void InvalidateStyleAttribute(bool only_changed_independent_properties);
 
   virtual void AttributeChanged(const AttributeModificationParams& params);
   // |ParseAttribute()| is called by |AttributeChanged()|. If an element
@@ -133,6 +134,9 @@ class Element : public ContainerNode {
   std::string innerHTML();
   AtomicString TextFromChildren();
   void setInnerHTML(const AtomicString& value, ExceptionState& exception_state);
+
+  ElementRareDataVector* GetElementRareData() const;
+  ElementRareDataVector& EnsureElementRareData();
 
   bool HasTagName(const AtomicString&) const;
   AtomicString nodeValue() const override;
@@ -159,12 +163,17 @@ class Element : public ContainerNode {
   Element* closest(const AtomicString& selectors, ExceptionState& exception_state);
 
   InlineCssStyleDeclaration* style();
-  InlineCssStyleDeclaration& EnsureCSSStyleDeclaration();
   DOMTokenList* classList();
   DOMStringMap* dataset();
 
   Element& CloneWithChildren(CloneChildrenFlag flag, Document* = nullptr) const;
   Element& CloneWithoutChildren(Document* = nullptr) const;
+
+  void NotifyInlineStyleMutation();
+
+  std::shared_ptr<const MutableCSSPropertyValueSet> EnsureMutableInlineStyle();
+  void ClearMutableInlineStyleIfEmpty();
+  std::shared_ptr<CSSPropertyValueSet> CreatePresentationAttributeStyle();
 
   NodeType nodeType() const override;
   bool ChildTypeAllowed(NodeType) const override;
@@ -238,8 +247,14 @@ class Element : public ContainerNode {
                             AttributeModificationReason reason,
                             ExceptionState& exception_state);
 
+  void DetachAllAttrNodesFromElement();
+
+  bool HasElementData() const { return static_cast<bool>(element_data_); }
   const ElementData* GetElementData() const { return element_data_.get(); }
-  bool HasElementData() const { return element_data_ != nullptr; }
+  UniqueElementData& EnsureUniqueElementData();
+
+  void CreateUniqueElementData();
+
   const AtomicString& getQualifiedName() const { return local_name_; }
   const AtomicString getUppercasedQualifiedName() const;
   ElementData& EnsureElementData();
@@ -259,9 +274,8 @@ class Element : public ContainerNode {
   void _notifyChildInsert();
   void _beforeUpdateId(JSValue oldIdValue, JSValue newIdValue);
 
-  mutable std::unique_ptr<ElementData> element_data_;
+  mutable std::shared_ptr<ElementData> element_data_;
   mutable Member<ElementAttributes> attributes_;
-  Member<InlineCssStyleDeclaration> cssom_wrapper_;
 
   QualifiedName tag_name_;
 };
@@ -321,6 +335,20 @@ inline bool Element::HasID() const {
 
 inline bool Element::HasClass() const {
   return HasElementData() && GetElementData()->HasClass();
+}
+
+inline UniqueElementData& Element::EnsureUniqueElementData() {
+  if (!HasElementData() || !GetElementData()->IsUnique())
+    CreateUniqueElementData();
+  return To<UniqueElementData>(*element_data_);
+}
+
+inline ElementRareDataVector* Element::GetElementRareData() const {
+  return static_cast<ElementRareDataVector*>(RareData());
+}
+
+inline ElementRareDataVector& Element::EnsureElementRareData() {
+  return static_cast<ElementRareDataVector&>(EnsureRareData());
 }
 
 

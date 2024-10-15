@@ -55,11 +55,11 @@ class StyleRuleImport : public StyleRuleBase {
   void ClearParentStyleSheet() { parent_style_sheet_ = nullptr; }
 
   std::string Href() const { return str_href_; }
-  StyleSheetContents* GetStyleSheet() const { return style_sheet_.get(); }
+  std::shared_ptr<StyleSheetContents> GetStyleSheet() const { return style_sheet_; }
 
   bool IsLoading() const;
 
-  const MediaQuerySet* MediaQueries() const { return media_queries_.get(); }
+  std::shared_ptr<const MediaQuerySet> MediaQueries() const { return media_queries_; }
   void SetMediaQueries(std::shared_ptr<const MediaQuerySet> media_queries) {
     media_queries_ = media_queries;
   }

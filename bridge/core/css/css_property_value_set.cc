@@ -60,6 +60,12 @@ static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet>
   return StylePropertySerializer(property_set).SerializeShorthand(property_id);
 }
 
+static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> property_set,
+                                 const std::string& custom_property_name) {
+  // Custom properties are never shorthands.
+  return "";
+}
+
 template <typename T>
 std::string CSSPropertyValueSet::GetPropertyValue(const T& property) const {
   std::string shorthand_serialization = SerializeShorthand(shared_from_this(), property);
@@ -73,6 +79,7 @@ std::string CSSPropertyValueSet::GetPropertyValue(const T& property) const {
   return "";
 }
 template std::string CSSPropertyValueSet::GetPropertyValue<CSSPropertyID>(const CSSPropertyID&) const;
+template std::string CSSPropertyValueSet::GetPropertyValue<std::string>(const std::string&) const;
 
 template const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValue<CSSPropertyID>(
     const CSSPropertyID&) const;
@@ -86,6 +93,7 @@ bool CSSPropertyValueSet::PropertyIsImportant(const T& property) const {
   return ShorthandIsImportant(property);
 }
 template bool CSSPropertyValueSet::PropertyIsImportant<CSSPropertyID>(const CSSPropertyID&) const;
+template bool CSSPropertyValueSet::PropertyIsImportant<std::string>(const std::string&) const;
 
 const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValueWithHint(
     const std::string& property_name,
@@ -445,6 +453,13 @@ bool MutableCSSPropertyValueSet::RemoveProperty(const T& property, std::string* 
   int found_property_index = FindPropertyIndex(property);
   return RemovePropertyAtIndex(found_property_index, return_text);
 }
+template bool MutableCSSPropertyValueSet::RemoveProperty(
+    const CSSPropertyID&,
+    std::string*);
+template bool MutableCSSPropertyValueSet::RemoveProperty(
+    const std::string&,
+    std::string*);
+
 
 inline bool ContainsId(const CSSProperty* const set[], unsigned length, CSSPropertyID id) {
   for (unsigned i = 0; i < length; ++i) {

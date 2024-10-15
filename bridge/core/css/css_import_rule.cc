@@ -20,3 +20,105 @@
 */
 
 #include "css_import_rule.h"
+#include "core/css/css_markup.h"
+
+namespace webf {
+
+CSSImportRule::CSSImportRule(StyleRuleImport* import_rule,
+                             CSSStyleSheet* parent)
+    : CSSRule(parent), import_rule_(import_rule) {}
+
+CSSImportRule::~CSSImportRule() = default;
+
+AtomicString CSSImportRule::href() const {
+  return AtomicString(ctx(), import_rule_->Href());
+}
+
+MediaList* CSSImportRule::media() {
+  if (!media_cssom_wrapper_) {
+    media_cssom_wrapper_ = MakeGarbageCollected<MediaList>(this);
+  }
+  return media_cssom_wrapper_.Get();
+}
+
+AtomicString CSSImportRule::cssText() const {
+  StringBuilder result;
+  result.Append("@import ");
+  result.Append(SerializeURI(import_rule_->Href()));
+
+  if (import_rule_->IsLayered()) {
+    result.Append(" layer");
+    AtomicString layer_name = layerName();
+    if (layer_name.length()) {
+      result.Append("(");
+      result.Append(layer_name.ToStdString(ctx()));
+      result.Append(")");
+    }
+  }
+
+  if (std::string supports = import_rule_->GetSupportsString();
+      supports != "") {
+    result.Append(" supports(");
+    result.Append(supports);
+    result.Append(")");
+  }
+
+  if (import_rule_->MediaQueries()) {
+    std::string media_text = import_rule_->MediaQueries()->MediaText();
+    if (!media_text.empty()) {
+      result.Append(' ');
+      result.Append(media_text);
+    }
+  }
+  result.Append(';');
+
+  return AtomicString(ctx(), result.ReleaseString());
+}
+
+CSSStyleSheet* CSSImportRule::styleSheet() const {
+  // TODO(yukishiino): CSSImportRule.styleSheet attribute is not nullable,
+  // thus this function must not return nullptr.
+  if (!import_rule_->GetStyleSheet()) {
+    return nullptr;
+  }
+
+  if (!style_sheet_cssom_wrapper_) {
+    style_sheet_cssom_wrapper_ = MakeGarbageCollected<CSSStyleSheet>(
+        GetExecutingContext(),
+        import_rule_->GetStyleSheet(), const_cast<CSSImportRule*>(this));
+  }
+  return style_sheet_cssom_wrapper_.Get();
+}
+
+AtomicString CSSImportRule::layerName() const {
+  if (!import_rule_->IsLayered()) {
+    return AtomicString::Empty();
+  }
+  return AtomicString(ctx(), import_rule_->GetLayerNameAsString());
+}
+
+AtomicString CSSImportRule::supportsText() const {
+  return AtomicString(ctx(), import_rule_->GetSupportsString());
+}
+
+void CSSImportRule::Reattach(std::shared_ptr<StyleRuleBase>) {
+  // FIXME: Implement when enabling caching for stylesheets with import rules.
+  NOTREACHED_IN_MIGRATION();
+}
+
+std::shared_ptr<const MediaQuerySet> CSSImportRule::MediaQueries() const {
+  return import_rule_->MediaQueries();
+}
+
+void CSSImportRule::SetMediaQueries(std::shared_ptr<const MediaQuerySet> media_queries) {
+  import_rule_->SetMediaQueries(media_queries);
+}
+
+void CSSImportRule::Trace(GCVisitor* visitor) const {
+  visitor->TraceMember(media_cssom_wrapper_);
+  visitor->TraceMember(style_sheet_cssom_wrapper_);
+  CSSRule::Trace(visitor);
+}
+
+
+}

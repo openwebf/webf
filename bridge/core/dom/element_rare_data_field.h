@@ -11,11 +11,8 @@ namespace webf {
 
 class ScriptWrappable;
 
-class ElementRareDataField : public ScriptWrappable {
+class ElementRareDataField {
  public:
-  void Trace(GCVisitor* visitor) const {
-    ScriptWrappable::Trace(visitor);
-  }
 };
 
 }  // namespace webf

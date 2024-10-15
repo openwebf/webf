@@ -55,9 +55,9 @@ void CSSRule::Trace(webf::GCVisitor* visitor) const {
 CSSRule::CSSRule(webf::CSSStyleSheet* parent)
     : has_cached_selector_text_(false), parent_is_rule_(false), parent_(parent), ScriptWrappable(parent->ctx()) {}
 
-const CSSParserContext* CSSRule::ParserContext() const {
+std::shared_ptr<CSSParserContext> CSSRule::ParserContext() const {
   CSSStyleSheet* style_sheet = parentStyleSheet();
-  return style_sheet->Contents()->ParserContext().get();
+  return std::const_pointer_cast<CSSParserContext>(style_sheet->Contents()->ParserContext());
 }
 
 bool CSSRule::VerifyParentIsCSSRule() const {

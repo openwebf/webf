@@ -6,9 +6,14 @@
 #define WEBF_CORE_DOM_ELEMENT_RARE_DATA_VECTOR_H_
 
 #include "core/dom/node_rare_data.h"
+#include "core/dom/dom_token_list.h"
+#include "core/dom/dom_string_map.h"
 #include "core/dom/element_rare_data_field.h"
 
 namespace webf {
+
+class CSSStyleDeclaration;
+class Element;
 
 // This class stores lazily-initialized state associated with Elements, each of
 // which is identified in the FieldId enum. Since storing pointers to all of
@@ -68,14 +73,14 @@ class ElementRareDataVector final : public NodeRareData {
     kNumFields = 32,
   };
 
-  const ElementRareDataField* GetField(FieldId field_id) const;
+  ScriptWrappable* GetField(FieldId field_id) const;
   // GetFieldIndex returns the index in |fields_| that |field_id| is stored in.
   // If |fields_| isn't storing a field for |field_id|, then this returns the
   // index which the data for |field_id| should be inserted into.
   unsigned GetFieldIndex(FieldId field_id) const;
-  void SetField(FieldId field_id, ElementRareDataField* field);
+  void SetField(FieldId field_id, ScriptWrappable* field);
 
-  std::vector<Member<ElementRareDataField>> fields_;
+  std::vector<Member<ScriptWrappable>> fields_;
   using BitfieldType = uint32_t;
   BitfieldType fields_bitfield_;
   static_assert(sizeof(fields_bitfield_) * 8 >=
@@ -88,7 +93,6 @@ class ElementRareDataVector final : public NodeRareData {
    public:
     T& Get() { return data_; }
     void Trace(GCVisitor* visitor) const {
-      ElementRareDataField::Trace(visitor);
       visitor->TraceMember(data_);
     }
 
@@ -142,6 +146,22 @@ class ElementRareDataVector final : public NodeRareData {
  public:
   ElementRareDataVector();
   ~ElementRareDataVector();
+
+  CSSStyleDeclaration& EnsureInlineCSSStyleDeclaration(Element* owner_element);
+
+  DOMTokenList* GetClassList() const {
+    return static_cast<DOMTokenList*>(GetField(FieldId::kClassList));
+  }
+  void SetClassList(DOMTokenList* class_list) {
+    SetField(FieldId::kClassList, class_list);
+  }
+
+  DOMStringMap* Dataset() const {
+    return static_cast<DOMStringMap*>(GetField(FieldId::kDataset));
+  }
+  void SetDataset(DOMStringMap* dataset) {
+    SetField(FieldId::kDataset, dataset);
+  }
 
   bool HasElementFlag(ElementFlags mask) const {
     return element_flags_ & static_cast<uint16_t>(mask);

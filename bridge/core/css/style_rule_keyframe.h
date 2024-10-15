@@ -48,7 +48,7 @@ class StyleRuleKeyframe final : public StyleRuleBase {
   const std::vector<KeyframeOffset>& Keys() const;
 
   const CSSPropertyValueSet& Properties() const { return *properties_; }
-  const MutableCSSPropertyValueSet& MutableProperties();
+  std::shared_ptr<const MutableCSSPropertyValueSet> MutableProperties();
 
   std::string CssText() const;
 

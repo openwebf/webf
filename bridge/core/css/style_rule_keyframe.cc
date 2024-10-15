@@ -57,11 +57,11 @@ const std::vector<KeyframeOffset>& StyleRuleKeyframe::Keys() const {
   return keys_;
 }
 
-const MutableCSSPropertyValueSet& StyleRuleKeyframe::MutableProperties() {
+std::shared_ptr<const MutableCSSPropertyValueSet> StyleRuleKeyframe::MutableProperties() {
   if (!properties_->IsMutable()) {
     properties_ = properties_->MutableCopy();
   }
-  return *To<MutableCSSPropertyValueSet>(properties_.get());
+  return std::reinterpret_pointer_cast<const MutableCSSPropertyValueSet>(properties_);
 }
 
 std::string StyleRuleKeyframe::CssText() const {

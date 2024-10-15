@@ -366,7 +366,7 @@ class StyleRuleCharset : public StyleRuleBase {
 
 class StyleRuleFontFace : public StyleRuleBase {
  public:
-  explicit StyleRuleFontFace(CSSPropertyValueSet*);
+  explicit StyleRuleFontFace(std::shared_ptr<CSSPropertyValueSet>);
   StyleRuleFontFace(const StyleRuleFontFace&);
 
   const CSSPropertyValueSet& Properties() const { return *properties_; }
@@ -380,7 +380,7 @@ class StyleRuleFontFace : public StyleRuleBase {
   void TraceAfterDispatch(GCVisitor*) const;
 
  private:
-  std::shared_ptr<CSSPropertyValueSet> properties_;  // Cannot be null.
+  std::shared_ptr<const CSSPropertyValueSet> properties_;  // Cannot be null.
   std::shared_ptr<const CascadeLayer> layer_;
 };
 

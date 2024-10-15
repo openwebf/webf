@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 #include "element_rare_data_vector.h"
+#include "core/css/inline_css_style_declaration.h"
+#include "core/dom/element.h"
+#include "core/dom/element_rare_data_field.h"
 
 namespace webf {
 
@@ -12,7 +15,13 @@ ElementRareDataVector::~ElementRareDataVector() {
   DCHECK(!GetField(FieldId::kPseudoElementData));
 }
 
-const ElementRareDataField* ElementRareDataVector::GetField(FieldId field_id) const {
+CSSStyleDeclaration& ElementRareDataVector::EnsureInlineCSSStyleDeclaration(
+    Element* owner_element) {
+  return EnsureField<InlineCssStyleDeclaration>(FieldId::kCssomWrapper,
+                                                owner_element);
+}
+
+ScriptWrappable* ElementRareDataVector::GetField(FieldId field_id) const {
   if (fields_bitfield_ &
       (static_cast<BitfieldType>(1) << static_cast<unsigned>(field_id)))
     return fields_[GetFieldIndex(field_id)];
@@ -28,7 +37,7 @@ unsigned ElementRareDataVector::GetFieldIndex(FieldId field_id) const {
 
 
 void ElementRareDataVector::SetField(FieldId field_id,
-                                     ElementRareDataField* field) {
+                                     ScriptWrappable* field) {
   unsigned field_id_int = static_cast<unsigned>(field_id);
   if (fields_bitfield_ & (static_cast<BitfieldType>(1) << field_id_int)) {
     if (field) {

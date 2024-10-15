@@ -30,6 +30,7 @@ class CSSParserObserver;
 class CSSSelector;
 class CSSParserTokenRange;
 class StyleRule;
+class StyleRuleKeyframes;
 class CSSParserObserver;
 class StyleRuleImport;
 class StyleRuleBase;
@@ -160,6 +161,9 @@ class CSSParserImpl {
   std::shared_ptr<StyleRuleMedia> ConsumeMediaRule(CSSParserTokenStream& stream,
                                    CSSNestingType,
                                    std::shared_ptr<const StyleRule> parent_rule_for_nesting);
+  std::shared_ptr<StyleRuleKeyframes> ConsumeKeyframesRule(bool webkit_prefixed,
+                                           CSSParserTokenStream&);
+  std::shared_ptr<StyleRuleFontFace> ConsumeFontFaceRule(CSSParserTokenStream&);
   // Finds a previously parsed MediaQuerySet for the given `prelude_string`
   // and returns it. If no MediaQuerySet is found, parses one using `prelude`,
   // and returns the result after caching it.

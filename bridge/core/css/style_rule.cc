@@ -592,11 +592,18 @@ void StyleRule::TraceAfterDispatch(GCVisitor* visitor) const {
   StyleRuleBase::TraceAfterDispatch(visitor);
 }
 
+StyleRuleFontFace::StyleRuleFontFace(std::shared_ptr<CSSPropertyValueSet> properties)
+    : StyleRuleBase(kFontFace), properties_(properties) {}
+
+StyleRuleFontFace::StyleRuleFontFace(const StyleRuleFontFace& font_face_rule)
+    : StyleRuleBase(font_face_rule),
+      properties_(font_face_rule.properties_->MutableCopy()) {}
+
 MutableCSSPropertyValueSet& StyleRuleFontFace::MutableProperties() {
   if (!properties_->IsMutable()) {
     properties_ = std::const_pointer_cast<MutableCSSPropertyValueSet>(properties_->MutableCopy());
   }
-  return *To<MutableCSSPropertyValueSet>(properties_.get());
+  return *To<MutableCSSPropertyValueSet>(const_cast<CSSPropertyValueSet*>(properties_.get()));
 }
 
 void StyleRuleFontFace::TraceAfterDispatch(webf::GCVisitor*) const {}
