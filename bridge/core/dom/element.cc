@@ -362,6 +362,11 @@ void Element::CloneAttributesFrom(const Element& other) {
     DetachAllAttrNodesFromElement();
   }
 
+  if (!other.element_data_) {
+    element_data_ = nullptr;
+    return;
+  }
+
   if (other.attributes_ != nullptr) {
     EnsureElementAttributes().CopyWith(other.attributes_);
   }
@@ -664,11 +669,12 @@ void Element::StyleAttributeChanged(const AtomicString& new_style_string,
 
 void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_string) {
   DCHECK(IsStyledElement());
-  std::shared_ptr<const CSSPropertyValueSet>& inline_style = GetElementData()->inline_style_;
+  std::shared_ptr<const CSSPropertyValueSet>& inline_style = EnsureElementData().inline_style_;
 
   // Avoid redundant work if we're using shared attribute data with already
   // parsed inline style.
-  if (inline_style && !GetElementData()->IsUnique()) {
+  if (inline_style &&
+      !GetElementData()->IsUnique()) {
     return;
   }
 
@@ -698,7 +704,7 @@ std::string Element::outerHTML() {
   if (attributes_ != nullptr) {
     s += " " + attributes_->ToString();
   }
-  if (GetElementData()->inline_style_ != nullptr) {
+  if (EnsureElementData().inline_style_ != nullptr) {
     s += " style=\"" + GetElementData()->inline_style_->AsText();
   }
 
