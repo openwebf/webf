@@ -19,6 +19,7 @@ class _IntersectionObserverDeliverContext {
 
   // Pointer<NativeValue> method;
   Pointer<NativeValue> allocatedNativeArguments;
+
   //Pointer<NativeValue> rawNativeEntries;
   WebFController controller;
   EvaluateOpItem? profileOp;
@@ -33,7 +34,8 @@ class _IntersectionObserverDeliverContext {
   );
 }
 
-void _handleDeliverResult(_IntersectionObserverDeliverContext context, Pointer<NativeValue> returnValue) {
+void _handleDeliverResult(Object handle, Pointer<NativeValue> returnValue) {
+  _IntersectionObserverDeliverContext context = handle as _IntersectionObserverDeliverContext;
   Pointer<EventDispatchResult> dispatchResult =
       fromNativeValue(context.controller.view, returnValue).cast<EventDispatchResult>();
 
@@ -99,35 +101,17 @@ class IntersectionObserver extends DynamicBindingObject {
     _entries.add(entry);
   }
 
-  List<NativeIntersectionObserverEntry> takeRecords() {
+  List<DartIntersectionObserverEntry> takeRecords() {
     List<DartIntersectionObserverEntry> entries = _entries.map((entry) => entry.copy()).toList();
     _entries.clear();
-    return toNativeEntries(entries);
-  }
-
-  List<NativeIntersectionObserverEntry> toNativeEntries(List<DartIntersectionObserverEntry> entries) {
-    if (entries.isEmpty) {
-      return [];
-    }
-
-    return List.generate(entries.length, (i) {
-      return NativeIntersectionObserverEntry(
-        BindingContext(
-          entries[i].element.ownerView,
-          entries[i].element.ownerView.contextId,
-          allocateNewBindingObject(),
-        ),
-        entries[i].isIntersecting,
-        entries[i].element,
-      );
-    });
+    return entries;
   }
 
   Future<void> deliver(WebFController controller) async {
     if (pointer == null) return;
     debugPrint('Dom.IntersectionObserver.deliver pointer:$pointer');
-    List<NativeIntersectionObserverEntry> nativeEntries = takeRecords();
-    if (nativeEntries.isNotEmpty) {
+    List<DartIntersectionObserverEntry> entries = takeRecords();
+    if (entries.isNotEmpty) {
       Completer completer = Completer();
 
       EvaluateOpItem? currentProfileOp;
@@ -139,15 +123,25 @@ class IntersectionObserver extends DynamicBindingObject {
       // Call methods implements at C++ side.
       DartInvokeBindingMethodsFromDart? f = pointer!.ref.invokeBindingMethodFromDart.asFunction();
 
-      // Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
-      // toNativeValue(method, 'deliver');
-
-      List<dynamic> dispatchEntryArguments = [nativeEntries];
-
       Stopwatch? stopwatch;
       if (enableWebFCommandLog) {
         stopwatch = Stopwatch()..start();
       }
+
+      // Allocate an chunk of memory for an list of NativeIntersectionObserverEntry
+      Pointer<NativeIntersectionObserverEntry> head =
+          malloc.allocate(sizeOf<NativeIntersectionObserverEntry>() * entries.length);
+
+      // Write the native memory from dart objects.
+      for(int i = 0; i < entries.length; i ++) {
+        (head + i).ref.isIntersecting = entries[i].isIntersecting ? 1 : 0;
+        (head + i).ref.target = entries[i].element.pointer!;
+      }
+
+      List<dynamic> dispatchEntryArguments = [
+        head,
+        entries.length
+      ];
 
       Pointer<NativeValue> allocatedNativeArguments = makeNativeValueArguments(bindingObject, dispatchEntryArguments);
 
@@ -167,6 +161,7 @@ class IntersectionObserver extends DynamicBindingObject {
 //     Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
         f(pointer!, currentProfileOp?.hashCode ?? 0, nullptr, dispatchEntryArguments.length, allocatedNativeArguments,
             context, resultCallback);
+        malloc.free(head);
       });
 
       return completer.future;

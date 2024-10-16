@@ -3,7 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:webf/foundation.dart';
+import 'dart:ffi';
+import 'package:webf/bridge.dart';
 import 'element.dart';
 
 class DartIntersectionObserverEntry {
@@ -24,26 +25,9 @@ class DartIntersectionObserverEntry {
   }
 }
 
-class NativeIntersectionObserverEntry extends DynamicBindingObject {
-  //final DOMHighResTimeStamp time;
-  //final DOMRectReadOnly? rootBounds;
-  //final DOMRectReadOnly boundingClientRect;
-  //final DOMRectReadOnly intersectionRect;
-  final bool isIntersecting;
+class NativeIntersectionObserverEntry extends Struct {
+  @Int8()
+  external int isIntersecting;
 
-  //final bool isVisible;
-  //final double intersectionRatio;
-  final Element target;
-
-  NativeIntersectionObserverEntry(BindingContext context, this.isIntersecting, this.target) : super(context);
-
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    // TODO: implement initializeMethods
-  }
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    // TODO: implement initializeProperties
-  }
+  external Pointer<NativeBindingObject> target;
 }

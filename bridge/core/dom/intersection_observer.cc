@@ -9,16 +9,21 @@
 #include <algorithm>
 #include <limits>
 
-#include "core/dom/element.h"
-#include <native_value_converter.h>
 #include "bindings/qjs/converter_impl.h"
+#include "core/dom/element.h"
 #include "core/dom/intersection_observer_entry.h"
 #include "core/dom/node.h"
 #include "core/executing_context.h"
-#include "qjs_intersection_observer_init.h"
 #include "foundation/logging.h"
+#include "foundation/native_value_converter.h"
+#include "qjs_intersection_observer_init.h"
 
 namespace webf {
+
+struct NativeIntersectionObserverEntry : public DartReadable {
+  int8_t is_intersecting;
+  NativeBindingObject* target;
+};
 
 IntersectionObserver* IntersectionObserver::Create(ExecutingContext* context,
                                                    const std::shared_ptr<QJSFunction>& function,
@@ -105,28 +110,33 @@ NativeValue IntersectionObserver::HandleCallFromDartSide(const AtomicString& met
                                                          int32_t argc,
                                                          const NativeValue* argv,
                                                          Dart_Handle dart_object) {
-   if (!GetExecutingContext() || !GetExecutingContext()->IsContextValid()) {
+  if (!GetExecutingContext() || !GetExecutingContext()->IsContextValid()) {
     WEBF_LOG(ERROR) << "[IntersectionObserver]: HandleCallFromDartSide Context Valid" << std::endl;
     return Native_NewNull();
   }
 
+  MemberMutationScope scope{GetExecutingContext()};
   WEBF_LOG(DEBUG) << "[IntersectionObserver]: HandleCallFromDartSide NativeValueConverter" << std::endl;
-  NativeValue native_entry_list = argv[0];
-  std::vector<IntersectionObserverEntry*> entries =
-      NativeValueConverter<NativeTypeArray<NativeTypePointer<IntersectionObserverEntry>>>::FromNativeValue(
-          ctx(), native_entry_list);
+  NativeIntersectionObserverEntry* native_entry =
+      NativeValueConverter<NativeTypePointer<NativeIntersectionObserverEntry>>::FromNativeValue(argv[0]);
+  size_t length = NativeValueConverter<NativeTypeInt64>::FromNativeValue(argv[1]);
 
-  if (!entries.empty()) {
+  if (length > 0) {
     assert(function_ != nullptr);
-
     WEBF_LOG(DEBUG) << "[IntersectionObserver]: HandleCallFromDartSide To JSValue" << std::endl;
-    JSValue v = Converter<IDLSequence<IntersectionObserverEntry>>::ToValue(ctx(), entries);
-    ScriptValue arguments[] = {ScriptValue(ctx(), v), ToValue()};
-
-    JS_FreeValue(ctx(), v);
+    JSValue js_array = JS_NewArray(ctx());
+    for (int i = 0; i < length; i++) {
+      auto* entry = MakeGarbageCollected<IntersectionObserverEntry>(
+          GetExecutingContext(), native_entry[i].is_intersecting,
+          DynamicTo<Element>(BindingObject::From(native_entry[i].target)));
+      JS_SetPropertyUint32(ctx(), js_array, i, entry->ToQuickJS());
+    }
+    ScriptValue arguments[] = {ScriptValue(ctx(), js_array), ToValue()};
 
     WEBF_LOG(DEBUG) << "[IntersectionObserver]: HandleCallFromDartSide function_ Invoke" << std::endl;
     function_->Invoke(ctx(), ToValue(), 2, arguments);
+
+    JS_FreeValue(ctx(), js_array);
   } else {
     WEBF_LOG(ERROR) << "[IntersectionObserver]: HandleCallFromDartSide entries is empty";
   }
