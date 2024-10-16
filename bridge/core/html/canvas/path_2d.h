@@ -8,6 +8,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
 #include "core/geometry/dom_matrix.h"
+#include "qjs_unionpath_2_d_dom_string.h"
 
 namespace webf {
 
@@ -17,12 +18,18 @@ class Path2D : public BindingObject {
  public:
   using ImplType = Path2D*;
   static Path2D* Create(ExecutingContext* context, ExceptionState& exception_state);
+  static Path2D* Create(ExecutingContext* context, 
+                        const std::shared_ptr<QJSUnionPath2DDomString>& init,
+                        ExceptionState& exception_state);
   Path2D() = delete;
 
   explicit Path2D(ExecutingContext* context, ExceptionState& exception_state);
+  explicit Path2D(ExecutingContext* context,
+                  const std::shared_ptr<QJSUnionPath2DDomString>& init,
+                  ExceptionState& exception_state);
 
-  void addPath(Path2D* path, DOMMatrixReadonly* dom_matrix, ExceptionState& exception_state);
-  void addPath(Path2D* path, ExceptionState& exception_state);
+  void addPath(Path2D* path, DOMMatrixReadonly* dom_matrix, ExceptionState& exception_state) const;
+  void addPath(Path2D* path, ExceptionState& exception_state) const;
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                     int32_t argc,

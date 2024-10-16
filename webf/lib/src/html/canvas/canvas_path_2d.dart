@@ -10,6 +10,7 @@ import 'dart:ui';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/geometry.dart';
+import 'package:webf/src/css/values/path.dart';
 
 // ignore: non_constant_identifier_names
 final double _2pi = 2 * math.pi;
@@ -25,8 +26,17 @@ class Path2D extends DynamicBindingObject {
 
   final List<double> _points = [];
 
-  Path2D({BindingContext? context, List<dynamic>? path2DInit}): super(context) {
-    print('Path2D init: $context, $path2DInit');
+  Path2D({BindingContext? context, List<dynamic>? path2DInit}) : super(context) {
+    if (path2DInit != null && path2DInit.isNotEmpty) {
+      switch (path2DInit[0].runtimeType) {
+        case Path2D:
+          addPath(path2DInit[0] as Path2D);
+          break;
+        case String:
+          addSVGPath(path2DInit[0] as String);
+          break;
+      }
+    }
   }
 
   @override
@@ -185,6 +195,16 @@ class Path2D extends DynamicBindingObject {
   void addPath(Path2D path, {Float64List? matrix4}) {
     _path.addPath(path._path, Offset.zero, matrix4: matrix4);
     _syncCurrentPoint();
+  }
+
+  void addSVGPath(String pathStr, {Float64List? matrix4}) {
+    CSSPath cssPath = CSSPath.parseValue(pathStr);
+    if (cssPath != CSSPath.None) {
+      final path = Path();
+      cssPath.applyTo(path);
+      _path.addPath(path, Offset.zero, matrix4: matrix4);
+      _syncCurrentPoint();
+    }
   }
 
   /// Adds a cubic bezier segment that curves from the current point
