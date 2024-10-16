@@ -125,7 +125,7 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
   // Collect all DOM elements in arguments.
   CollectElementDepsOnArgs(invoke_elements_deps, argc, argv);
   // Make sure all these elements are ready in dart.
-  context->FlushUICommand(this, reason, invoke_elements_deps);
+  context->SyncUICommandBuffer(this, reason, invoke_elements_deps);
 
   NativeValue return_value = Native_NewNull();
   NativeValue native_method =
