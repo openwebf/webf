@@ -70,7 +70,10 @@ enum BindingMethodCallOperations {
   kAsyncAnonymousFunction,
 };
 
-enum CreateBindingObjectType { kCreateDOMMatrix = 0 };
+enum CreateBindingObjectType {
+  kCreateDOMMatrix = 0,
+  kCreateIntersectionObserver
+};
 
 struct BindingObjectPromiseContext : public DartReadable {
   ExecutingContext* context;
@@ -136,6 +139,7 @@ class BindingObject : public ScriptWrappable {
   virtual bool IsTouchList() const;
   virtual bool IsComputedCssStyleDeclaration() const;
   virtual bool IsCanvasGradient() const;
+  virtual bool IsIntersectionObserverEntry() const;
 
  protected:
   void TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context);

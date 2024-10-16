@@ -5,6 +5,7 @@
 
 import 'dart:async';
 import 'dart:ui';
+import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -19,6 +20,8 @@ import 'package:webf/src/svg/rendering/container.dart';
 import 'package:webf/svg.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
+import 'intersection_observer.dart';
+import 'intersection_observer_entry.dart';
 
 final RegExp classNameSplitRegExp = RegExp(r'\s+');
 const String _ONE_SPACE = ' ';
@@ -108,6 +111,8 @@ class ElementAttributeProperty {
 abstract class Element extends ContainerNode with ElementBase, ElementEventMixin, ElementOverflowMixin {
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = UNKNOWN;
+
+  final Set<IntersectionObserver> _intersectionObserverList = HashSet();
 
   String? _id;
 
@@ -1977,6 +1982,37 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       style = renderBoxModel?.renderStyle;
     }
     return style;
+  }
+
+  void _handleIntersectionObserver(IntersectionObserverEntry entry) async {
+    debugPrint('Element._handleIntersectionObserver observer=$entry，element=$this');
+    // TODO(pengfei12.guo): 若存在多个IntersectionObserver，无法区分IntersectionObserver
+    for (var observer in _intersectionObserverList) {
+      observer.addEntry(DartIntersectionObserverEntry(entry.isIntersecting, this));
+    }
+  }
+
+  // IntersectionObserver 相关
+  bool addIntersectionObserver(IntersectionObserver observer) {
+    debugPrint('Element.addIntersectionObserver observer=$observer，element=$this');
+    if (_intersectionObserverList.contains(observer)) {
+      return false;
+    }
+    if (_intersectionObserverList.isEmpty) {
+      renderBoxModel?.addIntersectionChangeListener(_handleIntersectionObserver);
+      renderBoxModel?.markNeedsPaint();//markNeedsCompositingBitsUpdate
+    }
+    _intersectionObserverList.add(observer);
+    return true;
+  }
+
+  void removeIntersectionObserver(IntersectionObserver observer) {
+    debugPrint('Element.removeIntersectionObserver observer=$observer，element=$this');
+    _intersectionObserverList.remove(observer);
+
+    if (_intersectionObserverList.isEmpty) {
+      renderBoxModel?.removeIntersectionChangeListener(_handleIntersectionObserver);
+    }
   }
 }
 
