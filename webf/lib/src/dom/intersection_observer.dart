@@ -4,7 +4,6 @@
  */
 import 'dart:async';
 import 'dart:ffi';
-import 'dart:html';
 
 import 'package:ffi/ffi.dart';
 import 'package:webf/foundation.dart';
@@ -12,6 +11,7 @@ import '../../bridge.dart';
 import '../../launcher.dart';
 import 'element.dart';
 import 'intersection_observer_entry.dart';
+import 'package:flutter/foundation.dart';
 
 class _IntersectionObserverDeliverContext {
   Completer completer;
@@ -19,7 +19,7 @@ class _IntersectionObserverDeliverContext {
 
   // Pointer<NativeValue> method;
   Pointer<NativeValue> allocatedNativeArguments;
-  Pointer<NativeValue> rawNativeEntries;
+  //Pointer<NativeValue> rawNativeEntries;
   WebFController controller;
   EvaluateOpItem? profileOp;
 
@@ -27,7 +27,7 @@ class _IntersectionObserverDeliverContext {
     this.completer,
     this.stopwatch,
     this.allocatedNativeArguments,
-    this.rawNativeEntries,
+    //this.rawNativeEntries,
     this.controller,
     this.profileOp,
   );
@@ -38,7 +38,7 @@ void _handleDeliverResult(_IntersectionObserverDeliverContext context, Pointer<N
       fromNativeValue(context.controller.view, returnValue).cast<EventDispatchResult>();
 
   if (enableWebFCommandLog && context.stopwatch != null) {
-    print('deliver IntersectionObserverEntry to native side, time: ${context.stopwatch!.elapsedMicroseconds}us');
+    debugPrint('deliver IntersectionObserverEntry to native side, time: ${context.stopwatch!.elapsedMicroseconds}us');
   }
 
   // Free the allocated arguments.
@@ -63,13 +63,23 @@ class IntersectionObserver extends DynamicBindingObject {
   void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 
   void observe(Element element) {
+    if (!element.addIntersectionObserver(this)) {
+      return;
+    }
     _elementList.add(element);
-    element.addIntersectionObserver(this);
+    debugPrint('Dom.IntersectionObserver.observe');
+
+    // TODO(pengfei12.guo): test deliver
+    Future.delayed(Duration(milliseconds: 1000), () async {
+      addEntry(DartIntersectionObserverEntry(true, element));
+      await deliver(element.ownerView.rootController);
+    });
   }
 
   void unobserve(Element element) {
     _elementList.remove(element);
     element.removeIntersectionObserver(this);
+    debugPrint('Dom.IntersectionObserver.unobserve');
   }
 
   void disconnect() {
@@ -85,6 +95,7 @@ class IntersectionObserver extends DynamicBindingObject {
   }
 
   void addEntry(DartIntersectionObserverEntry entry) {
+    debugPrint('Dom.IntersectionObserver.addEntry entry:$entry');
     _entries.add(entry);
   }
 
@@ -114,7 +125,7 @@ class IntersectionObserver extends DynamicBindingObject {
 
   Future<void> deliver(WebFController controller) async {
     if (pointer == null) return;
-
+    debugPrint('Dom.IntersectionObserver.deliver pointer:$pointer');
     List<NativeIntersectionObserverEntry> nativeEntries = takeRecords();
     if (nativeEntries.isNotEmpty) {
       Completer completer = Completer();
@@ -128,10 +139,10 @@ class IntersectionObserver extends DynamicBindingObject {
       // Call methods implements at C++ side.
       DartInvokeBindingMethodsFromDart? f = pointer!.ref.invokeBindingMethodFromDart.asFunction();
 
-      Pointer<NativeValue> rawNativeEntries = malloc.allocate(sizeOf<NativeValue>());
-      toNativeValue(rawNativeEntries, 'dispatchEvent');
+      // Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
+      // toNativeValue(method, 'deliver');
 
-      List<dynamic> dispatchEntryArguments = [rawNativeEntries];
+      List<dynamic> dispatchEntryArguments = [nativeEntries];
 
       Stopwatch? stopwatch;
       if (enableWebFCommandLog) {
@@ -141,7 +152,7 @@ class IntersectionObserver extends DynamicBindingObject {
       Pointer<NativeValue> allocatedNativeArguments = makeNativeValueArguments(bindingObject, dispatchEntryArguments);
 
       _IntersectionObserverDeliverContext context = _IntersectionObserverDeliverContext(
-          completer, stopwatch, allocatedNativeArguments, rawNativeEntries, controller, currentProfileOp);
+          completer, stopwatch, allocatedNativeArguments, controller, currentProfileOp);
 
       Pointer<NativeFunction<NativeInvokeResultCallback>> resultCallback = Pointer.fromFunction(_handleDeliverResult);
 

@@ -51,6 +51,7 @@ mixin RenderIntersectionObserverMixin on RenderBox {
   }
 
   void addIntersectionChangeListener(IntersectionChangeCallback callback) {
+    debugPrint('RenderIntersectionObserverMixin.addIntersectionChangeListener callback=$callback');
     // Init things
     if (_listeners == null) {
       _listeners = List.empty(growable: true);
@@ -64,6 +65,7 @@ mixin RenderIntersectionObserverMixin on RenderBox {
   }
 
   void clearIntersectionChangeListeners() {
+    debugPrint('RenderIntersectionObserverMixin.clearIntersectionChangeListeners');
     _listeners?.clear();
     _listeners = null;
     _onIntersectionChange = null;
@@ -74,7 +76,7 @@ mixin RenderIntersectionObserverMixin on RenderBox {
       _onIntersectionChange = null;
       return;
     }
-
+    debugPrint('RenderIntersectionObserverMixin.removeIntersectionChangeListener callback=$callback');
     _listeners!.remove(callback);
     if (_listeners!.isEmpty) {
       _listeners = null;
@@ -93,6 +95,7 @@ mixin RenderIntersectionObserverMixin on RenderBox {
   }
 
   void paintIntersectionObserver(PaintingContext context, Offset offset, PaintingContextCallback callback) {
+    debugPrint('RenderIntersectionObserverMixin.paintIntersectionObserver _onIntersectionChange=$_onIntersectionChange，callback=$callback');
     // Skip to next if not has intersection observer
     if (_onIntersectionChange == null) {
       callback(context, offset);
@@ -326,6 +329,7 @@ class IntersectionObserverLayer extends ContainerLayer {
 
   /// Executes visibility callbacks for all updated.
   static void _processCallbacks() {
+    debugPrint('IntersectionObserverLayer._processCallbacks _updated=$_updated');
     for (final layer in _updated.values) {
       if (layer.onIntersectionChange == null) return;
       if (!layer.attached) {

@@ -1988,7 +1988,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return style;
   }
 
-  void _handleIntersectionChange(IntersectionObserverEntry entry) async {
+  void _handleIntersectionObserver(IntersectionObserverEntry entry) async {
+    debugPrint('Element._handleIntersectionObserver observer=$entry，element=$this');
     // TODO(pengfei12.guo): 若存在多个IntersectionObserver，无法区分IntersectionObserver
     for (var observer in _intersectionObserverList) {
       observer.addEntry(DartIntersectionObserverEntry(entry.isIntersecting, this));
@@ -1996,19 +1997,25 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   // IntersectionObserver 相关
-  void addIntersectionObserver(IntersectionObserver observer) {
-    if (_intersectionObserverList.isEmpty) {
-      renderBoxModel?.addIntersectionChangeListener(_handleIntersectionChange);
+  bool addIntersectionObserver(IntersectionObserver observer) {
+    debugPrint('Element.addIntersectionObserver observer=$observer，element=$this');
+    if (_intersectionObserverList.contains(observer)) {
+      return false;
     }
-
+    if (_intersectionObserverList.isEmpty) {
+      renderBoxModel?.addIntersectionChangeListener(_handleIntersectionObserver);
+      renderBoxModel?.markNeedsPaint();//markNeedsCompositingBitsUpdate
+    }
     _intersectionObserverList.add(observer);
+    return true;
   }
 
   void removeIntersectionObserver(IntersectionObserver observer) {
+    debugPrint('Element.removeIntersectionObserver observer=$observer，element=$this');
     _intersectionObserverList.remove(observer);
 
     if (_intersectionObserverList.isEmpty) {
-      renderBoxModel?.removeIntersectionChangeListener(_handleIntersectionChange);
+      renderBoxModel?.removeIntersectionChangeListener(_handleIntersectionObserver);
     }
   }
 }

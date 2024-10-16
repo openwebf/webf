@@ -618,6 +618,7 @@ class Document extends ContainerNode {
   }
 
   void deliverIntersectionObserver() {
+    debugPrint('Document.deliverIntersectionObserver pointer:$pointer');
     if (_intersectionObserverList.isEmpty) {
       return;
     }

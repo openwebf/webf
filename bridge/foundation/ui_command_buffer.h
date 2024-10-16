@@ -20,7 +20,8 @@ enum UICommandKind : uint32_t {
   kEvent = 1 << 4,
   kAttributeUpdate = 1 << 5,
   kDisposeBindingObject = 1 << 6,
-  kOperation = 1 << 7
+  kOperation = 1 << 7,
+  kIntersectionObserver = 1 << 8
 };
 
 enum class UICommand {
@@ -46,7 +47,7 @@ enum class UICommand {
   kFinishRecordingCommand,
   kAddIntersectionObserver,
   kRemoveIntersectionObserver,
-  kDisconnectIntersectionObserver,
+  kDisconnectIntersectionObserver
 };
 
 #define MAXIMUM_UI_COMMAND_SIZE 2048

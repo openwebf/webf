@@ -401,10 +401,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/legacy/bounding_client_rect.cc
     core/input/touch.cc
     core/input/touch_list.cc
-    #intersection
-    core/dom/intersection_observer_controller.cc
-    core/dom/element_intersection_observer_data.cc
-    core/dom/intersection_observation.cc
+
+    #IntersectionObserver
     core/dom/intersection_observer.cc
     core/dom/intersection_observer_entry.cc
     )
@@ -539,6 +537,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/defined_properties.cc
     out/element_attribute_names.cc
     out/element_namespace_uris.cc
+    # IntersectionObserver
     out/qjs_intersection_observer.cc
     out/qjs_intersection_observer_entry.cc
     out/qjs_intersection_observer_init.cc

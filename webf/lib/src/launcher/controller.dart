@@ -222,6 +222,8 @@ class WebFViewController implements WidgetsBindingObserver {
   bool _isFrameBindingAttached = false;
 
   void flushPendingCommandsPerFrame() {
+    debugPrint(
+        'WebFViewController.flushPendingCommandsPerFrame disposed=$disposed，_isFrameBindingAttached=$_isFrameBindingAttached');
     if (disposed && _isFrameBindingAttached) return;
     _isFrameBindingAttached = true;
     flushUICommand(this, window.pointer!);

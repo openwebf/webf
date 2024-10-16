@@ -99,6 +99,8 @@
 #include "qjs_widget_element.h"
 #include "qjs_window.h"
 #include "qjs_window_or_worker_global_scope.h"
+#include "qjs_intersection_observer.h"
+#include "qjs_intersection_observer_entry.h"
 
 namespace webf {
 
@@ -199,6 +201,10 @@ void InstallBindings(ExecutingContext* context) {
   QJSSVGEllipseElement::Install(context);
   QJSSVGStyleElement::Install(context);
   QJSSVGLineElement::Install(context);
+
+  //IntersectionObserver
+  QJSIntersectionObserver::Install(context);
+  QJSIntersectionObserverEntry::Install(context);
 
   // Legacy bindings, not standard.
   QJSElementAttributes::Install(context);
