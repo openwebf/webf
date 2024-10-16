@@ -946,6 +946,7 @@ class WebFController {
 
   List<BuildContext> buildContextStack = [];
   bool resizeToAvoidBottomInsets;
+  final BuildContext buildContext;
 
   String? _name;
 
@@ -1022,8 +1023,9 @@ class WebFController {
     this.initialCookies,
     this.routeObserver,
     this.externalController = true,
-    this.resizeToAvoidBottomInsets = true,
-  })  : _name = name,
+    this.resizeToAvoidBottomInsets = true
+  })  : buildContext = context,
+        _name = name,
         _entrypoint = bundle,
         _gestureListener = gestureListener,
         runningThread = runningThread ?? DedicatedThread(),
