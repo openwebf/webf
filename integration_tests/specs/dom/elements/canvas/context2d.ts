@@ -712,4 +712,59 @@ describe('Canvas context 2d', () => {
 
   })
 
+
+  it('should work with create default Path2D', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');    
+    let path1 = new Path2D();
+    path1.rect(10, 10, 100, 100);
+    context.stroke(path1)
+  })
+
+  it('should work with create Path2D with another Path2D instance', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');    
+    let path1 = new Path2D();
+    path1.rect(10, 10, 100, 100);
+
+    let path2 = new Path2D(path1);
+    path2.moveTo(220, 60);
+    path2.arc(170, 60, 50, 0, 2 * Math.PI);
+    context.stroke(path2);
+  })
+
+  it('should work with create Path2D with SVG path data', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');    
+    let path = new Path2D("M10 10 h 80 v 80 h -80 Z");
+    context.fill(path);
+  })
+
+  it('should work with Path2D addPath(path)', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');    
+    
+   // Create first path and add a rectangle
+    let p1 = new Path2D();
+    p1.rect(0, 0, 100, 150);
+
+    // Create second path and add a rectangle
+    let p2 = new Path2D();
+    p2.rect(150, 0, 100, 75);
+
+    // Add second path to the first path
+    p1.addPath(p2);
+
+    // Draw the first path
+    context.fill(p1);
+  })
+
 });
