@@ -15,6 +15,7 @@
 #include "core/base/memory/shared_ptr.h"
 #include "core/base/strings/string_util.h"
 #include "core/css/css_at_rule_id.h"
+#include "core/css/css_keyframes_rule.h"
 #include "core/css/css_property_value.h"
 #include "core/css/css_selector.h"
 #include "core/css/css_style_sheet.h"
@@ -24,7 +25,6 @@
 #include "core/css/parser/media_query_parser.h"
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/style_rule.h"
-#include "core/css/css_keyframes_rule.h"
 #include "core/css/style_rule_import.h"
 #include "core/css/style_rule_keyframe.h"
 #include "core/css/style_sheet_contents.h"
@@ -544,6 +544,16 @@ void CSSParserImpl::ConsumeDeclarationList(CSSParserTokenStream& stream,
                                            std::vector<std::shared_ptr<StyleRuleBase>>* child_rules) {
   DCHECK(parsed_properties_.empty());
 
+  bool is_observer_rule_type = rule_type == StyleRule::kStyle || rule_type == StyleRule::kProperty ||
+                               rule_type == StyleRule::kPage || rule_type == StyleRule::kContainer ||
+                               rule_type == StyleRule::kFontPaletteValues || rule_type == StyleRule::kKeyframe ||
+                               rule_type == StyleRule::kScope || rule_type == StyleRule::kViewTransition ||
+                               rule_type == StyleRule::kPositionTry;
+  bool use_observer = observer_ && is_observer_rule_type;
+  if (use_observer) {
+    observer_->StartRuleBody(stream.Offset());
+  }
+
   // Whenever we hit a nested rule, we emit a invisible rule from the
   // declarations in [parsed_properties_.begin() + invisible_rule_start_index,
   // parsed_properties_.end()>, and update invisible_rule_start_index to prepare
@@ -553,6 +563,16 @@ void CSSParserImpl::ConsumeDeclarationList(CSSParserTokenStream& stream,
   while (true) {
     // Having a lookahead may skip comments, which are used by the observer.
     DCHECK(!stream.HasLookAhead() || stream.AtEnd());
+
+    if (use_observer && !stream.HasLookAhead()) {
+      while (true) {
+        size_t start_offset = stream.Offset();
+        if (!stream.ConsumeCommentOrNothing()) {
+          break;
+        }
+        observer_->ObserveComment(start_offset, stream.Offset());
+      }
+    }
 
     if (stream.AtEnd()) {
       break;
@@ -641,6 +661,10 @@ void CSSParserImpl::ConsumeDeclarationList(CSSParserTokenStream& stream,
   // trailing bare declarations.
   EmitInvisibleRuleIfNeeded(parent_rule_for_nesting, invisible_rule_start_index,
                             CSSSelector::Signal::kBareDeclarationShift, child_rules);
+
+  if (use_observer) {
+    observer_->EndRuleBody(stream.LookAheadOffset());
+  }
 }
 
 template <typename ConsumeFunction>
@@ -978,23 +1002,44 @@ bool CSSParserImpl::ConsumeDeclaration(CSSParserTokenStream& stream, StyleRule::
           return false;
         }
       } else if (unresolved_property != CSSPropertyID::kInvalid) {
-        ConsumeDeclarationValue(stream, unresolved_property,
-                                /*is_in_declaration_list=*/true, rule_type);
+        if (observer_) {
+          CSSParserTokenStream::State savepoint = stream.Save();
+          ConsumeDeclarationValue(stream, unresolved_property,
+                                  /*is_in_declaration_list=*/true, rule_type);
+
+          //
+          // The observer would like to know (below) whether this declaration
+          // was !important or not. If our parse succeeded, we can just pick it
+          // out from the list of properties. If not, we'll need to look at the
+          // tokens ourselves.
+          if (parsed_properties_.size() != properties_count) {
+            important = parsed_properties_.back().IsImportant();
+          } else {
+            stream.Restore(savepoint);
+            CSSTokenizedValue tokenized_value = ConsumeRestrictedPropertyValue(stream);
+            important = RemoveImportantAnnotationIfPresent(tokenized_value);
+          }
+        } else {
+          ConsumeDeclarationValue(stream, unresolved_property,
+                                  /*is_in_declaration_list=*/true, rule_type);
+        }
       }
     }
   }
-  if ((rule_type == StyleRule::kStyle || rule_type == StyleRule::kKeyframe || rule_type == StyleRule::kProperty ||
+  if (observer_ &&
+      (rule_type == StyleRule::kStyle || rule_type == StyleRule::kKeyframe || rule_type == StyleRule::kProperty ||
        rule_type == StyleRule::kPositionTry || rule_type == StyleRule::kFontPaletteValues)) {
     if (!id) {
-      // If we skipped the relevant Consume*() calls above due to an invalid
+      // If we skipped the main call to ConsumeValue due to an invalid
       // property/descriptor, the inspector still needs to know the offset
       // where the would-be declaration ends.
-      CSSVariableParser::ConsumeUnparsedDeclaration(stream, /*allow_important_annotation=*/true,
-                                                    /*is_animation_tainted=*/false,
-                                                    /*must_contain_variable_reference=*/false,
-                                                    /*restricted_value=*/true, /*comma_ends_declaration=*/false,
-                                                    important, context_->GetExecutingContext());
+      CSSTokenizedValue tokenized_value = ConsumeRestrictedPropertyValue(stream);
+      important = RemoveImportantAnnotationIfPresent(tokenized_value);
     }
+    // The end offset is the offset of the terminating token, which is peeked
+    // but not yet consumed.
+    observer_->ObserveProperty(decl_offset_start, stream.LookAheadOffset(), important,
+                               parsed_properties_.size() != properties_count);
   }
 
   return parsed_properties_.size() != properties_count;
@@ -1007,6 +1052,11 @@ std::shared_ptr<StyleRuleKeyframe> CSSParserImpl::ConsumeKeyframeStyleRule(
   std::unique_ptr<std::vector<KeyframeOffset>> key_list = ConsumeKeyframeKeyList(context_, prelude);
   if (!key_list) {
     return nullptr;
+  }
+
+  if (observer_) {
+    observer_->StartRuleHeader(StyleRule::kKeyframe, prelude_offset.start);
+    observer_->EndRuleHeader(prelude_offset.end);
   }
 
   ConsumeDeclarationList(block, StyleRule::kKeyframe, CSSNestingType::kNone,
@@ -1151,9 +1201,8 @@ std::shared_ptr<StyleRuleFontFace> CSSParserImpl::ConsumeFontFaceRule(CSSParserT
       CreateCSSPropertyValueSet(parsed_properties_, kCSSFontFaceRuleMode, context_->GetDocument()));
 }
 
-std::shared_ptr<StyleRuleKeyframes> CSSParserImpl::ConsumeKeyframesRule(
-    bool webkit_prefixed,
-    CSSParserTokenStream& stream) {
+std::shared_ptr<StyleRuleKeyframes> CSSParserImpl::ConsumeKeyframesRule(bool webkit_prefixed,
+                                                                        CSSParserTokenStream& stream) {
   size_t prelude_offset_start = stream.LookAheadOffset();
   CSSParserTokenRange prelude = ConsumeAtRulePrelude(stream);
   size_t prelude_offset_end = stream.LookAheadOffset();
@@ -1184,12 +1233,11 @@ std::shared_ptr<StyleRuleKeyframes> CSSParserImpl::ConsumeKeyframesRule(
   }
 
   auto keyframe_rule = std::make_shared<StyleRuleKeyframes>();
-  ConsumeRuleList(
-      stream, kKeyframesRuleList, CSSNestingType::kNone,
-      /*parent_rule_for_nesting=*/nullptr,
-      [keyframe_rule](std::shared_ptr<StyleRuleBase> keyframe, size_t) {
-        keyframe_rule->ParserAppendKeyframe(std::reinterpret_pointer_cast<StyleRuleKeyframe>(keyframe));
-      });
+  ConsumeRuleList(stream, kKeyframesRuleList, CSSNestingType::kNone,
+                  /*parent_rule_for_nesting=*/nullptr,
+                  [keyframe_rule](std::shared_ptr<StyleRuleBase> keyframe, size_t) {
+                    keyframe_rule->ParserAppendKeyframe(std::reinterpret_pointer_cast<StyleRuleKeyframe>(keyframe));
+                  });
   keyframe_rule->SetName(name);
   keyframe_rule->SetVendorPrefixed(webkit_prefixed);
 
@@ -1358,6 +1406,11 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRule(CSSParserTokenStream&
   };
   std::unique_ptr<std::vector<CSSSelector>, decltype(func_clear_arena)> scope_guard(&arena_,
                                                                                     std::move(func_clear_arena));
+
+  if (observer_) {
+    observer_->StartRuleHeader(StyleRule::kStyle, stream.LookAheadOffset());
+  }
+
   // Style rules that look like custom property declarations
   // are not allowed by css-syntax.
   //
@@ -1385,6 +1438,10 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRule(CSSParserTokenStream&
     }
   }
 
+  if (observer_) {
+    observer_->EndRuleHeader(stream.LookAheadOffset());
+  }
+
   if (stream.AtEnd() ||
       AbortsNestedSelectorParsing(stream.UncheckedPeek().GetType(), semicolon_aborts_nested_selector, nesting_type)) {
     // Parse error, EOF instead of qualified rule block
@@ -1404,7 +1461,7 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRule(CSSParserTokenStream&
       return nullptr;
     }
 
-    if (lazy_state_) {
+    if (!observer_ && lazy_state_) {
       assert(style_sheet_);
 
       uint32_t len =
@@ -1430,7 +1487,7 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRule(CSSParserTokenStream&
     }
 
     // TODO(csharrison): How should we lazily parse css that needs the observer?
-    if (lazy_state_) {
+    if (!observer_ && lazy_state_) {
       DCHECK(style_sheet_);
 
       size_t block_start_offset = stream.Offset() - 1;  // - 1 for the {.

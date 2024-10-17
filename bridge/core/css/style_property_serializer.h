@@ -98,7 +98,7 @@ class StylePropertySerializer {
   // flag is not set consistently, or css-wide keywords are used. In these
   // cases serialization will always fail.
   // - A null std::string otherwise.
-  std::string CommonShorthandChecks(const StylePropertyShorthand&) const;
+  std::string CommonShorthandChecks(const StylePropertyShorthand&, bool* is_check_success) const;
 
   // Only StylePropertySerializer uses the following two classes.
   class PropertyValueForSerializer {
