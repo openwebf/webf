@@ -7,8 +7,8 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 import 'package:webf/foundation.dart';
-import '../../bridge.dart';
-import '../../launcher.dart';
+import 'package:webf/bridge.dart';
+import 'package:webf/launcher.dart';
 import 'element.dart';
 import 'intersection_observer_entry.dart';
 import 'package:flutter/foundation.dart';

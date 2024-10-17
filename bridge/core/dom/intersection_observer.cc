@@ -95,22 +95,6 @@ void IntersectionObserver::disconnect(ExceptionState& exception_state) {
                                                        bindingObject(), nullptr);
 }
 
-// std::vector<Member<IntersectionObserverEntry>> IntersectionObserver::takeRecords(ExceptionState& exception_state) {
-//   std::vector<Member<IntersectionObserverEntry>> entries;
-//   for (auto& observation : observations_)
-//     observation->TakeRecords(entries);
-//   active_observations_.clear();
-//   return entries;
-// }
-
-// AtomicString IntersectionObserver::rootMargin() const {
-//   return StringifyMargin(RootMargin());
-// }
-
-// AtomicString IntersectionObserver::scrollMargin() const {
-//   return StringifyMargin(ScrollMargin());
-// }
-
 NativeValue IntersectionObserver::HandleCallFromDartSide(const AtomicString& method,
                                                          int32_t argc,
                                                          const NativeValue* argv,

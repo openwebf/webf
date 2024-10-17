@@ -82,8 +82,8 @@ TEST(Node, IntersectionObserver) {
   auto context = env->page()->executingContext();
   const char* code = R"(
     // Create the observed element
-    const div = document.createElement('div');
-
+    const container = document.createElement('div');
+    document.body.appendChild(container);
     // Callback function to execute when mutations are observed
     const callback = (entries, observer) => {
       entries.forEach(entry => {
@@ -105,7 +105,7 @@ TEST(Node, IntersectionObserver) {
     const observer = new IntersectionObserver(callback, options);
 
     // Start observing the target element
-    observer.observe(div);
+    observer.observe(container);
   )";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 

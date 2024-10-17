@@ -100,7 +100,7 @@ class Document extends ContainerNode {
 
   final Set<int> _styleDirtyElements = {};
 
-  final Set<IntersectionObserver> _intersectionObserverList = HashSet();
+  final Set<IntersectionObserver> _intersectionObserverList = {};
 
   void markElementStyleDirty(Element element) {
     _styleDirtyElements.add(element.pointer!.address);
@@ -610,7 +610,6 @@ class Document extends ContainerNode {
   }
 
   void deliverIntersectionObserver() {
-    debugPrint('Document.deliverIntersectionObserver pointer:$pointer');
     if (_intersectionObserverList.isEmpty) {
       return;
     }

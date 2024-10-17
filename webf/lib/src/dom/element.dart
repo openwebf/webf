@@ -112,7 +112,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = UNKNOWN;
 
-  final Set<IntersectionObserver> _intersectionObserverList = HashSet();
+  final Set<IntersectionObserver> _intersectionObserverList = {};
   List<double> _thresholds = [0.0];
 
   String? _id;
@@ -1998,16 +1998,13 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return _intersectionObserverList.isNotEmpty;
   }
 
-  // IntersectionObserver 相关
   bool addIntersectionObserver(IntersectionObserver observer, List<double> thresholds) {
     if (_intersectionObserverList.contains(observer)) {
-      debugPrint('Element.addIntersectionObserver，element=$this duplicate');
       return false;
     }
-    //debugPrint('Element.addIntersectionObserver，element=$this attached:${renderBoxModel?.attached ?? false}');
     if (renderBoxModel?.attached ?? false) {
       renderBoxModel!.addIntersectionChangeListener(_handleIntersectionObserver, thresholds);
-      renderBoxModel!.markNeedsPaint(); //markNeedsCompositingBitsUpdate
+      renderBoxModel!.markNeedsPaint();
     }
     _intersectionObserverList.add(observer);
     _thresholds = thresholds;
@@ -2015,7 +2012,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void removeIntersectionObserver(IntersectionObserver observer) {
-    //debugPrint('Element.removeIntersectionObserver，element=$this');
     _intersectionObserverList.remove(observer);
 
     if (_intersectionObserverList.isEmpty) {
@@ -2027,7 +2023,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (_intersectionObserverList.isEmpty) {
       return;
     }
-    //debugPrint('Element.ensureAddIntersectionObserver，element=$this renderBoxModel:$renderBoxModel');
     renderBoxModel?.addIntersectionChangeListener(_handleIntersectionObserver, _thresholds);
   }
 }

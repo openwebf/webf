@@ -146,24 +146,24 @@ class IntersectionObserver final : public BindingObject {
   // root just because root_ is null.  Hence root_is_implicit_.
   [[nodiscard]] bool RootIsImplicit() const {
     // return root_is_implicit_;
-    // 如果没有指定 root 选项，默认情况下会使用视口作为根元素。
+    // If the root option is not specified, the viewport is used as the root element by default.
     return root_ == nullptr;
   }
 
-  // TODO(pengfei12.guo@vipshop.com): TimeDelta not support
+  // TODO(pengfei12.guo): TimeDelta not support
   // base::TimeDelta GetEffectiveDelay() const;
 
-  // TODO(pengfei12.guo@vipshop.com): RootMargin not support
+  // TODO(pengfei12.guo): RootMargin not support
   // std::vector<Length> RootMargin() const {
   //  return margin_target_ == kApplyMarginToRoot ? margin_ : Vector<Length>();
   //}
 
-  // TODO(pengfei12.guo@vipshop.com): TargetMargin not support
+  // TODO(pengfei12.guo): TargetMargin not support
   // Vector<Length> TargetMargin() const {
   //  return margin_target_ == kApplyMarginToTarget ? margin_ : Vector<Length>();
   //}
 
-  // TODO(pengfei12.guo@vipshop.com): ScrollMargin not support
+  // TODO(pengfei12.guo): ScrollMargin not support
   // Vector<Length> ScrollMargin() const { return scroll_margin_; }
 
   // TODO(pengfei12.guo): ComputeIntersections impl by dart
