@@ -181,7 +181,7 @@ abstract class BindingBridge {
         return;
       }
       case CreateBindingObjectType.createIntersectionObserver: {
-        IntersectionObserver intersectionObserver = IntersectionObserver(BindingContext(controller.view, contextId, pointer));
+        IntersectionObserver intersectionObserver = IntersectionObserver(BindingContext(controller.view, contextId, pointer), arguments);
         controller.view.setBindingObject(pointer, intersectionObserver);
         return;
       }

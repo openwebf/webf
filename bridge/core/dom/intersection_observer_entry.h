@@ -8,25 +8,32 @@
 #define WEBF_CORE_INTERSECTION_OBSERVER_INTERSECTION_OBSERVER_ENTRY_H_
 
 #include "bindings/qjs/cppgc/member.h"
-#include "core/binding_object.h"
+#include "bindings/qjs/script_wrappable.h"
 
 namespace webf {
 
 class Element;
 
-class IntersectionObserverEntry final : public BindingObject {
+struct NativeIntersectionObserverEntry : public DartReadable {
+  int8_t is_intersecting;
+  double intersectionRatio;
+  NativeBindingObject* target;
+};
+
+class IntersectionObserverEntry final : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-  using ImplType = IntersectionObserverEntry*;
+  IntersectionObserverEntry() = delete;
+  explicit IntersectionObserverEntry(ExecutingContext* context,
+                                     bool isIntersecting,
+                                     double intersectionRatio,
+                                     Element* target);
 
-  IntersectionObserverEntry(ExecutingContext* context, bool isIntersecting, Element* target);
   // TODO(pengfei12.guo): not supported
   // IDL interface
   // double time() const { return time_; }
-  // double intersectionRatio() const {
-  // return geometry_.IntersectionRatio();
-  //}
+  double intersectionRatio() const { return intersectionRatio_; }
   // DOMRectReadOnly* boundingClientRect() const;
   // DOMRectReadOnly* rootBounds() const;
   // DOMRectReadOnly* intersectionRect() const;
@@ -43,18 +50,12 @@ class IntersectionObserverEntry final : public BindingObject {
   // const IntersectionGeometry& GetGeometry() const { return geometry_; }
   void Trace(GCVisitor*) const override;
 
-  bool IsIntersectionObserverEntry() const override { return true; };
-
  private:
   // IntersectionGeometry geometry_;
+  double intersectionRatio_;
   bool isIntersecting_;
   // DOMHighResTimeStamp time_;
   Member<Element> target_;
-};
-
-template <>
-struct DowncastTraits<IntersectionObserverEntry> {
-  static bool AllowFrom(const BindingObject& binding_object) { return binding_object.IsIntersectionObserverEntry(); }
 };
 
 }  // namespace webf

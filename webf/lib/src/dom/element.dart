@@ -113,6 +113,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   String tagName = UNKNOWN;
 
   final Set<IntersectionObserver> _intersectionObserverList = HashSet();
+  List<double> _thresholds = [0.0];
 
   String? _id;
 
@@ -407,6 +408,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
       // Ensure that the event responder is bound.
       ensureEventResponderBound();
+
+      // Ensure IntersectionObserver when renderBoxModel change.
+      ensureAddIntersectionObserver();
     }
   }
 
@@ -1013,6 +1017,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     _beforeElement = null;
     _afterElement?.dispose();
     _afterElement = null;
+    renderBoxModel?.removeIntersectionChangeListener(_handleIntersectionObserver);
     super.dispose();
   }
 
@@ -1984,35 +1989,46 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return style;
   }
 
-  void _handleIntersectionObserver(IntersectionObserverEntry entry) async {
-    debugPrint('Element._handleIntersectionObserver observer=$entry，element=$this');
-    // TODO(pengfei12.guo): 若存在多个IntersectionObserver，无法区分IntersectionObserver
+  bool _handleIntersectionObserver(IntersectionObserverEntry entry) {
+    // If there are multiple IntersectionObservers, they cannot be distributed accurately
     for (var observer in _intersectionObserverList) {
-      observer.addEntry(DartIntersectionObserverEntry(entry.isIntersecting, this));
+      observer.addEntry(DartIntersectionObserverEntry(entry.isIntersecting, entry.intersectionRatio, this));
     }
+
+    return _intersectionObserverList.isNotEmpty;
   }
 
   // IntersectionObserver 相关
-  bool addIntersectionObserver(IntersectionObserver observer) {
-    debugPrint('Element.addIntersectionObserver observer=$observer，element=$this');
+  bool addIntersectionObserver(IntersectionObserver observer, List<double> thresholds) {
     if (_intersectionObserverList.contains(observer)) {
+      debugPrint('Element.addIntersectionObserver，element=$this duplicate');
       return false;
     }
-    if (_intersectionObserverList.isEmpty) {
-      renderBoxModel?.addIntersectionChangeListener(_handleIntersectionObserver);
-      renderBoxModel?.markNeedsPaint();//markNeedsCompositingBitsUpdate
+    //debugPrint('Element.addIntersectionObserver，element=$this attached:${renderBoxModel?.attached ?? false}');
+    if (renderBoxModel?.attached ?? false) {
+      renderBoxModel!.addIntersectionChangeListener(_handleIntersectionObserver, thresholds);
+      renderBoxModel!.markNeedsPaint(); //markNeedsCompositingBitsUpdate
     }
     _intersectionObserverList.add(observer);
+    _thresholds = thresholds;
     return true;
   }
 
   void removeIntersectionObserver(IntersectionObserver observer) {
-    debugPrint('Element.removeIntersectionObserver observer=$observer，element=$this');
+    //debugPrint('Element.removeIntersectionObserver，element=$this');
     _intersectionObserverList.remove(observer);
 
     if (_intersectionObserverList.isEmpty) {
       renderBoxModel?.removeIntersectionChangeListener(_handleIntersectionObserver);
     }
+  }
+
+  void ensureAddIntersectionObserver() {
+    if (_intersectionObserverList.isEmpty) {
+      return;
+    }
+    //debugPrint('Element.ensureAddIntersectionObserver，element=$this renderBoxModel:$renderBoxModel');
+    renderBoxModel?.addIntersectionChangeListener(_handleIntersectionObserver, _thresholds);
   }
 }
 

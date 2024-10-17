@@ -125,13 +125,13 @@ class IntersectionObserver final : public BindingObject {
   // std::vector<Member<IntersectionObserverEntry>> takeRecords(ExceptionState&);
 
   // API attributes.
-  Node* root() const { return root_; }
+  [[nodiscard]] Node* root() const { return root_; }
   // TODO(pengfei12.guo): not supported
   //AtomicString rootMargin() const;
   // TODO(pengfei12.guo): not supported
   //AtomicString scrollMargin() const;
-  // TODO(pengfei12.guo): not supported
-  //const std::vector<double>& thresholds() const { return thresholds_; }
+
+  [[nodiscard]] const std::vector<double>& thresholds() const { return thresholds_; }
   // TODO(pengfei12.guo): not supported
   // DOMHighResTimeStamp delay() const {
   //   if (delay_ != std::numeric_limits<int64_t>::min() && delay_ != std::numeric_limits<int64_t>::max()) {
@@ -192,6 +192,7 @@ class IntersectionObserver final : public BindingObject {
 
   // We use UntracedMember<> here to do custom weak processing.
   Node* root_;
+  std::vector<double> thresholds_;
 
   // TODO(pengfei12.guo): not support
   // const std::vector<Length> margin_;

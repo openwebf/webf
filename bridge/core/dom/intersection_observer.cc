@@ -9,21 +9,16 @@
 #include <algorithm>
 #include <limits>
 
-#include "bindings/qjs/converter_impl.h"
 #include "core/dom/element.h"
+#include <native_value_converter.h>
+#include "bindings/qjs/converter_impl.h"
 #include "core/dom/intersection_observer_entry.h"
 #include "core/dom/node.h"
 #include "core/executing_context.h"
-#include "foundation/logging.h"
-#include "foundation/native_value_converter.h"
 #include "qjs_intersection_observer_init.h"
+#include "foundation/logging.h"
 
 namespace webf {
-
-struct NativeIntersectionObserverEntry : public DartReadable {
-  int8_t is_intersecting;
-  NativeBindingObject* target;
-};
 
 IntersectionObserver* IntersectionObserver::Create(ExecutingContext* context,
                                                    const std::shared_ptr<QJSFunction>& function,
@@ -49,12 +44,22 @@ IntersectionObserver::IntersectionObserver(ExecutingContext* context,
                                            const std::shared_ptr<QJSFunction>& function,
                                            const std::shared_ptr<IntersectionObserverInit>& observer_init)
     : BindingObject(context->ctx()), function_(function) {
-  if (observer_init->hasRoot()) {
+  if (observer_init && observer_init->hasRoot()) {
     root_ = observer_init->root();
+  }
+  NativeValue arguments[1];
+  if (observer_init && observer_init->hasThreshold()) {
+#if ENABLE_LOG
+    WEBF_LOG(DEBUG) << "[IntersectionObserver]: Constructor threshold.size = " << observer_init->threshold().size()
+                    << std::endl;
+#endif
+    thresholds_ = std::move(observer_init->threshold());
+    std::sort(thresholds_.begin(), thresholds_.end());
+    arguments[0] = NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(thresholds_);
   }
   GetExecutingContext()->dartMethodPtr()->createBindingObject(
       GetExecutingContext()->isDedicated(), GetExecutingContext()->contextId(), bindingObject(),
-      CreateBindingObjectType::kCreateIntersectionObserver, nullptr, 0);
+      CreateBindingObjectType::kCreateIntersectionObserver, arguments, 1);
 }
 
 bool IntersectionObserver::RootIsValid() const {
@@ -62,17 +67,23 @@ bool IntersectionObserver::RootIsValid() const {
 }
 
 void IntersectionObserver::observe(Element* target, ExceptionState& exception_state) {
-  if (!RootIsValid() || !target)
+  if (!RootIsValid() || !target) {
+    WEBF_LOG(ERROR) << "[IntersectionObserver]: observe valid:" << std::endl;
     return;
+  }
 
-  // TODO(pengfei12.guo@vipshop.com): 通知dart，注册IntersectionObserver
+#if ENABLE_LOG
+  WEBF_LOG(DEBUG) << "[IntersectionObserver]: observe target=" << target << "，tagName=" << target->nodeName() << std::endl;
+#endif
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kAddIntersectionObserver, nullptr, bindingObject(),
                                                        target->bindingObject());
 }
 
 void IntersectionObserver::unobserve(Element* target, ExceptionState& exception_state) {
-  if (!target)
+  if (!target) {
+    WEBF_LOG(ERROR) << "[IntersectionObserver]: unobserve valid:" << std::endl;
     return;
+  }
 
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveIntersectionObserver, nullptr, bindingObject(),
                                                        target->bindingObject());
@@ -99,13 +110,6 @@ void IntersectionObserver::disconnect(ExceptionState& exception_state) {
 //   return StringifyMargin(ScrollMargin());
 // }
 
-// using InvokeBindingMethodsFromDart = void (*)(NativeBindingObject* binding_object,
-//                                               int64_t profile_id,
-//                                               NativeValue* method,
-//                                               int32_t argc,
-//                                               NativeValue* argv,
-//                                               Dart_Handle dart_object,
-//                                               DartInvokeResultCallback result_callback);
 NativeValue IntersectionObserver::HandleCallFromDartSide(const AtomicString& method,
                                                          int32_t argc,
                                                          const NativeValue* argv,
@@ -116,24 +120,27 @@ NativeValue IntersectionObserver::HandleCallFromDartSide(const AtomicString& met
   }
 
   MemberMutationScope scope{GetExecutingContext()};
-  WEBF_LOG(DEBUG) << "[IntersectionObserver]: HandleCallFromDartSide NativeValueConverter" << std::endl;
+
   NativeIntersectionObserverEntry* native_entry =
       NativeValueConverter<NativeTypePointer<NativeIntersectionObserverEntry>>::FromNativeValue(argv[0]);
   size_t length = NativeValueConverter<NativeTypeInt64>::FromNativeValue(argv[1]);
 
   if (length > 0) {
     assert(function_ != nullptr);
-    WEBF_LOG(DEBUG) << "[IntersectionObserver]: HandleCallFromDartSide To JSValue" << std::endl;
     JSValue js_array = JS_NewArray(ctx());
     for (int i = 0; i < length; i++) {
       auto* entry = MakeGarbageCollected<IntersectionObserverEntry>(
-          GetExecutingContext(), native_entry[i].is_intersecting,
+          GetExecutingContext(), native_entry[i].is_intersecting, native_entry[i].intersectionRatio,
           DynamicTo<Element>(BindingObject::From(native_entry[i].target)));
       JS_SetPropertyUint32(ctx(), js_array, i, entry->ToQuickJS());
     }
     ScriptValue arguments[] = {ScriptValue(ctx(), js_array), ToValue()};
 
-    WEBF_LOG(DEBUG) << "[IntersectionObserver]: HandleCallFromDartSide function_ Invoke" << std::endl;
+#if ENABLE_LOG
+    WEBF_LOG(DEBUG) << "[IntersectionObserver]: HandleCallFromDartSide length=" << length << "，JS function_ Invoke"
+                    << std::endl;
+#endif
+
     function_->Invoke(ctx(), ToValue(), 2, arguments);
 
     JS_FreeValue(ctx(), js_array);
@@ -145,7 +152,6 @@ NativeValue IntersectionObserver::HandleCallFromDartSide(const AtomicString& met
 }
 
 void IntersectionObserver::Trace(GCVisitor* visitor) const {
-  BindingObject::Trace(visitor);
   BindingObject::Trace(visitor);
 
   function_->Trace(visitor);

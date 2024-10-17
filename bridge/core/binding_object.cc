@@ -432,8 +432,4 @@ bool BindingObject::IsCanvasGradient() const {
   return false;
 }
 
-bool BindingObject::IsIntersectionObserverEntry() const {
-    return false;
-}
-
 }  // namespace webf

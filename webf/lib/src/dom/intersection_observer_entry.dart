@@ -15,13 +15,13 @@ class DartIntersectionObserverEntry {
   final bool isIntersecting;
 
   //final bool isVisible;
-  //final double intersectionRatio;
+  final double intersectionRatio;
   final Element element;
 
-  DartIntersectionObserverEntry(this.isIntersecting, this.element);
+  DartIntersectionObserverEntry(this.isIntersecting, this.intersectionRatio, this.element);
 
   DartIntersectionObserverEntry copy() {
-    return DartIntersectionObserverEntry(isIntersecting, element);
+    return DartIntersectionObserverEntry(isIntersecting, intersectionRatio, element);
   }
 }
 
@@ -29,5 +29,8 @@ class NativeIntersectionObserverEntry extends Struct {
   @Int8()
   external int isIntersecting;
 
-  external Pointer<NativeBindingObject> target;
+  @Double()
+  external double intersectionRatio;
+
+  external Pointer<NativeBindingObject> element;
 }

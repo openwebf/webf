@@ -9,22 +9,14 @@
 
 namespace webf {
 
-IntersectionObserverEntry::IntersectionObserverEntry(ExecutingContext* context, bool isIntersecting, Element* target)
-    : BindingObject(context->ctx()), isIntersecting_(isIntersecting), target_(target) {}
-
-// DOMRectReadOnly* IntersectionObserverEntry::boundingClientRect() const {
-//   return DOMRectReadOnly::FromRectF(gfx::RectF(geometry_.TargetRect()));
-// }
-//
-// DOMRectReadOnly* IntersectionObserverEntry::rootBounds() const {
-//   if (geometry_.ShouldReportRootBounds())
-//     return DOMRectReadOnly::FromRectF(gfx::RectF(geometry_.RootRect()));
-//   return nullptr;
-// }
-//
-// DOMRectReadOnly* IntersectionObserverEntry::intersectionRect() const {
-//   return DOMRectReadOnly::FromRectF(gfx::RectF(geometry_.IntersectionRect()));
-// }
+IntersectionObserverEntry::IntersectionObserverEntry(ExecutingContext* context,
+                                                     bool isIntersecting,
+                                                     double intersectionRatio,
+                                                     Element* target)
+    : ScriptWrappable(context->ctx()),
+      isIntersecting_(isIntersecting),
+      intersectionRatio_(intersectionRatio),
+      target_(target) {}
 
 void IntersectionObserverEntry::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(target_);

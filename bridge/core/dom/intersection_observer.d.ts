@@ -11,10 +11,7 @@ import {IntersectionObserverEntry} from "./intersection_observer_entry";
 import {Node} from "./node";
 import {Element} from "./element";
 
-//type IntersectionObserverCallback = (entries: IntersectionObserverEntry[], observer: IntersectionObserver)
-
 interface IntersectionObserver {
-  //new (callback: IntersectionObserverCallback, options?: IntersectionObserverInit): IntersectionObserver;
   new(callback: Function, options?: IntersectionObserverInit): IntersectionObserver;
 
   //readonly root: Node | null;
