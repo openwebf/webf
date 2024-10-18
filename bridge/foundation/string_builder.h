@@ -154,6 +154,30 @@ class StringBuilder {
     length_ += view.length();
   }
 
+  void AppendFormat(const char* format, ...) {
+    va_list args;
+
+    static constexpr unsigned kDefaultSize = 256;
+    std::string buffer;
+    buffer.reserve(kDefaultSize);
+
+    va_start(args, format);
+    int length = vsnprintf(buffer.data(), kDefaultSize, format, args);
+    va_end(args);
+    DCHECK_GE(length, 0);
+
+    if (length >= static_cast<int>(kDefaultSize)) {
+      buffer.resize(length + 1);
+      va_start(args, format);
+      length = vsnprintf(buffer.data(), buffer.size(), format, args);
+      va_end(args);
+    }
+
+    DCHECK_LT(static_cast<size_t>(length), buffer.size());
+
+    Append(buffer);
+  }
+
   void Append(int64_t v) {
     Append(std::to_string(v));
   }

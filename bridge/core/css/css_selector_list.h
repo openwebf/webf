@@ -71,7 +71,7 @@ namespace webf {
 // but not as part of a CSSSelectorList (see its class comments).
 // It reuses many of the exposed static member functions from CSSSelectorList
 // to provide a subset of its API.
-class CSSSelectorList {
+class CSSSelectorList  {
  public:
   // Constructs an empty selector list, for which IsValid() returns false.
   // TODO(sesse): Consider making this a singleton.
@@ -85,8 +85,10 @@ class CSSSelectorList {
   }
   ~CSSSelectorList() = default;
 
-  static std::shared_ptr<CSSSelectorList> AdoptSelectorVector(tcb::span<CSSSelector> selector_vector);
-  static void AdoptSelectorVector(tcb::span<CSSSelector> selector_vector, CSSSelector* selector_array);
+  static std::shared_ptr<CSSSelectorList> AdoptSelectorVector(
+      tcb::span<CSSSelector> selector_vector);
+  static void AdoptSelectorVector(tcb::span<CSSSelector> selector_vector,
+                                  CSSSelector* selector_array);
 
   std::shared_ptr<CSSSelectorList> Copy() const;
 
@@ -101,21 +103,21 @@ class CSSSelectorList {
 
   // The CSS selector represents a single sequence of simple selectors.
   bool HasOneSelector() const { return IsValid() && !Next(*first_selector_); }
-  const CSSSelector& SelectorAt(uint32_t index) const {
-    assert(IsValid());
+  const CSSSelector& SelectorAt(size_t index) const {
+    DCHECK(IsValid());
     return first_selector_[index];
   }
 
-  uint32_t SelectorIndex(const CSSSelector& selector) const {
-    assert(IsValid());
-    return static_cast<uint32_t>(&selector - first_selector_);
+  size_t SelectorIndex(const CSSSelector& selector) const {
+    DCHECK(IsValid());
+    return static_cast<size_t>(&selector - first_selector_);
   }
 
-  uint32_t IndexOfNextSelectorAfter(uint32_t index) const {
+  size_t IndexOfNextSelectorAfter(size_t index) const {
     const CSSSelector& current = SelectorAt(index);
     const CSSSelector* next = Next(current);
     if (!next) {
-      return UINT_MAX;
+      return -1;
     }
     return SelectorIndex(*next);
   }
@@ -131,9 +133,9 @@ class CSSSelectorList {
   unsigned MaximumSpecificity() const;
 
   // See CSSSelector::Reparent.
-  static void Reparent(CSSSelector* selector_list, std::shared_ptr<StyleRule> new_parent);;
+  static void Reparent(CSSSelector* selector_list, std::shared_ptr<StyleRule> new_parent);
 
-  void Reparent(const std::shared_ptr<StyleRule> new_parent) {
+  void Reparent(std::shared_ptr<StyleRule> new_parent) {
     CSSSelectorList::Reparent(first_selector_, new_parent);
   }
 
@@ -163,6 +165,7 @@ inline CSSSelector* CSSSelectorList::Next(CSSSelector& current) {
   }
   return last->IsLastInSelectorList() ? nullptr : last + 1;
 }
+
 
 }  // namespace webf
 

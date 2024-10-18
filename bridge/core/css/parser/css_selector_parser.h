@@ -152,7 +152,7 @@ class CSSSelectorParser {
       CSSNestingType);
 
   bool ConsumeName(CSSParserTokenStream&,
-                   std::string& name,
+                   std::optional<std::string>& name,
                    std::string& namespace_prefix);
 
   // These will return true iff the selector is valid;
@@ -176,7 +176,7 @@ class CSSSelectorParser {
 
   void PrependTypeSelectorIfNeeded(const std::string& namespace_prefix,
                                    bool has_element_name,
-                                   const std::string& element_name,
+                                   const std::optional<std::string>& element_name,
                                    size_t start_index_of_compound_selector);
   void SplitCompoundAtImplicitShadowCrossingCombinator(
       tcb::span<CSSSelector> compound_selector);

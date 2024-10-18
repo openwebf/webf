@@ -37,35 +37,47 @@ static QualifiedNameCache& GetQualifiedNameCache() {
   return g_name_cache;
 }
 
-QualifiedName::QualifiedName(const std::string& p, const std::string& l, const std::string& n) {
-  std::shared_ptr<QualifiedNameImpl> data = std::make_shared<QualifiedNameImpl>(p, l, n.empty() ? "" : n, false);
+QualifiedName::QualifiedName(const std::optional<std::string>& p,
+                             const std::optional<std::string>& l,
+                             const std::optional<std::string>& n) {
+  std::shared_ptr<QualifiedNameImpl> data =
+      std::make_shared<QualifiedNameImpl>(p, l, n.has_value() && n.value().empty() ? std::nullopt : n, false);
   QualifiedNameCache& cache = GetQualifiedNameCache();
   auto result = cache.insert(data);
   impl_ = data;
 }
 
-QualifiedName::QualifiedName(const std::string& local_name) : QualifiedName("", local_name, "") {}
+QualifiedName::QualifiedName(const std::optional<std::string>& local_name)
+    : QualifiedName(std::nullopt, local_name, std::nullopt) {}
 
-QualifiedName::QualifiedName(const std::string& p, const std::string& l, const std::string& n, bool is_static) {
-  std::shared_ptr<QualifiedNameImpl> data = std::make_shared<QualifiedNameImpl>(p, l, n.empty() ? "" : n, is_static);
+QualifiedName::QualifiedName(const std::optional<std::string>& p,
+                             const std::optional<std::string>& l,
+                             const std::optional<std::string>& n,
+                             bool is_static) {
+  std::shared_ptr<QualifiedNameImpl> data =
+      std::make_shared<QualifiedNameImpl>(p, l, n.has_value() && n.value().empty() ? "" : n, is_static);
   QualifiedNameCache& cache = GetQualifiedNameCache();
-  auto result = cache.insert(data);
+  cache.insert(data);
   impl_ = data;
 }
 
 QualifiedName::~QualifiedName() = default;
 
+void QualifiedName::InitAndReserveCapacityForSize(unsigned size) {
+  GetQualifiedNameCache().reserve(size + 2 /*g_star_atom and g_null_atom */);
+  new ((void*)&g_any_name) QualifiedName(std::nullopt, std::nullopt, std::optional<std::string>("*"), true);
+  new ((void*)&g_null_name) QualifiedName(std::nullopt, std::nullopt, std::nullopt, true);
+}
+
 std::string QualifiedName::ToString() const {
-  // TODO(guopengfei)：
-  JSContext* ctx = nullptr;
-  std::string local = LocalName();
+  std::optional<std::string> local = LocalName();
   if (HasPrefix())
-    return Prefix() + ":" + local;
-  return local;
+    return Prefix().value() + ":" + local.value();
+  return local.value();
 }
 
 unsigned QualifiedName::QualifiedNameImpl::ComputeHash() const {
-  QualifiedNameComponents components = {prefix_, local_name_, namespace_};
+  QualifiedNameComponents components = {prefix_.value(), local_name_.value(), namespace_.value()};
   return HashComponents(components);
 }
 

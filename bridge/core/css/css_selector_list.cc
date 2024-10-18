@@ -29,20 +29,17 @@
  */
 
 #include "css_selector_list.h"
+#include "core/base/memory/shared_ptr.h"
+#include "core/css/style_rule.h"
 
 namespace webf {
 
 std::shared_ptr<CSSSelectorList> CSSSelectorList::Empty() {
-  std::shared_ptr<CSSSelectorList> list = std::make_shared<CSSSelectorList>(webf::PassKey<CSSSelectorList>());
+  auto list = std::make_shared<CSSSelectorList>(webf::PassKey<CSSSelectorList>());
   new (list->first_selector_) CSSSelector();
   list->first_selector_[0].SetMatch(CSSSelector::kInvalidList);
-  assert(!list->IsValid());
+  DCHECK(!list->IsValid());
   return list;
-}
-
-void CSSSelectorList::AdoptSelectorVector(tcb::span<CSSSelector> selector_vector, CSSSelector* selector_array) {
-  std::uninitialized_move(selector_vector.begin(), selector_vector.end(), selector_array);
-  selector_array[selector_vector.size() - 1].SetLastInSelectorList(true);
 }
 
 std::shared_ptr<CSSSelectorList> CSSSelectorList::Copy() const {
@@ -52,7 +49,8 @@ std::shared_ptr<CSSSelectorList> CSSSelectorList::Copy() const {
 
   unsigned length = ComputeLength();
   DCHECK(length);
-  auto list = std::make_shared<CSSSelectorList>(webf::PassKey<CSSSelectorList>());
+  auto list = MakeSharedPtrWithAdditionalBytes<CSSSelectorList>(sizeof(CSSSelector) * (length - 1),
+                                                                webf::PassKey<CSSSelectorList>());
   for (unsigned i = 0; i < length; ++i) {
     new (&list->first_selector_[i]) CSSSelector(first_selector_[i]);
   }
@@ -60,14 +58,31 @@ std::shared_ptr<CSSSelectorList> CSSSelectorList::Copy() const {
   return list;
 }
 
+void CSSSelectorList::AdoptSelectorVector(tcb::span<CSSSelector> selector_vector, CSSSelector* selector_array) {
+  std::uninitialized_move(selector_vector.begin(), selector_vector.end(), selector_array);
+  selector_array[selector_vector.size() - 1].SetLastInSelectorList(true);
+}
+
 std::shared_ptr<CSSSelectorList> CSSSelectorList::AdoptSelectorVector(tcb::span<CSSSelector> selector_vector) {
   if (selector_vector.empty()) {
     return CSSSelectorList::Empty();
   }
 
-  std::shared_ptr<CSSSelectorList> list = std::make_shared<CSSSelectorList>(webf::PassKey<CSSSelectorList>());
+  auto list = MakeSharedPtrWithAdditionalBytes<CSSSelectorList>(sizeof(CSSSelector) * (selector_vector.size() - 1),
+                                                                webf::PassKey<CSSSelectorList>());
   AdoptSelectorVector(selector_vector, list->first_selector_);
   return list;
+}
+
+unsigned CSSSelectorList::ComputeLength() const {
+  if (!IsValid()) {
+    return 0;
+  }
+  const CSSSelector* current = First();
+  while (!current->IsLastInSelectorList()) {
+    ++current;
+  }
+  return SelectorIndex(*current) + 1;
 }
 
 unsigned CSSSelectorList::MaximumSpecificity() const {
@@ -78,6 +93,14 @@ unsigned CSSSelectorList::MaximumSpecificity() const {
   }
 
   return specificity;
+}
+
+void CSSSelectorList::Reparent(CSSSelector* selector_list, std::shared_ptr<StyleRule> new_parent) {
+  DCHECK(selector_list);
+  CSSSelector* current = selector_list;
+  do {
+    current->Reparent(new_parent);
+  } while (!(current++)->IsLastInSelectorList());
 }
 
 std::string CSSSelectorList::SelectorsText(const CSSSelector* first) {
@@ -93,24 +116,7 @@ std::string CSSSelectorList::SelectorsText(const CSSSelector* first) {
   return result.ReleaseString();
 }
 
-
-unsigned CSSSelectorList::ComputeLength() const {
-  if (!IsValid()) {
-    return 0;
-  }
-  const CSSSelector* current = First();
-  while (!current->IsLastInSelectorList()) {
-    ++current;
-  }
-  return SelectorIndex(*current) + 1;
-}
-
-void CSSSelectorList::Reparent(CSSSelector* selector_list, std::shared_ptr<StyleRule> new_parent) {
-  //  DCHECK(selector_list);
-  //  CSSSelector* current = selector_list;
-  //  do {
-  //    current->Reparent(new_parent);
-  //  } while (!(current++)->IsLastInSelectorList());
+void CSSSelectorList::Trace(GCVisitor* visitor) const {
 }
 
 }  // namespace webf

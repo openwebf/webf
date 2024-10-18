@@ -60,9 +60,9 @@ class Attribute {
   // as the Attribute stays in place. For example, calling a function that
   // mutates an Element's internal attribute storage may invalidate them.
   const std::string& Value() const { return value_; }
-  const std::string& Prefix() const { return name_.Prefix(); }
-  const std::string& LocalName() const { return name_.LocalName(); }
-  const std::string& NamespaceURI() const { return name_.NamespaceURI(); }
+  const std::optional<std::string>& Prefix() const { return name_.Prefix(); }
+  const std::optional<std::string>& LocalName() const { return name_.LocalName(); }
+  const std::optional<std::string>& NamespaceURI() const { return name_.NamespaceURI(); }
 
   const QualifiedName& GetName() const { return name_; }
 

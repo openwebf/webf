@@ -59,15 +59,15 @@ class NodeListsNodeData final {
     return list;
   }
 
-  using NamedNodeListKey = std::pair<CollectionType, std::string>;
+  using NamedNodeListKey = std::pair<CollectionType, std::optional<std::string>>;
   struct NodeListAtomicCacheMapEntryHashTraits {
     NodeListAtomicCacheMapEntryHashTraits() = default;
 
     struct Hash {
       size_t operator()(const NamedNodeListKey& entry) const {
-        size_t hash1 = entry.second == CSSSelector::UniversalSelectorAtom()
+        size_t hash1 = entry.second == CSSSelector::UniversalSelector()
                            ? global_string::kstar_atom.Hash()
-                           : SuperFastHash(entry.second.c_str(), entry.second.length());
+                           : SuperFastHash(entry.second->c_str(), entry.second->length());
         size_t hash2 = std::hash<CollectionType>()(entry.first);
         return hash1 ^ (hash2 << 1);  // Combine the two hash values
       }
@@ -102,7 +102,7 @@ class NodeListsNodeData final {
 
   template <typename T>
   T* AddCache(ContainerNode& node, CollectionType collection_type) {
-    NamedNodeListKey key(collection_type, CSSSelector::UniversalSelectorAtom());
+    NamedNodeListKey key(collection_type, CSSSelector::UniversalSelector());
     auto result = atomic_name_caches_.insert({key, nullptr});
     if (!result.second) {
       return static_cast<T*>(result.first->second.get());
@@ -115,7 +115,7 @@ class NodeListsNodeData final {
 
   template <typename T>
   T* Cached(CollectionType collection_type) {
-    auto it = atomic_name_caches_.find(NamedNodeListKey(collection_type, CSSSelector::UniversalSelectorAtom()));
+    auto it = atomic_name_caches_.find(NamedNodeListKey(collection_type, CSSSelector::UniversalSelector()));
     return static_cast<T*>(it != atomic_name_caches_.end() ? it->second.get() : nullptr);
   }
 

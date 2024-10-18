@@ -64,9 +64,7 @@ class QualifiedName {
       std::size_t operator()(const QualifiedNameImpl& k) const { return k.ComputeHash(); }
     };
 
-    bool operator==(const QualifiedNameImpl& other) const {
-      return other.ComputeHash() == ComputeHash();
-    }
+    bool operator==(const QualifiedNameImpl& other) const { return other.ComputeHash() == ComputeHash(); }
 
     unsigned ComputeHash() const;
 
@@ -74,17 +72,19 @@ class QualifiedName {
     // doing hashing and use one of the bits for the is_static_ value.
     mutable unsigned existing_hash_ : 24;
     unsigned is_static_ : 1;
-    const std::string prefix_;
-    const std::string local_name_;
-    const std::string namespace_;
+    const std::optional<std::string> prefix_;
+    const std::optional<std::string> local_name_;
+    const std::optional<std::string> namespace_;
     mutable std::string local_name_upper_;
-    QualifiedNameImpl(std::string prefix, std::string local_name, std::string namespace_uri, bool is_static)
+    QualifiedNameImpl(std::optional<std::string> prefix,
+                      std::optional<std::string> local_name,
+                      std::optional<std::string> namespace_uri,
+                      bool is_static)
         : existing_hash_(0),
           is_static_(is_static),
           prefix_(std::move(prefix)),
           local_name_(std::move(local_name)),
-          namespace_(std::move(namespace_uri)) {
-    }
+          namespace_(std::move(namespace_uri)) {}
 
    private:
   };
@@ -95,10 +95,12 @@ class QualifiedName {
     std::size_t operator()(const QualifiedName& k) const { return k.hash(); }
   };
 
-  QualifiedName(const std::string& prefix, const std::string& local_name, const std::string& namespace_uri);
+  QualifiedName(const std::optional<std::string>& prefix,
+                const std::optional<std::string>& local_name,
+                const std::optional<std::string>& namespace_uri);
   // Creates a QualifiedName instance with null prefix, the specified local
   // name, and null namespace.
-  explicit QualifiedName(const std::string& local_name);
+  explicit QualifiedName(const std::optional<std::string>& local_name);
   ~QualifiedName();
 
   QualifiedName(const QualifiedName& other) = default;
@@ -119,9 +121,9 @@ class QualifiedName {
   bool HasPrefix() const { return impl_->prefix_ != ""; }
   void SetPrefix(const std::string& prefix) { *this = QualifiedName(prefix, LocalName(), NamespaceURI()); }
 
-  [[nodiscard]] const std::string& Prefix() const { return impl_->prefix_; }
-  [[nodiscard]] const std::string& LocalName() const { return impl_->local_name_; }
-  [[nodiscard]] const std::string& NamespaceURI() const { return impl_->namespace_; }
+  [[nodiscard]] const std::optional<std::string>& Prefix() const { return impl_->prefix_; }
+  [[nodiscard]] const std::optional<std::string>& LocalName() const { return impl_->local_name_; }
+  [[nodiscard]] const std::optional<std::string>& NamespaceURI() const { return impl_->namespace_; }
 
   // Uppercased localName, cached for efficiency
   [[nodiscard]] const std::string& LocalNameUpper() const {
@@ -153,9 +155,9 @@ class QualifiedName {
  private:
   // This constructor is used only to create global/static QNames that don't
   // require any ref counting.
-  QualifiedName(const std::string& prefix,
-                const std::string& local_name,
-                const std::string& namespace_uri,
+  QualifiedName(const std::optional<std::string>& prefix,
+                const std::optional<std::string>& local_name,
+                const std::optional<std::string>& namespace_uri,
                 bool is_static);
 
   std::shared_ptr<QualifiedNameImpl> impl_ = nullptr;
@@ -165,7 +167,11 @@ extern const QualifiedName& g_any_name;
 extern const QualifiedName& g_null_name;
 
 inline unsigned HashComponents(const QualifiedNameComponents& buf) {
-  return SuperFastHash((const char*) &buf, sizeof(QualifiedNameComponents)) & 0xFFFFFF;
+  return SuperFastHash((const char*)&buf, sizeof(QualifiedNameComponents)) & 0xFFFFFF;
+}
+
+inline const QualifiedName& AnyQName() {
+  return g_any_name;
 }
 
 }  // namespace webf

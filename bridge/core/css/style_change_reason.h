@@ -107,7 +107,7 @@ class StyleChangeReasonForTracing {
   static StyleChangeReasonForTracing FromAttribute(
       const QualifiedName& attribute_name) {
     return StyleChangeReasonForTracing(style_change_reason::kAttribute,
-                                       attribute_name.LocalName());
+                                       attribute_name.LocalName().value_or(""));
   }
 
   std::string ReasonString() const { return std::string(reason_); }
