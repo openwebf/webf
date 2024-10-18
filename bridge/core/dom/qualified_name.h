@@ -101,7 +101,6 @@ class QualifiedName {
   // Creates a QualifiedName instance with null prefix, the specified local
   // name, and null namespace.
   explicit QualifiedName(const std::optional<std::string>& local_name);
-  ~QualifiedName();
 
   QualifiedName(const QualifiedName& other) = default;
   const QualifiedName& operator=(const QualifiedName& other) {

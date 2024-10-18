@@ -712,7 +712,9 @@ class CSSSelector {
   // from a normal |value_| to a |rare_data_|.
   union DataUnion {
     enum ConstructUninitializedTag { kConstructUninitialized };
-    explicit DataUnion(ConstructUninitializedTag) {}
+    explicit DataUnion(ConstructUninitializedTag) {
+      memset(this, 0, sizeof(DataUnion));
+    }
 
     enum ConstructEmptyValueTag { kConstructEmptyValue };
     explicit DataUnion(ConstructEmptyValueTag) : value_() {}

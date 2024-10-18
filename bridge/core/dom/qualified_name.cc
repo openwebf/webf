@@ -61,8 +61,6 @@ QualifiedName::QualifiedName(const std::optional<std::string>& p,
   impl_ = data;
 }
 
-QualifiedName::~QualifiedName() = default;
-
 void QualifiedName::InitAndReserveCapacityForSize(unsigned size) {
   GetQualifiedNameCache().reserve(size + 2 /*g_star_atom and g_null_atom */);
   new ((void*)&g_any_name) QualifiedName(std::nullopt, std::nullopt, std::optional<std::string>("*"), true);

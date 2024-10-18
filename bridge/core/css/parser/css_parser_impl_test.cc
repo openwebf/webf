@@ -240,52 +240,52 @@ TEST(CSSParserImplTest, NestedEmptySelectorCrash) {
 
   // We only really care that it doesn't crash.
 }
-//
-//TEST(CSSParserImplTest, NestedRulesInsideMediaQueries) {
-//  std::string sheet_text = R"CSS(
-//    .element {
-//      color: green;
-//      @media (width < 1000px) {
-//        color: navy;
-//        font-size: 12px;
-//        & + #foo { color: red; }
-//      }
-//    }
-//    )CSS";
-//
-//  auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-//  auto sheet = std::make_shared<StyleSheetContents>(context);
-//  TestCSSParserObserver test_css_parser_observer;
-//  CSSParserImpl::ParseStyleSheetForInspector(sheet_text, context, sheet,
-//                                             test_css_parser_observer);
-//
-//  ASSERT_EQ(1u, sheet->ChildRules().size());
-//  StyleRule* parent = DynamicTo<StyleRule>(sheet->ChildRules()[0].get());
-//  ASSERT_NE(nullptr, parent);
-//  EXPECT_EQ("color: green;", parent->Properties().AsText());
-//  EXPECT_EQ(".element", parent->SelectorsText());
-//
-//  ASSERT_NE(nullptr, parent->ChildRules());
-//  ASSERT_EQ(1u, parent->ChildRules()->size());
-//  const StyleRuleMedia* media_query =
-//      DynamicTo<StyleRuleMedia>((*parent->ChildRules())[0].get());
-//  ASSERT_NE(nullptr, media_query);
-//
-//  ASSERT_EQ(2u, media_query->ChildRules().size());
-//
-//  // Implicit & {} rule around the properties.
-//  const StyleRule* child0 =
-//      DynamicTo<StyleRule>(media_query->ChildRules()[0].get());
-//  ASSERT_NE(nullptr, child0);
-//  EXPECT_EQ("color: navy; font-size: 12px;", child0->Properties().AsText());
-//  EXPECT_EQ("&", child0->SelectorsText());
-//
-//  const StyleRule* child1 =
-//      DynamicTo<StyleRule>(media_query->ChildRules()[1].get());
-//  ASSERT_NE(nullptr, child1);
-//  EXPECT_EQ("color: red;", child1->Properties().AsText());
-//  EXPECT_EQ("& + #foo", child1->SelectorsText());
-//}
+
+TEST(CSSParserImplTest, NestedRulesInsideMediaQueries) {
+  std::string sheet_text = R"CSS(
+    .element {
+      color: green;
+      @media (width < 1000px) {
+        color: navy;
+        font-size: 12px;
+        & + #foo { color: red; }
+      }
+    }
+    )CSS";
+
+  auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  auto sheet = std::make_shared<StyleSheetContents>(context);
+  TestCSSParserObserver test_css_parser_observer;
+  CSSParserImpl::ParseStyleSheetForInspector(sheet_text, context, sheet,
+                                             test_css_parser_observer);
+
+  ASSERT_EQ(1u, sheet->ChildRules().size());
+  StyleRule* parent = DynamicTo<StyleRule>(sheet->ChildRules()[0].get());
+  ASSERT_NE(nullptr, parent);
+  EXPECT_EQ("color: green;", parent->Properties().AsText());
+  EXPECT_EQ(".element", parent->SelectorsText());
+
+  ASSERT_NE(nullptr, parent->ChildRules());
+  ASSERT_EQ(1u, parent->ChildRules()->size());
+  const StyleRuleMedia* media_query =
+      DynamicTo<StyleRuleMedia>((*parent->ChildRules())[0].get());
+  ASSERT_NE(nullptr, media_query);
+
+  ASSERT_EQ(2u, media_query->ChildRules().size());
+
+  // Implicit & {} rule around the properties.
+  const StyleRule* child0 =
+      DynamicTo<StyleRule>(media_query->ChildRules()[0].get());
+  ASSERT_NE(nullptr, child0);
+  EXPECT_EQ("color: navy; font-size: 12px;", child0->Properties().AsText());
+  EXPECT_EQ("&", child0->SelectorsText());
+
+  const StyleRule* child1 =
+      DynamicTo<StyleRule>(media_query->ChildRules()[1].get());
+  ASSERT_NE(nullptr, child1);
+  EXPECT_EQ("color: red;", child1->Properties().AsText());
+  EXPECT_EQ("& + #foo", child1->SelectorsText());
+}
 //
 //TEST(CSSParserImplTest, ObserveNestedMediaQuery) {
 //  std::string sheet_text = R"CSS(
