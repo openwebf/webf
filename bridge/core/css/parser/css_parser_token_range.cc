@@ -26,7 +26,7 @@ CSSParserTokenRange CSSParserTokenRange::MakeSubRange(const webf::CSSParserToken
   if (last == &g_static_eof_token) {
     last = last_;
   }
-  assert(first < last);
+  DCHECK_LE(first, last);
   return CSSParserTokenRange(first, last);
 }
 
