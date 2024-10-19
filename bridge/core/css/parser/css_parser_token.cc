@@ -234,12 +234,13 @@ void CSSParserToken::Serialize(StringBuilder& builder) const {
       if (numeric_value_type_ == kIntegerValueType) {
         return builder.Append(ClampTo<int64_t>(NumericValue()));
       } else {
-        std::string str = std::to_string(NumericValue());
+        NumberToStringBuffer buffer;
+        const char* str = NumberToString(NumericValue(), buffer);
         builder.Append(str);
         // This wasn't parsed as an integer, so when we serialize it back,
         // it cannot be an integer. Otherwise, we would round-trip e.g.
         // “2.0” to “2”, which could make an invalid value suddenly valid.
-        if (strchr(str.c_str(), '.') == nullptr && strchr(str.c_str(), 'e') == nullptr) {
+        if (strchr(str, '.') == nullptr && strchr(str, 'e') == nullptr) {
           builder.Append(".0");
         }
         return;
@@ -249,12 +250,13 @@ void CSSParserToken::Serialize(StringBuilder& builder) const {
       return builder.Append('%');
     case kDimensionToken: {
       // This will incorrectly serialize e.g. 4e3e2 as 4000e2
-      std::string str = std::to_string(NumericValue());
+      NumberToStringBuffer buffer;
+      const char* str = NumberToString(NumericValue(), buffer);
       builder.Append(str);
       // NOTE: We don't need the same “.0” treatment as we did for
       // kNumberToken, as there are no situations where e.g. 2deg
       // would be valid but 2.0deg not.
-      SerializeIdentifier(Value(), builder);
+      SerializeIdentifier(std::string(Value()), builder);
       break;
     }
     case kUnicodeRangeToken:

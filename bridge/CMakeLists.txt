@@ -114,6 +114,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/ascii_types.cc
   foundation/ui_command_buffer.cc
   foundation/ui_command_strategy.cc
+  foundation/dtoa.cc
   polyfill/dist/polyfill.cc
   multiple_threading/dispatcher.cc
   multiple_threading/looper.cc
@@ -142,8 +143,22 @@ list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}/include
   ${CMAKE_CURRENT_LIST_DIR}/polyfill/dist
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart
+  ${CMAKE_CURRENT_LIST_DIR}/third_party/double_conversion
   ${ADDITIONAL_INCLUDE_DIRS}
   )
+
+
+add_library(double_conversion STATIC
+  third_party/double_conversion/double-conversion/bignum.cc
+  third_party/double_conversion/double-conversion/bignum-dtoa.cc
+  third_party/double_conversion/double-conversion/cached-powers.cc
+  third_party/double_conversion/double-conversion/double-to-string.cc
+  third_party/double_conversion/double-conversion/fast-dtoa.cc
+  third_party/double_conversion/double-conversion/fixed-dtoa.cc
+  third_party/double_conversion/double-conversion/string-to-double.cc
+  third_party/double_conversion/double-conversion/strtod.cc
+)
+list(APPEND BRIDGE_LINK_LIBS double_conversion)
 
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   add_compile_options(-DWEBF_QUICK_JS_ENGINE=1)

@@ -434,11 +434,11 @@ std::string Color::SerializeLegacyColorAsCSSColor() const {
         SRGBToSRGBLegacy(r + kEpsilon, g + kEpsilon, b + kEpsilon);
   }
 
-  result.Append(round(ClampTo(r, 0.0, 255.0)), 0);
+  result.Append(round(ClampTo(r, 0.0, 255.0)), 6);
   result.Append(", ");
-  result.Append(round(ClampTo(g, 0.0, 255.0)), 0);
+  result.Append(round(ClampTo(g, 0.0, 255.0)), 6);
   result.Append(", ");
-  result.Append(round(ClampTo(b, 0.0, 255.0)), 0);
+  result.Append(round(ClampTo(b, 0.0, 255.0)), 6);
 
   if (!IsOpaque()) {
     result.Append(", ");
