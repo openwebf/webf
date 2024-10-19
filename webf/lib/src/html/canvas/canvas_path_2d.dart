@@ -88,9 +88,17 @@ class Path2D extends DynamicBindingObject {
             castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble(),
             castToType<num>(args[3]).toDouble()));
+    methods['roundRect'] = BindingObjectMethodSync(
+        call: (args) => roundRect(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble(),
+            args[4]));
     methods['addPath'] = BindingObjectMethodSync(call: (args) {
       if (args.length > 1 && args[1] is DOMMatrix) {
-        print(args[1]);
+        // print(args[1]);
+        
         addPath(args[0]);
       } else if (args.isNotEmpty && args[0] is Path2D) {
         addPath(args[0]);
@@ -235,6 +243,43 @@ class Path2D extends DynamicBindingObject {
     _setPoint(rect.right, rect.bottom);
     _setPoint(rect.left, rect.bottom);
   }
+
+  // radii values is same with css border-radius
+  void roundRect(double x, double y, double width, double height, List<double> radii) {
+    Rect rect = Rect.fromLTWH(x, y, width, height);
+    if (radii.length == 1) {
+      RRect rRect = RRect.fromRectAndRadius(rect, Radius.circular(radii[0]));
+      _path.addRRect(rRect);
+    } else if (radii.length == 2) {
+      RRect rRect = RRect.fromRectAndCorners(
+        rect, 
+        topLeft:Radius.circular(radii[0]),
+        topRight:Radius.circular(radii[1]),
+        bottomRight:Radius.circular(radii[1]),
+        bottomLeft:Radius.circular(radii[0])
+      );
+      _path.addRRect(rRect);
+    } else if (radii.length == 3) {
+      RRect rRect = RRect.fromRectAndCorners(
+        rect, 
+        topLeft:Radius.circular(radii[0]),
+        topRight:Radius.circular(radii[1]),
+        bottomRight:Radius.circular(radii[2]),
+        bottomLeft:Radius.circular(radii[1])
+      );
+      _path.addRRect(rRect);
+    } else if (radii.length == 4) {
+       RRect rRect = RRect.fromRectAndCorners(
+        rect, 
+        topLeft:Radius.circular(radii[0]),
+        topRight:Radius.circular(radii[1]),
+        bottomRight:Radius.circular(radii[2]),
+        bottomLeft:Radius.circular(radii[3])
+      );
+      _path.addRRect(rRect);
+    }
+  }
+
 
   /// degenerateEllipse() handles a degenerated ellipse using several lines.
   ///
