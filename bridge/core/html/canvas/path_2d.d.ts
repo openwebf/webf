@@ -9,5 +9,5 @@ interface Path2D {
   ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise?: boolean): DartImpl<void>;
   rect(x: number, y: number, w: number, h: number): DartImpl<void>;
   addPath(path: Path2D, matrix?: DOMMatrix): void;
-  new(init?: Path2D | string ): void;
+  new(init?: Path2D | string ): Path2D;
 }
