@@ -144,6 +144,9 @@ class CSSParserImpl {
                                                        AllowedRulesType allowed_rules,
                                                        CSSNestingType,
                                                        std::shared_ptr<const StyleRule> parent_rule_for_nesting);
+  std::shared_ptr<StyleRuleBase> ConsumeLayerRule(CSSParserTokenStream&,
+                                  CSSNestingType,
+                                  std::shared_ptr<const StyleRule> parent_rule_for_nesting);
   std::shared_ptr<StyleRuleBase> ConsumeQualifiedRule(CSSParserTokenStream&,
                                                       AllowedRulesType,
                                                       CSSNestingType,

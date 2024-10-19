@@ -40,7 +40,7 @@ std::string StyleRuleBase::LayerNameAsString(const webf::StyleRuleBase::LayerNam
     if (!result.empty()) {
       result.Append(".");
     }
-    SerializeIdentifier(part, result);
+    SerializeIdentifier(part.value_or(""), result);
   }
   return result.ReleaseString();
 }

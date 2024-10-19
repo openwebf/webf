@@ -82,7 +82,7 @@ class StyleRuleBase : public std::enable_shared_from_this<StyleRuleBase> {
   // Name of a cascade layer as given by an @layer rule, split at '.' into a
   // vector. Note that this may not be the full layer name if the rule is nested
   // in another @layer rule or in a layered @import.
-  using LayerName = std::vector<std::string>;
+  using LayerName = std::vector<std::optional<std::string>>;
   static std::string LayerNameAsString(const LayerName&);
 
   RuleType GetType() const { return static_cast<RuleType>(type_); }

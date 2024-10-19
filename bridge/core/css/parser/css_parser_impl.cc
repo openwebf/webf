@@ -1314,6 +1314,9 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeAtRuleContents(
         return ConsumeKeyframesRule(true, stream);
       case CSSAtRuleID::kCSSAtRuleKeyframes:
         return ConsumeKeyframesRule(false, stream);
+      case CSSAtRuleID::kCSSAtRuleLayer:
+        return ConsumeLayerRule(stream, nesting_type, parent_rule_for_nesting);
+      default:
       case CSSAtRuleID::kCSSAtRuleInvalid:
       case CSSAtRuleID::kCSSAtRuleCharset:
       case CSSAtRuleID::kCSSAtRuleImport:
@@ -1342,6 +1345,7 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeAtRuleContents(
       case CSSAtRuleID::kCSSAtRuleRightBottom:
         ConsumeErroneousAtRule(stream, id);
         return nullptr;  // Parse error, unrecognised or not-allowed at-rule
+        break;
     }
   }
 }
@@ -1818,6 +1822,93 @@ void CSSParserImpl::ConsumeRuleListOrNestedDeclarationList(CSSParserTokenStream&
     ConsumeRuleList(stream, kRegularRuleList, nesting_type, parent_rule_for_nesting,
                     [child_rules](std::shared_ptr<StyleRuleBase> rule, size_t) { child_rules->push_back(rule); });
   }
+}
+
+std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeLayerRule(
+    CSSParserTokenStream& stream,
+    CSSNestingType nesting_type,
+    std::shared_ptr<const StyleRule> parent_rule_for_nesting) {
+  size_t prelude_offset_start = stream.LookAheadOffset();
+  CSSParserTokenRange prelude = ConsumeAtRulePrelude(stream);
+  size_t prelude_offset_end = stream.LookAheadOffset();
+
+  // @layer statement rule without style declarations.
+  if (stream.AtEnd() || stream.UncheckedPeek().GetType() == kSemicolonToken) {
+    if (!ConsumeEndOfPreludeForAtRuleWithoutBlock(stream)) {
+      return nullptr;
+    }
+    if (nesting_type == CSSNestingType::kNesting) {
+      // @layer statement rules are not group rules, and can therefore
+      // not be nested.
+      //
+      // https://drafts.csswg.org/css-nesting-1/#nested-group-rules
+      return nullptr;
+    }
+
+    std::vector<StyleRuleBase::LayerName> names;
+    while (!prelude.AtEnd()) {
+      if (names.size()) {
+        if (!css_parsing_utils::ConsumeCommaIncludingWhitespace(prelude)) {
+          return nullptr;
+        }
+      }
+      StyleRuleBase::LayerName name = ConsumeCascadeLayerName(prelude);
+      if (!name.size()) {
+        return nullptr;
+      }
+      names.push_back(std::move(name));
+    }
+    if (!names.size()) {
+      return nullptr;
+    }
+
+    if (observer_) {
+      observer_->StartRuleHeader(StyleRule::kLayerStatement,
+                                 prelude_offset_start);
+      observer_->EndRuleHeader(prelude_offset_end);
+      observer_->StartRuleBody(prelude_offset_end);
+      observer_->EndRuleBody(prelude_offset_end);
+    }
+
+    return std::make_shared<StyleRuleLayerStatement>(std::move(names));
+  }
+
+  // @layer block rule with style declarations.
+  if (!ConsumeEndOfPreludeForAtRuleWithBlock(stream)) {
+    return nullptr;
+  }
+  CSSParserTokenStream::BlockGuard guard(stream);
+
+  StyleRuleBase::LayerName name;
+  prelude.ConsumeWhitespace();
+  if (prelude.AtEnd()) {
+    name.push_back(std::nullopt);
+  } else {
+    name = ConsumeCascadeLayerName(prelude);
+    if (!name.size() || !prelude.AtEnd()) {
+      return nullptr;
+    }
+  }
+
+  if (observer_) {
+    observer_->StartRuleHeader(StyleRule::kLayerBlock, prelude_offset_start);
+    observer_->EndRuleHeader(prelude_offset_end);
+    observer_->StartRuleBody(stream.Offset());
+  }
+
+  std::vector<std::shared_ptr<StyleRuleBase>> rules;
+  rules.reserve(4);
+  ConsumeRuleListOrNestedDeclarationList(
+      stream,
+      /* is_nested_group_rule */ nesting_type == CSSNestingType::kNesting,
+      nesting_type, parent_rule_for_nesting, &rules);
+
+  if (observer_) {
+    observer_->EndRuleBody(stream.Offset());
+  }
+
+  return std::make_shared<StyleRuleLayerBlock>(std::move(name),
+                                                   std::move(rules));
 }
 
 }  // namespace webf

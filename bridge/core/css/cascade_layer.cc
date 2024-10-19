@@ -13,7 +13,7 @@ namespace webf {
 
 std::shared_ptr<CascadeLayer> CascadeLayer::FindDirectSubLayer(const std::string& name) const {
   // Anonymous layers are all distinct.
-  if (name == "") {
+  if (name.empty()) {
     return nullptr;
   }
   for (const auto& sub_layer : direct_sub_layers_) {
@@ -26,10 +26,10 @@ std::shared_ptr<CascadeLayer> CascadeLayer::FindDirectSubLayer(const std::string
 
 std::shared_ptr<CascadeLayer> CascadeLayer::GetOrAddSubLayer(const StyleRuleBase::LayerName& name) {
   std::shared_ptr<CascadeLayer> layer = std::make_shared<CascadeLayer>(*this);
-  for (const std::string& name_part : name) {
-    std::shared_ptr<CascadeLayer> direct_sub_layer = layer->FindDirectSubLayer(name_part);
+  for (const std::optional<std::string>& name_part : name) {
+    std::shared_ptr<CascadeLayer> direct_sub_layer = layer->FindDirectSubLayer(name_part.value_or(""));
     if (!direct_sub_layer) {
-      direct_sub_layer = std::make_shared<CascadeLayer>(name_part);
+      direct_sub_layer = std::make_shared<CascadeLayer>(name_part.value_or(""));
       layer->direct_sub_layers_.push_back(direct_sub_layer);
     }
     layer = direct_sub_layer;
