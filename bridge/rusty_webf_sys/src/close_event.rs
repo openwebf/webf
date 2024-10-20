@@ -16,13 +16,15 @@ pub struct CloseEvent {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const CloseEventRustMethods,
+  status: *const RustValueStatus
 }
 impl CloseEvent {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const CloseEventRustMethods) -> CloseEvent {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const CloseEventRustMethods, status: *const RustValueStatus) -> CloseEvent {
     CloseEvent {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {

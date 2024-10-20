@@ -9,7 +9,7 @@ use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventT
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
 use crate::node::{Node, NodeRustMethods};
-use crate::OpaquePtr;
+use crate::{OpaquePtr, RustValueStatus};
 
 #[repr(C)]
 pub struct CommentRustMethods {
@@ -24,15 +24,14 @@ pub struct Comment {
   method_pointer: *const CommentRustMethods,
 }
 
-impl Comment {
-}
+impl Comment {}
 
 impl EventTargetMethods for Comment {
   /// Initialize the instance from cpp raw pointer.
-  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> Self where Self: Sized {
+  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T, status: *const RustValueStatus) -> Self where Self: Sized {
     unsafe {
       Comment {
-        character_data: CharacterData::initialize(ptr, context, &(method_pointer as *const CommentRustMethods).as_ref().unwrap().character_data),
+        character_data: CharacterData::initialize(ptr, context, &(method_pointer as *const CommentRustMethods).as_ref().unwrap().character_data, status),
         method_pointer: method_pointer as *const CommentRustMethods,
       }
     }

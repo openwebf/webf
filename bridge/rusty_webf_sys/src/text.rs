@@ -9,7 +9,7 @@ use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventT
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
 use crate::node::{Node, NodeMethods, NodeRustMethods};
-use crate::OpaquePtr;
+use crate::{OpaquePtr, RustValueStatus};
 
 #[repr(C)]
 pub struct TextNodeRustMethods {
@@ -44,10 +44,10 @@ impl NodeMethods for Text {
 
 impl EventTargetMethods for Text {
   /// Initialize the instance from cpp raw pointer.
-  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> Self where Self: Sized {
+  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T, status: *const RustValueStatus) -> Self where Self: Sized {
     unsafe {
       Text {
-        character_data: CharacterData::initialize(ptr, context, &(method_pointer as *const TextNodeRustMethods).as_ref().unwrap().character_data),
+        character_data: CharacterData::initialize(ptr, context, &(method_pointer as *const TextNodeRustMethods).as_ref().unwrap().character_data, status),
         method_pointer: method_pointer as *const TextNodeRustMethods,
       }
     }

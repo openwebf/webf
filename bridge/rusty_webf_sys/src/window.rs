@@ -5,7 +5,7 @@
 use std::ffi::c_double;
 use crate::event_target::{EventTargetRustMethods, RustMethods};
 use crate::executing_context::ExecutingContext;
-use crate::OpaquePtr;
+use crate::{OpaquePtr, RustValueStatus};
 
 #[repr(C)]
 pub struct WindowRustMethods {
@@ -17,15 +17,17 @@ impl RustMethods for WindowRustMethods {}
 
 pub struct Window {
   ptr: *const OpaquePtr,
-  method_pointer: *const WindowRustMethods
+  method_pointer: *const WindowRustMethods,
+  status: *const RustValueStatus,
 }
 
 
 impl Window {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const WindowRustMethods) -> Window {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const WindowRustMethods, status: *const RustValueStatus) -> Window {
     Window {
       ptr,
-      method_pointer
+      method_pointer,
+      status,
     }
   }
 }

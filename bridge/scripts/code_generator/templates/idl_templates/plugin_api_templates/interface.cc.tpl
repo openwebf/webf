@@ -4,9 +4,15 @@ namespace webf {
 <%= generatePublicReturnTypeValue(prop.type, true) %> <%= className %>PublicMethods::<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>) {
   <% if (isPointerType(prop.type)) { %>
   auto* result = <%= _.snakeCase(className) %>-><%= prop.name %>();
-  result->KeepAlive();
-  return {.value = result, .method_pointer = result-><%= _.camelCase(getPointerType(prop.type)) %>PublicMethods()};
+  WebFValueStatus* status_block = result->KeepAlive();
+  return <%= generatePublicReturnTypeValue(prop.type, true) %>(result, result-><%= _.camelCase(getPointerType(prop.type)) %>PublicMethods(), status_block);
   <% } else if (isAnyType(prop.type)) { %>
+
+   return WebFValue<ScriptValueRef, ScriptValueRefPublicMethods> {
+      new ScriptValueRef{<%= _.snakeCase(className) %>->GetExecutingContext(), <%= _.snakeCase(className) %>-><%= prop.name %>()}, ScriptValueRef::publicMethods(),
+          nullptr
+    };
+
   return {
         .value = new ScriptValueRef {
           <%= _.snakeCase(className) %>->GetExecutingContext(),

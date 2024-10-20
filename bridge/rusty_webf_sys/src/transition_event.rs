@@ -16,13 +16,15 @@ pub struct TransitionEvent {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const TransitionEventRustMethods,
+  status: *const RustValueStatus
 }
 impl TransitionEvent {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const TransitionEventRustMethods) -> TransitionEvent {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const TransitionEventRustMethods, status: *const RustValueStatus) -> TransitionEvent {
     TransitionEvent {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {

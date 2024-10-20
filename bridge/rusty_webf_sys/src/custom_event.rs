@@ -15,13 +15,15 @@ pub struct CustomEvent {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const CustomEventRustMethods,
+  status: *const RustValueStatus
 }
 impl CustomEvent {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const CustomEventRustMethods) -> CustomEvent {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const CustomEventRustMethods, status: *const RustValueStatus) -> CustomEvent {
     CustomEvent {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {

@@ -9,7 +9,7 @@ use crate::event::Event;
 use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTarget, EventTargetMethods, EventTargetRustMethods, RustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
-use crate::{OpaquePtr, RustValue};
+use crate::{OpaquePtr, RustValue, RustValueStatus};
 
 enum NodeType {
   ElementNode,
@@ -61,7 +61,7 @@ impl Node {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Node::initialize(returned_result.value, event_target.context(), returned_result.method_pointer));
+    return Ok(Node::initialize(returned_result.value, event_target.context(), returned_result.method_pointer, returned_result.status));
   }
 
   /// The removeChild() method of the Node interface removes a child node from the DOM and returns the removed node.
@@ -74,7 +74,7 @@ impl Node {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Node::initialize(returned_result.value, event_target.context(), returned_result.method_pointer));
+    return Ok(Node::initialize(returned_result.value, event_target.context(), returned_result.method_pointer, returned_result.status));
   }
 }
 
@@ -87,13 +87,14 @@ pub trait NodeMethods: EventTargetMethods {
 
 impl EventTargetMethods for Node {
   /// Initialize the instance from cpp raw pointer.
-  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> Self where Self: Sized {
+  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T, status: *const RustValueStatus) -> Self where Self: Sized {
     unsafe {
       Node {
         event_target: EventTarget::initialize(
           ptr,
           context,
           &(method_pointer as *const NodeRustMethods).as_ref().unwrap().event_target,
+          status,
         ),
         method_pointer: method_pointer as *const NodeRustMethods,
       }

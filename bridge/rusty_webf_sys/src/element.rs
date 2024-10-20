@@ -10,7 +10,7 @@ use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventT
 use crate::exception_state::ExceptionState;
 use crate::executing_context::{ExecutingContext};
 use crate::node::{Node, NodeMethods};
-use crate::OpaquePtr;
+use crate::{OpaquePtr, RustValueStatus};
 
 #[repr(C)]
 pub struct ElementRustMethods {
@@ -65,13 +65,14 @@ impl NodeMethods for Element {
 }
 
 impl EventTargetMethods for Element {
-  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> Self where Self: Sized {
+  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T, status: *const RustValueStatus) -> Self where Self: Sized {
     unsafe {
       Element {
         container_node: ContainerNode::initialize(
           ptr,
           context,
-          &(method_pointer as *const ElementRustMethods).as_ref().unwrap().container_node
+          &(method_pointer as *const ElementRustMethods).as_ref().unwrap().container_node,
+          status
         ),
         method_pointer: method_pointer as *const ElementRustMethods,
       }

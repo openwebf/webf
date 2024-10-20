@@ -62,7 +62,7 @@ impl ExecutingContext {
     let result = unsafe {
       ((*self.method_pointer).get_window)(self.ptr)
     };
-    return Window::initialize(result.value, self, result.method_pointer);
+    return Window::initialize(result.value, self, result.method_pointer, result.status);
   }
 
   /// Obtain the document instance from ExecutingContext.
@@ -70,7 +70,7 @@ impl ExecutingContext {
     let result = unsafe {
       ((*self.method_pointer).get_document)(self.ptr)
     };
-    return Document::initialize::<DocumentRustMethods>(result.value, self, result.method_pointer);
+    return Document::initialize::<DocumentRustMethods>(result.value, self, result.method_pointer, result.status);
   }
 
   pub fn create_exception_state(&self) -> ExceptionState {

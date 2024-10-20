@@ -14,13 +14,15 @@ pub struct IntersectionChangeEvent {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const IntersectionChangeEventRustMethods,
+  status: *const RustValueStatus
 }
 impl IntersectionChangeEvent {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const IntersectionChangeEventRustMethods) -> IntersectionChangeEvent {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const IntersectionChangeEventRustMethods, status: *const RustValueStatus) -> IntersectionChangeEvent {
     IntersectionChangeEvent {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {
