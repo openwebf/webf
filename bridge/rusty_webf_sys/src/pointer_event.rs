@@ -4,20 +4,21 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
+use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct PointerEventRustMethods {
   pub version: c_double,
-  pub height: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub is_primary: extern "C" fn(ptr: *const OpaquePtr) -> bool,
-  pub pointer_id: extern "C" fn(ptr: *const OpaquePtr) -> f64,
+  pub height: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub is_primary: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
+  pub pointer_id: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub pointer_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub pressure: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub tangential_pressure: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub tilt_x: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub tilt_y: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub twist: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub width: extern "C" fn(ptr: *const OpaquePtr) -> f64,
+  pub pressure: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub tangential_pressure: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub tilt_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub tilt_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub twist: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub width: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
 }
 pub struct PointerEvent {
   pub ptr: *const OpaquePtr,
@@ -51,7 +52,7 @@ impl PointerEvent {
     let value = unsafe {
       ((*self.method_pointer).is_primary)(self.ptr)
     };
-    value
+    value != 0
   }
   pub fn pointer_id(&self) -> f64 {
     let value = unsafe {
@@ -64,8 +65,7 @@ impl PointerEvent {
       ((*self.method_pointer).pointer_type)(self.ptr)
     };
     let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    let value = value.to_str().unwrap();
-    value.to_string()
+    value.to_str().unwrap().to_string()
   }
   pub fn pressure(&self) -> f64 {
     let value = unsafe {

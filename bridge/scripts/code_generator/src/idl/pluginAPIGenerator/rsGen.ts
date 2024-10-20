@@ -30,13 +30,13 @@ function generatePublicReturnTypeValue(type: ParameterType) {
       return 'i64';
     }
     case FunctionArgumentType.double: {
-      return 'f64';
+      return 'c_double';
     }
     case FunctionArgumentType.any: {
       return 'RustValue<ScriptValueRefRustMethods>';
     }
     case FunctionArgumentType.boolean: {
-      return 'bool';
+      return 'boolean_t';
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
@@ -94,13 +94,13 @@ function generatePublicParameterType(type: ParameterType): string {
       return 'i64';
     }
     case FunctionArgumentType.double: {
-      return 'f64';
+      return 'c_double';
     }
     case FunctionArgumentType.any: {
       return '*const OpaquePtr';
     }
     case FunctionArgumentType.boolean: {
-      return 'bool';
+      return 'boolean_t';
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
@@ -191,12 +191,18 @@ function generateMethodParametersName(parameters: FunctionArguments[]): string {
     return '';
   }
   return parameters.map(param => {
-    if (isStringType(param.type)) {
-      return `CString::new(${generateValidRustIdentifier(param.name)}).unwrap().as_ptr()`;
-    } else if (isAnyType(param.type)) {
-      return `${param.name}.ptr`;
-    } else {
-      return param.name;
+    switch (param.type.value) {
+      case FunctionArgumentType.dom_string:
+      case FunctionArgumentType.legacy_dom_string: {
+        return `CString::new(${generateValidRustIdentifier(param.name)}).unwrap().as_ptr()`;
+      }
+      case FunctionArgumentType.boolean: {
+        return `${generateValidRustIdentifier(param.name)} as i32`;
+      }
+      case FunctionArgumentType.any:
+        return `${param.name}.ptr`;
+      default:
+        return `${generateValidRustIdentifier(param.name)}`;
     }
   }).join(', ') + ', ';
 }
@@ -237,6 +243,50 @@ function generateValidRustIdentifier(name: string) {
   return rustKeywords.includes(name) ? `${name}_` : name;
 }
 
+function generateMethodReturnStatements(type: ParameterType) {
+  if (isPointerType(type)) {
+    const pointerType = getPointerType(type);
+    return `Ok(${pointerType}::initialize(value.value, self.context, value.method_pointer, value.status))`;
+  }
+  switch (type.value) {
+    case FunctionArgumentType.boolean: {
+      return 'Ok(value != 0)';
+    }
+    case FunctionArgumentType.dom_string:
+    case FunctionArgumentType.legacy_dom_string: {
+      return `let value = unsafe { std::ffi::CStr::from_ptr(value) };
+    Ok(value.to_str().unwrap().to_string())`;
+    }
+    default:
+      return 'Ok(value)';
+  }
+}
+
+function generatePropReturnStatements(type: ParameterType) {
+  if (isPointerType(type)) {
+    const pointerType = getPointerType(type);
+    return `${pointerType}::initialize(value.value, self.context, value.method_pointer, value.status)`;
+  }
+  switch (type.value) {
+    case FunctionArgumentType.boolean: {
+      return 'value != 0';
+    }
+    case FunctionArgumentType.dom_string:
+    case FunctionArgumentType.legacy_dom_string: {
+      return `let value = unsafe { std::ffi::CStr::from_ptr(value) };
+    value.to_str().unwrap().to_string()`;
+    }
+    case FunctionArgumentType.any: {
+      return `ScriptValueRef {
+      ptr: value.value,
+      method_pointer: value.method_pointer
+    }`;
+    }
+    default:
+      return 'value';
+  }
+}
+
 function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
   const baseTemplate = readSourceTemplate('base');
   const contents = blob.objects.map(object => {
@@ -247,49 +297,39 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
       case TemplateKind.Interface: {
         object = object as ClassObject;
 
-        let dependentTypes = new Set<string>();
-
-        object.props.forEach(prop => {
-          if (isPointerType(prop.type)) {
-            dependentTypes.add(getPointerType(prop.type));
-          }
-        });
-
-        object.methods.forEach(method => {
-          method.args.forEach(param => {
-            if (isPointerType(param.type)) {
-              dependentTypes.add(getPointerType(param.type));
-            }
-          });
-          if (isPointerType(method.returnType)) {
-            dependentTypes.add(getPointerType(method.returnType));
-          }
-        });
-
         return _.template(readSourceTemplate('interface'))({
           className: getClassName(blob),
           parentClassName: object.parent,
-          blob: blob,
+          blob,
           object,
           isPointerType,
           generatePublicReturnTypeValue,
           generatePublicParametersType,
           generatePublicParametersTypeWithName,
-          generatePublicParametersName,
           generateMethodReturnType,
-          generateMethodParametersType,
           generateMethodParametersTypeWithName,
           generateMethodParametersName,
+          generateMethodReturnStatements,
+          generatePropReturnStatements,
           generateValidRustIdentifier,
-          isStringType,
-          isAnyType,
           isVoidType,
-          dependentTypes: Array.from(dependentTypes),
           options,
         });
       }
       case TemplateKind.Dictionary: {
-        return '';
+        object = object as ClassObject;
+        const parentObject = ClassObject.globalClassMap[object.parent];
+
+        return _.template(readSourceTemplate('dictionary'))({
+          className: getClassName(blob),
+          parentClassName: object.parent,
+          parentObject,
+          blob,
+          object,
+          generatePublicReturnTypeValue,
+          isStringType,
+          options,
+        });
       }
       case TemplateKind.globalFunction: {
         return '';

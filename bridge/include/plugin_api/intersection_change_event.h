@@ -15,7 +15,7 @@ typedef struct IntersectionChangeEvent IntersectionChangeEvent;
 typedef struct ScriptValueRef ScriptValueRef;
 using PublicIntersectionChangeEventGetIntersectionRatio = double (*)(IntersectionChangeEvent*);
 struct IntersectionChangeEventPublicMethods : public WebFPublicMethods {
-  static double IntersectionRatio(IntersectionChangeEvent* intersectionChangeEvent);
+  static double IntersectionRatio(IntersectionChangeEvent* intersection_change_event);
   double version{1.0};
   PublicIntersectionChangeEventGetIntersectionRatio intersection_change_event_get_intersection_ratio{IntersectionRatio};
 };

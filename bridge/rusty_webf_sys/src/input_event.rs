@@ -4,6 +4,7 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
+use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct InputEventRustMethods {
@@ -38,15 +39,13 @@ impl InputEvent {
       ((*self.method_pointer).input_type)(self.ptr)
     };
     let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    let value = value.to_str().unwrap();
-    value.to_string()
+    value.to_str().unwrap().to_string()
   }
   pub fn data(&self) -> String {
     let value = unsafe {
       ((*self.method_pointer).data)(self.ptr)
     };
     let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    let value = value.to_str().unwrap();
-    value.to_string()
+    value.to_str().unwrap().to_string()
   }
 }

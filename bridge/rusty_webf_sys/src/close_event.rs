@@ -4,13 +4,14 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
+use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct CloseEventRustMethods {
   pub version: c_double,
   pub code: extern "C" fn(ptr: *const OpaquePtr) -> i64,
   pub reason: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub was_clean: extern "C" fn(ptr: *const OpaquePtr) -> bool,
+  pub was_clean: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
 }
 pub struct CloseEvent {
   pub ptr: *const OpaquePtr,
@@ -45,13 +46,12 @@ impl CloseEvent {
       ((*self.method_pointer).reason)(self.ptr)
     };
     let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    let value = value.to_str().unwrap();
-    value.to_string()
+    value.to_str().unwrap().to_string()
   }
   pub fn was_clean(&self) -> bool {
     let value = unsafe {
       ((*self.method_pointer).was_clean)(self.ptr)
     };
-    value
+    value != 0
   }
 }
