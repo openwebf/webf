@@ -19,11 +19,11 @@ using PublicAnimationEventGetElapsedTime = double (*)(AnimationEvent*);
 using PublicAnimationEventGetPseudoElement = const char* (*)(AnimationEvent*);
 using PublicAnimationEventDupPseudoElement = const char* (*)(AnimationEvent*);
 struct AnimationEventPublicMethods : public WebFPublicMethods {
-  static const char* AnimationName(AnimationEvent* animationEvent);
-  static const char* DupAnimationName(AnimationEvent* animationEvent);
-  static double ElapsedTime(AnimationEvent* animationEvent);
-  static const char* PseudoElement(AnimationEvent* animationEvent);
-  static const char* DupPseudoElement(AnimationEvent* animationEvent);
+  static const char* AnimationName(AnimationEvent* animation_event);
+  static const char* DupAnimationName(AnimationEvent* animation_event);
+  static double ElapsedTime(AnimationEvent* animation_event);
+  static const char* PseudoElement(AnimationEvent* animation_event);
+  static const char* DupPseudoElement(AnimationEvent* animation_event);
   double version{1.0};
   PublicAnimationEventGetAnimationName animation_event_get_animation_name{AnimationName};
   PublicAnimationEventDupAnimationName animation_event_dup_animation_name{DupAnimationName};

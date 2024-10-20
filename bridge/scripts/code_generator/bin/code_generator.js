@@ -173,6 +173,24 @@ let unionTypeCollector = new UnionTypeCollector();
 let names_needs_install = new Set();
 
 const pluginApiList = [
+  'dom/events/add_event_listener_options.d.ts',
+  'dom/events/event_listener_options.d.ts',
+  'dom/scroll_options.d.ts',
+  'dom/scroll_to_options.d.ts',
+  'dom/events/event_init.d.ts',
+  'events/animation_event_init.d.ts',
+  'events/close_event_init.d.ts',
+  'events/focus_event_init.d.ts',
+  'events/gesture_event_init.d.ts',
+  'events/hashchange_event_init.d.ts',
+  'events/input_event_init.d.ts',
+  'events/intersection_change_event_init.d.ts',
+  'events/keyboard_event_init.d.ts',
+  'events/mouse_event_init.d.ts',
+  'events/pointer_event_init.d.ts',
+  'events/transition_event_init.d.ts',
+  'input/touch_init.d.ts',
+  'events/ui_event_init.d.ts',
   'dom/events/event.d.ts',
   'dom/events/custom_event.d.ts',
   'events/animation_event.d.ts',
@@ -223,7 +241,10 @@ function genPluginAPICodeFromTypeDefine() {
     let genFilePath = path.join(b.dist, b.filename);
 
     wirteFileIfChanged(headerFilePath + '.h', result.header);
-    wirteFileIfChanged(genFilePath + '.cc', result.source);
+
+    if (result.source) {
+      wirteFileIfChanged(genFilePath + '.cc', result.source);
+    }
   }
 
 }

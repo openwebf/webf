@@ -92,6 +92,14 @@ function generatePublicReturnTypeValue(type: ParameterType, is32Bit: boolean = f
 function generatePublicParameterType(type: ParameterType, is32Bit: boolean = false): string {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
+    // dictionary types
+    if (pointerType.endsWith('Options') || pointerType.endsWith('Init')) {
+      return `WebF${pointerType}*`;
+    }
+    // special case for EventListener
+    else if (pointerType === 'JSEventListener') {
+      return 'WebFEventListenerContext*';
+    }
     return `${pointerType}*`;
   }
   switch (type.value) {
@@ -162,7 +170,9 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
   const baseTemplate = readHeaderTemplate('base');
   const contents = blob.objects.map(object => {
     const templateKind = getTemplateKind(object);
-    if (templateKind === TemplateKind.null) return '';
+    if (templateKind === TemplateKind.null) {
+      return '';
+    }
 
     switch(templateKind) {
       case TemplateKind.Interface: {
@@ -201,7 +211,37 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
         });
       }
       case TemplateKind.Dictionary: {
-        return '';
+        object = object as ClassObject;
+
+        let dependentTypes = new Set<string>();
+
+        object.props.forEach(prop => {
+          if (isPointerType(prop.type)) {
+            dependentTypes.add(getPointerType(prop.type));
+          }
+        });
+
+        const parentObject = ClassObject.globalClassMap[object.parent];
+
+        if (parentObject) {
+          parentObject.props.forEach(prop => {
+            if (isPointerType(prop.type)) {
+              dependentTypes.add(getPointerType(prop.type));
+            }
+          });
+        }
+
+        return _.template(readHeaderTemplate('dictionary'))({
+          className: getClassName(blob),
+          parentClassName: object.parent,
+          parentObject,
+          blob: blob,
+          object,
+          generatePublicReturnTypeValue,
+          isStringType,
+          dependentTypes: Array.from(dependentTypes),
+          options,
+        });
       }
       case TemplateKind.globalFunction: {
         return '';
@@ -221,7 +261,9 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
   const baseTemplate = readSourceTemplate('base');
   const contents = blob.objects.map(object => {
     const templateKind = getTemplateKind(object);
-    if (templateKind === TemplateKind.null) return '';
+    if (templateKind === TemplateKind.null || templateKind === TemplateKind.Dictionary) {
+      return '';
+    }
 
     switch(templateKind) {
       case TemplateKind.Interface: {
@@ -264,14 +306,15 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           options,
         });
       }
-      case TemplateKind.Dictionary: {
-        return '';
-      }
       case TemplateKind.globalFunction: {
         return '';
       }
     }
-  });
+  }).filter(str => str.trim().length > 0);
+
+  if (contents.length === 0) {
+    return '';
+  }
 
   return _.template(baseTemplate)({
     content: contents.join('\n'),

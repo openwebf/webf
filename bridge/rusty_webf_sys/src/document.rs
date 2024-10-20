@@ -2,20 +2,9 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-use std::ffi::{c_char, c_double, CString};
-use std::mem;
-use crate::container_node::{ContainerNode, ContainerNodeMethods, ContainerNodeRustMethods};
-use crate::element::{Element, ElementMethods, ElementRustMethods};
-use crate::document_fragment::{DocumentFragment, DocumentFragmentRustMethods};
-use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTarget, EventTargetMethods, RustMethods};
-use crate::exception_state::ExceptionState;
-use crate::executing_context::ExecutingContext;
-use crate::node::{Node, NodeMethods};
-use crate::{OpaquePtr, RustValue, RustValueStatus};
-use crate::text::{Text, TextNodeRustMethods};
-use crate::comment::{Comment, CommentRustMethods};
-use crate::event::{Event, EventRustMethods};
-use crate::html_element::HTMLElement;
+use std::ffi::*;
+use libc::boolean_t;
+use crate::*;
 
 #[repr(C)]
 pub struct ElementCreationOptions {

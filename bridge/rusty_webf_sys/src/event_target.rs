@@ -2,8 +2,9 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-use std::ffi::{c_double, c_void, CString};
-use libc::{boolean_t, c_char};
+use std::ffi::{c_double, c_void, CString, c_char};
+use libc::{boolean_t};
+use crate::add_event_listener_options::AddEventListenerOptions;
 use crate::element::{Element, ElementRustMethods};
 use crate::event::{Event, EventRustMethods};
 use crate::exception_state::ExceptionState;
@@ -36,13 +37,6 @@ impl Drop for EventCallbackContextData {
   fn drop(&mut self) {
     println!("Drop event callback context data");
   }
-}
-
-#[repr(C)]
-pub struct AddEventListenerOptions {
-  pub passive: boolean_t,
-  pub once: boolean_t,
-  pub capture: boolean_t,
 }
 
 pub trait RustMethods {}

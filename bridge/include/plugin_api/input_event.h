@@ -18,10 +18,10 @@ using PublicInputEventDupInputType = const char* (*)(InputEvent*);
 using PublicInputEventGetData = const char* (*)(InputEvent*);
 using PublicInputEventDupData = const char* (*)(InputEvent*);
 struct InputEventPublicMethods : public WebFPublicMethods {
-  static const char* InputType(InputEvent* inputEvent);
-  static const char* DupInputType(InputEvent* inputEvent);
-  static const char* Data(InputEvent* inputEvent);
-  static const char* DupData(InputEvent* inputEvent);
+  static const char* InputType(InputEvent* input_event);
+  static const char* DupInputType(InputEvent* input_event);
+  static const char* Data(InputEvent* input_event);
+  static const char* DupData(InputEvent* input_event);
   double version{1.0};
   PublicInputEventGetInputType input_event_get_input_type{InputType};
   PublicInputEventDupInputType input_event_dup_input_type{DupInputType};

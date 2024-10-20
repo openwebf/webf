@@ -18,10 +18,10 @@ using PublicHashchangeEventDupNewURL = const char* (*)(HashchangeEvent*);
 using PublicHashchangeEventGetOldURL = const char* (*)(HashchangeEvent*);
 using PublicHashchangeEventDupOldURL = const char* (*)(HashchangeEvent*);
 struct HashchangeEventPublicMethods : public WebFPublicMethods {
-  static const char* NewURL(HashchangeEvent* hashchangeEvent);
-  static const char* DupNewURL(HashchangeEvent* hashchangeEvent);
-  static const char* OldURL(HashchangeEvent* hashchangeEvent);
-  static const char* DupOldURL(HashchangeEvent* hashchangeEvent);
+  static const char* NewURL(HashchangeEvent* hashchange_event);
+  static const char* DupNewURL(HashchangeEvent* hashchange_event);
+  static const char* OldURL(HashchangeEvent* hashchange_event);
+  static const char* DupOldURL(HashchangeEvent* hashchange_event);
   double version{1.0};
   PublicHashchangeEventGetNewURL hashchange_event_get_new_url{NewURL};
   PublicHashchangeEventDupNewURL hashchange_event_dup_new_url{DupNewURL};

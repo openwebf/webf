@@ -4,6 +4,7 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
+use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct HashchangeEventRustMethods {
@@ -38,15 +39,13 @@ impl HashchangeEvent {
       ((*self.method_pointer).new_url)(self.ptr)
     };
     let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    let value = value.to_str().unwrap();
-    value.to_string()
+    value.to_str().unwrap().to_string()
   }
   pub fn old_url(&self) -> String {
     let value = unsafe {
       ((*self.method_pointer).old_url)(self.ptr)
     };
     let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    let value = value.to_str().unwrap();
-    value.to_string()
+    value.to_str().unwrap().to_string()
   }
 }

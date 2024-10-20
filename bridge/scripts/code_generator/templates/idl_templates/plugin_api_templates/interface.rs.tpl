@@ -53,45 +53,19 @@ impl <%= className %> {
       ((*self.method_pointer).<%= propName %>)(self.ptr);
     };
   }
-    <% } else if (isStringType(prop.type)) { %>
-  pub fn <%= propName %>(&self) -> <%= generateMethodReturnType(prop.type) %> {
-    let value = unsafe {
-      ((*self.method_pointer).<%= propName %>)(self.ptr)
-    };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    let value = value.to_str().unwrap();
-    value.to_string()
-  }
-    <% } else if (isPointerType(prop.type)) { %>
-  pub fn <%= propName %>(&self) -> <%= generateMethodReturnType(prop.type) %> {
-    let value = unsafe {
-      ((*self.method_pointer).<%= propName %>)(self.ptr)
-    };
-    <%= generateMethodReturnType(prop.type) %>::initialize(value.value, self.context, value.method_pointer, value.status)
-  }
-    <% } else if (isAnyType(prop.type)) { %>
- pub fn <%= propName %>(&self) -> <%= generateMethodReturnType(prop.type) %> {
-   let value = unsafe {
-     ((*self.method_pointer).<%= propName %>)(self.ptr)
-   };
-   ScriptValueRef {
-     ptr: value.value,
-     method_pointer: value.method_pointer
-   }
- }
     <% } else { %>
   pub fn <%= propName %>(&self) -> <%= generateMethodReturnType(prop.type) %> {
     let value = unsafe {
       ((*self.method_pointer).<%= propName %>)(self.ptr)
     };
-    value
+    <%= generatePropReturnStatements(prop.type) %>
   }
     <% } %>
 
     <% if (!prop.readonly) { %>
   pub fn set_<%= _.snakeCase(prop.name) %>(&self, value: <%= generateMethodReturnType(prop.type) %>, exception_state: &ExceptionState) -> Result<(), String> {
-    let result = unsafe {
-      ((*self.method_pointer).set_<%= _.snakeCase(prop.name) %>)(self.ptr, value, exception_state.ptr)
+    unsafe {
+      ((*self.method_pointer).set_<%= _.snakeCase(prop.name) %>)(self.ptr, <%= generateMethodParametersName([{name: 'value', type: prop.type}]) %>exception_state.ptr)
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -113,28 +87,6 @@ impl <%= className %> {
     }
     Ok(())
   }
-    <% } else if (isStringType(method.returnType)) { %>
-  pub fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<<%= generateMethodReturnType(method.returnType) %>, String> {
-    let value = unsafe {
-      ((*self.method_pointer).<%= methodName %>)(self.ptr, <%= generateMethodParametersName(method.args) %>exception_state.ptr)
-    };
-    if exception_state.has_exception() {
-      return Err(exception_state.stringify(self.context()));
-    }
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    let value = value.to_str().unwrap();
-    Ok(value.to_string())
-  }
-    <% } else if (isPointerType(method.returnType)) { %>
-  pub fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<<%= generateMethodReturnType(method.returnType) %>, String> {
-    let value = unsafe {
-      ((*self.method_pointer).<%= methodName %>)(self.ptr, <%= generateMethodParametersName(method.args) %>exception_state.ptr)
-    };
-    if exception_state.has_exception() {
-      return Err(exception_state.stringify(self.context()));
-    }
-    Ok(<%= generateMethodReturnType(method.returnType) %>::initialize(value.value, self.context, value.method_pointer))
-  }
     <% } else { %>
   pub fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<<%= generateMethodReturnType(method.returnType) %>, String> {
     let value = unsafe {
@@ -143,7 +95,7 @@ impl <%= className %> {
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
     }
-    Ok(value)
+    <%= generateMethodReturnStatements(method.returnType) %>
   }
     <% } %>
   <% }); %>

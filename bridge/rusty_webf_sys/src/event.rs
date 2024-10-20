@@ -4,22 +4,23 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
+use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct EventRustMethods {
   pub version: c_double,
-  pub bubbles: extern "C" fn(ptr: *const OpaquePtr) -> bool,
-  pub cancel_bubble: extern "C" fn(ptr: *const OpaquePtr) -> bool,
-  pub set_cancel_bubble: extern "C" fn(ptr: *const OpaquePtr, value: bool, exception_state: *const OpaquePtr) -> bool,
-  pub cancelable: extern "C" fn(ptr: *const OpaquePtr) -> bool,
+  pub bubbles: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
+  pub cancel_bubble: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
+  pub set_cancel_bubble: extern "C" fn(ptr: *const OpaquePtr, value: boolean_t, exception_state: *const OpaquePtr) -> bool,
+  pub cancelable: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
   pub current_target: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<EventTargetRustMethods>,
-  pub default_prevented: extern "C" fn(ptr: *const OpaquePtr) -> bool,
+  pub default_prevented: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
   pub src_element: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<EventTargetRustMethods>,
   pub target: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<EventTargetRustMethods>,
-  pub is_trusted: extern "C" fn(ptr: *const OpaquePtr) -> bool,
-  pub time_stamp: extern "C" fn(ptr: *const OpaquePtr) -> f64,
+  pub is_trusted: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
+  pub time_stamp: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub type_: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub init_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, bool, bool, exception_state: *const OpaquePtr) -> c_void,
+  pub init_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, boolean_t, boolean_t, exception_state: *const OpaquePtr) -> c_void,
   pub prevent_default: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
   pub stop_immediate_propagation: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
   pub stop_propagation: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
@@ -51,17 +52,17 @@ impl Event {
     let value = unsafe {
       ((*self.method_pointer).bubbles)(self.ptr)
     };
-    value
+    value != 0
   }
   pub fn cancel_bubble(&self) -> bool {
     let value = unsafe {
       ((*self.method_pointer).cancel_bubble)(self.ptr)
     };
-    value
+    value != 0
   }
   pub fn set_cancel_bubble(&self, value: bool, exception_state: &ExceptionState) -> Result<(), String> {
-    let result = unsafe {
-      ((*self.method_pointer).set_cancel_bubble)(self.ptr, value, exception_state.ptr)
+    unsafe {
+      ((*self.method_pointer).set_cancel_bubble)(self.ptr, value as i32, exception_state.ptr)
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -72,7 +73,7 @@ impl Event {
     let value = unsafe {
       ((*self.method_pointer).cancelable)(self.ptr)
     };
-    value
+    value != 0
   }
   pub fn current_target(&self) -> EventTarget {
     let value = unsafe {
@@ -84,7 +85,7 @@ impl Event {
     let value = unsafe {
       ((*self.method_pointer).default_prevented)(self.ptr)
     };
-    value
+    value != 0
   }
   pub fn src_element(&self) -> EventTarget {
     let value = unsafe {
@@ -102,7 +103,7 @@ impl Event {
     let value = unsafe {
       ((*self.method_pointer).is_trusted)(self.ptr)
     };
-    value
+    value != 0
   }
   pub fn time_stamp(&self) -> f64 {
     let value = unsafe {
@@ -115,12 +116,11 @@ impl Event {
       ((*self.method_pointer).type_)(self.ptr)
     };
     let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    let value = value.to_str().unwrap();
-    value.to_string()
+    value.to_str().unwrap().to_string()
   }
   pub fn init_event(&self, type_: &str, bubbles: bool, cancelable: bool, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).init_event)(self.ptr, CString::new(type_).unwrap().as_ptr(), bubbles, cancelable, exception_state.ptr);
+      ((*self.method_pointer).init_event)(self.ptr, CString::new(type_).unwrap().as_ptr(), bubbles as i32, cancelable as i32, exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));

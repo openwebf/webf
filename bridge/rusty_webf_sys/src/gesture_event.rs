@@ -4,18 +4,19 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
+use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct GestureEventRustMethods {
   pub version: c_double,
   pub state: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
   pub direction: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub delta_x: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub delta_y: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub velocity_x: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub velocity_y: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub scale: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub rotation: extern "C" fn(ptr: *const OpaquePtr) -> f64,
+  pub delta_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub delta_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub velocity_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub velocity_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub scale: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub rotation: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
 }
 pub struct GestureEvent {
   pub ptr: *const OpaquePtr,
@@ -44,16 +45,14 @@ impl GestureEvent {
       ((*self.method_pointer).state)(self.ptr)
     };
     let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    let value = value.to_str().unwrap();
-    value.to_string()
+    value.to_str().unwrap().to_string()
   }
   pub fn direction(&self) -> String {
     let value = unsafe {
       ((*self.method_pointer).direction)(self.ptr)
     };
     let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    let value = value.to_str().unwrap();
-    value.to_string()
+    value.to_str().unwrap().to_string()
   }
   pub fn delta_x(&self) -> f64 {
     let value = unsafe {

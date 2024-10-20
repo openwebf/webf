@@ -4,12 +4,13 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
+use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct CustomEventRustMethods {
   pub version: c_double,
   pub detail: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<ScriptValueRefRustMethods>,
-  pub init_custom_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, bool, bool, *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
+  pub init_custom_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, boolean_t, boolean_t, *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
 }
 pub struct CustomEvent {
   pub ptr: *const OpaquePtr,
@@ -33,18 +34,18 @@ impl CustomEvent {
     assert!(!self.context.is_null(), "Context PTR must not be null");
     unsafe { &*self.context }
   }
- pub fn detail(&self) -> ScriptValueRef {
-   let value = unsafe {
-     ((*self.method_pointer).detail)(self.ptr)
-   };
-   ScriptValueRef {
-     ptr: value.value,
-     method_pointer: value.method_pointer
-   }
- }
+  pub fn detail(&self) -> ScriptValueRef {
+    let value = unsafe {
+      ((*self.method_pointer).detail)(self.ptr)
+    };
+    ScriptValueRef {
+      ptr: value.value,
+      method_pointer: value.method_pointer
+    }
+  }
   pub fn init_custom_event(&self, type_: &str, canBubble: bool, cancelable: bool, detail: &ScriptValueRef, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).init_custom_event)(self.ptr, CString::new(type_).unwrap().as_ptr(), canBubble, cancelable, detail.ptr, exception_state.ptr);
+      ((*self.method_pointer).init_custom_event)(self.ptr, CString::new(type_).unwrap().as_ptr(), canBubble as i32, cancelable as i32, detail.ptr, exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));

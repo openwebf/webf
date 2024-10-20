@@ -4,14 +4,15 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
+use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct MouseEventRustMethods {
   pub version: c_double,
-  pub client_x: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub client_y: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub offset_x: extern "C" fn(ptr: *const OpaquePtr) -> f64,
-  pub offset_y: extern "C" fn(ptr: *const OpaquePtr) -> f64,
+  pub client_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub client_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub offset_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub offset_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
 }
 pub struct MouseEvent {
   pub ptr: *const OpaquePtr,
