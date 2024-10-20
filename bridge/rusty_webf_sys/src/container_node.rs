@@ -3,9 +3,8 @@
 */
 
 use std::ffi::c_double;
-use crate::document::{Document, DocumentRustMethods};
 use crate::event::Event;
-use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTargetMethods, EventTargetRustMethods, RustMethods};
+use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventTargetMethods, RustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
 use crate::node::{Node, NodeMethods, NodeRustMethods};

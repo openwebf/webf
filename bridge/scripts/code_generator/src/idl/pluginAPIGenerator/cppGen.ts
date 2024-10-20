@@ -1,12 +1,12 @@
 import fs from 'fs';
 import path from 'path';
-import { IDLBlob } from '../IDLBlob';
-import { getTemplateKind, TemplateKind } from '../generateHeader';
+import {IDLBlob} from '../IDLBlob';
+import {getTemplateKind, TemplateKind} from '../generateHeader';
 import _ from 'lodash';
-import { ClassObject, FunctionArguments, FunctionArgumentType, PropsDeclaration } from '../declaration';
-import { GenerateOptions, generateSupportedOptions } from '../generator';
-import { ParameterType } from '../analyzer';
-import { getPointerType, isPointerType } from '../generateSource';
+import {ClassObject, FunctionArguments, FunctionArgumentType} from '../declaration';
+import {GenerateOptions, generateSupportedOptions} from '../generator';
+import {ParameterType} from '../analyzer';
+import {getPointerType, isPointerType} from '../generateSource';
 
 function readHeaderTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../../../templates/idl_templates/plugin_api_templates/' + name + '.h.tpl'), {encoding: 'utf-8'});
@@ -76,6 +76,9 @@ function generatePublicReturnTypeValue(type: ParameterType, is32Bit: boolean = f
 
       return 'SharedNativeString*';
     }
+    case FunctionArgumentType.any: {
+      return 'WebFValue<ScriptValueRef, ScriptValueRefPublicMethods>';
+    }
     case FunctionArgumentType.void:
       return 'void';
     default:
@@ -103,6 +106,9 @@ function generatePublicParameterType(type: ParameterType, is32Bit: boolean = fal
     }
     case FunctionArgumentType.boolean: {
       return 'bool';
+    }
+    case FunctionArgumentType.any: {
+      return 'ScriptValueRef*';
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
@@ -146,6 +152,10 @@ function generatePublicParametersName(parameters: FunctionArguments[]): string {
     const name = _.snakeCase(param.name);
     return `${isStringType(param.type) ? name + '_atomic' : name}`;
   }).join(', ') + ', ';
+}
+
+export function isAnyType(type: ParameterType): boolean {
+  return type.value === FunctionArgumentType.any;
 }
 
 function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
@@ -249,6 +259,7 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           isPointerType,
           getPointerType,
           isStringType,
+          isAnyType,
           dependentTypes: Array.from(dependentTypes),
           options,
         });

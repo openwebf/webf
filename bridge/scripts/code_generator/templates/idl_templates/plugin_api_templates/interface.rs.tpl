@@ -67,6 +67,16 @@ impl <%= className %> {
     };
     <%= generateMethodReturnType(prop.type) %>::initialize(value.value, self.context, value.method_pointer)
   }
+    <% } else if (isAnyType(prop.type)) { %>
+ pub fn <%= propName %>(&self) -> <%= generateMethodReturnType(prop.type) %> {
+   let value = unsafe {
+     ((*self.method_pointer).<%= propName %>)(self.ptr)
+   };
+   ScriptValueRef {
+     ptr: value.value,
+     method_pointer: value.method_pointer
+   }
+ }
     <% } else { %>
   pub fn <%= propName %>(&self) -> <%= generateMethodReturnType(prop.type) %> {
     let value = unsafe {

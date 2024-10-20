@@ -174,6 +174,7 @@ let names_needs_install = new Set();
 
 const pluginApiList = [
   'dom/events/event.d.ts',
+  'dom/events/custom_event.d.ts',
   'events/animation_event.d.ts',
   'events/close_event.d.ts',
   'events/focus_event.d.ts',
@@ -198,9 +199,7 @@ function genPluginAPICodeFromTypeDefine() {
   //   cwd: source,
   // });
 
-  let typeFiles = pluginApiList;
-
-  let blobs = typeFiles.map(file => {
+  let blobs = pluginApiList.map(file => {
     let filename = 'plugin_api_' + file.split('/').slice(-1)[0].replace('.d.ts', '');
     let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
     return new IDLBlob(path.join(source, file), dist, filename, implement);
@@ -231,13 +230,7 @@ function genPluginAPICodeFromTypeDefine() {
 
 function genRustCodeFromTypeDefine() {
   // Generate code from type defines.
-  // let typeFiles = glob.sync("**/*.d.ts", {
-  //   cwd: source,
-  // });
-
-  let typeFiles = pluginApiList;
-
-  let blobs = typeFiles.map(file => {
+  let blobs = pluginApiList.map(file => {
     let filename = file.split('/').slice(-1)[0].replace('.d.ts', '');
     let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
     return new IDLBlob(path.join(source, file), dist, filename, implement);

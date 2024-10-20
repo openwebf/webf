@@ -1,3 +1,4 @@
+#include "script_value_ref.h"
 <% if (object.parent) { %>
 #include "<%= _.snakeCase(object.parent) %>.h"
 <% } else { %>
@@ -13,6 +14,7 @@ typedef struct <%= dependentType %>PublicMethods <%= dependentType %>PublicMetho
 typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
 typedef struct <%= className %> <%= className %>;
+typedef struct ScriptValueRef ScriptValueRef;
 
 <% _.forEach(object.props, function(prop, index) { %>
 using Public<%= className %>Get<%= _.startCase(prop.name).replace(/ /g, '') %> = <%= generatePublicReturnTypeValue(prop.type, true) %> (*)(<%= className %>*);
