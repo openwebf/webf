@@ -159,6 +159,8 @@ bool EventTarget::dispatchEvent(Event* event, ExceptionState& exception_state) {
   if (!GetExecutingContext())
     return false;
 
+  MemberMutationScope scope{GetExecutingContext()};
+
   event->SetTrusted(false);
 
   // Return whether the event was cancelled or not to JS not that it

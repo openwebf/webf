@@ -16,13 +16,15 @@ pub struct AnimationEvent {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const AnimationEventRustMethods,
+  status: *const RustValueStatus
 }
 impl AnimationEvent {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const AnimationEventRustMethods) -> AnimationEvent {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const AnimationEventRustMethods, status: *const RustValueStatus) -> AnimationEvent {
     AnimationEvent {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {

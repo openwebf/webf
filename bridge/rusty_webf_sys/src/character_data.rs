@@ -8,13 +8,13 @@ use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventT
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
 use crate::node::{Node, NodeRustMethods};
-use crate::OpaquePtr;
+use crate::{OpaquePtr, RustValueStatus};
 use crate::text::{Text, TextNodeRustMethods};
 
 #[repr(C)]
 pub struct CharacterDataRustMethods {
   pub version: c_double,
-  pub node: NodeRustMethods
+  pub node: NodeRustMethods,
 }
 
 impl RustMethods for CharacterDataRustMethods {}
@@ -24,14 +24,13 @@ pub struct CharacterData {
   method_pointer: *const CharacterDataRustMethods,
 }
 
-impl CharacterData {
-}
+impl CharacterData {}
 
 impl EventTargetMethods for CharacterData {
-  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> Self where Self: Sized {
+  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T, status: *const RustValueStatus) -> Self where Self: Sized {
     unsafe {
       CharacterData {
-        node: Node::initialize(ptr, context, &(method_pointer as *const CharacterDataRustMethods).as_ref().unwrap().node),
+        node: Node::initialize(ptr, context, &(method_pointer as *const CharacterDataRustMethods).as_ref().unwrap().node, status),
         method_pointer: method_pointer as *const CharacterDataRustMethods,
       }
     }
@@ -45,7 +44,7 @@ impl EventTargetMethods for CharacterData {
                         event_name: &str,
                         callback: EventListenerCallback,
                         options: &AddEventListenerOptions,
-                        exception_state: &ExceptionState) -> Result<(), String>  {
+                        exception_state: &ExceptionState) -> Result<(), String> {
     self.node.add_event_listener(event_name, callback, options, exception_state)
   }
 

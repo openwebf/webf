@@ -11,7 +11,7 @@ use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventT
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
 use crate::node::{Node, NodeMethods};
-use crate::{OpaquePtr, RustValue};
+use crate::{OpaquePtr, RustValue, RustValueStatus};
 use crate::text::{Text, TextNodeRustMethods};
 use crate::comment::{Comment, CommentRustMethods};
 use crate::event::{Event, EventRustMethods};
@@ -59,7 +59,6 @@ pub struct Document {
 }
 
 impl Document {
-
   /// Behavior as same as `document.createElement()` in JavaScript.
   /// the createElement() method creates the HTML element specified by tagName, or an HTMLUnknownElement if tagName isn't recognized.
   pub fn create_element(&self, name: &str, exception_state: &ExceptionState) -> Result<Element, String> {
@@ -73,7 +72,7 @@ impl Document {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(new_element_value.value, event_target.context(), new_element_value.method_pointer));
+    return Ok(Element::initialize(new_element_value.value, event_target.context(), new_element_value.method_pointer, new_element_value.status));
   }
 
   pub fn create_element_with_element_creation_options(&self, name: &str, options: &mut ElementCreationOptions, exception_state: &ExceptionState) -> Result<Element, String> {
@@ -87,7 +86,7 @@ impl Document {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(new_element_value.value, event_target.context(), new_element_value.method_pointer));
+    return Ok(Element::initialize(new_element_value.value, event_target.context(), new_element_value.method_pointer, new_element_value.status));
   }
 
   pub fn create_element_with_str(&self, name: &str, str_options: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
@@ -110,7 +109,7 @@ impl Document {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(new_element_value.value, event_target.context(), new_element_value.method_pointer));
+    return Ok(Element::initialize(new_element_value.value, event_target.context(), new_element_value.method_pointer, new_element_value.status));
   }
 
   pub fn create_element_ns_with_element_creation_options(&self, uri: &str, name: &str, options: &mut ElementCreationOptions, exception_state: &ExceptionState) -> Result<Element, String> {
@@ -125,7 +124,7 @@ impl Document {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(new_element_value.value, event_target.context(), new_element_value.method_pointer));
+    return Ok(Element::initialize(new_element_value.value, event_target.context(), new_element_value.method_pointer, new_element_value.status));
   }
 
   pub fn create_element_ns_with_str(&self, uri: &str, name: &str, str_options: &CString, exception_state: &ExceptionState) -> Result<Element, String> {
@@ -148,7 +147,7 @@ impl Document {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Text::initialize(new_text_node.value, event_target.context(), new_text_node.method_pointer));
+    return Ok(Text::initialize(new_text_node.value, event_target.context(), new_text_node.method_pointer, new_text_node.status));
   }
 
   /// Behavior as same as `document.createDocumentFragment()` in JavaScript.
@@ -163,7 +162,7 @@ impl Document {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(DocumentFragment::initialize(new_document_fragment.value, event_target.context(), new_document_fragment.method_pointer));
+    return Ok(DocumentFragment::initialize(new_document_fragment.value, event_target.context(), new_document_fragment.method_pointer, new_document_fragment.status));
   }
 
   /// Behavior as same as `document.createComment()` in JavaScript.
@@ -179,7 +178,7 @@ impl Document {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Comment::initialize(new_comment.value, event_target.context(), new_comment.method_pointer));
+    return Ok(Comment::initialize(new_comment.value, event_target.context(), new_comment.method_pointer, new_comment.status));
   }
 
   /// Behavior as same as `document.createEvent()` in JavaScript.
@@ -195,7 +194,7 @@ impl Document {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Event::initialize(new_event.value, event_target.context(), new_event.method_pointer));
+    return Ok(Event::initialize(new_event.value, event_target.context(), new_event.method_pointer, new_event.status));
   }
 
   /// Behavior as same as `document.querySelector()` in JavaScript.
@@ -211,7 +210,7 @@ impl Document {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(element_value.value, event_target.context(), element_value.method_pointer));
+    return Ok(Element::initialize(element_value.value, event_target.context(), element_value.method_pointer, element_value.status));
   }
 
   /// Behavior as same as `document.getElementById()` in JavaScript.
@@ -227,7 +226,7 @@ impl Document {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(element_value.value, event_target.context(), element_value.method_pointer));
+    return Ok(Element::initialize(element_value.value, event_target.context(), element_value.method_pointer, element_value.status));
   }
 
   /// Behavior as same as `document.elementFromPoint()` in JavaScript.
@@ -242,7 +241,7 @@ impl Document {
       return Err(exception_state.stringify(event_target.context()));
     }
 
-    return Ok(Element::initialize(element_value.value, event_target.context(), element_value.method_pointer));
+    return Ok(Element::initialize(element_value.value, event_target.context(), element_value.method_pointer, element_value.status));
   }
 
   /// Document.documentElement returns the Element that is the root element of the document
@@ -253,7 +252,7 @@ impl Document {
       ((*self.method_pointer).document_element)(event_target.ptr)
     };
 
-    return HTMLElement::initialize(html_element_value.value, event_target.context(), html_element_value.method_pointer);
+    return HTMLElement::initialize(html_element_value.value, event_target.context(), html_element_value.method_pointer, html_element_value.status);
   }
 
   /// The Document.head property represents the <head> or of the current document,
@@ -263,7 +262,7 @@ impl Document {
     let head_element_value = unsafe {
       ((*self.method_pointer).head)(event_target.ptr)
     };
-    return HTMLElement::initialize(head_element_value.value, event_target.context(), head_element_value.method_pointer);
+    return HTMLElement::initialize(head_element_value.value, event_target.context(), head_element_value.method_pointer, head_element_value.status);
   }
 
 
@@ -274,11 +273,11 @@ impl Document {
     let body_element_value = unsafe {
       ((*self.method_pointer).body)(event_target.ptr)
     };
-    return HTMLElement::initialize(body_element_value.value, event_target.context(), body_element_value.method_pointer);
+    return HTMLElement::initialize(body_element_value.value, event_target.context(), body_element_value.method_pointer, body_element_value.status);
   }
 }
 
-trait DocumentMethods : ContainerNodeMethods {}
+trait DocumentMethods: ContainerNodeMethods {}
 
 impl NodeMethods for Document {
   fn append_child(&self, new_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
@@ -296,13 +295,14 @@ impl NodeMethods for Document {
 
 impl EventTargetMethods for Document {
   /// Initialize the document instance from cpp raw pointer.
-  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> Self where Self: Sized {
+  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T, status: *const RustValueStatus) -> Self where Self: Sized {
     unsafe {
       Document {
         container_node: ContainerNode::initialize(
           ptr,
           context,
-          &(method_pointer as *const DocumentRustMethods).as_ref().unwrap().container_node
+          &(method_pointer as *const DocumentRustMethods).as_ref().unwrap().container_node,
+          status,
         ),
         method_pointer: method_pointer as *const DocumentRustMethods,
       }

@@ -3,15 +3,15 @@
  */
 
 #include "plugin_api/document.h"
-#include "plugin_api/exception_state.h"
-#include "core/dom/document.h"
-#include "core/dom/text.h"
-#include "core/dom/document_fragment.h"
 #include "core/dom/comment.h"
+#include "core/dom/document.h"
+#include "core/dom/document_fragment.h"
 #include "core/dom/events/event.h"
-#include "core/html/html_html_element.h"
-#include "core/html/html_head_element.h"
+#include "core/dom/text.h"
 #include "core/html/html_body_element.h"
+#include "core/html/html_head_element.h"
+#include "core/html/html_html_element.h"
+#include "plugin_api/exception_state.h"
 
 namespace webf {
 
@@ -24,12 +24,12 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElement(
   webf::AtomicString tag_name_atomic = webf::AtomicString(document->ctx(), tag_name);
   Element* new_element = document->createElement(tag_name_atomic, shared_exception_state->exception_state);
   if (shared_exception_state->exception_state.HasException()) {
-    return {.value = nullptr, .method_pointer = nullptr};
+    return WebFValue<Element, ElementPublicMethods>::Null();
   }
 
   // Hold the reference until rust side notify this element was released.
-  new_element->KeepAlive();
-  return {.value = new_element, .method_pointer = new_element->elementPublicMethods()};
+  WebFValueStatus* status_block = new_element->KeepAlive();
+  return WebFValue<Element, ElementPublicMethods>(new_element, new_element->elementPublicMethods(), status_block);
 }
 
 WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElementWithElementCreationOptions(
@@ -45,18 +45,15 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElementWit
   const char* value_cstr = value.c_str();
   webf::ScriptValue options_value = webf::ScriptValue::CreateJsonObject(document->ctx(), value_cstr, value.length());
 
-  Element* new_element = document->createElement(
-    tag_name_atomic,
-    options_value,
-    shared_exception_state->exception_state
-  );
+  Element* new_element =
+      document->createElement(tag_name_atomic, options_value, shared_exception_state->exception_state);
   if (shared_exception_state->exception_state.HasException()) {
-    return {.value = nullptr, .method_pointer = nullptr};
+    return WebFValue<Element, ElementPublicMethods>::Null();
   }
 
   // Hold the reference until rust side notify this element was released.
-  new_element->KeepAlive();
-  return {.value = new_element, .method_pointer = new_element->elementPublicMethods()};
+  WebFValueStatus* status_block = new_element->KeepAlive();
+  return WebFValue<Element, ElementPublicMethods>(new_element, new_element->elementPublicMethods(), status_block);
 }
 
 WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElementNS(
@@ -68,17 +65,18 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElementNS(
   MemberMutationScope scope{document->GetExecutingContext()};
   webf::AtomicString uri_atomic = webf::AtomicString(document->ctx(), uri);
   webf::AtomicString tag_name_atomic = webf::AtomicString(document->ctx(), tag_name);
-  Element* new_element = document->createElementNS(uri_atomic, tag_name_atomic, shared_exception_state->exception_state);
+  Element* new_element =
+      document->createElementNS(uri_atomic, tag_name_atomic, shared_exception_state->exception_state);
   if (shared_exception_state->exception_state.HasException()) {
-    return {.value = nullptr, .method_pointer = nullptr};
+    return WebFValue<Element, ElementPublicMethods>::Null();
   }
 
   // Hold the reference until rust side notify this element was released.
-  new_element->KeepAlive();
-  return {.value = new_element, .method_pointer = new_element->elementPublicMethods()};
+  WebFValueStatus* status_block = new_element->KeepAlive();
+  return WebFValue<Element, ElementPublicMethods>(new_element, new_element->elementPublicMethods(), status_block);
 }
 
-WebFValue <Element, ElementPublicMethods> DocumentPublicMethods::CreateElementNSWithElementCreationOptions(
+WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElementNSWithElementCreationOptions(
     webf::Document* ptr,
     const char* uri,
     const char* tag_name,
@@ -93,19 +91,15 @@ WebFValue <Element, ElementPublicMethods> DocumentPublicMethods::CreateElementNS
   const char* value_cstr = value.c_str();
   webf::ScriptValue options_value = webf::ScriptValue::CreateJsonObject(document->ctx(), value_cstr, value.length());
 
-  Element* new_element = document->createElementNS(
-    uri_atomic,
-    tag_name_atomic,
-    options_value,
-    shared_exception_state->exception_state
-  );
+  Element* new_element =
+      document->createElementNS(uri_atomic, tag_name_atomic, options_value, shared_exception_state->exception_state);
   if (shared_exception_state->exception_state.HasException()) {
-    return {.value = nullptr, .method_pointer = nullptr};
+    return WebFValue<Element, ElementPublicMethods>::Null();
   }
 
   // Hold the reference until rust side notify this element was released.
-  new_element->KeepAlive();
-  return {.value = new_element, .method_pointer = new_element->elementPublicMethods()};
+  WebFValueStatus* status_block = new_element->KeepAlive();
+  return WebFValue<Element, ElementPublicMethods>(new_element, new_element->elementPublicMethods(), status_block);
 }
 
 WebFValue<Text, TextNodePublicMethods> DocumentPublicMethods::CreateTextNode(
@@ -118,12 +112,12 @@ WebFValue<Text, TextNodePublicMethods> DocumentPublicMethods::CreateTextNode(
   Text* text_node = document->createTextNode(data_atomic, shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
-    return {.value = nullptr, .method_pointer = nullptr};
+    return WebFValue<Text, TextNodePublicMethods>::Null();
   }
 
-  text_node->KeepAlive();
+  WebFValueStatus* status_block = text_node->KeepAlive();
 
-  return {.value = text_node, .method_pointer = text_node->textNodePublicMethods()};
+  return WebFValue<Text, TextNodePublicMethods>(text_node, text_node->textNodePublicMethods(), status_block);
 }
 
 WebFValue<DocumentFragment, DocumentFragmentPublicMethods> DocumentPublicMethods::CreateDocumentFragment(
@@ -134,13 +128,13 @@ WebFValue<DocumentFragment, DocumentFragmentPublicMethods> DocumentPublicMethods
   DocumentFragment* document_fragment = document->createDocumentFragment(shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
-    return {.value = nullptr, .method_pointer = nullptr};
+    return WebFValue<DocumentFragment, DocumentFragmentPublicMethods>::Null();
   }
 
-  document_fragment->KeepAlive();
+  WebFValueStatus* status_block = document_fragment->KeepAlive();
 
-  return {.value = document_fragment,
-          .method_pointer = document_fragment->documentFragmentPublicMethods()};
+  return WebFValue<DocumentFragment, DocumentFragmentPublicMethods>(
+      document_fragment, document_fragment->documentFragmentPublicMethods(), status_block);
 }
 
 WebFValue<Comment, CommentPublicMethods> DocumentPublicMethods::CreateComment(
@@ -153,12 +147,12 @@ WebFValue<Comment, CommentPublicMethods> DocumentPublicMethods::CreateComment(
   Comment* comment = document->createComment(data_atomic, shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
-    return {.value = nullptr, .method_pointer = nullptr};
+    return WebFValue<Comment, CommentPublicMethods>::Null();
   }
 
-  comment->KeepAlive();
+  WebFValueStatus* status_block = comment->KeepAlive();
 
-  return {.value = comment, .method_pointer = comment->commentPublicMethods()};
+  return WebFValue<Comment, CommentPublicMethods>(comment, comment->commentPublicMethods(), status_block);
 }
 
 WebFValue<Event, EventPublicMethods> DocumentPublicMethods::CreateEvent(
@@ -171,12 +165,12 @@ WebFValue<Event, EventPublicMethods> DocumentPublicMethods::CreateEvent(
   Event* event = document->createEvent(type_atomic, shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
-    return {.value = nullptr, .method_pointer = nullptr};
+    return WebFValue<Event, EventPublicMethods>::Null();
   }
 
-  event->KeepAlive();
+  WebFValueStatus* status_block = event->KeepAlive();
 
-  return {.value = event, .method_pointer = event->eventPublicMethods()};
+  return WebFValue<Event, EventPublicMethods>(event, event->eventPublicMethods(), status_block);
 }
 
 WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::QuerySelector(
@@ -189,12 +183,12 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::QuerySelector(
   Element* element = document->querySelector(selectors_atomic, shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
-    return {.value = nullptr, .method_pointer = nullptr};
+    return WebFValue<Element, ElementPublicMethods>::Null();
   }
 
-  element->KeepAlive();
+  WebFValueStatus* status_block = element->KeepAlive();
 
-  return {.value = element, .method_pointer = element->elementPublicMethods()};
+  return WebFValue<Element, ElementPublicMethods>(element, element->elementPublicMethods(), status_block);
 }
 
 WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::GetElementById(
@@ -207,12 +201,12 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::GetElementById(
   Element* element = document->getElementById(id_atomic, shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
-    return {.value = nullptr, .method_pointer = nullptr};
+    return WebFValue<Element, ElementPublicMethods>::Null();
   }
 
-  element->KeepAlive();
+  WebFValueStatus* status_block = element->KeepAlive();
 
-  return {.value = element, .method_pointer = element->elementPublicMethods()};
+  return WebFValue<Element, ElementPublicMethods>(element, element->elementPublicMethods(), status_block);
 }
 
 WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::ElementFromPoint(
@@ -225,33 +219,31 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::ElementFromPoint
   Element* element = document->elementFromPoint(x, y, shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
-    return {.value = nullptr, .method_pointer = nullptr};
+    return WebFValue<Element, ElementPublicMethods>::Null();
   }
 
-  element->KeepAlive();
+  WebFValueStatus* status_block = element->KeepAlive();
 
-  return {.value = element, .method_pointer = element->elementPublicMethods()};
+  return WebFValue<Element, ElementPublicMethods>(element, element->elementPublicMethods(), status_block);
 }
 
 WebFValue<Element, HTMLElementPublicMethods> DocumentPublicMethods::DocumentElement(webf::Document* document) {
   auto* document_element = document->documentElement();
-  document_element->KeepAlive();
-  return {.value = document_element,
-          .method_pointer = document_element->htmlElementPublicMethods()};
+  WebFValueStatus* status_block = document_element->KeepAlive();
+  return WebFValue<Element, HTMLElementPublicMethods>{document_element, document_element->htmlElementPublicMethods(),
+                                                      status_block};
 }
 
-WebFValue<Element, HTMLElementPublicMethods> DocumentPublicMethods::Head(webf::Document *document) {
+WebFValue<Element, HTMLElementPublicMethods> DocumentPublicMethods::Head(webf::Document* document) {
   auto* head = document->head();
-  head->KeepAlive();
-  return {.value = head,
-          .method_pointer = head->htmlElementPublicMethods()};
+  WebFValueStatus* status_block = head->KeepAlive();
+  return WebFValue<Element, HTMLElementPublicMethods>{head, head->htmlElementPublicMethods(), status_block};
 }
 
-WebFValue<Element, HTMLElementPublicMethods> DocumentPublicMethods::Body(webf::Document *document) {
+WebFValue<Element, HTMLElementPublicMethods> DocumentPublicMethods::Body(webf::Document* document) {
   auto* body = document->body();
-  body->KeepAlive();
-  return {.value = body,
-          .method_pointer = body->htmlElementPublicMethods()};
+  WebFValueStatus* status_block = body->KeepAlive();
+  return WebFValue<Element, HTMLElementPublicMethods>{body, body->htmlElementPublicMethods(), status_block};
 }
 
 }  // namespace webf

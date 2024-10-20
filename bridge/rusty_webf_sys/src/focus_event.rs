@@ -14,13 +14,15 @@ pub struct FocusEvent {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const FocusEventRustMethods,
+  status: *const RustValueStatus
 }
 impl FocusEvent {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const FocusEventRustMethods) -> FocusEvent {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const FocusEventRustMethods, status: *const RustValueStatus) -> FocusEvent {
     FocusEvent {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {
@@ -34,6 +36,6 @@ impl FocusEvent {
     let value = unsafe {
       ((*self.method_pointer).related_target)(self.ptr)
     };
-    EventTarget::initialize(value.value, self.context, value.method_pointer)
+    EventTarget::initialize(value.value, self.context, value.method_pointer, value.status)
   }
 }

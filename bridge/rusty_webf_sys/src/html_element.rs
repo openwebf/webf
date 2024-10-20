@@ -11,7 +11,7 @@ use crate::event_target::{AddEventListenerOptions, EventListenerCallback, EventT
 use crate::exception_state::ExceptionState;
 use crate::executing_context::ExecutingContext;
 use crate::node::{Node, NodeMethods};
-use crate::OpaquePtr;
+use crate::{OpaquePtr, RustValueStatus};
 
 #[repr(C)]
 pub struct HTMLElementRustMethods {
@@ -47,13 +47,14 @@ impl NodeMethods for HTMLElement {
 }
 
 impl EventTargetMethods for HTMLElement {
-  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> Self where Self: Sized {
+  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T, status: *const RustValueStatus) -> Self where Self: Sized {
     unsafe {
       HTMLElement {
         element: Element::initialize(
           ptr,
           context,
           &(method_pointer as *const HTMLElementRustMethods).as_ref().unwrap().element,
+          status
         ),
         method_pointer: method_pointer as *const HTMLElementRustMethods,
       }

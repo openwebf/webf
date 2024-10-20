@@ -286,6 +286,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/api/text.cc
     core/api/comment.cc
     core/api/character_data.cc
+    core/api/script_value_ref.cc
     core/dart_isolate_context.cc
     core/dart_context_data.cc
     core/executing_context_data.cc
@@ -395,6 +396,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_textarea_element.cc
 
     core/native/native_loader.cc
+    core/native/script_value_ref.cc
 
     # SVG files
     core/svg/svg_element.cc
@@ -586,6 +588,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/plugin_api_pointer_event.cc
     out/plugin_api_transition_event.cc
     out/plugin_api_ui_event.cc
+    out/plugin_api_custom_event.cc
     )
 
 
