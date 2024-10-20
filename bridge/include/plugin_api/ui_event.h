@@ -19,9 +19,9 @@ using PublicUIEventGetDetail = double (*)(UIEvent*);
 using PublicUIEventGetView = WebFValue<Window, WindowPublicMethods> (*)(UIEvent*);
 using PublicUIEventGetWhich = double (*)(UIEvent*);
 struct UIEventPublicMethods : public WebFPublicMethods {
-  static double Detail(UIEvent* uiEvent);
-  static WebFValue<Window, WindowPublicMethods> View(UIEvent* uiEvent);
-  static double Which(UIEvent* uiEvent);
+  static double Detail(UIEvent* ui_event);
+  static WebFValue<Window, WindowPublicMethods> View(UIEvent* ui_event);
+  static double Which(UIEvent* ui_event);
   double version{1.0};
   PublicUIEventGetDetail ui_event_get_detail{Detail};
   PublicUIEventGetView ui_event_get_view{View};

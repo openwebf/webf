@@ -7,19 +7,9 @@ namespace webf {
   WebFValueStatus* status_block = result->KeepAlive();
   return <%= generatePublicReturnTypeValue(prop.type, true) %>(result, result-><%= _.camelCase(getPointerType(prop.type)) %>PublicMethods(), status_block);
   <% } else if (isAnyType(prop.type)) { %>
-
-   return WebFValue<ScriptValueRef, ScriptValueRefPublicMethods> {
+  return WebFValue<ScriptValueRef, ScriptValueRefPublicMethods>{
       new ScriptValueRef{<%= _.snakeCase(className) %>->GetExecutingContext(), <%= _.snakeCase(className) %>-><%= prop.name %>()}, ScriptValueRef::publicMethods(),
-          nullptr
-    };
-
-  return {
-        .value = new ScriptValueRef {
-          <%= _.snakeCase(className) %>->GetExecutingContext(),
-          <%= _.snakeCase(className) %>-><%= prop.name %>()
-        },
-        .method_pointer = ScriptValueRef::publicMethods(),
-    };
+      nullptr};
   <% } else if (isStringType(prop.type)) { %>
   return <%= _.snakeCase(className) %>-><%= prop.name %>().ToStringView().Characters8();
   <% } else { %>

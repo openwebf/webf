@@ -3,6 +3,7 @@
  */
 
 #include "plugin_api/event_target.h"
+#include "plugin_api/add_event_listener_options.h"
 #include "bindings/qjs/atomic_string.h"
 #include "core/dom/comment.h"
 #include "core/dom/container_node.h"

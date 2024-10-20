@@ -4,13 +4,14 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
+use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct UIEventRustMethods {
   pub version: c_double,
-  pub detail: extern "C" fn(ptr: *const OpaquePtr) -> f64,
+  pub detail: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub view: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<WindowRustMethods>,
-  pub which: extern "C" fn(ptr: *const OpaquePtr) -> f64,
+  pub which: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
 }
 pub struct UIEvent {
   pub ptr: *const OpaquePtr,
