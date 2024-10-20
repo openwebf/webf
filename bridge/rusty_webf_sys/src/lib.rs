@@ -29,6 +29,8 @@ pub mod text;
 pub mod comment;
 pub mod character_data;
 pub mod html_element;
+pub mod script_value_ref;
+mod custom_event;
 
 pub use executing_context::*;
 pub use document::*;
@@ -55,6 +57,7 @@ pub use text::*;
 pub use comment::*;
 pub use character_data::*;
 pub use html_element::*;
+pub use script_value_ref::*;
 
 #[repr(C)]
 pub struct OpaquePtr;

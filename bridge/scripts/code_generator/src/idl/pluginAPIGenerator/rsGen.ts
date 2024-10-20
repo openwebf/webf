@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import _ from 'lodash';
-import { getTemplateKind, TemplateKind } from '../generateHeader';
-import { GenerateOptions, generateSupportedOptions } from '../generator';
-import { IDLBlob } from '../IDLBlob';
-import { ClassObject, FunctionArguments, FunctionArgumentType } from '../declaration';
-import { getPointerType, isPointerType } from '../generateSource';
-import { ParameterType } from '../analyzer';
-import { isStringType } from './cppGen';
+import {getTemplateKind, TemplateKind} from '../generateHeader';
+import {GenerateOptions, generateSupportedOptions} from '../generator';
+import {IDLBlob} from '../IDLBlob';
+import {ClassObject, FunctionArguments, FunctionArgumentType} from '../declaration';
+import {getPointerType, isPointerType} from '../generateSource';
+import {ParameterType} from '../analyzer';
+import {isAnyType, isStringType} from './cppGen';
 
 function readSourceTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../../../templates/idl_templates/plugin_api_templates/' + name + '.rs.tpl'), {encoding: 'utf-8'});
@@ -31,6 +31,9 @@ function generatePublicReturnTypeValue(type: ParameterType) {
     }
     case FunctionArgumentType.double: {
       return 'f64';
+    }
+    case FunctionArgumentType.any: {
+      return 'RustValue<ScriptValueRefRustMethods>';
     }
     case FunctionArgumentType.boolean: {
       return 'bool';
@@ -57,6 +60,9 @@ function generateMethodReturnType(type: ParameterType) {
     }
     case FunctionArgumentType.int32: {
       return 'i64';
+    }
+    case FunctionArgumentType.any: {
+      return 'ScriptValueRef';
     }
     case FunctionArgumentType.double: {
       return 'f64';
@@ -89,6 +95,9 @@ function generatePublicParameterType(type: ParameterType): string {
     }
     case FunctionArgumentType.double: {
       return 'f64';
+    }
+    case FunctionArgumentType.any: {
+      return '*const OpaquePtr';
     }
     case FunctionArgumentType.boolean: {
       return 'bool';
@@ -144,6 +153,9 @@ function generateMethodParameterType(type: ParameterType): string {
     case FunctionArgumentType.double: {
       return 'f64';
     }
+    case FunctionArgumentType.any: {
+      return '&ScriptValueRef';
+    }
     case FunctionArgumentType.boolean: {
       return 'bool';
     }
@@ -179,10 +191,13 @@ function generateMethodParametersName(parameters: FunctionArguments[]): string {
     return '';
   }
   return parameters.map(param => {
-    const name = isStringType(param.type)
-      ? `CString::new(${generateValidRustIdentifier(param.name)}).unwrap().as_ptr()`
-      : param.name;
-    return `${name}`;
+    if (isStringType(param.type)) {
+      return `CString::new(${generateValidRustIdentifier(param.name)}).unwrap().as_ptr()`;
+    } else if (isAnyType(param.type)) {
+      return `${param.name}.ptr`;
+    } else {
+      return param.name;
+    }
   }).join(', ') + ', ';
 }
 
@@ -267,6 +282,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
           generateMethodParametersName,
           generateValidRustIdentifier,
           isStringType,
+          isAnyType,
           isVoidType,
           dependentTypes: Array.from(dependentTypes),
           options,

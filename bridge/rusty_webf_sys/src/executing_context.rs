@@ -10,6 +10,7 @@ use crate::document::{Document, DocumentRustMethods};
 use crate::event_target::EventTargetMethods;
 use crate::exception_state::{ExceptionState, ExceptionStateRustMethods};
 use crate::{OpaquePtr, RustValue};
+use crate::custom_event::{CustomEvent, CustomEventRustMethods};
 use crate::window::{Window, WindowRustMethods};
 
 #[repr(C)]
@@ -18,6 +19,7 @@ pub struct ExecutingContextRustMethods {
   pub get_document: extern "C" fn(*const OpaquePtr) -> RustValue<DocumentRustMethods>,
   pub get_window: extern "C" fn(*const OpaquePtr) -> RustValue<WindowRustMethods>,
   pub create_exception_state: extern "C" fn() -> RustValue<ExceptionStateRustMethods>,
+  pub create_custom_event: extern "C" fn() -> RustValue<CustomEventRustMethods>,
 }
 
 /// An environment contains all the necessary running states of a web page.
