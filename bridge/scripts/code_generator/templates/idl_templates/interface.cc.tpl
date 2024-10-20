@@ -200,6 +200,10 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= className %>::<%= prop.name %>);
   context->dartIsolateContext()->profiler()->FinishTrackSteps();
   return result;
+  <% } else if (prop.typeMode && prop.typeMode.staticMethod) { %>
+  auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= className %>::<%= prop.name %>());
+  context->dartIsolateContext()->profiler()->FinishTrackSteps();
+  return result;
   <% } else { %>
   auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= blob.filename %>-><%= prop.name %>());
   context->dartIsolateContext()->profiler()->FinishTrackSteps();

@@ -18,6 +18,12 @@ ScriptWrappable::ScriptWrappable(JSContext* ctx)
       context_(ExecutingContext::From(ctx)),
       context_id_(context_->contextId()) {}
 
+ScriptWrappable::~ScriptWrappable() {
+  if (status_block_ != nullptr) {
+    status_block_->disposed = true;
+  }
+}
+
 JSValue ScriptWrappable::ToQuickJS() const {
   return JS_DupValue(ctx_, jsObject_);
 }
@@ -295,12 +301,14 @@ void ScriptWrappable::InitializeQuickJSObject() {
   JS_SetPrototype(ctx_, jsObject_, prototype);
 }
 
-void ScriptWrappable::KeepAlive() {
+WebFValueStatus* ScriptWrappable::KeepAlive() {
   if (alive_count == 0) {
     context_->RegisterActiveScriptWrappers(this);
     JS_DupValue(ctx_, jsObject_);
+    status_block_ = new WebFValueStatus();
   }
   alive_count++;
+  return status_block_;
 }
 
 void ScriptWrappable::ReleaseAlive() {
@@ -308,6 +316,8 @@ void ScriptWrappable::ReleaseAlive() {
   if (alive_count == 0) {
     context_->InActiveScriptWrappers(this);
     JS_FreeValue(ctx_, jsObject_);
+    delete status_block_;
+    status_block_ = nullptr;
   }
 }
 

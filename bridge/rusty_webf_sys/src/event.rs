@@ -29,13 +29,15 @@ pub struct Event {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const EventRustMethods,
+  status: *const RustValueStatus
 }
 impl Event {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const EventRustMethods) -> Event {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const EventRustMethods, status: *const RustValueStatus) -> Event {
     Event {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {
@@ -76,7 +78,7 @@ impl Event {
     let value = unsafe {
       ((*self.method_pointer).current_target)(self.ptr)
     };
-    EventTarget::initialize(value.value, self.context, value.method_pointer)
+    EventTarget::initialize(value.value, self.context, value.method_pointer, value.status)
   }
   pub fn default_prevented(&self) -> bool {
     let value = unsafe {
@@ -88,13 +90,13 @@ impl Event {
     let value = unsafe {
       ((*self.method_pointer).src_element)(self.ptr)
     };
-    EventTarget::initialize(value.value, self.context, value.method_pointer)
+    EventTarget::initialize(value.value, self.context, value.method_pointer, value.status)
   }
   pub fn target(&self) -> EventTarget {
     let value = unsafe {
       ((*self.method_pointer).target)(self.ptr)
     };
-    EventTarget::initialize(value.value, self.context, value.method_pointer)
+    EventTarget::initialize(value.value, self.context, value.method_pointer, value.status)
   }
   pub fn is_trusted(&self) -> bool {
     let value = unsafe {

@@ -16,13 +16,15 @@ pub struct UIEvent {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const UIEventRustMethods,
+  status: *const RustValueStatus
 }
 impl UIEvent {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const UIEventRustMethods) -> UIEvent {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const UIEventRustMethods, status: *const RustValueStatus) -> UIEvent {
     UIEvent {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {
@@ -42,7 +44,7 @@ impl UIEvent {
     let value = unsafe {
       ((*self.method_pointer).view)(self.ptr)
     };
-    Window::initialize(value.value, self.context, value.method_pointer)
+    Window::initialize(value.value, self.context, value.method_pointer, value.status)
   }
   pub fn which(&self) -> f64 {
     let value = unsafe {

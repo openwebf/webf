@@ -17,12 +17,11 @@ WebFValue<Node, NodePublicMethods> NodePublicMethods::AppendChild(Node* self_nod
   MemberMutationScope member_mutation_scope{self_node->GetExecutingContext()};
   Node* returned_node = self_node->appendChild(new_node, shared_exception_state->exception_state);
   if (shared_exception_state->exception_state.HasException()) {
-    return {.value = nullptr, .method_pointer = nullptr};
+    return WebFValue<Node, NodePublicMethods>::Null();
   }
 
-  returned_node->KeepAlive();
-
-  return {.value = returned_node, .method_pointer = returned_node->nodePublicMethods()};
+  WebFValueStatus* status_block = returned_node->KeepAlive();
+  return WebFValue<Node, NodePublicMethods>(returned_node, returned_node->nodePublicMethods(), status_block);
 }
 
 WebFValue<Node, NodePublicMethods> NodePublicMethods::RemoveChild(webf::Node* self_node,
@@ -31,12 +30,11 @@ WebFValue<Node, NodePublicMethods> NodePublicMethods::RemoveChild(webf::Node* se
   MemberMutationScope member_mutation_scope{self_node->GetExecutingContext()};
   Node* returned_node = target_node->removeChild(target_node, shared_exception_state->exception_state);
   if (shared_exception_state->exception_state.HasException()) {
-    return {.value = nullptr, .method_pointer = nullptr};
+    return WebFValue<Node, NodePublicMethods>::Null();
   }
 
-  returned_node->KeepAlive();
-
-  return {.value = returned_node, .method_pointer = returned_node->nodePublicMethods()};
+  WebFValueStatus* status_block = returned_node->KeepAlive();
+  return WebFValue<Node, NodePublicMethods>(returned_node, returned_node->nodePublicMethods(), status_block);
 }
 
 }  // namespace webf

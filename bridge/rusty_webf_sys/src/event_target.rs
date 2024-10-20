@@ -8,7 +8,7 @@ use crate::element::{Element, ElementRustMethods};
 use crate::event::{Event, EventRustMethods};
 use crate::exception_state::ExceptionState;
 use crate::executing_context::{ExecutingContext, ExecutingContextRustMethods};
-use crate::{executing_context, OpaquePtr, RustValue};
+use crate::{executing_context, OpaquePtr, RustValue, RustValueStatus};
 use crate::container_node::{ContainerNode, ContainerNodeRustMethods};
 use crate::document::{Document, DocumentRustMethods};
 use crate::html_element::{HTMLElement, HTMLElementRustMethods};
@@ -20,6 +20,7 @@ struct EventCallbackContext {
   pub callback: extern "C" fn(event_callback_context: *const OpaquePtr,
                               event: *const OpaquePtr,
                               event_method_pointer: *const EventRustMethods,
+                              status: *const RustValueStatus,
                               exception_state: *const OpaquePtr) -> *const c_void,
   pub free_ptr: extern "C" fn(event_callback_context_ptr: *const OpaquePtr) -> *const c_void,
   pub ptr: *const EventCallbackContextData,
@@ -29,6 +30,12 @@ struct EventCallbackContextData {
   executing_context_ptr: *const OpaquePtr,
   executing_context_method_pointer: *const ExecutingContextRustMethods,
   func: EventListenerCallback,
+}
+
+impl Drop for EventCallbackContextData {
+  fn drop(&mut self) {
+    println!("Drop event callback context data");
+  }
 }
 
 #[repr(C)]
@@ -85,6 +92,7 @@ impl RustMethods for EventTargetRustMethods {}
 
 pub struct EventTarget {
   pub ptr: *const OpaquePtr,
+  status: *const RustValueStatus,
   context: *const ExecutingContext,
   method_pointer: *const EventTargetRustMethods,
 }
@@ -96,6 +104,7 @@ extern "C" fn handle_event_listener_callback(
   event_callback_context_ptr: *const OpaquePtr,
   event_ptr: *const OpaquePtr,
   event_method_pointer: *const EventRustMethods,
+  status: *const RustValueStatus,
   exception_state: *const OpaquePtr,
 ) -> *const c_void {
   // Reconstruct the Box and drop it to free the memory
@@ -110,7 +119,7 @@ extern "C" fn handle_event_listener_callback(
     let func = &(*callback_context_data).func;
     let callback_data = &(*callback_context_data);
     let executing_context = ExecutingContext::initialize(callback_data.executing_context_ptr, callback_data.executing_context_method_pointer);
-    let event = Event::initialize(event_ptr, &executing_context, event_method_pointer);
+    let event = Event::initialize(event_ptr, &executing_context, event_method_pointer, status);
     func(&event);
   }
 
@@ -208,7 +217,7 @@ impl EventTarget {
     if (raw_ptr.value == std::ptr::null()) {
       return Err("The type value of event_target does not belong to the Node type.");
     }
-    Ok(Node::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const NodeRustMethods))
+    Ok(Node::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const NodeRustMethods, raw_ptr.status))
   }
 
   pub fn as_element(&self) -> Result<Element, &str> {
@@ -216,9 +225,9 @@ impl EventTarget {
       ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::Element)
     };
     if (raw_ptr.value == std::ptr::null()) {
-      return Err("The type value of event_target does not belong to the Element type.")
+      return Err("The type value of event_target does not belong to the Element type.");
     }
-    Ok(Element::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const ElementRustMethods))
+    Ok(Element::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const ElementRustMethods, raw_ptr.status))
   }
 
   pub fn as_container_node(&self) -> Result<ContainerNode, &str> {
@@ -226,9 +235,9 @@ impl EventTarget {
       ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::ContainerNode)
     };
     if (raw_ptr.value == std::ptr::null()) {
-      return Err("The type value of event_target does not belong to the ContainerNode type.")
+      return Err("The type value of event_target does not belong to the ContainerNode type.");
     }
-    Ok(ContainerNode::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const ContainerNodeRustMethods))
+    Ok(ContainerNode::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const ContainerNodeRustMethods, raw_ptr.status))
   }
 
   pub fn as_window(&self) -> Result<Window, &str> {
@@ -236,9 +245,9 @@ impl EventTarget {
       ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::Window)
     };
     if (raw_ptr.value == std::ptr::null()) {
-      return Err("The type value of event_target does not belong to the Window type.")
+      return Err("The type value of event_target does not belong to the Window type.");
     }
-    Ok(Window::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const WindowRustMethods))
+    Ok(Window::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const WindowRustMethods, raw_ptr.status))
   }
 
   pub fn as_document(&self) -> Result<Document, &str> {
@@ -246,9 +255,9 @@ impl EventTarget {
       ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::Document)
     };
     if (raw_ptr.value == std::ptr::null()) {
-      return Err("The type value of event_target does not belong to the Document type.")
+      return Err("The type value of event_target does not belong to the Document type.");
     }
-    Ok(Document::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const DocumentRustMethods))
+    Ok(Document::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const DocumentRustMethods, raw_ptr.status))
   }
 
   pub fn as_html_element(&self) -> Result<HTMLElement, &str> {
@@ -256,14 +265,14 @@ impl EventTarget {
       ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::HTMLElement)
     };
     if raw_ptr.value == std::ptr::null() {
-      return Err("The type value of event_target does not belong to the HTMLElement type.")
+      return Err("The type value of event_target does not belong to the HTMLElement type.");
     }
-    Ok(HTMLElement::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const HTMLElementRustMethods))
+    Ok(HTMLElement::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const HTMLElementRustMethods, raw_ptr.status))
   }
 }
 
 pub trait EventTargetMethods {
-  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> Self where Self: Sized;
+  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T, status: *const RustValueStatus) -> Self where Self: Sized;
 
   fn ptr(&self) -> *const OpaquePtr;
 
@@ -288,6 +297,10 @@ impl Drop for EventTarget {
   // When the holding on Rust side released, should notify c++ side to release the holder.
   fn drop(&mut self) {
     unsafe {
+      if (*((*self).status)).disposed {
+        println!("The object {:?} has been disposed.", self.ptr);
+        return;
+      };
       ((*self.method_pointer).release)(self.ptr)
     };
   }
@@ -295,11 +308,12 @@ impl Drop for EventTarget {
 
 impl EventTargetMethods for EventTarget {
   /// Initialize the instance from cpp raw pointer.
-  fn initialize<T>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T) -> EventTarget {
+  fn initialize<T>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T, status: *const RustValueStatus) -> EventTarget {
     EventTarget {
       ptr,
       context,
       method_pointer: method_pointer as *const EventTargetRustMethods,
+      status
     }
   }
 

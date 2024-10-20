@@ -15,13 +15,15 @@ pub struct InputEvent {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const InputEventRustMethods,
+  status: *const RustValueStatus
 }
 impl InputEvent {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const InputEventRustMethods) -> InputEvent {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const InputEventRustMethods, status: *const RustValueStatus) -> InputEvent {
     InputEvent {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {

@@ -63,9 +63,15 @@ pub use script_value_ref::*;
 pub struct OpaquePtr;
 
 #[repr(C)]
+pub struct RustValueStatus {
+  pub disposed: bool,
+}
+
+#[repr(C)]
 pub struct RustValue<T> {
   pub value: *const OpaquePtr,
   pub method_pointer: *const T,
+  pub status: *const RustValueStatus,
 }
 
 pub fn initialize_webf_api(value: RustValue<ExecutingContextRustMethods>) -> ExecutingContext {

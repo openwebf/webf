@@ -23,13 +23,15 @@ pub struct PointerEvent {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const PointerEventRustMethods,
+  status: *const RustValueStatus
 }
 impl PointerEvent {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const PointerEventRustMethods) -> PointerEvent {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const PointerEventRustMethods, status: *const RustValueStatus) -> PointerEvent {
     PointerEvent {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {

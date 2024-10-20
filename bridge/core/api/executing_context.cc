@@ -11,20 +11,18 @@ namespace webf {
 
 WebFValue<Document, DocumentPublicMethods> ExecutingContextWebFMethods::document(webf::ExecutingContext* context) {
   auto* document = context->document();
-  document->KeepAlive();
-  return {
-      .value = document,
-      .method_pointer = document->documentPublicMethods(),
-  };
+  WebFValueStatus* status_block = document->KeepAlive();
+  return WebFValue<Document, DocumentPublicMethods>(document, document->documentPublicMethods(), status_block);
 }
 
 WebFValue<Window, WindowPublicMethods> ExecutingContextWebFMethods::window(webf::ExecutingContext* context) {
-  return {.value = context->window(), .method_pointer = context->window()->windowPublicMethods()};
+  return WebFValue<Window, WindowPublicMethods>(context->window(), context->window()->windowPublicMethods(),
+                                                context->window()->KeepAlive());
 }
 
 WebFValue<SharedExceptionState, ExceptionStatePublicMethods> ExecutingContextWebFMethods::CreateExceptionState() {
-  return {.value = new SharedExceptionState{webf::ExceptionState()},
-          .method_pointer = ExceptionState::publicMethodPointer()};
+  return WebFValue<SharedExceptionState, ExceptionStatePublicMethods>(new SharedExceptionState{webf::ExceptionState()},
+                                                                      ExceptionState::publicMethodPointer(), nullptr);
 }
 
 }  // namespace webf

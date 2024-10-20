@@ -17,13 +17,15 @@ pub struct MouseEvent {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const MouseEventRustMethods,
+  status: *const RustValueStatus
 }
 impl MouseEvent {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const MouseEventRustMethods) -> MouseEvent {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const MouseEventRustMethods, status: *const RustValueStatus) -> MouseEvent {
     MouseEvent {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {

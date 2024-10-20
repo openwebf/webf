@@ -23,14 +23,16 @@ pub struct <%= className %> {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const <%= className %>RustMethods,
+  status: *const RustValueStatus
 }
 
 impl <%= className %> {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const <%= className %>RustMethods) -> <%= className %> {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const <%= className %>RustMethods, status: *const RustValueStatus) -> <%= className %> {
     <%= className %> {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
 
@@ -65,7 +67,7 @@ impl <%= className %> {
     let value = unsafe {
       ((*self.method_pointer).<%= propName %>)(self.ptr)
     };
-    <%= generateMethodReturnType(prop.type) %>::initialize(value.value, self.context, value.method_pointer)
+    <%= generateMethodReturnType(prop.type) %>::initialize(value.value, self.context, value.method_pointer, value.status)
   }
     <% } else if (isAnyType(prop.type)) { %>
  pub fn <%= propName %>(&self) -> <%= generateMethodReturnType(prop.type) %> {

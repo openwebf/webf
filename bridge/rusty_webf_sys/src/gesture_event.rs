@@ -21,13 +21,15 @@ pub struct GestureEvent {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const GestureEventRustMethods,
+  status: *const RustValueStatus
 }
 impl GestureEvent {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const GestureEventRustMethods) -> GestureEvent {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const GestureEventRustMethods, status: *const RustValueStatus) -> GestureEvent {
     GestureEvent {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {

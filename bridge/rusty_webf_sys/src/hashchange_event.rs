@@ -15,13 +15,15 @@ pub struct HashchangeEvent {
   pub ptr: *const OpaquePtr,
   context: *const ExecutingContext,
   method_pointer: *const HashchangeEventRustMethods,
+  status: *const RustValueStatus
 }
 impl HashchangeEvent {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const HashchangeEventRustMethods) -> HashchangeEvent {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const HashchangeEventRustMethods, status: *const RustValueStatus) -> HashchangeEvent {
     HashchangeEvent {
       ptr,
       context,
       method_pointer,
+      status
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {
