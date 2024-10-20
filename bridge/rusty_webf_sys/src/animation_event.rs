@@ -4,12 +4,13 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
+use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct AnimationEventRustMethods {
   pub version: c_double,
   pub animation_name: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub elapsed_time: extern "C" fn(ptr: *const OpaquePtr) -> f64,
+  pub elapsed_time: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
 }
 pub struct AnimationEvent {
@@ -39,8 +40,7 @@ impl AnimationEvent {
       ((*self.method_pointer).animation_name)(self.ptr)
     };
     let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    let value = value.to_str().unwrap();
-    value.to_string()
+    value.to_str().unwrap().to_string()
   }
   pub fn elapsed_time(&self) -> f64 {
     let value = unsafe {
@@ -53,7 +53,6 @@ impl AnimationEvent {
       ((*self.method_pointer).pseudo_element)(self.ptr)
     };
     let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    let value = value.to_str().unwrap();
-    value.to_string()
+    value.to_str().unwrap().to_string()
   }
 }

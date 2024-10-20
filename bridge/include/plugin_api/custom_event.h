@@ -16,8 +16,8 @@ typedef struct ScriptValueRef ScriptValueRef;
 using PublicCustomEventGetDetail = WebFValue<ScriptValueRef, ScriptValueRefPublicMethods> (*)(CustomEvent*);
 using PublicCustomEventInitCustomEvent = void (*)(CustomEvent*, const char*, bool, bool, ScriptValueRef*, SharedExceptionState*);
 struct CustomEventPublicMethods : public WebFPublicMethods {
-  static WebFValue<ScriptValueRef, ScriptValueRefPublicMethods> Detail(CustomEvent* customEvent);
-  static void InitCustomEvent(CustomEvent* customEvent, const char* type, bool can_bubble, bool cancelable, ScriptValueRef* detail, SharedExceptionState* shared_exception_state);
+  static WebFValue<ScriptValueRef, ScriptValueRefPublicMethods> Detail(CustomEvent* custom_event);
+  static void InitCustomEvent(CustomEvent* custom_event, const char* type, bool can_bubble, bool cancelable, ScriptValueRef* detail, SharedExceptionState* shared_exception_state);
   double version{1.0};
   PublicCustomEventGetDetail custom_event_get_detail{Detail};
   PublicCustomEventInitCustomEvent custom_event_init_custom_event{InitCustomEvent};

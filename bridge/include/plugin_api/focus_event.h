@@ -17,7 +17,7 @@ typedef struct FocusEvent FocusEvent;
 typedef struct ScriptValueRef ScriptValueRef;
 using PublicFocusEventGetRelatedTarget = WebFValue<EventTarget, EventTargetPublicMethods> (*)(FocusEvent*);
 struct FocusEventPublicMethods : public WebFPublicMethods {
-  static WebFValue<EventTarget, EventTargetPublicMethods> RelatedTarget(FocusEvent* focusEvent);
+  static WebFValue<EventTarget, EventTargetPublicMethods> RelatedTarget(FocusEvent* focus_event);
   double version{1.0};
   PublicFocusEventGetRelatedTarget focus_event_get_related_target{RelatedTarget};
 };

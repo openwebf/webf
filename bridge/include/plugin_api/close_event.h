@@ -18,10 +18,10 @@ using PublicCloseEventGetReason = const char* (*)(CloseEvent*);
 using PublicCloseEventDupReason = const char* (*)(CloseEvent*);
 using PublicCloseEventGetWasClean = bool (*)(CloseEvent*);
 struct CloseEventPublicMethods : public WebFPublicMethods {
-  static int64_t Code(CloseEvent* closeEvent);
-  static const char* Reason(CloseEvent* closeEvent);
-  static const char* DupReason(CloseEvent* closeEvent);
-  static bool WasClean(CloseEvent* closeEvent);
+  static int64_t Code(CloseEvent* close_event);
+  static const char* Reason(CloseEvent* close_event);
+  static const char* DupReason(CloseEvent* close_event);
+  static bool WasClean(CloseEvent* close_event);
   double version{1.0};
   PublicCloseEventGetCode close_event_get_code{Code};
   PublicCloseEventGetReason close_event_get_reason{Reason};

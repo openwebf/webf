@@ -18,10 +18,10 @@ using PublicMouseEventGetClientY = double (*)(MouseEvent*);
 using PublicMouseEventGetOffsetX = double (*)(MouseEvent*);
 using PublicMouseEventGetOffsetY = double (*)(MouseEvent*);
 struct MouseEventPublicMethods : public WebFPublicMethods {
-  static double ClientX(MouseEvent* mouseEvent);
-  static double ClientY(MouseEvent* mouseEvent);
-  static double OffsetX(MouseEvent* mouseEvent);
-  static double OffsetY(MouseEvent* mouseEvent);
+  static double ClientX(MouseEvent* mouse_event);
+  static double ClientY(MouseEvent* mouse_event);
+  static double OffsetX(MouseEvent* mouse_event);
+  static double OffsetY(MouseEvent* mouse_event);
   double version{1.0};
   PublicMouseEventGetClientX mouse_event_get_client_x{ClientX};
   PublicMouseEventGetClientY mouse_event_get_client_y{ClientY};

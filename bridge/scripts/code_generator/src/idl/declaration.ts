@@ -63,7 +63,7 @@ export enum ClassObjectKind {
 }
 
 export class ClassObject {
-  static globalClassMap = new Map<string, ClassObject>();
+  static globalClassMap: {[key: string]: ClassObject} = Object.create(null);
   name: string;
   parent: string;
   mixinParent: string[];
