@@ -6,6 +6,14 @@ namespace webf {
   auto* result = <%= _.snakeCase(className) %>-><%= prop.name %>();
   result->KeepAlive();
   return {.value = result, .method_pointer = result-><%= _.camelCase(getPointerType(prop.type)) %>PublicMethods()};
+  <% } else if (isAnyType(prop.type)) { %>
+  return {
+        .value = new ScriptValueRef {
+          <%= _.snakeCase(className) %>->GetExecutingContext(),
+          <%= _.snakeCase(className) %>-><%= prop.name %>()
+        },
+        .method_pointer = ScriptValueRef::publicMethods(),
+    };
   <% } else if (isStringType(prop.type)) { %>
   return <%= _.snakeCase(className) %>-><%= prop.name %>().ToStringView().Characters8();
   <% } else { %>
