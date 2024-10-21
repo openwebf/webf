@@ -44,6 +44,10 @@ struct DowncastTraits<HTML${_.upperFirst(name)}Element> {
  static bool AllowFrom(const Node& node) {
    return node.IsHTMLElement() && IsA<HTML${_.upperFirst(name)}Element>(To<HTMLElement>(node));
  }
+ static bool AllowFrom(const EventTarget& event_target) {
+    return event_target.IsNode() && To<Node>(event_target).IsHTMLElement() &&
+            To<HTMLElement>(event_target).tagName() == html_names::k${ name };
+  }
 };
 `;
 } %>

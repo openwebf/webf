@@ -48,4 +48,9 @@ CharacterData::CharacterData(TreeScope& tree_scope, const AtomicString& text, No
   assert(type == kCreateOther || type == kCreateText);
 }
 
+const CharacterDataPublicMethods* CharacterData::characterDataPublicMethods() {
+  static CharacterDataPublicMethods character_data_public_methods;
+  return &character_data_public_methods;
+}
+
 }  // namespace webf

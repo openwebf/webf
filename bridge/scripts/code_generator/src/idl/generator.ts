@@ -2,7 +2,7 @@ import {IDLBlob} from './IDLBlob';
 import {generateCppHeader} from "./generateHeader";
 import {generateCppSource} from "./generateSource";
 
-function generateSupportedOptions(): GenerateOptions {
+export function generateSupportedOptions(): GenerateOptions {
   let globalFunctionInstallList: string[] = [];
   let classMethodsInstallList: string[] = [];
   let constructorInstallList: string[] = [];

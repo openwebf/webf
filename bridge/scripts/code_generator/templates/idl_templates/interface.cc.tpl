@@ -137,7 +137,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
       return success;
     };
   <% } %>
- <% } %>
+<% } %>
 
 <% _.forEach(filtedMethods, function(method, index) { %>
 
@@ -198,6 +198,10 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   return result;
   <% } else if (prop.typeMode && prop.typeMode.static) { %>
   auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= className %>::<%= prop.name %>);
+  context->dartIsolateContext()->profiler()->FinishTrackSteps();
+  return result;
+  <% } else if (prop.typeMode && prop.typeMode.staticMethod) { %>
+  auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= className %>::<%= prop.name %>());
   context->dartIsolateContext()->profiler()->FinishTrackSteps();
   return result;
   <% } else { %>

@@ -8,6 +8,7 @@
 
 #include <quickjs/quickjs.h>
 #include "bindings/qjs/cppgc/garbage_collected.h"
+#include "plugin_api/webf_value.h"
 #include "foundation/macros.h"
 #include "multiple_threading/dispatcher.h"
 #include "wrapper_type_info.h"
@@ -41,7 +42,7 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
   ScriptWrappable() = delete;
 
   explicit ScriptWrappable(JSContext* ctx);
-  virtual ~ScriptWrappable() = default;
+  virtual ~ScriptWrappable();
 
   // Returns the WrapperTypeInfo of the instance.
   virtual const WrapperTypeInfo* GetWrapperTypeInfo() const = 0;
@@ -64,16 +65,17 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
    * Classes kept alive as long as they have a pending activity.
    * Release them via `ReleaseAlive` method.
    */
-  void KeepAlive();
+  WebFValueStatus* KeepAlive();
   void ReleaseAlive();
 
  private:
-  bool is_alive = false;
+  uint32_t alive_count = 0;
   JSValue jsObject_{JS_NULL};
   JSContext* ctx_{nullptr};
   ExecutingContext* context_{nullptr};
   int64_t context_id_;
   JSRuntime* runtime_{nullptr};
+  WebFValueStatus* status_block_{nullptr};
   friend class GCVisitor;
 };
 

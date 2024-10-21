@@ -5,6 +5,7 @@
 #include "custom_event.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "native_value_converter.h"
+#include "core/native/script_value_ref.h"
 
 namespace webf {
 
@@ -62,6 +63,17 @@ void CustomEvent::initCustomEvent(const AtomicString& type,
   initEvent(type, can_bubble, cancelable, exception_state);
   if (!IsBeingDispatched() && !detail.IsEmpty()) {
     detail_ = detail;
+  }
+}
+
+void CustomEvent::initCustomEvent(const webf::AtomicString& type,
+                                  bool can_bubble,
+                                  bool cancelable,
+                                  const webf::ScriptValueRef* script_value_ref,
+                                  webf::ExceptionState& exception_state) {
+  initEvent(type, can_bubble, cancelable, exception_state);
+  if (!IsBeingDispatched() && !(script_value_ref->script_value).IsEmpty()) {
+    detail_ = script_value_ref->script_value;
   }
 }
 
