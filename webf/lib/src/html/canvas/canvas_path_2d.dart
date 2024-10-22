@@ -246,35 +246,68 @@ class Path2D extends DynamicBindingObject {
 
   // radii values is same with css border-radius
   void roundRect(double x, double y, double width, double height, List<double> radii) {
+    if(radii.isEmpty ) {
+      return;
+    }
+
+    RRect rRect = RRect.zero;
     Rect rect = Rect.fromLTWH(x, y, width, height);
+
     if (radii.length == 1) {
-      RRect rRect = RRect.fromRectAndRadius(rect, Radius.circular(radii[0]));
+      rRect = RRect.fromRectAndRadius(rect, Radius.circular(radii[0]));
       _path.addRRect(rRect);
-    } else if (radii.length == 2) {
+    } else {
+      double topLeft = 0;
+      double topRight = 0;
+      double bottomRight = 0;
+      double bottomLeft = 0;
+
+      if (radii.length == 2) {
+        topLeft = radii[0];
+        topRight = radii[1];
+        bottomRight = radii[0];
+        bottomLeft = radii[1];
+      } else if (radii.length == 3) {
+        topLeft = radii[0];
+        topRight = radii[1];
+        bottomRight = radii[2];
+        bottomLeft = radii[1];
+      } else if (radii.length >= 4) {
+        topLeft = radii[0];
+        topRight = radii[1];
+        bottomRight = radii[2];
+        bottomLeft = radii[3];
+      }
+
+      // swap when width or height is negative
+      // swap left <-> right
+      if (width < 0) {
+        double tmp = topLeft;
+        topLeft = topRight;
+        topRight = tmp;
+
+        tmp = bottomLeft;
+        bottomLeft = bottomRight;
+        bottomRight = tmp;
+      }
+
+      // swap top <-> bottom
+      if (height < 0) {
+        double tmp = topLeft;
+        topLeft = bottomLeft;
+        bottomLeft = tmp;
+
+        tmp = topRight;
+        topRight = bottomRight;
+        bottomRight = tmp;
+      }
+
       RRect rRect = RRect.fromRectAndCorners(
         rect,
-        topLeft: Radius.circular(radii[0]),
-        topRight: Radius.circular(radii[1]),
-        bottomRight: Radius.circular(radii[0]),
-        bottomLeft: Radius.circular(radii[1])
-      );
-      _path.addRRect(rRect);
-    } else if (radii.length == 3) {
-      RRect rRect = RRect.fromRectAndCorners(
-        rect,
-        topLeft: Radius.circular(radii[0]),
-        topRight: Radius.circular(radii[1]),
-        bottomRight: Radius.circular(radii[2]),
-        bottomLeft: Radius.circular(radii[1])
-      );
-      _path.addRRect(rRect);
-    } else if (radii.length == 4) {
-      RRect rRect = RRect.fromRectAndCorners(
-        rect,
-        topLeft: Radius.circular(radii[0]),
-        topRight: Radius.circular(radii[1]),
-        bottomRight: Radius.circular(radii[2]),
-        bottomLeft: Radius.circular(radii[3])
+        topLeft:Radius.circular(topLeft),
+        topRight:Radius.circular(topRight),
+        bottomRight:Radius.circular(bottomRight),
+        bottomLeft:Radius.circular(bottomLeft)
       );
       _path.addRRect(rRect);
     }
