@@ -53,6 +53,13 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   std::shared_ptr<QJSUnionDomStringCanvasGradient> strokeStyle();
   void setStrokeStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);
 
+  void roundRect(double x,
+                 double y,
+                 double w,
+                 double h,
+                 std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
+                 ExceptionState& exception_state);
+
   void Trace(GCVisitor* visitor) const override;
 
  private:
