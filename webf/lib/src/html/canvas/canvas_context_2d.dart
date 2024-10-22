@@ -245,6 +245,13 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
             castToType<num>(args[3]).toDouble()));
     methods['rotate'] = BindingObjectMethodSync(
         call: (args) => rotate(castToType<num>(args[0]).toDouble()));
+    methods['roundRect'] = BindingObjectMethodSync(
+        call: (args) => roundRect(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble(),
+            List<double>.from(args[4])));
     methods['resetTransform'] =
         BindingObjectMethodSync(call: (_) => resetTransform());
     methods['scale'] = BindingObjectMethodSync(
@@ -842,6 +849,12 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     _matrix.setRotationZ(angle);
     addAction((Canvas canvas, Size size) {
       canvas.rotate(angle);
+    });
+  }
+
+  void roundRect(double x, double y, double w, double h, List<double> radii) {
+    addAction((Canvas canvas, Size size) {
+      path2d.roundRect(x, y, w, h, radii);
     });
   }
 

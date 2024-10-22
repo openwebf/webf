@@ -9,6 +9,7 @@
 #include "core/binding_object.h"
 #include "core/geometry/dom_matrix.h"
 #include "qjs_unionpath_2_d_dom_string.h"
+#include "qjs_union_double_sequencedouble.h"
 
 namespace webf {
 
@@ -28,8 +29,15 @@ class Path2D : public BindingObject {
                   const std::shared_ptr<QJSUnionPath2DDomString>& init,
                   ExceptionState& exception_state);
 
-  void addPath(Path2D* path, DOMMatrixReadonly* dom_matrix, ExceptionState& exception_state) const;
-  void addPath(Path2D* path, ExceptionState& exception_state) const;
+  void addPath(Path2D* path, DOMMatrixReadonly* dom_matrix, ExceptionState& exception_state);
+  void addPath(Path2D* path, ExceptionState& exception_state);
+
+  void roundRect(double x,
+                 double y,
+                 double w,
+                 double h,
+                 std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
+                 ExceptionState& exception_state);
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                     int32_t argc,

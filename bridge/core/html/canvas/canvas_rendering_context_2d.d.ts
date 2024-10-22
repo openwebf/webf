@@ -35,6 +35,7 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     restore(): DartImpl<void>;
     resetTransform(): DartImpl<void>;
     rotate(angle: number): DartImpl<void>;
+    roundRect(x: number, y: number, w: number, h: number, radii: number | number[]): void;
     quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): DartImpl<void>;
     stroke(path?: Path2D): DartImpl<void>;
     strokeRect(x: number, y: number, w: number, h: number): DartImpl<void>;

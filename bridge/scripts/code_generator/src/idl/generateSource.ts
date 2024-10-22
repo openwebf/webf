@@ -148,14 +148,18 @@ export function isTypeHaveNull(type: ParameterType): boolean {
   return type.value.some(t => t.value === FunctionArgumentType.null);
 }
 
-export function isTypeHaveString(types: ParameterType[]): boolean {
-  return types.some(t => {
-    if (t.isArray) return isTypeHaveString(t.value as ParameterType[]);
-    if (!Array.isArray(t.value)) {
-      return t.value === FunctionArgumentType.dom_string;
-    }
-    return t.value.some(t => t.value === FunctionArgumentType.dom_string);
-  });
+export function isTypeHaveString(types: ParameterType[] | ParameterType): boolean {
+  if (Array.isArray(types)) {
+    return types.some(t => {
+      if (t.isArray) return isTypeHaveString(t.value as ParameterType);
+      if (!Array.isArray(t.value)) {
+        return t.value === FunctionArgumentType.dom_string;
+      }
+      return t.value.some(t => t.value === FunctionArgumentType.dom_string);
+    });
+  }
+
+  return types.value === FunctionArgumentType.dom_string;
 }
 
 export function isPointerType(type: ParameterType): boolean {

@@ -137,6 +137,30 @@ void CanvasRenderingContext2D::setStrokeStyle(const std::shared_ptr<QJSUnionDomS
   stroke_style_ = style;
 }
 
+void CanvasRenderingContext2D::roundRect(double x,
+                                         double y,
+                                         double w,
+                                         double h,
+                                         std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
+                                         ExceptionState& exception_state) {
+  std::vector<double> radii_vector;
+  if (radii->IsDouble()) {
+    radii_vector.emplace_back(radii->GetAsDouble());
+  } else if (radii->IsSequenceDouble()) {
+    std::vector<double> radii_sequence = radii->GetAsSequenceDouble();
+    radii_vector.assign(radii_sequence.begin(), radii_sequence.end());
+  }
+
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(w),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(h),
+                             NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(radii_vector)};
+
+  InvokeBindingMethod(binding_call_methods::kroundRect, sizeof(arguments) / sizeof(NativeValue), arguments,
+                      FlushUICommandReason::kDependentsOnElement, exception_state);
+}
+
 void CanvasRenderingContext2D::fill(webf::ExceptionState& exception_state) {
   InvokeBindingMethod(binding_call_methods::kfill, 0, nullptr, FlushUICommandReason::kDependentsOnElement,
                       exception_state);
