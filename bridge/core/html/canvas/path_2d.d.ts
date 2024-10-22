@@ -8,7 +8,7 @@ interface Path2D {
   arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): DartImpl<void>;
   ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise?: boolean): DartImpl<void>;
   rect(x: number, y: number, w: number, h: number): DartImpl<void>;
-  roundRect(x:number, y:number, w:number, h:number, radii: number): DartImpl<void>;
+  roundRect(x: number, y: number, w: number, h: number, radii: number | number[]): void;
   addPath(path: Path2D, matrix?: DOMMatrix): void;
-  new(init?: Path2D | string ): Path2D;
+  new(init?: Path2D | string): Path2D;
 }
