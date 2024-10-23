@@ -224,7 +224,7 @@ describe('Canvas context 2d', () => {
     document.body.appendChild(canvas);
     const ctx = canvas.getContext('2d');
 
-    ctx.scale(0.7, 0.7);
+    ctx.scale(0.6, 0.6);
 
     // 半径为零的圆角矩形（指定为数字）
     ctx.strokeStyle = "red";
