@@ -1,3 +1,50 @@
 interface DOMMatrixReadonly {
-  new(init: string | double[]): DOMMatrix;
+    readonly is2D: DartImpl<boolean>;
+    readonly isIdentity: DartImpl<boolean>;
+    readonly m11: DartImpl<double>;
+    readonly m12: DartImpl<double>;
+    readonly m13: DartImpl<double>;
+    readonly m14: DartImpl<double>;
+    readonly m21: DartImpl<double>;
+    readonly m22: DartImpl<double>;
+    readonly m23: DartImpl<double>;
+    readonly m24: DartImpl<double>;
+    readonly m31: DartImpl<double>;
+    readonly m32: DartImpl<double>;
+    readonly m33: DartImpl<double>;
+    readonly m34: DartImpl<double>;
+    readonly m41: DartImpl<double>;
+    readonly m42: DartImpl<double>;
+    readonly m43: DartImpl<double>;
+    readonly m44: DartImpl<double>;
+    readonly a: DartImpl<double>;
+    readonly b: DartImpl<double>;
+    readonly c: DartImpl<double>;
+    readonly d: DartImpl<double>;
+    readonly e: DartImpl<double>;
+    readonly f: DartImpl<double>;
+
+    flipX(): DOMMatrix;
+    // flipY(): DOMMatrix;
+    // inverse(): DOMMatrix;
+    // multiply(): DOMMatrix;
+    // rotateAxisAngle(): DOMMatrix;
+    // rotate(): DOMMatrix;
+    // rotateFromVector(): DOMMatrix;
+    // scale(): DOMMatrix;
+    // scale3d(): DOMMatrix;
+    // scaleNonUniform(): DOMMatrix;
+    // skewX(): DOMMatrix;
+    // skewY(): DOMMatrix;
+    // toFloat32Array(): double[];
+    // toFloat64Array(): double[];
+    // toJSON(): DartImpl<JSON>;
+    // toString(): DartImpl<string>;
+    // // TODO DOMPoint
+    // // transformPoint(): DartImpl<DOMPoint>;
+    // translate(): DOMMatrix;
+    // fromFloat32Array(): StaticMethod<DOMMatrix>;
+    // fromFloat64Array(): StaticMethod<DOMMatrix>;
+    // fromMatrix(): StaticMethod<DOMMatrix>;
+    new(init?: double[]): DOMMatrixReadonly;
 }
