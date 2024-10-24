@@ -13,8 +13,9 @@ class DOMMatrix : public DOMMatrixReadonly {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+  using ImplType = DOMMatrix*;
   static DOMMatrix* Create(ExecutingContext* context,
-                           const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
+                           const std::vector<double>& init,
                            ExceptionState& exception_state);
   static DOMMatrix* Create(ExecutingContext* context,
                            ExceptionState& exception_state);
@@ -23,7 +24,7 @@ class DOMMatrix : public DOMMatrixReadonly {
   explicit DOMMatrix(ExecutingContext* context,
                      ExceptionState& exception_state);
   explicit DOMMatrix(ExecutingContext* context,
-                     const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
+                     const std::vector<double>& init,
                      ExceptionState& exception_state);
 
  private:
