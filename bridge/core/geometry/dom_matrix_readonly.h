@@ -7,7 +7,7 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
-#include "qjs_union_dom_string_sequencedouble.h"
+#include "dom_matrix.h"
 
 namespace webf {
 
@@ -17,15 +17,19 @@ class DOMMatrixReadonly : public BindingObject {
  public:
   using ImplType = DOMMatrixReadonly*;
   static DOMMatrixReadonly* Create(ExecutingContext* context,
-                                   const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
+                                   const std::vector<double>& init,
                                    ExceptionState& exception_state);
-
+  static DOMMatrixReadonly* Create(ExecutingContext* context,
+                                   ExceptionState& exception_state);
   DOMMatrixReadonly() = delete;
   explicit DOMMatrixReadonly(ExecutingContext* context,
-                             const std::shared_ptr<QJSUnionDomStringSequenceDouble>& init,
+                             const std::vector<double>& init,
                              ExceptionState& exception_state);
   explicit DOMMatrixReadonly(ExecutingContext* context,
                                  ExceptionState& exception_state);
+
+  DOMMatrix* flipX(ExceptionState& exception_state);
+  // DOMMatrix* flipY(ExceptionState& exception_state);
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,
