@@ -26,6 +26,8 @@ class DOMMatrix : public DOMMatrixReadonly {
   explicit DOMMatrix(ExecutingContext* context,
                      const std::vector<double>& init,
                      ExceptionState& exception_state);
+  explicit DOMMatrix(ExecutingContext* context,
+                     NativeBindingObject* native_binding_object);
 
  private:
 };

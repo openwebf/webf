@@ -7,9 +7,10 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
-#include "dom_matrix.h"
 
 namespace webf {
+
+class DOMMatrix;
 
 class DOMMatrixReadonly : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();

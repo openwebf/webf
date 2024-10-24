@@ -3,6 +3,7 @@
  */
 
 #include "dom_matrix.h"
+#include "core/executing_context.h"
 
 namespace webf {
 
@@ -23,5 +24,9 @@ DOMMatrix::DOMMatrix(ExecutingContext* context,
                      const std::vector<double>& init,
                      ExceptionState& exception_state)
     : DOMMatrixReadonly(context, init, exception_state) {}
+
+DOMMatrix::DOMMatrix(webf::ExecutingContext* context, webf::NativeBindingObject* native_binding_object): DOMMatrixReadonly(context, ASSERT_NO_EXCEPTION()) {
+
+}
 
 }  // namespace webf

@@ -4,6 +4,7 @@
 
 #include "canvas_pattern.h"
 #include "binding_call_methods.h"
+#include "core/executing_context.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {
