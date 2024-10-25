@@ -62,6 +62,65 @@ inline bool IsAsciiControl(Char c) {
   return c <= 0x1f || c == 0x7f;
 }
 
+
+// These threadsafe functions return references to globally unique empty
+// strings.
+//
+// It is likely faster to construct a new empty string object (just a few
+// instructions to set the length to 0) than to get the empty string instance
+// returned by these functions (which requires threadsafe static access).
+//
+// Therefore, DO NOT USE THESE AS A GENERAL-PURPOSE SUBSTITUTE FOR DEFAULT
+// CONSTRUCTORS. There is only one case where you should use these: functions
+// which need to return a string by reference (e.g. as a class member
+// accessor), and don't have an empty string to use (e.g. in an error case).
+// These should not be used as initializers, function arguments, or return
+// values for functions which return by value or outparam.
+const std::string& EmptyString();
+
+// Contains the set of characters representing whitespace in the corresponding
+// encoding. Null-terminated. The ASCII versions are the whitespaces as defined
+// by HTML5, and don't include control characters.
+extern const wchar_t kWhitespaceWide[];  // Includes Unicode.
+extern const char kWhitespaceASCII[];
+
+// https://infra.spec.whatwg.org/#ascii-whitespace
+extern const char kInfraAsciiWhitespace[];
+
+// Null-terminated string representing the UTF-8 byte order mark.
+extern const char kUtf8ByteOrderMark[];
+
+
+// Determines the type of ASCII character, independent of locale (the C
+// library versions will change based on locale).
+template <typename Char>
+constexpr bool IsAsciiWhitespace(Char c) {
+  // kWhitespaceASCII is a null-terminated string.
+  for (const char* cur = kWhitespaceASCII; *cur; ++cur) {
+    if (*cur == c)
+      return true;
+  }
+  return false;
+}
+
+// Returns whether `c` is a Unicode whitespace character.
+// This cannot be used on eight-bit characters, since if they are ASCII you
+// should call IsAsciiWhitespace(), and if they are from a UTF-8 string they may
+// be individual units of a multi-unit code point.  Convert to 16- or 32-bit
+// values known to hold the full code point before calling this.
+template <typename Char>
+requires(sizeof(Char) > 1)
+    constexpr bool IsUnicodeWhitespace(Char c) {
+  // kWhitespaceWide is a null-terminated string.
+  for (const auto* cur = kWhitespaceWide; *cur; ++cur) {
+    if (static_cast<typename std::make_unsigned_t<wchar_t>>(*cur) ==
+        static_cast<typename std::make_unsigned_t<Char>>(c))
+      return true;
+  }
+  return false;
+}
+
+
 template <typename Char>
 inline bool IsUnicodeControl(Char c) {
   return IsAsciiControl(c) ||

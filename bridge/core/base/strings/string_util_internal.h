@@ -13,7 +13,6 @@
 #include <string_view>
 #include <type_traits>
 #include "core/base/ranges/ranges.h"
-#include "core/base/ranges/algorithm.h"
 
 namespace base {
 
@@ -59,7 +58,7 @@ requires(std::integral<typename T::value_type>)
 template <typename CharT, typename CharU>
 inline bool EqualsCaseInsensitiveASCIIT(std::basic_string_view<CharT> a,
                                         std::basic_string_view<CharU> b) {
-  return webf::ranges::equal(a, b, [](auto lhs, auto rhs) {
+  return std::ranges::equal(a, b, [](auto lhs, auto rhs) {
     return ToLowerASCII(lhs) == ToLowerASCII(rhs);
   });
 }

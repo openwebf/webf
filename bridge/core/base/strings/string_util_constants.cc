@@ -42,16 +42,10 @@ namespace base {
       0x205F, /* MEDIUM MATHEMATICAL SPACE */ \
       0x3000  /* IDEOGRAPHIC SPACE */
 
-#define WHITESPACE_UNICODE_NO_CR_LF \
-  WHITESPACE_ASCII_NO_CR_LF, WHITESPACE_UNICODE_NON_ASCII
-
 #define WHITESPACE_UNICODE WHITESPACE_ASCII, WHITESPACE_UNICODE_NON_ASCII
 
 const wchar_t kWhitespaceWide[] = {WHITESPACE_UNICODE, 0};
-const char16_t kWhitespaceUTF16[] = {WHITESPACE_UNICODE, 0};
-const char16_t kWhitespaceNoCrLfUTF16[] = {WHITESPACE_UNICODE_NO_CR_LF, 0};
 const char kWhitespaceASCII[] = {WHITESPACE_ASCII, 0};
-const char16_t kWhitespaceASCIIAs16[] = {WHITESPACE_ASCII, 0};
 
 const char kInfraAsciiWhitespace[] = {0x09, 0x0A, 0x0C, 0x0D, 0x20, 0};
 

@@ -52,6 +52,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/css/parser/css_parser_fast_paths_test.cc
   ./core/css/parser/css_parser_impl_test.cc
   ./core/css/parser/css_parser_token_test.cc
+  ./core/css/parser/css_selector_parser_test.cc
 #  "parser/css_parser_impl_test.cc",
 #  "parser/css_parser_local_context_test.cc",
 #  "parser/css_parser_token_stream_test.cc",

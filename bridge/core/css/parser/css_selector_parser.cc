@@ -14,6 +14,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include "core/base/strings/string_number_conversions.h"
 #include "core/css/css_selector.h"
 #include "core/css/css_selector_list.h"
 #include "core/css/parser/css_nesting_type.h"
@@ -23,14 +24,12 @@
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/style_sheet_contents.h"
 #include "core/dom/document.h"
-// #include "core/dom/pseudo_element.h"
 #include "core/base/auto_reset.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_save_point.h"
 #include "core/css/style_engine.h"
 #include "core/executing_context.h"
 #include "core/style/computed_style_constants.h"
-// #include "core/dom/pseudo_element.h"
 
 // TODO(xiezuobing):
 namespace webf {
@@ -190,8 +189,10 @@ bool CSSSelectorParser::ConsumeANPlusB(CSSParserTokenStream& stream, std::pair<i
 
   if (n_string.length() > 2) {
     bool valid;
-    result.second = std::stoi(n_string.substr(1));
-    return true;
+    int output;
+    valid = base::StringToInt(n_string.substr(1), &output);
+    result.second = output;
+    return valid;
   }
 
   NumericSign sign = n_string.length() == 1 ? kNoSign : kMinusSign;

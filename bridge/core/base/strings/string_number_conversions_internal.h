@@ -9,12 +9,14 @@
 #ifndef WEBF_STRING_NUMBER_CONVERSIONS_INTERNAL_H
 #define WEBF_STRING_NUMBER_CONVERSIONS_INTERNAL_H
 
+#include <errno.h>
+#include <stdlib.h>
+#include <string>
 #include <concepts>
 #include <string_view>
 #include <type_traits>
-#include <errno.h>
-#include <stdlib.h>
 
+#include <double-conversion/double-conversion.h>
 #include <limits>
 #include <optional>
 #include <string_view>
@@ -22,10 +24,42 @@
 #include "core/base/numerics/safe_math.h"
 #include "core/base/strings/string_util.h"
 
-
 namespace base {
 
 namespace internal {
+
+template <typename STR, typename INT>
+static STR IntToStringT(INT value) {
+  // log10(2) ~= 0.3 bytes needed per bit or per byte log10(2**8) ~= 2.4.
+  // So round up to allocate 3 output characters per byte, plus 1 for '-'.
+  const size_t kOutputBufSize =
+      3 * sizeof(INT) + std::numeric_limits<INT>::is_signed;
+
+  // Create the string in a temporary buffer, write it back to front, and
+  // then return the substr of what we ended up using.
+  using CHR = typename STR::value_type;
+  CHR outbuf[kOutputBufSize];
+
+  // The ValueOrDie call below can never fail, because UnsignedAbs is valid
+  // for all valid inputs.
+  std::make_unsigned_t<INT> res =
+      CheckedNumeric<INT>(value).UnsignedAbs().ValueOrDie();
+
+  CHR* end = outbuf + kOutputBufSize;
+  CHR* i = end;
+  do {
+    --i;
+    DCHECK(i != outbuf);
+    *i = static_cast<CHR>((res % 10) + '0');
+    res /= 10;
+  } while (res != 0);
+  if (IsValueNegative(value)) {
+    --i;
+    DCHECK(i != outbuf);
+    *i = static_cast<CHR>('-');
+  }
+  return STR(i, end);
+}
 
 // Utility to convert a character to a digit in a given base
 template <int BASE, typename CHAR>
@@ -171,6 +205,14 @@ bool HexStringToIntImpl(T input, VALUE& output) {
   return result.valid;
 }
 
+static const double_conversion::DoubleToStringConverter*
+GetDoubleToStringConverter() {
+  static double_conversion::DoubleToStringConverter converter(
+      double_conversion::DoubleToStringConverter::EMIT_POSITIVE_EXPONENT_SIGN,
+      nullptr, nullptr, 'e', -6, 12, 0, 0);
+  return &converter;
+}
+
 // Converts a given (data, size) pair to a desired string type. For
 // performance reasons, this dispatches to a different constructor if the
 // passed-in data matches the string's value_type.
@@ -184,6 +226,40 @@ StringT ToString(const CharT* data, size_t size) {
   return StringT(data, data + size);
 }
 
+template <typename StringT>
+StringT DoubleToStringT(double value) {
+  char buffer[32];
+  double_conversion::StringBuilder builder(buffer, sizeof(buffer));
+  GetDoubleToStringConverter()->ToShortest(value, &builder);
+  return ToString<StringT>(buffer, static_cast<size_t>(builder.position()));
+}
+
+template <typename STRING, typename CHAR>
+bool StringToDoubleImpl(STRING input, const CHAR* data, double& output) {
+  static double_conversion::StringToDoubleConverter converter(
+      double_conversion::StringToDoubleConverter::ALLOW_LEADING_SPACES |
+          double_conversion::StringToDoubleConverter::ALLOW_TRAILING_JUNK,
+      0.0, 0, nullptr, nullptr);
+
+  int processed_characters_count;
+  output = converter.StringToDouble(data, checked_cast<int>(input.size()),
+                                    &processed_characters_count);
+
+  // Cases to return false:
+  //  - If the input string is empty, there was nothing to parse.
+  //  - If the value saturated to HUGE_VAL.
+  //  - If the entire string was not processed, there are either characters
+  //    remaining in the string after a parsed number, or the string does not
+  //    begin with a parseable number.
+  //  - If the first character is a space, there was leading whitespace. Note
+  //    that this checks using IsWhitespace(), which behaves differently for
+  //    wide and narrow characters -- that is intentional and matches the
+  //    behavior of the double_conversion library's whitespace-skipping
+  //    algorithm.
+  return !input.empty() && output != HUGE_VAL && output != -HUGE_VAL &&
+         static_cast<size_t>(processed_characters_count) == input.size() &&
+         !IsWhitespace(input[0]);
+}
 
 template <typename Char, typename OutIter>
 static bool HexStringToByteContainer(std::string_view input, OutIter output) {
@@ -205,6 +281,6 @@ static bool HexStringToByteContainer(std::string_view input, OutIter output) {
 
 }  // namespace internal
 
-}  // namespace webf
+}  // namespace base
 
 #endif  // WEBF_STRING_NUMBER_CONVERSIONS_INTERNAL_H

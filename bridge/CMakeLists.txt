@@ -315,6 +315,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     ## Base
     core/base/hash/hash.cc
     core/base/strings/string_util.cc
+    core/base/strings/string_util_constants.cc
     core/base/strings/string_number_conversions.cc
     core/base/strings/utf_string_conversion_utils.cc
     core/core_initializer.cc

@@ -22,69 +22,104 @@
 namespace base {
 
 std::string NumberToString(int value) {
-  return std::to_string(value);
+  return internal::IntToStringT<std::string>(value);
+}
+
+std::u16string NumberToString16(int value) {
+  return internal::IntToStringT<std::u16string>(value);
 }
 
 std::string NumberToString(unsigned value) {
-  return std::to_string(value);
+  return internal::IntToStringT<std::string>(value);
+}
+
+std::u16string NumberToString16(unsigned value) {
+  return internal::IntToStringT<std::u16string>(value);
 }
 
 std::string NumberToString(long value) {
-  return std::to_string(value);
+  return internal::IntToStringT<std::string>(value);
+}
+
+std::u16string NumberToString16(long value) {
+  return internal::IntToStringT<std::u16string>(value);
 }
 
 std::string NumberToString(unsigned long value) {
-  return std::to_string(value);
+  return internal::IntToStringT<std::string>(value);
+}
+
+std::u16string NumberToString16(unsigned long value) {
+  return internal::IntToStringT<std::u16string>(value);
 }
 
 std::string NumberToString(long long value) {
-  return std::to_string(value);
+  return internal::IntToStringT<std::string>(value);
+}
+
+std::u16string NumberToString16(long long value) {
+  return internal::IntToStringT<std::u16string>(value);
 }
 
 std::string NumberToString(unsigned long long value) {
-  return std::to_string(value);
+  return internal::IntToStringT<std::string>(value);
+}
+
+std::u16string NumberToString16(unsigned long long value) {
+  return internal::IntToStringT<std::u16string>(value);
 }
 
 std::string NumberToString(double value) {
-  return std::to_string(value);
+  return internal::DoubleToStringT<std::string>(value);
 }
 
 bool StringToInt(std::string_view input, int* output) {
-  int result = std::stoi(input.data());
-  *output = result;
-  return true;
+  return internal::StringToIntImpl(input, *output);
+}
+
+bool StringToInt(std::u16string_view input, int* output) {
+  return internal::StringToIntImpl(input, *output);
 }
 
 bool StringToUint(std::string_view input, unsigned* output) {
-  unsigned result = std::stoul(input.data());
-  *output = result;
-  return true;
+  return internal::StringToIntImpl(input, *output);
+}
+
+bool StringToUint(std::u16string_view input, unsigned* output) {
+  return internal::StringToIntImpl(input, *output);
 }
 
 bool StringToInt64(std::string_view input, int64_t* output) {
-  int64_t result = std::stoll(input.data());
-  *output = result;
-  return true;
+  return internal::StringToIntImpl(input, *output);
+}
+
+bool StringToInt64(std::u16string_view input, int64_t* output) {
+  return internal::StringToIntImpl(input, *output);
 }
 
 bool StringToUint64(std::string_view input, uint64_t* output) {
-  uint64_t result = std::stoull(input.data());
-  *output = result;
-  return true;
+  return internal::StringToIntImpl(input, *output);
+}
+
+bool StringToUint64(std::u16string_view input, uint64_t* output) {
+  return internal::StringToIntImpl(input, *output);
 }
 
 bool StringToSizeT(std::string_view input, size_t* output) {
-  size_t result = std::stoull(input.data());
-  *output = result;
-  return true;
+  return internal::StringToIntImpl(input, *output);
 }
 
-// TODO(xiezuobing): internal::StringToDoubleImpl -> std::istringstream
-// It`s unsupported '- 12.32'
-// ' -1223.212' -> double type '-1223.212'
+bool StringToSizeT(std::u16string_view input, size_t* output) {
+  return internal::StringToIntImpl(input, *output);
+}
+
 bool StringToDouble(std::string_view input, double* output) {
-  *output = std::stod(std::string(input));
-  return true;
+  return internal::StringToDoubleImpl(input, input.data(), *output);
+}
+
+bool StringToDouble(std::u16string_view input, double* output) {
+  return internal::StringToDoubleImpl(
+      input, reinterpret_cast<const uint16_t*>(input.data()), *output);
 }
 
 std::string HexEncode(const void* bytes, size_t size) {
