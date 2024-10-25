@@ -520,17 +520,17 @@ static CSSNestingType ConsumeUntilCommaAndFindNestingType(CSSParserTokenStream& 
 // We have similar weaknesses here as in CSS custom properties,
 // such as not preserving comments fully.
 void CSSSelectorParser::AddPlaceholderSelectorIfNeeded(CSSParserTokenStream& stream) {
-  uint32_t start = stream.LookAheadOffset();
+  size_t start = stream.LookAheadOffset();
   CSSNestingType nesting_type = ConsumeUntilCommaAndFindNestingType(stream);
   stream.EnsureLookAhead();
-  uint32_t end = stream.LookAheadOffset();
+  size_t end = stream.LookAheadOffset();
 
   if (nesting_type != CSSNestingType::kNone) {
     CSSSelector placeholder_selector;
     placeholder_selector.SetMatch(CSSSelector::kPseudoClass);
-    // TODO(xiezuobing): 需要传入ExecutingContext
-    ExecutingContext* context;
-    placeholder_selector.SetUnparsedPlaceholder(nesting_type, stream.StringRangeAt(start, end - start).data());
+    placeholder_selector.SetUnparsedPlaceholder(
+        nesting_type,
+        std::string(stream.StringRangeAt(start, end - start)));
     placeholder_selector.SetLastInComplexSelector(true);
     output_.push_back(placeholder_selector);
   }
@@ -1718,7 +1718,7 @@ const std::string& CSSSelectorParser::DefaultNamespace() const {
   if (!style_sheet_ || ignore_default_namespace_) {
     return "*";
   }
-  return "";
+  return style_sheet_->DefaultNamespace();
 }
 
 const std::optional<std::string>& CSSSelectorParser::DetermineNamespace(const std::optional<std::string>& prefix) {
