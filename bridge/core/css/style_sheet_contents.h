@@ -70,6 +70,12 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
   Document* SingleOwnerDocument() const;
   bool HasSingleOwnerDocument() const { return has_single_owner_document_; }
 
+
+  const std::string& DefaultNamespace() const { return default_namespace_; }
+  const std::optional<std::string>& NamespaceURIFromPrefix(const std::string& prefix) const;
+
+  void ParserAddNamespace(const std::optional<std::string>& prefix, const std::optional<std::string>& uri);
+
   // Gets the first owner document in the list of registered clients, or nullptr
   // if there are none.
   Document* AnyOwnerDocument() const;
@@ -204,6 +210,9 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
 
   std::vector<std::shared_ptr<StyleRuleImport>> import_rules_;
   std::vector<std::shared_ptr<StyleRuleBase>> child_rules_;
+
+  std::unordered_map<std::string, std::string> namespaces_;
+  std::string default_namespace_;
 
   std::shared_ptr<StyleRuleImport> owner_rule_;
   std::shared_ptr<const CSSParserContext> parser_context_;

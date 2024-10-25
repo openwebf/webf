@@ -153,7 +153,7 @@ class CSSSelectorParser {
 
   bool ConsumeName(CSSParserTokenStream&,
                    std::optional<std::string>& name,
-                   std::string& namespace_prefix);
+                   std::optional<std::string>& namespace_prefix);
 
   // These will return true iff the selector is valid;
   // otherwise, the vector will be pushed onto output_.
@@ -165,6 +165,9 @@ class CSSSelectorParser {
   // This doesn't include element names, since they're handled specially
   bool ConsumeSimpleSelector(CSSParserTokenStream&);
 
+  const std::string& DefaultNamespace() const;
+  const std::optional<std::string>& DetermineNamespace(const std::optional<std::string>& prefix);
+
   // Returns an empty range on error.
   tcb::span<CSSSelector> ConsumeCompoundSelector(CSSParserTokenStream&,
                                                   CSSNestingType);
@@ -174,7 +177,7 @@ class CSSSelectorParser {
   CSSSelector::MatchType ConsumeAttributeMatch(CSSParserTokenStream&);
   CSSSelector::AttributeMatchType ConsumeAttributeFlags(CSSParserTokenStream&);
 
-  void PrependTypeSelectorIfNeeded(const std::string& namespace_prefix,
+  void PrependTypeSelectorIfNeeded(const std::optional<std::string>& namespace_prefix,
                                    bool has_element_name,
                                    const std::optional<std::string>& element_name,
                                    size_t start_index_of_compound_selector);
@@ -273,15 +276,15 @@ class CSSSelectorParser {
         : vector_(vector), initial_size_(vector.size()) {}
 
     ~ResetVectorAfterScope() {
-//      assert(vector_.size() > initial_size_);/**/
+      DCHECK_GE(vector_.size(), initial_size_);
       if (!committed_) {
         vector_.resize(initial_size_);
       }
     }
 
     tcb::span<CSSSelector> AddedElements() {
-      assert(vector_.size() >= initial_size_);
-      return tcb::span<CSSSelector>(vector_.data() + initial_size_, vector_.size() - initial_size_);
+      DCHECK_GE(vector_.size(), initial_size_);
+      return {(vector_.begin() + initial_size_).base(), vector_.end().base()};
     }
 
     // Make sure the added elements are left on the vector after

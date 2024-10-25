@@ -678,49 +678,6 @@ CSSSelector::PseudoType CSSSelector::NameToPseudoType(
   if (match == pseudo_type_map_end || match->string != name.value()) {
     return CSSSelector::kPseudoUnknown;
   }
-
-  if (match->type == CSSSelector::kPseudoPaused) {
-    return CSSSelector::kPseudoUnknown;
-  }
-
-  if (match->type == CSSSelector::kPseudoPlaying) {
-    return CSSSelector::kPseudoUnknown;
-  }
-
-  if (match->type == CSSSelector::kPseudoState) {
-    return CSSSelector::kPseudoUnknown;
-  }
-
-  if (match->type == CSSSelector::kPseudoDetailsContent) {
-    return CSSSelector::kPseudoUnknown;
-  }
-
-  if (match->type == CSSSelector::kPseudoPermissionGranted) {
-    return CSSSelector::kPseudoUnknown;
-  }
-
-  if ((match->type == CSSSelector::kPseudoScrollMarker ||
-       match->type == CSSSelector::kPseudoScrollMarkerGroup)) {
-    return CSSSelector::kPseudoUnknown;
-  }
-
-  if ((match->type == CSSSelector::kPseudoOpen ||
-       match->type == CSSSelector::kPseudoClosed)) {
-    return CSSSelector::kPseudoUnknown;
-  }
-
-  if ((match->type == CSSSelector::kPseudoSelectFallbackButton ||
-       match->type == CSSSelector::kPseudoSelectFallbackButtonIcon ||
-       match->type == CSSSelector::kPseudoSelectFallbackButtonText ||
-       match->type == CSSSelector::kPseudoSelectFallbackDatalist)) {
-    return CSSSelector::kPseudoUnknown;
-  }
-
-  if ((match->type == CSSSelector::kPseudoSearchText ||
-       match->type == CSSSelector::kPseudoCurrent)) {
-    return CSSSelector::kPseudoUnknown;
-  }
-
   return static_cast<CSSSelector::PseudoType>(match->type);
 }
 

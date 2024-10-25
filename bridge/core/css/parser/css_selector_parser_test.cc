@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <iostream>
+#include <stdexcept>
+#include <string_view>
 #include "core/css/parser/css_selector_parser.h"
 #include "core/css/css_test_helpers.h"
 #include "core/css/parser/css_parser_context.h"
@@ -155,11 +158,28 @@ TEST(CSSSelectorParserTest, PseudoElementsInCompoundLists) {
   }
 }
 
-TEST(CSSSelectorParserTest, ValidSimpleAfterPseudoElementInCompound) {
-  const char* test_cases[] = {
-      "::-webkit-volume-slider:hover",        "::selection:window-inactive",  "::search-text:current",
-      "::search-text:not(:current)",          "::-webkit-scrollbar:disabled", "::-webkit-volume-slider:not(:hover)",
-      "::-webkit-scrollbar:not(:horizontal)", "::slotted(span)::before",      "::slotted(div)::after"};
+TEST(CSSSelectorParserTest, InvalidSimpleAfterPseudoElementInCompound) {
+  const char* test_cases[] = {"::before#id",
+                              "::after:hover",
+                              ".class::content::before",
+                              "::shadow.class",
+                              "::selection:window-inactive::before",
+                              "::search-text.class",
+                              "::search-text::before",
+                              "::search-text:hover",
+                              "::-webkit-volume-slider.class",
+                              "::before:not(.a)",
+                              "::shadow:not(::after)",
+                              "::-webkit-scrollbar:vertical:not(:first-child)",
+                              "video::-webkit-media-text-track-region-container.scrolling",
+                              "div ::before.a",
+                              "::slotted(div):hover",
+                              "::slotted(div)::slotted(span)",
+                              "::slotted(div)::before:hover",
+                              "::slotted(div)::before::slotted(span)",
+                              "::slotted(*)::first-letter",
+                              "::slotted(.class)::first-line",
+                              "::slotted([attr])::-webkit-scrollbar"};
 
   std::vector<CSSSelector> arena;
   for (const char* test_case : test_cases) {
@@ -170,376 +190,340 @@ TEST(CSSSelectorParserTest, ValidSimpleAfterPseudoElementInCompound) {
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
                                          /*is_within_scope=*/false,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
+    EXPECT_EQ(vector.size(), 0u);
+  }
+}
+
+TEST(CSSSelectorParserTest, TransitionPseudoStyles) {
+  struct TestCase {
+    const char* selector;
+    bool valid;
+    std::optional<std::string> argument;
+    CSSSelector::PseudoType type;
+  };
+
+  TestCase test_cases[] = {
+      {"html::view-transition-group(*)", true, std::nullopt, CSSSelector::kPseudoViewTransitionGroup},
+      {"html::view-transition-group(foo)", true, "foo", CSSSelector::kPseudoViewTransitionGroup},
+      {"html::view-transition-image-pair(foo)", true, "foo", CSSSelector::kPseudoViewTransitionImagePair},
+      {"html::view-transition-old(foo)", true, "foo", CSSSelector::kPseudoViewTransitionOld},
+      {"html::view-transition-new(foo)", true, "foo", CSSSelector::kPseudoViewTransitionNew},
+      {"::view-transition-group(foo)", true, "foo", CSSSelector::kPseudoViewTransitionGroup},
+      {"div::view-transition-group(*)", true, std::nullopt, CSSSelector::kPseudoViewTransitionGroup},
+      {"::view-transition-group(*)::before", false, std::nullopt, CSSSelector::kPseudoUnknown},
+      {"::view-transition-group(*):hover", false, std::nullopt, CSSSelector::kPseudoUnknown},
+  };
+
+  std::vector<CSSSelector> arena;
+  for (const auto& test_case : test_cases) {
+    SCOPED_TRACE(test_case.selector);
+    CSSTokenizer tokenizer(test_case.selector);
+    CSSParserTokenStream stream(tokenizer);
+    tcb::span<CSSSelector> vector =
+        CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
+                                         CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
+                                         /*is_within_scope=*/false,
+                                         /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
+    EXPECT_EQ(!vector.empty(), test_case.valid);
+    if (!test_case.valid) {
+      continue;
+    }
+
+    std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
+    ASSERT_TRUE(list->HasOneSelector());
+
+    auto* selector = list->First();
+    while (selector->NextSimpleSelector()) {
+      selector = selector->NextSimpleSelector();
+    }
+
+    EXPECT_EQ(selector->GetPseudoType(), test_case.type);
+    EXPECT_EQ(selector->GetPseudoType() == CSSSelector::kPseudoViewTransition ? selector->Argument()
+                                                                              : selector->IdentList()[0],
+              test_case.argument);
+  }
+}
+
+TEST(CSSSelectorParserTest, WorkaroundForInvalidCustomPseudoInUAStyle) {
+  // See crbug.com/578131
+  const char* test_cases[] = {"video::-webkit-media-text-track-region-container.scrolling",
+                              "input[type=\"range\" i]::-webkit-media-slider-container > div"};
+
+  std::vector<CSSSelector> arena;
+  for (auto&& test_case : test_cases) {
+    CSSTokenizer tokenizer(test_case);
+    CSSParserTokenStream stream(tokenizer);
+    tcb::span<CSSSelector> vector =
+        CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kUASheetMode),
+                                         CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
+                                         /*is_within_scope=*/false,
+                                         /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
     EXPECT_GT(vector.size(), 0u);
   }
 }
+
+TEST(CSSSelectorParserTest, InvalidPseudoElementInNonRightmostCompound) {
+  const char* test_cases[] = {"::-webkit-volume-slider *", "::before *", "::-webkit-scrollbar *", "::cue *",
+                              "::selection *"};
+
+  std::vector<CSSSelector> arena;
+  for (const char* test_case : test_cases) {
+    CSSTokenizer tokenizer(test_case);
+    CSSParserTokenStream stream(tokenizer);
+    tcb::span<CSSSelector> vector =
+        CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
+                                         CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
+                                         /*is_within_scope=*/false,
+                                         /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
+    EXPECT_EQ(vector.size(), 0u);
+  }
+}
+
+TEST(CSSSelectorParserTest, UnresolvedNamespacePrefix) {
+  const char* test_cases[] = {"ns|div", "div ns|div", "div ns|div "};
+
+  auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  auto sheet = std::make_shared<StyleSheetContents>(context);
+
+  std::vector<CSSSelector> arena;
+  for (const char* test_case : test_cases) {
+    CSSTokenizer tokenizer(test_case);
+    CSSParserTokenStream stream(tokenizer);
+    tcb::span<CSSSelector> vector =
+        CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
+                                         /*parent_rule_for_nesting=*/nullptr, /*is_within_scope=*/false,
+                                         /*semicolon_aborts_nested_selector=*/false, sheet, arena);
+    EXPECT_EQ(vector.size(), 0u);
+  }
+}
+
+TEST(CSSSelectorParserTest, UnexpectedPipe) {
+  const char* test_cases[] = {"div | .c", "| div", " | div"};
+
+  auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  auto sheet = std::make_shared<StyleSheetContents>(context);
+
+  std::vector<CSSSelector> arena;
+  for (const char* test_case : test_cases) {
+    CSSTokenizer tokenizer(test_case);
+    CSSParserTokenStream stream(tokenizer);
+    tcb::span<CSSSelector> vector =
+        CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
+                                         /*parent_rule_for_nesting=*/nullptr, /*is_within_scope=*/false,
+                                         /*semicolon_aborts_nested_selector=*/false, sheet, arena);
+    EXPECT_EQ(vector.size(), 0u);
+  }
+}
+
+TEST(CSSSelectorParserTest, AttributeSelectorUniversalInvalid) {
+  const char* test_cases[] = {"[*]", "[*|*]"};
+
+  auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  auto sheet = std::make_shared<StyleSheetContents>(context);
+
+  std::vector<CSSSelector> arena;
+  for (std::string test_case : test_cases) {
+    SCOPED_TRACE(test_case);
+    CSSTokenizer tokenizer(test_case);
+    CSSParserTokenStream stream(tokenizer);
+    tcb::span<CSSSelector> vector =
+        CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
+                                         /*parent_rule_for_nesting=*/nullptr, /*is_within_scope=*/false,
+                                         /*semicolon_aborts_nested_selector=*/false, sheet, arena);
+    EXPECT_EQ(vector.size(), 0u);
+  }
+}
+
+TEST(CSSSelectorParserTest, InternalPseudo) {
+  const char* test_cases[] = {"::-internal-whatever",
+                              "::-internal-media-controls-text-track-list",
+                              ":-internal-is-html",
+                              ":-internal-list-box",
+                              ":-internal-multi-select-focus",
+                              ":-internal-shadow-host-has-appearance",
+                              ":-internal-spatial-navigation-focus",
+                              ":-internal-video-persistent",
+                              ":-internal-video-persistent-ancestor"};
+
+  std::vector<CSSSelector> arena;
+  for (std::string test_case : test_cases) {
+    SCOPED_TRACE(test_case);
+    {
+      CSSTokenizer tokenizer(test_case);
+      CSSParserTokenStream stream(tokenizer);
+      tcb::span<CSSSelector> author_vector =
+          CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
+                                           CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
+                                           /*is_within_scope=*/false,
+                                           /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
+      EXPECT_EQ(author_vector.size(), 0u);
+    }
+
+    {
+      CSSTokenizer tokenizer(test_case);
+      CSSParserTokenStream stream(tokenizer);
+      tcb::span<CSSSelector> ua_vector =
+          CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kUASheetMode),
+                                           CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
+                                           /*is_within_scope=*/false,
+                                           /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
+      EXPECT_GT(ua_vector.size(), 0u);
+    }
+  }
+}
+
+TEST(CSSSelectorParserTest, ScrollMarkerPseudos) {
+  struct TestCase {
+    const char* selector;
+    CSSSelector::PseudoType type;
+  };
+
+  TestCase test_cases[] = {
+      {"ul::scroll-marker-group", CSSSelector::kPseudoScrollMarkerGroup},
+      {"li::scroll-marker", CSSSelector::kPseudoScrollMarker},
+  };
+
+  std::vector<CSSSelector> arena;
+  for (const auto& test_case : test_cases) {
+    SCOPED_TRACE(test_case.selector);
+    CSSTokenizer tokenizer(test_case.selector);
+    CSSParserTokenStream stream(tokenizer);
+    tcb::span<CSSSelector> vector =
+        CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
+                                         CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
+                                         /*is_within_scope=*/false,
+                                         /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
+    EXPECT_TRUE(!vector.empty());
+
+    std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
+    ASSERT_TRUE(list->HasOneSelector());
+
+    const CSSSelector* selector = list->First();
+    while (selector->NextSimpleSelector()) {
+      selector = selector->NextSimpleSelector();
+    }
+
+    EXPECT_EQ(selector->GetPseudoType(), test_case.type);
+  }
+}
+
+// Pseudo-elements are not valid within :is() as per the spec:
+// https://drafts.csswg.org/selectors-4/#matches
+static const SelectorTestCase invalid_pseudo_is_argments_data[] = {
+    // clang-format off
+     {":is(::-webkit-progress-bar)", ":is()"},
+     {":is(::-webkit-progress-value)", ":is()"},
+     {":is(::-webkit-slider-runnable-track)", ":is()"},
+     {":is(::-webkit-slider-thumb)", ":is()"},
+     {":is(::after)", ":is()"},
+     {":is(::backdrop)", ":is()"},
+     {":is(::before)", ":is()"},
+     {":is(::cue)", ":is()"},
+     {":is(::first-letter)", ":is()"},
+     {":is(::first-line)", ":is()"},
+     {":is(::grammar-error)", ":is()"},
+     {":is(::marker)", ":is()"},
+     {":is(::placeholder)", ":is()"},
+     {":is(::selection)", ":is()"},
+     {":is(::slotted)", ":is()"},
+     {":is(::spelling-error)", ":is()"},
+     {":is(:after)", ":is()"},
+     {":is(:before)", ":is()"},
+     {":is(:cue)", ":is()"},
+     {":is(:first-letter)", ":is()"},
+     {":is(:first-line)", ":is()"},
+     // If the selector is nest-containing, it serializes as-is:
+     // https://drafts.csswg.org/css-nesting-1/#syntax
+     {":is(:unknown(&))"},
+    // clang-format on
+};
+
+INSTANTIATE_TEST_SUITE_P(InvalidPseudoIsArguments,
+                         SelectorParseTest,
+                         testing::ValuesIn(invalid_pseudo_is_argments_data));
+
+static const SelectorTestCase is_where_nesting_data[] = {
+    // clang-format off
+     // These pseudos only accept compound selectors:
+     {"::slotted(:is(.a .b))", "::slotted(:is())"},
+     {"::slotted(:is(.a + .b))", "::slotted(:is())"},
+     {"::slotted(:is(.a, .b + .c))", "::slotted(:is(.a))"},
+     {":host(:is(.a .b))", ":host(:is())"},
+     {":host(:is(.a + .b))", ":host(:is())"},
+     {":host(:is(.a, .b + .c))", ":host(:is(.a))"},
+     {":host-context(:is(.a .b))", ":host-context(:is())"},
+     {":host-context(:is(.a + .b))", ":host-context(:is())"},
+     {":host-context(:is(.a, .b + .c))", ":host-context(:is(.a))"},
+     {"::cue(:is(.a .b))", "::cue(:is())"},
+     {"::cue(:is(.a + .b))", "::cue(:is())"},
+     {"::cue(:is(.a, .b + .c))", "::cue(:is(.a))"},
+     // Only user-action pseudos + :state() are allowed after kPseudoPart:
+     {"::part(foo):is(.a)", "::part(foo):is()"},
+     {"::part(foo):is(.a:hover)", "::part(foo):is()"},
+     {"::part(foo):is(:hover.a)", "::part(foo):is()"},
+     {"::part(foo):is(:hover + .a)", "::part(foo):is()"},
+     {"::part(foo):is(.a + :hover)", "::part(foo):is()"},
+     {"::part(foo):is(:hover:enabled)", "::part(foo):is()"},
+     {"::part(foo):is(:enabled:hover)", "::part(foo):is()"},
+     {"::part(foo):is(:hover, :where(.a))",
+      "::part(foo):is(:hover, :where())"},
+     {"::part(foo):is(:hover, .a)", "::part(foo):is(:hover)"},
+     {"::part(foo):is(:state(bar), .a)", "::part(foo):is(:state(bar))"},
+     {"::part(foo):is(:enabled)", "::part(foo):is()"},
+     // Only scrollbar pseudos after kPseudoScrollbar:
+     {"::-webkit-scrollbar:is(:focus)", "::-webkit-scrollbar:is()"},
+     // Only :window-inactive after kPseudoSelection:
+     {"::selection:is(:focus)", "::selection:is()"},
+     // Only user-action pseudos after webkit pseudos:
+     {"::-webkit-input-placeholder:is(:enabled)",
+      "::-webkit-input-placeholder:is()"},
+     {"::-webkit-input-placeholder:is(:not(:enabled))",
+      "::-webkit-input-placeholder:is()"},
+
+     // Valid selectors:
+     {":is(.a, .b)"},
+     {":is(.a\n)", ":is(.a)"},
+     {":is(.a .b, .c)"},
+     {":is(.a :is(.b .c), .d)"},
+     {":is(.a :where(.b .c), .d)"},
+     {":where(.a :is(.b .c), .d)"},
+     {":not(:is(.a))"},
+     {":not(:is(.a, .b))"},
+     {":not(:is(.a + .b, .c .d))"},
+     {":not(:where(:not(.a)))"},
+     {"::slotted(:is(.a))"},
+     {"::slotted(:is(div.a))"},
+     {"::slotted(:is(.a, .b))"},
+     {":host(:is(.a))"},
+     {":host(:is(div.a))"},
+     {":host(:is(.a, .b))"},
+     {":host(:is(.a\n))", ":host(:is(.a))"},
+     {":host-context(:is(.a))"},
+     {":host-context(:is(div.a))"},
+     {":host-context(:is(.a, .b))"},
+     {"::cue(:is(.a))"},
+     {"::cue(:is(div.a))"},
+     {"::cue(:is(.a, .b))"},
+     {"::part(foo):is(:hover)"},
+     {"::part(foo):is(:hover:focus)"},
+     {"::part(foo):is(:is(:hover))"},
+     {"::part(foo):is(:focus, :hover)"},
+     {"::part(foo):is(:focus, :is(:hover))"},
+     {"::part(foo):is(:focus, :state(bar))"},
+     {"::-webkit-scrollbar:is(:enabled)"},
+     {"::selection:is(:window-inactive)"},
+     {"::-webkit-input-placeholder:is(:hover)"},
+     {"::-webkit-input-placeholder:is(:not(:hover))"},
+     {"::-webkit-input-placeholder:where(:hover)"},
+     {"::-webkit-input-placeholder:is()"},
+     {"::-webkit-input-placeholder:is(:where(:hover))"},
+    // clang-format on
+};
+
+//INSTANTIATE_TEST_SUITE_P(NestedSelectorValidity, SelectorParseTest, testing::ValuesIn(is_where_nesting_data));
 //
-// TEST(CSSSelectorParserTest, InvalidSimpleAfterPseudoElementInCompound) {
-//  const char* test_cases[] = {"::before#id",
-//                              "::after:hover",
-//                              ".class::content::before",
-//                              "::shadow.class",
-//                              "::selection:window-inactive::before",
-//                              "::search-text.class",
-//                              "::search-text::before",
-//                              "::search-text:hover",
-//                              "::-webkit-volume-slider.class",
-//                              "::before:not(.a)",
-//                              "::shadow:not(::after)",
-//                              "::-webkit-scrollbar:vertical:not(:first-child)",
-//                              "video::-webkit-media-text-track-region-container.scrolling",
-//                              "div ::before.a",
-//                              "::slotted(div):hover",
-//                              "::slotted(div)::slotted(span)",
-//                              "::slotted(div)::before:hover",
-//                              "::slotted(div)::before::slotted(span)",
-//                              "::slotted(*)::first-letter",
-//                              "::slotted(.class)::first-line",
-//                              "::slotted([attr])::-webkit-scrollbar"};
-//
-//  std::vector<CSSSelector> arena;
-//  for (const char* test_case : test_cases) {
-//    CSSTokenizer tokenizer(test_case);
-//    CSSParserTokenStream stream(tokenizer);
-//    tcb::span<CSSSelector> vector =
-//        CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
-//                                         CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-//                                         /*is_within_scope=*/false,
-//                                         /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
-//    EXPECT_EQ(vector.size(), 0u);
-//  }
-//}
-//
-// TEST(CSSSelectorParserTest, TransitionPseudoStyles) {
-//  struct TestCase {
-//    const char* selector;
-//    bool valid;
-//    const char* argument;
-//    CSSSelector::PseudoType type;
-//  };
-//
-//  TestCase test_cases[] = {
-//      {"html::view-transition-group(*)", true, nullptr, CSSSelector::kPseudoViewTransitionGroup},
-//      {"html::view-transition-group(foo)", true, "foo", CSSSelector::kPseudoViewTransitionGroup},
-//      {"html::view-transition-image-pair(foo)", true, "foo", CSSSelector::kPseudoViewTransitionImagePair},
-//      {"html::view-transition-old(foo)", true, "foo", CSSSelector::kPseudoViewTransitionOld},
-//      {"html::view-transition-new(foo)", true, "foo", CSSSelector::kPseudoViewTransitionNew},
-//      {"::view-transition-group(foo)", true, "foo", CSSSelector::kPseudoViewTransitionGroup},
-//      {"div::view-transition-group(*)", true, nullptr, CSSSelector::kPseudoViewTransitionGroup},
-//      {"::view-transition-group(*)::before", false, nullptr, CSSSelector::kPseudoUnknown},
-//      {"::view-transition-group(*):hover", false, nullptr, CSSSelector::kPseudoUnknown},
-//  };
-//
-//  std::vector<CSSSelector> arena;
-//  for (const auto& test_case : test_cases) {
-//    SCOPED_TRACE(test_case.selector);
-//    CSSTokenizer tokenizer(test_case.selector);
-//    CSSParserTokenStream stream(tokenizer);
-//    tcb::span<CSSSelector> vector =
-//        CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
-//                                         CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-//                                         /*is_within_scope=*/false,
-//                                         /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
-//    EXPECT_EQ(!vector.empty(), test_case.valid);
-//    if (!test_case.valid) {
-//      continue;
-//    }
-//
-//    std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
-//    ASSERT_TRUE(list->HasOneSelector());
-//
-//    auto* selector = list->First();
-//    while (selector->NextSimpleSelector()) {
-//      selector = selector->NextSimpleSelector();
-//    }
-//
-//    EXPECT_EQ(selector->GetPseudoType(), test_case.type);
-//    EXPECT_EQ(selector->GetPseudoType() == CSSSelector::kPseudoViewTransition ? selector->Argument()
-//                                                                              : selector->IdentList()[0],
-//              test_case.argument);
-//  }
-//}
-//
-// TEST(CSSSelectorParserTest, WorkaroundForInvalidCustomPseudoInUAStyle) {
-//  // See crbug.com/578131
-//  const char* test_cases[] = {"video::-webkit-media-text-track-region-container.scrolling",
-//                              "input[type=\"range\" i]::-webkit-media-slider-container > div"};
-//
-//  std::vector<CSSSelector> arena;
-//  for (auto&& test_case : test_cases) {
-//    CSSTokenizer tokenizer(test_case);
-//    CSSParserTokenStream stream(tokenizer);
-//    tcb::span<CSSSelector> vector =
-//        CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kUASheetMode),
-//                                         CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-//                                         /*is_within_scope=*/false,
-//                                         /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
-//    EXPECT_GT(vector.size(), 0u);
-//  }
-//}
-//
-// TEST(CSSSelectorParserTest, InvalidPseudoElementInNonRightmostCompound) {
-//  const char* test_cases[] = {"::-webkit-volume-slider *", "::before *", "::-webkit-scrollbar *", "::cue *",
-//                              "::selection *"};
-//
-//  std::vector<CSSSelector> arena;
-//  for (const char* test_case : test_cases) {
-//    CSSTokenizer tokenizer(test_case);
-//    CSSParserTokenStream stream(tokenizer);
-//    tcb::span<CSSSelector> vector =
-//        CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
-//                                         CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-//                                         /*is_within_scope=*/false,
-//                                         /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
-//    EXPECT_EQ(vector.size(), 0u);
-//  }
-//}
-//
-// TEST(CSSSelectorParserTest, UnresolvedNamespacePrefix) {
-//  const char* test_cases[] = {"ns|div", "div ns|div", "div ns|div "};
-//
-//  auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-//  auto sheet = std::make_shared<StyleSheetContents>(context);
-//
-//  std::vector<CSSSelector> arena;
-//  for (const char* test_case : test_cases) {
-//    CSSTokenizer tokenizer(test_case);
-//    CSSParserTokenStream stream(tokenizer);
-//    tcb::span<CSSSelector> vector =
-//        CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
-//                                         /*parent_rule_for_nesting=*/nullptr, /*is_within_scope=*/false,
-//                                         /*semicolon_aborts_nested_selector=*/false, sheet, arena);
-//    EXPECT_EQ(vector.size(), 0u);
-//  }
-//}
-//
-// TEST(CSSSelectorParserTest, UnexpectedPipe) {
-//  const char* test_cases[] = {"div | .c", "| div", " | div"};
-//
-//  auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-//  auto sheet = std::make_shared<StyleSheetContents>(context);
-//
-//  std::vector<CSSSelector> arena;
-//  for (const char* test_case : test_cases) {
-//    CSSTokenizer tokenizer(test_case);
-//    CSSParserTokenStream stream(tokenizer);
-//    tcb::span<CSSSelector> vector =
-//        CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
-//                                         /*parent_rule_for_nesting=*/nullptr, /*is_within_scope=*/false,
-//                                         /*semicolon_aborts_nested_selector=*/false, sheet, arena);
-//    EXPECT_EQ(vector.size(), 0u);
-//  }
-//}
-//
-// TEST(CSSSelectorParserTest, AttributeSelectorUniversalInvalid) {
-//  const char* test_cases[] = {"[*]", "[*|*]"};
-//
-//  auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-//  auto sheet = std::make_shared<StyleSheetContents>(context);
-//
-//  std::vector<CSSSelector> arena;
-//  for (std::string test_case : test_cases) {
-//    SCOPED_TRACE(test_case);
-//    CSSTokenizer tokenizer(test_case);
-//    CSSParserTokenStream stream(tokenizer);
-//    tcb::span<CSSSelector> vector =
-//        CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
-//                                         /*parent_rule_for_nesting=*/nullptr, /*is_within_scope=*/false,
-//                                         /*semicolon_aborts_nested_selector=*/false, sheet, arena);
-//    EXPECT_EQ(vector.size(), 0u);
-//  }
-//}
-//
-// TEST(CSSSelectorParserTest, InternalPseudo) {
-//  const char* test_cases[] = {"::-internal-whatever",
-//                              "::-internal-media-controls-text-track-list",
-//                              ":-internal-is-html",
-//                              ":-internal-list-box",
-//                              ":-internal-multi-select-focus",
-//                              ":-internal-shadow-host-has-appearance",
-//                              ":-internal-spatial-navigation-focus",
-//                              ":-internal-video-persistent",
-//                              ":-internal-video-persistent-ancestor"};
-//
-//  std::vector<CSSSelector> arena;
-//  for (std::string test_case : test_cases) {
-//    SCOPED_TRACE(test_case);
-//    {
-//      CSSTokenizer tokenizer(test_case);
-//      CSSParserTokenStream stream(tokenizer);
-//      tcb::span<CSSSelector> author_vector =
-//          CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
-//                                           CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-//                                           /*is_within_scope=*/false,
-//                                           /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
-//      EXPECT_EQ(author_vector.size(), 0u);
-//    }
-//
-//    {
-//      CSSTokenizer tokenizer(test_case);
-//      CSSParserTokenStream stream(tokenizer);
-//      tcb::span<CSSSelector> ua_vector =
-//          CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kUASheetMode),
-//                                           CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-//                                           /*is_within_scope=*/false,
-//                                           /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
-//      EXPECT_GT(ua_vector.size(), 0u);
-//    }
-//  }
-//}
-//
-// TEST(CSSSelectorParserTest, ScrollMarkerPseudos) {
-//  struct TestCase {
-//    const char* selector;
-//    CSSSelector::PseudoType type;
-//  };
-//
-//  TestCase test_cases[] = {
-//      {"ul::scroll-marker-group", CSSSelector::kPseudoScrollMarkerGroup},
-//      {"li::scroll-marker", CSSSelector::kPseudoScrollMarker},
-//  };
-//
-//  std::vector<CSSSelector> arena;
-//  for (const auto& test_case : test_cases) {
-//    SCOPED_TRACE(test_case.selector);
-//    CSSTokenizer tokenizer(test_case.selector);
-//    CSSParserTokenStream stream(tokenizer);
-//    tcb::span<CSSSelector> vector =
-//        CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
-//                                         CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-//                                         /*is_within_scope=*/false,
-//                                         /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
-//    EXPECT_TRUE(!vector.empty());
-//
-//    std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
-//    ASSERT_TRUE(list->HasOneSelector());
-//
-//    const CSSSelector* selector = list->First();
-//    while (selector->NextSimpleSelector()) {
-//      selector = selector->NextSimpleSelector();
-//    }
-//
-//    EXPECT_EQ(selector->GetPseudoType(), test_case.type);
-//  }
-//}
-//
-//// Pseudo-elements are not valid within :is() as per the spec:
-//// https://drafts.csswg.org/selectors-4/#matches
-// static const SelectorTestCase invalid_pseudo_is_argments_data[] = {
-//     // clang-format off
-//     {":is(::-webkit-progress-bar)", ":is()"},
-//     {":is(::-webkit-progress-value)", ":is()"},
-//     {":is(::-webkit-slider-runnable-track)", ":is()"},
-//     {":is(::-webkit-slider-thumb)", ":is()"},
-//     {":is(::after)", ":is()"},
-//     {":is(::backdrop)", ":is()"},
-//     {":is(::before)", ":is()"},
-//     {":is(::cue)", ":is()"},
-//     {":is(::first-letter)", ":is()"},
-//     {":is(::first-line)", ":is()"},
-//     {":is(::grammar-error)", ":is()"},
-//     {":is(::marker)", ":is()"},
-//     {":is(::placeholder)", ":is()"},
-//     {":is(::selection)", ":is()"},
-//     {":is(::slotted)", ":is()"},
-//     {":is(::spelling-error)", ":is()"},
-//     {":is(:after)", ":is()"},
-//     {":is(:before)", ":is()"},
-//     {":is(:cue)", ":is()"},
-//     {":is(:first-letter)", ":is()"},
-//     {":is(:first-line)", ":is()"},
-//     // If the selector is nest-containing, it serializes as-is:
-//     // https://drafts.csswg.org/css-nesting-1/#syntax
-//     {":is(:unknown(&))"},
-//     // clang-format on
-// };
-//
-// INSTANTIATE_TEST_SUITE_P(InvalidPseudoIsArguments,
-//                          SelectorParseTest,
-//                          testing::ValuesIn(invalid_pseudo_is_argments_data));
-//
-// static const SelectorTestCase is_where_nesting_data[] = {
-//     // clang-format off
-//     // These pseudos only accept compound selectors:
-//     {"::slotted(:is(.a .b))", "::slotted(:is())"},
-//     {"::slotted(:is(.a + .b))", "::slotted(:is())"},
-//     {"::slotted(:is(.a, .b + .c))", "::slotted(:is(.a))"},
-//     {":host(:is(.a .b))", ":host(:is())"},
-//     {":host(:is(.a + .b))", ":host(:is())"},
-//     {":host(:is(.a, .b + .c))", ":host(:is(.a))"},
-//     {":host-context(:is(.a .b))", ":host-context(:is())"},
-//     {":host-context(:is(.a + .b))", ":host-context(:is())"},
-//     {":host-context(:is(.a, .b + .c))", ":host-context(:is(.a))"},
-//     {"::cue(:is(.a .b))", "::cue(:is())"},
-//     {"::cue(:is(.a + .b))", "::cue(:is())"},
-//     {"::cue(:is(.a, .b + .c))", "::cue(:is(.a))"},
-//     // Only user-action pseudos + :state() are allowed after kPseudoPart:
-//     {"::part(foo):is(.a)", "::part(foo):is()"},
-//     {"::part(foo):is(.a:hover)", "::part(foo):is()"},
-//     {"::part(foo):is(:hover.a)", "::part(foo):is()"},
-//     {"::part(foo):is(:hover + .a)", "::part(foo):is()"},
-//     {"::part(foo):is(.a + :hover)", "::part(foo):is()"},
-//     {"::part(foo):is(:hover:enabled)", "::part(foo):is()"},
-//     {"::part(foo):is(:enabled:hover)", "::part(foo):is()"},
-//     {"::part(foo):is(:hover, :where(.a))",
-//      "::part(foo):is(:hover, :where())"},
-//     {"::part(foo):is(:hover, .a)", "::part(foo):is(:hover)"},
-//     {"::part(foo):is(:state(bar), .a)", "::part(foo):is(:state(bar))"},
-//     {"::part(foo):is(:enabled)", "::part(foo):is()"},
-//     // Only scrollbar pseudos after kPseudoScrollbar:
-//     {"::-webkit-scrollbar:is(:focus)", "::-webkit-scrollbar:is()"},
-//     // Only :window-inactive after kPseudoSelection:
-//     {"::selection:is(:focus)", "::selection:is()"},
-//     // Only user-action pseudos after webkit pseudos:
-//     {"::-webkit-input-placeholder:is(:enabled)",
-//      "::-webkit-input-placeholder:is()"},
-//     {"::-webkit-input-placeholder:is(:not(:enabled))",
-//      "::-webkit-input-placeholder:is()"},
-//
-//     // Valid selectors:
-//     {":is(.a, .b)"},
-//     {":is(.a\n)", ":is(.a)"},
-//     {":is(.a .b, .c)"},
-//     {":is(.a :is(.b .c), .d)"},
-//     {":is(.a :where(.b .c), .d)"},
-//     {":where(.a :is(.b .c), .d)"},
-//     {":not(:is(.a))"},
-//     {":not(:is(.a, .b))"},
-//     {":not(:is(.a + .b, .c .d))"},
-//     {":not(:where(:not(.a)))"},
-//     {"::slotted(:is(.a))"},
-//     {"::slotted(:is(div.a))"},
-//     {"::slotted(:is(.a, .b))"},
-//     {":host(:is(.a))"},
-//     {":host(:is(div.a))"},
-//     {":host(:is(.a, .b))"},
-//     {":host(:is(.a\n))", ":host(:is(.a))"},
-//     {":host-context(:is(.a))"},
-//     {":host-context(:is(div.a))"},
-//     {":host-context(:is(.a, .b))"},
-//     {"::cue(:is(.a))"},
-//     {"::cue(:is(div.a))"},
-//     {"::cue(:is(.a, .b))"},
-//     {"::part(foo):is(:hover)"},
-//     {"::part(foo):is(:hover:focus)"},
-//     {"::part(foo):is(:is(:hover))"},
-//     {"::part(foo):is(:focus, :hover)"},
-//     {"::part(foo):is(:focus, :is(:hover))"},
-//     {"::part(foo):is(:focus, :state(bar))"},
-//     {"::-webkit-scrollbar:is(:enabled)"},
-//     {"::selection:is(:window-inactive)"},
-//     {"::-webkit-input-placeholder:is(:hover)"},
-//     {"::-webkit-input-placeholder:is(:not(:hover))"},
-//     {"::-webkit-input-placeholder:where(:hover)"},
-//     {"::-webkit-input-placeholder:is()"},
-//     {"::-webkit-input-placeholder:is(:where(:hover))"},
-//     // clang-format on
-// };
-//
-// INSTANTIATE_TEST_SUITE_P(NestedSelectorValidity, SelectorParseTest, testing::ValuesIn(is_where_nesting_data));
-//
-// static const SelectorTestCase is_where_forgiving_data[] = {
-//     // clang-format off
+//static const SelectorTestCase is_where_forgiving_data[] = {
+//    // clang-format off
 //     {":is():where()"},
 //     {":is(.a, .b):where(.c)"},
 //     {":is(.a, :unknown, .b)", ":is(.a, .b)"},
@@ -559,9 +543,9 @@ TEST(CSSSelectorParserTest, ValidSimpleAfterPseudoElementInCompound) {
 //     {":is({,.b,} @x, .a)", ":is(.a)"},
 //     {":is((@x), .a)", ":is(.a)"},
 //     {":is((.b), .a)", ":is(.a)"},
-//     // clang-format on
-// };
-//
+//    // clang-format on
+//};
+
 // INSTANTIATE_TEST_SUITE_P(IsWhereForgiving, SelectorParseTest, testing::ValuesIn(is_where_forgiving_data));
 // namespace {
 //

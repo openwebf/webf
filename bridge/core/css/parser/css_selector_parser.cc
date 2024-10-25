@@ -14,20 +14,19 @@
 #include <optional>
 #include <span>
 #include <string>
+#include "core/base/auto_reset.h"
 #include "core/base/strings/string_number_conversions.h"
 #include "core/css/css_selector.h"
 #include "core/css/css_selector_list.h"
 #include "core/css/parser/css_nesting_type.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_observer.h"
+#include "core/css/parser/css_parser_save_point.h"
 #include "core/css/parser/css_parser_token.h"
 #include "core/css/parser/css_parser_token_stream.h"
+#include "core/css/style_engine.h"
 #include "core/css/style_sheet_contents.h"
 #include "core/dom/document.h"
-#include "core/base/auto_reset.h"
-#include "core/css/parser/css_parser_context.h"
-#include "core/css/parser/css_parser_save_point.h"
-#include "core/css/style_engine.h"
 #include "core/executing_context.h"
 #include "core/style/computed_style_constants.h"
 
@@ -1199,9 +1198,9 @@ static bool SelectorListRequiresScopeActivation(const CSSSelectorList& list) {
 
 bool CSSSelectorParser::ConsumeName(CSSParserTokenStream& stream,
                                     std::optional<std::string>& name,
-                                    std::string& namespace_prefix) {
-  name = "";
-  namespace_prefix = "";
+                                    std::optional<std::string>& namespace_prefix) {
+  name = std::nullopt;
+  namespace_prefix = std::nullopt;
 
   const CSSParserToken& first_token = stream.Peek();
   if (first_token.GetType() == kIdentToken) {
@@ -1273,7 +1272,7 @@ bool CSSSelectorParser::ConsumeAttribute(CSSParserTokenStream& stream) {
   CSSParserTokenStream::BlockGuard guard(stream);
   stream.ConsumeWhitespace();
 
-  std::string namespace_prefix;
+  std::optional<std::string> namespace_prefix;
   std::optional<std::string> attribute_name;
   if (!ConsumeName(stream, attribute_name, namespace_prefix)) {
     return false;
@@ -1285,8 +1284,14 @@ bool CSSSelectorParser::ConsumeAttribute(CSSParserTokenStream& stream) {
 
   std::transform(attribute_name->begin(), attribute_name->end(), attribute_name->begin(), tolower);
 
-  QualifiedName qualified_name =
-      namespace_prefix.empty() ? QualifiedName(attribute_name) : QualifiedName(namespace_prefix, attribute_name, "");
+  std::optional<std::string> namespace_uri = DetermineNamespace(namespace_prefix);
+  if (!namespace_uri.has_value()) {
+    return false;
+  }
+
+  QualifiedName qualified_name = !namespace_prefix.has_value()
+                                     ? QualifiedName(attribute_name)
+                                     : QualifiedName(namespace_prefix, attribute_name, namespace_uri);
 
   if (stream.AtEnd()) {
     CSSSelector selector(CSSSelector::kAttributeSet, qualified_name, CSSSelector::AttributeMatchType::kCaseSensitive);
@@ -1709,6 +1714,31 @@ bool CSSSelectorParser::ConsumeSimpleSelector(CSSParserTokenStream& stream) {
   return true;
 }
 
+const std::string& CSSSelectorParser::DefaultNamespace() const {
+  if (!style_sheet_ || ignore_default_namespace_) {
+    return "*";
+  }
+  return "";
+}
+
+const std::optional<std::string>& CSSSelectorParser::DetermineNamespace(const std::optional<std::string>& prefix) {
+  if (!prefix.has_value()) {
+    return DefaultNamespace();
+  }
+  if (prefix->empty()) {
+    return "";  // No namespace. If an element/attribute has a
+                // namespace, we won't match it.
+  }
+  if (prefix == "*") {
+    return "*";  // We'll match any namespace.
+  }
+  if (!style_sheet_) {
+    return "";  // Cannot resolve prefix to namespace without a
+                // stylesheet, syntax error.
+  }
+  return style_sheet_->NamespaceURIFromPrefix(prefix.value());
+}
+
 tcb::span<CSSSelector> CSSSelectorParser::ConsumeCompoundSelector(CSSParserTokenStream& stream,
                                                                   CSSNestingType nesting_type) {
   ResetVectorAfterScope reset_vector(output_);
@@ -1726,7 +1756,7 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeCompoundSelector(CSSParserToken
   // gets very complex with having to deal with both the explicit and the
   // implicit case. Consider just inserting it, and then removing it
   // afterwards if we really don't need it.
-  std::string namespace_prefix;
+  std::optional<std::string> namespace_prefix;
   std::optional<std::string> element_name;
   const bool has_q_name = ConsumeName(stream, element_name, namespace_prefix);
   std::transform(element_name->begin(), element_name->end(), element_name->begin(), tolower);
@@ -1767,6 +1797,13 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeCompoundSelector(CSSParserToken
       // No tag name either, so we fail parsing of this selector.
       return {};
     }
+
+    std::optional<std::string> namespace_uri = DetermineNamespace(namespace_prefix);
+    if (!namespace_uri.has_value()) {
+      failed_parsing_ = true;
+      return {};
+    }
+
     DCHECK(has_q_name);
     namespace_prefix = "";
     output_.push_back(CSSSelector(QualifiedName(namespace_prefix, element_name, "")));
@@ -1885,19 +1922,31 @@ CSSSelector::AttributeMatchType CSSSelectorParser::ConsumeAttributeFlags(CSSPars
   return CSSSelector::AttributeMatchType::kCaseSensitive;
 }
 
-void CSSSelectorParser::PrependTypeSelectorIfNeeded(const std::string& namespace_prefix,
+void CSSSelectorParser::PrependTypeSelectorIfNeeded(const std::optional<std::string>& namespace_prefix,
                                                     bool has_q_name,
                                                     const std::optional<std::string>& element_name,
                                                     size_t start_index_of_compound_selector) {
   const CSSSelector& compound_selector = output_[start_index_of_compound_selector];
 
-  if (!has_q_name && !NeedsImplicitShadowCombinatorForMatching(compound_selector)) {
+  if (!has_q_name && DefaultNamespace() == "*" && !NeedsImplicitShadowCombinatorForMatching(compound_selector)) {
     return;
   }
 
   std::optional<std::string> determined_element_name = !has_q_name ? CSSSelector::UniversalSelector() : element_name;
-  std::string determined_prefix = "";
-  QualifiedName tag = QualifiedName(determined_prefix, determined_element_name, "");
+
+  std::optional<std::string> namespace_uri = DetermineNamespace(namespace_prefix);
+  if (!namespace_uri.has_value()) {
+    failed_parsing_ = true;
+    return;
+  }
+
+  std::optional<std::string> determined_prefix = namespace_prefix;
+
+  if (namespace_uri == DefaultNamespace()) {
+    determined_prefix = std::nullopt;
+  }
+
+  QualifiedName tag = QualifiedName(determined_prefix, determined_element_name, namespace_uri);
 
   // *:host/*:host-context never matches, so we can't discard the *,
   // otherwise we can't tell the difference between *:host and just :host.
@@ -1908,7 +1957,7 @@ void CSSSelectorParser::PrependTypeSelectorIfNeeded(const std::string& namespace
   // (relation) on in the cases where there are no simple selectors preceding
   // the pseudo element.
   bool is_host_pseudo = IsHostPseudoSelector(compound_selector);
-  if (is_host_pseudo && !has_q_name && namespace_prefix.empty()) {
+  if (is_host_pseudo && !has_q_name && !namespace_prefix.has_value()) {
     return;
   }
   if (tag != AnyQName() || is_host_pseudo || NeedsImplicitShadowCombinatorForMatching(compound_selector)) {

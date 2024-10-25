@@ -54,6 +54,7 @@ StyleSheetContents::StyleSheetContents(const std::shared_ptr<const CSSParserCont
       has_syntactically_valid_css_header_(true),
       is_mutable_(false),
       has_font_face_rule_(false),
+      default_namespace_("*"),
       has_viewport_rule_(false),
       has_single_owner_document_(true),
       has_media_queries_(false),
@@ -68,8 +69,8 @@ StyleSheetContents::StyleSheetContents(const webf::StyleSheetContents& o)
       import_rules_(o.import_rules_.size()),
       //      namespace_rules_(o.namespace_rules_.size()),
       child_rules_(o.child_rules_.size()),
-      //      namespaces_(o.namespaces_),
-      //      default_namespace_(o.default_namespace_),
+      namespaces_(o.namespaces_),
+      default_namespace_(o.default_namespace_),
       has_syntactically_valid_css_header_(o.has_syntactically_valid_css_header_),
       did_load_error_occur_(false),
       is_mutable_(false),
@@ -213,6 +214,15 @@ void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
     return;
   }
 
+//  if (auto* namespace_rule = DynamicTo<StyleRuleNamespace>(rule)) {
+//    // Parser enforces that @namespace rules come before all rules other than
+//    // import/charset rules and empty layer statements
+//    DCHECK(child_rules_.empty());
+//    ParserAddNamespace(namespace_rule->Prefix(), namespace_rule->Uri());
+//    namespace_rules_.push_back(namespace_rule);
+//    return;
+//  }
+
   child_rules_.push_back(rule);
 }
 
@@ -321,6 +331,21 @@ void StyleSheetContents::Trace(webf::GCVisitor* gc_visitor) const {
     parser_context_->Trace(gc_visitor);
   }
 }
+
+const std::optional<std::string>& StyleSheetContents::NamespaceURIFromPrefix(const std::string& prefix) const {
+  auto it = namespaces_.find(prefix);
+  return it != namespaces_.end() ? std::optional<std::string>(it->second) : std::nullopt;
+}
+
+void StyleSheetContents::ParserAddNamespace(const std::optional<std::string>& prefix, const std::optional<std::string>& uri) {
+  DCHECK(uri.has_value());
+  if (!prefix.has_value()) {
+    default_namespace_ = uri.value();
+    return;
+  }
+  namespaces_.insert(std::make_pair(prefix.value(), uri.value()));
+}
+
 
 void StyleSheetContents::NotifyRemoveFontFaceRule(const webf::StyleRuleFontFace*) {}
 
