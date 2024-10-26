@@ -481,5 +481,3 @@ Object.assign(global, {
   onFourfoldImageLoad,
   onDoubleImageLoad
 });
-
-nativeLoader.loadNativeLibrary('example_app', {}).catch(err => console.log(err));

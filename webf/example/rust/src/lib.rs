@@ -1,9 +1,8 @@
 use std::ffi::{c_void, CString};
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{element, initialize_webf_api, RustValue};
+use webf_sys::{AddEventListenerOptions, element, EventTargetMethods, initialize_webf_api, RustValue};
 use webf_sys::element::Element;
-use webf_sys::event_target::{AddEventListenerOptions, EventTarget, EventTargetMethods};
 use webf_sys::node::NodeMethods;
 
 #[no_mangle]

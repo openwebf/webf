@@ -18,7 +18,7 @@ if(MSVC)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-#  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
 endif()
 
 if(WIN32)

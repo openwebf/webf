@@ -82,7 +82,6 @@ BindingObject::~BindingObject() {
   binding_object_->invoke_binding_methods_from_dart = nullptr;
   binding_object_->invoke_bindings_methods_from_native = nullptr;
 
-  WEBF_LOG(VERBOSE) << " DISPOSE BINDING OBJECT: " << this;
   // When a JSObject got finalized by QuickJS GC, we can not guarantee the ExecutingContext are still alive and
   // accessible.
   if (isContextValid(contextId())) {
