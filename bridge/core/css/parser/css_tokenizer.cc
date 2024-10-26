@@ -92,8 +92,8 @@ CSSParserToken CSSTokenizer::TokenizeSingleWithComments() {
 }
 
 void CSSTokenizer::PersistStrings(CSSTokenizer& destination) {
-  for (const std::string& s : string_pool_) {
-    destination.string_pool_.push_back(std::move(s));
+  for (const std::shared_ptr<std::string>& s : string_pool_) {
+    destination.string_pool_.push_back(s);
   }
 }
 
@@ -836,8 +836,9 @@ bool CSSTokenizer::NextCharsAreIdentifier() {
 }
 
 std::string_view CSSTokenizer::RegisterString(const std::string& string) {
-  string_pool_.push_back(string);
-  return std::string_view(string);
+  std::shared_ptr<std::string> buffer = std::make_shared<std::string>(string);
+  string_pool_.push_back(buffer);
+  return std::string_view(buffer->data(), string.size());
 }
 
 }  // namespace webf

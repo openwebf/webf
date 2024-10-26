@@ -7,6 +7,8 @@
  */
 
 #include "css_parser_idioms.h"
+#include "foundation/string_builder.h"
+#include "core/base/strings/string_number_conversions.h"
 #include "foundation/ascii_types.h"
 #include "css_tokenizer_input_stream.h"
 
@@ -26,20 +28,23 @@ void ConsumeSingleWhitespaceIfNext(CSSTokenizerInputStream& input) {
 int32_t ConsumeEscape(CSSTokenizerInputStream& input) {
   char cc = input.NextInputChar();
   input.Advance();
-  assert(!IsCSSNewLine(cc));
+  DCHECK(!IsCSSNewLine(cc));
   if (IsASCIIHexDigit(cc)) {
     unsigned consumed_hex_digits = 1;
-    std::string hex_chars;
-    hex_chars.append(std::string(1, (char) cc));
+    StringBuilder hex_chars;
+    hex_chars.Append(cc);
     while (consumed_hex_digits < 6 &&
            IsASCIIHexDigit(input.PeekWithoutReplacement(0))) {
       cc = input.NextInputChar();
       input.Advance();
-      hex_chars.append(std::string(1, char(cc)));
+      hex_chars.Append(cc);
       consumed_hex_digits++;
-    }
+    };
     ConsumeSingleWhitespaceIfNext(input);
-    int32_t code_point = std::stoi(hex_chars);
+    bool ok = false;
+    uint32_t code_point;
+    ok = base::HexStringToUInt(hex_chars.ReleaseString(), &code_point);
+    DCHECK(ok);
     if (code_point == 0 || (0xD800 <= code_point && code_point <= 0xDFFF) ||
         code_point > 0x10FFFF) {
       return kReplacementCharacter;
@@ -55,20 +60,20 @@ int32_t ConsumeEscape(CSSTokenizerInputStream& input) {
 
 //// http://www.w3.org/TR/css3-syntax/#consume-a-name
 std::string ConsumeName(CSSTokenizerInputStream& input) {
-  std::string result;
+  StringBuilder result;
   while (true) {
     char cc = input.NextInputChar();
     input.Advance();
     if (IsNameCodePoint(cc)) {
-      result.append(std::string(1, (char) cc));
+      result.Append(cc);
       continue;
     }
     if (TwoCharsAreValidEscape(cc, input.PeekWithoutReplacement(0))) {
-      result.append(std::string(1, (char) ConsumeEscape(input)));
+      result.Append(ConsumeEscape(input));
       continue;
     }
     input.PushBack(cc);
-    return result;
+    return result.ReleaseString();
   }
 }
 

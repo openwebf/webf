@@ -75,11 +75,6 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   add_compile_options(-fPIC)
 endif()
 
-if (ENABLE_ASAN)
-  add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
-  add_link_options(-fsanitize=address -fno-omit-frame-pointer)
-endif ()
-
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   if (MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "/O1")
@@ -846,6 +841,11 @@ target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
 
 add_library(gumbo_parse_static STATIC ${GUMBO_PARSER})
 list(APPEND BRIDGE_LINK_LIBS gumbo_parse_static)
+
+if (ENABLE_ASAN)
+  target_compile_options(webf PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+  target_link_options(webf PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+endif ()
 
 if (${IS_ANDROID})
   find_library(log-lib log)

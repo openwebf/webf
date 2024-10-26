@@ -53,7 +53,6 @@ class StringBuilder {
       Append(static_cast<char>(c));
       return;
     }
-    assert(false);
   }
 
   void Append(const StringBuilder& other) {
@@ -138,8 +137,13 @@ class StringBuilder {
     Append(std::to_string(v));
   }
 
-  void Append(int32_t v) {
-    Append(std::to_string(v));
+  void Append(int32_t c) {
+    if (U_IS_BMP(c)) {
+      Append(static_cast<char16_t >(c));
+      return;
+    }
+    Append(U16_LEAD(c));
+    Append(U16_TRAIL(c));
   }
 
   void Append(char c) {

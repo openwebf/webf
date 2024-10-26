@@ -47,7 +47,7 @@ class CSSTokenizer {
   [[nodiscard]] uint32_t PreviousOffset() const { return prev_offset_; }
   [[nodiscard]] std::string_view StringRangeFrom(size_t start) const;
   [[nodiscard]] std::string_view StringRangeAt(size_t start, size_t length) const;
-  [[nodiscard]] const std::vector<std::string>& StringPool() const { return string_pool_; }
+  [[nodiscard]] const std::vector<std::shared_ptr<std::string>>& StringPool() const { return string_pool_; }
   CSSParserToken TokenizeSingle();
   CSSParserToken TokenizeSingleWithComments();
 
@@ -159,7 +159,7 @@ class CSSTokenizer {
   uint32_t token_count_ = 0;
   std::vector<CSSParserTokenType> block_stack_;
   // We only allocate strings when escapes are used.
-  std::vector<std::string> string_pool_;
+  std::vector<std::shared_ptr<std::string>> string_pool_;
   bool unicode_ranges_allowed_ = false;
 };
 
