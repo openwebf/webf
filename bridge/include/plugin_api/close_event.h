@@ -23,6 +23,7 @@ struct CloseEventPublicMethods : public WebFPublicMethods {
   static const char* DupReason(CloseEvent* close_event);
   static bool WasClean(CloseEvent* close_event);
   double version{1.0};
+  EventPublicMethods event;
   PublicCloseEventGetCode close_event_get_code{Code};
   PublicCloseEventGetReason close_event_get_reason{Reason};
   PublicCloseEventDupReason close_event_dup_reason{DupReason};

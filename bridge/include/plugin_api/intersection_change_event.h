@@ -17,6 +17,7 @@ using PublicIntersectionChangeEventGetIntersectionRatio = double (*)(Intersectio
 struct IntersectionChangeEventPublicMethods : public WebFPublicMethods {
   static double IntersectionRatio(IntersectionChangeEvent* intersection_change_event);
   double version{1.0};
+  EventPublicMethods event;
   PublicIntersectionChangeEventGetIntersectionRatio intersection_change_event_get_intersection_ratio{IntersectionRatio};
 };
 }  // namespace webf

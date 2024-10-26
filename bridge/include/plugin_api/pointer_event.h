@@ -37,6 +37,7 @@ struct PointerEventPublicMethods : public WebFPublicMethods {
   static double Twist(PointerEvent* pointer_event);
   static double Width(PointerEvent* pointer_event);
   double version{1.0};
+  MouseEventPublicMethods mouse_event;
   PublicPointerEventGetHeight pointer_event_get_height{Height};
   PublicPointerEventGetIsPrimary pointer_event_get_is_primary{IsPrimary};
   PublicPointerEventGetPointerId pointer_event_get_pointer_id{PointerId};

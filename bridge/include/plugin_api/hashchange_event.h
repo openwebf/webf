@@ -23,6 +23,7 @@ struct HashchangeEventPublicMethods : public WebFPublicMethods {
   static const char* OldURL(HashchangeEvent* hashchange_event);
   static const char* DupOldURL(HashchangeEvent* hashchange_event);
   double version{1.0};
+  EventPublicMethods event;
   PublicHashchangeEventGetNewURL hashchange_event_get_new_url{NewURL};
   PublicHashchangeEventDupNewURL hashchange_event_dup_new_url{DupNewURL};
   PublicHashchangeEventGetOldURL hashchange_event_get_old_url{OldURL};

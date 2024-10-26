@@ -19,6 +19,7 @@ using PublicFocusEventGetRelatedTarget = WebFValue<EventTarget, EventTargetPubli
 struct FocusEventPublicMethods : public WebFPublicMethods {
   static WebFValue<EventTarget, EventTargetPublicMethods> RelatedTarget(FocusEvent* focus_event);
   double version{1.0};
+  UIEventPublicMethods ui_event;
   PublicFocusEventGetRelatedTarget focus_event_get_related_target{RelatedTarget};
 };
 }  // namespace webf

@@ -25,6 +25,7 @@ struct TransitionEventPublicMethods : public WebFPublicMethods {
   static const char* PseudoElement(TransitionEvent* transition_event);
   static const char* DupPseudoElement(TransitionEvent* transition_event);
   double version{1.0};
+  EventPublicMethods event;
   PublicTransitionEventGetElapsedTime transition_event_get_elapsed_time{ElapsedTime};
   PublicTransitionEventGetPropertyName transition_event_get_property_name{PropertyName};
   PublicTransitionEventDupPropertyName transition_event_dup_property_name{DupPropertyName};
