@@ -50,12 +50,12 @@ class Dispatcher {
 
   template <typename Func, typename... Args>
   void PostToDart(bool dedicated_thread, Func&& func, Args&&... args) {
-#if FLUTTER_BACKEND
     if (!dedicated_thread) {
       std::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
       return;
     }
 
+#if FLUTTER_BACKEND
     auto task = std::make_shared<ConcreteTask<Func, Args...>>(std::forward<Func>(func), std::forward<Args>(args)...);
     DartWork work = [task](bool cancel) { (*task)(); };
 

@@ -30,8 +30,6 @@ dependencies:
   waterfall_flow: ^3.0.1
   image_compare: ^1.1.2
   card_swiper: ^3.0.1
-  example_app:
-    path: rust_builder
 
 dev_dependencies:
   flutter_test:

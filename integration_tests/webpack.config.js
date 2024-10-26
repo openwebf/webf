@@ -14,30 +14,29 @@ const specGroup = require('./spec_group.json');
 
 let coreSpecFiles = [];
 
-//if (process.env.SPEC_SCOPE) {
-//  let targetSpec = specGroup.find((item) => item.name === process.env.SPEC_SCOPE.trim());
-//  if (targetSpec) {
-//    let targetSpecCollection = targetSpec.specs;
-//    targetSpecCollection.forEach(spec => {
-//      let files = glob.sync(spec, {
-//        cwd: context,
-//        ignore: ['node_modules/**'],
-//      }).map((file) => './' + file);
-//      coreSpecFiles = coreSpecFiles.concat(files);
-//    });
-//  } else {
-//    throw new Error('Unknown target spec scope: ' + process.env.SPEC_SCOPE);
-//  }
-//} else {
-//  coreSpecFiles = glob.sync('specs/**/*.{js,jsx,ts,tsx,html,svg}', {
-//    cwd: context,
-//    ignore: ['node_modules/**'],
-//  }).map((file) => './' + file);
-//  if (process.env.WEBF_TEST_FILTER) {
-//    coreSpecFiles = coreSpecFiles.filter(name => name.includes(process.env.WEBF_TEST_FILTER))
-//  }
-//}
-
+if (process.env.SPEC_SCOPE) {
+ let targetSpec = specGroup.find((item) => item.name === process.env.SPEC_SCOPE.trim());
+ if (targetSpec) {
+   let targetSpecCollection = targetSpec.specs;
+   targetSpecCollection.forEach(spec => {
+     let files = glob.sync(spec, {
+       cwd: context,
+       ignore: ['node_modules/**'],
+     }).map((file) => './' + file);
+     coreSpecFiles = coreSpecFiles.concat(files);
+   });
+ } else {
+   throw new Error('Unknown target spec scope: ' + process.env.SPEC_SCOPE);
+ }
+} else {
+ coreSpecFiles = glob.sync('specs/**/*.{js,jsx,ts,tsx,html,svg}', {
+   cwd: context,
+   ignore: ['node_modules/**'],
+ }).map((file) => './' + file);
+ if (process.env.WEBF_TEST_FILTER) {
+   coreSpecFiles = coreSpecFiles.filter(name => name.includes(process.env.WEBF_TEST_FILTER))
+ }
+}
 
 const dartVersion = execSync('dart --version', {encoding: 'utf-8'});
 const regExp = /Dart SDK version: (\d\.\d{1,3}\.\d{1,3}) /;
