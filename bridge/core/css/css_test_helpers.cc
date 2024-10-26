@@ -64,7 +64,8 @@ std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationBlock(const std::stri
   return set;
 }
 
-std::shared_ptr<StyleRuleBase> ParseRule(Document& document, std::string text) {
+std::shared_ptr<StyleRuleBase> ParseRule(Document& document, const std::string& text) {
+  MemberMutationScope scope{document.GetExecutingContext()};
   auto* sheet = CSSStyleSheet::CreateInline(document, NullURL(), TextPosition::MinimumPosition());
   const auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   return CSSParser::ParseRule(context, sheet->Contents(), CSSNestingType::kNone,

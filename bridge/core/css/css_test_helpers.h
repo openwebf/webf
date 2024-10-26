@@ -57,7 +57,7 @@ std::shared_ptr<const CSSValue> ParseLonghand(Document& document,
 std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationBlock(
     const std::string& block_text,
     CSSParserMode mode = kHTMLStandardMode);
-std::shared_ptr<StyleRuleBase> ParseRule(Document& document, std::string text);
+std::shared_ptr<StyleRuleBase> ParseRule(Document& document, const std::string& text);
 
 // Parse a value according to syntax defined by:
 // https://drafts.css-houdini.org/css-properties-values-api-1/#syntax-strings

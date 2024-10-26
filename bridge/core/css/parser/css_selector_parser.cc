@@ -528,9 +528,7 @@ void CSSSelectorParser::AddPlaceholderSelectorIfNeeded(CSSParserTokenStream& str
   if (nesting_type != CSSNestingType::kNone) {
     CSSSelector placeholder_selector;
     placeholder_selector.SetMatch(CSSSelector::kPseudoClass);
-    placeholder_selector.SetUnparsedPlaceholder(
-        nesting_type,
-        std::string(stream.StringRangeAt(start, end - start)));
+    placeholder_selector.SetUnparsedPlaceholder(nesting_type, std::string(stream.StringRangeAt(start, end - start)));
     placeholder_selector.SetLastInComplexSelector(true);
     output_.push_back(placeholder_selector);
   }
@@ -1343,8 +1341,6 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
       case CSSSelector::kPseudoAfter:
         break;
       case CSSSelector::kPseudoMarker:
-        if (context_->Mode() != kUASheetMode) {
-        }
         break;
       default:
         break;
@@ -1381,11 +1377,11 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
   switch (selector.GetPseudoType()) {
     case CSSSelector::kPseudoIs: {
       DisallowPseudoElementsScope scope(this);
-      AutoReset<bool> resist_namespace(&resist_default_namespace_, true);
-      AutoReset<bool> is_inside_logical_combination_in_has_argument(&is_inside_logical_combination_in_has_argument_,
-                                                                    is_inside_has_argument_);
+      webf::AutoReset<bool> resist_namespace(&resist_default_namespace_, true);
+      webf::AutoReset<bool> is_inside_logical_combination_in_has_argument(
+          &is_inside_logical_combination_in_has_argument_, is_inside_has_argument_);
 
-      std::shared_ptr<CSSSelectorList> selector_list = ConsumeForgivingNestedSelectorList(stream);
+      auto selector_list = ConsumeForgivingNestedSelectorList(stream);
       if (!selector_list || !stream.AtEnd()) {
         return false;
       }
@@ -1395,9 +1391,9 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
     }
     case CSSSelector::kPseudoWhere: {
       DisallowPseudoElementsScope scope(this);
-      AutoReset<bool> resist_namespace(&resist_default_namespace_, true);
-      AutoReset<bool> is_inside_logical_combination_in_has_argument(&is_inside_logical_combination_in_has_argument_,
-                                                                    is_inside_has_argument_);
+      webf::AutoReset<bool> resist_namespace(&resist_default_namespace_, true);
+      webf::AutoReset<bool> is_inside_logical_combination_in_has_argument(
+          &is_inside_logical_combination_in_has_argument_, is_inside_has_argument_);
 
       std::shared_ptr<CSSSelectorList> selector_list = ConsumeForgivingNestedSelectorList(stream);
       if (!selector_list || !stream.AtEnd()) {
@@ -1412,8 +1408,8 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
     case CSSSelector::kPseudoAny:
     case CSSSelector::kPseudoCue: {
       DisallowPseudoElementsScope scope(this);
-      AutoReset<bool> inside_compound(&inside_compound_pseudo_, true);
-      AutoReset<bool> ignore_namespace(
+      webf::AutoReset<bool> inside_compound(&inside_compound_pseudo_, true);
+      webf::AutoReset<bool> ignore_namespace(
           &ignore_default_namespace_, ignore_default_namespace_ || selector.GetPseudoType() == CSSSelector::kPseudoCue);
 
       std::shared_ptr<CSSSelectorList> selector_list = ConsumeCompoundSelectorList(stream);
@@ -1436,11 +1432,11 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
     }
     case CSSSelector::kPseudoHas: {
       DisallowPseudoElementsScope scope(this);
-      AutoReset<bool> resist_namespace(&resist_default_namespace_, true);
+      webf::AutoReset<bool> resist_namespace(&resist_default_namespace_, true);
 
-      AutoReset<bool> is_inside_has_argument(&is_inside_has_argument_, true);
-      AutoReset<bool> found_pseudo_in_has_argument(&found_pseudo_in_has_argument_, false);
-      AutoReset<bool> found_complex_logical_combinations_in_has_argument(
+      webf::AutoReset<bool> is_inside_has_argument(&is_inside_has_argument_, true);
+      webf::AutoReset<bool> found_pseudo_in_has_argument(&found_pseudo_in_has_argument_, false);
+      webf::AutoReset<bool> found_complex_logical_combinations_in_has_argument(
           &found_complex_logical_combinations_in_has_argument_, false);
 
       std::shared_ptr<CSSSelectorList> selector_list;
@@ -1460,11 +1456,11 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
     }
     case CSSSelector::kPseudoNot: {
       DisallowPseudoElementsScope scope(this);
-      AutoReset<bool> resist_namespace(&resist_default_namespace_, true);
-      AutoReset<bool> is_inside_logical_combination_in_has_argument(&is_inside_logical_combination_in_has_argument_,
-                                                                    is_inside_has_argument_);
+      webf::AutoReset<bool> resist_namespace(&resist_default_namespace_, true);
+      webf::AutoReset<bool> is_inside_logical_combination_in_has_argument(
+          &is_inside_logical_combination_in_has_argument_, is_inside_has_argument_);
 
-      std::shared_ptr<CSSSelectorList> selector_list = ConsumeNestedSelectorList(stream);
+      auto selector_list = ConsumeNestedSelectorList(stream);
       if (!selector_list || !selector_list->IsValid() || !stream.AtEnd()) {
         return false;
       }
@@ -1475,7 +1471,6 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
     }
     case CSSSelector::kPseudoDir:
     case CSSSelector::kPseudoState: {
-      CHECK(selector.GetPseudoType() != CSSSelector::kPseudoState);
       const CSSParserToken& ident = stream.Peek();
       if (ident.GetType() != kIdentToken) {
         return false;
@@ -1551,6 +1546,17 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
 
       CHECK_EQ(name_and_classes->size(), 1ull);
 
+      while (!stream.AtEnd() && stream.Peek().GetType() != kWhitespaceToken) {
+        if (stream.Peek().GetType() != kDelimiterToken || stream.Consume().Delimiter() != '.') {
+          return false;
+        }
+
+        if (stream.Peek().GetType() != kIdentToken) {
+          return false;
+        }
+        name_and_classes->push_back(std::string(stream.Consume().Value()));
+      }
+
       stream.ConsumeWhitespace();
 
       if (!stream.AtEnd()) {
@@ -1563,7 +1569,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
     }
     case CSSSelector::kPseudoSlotted: {
       DisallowPseudoElementsScope scope(this);
-      AutoReset<bool> inside_compound(&inside_compound_pseudo_, true);
+      webf::AutoReset<bool> inside_compound(&inside_compound_pseudo_, true);
 
       {
         ResetVectorAfterScope reset_vector(output_);
@@ -1721,7 +1727,7 @@ const std::string& CSSSelectorParser::DefaultNamespace() const {
   return style_sheet_->DefaultNamespace();
 }
 
-const std::optional<std::string>& CSSSelectorParser::DetermineNamespace(const std::optional<std::string>& prefix) {
+std::optional<std::string> CSSSelectorParser::DetermineNamespace(const std::optional<std::string>& prefix) {
   if (!prefix.has_value()) {
     return DefaultNamespace();
   }
@@ -1733,8 +1739,8 @@ const std::optional<std::string>& CSSSelectorParser::DetermineNamespace(const st
     return "*";  // We'll match any namespace.
   }
   if (!style_sheet_) {
-    return "";  // Cannot resolve prefix to namespace without a
-                // stylesheet, syntax error.
+    return std::nullopt;  // Cannot resolve prefix to namespace without a
+                          // stylesheet, syntax error.
   }
   return style_sheet_->NamespaceURIFromPrefix(prefix.value());
 }
@@ -1961,8 +1967,8 @@ void CSSSelectorParser::PrependTypeSelectorIfNeeded(const std::optional<std::str
     return;
   }
   if (tag != AnyQName() || is_host_pseudo || NeedsImplicitShadowCombinatorForMatching(compound_selector)) {
-    const bool is_implicit =
-        determined_prefix == "" && determined_element_name == CSSSelector::UniversalSelector() && !is_host_pseudo;
+    const bool is_implicit = !determined_prefix.has_value() &&
+                             determined_element_name == CSSSelector::UniversalSelector() && !is_host_pseudo;
 
     output_.insert(output_.begin() + start_index_of_compound_selector, CSSSelector(tag, is_implicit));
   }

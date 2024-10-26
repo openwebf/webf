@@ -166,7 +166,7 @@ class CSSSelectorParser {
   bool ConsumeSimpleSelector(CSSParserTokenStream&);
 
   const std::string& DefaultNamespace() const;
-  const std::optional<std::string>& DetermineNamespace(const std::optional<std::string>& prefix);
+  std::optional<std::string> DetermineNamespace(const std::optional<std::string>& prefix);
 
   // Returns an empty range on error.
   tcb::span<CSSSelector> ConsumeCompoundSelector(CSSParserTokenStream&,
