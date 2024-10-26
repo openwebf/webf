@@ -62,7 +62,7 @@ impl Event {
   }
   pub fn set_cancel_bubble(&self, value: bool, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).set_cancel_bubble)(self.ptr(), value as i32, exception_state.ptr)
+      ((*self.method_pointer).set_cancel_bubble)(self.ptr(), value as boolean_t, exception_state.ptr)
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -120,7 +120,7 @@ impl Event {
   }
   pub fn init_event(&self, type_: &str, bubbles: bool, cancelable: bool, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).init_event)(self.ptr(), CString::new(type_).unwrap().as_ptr(), bubbles as i32, cancelable as i32, exception_state.ptr);
+      ((*self.method_pointer).init_event)(self.ptr(), CString::new(type_).unwrap().as_ptr(), bubbles as boolean_t, cancelable as boolean_t, exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
