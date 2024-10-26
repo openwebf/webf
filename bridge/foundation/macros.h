@@ -39,7 +39,7 @@ class __thisIsHereToForceASemicolonAfterThisMacro;
 #define CHECK(exp) assert(exp)
 #define DCHECK_EQ(exp1, exp2) assert(exp1 == exp2)
 #define CHECK_EQ(exp1, exp2) assert(exp1 == exp2)
-#define DCHECK_GE(exp1, exp2) assert(exp1 > exp2)
+#define DCHECK_GE(exp1, exp2) assert(exp1 >= exp2)
 #define CHECK_GT(exp1, exp2) assert(exp1 > exp2)
 #define DCHECK_NE(exp1, exp2) assert(exp1 != exp2)
 #define DCHECK_LE(exp1, exp2) assert(exp1 <= exp2)
