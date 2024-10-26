@@ -9,55 +9,146 @@ use crate::*;
 #[repr(C)]
 pub struct MouseEventRustMethods {
   pub version: c_double,
+  pub ui_event: *const UIEventRustMethods,
   pub client_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub client_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub offset_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub offset_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
 }
 pub struct MouseEvent {
-  pub ptr: *const OpaquePtr,
-  context: *const ExecutingContext,
+  pub ui_event: UIEvent,
   method_pointer: *const MouseEventRustMethods,
-  status: *const RustValueStatus
 }
 impl MouseEvent {
   pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const MouseEventRustMethods, status: *const RustValueStatus) -> MouseEvent {
-    MouseEvent {
-      ptr,
-      context,
-      method_pointer,
-      status
+    unsafe {
+      MouseEvent {
+        ui_event: UIEvent::initialize(
+          ptr,
+          context,
+          method_pointer.as_ref().unwrap().ui_event,
+          status,
+        ),
+        method_pointer,
+      }
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {
-    self.ptr
+    self.ui_event.ptr()
   }
   pub fn context<'a>(&self) -> &'a ExecutingContext {
-    assert!(!self.context.is_null(), "Context PTR must not be null");
-    unsafe { &*self.context }
+    self.ui_event.context()
   }
   pub fn client_x(&self) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).client_x)(self.ptr)
+      ((*self.method_pointer).client_x)(self.ptr())
     };
     value
   }
   pub fn client_y(&self) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).client_y)(self.ptr)
+      ((*self.method_pointer).client_y)(self.ptr())
     };
     value
   }
   pub fn offset_x(&self) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).offset_x)(self.ptr)
+      ((*self.method_pointer).offset_x)(self.ptr())
     };
     value
   }
   pub fn offset_y(&self) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).offset_y)(self.ptr)
+      ((*self.method_pointer).offset_y)(self.ptr())
     };
     value
+  }
+}
+pub trait MouseEventMethods: UIEventMethods {
+  fn client_x(&self) -> f64;
+  fn client_y(&self) -> f64;
+  fn offset_x(&self) -> f64;
+  fn offset_y(&self) -> f64;
+  fn as_mouse_event(&self) -> &MouseEvent;
+}
+impl MouseEventMethods for MouseEvent {
+  fn client_x(&self) -> f64 {
+    self.client_x()
+  }
+  fn client_y(&self) -> f64 {
+    self.client_y()
+  }
+  fn offset_x(&self) -> f64 {
+    self.offset_x()
+  }
+  fn offset_y(&self) -> f64 {
+    self.offset_y()
+  }
+  fn as_mouse_event(&self) -> &MouseEvent {
+    self
+  }
+}
+impl UIEventMethods for MouseEvent {
+  fn detail(&self) -> f64 {
+    self.ui_event.detail()
+  }
+  fn view(&self) -> Window {
+    self.ui_event.view()
+  }
+  fn which(&self) -> f64 {
+    self.ui_event.which()
+  }
+  fn as_ui_event(&self) -> &UIEvent {
+    &self.ui_event
+  }
+}
+impl EventMethods for MouseEvent {
+  fn bubbles(&self) -> bool {
+    self.ui_event.event.bubbles()
+  }
+  fn cancel_bubble(&self) -> bool {
+    self.ui_event.event.cancel_bubble()
+  }
+  fn set_cancel_bubble(&self, value: bool, exception_state: &ExceptionState) -> Result<(), String> {
+    self.ui_event.event.set_cancel_bubble(value, exception_state)
+  }
+  fn cancelable(&self) -> bool {
+    self.ui_event.event.cancelable()
+  }
+  fn current_target(&self) -> EventTarget {
+    self.ui_event.event.current_target()
+  }
+  fn default_prevented(&self) -> bool {
+    self.ui_event.event.default_prevented()
+  }
+  fn src_element(&self) -> EventTarget {
+    self.ui_event.event.src_element()
+  }
+  fn target(&self) -> EventTarget {
+    self.ui_event.event.target()
+  }
+  fn is_trusted(&self) -> bool {
+    self.ui_event.event.is_trusted()
+  }
+  fn time_stamp(&self) -> f64 {
+    self.ui_event.event.time_stamp()
+  }
+  fn type_(&self) -> String {
+    self.ui_event.event.type_()
+  }
+  fn init_event(&self, type_: &str, bubbles: bool, cancelable: bool, exception_state: &ExceptionState) -> Result<(), String> {
+    self.ui_event.event.init_event(type_, bubbles, cancelable, exception_state)
+  }
+  fn prevent_default(&self, exception_state: &ExceptionState) -> Result<(), String> {
+    self.ui_event.event.prevent_default(exception_state)
+  }
+  fn stop_immediate_propagation(&self, exception_state: &ExceptionState) -> Result<(), String> {
+    self.ui_event.event.stop_immediate_propagation(exception_state)
+  }
+  fn stop_propagation(&self, exception_state: &ExceptionState) -> Result<(), String> {
+    self.ui_event.event.stop_propagation(exception_state)
+  }
+  fn as_event(&self) -> &Event {
+    &self.ui_event.event
   }
 }

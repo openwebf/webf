@@ -9,6 +9,7 @@ use crate::*;
 #[repr(C)]
 pub struct PointerEventRustMethods {
   pub version: c_double,
+  pub mouse_event: *const MouseEventRustMethods,
   pub height: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub is_primary: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
   pub pointer_id: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
@@ -21,86 +22,217 @@ pub struct PointerEventRustMethods {
   pub width: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
 }
 pub struct PointerEvent {
-  pub ptr: *const OpaquePtr,
-  context: *const ExecutingContext,
+  pub mouse_event: MouseEvent,
   method_pointer: *const PointerEventRustMethods,
-  status: *const RustValueStatus
 }
 impl PointerEvent {
   pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const PointerEventRustMethods, status: *const RustValueStatus) -> PointerEvent {
-    PointerEvent {
-      ptr,
-      context,
-      method_pointer,
-      status
+    unsafe {
+      PointerEvent {
+        mouse_event: MouseEvent::initialize(
+          ptr,
+          context,
+          method_pointer.as_ref().unwrap().mouse_event,
+          status,
+        ),
+        method_pointer,
+      }
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {
-    self.ptr
+    self.mouse_event.ptr()
   }
   pub fn context<'a>(&self) -> &'a ExecutingContext {
-    assert!(!self.context.is_null(), "Context PTR must not be null");
-    unsafe { &*self.context }
+    self.mouse_event.context()
   }
   pub fn height(&self) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).height)(self.ptr)
+      ((*self.method_pointer).height)(self.ptr())
     };
     value
   }
   pub fn is_primary(&self) -> bool {
     let value = unsafe {
-      ((*self.method_pointer).is_primary)(self.ptr)
+      ((*self.method_pointer).is_primary)(self.ptr())
     };
     value != 0
   }
   pub fn pointer_id(&self) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).pointer_id)(self.ptr)
+      ((*self.method_pointer).pointer_id)(self.ptr())
     };
     value
   }
   pub fn pointer_type(&self) -> String {
     let value = unsafe {
-      ((*self.method_pointer).pointer_type)(self.ptr)
+      ((*self.method_pointer).pointer_type)(self.ptr())
     };
     let value = unsafe { std::ffi::CStr::from_ptr(value) };
     value.to_str().unwrap().to_string()
   }
   pub fn pressure(&self) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).pressure)(self.ptr)
+      ((*self.method_pointer).pressure)(self.ptr())
     };
     value
   }
   pub fn tangential_pressure(&self) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).tangential_pressure)(self.ptr)
+      ((*self.method_pointer).tangential_pressure)(self.ptr())
     };
     value
   }
   pub fn tilt_x(&self) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).tilt_x)(self.ptr)
+      ((*self.method_pointer).tilt_x)(self.ptr())
     };
     value
   }
   pub fn tilt_y(&self) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).tilt_y)(self.ptr)
+      ((*self.method_pointer).tilt_y)(self.ptr())
     };
     value
   }
   pub fn twist(&self) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).twist)(self.ptr)
+      ((*self.method_pointer).twist)(self.ptr())
     };
     value
   }
   pub fn width(&self) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).width)(self.ptr)
+      ((*self.method_pointer).width)(self.ptr())
     };
     value
+  }
+}
+pub trait PointerEventMethods: MouseEventMethods {
+  fn height(&self) -> f64;
+  fn is_primary(&self) -> bool;
+  fn pointer_id(&self) -> f64;
+  fn pointer_type(&self) -> String;
+  fn pressure(&self) -> f64;
+  fn tangential_pressure(&self) -> f64;
+  fn tilt_x(&self) -> f64;
+  fn tilt_y(&self) -> f64;
+  fn twist(&self) -> f64;
+  fn width(&self) -> f64;
+  fn as_pointer_event(&self) -> &PointerEvent;
+}
+impl PointerEventMethods for PointerEvent {
+  fn height(&self) -> f64 {
+    self.height()
+  }
+  fn is_primary(&self) -> bool {
+    self.is_primary()
+  }
+  fn pointer_id(&self) -> f64 {
+    self.pointer_id()
+  }
+  fn pointer_type(&self) -> String {
+    self.pointer_type()
+  }
+  fn pressure(&self) -> f64 {
+    self.pressure()
+  }
+  fn tangential_pressure(&self) -> f64 {
+    self.tangential_pressure()
+  }
+  fn tilt_x(&self) -> f64 {
+    self.tilt_x()
+  }
+  fn tilt_y(&self) -> f64 {
+    self.tilt_y()
+  }
+  fn twist(&self) -> f64 {
+    self.twist()
+  }
+  fn width(&self) -> f64 {
+    self.width()
+  }
+  fn as_pointer_event(&self) -> &PointerEvent {
+    self
+  }
+}
+impl MouseEventMethods for PointerEvent {
+  fn client_x(&self) -> f64 {
+    self.mouse_event.client_x()
+  }
+  fn client_y(&self) -> f64 {
+    self.mouse_event.client_y()
+  }
+  fn offset_x(&self) -> f64 {
+    self.mouse_event.offset_x()
+  }
+  fn offset_y(&self) -> f64 {
+    self.mouse_event.offset_y()
+  }
+  fn as_mouse_event(&self) -> &MouseEvent {
+    &self.mouse_event
+  }
+}
+impl UIEventMethods for PointerEvent {
+  fn detail(&self) -> f64 {
+    self.mouse_event.ui_event.detail()
+  }
+  fn view(&self) -> Window {
+    self.mouse_event.ui_event.view()
+  }
+  fn which(&self) -> f64 {
+    self.mouse_event.ui_event.which()
+  }
+  fn as_ui_event(&self) -> &UIEvent {
+    &self.mouse_event.ui_event
+  }
+}
+impl EventMethods for PointerEvent {
+  fn bubbles(&self) -> bool {
+    self.mouse_event.ui_event.event.bubbles()
+  }
+  fn cancel_bubble(&self) -> bool {
+    self.mouse_event.ui_event.event.cancel_bubble()
+  }
+  fn set_cancel_bubble(&self, value: bool, exception_state: &ExceptionState) -> Result<(), String> {
+    self.mouse_event.ui_event.event.set_cancel_bubble(value, exception_state)
+  }
+  fn cancelable(&self) -> bool {
+    self.mouse_event.ui_event.event.cancelable()
+  }
+  fn current_target(&self) -> EventTarget {
+    self.mouse_event.ui_event.event.current_target()
+  }
+  fn default_prevented(&self) -> bool {
+    self.mouse_event.ui_event.event.default_prevented()
+  }
+  fn src_element(&self) -> EventTarget {
+    self.mouse_event.ui_event.event.src_element()
+  }
+  fn target(&self) -> EventTarget {
+    self.mouse_event.ui_event.event.target()
+  }
+  fn is_trusted(&self) -> bool {
+    self.mouse_event.ui_event.event.is_trusted()
+  }
+  fn time_stamp(&self) -> f64 {
+    self.mouse_event.ui_event.event.time_stamp()
+  }
+  fn type_(&self) -> String {
+    self.mouse_event.ui_event.event.type_()
+  }
+  fn init_event(&self, type_: &str, bubbles: bool, cancelable: bool, exception_state: &ExceptionState) -> Result<(), String> {
+    self.mouse_event.ui_event.event.init_event(type_, bubbles, cancelable, exception_state)
+  }
+  fn prevent_default(&self, exception_state: &ExceptionState) -> Result<(), String> {
+    self.mouse_event.ui_event.event.prevent_default(exception_state)
+  }
+  fn stop_immediate_propagation(&self, exception_state: &ExceptionState) -> Result<(), String> {
+    self.mouse_event.ui_event.event.stop_immediate_propagation(exception_state)
+  }
+  fn stop_propagation(&self, exception_state: &ExceptionState) -> Result<(), String> {
+    self.mouse_event.ui_event.event.stop_propagation(exception_state)
+  }
+  fn as_event(&self) -> &Event {
+    &self.mouse_event.ui_event.event
   }
 }

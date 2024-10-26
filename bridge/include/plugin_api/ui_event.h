@@ -23,6 +23,7 @@ struct UIEventPublicMethods : public WebFPublicMethods {
   static WebFValue<Window, WindowPublicMethods> View(UIEvent* ui_event);
   static double Which(UIEvent* ui_event);
   double version{1.0};
+  EventPublicMethods event;
   PublicUIEventGetDetail ui_event_get_detail{Detail};
   PublicUIEventGetView ui_event_get_view{View};
   PublicUIEventGetWhich ui_event_get_which{Which};

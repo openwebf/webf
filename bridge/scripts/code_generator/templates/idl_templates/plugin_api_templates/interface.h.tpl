@@ -65,6 +65,10 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
   <% } %>
   double version{1.0};
 
+  <% if (object.parent) { %>
+  <%= object.parent %>PublicMethods <%= _.snakeCase(object.parent) %>;
+  <% } %>
+
   <% _.forEach(object.props, function(prop, index) { %>
     <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
   Public<%= className %>Get<%= propName %> <%= _.snakeCase(className) %>_get_<%= _.snakeCase(prop.name) %>{<%= propName %>};
