@@ -66,7 +66,7 @@ class CSSLengthValue {
     }
 
     if (isViewportSizeRelatedLength()) {
-      renderStyle!.addViewportSizeRelativeProperty();
+      renderStyle?.addViewportSizeRelativeProperty();
     }
   }
 
