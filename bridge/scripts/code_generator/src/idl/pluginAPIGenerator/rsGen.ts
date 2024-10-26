@@ -197,7 +197,7 @@ function generateMethodParametersName(parameters: FunctionArguments[]): string {
         return `CString::new(${generateValidRustIdentifier(param.name)}).unwrap().as_ptr()`;
       }
       case FunctionArgumentType.boolean: {
-        return `${generateValidRustIdentifier(param.name)} as i32`;
+        return `${generateValidRustIdentifier(param.name)} as boolean_t`;
       }
       case FunctionArgumentType.any:
         return `${param.name}.ptr`;
