@@ -207,6 +207,15 @@ function generateMethodParametersName(parameters: FunctionArguments[]): string {
   }).join(', ') + ', ';
 }
 
+function generateParentMethodParametersName(parameters: FunctionArguments[]): string {
+  if (parameters.length === 0) {
+    return '';
+  }
+  return parameters.map(param => {
+    return `${generateValidRustIdentifier(param.name)}`;
+  }).join(', ') + ', ';
+}
+
 function getClassName(blob: IDLBlob) {
   let raw = _.camelCase(blob.filename[0].toUpperCase() + blob.filename.slice(1));
   if (raw.slice(0, 3) == 'dom') {
@@ -246,7 +255,7 @@ function generateValidRustIdentifier(name: string) {
 function generateMethodReturnStatements(type: ParameterType) {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
-    return `Ok(${pointerType}::initialize(value.value, self.context, value.method_pointer, value.status))`;
+    return `Ok(${pointerType}::initialize(value.value, self.context(), value.method_pointer, value.status))`;
   }
   switch (type.value) {
     case FunctionArgumentType.boolean: {
@@ -265,7 +274,7 @@ function generateMethodReturnStatements(type: ParameterType) {
 function generatePropReturnStatements(type: ParameterType) {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
-    return `${pointerType}::initialize(value.value, self.context, value.method_pointer, value.status)`;
+    return `${pointerType}::initialize(value.value, self.context(), value.method_pointer, value.status)`;
   }
   switch (type.value) {
     case FunctionArgumentType.boolean: {
@@ -297,11 +306,21 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
       case TemplateKind.Interface: {
         object = object as ClassObject;
 
+        const inheritedObjects: ClassObject[] = [];
+
+        let currentParentObject = object;
+        while (currentParentObject.parent) {
+          const parentObject = ClassObject.globalClassMap[currentParentObject.parent];
+          inheritedObjects.push(parentObject);
+          currentParentObject = parentObject;
+        }
+
         return _.template(readSourceTemplate('interface'))({
           className: getClassName(blob),
           parentClassName: object.parent,
           blob,
           object,
+          inheritedObjects,
           isPointerType,
           generatePublicReturnTypeValue,
           generatePublicParametersType,
@@ -309,6 +328,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
           generateMethodReturnType,
           generateMethodParametersTypeWithName,
           generateMethodParametersName,
+          generateParentMethodParametersName,
           generateMethodReturnStatements,
           generatePropReturnStatements,
           generateValidRustIdentifier,

@@ -23,6 +23,7 @@ struct MouseEventPublicMethods : public WebFPublicMethods {
   static double OffsetX(MouseEvent* mouse_event);
   static double OffsetY(MouseEvent* mouse_event);
   double version{1.0};
+  UIEventPublicMethods ui_event;
   PublicMouseEventGetClientX mouse_event_get_client_x{ClientX};
   PublicMouseEventGetClientY mouse_event_get_client_y{ClientY};
   PublicMouseEventGetOffsetX mouse_event_get_offset_x{OffsetX};

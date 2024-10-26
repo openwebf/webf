@@ -35,6 +35,7 @@ struct GestureEventPublicMethods : public WebFPublicMethods {
   static double Scale(GestureEvent* gesture_event);
   static double Rotation(GestureEvent* gesture_event);
   double version{1.0};
+  EventPublicMethods event;
   PublicGestureEventGetState gesture_event_get_state{State};
   PublicGestureEventDupState gesture_event_dup_state{DupState};
   PublicGestureEventGetDirection gesture_event_get_direction{Direction};

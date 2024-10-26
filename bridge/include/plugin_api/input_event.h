@@ -23,6 +23,7 @@ struct InputEventPublicMethods : public WebFPublicMethods {
   static const char* Data(InputEvent* input_event);
   static const char* DupData(InputEvent* input_event);
   double version{1.0};
+  UIEventPublicMethods ui_event;
   PublicInputEventGetInputType input_event_get_input_type{InputType};
   PublicInputEventDupInputType input_event_dup_input_type{DupInputType};
   PublicInputEventGetData input_event_get_data{Data};

@@ -25,6 +25,7 @@ struct AnimationEventPublicMethods : public WebFPublicMethods {
   static const char* PseudoElement(AnimationEvent* animation_event);
   static const char* DupPseudoElement(AnimationEvent* animation_event);
   double version{1.0};
+  EventPublicMethods event;
   PublicAnimationEventGetAnimationName animation_event_get_animation_name{AnimationName};
   PublicAnimationEventDupAnimationName animation_event_dup_animation_name{DupAnimationName};
   PublicAnimationEventGetElapsedTime animation_event_get_elapsed_time{ElapsedTime};

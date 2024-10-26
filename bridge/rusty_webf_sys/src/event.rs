@@ -50,19 +50,19 @@ impl Event {
   }
   pub fn bubbles(&self) -> bool {
     let value = unsafe {
-      ((*self.method_pointer).bubbles)(self.ptr)
+      ((*self.method_pointer).bubbles)(self.ptr())
     };
     value != 0
   }
   pub fn cancel_bubble(&self) -> bool {
     let value = unsafe {
-      ((*self.method_pointer).cancel_bubble)(self.ptr)
+      ((*self.method_pointer).cancel_bubble)(self.ptr())
     };
     value != 0
   }
   pub fn set_cancel_bubble(&self, value: bool, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).set_cancel_bubble)(self.ptr, value as i32, exception_state.ptr)
+      ((*self.method_pointer).set_cancel_bubble)(self.ptr(), value as i32, exception_state.ptr)
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -71,56 +71,56 @@ impl Event {
   }
   pub fn cancelable(&self) -> bool {
     let value = unsafe {
-      ((*self.method_pointer).cancelable)(self.ptr)
+      ((*self.method_pointer).cancelable)(self.ptr())
     };
     value != 0
   }
   pub fn current_target(&self) -> EventTarget {
     let value = unsafe {
-      ((*self.method_pointer).current_target)(self.ptr)
+      ((*self.method_pointer).current_target)(self.ptr())
     };
-    EventTarget::initialize(value.value, self.context, value.method_pointer, value.status)
+    EventTarget::initialize(value.value, self.context(), value.method_pointer, value.status)
   }
   pub fn default_prevented(&self) -> bool {
     let value = unsafe {
-      ((*self.method_pointer).default_prevented)(self.ptr)
+      ((*self.method_pointer).default_prevented)(self.ptr())
     };
     value != 0
   }
   pub fn src_element(&self) -> EventTarget {
     let value = unsafe {
-      ((*self.method_pointer).src_element)(self.ptr)
+      ((*self.method_pointer).src_element)(self.ptr())
     };
-    EventTarget::initialize(value.value, self.context, value.method_pointer, value.status)
+    EventTarget::initialize(value.value, self.context(), value.method_pointer, value.status)
   }
   pub fn target(&self) -> EventTarget {
     let value = unsafe {
-      ((*self.method_pointer).target)(self.ptr)
+      ((*self.method_pointer).target)(self.ptr())
     };
-    EventTarget::initialize(value.value, self.context, value.method_pointer, value.status)
+    EventTarget::initialize(value.value, self.context(), value.method_pointer, value.status)
   }
   pub fn is_trusted(&self) -> bool {
     let value = unsafe {
-      ((*self.method_pointer).is_trusted)(self.ptr)
+      ((*self.method_pointer).is_trusted)(self.ptr())
     };
     value != 0
   }
   pub fn time_stamp(&self) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).time_stamp)(self.ptr)
+      ((*self.method_pointer).time_stamp)(self.ptr())
     };
     value
   }
   pub fn type_(&self) -> String {
     let value = unsafe {
-      ((*self.method_pointer).type_)(self.ptr)
+      ((*self.method_pointer).type_)(self.ptr())
     };
     let value = unsafe { std::ffi::CStr::from_ptr(value) };
     value.to_str().unwrap().to_string()
   }
   pub fn init_event(&self, type_: &str, bubbles: bool, cancelable: bool, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).init_event)(self.ptr, CString::new(type_).unwrap().as_ptr(), bubbles as i32, cancelable as i32, exception_state.ptr);
+      ((*self.method_pointer).init_event)(self.ptr(), CString::new(type_).unwrap().as_ptr(), bubbles as i32, cancelable as i32, exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -129,7 +129,7 @@ impl Event {
   }
   pub fn prevent_default(&self, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).prevent_default)(self.ptr, exception_state.ptr);
+      ((*self.method_pointer).prevent_default)(self.ptr(), exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -138,7 +138,7 @@ impl Event {
   }
   pub fn stop_immediate_propagation(&self, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).stop_immediate_propagation)(self.ptr, exception_state.ptr);
+      ((*self.method_pointer).stop_immediate_propagation)(self.ptr(), exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -147,7 +147,7 @@ impl Event {
   }
   pub fn stop_propagation(&self, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).stop_propagation)(self.ptr, exception_state.ptr);
+      ((*self.method_pointer).stop_propagation)(self.ptr(), exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -158,7 +158,75 @@ impl Event {
 impl Drop for Event {
   fn drop(&mut self) {
     unsafe {
-      ((*self.method_pointer).release)(self.ptr);
+      ((*self.method_pointer).release)(self.ptr());
     }
+  }
+}
+pub trait EventMethods {
+  fn bubbles(&self) -> bool;
+  fn cancel_bubble(&self) -> bool;
+  fn set_cancel_bubble(&self, value: bool, exception_state: &ExceptionState) -> Result<(), String>;
+  fn cancelable(&self) -> bool;
+  fn current_target(&self) -> EventTarget;
+  fn default_prevented(&self) -> bool;
+  fn src_element(&self) -> EventTarget;
+  fn target(&self) -> EventTarget;
+  fn is_trusted(&self) -> bool;
+  fn time_stamp(&self) -> f64;
+  fn type_(&self) -> String;
+  fn init_event(&self, type_: &str, bubbles: bool, cancelable: bool, exception_state: &ExceptionState) -> Result<(), String>;
+  fn prevent_default(&self, exception_state: &ExceptionState) -> Result<(), String>;
+  fn stop_immediate_propagation(&self, exception_state: &ExceptionState) -> Result<(), String>;
+  fn stop_propagation(&self, exception_state: &ExceptionState) -> Result<(), String>;
+  fn as_event(&self) -> &Event;
+}
+impl EventMethods for Event {
+  fn bubbles(&self) -> bool {
+    self.bubbles()
+  }
+  fn cancel_bubble(&self) -> bool {
+    self.cancel_bubble()
+  }
+  fn set_cancel_bubble(&self, value: bool, exception_state: &ExceptionState) -> Result<(), String> {
+    self.set_cancel_bubble(value, exception_state)
+  }
+  fn cancelable(&self) -> bool {
+    self.cancelable()
+  }
+  fn current_target(&self) -> EventTarget {
+    self.current_target()
+  }
+  fn default_prevented(&self) -> bool {
+    self.default_prevented()
+  }
+  fn src_element(&self) -> EventTarget {
+    self.src_element()
+  }
+  fn target(&self) -> EventTarget {
+    self.target()
+  }
+  fn is_trusted(&self) -> bool {
+    self.is_trusted()
+  }
+  fn time_stamp(&self) -> f64 {
+    self.time_stamp()
+  }
+  fn type_(&self) -> String {
+    self.type_()
+  }
+  fn init_event(&self, type_: &str, bubbles: bool, cancelable: bool, exception_state: &ExceptionState) -> Result<(), String> {
+    self.init_event(type_, bubbles, cancelable, exception_state)
+  }
+  fn prevent_default(&self, exception_state: &ExceptionState) -> Result<(), String> {
+    self.prevent_default(exception_state)
+  }
+  fn stop_immediate_propagation(&self, exception_state: &ExceptionState) -> Result<(), String> {
+    self.stop_immediate_propagation(exception_state)
+  }
+  fn stop_propagation(&self, exception_state: &ExceptionState) -> Result<(), String> {
+    self.stop_propagation(exception_state)
+  }
+  fn as_event(&self) -> &Event {
+    self
   }
 }
