@@ -293,17 +293,11 @@ DOMMatrix* DOMMatrixReadonly::skewY(double sy, ExceptionState& exception_state) 
 //   return float64Vector;
 // }
 // toJSON(): DartImpl<JSON>;
-std::string DOMMatrixReadonly::toString(ExceptionState& exception_state) const {
+AtomicString DOMMatrixReadonly::toString(ExceptionState& exception_state) const {
   NativeValue arguments[0];
   NativeValue dart_result = InvokeBindingMethod(binding_call_methods::ktoString, sizeof(arguments) / sizeof(NativeValue),
                                           arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
-
-  typename NativeTypeString::ImplType v = NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), dart_result);
-  if (UNLIKELY(exception_state.HasException())) {
-    return nullptr;
-  }
-  auto result = Converter<IDLDOMString>::ToValue(ctx(), v);
-  return result;
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
 }
 
 DOMMatrix* DOMMatrixReadonly::translate(double tx, double ty, double tz, ExceptionState& exception_state) const {
