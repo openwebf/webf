@@ -3,7 +3,6 @@
  */
 
 #include "plugin_api/event_target.h"
-#include "plugin_api/add_event_listener_options.h"
 #include "bindings/qjs/atomic_string.h"
 #include "core/dom/comment.h"
 #include "core/dom/container_node.h"
@@ -19,6 +18,7 @@
 #include "core/html/html_element.h"
 #include "core/html/html_image_element.h"
 #include "html_element_type_helper.h"
+#include "plugin_api/add_event_listener_options.h"
 #include "plugin_api/exception_state.h"
 
 namespace webf {

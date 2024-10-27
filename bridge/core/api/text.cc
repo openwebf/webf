@@ -5,6 +5,4 @@
 #include "plugin_api/text.h"
 #include "core/dom/character_data.h"
 
-namespace webf {
-
-}  // namespace webf
+namespace webf {}  // namespace webf

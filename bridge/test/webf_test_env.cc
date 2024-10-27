@@ -183,9 +183,7 @@ void TEST_LoadNativeLibrary(double context_id,
                             SharedNativeString* lib_name,
                             void* initialize_data,
                             void* import_data,
-                            LoadNativeLibraryCallback callback) {
-
-}
+                            LoadNativeLibraryCallback callback) {}
 
 void TEST_GetWidgetElementShape() {}
 

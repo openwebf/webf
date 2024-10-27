@@ -7,7 +7,7 @@ use std::ffi::*;
 use crate::*;
 #[repr(C)]
 pub struct EventInit {
-  pub bubbles: i32,
-  pub cancelable: i32,
-  pub composed: i32,
+  pub bubbles: bool,
+  pub cancelable: bool,
+  pub composed: bool,
 }

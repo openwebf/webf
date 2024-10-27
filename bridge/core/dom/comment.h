@@ -31,7 +31,9 @@ class Comment : public CharacterData {
 template <>
 struct DowncastTraits<Comment> {
   static bool AllowFrom(const Node& node) { return node.IsOtherNode(); }
-  static bool AllowFrom(const EventTarget& event_target) { return event_target.IsNode() && To<Node>(event_target).IsOtherNode(); }
+  static bool AllowFrom(const EventTarget& event_target) {
+    return event_target.IsNode() && To<Node>(event_target).IsOtherNode();
+  }
 };
 
 }  // namespace webf

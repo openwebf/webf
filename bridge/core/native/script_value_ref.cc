@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #include "core/native/script_value_ref.h"
@@ -11,4 +11,4 @@ ScriptValueRefPublicMethods* ScriptValueRef::publicMethods() {
   return &public_methods;
 }
 
-}
+}  // namespace webf

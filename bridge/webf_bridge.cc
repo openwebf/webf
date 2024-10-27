@@ -141,8 +141,8 @@ void evaluateScripts(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(
-      page->isDedicated(), page->contextId(), webf::WebFPage::EvaluateScriptsInternal, page_, code, code_len, parsed_bytecodes,
-      bytecode_len, bundleFilename, start_line, profile_id, persistent_handle, result_callback);
+      page->isDedicated(), page->contextId(), webf::WebFPage::EvaluateScriptsInternal, page_, code, code_len,
+      parsed_bytecodes, bytecode_len, bundleFilename, start_line, profile_id, persistent_handle, result_callback);
 }
 
 void dumpQuickjsByteCode(void* page_,
@@ -161,8 +161,8 @@ void dumpQuickjsByteCode(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->dartIsolateContext()->dispatcher()->PostToJs(
-      page->isDedicated(), page->contextId(), webf::WebFPage::DumpQuickJsByteCodeInternal, page, profile_id, code, code_len,
-      parsed_bytecodes, bytecode_len, url, persistent_handle, result_callback);
+      page->isDedicated(), page->contextId(), webf::WebFPage::DumpQuickJsByteCodeInternal, page, profile_id, code,
+      code_len, parsed_bytecodes, bytecode_len, url, persistent_handle, result_callback);
 }
 
 void evaluateQuickjsByteCode(void* page_,
@@ -177,8 +177,8 @@ void evaluateQuickjsByteCode(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), page->contextId(),
-                                                     webf::WebFPage::EvaluateQuickjsByteCodeInternal, page_, bytes, byteLen,
-                                                     profile_id, persistent_handle, result_callback);
+                                                     webf::WebFPage::EvaluateQuickjsByteCodeInternal, page_, bytes,
+                                                     byteLen, profile_id, persistent_handle, result_callback);
 }
 
 void parseHTML(void* page_,
@@ -240,8 +240,9 @@ void invokeModuleEvent(void* page_,
   auto dart_isolate_context = page->executingContext()->dartIsolateContext();
   auto is_dedicated = page->executingContext()->isDedicated();
   auto context_id = page->contextId();
-  dart_isolate_context->dispatcher()->PostToJs(is_dedicated, context_id, webf::WebFPage::InvokeModuleEventInternal, page_, module,
-                                               eventType, event, extra, persistent_handle, result_callback);
+  dart_isolate_context->dispatcher()->PostToJs(is_dedicated, context_id, webf::WebFPage::InvokeModuleEventInternal,
+                                               page_, module, eventType, event, extra, persistent_handle,
+                                               result_callback);
 }
 
 void collectNativeProfileData(void* ptr, const char** data, uint32_t* len) {

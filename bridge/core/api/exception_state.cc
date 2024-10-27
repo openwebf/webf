@@ -13,9 +13,9 @@ bool ExceptionStatePublicMethods::HasException(SharedExceptionState* shared_exce
 }
 
 void ExceptionStatePublicMethods::Stringify(webf::ExecutingContext* context,
-                                          webf::SharedExceptionState* shared_exception_state,
-                                          char** errmsg,
-                                          uint32_t* strlen) {
+                                            webf::SharedExceptionState* shared_exception_state,
+                                            char** errmsg,
+                                            uint32_t* strlen) {
   context->HandleException(shared_exception_state->exception_state, errmsg, strlen);
 }
 

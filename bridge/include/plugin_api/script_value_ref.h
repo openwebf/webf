@@ -1,6 +1,6 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_INCLUDE_PLUGIN_API_SCRIPT_VALUE_REF_H_
 #define WEBF_INCLUDE_PLUGIN_API_SCRIPT_VALUE_REF_H_
@@ -18,6 +18,6 @@ struct ScriptValueRefPublicMethods : WebFPublicMethods {
   PublicScriptValueRefRelease release{Release};
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_INCLUDE_PLUGIN_API_SCRIPT_VALUE_REF_H_

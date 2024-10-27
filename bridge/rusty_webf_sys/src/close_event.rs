@@ -11,7 +11,7 @@ pub struct CloseEventRustMethods {
   pub event: *const EventRustMethods,
   pub code: extern "C" fn(ptr: *const OpaquePtr) -> i64,
   pub reason: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub was_clean: extern "C" fn(ptr: *const OpaquePtr) -> i32,
+  pub was_clean: extern "C" fn(ptr: *const OpaquePtr) -> bool,
 }
 pub struct CloseEvent {
   pub event: Event,
@@ -54,7 +54,7 @@ impl CloseEvent {
     let value = unsafe {
       ((*self.method_pointer).was_clean)(self.ptr())
     };
-    value != 0
+    value
   }
 }
 pub trait CloseEventMethods: EventMethods {

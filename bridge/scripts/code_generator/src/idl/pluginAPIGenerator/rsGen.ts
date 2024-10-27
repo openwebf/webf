@@ -36,7 +36,7 @@ function generatePublicReturnTypeValue(type: ParameterType) {
       return 'RustValue<ScriptValueRefRustMethods>';
     }
     case FunctionArgumentType.boolean: {
-      return 'i32';
+      return 'bool';
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
@@ -100,7 +100,7 @@ function generatePublicParameterType(type: ParameterType): string {
       return '*const OpaquePtr';
     }
     case FunctionArgumentType.boolean: {
-      return 'i32';
+      return 'bool';
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
@@ -196,9 +196,6 @@ function generateMethodParametersName(parameters: FunctionArguments[]): string {
       case FunctionArgumentType.legacy_dom_string: {
         return `CString::new(${generateValidRustIdentifier(param.name)}).unwrap().as_ptr()`;
       }
-      case FunctionArgumentType.boolean: {
-        return `${generateValidRustIdentifier(param.name)} as boolean_t`;
-      }
       case FunctionArgumentType.any:
         return `${param.name}.ptr`;
       default:
@@ -258,9 +255,6 @@ function generateMethodReturnStatements(type: ParameterType) {
     return `Ok(${pointerType}::initialize(value.value, self.context(), value.method_pointer, value.status))`;
   }
   switch (type.value) {
-    case FunctionArgumentType.boolean: {
-      return 'Ok(value != 0)';
-    }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
       return `let value = unsafe { std::ffi::CStr::from_ptr(value) };
@@ -277,9 +271,6 @@ function generatePropReturnStatements(type: ParameterType) {
     return `${pointerType}::initialize(value.value, self.context(), value.method_pointer, value.status)`;
   }
   switch (type.value) {
-    case FunctionArgumentType.boolean: {
-      return 'value != 0';
-    }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
       return `let value = unsafe { std::ffi::CStr::from_ptr(value) };

@@ -6,8 +6,8 @@
 #ifndef WEBF_CORE_WEBF_API_PLUGIN_API_HASHCHANGE_EVENT_H_
 #define WEBF_CORE_WEBF_API_PLUGIN_API_HASHCHANGE_EVENT_H_
 #include <stdint.h>
-#include "script_value_ref.h"
 #include "event.h"
+#include "script_value_ref.h"
 namespace webf {
 typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
@@ -30,4 +30,4 @@ struct HashchangeEventPublicMethods : public WebFPublicMethods {
   PublicHashchangeEventDupOldURL hashchange_event_dup_old_url{DupOldURL};
 };
 }  // namespace webf
-#endif // WEBF_CORE_WEBF_API_PLUGIN_API_HASHCHANGE_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_HASHCHANGE_EVENT_H_
