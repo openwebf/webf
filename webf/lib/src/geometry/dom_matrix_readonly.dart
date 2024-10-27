@@ -129,20 +129,17 @@ class DOMMatrixReadonly extends DynamicBindingObject {
     );
     methods['skewX'] = BindingObjectMethodSync(call: (args) => skewX(castToType<num>(args[0]).toDouble()));
     methods['skewY'] = BindingObjectMethodSync(call: (args) => skewY(castToType<num>(args[0]).toDouble()));
-
     // // toFloat32Array(): number[];
     // // toFloat64Array(): number[];
     // // toJSON(): DartImpl<JSON>;
     methods['toString'] = BindingObjectMethodSync(call: (args) => toString());
-
-      // toString(): string;
     // // TODO DOMPoint
     // // transformPoint(): DartImpl<DOMPoint>;
-    // translate(tx:number, ty:number, tz:number): DOMMatrix
     methods['translate'] = BindingObjectMethodSync(
       call: (args) => translate(
         castToType<num>(args[0]).toDouble(),
-        castToType<num>(args[1]).toDouble()
+        castToType<num>(args[1]).toDouble(),
+        castToType<num>(args[2]).toDouble()
       )
     );
   }
@@ -287,7 +284,6 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrix flipY() {
-    // TODO
     Matrix4 m = Matrix4.identity();
     m.storage[5] = -1;
     return DOMMatrix.fromMatrix4(
@@ -295,9 +291,6 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrix inverse() {
-    // TODO
-    // Matrix4? m = Matrix4.tryInvert(_matrix4);
-    // m ??= Matrix4.zero();
     Matrix4 m = Matrix4.inverted(_matrix4);
     return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
   }
@@ -314,8 +307,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrix rotate(double x, double y, double z) {
-    //TODO
-    Matrix4 m = _matrix4;
+    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage)..rotate3(Vector3(x, y, z));
     return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
   }
 
@@ -326,27 +318,23 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrix scale(double sX, double sY, double sZ, double oriX, double oriY, double oriZ) {
-    //TODO
-    Matrix4 m = _matrix4;
+    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage).scaled(sX, sX, sZ)..translate(oriX, oriY, oriZ);
     return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
   }
 
   DOMMatrix scale3d(double scale, double oriX, double oriY, double oriZ) {
-    //TODO
-    Matrix4 m = _matrix4;
+    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage).scaled(scale)..translate(oriX, oriY, oriZ);
     return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
   }
 
   DOMMatrix skewX(double sx) {
-    //TODO
-    Matrix4 m = _matrix4;
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
+    Matrix4 m = Matrix4.skewX(sx);
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m);
   }
 
   DOMMatrix skewY(double sy) {
-    //TODO
-    Matrix4 m = _matrix4;
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
+    Matrix4 m = Matrix4.skewY(sy);
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m);
   }
 
   String toString() {
@@ -358,9 +346,8 @@ class DOMMatrixReadonly extends DynamicBindingObject {
     }
   }
 
-  DOMMatrix translate(double tx, double ty) {
-    //TODO
-    Matrix4 m = _matrix4;
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
+  DOMMatrix translate(double tx, double ty, double tz) {
+    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage)..translate(tx, ty, tz);
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m);
   }
 }
