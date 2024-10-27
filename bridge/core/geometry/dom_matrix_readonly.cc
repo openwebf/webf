@@ -19,9 +19,7 @@ DOMMatrixReadonly* DOMMatrixReadonly::Create(ExecutingContext* context,
   return MakeGarbageCollected<DOMMatrixReadonly>(context, init, exception_state);
 }
 
-DOMMatrixReadonly* DOMMatrixReadonly::Create(webf::ExecutingContext* context, webf::ExceptionState& exception_state) {
-
-}
+DOMMatrixReadonly* DOMMatrixReadonly::Create(webf::ExecutingContext* context, webf::ExceptionState& exception_state) {}
 
 DOMMatrixReadonly::DOMMatrixReadonly(ExecutingContext* context,
                                      const std::vector<double>& init,
@@ -41,9 +39,11 @@ DOMMatrixReadonly::DOMMatrixReadonly(webf::ExecutingContext* context, webf::Exce
                                                               CreateBindingObjectType::kCreateDOMMatrix, nullptr, 0);
 }
 
+DOMMatrixReadonly::DOMMatrixReadonly(webf::ExecutingContext* context, webf::NativeBindingObject* native_binding_object)
+    : BindingObject(context->ctx(), native_binding_object) {}
+
 double DOMMatrixReadonly::getMatrixProperty(const AtomicString& prop) const {
-  NativeValue dart_result =
-      GetBindingProperty(prop, FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
+  NativeValue dart_result = GetBindingProperty(prop, FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
   return NativeValueConverter<NativeTypeDouble>::FromNativeValue(dart_result);
 }
 
@@ -152,7 +152,7 @@ void DOMMatrixReadonly::setM44(double v, ExceptionState& exception_state) {
   setMatrixProperty(binding_call_methods::km44, v, exception_state);
 }
 
-DOMMatrix* DOMMatrixReadonly::flipX(ExceptionState& exception_state) const{
+DOMMatrix* DOMMatrixReadonly::flipX(ExceptionState& exception_state) const {
   NativeValue arguments[0];
   NativeValue value = InvokeBindingMethod(binding_call_methods::kflipX, sizeof(arguments) / sizeof(NativeValue),
                                           arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
@@ -162,7 +162,7 @@ DOMMatrix* DOMMatrixReadonly::flipX(ExceptionState& exception_state) const{
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
-DOMMatrix* DOMMatrixReadonly::flipY(ExceptionState& exception_state) const{
+DOMMatrix* DOMMatrixReadonly::flipY(ExceptionState& exception_state) const {
   NativeValue arguments[0];
   NativeValue value = InvokeBindingMethod(binding_call_methods::kflipY, sizeof(arguments) / sizeof(NativeValue),
                                           arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
@@ -172,7 +172,7 @@ DOMMatrix* DOMMatrixReadonly::flipY(ExceptionState& exception_state) const{
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
-DOMMatrix* DOMMatrixReadonly::inverse(ExceptionState& exception_state) const{
+DOMMatrix* DOMMatrixReadonly::inverse(ExceptionState& exception_state) const {
   NativeValue arguments[0];
   NativeValue value = InvokeBindingMethod(binding_call_methods::kinverse, sizeof(arguments) / sizeof(NativeValue),
                                           arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
@@ -182,13 +182,18 @@ DOMMatrix* DOMMatrixReadonly::inverse(ExceptionState& exception_state) const{
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
-DOMMatrix* DOMMatrixReadonly::rotateAxisAngle(double x, double y, double z, double angle, ExceptionState& exception_state) const {
+DOMMatrix* DOMMatrixReadonly::rotateAxisAngle(double x,
+                                              double y,
+                                              double z,
+                                              double angle,
+                                              ExceptionState& exception_state) const {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(z),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(angle)};
-  NativeValue value = InvokeBindingMethod(binding_call_methods::krotateAxisAngle, sizeof(arguments) / sizeof(NativeValue),
-                                          arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeValue value =
+      InvokeBindingMethod(binding_call_methods::krotateAxisAngle, sizeof(arguments) / sizeof(NativeValue), arguments,
+                          FlushUICommandReason::kDependentsOnElement, exception_state);
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
   if (native_binding_object == nullptr)
@@ -210,10 +215,11 @@ DOMMatrix* DOMMatrixReadonly::rotate(double rotX, double rotY, double rotZ, Exce
 DOMMatrix* DOMMatrixReadonly::rotateFromVector(double x, double y, ExceptionState& exception_state) const {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(y)};
-  NativeValue value = InvokeBindingMethod(binding_call_methods::krotateFromVector, sizeof(arguments) / sizeof(NativeValue),
-                                          arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeValue value =
+      InvokeBindingMethod(binding_call_methods::krotateFromVector, sizeof(arguments) / sizeof(NativeValue), arguments,
+                          FlushUICommandReason::kDependentsOnElement, exception_state);
   NativeBindingObject* native_binding_object =
-    NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
   if (native_binding_object == nullptr)
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
@@ -280,7 +286,8 @@ DOMMatrix* DOMMatrixReadonly::skewY(double sy, ExceptionState& exception_state) 
 // std::vector<float>& DOMMatrixReadonly::toFloat32Array(ExceptionState& exception_state) const {
 //   std::vector<float> float32Vector;
 //   // NativeValue arguments[0];
-//   // NativeValue value = InvokeBindingMethod(binding_call_methods::ktoFloat32Array, sizeof(arguments) / sizeof(NativeValue),
+//   // NativeValue value = InvokeBindingMethod(binding_call_methods::ktoFloat32Array, sizeof(arguments) /
+//   sizeof(NativeValue),
 //   //   arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
 //   // auto&& arr = NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::FromNativeValue(ctx(), value);
 //   // if (native_binding_object == nullptr)
@@ -295,8 +302,9 @@ DOMMatrix* DOMMatrixReadonly::skewY(double sy, ExceptionState& exception_state) 
 // toJSON(): DartImpl<JSON>;
 AtomicString DOMMatrixReadonly::toString(ExceptionState& exception_state) const {
   NativeValue arguments[0];
-  NativeValue dart_result = InvokeBindingMethod(binding_call_methods::ktoString, sizeof(arguments) / sizeof(NativeValue),
-                                          arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeValue dart_result =
+      InvokeBindingMethod(binding_call_methods::ktoString, sizeof(arguments) / sizeof(NativeValue), arguments,
+                          FlushUICommandReason::kDependentsOnElement, exception_state);
   return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
 }
 
@@ -312,7 +320,6 @@ DOMMatrix* DOMMatrixReadonly::translate(double tx, double ty, double tz, Excepti
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
-
 
 NativeValue DOMMatrixReadonly::HandleCallFromDartSide(const AtomicString& method,
                                                       int32_t argc,

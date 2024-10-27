@@ -25,7 +25,7 @@ DOMMatrix::DOMMatrix(ExecutingContext* context,
                      ExceptionState& exception_state)
     : DOMMatrixReadonly(context, init, exception_state) {}
 
-DOMMatrix::DOMMatrix(webf::ExecutingContext* context, webf::NativeBindingObject* native_binding_object): DOMMatrixReadonly(context, ASSERT_NO_EXCEPTION()) {
+DOMMatrix::DOMMatrix(webf::ExecutingContext* context, webf::NativeBindingObject* native_binding_object): DOMMatrixReadonly(context, native_binding_object) {
 
 }
 
