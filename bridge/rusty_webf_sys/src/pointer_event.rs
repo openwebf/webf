@@ -4,14 +4,13 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
-use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct PointerEventRustMethods {
   pub version: c_double,
   pub mouse_event: *const MouseEventRustMethods,
   pub height: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub is_primary: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
+  pub is_primary: extern "C" fn(ptr: *const OpaquePtr) -> i32,
   pub pointer_id: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub pointer_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
   pub pressure: extern "C" fn(ptr: *const OpaquePtr) -> c_double,

@@ -66,7 +66,7 @@ function generatePublicReturnTypeValue(type: ParameterType, is32Bit: boolean = f
       return 'double';
     }
     case FunctionArgumentType.boolean: {
-      return 'bool';
+      return 'int32_t';
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
@@ -113,7 +113,7 @@ function generatePublicParameterType(type: ParameterType, is32Bit: boolean = fal
       return 'double';
     }
     case FunctionArgumentType.boolean: {
-      return 'bool';
+      return 'int32_t';
     }
     case FunctionArgumentType.any: {
       return 'ScriptValueRef*';

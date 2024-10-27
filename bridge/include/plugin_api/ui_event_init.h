@@ -11,9 +11,9 @@ namespace webf {
 typedef struct Window Window;
 typedef struct WindowPublicMethods WindowPublicMethods;
 struct WebFUIEventInit {
-  bool bubbles;
-  bool cancelable;
-  bool composed;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
   double detail;
   WebFValue<Window, WindowPublicMethods> view;
   double which;

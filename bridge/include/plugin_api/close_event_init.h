@@ -9,12 +9,12 @@
 #include "webf_value.h"
 namespace webf {
 struct WebFCloseEventInit {
-  bool bubbles;
-  bool cancelable;
-  bool composed;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
   int64_t code;
   const char* reason;
-  bool was_clean;
+  int32_t was_clean;
 };
 }  // namespace webf
 #endif // WEBF_CORE_WEBF_API_PLUGIN_API_CLOSE_EVENT_INIT_H_

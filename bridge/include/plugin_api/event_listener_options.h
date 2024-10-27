@@ -9,7 +9,7 @@
 #include "webf_value.h"
 namespace webf {
 struct WebFEventListenerOptions {
-  bool capture;
+  int32_t capture;
 };
 }  // namespace webf
 #endif // WEBF_CORE_WEBF_API_PLUGIN_API_EVENT_LISTENER_OPTIONS_H_

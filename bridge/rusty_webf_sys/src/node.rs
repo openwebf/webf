@@ -3,7 +3,6 @@
 */
 
 use std::ffi::*;
-use libc::boolean_t;
 use crate::*;
 
 enum NodeType {

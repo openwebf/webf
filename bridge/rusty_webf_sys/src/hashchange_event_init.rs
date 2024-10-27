@@ -4,13 +4,12 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
-use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct HashchangeEventInit {
-  pub bubbles: boolean_t,
-  pub cancelable: boolean_t,
-  pub composed: boolean_t,
+  pub bubbles: i32,
+  pub cancelable: i32,
+  pub composed: i32,
   pub old_url: *const c_char,
   pub new_url: *const c_char,
 }

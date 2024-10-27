@@ -16,12 +16,12 @@ typedef struct ScriptValueRef ScriptValueRef;
 using PublicCloseEventGetCode = int64_t (*)(CloseEvent*);
 using PublicCloseEventGetReason = const char* (*)(CloseEvent*);
 using PublicCloseEventDupReason = const char* (*)(CloseEvent*);
-using PublicCloseEventGetWasClean = bool (*)(CloseEvent*);
+using PublicCloseEventGetWasClean = int32_t (*)(CloseEvent*);
 struct CloseEventPublicMethods : public WebFPublicMethods {
   static int64_t Code(CloseEvent* close_event);
   static const char* Reason(CloseEvent* close_event);
   static const char* DupReason(CloseEvent* close_event);
-  static bool WasClean(CloseEvent* close_event);
+  static int32_t WasClean(CloseEvent* close_event);
   double version{1.0};
   EventPublicMethods event;
   PublicCloseEventGetCode close_event_get_code{Code};

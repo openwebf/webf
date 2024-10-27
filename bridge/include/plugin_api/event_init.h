@@ -9,9 +9,9 @@
 #include "webf_value.h"
 namespace webf {
 struct WebFEventInit {
-  bool bubbles;
-  bool cancelable;
-  bool composed;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
 };
 }  // namespace webf
 #endif // WEBF_CORE_WEBF_API_PLUGIN_API_EVENT_INIT_H_

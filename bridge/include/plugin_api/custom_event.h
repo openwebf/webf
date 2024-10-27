@@ -14,10 +14,10 @@ typedef struct ExecutingContext ExecutingContext;
 typedef struct CustomEvent CustomEvent;
 typedef struct ScriptValueRef ScriptValueRef;
 using PublicCustomEventGetDetail = WebFValue<ScriptValueRef, ScriptValueRefPublicMethods> (*)(CustomEvent*);
-using PublicCustomEventInitCustomEvent = void (*)(CustomEvent*, const char*, bool, bool, ScriptValueRef*, SharedExceptionState*);
+using PublicCustomEventInitCustomEvent = void (*)(CustomEvent*, const char*, int32_t, int32_t, ScriptValueRef*, SharedExceptionState*);
 struct CustomEventPublicMethods : public WebFPublicMethods {
   static WebFValue<ScriptValueRef, ScriptValueRefPublicMethods> Detail(CustomEvent* custom_event);
-  static void InitCustomEvent(CustomEvent* custom_event, const char* type, bool can_bubble, bool cancelable, ScriptValueRef* detail, SharedExceptionState* shared_exception_state);
+  static void InitCustomEvent(CustomEvent* custom_event, const char* type, int32_t can_bubble, int32_t cancelable, ScriptValueRef* detail, SharedExceptionState* shared_exception_state);
   double version{1.0};
   EventPublicMethods event;
   PublicCustomEventGetDetail custom_event_get_detail{Detail};

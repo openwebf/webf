@@ -4,7 +4,6 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
-use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct CloseEventRustMethods {
@@ -12,7 +11,7 @@ pub struct CloseEventRustMethods {
   pub event: *const EventRustMethods,
   pub code: extern "C" fn(ptr: *const OpaquePtr) -> i64,
   pub reason: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub was_clean: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
+  pub was_clean: extern "C" fn(ptr: *const OpaquePtr) -> i32,
 }
 pub struct CloseEvent {
   pub event: Event,

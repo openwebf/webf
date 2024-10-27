@@ -4,14 +4,13 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
-use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct CustomEventRustMethods {
   pub version: c_double,
   pub event: *const EventRustMethods,
   pub detail: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<ScriptValueRefRustMethods>,
-  pub init_custom_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, boolean_t, boolean_t, *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
+  pub init_custom_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, i32, i32, *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
 }
 pub struct CustomEvent {
   pub event: Event,

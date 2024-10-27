@@ -9,7 +9,7 @@
 #include "webf_value.h"
 namespace webf {
 struct WebFPointerEventInit {
-  bool is_primary;
+  int32_t is_primary;
   double pointer_id;
   const char* pointer_type;
   double pressure;

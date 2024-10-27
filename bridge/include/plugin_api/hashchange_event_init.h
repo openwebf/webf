@@ -9,9 +9,9 @@
 #include "webf_value.h"
 namespace webf {
 struct WebFHashchangeEventInit {
-  bool bubbles;
-  bool cancelable;
-  bool composed;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
   const char* old_url;
   const char* new_url;
 };
