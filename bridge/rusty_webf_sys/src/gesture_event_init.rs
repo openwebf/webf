@@ -7,9 +7,9 @@ use std::ffi::*;
 use crate::*;
 #[repr(C)]
 pub struct GestureEventInit {
-  pub bubbles: i32,
-  pub cancelable: i32,
-  pub composed: i32,
+  pub bubbles: bool,
+  pub cancelable: bool,
+  pub composed: bool,
   pub state: *const c_char,
   pub direction: *const c_char,
   pub delta_x: c_double,

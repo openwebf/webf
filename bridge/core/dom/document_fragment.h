@@ -40,7 +40,9 @@ class DocumentFragment : public ContainerNode {
 template <>
 struct DowncastTraits<DocumentFragment> {
   static bool AllowFrom(const Node& node) { return node.IsDocumentFragment(); }
-  static bool AllowFrom(const EventTarget& event_target) { return event_target.IsNode() && To<Node>(event_target).IsDocumentFragment(); }
+  static bool AllowFrom(const EventTarget& event_target) {
+    return event_target.IsNode() && To<Node>(event_target).IsDocumentFragment();
+  }
 };
 
 }  // namespace webf

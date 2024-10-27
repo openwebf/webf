@@ -6,8 +6,8 @@
 #define WEBF_CORE_RUST_API_EXECUTING_CONTEXT_H_
 
 #include "document.h"
-#include "window.h"
 #include "exception_state.h"
+#include "window.h"
 
 namespace webf {
 

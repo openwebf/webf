@@ -17,9 +17,9 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   let div_element = document.create_element("div", &exception_state).unwrap();
 
   let event_listener_options = AddEventListenerOptions {
-    passive: 0,
-    once: 0,
-    capture: 0,
+    passive: false,
+    once: false,
+    capture: false,
   };
 
   let event_handler = Box::new(|event: &Event| {

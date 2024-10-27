@@ -10,7 +10,7 @@ pub struct CustomEventRustMethods {
   pub version: c_double,
   pub event: *const EventRustMethods,
   pub detail: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<ScriptValueRefRustMethods>,
-  pub init_custom_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, i32, i32, *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
+  pub init_custom_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, bool, bool, *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
 }
 pub struct CustomEvent {
   pub event: Event,
@@ -47,7 +47,7 @@ impl CustomEvent {
   }
   pub fn init_custom_event(&self, type_: &str, canBubble: bool, cancelable: bool, detail: &ScriptValueRef, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).init_custom_event)(self.ptr(), CString::new(type_).unwrap().as_ptr(), canBubble as boolean_t, cancelable as boolean_t, detail.ptr, exception_state.ptr);
+      ((*self.method_pointer).init_custom_event)(self.ptr(), CString::new(type_).unwrap().as_ptr(), canBubble, cancelable, detail.ptr, exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));

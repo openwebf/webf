@@ -9,12 +9,12 @@
 #include <set>
 #include <utility>
 
-#include "plugin_api/node.h"
 #include "events/event_target.h"
 #include "foundation/macros.h"
 #include "mutation_observer.h"
 #include "mutation_observer_registration.h"
 #include "node_data.h"
+#include "plugin_api/node.h"
 #include "qjs_union_dom_stringnode.h"
 #include "tree_scope.h"
 

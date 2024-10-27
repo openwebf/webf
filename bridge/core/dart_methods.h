@@ -37,7 +37,10 @@ using AsyncModuleCallback = NativeValue* (*)(void* callback_context,
                                              InvokeModuleResultCallback result_callback);
 
 using PluginLibraryEntryPoint = void* (*)(WebFValue<ExecutingContext, ExecutingContextWebFMethods> handle_context);
-using LoadNativeLibraryCallback = void (*)(PluginLibraryEntryPoint entry_point, void* initialize_data, double context_id, void* imported_data);
+using LoadNativeLibraryCallback = void (*)(PluginLibraryEntryPoint entry_point,
+                                           void* initialize_data,
+                                           double context_id,
+                                           void* imported_data);
 
 using AsyncBlobCallback =
     void (*)(void* callback_context, double context_id, char* error, uint8_t* bytes, int32_t length);

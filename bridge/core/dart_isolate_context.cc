@@ -85,8 +85,7 @@ void DartIsolateContext::InitializeJSRuntime() {
 }
 
 void DartIsolateContext::FinalizeJSRuntime() {
-  if (running_dart_isolates > 0 ||
-      runtime_ == nullptr) {
+  if (running_dart_isolates > 0 || runtime_ == nullptr) {
     return;
   }
 

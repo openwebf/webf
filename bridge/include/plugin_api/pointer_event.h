@@ -6,8 +6,8 @@
 #ifndef WEBF_CORE_WEBF_API_PLUGIN_API_POINTER_EVENT_H_
 #define WEBF_CORE_WEBF_API_PLUGIN_API_POINTER_EVENT_H_
 #include <stdint.h>
-#include "script_value_ref.h"
 #include "mouse_event.h"
+#include "script_value_ref.h"
 namespace webf {
 typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
@@ -51,4 +51,4 @@ struct PointerEventPublicMethods : public WebFPublicMethods {
   PublicPointerEventGetWidth pointer_event_get_width{Width};
 };
 }  // namespace webf
-#endif // WEBF_CORE_WEBF_API_PLUGIN_API_POINTER_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_POINTER_EVENT_H_

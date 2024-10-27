@@ -153,7 +153,6 @@ void WebFPage::reportError(const char* errmsg) {
   handler_(context_, errmsg);
 }
 
-
 static void ReturnEvaluateScriptsInternal(Dart_PersistentHandle persistent_handle,
                                           EvaluateQuickjsByteCodeCallback result_callback,
                                           bool is_success) {
@@ -163,15 +162,15 @@ static void ReturnEvaluateScriptsInternal(Dart_PersistentHandle persistent_handl
 }
 
 void WebFPage::EvaluateScriptsInternal(void* page_,
-                             const char* code,
-                             uint64_t code_len,
-                             uint8_t** parsed_bytecodes,
-                             uint64_t* bytecode_len,
-                             const char* bundleFilename,
-                             int32_t startLine,
-                             int64_t profile_id,
-                             Dart_Handle persistent_handle,
-                             EvaluateScriptsCallback result_callback) {
+                                       const char* code,
+                                       uint64_t code_len,
+                                       uint8_t** parsed_bytecodes,
+                                       uint64_t* bytecode_len,
+                                       const char* bundleFilename,
+                                       int32_t startLine,
+                                       int64_t profile_id,
+                                       Dart_Handle persistent_handle,
+                                       EvaluateScriptsCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
 
@@ -194,11 +193,11 @@ static void ReturnEvaluateQuickjsByteCodeResultToDart(Dart_PersistentHandle pers
 }
 
 void WebFPage::EvaluateQuickjsByteCodeInternal(void* page_,
-                                     uint8_t* bytes,
-                                     int32_t byteLen,
-                                     int64_t profile_id,
-                                     Dart_PersistentHandle persistent_handle,
-                                     EvaluateQuickjsByteCodeCallback result_callback) {
+                                               uint8_t* bytes,
+                                               int32_t byteLen,
+                                               int64_t profile_id,
+                                               Dart_PersistentHandle persistent_handle,
+                                               EvaluateQuickjsByteCodeCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
 
@@ -219,11 +218,11 @@ static void ReturnParseHTMLToDart(Dart_PersistentHandle persistent_handle, Parse
 }
 
 void WebFPage::ParseHTMLInternal(void* page_,
-                       char* code,
-                       int32_t length,
-                       int64_t profile_id,
-                       Dart_PersistentHandle dart_handle,
-                       ParseHTMLCallback result_callback) {
+                                 char* code,
+                                 int32_t length,
+                                 int64_t profile_id,
+                                 Dart_PersistentHandle dart_handle,
+                                 ParseHTMLCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
 
@@ -247,12 +246,12 @@ static void ReturnInvokeEventResultToDart(Dart_Handle persistent_handle,
 }
 
 void WebFPage::InvokeModuleEventInternal(void* page_,
-                               void* module_name,
-                               const char* eventType,
-                               void* event,
-                               void* extra,
-                               Dart_Handle persistent_handle,
-                               InvokeModuleEventCallback result_callback) {
+                                         void* module_name,
+                                         const char* eventType,
+                                         void* event,
+                                         void* extra,
+                                         Dart_Handle persistent_handle,
+                                         InvokeModuleEventCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   auto dart_isolate_context = page->executingContext()->dartIsolateContext();
   assert(std::this_thread::get_id() == page->currentThread());
@@ -275,14 +274,14 @@ static void ReturnDumpByteCodeResultToDart(Dart_Handle persistent_handle, DumpQu
 }
 
 void WebFPage::DumpQuickJsByteCodeInternal(void* page_,
-                                 int64_t profile_id,
-                                 const char* code,
-                                 int32_t code_len,
-                                 uint8_t** parsed_bytecodes,
-                                 uint64_t* bytecode_len,
-                                 const char* url,
-                                 Dart_PersistentHandle persistent_handle,
-                                 DumpQuickjsByteCodeCallback result_callback) {
+                                           int64_t profile_id,
+                                           const char* code,
+                                           int32_t code_len,
+                                           uint8_t** parsed_bytecodes,
+                                           uint64_t* bytecode_len,
+                                           const char* url,
+                                           Dart_PersistentHandle persistent_handle,
+                                           DumpQuickjsByteCodeCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   auto dart_isolate_context = page->executingContext()->dartIsolateContext();
 
@@ -297,6 +296,5 @@ void WebFPage::DumpQuickJsByteCodeInternal(void* page_,
   dart_isolate_context->dispatcher()->PostToDart(page->isDedicated(), ReturnDumpByteCodeResultToDart, persistent_handle,
                                                  result_callback);
 }
-
 
 }  // namespace webf

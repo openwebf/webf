@@ -7,10 +7,10 @@ use std::ffi::*;
 use crate::*;
 #[repr(C)]
 pub struct CloseEventInit {
-  pub bubbles: i32,
-  pub cancelable: i32,
-  pub composed: i32,
+  pub bubbles: bool,
+  pub cancelable: bool,
+  pub composed: bool,
   pub code: i64,
   pub reason: *const c_char,
-  pub was_clean: i32,
+  pub was_clean: bool,
 }

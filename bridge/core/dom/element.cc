@@ -4,7 +4,6 @@
  */
 #include "element.h"
 #include <utility>
-#include "plugin_api/element.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
@@ -21,6 +20,7 @@
 #include "foundation/native_value_converter.h"
 #include "html_element_type_helper.h"
 #include "mutation_observer_interest_group.h"
+#include "plugin_api/element.h"
 #include "qjs_element.h"
 #include "text.h"
 

@@ -3,11 +3,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "plugin_api/event_target.h"
-#include "event_target.h"
 #include <cstdint>
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
 #include "event_factory.h"
+#include "event_target.h"
 #include "include/dart_api.h"
 #include "native_value_converter.h"
 #include "qjs_add_event_listener_options.h"
@@ -79,7 +79,8 @@ bool EventTarget::addEventListener(const AtomicString& event_type,
                                    const std::shared_ptr<EventListener>& event_listener,
                                    const std::shared_ptr<QJSUnionAddEventListenerOptionsBoolean>& options,
                                    ExceptionState& exception_state) {
-  if (event_listener == nullptr) return false;
+  if (event_listener == nullptr)
+    return false;
   std::shared_ptr<AddEventListenerOptions> event_listener_options;
   if (options == nullptr) {
     event_listener_options = AddEventListenerOptions::Create();

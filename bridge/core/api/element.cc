@@ -5,6 +5,4 @@
 #include "plugin_api/element.h"
 #include "core/dom/container_node.h"
 
-namespace webf {
-
-}  // namespace webf
+namespace webf {}  // namespace webf

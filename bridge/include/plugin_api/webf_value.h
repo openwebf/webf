@@ -17,7 +17,8 @@ template <typename T, typename U>
 struct WebFValue {
   WebFValue() = delete;
   static WebFValue Null() { return WebFValue(nullptr, nullptr, nullptr); }
-  explicit WebFValue(T* value, const U* method, WebFValueStatus* status) : value(value), method_pointer(method), status(status) {};
+  explicit WebFValue(T* value, const U* method, WebFValueStatus* status)
+      : value(value), method_pointer(method), status(status){};
   T* value;
   const U* method_pointer;
   WebFValueStatus* status;

@@ -22,4 +22,4 @@ struct WebFGestureEventInit {
   double rotation;
 };
 }  // namespace webf
-#endif // WEBF_CORE_WEBF_API_PLUGIN_API_GESTURE_EVENT_INIT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_GESTURE_EVENT_INIT_H_
