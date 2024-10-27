@@ -29,7 +29,14 @@ class DOMMatrix : public DOMMatrixReadonly {
   explicit DOMMatrix(ExecutingContext* context,
                      NativeBindingObject* native_binding_object);
 
+  [[nodiscard]]
+  bool IsDOMMatrix() const override { return true; }
+
  private:
+};
+template <>
+struct DowncastTraits<DOMMatrix> {
+  static bool AllowFrom(const DOMMatrixReadonly& matrix) { return matrix .IsDOMMatrix(); }
 };
 
 }  // namespace webf
