@@ -18,6 +18,6 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../src" "${CMAKE_CURRENT_BINARY_DI
 set(rust_builder_bundled_libraries
   # Defined in ../src/CMakeLists.txt.
   # This can be changed to accommodate different builds.
-  $<TARGET_FILE:rust_builder>
+  $<TARGET_FILE:example_app>
   PARENT_SCOPE
 )

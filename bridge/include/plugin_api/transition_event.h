@@ -6,8 +6,8 @@
 #ifndef WEBF_CORE_WEBF_API_PLUGIN_API_TRANSITION_EVENT_H_
 #define WEBF_CORE_WEBF_API_PLUGIN_API_TRANSITION_EVENT_H_
 #include <stdint.h>
-#include "event.h"
 #include "script_value_ref.h"
+#include "event.h"
 namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
