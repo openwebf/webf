@@ -7,7 +7,7 @@ use std::ffi::*;
 use crate::*;
 #[repr(C)]
 pub struct AddEventListenerOptions {
-  pub capture: i32,
-  pub passive: i32,
-  pub once: i32,
+  pub capture: bool,
+  pub passive: bool,
+  pub once: bool,
 }

@@ -7,9 +7,9 @@ use std::ffi::*;
 use crate::*;
 #[repr(C)]
 pub struct UIEventInit {
-  pub bubbles: i32,
-  pub cancelable: i32,
-  pub composed: i32,
+  pub bubbles: bool,
+  pub cancelable: bool,
+  pub composed: bool,
   pub detail: c_double,
   pub view: RustValue<WindowRustMethods>,
   pub which: c_double,
