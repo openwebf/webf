@@ -9,9 +9,9 @@
 #include "webf_value.h"
 namespace webf {
 struct WebFGestureEventInit {
-  bool bubbles;
-  bool cancelable;
-  bool composed;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
   const char* state;
   const char* direction;
   double delta_x;

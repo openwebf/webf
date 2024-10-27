@@ -3,7 +3,6 @@
 */
 
 use std::ffi::{c_double, c_void, CString, c_char};
-use libc::{boolean_t};
 use crate::add_event_listener_options::AddEventListenerOptions;
 use crate::element::{Element, ElementRustMethods};
 use crate::event::{Event, EventRustMethods};

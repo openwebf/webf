@@ -14,7 +14,7 @@ typedef struct ExecutingContext ExecutingContext;
 typedef struct PointerEvent PointerEvent;
 typedef struct ScriptValueRef ScriptValueRef;
 using PublicPointerEventGetHeight = double (*)(PointerEvent*);
-using PublicPointerEventGetIsPrimary = bool (*)(PointerEvent*);
+using PublicPointerEventGetIsPrimary = int32_t (*)(PointerEvent*);
 using PublicPointerEventGetPointerId = double (*)(PointerEvent*);
 using PublicPointerEventGetPointerType = const char* (*)(PointerEvent*);
 using PublicPointerEventDupPointerType = const char* (*)(PointerEvent*);
@@ -26,7 +26,7 @@ using PublicPointerEventGetTwist = double (*)(PointerEvent*);
 using PublicPointerEventGetWidth = double (*)(PointerEvent*);
 struct PointerEventPublicMethods : public WebFPublicMethods {
   static double Height(PointerEvent* pointer_event);
-  static bool IsPrimary(PointerEvent* pointer_event);
+  static int32_t IsPrimary(PointerEvent* pointer_event);
   static double PointerId(PointerEvent* pointer_event);
   static const char* PointerType(PointerEvent* pointer_event);
   static const char* DupPointerType(PointerEvent* pointer_event);

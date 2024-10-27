@@ -4,23 +4,22 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 use std::ffi::*;
-use libc::boolean_t;
 use crate::*;
 #[repr(C)]
 pub struct EventRustMethods {
   pub version: c_double,
-  pub bubbles: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
-  pub cancel_bubble: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
-  pub set_cancel_bubble: extern "C" fn(ptr: *const OpaquePtr, value: boolean_t, exception_state: *const OpaquePtr) -> bool,
-  pub cancelable: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
+  pub bubbles: extern "C" fn(ptr: *const OpaquePtr) -> i32,
+  pub cancel_bubble: extern "C" fn(ptr: *const OpaquePtr) -> i32,
+  pub set_cancel_bubble: extern "C" fn(ptr: *const OpaquePtr, value: i32, exception_state: *const OpaquePtr) -> bool,
+  pub cancelable: extern "C" fn(ptr: *const OpaquePtr) -> i32,
   pub current_target: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<EventTargetRustMethods>,
-  pub default_prevented: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
+  pub default_prevented: extern "C" fn(ptr: *const OpaquePtr) -> i32,
   pub src_element: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<EventTargetRustMethods>,
   pub target: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<EventTargetRustMethods>,
-  pub is_trusted: extern "C" fn(ptr: *const OpaquePtr) -> boolean_t,
+  pub is_trusted: extern "C" fn(ptr: *const OpaquePtr) -> i32,
   pub time_stamp: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub type_: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub init_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, boolean_t, boolean_t, exception_state: *const OpaquePtr) -> c_void,
+  pub init_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, i32, i32, exception_state: *const OpaquePtr) -> c_void,
   pub prevent_default: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
   pub stop_immediate_propagation: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
   pub stop_propagation: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,

@@ -9,9 +9,9 @@
 #include "webf_value.h"
 namespace webf {
 struct WebFAnimationEventInit {
-  bool bubbles;
-  bool cancelable;
-  bool composed;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
   const char* animation_name;
   double elapsed_time;
   const char* pseudo_element;

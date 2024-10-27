@@ -9,9 +9,9 @@
 #include "webf_value.h"
 namespace webf {
 struct WebFTransitionEventInit {
-  bool bubbles;
-  bool cancelable;
-  bool composed;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
   double elapsed_time;
   const char* property_name;
   const char* pseudo_element;

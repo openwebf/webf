@@ -36,7 +36,7 @@ function generatePublicReturnTypeValue(type: ParameterType) {
       return 'RustValue<ScriptValueRefRustMethods>';
     }
     case FunctionArgumentType.boolean: {
-      return 'boolean_t';
+      return 'i32';
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
@@ -100,7 +100,7 @@ function generatePublicParameterType(type: ParameterType): string {
       return '*const OpaquePtr';
     }
     case FunctionArgumentType.boolean: {
-      return 'boolean_t';
+      return 'i32';
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
