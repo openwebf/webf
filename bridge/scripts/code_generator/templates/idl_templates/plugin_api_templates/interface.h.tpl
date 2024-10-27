@@ -13,13 +13,13 @@ typedef struct WebF<%= dependentType %> WebF<%= dependentType %>;
   <% } else if (dependentType === 'JSEventListener') { %>
 typedef struct WebFEventListenerContext WebFEventListenerContext;
   <% } else { %>
-typedef struct <%= dependentType %> <%= dependentType %>;
+class <%= dependentType %>;
 typedef struct <%= dependentType %>PublicMethods <%= dependentType %>PublicMethods;
   <% } %>
 <% }); %>
-typedef struct SharedExceptionState SharedExceptionState;
-typedef struct ExecutingContext ExecutingContext;
-typedef struct <%= className %> <%= className %>;
+class SharedExceptionState;
+class ExecutingContext;
+class <%= className %>;
 typedef struct ScriptValueRef ScriptValueRef;
 
 <% _.forEach(object.props, function(prop, index) { %>

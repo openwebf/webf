@@ -6,12 +6,12 @@
 #ifndef WEBF_CORE_WEBF_API_PLUGIN_API_TRANSITION_EVENT_H_
 #define WEBF_CORE_WEBF_API_PLUGIN_API_TRANSITION_EVENT_H_
 #include <stdint.h>
-#include "event.h"
 #include "script_value_ref.h"
+#include "event.h"
 namespace webf {
-typedef struct SharedExceptionState SharedExceptionState;
-typedef struct ExecutingContext ExecutingContext;
-typedef struct TransitionEvent TransitionEvent;
+class SharedExceptionState;
+class ExecutingContext;
+class TransitionEvent;
 typedef struct ScriptValueRef ScriptValueRef;
 using PublicTransitionEventGetElapsedTime = double (*)(TransitionEvent*);
 using PublicTransitionEventGetPropertyName = const char* (*)(TransitionEvent*);

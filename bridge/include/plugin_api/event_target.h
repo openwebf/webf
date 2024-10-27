@@ -10,11 +10,11 @@
 namespace webf {
 
 typedef struct WebFAddEventListenerOptions WebFAddEventListenerOptions;
-typedef struct EventTarget EventTarget;
-typedef struct SharedExceptionState SharedExceptionState;
-typedef struct ExecutingContext ExecutingContext;
-typedef struct Event Event;
-typedef struct EventPublicMethods EventWebFMethods;
+class EventTarget;
+class SharedExceptionState;
+class ExecutingContext;
+class Event;
+typedef struct EventPublicMethods EventPublicMethods;
 typedef struct WebFEventListenerContext WebFEventListenerContext;
 
 using WebFImplEventCallback = void (*)(WebFEventListenerContext* callback_context,

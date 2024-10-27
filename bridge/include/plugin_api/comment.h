@@ -9,10 +9,10 @@
 
 namespace webf {
 
-typedef struct EventTarget EventTarget;
-typedef struct SharedExceptionState SharedExceptionState;
-typedef struct ExecutingContext ExecutingContext;
-typedef struct Event Event;
+class EventTarget;
+class SharedExceptionState;
+class ExecutingContext;
+class Event;
 
 struct CommentPublicMethods : WebFPublicMethods {
   double version{1.0};

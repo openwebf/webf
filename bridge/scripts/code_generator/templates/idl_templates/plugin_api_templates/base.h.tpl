@@ -10,4 +10,4 @@
 #include <stdint.h>
 <%= content %>
 
-#endif // WEBF_CORE_WEBF_API_<%= blob.filename.toUpperCase() %>_H_
+#endif  // WEBF_CORE_WEBF_API_<%= blob.filename.toUpperCase() %>_H_

@@ -9,9 +9,9 @@
 #include "script_value_ref.h"
 #include "ui_event.h"
 namespace webf {
-typedef struct SharedExceptionState SharedExceptionState;
-typedef struct ExecutingContext ExecutingContext;
-typedef struct InputEvent InputEvent;
+class SharedExceptionState;
+class ExecutingContext;
+class InputEvent;
 typedef struct ScriptValueRef ScriptValueRef;
 using PublicInputEventGetInputType = const char* (*)(InputEvent*);
 using PublicInputEventDupInputType = const char* (*)(InputEvent*);
