@@ -6,8 +6,8 @@
 #ifndef WEBF_CORE_WEBF_API_PLUGIN_API_UI_EVENT_H_
 #define WEBF_CORE_WEBF_API_PLUGIN_API_UI_EVENT_H_
 #include <stdint.h>
-#include "script_value_ref.h"
 #include "event.h"
+#include "script_value_ref.h"
 namespace webf {
 class Window;
 typedef struct WindowPublicMethods WindowPublicMethods;
