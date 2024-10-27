@@ -6,12 +6,12 @@
 #ifndef WEBF_CORE_WEBF_API_PLUGIN_API_POINTER_EVENT_H_
 #define WEBF_CORE_WEBF_API_PLUGIN_API_POINTER_EVENT_H_
 #include <stdint.h>
-#include "mouse_event.h"
 #include "script_value_ref.h"
+#include "mouse_event.h"
 namespace webf {
-typedef struct SharedExceptionState SharedExceptionState;
-typedef struct ExecutingContext ExecutingContext;
-typedef struct PointerEvent PointerEvent;
+class SharedExceptionState;
+class ExecutingContext;
+class PointerEvent;
 typedef struct ScriptValueRef ScriptValueRef;
 using PublicPointerEventGetHeight = double (*)(PointerEvent*);
 using PublicPointerEventGetIsPrimary = int32_t (*)(PointerEvent*);

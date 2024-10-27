@@ -18,10 +18,10 @@
 #define WEBF_EXPORT __attribute__((__visibility__("default")))
 #endif
 
-typedef struct SharedNativeString SharedNativeString;
-typedef struct NativeValue NativeValue;
-typedef struct NativeScreen NativeScreen;
-typedef struct NativeByteCode NativeByteCode;
+class SharedNativeString;
+class NativeValue;
+class NativeScreen;
+class NativeByteCode;
 
 struct WebFInfo {
   const char* app_name{nullptr};

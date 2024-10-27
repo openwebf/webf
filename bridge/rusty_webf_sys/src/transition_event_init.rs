@@ -7,9 +7,9 @@ use std::ffi::*;
 use crate::*;
 #[repr(C)]
 pub struct TransitionEventInit {
-  pub bubbles: bool,
-  pub cancelable: bool,
-  pub composed: bool,
+  pub bubbles: i32,
+  pub cancelable: i32,
+  pub composed: i32,
   pub elapsed_time: c_double,
   pub property_name: *const c_char,
   pub pseudo_element: *const c_char,

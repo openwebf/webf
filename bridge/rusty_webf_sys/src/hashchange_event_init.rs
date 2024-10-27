@@ -7,9 +7,9 @@ use std::ffi::*;
 use crate::*;
 #[repr(C)]
 pub struct HashchangeEventInit {
-  pub bubbles: bool,
-  pub cancelable: bool,
-  pub composed: bool,
+  pub bubbles: i32,
+  pub cancelable: i32,
+  pub composed: i32,
   pub old_url: *const c_char,
   pub new_url: *const c_char,
 }

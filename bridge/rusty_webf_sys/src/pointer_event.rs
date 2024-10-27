@@ -10,7 +10,7 @@ pub struct PointerEventRustMethods {
   pub version: c_double,
   pub mouse_event: *const MouseEventRustMethods,
   pub height: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub is_primary: extern "C" fn(ptr: *const OpaquePtr) -> bool,
+  pub is_primary: extern "C" fn(ptr: *const OpaquePtr) -> i32,
   pub pointer_id: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub pointer_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
   pub pressure: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
@@ -54,7 +54,7 @@ impl PointerEvent {
     let value = unsafe {
       ((*self.method_pointer).is_primary)(self.ptr())
     };
-    value
+    value != 0
   }
   pub fn pointer_id(&self) -> f64 {
     let value = unsafe {
