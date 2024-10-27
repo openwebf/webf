@@ -14,4 +14,4 @@ struct WebFScrollToOptions {
   const double left;
 };
 }  // namespace webf
-#endif // WEBF_CORE_WEBF_API_PLUGIN_API_SCROLL_TO_OPTIONS_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_SCROLL_TO_OPTIONS_H_

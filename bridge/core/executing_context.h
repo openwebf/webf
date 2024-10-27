@@ -21,10 +21,10 @@
 #include "bindings/qjs/binding_initializer.h"
 #include "bindings/qjs/rejected_promises.h"
 #include "bindings/qjs/script_value.h"
-#include "plugin_api/executing_context.h"
 #include "foundation/macros.h"
 #include "foundation/ui_command_buffer.h"
 #include "native/native_loader.h"
+#include "plugin_api/executing_context.h"
 
 #include "dart_isolate_context.h"
 #include "dart_methods.h"
@@ -141,9 +141,7 @@ class ExecutingContext {
     assert(dart_isolate_context_->valid());
     return dart_isolate_context_->dartMethodPtr();
   }
-  FORCE_INLINE ExecutingContextWebFMethods* publicMethodPtr() const {
-    return public_method_ptr_.get();
-  }
+  FORCE_INLINE ExecutingContextWebFMethods* publicMethodPtr() const { return public_method_ptr_.get(); }
   FORCE_INLINE bool isDedicated() { return is_dedicated_; }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
 

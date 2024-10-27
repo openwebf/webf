@@ -6,8 +6,8 @@
 #ifndef WEBF_CORE_WEBF_API_PLUGIN_API_GESTURE_EVENT_H_
 #define WEBF_CORE_WEBF_API_PLUGIN_API_GESTURE_EVENT_H_
 #include <stdint.h>
-#include "script_value_ref.h"
 #include "event.h"
+#include "script_value_ref.h"
 namespace webf {
 typedef struct SharedExceptionState SharedExceptionState;
 typedef struct ExecutingContext ExecutingContext;
@@ -48,4 +48,4 @@ struct GestureEventPublicMethods : public WebFPublicMethods {
   PublicGestureEventGetRotation gesture_event_get_rotation{Rotation};
 };
 }  // namespace webf
-#endif // WEBF_CORE_WEBF_API_PLUGIN_API_GESTURE_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_GESTURE_EVENT_H_

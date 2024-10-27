@@ -19,4 +19,4 @@ struct WebFFocusEventInit {
   WebFValue<EventTarget, EventTargetPublicMethods> related_target;
 };
 }  // namespace webf
-#endif // WEBF_CORE_WEBF_API_PLUGIN_API_FOCUS_EVENT_INIT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_FOCUS_EVENT_INIT_H_

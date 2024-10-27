@@ -19,9 +19,9 @@ struct SharedExceptionState {
 
 using PublicExceptionStateHasException = bool (*)(SharedExceptionState* shared_exception_state);
 using PublicExceptionStateStringify = void (*)(ExecutingContext* context,
-                                             SharedExceptionState* shared_exception_state,
-                                             char** errmsg,
-                                             uint32_t* strlen);
+                                               SharedExceptionState* shared_exception_state,
+                                               char** errmsg,
+                                               uint32_t* strlen);
 
 struct ExceptionStatePublicMethods : public WebFPublicMethods {
   static bool HasException(SharedExceptionState* shared_exception_state);

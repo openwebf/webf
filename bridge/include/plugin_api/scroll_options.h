@@ -12,4 +12,4 @@ struct WebFScrollOptions {
   const char* behavior;
 };
 }  // namespace webf
-#endif // WEBF_CORE_WEBF_API_PLUGIN_API_SCROLL_OPTIONS_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_SCROLL_OPTIONS_H_

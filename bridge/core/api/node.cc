@@ -12,8 +12,8 @@ namespace webf {
 NodePublicMethods::NodePublicMethods() {}
 
 WebFValue<Node, NodePublicMethods> NodePublicMethods::AppendChild(Node* self_node,
-                                                              Node* new_node,
-                                                              SharedExceptionState* shared_exception_state) {
+                                                                  Node* new_node,
+                                                                  SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{self_node->GetExecutingContext()};
   Node* returned_node = self_node->appendChild(new_node, shared_exception_state->exception_state);
   if (shared_exception_state->exception_state.HasException()) {
@@ -25,8 +25,8 @@ WebFValue<Node, NodePublicMethods> NodePublicMethods::AppendChild(Node* self_nod
 }
 
 WebFValue<Node, NodePublicMethods> NodePublicMethods::RemoveChild(webf::Node* self_node,
-                                                              webf::Node* target_node,
-                                                              webf::SharedExceptionState* shared_exception_state) {
+                                                                  webf::Node* target_node,
+                                                                  webf::SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{self_node->GetExecutingContext()};
   Node* returned_node = target_node->removeChild(target_node, shared_exception_state->exception_state);
   if (shared_exception_state->exception_state.HasException()) {

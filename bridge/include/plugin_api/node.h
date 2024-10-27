@@ -18,8 +18,8 @@ typedef struct Event Event;
 struct NodePublicMethods;
 
 using PublicNodeAppendChild = WebFValue<Node, NodePublicMethods> (*)(Node* self_node,
-                                                                 Node* new_node,
-                                                                 SharedExceptionState* shared_exception_state);
+                                                                     Node* new_node,
+                                                                     SharedExceptionState* shared_exception_state);
 
 using PublicNodeRemoveChild = WebFValue<Node, NodePublicMethods> (*)(Node* self_node,
                                                                      Node* target_node,
@@ -29,11 +29,11 @@ struct NodePublicMethods : WebFPublicMethods {
   explicit NodePublicMethods();
 
   static WebFValue<Node, NodePublicMethods> AppendChild(Node* self_node,
-                                                      Node* new_node,
-                                                      SharedExceptionState* shared_exception_state);
+                                                        Node* new_node,
+                                                        SharedExceptionState* shared_exception_state);
   static WebFValue<Node, NodePublicMethods> RemoveChild(Node* self_node,
-                                                      Node* target_node,
-                                                      SharedExceptionState* shared_exception_state);
+                                                        Node* target_node,
+                                                        SharedExceptionState* shared_exception_state);
   double version{1.0};
   EventTargetPublicMethods event_target;
   PublicNodeAppendChild rust_node_append_child{AppendChild};

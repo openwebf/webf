@@ -5,6 +5,4 @@
 #include "plugin_api/window.h"
 #include "core/dom/events/event_target.h"
 
-namespace webf {
-
-}  // namespace webf
+namespace webf {}  // namespace webf

@@ -25,4 +25,4 @@ struct WebFTouchInit {
   double force;
 };
 }  // namespace webf
-#endif // WEBF_CORE_WEBF_API_PLUGIN_API_TOUCH_INIT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_TOUCH_INIT_H_

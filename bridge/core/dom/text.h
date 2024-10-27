@@ -38,7 +38,9 @@ template <>
 struct DowncastTraits<Text> {
   static bool AllowFrom(const Node& node) { return node.IsTextNode(); };
   static bool AllowFrom(const CharacterData& character_data) { return character_data.IsTextNode(); }
-  static bool AllowFrom(const EventTarget& event_target) { return event_target.IsNode() && To<Node>(event_target).IsTextNode(); }
+  static bool AllowFrom(const EventTarget& event_target) {
+    return event_target.IsNode() && To<Node>(event_target).IsTextNode();
+  }
 };
 
 }  // namespace webf
