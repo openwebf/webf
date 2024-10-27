@@ -258,7 +258,7 @@ describe('Canvas context 2d', () => {
     ctx.stroke();
     
     await snapshot(canvas);
-
+    done();
   });
 
   it('should work with transform and resetTransform', async () => {
