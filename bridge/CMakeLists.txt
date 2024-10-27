@@ -21,6 +21,11 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
 endif()
 
+set(WEBF_JS_ENGINE $ENV{WEBF_JS_ENGINE})
+if(NOT WEBF_JS_ENGINE)
+    set(WEBF_JS_ENGINE "quickjs")
+endif()
+
 if(WIN32)
   set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads")
   include_directories(${PTHREADS_ROOT}/include)
@@ -143,7 +148,7 @@ list(APPEND BRIDGE_INCLUDE
   ${ADDITIONAL_INCLUDE_DIRS}
   )
 
-if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
+if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   add_compile_options(-DWEBF_QUICK_JS_ENGINE=1)
 
   execute_process(
