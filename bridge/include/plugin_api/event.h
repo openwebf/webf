@@ -45,7 +45,11 @@ struct EventPublicMethods : public WebFPublicMethods {
   static double TimeStamp(Event* event);
   static const char* Type(Event* event);
   static const char* DupType(Event* event);
-  static void InitEvent(Event* event, const char* type, int32_t bubbles, int32_t cancelable, SharedExceptionState* shared_exception_state);
+  static void InitEvent(Event* event,
+                        const char* type,
+                        int32_t bubbles,
+                        int32_t cancelable,
+                        SharedExceptionState* shared_exception_state);
   static void PreventDefault(Event* event, SharedExceptionState* shared_exception_state);
   static void StopImmediatePropagation(Event* event, SharedExceptionState* shared_exception_state);
   static void StopPropagation(Event* event, SharedExceptionState* shared_exception_state);
