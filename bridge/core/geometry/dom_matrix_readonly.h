@@ -99,6 +99,9 @@ class DOMMatrixReadonly : public BindingObject {
                                      int32_t argc,
                                      const NativeValue* argv,
                                      Dart_Handle dart_object) override;
+ protected:
+  explicit DOMMatrixReadonly(ExecutingContext* context, NativeBindingObject* native_binding_object);
+
 private:
   double getMatrixProperty(const AtomicString& prop) const;
   void setMatrixProperty(const AtomicString& prop, double v, ExceptionState& exception_state);
