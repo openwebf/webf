@@ -9,11 +9,11 @@
 #include "script_value_ref.h"
 #include "ui_event.h"
 namespace webf {
-typedef struct EventTarget EventTarget;
+class EventTarget;
 typedef struct EventTargetPublicMethods EventTargetPublicMethods;
-typedef struct SharedExceptionState SharedExceptionState;
-typedef struct ExecutingContext ExecutingContext;
-typedef struct FocusEvent FocusEvent;
+class SharedExceptionState;
+class ExecutingContext;
+class FocusEvent;
 typedef struct ScriptValueRef ScriptValueRef;
 using PublicFocusEventGetRelatedTarget = WebFValue<EventTarget, EventTargetPublicMethods> (*)(FocusEvent*);
 struct FocusEventPublicMethods : public WebFPublicMethods {

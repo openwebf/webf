@@ -11,7 +11,7 @@
 
 namespace webf {
 
-typedef struct ExecutingContext ExecutingContext;
+class ExecutingContext;
 
 struct SharedExceptionState {
   webf::ExceptionState exception_state;

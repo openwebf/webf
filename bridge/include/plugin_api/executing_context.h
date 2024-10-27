@@ -11,9 +11,9 @@
 
 namespace webf {
 
-typedef struct Document Document;
-typedef struct ExecutingContext ExecutingContext;
-typedef struct Window Window;
+class Document;
+class ExecutingContext;
+class Window;
 
 using PublicContextGetDocument = WebFValue<Document, DocumentPublicMethods> (*)(ExecutingContext*);
 using PublicContextGetWindow = WebFValue<Window, WindowPublicMethods> (*)(ExecutingContext*);

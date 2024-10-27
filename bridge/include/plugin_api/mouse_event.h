@@ -9,9 +9,9 @@
 #include "script_value_ref.h"
 #include "ui_event.h"
 namespace webf {
-typedef struct SharedExceptionState SharedExceptionState;
-typedef struct ExecutingContext ExecutingContext;
-typedef struct MouseEvent MouseEvent;
+class SharedExceptionState;
+class ExecutingContext;
+class MouseEvent;
 typedef struct ScriptValueRef ScriptValueRef;
 using PublicMouseEventGetClientX = double (*)(MouseEvent*);
 using PublicMouseEventGetClientY = double (*)(MouseEvent*);

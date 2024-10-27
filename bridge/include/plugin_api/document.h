@@ -15,15 +15,15 @@
 
 namespace webf {
 
-typedef struct EventTarget EventTarget;
-typedef struct SharedExceptionState SharedExceptionState;
-typedef struct ExecutingContext ExecutingContext;
-typedef struct Element Element;
-typedef struct DocumentFragment DocumentFragment;
-typedef struct Document Document;
-typedef struct Text Text;
-typedef struct Comment Comment;
-typedef struct Event Event;
+class EventTarget;
+class SharedExceptionState;
+class ExecutingContext;
+class Element;
+class DocumentFragment;
+class Document;
+class Text;
+class Comment;
+class Event;
 
 struct WebFElementCreationOptions {
   const char* is;

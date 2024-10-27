@@ -9,11 +9,11 @@
 #include "script_value_ref.h"
 #include "webf_value.h"
 namespace webf {
-typedef struct EventTarget EventTarget;
+class EventTarget;
 typedef struct EventTargetPublicMethods EventTargetPublicMethods;
-typedef struct SharedExceptionState SharedExceptionState;
-typedef struct ExecutingContext ExecutingContext;
-typedef struct Event Event;
+class SharedExceptionState;
+class ExecutingContext;
+class Event;
 typedef struct ScriptValueRef ScriptValueRef;
 using PublicEventGetBubbles = int32_t (*)(Event*);
 using PublicEventGetCancelBubble = int32_t (*)(Event*);
@@ -45,11 +45,7 @@ struct EventPublicMethods : public WebFPublicMethods {
   static double TimeStamp(Event* event);
   static const char* Type(Event* event);
   static const char* DupType(Event* event);
-  static void InitEvent(Event* event,
-                        const char* type,
-                        int32_t bubbles,
-                        int32_t cancelable,
-                        SharedExceptionState* shared_exception_state);
+  static void InitEvent(Event* event, const char* type, int32_t bubbles, int32_t cancelable, SharedExceptionState* shared_exception_state);
   static void PreventDefault(Event* event, SharedExceptionState* shared_exception_state);
   static void StopImmediatePropagation(Event* event, SharedExceptionState* shared_exception_state);
   static void StopPropagation(Event* event, SharedExceptionState* shared_exception_state);
