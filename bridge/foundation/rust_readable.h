@@ -6,6 +6,7 @@
 #define RUST_READABLE_H
 
 #include <cinttypes>
+#include <memory>
 
 namespace webf {
 
