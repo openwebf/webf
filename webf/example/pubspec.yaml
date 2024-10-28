@@ -11,8 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # example_app:
-  #   path: rust_builde r
+  example_app:
+    path: rust_builder
   webf: ^0.10.0
 
 # When depending on this package from a real application,
