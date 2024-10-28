@@ -33,7 +33,7 @@ static void ExecuteNativeLibrary(PluginLibraryEntryPoint entry_point,
     native_library_load_context->promise_resolver->Reject(exception_value);
     JS_FreeValue(context->ctx(), exception_value);
   } else {
-    auto exec_status = new WebFValueStatus{false};
+    auto exec_status = new WebFValueStatus();
     auto entry_data = WebFValue<ExecutingContext, ExecutingContextWebFMethods>{
         native_library_load_context->context, native_library_load_context->context->publicMethodPtr(), exec_status};
     WEBF_LOG(VERBOSE) << " entry_point: " << entry_point;

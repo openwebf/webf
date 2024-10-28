@@ -5,10 +5,12 @@
 #ifndef WEBF_CORE_WEBF_API_WEBF_VALUE_H_
 #define WEBF_CORE_WEBF_API_WEBF_VALUE_H_
 
+#include "rust_readable.h"
+
 namespace webf {
 
 /// A simple, long-lived struct to check if the underlying pointer of WebFValue has been disposed
-struct WebFValueStatus {
+struct WebFValueStatus : public RustReadable {
   bool disposed = false;
 };
 
@@ -26,7 +28,7 @@ struct WebFValue {
 
 // Memory aligned and readable from external C/C++/Rust side.
 // Only C type member can be included in this class, any C++ type and classes can is not allowed to use here.
-struct WebFPublicMethods {};
+struct WebFPublicMethods : RustReadable {};
 
 template <typename T, typename U>
 WebFValue<T, U> ToWebFValue(void* value, void* method_pointer) {

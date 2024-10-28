@@ -6,7 +6,7 @@
 #define EXCEPTION_STATE_H
 
 #include "bindings/qjs/exception_state.h"
-#include "foundation/rust_readable.h"
+#include "plugin_api/rust_readable.h"
 
 namespace webf {
 
