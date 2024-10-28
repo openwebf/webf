@@ -228,4 +228,4 @@ impl EventMethods for Event {
   fn as_event(&self) -> &Event {
     self
   }
-}
+}

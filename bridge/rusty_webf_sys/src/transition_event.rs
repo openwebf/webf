@@ -127,4 +127,4 @@ impl EventMethods for TransitionEvent {
   fn as_event(&self) -> &Event {
     &self.event
   }
-}
+}

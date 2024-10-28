@@ -125,4 +125,4 @@ impl EventMethods for UIEvent {
   fn as_event(&self) -> &Event {
     &self.event
   }
-}
+}

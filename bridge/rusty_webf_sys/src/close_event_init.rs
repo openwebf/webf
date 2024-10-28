@@ -13,4 +13,4 @@ pub struct CloseEventInit {
   pub code: i64,
   pub reason: *const c_char,
   pub was_clean: i32,
-}
+}

@@ -103,4 +103,4 @@ impl EventMethods for IntersectionChangeEvent {
   fn as_event(&self) -> &Event {
     &self.event
   }
-}
+}
