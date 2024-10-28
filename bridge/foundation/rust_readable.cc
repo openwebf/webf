@@ -2,6 +2,7 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include <memory>
 #include "rust_readable.h"
 
 #if WIN32
@@ -10,7 +11,7 @@
 
 namespace webf {
 
-void* RustReadable::operator new(size_t size) {
+void* RustReadable::operator new(std::size_t size) {
 #if WIN32
   return HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, size);
 #else
