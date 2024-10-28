@@ -7,6 +7,7 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
+#include "qjs_uniondom_matrix_sequencedouble.h"
 
 namespace webf {
 
@@ -77,7 +78,7 @@ class DOMMatrixReadonly : public BindingObject {
   DOMMatrix* flipX(ExceptionState& exception_state) const;
   DOMMatrix* flipY(ExceptionState& exception_state) const;
   DOMMatrix* inverse(ExceptionState& exception_state) const;
-  // DOMMatrix* multiply( ,ExceptionState& exception_state) const;
+  DOMMatrix* multiply(const std::shared_ptr<QJSUnionDOMMatrixSequenceDouble>& matrix, ExceptionState& exception_state) const;
   DOMMatrix* rotateAxisAngle(double x, double y, double z, double angle, ExceptionState& exception_state) const;
   DOMMatrix* rotate(double rotX, double rotY, double rotZ, ExceptionState& exception_state) const;
   DOMMatrix* rotateFromVector(double x, double y, ExceptionState& exception_state) const;
@@ -88,8 +89,6 @@ class DOMMatrixReadonly : public BindingObject {
   // DOMMatrix* scaleNonUniform(ExceptionState& exception_state) const;
   DOMMatrix* skewX(double sx, ExceptionState& exception_state) const;
   DOMMatrix* skewY(double sy, ExceptionState& exception_state) const;
-  // std::vector<float>& toFloat32Array(ExceptionState& exception_state) const;
-  // std::vector<double>& toFloat64Array(ExceptionState& exception_state) const;
   // toJSON(): DartImpl<JSON>;
 
   AtomicString toString(ExceptionState& exception_state) const;

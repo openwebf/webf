@@ -551,6 +551,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_dom_matrix_readonly.cc
     out/qjs_union_dom_string_sequencedouble.cc
     out/qjs_union_double_sequencedouble.cc
+    out/qjs_uniondom_matrix_sequencedouble.cc
     out/qjs_unionhtml_image_elementhtml_canvas_element.cc
     out/qjs_union_dom_stringcanvas_gradient.cc
     out/canvas_types.cc
