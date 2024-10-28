@@ -11,7 +11,7 @@
 #include "core/html/html_body_element.h"
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
-#include "plugin_api/exception_state.h"
+#include "core/api/exception_state.h"
 
 namespace webf {
 

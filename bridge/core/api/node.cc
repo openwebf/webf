@@ -5,7 +5,7 @@
 #include "plugin_api/node.h"
 #include "core/dom/events/event_target.h"
 #include "core/dom/node.h"
-#include "plugin_api/exception_state.h"
+#include "core/api/exception_state.h"
 
 namespace webf {
 

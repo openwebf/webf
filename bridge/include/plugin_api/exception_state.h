@@ -12,11 +12,7 @@
 namespace webf {
 
 class ExecutingContext;
-
-class SharedExceptionState {
-  public:
-  webf::ExceptionState exception_state;
-};
+class SharedExceptionState;
 
 using PublicExceptionStateHasException = bool (*)(SharedExceptionState* shared_exception_state);
 using PublicExceptionStateStringify = void (*)(ExecutingContext* context,

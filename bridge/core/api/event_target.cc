@@ -19,7 +19,7 @@
 #include "core/html/html_image_element.h"
 #include "html_element_type_helper.h"
 #include "plugin_api/add_event_listener_options.h"
-#include "plugin_api/exception_state.h"
+#include "core/api/exception_state.h"
 
 namespace webf {
 
