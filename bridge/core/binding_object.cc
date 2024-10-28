@@ -39,9 +39,9 @@ static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
   auto is_dedicated = binding_object->binding_target_->GetExecutingContext()->isDedicated();
   auto context_id = binding_object->binding_target_->contextId();
 
-  dart_isolate->dispatcher()->PostToJs(is_dedicated, static_cast<int32_t>(context_id), NativeBindingObject::HandleCallFromDartSide,
-                                       dart_isolate, binding_object, profile_id, method, argc, argv, persistent_handle,
-                                       result_callback);
+  dart_isolate->dispatcher()->PostToJs(is_dedicated, static_cast<int32_t>(context_id),
+                                       NativeBindingObject::HandleCallFromDartSide, dart_isolate, binding_object,
+                                       profile_id, method, argc, argv, persistent_handle, result_callback);
 }
 
 NativeBindingObject::NativeBindingObject(BindingObject* target)

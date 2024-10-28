@@ -3,6 +3,7 @@
  */
 
 #include "plugin_api/document.h"
+#include "core/api/exception_state.h"
 #include "core/dom/comment.h"
 #include "core/dom/document.h"
 #include "core/dom/document_fragment.h"
@@ -11,7 +12,6 @@
 #include "core/html/html_body_element.h"
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
-#include "core/api/exception_state.h"
 
 namespace webf {
 
