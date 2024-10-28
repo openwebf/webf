@@ -206,6 +206,8 @@ WebFValue<EventTarget, WebFPublicMethods> EventTargetPublicMethods::DynamicTo(we
       return WebFValue<EventTarget, WebFPublicMethods>(canvas_element, canvas_element->htmlCanvasElementPublicMethods(),
                                                        status_block);
     }
+    default:
+      assert_m(false, ("Unknown event_target_type " + std::to_string(static_cast<int32_t>(event_target_type))).c_str());
   }
 }
 

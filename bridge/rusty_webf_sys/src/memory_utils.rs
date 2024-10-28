@@ -13,7 +13,7 @@ pub fn safe_free_cpp_ptr<T>(ptr: *const T) {
           Option::from(ptr as *const libc::c_void)
         ).expect("Failed to call HeapFree");
       }
-    } else if cfg!(target_os = "macos") || cfg!(target_os = "linux") {
+    } else {
       libc::free(ptr.cast_mut() as *mut libc::c_void);
     }
   }

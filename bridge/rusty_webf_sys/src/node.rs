@@ -5,6 +5,7 @@
 use std::ffi::*;
 use crate::*;
 
+#[repr(C)]
 enum NodeType {
   ElementNode,
   AttributeNode,
