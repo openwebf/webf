@@ -10,4 +10,4 @@ crate-type = ["cdylib", "staticlib"]
 webf-sys = "0.16.0"
 
 [patch.crates-io]
-webf-sys = { path = "../../../bridge/rusty_webf_sys" }
+webf-sys = { path = "../../../../bridge/rusty_webf_sys" }
