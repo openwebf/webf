@@ -11,4 +11,4 @@ pub struct FocusEventInit {
   pub view: RustValue<WindowRustMethods>,
   pub which: c_double,
   pub related_target: RustValue<EventTargetRustMethods>,
-}
+}

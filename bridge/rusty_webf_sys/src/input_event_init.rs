@@ -12,4 +12,4 @@ pub struct InputEventInit {
   pub which: c_double,
   pub input_type: *const c_char,
   pub data: *const c_char,
-}
+}

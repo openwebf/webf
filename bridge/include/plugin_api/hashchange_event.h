@@ -31,4 +31,4 @@ struct HashchangeEventPublicMethods : public WebFPublicMethods {
   PublicHashchangeEventDupOldURL hashchange_event_dup_old_url{DupOldURL};
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_HASHCHANGE_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_HASHCHANGE_EVENT_H_

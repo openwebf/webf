@@ -22,4 +22,4 @@ struct IntersectionChangeEventPublicMethods : public WebFPublicMethods {
   PublicIntersectionChangeEventGetIntersectionRatio intersection_change_event_get_intersection_ratio{IntersectionRatio};
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_INTERSECTION_CHANGE_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_INTERSECTION_CHANGE_EVENT_H_

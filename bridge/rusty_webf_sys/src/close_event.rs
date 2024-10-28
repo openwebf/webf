@@ -126,4 +126,4 @@ impl EventMethods for CloseEvent {
   fn as_event(&self) -> &Event {
     &self.event
   }
-}
+}

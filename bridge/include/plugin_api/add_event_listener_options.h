@@ -15,4 +15,4 @@ struct WebFAddEventListenerOptions {
   int32_t once;
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_ADD_EVENT_LISTENER_OPTIONS_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_ADD_EVENT_LISTENER_OPTIONS_H_
