@@ -24,4 +24,4 @@ struct FocusEventPublicMethods : public WebFPublicMethods {
   PublicFocusEventGetRelatedTarget focus_event_get_related_target{RelatedTarget};
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_FOCUS_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_FOCUS_EVENT_H_

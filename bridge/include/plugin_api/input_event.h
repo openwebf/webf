@@ -31,4 +31,4 @@ struct InputEventPublicMethods : public WebFPublicMethods {
   PublicInputEventDupData input_event_dup_data{DupData};
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_INPUT_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_INPUT_EVENT_H_

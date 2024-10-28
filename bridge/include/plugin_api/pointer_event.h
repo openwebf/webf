@@ -52,4 +52,4 @@ struct PointerEventPublicMethods : public WebFPublicMethods {
   PublicPointerEventGetWidth pointer_event_get_width{Width};
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_POINTER_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_POINTER_EVENT_H_

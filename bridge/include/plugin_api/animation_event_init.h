@@ -18,4 +18,4 @@ struct WebFAnimationEventInit {
   const char* pseudo_element;
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_ANIMATION_EVENT_INIT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_ANIMATION_EVENT_INIT_H_

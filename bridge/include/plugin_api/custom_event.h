@@ -25,4 +25,4 @@ struct CustomEventPublicMethods : public WebFPublicMethods {
   PublicCustomEventInitCustomEvent custom_event_init_custom_event{InitCustomEvent};
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_CUSTOM_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_CUSTOM_EVENT_H_

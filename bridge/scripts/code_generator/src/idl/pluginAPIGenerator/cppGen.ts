@@ -254,7 +254,7 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
     blob: blob
   }).split('\n').filter(str => {
     return str.trim().length > 0;
-  }).join('\n');
+  }).join('\n') + '\n';
 }
 
 function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
@@ -321,7 +321,7 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
     blob: blob
   }).split('\n').filter(str => {
     return str.trim().length > 0;
-  }).join('\n');
+  }).join('\n') + '\n';
 }
 
 export function generatePluginAPI(blob: IDLBlob) {

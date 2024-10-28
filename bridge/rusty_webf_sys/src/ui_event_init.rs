@@ -13,4 +13,4 @@ pub struct UIEventInit {
   pub detail: c_double,
   pub view: RustValue<WindowRustMethods>,
   pub which: c_double,
-}
+}

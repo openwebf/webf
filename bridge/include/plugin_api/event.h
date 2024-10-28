@@ -71,4 +71,4 @@ struct EventPublicMethods : public WebFPublicMethods {
   PublicEventRelease event_release{Release};
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_EVENT_H_

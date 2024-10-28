@@ -30,4 +30,4 @@ struct UIEventPublicMethods : public WebFPublicMethods {
   PublicUIEventGetWhich ui_event_get_which{Which};
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_UI_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_UI_EVENT_H_
