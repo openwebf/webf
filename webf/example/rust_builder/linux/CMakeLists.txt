@@ -11,7 +11,7 @@ project(${PROJECT_NAME} LANGUAGES CXX)
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # Replace add_subdirectory that references old C++ code with Cargokit:
 include("../cargokit/cmake/cargokit.cmake")
-apply_cargokit(${PROJECT_NAME} ../../rust example_app "")
+apply_cargokit(${PROJECT_NAME} ../rust example_app "")
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 

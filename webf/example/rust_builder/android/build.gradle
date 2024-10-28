@@ -49,6 +49,6 @@ android {
 apply from: "../cargokit/gradle/plugin.gradle"
 
 cargokit {
-    manifestDir = "../../rust"
+    manifestDir = "../rust"
     libname = "example_app"
 }
