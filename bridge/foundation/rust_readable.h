@@ -1,10 +1,12 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef RUST_READABLE_H
 #define RUST_READABLE_H
 
+#include <cinttypes>
+#include <memory>
 #include <cstddef>
 
 namespace webf {
@@ -16,6 +18,6 @@ struct RustReadable {
  static void operator delete(void* memory) noexcept;
 };
 
-}
+}  // namespace webf
 
-#endif //RUST_READABLE_H
+#endif  // RUST_READABLE_H

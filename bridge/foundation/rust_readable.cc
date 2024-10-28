@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #include <memory>
@@ -26,6 +26,4 @@ void RustReadable::operator delete(void* memory) noexcept {
 #endif
 }
 
-
-
-}
+}  // namespace webf

@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef EXCEPTION_STATE_H
@@ -11,14 +11,12 @@
 namespace webf {
 
 class SharedExceptionState : public RustReadable {
-public:
+ public:
+  SharedExceptionState();
 
- SharedExceptionState();
-
- ExceptionState exception_state;
+  ExceptionState exception_state;
 };
 
+}  // namespace webf
 
-}
-
-#endif //EXCEPTION_STATE_H
+#endif  // EXCEPTION_STATE_H

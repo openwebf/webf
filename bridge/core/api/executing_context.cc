@@ -3,11 +3,11 @@
  */
 
 #include "plugin_api/executing_context.h"
+#include "bindings/qjs/exception_state.h"
+#include "core/api/exception_state.h"
 #include "core/dom/document.h"
 #include "core/executing_context.h"
 #include "core/frame/window.h"
-#include "bindings/qjs/exception_state.h"
-#include "core/api/exception_state.h"
 
 namespace webf {
 
