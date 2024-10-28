@@ -17,4 +17,4 @@ struct WebFIntersectionChangeEventInit {
   double intersection_ratio;
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_INTERSECTION_CHANGE_EVENT_INIT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_INTERSECTION_CHANGE_EVENT_INIT_H_

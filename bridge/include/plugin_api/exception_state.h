@@ -13,7 +13,8 @@ namespace webf {
 
 class ExecutingContext;
 
-struct SharedExceptionState {
+class SharedExceptionState {
+  public:
   webf::ExceptionState exception_state;
 };
 
@@ -23,7 +24,7 @@ using PublicExceptionStateStringify = void (*)(ExecutingContext* context,
                                                char** errmsg,
                                                uint32_t* strlen);
 
-struct ExceptionStatePublicMethods : public WebFPublicMethods {
+class ExceptionStatePublicMethods : public WebFPublicMethods {
   static bool HasException(SharedExceptionState* shared_exception_state);
   static void Stringify(ExecutingContext* context,
                         SharedExceptionState* shared_exception_state,

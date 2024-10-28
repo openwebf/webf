@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <inttypes.h>
+#include <malloc.h>
 #include <string.h>
 #include <assert.h>
 

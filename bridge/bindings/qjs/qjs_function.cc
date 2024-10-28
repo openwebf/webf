@@ -47,7 +47,7 @@ bool QJSFunction::IsFunction(JSContext* ctx) {
   return JS_IsFunction(ctx, function_);
 }
 
-ScriptValue QJSFunction::Invoke(JSContext* ctx, const ScriptValue& this_val, int32_t argc, ScriptValue* arguments) {
+ScriptValue QJSFunction::Invoke(JSContext* ctx, const ScriptValue& this_val, int argc, ScriptValue* arguments) {
   // 'm_function' might be destroyed when calling itself (if it frees the handler), so must take extra care.
   JS_DupValue(ctx, function_);
 

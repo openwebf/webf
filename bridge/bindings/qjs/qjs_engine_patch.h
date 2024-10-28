@@ -6,6 +6,9 @@
 #ifndef BRIDGE_QJS_PATCH_H
 #define BRIDGE_QJS_PATCH_H
 
+#pragma warning(push)
+#pragma warning(disable: 4200)
+
 #include <quickjs/list.h>
 #include <quickjs/quickjs.h>
 #include "foundation/string_view.h"

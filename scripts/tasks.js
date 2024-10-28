@@ -542,7 +542,7 @@ task('generate-bindings-code', (done) => {
   if (!fs.existsSync(path.join(paths.codeGen, 'node_modules'))) {
     spawnSync(NPM, ['install'], {
       cwd: paths.codeGen,
-      stdio: 'inherit'
+      stdio: 'inherit'  
     });
   }
 
@@ -551,6 +551,7 @@ task('generate-bindings-code', (done) => {
     env: {
       ...process.env,
     },
+    shell: true,
     stdio: 'inherit'
   });
 
@@ -563,6 +564,7 @@ task('generate-bindings-code', (done) => {
     env: {
       ...process.env,
     },
+    shell: true,
     stdio: 'inherit'
   });
 
@@ -589,7 +591,7 @@ task('build-window-webf-lib', (done) => {
   const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
   // generate project
-  execSync(`cmake --log-level=VERBOSE -DCMAKE_BUILD_TYPE=${buildType} ${externCmakeArgs.join(' ')} -DVERBOSE_CONFIGURE=ON -B ${bridgeCmakeDir} -S ${paths.bridge}`,
+  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} ${externCmakeArgs.join(' ')} -B ${bridgeCmakeDir} -S ${paths.bridge}`,
     {
       cwd: paths.bridge,
       stdio: 'inherit',

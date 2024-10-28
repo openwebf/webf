@@ -11,4 +11,4 @@ pub struct IntersectionChangeEventInit {
   pub view: RustValue<WindowRustMethods>,
   pub which: c_double,
   pub intersection_ratio: c_double,
-}
+}

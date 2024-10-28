@@ -16,4 +16,4 @@ struct WebFHashchangeEventInit {
   const char* new_url;
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_HASHCHANGE_EVENT_INIT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_HASHCHANGE_EVENT_INIT_H_

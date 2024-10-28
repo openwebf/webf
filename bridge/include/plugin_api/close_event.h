@@ -30,4 +30,4 @@ struct CloseEventPublicMethods : public WebFPublicMethods {
   PublicCloseEventGetWasClean close_event_get_was_clean{WasClean};
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_CLOSE_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_CLOSE_EVENT_H_

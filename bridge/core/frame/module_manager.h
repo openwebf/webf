@@ -12,7 +12,8 @@
 
 namespace webf {
 
-struct ModuleContext {
+class ModuleContext {
+  public:
   ModuleContext(ExecutingContext* context, const std::shared_ptr<ModuleCallback>& callback)
       : context(context), callback(callback) {}
   ExecutingContext* context;

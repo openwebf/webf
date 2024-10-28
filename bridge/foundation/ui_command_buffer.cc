@@ -40,6 +40,8 @@ UICommandKind GetKindFromUICommand(UICommand command) {
     case UICommand::kStartRecordingCommand:
     case UICommand::kFinishRecordingCommand:
       return UICommandKind::kOperation;
+    default:
+      return UICommandKind::kUknownCommand;
   }
 }
 

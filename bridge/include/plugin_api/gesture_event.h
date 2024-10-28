@@ -48,4 +48,4 @@ struct GestureEventPublicMethods : public WebFPublicMethods {
   PublicGestureEventGetRotation gesture_event_get_rotation{Rotation};
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_GESTURE_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_GESTURE_EVENT_H_

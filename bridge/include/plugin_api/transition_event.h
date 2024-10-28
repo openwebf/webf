@@ -33,4 +33,4 @@ struct TransitionEventPublicMethods : public WebFPublicMethods {
   PublicTransitionEventDupPseudoElement transition_event_dup_pseudo_element{DupPseudoElement};
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_TRANSITION_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_TRANSITION_EVENT_H_
