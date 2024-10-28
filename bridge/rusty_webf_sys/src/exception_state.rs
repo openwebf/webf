@@ -5,10 +5,10 @@
 use std::ffi::{c_char, c_double, c_void};
 use std::{ptr};
 use libc::c_uint;
-
 #[cfg(target_os = "windows")]
-use windows::Win32::System::Memory;
+use windows::*;
 use crate::executing_context::ExecutingContext;
+use crate::memory_utils::safe_free_cpp_ptr;
 use crate::OpaquePtr;
 
 #[repr(C)]
@@ -59,7 +59,7 @@ impl ExceptionState {
       let message = String::from_utf8_lossy(slice).to_string();
 
       // Free the allocated C string memory
-      libc::free(errmsg as *mut c_void);
+      safe_free_cpp_ptr(errmsg as *mut c_void);
       return message;
     }
   }
@@ -67,20 +67,6 @@ impl ExceptionState {
 
 impl Drop for ExceptionState {
   fn drop(&mut self) {
-    unsafe {
-
-      if cfg!(target_os = "windows") {
-        #[cfg(target_os = "windows")]
-        {
-          Memory::HeapFree(
-            Memory::GetProcessHeap().unwrap(),
-            Memory::HEAP_FLAGS(0),
-            Option::from(self.ptr as *const c_void)
-          ).expect("Failed to call HeapFree");
-        }
-      } else if cfg!(target_os = "macos") || cfg!(target_os = "linux") {
-        libc::free(self.ptr.cast_mut() as *mut c_void);
-      }
-    }
+    safe_free_cpp_ptr(self.ptr)
   }
 }

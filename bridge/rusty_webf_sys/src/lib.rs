@@ -49,6 +49,7 @@ pub mod scroll_to_options;
 pub mod touch_init;
 pub mod transition_event_init;
 pub mod ui_event_init;
+mod memory_utils;
 
 pub use executing_context::*;
 pub use document::*;

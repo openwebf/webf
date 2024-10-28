@@ -6,6 +6,7 @@
 #define WEBF_CORE_WEBF_API_EVENT_TARGET_H_
 
 #include "webf_value.h"
+#include "plugin_api/rust_readable.h"
 
 namespace webf {
 
@@ -41,7 +42,7 @@ enum class EventTargetType {
   kComment = 13,
 };
 
-struct WebFEventListenerContext {
+struct WebFEventListenerContext : public RustReadable {
   WebFImplEventCallback callback;
   FreePtrFn free_ptr;
   void* ptr;

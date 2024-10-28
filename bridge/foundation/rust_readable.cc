@@ -3,7 +3,7 @@
  */
 
 #include <memory>
-#include "rust_readable.h"
+#include "plugin_api/rust_readable.h"
 
 #if WIN32
 #include <Windows.h>
