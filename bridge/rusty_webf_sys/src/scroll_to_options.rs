@@ -10,4 +10,4 @@ pub struct ScrollToOptions {
   pub behavior: *const c_char,
   pub top: c_double,
   pub left: c_double,
-}
+}

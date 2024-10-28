@@ -26,11 +26,6 @@ if(NOT WEBF_JS_ENGINE)
     set(WEBF_JS_ENGINE "quickjs")
 endif()
 
-if(WIN32)
-  set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads")
-  include_directories(${PTHREADS_ROOT}/include)
-  link_directories(${PTHREADS_ROOT}/lib/x64)
-endif()
 find_package(Threads REQUIRED)
 
 if(MSVC)
@@ -85,11 +80,8 @@ if (ENABLE_ASAN)
   add_link_options(-fsanitize=address -fno-omit-frame-pointer)
 endif ()
 
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-  if (MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "/O1")
-    set(CMAKE_C_FLAGS_RELEASE "/O1")
-  else()
+if (NOT MSVC) 
+  if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     # Avoid quickjs stackoverflow.
     add_compile_options(-O1)
   endif()
@@ -218,8 +210,33 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     add_library(quickjs SHARED ${QUICK_JS_SOURCE})
   endif()
 
+  # PThread compact
+  if(MSVC)
+    # Using `add_subdirectory` will failed at cmake install starge due to unknown issues:
+    # https://github.com/flutter/flutter/issues/95530
+    set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread")
+    add_library(pthreadVC3 SHARED ${PTHREADS_ROOT}/pthread-JMP.c ${PTHREADS_ROOT}/version.rc)
+    target_compile_definitions(pthreadVC3
+      PRIVATE 
+      _UNICODE
+      UNICODE
+      WIN32
+      _WINDOWS
+      _WINDLL
+      PTW32_CLEANUP_C
+      UNICODE
+      _UNICODE
+      ENABLE_LOG=0
+      PTW32_ARCHAMD64
+      PTW32_BUILD_INLINED
+      HAVE_CONFIG_H
+      PTW32_RC_MSC
+    )
+    target_include_directories(pthreadVC3 PUBLIC ${PTHREADS_ROOT})
+  endif()
+
   if(WIN32)
-    target_link_libraries(quickjs pthreadVC2)
+    target_link_libraries(quickjs pthreadVC3)
     target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
     target_compile_definitions(quickjs PUBLIC HAVE_STRUCT_TIMESPEC=1 _HAS_EXCEPTIONS=1)
   else()
@@ -227,7 +244,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   endif()
 
   set(MI_OVERRIDE OFF)
-  if (NOT DEFINED USE_SYSTEM_MALLOC)
+  if (NOT MSVC AND NOT DEFINED USE_SYSTEM_MALLOC)
     add_compile_definitions(ENABLE_MI_MALLOC=1)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc/include)
@@ -237,7 +254,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
 
   if (MSVC)
-    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread)
     target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
   endif()
 
@@ -611,7 +628,6 @@ list(APPEND PUBLIC_HEADER
 )
 
 add_library(webf SHARED ${BRIDGE_SOURCE})
-add_library(webf_static STATIC ${BRIDGE_SOURCE})
 
 if(MSVC)
   target_compile_options(webf PRIVATE /JMC)
@@ -636,7 +652,7 @@ elseif(${IS_IOS})
 endif()
 
 
-### webf
+## webf
 target_include_directories(webf PRIVATE
   ${BRIDGE_INCLUDE}
   ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
@@ -651,12 +667,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
   endif ()
 endif ()
-
-### webfStatic
-target_include_directories(webf_static PRIVATE
-  ${BRIDGE_INCLUDE}
-  ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
-target_link_libraries(webf_static ${BRIDGE_LINK_LIBS})
 
 execute_process(
   COMMAND node get_app_ver.js
@@ -694,8 +704,11 @@ if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
         RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
     )
     if(MSVC)
-      set(PTHREAD_LIB ${PTHREADS_ROOT}/dll/x64/pthreadVC2.dll)
-      file(COPY ${PTHREAD_LIB} DESTINATION "$ENV{LIBRARY_OUTPUT_DIR}")
+      set_target_properties(pthreadVC3
+        PROPERTIES
+          LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+          RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+      )
     endif()
   endif ()
 elseif (IS_ANDROID)

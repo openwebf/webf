@@ -30,4 +30,4 @@ struct MouseEventPublicMethods : public WebFPublicMethods {
   PublicMouseEventGetOffsetY mouse_event_get_offset_y{OffsetY};
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_MOUSE_EVENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_MOUSE_EVENT_H_

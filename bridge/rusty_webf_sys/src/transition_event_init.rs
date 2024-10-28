@@ -13,4 +13,4 @@ pub struct TransitionEventInit {
   pub elapsed_time: c_double,
   pub property_name: *const c_char,
   pub pseudo_element: *const c_char,
-}
+}
