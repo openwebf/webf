@@ -10,4 +10,4 @@ pub struct MouseEventInit {
   pub detail: c_double,
   pub view: RustValue<WindowRustMethods>,
   pub which: c_double,
-}
+}

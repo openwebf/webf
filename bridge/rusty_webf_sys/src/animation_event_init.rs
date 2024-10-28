@@ -13,4 +13,4 @@ pub struct AnimationEventInit {
   pub animation_name: *const c_char,
   pub elapsed_time: c_double,
   pub pseudo_element: *const c_char,
-}
+}

@@ -17,4 +17,4 @@ pub struct PointerEventInit {
   pub twist: c_double,
   pub width: c_double,
   pub height: c_double,
-}
+}

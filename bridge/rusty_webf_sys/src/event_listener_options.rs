@@ -8,4 +8,4 @@ use crate::*;
 #[repr(C)]
 pub struct EventListenerOptions {
   pub capture: i32,
-}
+}
