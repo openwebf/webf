@@ -182,6 +182,30 @@ DOMMatrix* DOMMatrixReadonly::inverse(ExceptionState& exception_state) const {
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
+
+DOMMatrix* DOMMatrixReadonly::multiply(const std::shared_ptr<QJSUnionDOMMatrixSequenceDouble>& matrix,
+                                       ExceptionState& exception_state) const {
+
+  NativeValue arguments[2];
+
+  if (matrix->IsDOMMatrix()) {
+    arguments[0] =
+        NativeValueConverter<NativeTypePointer<DOMMatrix>>::ToNativeValue(matrix->GetAsDOMMatrix());
+  } else if (matrix->IsSequenceDouble()) {
+    arguments[0] =
+        NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(matrix->GetAsSequenceDouble());
+  }
+
+  NativeValue value = InvokeBindingMethod(binding_call_methods::kmultiply, sizeof(arguments) / sizeof(NativeValue),
+                                          arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeBindingObject* native_binding_object =
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
+
+  if (native_binding_object == nullptr)
+    return nullptr;
+  return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
+}
+
 DOMMatrix* DOMMatrixReadonly::rotateAxisAngle(double x,
                                               double y,
                                               double z,

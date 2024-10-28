@@ -26,17 +26,19 @@ interface DOMMatrixReadonly {
     flipX(): DOMMatrix;
     flipY(): DOMMatrix;
     inverse(): DOMMatrix;
-    // multiply(matrix: DOMMatrix): DOMMatrix;
+    multiply(matrix: DOMMatrix | double[]): DOMMatrix;
     rotateAxisAngle(x:number, y:number, z:number, angle:number): DOMMatrix;
     rotate(rotX:number, rotY:number, rotZ:number): DOMMatrix;
     rotateFromVector(x:number, y:number): DOMMatrix;
     scale(scaleX: number, scaleY: number, scaleZ: number, originX: number, originY: number, originZ: number): DOMMatrix;
     scale3d(scale: number, originX: number, originY: number, originZ: number): DOMMatrix;
+    // TODO
     // scaleNonUniform(): DOMMatrix;
     skewX(sx: number): DOMMatrix;
     skewY(sy: number): DOMMatrix;
     // toFloat32Array(): number[];
     // toFloat64Array(): number[];
+    // TODO
     // toJSON(): DartImpl<JSON>;
     toString(): string;
     // TODO DOMPoint

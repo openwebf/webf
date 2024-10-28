@@ -13,25 +13,12 @@ import 'package:webf/geometry.dart';
 class DOMMatrixReadonly extends DynamicBindingObject {
 
   // Matrix4 Values are stored in column major order.
-  //
   Matrix4 _matrix4 = Matrix4.identity();
   Matrix4 get matrix => _matrix4;
   bool _is2D = true;
   bool get is2D => _is2D;
 
-  DOMMatrixReadonly.fromFloat64List(BindingContext context, Float64List list) : super(context) {
-    print('create fromFloat64List this.pointer->  ${this.pointer}');
-
-    if (list.length == 16) {
-      for (int i = 0; i < list.length; i++) {
-        _matrix4[i] = list[i];
-      }
-    }
-  }
-
   DOMMatrixReadonly.fromMatrix4(BindingContext context, Matrix4? matrix4) : super(context) {
-    print('create fromMatrix4 this.pointer->  ${this.pointer}');
-
     if(matrix4 != null) {
       _matrix4 = matrix4;
       // TODO _is2D ?
@@ -42,26 +29,25 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrixReadonly(BindingContext context, List<dynamic> domMatrixInit) : super(context) {
-    print('create default this.pointer->  ${this.pointer}');
-
-    if(domMatrixInit.isNotEmpty ) {
-      if(domMatrixInit[0].runtimeType == List<dynamic>) {
-        List<dynamic> list = domMatrixInit[0];
-        if (list.isNotEmpty && list[0].runtimeType == double) {
-          List<double> doubleList = List<double>.from(list);
-          if (doubleList.length == 6) {
-            _matrix4[0] = doubleList[0];
-            _matrix4[1] = doubleList[1];
-            _matrix4[4] = doubleList[2];
-            _matrix4[5] = doubleList[3];
-            _matrix4[12] = doubleList[4];
-            _matrix4[13] = doubleList[5];
-          } else if (doubleList.length == 16) {
-            _is2D = false;
-            _matrix4 = Matrix4.fromList(doubleList);
-          } else {
-            throw TypeError();
-          }
+    if(!domMatrixInit.isNotEmpty ) {
+      return;
+    }
+    if (domMatrixInit[0].runtimeType == List<dynamic>) {
+      List<dynamic> list = domMatrixInit[0];
+      if (list.isNotEmpty && list[0].runtimeType == double) {
+        List<double> doubleList = List<double>.from(list);
+        if (doubleList.length == 6) {
+          _matrix4[0] = doubleList[0];
+          _matrix4[1] = doubleList[1];
+          _matrix4[4] = doubleList[2];
+          _matrix4[5] = doubleList[3];
+          _matrix4[12] = doubleList[4];
+          _matrix4[13] = doubleList[5];
+        } else if (doubleList.length == 16) {
+          _is2D = false;
+          _matrix4 = Matrix4.fromList(doubleList);
+        } else {
+          throw TypeError();
         }
       }
     }
@@ -275,17 +261,12 @@ class DOMMatrixReadonly extends DynamicBindingObject {
 
   DOMMatrix flipX() {
     Matrix4 m = Matrix4.identity()..setEntry(0, 0, -1);
-    DOMMatrix ret = DOMMatrix.fromMatrix4(
+    return DOMMatrix.fromMatrix4(
         BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m);
-
-    print('flipX return  DOMMatrix this.pointer->  ${this.pointer}');
-    print('flipX return toString:\n${ret.toString()}');
-    return ret;
   }
 
   DOMMatrix flipY() {
-    Matrix4 m = Matrix4.identity();
-    m.storage[5] = -1;
+    Matrix4 m = Matrix4.identity()..setEntry(1, 1, -1);
     return DOMMatrix.fromMatrix4(
         BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m);
   }
