@@ -2,10 +2,11 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-
 use std::ffi::{c_char, c_double, c_void};
-use std::{os, ptr};
+use std::{ptr};
 use libc::c_uint;
+
+#[cfg(target_os = "windows")]
 use windows::Win32::System::Memory;
 use crate::executing_context::ExecutingContext;
 use crate::OpaquePtr;
@@ -55,7 +56,7 @@ impl ExceptionState {
         return String::new();
       }
       let slice = std::slice::from_raw_parts(errmsg as *const u8, strlen as usize);
-      let message = String::from_utf8_lossy(slice).to_string();;
+      let message = String::from_utf8_lossy(slice).to_string();
 
       // Free the allocated C string memory
       libc::free(errmsg as *mut c_void);
@@ -67,13 +68,17 @@ impl ExceptionState {
 impl Drop for ExceptionState {
   fn drop(&mut self) {
     unsafe {
-      if cfg!(windows) {
-        Memory::HeapFree(
-          Memory::GetProcessHeap().unwrap(),
-          Memory::HEAP_FLAGS(0),
-          Option::from(self.ptr as *const c_void)
-        ).expect("Exception to call HeapFree");
-      } else if cfg!(unix) {
+
+      if cfg!(target_os = "windows") {
+        #[cfg(target_os = "windows")]
+        {
+          Memory::HeapFree(
+            Memory::GetProcessHeap().unwrap(),
+            Memory::HEAP_FLAGS(0),
+            Option::from(self.ptr as *const c_void)
+          ).expect("Failed to call HeapFree");
+        }
+      } else if cfg!(target_os = "macos") || cfg!(target_os = "linux") {
         libc::free(self.ptr.cast_mut() as *mut c_void);
       }
     }
