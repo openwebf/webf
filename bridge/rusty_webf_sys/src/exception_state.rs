@@ -4,8 +4,9 @@
 
 
 use std::ffi::{c_char, c_double, c_void};
-use std::ptr;
+use std::{os, ptr};
 use libc::c_uint;
+use windows::Win32::System::Memory;
 use crate::executing_context::ExecutingContext;
 use crate::OpaquePtr;
 
@@ -17,7 +18,7 @@ pub struct ExceptionStateRustMethods {
     executing_context: *const OpaquePtr,
     shared_exception_state: *const OpaquePtr,
     errmsg: *mut *mut c_char,
-    strlen: *mut c_uint
+    strlen: *mut c_uint,
   ) -> c_void,
 }
 
@@ -31,7 +32,7 @@ impl ExceptionState {
   pub fn initialize(ptr: *const OpaquePtr, method_pointer: *const ExceptionStateRustMethods) -> ExceptionState {
     ExceptionState {
       ptr,
-      method_pointer
+      method_pointer,
     }
   }
 
@@ -66,7 +67,15 @@ impl ExceptionState {
 impl Drop for ExceptionState {
   fn drop(&mut self) {
     unsafe {
-      // libc::free(self.ptr.cast_mut() as *mut c_void);
+      if cfg!(windows) {
+        Memory::HeapFree(
+          Memory::GetProcessHeap().unwrap(),
+          Memory::HEAP_FLAGS(0),
+          Option::from(self.ptr as *const c_void)
+        ).expect("Exception to call HeapFree");
+      } else if cfg!(unix) {
+        libc::free(self.ptr.cast_mut() as *mut c_void);
+      }
     }
   }
 }

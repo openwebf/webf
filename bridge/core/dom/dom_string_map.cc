@@ -23,7 +23,7 @@ static bool IsValidAttributeName(const AtomicString& name) {
   if (!startsWith((const char*)name.Character8(), "data-"))
     return false;
 
-  unsigned length = name.length();
+  const int64_t length = name.length();
   for (unsigned i = 5; i < length; ++i) {
     if (IsASCIIUpper(name.Character8()[i]))
       return false;
@@ -33,7 +33,7 @@ static bool IsValidAttributeName(const AtomicString& name) {
 }
 
 static bool IsValidPropertyName(const AtomicString& name) {
-  unsigned length = name.length();
+  const int64_t length = name.length();
   for (unsigned i = 0; i < length; ++i) {
     if (name.Character8()[i] == '-' && (i + 1 < length) && IsASCIILower(name.Character8()[i + 1]))
       return false;

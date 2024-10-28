@@ -9,13 +9,13 @@ use webf_sys::node::NodeMethods;
 pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) -> *mut c_void {
   let context = initialize_webf_api(handle);
   println!("Context created");
-  // let exception_state = context.create_exception_state();
-  // let document = context.document();
+  let exception_state = context.create_exception_state();
+  let document = context.document();
 
-  // let click_event = document.create_event("custom_click", &exception_state).unwrap();
-  // document.dispatch_event(&click_event, &exception_state);
+  let click_event = document.create_event("custom_click", &exception_state).unwrap();
+  document.dispatch_event(&click_event, &exception_state);
 
-  // let div_element = document.create_element("div", &exception_state).unwrap();
+  let div_element = document.create_element("div", &exception_state).unwrap();
 
   // let event_listener_options = AddEventListenerOptions {
   //   passive: 0,
@@ -55,11 +55,11 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
 
   // div_element.add_event_listener("click", real_click_handler, &event_listener_options, &exception_state).unwrap();
 
-  // let text_node = document.create_text_node("From Rust", &exception_state).unwrap();
+  let text_node = document.create_text_node("From Rust", &exception_state).unwrap();
 
-  // div_element.append_child(&text_node.as_node(), &exception_state).expect("append Node Failed");
+  div_element.append_child(&text_node.as_node(), &exception_state).expect("append Node Failed");
 
-  // document.body().append_child(&div_element.as_node(), &exception_state).unwrap();
+  document.body().append_child(&div_element.as_node(), &exception_state).unwrap();
 
   // let event_cleaner_element = document.create_element("button", &exception_state).unwrap();
 

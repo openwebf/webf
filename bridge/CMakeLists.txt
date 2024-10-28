@@ -106,6 +106,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/stop_watch.cc
   foundation/profiler.cc
   foundation/dart_readable.cc
+  foundation/rust_readable.cc
   foundation/ui_command_buffer.cc
   foundation/ui_command_strategy.cc
   polyfill/dist/polyfill.cc

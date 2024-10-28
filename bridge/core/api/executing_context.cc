@@ -6,6 +6,8 @@
 #include "core/dom/document.h"
 #include "core/executing_context.h"
 #include "core/frame/window.h"
+#include "bindings/qjs/exception_state.h"
+#include "core/api/exception_state.h"
 
 namespace webf {
 
@@ -21,7 +23,7 @@ WebFValue<Window, WindowPublicMethods> ExecutingContextWebFMethods::window(webf:
 }
 
 WebFValue<SharedExceptionState, ExceptionStatePublicMethods> ExecutingContextWebFMethods::CreateExceptionState() {
-  return WebFValue<SharedExceptionState, ExceptionStatePublicMethods>(new SharedExceptionState{webf::ExceptionState()},
+  return WebFValue<SharedExceptionState, ExceptionStatePublicMethods>(new SharedExceptionState(),
                                                                       ExceptionState::publicMethodPointer(), nullptr);
 }
 
