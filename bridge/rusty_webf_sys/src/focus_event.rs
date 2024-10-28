@@ -117,4 +117,4 @@ impl EventMethods for FocusEvent {
   fn as_event(&self) -> &Event {
     &self.ui_event.event
   }
-}
+}

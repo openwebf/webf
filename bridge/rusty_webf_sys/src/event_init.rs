@@ -10,4 +10,4 @@ pub struct EventInit {
   pub bubbles: i32,
   pub cancelable: i32,
   pub composed: i32,
-}
+}

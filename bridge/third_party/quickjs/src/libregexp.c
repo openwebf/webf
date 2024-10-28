@@ -25,9 +25,12 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <inttypes.h>
-#include <malloc.h>
 #include <string.h>
 #include <assert.h>
+
+#if _MSC_VER
+#include <malloc.h>
+#endif
 
 #include "quickjs/cutils.h"
 #include "quickjs/libregexp.h"

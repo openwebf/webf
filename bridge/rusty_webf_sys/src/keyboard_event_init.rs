@@ -21,4 +21,4 @@ pub struct KeyboardEventInit {
   pub meta_key: i32,
   pub repeat: i32,
   pub shift_key: i32,
-}
+}

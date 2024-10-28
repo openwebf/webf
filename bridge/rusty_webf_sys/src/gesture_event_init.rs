@@ -18,4 +18,4 @@ pub struct GestureEventInit {
   pub velocity_y: c_double,
   pub scale: c_double,
   pub rotation: c_double,
-}
+}

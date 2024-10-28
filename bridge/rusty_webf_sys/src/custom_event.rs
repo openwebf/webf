@@ -120,4 +120,4 @@ impl EventMethods for CustomEvent {
   fn as_event(&self) -> &Event {
     &self.event
   }
-}
+}
