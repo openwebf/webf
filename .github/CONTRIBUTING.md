@@ -22,41 +22,33 @@ git submodule update --init --recursive
 $ npm install
 ```
 
-## Building bridge
+## Prepare
 
-> Debug is the default build type, if you want to have a release build, please add `:release` after your command.
->
-> Exp: Execute `npm run build:bridge:macos:release` to build a release bridge for the macOS platform.
+**Windows, Linux, Android**
 
-**Windows**
+The current C/C++ code build process has been integrated into Flutter's compilation and build pipeline for Windows, Linux, and Android.
 
-```shell
-$ npm run build:bridge:windows:release
-```
-
-**macOS**
+Run the following script to generate C/C++ binding code using the code generator:
 
 ```shell
-$ npm run build:bridge:macos:release
+npm run generate_binding_code
 ```
 
-**linux**
+---
+
+**iOS and macOS**
+
+> The default build type is Debug. To create a release build, add `:release` to your command.  
+>  
+> Example: Execute `npm run build:bridge:macos:release` to build a release bridge for macOS.
 
 ```shell
-$ npm run build:bridge:linux:release
+$ npm run build:bridge:ios:release    # iOS
+$ npm run build:bridge:macos:release  # macOS
 ```
 
-**iOS**
+--- 
 
-```shell
-$ npm run build:bridge:ios:release
-```
-
-**Android**
-
-```shell
-$ npm run build:bridge:android:release
-```
 
 ### Run Example
 

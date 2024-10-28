@@ -8,6 +8,7 @@ require('./tasks');
 
 // Run tasks
 series(
+  'compile-polyfill',
   'generate-bindings-code',
 )((err) => {
   if (err) {
