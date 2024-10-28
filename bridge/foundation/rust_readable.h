@@ -5,14 +5,14 @@
 #ifndef RUST_READABLE_H
 #define RUST_READABLE_H
 
-#include <cinttypes>
+#include <cstddef>
 
 namespace webf {
 
 // Shared C struct which can be read by rust through Dart FFI.
 struct RustReadable {
  // Dart FFI use ole32 as it's allocator, we need to override the default allocator to compact with Dart FFI.
- static void* operator new(size_t size);
+ static void* operator new(std::size_t size);
  static void operator delete(void* memory) noexcept;
 };
 
