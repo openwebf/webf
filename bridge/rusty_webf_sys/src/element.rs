@@ -13,6 +13,7 @@ pub struct ElementRustMethods {
 
 impl RustMethods for ElementRustMethods {}
 
+#[repr(C)]
 enum ElementType {
   kHTMLDIVElement,
   kHTMLAnchorElement,

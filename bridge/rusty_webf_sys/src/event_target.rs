@@ -41,6 +41,7 @@ impl Drop for EventCallbackContextData {
 pub trait RustMethods {}
 
 
+#[repr(C)]
 enum EventTargetType {
   EventTarget = 0,
   Node = 1,
@@ -199,12 +200,14 @@ impl EventTarget {
 
   pub fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool {
     unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
       ((*self.method_pointer).dispatch_event)(self.ptr, event.ptr, exception_state.ptr)
     }
   }
 
   pub fn as_node(&self) -> Result<Node, &str> {
     let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
       ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::Node)
     };
     if (raw_ptr.value == std::ptr::null()) {
@@ -215,6 +218,7 @@ impl EventTarget {
 
   pub fn as_element(&self) -> Result<Element, &str> {
     let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
       ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::Element)
     };
     if (raw_ptr.value == std::ptr::null()) {
@@ -225,6 +229,7 @@ impl EventTarget {
 
   pub fn as_container_node(&self) -> Result<ContainerNode, &str> {
     let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
       ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::ContainerNode)
     };
     if (raw_ptr.value == std::ptr::null()) {
@@ -235,6 +240,7 @@ impl EventTarget {
 
   pub fn as_window(&self) -> Result<Window, &str> {
     let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
       ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::Window)
     };
     if (raw_ptr.value == std::ptr::null()) {
@@ -245,6 +251,7 @@ impl EventTarget {
 
   pub fn as_document(&self) -> Result<Document, &str> {
     let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
       ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::Document)
     };
     if (raw_ptr.value == std::ptr::null()) {
@@ -255,6 +262,7 @@ impl EventTarget {
 
   pub fn as_html_element(&self) -> Result<HTMLElement, &str> {
     let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
       ((*self.method_pointer).dynamic_to)(self.ptr, EventTargetType::HTMLElement)
     };
     if raw_ptr.value == std::ptr::null() {
