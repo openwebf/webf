@@ -234,4 +234,4 @@ impl EventMethods for PointerEvent {
   fn as_event(&self) -> &Event {
     &self.mouse_event.ui_event.event
   }
-}
+}

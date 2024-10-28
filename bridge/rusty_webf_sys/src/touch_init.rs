@@ -19,4 +19,4 @@ pub struct TouchInit {
   pub radius_y: c_double,
   pub rotation_angle: c_double,
   pub force: c_double,
-}
+}

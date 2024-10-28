@@ -12,4 +12,4 @@ pub struct HashchangeEventInit {
   pub composed: i32,
   pub old_url: *const c_char,
   pub new_url: *const c_char,
-}
+}

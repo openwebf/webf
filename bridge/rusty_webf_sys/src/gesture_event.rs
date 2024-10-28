@@ -182,4 +182,4 @@ impl EventMethods for GestureEvent {
   fn as_event(&self) -> &Event {
     &self.event
   }
-}
+}

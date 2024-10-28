@@ -66,7 +66,7 @@ impl ExceptionState {
 impl Drop for ExceptionState {
   fn drop(&mut self) {
     unsafe {
-      libc::free(self.ptr.cast_mut() as *mut c_void);
+      // libc::free(self.ptr.cast_mut() as *mut c_void);
     }
   }
 }

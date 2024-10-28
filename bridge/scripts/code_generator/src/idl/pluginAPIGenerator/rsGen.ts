@@ -362,7 +362,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
     blob: blob
   }).split('\n').filter(str => {
     return str.trim().length > 0;
-  }).join('\n');
+  }).join('\n') + '\n';
 }
 
 export function generateRustSource(blob: IDLBlob) {

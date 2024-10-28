@@ -214,7 +214,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   if(MSVC)
     # Using `add_subdirectory` will failed at cmake install starge due to unknown issues:
     # https://github.com/flutter/flutter/issues/95530
-    set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread")
+    set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32")
     add_library(pthreadVC3 SHARED ${PTHREADS_ROOT}/pthread-JMP.c ${PTHREADS_ROOT}/version.rc)
     target_compile_definitions(pthreadVC3
       PRIVATE 
@@ -254,7 +254,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
 
   if (MSVC)
-    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32)
     target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
   endif()
 
