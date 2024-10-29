@@ -37,12 +37,12 @@ class DOMMatrixReadonly extends DynamicBindingObject {
       if (list.isNotEmpty && list[0].runtimeType == double) {
         List<double> doubleList = List<double>.from(list);
         if (doubleList.length == 6) {
-          _matrix4[0] = doubleList[0];
-          _matrix4[1] = doubleList[1];
-          _matrix4[4] = doubleList[2];
-          _matrix4[5] = doubleList[3];
-          _matrix4[12] = doubleList[4];
-          _matrix4[13] = doubleList[5];
+          _matrix4[0] = doubleList[0];  // m11 = a
+          _matrix4[1] = doubleList[1];  // m12 = b
+          _matrix4[4] = doubleList[2];  // m21 = c
+          _matrix4[5] = doubleList[3];  // m22 = d
+          _matrix4[12] = doubleList[4]; // m41 = e
+          _matrix4[13] = doubleList[5]; // m42 = f
         } else if (doubleList.length == 16) {
           _is2D = false;
           _matrix4 = Matrix4.fromList(doubleList);
@@ -61,7 +61,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
     methods['multiply'] = BindingObjectMethodSync(call: (args) {
       BindingObject domMatrix = args[0];
       if (domMatrix is DOMMatrix) {
-        multiply((domMatrix as DOMMatrix).matrix);
+        return multiply((domMatrix as DOMMatrix).matrix);
       }
     });
     methods['rotateAxisAngle'] = BindingObjectMethodSync(
@@ -136,8 +136,6 @@ class DOMMatrixReadonly extends DynamicBindingObject {
     properties['isIdentity'] = BindingObjectProperty(getter: () => _matrix4.isIdentity());
     // m11 = a
     properties['m11'] = BindingObjectProperty(getter: () {
-      print('m11 this.pointer->  ${this.pointer}');
-
       return _matrix4[0];
     }, setter: (value) {
       if (value is double) {

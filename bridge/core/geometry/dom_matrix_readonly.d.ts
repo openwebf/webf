@@ -26,7 +26,7 @@ interface DOMMatrixReadonly {
     flipX(): DOMMatrix;
     flipY(): DOMMatrix;
     inverse(): DOMMatrix;
-    multiply(matrix: DOMMatrix | double[]): DOMMatrix;
+    multiply(matrix: DOMMatrix): DOMMatrix;
     rotateAxisAngle(x:number, y:number, z:number, angle:number): DOMMatrix;
     rotate(rotX:number, rotY:number, rotZ:number): DOMMatrix;
     rotateFromVector(x:number, y:number): DOMMatrix;
