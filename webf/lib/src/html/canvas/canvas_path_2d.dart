@@ -97,9 +97,7 @@ class Path2D extends DynamicBindingObject {
             List<double>.from(args[4])));
     methods['addPath'] = BindingObjectMethodSync(call: (args) {
       if (args.length > 1 && args[1] is DOMMatrix) {
-        // print(args[1]);
-
-        addPath(args[0]);
+        addPath(args[0], matrix4: (args[1] as DOMMatrix).matrix.storage);
       } else if (args.isNotEmpty && args[0] is Path2D) {
         addPath(args[0]);
       }
