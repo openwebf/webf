@@ -59,6 +59,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/css/parser/find_length_of_declaration_list_test.cc
   ./core/css/parser/media_condition_test.cc
   ./core/css/properties/css_bitset_test.cc
+  ./core/css/properties/css_parsing_utils_test.cc
 #  "parser/css_parser_impl_test.cc",
 #  "parser/css_parser_local_context_test.cc",
 #  "parser/css_parser_token_stream_test.cc",
