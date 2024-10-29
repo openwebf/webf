@@ -183,18 +183,18 @@ DOMMatrix* DOMMatrixReadonly::inverse(ExceptionState& exception_state) const {
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
 
-DOMMatrix* DOMMatrixReadonly::multiply(const std::shared_ptr<QJSUnionDOMMatrixSequenceDouble>& matrix,
+DOMMatrix* DOMMatrixReadonly::multiply(const DOMMatrix* matrix,
                                        ExceptionState& exception_state) const {
 
-  NativeValue arguments[2];
+  NativeValue arguments[0] = NativeValueConverter<NativeTypePointer<DOMMatrix>>::ToNativeValue(matrix);
 
-  if (matrix->IsDOMMatrix()) {
-    arguments[0] =
-        NativeValueConverter<NativeTypePointer<DOMMatrix>>::ToNativeValue(matrix->GetAsDOMMatrix());
-  } else if (matrix->IsSequenceDouble()) {
-    arguments[0] =
-        NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(matrix->GetAsSequenceDouble());
-  }
+  // if (matrix->IsDOMMatrix()) {
+  //   arguments[0] =
+  //       NativeValueConverter<NativeTypePointer<DOMMatrix>>::ToNativeValue(matrix->GetAsDOMMatrix());
+  // } else if (matrix->IsSequenceDouble()) {
+  //   arguments[0] =
+  //       NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(matrix->GetAsSequenceDouble());
+  // }
 
   NativeValue value = InvokeBindingMethod(binding_call_methods::kmultiply, sizeof(arguments) / sizeof(NativeValue),
                                           arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
