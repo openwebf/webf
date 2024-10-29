@@ -56,6 +56,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/css/parser/css_supports_parser_test.cc
   ./core/css/parser/css_tokenizer_test.cc
   ./core/css/parser/css_variable_parser_test.cc
+  ./core/css/parser/find_length_of_declaration_list_test.cc
 #  "parser/css_parser_impl_test.cc",
 #  "parser/css_parser_local_context_test.cc",
 #  "parser/css_parser_token_stream_test.cc",

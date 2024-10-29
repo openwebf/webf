@@ -5,6 +5,16 @@
 #ifndef WEBF_CORE_CSS_PARSER_FIND_LENGTH_OF_DECLARATION_LIST_INL_H_
 #define WEBF_CORE_CSS_PARSER_FIND_LENGTH_OF_DECLARATION_LIST_INL_H_
 
+#ifdef __SSE2__
+#include <immintrin.h>
+#elif defined(__ARM_NEON__)
+#include <arm_neon.h>
+#endif
+
+#include "foundation/string_view.h"
+
+namespace webf {
+
 // This file contains SIMD code to try to heuristically detect
 // the length of a CSS declaration block. We use this during parsing
 // in order to skip over them quickly (we don't need to parse
@@ -42,14 +52,6 @@
 // already with base SSE2. On Arm (at least on M1, which is very wide),
 // it would help slightly to unroll 2x manually to extract more ILP;
 // there are many paths where there are long dependency chains.
-
-#ifdef __SSE2__
-#include <immintrin.h>
-#elif defined(__ARM_NEON__)
-#include <arm_neon.h>
-#endif
-
-#include "foundation/string_view.h"
 
 #ifdef __SSE2__
 
@@ -250,7 +252,6 @@ static inline uint8x16_t LoadAndCollapseHighBytes(const uint8_t* ptr) {
   return ret;
 }
 
-
 // The NEON implementation follows basically the same pattern as the
 // SSE2 implementation; comments will be added only where they differ
 // substantially.
@@ -258,7 +259,7 @@ static inline uint8x16_t LoadAndCollapseHighBytes(const uint8_t* ptr) {
 // For A64, we _do_ have access to the PMULL instruction (the NEON
 // equivalent of PCLMULQDQ), but it's supposedly slow, so we use
 // the same XOR-shift cascade.
-ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin,
+inline static size_t FindLengthOfDeclarationList(const uint8_t* begin,
                                                         const uint8_t* end) {
   // Since NEON doesn't have a natural way of moving the last element
   // to the first slot (shift right by 15 _bytes_), but _does_ have
@@ -364,9 +365,11 @@ ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin,
 
 #endif
 
-ALWAYS_INLINE static size_t FindLengthOfDeclarationList(std::string_view str) {
+inline static size_t FindLengthOfDeclarationList(std::string_view str) {
   return FindLengthOfDeclarationList(reinterpret_cast<const uint8_t*>(str.data()),
                                      reinterpret_cast<const uint8_t*>(str.data() + str.length()));
+}
+
 }
 
 #endif  // WEBF_CORE_CSS_PARSER_FIND_LENGTH_OF_DECLARATION_LIST_INL_H_
