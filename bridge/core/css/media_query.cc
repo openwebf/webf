@@ -121,11 +121,11 @@ bool MediaQuery::operator==(const MediaQuery& other) const {
 
 // https://drafts.csswg.org/cssom/#serialize-a-list-of-media-queries
 std::string MediaQuery::CssText() const {
-  if (serialization_cache_.empty()) {
+  if (!serialization_cache_.has_value()) {
     const_cast<MediaQuery*>(this)->serialization_cache_ = Serialize();
   }
 
-  return serialization_cache_;
+  return serialization_cache_.value();
 }
 
 }  // namespace webf

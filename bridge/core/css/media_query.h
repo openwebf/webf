@@ -68,7 +68,7 @@ class MediaQuery {
 
  private:
   std::string media_type_;
-  std::string serialization_cache_;
+  std::optional<std::string> serialization_cache_;
   std::shared_ptr<const MediaQueryExpNode> exp_node_;
 
   RestrictorType restrictor_;

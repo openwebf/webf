@@ -11,15 +11,15 @@
     ]
   },
   "data": [
-    "All",
-    "Braille",
-    "Embossed",
-    "Handheld",
-    "Print",
-    "Projection",
-    "Screen",
-    "Speech",
-    "Tty",
-    "Tv"
+    "all",
+    "braille",
+    "embossed",
+    "handheld",
+    "print",
+    "projection",
+    "screen",
+    "speech",
+    "tty",
+    "tv"
   ]
 }
