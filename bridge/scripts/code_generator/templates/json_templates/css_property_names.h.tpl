@@ -92,8 +92,8 @@ inline bool IsValidCSSPropertyID(CSSPropertyID id)
 
 inline CSSPropertyID ConvertToCSSPropertyID(int value)
 {
-    assert(value > static_cast<int>(CSSPropertyID::kInvalid));
-    assert(value < kIntLastCSSProperty);
+    DCHECK_GE(value, static_cast<int>(CSSPropertyID::kInvalid));
+    DCHECK_LE(value, kIntLastCSSProperty);
     return static_cast<CSSPropertyID>(value);
 }
 
