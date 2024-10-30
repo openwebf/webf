@@ -6,7 +6,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:vector_math/vector_math_64.dart';
-// import 'package:flutter/gestures.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/geometry.dart';
@@ -106,7 +105,12 @@ class DOMMatrixReadonly extends DynamicBindingObject {
         castToType<num>(args[3]).toDouble(),
       )
     );
-    // // scaleNonUniform(): DOMMatrix;
+    methods['scaleNonUniform'] = BindingObjectMethodSync(
+      call: (args) => scaleNonUniform(
+        castToType<num>(args[0]).toDouble(),
+        castToType<num>(args[1]).toDouble()
+      )
+    );
     methods['scale3d'] = BindingObjectMethodSync(
       call: (args) => scale3d(
         castToType<num>(args[0]).toDouble(),
@@ -322,6 +326,11 @@ class DOMMatrixReadonly extends DynamicBindingObject {
 
   DOMMatrix scale3d(double scale, double oriX, double oriY, double oriZ) {
     return this.scale(scale, scale, scale, oriX, oriY, oriZ);
+  }
+
+  DOMMatrix scaleNonUniform(double sX, double sY) {
+    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage)..scaled(sX, sY, 1);
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, _is2D);
   }
 
   DOMMatrix skewX(double sx) {
