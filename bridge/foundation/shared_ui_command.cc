@@ -44,6 +44,10 @@ void* SharedUICommand::data() {
 }
 
 uint32_t SharedUICommand::kindFlag() {
+  // simply spin wait for the swapBuffers to finish.
+  while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {
+  }
+
   return active_buffer->kindFlag();
 }
 
@@ -54,6 +58,9 @@ int64_t SharedUICommand::size() {
 
 // third called by dart to clear commands.
 void SharedUICommand::clear() {
+  // simply spin wait for the swapBuffers to finish.
+  while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {
+  }
   active_buffer->clear();
 }
 

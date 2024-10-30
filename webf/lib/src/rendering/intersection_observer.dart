@@ -46,6 +46,10 @@ mixin RenderIntersectionObserverMixin on RenderBox {
 
   Rect intersectPadding = Rect.zero;
 
+  bool hasIntersectionObserver() {
+    return _listeners?.isNotEmpty == true;
+  }
+
   void addIntersectionChangeListener(IntersectionChangeCallback callback) {
     // Init things
     if (_listeners == null) {

@@ -41,6 +41,47 @@ class WebFPage final {
 
   // Bytecodes which registered by webf plugins.
   static std::unordered_map<std::string, NativeByteCode> pluginByteCode;
+  static void EvaluateScriptsInternal(void* page_,
+                                      const char* code,
+                                      uint64_t code_len,
+                                      uint8_t** parsed_bytecodes,
+                                      uint64_t* bytecode_len,
+                                      const char* bundleFilename,
+                                      int32_t startLine,
+                                      int64_t profile_id,
+                                      Dart_Handle dart_handle,
+                                      EvaluateScriptsCallback result_callback);
+
+  static void EvaluateQuickjsByteCodeInternal(void* page_,
+                                              uint8_t* bytes,
+                                              int32_t byteLen,
+                                              int64_t profile_id,
+                                              Dart_PersistentHandle persistent_handle,
+                                              EvaluateQuickjsByteCodeCallback result_callback);
+  static void ParseHTMLInternal(void* page_,
+                                char* code,
+                                int32_t length,
+                                int64_t profile_id,
+                                Dart_PersistentHandle dart_handle,
+                                ParseHTMLCallback result_callback);
+
+  static void InvokeModuleEventInternal(void* page_,
+                                        void* module_name,
+                                        const char* eventType,
+                                        void* event,
+                                        void* extra,
+                                        Dart_Handle dart_handle,
+                                        InvokeModuleEventCallback result_callback);
+
+  static void DumpQuickJsByteCodeInternal(void* page_,
+                                          int64_t profile_id,
+                                          const char* code,
+                                          int32_t code_len,
+                                          uint8_t** parsed_bytecodes,
+                                          uint64_t* bytecode_len,
+                                          const char* url,
+                                          Dart_PersistentHandle persistent_handle,
+                                          DumpQuickjsByteCodeCallback result_callback);
 
   // evaluate JavaScript source codes in standard mode.
   bool evaluateScript(const char* script,

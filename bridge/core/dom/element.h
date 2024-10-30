@@ -14,6 +14,7 @@
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
 #include "parent_node.h"
+#include "plugin_api/element.h"
 #include "qjs_scroll_to_options.h"
 #include "core/platform/gfx/geometry/vector2d_f.h"
 
@@ -189,6 +190,7 @@ class Element : public ContainerNode {
   void BeginParsingChildren() { SetIsFinishedParsingChildren(false); }
 
   void Trace(GCVisitor* visitor) const override;
+  const ElementPublicMethods* elementPublicMethods();
 
   // add for invalidation begin
   bool IsDocumentElement() const;

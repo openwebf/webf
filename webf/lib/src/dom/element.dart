@@ -273,7 +273,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         }
 
         SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-          if (!previousRenderBoxModel.disposed) {
+          if (!previousRenderBoxModel.disposed && !managedByFlutterWidget) {
             previousRenderBoxModel.dispose();
           }
         });
@@ -527,6 +527,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     // Cancel running animation.
     renderStyle.cancelRunningAnimation();
+
+    ownerView.window.unwatchViewportSizeChangeForElement(this);
 
     RenderBoxModel? renderBoxModel = this.renderBoxModel;
     if (renderBoxModel != null) {
@@ -783,7 +785,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       if (previousPseudoElement.firstChild != null) {
         (previousPseudoElement.firstChild as TextNode).data = pseudoValue.value;
       } else {
-        final textNode = ownerDocument.createTextNode(pseudoValue.value);
+        final textNode = ownerDocument.createTextNode(pseudoValue.value, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
         previousPseudoElement.appendChild(textNode);
       }
     }
@@ -1042,18 +1044,30 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         containingBlockRenderBox = parentNode!.renderer as RenderLayoutBox;
         break;
       case CSSPositionType.absolute:
+        Element viewportElement = ownerDocument.documentElement!;
+
+        if (ownerView.activeRouterRoot != null) {
+          viewportElement = (ownerView.activeRouterRoot!.firstChild as RenderBoxModel).renderStyle.target;
+        }
+
         // If the element has 'position: absolute', the containing block is established by the nearest ancestor with
         // a 'position' of 'absolute', 'relative' or 'fixed', in the following way:
         //  1. In the case that the ancestor is an inline element, the containing block is the bounding box around
         //    the padding boxes of the first and the last inline boxes generated for that element.
         //    In CSS 2.1, if the inline element is split across multiple lines, the containing block is undefined.
         //  2. Otherwise, the containing block is formed by the padding edge of the ancestor.
-        containingBlockRenderBox = _findContainingBlock(this, ownerDocument.documentElement!)?._renderLayoutBox;
+        containingBlockRenderBox = _findContainingBlock(this, viewportElement)?._renderLayoutBox;
         break;
       case CSSPositionType.fixed:
+        Element viewportElement = ownerDocument.documentElement!;
+
+        if (ownerView.activeRouterRoot != null) {
+          viewportElement = (ownerView.activeRouterRoot!.firstChild as RenderBoxModel).renderStyle.target;
+        }
+
         // If the element has 'position: fixed', the containing block is established by the viewport
         // in the case of continuous media or the page area in the case of paged media.
-        containingBlockRenderBox = ownerDocument.documentElement!._renderLayoutBox;
+        containingBlockRenderBox = viewportElement.renderer;
         break;
     }
     return containingBlockRenderBox;
@@ -1092,11 +1106,21 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         RenderBoxModel _renderBoxModel = renderBoxModel!;
         // Find the renderBox of its containing block.
         RenderLayoutBox? containingBlockRenderBox = getContainingBlockRenderBox();
+        Node? previousSiblingNode = previousSibling;
         // Find the previous siblings to insert before renderBoxModel is detached.
-        RenderBox? preSibling = previousSibling?.renderer;
+        RenderBox? previousSiblingRenderBox = previousSiblingNode?.renderer;
+
+        // Search for elements whose style is not display: none.
+        while (previousSiblingRenderBox == null &&
+            previousSiblingNode is Element &&
+            previousSiblingNode.renderStyle.display == CSSDisplay.none) {
+          previousSiblingNode = previousSiblingNode.previousSibling;
+          previousSiblingRenderBox = previousSiblingNode?.renderer;
+        }
+
         // Original parent renderBox.
         RenderBox parentRenderBox = parentNode!.renderer!;
-        _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: preSibling);
+        _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: previousSiblingRenderBox);
       }
     }
 

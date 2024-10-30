@@ -5,7 +5,7 @@ project(WebF)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 12)
 # MSBuild are slower than Clang/GCC to support new CXX standards.
 if(MSVC)
-  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD 20)
 else()
   set(CMAKE_CXX_STANDARD 17)
 endif()
@@ -18,14 +18,14 @@ if(MSVC)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-#  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
 endif()
 
-if(WIN32)
-  set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads")
-  include_directories(${PTHREADS_ROOT}/include)
-  link_directories(${PTHREADS_ROOT}/lib/x64)
+set(WEBF_JS_ENGINE $ENV{WEBF_JS_ENGINE})
+if(NOT WEBF_JS_ENGINE)
+    set(WEBF_JS_ENGINE "quickjs")
 endif()
+
 find_package(Threads REQUIRED)
 
 if(MSVC)
@@ -75,11 +75,8 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   add_compile_options(-fPIC)
 endif()
 
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-  if (MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "/O1")
-    set(CMAKE_C_FLAGS_RELEASE "/O1")
-  else()
+if (NOT MSVC)
+  if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     # Avoid quickjs stackoverflow.
 #    add_compile_options(-O1)
   endif()
@@ -104,6 +101,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/stop_watch.cc
   foundation/profiler.cc
   foundation/dart_readable.cc
+  foundation/rust_readable.cc
   foundation/string_builder.cc
   foundation/string_utils.cc
   foundation/ascii_types.cc
@@ -137,11 +135,11 @@ list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/include
   ${CMAKE_CURRENT_LIST_DIR}/polyfill/dist
+  ${CMAKE_CURRENT_LIST_DIR}/core_rs/include
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart
   ${CMAKE_CURRENT_LIST_DIR}/third_party/double_conversion
   ${ADDITIONAL_INCLUDE_DIRS}
   )
-
 
 add_library(double_conversion STATIC
   third_party/double_conversion/double-conversion/bignum.cc
@@ -155,7 +153,7 @@ add_library(double_conversion STATIC
 )
 list(APPEND BRIDGE_LINK_LIBS double_conversion)
 
-if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
+if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   add_compile_options(-DWEBF_QUICK_JS_ENGINE=1)
 
   execute_process(
@@ -225,8 +223,33 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     add_library(quickjs SHARED ${QUICK_JS_SOURCE})
   endif()
 
+  # PThread compact
+  if(MSVC)
+    # Using `add_subdirectory` will failed at cmake install starge due to unknown issues:
+    # https://github.com/flutter/flutter/issues/95530
+    set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32")
+    add_library(pthreadVC3 SHARED ${PTHREADS_ROOT}/pthread-JMP.c ${PTHREADS_ROOT}/version.rc)
+    target_compile_definitions(pthreadVC3
+      PRIVATE
+      _UNICODE
+      UNICODE
+      WIN32
+      _WINDOWS
+      _WINDLL
+      PTW32_CLEANUP_C
+      UNICODE
+      _UNICODE
+      ENABLE_LOG=0
+      PTW32_ARCHAMD64
+      PTW32_BUILD_INLINED
+      HAVE_CONFIG_H
+      PTW32_RC_MSC
+    )
+    target_include_directories(pthreadVC3 PUBLIC ${PTHREADS_ROOT})
+  endif()
+
   if(WIN32)
-    target_link_libraries(quickjs pthreadVC2)
+    target_link_libraries(quickjs pthreadVC3)
     target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
     target_compile_definitions(quickjs PUBLIC HAVE_STRUCT_TIMESPEC=1 _HAS_EXCEPTIONS=1)
   else()
@@ -234,7 +257,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   endif()
 
   set(MI_OVERRIDE OFF)
-  if (NOT DEFINED USE_SYSTEM_MALLOC)
+  if (NOT MSVC AND NOT DEFINED USE_SYSTEM_MALLOC)
     add_compile_definitions(ENABLE_MI_MALLOC=1)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc/include)
@@ -244,7 +267,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
 
   if (MSVC)
-    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthreads)
+    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32)
     target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
   endif()
 
@@ -278,12 +301,27 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/union_base.cc
     # Core sources
     webf_bridge.cc
-    core/api/api.cc
     core/executing_context.cc
     core/script_forbidden_scope.cc
     core/script_state.cc
     core/page.cc
     core/dart_methods.cc
+    core/api/exception_state.cc
+    core/api/event_target.cc
+    core/api/node.cc
+    core/api/executing_context.cc
+    core/api/container_node.cc
+    core/api/document.cc
+    core/api/element.cc
+    core/api/html_element.cc
+    core/api/html_image_element.cc
+    core/api/html_canvas_element.cc
+    core/api/document_fragment.cc
+    core/api/window.cc
+    core/api/text.cc
+    core/api/comment.cc
+    core/api/character_data.cc
+    core/api/script_value_ref.cc
     core/dart_isolate_context.cc
     core/dart_context_data.cc
     core/executing_context_data.cc
@@ -554,6 +592,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/input_event.cc
     core/events/touch_event.cc
     core/events/mouse_event.cc
+    core/events/hybrid_router_change_event.cc
     core/events/pop_state_event.cc
     core/events/pointer_event.cc
     core/events/transition_event.cc
@@ -582,16 +621,21 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/canvas/canvas_rendering_context_2d.cc
     core/html/canvas/canvas_gradient.cc
     core/html/canvas/canvas_pattern.cc
+    #core/geometry/dom_matrix.cc
+    #core/geometry/dom_matrix_readonly.cc
     core/html/forms/html_button_element.cc
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
 
+    core/native/native_loader.cc
+    core/native/script_value_ref.cc
+
     # css invalidation
-#    core/css/invalidation/invalidation_flags.cc
-#    core/css/invalidation/invalidation_set.cc
-#    core/css/invalidation/pending_invalidations.cc
-#    core/css/invalidation/style_invalidator.cc
+    #    core/css/invalidation/invalidation_flags.cc
+    #    core/css/invalidation/invalidation_set.cc
+    #    core/css/invalidation/pending_invalidations.cc
+    #    core/css/invalidation/style_invalidator.cc
 
     # SVG files
     core/svg/svg_element.cc
@@ -682,6 +726,8 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_mutation_observer_registration.cc
     out/qjs_touch_event.cc
     out/qjs_touch_event_init.cc
+    out/qjs_hybrid_router_change_event.cc
+    out/qjs_hybrid_router_change_event_init.cc
     out/qjs_pointer_event.cc
     out/qjs_pointer_event_init.cc
     out/qjs_mouse_event.cc
@@ -712,6 +758,7 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_css_style_declaration.cc
     out/qjs_inline_css_style_declaration.cc
     out/qjs_computed_css_style_declaration.cc
+    out/qjs_native_loader.cc
     out/qjs_style_sheet.cc
     out/qjs_text.cc
     out/qjs_screen.cc
@@ -814,6 +861,21 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_svg_ellipse_element.cc
     out/qjs_svg_style_element.cc
     out/qjs_svg_line_element.cc
+
+    # plugin api
+    out/plugin_api_event.cc
+    out/plugin_api_animation_event.cc
+    out/plugin_api_close_event.cc
+    out/plugin_api_focus_event.cc
+    out/plugin_api_gesture_event.cc
+    out/plugin_api_hashchange_event.cc
+    out/plugin_api_input_event.cc
+    out/plugin_api_intersection_change_event.cc
+    out/plugin_api_mouse_event.cc
+    out/plugin_api_pointer_event.cc
+    out/plugin_api_transition_event.cc
+    out/plugin_api_ui_event.cc
+    out/plugin_api_custom_event.cc
     )
 
 
@@ -831,7 +893,6 @@ list(APPEND PUBLIC_HEADER
 )
 
 add_library(webf SHARED ${BRIDGE_SOURCE})
-add_library(webf_static STATIC ${BRIDGE_SOURCE})
 
 if(MSVC)
   target_compile_options(webf PRIVATE /JMC)
@@ -862,7 +923,7 @@ elseif(${IS_IOS})
 endif()
 
 
-### webf
+## webf
 target_include_directories(webf PRIVATE
   ${BRIDGE_INCLUDE}
   ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
@@ -877,12 +938,6 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
   endif ()
 endif ()
-
-### webfStatic
-target_include_directories(webf_static PRIVATE
-  ${BRIDGE_INCLUDE}
-  ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
-target_link_libraries(webf_static ${BRIDGE_LINK_LIBS})
 
 execute_process(
   COMMAND node get_app_ver.js
@@ -910,9 +965,6 @@ if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
     LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
     RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
   )
-  set_target_properties(webf_static
-    PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}")
-
   if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     set_target_properties(quickjs
       PROPERTIES
@@ -920,8 +972,11 @@ if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
         RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
     )
     if(MSVC)
-      set(PTHREAD_LIB ${PTHREADS_ROOT}/dll/x64/pthreadVC2.dll)
-      file(COPY ${PTHREAD_LIB} DESTINATION "$ENV{LIBRARY_OUTPUT_DIR}")
+      set_target_properties(pthreadVC3
+        PROPERTIES
+          LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+          RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+      )
     endif()
   endif ()
 elseif (IS_ANDROID)

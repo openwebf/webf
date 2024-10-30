@@ -18,10 +18,10 @@
 #define WEBF_EXPORT __attribute__((__visibility__("default")))
 #endif
 
-typedef struct SharedNativeString SharedNativeString;
-typedef struct NativeValue NativeValue;
-typedef struct NativeScreen NativeScreen;
-typedef struct NativeByteCode NativeByteCode;
+class SharedNativeString;
+class NativeValue;
+class NativeScreen;
+class NativeByteCode;
 
 struct WebFInfo {
   const char* app_name{nullptr};
@@ -147,6 +147,6 @@ WEBF_EXPORT_C void executeNativeCallback(DartWork* work_ptr);
 WEBF_EXPORT_C
 void init_dart_dynamic_linking(void* data);
 WEBF_EXPORT_C
-void register_dart_context_finalizer(Dart_Handle dart_handle, void* dart_isolate_context);
+void on_dart_context_finalized(void* dart_isolate_context);
 
 #endif  // WEBF_BRIDGE_EXPORT_H

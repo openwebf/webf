@@ -68,6 +68,7 @@ class _WebFTesterState extends State<WebFTester> {
       disableViewportWidthAssertion: true,
       disableViewportHeightAssertion: true,
       javaScriptChannel: javaScriptChannel,
+      runningThread: FlutterUIThread(),
       onControllerCreated: onControllerCreated,
       onLoad: onLoad,
       gestureListener: GestureListener(

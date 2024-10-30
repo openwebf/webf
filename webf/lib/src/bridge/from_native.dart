@@ -5,9 +5,11 @@
 
 import 'dart:async';
 import 'dart:ffi';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:path/path.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
@@ -117,7 +119,8 @@ class _InvokeModuleResultContext {
       {this.errmsgPtr, this.data, this.stopwatch});
 }
 
-void _handleInvokeModuleResult(_InvokeModuleResultContext context, Pointer<NativeValue> result) {
+void _handleInvokeModuleResult(Object handle, Pointer<NativeValue> result) {
+  _InvokeModuleResultContext context = handle as _InvokeModuleResultContext;
   var returnValue = fromNativeValue(context.currentView, result);
 
   if (enableWebFCommandLog && context.stopwatch != null) {
@@ -137,7 +140,8 @@ void _handleInvokeModuleResult(_InvokeModuleResultContext context, Pointer<Nativ
 }
 
 dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, String moduleName, String method, params,
-    DartAsyncModuleCallback callback, { BindingOpItem? profileOp }) {
+    DartAsyncModuleCallback callback,
+    {BindingOpItem? profileOp}) {
   WebFViewController currentView = controller.view;
   dynamic result;
 
@@ -183,7 +187,6 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackBindingSteps(profileOp!);
     }
-
   } catch (e, stack) {
     if (enableWebFCommandLog) {
       print('Invoke module failed: $e\n$stack');
@@ -208,7 +211,6 @@ Pointer<NativeValue> _invokeModule(
     Pointer<NativeString> method,
     Pointer<NativeValue> params,
     Pointer<NativeFunction<NativeAsyncModuleCallback>> callback) {
-
   BindingOpItem? currentProfileOp;
   if (enableWebFProfileTracking) {
     currentProfileOp = WebFProfiler.instance.startTrackBinding(profileLinkId);
@@ -229,8 +231,9 @@ Pointer<NativeValue> _invokeModule(
     WebFProfiler.instance.startTrackBindingSteps(currentProfileOp, 'invokeModule');
   }
 
-  dynamic result = invokeModule(callbackContext, controller, moduleValue, methodValue,
-      paramsValue, callback.asFunction(), profileOp: currentProfileOp);
+  dynamic result = invokeModule(
+      callbackContext, controller, moduleValue, methodValue, paramsValue, callback.asFunction(),
+      profileOp: currentProfileOp);
 
   if (enableWebFProfileTracking) {
     WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
@@ -446,9 +449,59 @@ void _createBindingObject(
 final Pointer<NativeFunction<NativeCreateBindingObject>> _nativeCreateBindingObject =
     Pointer.fromFunction(_createBindingObject);
 
-typedef NativeGetWidgetElementShape = Int8 Function(Double contextId, Pointer<NativeBindingObject> nativeBindingObject, Pointer<NativeValue> result);
+typedef NativeLoadNativeLibrary = Void Function(
+    Double contextId,
+    Pointer<NativeString> libName,
+    Pointer<Void> initializeData,
+    Pointer<Void> importData,
+    Pointer<NativeFunction<NativeLoadNativeLibraryCallback>> callback);
+typedef NativeLoadNativeLibraryCallback = Pointer<Void> Function(
+    Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> entryPoint,
+    Pointer<Void> initializeData, Double contextId, Pointer<Void> exportData);
+typedef DartLoadNativeLibraryCallback = Pointer<Void> Function(
+    Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> entryPoint,
+    Pointer<Void> initializeData, double contextId, Pointer<Void> exportData);
 
-int _getWidgetElementShape(double contextId, Pointer<NativeBindingObject> nativeBindingObject, Pointer<NativeValue> result) {
+typedef StandardWebFPluginExternalSymbol = Void Function();
+typedef DartStandardWebFPluginExternalSymbol = void Function();
+
+String _getNativeLibraryName(String prefix) {
+  if (Platform.isMacOS || Platform.isIOS) {
+    return '$prefix.framework/$prefix';
+  } else if (Platform.isWindows) {
+    return '$prefix.dll';
+  } else if (Platform.isAndroid || Platform.isLinux) {
+    return 'lib$prefix.so';
+  } else {
+    throw UnimplementedError('Not supported platform.');
+  }
+}
+
+void _loadNativeLibrary(double contextId, Pointer<NativeString> nativeLibName, Pointer<Void> initializeData,
+    Pointer<Void> importData, Pointer<NativeFunction<NativeLoadNativeLibraryCallback>> nativeCallback) {
+  String libName = nativeStringToString(nativeLibName);
+  final String _defaultLibraryPath = Platform.isLinux ? '\$ORIGIN' : '';
+  DartLoadNativeLibraryCallback callback = nativeCallback.asFunction(isLeaf: true);
+  try {
+    final library = DynamicLibrary.open(join(_defaultLibraryPath, _getNativeLibraryName(libName)));
+    String entrySymbol = Platform.environment['WEBF_ENABLE_TEST'] != null ? 'init_webf_test_app' : 'init_webf_app';
+    Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> nativeFunction =
+      library.lookup<NativeFunction<StandardWebFPluginExternalSymbol>>(entrySymbol);
+
+    callback(nativeFunction, initializeData, contextId, importData);
+  } catch (e, stack) {
+    String errmsg = '$e\n$stack';
+    callback(nullptr, initializeData, contextId, errmsg.toNativeUtf8().cast<Void>());
+  }
+}
+
+final Pointer<NativeFunction<NativeLoadNativeLibrary>> _nativeLoadLibrary = Pointer.fromFunction(_loadNativeLibrary);
+
+typedef NativeGetWidgetElementShape = Int8 Function(
+    Double contextId, Pointer<NativeBindingObject> nativeBindingObject, Pointer<NativeValue> result);
+
+int _getWidgetElementShape(
+    double contextId, Pointer<NativeBindingObject> nativeBindingObject, Pointer<NativeValue> result) {
   try {
     WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
     DynamicBindingObject object = controller.view.getBindingObject<DynamicBindingObject>(nativeBindingObject)!;
@@ -463,7 +516,8 @@ int _getWidgetElementShape(double contextId, Pointer<NativeBindingObject> native
   return 0;
 }
 
-final Pointer<NativeFunction<NativeGetWidgetElementShape>> _nativeGetWidgetElementShape = Pointer.fromFunction(_getWidgetElementShape, 0);
+final Pointer<NativeFunction<NativeGetWidgetElementShape>> _nativeGetWidgetElementShape =
+    Pointer.fromFunction(_getWidgetElementShape, 0);
 
 typedef NativeJSError = Void Function(Double contextId, Pointer<Utf8>);
 
@@ -507,6 +561,7 @@ final List<int> _dartNativeMethods = [
   _nativeToBlob.address,
   _nativeFlushUICommand.address,
   _nativeCreateBindingObject.address,
+  _nativeLoadLibrary.address,
   _nativeGetWidgetElementShape.address,
   _nativeOnJsError.address,
   _nativeOnJsLog.address,

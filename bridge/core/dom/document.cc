@@ -569,4 +569,9 @@ void Document::InvalidateNodeListCaches(const QualifiedName* attr_name) {
   //   list->InvalidateCacheForAttribute(attr_name);
 }
 
+const DocumentPublicMethods* Document::documentPublicMethods() {
+  static DocumentPublicMethods document_public_methods;
+  return &document_public_methods;
+}
+
 }  // namespace webf

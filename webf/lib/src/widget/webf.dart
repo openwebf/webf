@@ -286,6 +286,9 @@ class WebFState extends State<WebF> with RouteAware {
     if (widget.routeObserver != null) {
       widget.routeObserver!.subscribe(this, ModalRoute.of(context)!);
     }
+    if (widget.controller?.routeObserver != null) {
+      widget.controller?.routeObserver!.subscribe(this, ModalRoute.of(context)!);
+    }
   }
 
   @override
@@ -296,20 +299,6 @@ class WebFState extends State<WebF> with RouteAware {
     }
   }
 
-  // Resume call timer and callbacks when webf widget change to visible.
-  @override
-  void didPopNext() {
-    assert(widget.controller != null);
-    widget.controller!.resume();
-  }
-
-  // Pause all timer and callbacks when webf widget has been invisible.
-  @override
-  void didPushNext() {
-    assert(widget.controller != null);
-    widget.controller!.pause();
-  }
-
   @override
   void dispose() {
     if (widget.routeObserver != null) {
@@ -318,15 +307,12 @@ class WebFState extends State<WebF> with RouteAware {
     super.dispose();
     _disposed = true;
   }
-
-  @override
-  void deactivate() {
-    super.deactivate();
-  }
 }
 
 class WebFContext extends InheritedWidget {
-  WebFContext({required super.child});
+  WebFContext({required super.child, this.controller});
+
+  final WebFController? controller;
 
   @override
   bool updateShouldNotify(covariant InheritedWidget oldWidget) {
@@ -335,12 +321,12 @@ class WebFContext extends InheritedWidget {
 
   @override
   InheritedElement createElement() {
-    return WebFContextInheritElement(this);
+    return WebFContextInheritElement(this, controller);
   }
 }
 
 class WebFContextInheritElement extends InheritedElement {
-  WebFContextInheritElement(super.widget);
+  WebFContextInheritElement(super.widget, this.controller);
 
   WebFController? controller;
 
@@ -382,6 +368,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
             autoExecuteEntrypoint: false,
             externalController: false,
             onLoad: _webfWidget.onLoad,
+            routeObserver: _webfWidget.routeObserver,
             onDOMContentLoaded: _webfWidget.onDOMContentLoaded,
             onLoadError: _webfWidget.onLoadError,
             onJSError: _webfWidget.onJSError,
@@ -455,6 +442,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     (parent as WebFContextInheritElement).controller = controller;
 
     await controller!.controlledInitCompleter.future;
+    controller!.buildContextStack.add(this);
 
     if (controller!.entrypoint == null) {
       throw FlutterError('Consider providing a WebFBundle resource as the entry point for WebF');
@@ -486,7 +474,6 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
         if (controller!.mode == WebFLoadingMode.standard) {
           await controller!.executeEntrypoint(animationController: widget._webfWidget.animationController);
         } else if (controller!.mode == WebFLoadingMode.preloading) {
-
           await controller!.controllerPreloadingCompleter.future;
 
           if (controller!.view.getRootRenderObject()!.parent == null) {
@@ -551,6 +538,7 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
     } else {
       controller?.dispose();
     }
+    controller!.buildContextStack.removeLast();
     controller = null;
   }
 

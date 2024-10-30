@@ -179,6 +179,12 @@ void TEST_flushUICommand(double contextId) {
 
 void TEST_CreateBindingObject(double context_id, void* native_binding_object, int32_t type, void* args, int32_t argc) {}
 
+void TEST_LoadNativeLibrary(double context_id,
+                            SharedNativeString* lib_name,
+                            void* initialize_data,
+                            void* import_data,
+                            LoadNativeLibraryCallback callback) {}
+
 void TEST_GetWidgetElementShape() {}
 
 void TEST_onJsLog(double contextId, int32_t level, const char*) {}
@@ -330,8 +336,10 @@ std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
                                     reinterpret_cast<uint64_t>(TEST_toBlob),
                                     reinterpret_cast<uint64_t>(TEST_flushUICommand),
                                     reinterpret_cast<uint64_t>(TEST_CreateBindingObject),
+                                    reinterpret_cast<uint64_t>(TEST_LoadNativeLibrary),
                                     reinterpret_cast<uint64_t>(TEST_GetWidgetElementShape)};
 
+  WEBF_LOG(VERBOSE) << " ON JS ERROR" << onJSError;
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(onJSError));
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_onJsLog));
   return mockMethods;

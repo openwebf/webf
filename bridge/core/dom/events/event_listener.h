@@ -37,6 +37,8 @@ class EventListener {
   // Returns true if this implements IDL EventHandler family.
   virtual bool IsEventHandler() const { return false; }
 
+  virtual bool IsPublicPluginEventHandler() const { return false; }
+
   // Returns true if this implements IDL EventHandler family and the value is
   // a content attribute (or compiled from a content attribute).
   virtual bool IsEventHandlerForContentAttribute() const { return false; }
@@ -51,7 +53,7 @@ class EventListener {
 
   virtual void Trace(GCVisitor* visitor) const = 0;
 
- private:
+ protected:
   EventListener() = default;
 
   friend JSBasedEventListener;

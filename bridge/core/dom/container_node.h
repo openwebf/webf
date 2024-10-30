@@ -11,6 +11,7 @@
 #include "bindings/qjs/heap_vector.h"
 #include "core/html/collection_type.h"
 #include "core/dom/node.h"
+#include "plugin_api/container_node.h"
 
 namespace webf {
 
@@ -198,6 +199,7 @@ class ContainerNode : public Node {
   virtual void ChildrenChanged(const ChildrenChange&);
 
   void Trace(GCVisitor* visitor) const override;
+  const ContainerNodePublicMethods* containerNodePublicMethods();
 
   bool HasRestyleFlag(DynamicRestyleFlags mask) const {
     if (const NodeRareData* data = RareData()) {

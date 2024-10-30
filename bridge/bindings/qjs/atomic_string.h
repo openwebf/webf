@@ -132,7 +132,7 @@ bool AtomicString::ContainsOnlyLatin1OrEmpty() const {
 
   const uint16_t* characters = Character16();
   uint16_t ored = 0;
-  for (size_t i = 0; i < length_; ++i)
+  for (int64_t i = 0; i < length_; ++i)
     ored |= characters[i];
   return !(ored & 0xFF00);
 }

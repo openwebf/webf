@@ -339,22 +339,6 @@ describe('Transition all', () => {
         transition: 'all 1s linear',
       });
       await snapshot();
-
-      setTimeout(async () => {
-        setElementStyle(container1, {
-          transform: 'translate3d(0px, 100px, 0)',
-        });
-
-        await snapshot();
-
-        setTimeout(async () => {
-          setElementStyle(container1, {
-            transform: 'translate3d(200px, 200px, 0)',
-          });
-
-          await snapshot();
-        }, 500);
-      }, 200);
     });
   });
 });

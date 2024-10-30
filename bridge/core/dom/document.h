@@ -13,6 +13,7 @@
 #include "foundation/macros.h"
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
+#include "plugin_api/document.h"
 
 namespace webf {
 
@@ -167,6 +168,7 @@ class Document : public ContainerNode, public TreeScope {
   std::shared_ptr<EventListener> GetWindowAttributeEventListener(const AtomicString& event_type);
 
   void Trace(GCVisitor* visitor) const override;
+  const DocumentPublicMethods* documentPublicMethods();
   StyleEngine& EnsureStyleEngine();
   bool IsForMarkupSanitization() const { return is_for_markup_sanitization_; }
 
@@ -222,6 +224,9 @@ class Document : public ContainerNode, public TreeScope {
 template <>
 struct DowncastTraits<Document> {
   static bool AllowFrom(const Node& node) { return node.IsDocumentNode(); }
+  static bool AllowFrom(const EventTarget& event_target) {
+    return event_target.IsNode() && To<Node>(event_target).IsDocumentNode();
+  }
 };
 
 }  // namespace webf

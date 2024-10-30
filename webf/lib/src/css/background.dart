@@ -9,6 +9,7 @@ import 'dart:ui';
 
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/dom.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/html.dart';
 import 'package:webf/css.dart';
@@ -178,6 +179,10 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   set backgroundImage(CSSBackgroundImage? value) {
     if (value == _backgroundImage) return;
+    if (_backgroundImage != null) {
+      _backgroundImage!.dispose();
+    }
+
     _backgroundImage = value;
     renderBoxModel?.markNeedsPaint();
   }
@@ -255,16 +260,24 @@ class CSSBackgroundImage {
 
   ImageProvider? _image;
 
-  Future<ImageLoadResponse> _obtainImage(Uri url) async {
+  static Future<ImageLoadResponse> _obtainImage(Element element, Uri url) async {
     ImageRequest request = ImageRequest.fromUri(url);
     // Increment count when request.
-    controller.view.document.incrementRequestCount();
+    element.ownerDocument.controller.view.document.incrementRequestCount();
 
-    ImageLoadResponse data = await request.obtainImage(controller);
+    ImageLoadResponse data = await request.obtainImage(element.ownerDocument.controller);
 
     // Decrement count when response.
-    controller.view.document.decrementRequestCount();
+    element.ownerDocument.controller.view.document.decrementRequestCount();
     return data;
+  }
+
+  static void _handleBitFitImageLoad(
+      Element element, int naturalWidth, int naturalHeight, int frameCount) {
+    if (frameCount > 1 && !element.isRepaintBoundary) {
+      element.forceToRepaintBoundary = true;
+      element.renderBoxModel!.invalidateBoxPainter();
+    }
   }
 
   ImageProvider? get image {
@@ -285,15 +298,11 @@ class CSSBackgroundImage {
           return _image = BoxFitImage(
             boxFit: renderStyle.backgroundSize.fit,
             url: uri,
+            controller: controller,
+            targetElementPtr: renderStyle.target.pointer!,
             loadImage: _obtainImage,
-              onImageLoad: (int naturalWidth, int naturalHeight, int frameCount) {
-                if (frameCount > 1) {
-                   renderStyle.target.forceToRepaintBoundary = true;
-                   renderStyle.target.renderBoxModel!.invalidateBoxPainter();
-                }
-              },
-            devicePixelRatio: ownerFlutterView.devicePixelRatio
-          );
+            onImageLoad: _handleBitFitImageLoad,
+            devicePixelRatio: ownerFlutterView.devicePixelRatio);
         }
       }
     }
@@ -502,6 +511,10 @@ class CSSBackgroundImage {
     }
     return 'none';
   }
+
+  void dispose() {
+    _image = null;
+  }
 }
 
 class CSSBackgroundPosition {
@@ -694,8 +707,8 @@ class CSSBackground {
   }
 }
 
-void _applyColorAndStops(int start, List<String> args, List<Color> colors, List<double> stops,
-    RenderStyle renderStyle, String propertyName,
+void _applyColorAndStops(
+    int start, List<String> args, List<Color> colors, List<double> stops, RenderStyle renderStyle, String propertyName,
     [double? gradientLength]) {
   // colors should more than one, otherwise invalid
   if (args.length - start - 1 > 0) {

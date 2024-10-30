@@ -31,9 +31,12 @@ DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
   to_blob_ = reinterpret_cast<ToBlob>(dart_methods[i++]);
   flush_ui_command_ = reinterpret_cast<FlushUICommand>(dart_methods[i++]);
   create_binding_object_ = reinterpret_cast<CreateBindingObject>(dart_methods[i++]);
+  load_native_library_ = reinterpret_cast<LoadNativeLibrary>(dart_methods[i++]);
   get_widget_element_shape_ = reinterpret_cast<GetWidgetElementShape>(dart_methods[i++]);
   on_js_error_ = reinterpret_cast<OnJSError>(dart_methods[i++]);
   on_js_log_ = reinterpret_cast<OnJSLog>(dart_methods[i++]);
+
+  WEBF_LOG(VERBOSE) << "2 on Js" << load_native_library_;
 
   assert_m(i == dart_methods_length, "Dart native methods count is not equal with C++ side method registrations.");
 }
@@ -213,6 +216,24 @@ void DartMethodPointer::createBindingObject(bool is_dedicated,
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::createBindingObject SYNC call END";
+#endif
+}
+
+void DartMethodPointer::loadNativeLibrary(bool is_dedicated,
+                                          double context_id,
+                                          webf::SharedNativeString* lib_name,
+                                          void* initialize_data,
+                                          void* import_data,
+                                          LoadNativeLibraryCallback callback) {
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::loadNativeLibrary SYNC call START";
+#endif
+
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, load_native_library_, context_id, lib_name,
+                                                  initialize_data, import_data, callback);
+
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::loadNativeLibrary SYNC call END";
 #endif
 }
 

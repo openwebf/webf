@@ -6,6 +6,7 @@
 #define BRIDGE_COMMENT_H
 
 #include "character_data.h"
+#include "plugin_api/comment.h"
 
 namespace webf {
 
@@ -20,6 +21,8 @@ class Comment : public CharacterData {
 
   NodeType nodeType() const override;
 
+  const CommentPublicMethods* commentPublicMethods();
+
  private:
   std::string nodeName() const override;
   Node* Clone(Document&, CloneChildrenFlag) const override;
@@ -28,6 +31,9 @@ class Comment : public CharacterData {
 template <>
 struct DowncastTraits<Comment> {
   static bool AllowFrom(const Node& node) { return node.IsOtherNode(); }
+  static bool AllowFrom(const EventTarget& event_target) {
+    return event_target.IsNode() && To<Node>(event_target).IsOtherNode();
+  }
 };
 
 }  // namespace webf

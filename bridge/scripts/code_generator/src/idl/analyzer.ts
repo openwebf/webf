@@ -149,6 +149,11 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
       let argument = typeReference.typeArguments![0];
       // @ts-ignore
       return getParameterBaseType(argument);
+    } else if (identifier === 'StaticMethod') {
+      if (mode) mode.staticMethod = true;
+      let argument = typeReference.typeArguments![0];
+      // @ts-ignore
+      return getParameterBaseType(argument);
     } else if (identifier === 'LegacyNullToEmptyString') {
       return FunctionArgumentType.legacy_dom_string;
     }

@@ -6,6 +6,8 @@
 #define BRIDGE_CORE_HTML_HTML_IMAGE_ELEMENT_H_
 
 #include "html_element.h"
+#include "html_names.h"
+#include "plugin_api/html_image_element.h"
 
 namespace webf {
 
@@ -23,7 +25,21 @@ class HTMLImageElement : public HTMLElement {
 
   ScriptPromise decode(ExceptionState& exception_state) const;
 
+  const HTMLImageElementPublicMethods* htmlImageElementPublicMethods() {
+    static HTMLImageElementPublicMethods html_image_element_public_methods;
+    return &html_image_element_public_methods;
+  }
+
  private:
+  bool keep_alive = false;
+};
+
+template <>
+struct DowncastTraits<HTMLImageElement> {
+  static bool AllowFrom(const EventTarget& event_target) {
+    return event_target.IsNode() && To<Node>(event_target).IsHTMLElement() &&
+           To<HTMLElement>(event_target).tagName() == html_names::kimg;
+  }
 };
 
 }  // namespace webf

@@ -27,6 +27,8 @@ abstract class WidgetElement extends dom.Element {
   }
   WebFWidgetElementToWidgetAdapter? attachedAdapter;
 
+  bool isRouterLinkElement = false;
+
   BuildContext get context {
     return _state!.context;
   }
@@ -66,7 +68,7 @@ abstract class WidgetElement extends dom.Element {
   @override
   void didDetachRenderer() {
     super.didDetachRenderer();
-    _detachWidget();
+    detachWidget();
   }
 
   @nonVirtual
@@ -93,7 +95,7 @@ abstract class WidgetElement extends dom.Element {
   @override
   void didAttachRenderer() {
     // Children of WidgetElement should insert render object by Flutter Framework.
-    _attachWidget(_widget);
+    attachWidget(_widget);
   }
 
   // Reconfigure renderObjects when already rendered pages reattached to flutter tree
@@ -199,27 +201,6 @@ abstract class WidgetElement extends dom.Element {
     return null;
   }
 
-  // void _attachWidget(Widget widget) {
-  //   if (attachedAdapter == null) return;
-  //   // Attach the current widget to the root WebF or WebFHTMLElementStatefulWidget as a child in the current widget tree.
-  //   dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
-  //   if (ancestorWidgetNode != null) {
-  //     dom.Element element = ancestorWidgetNode as dom.Element;
-  //     // The ancestor may no be initialized
-  //     if (element.flutterWidgetState == null) {
-  //       element.pendingSubWidgets.add(attachedAdapter!);
-  //     } else {
-  //       element.flutterWidgetState!.addWidgetChild(attachedAdapter!);
-  //     }
-  //   } else {
-  //     ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
-  //   }
-  //   // Flush the build and layout to initialize the renderObject.
-  //   WidgetsBinding.instance.buildOwner!.buildScope(WidgetsBinding.instance.rootElement!);
-  //   WidgetsBinding.instance.pipelineOwner.flushLayout();
-  // }
-
-
   void _attachWidget(Widget widget) {
     if (attachedAdapter == null) return;
     // Attach the current widget to the root WebF or WebFHTMLElementStatefulWidget as a child in the current widget tree.
@@ -234,7 +215,7 @@ abstract class WidgetElement extends dom.Element {
     }
   }
 
-  void _detachWidget() {
+  void detachWidget() {
     if (attachedAdapter != null) {
       dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
       if (ancestorWidgetNode != null) {

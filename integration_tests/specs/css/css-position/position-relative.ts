@@ -390,9 +390,11 @@ describe('position-relative', () => {
 
     await snapshot();
   });
-  it('005-ref', async () => {
+  it('005-ref', async (done) => {
     let p;
     let div;
+    let img1;
+    let img2;
     p = createElement(
       'p',
       {
@@ -416,7 +418,7 @@ describe('position-relative', () => {
         },
       },
       [
-        createElement('img', {
+        img1 = createElement('img', {
           src: 'assets/swatch-orange.png',
           width: '96',
           height: '96',
@@ -425,7 +427,7 @@ describe('position-relative', () => {
             'box-sizing': 'border-box',
           },
         }),
-        createElement('img', {
+        img2 = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '96',
           height: '96',
@@ -439,7 +441,17 @@ describe('position-relative', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    let count = 0;
+    async function onImageLoad() {
+      count++;
+      if (count >= 2) {
+        await snapshot(0.1);
+        done();
+      }
+    }
+
+    img1.addEventListener('load', onImageLoad);
+    img2.addEventListener('load', onImageLoad);
   });
   it('005', async () => {
     let p;

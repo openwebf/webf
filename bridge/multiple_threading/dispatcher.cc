@@ -140,7 +140,7 @@ bool Dispatcher::NotifyDart(const DartWork* work_ptr, bool is_sync) {
 }
 
 void Dispatcher::FinalizeAllJSThreads(webf::multi_threading::Callback callback) {
-  std::atomic<uint32_t> unfinished_thread = js_threads_.size();
+  std::atomic<size_t> unfinished_thread = js_threads_.size();
 
   std::atomic<bool> is_final_async_dart_task_complete{false};
 

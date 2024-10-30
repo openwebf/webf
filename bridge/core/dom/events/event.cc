@@ -306,6 +306,10 @@ bool Event::IsHashChangeEvent() const {
   return false;
 }
 
+bool Event::IsHybridRouterChangeEvent() const {
+  return false;
+}
+
 bool Event::IsIntersectionchangeEvent() const {
   return false;
 }
@@ -359,6 +363,10 @@ void Event::Trace(GCVisitor* visitor) const {
   for (auto& prop : customized_event_props_) {
     prop.Trace(visitor);
   }
+}
+
+const EventPublicMethods* Event::eventPublicMethods() {
+  return &event_public_methods;
 }
 
 }  // namespace webf

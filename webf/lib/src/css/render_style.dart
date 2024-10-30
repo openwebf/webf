@@ -211,6 +211,7 @@ abstract class RenderStyle {
   void addFontRelativeProperty(String propertyName);
   void addRootFontRelativeProperty(String propertyName);
   void addColorRelativeProperty(String propertyName);
+  void addViewportSizeRelativeProperty();
   double getWidthByAspectRatio();
   double getHeightByAspectRatio();
 
@@ -218,7 +219,7 @@ abstract class RenderStyle {
   // for class that extends [AbstractRenderStyle].
   RenderBoxModel? get renderBoxModel => target.renderBoxModel;
 
-  Size get viewportSize => target.ownerDocument.viewport!.viewportSize;
+  Size get viewportSize => target.ownerDocument.viewport?.viewportSize ?? Size.zero;
   FlutterView get currentFlutterView => target.ownerDocument.controller.ownerFlutterView;
 
   double get rootFontSize => target.ownerDocument.documentElement!.renderStyle.fontSize.computedValue;
@@ -1615,6 +1616,7 @@ class CSSRenderStyle extends RenderStyle
   void detach() {
     // Clear reference to it's parent.
     parent = null;
+    backgroundImage = null;
   }
 
   // Find ancestor render style with display of not inline.

@@ -142,6 +142,10 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
     final int remainingCount = childCount - lastIndex - 1;
     return trailingScrollOffset + averageExtent * remainingCount;
   }
+
+  @override
+  // TODO: add impl for estimatedChildCount
+  int? get estimatedChildCount => null;
 }
 
 /// Used for the placeholder for empty sliver item.

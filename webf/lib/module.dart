@@ -12,5 +12,6 @@ export 'src/module/schedule_frame.dart';
 export 'src/module/timer.dart';
 export 'src/module/location.dart';
 export 'src/module/history.dart';
+export 'src/module/hybrid_history.dart';
 export 'src/module/navigation.dart';
 export 'src/module/navigator.dart';

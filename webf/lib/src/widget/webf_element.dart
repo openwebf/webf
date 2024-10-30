@@ -47,6 +47,7 @@ class _WebFElement extends MultiChildRenderObjectElement {
     inlineStyle.forEach((key, value) {
       htmlElement!.setInlineStyle(key, value);
     });
+    htmlElement!.recalculateStyle();
   }
 
   @override
@@ -59,8 +60,16 @@ class _WebFElement extends MultiChildRenderObjectElement {
     htmlElement!.createdByFlutterWidget = true;
 
     dom.Element? parentElement = findClosestAncestorHTMLElement(this);
+
     if (parentElement != null) {
       parentElement.appendChild(htmlElement!);
+
+      if (parentElement is RouterLinkElement) {
+        // Migrate previous childNodes into RouterLinkElement.
+        parentElement.cachedChildNodes.forEach((node) {
+          htmlElement!.appendChild(node);
+        });
+      }
 
       if (widget.inlineStyle != null) {
         fullFillInlineStyle(widget.inlineStyle!);
@@ -68,6 +77,7 @@ class _WebFElement extends MultiChildRenderObjectElement {
 
       htmlElement!.ensureChildAttached();
     }
+
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
     }

@@ -1,10 +1,11 @@
 describe('percentage', () => {
-  it('works in nested flex layout', async () => {
+  it('works in nested flex layout', async (done) => {
     let log;
     let child;
     let flexitem;
     let flexbox;
     let container;
+    let img;
     container = createElement(
       'div',
       {
@@ -17,7 +18,7 @@ describe('percentage', () => {
         },
       },
       [
-        createElement(
+        img = createElement(
           'img',
           {
             src: 'assets/100x100-green.png',
@@ -72,6 +73,9 @@ describe('percentage', () => {
     );
     BODY.appendChild(container);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 });

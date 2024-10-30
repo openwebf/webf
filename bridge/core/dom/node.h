@@ -13,6 +13,7 @@
 #include "foundation/macros.h"
 #include "mutation_observer.h"
 #include "mutation_observer_registration.h"
+#include "plugin_api/node.h"
 #include "core/dom/node_rare_data.h"
 #include "qjs_union_dom_stringnode.h"
 #include "tree_scope.h"
@@ -317,6 +318,7 @@ class Node : public EventTarget {
   }
 
   void Trace(GCVisitor*) const override;
+  const NodePublicMethods* nodePublicMethods();
 
   NodeListsNodeData* NodeLists();
   void ClearNodeLists();

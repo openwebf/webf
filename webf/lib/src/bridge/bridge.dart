@@ -7,15 +7,24 @@ import 'dart:async';
 import 'dart:ffi';
 import 'package:webf/launcher.dart';
 
+import 'dynamic_library.dart';
 import 'binding.dart';
 import 'from_native.dart';
 import 'to_native.dart';
 import 'multiple_thread.dart';
 
-class DartContext {
+typedef NativeOnDartContextFinalized = Void Function(Pointer<Void> data);
+typedef DartOnDartContextFinalized = void Function(Pointer<Void> data);
+
+final _initDartDynamicLinking = WebFDynamicLibrary.ref
+    .lookup<NativeFunction<NativeOnDartContextFinalized>>('on_dart_context_finalized');
+
+class DartContext implements Finalizable {
+  static final _finalizer = NativeFinalizer(_initDartDynamicLinking);
+
   DartContext() : pointer = initDartIsolateContext(makeDartMethodsData()) {
     initDartDynamicLinking();
-    registerDartContextFinalizer(this);
+    _finalizer.attach(this, pointer);
   }
   final Pointer<Void> pointer;
 }
@@ -28,10 +37,10 @@ bool isJSRunningInDedicatedThread(double contextId) {
 
 /// Init bridge
 FutureOr<double> initBridge(WebFViewController view, WebFThread runningThread) async {
-  dartContext ??= DartContext();
-
   // Setup binding bridge.
   BindingBridge.setup();
+
+  dartContext ??= DartContext();
 
   double newContextId = runningThread.identity();
   await allocateNewPage(runningThread is FlutterUIThread, newContextId, runningThread.syncBufferSize());

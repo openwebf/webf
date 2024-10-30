@@ -126,6 +126,11 @@ mixin CSSSizingMixin on RenderStyle {
   CSSLengthValue? _maxHeight;
 
   @override
+  void addViewportSizeRelativeProperty() {
+    target.ownerView.window.watchViewportSizeChangeForElement(target);
+  }
+
+  @override
   CSSLengthValue get maxHeight {
     return _maxHeight ?? CSSLengthValue.none;
   }

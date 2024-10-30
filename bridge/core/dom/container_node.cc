@@ -788,6 +788,11 @@ void ContainerNode::Trace(GCVisitor* visitor) const {
   Node::Trace(visitor);
 }
 
+const ContainerNodePublicMethods* ContainerNode::containerNodePublicMethods() {
+  static ContainerNodePublicMethods container_node_public_methods;
+  return &container_node_public_methods;
+}
+
 void ContainerNode::SetRestyleFlag(DynamicRestyleFlags mask) {
   assert(IsElementNode() || IsShadowRoot());
   EnsureRareData().SetRestyleFlag(mask);
