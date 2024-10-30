@@ -99,7 +99,7 @@ double _dot(v1, v2) {
 final double _1deg = 180 / pi;
 final double _1rad = pi / 180;
 
-double? _rad2deg(rad) {
+double? rad2deg(rad) {
   // angleInDegree = angleInRadians * (180 / Math.PI)
   return rad * _1deg;
 }
@@ -579,7 +579,7 @@ class CSSMatrix {
     double m22 = row1y;
 
     // Convert into degrees because our rotation functions expect it.
-    angle = _rad2deg(angle)!;
+    angle = rad2deg(angle)!;
 
     return [translate, scale, angle, m11, m12, m21, m22];
   }
