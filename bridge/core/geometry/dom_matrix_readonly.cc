@@ -278,7 +278,18 @@ DOMMatrix* DOMMatrixReadonly::scale3d(double scale,
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
-// DOMMatrix* scaleNonUniform(ExceptionState& exception_state) const;
+DOMMatrix* DOMMatrixReadonly::scaleNonUniform(double scaleX, double scaleY, ExceptionState& exception_state) const {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(scaleX),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(scaleY)};
+  NativeValue value =
+      InvokeBindingMethod(binding_call_methods::kscaleNonUniform, sizeof(arguments) / sizeof(NativeValue), arguments,
+                          FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeBindingObject* native_binding_object =
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
+  if (native_binding_object == nullptr)
+    return nullptr;
+  return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
+}
 DOMMatrix* DOMMatrixReadonly::skewX(double sx, ExceptionState& exception_state) const {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(sx)};
   NativeValue value = InvokeBindingMethod(binding_call_methods::kskewX, sizeof(arguments) / sizeof(NativeValue),

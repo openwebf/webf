@@ -32,8 +32,7 @@ interface DOMMatrixReadonly {
     rotateFromVector(x:number, y:number): DOMMatrix;
     scale(scaleX: number, scaleY: number, scaleZ: number, originX: number, originY: number, originZ: number): DOMMatrix;
     scale3d(scale: number, originX: number, originY: number, originZ: number): DOMMatrix;
-    // TODO
-    // scaleNonUniform(): DOMMatrix;
+    scaleNonUniform(scaleX: number, scaleY: number): DOMMatrix;
     skewX(sx: number): DOMMatrix;
     skewY(sy: number): DOMMatrix;
     // toFloat32Array(): number[];

@@ -86,7 +86,7 @@ class DOMMatrixReadonly : public BindingObject {
                    double originX, double originY, double originZ,
                    ExceptionState& exception_state) const;
   DOMMatrix* scale3d(double scale, double originX, double originY, double originZ, ExceptionState& exception_state) const;
-  // DOMMatrix* scaleNonUniform(ExceptionState& exception_state) const;
+  DOMMatrix* scaleNonUniform(double scaleX, double scaleY, ExceptionState& exception_state) const;
   DOMMatrix* skewX(double sx, ExceptionState& exception_state) const;
   DOMMatrix* skewY(double sy, ExceptionState& exception_state) const;
   // toJSON(): DartImpl<JSON>;
