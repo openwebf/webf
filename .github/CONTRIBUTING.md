@@ -19,6 +19,9 @@ git config --global core.symlinks true
 git config --global core.autocrlf false
 ```
 
+-----
+
+Running the following commands to get the code:
 
 ```
 git clone git@github.com:openwebf/webf.git
