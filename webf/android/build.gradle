@@ -3,45 +3,40 @@ version '1.0'
 
 buildscript {
     repositories {
-        maven {
-            url 'https://maven.aliyun.com/repository/public/'
-        }
-        maven {
-            url 'https://maven.aliyun.com/repository/google/'
-        }
-        maven {
-            url 'https://maven.aliyun.com/repository/jcenter/'
-        }
+        google()
+        mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.0'
+        classpath("com.android.tools.build:gradle:7.3.0")
     }
 }
 
-rootProject.allprojects {
+
+allprojects {
     repositories {
-        maven {
-            url 'https://maven.aliyun.com/repository/public/'
-        }
-        maven {
-            url 'https://maven.aliyun.com/repository/google/'
-        }
-        maven {
-            url 'https://maven.aliyun.com/repository/jcenter/'
-        }
+        google()
+        mavenCentral()
     }
 }
 
 apply plugin: 'com.android.library'
 
+
 android {
-    compileSdkVersion 29
+    if (project.android.hasProperty("namespace")) {
+        namespace = "com.openwebf.webf"
+    }
+
+    compileSdk = 34
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
 
     defaultConfig {
-        minSdkVersion 18
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
+        minSdk = 21
         externalNativeBuild {
             cmake {
                 arguments "-DANDROID_STL=c++_shared", "-DIS_ANDROID=TRUE"
