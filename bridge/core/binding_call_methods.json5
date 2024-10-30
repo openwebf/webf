@@ -45,6 +45,7 @@
     "x",
     "y",
     "z",
+    "w",
     "screen",
     "target",
     "accessKey",

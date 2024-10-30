@@ -73,6 +73,7 @@ enum BindingMethodCallOperations {
 enum CreateBindingObjectType { 
   kCreateDOMMatrix = 0,
   kCreatePath2D = 1,
+  kCreateDOMPoint = 2,
 };
 
 struct BindingObjectPromiseContext : public DartReadable {

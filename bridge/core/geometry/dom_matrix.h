@@ -36,7 +36,7 @@ class DOMMatrix : public DOMMatrixReadonly {
 };
 template <>
 struct DowncastTraits<DOMMatrix> {
-  static bool AllowFrom(const DOMMatrixReadonly& matrix) { return matrix .IsDOMMatrix(); }
+  static bool AllowFrom(const DOMMatrixReadonly& matrix) { return matrix.IsDOMMatrix(); }
 };
 
 }  // namespace webf
