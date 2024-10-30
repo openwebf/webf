@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
@@ -9,19 +10,20 @@ import 'package:vector_math/vector_math_64.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/geometry.dart';
+import 'package:webf/src/css/matrix.dart';
+
 
 class DOMMatrixReadonly extends DynamicBindingObject {
-
   // Matrix4 Values are stored in column major order.
   Matrix4 _matrix4 = Matrix4.identity();
   Matrix4 get matrix => _matrix4;
   bool _is2D = true;
   bool get is2D => _is2D;
 
-  DOMMatrixReadonly.fromMatrix4(BindingContext context, Matrix4? matrix4) : super(context) {
+  DOMMatrixReadonly.fromMatrix4(BindingContext context, Matrix4? matrix4, bool flag2D) : super(context) {
     if(matrix4 != null) {
       _matrix4 = matrix4;
-      // TODO _is2D ?
+      _is2D = flag2D;
     } else {
       _matrix4 = Matrix4.zero();
       _is2D = false;
@@ -61,7 +63,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
     methods['multiply'] = BindingObjectMethodSync(call: (args) {
       BindingObject domMatrix = args[0];
       if (domMatrix is DOMMatrix) {
-        return multiply((domMatrix as DOMMatrix).matrix);
+        return multiply((domMatrix as DOMMatrix));
       }
     });
     methods['rotateAxisAngle'] = BindingObjectMethodSync(
@@ -260,62 +262,79 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   DOMMatrix flipX() {
     Matrix4 m = Matrix4.identity()..setEntry(0, 0, -1);
     return DOMMatrix.fromMatrix4(
-        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m);
+        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, _is2D);
   }
 
   DOMMatrix flipY() {
     Matrix4 m = Matrix4.identity()..setEntry(1, 1, -1);
     return DOMMatrix.fromMatrix4(
-        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m);
+        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, _is2D);
   }
 
   DOMMatrix inverse() {
     Matrix4 m = Matrix4.inverted(_matrix4);
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, _is2D);
   }
 
-  DOMMatrix multiply(Matrix4 matrix) {
-    Matrix4 m = _matrix4.multiplied(matrix);
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
+  DOMMatrix multiply(DOMMatrix domMatrix) {
+    Matrix4 m = _matrix4.multiplied(domMatrix.matrix);
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, domMatrix.is2D);
   }
 
   DOMMatrix rotateAxisAngle(double x, double y, double z, double angle) {
-    //TODO
-    Matrix4 m = _matrix4;
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
+    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage)..rotate(Vector3(x, y, z), angle);
+    bool flag2D = _is2D;
+    if (x != 0 || y != 0) {
+      flag2D = false;
+    }
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, flag2D);
   }
 
   DOMMatrix rotate(double x, double y, double z) {
     Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage)..rotate3(Vector3(x, y, z));
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
+    bool flag2D = _is2D;
+    if (x != 0 || y == 0) {
+      flag2D = false;
+    }
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, flag2D);
   }
 
   DOMMatrix rotateFromVector(double x, double y) {
-    //TODO
-    Matrix4 m = _matrix4;
+    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage);
+    double? angle = rad2deg(atan2(x, y));
+    if(angle != null) {
+      m.rotateZ(angle);
+    }
     return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
   }
 
   DOMMatrix scale(double sX, double sY, double sZ, double oriX, double oriY, double oriZ) {
-    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage).scaled(sX, sX, sZ)..translate(oriX, oriY, oriZ);
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
+    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage)
+      ..translate(oriX, oriY, oriZ)
+      ..scaled(sX, sX, sZ)
+      ..translate(-oriX, -oriY, -oriZ);
+    bool flag2D = _is2D;
+    if (sZ != 1 || oriZ != 0) {
+      flag2D = false;
+    }
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, flag2D);
   }
 
   DOMMatrix scale3d(double scale, double oriX, double oriY, double oriZ) {
-    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage).scaled(scale)..translate(oriX, oriY, oriZ);
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
+    return this.scale(scale, scale, scale, oriX, oriY, oriZ);
   }
 
   DOMMatrix skewX(double sx) {
     Matrix4 m = Matrix4.skewX(sx);
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m);
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, _is2D);
   }
 
   DOMMatrix skewY(double sy) {
     Matrix4 m = Matrix4.skewY(sy);
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m);
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, _is2D);
   }
 
+  @override
   String toString() {
     if (_is2D) {
       // a,b,c,d,e,f
@@ -327,6 +346,11 @@ class DOMMatrixReadonly extends DynamicBindingObject {
 
   DOMMatrix translate(double tx, double ty, double tz) {
     Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage)..translate(tx, ty, tz);
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m);
+    bool flag2D = _is2D;
+    if (tz != 0) {
+      flag2D = false;
+    }
+    return DOMMatrix.fromMatrix4(
+        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m);
   }
 }

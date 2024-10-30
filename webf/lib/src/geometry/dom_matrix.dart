@@ -12,6 +12,6 @@ class DOMMatrix extends DOMMatrixReadonly {
   DOMMatrix(BindingContext context, List<dynamic> domMatrixInit) : super(context, domMatrixInit) {
   }
 
-  DOMMatrix.fromMatrix4(BindingContext context, Matrix4? matrix4) : super.fromMatrix4(context, matrix4) {
+  DOMMatrix.fromMatrix4(BindingContext context, Matrix4? matrix4, bool flag2D) : super.fromMatrix4(context, matrix4, flag2D) {
   }
 }
