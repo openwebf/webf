@@ -55,7 +55,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
     }
   }
 
-    @override
+  @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
     methods['flipX'] = BindingObjectMethodSync(call: (_) => flipX());
     methods['flipY'] = BindingObjectMethodSync(call: (_) => flipY());
@@ -305,7 +305,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
     if(angle != null) {
       m.rotateZ(angle);
     }
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m);
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, _is2D);
   }
 
   DOMMatrix scale(double sX, double sY, double sZ, double oriX, double oriY, double oriZ) {
@@ -351,6 +351,6 @@ class DOMMatrixReadonly extends DynamicBindingObject {
       flag2D = false;
     }
     return DOMMatrix.fromMatrix4(
-        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m);
+        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, flag2D);
   }
 }
