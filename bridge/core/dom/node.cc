@@ -40,7 +40,6 @@
 #include "element.h"
 #include "empty_node_list.h"
 #include "node.h"
-#include "node_data.h"
 #include "node_traversal.h"
 #include "qjs_node.h"
 #include "text.h"

@@ -228,7 +228,7 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::ElementFromPoint
 }
 
 WebFValue<Element, HTMLElementPublicMethods> DocumentPublicMethods::DocumentElement(webf::Document* document) {
-  auto* document_element = document->documentElement();
+  auto* document_element = DynamicTo<HTMLElement>(document->documentElement());
   WebFValueStatus* status_block = document_element->KeepAlive();
   return WebFValue<Element, HTMLElementPublicMethods>{document_element, document_element->htmlElementPublicMethods(),
                                                       status_block};

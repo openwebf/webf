@@ -2,6 +2,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include <atomic>
+#include <memory>
 #include "shared_ui_command.h"
 #include "core/executing_context.h"
 #include "foundation/logging.h"
@@ -45,7 +47,7 @@ void* SharedUICommand::data() {
 
 uint32_t SharedUICommand::kindFlag() {
   // simply spin wait for the swapBuffers to finish.
-  while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {
+  while (is_blocking_writing_.load(std::memory_order_acquire)) {
   }
 
   return active_buffer->kindFlag();
@@ -59,7 +61,7 @@ int64_t SharedUICommand::size() {
 // third called by dart to clear commands.
 void SharedUICommand::clear() {
   // simply spin wait for the swapBuffers to finish.
-  while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {
+  while (is_blocking_writing_.load(std::memory_order_acquire)) {
   }
   active_buffer->clear();
 }

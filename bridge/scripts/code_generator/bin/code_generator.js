@@ -319,10 +319,10 @@ function genPluginAPICodeFromTypeDefine() {
     let headerFilePath = path.join(b.dist, '../include/plugin_api', b.filename.replace('plugin_api_', ''));
     let genFilePath = path.join(b.dist, b.filename);
 
-    wirteFileIfChanged(headerFilePath + '.h', result.header);
+    writeFileIfChanged(headerFilePath + '.h', result.header);
 
     if (result.source) {
-      wirteFileIfChanged(genFilePath + '.cc', result.source);
+      writeFileIfChanged(genFilePath + '.cc', result.source);
     }
   }
 
@@ -352,7 +352,7 @@ function genRustCodeFromTypeDefine() {
 
     let genFilePath = path.join(b.dist, '../rusty_webf_sys/src', b.filename);
 
-    wirteFileIfChanged(genFilePath + '.rs', result);
+    writeFileIfChanged(genFilePath + '.rs', result);
   }
 
 }

@@ -11,6 +11,7 @@
 #include <arm_neon.h>
 #endif
 
+#include "core/base/compiler_specific.h"
 #include "foundation/string_view.h"
 
 namespace webf {
@@ -365,7 +366,7 @@ ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin,
 
 #endif
 
-inline static size_t FindLengthOfDeclarationList(std::string_view str) {
+inline ALWAYS_INLINE size_t FindLengthOfDeclarationList(std::string_view str) {
   return FindLengthOfDeclarationList(reinterpret_cast<const uint8_t*>(str.data()),
                                      reinterpret_cast<const uint8_t*>(str.data() + str.length()));
 }
