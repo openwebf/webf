@@ -102,7 +102,7 @@ class DOMMatrixReadonly : public BindingObject {
   explicit DOMMatrixReadonly(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
 private:
-  double getMatrixProperty(const AtomicString& prop) const;
+  [[nodiscard]] double getMatrixProperty(const AtomicString& prop) const;
   void setMatrixProperty(const AtomicString& prop, double v, ExceptionState& exception_state);
 
 };

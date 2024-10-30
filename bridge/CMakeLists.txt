@@ -414,6 +414,8 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/canvas/path_2d.cc
     core/geometry/dom_matrix.cc
     core/geometry/dom_matrix_readonly.cc
+    core/geometry/dom_point.cc
+    core/geometry/dom_point_readonly.cc
     core/html/forms/html_button_element.cc
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
@@ -549,6 +551,8 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_path_2d.cc
     out/qjs_dom_matrix.cc
     out/qjs_dom_matrix_readonly.cc
+    out/qjs_dom_point.cc
+    out/qjs_dom_point_readonly.cc
     out/qjs_union_dom_string_sequencedouble.cc
     out/qjs_union_double_sequencedouble.cc
     out/qjs_uniondom_matrix_sequencedouble.cc
