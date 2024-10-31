@@ -92,7 +92,7 @@ void StyleElement::ClearSheet(Element& owner_element) {
   sheet_.Release()->ClearOwnerNode();
 }
 
-StyleElement::ProcessingResult StyleElement:: CreateSheet(Element& element, const std::string& text) {
+StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const std::string& text) {
   assert(element.isConnected());
   assert(IsSameObject(element));
   Document& document = element.GetDocument();
