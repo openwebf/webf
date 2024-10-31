@@ -183,13 +183,13 @@ JSValue js_atomics_op(JSContext *ctx,
 #else
 #define OP(op_name, func_name)                          \
     case ATOMICS_OP_ ## op_name | (0 << 3):             \
-       a = func_name((_Atomic(uint8_t) *)ptr, v);       \
+       a = (uint32_t)func_name((_Atomic(uint8_t) *)ptr, v);       \
        break;                                           \
     case ATOMICS_OP_ ## op_name | (1 << 3):             \
-        a = func_name((_Atomic(uint16_t) *)ptr, v);     \
+        a = (uint32_t)func_name((_Atomic(uint16_t) *)ptr, v);     \
         break;                                          \
     case ATOMICS_OP_ ## op_name | (2 << 3):             \
-        a = func_name((_Atomic(uint32_t) *)ptr, v);     \
+        a = (uint32_t)func_name((_Atomic(uint32_t) *)ptr, v);     \
         break;
 #endif
     OP(ADD, atomic_fetch_add)
@@ -197,16 +197,7 @@ JSValue js_atomics_op(JSContext *ctx,
     OP(OR, atomic_fetch_or)
     OP(SUB, atomic_fetch_sub)
     OP(XOR, atomic_fetch_xor)
-    // OP(EXCHANGE, atomic_exchange)
-    case ATOMICS_OP_EXCHANGE | (0 << 3):
-      a = (uint32_t)_InterlockedExchangePointer((PVOID volatile*)(intptr_t*)ptr, (PVOID)v);
-    break;
-    case ATOMICS_OP_EXCHANGE | (1 << 3):
-      a = (uint32_t)_InterlockedExchangePointer((PVOID volatile*)(intptr_t*)ptr, (PVOID)v);
-    break;
-    case ATOMICS_OP_EXCHANGE | (2 << 3):
-      a = (uint32_t)_InterlockedExchangePointer((PVOID volatile*)(intptr_t*)ptr, (PVOID)v);
-    break;
+    OP(EXCHANGE, atomic_exchange)
 #undef OP
 
     case ATOMICS_OP_LOAD | (0 << 3):
