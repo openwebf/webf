@@ -7,7 +7,7 @@
 
 namespace webf {
 
-void StringBuilder::CreateBuffer8(unsigned int added_size) {
+void StringBuilder::CreateBuffer8(size_t added_size) {
   DCHECK(!HasBuffer());
   has_buffer_ = true;
   // createBuffer is called right before appending addedSize more bytes. We

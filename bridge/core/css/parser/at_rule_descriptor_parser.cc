@@ -233,6 +233,7 @@ std::shared_ptr<const CSSValue> ConsumeDescriptor(StyleRule::RuleType rule_type,
     case StyleRule::kStartingStyle:
     case StyleRule::kFunction:
     case StyleRule::kPositionTry:
+    default:
       // TODO(andruud): Handle other descriptor types here.
       NOTREACHED_IN_MIGRATION();
       return nullptr;

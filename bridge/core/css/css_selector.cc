@@ -69,12 +69,12 @@ unsigned MaximumSpecificity(const CSSSelector* first_selector) {
   return specificity;
 }
 
-struct SameSizeAsCSSSelector {
-  unsigned bitfields;
-  void* pointers[3];
-};
-
-static_assert(sizeof(CSSSelector) == sizeof(SameSizeAsCSSSelector));
+// struct SameSizeAsCSSSelector {
+//   uint32_t bitfields;
+//   void* pointers[3];
+// };
+//
+// static_assert(sizeof(CSSSelector) == sizeof(SameSizeAsCSSSelector));
 
 CSSSelector::CSSSelector(MatchType match_type,
                          const QualifiedName& attribute,

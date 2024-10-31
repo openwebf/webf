@@ -53,6 +53,8 @@
 
 #include <WinSock2.h>
 
+struct timezone;
+
 // From: https://stackoverflow.com/a/26085827
 int gettimeofday(struct timeval * tp, struct timezone * tzp);
 

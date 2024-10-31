@@ -7,6 +7,7 @@
  */
 
 #include "string_util.h"
+#include <algorithm>
 #include <string_view>
 #include "foundation/ascii_types.h"
 

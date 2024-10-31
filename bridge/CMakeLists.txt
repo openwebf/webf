@@ -3,27 +3,41 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 12)
 project(WebF)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET 12)
-# MSBuild are slower than Clang/GCC to support new CXX standards.
-if(MSVC)
+
+# We using Clang for all platforms, including Windows.
+
+if(WIN32)
   set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+  set(BUILD_SHARED_LIBS TRUE)
 else()
   set(CMAKE_CXX_STANDARD 17)
 endif()
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(MSVC)
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-  set(BUILD_SHARED_LIBS TRUE)
+if(WIN32)
+  add_compile_options(
+    -Wno-microsoft-enum-forward-reference
+    -Wno-macro-redefined
+    -Wno-ignored-pragmas
+    -Wno-implicit-const-int-float-conversion
+    -Wno-deprecated-declarations
+    -Wno-int-to-void-pointer-cast
+    -Wno-void-pointer-to-int-cast
+    -Wno-incompatible-pointer-types
+    -Wno-microsoft-cast
+  )
 endif()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
 endif()
 
 set(WEBF_JS_ENGINE $ENV{WEBF_JS_ENGINE})
 if(NOT WEBF_JS_ENGINE)
-    set(WEBF_JS_ENGINE "quickjs")
+  set(WEBF_JS_ENGINE "quickjs")
 endif()
 
 find_package(Threads REQUIRED)
@@ -32,31 +46,29 @@ if(MSVC)
   add_compile_options(/MP)
 endif()
 
-if (${ENABLE_PROFILE})
+if(${ENABLE_PROFILE})
   add_definitions(-DENABLE_PROFILE=1)
-else ()
+else()
   add_definitions(-DENABLE_PROFILE=0)
-endif ()
+endif()
 
-if (${ENABLE_LOG})
+if(${ENABLE_LOG})
   add_definitions(-DENABLE_LOG=1)
 else()
   add_definitions(-DENABLE_LOG=0)
 endif()
 
-if(NOT MSVC)
-  if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
-    include(CheckIPOSupported)
-    check_ipo_supported(RESULT supported OUTPUT error)
-    if( supported )
-      set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-      add_compile_options(-flto)
-    endif()
+if(${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+  include(CheckIPOSupported)
+  check_ipo_supported(RESULT supported OUTPUT error)
+  if(supported)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    add_compile_options(-flto)
   endif()
 endif()
 
 list(APPEND WEBF_PUBLIC_HEADERS
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_bridge.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_bridge.h
 )
 
 set(QUICKJS_PUBLIC_HEADERS
@@ -71,19 +83,19 @@ set(QUICKJS_PUBLIC_HEADERS
   third_party/quickjs/quickjs-opcode.h
 )
 
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   add_compile_options(-fPIC)
 endif()
 
-if (NOT MSVC)
-  if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if(NOT MSVC)
+  if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     # Avoid quickjs stackoverflow.
-#    add_compile_options(-O1)
+    #    add_compile_options(-O1)
   endif()
 endif()
 
-if (DEFINED PLATFORM)
-  if (${PLATFORM} STREQUAL "OS")
+if(DEFINED PLATFORM)
+  if(${PLATFORM} STREQUAL "OS")
     add_compile_options(-fno-aligned-allocation)
   endif()
 endif()
@@ -112,7 +124,7 @@ list(APPEND BRIDGE_SOURCE
   multiple_threading/dispatcher.cc
   multiple_threading/looper.cc
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
-  )
+)
 
 list(APPEND GUMBO_PARSER
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/attribute.c
@@ -127,7 +139,7 @@ list(APPEND GUMBO_PARSER
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/utf8.c
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/util.c
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/vector.c
-  )
+)
 
 list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}/foundation
@@ -139,7 +151,7 @@ list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart
   ${CMAKE_CURRENT_LIST_DIR}/third_party/double_conversion
   ${ADDITIONAL_INCLUDE_DIRS}
-  )
+)
 
 add_library(double_conversion STATIC
   third_party/double_conversion/double-conversion/bignum.cc
@@ -153,7 +165,7 @@ add_library(double_conversion STATIC
 )
 list(APPEND BRIDGE_LINK_LIBS double_conversion)
 
-if (${WEBF_JS_ENGINE} MATCHES "quickjs")
+if(${WEBF_JS_ENGINE} MATCHES "quickjs")
   add_compile_options(-DWEBF_QUICK_JS_ENGINE=1)
 
   execute_process(
@@ -164,10 +176,6 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   add_library(modb STATIC
     third_party/modp_b64/modp_b64.cc
   )
-
-  if (NOT MSVC)
-    list(APPEND QUICK_JS_SOURCE third_party/quickjs/src/libbf.c)
-  endif()
 
   list(APPEND QUICK_JS_SOURCE
     # third_party/quickjs/src/libbf.c
@@ -213,9 +221,9 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/builtins/js-typed-array.c
   )
 
-  if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+  if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
     add_definitions(-DDDEBUG)
-  endif ()
+  endif()
 
   if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
@@ -224,7 +232,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   endif()
 
   # PThread compact
-  if(MSVC)
+  if(WIN32)
     # Using `add_subdirectory` will failed at cmake install starge due to unknown issues:
     # https://github.com/flutter/flutter/issues/95530
     set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32")
@@ -257,7 +265,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   endif()
 
   set(MI_OVERRIDE OFF)
-  if (NOT MSVC AND NOT DEFINED USE_SYSTEM_MALLOC)
+  if(NOT WIN32 AND NOT DEFINED USE_SYSTEM_MALLOC)
     add_compile_definitions(ENABLE_MI_MALLOC=1)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc/include)
@@ -266,7 +274,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
 
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
 
-  if (MSVC)
+  if(WIN32)
     target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32)
     target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
   endif()
@@ -363,7 +371,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/style_sheet_contents.cc
     core/css/css_style_sheet.cc
     core/css/style_rule_import.cc
-#    core/css/style_recalc_root.cc
+    #    core/css/style_recalc_root.cc
     core/css/style_sheet.cc
     core/css/parser/css_parser.cc
     core/css/parser/css_parser_context.cc
@@ -682,7 +690,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/fonts/font.cc
     core/platform/fonts/font_description.cc
 
-    )
+  )
 
   # Gen sources.
   list(APPEND BRIDGE_SOURCE
@@ -876,17 +884,15 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/plugin_api_transition_event.cc
     out/plugin_api_ui_event.cc
     out/plugin_api_custom_event.cc
-    )
+  )
 
 
-  if (NOT MSVC)
   # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2
   # https://stackoverflow.com/questions/14735010/how-do-you-get-gccs-builtin-frame-address-to-work-with-o2
   add_compile_options(-fno-optimize-sibling-calls -fno-omit-frame-pointer)
-  endif()
   target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"})
 
-endif ()
+endif()
 
 list(APPEND PUBLIC_HEADER
   include/webf_bridge.h
@@ -894,24 +900,20 @@ list(APPEND PUBLIC_HEADER
 
 add_library(webf SHARED ${BRIDGE_SOURCE})
 
-if(MSVC)
-  target_compile_options(webf PRIVATE /JMC)
-endif()
-
 target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
 
 add_library(gumbo_parse_static STATIC ${GUMBO_PARSER})
 list(APPEND BRIDGE_LINK_LIBS gumbo_parse_static)
 
-if (ENABLE_ASAN)
+if(ENABLE_ASAN)
   target_compile_options(webf PRIVATE -fsanitize=address -fno-omit-frame-pointer)
   target_link_options(webf PRIVATE -fsanitize=address -fno-omit-frame-pointer)
-endif ()
+endif()
 
-if (${IS_ANDROID})
+if(${IS_ANDROID})
   find_library(log-lib log)
 
-  if (${ANDROID_ABI} MATCHES "armeabi-v7a" OR ${ANDROID_ABI} MATCHES "x86")
+  if(${ANDROID_ABI} MATCHES "armeabi-v7a" OR ${ANDROID_ABI} MATCHES "x86")
     add_definitions(-DANDROID_32_BIT=1)
   endif()
 
@@ -929,15 +931,15 @@ target_include_directories(webf PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
 target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
 
-if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
-  if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+if($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
+  if(${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
     target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
     target_compile_options(quickjs PRIVATE -fno-exceptions -fno-rtti -fdata-sections -ffunction-sections)
-  else ()
+  else()
     ### remove dynamic_cast and exceptions
     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
-  endif ()
-endif ()
+  endif()
+endif()
 
 execute_process(
   COMMAND node get_app_ver.js
@@ -954,36 +956,36 @@ execute_process(
 string(REPLACE \n "" GIT_HEAD ${GIT_HEAD}) # Remove last \n
 add_definitions(-DAPP_REV="${GIT_HEAD}") # Read from git head sha1
 
-if (${ENABLE_TEST})
+if(${ENABLE_TEST})
   add_compile_definitions(IS_TEST=true)
   include(./test/test.cmake)
-endif ()
+endif()
 
-if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
+if(DEFINED ENV{LIBRARY_OUTPUT_DIR})
   set_target_properties(webf
     PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
     RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
   )
-  if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
+  if($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     set_target_properties(quickjs
       PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-        RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+      LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+      RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
     )
-    if(MSVC)
+    if(WIN32)
       set_target_properties(pthreadVC3
         PROPERTIES
-          LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-          RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+        LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
       )
     endif()
-  endif ()
-elseif (IS_ANDROID)
+  endif()
+elseif(IS_ANDROID)
   # android do nothing
-endif ()
+endif()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO")
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
 
@@ -995,7 +997,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     MACOSX_FRAMEWORK_BUNDLE_VERSION 1.0
     MACOSX_FRAMEWORK_SHORT_VERSION_STRING 1.0
     PUBLIC_HEADER ${WEBF_PUBLIC_HEADERS}
-    )
+  )
 
   # If quickjs is static, there will be no quickjs.framework any more.
   if(NOT DEFINED STATIC_QUICKJS)
@@ -1007,6 +1009,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
       MACOSX_FRAMEWORK_BUNDLE_VERSION 1.0
       MACOSX_FRAMEWORK_SHORT_VERSION_STRING 1.0
       PUBLIC_HEADER ${QUICKJS_PUBLIC_HEADERS}
-      )
+    )
   endif()
-endif ()
+endif()

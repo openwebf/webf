@@ -1720,7 +1720,7 @@ bool CSSSelectorParser::ConsumeSimpleSelector(CSSParserTokenStream& stream) {
   return true;
 }
 
-const std::string& CSSSelectorParser::DefaultNamespace() const {
+const std::string CSSSelectorParser::DefaultNamespace() const {
   if (!style_sheet_ || ignore_default_namespace_) {
     return "*";
   }

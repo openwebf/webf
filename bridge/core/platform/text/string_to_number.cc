@@ -10,7 +10,6 @@
 #include <cstddef>
 #include <cassert>
 #include <type_traits>
-#include <unicode/uchar.h>
 #include "foundation/ascii_types.h"
 #include "foundation/string_builder.h"
 

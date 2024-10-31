@@ -6,6 +6,7 @@
 #ifndef WEBF_FOUNDATION_STRING_BUILDER_H_
 #define WEBF_FOUNDATION_STRING_BUILDER_H_
 
+#include <cstdarg>
 #include <codecvt>
 #include <string>
 #include <sstream>
@@ -103,7 +104,6 @@ class StringBuilder {
       return;
     }
 
-
     EnsureBuffer8(view.length());
     string_.append(view);
     length_ += view.length();
@@ -166,7 +166,7 @@ class StringBuilder {
     return string_.data();
   }
 
-  operator StringView() const { return StringView(Characters8(), length_); }
+  operator StringView() const { return StringView(Characters8(), static_cast<unsigned>(length_)); }
 
   std::string ReleaseString() { return string_; }
 
@@ -177,20 +177,20 @@ class StringBuilder {
   void Reserve(unsigned new_size);
 
  private:
-  static const unsigned kInlineBufferSize = 16;
-  static unsigned InitialBufferSize() { return kInlineBufferSize; }
+  static const size_t kInlineBufferSize = 16;
+  static size_t InitialBufferSize() { return kInlineBufferSize; }
 
-  void EnsureBuffer8(unsigned added_size) {
+  void EnsureBuffer8(size_t added_size) {
     if (!HasBuffer())
       CreateBuffer8(added_size);
   }
 
   bool HasBuffer() const { return has_buffer_; }
-  void CreateBuffer8(unsigned added_size);
+  void CreateBuffer8(size_t added_size);
 
   friend bool operator==(const StringBuilder& a, const std::string& b);
 
-  unsigned length_ = 0;
+  size_t length_ = 0;
   std::string string_;
   bool has_buffer_ = false;
 };

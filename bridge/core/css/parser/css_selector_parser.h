@@ -165,7 +165,7 @@ class CSSSelectorParser {
   // This doesn't include element names, since they're handled specially
   bool ConsumeSimpleSelector(CSSParserTokenStream&);
 
-  const std::string& DefaultNamespace() const;
+  const std::string DefaultNamespace() const;
   std::optional<std::string> DetermineNamespace(const std::optional<std::string>& prefix);
 
   // Returns an empty range on error.
@@ -284,7 +284,7 @@ class CSSSelectorParser {
 
     tcb::span<CSSSelector> AddedElements() {
       DCHECK_GE(vector_.size(), initial_size_);
-      return {(vector_.begin() + initial_size_).base(), vector_.end().base()};
+      return {(vector_.data() + initial_size_), vector_.data() + vector_.size()};
     }
 
     // Make sure the added elements are left on the vector after

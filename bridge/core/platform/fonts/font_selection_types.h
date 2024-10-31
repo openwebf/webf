@@ -26,6 +26,7 @@
 #ifndef WEBF_CORE_PLATFORM_FONTS_FONT_SELECTION_TYPES_H_
 #define WEBF_CORE_PLATFORM_FONTS_FONT_SELECTION_TYPES_H_
 
+#include <algorithm>
 #include "foundation/macros.h"
 #include "core/platform/math_extras.h"
 

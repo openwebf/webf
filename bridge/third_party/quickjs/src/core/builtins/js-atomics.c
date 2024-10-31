@@ -197,7 +197,16 @@ JSValue js_atomics_op(JSContext *ctx,
     OP(OR, atomic_fetch_or)
     OP(SUB, atomic_fetch_sub)
     OP(XOR, atomic_fetch_xor)
-    OP(EXCHANGE, atomic_exchange)
+    // OP(EXCHANGE, atomic_exchange)
+    case ATOMICS_OP_EXCHANGE | (0 << 3):
+      a = (uint32_t)_InterlockedExchangePointer((PVOID volatile*)(intptr_t*)ptr, (PVOID)v);
+    break;
+    case ATOMICS_OP_EXCHANGE | (1 << 3):
+      a = (uint32_t)_InterlockedExchangePointer((PVOID volatile*)(intptr_t*)ptr, (PVOID)v);
+    break;
+    case ATOMICS_OP_EXCHANGE | (2 << 3):
+      a = (uint32_t)_InterlockedExchangePointer((PVOID volatile*)(intptr_t*)ptr, (PVOID)v);
+    break;
 #undef OP
 
     case ATOMICS_OP_LOAD | (0 << 3):

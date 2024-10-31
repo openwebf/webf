@@ -332,7 +332,7 @@ void StyleSheetContents::Trace(webf::GCVisitor* gc_visitor) const {
   }
 }
 
-const std::optional<std::string>& StyleSheetContents::NamespaceURIFromPrefix(const std::string& prefix) const {
+const std::optional<std::string> StyleSheetContents::NamespaceURIFromPrefix(const std::string& prefix) const {
   auto it = namespaces_.find(prefix);
   return it != namespaces_.end() ? std::optional<std::string>(it->second) : std::nullopt;
 }

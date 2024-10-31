@@ -24,6 +24,7 @@
 #ifndef WEBF_QUALIFIED_NAME_H
 #define WEBF_QUALIFIED_NAME_H
 
+#include <optional>
 #include <built_in_string.h>
 #include "bindings/qjs/atomic_string.h"
 #include "core/base/hash/hash.h"
