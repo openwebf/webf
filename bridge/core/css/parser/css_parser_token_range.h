@@ -31,7 +31,7 @@ class CSSParserTokenRange {
 
  public:
   CSSParserTokenRange(const std::vector<CSSParserToken>& vector)
-      : first_(&*vector.begin()), last_(&*vector.end()) {}
+      : first_(vector.data()), last_(vector.data() + vector.size()) {}
   explicit CSSParserTokenRange(tcb::span<CSSParserToken> tokens)
       : first_(tokens.data()), last_(tokens.data() + tokens.size()) {}
 

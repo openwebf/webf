@@ -1765,7 +1765,9 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeCompoundSelector(CSSParserToken
   std::optional<std::string> namespace_prefix;
   std::optional<std::string> element_name;
   const bool has_q_name = ConsumeName(stream, element_name, namespace_prefix);
-  std::transform(element_name->begin(), element_name->end(), element_name->begin(), tolower);
+  if (element_name.has_value()) {
+    std::transform(element_name->begin(), element_name->end(), element_name->begin(), tolower);
+  }
 
   // A tag name is not valid following a pseudo-element. This can happen for
   // e.g. :::part(x):is(div).

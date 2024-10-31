@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <bit>
 #include "element_rare_data_vector.h"
 #include "core/css/inline_css_style_declaration.h"
 #include "core/dom/element.h"
@@ -50,7 +51,12 @@ void ElementRareDataVector::SetField(FieldId field_id,
   } else if (field) {
     fields_bitfield_ =
         fields_bitfield_ | (static_cast<BitfieldType>(1) << field_id_int);
-    fields_.insert(fields_.begin() + GetFieldIndex(field_id), field);
+    unsigned offset = GetFieldIndex(field_id);
+    if (offset > fields_.size()) {
+      fields_.resize(field_id_int + 1);
+    }
+
+    fields_[offset] =  field;
   }
 }
 

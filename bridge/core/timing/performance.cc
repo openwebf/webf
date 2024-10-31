@@ -276,9 +276,9 @@ void Performance::measure(const AtomicString& measure_name,
     int64_t start_time = std::chrono::duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
     auto* measure = PerformanceMeasure::Create(GetExecutingContext(), measure_name, start_time, start_time + duration,
                                                ScriptValue::Empty(ctx()), exception_state);
-    entries_.emplace_back(measure);
     start_it = ++start_entry;
     end_it = ++end_entry;
+    entries_.emplace_back(measure);
   }
 }
 

@@ -4,26 +4,61 @@
  */
 
 #include "webf_bridge_test.h"
-#include <execinfo.h>
 #include <signal.h>
-#include <unistd.h>
 #include <atomic>
 #include "bindings/qjs/native_string_utils.h"
 #include "logging.h"
 #include "webf_test_context.h"
 
+#ifdef __linux__
+    #include <execinfo.h>
+    #include <signal.h>
+    #include <unistd.h>
+#elif _WIN32
+    #include <windows.h>
+    #include <dbghelp.h>
+#pragma comment(lib, "dbghelp.lib") // Link with dbghelp library on Windows
+#endif
+
 std::unordered_map<int, webf::WebFTestContext*> testContextPool = std::unordered_map<int, webf::WebFTestContext*>();
+
+void printStackTrace() {
+#ifdef __linux__
+  void *array[10];
+  size_t size = backtrace(array, 10);
+  char **strings = backtrace_symbols(array, size);
+
+  std::cout << "Stack trace:" << std::endl;
+  for (size_t i = 0; i < size; i++) {
+    std::cout << strings[i] << std::endl;
+  }
+
+  free(strings);
+#elif _WIN32
+  void *stack[62];
+  HANDLE process = GetCurrentProcess();
+  SymInitialize(process, NULL, TRUE);
+  WORD frames = CaptureStackBackTrace(0, 62, stack, NULL);
+  SYMBOL_INFO *symbol = (SYMBOL_INFO *)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
+  symbol->MaxNameLen = 255;
+  symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+
+  std::cout << "Stack trace:" << std::endl;
+  for (WORD i = 0; i < frames; i++) {
+    SymFromAddr(process, (DWORD64)(stack[i]), 0, symbol);
+    std::cout << i << ": " << symbol->Name << " - 0x" << symbol->Address << std::endl;
+  }
+
+  free(symbol);
+  SymCleanup(process);
+#endif
+}
 
 void handler(int sig) {
   void* array[10];
   size_t size;
 
-  // get void*'s for all entries on the stack
-  size = backtrace(array, 10);
-
-  // print out all the frames to stderr
-  fprintf(stderr, "Error: signal %d:\n", sig);
-  backtrace_symbols_fd(array, size, STDERR_FILENO);
+  printStackTrace();
   exit(1);
 }
 

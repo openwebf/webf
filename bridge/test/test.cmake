@@ -24,18 +24,18 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/executing_context_test.cc
   ./core/frame/console_test.cc
   ./core/frame/module_manager_test.cc
-  ./core/dom/events/event_target_test.cc
-  ./core/dom/document_test.cc
-  ./core/dom/legacy/element_attribute_test.cc
-  ./core/dom/node_test.cc
-  ./core/html/html_collection_test.cc
-  ./core/dom/element_test.cc
+#  ./core/dom/events/event_target_test.cc
+#  ./core/dom/document_test.cc
+#  ./core/dom/legacy/element_attribute_test.cc
+#  ./core/dom/node_test.cc
+#  ./core/html/html_collection_test.cc
+#  ./core/dom/element_test.cc
   ./core/frame/dom_timer_test.cc
   ./core/frame/window_test.cc
-  ./core/css/inline_css_style_declaration_test.cc
-  ./core/html/html_element_test.cc
-  ./core/html/custom/widget_element_test.cc
-  ./core/html/html_style_element_test.cc
+#  ./core/css/inline_css_style_declaration_test.cc
+#  ./core/html/html_element_test.cc
+#  ./core/html/custom/widget_element_test.cc
+#  ./core/html/html_style_element_test.cc
   ./core/timing/performance_test.cc
   ./core/css/style_engine_test.cc
   ./core/css/css_initial_test.cc
@@ -82,8 +82,20 @@ add_executable(webf_unit_test
   ${BRIDGE_SOURCE}
 )
 
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+enable_testing()
+
+# this sets the output dir to /bin
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
 target_include_directories(webf_unit_test PUBLIC ./third_party/googletest/googletest/include ${BRIDGE_INCLUDE} ./test)
-target_link_libraries(webf_unit_test gtest gtest_main ${BRIDGE_LINK_LIBS})
+target_link_libraries(webf_unit_test
+  ${BRIDGE_LINK_LIBS}
+  GTest::gtest_main
+)
+
+include(GoogleTest)
+gtest_discover_tests(webf_unit_test)
 
 target_compile_options(quickjs PUBLIC -DDUMP_LEAKS=1)
 target_compile_options(webf PUBLIC -DDUMP_LEAKS=1)

@@ -28,6 +28,7 @@ if(WIN32)
     -Wno-void-pointer-to-int-cast
     -Wno-incompatible-pointer-types
     -Wno-microsoft-cast
+    -Wno-duplicate-decl-specifier
   )
 endif()
 
