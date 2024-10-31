@@ -149,7 +149,7 @@ CSSVariableData::CSSVariableData(PassKey,
       has_root_font_units_(has_root_font_units),
       has_line_height_units_(has_line_height_units),
       unused_(0) {
-  std::copy(original_text.begin(), original_text.end(), reinterpret_cast<char*>(this + 1));
+  std::ranges::copy(original_text, reinterpret_cast<char*>(this + 1));
 }
 
 }  // namespace webf

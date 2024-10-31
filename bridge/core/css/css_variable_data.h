@@ -10,6 +10,8 @@
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_tokenized_value.h"
 
+#include <core/base/memory/shared_ptr.h>
+
 namespace webf {
 
 enum class SecureContextMode;
@@ -40,40 +42,36 @@ class CSSVariableData {
   // ExtractFeatures()) or got them from another CSSVariableData instance during
   // substitution.
   static std::shared_ptr<CSSVariableData> Create(std::string_view original_text,
-                                 bool is_animation_tainted,
-                                 bool needs_variable_resolution,
-                                 bool has_font_units,
-                                 bool has_root_font_units,
-                                 bool has_line_height_units) {
+                                                 bool is_animation_tainted,
+                                                 bool needs_variable_resolution,
+                                                 bool has_font_units,
+                                                 bool has_root_font_units,
+                                                 bool has_line_height_units) {
     if (original_text.length() > kMaxVariableBytes) {
       // This should have been blocked off during variable substitution.
       NOTREACHED_IN_MIGRATION();
       return nullptr;
     }
-
-    return std::make_shared<CSSVariableData>(
-        PassKey(), original_text, is_animation_tainted,
-        needs_variable_resolution, has_font_units, has_root_font_units,
-        has_line_height_units);
+    return MakeSharedPtrWithAdditionalBytes<CSSVariableData>(
+        original_text.length(), PassKey(), original_text, is_animation_tainted, needs_variable_resolution,
+        has_font_units, has_root_font_units, has_line_height_units);
   }
 
   // Second-fastest; scans through all the tokens to determine the has_* data.
   // (The tokens are not used apart from that; only the original string is
   // stored.) The tokens must correspond to the given string.
   static std::shared_ptr<CSSVariableData> Create(CSSTokenizedValue value,
-                                 bool is_animation_tainted,
-                                 bool needs_variable_resolution);
+                                                 bool is_animation_tainted,
+                                                 bool needs_variable_resolution);
 
   // Like the previous, but also needs to tokenize the string.
   static std::shared_ptr<CSSVariableData> Create(const std::string& original_text,
-                                 bool is_animation_tainted,
-                                 bool needs_variable_resolution);
+                                                 bool is_animation_tainted,
+                                                 bool needs_variable_resolution);
 
   void Trace(GCVisitor*) const {}
 
-  std::string_view OriginalText() const {
-    return std::string_view(reinterpret_cast<const char*>(this + 1), length_);
-  }
+  std::string_view OriginalText() const { return std::string_view(reinterpret_cast<const char*>(this + 1), length_); }
 
   std::string Serialize() const;
 
@@ -96,8 +94,8 @@ class CSSVariableData {
   bool HasLineHeightUnits() const { return has_line_height_units_; }
 
   // TODO(xiezuobing): implement for animation.
-//  const CSSValue* ParseForSyntax(const CSSSyntaxDefinition&,
-//                                 SecureContextMode) const;
+  //  const CSSValue* ParseForSyntax(const CSSSyntaxDefinition&,
+  //                                 SecureContextMode) const;
 
   CSSVariableData(const CSSVariableData&) = delete;
   CSSVariableData& operator=(const CSSVariableData&) = delete;
@@ -119,7 +117,6 @@ class CSSVariableData {
   static const size_t kMaxVariableBytes = 2097152;
 
  private:
-
   // We'd like to use bool for the booleans, but this causes the struct to
   // balloon in size on Windows:
   // https://randomascii.wordpress.com/2010/06/06/bit-field-packing-with-visual-c/
@@ -139,10 +136,8 @@ class CSSVariableData {
 };
 
 #if !DCHECK_IS_ON()
-static_assert(sizeof(CSSVariableData) <= 4,
-              "CSSVariableData must not grow without thinking");
+static_assert(sizeof(CSSVariableData) <= 4, "CSSVariableData must not grow without thinking");
 #endif
-
 
 }  // namespace webf
 
