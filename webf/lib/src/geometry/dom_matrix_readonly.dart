@@ -132,6 +132,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
       if (domPoint is DOMPoint) {
         return transformPoint((domPoint as DOMPoint));
       }
+    });
     methods['translate'] = BindingObjectMethodSync(
       call: (args) => translate(
         castToType<num>(args[0]).toDouble(),
@@ -433,11 +434,10 @@ class DOMMatrixReadonly extends DynamicBindingObject {
         BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, flag2D);
   }
 
-  bool isIdentityOrTranslation() {
-    return
-        _matrix4[0] == 1 && _matrix4[1] == 0 && _matrix4[2] == 0 && _matrix4[3] == 0 &&
-        _matrix4[4] == 0 && _matrix4[5] == 1 && _matrix4[6] == 0 && _matrix4[7] == 0 &&
-        _matrix4[8] == 0 && _matrix4[9] == 0 && _matrix4[10] == 1 && _matrix4[11] == 0 &&
-        _matrix4[15] == 1;
-  }
+    bool isIdentityOrTranslation() {
+      return _matrix4[0] == 1 && _matrix4[1] == 0 && _matrix4[2] == 0 && _matrix4[3] == 0 &&
+          _matrix4[4] == 0 && _matrix4[5] == 1 && _matrix4[6] == 0 && _matrix4[7] == 0 &&
+          _matrix4[8] == 0 && _matrix4[9] == 0 && _matrix4[10] == 1 && _matrix4[11] == 0 &&
+          _matrix4[15] == 1;
+    }
 }
