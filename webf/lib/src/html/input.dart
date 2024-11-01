@@ -138,15 +138,7 @@ mixin BaseInputElement on WidgetElement {
     properties['autofocus'] = BindingObjectProperty(getter: () => autofocus, setter: (value) => autofocus = value);
     properties['defaultValue'] =
         BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
-  }
-
-  @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    attributes['value'] = ElementAttributeProperty(getter: () => value, setter: (value) => this.value = value);
-    attributes['disabled'] =
-        ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => disabled = value);
+    properties['maxLength'] = BindingObjectProperty(getter: () => maxLength, setter: (value) => maxLength = value);
   }
 
   TextInputType? getKeyboardType() {
@@ -166,9 +158,10 @@ mixin BaseInputElement on WidgetElement {
     return TextInputType.text;
   }
 
-  String get type => getAttribute('type') ?? 'text';
+  String _type = 'text';
+  String get type => _type;
   void set type(value) {
-    internalSetAttribute('type', value?.toString() ?? '');
+    _type = value;
     resetInputDefaultStyle();
   }
 
@@ -193,19 +186,22 @@ mixin BaseInputElement on WidgetElement {
     }
   }
 
-  String get placeholder => getAttribute('placeholder') ?? '';
+  String _placeholder = '';
+  String get placeholder => _placeholder;
   set placeholder(value) {
-    internalSetAttribute('placeholder', value?.toString() ?? '');
+    _placeholder = value;
   }
 
-  String? get label => getAttribute('label');
+  String _label = '';
+  String? get label => _label;
   set label(value) {
-    internalSetAttribute('label', value?.toString() ?? '');
+    _label = value;
   }
 
-  String? get defaultValue => getAttribute('defaultValue') ?? getAttribute('value') ?? '';
+  String _defaultValue = '';
+  String? get defaultValue => _defaultValue;
   set defaultValue(String? text) {
-    internalSetAttribute('defaultValue', text?.toString() ?? '');
+    _defaultValue = text ?? '';
     // Only set value when dirty flag is false.
     if (!hasDirtyValue) {
       value = text;
@@ -222,14 +218,16 @@ mixin BaseInputElement on WidgetElement {
     _disabled = value == true;
   }
 
-  bool get autofocus => getAttribute('autofocus') != null;
+  bool _autofocus = false;
+  bool get autofocus => _autofocus;
   set autofocus(value) {
-    internalSetAttribute('autofocus', value?.toString() ?? '');
+    _autofocus = value;
   }
 
-  bool get readonly => getAttribute('readonly') != null;
+  bool _readonly = false;
+  bool get readonly => _readonly;
   set readonly(value) {
-    internalSetAttribute('readonly', value?.toString() ?? '');
+    _readonly = value;
   }
 
   List<BorderSide>? get borderSides => renderStyle.borderSides;
@@ -241,10 +239,12 @@ mixin BaseInputElement on WidgetElement {
 
   bool get _isFocus => _focusNode?.hasFocus ?? false;
 
-  int? get maxLength {
-    String? value = getAttribute('maxLength');
-    if (value != null) return int.parse(value);
-    return null;
+  double? _maxLength;
+  set maxLength(double? value) {
+    _maxLength = value;
+  }
+  double? get maxLength {
+    return _maxLength;
   }
 
   List<TextInputFormatter>? getInputFormatters() {
@@ -335,7 +335,7 @@ mixin BaseInputElement on WidgetElement {
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
-        maxLength: maxLength,
+        maxLength: maxLength?.toInt(),
         onChanged: onChanged,
         textAlign: renderStyle.textAlign,
         focusNode: _focusNode,
@@ -357,7 +357,7 @@ mixin BaseInputElement on WidgetElement {
         autofocus: autofocus,
         minLines: minLines,
         maxLines: maxLines,
-        maxLength: maxLength,
+        maxLength: maxLength?.toInt(),
         onChanged: onChanged,
         textAlign: renderStyle.textAlign,
         focusNode: _focusNode,
@@ -441,22 +441,14 @@ mixin BaseInputElement on WidgetElement {
 /// create a checkBox widget when input type='checkbox'
 mixin BaseCheckBoxElement on WidgetElement {
   bool checked = false;
-
-  bool get disabled => getAttribute('disabled') != null;
+  bool disabled = false;
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
 
     properties['checked'] = BindingObjectProperty(getter: () => checked, setter: (value) => checked = value);
-  }
-
-  @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    attributes['checked'] =
-        ElementAttributeProperty(getter: () => checked.toString(), setter: (value) => checked = value == 'true');
+    properties['disabled'] = BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = value);
   }
 
   double getCheckboxSize() {
@@ -491,7 +483,23 @@ mixin BaseButtonElement on WidgetElement {
   bool checked = false;
   String _value = '';
 
-  bool get disabled => getAttribute('disabled') != null;
+  bool _disabled = false;
+  bool get disabled => _disabled;
+  set disabled(value) {
+    if (value is String) {
+      _disabled = value == 'true';
+      return;
+    }
+    _disabled = value == true;
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+
+    properties['checked'] = BindingObjectProperty(getter: () => checked, setter: (value) => checked = value);
+    properties['disabled'] = BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = value);
+  }
 
   @override
   void propertyDidUpdate(String key, value) {

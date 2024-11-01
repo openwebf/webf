@@ -16,7 +16,7 @@ class EventListenerOptions;
 // RegisteredEventListener represents 'event listener' defined in the DOM
 // standard. https://dom.spec.whatwg.org/#concept-event-listener
 class RegisteredEventListener final {
-  WEBF_DISALLOW_NEW()
+  WEBF_DISALLOW_NEW();
  public:
   RegisteredEventListener();
   RegisteredEventListener(const std::shared_ptr<EventListener>& listener,

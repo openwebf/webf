@@ -2,6 +2,24 @@
 
 ## Prerequisites
 
+
+**Install gperf**
+
+**macOS**
+```bash
+brew install gperf
+```
+
+**Linux**
+```bash
+apt-get install gperf
+```
+
+**Windows**
+```bash
+choco install gperf
+```
+
 * [Node.js](https://nodejs.org/) v12.0 or later
 * [Flutter](https://flutter.dev/docs/get-started/install) version in the `webf/pubspec.yaml`
 * [CMake](https://cmake.org/) v3.10.0 or later

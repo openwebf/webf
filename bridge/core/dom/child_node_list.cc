@@ -4,7 +4,7 @@
  */
 
 #include "child_node_list.h"
-#include "bindings/qjs/cppgc/gc_visitor.h"
+#include "core/dom/container_node.h"
 
 namespace webf {
 

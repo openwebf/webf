@@ -1,6 +1,7 @@
 import {JSONBlob} from './JSONBlob';
 import {JSONTemplate} from './JSONTemplate';
 import _ from 'lodash';
+import {enumKeyForCSSKeywords, lowerCamelCase, upperCamelCase} from "./name_utiltities";
 
 function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[], options: GenerateJSONOptions = {}): string {
   let compiled = _.template(template.raw);
@@ -11,15 +12,11 @@ function generateHeader(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[
     data: blob.json.data,
     options,
     deps,
-    upperCamelCase
+    upperCamelCase,
+    enumKeyForCSSKeywords
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');
-}
-
-
-function upperCamelCase(name: string) {
-  return _.upperFirst(_.camelCase(name));
 }
 
 function generateBody(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[], options: GenerateJSONOptions = {}): string {
@@ -31,6 +28,7 @@ function generateBody(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[],
     deps,
     options,
     upperCamelCase,
+    enumKeyForCSSKeywords,
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');

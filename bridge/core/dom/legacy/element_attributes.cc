@@ -147,4 +147,8 @@ void ElementAttributes::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(element_);
 }
 
+bool ElementAttributes::hasAttributes() const {
+  return attributes_.empty();
+}
+
 }  // namespace webf

@@ -12,26 +12,26 @@ class SVGDefsElement extends DefsAttributeElement {
   SVGDefsElement(super.context);
 
   Shader? getShader(attribute, Rect rect) {
-    NodeList nodeList = childNodes;
-    Iterator iterator = nodeList.iterator;
-    while (iterator.moveNext()) {
-      if (iterator.current is SVGLinearGradientElement) {
-        SVGLinearGradientElement element = iterator.current;
-        dynamic id = element.attributeStyle['id'];
-        if (attribute == 'url(#$id)') {
-          element.parseCSSColorStop();
-          double x0 = double.parse(element.attributes['x1']!);
-          double y0 = double.parse(element.attributes['y1']!);
-          double x1 = double.parse(element.attributes['x2']!);
-          double y1 = double.parse(element.attributes['y2']!);
-          CanvasLinearGradient glinearGradient = CanvasLinearGradient(x0, y0, x1, y1);
-          glinearGradient.stops = element.stops;
-          glinearGradient.colors = element.colors;
-          LinearGradient linearGradient = _drawLinearGradient(glinearGradient, rect.left, rect.top, rect.width, rect.height);
-          return linearGradient.createShader(rect);
-        }
-      }
-    }
+    // NodeList nodeList = childNodes;
+    // Iterator iterator = nodeList.iterator;
+    // while (iterator.moveNext()) {
+    //   if (iterator.current is SVGLinearGradientElement) {
+    //     SVGLinearGradientElement element = iterator.current;
+    //     dynamic id = element.attributeStyle['id'];
+    //     if (attribute == 'url(#$id)') {
+    //       element.parseCSSColorStop();
+    //       double x0 = double.parse(element.attributes['x1']!);
+    //       double y0 = double.parse(element.attributes['y1']!);
+    //       double x1 = double.parse(element.attributes['x2']!);
+    //       double y1 = double.parse(element.attributes['y2']!);
+    //       CanvasLinearGradient glinearGradient = CanvasLinearGradient(x0, y0, x1, y1);
+    //       glinearGradient.stops = element.stops;
+    //       glinearGradient.colors = element.colors;
+    //       LinearGradient linearGradient = _drawLinearGradient(glinearGradient, rect.left, rect.top, rect.width, rect.height);
+    //       return linearGradient.createShader(rect);
+    //     }
+    //   }
+    // }
     return null;
   }
 

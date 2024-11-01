@@ -322,7 +322,7 @@ JSValue JS_NewUnicodeString(JSContext* ctx, const uint16_t* code, uint32_t lengt
   str = js_alloc_string(JS_GetRuntime(ctx), ctx, length, 1);
   if (!str)
     return JS_EXCEPTION;
-  memcpy(str->u.str16, code, length * 2);
+  memcpy(str->u.str16, code, length * sizeof(uint16_t));
   return JS_MKPTR(JS_TAG_STRING, str);
 }
 

@@ -134,28 +134,6 @@ abstract class WidgetElement extends dom.Element {
     styleDidUpdate(property, value);
   }
 
-  @mustCallSuper
-  @override
-  void removeAttribute(String key) {
-    super.removeAttribute(key);
-    bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), null);
-    if (_state != null && shouldRebuild) {
-      _state!.requestUpdateState();
-    }
-    attributeDidUpdate(key, '');
-  }
-
-  @mustCallSuper
-  @override
-  void setAttribute(String key, value) {
-    super.setAttribute(key, value);
-    bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), value);
-    if (_state != null && shouldRebuild) {
-      _state!.requestUpdateState();
-    }
-    attributeDidUpdate(key, value);
-  }
-
   @nonVirtual
   @override
   dom.Node appendChild(dom.Node child) {
@@ -205,23 +183,27 @@ abstract class WidgetElement extends dom.Element {
     return child;
   }
 
+  // Locate the closest `WebFHTMLElementStatefulWidget` widget for this element.
   static dom.Node? _getAncestorWidgetNode(WidgetElement element) {
     dom.Node? parent = element.parentNode;
+    dom.Node? current = element;
 
-    while (parent != null) {
-      if (parent.flutterWidget != null) {
-        return parent;
+    while(parent != null) {
+      // The `WebFCharacterDataToWidgetAdaptor` always be the child of WidgetElement.
+      if (parent is WidgetElement) {
+        return current;
       }
 
+      current = parent;
       parent = parent.parentNode;
     }
 
     return null;
   }
 
-  void attachWidget(Widget widget) {
+  void _attachWidget(Widget widget) {
     if (attachedAdapter == null) return;
-
+    // Attach the current widget to the root WebF or WebFHTMLElementStatefulWidget as a child in the current widget tree.
     dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
     if (ancestorWidgetNode != null) {
       (ancestorWidgetNode as dom.Element).flutterWidgetState!.addWidgetChild(attachedAdapter!);

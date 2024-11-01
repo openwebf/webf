@@ -87,14 +87,12 @@ class CSSStyleDeclaration extends DynamicBindingObject {
   CSSStyleDeclaration? get pseudoBeforeStyle => _pseudoBeforeStyle;
   set pseudoBeforeStyle(CSSStyleDeclaration? newStyle) {
     _pseudoBeforeStyle = newStyle;
-    target?.markBeforePseudoElementNeedsUpdate();
   }
 
   CSSStyleDeclaration? _pseudoAfterStyle;
   CSSStyleDeclaration? get pseudoAfterStyle => _pseudoAfterStyle;
   set pseudoAfterStyle(CSSStyleDeclaration? newStyle) {
     _pseudoAfterStyle = newStyle;
-    target?.markAfterPseudoElementNeedsUpdate();
   }
 
   CSSStyleDeclaration([BindingContext? context]): super(context);
@@ -441,11 +439,10 @@ class CSSStyleDeclaration extends DynamicBindingObject {
 
   void flushPendingProperties() {
     Element? _target = target;
-    // If style target element not exists, no need to do flush operation.
-    if (_target == null) return;
 
     // Display change from none to other value that the renderBoxModel is null.
     if (_pendingProperties.containsKey(DISPLAY) &&
+        _target != null &&
         _target.isConnected &&
         _target.parentElement?.renderStyle.display != CSSDisplay.sliver) {
       CSSPropertyValue? prevValue = _properties[DISPLAY];
@@ -455,7 +452,7 @@ class CSSStyleDeclaration extends DynamicBindingObject {
       _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
 
-    RenderBoxModel? renderBoxModel = _target.renderBoxModel;
+    RenderBoxModel? renderBoxModel = _target?.renderBoxModel;
     if (_pendingProperties.isEmpty || renderBoxModel == null) {
       return;
     }
@@ -523,60 +520,6 @@ class CSSStyleDeclaration extends DynamicBindingObject {
     }
   }
 
-  void handlePseudoRules(Element parentElement, List<CSSStyleRule> rules) {
-    if (rules.isEmpty) return;
-
-    List<CSSStyleRule> beforeRules = [];
-    List<CSSStyleRule> afterRules = [];
-
-    for (CSSStyleRule style in rules) {
-      for (Selector selector in style.selectorGroup.selectors) {
-        for (SimpleSelectorSequence sequence in selector.simpleSelectorSequences) {
-          if (sequence.simpleSelector is PseudoElementSelector) {
-            if (sequence.simpleSelector.name == 'before') {
-              beforeRules.add(style);
-            } else if (sequence.simpleSelector.name == 'after') {
-              afterRules.add(style);
-            }
-          }
-        }
-      }
-    }
-
-    int sortRules(leftRule, rightRule) {
-      int isCompare = leftRule.selectorGroup.matchSpecificity.compareTo(rightRule.selectorGroup.matchSpecificity);
-      if (isCompare == 0) {
-        return leftRule.position.compareTo(rightRule.position);
-      }
-      return isCompare;
-    }
-
-    // sort selector
-    beforeRules.sort(sortRules);
-    afterRules.sort(sortRules);
-
-    if (beforeRules.isNotEmpty) {
-      pseudoBeforeStyle ??= CSSStyleDeclaration();
-      // Merge all the rules
-      for (CSSStyleRule rule in beforeRules) {
-        pseudoBeforeStyle!.union(rule.declaration);
-      }
-      parentElement.markBeforePseudoElementNeedsUpdate();
-    } else if (beforeRules.isEmpty && pseudoBeforeStyle != null) {
-      pseudoBeforeStyle = null;
-    }
-
-    if (afterRules.isNotEmpty) {
-      pseudoAfterStyle ??= CSSStyleDeclaration();
-      for (CSSStyleRule rule in afterRules) {
-        pseudoAfterStyle!.union(rule.declaration);
-      }
-      parentElement.markAfterPseudoElementNeedsUpdate();
-    } else if (afterRules.isEmpty && pseudoAfterStyle != null) {
-      pseudoAfterStyle = null;
-    }
-  }
-
   // Merge the difference between the declarations and return the updated status
   bool merge(CSSStyleDeclaration other) {
     Map<String, CSSPropertyValue> properties = {}
@@ -614,10 +557,20 @@ class CSSStyleDeclaration extends DynamicBindingObject {
     }
 
     if (other.pseudoBeforeStyle != null) {
-      pseudoBeforeStyle?.merge(other.pseudoBeforeStyle!);
+      if (pseudoBeforeStyle == null) {
+        pseudoBeforeStyle = other.pseudoBeforeStyle;
+      } else {
+        pseudoBeforeStyle?.merge(other.pseudoBeforeStyle!);
+      }
+      target?.updateBeforePseudoElement();
     }
     if (other.pseudoAfterStyle != null) {
-      pseudoAfterStyle?.merge(other.pseudoAfterStyle!);
+      if (pseudoAfterStyle == null) {
+        pseudoAfterStyle = other.pseudoAfterStyle;
+      } else {
+        pseudoAfterStyle?.merge(other.pseudoAfterStyle!);
+      }
+      target?.updateAfterPseudoElement();
     }
 
     return updateStatus;
@@ -678,7 +631,7 @@ class CSSStyleDeclaration extends DynamicBindingObject {
   }
 
   @override
-  String toString() => 'CSSStyleDeclaration($cssText)';
+  String toString() => 'CSSStyleDeclaration(${super.hashCode} $cssText)';
 
   @override
   int get hashCode => cssText.hashCode;

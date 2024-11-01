@@ -219,8 +219,6 @@ class ScriptElement extends Element {
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
-  final String _type = _MIME_TEXT_JAVASCRIPT;
-
   Uri? _resolvedSource;
   ScriptReadyState _readyState = ScriptReadyState.loading;
 
@@ -242,59 +240,43 @@ class ScriptElement extends Element {
     );
   }
 
-  @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    attributes['src'] = ElementAttributeProperty(setter: (value) => src = attributeToProperty<String>(value));
-    attributes['async'] = ElementAttributeProperty(setter: (value) => async = attributeToProperty<bool>(value));
-    attributes['defer'] = ElementAttributeProperty(setter: (value) => defer = attributeToProperty<bool>(value));
-    attributes['type'] = ElementAttributeProperty(setter: (value) => type = attributeToProperty<String>(value));
-    attributes['charset'] = ElementAttributeProperty(setter: (value) => charset = attributeToProperty<String>(value));
-    attributes['text'] = ElementAttributeProperty(setter: (value) => text = attributeToProperty<String>(value));
-  }
-
   String get src => _resolvedSource?.toString() ?? '';
 
   set src(String value) {
-    internalSetAttribute('src', value);
     _resolveSource(value);
     _fetchAndExecuteSource();
     // Set src will not reflect to attribute src.
   }
 
-  bool get async => getAttribute('async') != null;
+  bool _async = false;
+  bool get async => _async;
 
   set async(bool value) {
-    if (value) {
-      internalSetAttribute('async', '');
-    } else {
-      removeAttribute('async');
-    }
+    _async = value;
   }
 
-  bool get defer => getAttribute('defer') != null;
+  bool _defer = false;
+  bool get defer => _defer;
   set defer(bool value) {
-    if (value) {
-      internalSetAttribute('defer', '');
-    } else {
-      removeAttribute('defer');
-    }
+    _defer = value;
   }
 
-  String get type => getAttribute('type') ?? '';
+  String _type = _MIME_TEXT_JAVASCRIPT;
+  String get type => _type;
   set type(String value) {
-    internalSetAttribute('type', value);
+    _type = value;
   }
 
-  String get charset => getAttribute('charset') ?? '';
+  String _charset = '';
+  String get charset => _charset;
   set charset(String value) {
-    internalSetAttribute('charset', value);
+    _charset = value;
   }
 
-  String get text => getAttribute('text') ?? '';
+  String _text = '';
+  String get text => _text;
   set text(String value) {
-    internalSetAttribute('text', value);
+    _text = value;
   }
 
   ScriptReadyState get readyState => _readyState;

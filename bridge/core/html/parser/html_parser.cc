@@ -131,8 +131,10 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
           }
         }
 
+        element->BeginParsingChildren();
         traverseHTML(element, child);
         root_container->AppendChild(element);
+        element->FinishParsingChildren();
         parseProperty(element, &child->v.element);
       } else if (child->type == GUMBO_NODE_TEXT) {
         auto* text = context->document()->createTextNode(AtomicString(ctx, child->v.text.text), ASSERT_NO_EXCEPTION());
@@ -156,6 +158,9 @@ bool HTMLParser::parseHTML(const std::string& html, Node* root_node, bool isHTML
         GumboOutput* htmlTree = parse(html, isHTMLFragment);
 
         root_node->GetExecutingContext()->dartIsolateContext()->profiler()->FinishTrackSteps();
+
+        root_container_node->ParserFinishedBuildingDocumentFragment();
+
         root_node->GetExecutingContext()->dartIsolateContext()->profiler()->StartTrackSteps("HTMLParser::traverseHTML");
 
         traverseHTML(root_container_node, htmlTree->root);

@@ -1,29 +1,44 @@
 cmake_minimum_required(VERSION 3.10.0)
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 12)
 project(WebF)
 
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
-# MSBuild are slower than Clang/GCC to support new CXX standards.
-if(MSVC)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 12)
+
+# We using Clang for all platforms, including Windows.
+
+if(WIN32)
   set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+  set(BUILD_SHARED_LIBS TRUE)
 else()
   set(CMAKE_CXX_STANDARD 17)
 endif()
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(MSVC)
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-  set(BUILD_SHARED_LIBS TRUE)
+if(WIN32)
+  add_compile_options(
+    -Wno-microsoft-enum-forward-reference
+    -Wno-macro-redefined
+    -Wno-ignored-pragmas
+    -Wno-implicit-const-int-float-conversion
+    -Wno-deprecated-declarations
+    -Wno-int-to-void-pointer-cast
+    -Wno-void-pointer-to-int-cast
+    -Wno-incompatible-pointer-types
+    -Wno-microsoft-cast
+    -Wno-duplicate-decl-specifier
+  )
 endif()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
 endif()
 
 set(WEBF_JS_ENGINE $ENV{WEBF_JS_ENGINE})
 if(NOT WEBF_JS_ENGINE)
-    set(WEBF_JS_ENGINE "quickjs")
+  set(WEBF_JS_ENGINE "quickjs")
 endif()
 
 find_package(Threads REQUIRED)
@@ -32,31 +47,29 @@ if(MSVC)
   add_compile_options(/MP)
 endif()
 
-if (${ENABLE_PROFILE})
+if(${ENABLE_PROFILE})
   add_definitions(-DENABLE_PROFILE=1)
-else ()
+else()
   add_definitions(-DENABLE_PROFILE=0)
-endif ()
+endif()
 
-if (${ENABLE_LOG})
+if(${ENABLE_LOG})
   add_definitions(-DENABLE_LOG=1)
 else()
   add_definitions(-DENABLE_LOG=0)
 endif()
 
-if(NOT MSVC)
-  if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
-    include(CheckIPOSupported)
-    check_ipo_supported(RESULT supported OUTPUT error)
-    if( supported )
-      set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-      add_compile_options(-flto)
-    endif()
+if(${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+  include(CheckIPOSupported)
+  check_ipo_supported(RESULT supported OUTPUT error)
+  if(supported)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    add_compile_options(-flto)
   endif()
 endif()
 
 list(APPEND WEBF_PUBLIC_HEADERS
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_bridge.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_bridge.h
 )
 
 set(QUICKJS_PUBLIC_HEADERS
@@ -71,24 +84,19 @@ set(QUICKJS_PUBLIC_HEADERS
   third_party/quickjs/quickjs-opcode.h
 )
 
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   add_compile_options(-fPIC)
 endif()
 
-if (ENABLE_ASAN)
-  add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
-  add_link_options(-fsanitize=address -fno-omit-frame-pointer)
-endif ()
-
-if (NOT MSVC) 
-  if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if(NOT MSVC)
+  if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     # Avoid quickjs stackoverflow.
-    add_compile_options(-O1)
+    #    add_compile_options(-O1)
   endif()
 endif()
 
-if (DEFINED PLATFORM)
-  if (${PLATFORM} STREQUAL "OS")
+if(DEFINED PLATFORM)
+  if(${PLATFORM} STREQUAL "OS")
     add_compile_options(-fno-aligned-allocation)
   endif()
 endif()
@@ -107,13 +115,17 @@ list(APPEND BRIDGE_SOURCE
   foundation/profiler.cc
   foundation/dart_readable.cc
   foundation/rust_readable.cc
+  foundation/string_builder.cc
+  foundation/string_utils.cc
+  foundation/ascii_types.cc
   foundation/ui_command_buffer.cc
   foundation/ui_command_strategy.cc
+  foundation/dtoa.cc
   polyfill/dist/polyfill.cc
   multiple_threading/dispatcher.cc
   multiple_threading/looper.cc
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
-  )
+)
 
 list(APPEND GUMBO_PARSER
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/attribute.c
@@ -128,7 +140,7 @@ list(APPEND GUMBO_PARSER
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/utf8.c
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/util.c
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/vector.c
-  )
+)
 
 list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}/foundation
@@ -138,10 +150,23 @@ list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}/polyfill/dist
   ${CMAKE_CURRENT_LIST_DIR}/core_rs/include
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart
+  ${CMAKE_CURRENT_LIST_DIR}/third_party/double_conversion
   ${ADDITIONAL_INCLUDE_DIRS}
-  )
+)
 
-if (${WEBF_JS_ENGINE} MATCHES "quickjs")
+add_library(double_conversion STATIC
+  third_party/double_conversion/double-conversion/bignum.cc
+  third_party/double_conversion/double-conversion/bignum-dtoa.cc
+  third_party/double_conversion/double-conversion/cached-powers.cc
+  third_party/double_conversion/double-conversion/double-to-string.cc
+  third_party/double_conversion/double-conversion/fast-dtoa.cc
+  third_party/double_conversion/double-conversion/fixed-dtoa.cc
+  third_party/double_conversion/double-conversion/string-to-double.cc
+  third_party/double_conversion/double-conversion/strtod.cc
+)
+list(APPEND BRIDGE_LINK_LIBS double_conversion)
+
+if(${WEBF_JS_ENGINE} MATCHES "quickjs")
   add_compile_options(-DWEBF_QUICK_JS_ENGINE=1)
 
   execute_process(
@@ -152,10 +177,6 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   add_library(modb STATIC
     third_party/modp_b64/modp_b64.cc
   )
-
-  if (NOT MSVC)
-    list(APPEND QUICK_JS_SOURCE third_party/quickjs/src/libbf.c)
-  endif()
 
   list(APPEND QUICK_JS_SOURCE
     # third_party/quickjs/src/libbf.c
@@ -201,9 +222,9 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/quickjs/src/core/builtins/js-typed-array.c
   )
 
-  if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+  if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
     add_definitions(-DDDEBUG)
-  endif ()
+  endif()
 
   if(${STATIC_QUICKJS})
     add_library(quickjs STATIC ${QUICK_JS_SOURCE})
@@ -212,13 +233,13 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   endif()
 
   # PThread compact
-  if(MSVC)
+  if(WIN32)
     # Using `add_subdirectory` will failed at cmake install starge due to unknown issues:
     # https://github.com/flutter/flutter/issues/95530
     set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32")
     add_library(pthreadVC3 SHARED ${PTHREADS_ROOT}/pthread-JMP.c ${PTHREADS_ROOT}/version.rc)
     target_compile_definitions(pthreadVC3
-      PRIVATE 
+      PRIVATE
       _UNICODE
       UNICODE
       WIN32
@@ -245,7 +266,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   endif()
 
   set(MI_OVERRIDE OFF)
-  if (NOT MSVC AND NOT DEFINED USE_SYSTEM_MALLOC)
+  if(NOT WIN32 AND NOT DEFINED USE_SYSTEM_MALLOC)
     add_compile_definitions(ENABLE_MI_MALLOC=1)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc/include)
@@ -254,7 +275,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
 
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
 
-  if (MSVC)
+  if(WIN32)
     target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32)
     target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
   endif()
@@ -332,15 +353,209 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/timing/performance_mark.cc
     core/timing/performance_entry.cc
     core/timing/performance_measure.cc
+
+    ## Base
+    core/base/hash/hash.cc
+    core/base/strings/string_util.cc
+    core/base/strings/string_util_constants.cc
+    core/base/strings/string_number_conversions.cc
+    core/base/strings/utf_string_conversion_utils.cc
+    core/core_initializer.cc
+
+    ## CSS
     core/css/css_style_declaration.cc
     core/css/inline_css_style_declaration.cc
     core/css/computed_css_style_declaration.cc
+    core/css/style_element.cc
+    core/css/style_color.cc
+    core/css/style_engine.cc
+    core/css/style_sheet_contents.cc
+    core/css/css_style_sheet.cc
+    core/css/style_rule_import.cc
+    #    core/css/style_recalc_root.cc
+    core/css/style_sheet.cc
+    core/css/parser/css_parser.cc
+    core/css/parser/css_parser_context.cc
+    core/css/parser/css_parser_idioms.cc
+    core/css/parser/css_parser_impl.cc
+    core/css/parser/css_lazy_parsing_state.cc
+    core/css/parser/at_rule_descriptor_parser.cc
+    core/css/parser/css_variable_parser.cc
+    core/css/parser/css_supports_parser.cc
+    core/css/parser/media_query_parser.cc
+    core/css/parser/container_query_parser.cc
+    core/css/parser/css_lazy_property_parser_impl.cc
+    core/css/parser/css_parser_token.cc
+    core/css/parser/css_parser_fast_path.cc
+    core/css/parser/font_variant_alternates_parser.cc
+    core/css/parser/css_parser_token_range.cc
+    core/css/parser/css_parser_token_stream.cc
+    core/css/parser/css_tokenizer.cc
+    core/css/parser/css_property_parser.cc
+    core/css/parser/css_tokenizer_input_stream.cc
+    core/css/parser/css_selector_parser.cc
+    core/css/properties/css_direction_aware_resolver.cc
+    core/css/properties/css_unresolved_property.cc
+    core/css/properties/css_property.cc
+    core/css/properties/css_parsing_utils.cc
+    core/css/css_at_rule_id.cc
+    core/css/properties/css_color_function_parser.cc
+    core/css/css_rule.cc
+    core/css/css_rule_list.cc
+    core/css/css_selector.cc
+    core/css/css_selector_list.cc
+    core/css/css_value.cc
+    core/css/media_list.cc
+    core/css/media_values.cc
+    core/css/style_scope.cc
+    core/css/cascade_layer.cc
+    core/css/container_selector.cc
+    core/css/container_query.cc
+    core/css/media_query_exp.cc
+    core/css/media_query.cc
+    core/css/media_query_evaluator.cc
+    core/css/css_content_distribution_value.cc
+    core/css/css_reflect_value.cc
+    core/css/css_border_image.cc
+    core/css/css_axis_value.cc
+    core/css/css_font_face_src_value.cc
+    core/css/properties/longhand.cc
+    core/css/properties/shorthands/shorthands_custom.cc
+    core/css/properties/longhands/longhands_custom.cc
+    core/css/abstract_property_set_css_style_declaration.cc
+    core/css/property_set_css_style_declaration.cc
+    core/css/style_rule.cc
+    core/animation/timeline_offset.cc
+    core/css/css_property_value_set.cc
+    core/css/css_property_name.cc
+    core/css/css_property_value.cc
+    core/css/css_quad_value.cc
+    core/css/css_shadow_value.cc
+    core/css/css_font_style_range_value.cc
+    core/css/css_border_image_slice_value.cc
+    core/css/css_primitive_value.cc
+    core/css/css_image_value.cc
+    core/css/css_image_generator_value.cc
+    core/css/css_gradient_value.cc
+    core/css/css_image_set_type_value.cc
+    core/css/css_image_set_option_value.cc
+    core/css/css_image_set_value.cc
+    core/css/css_crossfade_value.cc
+    core/css/css_repeat_style_value.cc
+    core/css/css_font_family_value.cc
+    core/css/css_uri_value.cc
+    core/css/css_url_data.cc
+    core/css/css_pending_system_font_value.cc
+    core/css/css_font_variation_value.cc
+    core/css/css_font_feature_value.cc
+    core/css/css_alternate_value.cc
+    core/css/css_identifier_value.cc
+    core/css/css_numeric_literal_value.cc
+    core/css/css_math_expression_node.cc
+    core/css/css_ray_value.cc
+    core/css/css_to_length_conversion_data.cc
+    core/css/css_grid_auto_repeat_value.cc
+    core/css/css_grid_integer_repeat_value.cc
+    core/css/css_grid_template_areas_value.cc
+    core/css/css_scroll_value.cc
+    core/css/css_basic_shape_value.cc
+    core/css/css_math_function_value.cc
+    core/css/css_pending_substitution_value.cc
+    core/css/css_unparsed_declaration_value.cc
+    core/css/css_variable_data.cc
+    core/css/style_rule_keyframe.cc
+    core/css/css_math_operator.cc
+    core/css/css_ratio_value.cc
+    core/css/css_keyframes_rule.cc
+    core/css/css_keyframe_rule.cc
+    core/css/css_import_rule.cc
+    core/css/style_rule_css_style_declaration.cc
+    core/css/keyframe_style_rule_css_style_declaration.cc
+    core/css/style_attribute_mutation_scope.cc
+    core/css/css_unset_value.cc
+    core/css/css_value_pair.cc
+    core/css/css_light_dart_value_pair.cc
+    core/css/css_revert_layer_value.cc
+    core/css/css_revert_value.cc
+    core/css/css_initial_value.cc
+    core/css/css_inherit_value.cc
+    core/css/css_view_value.cc
+    core/css/css_initial_color_value.cc
+    core/css/css_invalid_variable_value.cc
+    core/css/css_keyframe_shorthand_value.cc
+    core/css/css_bracketed_value_list.cc
+    core/css/css_custom_ident_value.cc
+    core/css/css_value_list.cc
+    core/css/css_syntax_definition.cc
+    core/css/css_syntax_string_parser.cc
+    core/css/style_property_serializer.cc
+    core/css/style_property_shorthand_custom.cc
+    core/css/css_value_clamping_utils.cc
+    core/css/style_change_reason.cc
+    core/css/css_markup.cc
+
+    core/css/css_function_value.cc
+    core/css/css_appearance_auto_base_select_value_pair.cc
+    core/css/css_value_pool.cc
+    core/css/cssom_utils.cc
+    core/css/css_string_value.cc
+    core/css/css_initial_value.cc
+    core/css/css_numeric_literal_value
+    core/css/css_color.cc
+    core/css/anchor_query.h
+    core/css/css_length_resolver.cc
+    core/style/scoped_css_name.cc
+    core/style/grid_area.h
+
+    ## Core Platform
+    core/platform/text/writing_mode.cc
+    core/platform/text/text_stream.cc
+    core/platform/text/text_direction.cc
+    core/platform/text/writing_direction_mode.cc
+    core/platform/text/string_to_number.cc
+    core/platform/graphics/color.cc
+    core/platform/graphics/color_conversions.cc
+    core/platform/graphics/graphic_types.cc
+    core/platform/graphics/gradient.cc
+    core/platform/geometry/length.cc
+    core/platform/geometry/dom_matrix.cc
+    core/platform/geometry/layout_unit.cc
+    core/platform/geometry/calculation_expression_node.cc
+    core/platform/geometry/dom_matrix_readonly.cc
+    core/platform/geometry/length_functions.cc
+    core/platform/geometry/calculation_value.cc
+    core/platform/url/kurl.cc
+    core/platform/url/scheme_host_port.cc
+    core/platform/url/scheme_registry.cc
+    core/platform/url/url_canon_etc.cc
+    core/platform/url/url_canon_filesystemurl.cc
+    core/platform/url/url_canon_fileurl.cc
+    core/platform/url/url_canon_host.cc
+    core/platform/url/url_canon_ip.cc
+    core/platform/url/url_canon_mailtourl.cc
+    core/platform/url/url_canon_non_special_url.cc
+    core/platform/url/url_canon_path.cc
+    core/platform/url/url_canon_pathurl.cc
+    core/platform/url/url_canon_query.cc
+    core/platform/url/url_canon_relative.cc
+    core/platform/url/url_canon_stdstring.cc
+    core/platform/url/url_parse.cc
+    core/platform/url/url_parse_file.cc
+    core/platform/url/url_util.cc
+    core/platform/url/url_canon_internal.cc
+    core/platform/url/url_canon.cc
+    core/platform/url/url_canon_stdurl.cc
+
+    ## DOM
+    core/dom/node_lists_node_data.cc
+    core/dom/node_rare_data.cc
     core/dom/frame_request_callback_collection.cc
     core/dom/events/registered_eventListener.cc
     core/dom/events/event_listener_map.cc
     core/dom/events/event.cc
     core/dom/events/custom_event.cc
     core/dom/events/event_target.cc
+    core/dom/events/event_dispatch_forbidden_scope.cc
     core/dom/events/event_listener_map.cc
     core/dom/events/event_target_impl.cc
     core/binding_object.cc
@@ -349,6 +564,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/static_node_list.cc
     core/dom/node_traversal.cc
     core/dom/live_node_list_base.cc
+    core/dom/live_node_list.cc
     core/dom/character_data.cc
     core/dom/comment.cc
     core/dom/text.cc
@@ -357,11 +573,13 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/parent_node.cc
     core/dom/element_data.cc
     core/dom/document.cc
+    core/dom/qualified_name.cc
     core/dom/dom_token_list.cc
     core/dom/dom_string_map.cc
+    core/dom/element_rare_data_vector.cc
     core/dom/space_split_string.cc
     core/dom/scripted_animation_controller.cc
-    core/dom/node_data.cc
+    #core/dom/node_data.cc
     core/dom/document_fragment.cc
     core/dom/child_node_list.cc
     core/dom/empty_node_list.cc
@@ -395,6 +613,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_div_element.cc
     core/html/html_head_element.cc
     core/html/html_body_element.cc
+    core/html/html_style_element.cc
     core/html/html_html_element.cc
     core/html/html_template_element.cc
     core/html/html_all_collection.cc
@@ -411,8 +630,8 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/canvas/canvas_rendering_context_2d.cc
     core/html/canvas/canvas_gradient.cc
     core/html/canvas/canvas_pattern.cc
-    core/geometry/dom_matrix.cc
-    core/geometry/dom_matrix_readonly.cc
+    #core/geometry/dom_matrix.cc
+    #core/geometry/dom_matrix_readonly.cc
     core/html/forms/html_button_element.cc
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
@@ -420,6 +639,12 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
 
     core/native/native_loader.cc
     core/native/script_value_ref.cc
+
+    # css invalidation
+    #    core/css/invalidation/invalidation_flags.cc
+    #    core/css/invalidation/invalidation_set.cc
+    #    core/css/invalidation/pending_invalidations.cc
+    #    core/css/invalidation/style_invalidator.cc
 
     # SVG files
     core/svg/svg_element.cc
@@ -443,7 +668,30 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/legacy/bounding_client_rect.cc
     core/input/touch.cc
     core/input/touch_list.cc
-    )
+    core/css/css_timing_function_value.cc
+    core/platform/animation/timing_function.cc
+    core/platform/gfx/animation/keyframe/timing_function.cc
+    core/platform/gfx/geometry/cubic_bezier.cc
+    core/platform/gfx/geometry/point_conversions.cc
+    core/platform/gfx/geometry/point.cc
+    core/platform/gfx/geometry/point_f.cc
+    core/platform/gfx/geometry/size.cc
+    core/platform/gfx/geometry/size_f.cc
+    core/platform/gfx/geometry/vector2d.cc
+    core/platform/gfx/geometry/vector2d_f.cc
+    core/platform/gfx/geometry/insets.cc
+    core/platform/gfx/geometry/insets_conversions.cc
+    core/platform/gfx/geometry/insets_f.cc
+    core/platform/gfx/geometry/rect.cc
+    core/platform/gfx/geometry/rect_f.cc
+    core/platform/gfx/geometry/rect_conversions.cc
+    core/platform/gfx/geometry/size_conversions.cc
+    core/platform/fonts/font_family.cc
+    core/platform/fonts/font_selection_types.cc
+    core/platform/fonts/font.cc
+    core/platform/fonts/font_description.cc
+
+  )
 
   # Gen sources.
   list(APPEND BRIDGE_SOURCE
@@ -458,6 +706,8 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_add_event_listener_options.cc
     out/qjs_event_listener_options.cc
     out/qjs_error_event.cc
+    out/color_data.cc
+    out/qjs_css_rule.cc
     out/qjs_message_event.cc
     out/qjs_message_event_init.cc
     out/qjs_close_event.cc
@@ -518,11 +768,15 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_inline_css_style_declaration.cc
     out/qjs_computed_css_style_declaration.cc
     out/qjs_native_loader.cc
+    out/qjs_style_sheet.cc
     out/qjs_text.cc
     out/qjs_screen.cc
     out/qjs_node_list.cc
     out/event_type_names.cc
+    out/at_rule_descriptors.cc
     out/built_in_string.cc
+    out/global_string.cc
+    out/media_type_names.cc
     out/mutation_record_types.cc
     out/binding_call_methods.cc
     out/qjs_scroll_options.cc
@@ -554,8 +808,12 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_button_element.cc
     out/qjs_html_input_element.cc
     out/qjs_html_form_element.cc
+    out/qjs_css_import_rule.cc
+    out/qjs_css_keyframe_rule.cc
+    out/qjs_css_keyframes_rule.cc
     out/qjs_html_textarea_element.cc
     out/qjs_html_script_element.cc
+    out/qjs_html_style_element.cc
     out/qjs_promise_rejection_event.cc
     out/qjs_promise_rejection_event_init.cc
     out/qjs_unionevent_listener_options_boolean.cc
@@ -569,6 +827,8 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/performance_entry_names.cc
     out/qjs_performance_measure_options.cc
     out/qjs_performance_mark_options.cc
+    out/qjs_css_rule_list.cc
+    out/qjs_media_list.cc
     out/performance_mark_constants.cc
     out/html_element_factory.cc
     out/html_names.cc
@@ -576,10 +836,23 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/defined_properties.cc
     out/element_attribute_names.cc
     out/element_namespace_uris.cc
+    out/font_family_names.cc
+    out/media_feature_names.cc
+    out/qjs_css_style_sheet.cc
 
     # SVG generated
     out/svg_names.cc
     out/svg_element_factory.cc
+
+    # CSS Values
+    out/css_value_keywords.cc
+    out/css_property_names.cc
+    out/property_bitset.cc
+    out/longhands.cc
+    out/shorthands.cc
+    out/css_property_instance.cc
+    out/style_property_shorthand.cc
+    out/css_primitive_value_unit_trie.cc
 
     # SVG files
     out/qjs_svg_element.cc
@@ -612,17 +885,15 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/plugin_api_transition_event.cc
     out/plugin_api_ui_event.cc
     out/plugin_api_custom_event.cc
-    )
+  )
 
 
-  if (NOT MSVC)
   # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2
   # https://stackoverflow.com/questions/14735010/how-do-you-get-gccs-builtin-frame-address-to-work-with-o2
   add_compile_options(-fno-optimize-sibling-calls -fno-omit-frame-pointer)
-  endif()
   target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"})
 
-endif ()
+endif()
 
 list(APPEND PUBLIC_HEADER
   include/webf_bridge.h
@@ -630,23 +901,25 @@ list(APPEND PUBLIC_HEADER
 
 add_library(webf SHARED ${BRIDGE_SOURCE})
 
-if(MSVC)
-  target_compile_options(webf PRIVATE /JMC)
-endif()
-
 target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
 
 add_library(gumbo_parse_static STATIC ${GUMBO_PARSER})
 list(APPEND BRIDGE_LINK_LIBS gumbo_parse_static)
 
-if (${IS_ANDROID})
+if(ENABLE_ASAN)
+  target_compile_options(webf PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+  target_link_options(webf PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+endif()
+
+if(${IS_ANDROID})
   find_library(log-lib log)
 
-  if (${ANDROID_ABI} MATCHES "armeabi-v7a" OR ${ANDROID_ABI} MATCHES "x86")
+  if(${ANDROID_ABI} MATCHES "armeabi-v7a" OR ${ANDROID_ABI} MATCHES "x86")
     add_definitions(-DANDROID_32_BIT=1)
   endif()
 
   add_definitions(-DIS_ANDROID=1)
+  add_definitions(-DANDROID=1)
   list(APPEND BRIDGE_LINK_LIBS ${log-lib})
 elseif(${IS_IOS})
   add_definitions(-DIS_IOS=1)
@@ -659,15 +932,15 @@ target_include_directories(webf PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
 target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
 
-if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
-  if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+if($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
+  if(${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
     target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
     target_compile_options(quickjs PRIVATE -fno-exceptions -fno-rtti -fdata-sections -ffunction-sections)
-  else ()
+  else()
     ### remove dynamic_cast and exceptions
     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
-  endif ()
-endif ()
+  endif()
+endif()
 
 execute_process(
   COMMAND node get_app_ver.js
@@ -684,36 +957,36 @@ execute_process(
 string(REPLACE \n "" GIT_HEAD ${GIT_HEAD}) # Remove last \n
 add_definitions(-DAPP_REV="${GIT_HEAD}") # Read from git head sha1
 
-if (${ENABLE_TEST})
+if(${ENABLE_TEST})
   add_compile_definitions(IS_TEST=true)
   include(./test/test.cmake)
-endif ()
+endif()
 
-if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
+if(DEFINED ENV{LIBRARY_OUTPUT_DIR})
   set_target_properties(webf
     PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
     RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
   )
-  if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
+  if($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     set_target_properties(quickjs
       PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-        RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+      LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+      RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
     )
-    if(MSVC)
+    if(WIN32)
       set_target_properties(pthreadVC3
         PROPERTIES
-          LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-          RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+        LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
       )
     endif()
-  endif ()
-elseif (IS_ANDROID)
+  endif()
+elseif(IS_ANDROID)
   # android do nothing
-endif ()
+endif()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO")
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
 
@@ -725,7 +998,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     MACOSX_FRAMEWORK_BUNDLE_VERSION 1.0
     MACOSX_FRAMEWORK_SHORT_VERSION_STRING 1.0
     PUBLIC_HEADER ${WEBF_PUBLIC_HEADERS}
-    )
+  )
 
   # If quickjs is static, there will be no quickjs.framework any more.
   if(NOT DEFINED STATIC_QUICKJS)
@@ -737,6 +1010,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
       MACOSX_FRAMEWORK_BUNDLE_VERSION 1.0
       MACOSX_FRAMEWORK_SHORT_VERSION_STRING 1.0
       PUBLIC_HEADER ${QUICKJS_PUBLIC_HEADERS}
-      )
+    )
   endif()
-endif ()
+endif()

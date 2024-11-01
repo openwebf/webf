@@ -22,6 +22,7 @@ class WebFHTMLElementToFlutterElementAdaptor extends MultiChildRenderObjectEleme
       WebFProfiler.instance.startTrackUICommand();
     }
     super.mount(parent, newSlot);
+    widget.webFElement.style.flushPendingProperties();
     widget.webFElement.ensureChildAttached();
 
     dom.Element element = widget.webFElement;
@@ -33,6 +34,7 @@ class WebFHTMLElementToFlutterElementAdaptor extends MultiChildRenderObjectEleme
         element.style.flushPendingProperties();
       }
     }
+
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
     }

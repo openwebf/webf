@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "templates": [
+      {
+        "template": "make_std_names",
+        "filename": "media_feature_names",
+        "options": {
+          "camelcase": true
+        }
+      },
+      {
+        "template": "make_media_features",
+        "filename": "media_features"
+      }
+    ]
+  },
+  data: [
+    "color",
+    "grid",
+    "height",
+    "width",
+    "aspect-ratio",
+    "device-aspect-ratio",
+    "video-dynamic-range",
+    "device-pixel-ratio",
+    "device-height",
+    "device-width",
+    "inline-size",
+    "max-color",
+    "max-color-index",
+    "max-aspect-ratio",
+    "max-block-size",
+    "min-block-size",
+    "max-device-aspect-ratio",
+    "max-device-pixel-ratio",
+    "max-device-height",
+    "max-device-width",
+    "max-height",
+    "max-inline-size",
+    "max-width",
+    "max-resolution",
+    "min-color",
+    "min-color-index",
+    "min-aspect-ratio",
+    "min-device-aspect-ratio",
+    "min-device-pixel-ratio",
+    "min-device-height",
+    "min-device-width",
+    "min-height",
+    "min-inline-size",
+    "min-width",
+    "min-resolution"
+  ],
+}

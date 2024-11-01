@@ -49,14 +49,11 @@ class SVGElement extends Element {
     return null;
   }
 
-  setAttributeStyle(String property, String value) {
-    if (style.getPropertyValue(property) == value) {
-      return;
-    }
-    internalSetAttribute(property, value);
-    // TODO: This have some problems about cascading order. I will fixed it later. @XGHeaven
-    attributeStyle[property] = value;
-  }
+  // setAttributeStyle(String property, String value) {
+  //   internalSetAttribute(property, value);
+  //   // TODO: This have some problems about cascading order. I will fixed it later. @XGHeaven
+  //   attributeStyle[property] = value;
+  // }
 
   @override
   void applyAttributeStyle(CSSStyleDeclaration style) {
@@ -65,16 +62,16 @@ class SVGElement extends Element {
     });
   }
 
-  @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-    final configs =
-        _presentationAttributesConfigsCache ??= presentationAttributeConfigs;
-    for (final config in configs) {
-      attributes[config.name] = ElementAttributeProperty(
-          setter: (value) => setAttributeStyle(config.camelName, value));
-    }
-  }
+  // @override
+  // void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+  //   super.initializeAttributes(attributes);
+  //   final configs =
+  //       _presentationAttributesConfigsCache ??= presentationAttributeConfigs;
+  //   for (final config in configs) {
+  //     attributes[config.name] = ElementAttributeProperty(
+  //         setter: (value) => setAttributeStyle(config.camelName, value));
+  //   }
+  // }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {

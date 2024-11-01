@@ -3,11 +3,18 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "element.h"
+
+#include <core/css/parser/css_selector_parser.h>
+
 #include <utility>
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_promise_resolver.h"
+#include "core/css/css_property_value_set.h"
+#include "core/css/parser/css_parser.h"
+#include "core/css/inline_css_style_declaration.h"
+#include "core/css/css_style_sheet.h"
 #include "built_in_string.h"
 #include "child_list_mutation_scope.h"
 #include "comment.h"
@@ -31,7 +38,10 @@ Element::Element(const AtomicString& namespace_uri,
                  const AtomicString& prefix,
                  Document* document,
                  Node::ConstructionType construction_type)
-    : ContainerNode(document, construction_type), local_name_(local_name), namespace_uri_(namespace_uri) {
+    : ContainerNode(document, construction_type),
+      local_name_(local_name),
+      namespace_uri_(namespace_uri),
+      tag_name_(local_name.ToStdString(document->ctx())) {
   auto buffer = GetExecutingContext()->uiCommandBuffer();
   if (namespace_uri == element_namespace_uris::khtml) {
     buffer->AddCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())), bindingObject(),
@@ -265,34 +275,28 @@ Element* Element::closest(const AtomicString& selectors, ExceptionState& excepti
 InlineCssStyleDeclaration* Element::style() {
   if (!IsStyledElement())
     return nullptr;
-  return &EnsureCSSStyleDeclaration();
-}
-
-InlineCssStyleDeclaration& Element::EnsureCSSStyleDeclaration() {
-  if (cssom_wrapper_ == nullptr) {
-    cssom_wrapper_ = MakeGarbageCollected<InlineCssStyleDeclaration>(GetExecutingContext(), this);
-  }
-  return *cssom_wrapper_;
+  CSSStyleDeclaration& style = EnsureElementRareData().EnsureInlineCSSStyleDeclaration(this);
+  return To<InlineCssStyleDeclaration>(&style);
 }
 
 DOMTokenList* Element::classList() {
-  ElementData& element_data = EnsureElementData();
-  if (element_data.GetClassList() == nullptr) {
+  ElementRareDataVector& rare_data = EnsureElementRareData();
+  if (rare_data.GetClassList() == nullptr) {
     auto* class_list = MakeGarbageCollected<DOMTokenList>(this, html_names::kClassAttr);
     AtomicString classValue = getAttribute(html_names::kClassAttr, ASSERT_NO_EXCEPTION());
     class_list->DidUpdateAttributeValue(built_in_string::kNULL, classValue);
-    element_data.SetClassList(class_list);
+    rare_data.SetClassList(class_list);
   }
-  return element_data.GetClassList();
+  return rare_data.GetClassList();
 }
 
 DOMStringMap* Element::dataset() {
-  ElementData& element_data = EnsureElementData();
-  if (element_data.DataSet() == nullptr) {
+  ElementRareDataVector& rare_data = EnsureElementRareData();
+  if (rare_data.Dataset() == nullptr) {
     auto* data_set = MakeGarbageCollected<DOMStringMap>(this);
-    element_data.SetDataSet(data_set);
+    rare_data.SetDataset(data_set);
   }
-  return element_data.DataSet();
+  return rare_data.Dataset();
 }
 
 Element& Element::CloneWithChildren(CloneChildrenFlag flag, Document* document) const {
@@ -315,15 +319,75 @@ Element& Element::CloneWithoutChildren(Document* document) const {
   return clone;
 }
 
+void Element::NotifyInlineStyleMutation() {
+
+}
+
+std::shared_ptr<const MutableCSSPropertyValueSet> Element::EnsureMutableInlineStyle() {
+  DCHECK(IsStyledElement());
+  std::shared_ptr<const CSSPropertyValueSet>& inline_style = EnsureUniqueElementData().inline_style_;
+  if (!inline_style) {
+    CSSParserMode mode = kHTMLStandardMode;
+    inline_style = std::make_shared<MutableCSSPropertyValueSet>(mode);
+  } else if (!inline_style->IsMutable()) {
+    inline_style = inline_style->MutableCopy();
+  }
+  return std::reinterpret_pointer_cast<const MutableCSSPropertyValueSet>(inline_style);
+}
+
+void Element::ClearMutableInlineStyleIfEmpty() {
+  if (EnsureMutableInlineStyle()->IsEmpty()) {
+    EnsureUniqueElementData().inline_style_ = nullptr;
+  }
+}
+
+std::shared_ptr<CSSPropertyValueSet> Element::CreatePresentationAttributeStyle() {
+  assert(false);
+//  auto style = std::make_shared<MutableCSSPropertyValueSet>(
+//      IsSVGElement() ? kSVGAttributeMode : kHTMLStandardMode);
+//  AttributeCollection attributes = AttributesWithoutUpdate();
+//  for (const Attribute& attr : attributes) {
+//    CollectStyleForPresentationAttribute(attr.GetName(), attr.Value(), style);
+//  }
+//  CollectExtraStyleForPresentationAttribute(style);
+//  return style;
+  return nullptr;
+}
+
+void Element::DetachAllAttrNodesFromElement() {
+}
+
+
 void Element::CloneAttributesFrom(const Element& other) {
+  if (GetElementRareData()) {
+    DetachAllAttrNodesFromElement();
+  }
+
+  if (!other.element_data_) {
+    element_data_ = nullptr;
+    return;
+  }
+
   if (other.attributes_ != nullptr) {
     EnsureElementAttributes().CopyWith(other.attributes_);
   }
-  if (other.cssom_wrapper_ != nullptr) {
-    EnsureCSSStyleDeclaration().CopyWith(other.cssom_wrapper_);
+
+  // If 'other' has a mutable ElementData, convert it to an immutable one so we
+  // can share it between both elements.
+  // We can only do this if there are no presentation attributes and sharing the
+  // data won't result in different case sensitivity of class or id.
+  auto* unique_element_data =
+      DynamicTo<UniqueElementData>(other.element_data_.get());
+  if (unique_element_data &&
+      !other.element_data_->PresentationAttributeStyle()) {
+    const_cast<Element&>(other).element_data_ =
+        unique_element_data->MakeShareableCopy();
   }
-  if (other.element_data_ != nullptr) {
-    EnsureElementData().CopyWith(other.element_data_.get());
+
+  if (!other.element_data_->IsUnique()) {
+    element_data_ = other.element_data_;
+  } else {
+    element_data_ = other.element_data_->MakeUniqueCopy();
   }
 }
 
@@ -335,9 +399,12 @@ bool Element::IsWidgetElement() const {
   return false;
 }
 
+bool Element::IsDocumentElement() const {
+  return this == GetDocument().documentElement();
+}
+
 void Element::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(attributes_);
-  visitor->TraceMember(cssom_wrapper_);
   if (element_data_ != nullptr) {
     element_data_->Trace(visitor);
   }
@@ -347,6 +414,36 @@ void Element::Trace(GCVisitor* visitor) const {
 const ElementPublicMethods* Element::elementPublicMethods() {
   static ElementPublicMethods element_public_methods;
   return &element_public_methods;
+}
+
+AtomicString Element::LocalNameForSelectorMatching() const {
+  /* // TODO(guopengfei)：
+  if (IsHTMLElement() || !IsA<HTMLDocument>(GetDocument())) {
+    return localName();
+  }
+  return localName().LowerASCII();
+  */
+  return AtomicString::Empty();
+}
+
+bool Element::HasAttributeIgnoringNamespace(const AtomicString& local_name) const {
+  if (!HasElementData()) {
+    return false;
+  }
+  /* // TODO(guopengfei)：
+  WTF::AtomicStringTable::WeakResult hint =
+      WeakLowercaseIfNecessary(local_name);
+  SynchronizeAttributeHinted(local_name, hint);
+  if (hint.IsNull()) {
+    return false;
+  }
+  for (const Attribute& attribute : GetElementData()->Attributes()) {
+    if (hint == attribute.LocalName()) {
+      return true;
+    }
+  }
+  */
+  return false;
 }
 
 // https://dom.spec.whatwg.org/#concept-element-qualified-name
@@ -362,7 +459,7 @@ const AtomicString Element::getUppercasedQualifiedName() const {
 
 ElementData& Element::EnsureElementData() {
   if (element_data_ == nullptr) {
-    element_data_ = std::make_unique<ElementData>();
+    element_data_ = std::make_shared<ElementData>();
   }
   return *element_data_;
 }
@@ -528,8 +625,9 @@ void Element::SetAttributeInternal(const webf::AtomicString& name,
 }
 
 void Element::SynchronizeAttribute(const AtomicString& name) {
-  if (!cssom_wrapper_)
+  if (!HasElementData()) {
     return;
+  }
 
   if (UNLIKELY(name == html_names::kStyleAttr && EnsureElementData().style_attribute_is_dirty())) {
     assert(IsStyledElement());
@@ -538,11 +636,21 @@ void Element::SynchronizeAttribute(const AtomicString& name) {
   }
 }
 
-void Element::InvalidateStyleAttribute() {
-  EnsureElementData().SetStyleAttributeIsDirty(true);
+void Element::InvalidateStyleAttribute(bool only_changed_independent_properties) {
+  DCHECK(HasElementData());
+  GetElementData()->SetStyleAttributeIsDirty(true);
+  SetNeedsStyleRecalc(only_changed_independent_properties
+                          ? kInlineIndependentStyleChange
+                          : kLocalStyleChange,
+                      StyleChangeReasonForTracing::Create(
+                          style_change_reason::kInlineCSSStyleMutated));
+//  GetDocument().GetStyleEngine().AttributeChangedForElement(
+//      html_names::kStyleAttr, *this);
 }
 
 void Element::AttributeChanged(const AttributeModificationParams& params) {
+  ParseAttribute(params);
+
   const AtomicString& name = params.name;
 
   if (IsStyledElement()) {
@@ -552,19 +660,46 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
   }
 }
 
+void Element::ParseAttribute(const webf::Element::AttributeModificationParams&) {}
+
 void Element::StyleAttributeChanged(const AtomicString& new_style_string,
                                     AttributeModificationReason modification_reason) {
   assert(IsStyledElement());
 
-  if (new_style_string.IsNull() && cssom_wrapper_ != nullptr) {
-    EnsureCSSStyleDeclaration().Clear();
+  if (new_style_string.IsNull()) {
+    EnsureUniqueElementData().inline_style_ = nullptr;
   } else {
     SetInlineStyleFromString(new_style_string);
   }
 }
 
 void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_string) {
-  EnsureCSSStyleDeclaration().SetCSSTextInternal(new_style_string);
+  DCHECK(IsStyledElement());
+  std::shared_ptr<const CSSPropertyValueSet>& inline_style = EnsureElementData().inline_style_;
+
+  // Avoid redundant work if we're using shared attribute data with already
+  // parsed inline style.
+  if (inline_style &&
+      !GetElementData()->IsUnique()) {
+    return;
+  }
+
+  // We reconstruct the property set instead of mutating if there is no CSSOM
+  // wrapper.  This makes wrapperless property sets immutable and so cacheable.
+  if (inline_style && !inline_style->IsMutable()) {
+    inline_style = nullptr;
+  }
+
+  if (!inline_style) {
+    inline_style =
+        CSSParser::ParseInlineStyleDeclaration(reinterpret_cast<const char*>(new_style_string.Character8()), this);
+  } else {
+    DCHECK(inline_style->IsMutable());
+    static_cast<MutableCSSPropertyValueSet*>(const_cast<CSSPropertyValueSet*>(inline_style.get()))
+        ->ParseDeclarationList(
+            reinterpret_cast<const char*>(new_style_string.Character8()),
+            GetDocument().ElementSheet().Contents());
+  }
 }
 
 std::string Element::outerHTML() {
@@ -575,8 +710,8 @@ std::string Element::outerHTML() {
   if (attributes_ != nullptr) {
     s += " " + attributes_->ToString();
   }
-  if (cssom_wrapper_ != nullptr) {
-    s += " style=\"" + cssom_wrapper_->ToString();
+  if (EnsureElementData().inline_style_ != nullptr) {
+    s += " style=\"" + GetElementData()->inline_style_->AsText();
   }
 
   s += ">";
@@ -616,13 +751,22 @@ std::string Element::innerHTML() {
   return s;
 }
 
+AtomicString Element::TextFromChildren() {
+  return {ctx(), innerHTML()};
+}
+
 void Element::setInnerHTML(const AtomicString& value, ExceptionState& exception_state) {
   auto html = value.ToStdString(ctx());
   ChildListMutationScope scope{*this};
-  if (auto* template_element = DynamicTo<HTMLTemplateElement>(this)) {
-    HTMLParser::parseHTMLFragment(html.c_str(), html.size(), template_element->content());
+
+  if (value.IsEmpty()) {
+    setTextContent(value, exception_state);
   } else {
-    HTMLParser::parseHTMLFragment(html.c_str(), html.size(), this);
+    if (auto* template_element = DynamicTo<HTMLTemplateElement>(this)) {
+      HTMLParser::parseHTMLFragment(html.c_str(), html.size(), template_element->content());
+    } else {
+      HTMLParser::parseHTMLFragment(html.c_str(), html.size(), this);
+    }
   }
 }
 
@@ -652,6 +796,113 @@ bool Element::ChildTypeAllowed(NodeType type) const {
       break;
   }
   return false;
+}
+
+void Element::FinishParsingChildren() {
+  SetIsFinishedParsingChildren(true);
+  //  CheckForEmptyStyleChange(this, this);
+  //  CheckForSiblingStyleChanges(kFinishedParsingChildren, nullptr, lastChild(),
+  //                              nullptr);
+  //
+  //  if (GetDocument().HasRenderBlockingExpectLinkElements()) {
+  //    DCHECK(GetDocument().GetRenderBlockingResourceManager());
+  //    GetDocument()
+  //        .GetRenderBlockingResourceManager()
+  //        ->RemovePendingParsingElement(GetIdAttribute(), this);
+  //  }
+  //  GetDocument()
+  //      .GetStyleEngine()
+  // .ScheduleInvalidationsForHasPseudoAffectedByInsertion(
+  //   parentElement(), previousSibling(), *this);
+}
+
+// inline ElementRareDataVector* Element::GetElementRareData() const {
+//   return static_cast<ElementRareDataVector*>(RareData());
+// }
+//
+// inline ElementRareDataVector& Element::EnsureElementRareData() {
+//   return static_cast<ElementRareDataVector&>(EnsureRareData());
+// }
+
+bool Element::HasPart() const {
+  // TODO(guopengfei)：未迁移ElementRareDataVector
+  // if (const ElementRareDataVector* data = GetElementRareData()) {
+  //   if (auto* part = data->GetPart()) {
+  //     return part->length() > 0;
+  //   }
+  // }
+  return false;
+}
+
+DOMTokenList* Element::GetPart() const {
+  // TODO(guopengfei)：未迁移ElementRareDataVector
+  // if (const ElementRareDataVector* data = GetElementRareData()) {
+  //   return data->GetPart();
+  // }
+  return nullptr;
+}
+// TODO(guopengfei)：未迁移ElementRareDataVector
+// DOMTokenList& Element::part() {
+//   ElementRareDataVector& rare_data = EnsureElementRareData();
+//   DOMTokenList* part = rare_data.GetPart();
+//   if (!part) {
+//     part = MakeGarbageCollected<DOMTokenList>(*this, html_names::kPartAttr);
+//     rare_data.SetPart(part);
+//   }
+//   return *part;
+// }
+
+void Element::SetAnimationStyleChange(bool animation_style_change) {
+  if (animation_style_change && GetDocument().InStyleRecalc()) {
+    return;
+  }
+  /* // TODO(guopengfei)：暂不支持ElementAnimations
+  if (ElementRareDataVector* data = GetElementRareData()) {
+    if (ElementAnimations* element_animations = data->GetElementAnimations()) {
+      element_animations->SetAnimationStyleChange(animation_style_change);
+    }
+  }
+  */
+}
+
+void Element::SetNeedsAnimationStyleRecalc() {
+  if (GetDocument().InStyleRecalc()) {
+    return;
+  }
+  if (GetDocument().GetStyleEngine().InApplyAnimationUpdate()) {
+    return;
+  }
+  if (GetStyleChangeType() != kNoStyleChange) {
+    return;
+  }
+
+  SetNeedsStyleRecalc(kLocalStyleChange, StyleChangeReasonForTracing::Create(style_change_reason::kAnimation));
+  /*
+    // TODO(guopengfei)：未迁移ComputedStyle
+    // Setting this flag to 'true' only makes sense if there's an existing style,
+    // otherwise there is no previous style to use as the basis for the new one.
+    if (NeedsStyleRecalc() && GetComputedStyle() &&
+        !GetComputedStyle()->IsEnsuredInDisplayNone()) {
+      SetAnimationStyleChange(true);
+      }
+    */
+}
+
+bool Element::ChildStyleRecalcBlockedByDisplayLock() const {
+  // TODO(guopengfei)：暂不支持
+  // auto* context = GetDisplayLockContext();
+  // return context && !context->ShouldStyleChildren();
+  return false;
+}
+
+void Element::CreateUniqueElementData() {
+  if (!element_data_) {
+    element_data_ = std::make_unique<UniqueElementData>();
+  } else {
+    DCHECK(!IsA<UniqueElementData>(element_data_.get()));
+    element_data_ =
+        To<ShareableElementData>(element_data_.get())->MakeUniqueCopy();
+  }
 }
 
 }  // namespace webf

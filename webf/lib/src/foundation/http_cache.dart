@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:async';
-import 'dart:collection';
 import 'dart:io';
 
 import 'package:async/async.dart';
@@ -27,7 +26,7 @@ class HttpCacheController {
   // TODO: Add HTTP Cache for Windows and Linux
   static HttpCacheMode mode = Platform.isWindows ? HttpCacheMode.NO_CACHE : HttpCacheMode.DEFAULT;
 
-  static final Map<String, HttpCacheController> _controllers = HashMap();
+  static final Map<String, HttpCacheController> _controllers = {};
 
   static Directory? _cacheDirectory;
   static Future<Directory> getCacheDirectory() async {
@@ -70,7 +69,7 @@ class HttpCacheController {
   // Memory cache.
   //   [String cacheKey] -> [HttpCacheObject object]
   // A splay tree is a good choice for data that is stored and accessed frequently.
-  final SplayTreeMap<String, HttpCacheObject> _caches = SplayTreeMap();
+  final Map<String, HttpCacheObject> _caches = {};
 
   HttpCacheController._(String origin, {int maxCachedObjects = 1000})
       : _origin = origin,
@@ -99,7 +98,7 @@ class HttpCacheController {
   // Add or update the httpCacheObject to memory cache.
   void putObject(Uri uri, HttpCacheObject cacheObject) {
     if (_caches.length == _maxCachedObjects) {
-      _caches.remove(_caches.lastKey());
+      _caches.remove(_caches.keys.last);
     }
     final String key = getCacheKey(uri);
     _caches.update(key, (value) => cacheObject, ifAbsent: () => cacheObject);

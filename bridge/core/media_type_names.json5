@@ -1,0 +1,25 @@
+{
+  "metadata": {
+    "templates": [
+      {
+        "template": "make_std_names",
+        "filename": "media_type_names",
+        "options": {
+          "camelcase": true
+        }
+      }
+    ]
+  },
+  "data": [
+    "all",
+    "braille",
+    "embossed",
+    "handheld",
+    "print",
+    "projection",
+    "screen",
+    "speech",
+    "tty",
+    "tv"
+  ]
+}

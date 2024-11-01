@@ -46,6 +46,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "core/css/parser/css_parser_idioms.h"
 #include "space_split_string.h"
 #include <sstream>
 #include <unordered_set>
@@ -53,12 +54,17 @@
 
 namespace webf {
 
+template <typename CharType>
+inline bool IsNotHTMLSpace(CharType character) {
+  return !IsHTMLSpace<CharType>(character);
+}
+
 void SpaceSplitString::Set(JSContext* ctx, const AtomicString& value) {
   if (value.IsNull()) {
     Clear();
     return;
   }
-  data_ = std::make_unique<Data>(ctx, value);
+  data_ = std::make_shared<Data>(ctx, value);
 }
 
 void SpaceSplitString::Clear() {
@@ -68,7 +74,7 @@ void SpaceSplitString::Clear() {
 void SpaceSplitString::Add(JSContext* ctx, const AtomicString& string) {
   if (Contains(string))
     return;
-  EnsureUnique();
+  EnsureShared();
   if (data_) {
     data_->Add(string);
   } else {
@@ -84,7 +90,7 @@ bool SpaceSplitString::Remove(const AtomicString& string) {
   while (i < data_->size()) {
     if ((*data_)[i] == string) {
       if (!changed)
-        EnsureUnique();
+        EnsureShared();
       data_->Remove(i);
       changed = true;
       continue;
@@ -96,13 +102,13 @@ bool SpaceSplitString::Remove(const AtomicString& string) {
 
 void SpaceSplitString::Remove(size_t index) {
   assert(index < size());
-  EnsureUnique();
+  EnsureShared();
   data_->Remove(index);
 }
 
 void SpaceSplitString::ReplaceAt(size_t index, const AtomicString& string) {
   assert(index < data_->size());
-  EnsureUnique();
+  EnsureShared();
   (*data_)[index] = string;
 }
 

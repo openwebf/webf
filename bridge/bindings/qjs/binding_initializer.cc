@@ -10,6 +10,8 @@
 #include "qjs_blob.h"
 #include "qjs_bounding_client_rect.h"
 #include "qjs_canvas_gradient.h"
+#include "qjs_css_rule.h"
+#include "qjs_html_style_element.h"
 #include "qjs_canvas_pattern.h"
 #include "qjs_canvas_rendering_context.h"
 #include "qjs_canvas_rendering_context_2d.h"
@@ -99,6 +101,9 @@
 #include "qjs_ui_event.h"
 #include "qjs_widget_element.h"
 #include "qjs_window.h"
+#include "qjs_css_style_sheet.h"
+#include "qjs_media_list.h"
+#include "qjs_css_rule.h"
 #include "qjs_window_or_worker_global_scope.h"
 
 namespace webf {
@@ -150,12 +155,14 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLAnchorElement::Install(context);
   QJSHTMLImageElement::Install(context);
   QJSHTMLInputElement::Install(context);
+  QJSHTMLStyleElement::Install(context);
   QJSHTMLTextareaElement::Install(context);
   QJSHTMLButtonElement::Install(context);
   QJSHTMLFormElement::Install(context);
   QJSImage::Install(context);
   QJSHTMLScriptElement::Install(context);
   QJSHTMLLinkElement::Install(context);
+
   QJSHTMLUnknownElement::Install(context);
   QJSHTMLTemplateElement::Install(context);
   QJSHTMLCanvasElement::Install(context);
@@ -170,6 +177,8 @@ void InstallBindings(ExecutingContext* context) {
   QJSComputedCssStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
   QJSScreen::Install(context);
+  QJSCSSStyleSheet::Install(context);
+  QJSMediaList::Install(context);
   QJSBlob::Install(context);
   QJSTouch::Install(context);
   QJSTouchList::Install(context);

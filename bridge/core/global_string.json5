@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "templates": [
+      {
+        "template": "make_names",
+        "filename": "global_string"
+      }
+    ]
+  },
+  "data": [
+    ["null_atom", ""],
+    ["empty_atom", ""],
+    ["star_atom", "*"]
+  ]
+}

@@ -2,9 +2,9 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+#include "page.h"
 #include <atomic>
 #include <unordered_map>
-
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/binding_initializer.h"
 #include "core/dart_methods.h"
@@ -15,10 +15,22 @@
 #include "event_factory.h"
 #include "foundation/logging.h"
 #include "foundation/native_value_converter.h"
-#include "page.h"
 #include "polyfill.h"
 
 namespace webf {
+
+namespace {
+// This seems like a reasonable upper bound, and otherwise mutually
+// recursive frameset pages can quickly bring the program to its knees
+// with exponential growth in the number of frames.
+const int kMaxNumberOfFrames = 1000;
+
+// It is possible to use a reduced frame limit for testing, but only two values
+// are permitted, the default or reduced limit.
+const int kTenFrames = 10;
+
+bool g_limit_max_frames_to_ten_for_testing = false;
+}
 
 ConsoleMessageHandler WebFPage::consoleMessageHandler{nullptr};
 
@@ -295,6 +307,11 @@ void WebFPage::DumpQuickJsByteCodeInternal(void* page_,
 
   dart_isolate_context->dispatcher()->PostToDart(page->isDedicated(), ReturnDumpByteCodeResultToDart, persistent_handle,
                                                  result_callback);
+}
+
+// static
+int WebFPage::MaxNumberOfFrames() {
+  return kMaxNumberOfFrames;
 }
 
 }  // namespace webf

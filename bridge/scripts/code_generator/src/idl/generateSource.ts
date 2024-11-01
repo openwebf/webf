@@ -85,7 +85,10 @@ export function generateCoreTypeValue(type: ParameterType): string {
       return 'ScriptValue';
     }
   }
-
+  if (isUnionType(type) && Array.isArray(type.value)) {
+    let unionTypeClassName = generateUnionTypeClassName(type.value);
+    return `std::shared_ptr<${unionTypeClassName}>`;
+  }
   if (isDictionary(type)) {
     return `std::shared_ptr<${getPointerType(type)}>`;
   }

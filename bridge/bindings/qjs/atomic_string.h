@@ -13,6 +13,7 @@
 #include "foundation/macros.h"
 #include "foundation/native_string.h"
 #include "foundation/string_view.h"
+#include "foundation/ascii_types.h"
 #include "native_string_utils.h"
 #include "qjs_engine_patch.h"
 
@@ -58,6 +59,13 @@ class AtomicString {
 
   bool IsEmpty() const;
   bool IsNull() const;
+  unsigned Hash() const {
+    return atom_;
+  }
+  bool StartsWith(const StringView& prefix) const {
+    // TODO(xiezuobing): 字符串处理(忽略大小写的对比开头)，区分是否是8Bit
+      return false;
+  };
 
   JSAtom Impl() const { return atom_; }
 
@@ -96,6 +104,12 @@ class AtomicString {
   bool operator!=(const AtomicString& other) const { return other.atom_ != this->atom_; };
   bool operator>(const AtomicString& other) const { return other.atom_ > this->atom_; };
   bool operator<(const AtomicString& other) const { return other.atom_ < this->atom_; };
+  char16_t operator[](uint32_t i) const {
+    if(Is8Bit())
+      return Character8()[i];
+    else
+      return Character16()[i];
+  }
 
  protected:
   JSRuntime* runtime_{nullptr};

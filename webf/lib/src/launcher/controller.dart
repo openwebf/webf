@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
@@ -310,6 +311,9 @@ class WebFViewController implements WidgetsBindingObserver {
   RenderViewportBox? viewport;
   late Document document;
   late Window window;
+  bool _isDocumentInited = false;
+
+  bool get isDocumentInited => _isDocumentInited;
 
   void initDocument(view, Pointer<NativeBindingObject> pointer) {
     document = Document(
@@ -318,6 +322,7 @@ class WebFViewController implements WidgetsBindingObserver {
       gestureListener: gestureListener,
       initialCookies: initialCookies,
     );
+    _isDocumentInited = true;
 
     // Listeners need to be registered to window in order to dispatch events on demand.
     if (gestureListener != null) {
@@ -533,12 +538,6 @@ class WebFViewController implements WidgetsBindingObserver {
       originalTarget.inlineStyle.forEach((key, value) {
         newElement.setInlineStyle(key, value);
       });
-      // Copy element attributes.
-      originalTarget.attributes.forEach((key, value) {
-        newElement.setAttribute(key, value);
-      });
-      newElement.className = originalTarget.className;
-      newElement.id = originalTarget.id;
     }
   }
 
@@ -592,52 +591,6 @@ class WebFViewController implements WidgetsBindingObserver {
     }
 
     _debugDOMTreeChanged();
-  }
-
-  void setAttribute(Pointer<NativeBindingObject> selfPtr, String key, String value) {
-    assert(hasBindingObject(selfPtr), 'selfPtr: $selfPtr key: $key value: $value');
-    Node? target = getBindingObject<Node>(selfPtr);
-    if (target == null) return;
-
-    if (target is Element) {
-      // Only element has properties.
-      target.setAttribute(key, value);
-    } else if (target is TextNode && (key == 'data' || key == 'nodeValue')) {
-      target.data = value;
-    } else {
-      debugPrint('Only element has properties, try setting $key to Node(#$selfPtr).');
-    }
-  }
-
-  String? getAttribute(Pointer selfPtr, String key) {
-    assert(hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
-    Node? target = getBindingObject<Node>(selfPtr);
-    if (target == null) return null;
-
-    if (target is Element) {
-      // Only element has attributes.
-      return target.getAttribute(key);
-    } else if (target is TextNode && (key == 'data' || key == 'nodeValue')) {
-      // @TODO: property is not attribute.
-      return target.data;
-    } else {
-      return null;
-    }
-  }
-
-  void removeAttribute(Pointer selfPtr, String key) {
-    assert(hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
-    Node? target = getBindingObject<Node>(selfPtr);
-    if (target == null) return;
-
-    if (target is Element) {
-      target.removeAttribute(key);
-    } else if (target is TextNode && (key == 'data' || key == 'nodeValue')) {
-      // @TODO: property is not attribute.
-      target.data = '';
-    } else {
-      debugPrint('Only element has attributes, try removing $key from Node(#$selfPtr).');
-    }
   }
 
   void setInlineStyle(Pointer selfPtr, String key, String value) {
@@ -1591,6 +1544,12 @@ class WebFController {
         }
       });
       return;
+    }
+
+    if (!kReleaseMode) {
+      Timeline.startSync(
+        'Evaluate Scripts'
+      );
     }
 
     assert(!_view._disposed, 'WebF have already disposed');

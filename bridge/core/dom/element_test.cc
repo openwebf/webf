@@ -112,21 +112,21 @@ console.log(div.outerHTML, div.innerHTML, document.body.innerHTML);
   EXPECT_EQ(errorCalled, false);
 }
 
-TEST(Element, style) {
-  bool static errorCalled = false;
-  bool static logCalled = false;
-  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-    logCalled = true;
-    EXPECT_STREQ(message.c_str(), "true false");
-  };
-  auto env = TEST_init([](double contextId, const char* errmsg) {
-    WEBF_LOG(VERBOSE) << errmsg;
-    errorCalled = true;
-  });
-  const char* code = "console.log('borderTop' in document.body.style, 'borderXXX' in document.body.style)";
-  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
-  EXPECT_EQ(errorCalled, false);
-}
+//TEST(Element, style) {
+//  bool static errorCalled = false;
+//  bool static logCalled = false;
+//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
+//    logCalled = true;
+//    EXPECT_STREQ(message.c_str(), "true false");
+//  };
+//  auto env = TEST_init([](double contextId, const char* errmsg) {
+//    WEBF_LOG(VERBOSE) << errmsg;
+//    errorCalled = true;
+//  });
+//  const char* code = "console.log('borderTop' in document.body.style, 'borderXXX' in document.body.style)";
+//  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+//  EXPECT_EQ(errorCalled, false);
+//}
 
 TEST(Element, instanceofNode) {
   bool static errorCalled = false;

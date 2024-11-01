@@ -29,6 +29,8 @@ class TreeScope {
     return *document_;
   }
 
+ ContainerNode& RootNode() const { return *root_node_; }
+
  protected:
   explicit TreeScope(Document&);
 

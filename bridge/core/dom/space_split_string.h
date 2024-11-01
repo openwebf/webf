@@ -11,32 +11,13 @@
 
 namespace webf {
 
-template <typename CharType>
-inline bool IsHTMLSpace(CharType character) {
-  // Histogram from Apple's page load test combined with some ad hoc browsing
-  // some other test suites.
-  //
-  //     82%: 216330 non-space characters, all > U+0020
-  //     11%:  30017 plain space characters, U+0020
-  //      5%:  12099 newline characters, U+000A
-  //      2%:   5346 tab characters, U+0009
-  //
-  // No other characters seen. No U+000C or U+000D, and no other control
-  // characters. Accordingly, we check for non-spaces first, then space, then
-  // newline, then tab, then the other characters.
-  return character <= ' ' &&
-         (character == ' ' || character == '\n' || character == '\t' || character == '\r' || character == '\f');
-}
-
-template <typename CharType>
-inline bool IsNotHTMLSpace(CharType character) {
-  return !IsHTMLSpace<CharType>(character);
-}
-
 class SpaceSplitString {
  public:
   SpaceSplitString() = default;
   explicit SpaceSplitString(JSContext* ctx, const AtomicString& string) { Set(ctx, string); };
+  SpaceSplitString(const SpaceSplitString& other) : data_(other.data_) {}
+  SpaceSplitString(SpaceSplitString&&) = default;
+  ~SpaceSplitString() = default;
 
   bool operator!=(const SpaceSplitString& other) const { return data_ != other.data_; }
 
@@ -64,6 +45,23 @@ class SpaceSplitString {
   bool IsNull() const { return !data_; }
   const AtomicString& operator[](size_t i) const { return (*data_)[i]; }
 
+  // Provide begin and end functions
+  std::vector<AtomicString>::iterator begin() {
+    return data_->vector_.begin();
+  }
+
+  std::vector<AtomicString>::iterator end() {
+    return data_->vector_.end();
+  }
+
+  [[nodiscard]] std::vector<AtomicString>::const_iterator begin() const {
+    return data_->vector_.begin();
+  }
+
+  [[nodiscard]] std::vector<AtomicString>::const_iterator end() const {
+    return data_->vector_.end();
+  }
+
  private:
   class Data {
    public:
@@ -89,17 +87,18 @@ class SpaceSplitString {
     inline void CreateVector(JSContext* ctx, const AtomicString&, const CharacterType*, unsigned);
 
     AtomicString key_string_;
+  public:
     std::vector<AtomicString> vector_;
   };
 
   static std::unordered_map<JSAtom, Data*>& SharedDataMap();
-  void EnsureUnique() {
+  void EnsureShared() {
     if (data_ != nullptr) {
-      data_ = std::make_unique<Data>(*data_);
+      data_ = std::make_shared<Data>(*data_);
     }
   }
 
-  std::unique_ptr<Data> data_ = nullptr;
+  std::shared_ptr<Data> data_ = nullptr;
 };
 
 }  // namespace webf

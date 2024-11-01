@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:collection';
 import 'package:webf/css.dart';
 
 mixin CSSVariableMixin on RenderStyle {
@@ -64,10 +63,10 @@ mixin CSSVariableMixin on RenderStyle {
   void setCSSVariable(String identifier, String value) {
     CSSVariable? variable = CSSVariable.tryParse(this, value);
     if (variable != null) {
-      _variableStorage ??= HashMap<String, CSSVariable>();
+      _variableStorage ??= <String, CSSVariable>{};
       _variableStorage![identifier] = variable;
     } else {
-      _identifierStorage ??= HashMap<String, String>();
+      _identifierStorage ??= <String, String>{};
       _identifierStorage![identifier] = value;
     }
     if (_propertyDependencies.containsKey(identifier)) {
