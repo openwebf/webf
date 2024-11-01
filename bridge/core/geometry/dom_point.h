@@ -32,6 +32,8 @@ class DOMPoint : public DOMPointReadonly {
   explicit DOMPoint(ExecutingContext* context, double x, double y, ExceptionState& exception_state);
   explicit DOMPoint(ExecutingContext* context, double x, double y, double z, ExceptionState& exception_state);
   explicit DOMPoint(ExecutingContext* context, double x, double y, double z, double w, ExceptionState& exception_state);
+  explicit DOMPoint(ExecutingContext* context, NativeBindingObject* native_binding_object);
+
   [[nodiscard]] bool IsDOMPoint() const override { return true; }
 };
 template <>

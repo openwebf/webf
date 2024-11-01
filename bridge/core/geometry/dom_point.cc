@@ -40,5 +40,6 @@ DOMPoint::DOMPoint(ExecutingContext* context, double x, double y, double z, Exce
     : DOMPointReadonly(context, x, y, z, exception_state) {}
 DOMPoint::DOMPoint(ExecutingContext* context, double x, double y, double z, double w, ExceptionState& exception_state)
     : DOMPointReadonly(context, x, y, z, w, exception_state) {}
+DOMPoint::DOMPoint(webf::ExecutingContext* context, webf::NativeBindingObject* native_binding_object): DOMPointReadonly(context, native_binding_object) {}
 
 }  // namespace webf
