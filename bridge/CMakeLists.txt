@@ -121,6 +121,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/ui_command_buffer.cc
   foundation/ui_command_strategy.cc
   foundation/dtoa.cc
+  foundation/decimal.cc
   polyfill/dist/polyfill.cc
   multiple_threading/dispatcher.cc
   multiple_threading/looper.cc
