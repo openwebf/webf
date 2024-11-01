@@ -220,6 +220,7 @@
     "toFloat32Array",
     "toFloat64Array",
     "toJSON",
-    "toString"
+    "toString",
+    "transformPoint"
   ]
 }

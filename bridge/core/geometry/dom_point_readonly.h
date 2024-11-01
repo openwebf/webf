@@ -67,6 +67,8 @@ class DOMPointReadonly : public BindingObject {
                                      int32_t argc,
                                      const NativeValue* argv,
                                      Dart_Handle dart_object) override;
+protected:
+  explicit DOMPointReadonly(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
  private:
   [[nodiscard]] double getPointProperty(const AtomicString& prop) const;

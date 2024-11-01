@@ -10,17 +10,19 @@ import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/geometry.dart';
 import 'package:webf/src/css/matrix.dart';
-
+import 'package:webf/src/geometry/dom_point.dart';
 
 class DOMMatrixReadonly extends DynamicBindingObject {
   // Matrix4 Values are stored in column major order.
   Matrix4 _matrix4 = Matrix4.identity();
+
   Matrix4 get matrix => _matrix4;
   bool _is2D = true;
+
   bool get is2D => _is2D;
 
   DOMMatrixReadonly.fromMatrix4(BindingContext context, Matrix4? matrix4, bool flag2D) : super(context) {
-    if(matrix4 != null) {
+    if (matrix4 != null) {
       _matrix4 = matrix4;
       _is2D = flag2D;
     } else {
@@ -30,7 +32,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrixReadonly(BindingContext context, List<dynamic> domMatrixInit) : super(context) {
-    if(!domMatrixInit.isNotEmpty ) {
+    if (!domMatrixInit.isNotEmpty) {
       return;
     }
     if (domMatrixInit[0].runtimeType == List<dynamic>) {
@@ -38,10 +40,10 @@ class DOMMatrixReadonly extends DynamicBindingObject {
       if (list.isNotEmpty && list[0].runtimeType == double) {
         List<double> doubleList = List<double>.from(list);
         if (doubleList.length == 6) {
-          _matrix4[0] = doubleList[0];  // m11 = a
-          _matrix4[1] = doubleList[1];  // m12 = b
-          _matrix4[4] = doubleList[2];  // m21 = c
-          _matrix4[5] = doubleList[3];  // m22 = d
+          _matrix4[0] = doubleList[0]; // m11 = a
+          _matrix4[1] = doubleList[1]; // m12 = b
+          _matrix4[4] = doubleList[2]; // m21 = c
+          _matrix4[5] = doubleList[3]; // m22 = d
           _matrix4[12] = doubleList[4]; // m41 = e
           _matrix4[13] = doubleList[5]; // m42 = f
         } else if (doubleList.length == 16) {
@@ -121,12 +123,15 @@ class DOMMatrixReadonly extends DynamicBindingObject {
     );
     methods['skewX'] = BindingObjectMethodSync(call: (args) => skewX(castToType<num>(args[0]).toDouble()));
     methods['skewY'] = BindingObjectMethodSync(call: (args) => skewY(castToType<num>(args[0]).toDouble()));
-    // // toFloat32Array(): number[];
-    // // toFloat64Array(): number[];
-    // // toJSON(): DartImpl<JSON>;
+    // toFloat32Array(): number[];
+    // toFloat64Array(): number[];
+    // toJSON(): DartImpl<JSON>;
     methods['toString'] = BindingObjectMethodSync(call: (args) => toString());
-    // // TODO DOMPoint
-    // // transformPoint(): DartImpl<DOMPoint>;
+    methods['transformPoint'] = BindingObjectMethodSync(call: (args) {
+      BindingObject domPoint = args[0];
+      if (domPoint is DOMPoint) {
+        return transformPoint((domPoint as DOMPoint));
+      }
     methods['translate'] = BindingObjectMethodSync(
       call: (args) => translate(
         castToType<num>(args[0]).toDouble(),
@@ -148,119 +153,161 @@ class DOMMatrixReadonly extends DynamicBindingObject {
         _matrix4[0] = value;
       }
     });
-    properties['a'] = BindingObjectProperty(getter: () => _matrix4[0], setter: (value) {
-      if (value is double) {
-        _matrix4[0] = value;
-      }
-    });
+    properties['a'] = BindingObjectProperty(
+        getter: () => _matrix4[0],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[0] = value;
+          }
+        });
     // m12 = b
-    properties['m12'] = BindingObjectProperty(getter: () => _matrix4[1], setter: (value) {
-      if (value is double) {
-        _matrix4[1] = value;
-      }
-    });
-    properties['b'] = BindingObjectProperty(getter: () => _matrix4[1], setter: (value) {
-      if (value is double) {
-        _matrix4[1] = value;
-      }
-    });
-    properties['m13'] = BindingObjectProperty(getter: () => _matrix4[2], setter: (value) {
-      if (value is double) {
-        _matrix4[2] = value;
-      }
-    });
-    properties['m14'] = BindingObjectProperty(getter: () => _matrix4[3], setter: (value) {
-      if (value is double) {
-        _matrix4[3] = value;
-      }
-    });
+    properties['m12'] = BindingObjectProperty(
+        getter: () => _matrix4[1],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[1] = value;
+          }
+        });
+    properties['b'] = BindingObjectProperty(
+        getter: () => _matrix4[1],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[1] = value;
+          }
+        });
+    properties['m13'] = BindingObjectProperty(
+        getter: () => _matrix4[2],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[2] = value;
+          }
+        });
+    properties['m14'] = BindingObjectProperty(
+        getter: () => _matrix4[3],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[3] = value;
+          }
+        });
 
     // m22 = c
-    properties['m21'] = BindingObjectProperty(getter: () => _matrix4[4], setter: (value) {
-      if (value is double) {
-        _matrix4[4] = value;
-      }
-    });
-    properties['c'] = BindingObjectProperty(getter: () => _matrix4[4], setter: (value) {
-      if (value is double) {
-        _matrix4[4] = value;
-      }
-    });
+    properties['m21'] = BindingObjectProperty(
+        getter: () => _matrix4[4],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[4] = value;
+          }
+        });
+    properties['c'] = BindingObjectProperty(
+        getter: () => _matrix4[4],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[4] = value;
+          }
+        });
     // m22 = d
-    properties['m22'] = BindingObjectProperty(getter: () => _matrix4[5], setter: (value) {
-      if (value is double) {
-        _matrix4[5] = value;
-      }
-    });
-    properties['d'] = BindingObjectProperty(getter: () => _matrix4[5], setter: (value) {
-      if (value is double) {
-        _matrix4[5] = value;
-      }
-    });
-    properties['m23'] = BindingObjectProperty(getter: () => _matrix4[6], setter: (value) {
-      if (value is double) {
-        _matrix4[6] = value;
-      }
-    });
-    properties['m24'] = BindingObjectProperty(getter: () => _matrix4[7], setter: (value) {
-      if (value is double) {
-        _matrix4[7] = value;
-      }
-    });
+    properties['m22'] = BindingObjectProperty(
+        getter: () => _matrix4[5],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[5] = value;
+          }
+        });
+    properties['d'] = BindingObjectProperty(
+        getter: () => _matrix4[5],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[5] = value;
+          }
+        });
+    properties['m23'] = BindingObjectProperty(
+        getter: () => _matrix4[6],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[6] = value;
+          }
+        });
+    properties['m24'] = BindingObjectProperty(
+        getter: () => _matrix4[7],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[7] = value;
+          }
+        });
 
-    properties['m31'] = BindingObjectProperty(getter: () => _matrix4[8], setter: (value) {
-      if (value is double) {
-        _matrix4[8] = value;
-      }
-    });
-    properties['m32'] = BindingObjectProperty(getter: () => _matrix4[9], setter: (value) {
-      if (value is double) {
-        _matrix4[9] = value;
-      }
-    });
-    properties['m33'] = BindingObjectProperty(getter: () => _matrix4[10], setter: (value) {
-      if (value is double) {
-        _matrix4[10] = value;
-      }
-    });
-    properties['m34'] = BindingObjectProperty(getter: () => _matrix4[11], setter: (value) {
-      if (value is double) {
-        _matrix4[11] = value;
-      }
-    });
+    properties['m31'] = BindingObjectProperty(
+        getter: () => _matrix4[8],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[8] = value;
+          }
+        });
+    properties['m32'] = BindingObjectProperty(
+        getter: () => _matrix4[9],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[9] = value;
+          }
+        });
+    properties['m33'] = BindingObjectProperty(
+        getter: () => _matrix4[10],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[10] = value;
+          }
+        });
+    properties['m34'] = BindingObjectProperty(
+        getter: () => _matrix4[11],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[11] = value;
+          }
+        });
 
     // m41 = e
-    properties['m41'] = BindingObjectProperty(getter: () => _matrix4[12], setter: (value) {
-      if (value is double) {
-        _matrix4[12] = value;
-      }
-    });
-    properties['e'] = BindingObjectProperty(getter: () => _matrix4[12], setter: (value) {
-      if (value is double) {
-        _matrix4[12] = value;
-      }
-    });
+    properties['m41'] = BindingObjectProperty(
+        getter: () => _matrix4[12],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[12] = value;
+          }
+        });
+    properties['e'] = BindingObjectProperty(
+        getter: () => _matrix4[12],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[12] = value;
+          }
+        });
     // m42 = f
-    properties['m42'] = BindingObjectProperty(getter: () => _matrix4[13], setter: (value) {
-      if (value is double) {
-        _matrix4[13] = value;
-      }
-    });
-    properties['f'] = BindingObjectProperty(getter: () => _matrix4[13], setter: (value) {
-      if (value is double) {
-        _matrix4[13] = value;
-      }
-    });
-    properties['m43'] = BindingObjectProperty(getter: () => _matrix4[14], setter: (value) {
-      if (value is double) {
-        _matrix4[14] = value;
-      }
-    });
-    properties['m44'] = BindingObjectProperty(getter: () => _matrix4[15], setter: (value) {
-      if (value is double) {
-        _matrix4[15] = value;
-      }
-    });
+    properties['m42'] = BindingObjectProperty(
+        getter: () => _matrix4[13],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[13] = value;
+          }
+        });
+    properties['f'] = BindingObjectProperty(
+        getter: () => _matrix4[13],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[13] = value;
+          }
+        });
+    properties['m43'] = BindingObjectProperty(
+        getter: () => _matrix4[14],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[14] = value;
+          }
+        });
+    properties['m44'] = BindingObjectProperty(
+        getter: () => _matrix4[15],
+        setter: (value) {
+          if (value is double) {
+            _matrix4[15] = value;
+          }
+        });
   }
 
   DOMMatrix flipX() {
@@ -282,7 +329,8 @@ class DOMMatrixReadonly extends DynamicBindingObject {
 
   DOMMatrix multiply(DOMMatrix domMatrix) {
     Matrix4 m = _matrix4.multiplied(domMatrix.matrix);
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, domMatrix.is2D);
+    return DOMMatrix.fromMatrix4(
+        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, domMatrix.is2D);
   }
 
   DOMMatrix rotateAxisAngle(double x, double y, double z, double angle) {
@@ -306,7 +354,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   DOMMatrix rotateFromVector(double x, double y) {
     Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage);
     double? angle = rad2deg(atan2(x, y));
-    if(angle != null) {
+    if (angle != null) {
       m.rotateZ(angle);
     }
     return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, _is2D);
@@ -335,12 +383,14 @@ class DOMMatrixReadonly extends DynamicBindingObject {
 
   DOMMatrix skewX(double sx) {
     Matrix4 m = Matrix4.skewX(sx);
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, _is2D);
+    return DOMMatrix.fromMatrix4(
+        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, _is2D);
   }
 
   DOMMatrix skewY(double sy) {
     Matrix4 m = Matrix4.skewY(sy);
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, _is2D);
+    return DOMMatrix.fromMatrix4(
+        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, _is2D);
   }
 
   @override
@@ -353,6 +403,26 @@ class DOMMatrixReadonly extends DynamicBindingObject {
     }
   }
 
+  DOMPoint transformPoint(DOMPoint domPoint) {
+    double x = domPoint.data.x, y = domPoint.data.y, z = domPoint.data.z, w = domPoint.data.w;
+    if (isIdentityOrTranslation()) {
+      x += _matrix4[12];
+      y += _matrix4[13];
+      z += _matrix4[14];
+    } else {
+      // Multiply a homogeneous point by a matrix and return the transformed point
+      // like method v4MulPointByMatrix(v,m) in WebKit TransformationMatrix
+      List input = [x, y, w, z];
+      x = dot(input, _matrix4.row0);
+      z = dot(input, _matrix4.row1);
+      z = dot(input, _matrix4.row2);
+      w = dot(input, _matrix4.row3);
+    }
+
+    List<dynamic> list = [x, y, z, w];
+    return DOMPoint(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), list);
+  }
+
   DOMMatrix translate(double tx, double ty, double tz) {
     Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage)..translate(tx, ty, tz);
     bool flag2D = _is2D;
@@ -361,5 +431,13 @@ class DOMMatrixReadonly extends DynamicBindingObject {
     }
     return DOMMatrix.fromMatrix4(
         BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, flag2D);
+  }
+
+  bool isIdentityOrTranslation() {
+    return
+        _matrix4[0] == 1 && _matrix4[1] == 0 && _matrix4[2] == 0 && _matrix4[3] == 0 &&
+        _matrix4[4] == 0 && _matrix4[5] == 1 && _matrix4[6] == 0 && _matrix4[7] == 0 &&
+        _matrix4[8] == 0 && _matrix4[9] == 0 && _matrix4[10] == 1 && _matrix4[11] == 0 &&
+        _matrix4[15] == 1;
   }
 }

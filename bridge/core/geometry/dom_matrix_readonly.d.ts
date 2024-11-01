@@ -40,8 +40,7 @@ interface DOMMatrixReadonly {
     // TODO
     // toJSON(): DartImpl<JSON>;
     toString(): string;
-    // TODO DOMPoint
-    // transformPoint(): DartImpl<DOMPoint>;
+    transformPoint(point: DOMPoint): DOMPoint;
     translate(tx:number, ty:number, tz:number): DOMMatrix;
     // fromFloat32Array(): StaticMethod<DOMMatrix>;
     // fromFloat64Array(): StaticMethod<DOMMatrix>;
