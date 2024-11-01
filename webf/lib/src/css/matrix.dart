@@ -88,7 +88,7 @@ List<double> _cross(v1, v2) {
   return [v1[1] * v2[2] - v1[2] * v2[1], v1[2] * v2[0] - v1[0] * v2[2], v1[0] * v2[1] - v1[1] * v2[0]];
 }
 
-double _dot(v1, v2) {
+double dot(v1, v2) {
   double result = 0;
   for (var i = 0; i < v1.length; i++) {
     result += v1[i] * v2[i];
@@ -227,7 +227,7 @@ class CSSMatrix {
   // Perform a spherical linear interpolation between the two
   // passed quaternions with 0 <= t <= 1.
   static List<double> lerpQuaternion(quaternionA, quaternionB, t) {
-    var product = _dot(quaternionA, quaternionB);
+    var product = dot(quaternionA, quaternionB);
 
     // Clamp product to -1.0 <= product <= 1.0
     product = max<double>(min<double>(product, 1.0), -1.0);
@@ -320,7 +320,7 @@ class CSSMatrix {
     // skew factors XY,XZ,YZ represented as a 3 component vector
     List<double> skew = List.filled(3, 0);
     row.add(matrix[1].sublist(0, 3));
-    skew[0] = _dot(row[0], row[1]);
+    skew[0] = dot(row[0], row[1]);
     row[1] = _combine(row[1], row[0], 1.0, -skew[0]);
 
     // Now, compute Y scale and _normalize 2nd row.
@@ -330,9 +330,9 @@ class CSSMatrix {
 
     // Compute XZ and YZ shears, orthogonalize 3rd row
     row.add(matrix[2].sublist(0, 3));
-    skew[1] = _dot(row[0], row[2]);
+    skew[1] = dot(row[0], row[2]);
     row[2] = _combine(row[2], row[0], 1.0, -skew[1]);
-    skew[2] = _dot(row[1], row[2]);
+    skew[2] = dot(row[1], row[2]);
     row[2] = _combine(row[2], row[1], 1.0, -skew[2]);
 
     // Next, get Z scale and _normalize 3rd row.
@@ -345,7 +345,7 @@ class CSSMatrix {
     // Check for a coordinate system flip.  If the _determinant
     // is -1, then negate the matrix and the scaling factors.
     var pdum3 = _cross(row[1], row[2]);
-    if (_dot(row[0], pdum3) < 0) {
+    if (dot(row[0], pdum3) < 0) {
       for (var i = 0; i < 3; i++) {
         scale[i] *= -1;
         row[i][0] *= -1;

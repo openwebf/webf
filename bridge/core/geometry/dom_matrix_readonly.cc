@@ -9,6 +9,7 @@
 #include "binding_call_methods.h"
 #include "core/executing_context.h"
 #include "core/geometry/dom_matrix.h"
+#include "core/geometry/dom_point.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {
@@ -183,8 +184,7 @@ DOMMatrix* DOMMatrixReadonly::inverse(ExceptionState& exception_state) const {
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
 
-DOMMatrix* DOMMatrixReadonly::multiply(DOMMatrix* matrix,
-                                       ExceptionState& exception_state) const {
+DOMMatrix* DOMMatrixReadonly::multiply(DOMMatrix* matrix, ExceptionState& exception_state) const {
   NativeValue arguments[] = {
     NativeValueConverter<NativeTypePointer<DOMMatrix>>::ToNativeValue(matrix)
   };
@@ -333,6 +333,20 @@ AtomicString DOMMatrixReadonly::toString(ExceptionState& exception_state) const 
       InvokeBindingMethod(binding_call_methods::ktoString, sizeof(arguments) / sizeof(NativeValue), arguments,
                           FlushUICommandReason::kDependentsOnElement, exception_state);
   return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
+}
+
+DOMPoint* DOMMatrixReadonly::transformPoint(DOMPoint* point, ExceptionState& exception_state) const {
+  NativeValue arguments[] = {
+    NativeValueConverter<NativeTypePointer<DOMPoint>>::ToNativeValue(point)
+  };
+  NativeValue value = InvokeBindingMethod(binding_call_methods::ktransformPoint, sizeof(arguments) / sizeof(NativeValue),
+                                          arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeBindingObject* native_binding_object =
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
+
+  if (native_binding_object == nullptr)
+    return nullptr;
+  return MakeGarbageCollected<DOMPoint>(GetExecutingContext(), native_binding_object);
 }
 
 DOMMatrix* DOMMatrixReadonly::translate(double tx, double ty, double tz, ExceptionState& exception_state) const {

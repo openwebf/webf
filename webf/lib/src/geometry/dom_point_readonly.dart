@@ -11,7 +11,15 @@ import 'package:webf/foundation.dart';
 import 'package:webf/geometry.dart';
 import 'package:webf/src/css/matrix.dart';
 
+class DOMPointData {
+  double x = 0;
+  double y = 0;
+  double z = 0;
+  double w = 1;
+}
+
 class DOMPointReadonly extends DynamicBindingObject {
+  final DOMPointData data = DOMPointData();
   DOMPointReadonly(BindingContext context, List<dynamic> domPointInit) : super(context) {
     if (!domPointInit.isNotEmpty) {
       return;
@@ -26,6 +34,21 @@ class DOMPointReadonly extends DynamicBindingObject {
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    // TODO: implement initializeProperties
+    properties['x'] = BindingObjectProperty(
+      getter: () => data.x,
+      setter: (value) => data.x = castToType<num>(value).toDouble()
+    );
+    properties['y'] = BindingObjectProperty(
+        getter: () => data.y,
+        setter: (value) => data.y = castToType<num>(value).toDouble()
+    );
+    properties['z'] = BindingObjectProperty(
+        getter: () => data.z,
+        setter: (value) => data.z = castToType<num>(value).toDouble()
+    );
+    properties['w'] = BindingObjectProperty(
+        getter: () => data.w,
+        setter: (value) => data.w = castToType<num>(value).toDouble()
+    );
   }
 }

@@ -103,6 +103,9 @@ DOMPointReadonly::DOMPointReadonly(webf::ExecutingContext* context,
       CreateBindingObjectType::kCreateDOMPoint, arguments, sizeof(arguments) / sizeof(NativeValue));
 }
 
+DOMPointReadonly::DOMPointReadonly(webf::ExecutingContext* context, webf::NativeBindingObject* native_binding_object)
+    : BindingObject(context->ctx(), native_binding_object) {}
+
 double DOMPointReadonly::getPointProperty(const AtomicString& prop) const {
   NativeValue dart_result = GetBindingProperty(prop, FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
   return NativeValueConverter<NativeTypeDouble>::FromNativeValue(dart_result);

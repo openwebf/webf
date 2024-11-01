@@ -12,6 +12,7 @@
 namespace webf {
 
 class DOMMatrix;
+class DOMPoint;
 
 class DOMMatrixReadonly : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
@@ -92,6 +93,7 @@ class DOMMatrixReadonly : public BindingObject {
   // toJSON(): DartImpl<JSON>;
 
   AtomicString toString(ExceptionState& exception_state) const;
+  DOMPoint* transformPoint(DOMPoint* point, ExceptionState& exception_state) const;
   DOMMatrix* translate(double tx, double ty, double tz, ExceptionState& exception_state) const;
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
