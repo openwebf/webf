@@ -6,14 +6,14 @@
 #include <cstdlib>
 #include <memory>
 
-#if WIN32
+#if defined(_WIN32)
 #include <Windows.h>
 #endif
 
 namespace webf {
 
 void* dart_malloc(std::size_t size) {
-#if WIN32
+#if defined(_WIN32)
   return CoTaskMemAlloc(size);
 #else
   return malloc(size);
@@ -21,7 +21,7 @@ void* dart_malloc(std::size_t size) {
 }
 
 void dart_free(void* ptr) {
-#if WIN32
+#if defined(_WIN32)
   return CoTaskMemFree(ptr);
 #else
   return free(ptr);

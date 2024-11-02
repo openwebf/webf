@@ -8,7 +8,7 @@
 #include <quickjs/list.h>
 #include <cstring>
 
-#if WIN32
+#if defined(_WIN32)
 #include <Windows.h>
 #endif
 
@@ -254,7 +254,7 @@ uint16_t* JS_ToUnicode(JSContext* ctx, JSValueConst value, uint32_t* length) {
 
   if (!string->is_wide_char) {
     uint8_t* p = string->u.str8;
-#if WIN32
+#if defined(_WIN32)
     int utf16_str_len = MultiByteToWideChar(CP_ACP, 0, reinterpret_cast<const char*>(p), -1, NULL, 0) - 1;
     if (utf16_str_len == -1) {
       return nullptr;
@@ -278,7 +278,7 @@ uint16_t* JS_ToUnicode(JSContext* ctx, JSValueConst value, uint32_t* length) {
 #endif
   } else {
     *length = string->len;
-#if WIN32
+#if defined(_WIN32)
     buffer = (uint16_t*)CoTaskMemAlloc(sizeof(uint16_t) * string->len);
 #else
     buffer = (uint16_t*)malloc(sizeof(uint16_t) * string->len);

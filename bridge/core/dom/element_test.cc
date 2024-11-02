@@ -84,7 +84,7 @@ TEST(Element, outerHTML) {
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
-#if WIN32
+#if defined(_WIN32)
     EXPECT_STREQ(message.c_str(),
                  "<div attr-key=\"attr-value\" style=\"width: 100px;height: 100px;\"></div>  <div "
                  "attr-key=\"attr-value\" style=\"width: 100px;height: 100px;\"></div>");
