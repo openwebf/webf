@@ -9,6 +9,7 @@
 
 #include "core/executing_context.h"
 #include "dom_point.h"
+#include "dom_matrix.h"
 
 namespace webf {
 
@@ -140,6 +141,20 @@ double DOMPointReadonly::w() const {
 }
 void DOMPointReadonly::setW(double v, ExceptionState& exception_state) {
   setPointProperty(binding_call_methods::kw, v, exception_state);
+}
+
+DOMPoint* DOMPointReadonly::matrixTransform(DOMMatrix* matrix, ExceptionState& exception_state) const {
+  NativeValue arguments[] = {
+    NativeValueConverter<NativeTypePointer<DOMMatrix>>::ToNativeValue(matrix)
+  };
+  NativeValue value = InvokeBindingMethod(binding_call_methods::kmatrixTransform, sizeof(arguments) / sizeof(NativeValue),
+                                          arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeBindingObject* native_binding_object =
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
+
+  if (native_binding_object == nullptr)
+    return nullptr;
+  return MakeGarbageCollected<DOMPoint>(GetExecutingContext(), native_binding_object);
 }
 
 NativeValue DOMPointReadonly::HandleCallFromDartSide(const AtomicString& method,

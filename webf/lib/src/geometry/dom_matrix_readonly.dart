@@ -406,7 +406,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
 
   DOMPoint transformPoint(DOMPoint domPoint) {
     double x = domPoint.x, y = domPoint.y, z = domPoint.z, w = domPoint.w;
-    if (isIdentityOrTranslation()) {
+    if (isIdentityOrTranslation(_matrix4)) {
       x += _matrix4[12];
       y += _matrix4[13];
       z += _matrix4[14];
@@ -434,10 +434,10 @@ class DOMMatrixReadonly extends DynamicBindingObject {
         BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, flag2D);
   }
 
-    bool isIdentityOrTranslation() {
-      return _matrix4[0] == 1 && _matrix4[1] == 0 && _matrix4[2] == 0 && _matrix4[3] == 0 &&
-          _matrix4[4] == 0 && _matrix4[5] == 1 && _matrix4[6] == 0 && _matrix4[7] == 0 &&
-          _matrix4[8] == 0 && _matrix4[9] == 0 && _matrix4[10] == 1 && _matrix4[11] == 0 &&
-          _matrix4[15] == 1;
+    static bool isIdentityOrTranslation(Matrix4 matrix) {
+      return matrix[0] == 1 && matrix[1] == 0 && matrix[2] == 0 && matrix[3] == 0 &&
+          matrix[4] == 0 && matrix[5] == 1 && matrix[6] == 0 && matrix[7] == 0 &&
+          matrix[8] == 0 && matrix[9] == 0 && matrix[10] == 1 && matrix[11] == 0 &&
+          matrix[15] == 1;
     }
 }

@@ -18,6 +18,9 @@ struct DOMPointData {
   double w;
 };
 
+class DOMPoint;
+class DOMMatrix;
+
 class DOMPointReadonly : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
@@ -62,6 +65,8 @@ class DOMPointReadonly : public BindingObject {
   void setZ(double v, ExceptionState& exception_state);
   double w() const;
   void setW(double v, ExceptionState& exception_state);
+
+  DOMPoint* matrixTransform(DOMMatrix* matrix, ExceptionState& exception_state) const;
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,
