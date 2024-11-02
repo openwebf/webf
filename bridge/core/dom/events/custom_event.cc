@@ -81,6 +81,11 @@ bool CustomEvent::IsCustomEvent() const {
   return true;
 }
 
+const CustomEventPublicMethods* CustomEvent::customEventPublicMethods() {
+  static CustomEventPublicMethods custom_event_public_methods;
+  return &custom_event_public_methods;
+}
+
 void CustomEvent::Trace(GCVisitor* visitor) const {
   Event::Trace(visitor);
   detail_.Trace(visitor);

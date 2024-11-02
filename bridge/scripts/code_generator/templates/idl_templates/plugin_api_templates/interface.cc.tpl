@@ -44,6 +44,28 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
 void <%= className %>PublicMethods::Release(<%= className %>* <%= _.snakeCase(className) %>) {
   <%= _.snakeCase(className) %>->ReleaseAlive();
 }
+
+WebFValue<<%= className %>, WebFPublicMethods> <%= className %>PublicMethods::DynamicTo(webf::<%= className %>* <%= _.snakeCase(className) %>, webf::<%= className %>Type <%= _.snakeCase(className) %>_type) {
+  switch (<%= _.snakeCase(className) %>_type) {
+    case <%= className %>Type::k<%= className %>: {
+      WebFValueStatus* status_block = <%= _.snakeCase(className) %>->KeepAlive();
+      return WebFValue<<%= className %>, WebFPublicMethods>(<%= _.snakeCase(className) %>, <%= _.snakeCase(className) %>-><%= _.camelCase(className) %>PublicMethods(), status_block);
+    }
+  <% _.forEach(subClasses, function (subClass, index) { %>
+    case <%= className %>Type::k<%= subClass %>: {
+      auto* <%= _.snakeCase(subClass) %> = webf::DynamicTo<<%= subClass %>>(<%= _.snakeCase(className) %>);
+      if (<%= _.snakeCase(subClass) %> == nullptr) {
+        return WebFValue<<%= className %>, WebFPublicMethods>::Null();
+      }
+      WebFValueStatus* status_block = <%= _.snakeCase(subClass) %>->KeepAlive();
+      return WebFValue<<%= className %>, WebFPublicMethods>(<%= _.snakeCase(subClass) %>, <%= _.snakeCase(subClass) %>-><%= _.camelCase(subClass) %>PublicMethods(), status_block);
+    }
+  <% }); %>
+    default:
+      assert_m(false, ("Unknown <%= className %>Type " + std::to_string(static_cast<int32_t>(<%= _.snakeCase(className) %>_type))).c_str());
+      return WebFValue<<%= className %>, WebFPublicMethods>::Null();
+  }
+}
 <% } %>
 
 }  // namespace webf

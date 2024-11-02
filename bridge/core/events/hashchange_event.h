@@ -9,6 +9,7 @@
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
 #include "qjs_hashchange_event_init.h"
+#include "plugin_api/hashchange_event.h"
 
 namespace webf {
 
@@ -43,9 +44,16 @@ class HashchangeEvent : public Event {
 
   bool IsHashChangeEvent() const override;
 
+  const HashchangeEventPublicMethods* hashchangeEventPublicMethods();
+
  private:
   AtomicString new_url_;
   AtomicString old_url_;
+};
+
+template <>
+struct DowncastTraits<HashchangeEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsHashChangeEvent(); }
 };
 
 }  // namespace webf

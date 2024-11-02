@@ -7,6 +7,7 @@
 
 #include "qjs_mouse_event_init.h"
 #include "ui_event.h"
+#include "plugin_api/mouse_event.h"
 
 namespace webf {
 
@@ -56,6 +57,8 @@ class MouseEvent : public UIEvent {
 
   void Trace(GCVisitor* visitor) const override;
 
+  const MouseEventPublicMethods* mouseEventPublicMethods();
+
   bool IsMouseEvent() const override;
 
  private:
@@ -78,6 +81,11 @@ class MouseEvent : public UIEvent {
   double x_;
   double y_;
   Member<EventTarget> related_target_;
+};
+
+template <>
+struct DowncastTraits<MouseEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsMouseEvent(); }
 };
 
 }  // namespace webf

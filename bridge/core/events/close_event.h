@@ -9,6 +9,7 @@
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
 #include "qjs_close_event_init.h"
+#include "plugin_api/close_event.h"
 
 namespace webf {
 
@@ -48,6 +49,8 @@ class CloseEvent : public Event {
 
   bool IsCloseEvent() const override;
 
+  const CloseEventPublicMethods* closeEventPublicMethods();
+
   int64_t code() const;
   const AtomicString& reason() const;
   bool wasClean() const;
@@ -56,6 +59,11 @@ class CloseEvent : public Event {
   int64_t code_;
   AtomicString reason_;
   bool was_clean_;
+};
+
+template <>
+struct DowncastTraits<CloseEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsCloseEvent(); }
 };
 
 }  // namespace webf

@@ -78,4 +78,9 @@ bool CloseEvent::wasClean() const {
   return was_clean_;
 }
 
+const CloseEventPublicMethods* CloseEvent::closeEventPublicMethods() {
+  static CloseEventPublicMethods close_event_public_methods;
+  return &close_event_public_methods;
+}
+
 }  // namespace webf

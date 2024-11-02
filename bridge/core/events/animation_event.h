@@ -9,6 +9,7 @@
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
 #include "qjs_animation_event_init.h"
+#include "plugin_api/animation_event.h"
 
 namespace webf {
 
@@ -48,10 +49,17 @@ class AnimationEvent : public Event {
 
   bool IsAnimationEvent() const override;
 
+  const AnimationEventPublicMethods* animationEventPublicMethods();
+
  private:
   AtomicString animation_name_;
   AtomicString pseudo_element_;
   double elapsed_time_;
+};
+
+template <>
+struct DowncastTraits<AnimationEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsAnimationEvent(); }
 };
 
 }  // namespace webf

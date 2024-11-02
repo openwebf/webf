@@ -72,4 +72,9 @@ bool TransitionEvent::IsTransitionEvent() const {
   return true;
 }
 
+const TransitionEventPublicMethods* TransitionEvent::transitionEventPublicMethods() {
+  static TransitionEventPublicMethods transition_event_public_methods;
+  return &transition_event_public_methods;
+}
+
 }  // namespace webf

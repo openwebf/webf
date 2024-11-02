@@ -197,6 +197,19 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
           }
         });
 
+        const subClasses: string[] = [];
+
+        function appendSubClasses(name: string) {
+          ClassObject.globalClassRelationMap[name]?.forEach(subClass => {
+            subClasses.push(subClass);
+            appendSubClasses(subClass);
+          });
+        }
+
+        if (object.name in ClassObject.globalClassRelationMap) {
+          appendSubClasses(object.name);
+        }
+
         return _.template(readHeaderTemplate('interface'))({
           className: getClassName(blob),
           parentClassName: object.parent,
@@ -207,6 +220,7 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
           generatePublicParametersTypeWithName,
           isStringType,
           dependentTypes: Array.from(dependentTypes),
+          subClasses: _.uniq(subClasses),
           options,
         });
       }
@@ -288,6 +302,19 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           }
         });
 
+        const subClasses: string[] = [];
+
+        function appendSubClasses(name: string) {
+          ClassObject.globalClassRelationMap[name]?.forEach(subClass => {
+            subClasses.push(subClass);
+            appendSubClasses(subClass);
+          });
+        }
+
+        if (object.name in ClassObject.globalClassRelationMap) {
+          appendSubClasses(object.name);
+        }
+
         return _.template(readSourceTemplate('interface'))({
           className: getClassName(blob),
           parentClassName: object.parent,
@@ -303,6 +330,7 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           isStringType,
           isAnyType,
           dependentTypes: Array.from(dependentTypes),
+          subClasses: _.uniq(subClasses),
           options,
         });
       }

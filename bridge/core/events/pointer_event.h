@@ -7,6 +7,7 @@
 
 #include "mouse_event.h"
 #include "qjs_pointer_event_init.h"
+#include "plugin_api/pointer_event.h"
 
 namespace webf {
 
@@ -47,6 +48,8 @@ class PointerEvent : public MouseEvent {
 
   bool IsPointerEvent() const override;
 
+  const PointerEventPublicMethods* pointerEventPublicMethods();
+
  private:
   double height_;
   bool is_primary;
@@ -58,6 +61,11 @@ class PointerEvent : public MouseEvent {
   double tilt_y_;
   double twist_;
   double width_;
+};
+
+template <>
+struct DowncastTraits<PointerEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsPointerEvent(); }
 };
 
 }  // namespace webf

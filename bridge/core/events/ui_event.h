@@ -11,6 +11,7 @@
 #include "core/dom/events/event.h"
 #include "core/frame/window.h"
 #include "qjs_ui_event_init.h"
+#include "plugin_api/ui_event.h"
 
 namespace webf {
 
@@ -56,6 +57,8 @@ class UIEvent : public Event {
   double which() const;
 
   bool IsUiEvent() const override;
+
+  const UIEventPublicMethods* uiEventPublicMethods();
 
   void Trace(GCVisitor* visitor) const override;
 

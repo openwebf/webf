@@ -68,4 +68,9 @@ const AtomicString& AnimationEvent::pseudoElement() const {
   return pseudo_element_;
 }
 
+const AnimationEventPublicMethods* AnimationEvent::animationEventPublicMethods() {
+  static AnimationEventPublicMethods animation_event_public_methods;
+  return &animation_event_public_methods;
+}
+
 }  // namespace webf

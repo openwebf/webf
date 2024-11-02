@@ -7,6 +7,7 @@
 
 #include "core/dom/events/event.h"
 #include "qjs_transition_event_init.h"
+#include "plugin_api/transition_event.h"
 
 namespace webf {
 
@@ -42,10 +43,17 @@ class TransitionEvent : public Event {
 
   bool IsTransitionEvent() const override;
 
+  const TransitionEventPublicMethods* transitionEventPublicMethods();
+
  private:
   double elapsed_time_;
   AtomicString property_name_;
   AtomicString pseudo_element_;
+};
+
+template <>
+struct DowncastTraits<TransitionEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsTransitionEvent(); }
 };
 
 }  // namespace webf

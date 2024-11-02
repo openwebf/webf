@@ -64,6 +64,7 @@ export enum ClassObjectKind {
 
 export class ClassObject {
   static globalClassMap: {[key: string]: ClassObject} = Object.create(null);
+  static globalClassRelationMap: {[key: string]: string[]} = Object.create(null);
   name: string;
   parent: string;
   mixinParent: string[];
@@ -71,7 +72,7 @@ export class ClassObject {
   indexedProp?: IndexedPropertyDeclaration;
   methods: FunctionDeclaration[] = [];
   construct?: FunctionDeclaration;
-  kind: ClassObjectKind = ClassObjectKind.interface
+  kind: ClassObjectKind = ClassObjectKind.interface;
 }
 
 export class FunctionObject {
