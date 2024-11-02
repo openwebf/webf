@@ -1,3 +1,13 @@
+<% if (!object.parent) { %>
+#[repr(C)]
+enum <%= className %>Type {
+  <%= className %> = 0,
+  <% _.forEach(subClasses, function (subClass, index) { %>
+  <%= subClass %> = <%= index + 1 %>,
+  <% }); %>
+}
+<% } %>
+
 #[repr(C)]
 pub struct <%= className %>RustMethods {
   pub version: c_double,
@@ -20,6 +30,7 @@ pub struct <%= className %>RustMethods {
 
   <% if (!object.parent) { %>
   pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: <%= className %>Type) -> RustValue<c_void>,
   <% } %>
 }
 
@@ -136,6 +147,23 @@ impl <%= className %> {
   }
     <% } %>
   <% }); %>
+
+  <% if (!object.parent) { %>
+
+    <% _.forEach(subClasses, function (subClass, index) { %>
+
+  pub fn as_<%= _.snakeCase(subClass) %>(&self) -> Result<<%= subClass %>, &str> {
+    let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
+      ((*self.method_pointer).dynamic_to)(self.ptr, <%= className %>Type::<%= subClass %>)
+    };
+    if (raw_ptr.value == std::ptr::null()) {
+      return Err("The type value of <%= className %> does not belong to the <%= subClass %> type.");
+    }
+    Ok(<%= subClass %>::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const <%= subClass %>RustMethods, raw_ptr.status))
+  }
+    <% }); %>
+  <% } %>
 }
 
 <% if (!object.parent) { %>

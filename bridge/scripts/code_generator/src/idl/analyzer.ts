@@ -24,11 +24,22 @@ export interface UnionTypeCollector {
 }
 
 export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropertyCollector, unionTypeCollector: UnionTypeCollector) {
-  let code = blob.raw;
   const sourceFile = ts.createSourceFile(blob.source, blob.raw, ScriptTarget.ES2020);
   blob.objects = sourceFile.statements.map(statement => walkProgram(blob, statement, definedPropertyCollector, unionTypeCollector)).filter(o => {
     return o instanceof ClassObject || o instanceof FunctionObject;
   }) as (FunctionObject | ClassObject)[];
+}
+
+export function buildClassRelationship() {
+  const globalClassMap = ClassObject.globalClassMap;
+  const globalClassRelationMap = ClassObject.globalClassRelationMap;
+
+  Object.values(globalClassMap).forEach(obj => {
+    if (obj.parent) {
+      globalClassRelationMap[obj.parent] = globalClassRelationMap[obj.parent] || [];
+      globalClassRelationMap[obj.parent].push(obj.name);
+    }
+  });
 }
 
 function getInterfaceName(statement: ts.Statement) {

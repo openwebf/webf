@@ -249,7 +249,8 @@ function generateValidRustIdentifier(name: string) {
   const rustKeywords = [
     'type',
   ];
-  return rustKeywords.includes(name) ? `${name}_` : name;
+  let identifier = _.snakeCase(name);
+  return rustKeywords.includes(identifier) ? `${identifier}_` : identifier;
 }
 
 function generateMethodReturnStatements(type: ParameterType) {
@@ -315,6 +316,19 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
           currentParentObject = parentObject;
         }
 
+        const subClasses: string[] = [];
+
+        function appendSubClasses(name: string) {
+          ClassObject.globalClassRelationMap[name]?.forEach(subClass => {
+            subClasses.push(subClass);
+            appendSubClasses(subClass);
+          });
+        }
+
+        if (object.name in ClassObject.globalClassRelationMap) {
+          appendSubClasses(object.name);
+        }
+
         return _.template(readSourceTemplate('interface'))({
           className: getClassName(blob),
           parentClassName: object.parent,
@@ -333,6 +347,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
           generatePropReturnStatements,
           generateValidRustIdentifier,
           isVoidType,
+          subClasses: _.uniq(subClasses),
           options,
         });
       }

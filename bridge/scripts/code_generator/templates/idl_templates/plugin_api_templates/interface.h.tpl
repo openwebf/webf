@@ -22,6 +22,15 @@ class ExecutingContext;
 class <%= className %>;
 typedef struct ScriptValueRef ScriptValueRef;
 
+<% if (!object.parent) { %>
+enum class <%= className %>Type {
+  k<%= className %> = 0,
+  <% _.forEach(subClasses, function (subClass, index) { %>
+  k<%= subClass %> = <%= index + 1 %>,
+  <% }) %>
+};
+<% } %>
+
 <% _.forEach(object.props, function(prop, index) { %>
   <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
 using Public<%= className %>Get<%= propName %> = <%= generatePublicReturnTypeValue(prop.type, true) %> (*)(<%= className %>*);
@@ -40,6 +49,7 @@ using Public<%= className %><%= methodName %> = <%= generatePublicReturnTypeValu
 
 <% if (!object.parent) { %>
 using Public<%= className %>Release = void (*)(<%= className %>*);
+using Public<%= className %>DynamicTo = WebFValue<<%= className %>, WebFPublicMethods> (*)(<%= className %>*, <%= className %>Type);
 <% } %>
 
 struct <%= className %>PublicMethods : public WebFPublicMethods {
@@ -62,6 +72,7 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
 
   <% if (!object.parent) { %>
   static void Release(<%= className %>* <%= _.snakeCase(className) %>);
+  static WebFValue<<%= className %>, WebFPublicMethods> DynamicTo(<%= className %>* <%= _.snakeCase(className) %>, <%= className %>Type <%= _.snakeCase(className) %>_type);
   <% } %>
   double version{1.0};
 
@@ -87,6 +98,7 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
 
   <% if (!object.parent) { %>
   Public<%= className %>Release <%= _.snakeCase(className) %>_release{Release};
+  Public<%= className %>DynamicTo <%= _.snakeCase(className) %>_dynamic_to{DynamicTo};
   <% } %>
 };
 

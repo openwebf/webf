@@ -63,4 +63,9 @@ bool InputEvent::IsInputEvent() const {
   return true;
 }
 
+const InputEventPublicMethods* InputEvent::inputEventPublicMethods() {
+  static InputEventPublicMethods input_event_public_methods;
+  return &input_event_public_methods;
+}
+
 }  // namespace webf

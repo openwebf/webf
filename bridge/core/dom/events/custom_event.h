@@ -7,6 +7,7 @@
 
 #include "event.h"
 #include "qjs_custom_event_init.h"
+#include "plugin_api/custom_event.h"
 
 namespace webf {
 
@@ -53,6 +54,8 @@ class CustomEvent final : public Event {
                        bool cancelable,
                        const ScriptValueRef* script_value_ref,
                        ExceptionState& exception_state);
+
+  const CustomEventPublicMethods* customEventPublicMethods();
 
   bool IsCustomEvent() const override;
 

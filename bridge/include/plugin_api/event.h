@@ -16,6 +16,21 @@ class SharedExceptionState;
 class ExecutingContext;
 class Event;
 typedef struct ScriptValueRef ScriptValueRef;
+enum class EventType {
+  kEvent = 0,
+  kCustomEvent = 1,
+  kAnimationEvent = 2,
+  kCloseEvent = 3,
+  kGestureEvent = 4,
+  kHashchangeEvent = 5,
+  kIntersectionChangeEvent = 6,
+  kTransitionEvent = 7,
+  kUIEvent = 8,
+  kFocusEvent = 9,
+  kInputEvent = 10,
+  kMouseEvent = 11,
+  kPointerEvent = 12,
+};
 using PublicEventGetBubbles = int32_t (*)(Event*);
 using PublicEventGetCancelBubble = int32_t (*)(Event*);
 using PublicEventSetCancelBubble = void (*)(Event*, int32_t, SharedExceptionState*);
@@ -33,6 +48,7 @@ using PublicEventPreventDefault = void (*)(Event*, SharedExceptionState*);
 using PublicEventStopImmediatePropagation = void (*)(Event*, SharedExceptionState*);
 using PublicEventStopPropagation = void (*)(Event*, SharedExceptionState*);
 using PublicEventRelease = void (*)(Event*);
+using PublicEventDynamicTo = WebFValue<Event, WebFPublicMethods> (*)(Event*, EventType);
 struct EventPublicMethods : public WebFPublicMethods {
   static int32_t Bubbles(Event* event);
   static int32_t CancelBubble(Event* event);
@@ -51,6 +67,7 @@ struct EventPublicMethods : public WebFPublicMethods {
   static void StopImmediatePropagation(Event* event, SharedExceptionState* shared_exception_state);
   static void StopPropagation(Event* event, SharedExceptionState* shared_exception_state);
   static void Release(Event* event);
+  static WebFValue<Event, WebFPublicMethods> DynamicTo(Event* event, EventType event_type);
   double version{1.0};
   PublicEventGetBubbles event_get_bubbles{Bubbles};
   PublicEventGetCancelBubble event_get_cancel_bubble{CancelBubble};
@@ -69,6 +86,7 @@ struct EventPublicMethods : public WebFPublicMethods {
   PublicEventStopImmediatePropagation event_stop_immediate_propagation{StopImmediatePropagation};
   PublicEventStopPropagation event_stop_propagation{StopPropagation};
   PublicEventRelease event_release{Release};
+  PublicEventDynamicTo event_dynamic_to{DynamicTo};
 };
 }  // namespace webf
 #endif  // WEBF_CORE_WEBF_API_PLUGIN_API_EVENT_H_

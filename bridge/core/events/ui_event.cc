@@ -82,4 +82,9 @@ void UIEvent::Trace(GCVisitor* visitor) const {
   Event::Trace(visitor);
 }
 
+const UIEventPublicMethods* UIEvent::uiEventPublicMethods() {
+  static UIEventPublicMethods ui_event_public_methods;
+  return &ui_event_public_methods;
+}
+
 }  // namespace webf

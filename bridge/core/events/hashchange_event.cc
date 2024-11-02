@@ -67,4 +67,9 @@ const AtomicString& HashchangeEvent::oldURL() const {
   return old_url_;
 }
 
+const HashchangeEventPublicMethods* HashchangeEvent::hashchangeEventPublicMethods() {
+  static HashchangeEventPublicMethods hashchange_event_public_methods;
+  return &hashchange_event_public_methods;
+}
+
 }  // namespace webf

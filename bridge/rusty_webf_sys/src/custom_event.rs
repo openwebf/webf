@@ -45,9 +45,9 @@ impl CustomEvent {
       method_pointer: value.method_pointer
     }
   }
-  pub fn init_custom_event(&self, type_: &str, canBubble: bool, cancelable: bool, detail: &ScriptValueRef, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn init_custom_event(&self, type_: &str, can_bubble: bool, cancelable: bool, detail: &ScriptValueRef, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).init_custom_event)(self.ptr(), CString::new(type_).unwrap().as_ptr(), i32::from(canBubble), i32::from(cancelable), detail.ptr, exception_state.ptr);
+      ((*self.method_pointer).init_custom_event)(self.ptr(), CString::new(type_).unwrap().as_ptr(), i32::from(can_bubble), i32::from(cancelable), detail.ptr, exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -57,15 +57,15 @@ impl CustomEvent {
 }
 pub trait CustomEventMethods: EventMethods {
   fn detail(&self) -> ScriptValueRef;
-  fn init_custom_event(&self, type_: &str, canBubble: bool, cancelable: bool, detail: &ScriptValueRef, exception_state: &ExceptionState) -> Result<(), String>;
+  fn init_custom_event(&self, type_: &str, can_bubble: bool, cancelable: bool, detail: &ScriptValueRef, exception_state: &ExceptionState) -> Result<(), String>;
   fn as_custom_event(&self) -> &CustomEvent;
 }
 impl CustomEventMethods for CustomEvent {
   fn detail(&self) -> ScriptValueRef {
     self.detail()
   }
-  fn init_custom_event(&self, type_: &str, canBubble: bool, cancelable: bool, detail: &ScriptValueRef, exception_state: &ExceptionState) -> Result<(), String> {
-    self.init_custom_event(type_, canBubble, cancelable, detail, exception_state)
+  fn init_custom_event(&self, type_: &str, can_bubble: bool, cancelable: bool, detail: &ScriptValueRef, exception_state: &ExceptionState) -> Result<(), String> {
+    self.init_custom_event(type_, can_bubble, cancelable, detail, exception_state)
   }
   fn as_custom_event(&self) -> &CustomEvent {
     self

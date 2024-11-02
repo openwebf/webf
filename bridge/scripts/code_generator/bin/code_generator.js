@@ -8,7 +8,7 @@ const fs = require('fs');
 const { IDLBlob } = require('../dist/idl/IDLBlob');
 const { JSONBlob } = require('../dist/json/JSONBlob');
 const { JSONTemplate } = require('../dist/json/JSONTemplate');
-const { analyzer } = require('../dist/idl/analyzer');
+const { analyzer, buildClassRelationship } = require('../dist/idl/analyzer');
 const { generatorSource } = require('../dist/idl/generator')
 const { generateUnionTypes, generateUnionTypeFileName } = require('../dist/idl/generateUnionTypes')
 const { generateJSONTemplate } = require('../dist/json/generator');
@@ -16,6 +16,7 @@ const { generateNamesInstaller } = require("../dist/json/generator");
 const { generatePluginAPI } = require("../dist/idl/pluginAPIGenerator/cppGen");
 const { generateRustSource } = require("../dist/idl/pluginAPIGenerator/rsGen");
 const { union } = require("lodash");
+const { ClassObject } = require('../dist/idl/declaration');
 
 program
   .version(packageJSON.version)
@@ -56,6 +57,8 @@ function genCodeFromTypeDefine() {
     let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
     return new IDLBlob(path.join(source, file), dist, filename, implement);
   });
+
+  ClassObject.globalClassMap = Object.create(null);
 
   // Analyze all files first.
   for (let i = 0; i < blobs.length; i ++) {
@@ -223,11 +226,15 @@ function genPluginAPICodeFromTypeDefine() {
     return new IDLBlob(path.join(source, file), dist, filename, implement);
   });
 
+  ClassObject.globalClassMap = Object.create(null);
+
   // Analyze all files first.
   for (let i = 0; i < blobs.length; i ++) {
     let b = blobs[i];
     analyzer(b, definedPropertyCollector, unionTypeCollector);
   }
+
+  buildClassRelationship();
 
   for (let i = 0; i < blobs.length; i ++) {
     let b = blobs[i];
@@ -257,11 +264,15 @@ function genRustCodeFromTypeDefine() {
     return new IDLBlob(path.join(source, file), dist, filename, implement);
   });
 
+  ClassObject.globalClassMap = Object.create(null);
+
   // Analyze all files first.
   for (let i = 0; i < blobs.length; i ++) {
     let b = blobs[i];
     analyzer(b, definedPropertyCollector, unionTypeCollector);
   }
+
+  buildClassRelationship();
 
   for (let i = 0; i < blobs.length; i ++) {
     let b = blobs[i];
