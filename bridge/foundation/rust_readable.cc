@@ -6,14 +6,14 @@
 #include <cstdlib>
 #include <memory>
 
-#if WIN32
+#if defined(_WIN32)
 #include <Windows.h>
 #endif
 
 namespace webf {
 
 void* RustReadable::operator new(std::size_t size) {
-#if WIN32
+#if defined(_WIN32)
   return HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, size);
 #else
   return malloc(size);
@@ -21,7 +21,7 @@ void* RustReadable::operator new(std::size_t size) {
 }
 
 void RustReadable::operator delete(void* memory) noexcept {
-#if WIN32
+#if defined(_WIN32)
   HeapFree(GetProcessHeap(), 0, memory);
 #else
 #endif

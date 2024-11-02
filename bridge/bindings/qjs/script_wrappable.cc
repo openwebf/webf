@@ -314,10 +314,10 @@ WebFValueStatus* ScriptWrappable::KeepAlive() {
 void ScriptWrappable::ReleaseAlive() {
   alive_count--;
   if (alive_count == 0) {
-    context_->InActiveScriptWrappers(this);
-    JS_FreeValue(ctx_, jsObject_);
     delete status_block_;
     status_block_ = nullptr;
+    context_->InActiveScriptWrappers(this);
+    JS_FreeValue(ctx_, jsObject_);
   }
 }
 
