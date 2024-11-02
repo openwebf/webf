@@ -8,7 +8,7 @@ use crate::*;
 #[repr(C)]
 pub struct CustomEventRustMethods {
   pub version: c_double,
-  pub event: *const EventRustMethods,
+  pub event: EventRustMethods,
   pub detail: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<ScriptValueRefRustMethods>,
   pub init_custom_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, i32, i32, *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
 }
@@ -23,7 +23,7 @@ impl CustomEvent {
         event: Event::initialize(
           ptr,
           context,
-          method_pointer.as_ref().unwrap().event,
+          &(method_pointer).as_ref().unwrap().event,
           status,
         ),
         method_pointer,
@@ -40,10 +40,7 @@ impl CustomEvent {
     let value = unsafe {
       ((*self.method_pointer).detail)(self.ptr())
     };
-    ScriptValueRef {
-      ptr: value.value,
-      method_pointer: value.method_pointer
-    }
+    ScriptValueRef::initialize(value.value, self.context(), value.method_pointer)
   }
   pub fn init_custom_event(&self, type_: &str, can_bubble: bool, cancelable: bool, detail: &ScriptValueRef, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {

@@ -8,7 +8,7 @@ use crate::*;
 #[repr(C)]
 pub struct MouseEventRustMethods {
   pub version: c_double,
-  pub ui_event: *const UIEventRustMethods,
+  pub ui_event: UIEventRustMethods,
   pub client_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub client_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub offset_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
@@ -25,7 +25,7 @@ impl MouseEvent {
         ui_event: UIEvent::initialize(
           ptr,
           context,
-          method_pointer.as_ref().unwrap().ui_event,
+          &(method_pointer).as_ref().unwrap().ui_event,
           status,
         ),
         method_pointer,

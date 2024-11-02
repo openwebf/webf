@@ -8,7 +8,7 @@ use crate::*;
 #[repr(C)]
 pub struct FocusEventRustMethods {
   pub version: c_double,
-  pub ui_event: *const UIEventRustMethods,
+  pub ui_event: UIEventRustMethods,
   pub related_target: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<EventTargetRustMethods>,
 }
 pub struct FocusEvent {
@@ -22,7 +22,7 @@ impl FocusEvent {
         ui_event: UIEvent::initialize(
           ptr,
           context,
-          method_pointer.as_ref().unwrap().ui_event,
+          &(method_pointer).as_ref().unwrap().ui_event,
           status,
         ),
         method_pointer,

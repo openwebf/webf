@@ -8,9 +8,11 @@ use crate::*;
 #[repr(C)]
 pub struct GestureEventRustMethods {
   pub version: c_double,
-  pub event: *const EventRustMethods,
+  pub event: EventRustMethods,
   pub state: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub dup_state: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
   pub direction: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub dup_direction: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
   pub delta_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub delta_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub velocity_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
@@ -29,7 +31,7 @@ impl GestureEvent {
         event: Event::initialize(
           ptr,
           context,
-          method_pointer.as_ref().unwrap().event,
+          &(method_pointer).as_ref().unwrap().event,
           status,
         ),
         method_pointer,

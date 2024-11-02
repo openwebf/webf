@@ -12,7 +12,7 @@ enum <%= className %>Type {
 pub struct <%= className %>RustMethods {
   pub version: c_double,
   <% if (object.parent) { %>
-  pub <%= _.snakeCase(object.parent) %>: *const <%= object.parent %>RustMethods,
+  pub <%= _.snakeCase(object.parent) %>: <%= object.parent %>RustMethods,
   <% } %>
 
   <% _.forEach(object.props, function(prop, index) { %>
@@ -20,6 +20,9 @@ pub struct <%= className %>RustMethods {
   pub <%= propName %>: extern "C" fn(ptr: *const OpaquePtr) -> <%= generatePublicReturnTypeValue(prop.type) %>,
     <% if (!prop.readonly) { %>
   pub set_<%= _.snakeCase(prop.name) %>: extern "C" fn(ptr: *const OpaquePtr, value: <%= generatePublicReturnTypeValue(prop.type) %>, exception_state: *const OpaquePtr) -> bool,
+    <% } %>
+    <% if (isStringType(prop.type)) { %>
+  pub dup_<%= _.snakeCase(prop.name) %>: extern "C" fn(ptr: *const OpaquePtr) -> <%= generatePublicReturnTypeValue(prop.type) %>,
     <% } %>
   <% }); %>
 
@@ -56,7 +59,7 @@ impl <%= className %> {
         <%= _.snakeCase(object.parent) %>: <%= object.parent %>::initialize(
           ptr,
           context,
-          method_pointer.as_ref().unwrap().<%= _.snakeCase(object.parent) %>,
+          &(method_pointer).as_ref().unwrap().<%= _.snakeCase(object.parent) %>,
           status,
         ),
         method_pointer,

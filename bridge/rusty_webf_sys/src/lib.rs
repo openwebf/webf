@@ -77,6 +77,7 @@ pub use comment::*;
 pub use character_data::*;
 pub use html_element::*;
 pub use script_value_ref::*;
+pub use custom_event::*;
 pub use add_event_listener_options::*;
 pub use animation_event_init::*;
 pub use close_event_init::*;
