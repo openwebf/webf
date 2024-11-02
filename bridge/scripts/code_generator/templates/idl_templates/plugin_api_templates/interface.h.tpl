@@ -1,3 +1,4 @@
+#include "rust_readable.h"
 #include "script_value_ref.h"
 <% if (object.parent) { %>
 #include "<%= _.snakeCase(object.parent) %>.h"

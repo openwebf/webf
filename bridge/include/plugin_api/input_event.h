@@ -7,6 +7,7 @@
 #ifndef WEBF_CORE_WEBF_API_PLUGIN_API_INPUT_EVENT_H_
 #define WEBF_CORE_WEBF_API_PLUGIN_API_INPUT_EVENT_H_
 #include <stdint.h>
+#include "rust_readable.h"
 #include "script_value_ref.h"
 #include "ui_event.h"
 namespace webf {
