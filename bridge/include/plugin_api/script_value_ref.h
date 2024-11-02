@@ -18,7 +18,9 @@ using PublicScriptValueRefRelease = void (*)(ScriptValueRef*);
 
 struct ScriptValueRefPublicMethods : WebFPublicMethods {
   static const char* ToString(ScriptValueRef* script_value_ref, SharedExceptionState* shared_exception_state);
-  static void SetAsString(ScriptValueRef* script_value_ref, const char* value, SharedExceptionState* shared_exception_state);
+  static void SetAsString(ScriptValueRef* script_value_ref,
+                          const char* value,
+                          SharedExceptionState* shared_exception_state);
   static void Release(ScriptValueRef* script_value_ref);
   PublicScriptValueRefToString to_string{ToString};
   PublicScriptValueRefSetAsString set_as_string{SetAsString};
