@@ -6,7 +6,7 @@
 * [Flutter](https://flutter.dev/docs/get-started/install) version in the `webf/pubspec.yaml`
 * [CMake](https://cmake.org/) v3.10.0 or later
 * [Xcode](https://developer.apple.com/xcode/) (10.12) or later (Running on macOS or iOS)
-* [Android NDK](https://developer.android.com/studio/projects/install-ndk) version `22.1.7171670` (Running on Android)]
+* [Android NDK](https://developer.android.com/studio/projects/install-ndk) version `22.1.7171670` (Running on Android)
 * [Visual Studio 2019 or later](https://visualstudio.microsoft.com/) (Running on Windows)
 * [Rust](https://www.rust-lang.org/) (For building Rust example apps.)
 
@@ -50,8 +50,8 @@ npm run generate_binding_code
 
 **iOS and macOS**
 
-> The default build type is Debug. To create a release build, add `:release` to your command.  
->  
+> The default build type is Debug. To create a release build, add `:release` to your command.
+>
 > Example: Execute `npm run build:bridge:macos:release` to build a release bridge for macOS.
 
 ```shell
@@ -59,7 +59,7 @@ $ npm run build:bridge:ios:release    # iOS
 $ npm run build:bridge:macos:release  # macOS
 ```
 
---- 
+---
 
 
 ### Run Example
@@ -97,9 +97,8 @@ npm run integration -- --skip-build
 Change the `it` into `fit` to running this test spec only.
 
 ```typescript
-fit('document.all', () => { 
+fit('document.all', () => {
   expect(document.all).not.toBeUndefined();
   expect(document.all.length).toBeGreaterThan(0);
 });
 ```
-
