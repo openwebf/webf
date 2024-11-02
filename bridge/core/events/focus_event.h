@@ -9,9 +9,9 @@
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
+#include "plugin_api/focus_event.h"
 #include "qjs_focus_event_init.h"
 #include "ui_event.h"
-#include "plugin_api/focus_event.h"
 
 namespace webf {
 

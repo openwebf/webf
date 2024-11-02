@@ -6,8 +6,8 @@
 #define BRIDGE_CUSTOM_EVENT_H
 
 #include "event.h"
-#include "qjs_custom_event_init.h"
 #include "plugin_api/custom_event.h"
+#include "qjs_custom_event_init.h"
 
 namespace webf {
 
