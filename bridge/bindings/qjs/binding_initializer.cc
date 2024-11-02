@@ -169,6 +169,8 @@ void InstallBindings(ExecutingContext* context) {
   QJSPath2D::Install(context);
   QJSDOMMatrixReadonly::Install(context);
   QJSDOMMatrix::Install(context);
+  QJSDOMPointReadonly::Install(context);
+  QJSDOMPoint::Install(context);
   QJSCSSStyleDeclaration::Install(context);
   QJSInlineCssStyleDeclaration::Install(context);
   QJSComputedCssStyleDeclaration::Install(context);

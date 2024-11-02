@@ -130,7 +130,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
     methods['transformPoint'] = BindingObjectMethodSync(call: (args) {
       BindingObject domPoint = args[0];
       if (domPoint is DOMPoint) {
-        return transformPoint((domPoint as DOMPoint));
+        return transformPoint(domPoint);
       }
     });
     methods['translate'] = BindingObjectMethodSync(
