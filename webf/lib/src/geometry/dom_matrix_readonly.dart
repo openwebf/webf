@@ -405,7 +405,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMPoint transformPoint(DOMPoint domPoint) {
-    double x = domPoint.data.x, y = domPoint.data.y, z = domPoint.data.z, w = domPoint.data.w;
+    double x = domPoint.x, y = domPoint.y, z = domPoint.z, w = domPoint.w;
     if (isIdentityOrTranslation()) {
       x += _matrix4[12];
       y += _matrix4[13];
@@ -415,7 +415,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
       // like method v4MulPointByMatrix(v,m) in WebKit TransformationMatrix
       List input = [x, y, w, z];
       x = dot(input, _matrix4.row0);
-      z = dot(input, _matrix4.row1);
+      y = dot(input, _matrix4.row1);
       z = dot(input, _matrix4.row2);
       w = dot(input, _matrix4.row3);
     }
