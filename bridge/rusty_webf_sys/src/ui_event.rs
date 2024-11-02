@@ -8,7 +8,7 @@ use crate::*;
 #[repr(C)]
 pub struct UIEventRustMethods {
   pub version: c_double,
-  pub event: *const EventRustMethods,
+  pub event: EventRustMethods,
   pub detail: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub view: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<WindowRustMethods>,
   pub which: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
@@ -24,7 +24,7 @@ impl UIEvent {
         event: Event::initialize(
           ptr,
           context,
-          method_pointer.as_ref().unwrap().event,
+          &(method_pointer).as_ref().unwrap().event,
           status,
         ),
         method_pointer,

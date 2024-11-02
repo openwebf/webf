@@ -1,7 +1,7 @@
 use std::ffi::{c_void, CString};
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{AddEventListenerOptions, element, EventTargetMethods, initialize_webf_api, RustValue};
+use webf_sys::{element, initialize_webf_api, AddEventListenerOptions, EventMethods, EventTargetMethods, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
@@ -36,6 +36,22 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   div_element.add_event_listener("custom_click", event_handler.clone(), &event_listener_options, &exception_state).unwrap();
 
   let real_click_handler = Box::new(move |event: &Event| {
+    match event.as_mouse_event() {
+      Ok(mouse_event) => {
+        let x = mouse_event.offset_x();
+        let y = mouse_event.offset_y();
+        let document = context.document();
+        let exception_state = context.create_exception_state();
+        let div = document.create_element("div", &exception_state).unwrap();
+        let text_node = document.create_text_node(format!("Mouse Clicked at x: {}, y: {}", x, y).as_str(), &exception_state).unwrap();
+        div.append_child(&text_node.as_node(), &exception_state).unwrap();
+        document.body().append_child(&div.as_node(), &exception_state).unwrap();
+      },
+      Err(_) => {
+        println!("Not a mouse event");
+      }
+    }
+
     let context = event.context();
     let exception_state = context.create_exception_state();
     let document = context.document();

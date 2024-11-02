@@ -8,10 +8,12 @@ use crate::*;
 #[repr(C)]
 pub struct AnimationEventRustMethods {
   pub version: c_double,
-  pub event: *const EventRustMethods,
+  pub event: EventRustMethods,
   pub animation_name: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub dup_animation_name: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
   pub elapsed_time: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub dup_pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
 }
 pub struct AnimationEvent {
   pub event: Event,
@@ -24,7 +26,7 @@ impl AnimationEvent {
         event: Event::initialize(
           ptr,
           context,
-          method_pointer.as_ref().unwrap().event,
+          &(method_pointer).as_ref().unwrap().event,
           status,
         ),
         method_pointer,

@@ -8,9 +8,11 @@ use crate::*;
 #[repr(C)]
 pub struct InputEventRustMethods {
   pub version: c_double,
-  pub ui_event: *const UIEventRustMethods,
+  pub ui_event: UIEventRustMethods,
   pub input_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub dup_input_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
   pub data: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub dup_data: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
 }
 pub struct InputEvent {
   pub ui_event: UIEvent,
@@ -23,7 +25,7 @@ impl InputEvent {
         ui_event: UIEvent::initialize(
           ptr,
           context,
-          method_pointer.as_ref().unwrap().ui_event,
+          &(method_pointer).as_ref().unwrap().ui_event,
           status,
         ),
         method_pointer,

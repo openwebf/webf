@@ -287,10 +287,7 @@ function generatePropReturnStatements(type: ParameterType) {
     value.to_str().unwrap().to_string()`;
     }
     case FunctionArgumentType.any: {
-      return `ScriptValueRef {
-      ptr: value.value,
-      method_pointer: value.method_pointer
-    }`;
+      return `ScriptValueRef::initialize(value.value, self.context(), value.method_pointer)`;
     }
     default:
       return 'value';
@@ -347,6 +344,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
           generatePropReturnStatements,
           generateValidRustIdentifier,
           isVoidType,
+          isStringType,
           subClasses: _.uniq(subClasses),
           options,
         });

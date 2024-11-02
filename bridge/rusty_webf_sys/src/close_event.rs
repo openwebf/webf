@@ -8,9 +8,10 @@ use crate::*;
 #[repr(C)]
 pub struct CloseEventRustMethods {
   pub version: c_double,
-  pub event: *const EventRustMethods,
+  pub event: EventRustMethods,
   pub code: extern "C" fn(ptr: *const OpaquePtr) -> i64,
   pub reason: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub dup_reason: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
   pub was_clean: extern "C" fn(ptr: *const OpaquePtr) -> i32,
 }
 pub struct CloseEvent {
@@ -24,7 +25,7 @@ impl CloseEvent {
         event: Event::initialize(
           ptr,
           context,
-          method_pointer.as_ref().unwrap().event,
+          &(method_pointer).as_ref().unwrap().event,
           status,
         ),
         method_pointer,

@@ -8,9 +8,11 @@ use crate::*;
 #[repr(C)]
 pub struct HashchangeEventRustMethods {
   pub version: c_double,
-  pub event: *const EventRustMethods,
+  pub event: EventRustMethods,
   pub new_url: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub dup_new_url: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
   pub old_url: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub dup_old_url: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
 }
 pub struct HashchangeEvent {
   pub event: Event,
@@ -23,7 +25,7 @@ impl HashchangeEvent {
         event: Event::initialize(
           ptr,
           context,
-          method_pointer.as_ref().unwrap().event,
+          &(method_pointer).as_ref().unwrap().event,
           status,
         ),
         method_pointer,

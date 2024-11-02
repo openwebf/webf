@@ -35,6 +35,7 @@ pub struct EventRustMethods {
   pub is_trusted: extern "C" fn(ptr: *const OpaquePtr) -> i32,
   pub time_stamp: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub type_: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub dup_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
   pub init_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, i32, i32, exception_state: *const OpaquePtr) -> c_void,
   pub prevent_default: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
   pub stop_immediate_propagation: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,

@@ -8,10 +8,12 @@ use crate::*;
 #[repr(C)]
 pub struct TransitionEventRustMethods {
   pub version: c_double,
-  pub event: *const EventRustMethods,
+  pub event: EventRustMethods,
   pub elapsed_time: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub property_name: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub dup_property_name: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
   pub pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub dup_pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
 }
 pub struct TransitionEvent {
   pub event: Event,
@@ -24,7 +26,7 @@ impl TransitionEvent {
         event: Event::initialize(
           ptr,
           context,
-          method_pointer.as_ref().unwrap().event,
+          &(method_pointer).as_ref().unwrap().event,
           status,
         ),
         method_pointer,
