@@ -7,7 +7,6 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
-#include "qjs_uniondom_matrix_sequencedouble.h"
 
 namespace webf {
 
@@ -24,6 +23,8 @@ class DOMMatrixReadonly : public BindingObject {
                                    ExceptionState& exception_state);
   static DOMMatrixReadonly* Create(ExecutingContext* context,
                                    ExceptionState& exception_state);
+  static DOMMatrix* fromMatrix(ExecutingContext* context, DOMMatrixReadonly* matrix, ExceptionState& exception_state);
+
   DOMMatrixReadonly() = delete;
   explicit DOMMatrixReadonly(ExecutingContext* context,
                              const std::vector<double>& init,
@@ -80,20 +81,44 @@ class DOMMatrixReadonly : public BindingObject {
   DOMMatrix* flipY(ExceptionState& exception_state) const;
   DOMMatrix* inverse(ExceptionState& exception_state) const;
   DOMMatrix* multiply(DOMMatrix* matrix, ExceptionState& exception_state) const;
+  DOMMatrix* rotateAxisAngle(ExceptionState& exception_state) const;
+  DOMMatrix* rotateAxisAngle(double x, ExceptionState& exception_state) const;
+  DOMMatrix* rotateAxisAngle(double x, double y, ExceptionState& exception_state) const;
+  DOMMatrix* rotateAxisAngle(double x, double y, double z, ExceptionState& exception_state) const;
   DOMMatrix* rotateAxisAngle(double x, double y, double z, double angle, ExceptionState& exception_state) const;
-  DOMMatrix* rotate(double rotX, double rotY, double rotZ, ExceptionState& exception_state) const;
+  DOMMatrix* rotate(ExceptionState& exception_state) const;
+  DOMMatrix* rotate(double x, ExceptionState& exception_state) const;
+  DOMMatrix* rotate(double x, double y, ExceptionState& exception_state) const;
+  DOMMatrix* rotate(double x, double y, double z, ExceptionState& exception_state) const;
+  DOMMatrix* rotateFromVector(ExceptionState& exception_state) const;
+  DOMMatrix* rotateFromVector(double x, ExceptionState& exception_state) const;
   DOMMatrix* rotateFromVector(double x, double y, ExceptionState& exception_state) const;
-  DOMMatrix* scale(double scaleX, double scaleY, double scaleZ,
-                   double originX, double originY, double originZ,
-                   ExceptionState& exception_state) const;
-  DOMMatrix* scale3d(double scale, double originX, double originY, double originZ, ExceptionState& exception_state) const;
-  DOMMatrix* scaleNonUniform(double scaleX, double scaleY, ExceptionState& exception_state) const;
+  DOMMatrix* scale(ExceptionState& exception_state) const;
+  DOMMatrix* scale(double sx, ExceptionState& exception_state) const;
+  DOMMatrix* scale(double sx, double sy, ExceptionState& exception_state) const;
+  DOMMatrix* scale(double sx, double sy, double sz, ExceptionState& exception_state) const;
+  DOMMatrix* scale(double sx, double sy, double sz, double ox, ExceptionState& exception_state) const;
+  DOMMatrix* scale(double sx, double sy, double sz, double ox, double oy, ExceptionState& exception_state) const;
+  DOMMatrix* scale(double sx, double sy, double sz, double ox, double oy, double oz, ExceptionState& exception_state) const;
+  DOMMatrix* scale3d(ExceptionState& exception_state) const;
+  DOMMatrix* scale3d(double scale, ExceptionState& exception_state) const;
+  DOMMatrix* scale3d(double scale, double ox, ExceptionState& exception_state) const;
+  DOMMatrix* scale3d(double scale, double ox, double oy, ExceptionState& exception_state) const;
+  DOMMatrix* scale3d(double scale, double ox, double oy, double oz, ExceptionState& exception_state) const;
+  DOMMatrix* scaleNonUniform(ExceptionState& exception_state) const;
+  DOMMatrix* scaleNonUniform(double sx, ExceptionState& exception_state) const;
+  DOMMatrix* scaleNonUniform(double sx, double sy, ExceptionState& exception_state) const;
+  DOMMatrix* skewX(ExceptionState& exception_state) const;
   DOMMatrix* skewX(double sx, ExceptionState& exception_state) const;
+  DOMMatrix* skewY(ExceptionState& exception_state) const;
   DOMMatrix* skewY(double sy, ExceptionState& exception_state) const;
   // toJSON(): DartImpl<JSON>;
 
   AtomicString toString(ExceptionState& exception_state) const;
   DOMPoint* transformPoint(DOMPoint* point, ExceptionState& exception_state) const;
+  DOMMatrix* translate(ExceptionState& exception_state) const;
+  DOMMatrix* translate(double tx, ExceptionState& exception_state) const;
+  DOMMatrix* translate(double tx, double ty, ExceptionState& exception_state) const;
   DOMMatrix* translate(double tx, double ty, double tz, ExceptionState& exception_state) const;
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,

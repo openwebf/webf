@@ -76,6 +76,31 @@ function assert_false(value: any, message?: string) {
   expect(value).toBe(false, message)
 }
 
+/**
+     * Assert that ``actual`` is within ± ``epsilon`` of ``expected``.
+     *
+     * @param {number} actual - Test value.
+     * @param {number} expected - Value number is expected to be close to.
+     * @param {number} epsilon - Magnitude of allowed difference between ``actual`` and ``expected``.
+     * @param {string} [description] - Description of the condition being tested.
+     */
+function assert_approx_equals(actual, expected, epsilon, description)
+{
+    /*
+     * Test if two primitive numbers are equal within +/- epsilon
+     */
+    description = description + ", actual value is " + actual;
+    assert_true(typeof actual === "number", description);
+
+    // The epsilon math below does not place nice with NaN and Infinity
+    // But in this case Infinity = Infinity and NaN = NaN
+    if (isFinite(actual) || isFinite(expected)) {
+        assert_true(Math.abs(actual - expected) <= epsilon, description);
+    } else {
+        assert_equals(actual, expected);
+    }
+}
+
 function format_value(v: any) {
   return JSON.stringify(v)
 }
@@ -466,6 +491,7 @@ Object.assign(global, {
   assert_not_equals,
   assert_throws_exactly,
   assert_class_string,
+  assert_approx_equals,
   simulatePointDown,
   simulatePointUp,
   simulatePointRemove,

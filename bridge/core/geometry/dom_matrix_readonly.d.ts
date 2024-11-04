@@ -27,23 +27,23 @@ interface DOMMatrixReadonly {
     flipY(): DOMMatrix;
     inverse(): DOMMatrix;
     multiply(matrix: DOMMatrix): DOMMatrix;
-    rotateAxisAngle(x:number, y:number, z:number, angle:number): DOMMatrix;
-    rotate(rotX:number, rotY:number, rotZ:number): DOMMatrix;
-    rotateFromVector(x:number, y:number): DOMMatrix;
-    scale(scaleX: number, scaleY: number, scaleZ: number, originX: number, originY: number, originZ: number): DOMMatrix;
-    scale3d(scale: number, originX: number, originY: number, originZ: number): DOMMatrix;
-    scaleNonUniform(scaleX: number, scaleY: number): DOMMatrix;
-    skewX(sx: number): DOMMatrix;
-    skewY(sy: number): DOMMatrix;
+    rotateAxisAngle(x?:number, y?:number, z?:number, angle?:number): DOMMatrix;
+    rotate(x?:number, y?:number, z?:number): DOMMatrix;
+    rotateFromVector(x?:number, y?:number): DOMMatrix;
+    scale(sx?: number, sy?: number, sz?: number, ox?: number, oy?: number, oz?: number): DOMMatrix;
+    scale3d(scale?: number, ox?: number, oy?: number, oz?: number): DOMMatrix;
+    scaleNonUniform(sx?: number, sy?: number): DOMMatrix;
+    skewX(sx?: number): DOMMatrix;
+    skewY(sy?: number): DOMMatrix;
     // toFloat32Array(): number[];
     // toFloat64Array(): number[];
     // TODO
     // toJSON(): DartImpl<JSON>;
     toString(): string;
     transformPoint(point: DOMPoint): DOMPoint;
-    translate(tx:number, ty:number, tz:number): DOMMatrix;
+    translate(tx?:number, ty?:number, tz?:number): DOMMatrix;
     // fromFloat32Array(): StaticMethod<DOMMatrix>;
     // fromFloat64Array(): StaticMethod<DOMMatrix>;
-    // fromMatrix(): StaticMethod<DOMMatrix>;
+    fromMatrix(matrix: DOMMatrix): StaticMethod<DOMMatrix>;
     new(init?: number[]): DOMMatrixReadonly;
 }

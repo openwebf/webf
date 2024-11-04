@@ -17,6 +17,12 @@ DOMMatrix* DOMMatrix::Create(webf::ExecutingContext* context, webf::ExceptionSta
   return MakeGarbageCollected<DOMMatrix>(context, exception_state);
 }
 
+DOMMatrix* DOMMatrix::fromMatrix(ExecutingContext* context,
+                                 DOMMatrix *matrix,
+                                 ExceptionState& exception_state) {
+  return DOMMatrixReadonly::fromMatrix(context, matrix ,exception_state);
+}
+
 DOMMatrix::DOMMatrix(webf::ExecutingContext* context, webf::ExceptionState& exception_state):
       DOMMatrixReadonly(context, exception_state) {}
 

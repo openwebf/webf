@@ -19,6 +19,9 @@ class DOMMatrix : public DOMMatrixReadonly {
                            ExceptionState& exception_state);
   static DOMMatrix* Create(ExecutingContext* context,
                            ExceptionState& exception_state);
+  static DOMMatrix* fromMatrix(ExecutingContext* context,
+                               DOMMatrix *matrix,
+                               ExceptionState& exception_state);
 
   DOMMatrix() = delete;
   explicit DOMMatrix(ExecutingContext* context,

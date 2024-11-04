@@ -335,7 +335,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrix rotateAxisAngle(double x, double y, double z, double angle) {
-    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage)..rotate(Vector3(x, y, z), angle);
+    Matrix4 m = _matrix4.clone()..rotate(Vector3(x, y, z), angle);
     bool flag2D = _is2D;
     if (x != 0 || y != 0) {
       flag2D = false;
@@ -344,7 +344,18 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrix rotate(double x, double y, double z) {
-    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage)..rotate3(Vector3(x, y, z));
+    // rotate(-90) => rotate(0,0,9-0)
+    // TODO rotate(-90, 0, 0) ??
+    if(y==0 && z==0) {
+      z = x;
+      x = 0;
+      y  = 0;
+    }
+    double xRad = x * degrees2Radians;
+    double yRad = y * degrees2Radians;
+    double zRad = z * degrees2Radians;
+
+    Matrix4 m = _matrix4.clone()..rotateX(xRad)..rotateY(yRad)..rotateZ(zRad);
     bool flag2D = _is2D;
     if (x != 0 || y == 0) {
       flag2D = false;
@@ -353,7 +364,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrix rotateFromVector(double x, double y) {
-    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage);
+    Matrix4 m = _matrix4.clone();
     double? angle = rad2deg(atan2(x, y));
     if (angle != null) {
       m.rotateZ(angle);
@@ -362,9 +373,9 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrix scale(double sX, double sY, double sZ, double oriX, double oriY, double oriZ) {
-    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage)
+    Matrix4 m = _matrix4.clone()
       ..translate(oriX, oriY, oriZ)
-      ..scaled(sX, sX, sZ)
+      ..scale(sX, sY, sZ)
       ..translate(-oriX, -oriY, -oriZ);
     bool flag2D = _is2D;
     if (sZ != 1 || oriZ != 0) {
@@ -378,18 +389,18 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrix scaleNonUniform(double sX, double sY) {
-    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage)..scaled(sX, sY, 1);
+    Matrix4 m = _matrix4.clone()..scale(sX, sY, 1);
     return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, _is2D);
   }
 
   DOMMatrix skewX(double sx) {
-    Matrix4 m = Matrix4.skewX(sx);
+    Matrix4 m = Matrix4.skewX(sx * degrees2Radians);
     return DOMMatrix.fromMatrix4(
         BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, _is2D);
   }
 
   DOMMatrix skewY(double sy) {
-    Matrix4 m = Matrix4.skewY(sy);
+    Matrix4 m = Matrix4.skewY(sy * degrees2Radians);
     return DOMMatrix.fromMatrix4(
         BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, _is2D);
   }
@@ -425,19 +436,19 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrix translate(double tx, double ty, double tz) {
-    Matrix4 m = Matrix4.fromFloat64List(_matrix4.storage)..translate(tx, ty, tz);
+    Matrix4 m = _matrix4.clone()..translate(tx, ty, tz);
     bool flag2D = _is2D;
     if (tz != 0) {
       flag2D = false;
     }
     return DOMMatrix.fromMatrix4(
-        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, flag2D);
+        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, flag2D);
   }
 
-    static bool isIdentityOrTranslation(Matrix4 matrix) {
-      return matrix[0] == 1 && matrix[1] == 0 && matrix[2] == 0 && matrix[3] == 0 &&
-          matrix[4] == 0 && matrix[5] == 1 && matrix[6] == 0 && matrix[7] == 0 &&
-          matrix[8] == 0 && matrix[9] == 0 && matrix[10] == 1 && matrix[11] == 0 &&
-          matrix[15] == 1;
-    }
+  static bool isIdentityOrTranslation(Matrix4 matrix) {
+    return matrix[0] == 1 && matrix[1] == 0 && matrix[2] == 0 && matrix[3] == 0 &&
+      matrix[4] == 0 && matrix[5] == 1 && matrix[6] == 0 && matrix[7] == 0 &&
+      matrix[8] == 0 && matrix[9] == 0 && matrix[10] == 1 && matrix[11] == 0 &&
+      matrix[15] == 1;
+  }
 }
