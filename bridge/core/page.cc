@@ -31,10 +31,10 @@ WebFPage::WebFPage(DartIsolateContext* dart_isolate_context,
   context_ = new ExecutingContext(
       dart_isolate_context, is_dedicated, sync_buffer_size, context_id,
       [](ExecutingContext* context, const char* message) {
+        WEBF_LOG(ERROR) << message << std::endl;
         if (context->IsContextValid()) {
           context->dartMethodPtr()->onJSError(context->isDedicated(), context->contextId(), message);
         }
-        WEBF_LOG(ERROR) << message << std::endl;
       },
       this);
 }
