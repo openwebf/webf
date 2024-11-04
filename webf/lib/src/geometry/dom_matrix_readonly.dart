@@ -335,12 +335,13 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrix rotateAxisAngle(double x, double y, double z, double angle) {
-    Matrix4 m = _matrix4.clone()..rotate(Vector3(x, y, z), angle);
+    Matrix4 m = DOMMatrixReadonly.rotate3d(x, y, z, angle);
     bool flag2D = _is2D;
     if (x != 0 || y != 0) {
       flag2D = false;
     }
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, flag2D);
+    return DOMMatrix.fromMatrix4(
+        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, flag2D);
   }
 
   DOMMatrix rotate(double x, double y, double z) {
@@ -451,5 +452,39 @@ class DOMMatrixReadonly extends DynamicBindingObject {
       matrix[4] == 0 && matrix[5] == 1 && matrix[6] == 0 && matrix[7] == 0 &&
       matrix[8] == 0 && matrix[9] == 0 && matrix[10] == 1 && matrix[11] == 0 &&
       matrix[15] == 1;
+  }
+
+  static Matrix4 rotate3d(double x, double y, double z, double angle) {
+    // normalizing x,y,z
+    List<double> vec = [x,y,z];
+    List<double> norVec = normalize(vec);
+    double nx = norVec[0];
+    double ny = norVec[1];
+    double nz = norVec[2];
+
+    // The 3D rotation matrix is described in CSS Transforms with alpha.
+    // Please see: https://drafts.csswg.org/css-transforms-2/#Rotate3dDefined
+    double alpha_in_radians = degrees2Radians * (angle / 2);
+    double sc = sin (alpha_in_radians) * cos(alpha_in_radians);
+    double sq = sin(alpha_in_radians) * sin(alpha_in_radians);
+
+    double m11 = 1 - 2 * (ny * ny + nz * nz) * sq;
+    double m12 = 2 * (nx * ny * sq + nz * sc);
+    double m13 = 2 * (nx * nz * sq - ny * sc);
+    double m14 = 0;
+    double m21 = 2 * (nx * ny * sq - nz * sc);
+    double m22 = 1 - 2 * (nx * nx + nz * nz) * sq;
+    double m23 = 2 * (ny * nz * sq + nx * sc);
+    double m24 = 0;
+    double m31 = 2 * (nx * nz * sq + ny * sc);
+    double m32 = 2 * (ny * nz * sq - nx * sc);
+    double m33 = 1 - 2 * (nx * nx + ny * ny) * sq;
+    double m34 = 0;
+    double m41 = 0;
+    double m42 = 0;
+    double m43 = 0;
+    double m44 = 1;
+
+    return new Matrix4(m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44);
   }
 }

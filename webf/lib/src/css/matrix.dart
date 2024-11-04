@@ -75,8 +75,11 @@ double _length(v) {
   return sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 }
 
-List<double> _normalize(List<double> v) {
+List<double> normalize(List<double> v) {
   var len = _length(v);
+  if (len == 0) {
+    return v;
+  }
   return [v[0] / len, v[1] / len, v[2] / len];
 }
 
@@ -311,10 +314,10 @@ class CSSMatrix {
     List<List<double>> row = [];
     row.add(matrix[0].sublist(0, 3));
 
-    // Compute X scale factor and _normalize first row.
+    // Compute X scale factor and normalize first row.
     List<double> scale = List.filled(3, 0);
     scale[0] = _length(row[0]);
-    row[0] = _normalize(row[0]);
+    row[0] = normalize(row[0]);
 
     // Compute XY shear factor and make 2nd row orthogonal to 1st.
     // skew factors XY,XZ,YZ represented as a 3 component vector
@@ -323,9 +326,9 @@ class CSSMatrix {
     skew[0] = dot(row[0], row[1]);
     row[1] = _combine(row[1], row[0], 1.0, -skew[0]);
 
-    // Now, compute Y scale and _normalize 2nd row.
+    // Now, compute Y scale and normalize 2nd row.
     scale[1] = _length(row[1]);
-    row[1] = _normalize(row[1]);
+    row[1] = normalize(row[1]);
     skew[0] /= scale[1];
 
     // Compute XZ and YZ shears, orthogonalize 3rd row
@@ -335,9 +338,9 @@ class CSSMatrix {
     skew[2] = dot(row[1], row[2]);
     row[2] = _combine(row[2], row[1], 1.0, -skew[2]);
 
-    // Next, get Z scale and _normalize 3rd row.
+    // Next, get Z scale and normalize 3rd row.
     scale[2] = _length(row[2]);
-    row[2] = _normalize(row[2]);
+    row[2] = normalize(row[2]);
     skew[1] /= scale[2];
     skew[2] /= scale[2];
 
