@@ -365,9 +365,10 @@ class DOMMatrixReadonly extends DynamicBindingObject {
 
   DOMMatrix rotateFromVector(double x, double y) {
     Matrix4 m = _matrix4.clone();
-    double? angle = rad2deg(atan2(x, y));
-    if (angle != null) {
-      m.rotateZ(angle);
+    double rad = atan2(y, x);
+    double angle = rad * radians2Degrees;
+    if (angle % 360 != 0) {
+      m.rotateZ(rad);
     }
     return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, _is2D);
   }
