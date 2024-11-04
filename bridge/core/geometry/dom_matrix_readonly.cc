@@ -12,15 +12,29 @@
 #include "core/geometry/dom_point.h"
 #include "foundation/native_value_converter.h"
 
-namespace webf {
 
+namespace webf {
 DOMMatrixReadonly* DOMMatrixReadonly::Create(ExecutingContext* context,
                                              const std::vector<double>& init,
                                              ExceptionState& exception_state) {
   return MakeGarbageCollected<DOMMatrixReadonly>(context, init, exception_state);
 }
 
-DOMMatrixReadonly* DOMMatrixReadonly::Create(webf::ExecutingContext* context, webf::ExceptionState& exception_state) {}
+DOMMatrixReadonly* DOMMatrixReadonly::Create(webf::ExecutingContext* context, webf::ExceptionState& exception_state) {
+  return MakeGarbageCollected<DOMMatrixReadonly>(context, exception_state);
+}
+
+DOMMatrix* DOMMatrixReadonly::fromMatrix(ExecutingContext* context,
+                                         DOMMatrixReadonly* matrix,
+                                         ExceptionState& exception_state) {
+  // TODO 使用 Module 方法
+  // NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<DOMMatrixReadonly>>::ToNativeValue(matrix)};
+  // auto execute_context = matrix->GetExecutingContext();
+  // execute_context()->dartMethodPtr()->createBindingObject(execute_context()->isDedicated(),
+  //                                                         execute_context()->contextId(), matrix->bindingObject(),
+  //                                                         CreateBindingObjectType::kCreateDOMMatrix, arguments, 1);
+  return MakeGarbageCollected<DOMMatrix>(context, exception_state);
+}
 
 DOMMatrixReadonly::DOMMatrixReadonly(ExecutingContext* context,
                                      const std::vector<double>& init,
@@ -198,6 +212,18 @@ DOMMatrix* DOMMatrixReadonly::multiply(DOMMatrix* matrix, ExceptionState& except
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
 
+DOMMatrix* DOMMatrixReadonly::rotateAxisAngle(ExceptionState& exception_state) const {
+  return this->rotateAxisAngle(0, 0, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::rotateAxisAngle(double x, ExceptionState& exception_state) const {
+  return this->rotateAxisAngle(x, 0, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::rotateAxisAngle(double x, double y, ExceptionState& exception_state) const {
+  return this->rotateAxisAngle(x, y, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::rotateAxisAngle(double x, double y, double z, ExceptionState& exception_state) const {
+  return this->rotateAxisAngle(x, y, z, 0, exception_state);
+}
 DOMMatrix* DOMMatrixReadonly::rotateAxisAngle(double x,
                                               double y,
                                               double z,
@@ -216,6 +242,16 @@ DOMMatrix* DOMMatrixReadonly::rotateAxisAngle(double x,
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
+
+DOMMatrix* DOMMatrixReadonly::rotate(ExceptionState& exception_state) const {
+  return this->rotate(0, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::rotate(double x, ExceptionState& exception_state) const {
+  return this->rotate(x, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::rotate(double x, double y, ExceptionState& exception_state) const {
+  return this->rotate(x, y, 0, exception_state);
+}
 DOMMatrix* DOMMatrixReadonly::rotate(double rotX, double rotY, double rotZ, ExceptionState& exception_state) const {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(rotX),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(rotY),
@@ -227,6 +263,13 @@ DOMMatrix* DOMMatrixReadonly::rotate(double rotX, double rotY, double rotZ, Exce
   if (native_binding_object == nullptr)
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
+}
+
+DOMMatrix* DOMMatrixReadonly::rotateFromVector(ExceptionState& exception_state) const {
+  return this->rotateFromVector(0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::rotateFromVector(double x, ExceptionState& exception_state) const {
+  return this->rotateFromVector(x, 0, exception_state);
 }
 DOMMatrix* DOMMatrixReadonly::rotateFromVector(double x, double y, ExceptionState& exception_state) const {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
@@ -240,19 +283,38 @@ DOMMatrix* DOMMatrixReadonly::rotateFromVector(double x, double y, ExceptionStat
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
-DOMMatrix* DOMMatrixReadonly::scale(double scaleX,
-                                    double scaleY,
-                                    double scaleZ,
-                                    double originX,
-                                    double originY,
-                                    double originZ,
+
+DOMMatrix* DOMMatrixReadonly::scale(ExceptionState& exception_state) const {
+  return this->scale(1, 1,1, 0, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::scale(double sx, ExceptionState& exception_state) const {
+  return this->scale(sx, 1, 1, 0, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::scale(double sx, double sy, ExceptionState& exception_state) const {
+  return this->scale(sx, sy, 1, 0, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::scale(double sx, double sy, double sz, ExceptionState& exception_state) const {
+  return this->scale(sx, sy, sz, 0, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::scale(double sx, double sy, double sz, double ox, ExceptionState& exception_state) const {
+  return this->scale(sx, sy, sz, ox, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::scale(double sx, double sy, double sz, double ox, double oy, ExceptionState& exception_state) const {
+  return this->scale(sx, sy, sz, ox, oy, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::scale(double sx,
+                                    double sy,
+                                    double sz,
+                                    double ox,
+                                    double oy,
+                                    double oz,
                                     ExceptionState& exception_state) const {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(scaleX),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(scaleY),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(scaleZ),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(originX),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(originY),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(originZ)};
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(sx),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(sy),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(sz),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(ox),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(oy),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(oz)};
   NativeValue value = InvokeBindingMethod(binding_call_methods::kscale, sizeof(arguments) / sizeof(NativeValue),
                                           arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
   NativeBindingObject* native_binding_object =
@@ -261,15 +323,28 @@ DOMMatrix* DOMMatrixReadonly::scale(double scaleX,
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
+
+DOMMatrix* DOMMatrixReadonly::scale3d(ExceptionState& exception_state) const {
+  return this->scale3d(1, 0,0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::scale3d(double scale, ExceptionState& exception_state) const {
+  return this->scale3d(scale, 0, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::scale3d(double scale, double ox, ExceptionState& exception_state) const {
+  return this->scale3d(scale, ox, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::scale3d(double scale, double ox, double oy, ExceptionState& exception_state) const {
+  return this->scale3d(scale, ox, oy, 0, exception_state);
+}
 DOMMatrix* DOMMatrixReadonly::scale3d(double scale,
-                                      double originX,
-                                      double originY,
-                                      double originZ,
+                                      double ox,
+                                      double oy,
+                                      double oz,
                                       ExceptionState& exception_state) const {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(scale),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(originX),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(originY),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(originZ)};
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(ox),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(oy),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(oz)};
   NativeValue value = InvokeBindingMethod(binding_call_methods::kscale3d, sizeof(arguments) / sizeof(NativeValue),
                                           arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
   NativeBindingObject* native_binding_object =
@@ -278,9 +353,16 @@ DOMMatrix* DOMMatrixReadonly::scale3d(double scale,
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
-DOMMatrix* DOMMatrixReadonly::scaleNonUniform(double scaleX, double scaleY, ExceptionState& exception_state) const {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(scaleX),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(scaleY)};
+
+DOMMatrix* DOMMatrixReadonly::scaleNonUniform(ExceptionState& exception_state) const {
+  return this->scaleNonUniform(1, 1, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::scaleNonUniform(double sx, ExceptionState& exception_state) const {
+  return this->scaleNonUniform(sx, 1, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::scaleNonUniform(double sx, double sy, ExceptionState& exception_state) const {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(sx),
+                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(sy)};
   NativeValue value =
       InvokeBindingMethod(binding_call_methods::kscaleNonUniform, sizeof(arguments) / sizeof(NativeValue), arguments,
                           FlushUICommandReason::kDependentsOnElement, exception_state);
@@ -289,6 +371,10 @@ DOMMatrix* DOMMatrixReadonly::scaleNonUniform(double scaleX, double scaleY, Exce
   if (native_binding_object == nullptr)
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
+}
+
+DOMMatrix* DOMMatrixReadonly::skewX(ExceptionState& exception_state) const {
+  return this->skewX(0, exception_state);
 }
 DOMMatrix* DOMMatrixReadonly::skewX(double sx, ExceptionState& exception_state) const {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(sx)};
@@ -299,6 +385,10 @@ DOMMatrix* DOMMatrixReadonly::skewX(double sx, ExceptionState& exception_state) 
   if (native_binding_object == nullptr)
     return nullptr;
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
+}
+
+DOMMatrix* DOMMatrixReadonly::skewY(ExceptionState& exception_state) const {
+  return this->skewY(0, exception_state);
 }
 DOMMatrix* DOMMatrixReadonly::skewY(double sy, ExceptionState& exception_state) const {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(sy)};
@@ -349,6 +439,15 @@ DOMPoint* DOMMatrixReadonly::transformPoint(DOMPoint* point, ExceptionState& exc
   return MakeGarbageCollected<DOMPoint>(GetExecutingContext(), native_binding_object);
 }
 
+DOMMatrix* DOMMatrixReadonly::translate(ExceptionState& exception_state) const {
+  return this->translate(0, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::translate(double tx, ExceptionState& exception_state) const {
+  return this->translate(tx, 0, 0, exception_state);
+}
+DOMMatrix* DOMMatrixReadonly::translate(double tx, double ty, ExceptionState& exception_state) const {
+  return this->translate(tx, ty, 0, exception_state);
+}
 DOMMatrix* DOMMatrixReadonly::translate(double tx, double ty, double tz, ExceptionState& exception_state) const {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(tx),
                              NativeValueConverter<NativeTypeDouble>::ToNativeValue(ty),

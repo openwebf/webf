@@ -7,7 +7,6 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
-#include "qjs_uniondom_matrix_sequencedouble.h"
 
 namespace webf {
 
