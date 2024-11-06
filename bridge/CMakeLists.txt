@@ -413,7 +413,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/canvas/canvas_pattern.cc
     core/html/canvas/path_2d.cc
     core/geometry/dom_matrix.cc
-    core/geometry/dom_matrix_readonly.cc
+    core/geometry/dom_matrix_read_only.cc
     core/geometry/dom_point.cc
     core/geometry/dom_point_readonly.cc
     core/html/forms/html_button_element.cc
@@ -550,7 +550,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_canvas_pattern.cc
     out/qjs_path_2d.cc
     out/qjs_dom_matrix.cc
-    out/qjs_dom_matrix_readonly.cc
+    out/qjs_dom_matrix_read_only.cc
     out/qjs_dom_point.cc
     out/qjs_dom_point_readonly.cc
     out/qjs_union_double_sequencedouble.cc

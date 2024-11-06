@@ -1,4 +1,4 @@
-interface DOMMatrixReadonly {
+interface DOMMatrixReadOnly {
     readonly is2D: DartImpl<boolean>;
     readonly isIdentity: DartImpl<boolean>;
     m11: number;
@@ -45,5 +45,5 @@ interface DOMMatrixReadonly {
     // fromFloat32Array(): StaticMethod<DOMMatrix>;
     // fromFloat64Array(): StaticMethod<DOMMatrix>;
     fromMatrix(matrix: DOMMatrix): StaticMethod<DOMMatrix>;
-    new(init?: number[]): DOMMatrixReadonly;
+    new(init?: number[]): DOMMatrixReadOnly;
 }

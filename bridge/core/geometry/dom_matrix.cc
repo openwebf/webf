@@ -20,18 +20,18 @@ DOMMatrix* DOMMatrix::Create(webf::ExecutingContext* context, webf::ExceptionSta
 DOMMatrix* DOMMatrix::fromMatrix(ExecutingContext* context,
                                  DOMMatrix *matrix,
                                  ExceptionState& exception_state) {
-  return DOMMatrixReadonly::fromMatrix(context, matrix ,exception_state);
+  return DOMMatrixReadOnly::fromMatrix(context, matrix ,exception_state);
 }
 
 DOMMatrix::DOMMatrix(webf::ExecutingContext* context, webf::ExceptionState& exception_state):
-      DOMMatrixReadonly(context, exception_state) {}
+      DOMMatrixReadOnly(context, exception_state) {}
 
 DOMMatrix::DOMMatrix(ExecutingContext* context,
                      const std::vector<double>& init,
                      ExceptionState& exception_state)
-    : DOMMatrixReadonly(context, init, exception_state) {}
+    : DOMMatrixReadOnly(context, init, exception_state) {}
 
-DOMMatrix::DOMMatrix(webf::ExecutingContext* context, webf::NativeBindingObject* native_binding_object): DOMMatrixReadonly(context, native_binding_object) {
+DOMMatrix::DOMMatrix(webf::ExecutingContext* context, webf::NativeBindingObject* native_binding_object): DOMMatrixReadOnly(context, native_binding_object) {
 
 }
 

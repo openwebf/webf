@@ -29,7 +29,7 @@ class Path2D : public BindingObject {
                   const std::shared_ptr<QJSUnionPath2DDomString>& init,
                   ExceptionState& exception_state);
 
-  void addPath(Path2D* path, DOMMatrixReadonly* dom_matrix, ExceptionState& exception_state);
+  void addPath(Path2D* path, DOMMatrixReadOnly* dom_matrix, ExceptionState& exception_state);
   void addPath(Path2D* path, ExceptionState& exception_state);
 
   void roundRect(double x,

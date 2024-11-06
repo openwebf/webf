@@ -13,23 +13,23 @@ namespace webf {
 class DOMMatrix;
 class DOMPoint;
 
-class DOMMatrixReadonly : public BindingObject {
+class DOMMatrixReadOnly : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-  using ImplType = DOMMatrixReadonly*;
-  static DOMMatrixReadonly* Create(ExecutingContext* context,
+  using ImplType = DOMMatrixReadOnly*;
+  static DOMMatrixReadOnly* Create(ExecutingContext* context,
                                    const std::vector<double>& init,
                                    ExceptionState& exception_state);
-  static DOMMatrixReadonly* Create(ExecutingContext* context,
+  static DOMMatrixReadOnly* Create(ExecutingContext* context,
                                    ExceptionState& exception_state);
-  static DOMMatrix* fromMatrix(ExecutingContext* context, DOMMatrixReadonly* matrix, ExceptionState& exception_state);
+  static DOMMatrix* fromMatrix(ExecutingContext* context, DOMMatrixReadOnly* matrix, ExceptionState& exception_state);
 
-  DOMMatrixReadonly() = delete;
-  explicit DOMMatrixReadonly(ExecutingContext* context,
+  DOMMatrixReadOnly() = delete;
+  explicit DOMMatrixReadOnly(ExecutingContext* context,
                              const std::vector<double>& init,
                              ExceptionState& exception_state);
-  explicit DOMMatrixReadonly(ExecutingContext* context, ExceptionState& exception_state);
+  explicit DOMMatrixReadOnly(ExecutingContext* context, ExceptionState& exception_state);
 
   virtual bool IsDOMMatrix() const { return false; }
   double m11() const;
@@ -126,7 +126,7 @@ class DOMMatrixReadonly : public BindingObject {
                                      const NativeValue* argv,
                                      Dart_Handle dart_object) override;
  protected:
-  explicit DOMMatrixReadonly(ExecutingContext* context, NativeBindingObject* native_binding_object);
+  explicit DOMMatrixReadOnly(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
 private:
   [[nodiscard]] double getMatrixProperty(const AtomicString& prop) const;
