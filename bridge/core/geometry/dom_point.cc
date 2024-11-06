@@ -30,16 +30,16 @@ DOMPoint* DOMPoint::Create(ExecutingContext* context,
 }
 
 DOMPoint::DOMPoint(webf::ExecutingContext* context, webf::ExceptionState& exception_state)
-    : DOMPointReadonly(context, exception_state) {}
+    : DOMPointReadOnly(context, exception_state) {}
 
 DOMPoint::DOMPoint(ExecutingContext* context, double x, ExceptionState& exception_state)
-    : DOMPointReadonly(context, x, exception_state) {}
+    : DOMPointReadOnly(context, x, exception_state) {}
 DOMPoint::DOMPoint(ExecutingContext* context, double x, double y, ExceptionState& exception_state)
-    : DOMPointReadonly(context, x, y, exception_state) {}
+    : DOMPointReadOnly(context, x, y, exception_state) {}
 DOMPoint::DOMPoint(ExecutingContext* context, double x, double y, double z, ExceptionState& exception_state)
-    : DOMPointReadonly(context, x, y, z, exception_state) {}
+    : DOMPointReadOnly(context, x, y, z, exception_state) {}
 DOMPoint::DOMPoint(ExecutingContext* context, double x, double y, double z, double w, ExceptionState& exception_state)
-    : DOMPointReadonly(context, x, y, z, w, exception_state) {}
-DOMPoint::DOMPoint(webf::ExecutingContext* context, webf::NativeBindingObject* native_binding_object): DOMPointReadonly(context, native_binding_object) {}
+    : DOMPointReadOnly(context, x, y, z, w, exception_state) {}
+DOMPoint::DOMPoint(webf::ExecutingContext* context, webf::NativeBindingObject* native_binding_object): DOMPointReadOnly(context, native_binding_object) {}
 
 }  // namespace webf

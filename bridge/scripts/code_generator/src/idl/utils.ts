@@ -15,11 +15,10 @@ export function addIndent(str: String, space: number) {
 export function getClassName(blob: IDLBlob) {
   let raw = camelCase(blob.filename[4].toUpperCase() + blob.filename.slice(5));
   if (raw.slice(0, 3) == 'dom') {
-    console.log("className:" + raw)
     if (raw === 'domMatrixReadonly') {
       return `DOMMatrixReadOnly`;
     } else if (raw === 'domPointReadonly') {
-      return `DOMPointReadonly`;
+      return `DOMPointReadOnly`;
     }
     return 'DOM' + raw.slice(3);
   }

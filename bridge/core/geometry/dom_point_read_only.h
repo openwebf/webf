@@ -20,34 +20,34 @@ struct DOMPointData {
 class DOMPoint;
 class DOMMatrix;
 
-class DOMPointReadonly : public BindingObject {
+class DOMPointReadOnly : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-  using ImplType = DOMPointReadonly*;
+  using ImplType = DOMPointReadOnly*;
 
-  static DOMPointReadonly* Create(ExecutingContext* context, ExceptionState& exception_state);
-  static DOMPointReadonly* Create(ExecutingContext* context, double x, ExceptionState& exception_state);
-  static DOMPointReadonly* Create(ExecutingContext* context, double x, double y, ExceptionState& exception_state);
-  static DOMPointReadonly* Create(ExecutingContext* context,
+  static DOMPointReadOnly* Create(ExecutingContext* context, ExceptionState& exception_state);
+  static DOMPointReadOnly* Create(ExecutingContext* context, double x, ExceptionState& exception_state);
+  static DOMPointReadOnly* Create(ExecutingContext* context, double x, double y, ExceptionState& exception_state);
+  static DOMPointReadOnly* Create(ExecutingContext* context,
                                   double x,
                                   double y,
                                   double z,
                                   ExceptionState& exception_state);
-  static DOMPointReadonly* Create(ExecutingContext* context,
+  static DOMPointReadOnly* Create(ExecutingContext* context,
                                   double x,
                                   double y,
                                   double z,
                                   double w,
                                   ExceptionState& exception_state);
 
-  DOMPointReadonly() = delete;
+  DOMPointReadOnly() = delete;
 
-  explicit DOMPointReadonly(ExecutingContext* context, ExceptionState& exception_state);
-  explicit DOMPointReadonly(ExecutingContext* context, double x, ExceptionState& exception_state);
-  explicit DOMPointReadonly(ExecutingContext* context, double x, double y, ExceptionState& exception_state);
-  explicit DOMPointReadonly(ExecutingContext* context, double x, double y, double z, ExceptionState& exception_state);
-  explicit DOMPointReadonly(ExecutingContext* context,
+  explicit DOMPointReadOnly(ExecutingContext* context, ExceptionState& exception_state);
+  explicit DOMPointReadOnly(ExecutingContext* context, double x, ExceptionState& exception_state);
+  explicit DOMPointReadOnly(ExecutingContext* context, double x, double y, ExceptionState& exception_state);
+  explicit DOMPointReadOnly(ExecutingContext* context, double x, double y, double z, ExceptionState& exception_state);
+  explicit DOMPointReadOnly(ExecutingContext* context,
                             double x,
                             double y,
                             double z,
@@ -72,7 +72,7 @@ class DOMPointReadonly : public BindingObject {
                                      const NativeValue* argv,
                                      Dart_Handle dart_object) override;
 protected:
-  explicit DOMPointReadonly(ExecutingContext* context, NativeBindingObject* native_binding_object);
+  explicit DOMPointReadOnly(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
  private:
   [[nodiscard]] double getPointProperty(const AtomicString& prop) const;

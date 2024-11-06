@@ -7,11 +7,11 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
-#include "dom_point_readonly.h"
+#include "dom_point_read_only.h"
 
 namespace webf {
 
-class DOMPoint : public DOMPointReadonly {
+class DOMPoint : public DOMPointReadOnly {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
@@ -38,7 +38,7 @@ class DOMPoint : public DOMPointReadonly {
 };
 template <>
 struct DowncastTraits<DOMPoint> {
-  static bool AllowFrom(const DOMPointReadonly& matrix) { return matrix.IsDOMPoint(); }
+  static bool AllowFrom(const DOMPointReadOnly& matrix) { return matrix.IsDOMPoint(); }
 };
 }  // namespace webf
 
