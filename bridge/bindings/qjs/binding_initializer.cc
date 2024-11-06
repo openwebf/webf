@@ -24,7 +24,7 @@
 #include "qjs_document.h"
 #include "qjs_document_fragment.h"
 #include "qjs_dom_matrix.h"
-#include "qjs_dom_matrix_readonly.h"
+#include "qjs_dom_matrix_read_only.h"
 #include "qjs_dom_point.h"
 #include "qjs_dom_point_readonly.h"
 #include "qjs_dom_string_map.h"
@@ -167,7 +167,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSCanvasPattern::Install(context);
   QJSCanvasGradient::Install(context);
   QJSPath2D::Install(context);
-  QJSDOMMatrixReadonly::Install(context);
+  QJSDOMMatrixReadOnly::Install(context);
   QJSDOMMatrix::Install(context);
   QJSDOMPointReadonly::Install(context);
   QJSDOMPoint::Install(context);

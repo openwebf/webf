@@ -42,9 +42,9 @@ Path2D::Path2D(ExecutingContext* context,
                                                               CreateBindingObjectType::kCreatePath2D, arguments, 1);
 }
 
-void Path2D::addPath(Path2D* path, DOMMatrixReadonly* dom_matrix, ExceptionState& exception_state) {
+void Path2D::addPath(Path2D* path, DOMMatrixReadOnly* dom_matrix, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<Path2D>>::ToNativeValue(path),
-                            NativeValueConverter<NativeTypePointer<DOMMatrixReadonly>>::ToNativeValue(dom_matrix)};
+                            NativeValueConverter<NativeTypePointer<DOMMatrixReadOnly>>::ToNativeValue(dom_matrix)};
   InvokeBindingMethod(binding_call_methods::kaddPath, 2, arguments, FlushUICommandReason::kDependentsOnElement,
                       exception_state);
 }

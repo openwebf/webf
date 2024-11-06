@@ -1,3 +1,3 @@
-interface DOMMatrix extends DOMMatrixReadonly {
+interface DOMMatrix extends DOMMatrixReadOnly {
     new(init?: double[]): DOMMatrix;
 }

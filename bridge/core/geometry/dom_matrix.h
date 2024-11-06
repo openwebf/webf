@@ -5,11 +5,11 @@
 #ifndef WEBF_CORE_HTML_CANVAS_DOM_MATRIX_H_
 #define WEBF_CORE_HTML_CANVAS_DOM_MATRIX_H_
 
-#include "dom_matrix_readonly.h"
+#include "dom_matrix_read_only.h"
 
 namespace webf {
 
-class DOMMatrix : public DOMMatrixReadonly {
+class DOMMatrix : public DOMMatrixReadOnly {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
@@ -39,7 +39,7 @@ class DOMMatrix : public DOMMatrixReadonly {
 };
 template <>
 struct DowncastTraits<DOMMatrix> {
-  static bool AllowFrom(const DOMMatrixReadonly& matrix) { return matrix.IsDOMMatrix(); }
+  static bool AllowFrom(const DOMMatrixReadOnly& matrix) { return matrix.IsDOMMatrix(); }
 };
 
 }  // namespace webf
