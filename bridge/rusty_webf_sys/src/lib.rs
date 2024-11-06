@@ -49,6 +49,8 @@ pub mod scroll_to_options;
 pub mod touch_init;
 pub mod transition_event_init;
 pub mod ui_event_init;
+pub mod webf_event_listener;
+pub mod webf_function;
 mod memory_utils;
 
 pub use executing_context::*;
@@ -72,6 +74,7 @@ pub use transition_event::*;
 pub use ui_event::*;
 pub use container_node::*;
 pub use exception_state::*;
+pub use executing_context::*;
 pub use text::*;
 pub use comment::*;
 pub use character_data::*;
@@ -96,6 +99,8 @@ pub use scroll_to_options::*;
 pub use touch_init::*;
 pub use transition_event_init::*;
 pub use ui_event_init::*;
+pub use webf_event_listener::*;
+pub use webf_function::*;
 
 #[repr(C)]
 pub struct OpaquePtr;

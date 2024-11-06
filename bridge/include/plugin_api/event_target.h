@@ -18,13 +18,6 @@ class Event;
 typedef struct EventPublicMethods EventPublicMethods;
 typedef struct WebFEventListenerContext WebFEventListenerContext;
 
-using WebFImplEventCallback = void (*)(WebFEventListenerContext* callback_context,
-                                       Event* event,
-                                       const EventPublicMethods* event_methods,
-                                       WebFValueStatus* status,
-                                       SharedExceptionState* shared_exception_state);
-using FreePtrFn = void (*)(WebFEventListenerContext* callback_context);
-
 enum class EventTargetType {
   kEventTarget = 0,
   kNode = 1,
@@ -40,12 +33,6 @@ enum class EventTargetType {
   kDocumentFragment = 11,
   kText = 12,
   kComment = 13,
-};
-
-struct WebFEventListenerContext : public RustReadable {
-  WebFImplEventCallback callback;
-  FreePtrFn free_ptr;
-  void* ptr;
 };
 
 using PublicEventTargetAddEventListener = void (*)(EventTarget* event_target,
