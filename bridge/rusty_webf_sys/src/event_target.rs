@@ -2,42 +2,13 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-use std::ffi::{c_double, c_void, CString, c_char};
-use crate::add_event_listener_options::AddEventListenerOptions;
-use crate::element::{Element, ElementRustMethods};
-use crate::event::{Event, EventRustMethods};
-use crate::exception_state::ExceptionState;
-use crate::executing_context::{ExecutingContext, ExecutingContextRustMethods};
-use crate::{executing_context, OpaquePtr, RustValue, RustValueStatus};
-use crate::container_node::{ContainerNode, ContainerNodeRustMethods};
-use crate::document::{Document, DocumentRustMethods};
-use crate::html_element::{HTMLElement, HTMLElementRustMethods};
-use crate::node::{Node, NodeRustMethods};
-use crate::window::{Window, WindowRustMethods};
-
-#[repr(C)]
-struct EventCallbackContext {
-  pub callback: extern "C" fn(event_callback_context: *const OpaquePtr,
-                              event: *const OpaquePtr,
-                              event_method_pointer: *const EventRustMethods,
-                              status: *const RustValueStatus,
-                              exception_state: *const OpaquePtr) -> *const c_void,
-  pub free_ptr: extern "C" fn(event_callback_context_ptr: *const OpaquePtr) -> *const c_void,
-  pub ptr: *const EventCallbackContextData,
-}
-
-struct EventCallbackContextData {
-  executing_context_ptr: *const OpaquePtr,
-  executing_context_method_pointer: *const ExecutingContextRustMethods,
-  executing_context_status: *const RustValueStatus,
-  func: EventListenerCallback,
-}
+use std::ffi::*;
+use crate::*;
 
 pub trait RustMethods {}
 
-
 #[repr(C)]
-enum EventTargetType {
+pub enum EventTargetType {
   EventTarget = 0,
   Node = 1,
   ContainerNode = 2,
@@ -86,43 +57,6 @@ pub struct EventTarget {
   method_pointer: *const EventTargetRustMethods,
 }
 
-pub type EventListenerCallback = Box<dyn Fn(&Event)>;
-
-// Define the callback function
-extern "C" fn handle_event_listener_callback(
-  event_callback_context_ptr: *const OpaquePtr,
-  event_ptr: *const OpaquePtr,
-  event_method_pointer: *const EventRustMethods,
-  status: *const RustValueStatus,
-  exception_state: *const OpaquePtr,
-) -> *const c_void {
-  // Reconstruct the Box and drop it to free the memory
-  let event_callback_context = unsafe {
-    &(*(event_callback_context_ptr as *mut EventCallbackContext))
-  };
-  let callback_context_data = unsafe {
-    &(*(event_callback_context.ptr as *mut EventCallbackContextData))
-  };
-
-  unsafe {
-    let func = &(*callback_context_data).func;
-    let callback_data = &(*callback_context_data);
-    let executing_context = ExecutingContext::initialize(callback_data.executing_context_ptr, callback_data.executing_context_method_pointer, callback_data.executing_context_status);
-    let event = Event::initialize(event_ptr, &executing_context, event_method_pointer, status);
-    func(&event);
-  }
-
-  std::ptr::null()
-}
-
-extern "C" fn handle_callback_data_free(event_callback_context_ptr: *const OpaquePtr) -> *const c_void {
-  unsafe {
-    let event_callback_context = &(*(event_callback_context_ptr as *mut EventCallbackContext));
-    let _ = Box::from_raw(event_callback_context.ptr as *mut EventCallbackContextData);
-  }
-  std::ptr::null()
-}
-
 impl EventTarget {
   fn ptr(&self) -> *const OpaquePtr {
     self.ptr
@@ -147,7 +81,11 @@ impl EventTarget {
       func: callback,
     });
     let callback_context_data_ptr = Box::into_raw(callback_context_data);
-    let callback_context = Box::new(EventCallbackContext { callback: handle_event_listener_callback, free_ptr: handle_callback_data_free, ptr: callback_context_data_ptr });
+    let callback_context = Box::new(EventCallbackContext {
+      callback: invoke_event_listener_callback,
+      free_ptr: release_event_listener_callback,
+      ptr: callback_context_data_ptr
+    });
     let callback_context_ptr = Box::into_raw(callback_context);
     let c_event_name = CString::new(event_name).unwrap();
     unsafe {
@@ -178,7 +116,11 @@ impl EventTarget {
       func: callback,
     });
     let callback_context_data_ptr = Box::into_raw(callback_context_data);
-    let callback_context = Box::new(EventCallbackContext { callback: handle_event_listener_callback, free_ptr: handle_callback_data_free, ptr: callback_context_data_ptr });
+    let callback_context = Box::new(EventCallbackContext {
+      callback: invoke_event_listener_callback,
+      free_ptr: release_event_listener_callback,
+      ptr: callback_context_data_ptr
+    });
     let callback_context_ptr = Box::into_raw(callback_context);
     let c_event_name = CString::new(event_name).unwrap();
     unsafe {

@@ -12,6 +12,12 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   let exception_state = context.create_exception_state();
   let document = context.document();
 
+  let timer_callback = Box::new(move || {
+    println!("Timer Callback");
+  });
+
+  context.set_interval_with_callback_and_timeout(timer_callback, 1000, &exception_state).unwrap();
+
   let click_event = document.create_event("custom_click", &exception_state).unwrap();
   document.dispatch_event(&click_event, &exception_state);
 
@@ -93,6 +99,5 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   event_cleaner_element.add_event_listener("click", event_cleaner_handler, &event_listener_options, &exception_state).unwrap();
 
   document.body().append_child(&event_cleaner_element.as_node(), &exception_state).unwrap();
-
   std::ptr::null_mut()
 }
