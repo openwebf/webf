@@ -359,7 +359,7 @@ ${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverte
   `.trim();
 }
 
-function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, argument: FunctionArguments, argsIndex: number, previousArguments: string[], options: GenFunctionBodyOptions) {
+function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, argument: FunctionArguments, argsIndex: number, argsLength: number, previousArguments: string[], options: GenFunctionBodyOptions) {
   let call = '';
   let returnValueAssignment = '';
   if (declare.returnType.value != FunctionArgumentType.void) {
@@ -383,7 +383,9 @@ if (UNLIKELY(exception_state.HasException())) {
 if (argc <= ${argsIndex + 1}) {
   ${call}
   break;
-}`;
+}
+${(argsIndex) + 1 == argsLength ? call : ''}
+`;
 }
 
 function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaration, options: GenFunctionBodyOptions = {
@@ -412,7 +414,7 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
   let totalArguments: string[] = requiredArguments.slice();
 
   for (let i = minimalRequiredArgc; i < declaration.args.length; i++) {
-    optionalArgumentsInit.push(generateOptionalInitBody(blob, declaration, declaration.args[i], i, totalArguments, options));
+    optionalArgumentsInit.push(generateOptionalInitBody(blob, declaration, declaration.args[i], i, declaration.args.length, totalArguments, options));
     totalArguments.push(`args_${declaration.args[i].name}`);
   }
 

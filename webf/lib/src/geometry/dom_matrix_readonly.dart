@@ -75,13 +75,18 @@ class DOMMatrixReadonly extends DynamicBindingObject {
         castToType<num>(args[3]).toDouble()
       )
     );
-    methods['rotate'] = BindingObjectMethodSync(
-      call: (args) => rotate(
-        castToType<num>(args[0]).toDouble(),
-        castToType<num>(args[1]).toDouble(),
-        castToType<num>(args[2]).toDouble()
-      )
-    );
+    methods['rotate'] = BindingObjectMethodSync(call: (args) {
+      if (args.length == 1) {
+        // rotate(x)
+        return rotateZ(castToType<num>(args[0]).toDouble());
+      } else if (args.length == 3) {
+        // rotate(x,y,z)
+        return rotate(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble());
+      }
+    });
 
     methods['rotateFromVector'] = BindingObjectMethodSync(
       call: (args) => rotateFromVector(
@@ -331,7 +336,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   DOMMatrix multiply(DOMMatrix domMatrix) {
     Matrix4 m = _matrix4.multiplied(domMatrix.matrix);
     return DOMMatrix.fromMatrix4(
-        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, domMatrix.is2D);
+        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, _is2D);
   }
 
   DOMMatrix rotateAxisAngle(double x, double y, double z, double angle) {
@@ -344,24 +349,20 @@ class DOMMatrixReadonly extends DynamicBindingObject {
         BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, flag2D);
   }
 
-  DOMMatrix rotate(double x, double y, double z) {
-    // rotate(-90) => rotate(0,0,9-0)
-    // TODO rotate(-90, 0, 0) ??
-    if(y==0 && z==0) {
-      z = x;
-      x = 0;
-      y  = 0;
-    }
+  DOMMatrix rotateZ(double x) {
+    // rotate(-90) => rotateZ(-90)
     double xRad = x * degrees2Radians;
-    double yRad = y * degrees2Radians;
-    double zRad = z * degrees2Radians;
+    Matrix4 m = _matrix4.clone()..rotateZ(xRad);
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, _is2D);
+  }
 
-    Matrix4 m = _matrix4.clone()..rotateX(xRad)..rotateY(yRad)..rotateZ(zRad);
+  DOMMatrix rotate(double x, double y, double z) {
+    Matrix4 m = DOMMatrixReadonly.rotate3d(x, y, z, 0);
     bool flag2D = _is2D;
     if (x != 0 || y == 0) {
       flag2D = false;
     }
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, flag2D);
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, flag2D);
   }
 
   DOMMatrix rotateFromVector(double x, double y) {

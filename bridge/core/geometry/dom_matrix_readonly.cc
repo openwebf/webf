@@ -247,7 +247,14 @@ DOMMatrix* DOMMatrixReadonly::rotate(ExceptionState& exception_state) const {
   return this->rotate(0, 0, 0, exception_state);
 }
 DOMMatrix* DOMMatrixReadonly::rotate(double x, ExceptionState& exception_state) const {
-  return this->rotate(x, 0, 0, exception_state);
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(x)};
+  NativeValue value = InvokeBindingMethod(binding_call_methods::krotate, sizeof(arguments) / sizeof(NativeValue),
+                                          arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeBindingObject* native_binding_object =
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
+  if (native_binding_object == nullptr)
+    return nullptr;
+  return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
 DOMMatrix* DOMMatrixReadonly::rotate(double x, double y, ExceptionState& exception_state) const {
   return this->rotate(x, y, 0, exception_state);
