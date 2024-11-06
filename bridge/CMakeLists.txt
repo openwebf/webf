@@ -415,7 +415,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/geometry/dom_matrix.cc
     core/geometry/dom_matrix_read_only.cc
     core/geometry/dom_point.cc
-    core/geometry/dom_point_readonly.cc
+    core/geometry/dom_point_read_only.cc
     core/html/forms/html_button_element.cc
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
@@ -552,7 +552,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_dom_matrix.cc
     out/qjs_dom_matrix_read_only.cc
     out/qjs_dom_point.cc
-    out/qjs_dom_point_readonly.cc
+    out/qjs_dom_point_read_only.cc
     out/qjs_union_double_sequencedouble.cc
     out/qjs_unionhtml_image_elementhtml_canvas_element.cc
     out/qjs_union_dom_stringcanvas_gradient.cc

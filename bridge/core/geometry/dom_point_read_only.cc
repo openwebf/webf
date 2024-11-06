@@ -2,9 +2,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "dom_point_readonly.h"
+#include "dom_point_read_only.h"
 
-#include <binding_call_methods.h>
+#include "binding_call_methods.h"
 #include <native_value_converter.h>
 
 #include "core/executing_context.h"
@@ -13,44 +13,44 @@
 
 namespace webf {
 
-DOMPointReadonly* DOMPointReadonly::Create(webf::ExecutingContext* context, webf::ExceptionState& exception_state) {
-  return MakeGarbageCollected<DOMPointReadonly>(context, exception_state);
+DOMPointReadOnly* DOMPointReadOnly::Create(webf::ExecutingContext* context, webf::ExceptionState& exception_state) {
+  return MakeGarbageCollected<DOMPointReadOnly>(context, exception_state);
 }
-DOMPointReadonly* DOMPointReadonly::Create(webf::ExecutingContext* context,
+DOMPointReadOnly* DOMPointReadOnly::Create(webf::ExecutingContext* context,
                                            double x,
                                            webf::ExceptionState& exception_state) {
-  return MakeGarbageCollected<DOMPointReadonly>(context, x, exception_state);
+  return MakeGarbageCollected<DOMPointReadOnly>(context, x, exception_state);
 }
-DOMPointReadonly* DOMPointReadonly::Create(webf::ExecutingContext* context,
+DOMPointReadOnly* DOMPointReadOnly::Create(webf::ExecutingContext* context,
                                            double x,
                                            double y,
                                            webf::ExceptionState& exception_state) {
-  return MakeGarbageCollected<DOMPointReadonly>(context, x, y, exception_state);
+  return MakeGarbageCollected<DOMPointReadOnly>(context, x, y, exception_state);
 }
-DOMPointReadonly* DOMPointReadonly::Create(webf::ExecutingContext* context,
+DOMPointReadOnly* DOMPointReadOnly::Create(webf::ExecutingContext* context,
                                            double x,
                                            double y,
                                            double z,
                                            webf::ExceptionState& exception_state) {
-  return MakeGarbageCollected<DOMPointReadonly>(context, x, y, z, exception_state);
+  return MakeGarbageCollected<DOMPointReadOnly>(context, x, y, z, exception_state);
 }
-DOMPointReadonly* DOMPointReadonly::Create(webf::ExecutingContext* context,
+DOMPointReadOnly* DOMPointReadOnly::Create(webf::ExecutingContext* context,
                                            double x,
                                            double y,
                                            double z,
                                            double w,
                                            webf::ExceptionState& exception_state) {
-  return MakeGarbageCollected<DOMPointReadonly>(context, x, y, z, w, exception_state);
+  return MakeGarbageCollected<DOMPointReadOnly>(context, x, y, z, w, exception_state);
 }
 
-DOMPointReadonly::DOMPointReadonly(webf::ExecutingContext* context, webf::ExceptionState& exception_state)
+DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context, webf::ExceptionState& exception_state)
     : BindingObject(context->ctx()) {
   GetExecutingContext()->dartMethodPtr()->createBindingObject(GetExecutingContext()->isDedicated(),
                                                               GetExecutingContext()->contextId(), bindingObject(),
                                                               CreateBindingObjectType::kCreateDOMPoint, nullptr, 0);
 }
 
-DOMPointReadonly::DOMPointReadonly(webf::ExecutingContext* context, double x, webf::ExceptionState& exception_state)
+DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context, double x, webf::ExceptionState& exception_state)
     : BindingObject(context->ctx()) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(x)};
 
@@ -59,7 +59,7 @@ DOMPointReadonly::DOMPointReadonly(webf::ExecutingContext* context, double x, we
       CreateBindingObjectType::kCreateDOMPoint, arguments, sizeof(arguments) / sizeof(NativeValue));
 }
 
-DOMPointReadonly::DOMPointReadonly(webf::ExecutingContext* context,
+DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context,
                                    double x,
                                    double y,
                                    webf::ExceptionState& exception_state)
@@ -72,7 +72,7 @@ DOMPointReadonly::DOMPointReadonly(webf::ExecutingContext* context,
       CreateBindingObjectType::kCreateDOMPoint, arguments, sizeof(arguments) / sizeof(NativeValue));
 }
 
-DOMPointReadonly::DOMPointReadonly(webf::ExecutingContext* context,
+DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context,
                                    double x,
                                    double y,
                                    double w,
@@ -87,7 +87,7 @@ DOMPointReadonly::DOMPointReadonly(webf::ExecutingContext* context,
       CreateBindingObjectType::kCreateDOMPoint, arguments, sizeof(arguments) / sizeof(NativeValue));
 }
 
-DOMPointReadonly::DOMPointReadonly(webf::ExecutingContext* context,
+DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context,
                                    double x,
                                    double y,
                                    double w,
@@ -104,46 +104,46 @@ DOMPointReadonly::DOMPointReadonly(webf::ExecutingContext* context,
       CreateBindingObjectType::kCreateDOMPoint, arguments, sizeof(arguments) / sizeof(NativeValue));
 }
 
-DOMPointReadonly::DOMPointReadonly(webf::ExecutingContext* context, webf::NativeBindingObject* native_binding_object)
+DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context, webf::NativeBindingObject* native_binding_object)
     : BindingObject(context->ctx(), native_binding_object) {}
 
-double DOMPointReadonly::getPointProperty(const AtomicString& prop) const {
+double DOMPointReadOnly::getPointProperty(const AtomicString& prop) const {
   NativeValue dart_result = GetBindingProperty(prop, FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
   return NativeValueConverter<NativeTypeDouble>::FromNativeValue(dart_result);
 }
 
-void DOMPointReadonly::setPointProperty(const AtomicString& prop, double v, ExceptionState& exception_state) {
+void DOMPointReadOnly::setPointProperty(const AtomicString& prop, double v, ExceptionState& exception_state) {
   if (DynamicTo<DOMPoint>(this)) {
     SetBindingProperty(prop, NativeValueConverter<NativeTypeDouble>::ToNativeValue(v), exception_state);
   }
 }
 
-double DOMPointReadonly::x() const {
+double DOMPointReadOnly::x() const {
   return getPointProperty(binding_call_methods::kx);
 }
-void DOMPointReadonly::setX(double v, ExceptionState& exception_state) {
+void DOMPointReadOnly::setX(double v, ExceptionState& exception_state) {
   setPointProperty(binding_call_methods::kx, v, exception_state);
 }
-double DOMPointReadonly::y() {
+double DOMPointReadOnly::y() {
   return getPointProperty(binding_call_methods::ky);
 }
-void DOMPointReadonly::setY(double v, ExceptionState& exception_state) {
+void DOMPointReadOnly::setY(double v, ExceptionState& exception_state) {
   setPointProperty(binding_call_methods::ky, v, exception_state);
 }
-double DOMPointReadonly::z() const {
+double DOMPointReadOnly::z() const {
   return getPointProperty(binding_call_methods::kz);
 }
-void DOMPointReadonly::setZ(double v, ExceptionState& exception_state) {
+void DOMPointReadOnly::setZ(double v, ExceptionState& exception_state) {
   setPointProperty(binding_call_methods::kz, v, exception_state);
 }
-double DOMPointReadonly::w() const {
+double DOMPointReadOnly::w() const {
   return getPointProperty(binding_call_methods::kw);
 }
-void DOMPointReadonly::setW(double v, ExceptionState& exception_state) {
+void DOMPointReadOnly::setW(double v, ExceptionState& exception_state) {
   setPointProperty(binding_call_methods::kw, v, exception_state);
 }
 
-DOMPoint* DOMPointReadonly::matrixTransform(DOMMatrix* matrix, ExceptionState& exception_state) const {
+DOMPoint* DOMPointReadOnly::matrixTransform(DOMMatrix* matrix, ExceptionState& exception_state) const {
   NativeValue arguments[] = {
     NativeValueConverter<NativeTypePointer<DOMMatrix>>::ToNativeValue(matrix)
   };
@@ -157,7 +157,7 @@ DOMPoint* DOMPointReadonly::matrixTransform(DOMMatrix* matrix, ExceptionState& e
   return MakeGarbageCollected<DOMPoint>(GetExecutingContext(), native_binding_object);
 }
 
-NativeValue DOMPointReadonly::HandleCallFromDartSide(const AtomicString& method,
+NativeValue DOMPointReadOnly::HandleCallFromDartSide(const AtomicString& method,
                                                       int32_t argc,
                                                      const NativeValue* argv,
                                                      Dart_Handle dart_object) {
