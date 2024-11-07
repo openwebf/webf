@@ -174,7 +174,7 @@ void MediaList::setMediaText(ExecutingContext* execution_context,
                              const AtomicString& value) {
   CSSStyleSheet::RuleMutationScope mutation_scope(parent_rule_);
 
-  Owner()->SetMediaQueries(MediaQuerySet::Create(value.ToStdString(execution_context->ctx()), execution_context));
+  Owner()->SetMediaQueries(MediaQuerySet::Create(value.ToStdString(), execution_context));
 
   NotifyMutation();
 }
@@ -183,7 +183,7 @@ AtomicString MediaList::item(unsigned index) const {
   const std::vector<std::shared_ptr<const MediaQuery>>& queries =
       Queries()->QueryVector();
   if (index < queries.size()) {
-    return AtomicString(ctx(), queries[index]->CssText());
+    return AtomicString(queries[index]->CssText());
   }
   return AtomicString::Empty();
 }
@@ -194,10 +194,10 @@ void MediaList::deleteMedium(const ExecutingContext* execution_context,
   CSSStyleSheet::RuleMutationScope mutation_scope(parent_rule_);
 
   std::shared_ptr<const MediaQuerySet> new_media_queries =
-      Queries()->CopyAndRemove(medium.ToStdString(ctx()), execution_context);
+      Queries()->CopyAndRemove(medium.ToStdString(), execution_context);
   if (!new_media_queries) {
     exception_state.ThrowException(ctx(), ErrorType::InternalError,
-                                      "Failed to delete '" + medium.ToStdString(ctx()) + "'.");
+                                      "Failed to delete '" + medium.ToStdString() + "'.");
     return;
   }
   Owner()->SetMediaQueries(new_media_queries);
@@ -210,7 +210,7 @@ void MediaList::appendMedium(const ExecutingContext* execution_context,
   CSSStyleSheet::RuleMutationScope mutation_scope(parent_rule_);
 
   auto new_media_queries =
-      Queries()->CopyAndAdd(medium.ToStdString(ctx()), execution_context);
+      Queries()->CopyAndAdd(medium.ToStdString(), execution_context);
   if (!new_media_queries) {
     return;
   }

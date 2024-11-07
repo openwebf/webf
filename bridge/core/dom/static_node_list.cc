@@ -30,12 +30,12 @@ void StaticNodeList::Trace(GCVisitor* visitor) const {
 
 void StaticNodeList::NamedPropertyEnumerator(std::vector<AtomicString>& names, webf::ExceptionState& exception_state) {
   for (int i = 0; i < nodes_.size(); i++) {
-    names.emplace_back(AtomicString(ctx(), std::to_string(i)));
+    names.emplace_back(AtomicString(std::to_string(i)));
   }
 }
 
 bool StaticNodeList::NamedPropertyQuery(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
-  std::string str = key.ToStdString(ctx());
+  std::string str = key.ToStdString();
   int number = std::stoi(str);
   if (number >= nodes_.size()) {
     return false;

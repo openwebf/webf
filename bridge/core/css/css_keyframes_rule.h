@@ -101,7 +101,7 @@ class CSSKeyframesRule final : public CSSRule {
   AtomicString cssText() const override;
   void Reattach(std::shared_ptr<StyleRuleBase>) override;
 
-  AtomicString name() const { return AtomicString(ctx(), keyframes_rule_->GetName()); }
+  AtomicString name() const { return AtomicString(keyframes_rule_->GetName()); }
   void setName(const AtomicString&);
 
   CSSRuleList* cssRules() const override;

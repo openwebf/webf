@@ -21,7 +21,7 @@ PerformanceMark* PerformanceMark::Create(ExecutingContext* context,
       start = mark_options->startTime();
       if (start < 0) {
         exception_state.ThrowException(context->ctx(), ErrorType::TypeError,
-                                       "'" + name.ToStdString(context->ctx()) + "' cannot have a negative Start time.");
+                                       "'" + name.ToStdString() + "' cannot have a negative Start time.");
         return nullptr;
       }
     } else {

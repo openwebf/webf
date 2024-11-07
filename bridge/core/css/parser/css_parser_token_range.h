@@ -15,7 +15,6 @@
 #include <span>
 #include <utility>
 #include <vector>
-#include "bindings/qjs/atomic_string.h"
 #include "core/base/containers/span.h"
 #include "css_parser_token.h"
 

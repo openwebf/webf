@@ -26,6 +26,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "core/base/strings/string_number_conversions.h"
 #include "core/css/parser/css_parser_idioms.h"
 #include "dom_token_list.h"
 #include "element.h"
@@ -33,25 +34,18 @@
 namespace webf {
 
 bool CheckEmptyToken(JSContext* ctx, const AtomicString& token, ExceptionState& exception_state) {
-  if (!token.IsEmpty())
+  if (!token.empty())
     return true;
   exception_state.ThrowException(ctx, ErrorType::TypeError, "The token provided must not be empty.");
   return false;
 }
 
 bool CheckTokenWithWhitespace(JSContext* ctx, const AtomicString& token, ExceptionState& exception_state) {
-  if (token.Is8Bit()) {
-    if (token.Find(IsHTMLSpace<char>) == -1) {
-      return true;
-    }
-  } else {
-    if (token.Find(IsHTMLSpace<uint16_t>) == -1) {
-      return true;
-    }
-  }
+  if (token.Find(IsHTMLSpace) == kNotFound)
+    return true;
 
   exception_state.ThrowException(ctx, ErrorType::TypeError,
-                                 "The token provided ('" + token.ToStdString(ctx) +
+                                 "The token provided ('" + token.ToStdString() +
                                      "') contains HTML space characters, "
                                      "which are not valid in tokens.");
   return false;
@@ -116,8 +110,9 @@ void DOMTokenList::Trace(GCVisitor* visitor) const {
 }
 
 bool DOMTokenList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
-  if (JS_AtomIsTaggedInt(key.Impl())) {
-    int64_t index = JS_AtomToUInt32(key.Impl());
+  if (key.Impl()->IsDigit()) {
+    int64_t index;
+    base::StringToInt64(key.Characters8(), &index);
     return index < length();
   }
   return false;
@@ -236,14 +231,14 @@ bool DOMTokenList::replace(const AtomicString& token, const AtomicString& new_to
 }
 
 bool DOMTokenList::supports(const AtomicString& token, ExceptionState& exception_state) {
-  return ValidateTokenValue(token.ToLowerIfNecessary(element_->ctx()), exception_state);
+  return ValidateTokenValue(token.LowerASCII(), exception_state);
 }
 
 // https://dom.spec.whatwg.org/#dom-domtokenlist-add
 void DOMTokenList::AddTokens(const std::vector<AtomicString>& tokens) {
   // 2. For each token in tokens, append token to context object’s token set.
   for (const auto& token : tokens)
-    token_set_.Add(element_->ctx(), AtomicString(token));
+    token_set_.Add(AtomicString(token));
   // 3. Run the update steps.
   UpdateWithTokenSet(token_set_);
 }
@@ -260,7 +255,7 @@ void DOMTokenList::RemoveTokens(const std::vector<AtomicString>& tokens) {
 // https://dom.spec.whatwg.org/#concept-dtl-update
 void DOMTokenList::UpdateWithTokenSet(const SpaceSplitString& token_set) {
   is_in_update_step_ = true;
-  setValue(token_set.SerializeToString(element_->ctx()), ASSERT_NO_EXCEPTION());
+  setValue(token_set.SerializeToString(), ASSERT_NO_EXCEPTION());
   is_in_update_step_ = false;
 }
 
@@ -285,7 +280,7 @@ void DOMTokenList::DidUpdateAttributeValue(const AtomicString& old_value, const 
   if (is_in_update_step_)
     return;
   if (old_value != new_value)
-    token_set_.Set(element_->ctx(), new_value);
+    token_set_.Set(new_value);
 }
 
 }  // namespace webf

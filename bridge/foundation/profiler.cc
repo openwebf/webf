@@ -250,7 +250,7 @@ std::string WebFProfiler::ToJSON() {
 
     JS_FreeValue(ctx, object);
 
-    result = result_value.ToString(ctx).ToStdString(ctx);
+    result = result_value.ToString(ctx).ToStdString();
   }
 
   JS_FreeContext(ctx);

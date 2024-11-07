@@ -12,10 +12,10 @@
 
 namespace webf {
 
-static inline bool IsNumberIndex(const StringView& name) {
-  if (name.Empty())
+static inline bool IsNumberIndex(const std::string_view& name) {
+  if (name.empty())
     return false;
-  char f = name.Characters8()[0];
+  char f = name[0];
   return f >= '0' && f <= '9';
 }
 
@@ -34,7 +34,7 @@ AtomicString ElementAttributes::getAttribute(const AtomicString& name, Exception
       NativeValue dart_result =
           element_->GetBindingProperty(name, FlushUICommandReason::kDependentsOnElement, exception_state);
       if (dart_result.tag == NativeTag::TAG_STRING) {
-        return NativeValueConverter<NativeTypeString>::FromNativeValue(element_->ctx(), std::move(dart_result));
+        return NativeValueConverter<NativeTypeString>::FromNativeValue(std::move(dart_result));
       }
     }
     return AtomicString::Null();
@@ -51,7 +51,7 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
 
   if (numberIndex) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError,
-                                   "Failed to execute 'kSetAttribute' on 'Element': '" + name.ToStdString(ctx()) +
+                                   "Failed to execute 'kSetAttribute' on 'Element': '" + name.ToStdString() +
                                        "' is not a valid attribute name.");
     return false;
   }
@@ -64,8 +64,8 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
   if (name == html_names::kStyleAttr)
     return true;
 
-  std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString(ctx());
-  std::unique_ptr<SharedNativeString> args_02 = name.ToNativeString(ctx());
+  std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString();
+  std::unique_ptr<SharedNativeString> args_02 = name.ToNativeString();
 
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetAttribute, std::move(args_01),
                                                        element_->bindingObject(), args_02.release());
@@ -101,7 +101,7 @@ void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState
 
   attributes_.erase(name);
 
-  std::unique_ptr<SharedNativeString> args_01 = name.ToNativeString(ctx());
+  std::unique_ptr<SharedNativeString> args_01 = name.ToNativeString();
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveAttribute, std::move(args_01),
                                                        element_->bindingObject(), nullptr);
 }
@@ -116,8 +116,8 @@ std::string ElementAttributes::ToString() {
   std::string s;
 
   for (auto& attr : attributes_) {
-    s += attr.first.ToStdString(ctx()) + "=";
-    s += "\"" + attr.second.ToStdString(ctx()) + "\"";
+    s += attr.first.ToStdString() + "=";
+    s += "\"" + attr.second.ToStdString() + "\"";
   }
 
   return s;

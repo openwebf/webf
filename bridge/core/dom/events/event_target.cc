@@ -298,7 +298,7 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
     }
 
     GetExecutingContext()->uiCommandBuffer()->AddCommand(
-        UICommand::kAddEvent, std::move(event_type.ToNativeString(ctx())), bindingObject(), listener_options);
+        UICommand::kAddEvent, std::move(event_type.ToNativeString()), bindingObject(), listener_options);
   }
 
   return added;
@@ -346,7 +346,7 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
     bool has_capture = options->hasCapture() && options->capture();
 
     GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveEvent,
-                                                         std::move(event_type.ToNativeString(ctx())), bindingObject(),
+                                                         std::move(event_type.ToNativeString()), bindingObject(),
                                                          has_capture ? (void*)0x01 : nullptr);
   }
 
@@ -385,7 +385,7 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   NativeValue native_is_capture = argv[2];
   bool isCapture = NativeValueConverter<NativeTypeBool>::FromNativeValue(native_is_capture);
   AtomicString event_type =
-      NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(native_event_type));
+      NativeValueConverter<NativeTypeString>::FromNativeValue(std::move(native_event_type));
   RawEvent* raw_event = NativeValueConverter<NativeTypePointer<RawEvent>>::FromNativeValue(argv[1]);
 
   Event* event = EventFactory::Create(GetExecutingContext(), event_type, raw_event);

@@ -45,11 +45,11 @@ Document::Document(ExecutingContext* context)
 
 // https://dom.spec.whatwg.org/#dom-document-createelement
 Element* Document::createElement(const AtomicString& name, ExceptionState& exception_state) {
-  const AtomicString& local_name = name.ToLowerIfNecessary(ctx());
+  const AtomicString& local_name = name.LowerASCII();
   if (!IsValidName(local_name)) {
     exception_state.ThrowException(
         ctx(), ErrorType::InternalError,
-        "The tag name provided ('" + local_name.ToStdString(ctx()) + "') is not a valid name.");
+        "The tag name provided ('" + local_name.ToStdString() + "') is not a valid name.");
     return nullptr;
   }
 
@@ -72,7 +72,7 @@ Element* Document::createElement(const AtomicString& name,
 
 Element* Document::createElementNS(const AtomicString& uri, const AtomicString& name, ExceptionState& exception_state) {
   // Empty string '' is the same as null
-  const AtomicString& _uri = uri.IsEmpty() ? AtomicString::Null() : uri;
+  const AtomicString& _uri = uri.empty() ? AtomicString::Null() : uri;
   if (_uri == element_namespace_uris::khtml) {
     return createElement(name, exception_state);
   }
@@ -90,7 +90,7 @@ Element* Document::createElementNS(const AtomicString& uri, const AtomicString& 
   if (!IsValidName(qualified_name)) {
     exception_state.ThrowException(
         ctx(), ErrorType::InternalError,
-        "The tag name provided ('" + qualified_name.ToStdString(ctx()) + "') is not a valid name.");
+        "The tag name provided ('" + qualified_name.ToStdString() + "') is not a valid name.");
     return nullptr;
   }
 
@@ -165,15 +165,15 @@ bool Document::ChildTypeAllowed(NodeType type) const {
   return false;
 }
 
-Element* Document::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
-  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments,
-                                           FlushUICommandReason::kDependentsAll, exception_state);
-  if (exception_state.HasException()) {
-    return nullptr;
-  }
-  return NativeValueConverter<NativeTypePointer<Element>>::FromNativeValue(ctx(), result);
-}
+//Element* Document::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
+//  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
+//  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments,
+//                                           FlushUICommandReason::kDependentsAll, exception_state);
+//  if (exception_state.HasException()) {
+//    return nullptr;
+//  }
+//  return NativeValueConverter<NativeTypePointer<Element>>::FromNativeValue(ctx(), result);
+//}
 
 std::vector<Element*> Document::querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
@@ -247,7 +247,7 @@ Window* Document::defaultView() const {
 AtomicString Document::domain() {
   NativeValue dart_result = GetBindingProperty(binding_call_methods::kdomain,
                                                FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
-  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(std::move(dart_result));
 }
 
 void Document::setDomain(const AtomicString& value, ExceptionState& exception_state) {
@@ -258,7 +258,7 @@ void Document::setDomain(const AtomicString& value, ExceptionState& exception_st
 AtomicString Document::compatMode() {
   NativeValue dart_result = GetBindingProperty(binding_call_methods::kcompatMode,
                                                FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
-  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(std::move(dart_result));
 }
 
 CSSStyleSheet& Document::ElementSheet() {
@@ -270,7 +270,7 @@ CSSStyleSheet& Document::ElementSheet() {
 AtomicString Document::readyState() {
   NativeValue dart_result = GetBindingProperty(binding_call_methods::kreadyState,
                                                FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());
-  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(std::move(dart_result));
 }
 
 bool Document::hidden() {
@@ -411,15 +411,7 @@ bool Document::IsValidName(const AtomicString& name) {
 
   auto string_view = name.ToStringView();
 
-  if (string_view.Is8Bit()) {
-    const char* characters = string_view.Characters8();
-    if (IsValidNameASCII(characters, length)) {
-      return true;
-    }
-  }
-
-  const char16_t* characters = string_view.Characters16();
-
+  const char* characters = string_view.data();
   if (IsValidNameASCII(characters, length)) {
     return true;
   }
@@ -477,7 +469,7 @@ void Document::setBody(HTMLBodyElement* new_body, ExceptionState& exception_stat
 
   if (!IsA<HTMLBodyElement>(*new_body)) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError,
-                                   "The new body element is of type '" + new_body->tagName().ToStdString(ctx()) +
+                                   "The new body element is of type '" + new_body->tagName().ToStdString() +
                                        "'. It must be either a 'BODY' element.");
     return;
   }

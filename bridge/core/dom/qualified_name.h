@@ -25,8 +25,7 @@
 #define WEBF_QUALIFIED_NAME_H
 
 #include <optional>
-#include <built_in_string.h>
-#include "bindings/qjs/atomic_string.h"
+#include "foundation/atomic_string.h"
 #include "core/base/hash/hash.h"
 #include "core/platform/static_constructors.h"
 
@@ -34,9 +33,9 @@ namespace webf {
 
 struct QualifiedNameComponents {
   WEBF_DISALLOW_NEW();
-  std::string prefix_;
-  std::string local_name_;
-  std::string namespace_;
+  std::shared_ptr<StringImpl> prefix_;
+  std::shared_ptr<StringImpl> local_name_;
+  std::shared_ptr<StringImpl> namespace_;
 };
 
 // This struct is used to pass data between QualifiedName and the
@@ -54,9 +53,9 @@ class QualifiedName {
  public:
   class QualifiedNameImpl {
    public:
-    static std::shared_ptr<QualifiedNameImpl> Create(const std::string& prefix,
-                                                     const std::string& local_name,
-                                                     const std::string& namespace_uri,
+    static std::shared_ptr<QualifiedNameImpl> Create(const AtomicString& prefix,
+                                                     const AtomicString& local_name,
+                                                     const AtomicString& namespace_uri,
                                                      bool is_static) {
       return std::make_shared<QualifiedNameImpl>(prefix, local_name, namespace_uri, is_static);
     }
@@ -73,19 +72,19 @@ class QualifiedName {
     // doing hashing and use one of the bits for the is_static_ value.
     mutable unsigned existing_hash_ : 24;
     unsigned is_static_ : 1;
-    const std::optional<std::string> prefix_;
-    const std::optional<std::string> local_name_;
-    const std::optional<std::string> namespace_;
+    const AtomicString prefix_;
+    const AtomicString local_name_;
+    const AtomicString namespace_;
     mutable std::string local_name_upper_;
-    QualifiedNameImpl(std::optional<std::string> prefix,
-                      std::optional<std::string> local_name,
-                      std::optional<std::string> namespace_uri,
+    QualifiedNameImpl(const AtomicString& prefix,
+                      const AtomicString& local_name,
+                      const AtomicString& namespace_uri,
                       bool is_static)
         : existing_hash_(0),
           is_static_(is_static),
-          prefix_(std::move(prefix)),
-          local_name_(std::move(local_name)),
-          namespace_(std::move(namespace_uri)) {}
+          prefix_(prefix),
+          local_name_(local_name),
+          namespace_(namespace_uri) {}
 
    private:
   };
@@ -96,12 +95,12 @@ class QualifiedName {
     std::size_t operator()(const QualifiedName& k) const { return k.hash(); }
   };
 
-  QualifiedName(const std::optional<std::string>& prefix,
-                const std::optional<std::string>& local_name,
-                const std::optional<std::string>& namespace_uri);
+  QualifiedName(const AtomicString& prefix,
+                const AtomicString& local_name,
+                const AtomicString& namespace_uri);
   // Creates a QualifiedName instance with null prefix, the specified local
   // name, and null namespace.
-  explicit QualifiedName(const std::optional<std::string>& local_name);
+  explicit QualifiedName(const AtomicString& local_name);
 
   QualifiedName(const QualifiedName& other) = default;
   const QualifiedName& operator=(const QualifiedName& other) {
@@ -118,12 +117,12 @@ class QualifiedName {
     return impl_ == other.impl_ || (LocalName() == other.LocalName() && NamespaceURI() == other.NamespaceURI());
   }
 
-  bool HasPrefix() const { return impl_->prefix_ != ""; }
-  void SetPrefix(const std::string& prefix) { *this = QualifiedName(prefix, LocalName(), NamespaceURI()); }
+  bool HasPrefix() const { return impl_->prefix_ != AtomicString::Empty(); }
+  void SetPrefix(const AtomicString& prefix) { *this = QualifiedName(prefix, LocalName(), NamespaceURI()); }
 
-  [[nodiscard]] const std::optional<std::string>& Prefix() const { return impl_->prefix_; }
-  [[nodiscard]] const std::optional<std::string>& LocalName() const { return impl_->local_name_; }
-  [[nodiscard]] const std::optional<std::string>& NamespaceURI() const { return impl_->namespace_; }
+  [[nodiscard]] const AtomicString& Prefix() const { return impl_->prefix_; }
+  [[nodiscard]] const AtomicString& LocalName() const { return impl_->local_name_; }
+  [[nodiscard]] const AtomicString& NamespaceURI() const { return impl_->namespace_; }
 
   // Uppercased localName, cached for efficiency
   [[nodiscard]] const std::string& LocalNameUpper() const {
@@ -145,7 +144,7 @@ class QualifiedName {
   // Init routine for globals
   static void InitAndReserveCapacityForSize(unsigned size);
 
-  static const QualifiedName Null() { return QualifiedName("", "", ""); }
+  static const QualifiedName Null() { return QualifiedName(AtomicString::Empty(), AtomicString::Empty(), AtomicString::Empty()); }
 
   // The below methods are only for creating static global QNames that need no
   // ref counting.
@@ -155,9 +154,9 @@ class QualifiedName {
  private:
   // This constructor is used only to create global/static QNames that don't
   // require any ref counting.
-  QualifiedName(const std::optional<std::string>& prefix,
-                const std::optional<std::string>& local_name,
-                const std::optional<std::string>& namespace_uri,
+  QualifiedName(const AtomicString& prefix,
+                const AtomicString& local_name,
+                const AtomicString& namespace_uri,
                 bool is_static);
 
   std::shared_ptr<QualifiedNameImpl> impl_ = nullptr;

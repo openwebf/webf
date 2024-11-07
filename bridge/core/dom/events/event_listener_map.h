@@ -9,7 +9,6 @@
 
 #include <vector>
 
-#include "bindings/qjs/atomic_string.h"
 #include "event_listener.h"
 #include "foundation/macros.h"
 #include "registered_eventListener.h"

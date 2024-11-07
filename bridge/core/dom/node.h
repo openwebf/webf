@@ -268,11 +268,25 @@ class Node : public EventTarget {
 
   [[nodiscard]] bool IsInDocumentTree() const { return isConnected(); }
   [[nodiscard]] bool IsInTreeScope() const { return GetFlag(static_cast<NodeFlags>(kIsConnectedFlag)); }
+  [[nodiscard]] bool IsInShadowTree() const { return false; }
 
   [[nodiscard]] bool IsDocumentTypeNode() const { return nodeType() == kDocumentTypeNode; }
   [[nodiscard]] virtual bool ChildTypeAllowed(NodeType) const { return false; }
   [[nodiscard]] unsigned CountChildren() const;
 
+  // If this node is in a shadow tree, returns its shadow host. Otherwise,
+  // returns nullptr.
+  Element* OwnerShadowHost() const;
+  // crbug.com/569532: containingShadowRoot() can return nullptr even if
+  // isInShadowTree() returns true.
+  // This can happen when handling queued events (e.g. during execCommand())
+  ShadowRoot* ContainingShadowRoot() const;
+  ShadowRoot* GetShadowRoot() const;
+  bool IsInUserAgentShadowRoot() const;
+
+  ContainerNode* ParentElementOrShadowRoot() const;
+
+  bool IsLink() const { return GetFlag(kIsLinkFlag); }
   bool IsNode() const override;
   bool IsDescendantOf(const Node*) const;
   bool contains(const Node*, ExceptionState&) const;
@@ -429,6 +443,10 @@ class Node : public EventTarget {
     kIsContainerFlag = 1 << 1,
     kDOMNodeTypeMask = 0x3 << kDOMNodeTypeShift,
     kElementNamespaceTypeMask = 0x3 << kElementNamespaceTypeShift,
+
+    // Changes based on if the element should be treated like a link,
+    // ex. When setting the href attribute on an <a>.
+    kIsLinkFlag = 1u << 7,
 
     // Tree state flags. These change when the element is added/removed
     // from a DOM tree.

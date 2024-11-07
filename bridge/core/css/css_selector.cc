@@ -37,7 +37,6 @@
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_selector_parser.h"
-#include "global_string.h"
 #include "style_rule.h"
 #include "core/dom/document.h"
 #include "core/executing_context.h"
@@ -97,7 +96,7 @@ CSSSelector::CSSSelector(MatchType match_type,
 CSSSelector::CSSSelector(MatchType match_type,
                          const QualifiedName& attribute,
                          AttributeMatchType case_sensitivity,
-                         const std::string& value)
+                         const AtomicString& value)
     : bits_(
           RelationField::encode(kSubSelector) |
           MatchField::encode(static_cast<unsigned>(match_type)) |
@@ -237,7 +236,7 @@ inline unsigned CSSSelector::SpecificityForOneSelector() const {
         case kPseudoViewTransitionOld:
         case kPseudoViewTransitionNew: {
           CHECK(!IdentList().empty());
-          return (IdentList().size() == 1u && !IdentList()[0].has_value())
+          return (IdentList().size() == 1u && IdentList()[0].IsNull())
                      ? 0
                      : kTagSpecificity;
         }
@@ -255,7 +254,7 @@ inline unsigned CSSSelector::SpecificityForOneSelector() const {
     case kAttributeEnd:
       return kClassLikeSpecificity;
     case kTag:
-      if (TagQName().LocalName() == UniversalSelector()) {
+      if (TagQName().LocalName() == UniversalSelectorAtom()) {
         return 0;
       }
       return kTagSpecificity;
@@ -278,7 +277,7 @@ unsigned CSSSelector::SpecificityForPage() const {
        component = component->NextSimpleSelector()) {
     switch (component->Match()) {
       case kTag:
-        s += TagQName().LocalName() == UniversalSelector() ? 0 : 4;
+        s += TagQName().LocalName() == UniversalSelectorAtom() ? 0 : 4;
         break;
       case kPagePseudoClass:
         switch (component->GetPseudoType()) {
@@ -647,10 +646,10 @@ constexpr static NameToPseudoStruct kPseudoTypeWithArgumentsMap[] = {
 };
 
 CSSSelector::PseudoType CSSSelector::NameToPseudoType(
-    const std::optional<std::string>& name,
+    const AtomicString& name,
     bool has_arguments,
     const Document* document) {
-  if (!name.has_value()) {
+  if (name.IsNull() || !name.Is8Bit()) {
     return CSSSelector::kPseudoUnknown;
   }
 
@@ -666,16 +665,17 @@ CSSSelector::PseudoType CSSSelector::NameToPseudoType(
                           std::size(kPseudoTypeWithoutArgumentsMap);
   }
   const NameToPseudoStruct* match = std::lower_bound(
-      pseudo_type_map, pseudo_type_map_end, name.value(),
-      [](const NameToPseudoStruct& entry, const std::string& name) -> bool {
+      pseudo_type_map, pseudo_type_map_end, name,
+      [](const NameToPseudoStruct& entry, const AtomicString& name) -> bool {
+        DCHECK(name.Is8Bit());
         DCHECK(entry.string);
         // If strncmp returns 0, then either the keys are equal, or |name| sorts
         // before |entry|.
         return strncmp(entry.string,
-                       reinterpret_cast<const char*>(name.c_str()),
+                       reinterpret_cast<const char*>(name.Characters8()),
                        name.length()) < 0;
       });
-  if (match == pseudo_type_map_end || match->string != name.value()) {
+  if (match == pseudo_type_map_end || match->string != name.GetString()) {
     return CSSSelector::kPseudoUnknown;
   }
   return static_cast<CSSSelector::PseudoType>(match->type);
@@ -686,19 +686,19 @@ void CSSSelector::Show(int indent) const {
   printf("%*sSelectorText(): %s\n", indent, "", SelectorText().c_str());
   printf("%*smatch_: %d\n", indent, "", Match());
   if (Match() != kTag) {
-    printf("%*sValue(): %s\n", indent, "", Value().c_str());
+    printf("%*sValue(): %s\n", indent, "", Value().Characters8());
   }
   printf("%*sGetPseudoType(): %d\n", indent, "", GetPseudoType());
   if (Match() == kTag) {
     printf("%*sTagQName().LocalName(): %s\n", indent, "",
-           TagQName().LocalName().value().c_str());
+           TagQName().LocalName().Characters8());
   }
   printf("%*sIsAttributeSelector(): %d\n", indent, "", IsAttributeSelector());
   if (IsAttributeSelector()) {
     printf("%*sAttribute(): %s\n", indent, "",
-           Attribute().LocalName().value().c_str());
+           Attribute().LocalName().Characters8());
   }
-  printf("%*sArgument(): %s\n", indent, "", Argument()->c_str());
+  printf("%*sArgument(): %s\n", indent, "", Argument().Characters8());
   printf("%*sSpecificity(): %u\n", indent, "", Specificity());
   if (NextSimpleSelector()) {
     printf("\n%*s--> (Relation() == %d)\n", indent, "", Relation());
@@ -716,11 +716,11 @@ void CSSSelector::Show() const {
 }
 #endif  // DCHECK_IS_ON()
 
-void CSSSelector::UpdatePseudoPage(const std::string& value,
+void CSSSelector::UpdatePseudoPage(const AtomicString& value,
                                    const Document* document) {
   DCHECK_EQ(Match(), kPagePseudoClass);
   SetValue(value);
-  PseudoType type = CSSSelectorParser::ParsePseudoType(value, false, document);
+  PseudoType type = CSSSelectorParser::ParsePseudoType(value.Characters8(), false, document);
   if (type != kPseudoFirstPage && type != kPseudoLeftPage &&
       type != kPseudoRightPage) {
     type = kPseudoUnknown;
@@ -728,14 +728,14 @@ void CSSSelector::UpdatePseudoPage(const std::string& value,
   bits_.set<PseudoTypeField>(type);
 }
 
-void CSSSelector::UpdatePseudoType(const std::string& value,
+void CSSSelector::UpdatePseudoType(const AtomicString& value,
                                    const CSSParserContext& context,
                                    bool has_arguments,
                                    CSSParserMode mode) {
   DCHECK(Match() == kPseudoClass || Match() == kPseudoElement);
-  std::string lower_value = base::ToLowerASCII(value);
+  AtomicString lower_value = value.LowerASCII();
   PseudoType pseudo_type = CSSSelectorParser::ParsePseudoType(
-      lower_value, has_arguments, context.GetDocument());
+      lower_value.Characters8(), has_arguments, context.GetDocument());
   SetPseudoType(pseudo_type);
   SetValue(pseudo_type == kPseudoStateDeprecatedSyntax ? value : lower_value);
 
@@ -914,7 +914,7 @@ void CSSSelector::UpdatePseudoType(const std::string& value,
 }
 
 void CSSSelector::SetUnparsedPlaceholder(CSSNestingType unparsed_nesting_type,
-                                         const std::string& value) {
+                                         const AtomicString& value) {
   DCHECK(Match() == kPseudoClass);
   SetPseudoType(kPseudoUnparsed);
   CreateRareData();
@@ -942,21 +942,21 @@ void CSSSelector::SetTrue() {
   bits_.set<IsImplicitlyAddedField>(true);
 }
 
-static void SerializeIdentifierOrAny(const std::optional<std::string>& identifier,
-                                     const std::optional<std::string>& any,
+static void SerializeIdentifierOrAny(const AtomicString& identifier,
+                                     const AtomicString& any,
                                      StringBuilder& builder) {
   if (identifier != any) {
-    SerializeIdentifier(identifier.value(), builder);
+    SerializeIdentifier(identifier.ToStringView(), builder);
   } else {
-    builder.Append("*");
+    builder.Append(g_star_atom.ToStringView());
   }
 }
 
-static void SerializeNamespacePrefixIfNeeded(const std::optional<std::string>& prefix,
-                                             const std::optional<std::string>& any,
+static void SerializeNamespacePrefixIfNeeded(const AtomicString& prefix,
+                                             const AtomicString& any,
                                              StringBuilder& builder,
                                              bool is_attribute_selector) {
-  if (!prefix.has_value() || (prefix->empty() && is_attribute_selector)) {
+  if (prefix.IsNull() || (prefix.empty() && is_attribute_selector)) {
     return;
   }
   SerializeIdentifierOrAny(prefix, any, builder);
@@ -979,18 +979,18 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
   bool suppress_selector_list = false;
   if (Match() == kId) {
     builder.Append('#');
-    SerializeIdentifier(SerializingValue(), builder);
+    SerializeIdentifier(SerializingValue().ToStringView(), builder);
   } else if (Match() == kClass) {
     builder.Append('.');
-    SerializeIdentifier(SerializingValue(), builder);
+    SerializeIdentifier(SerializingValue().ToStringView(), builder);
   } else if (Match() == kPseudoClass || Match() == kPagePseudoClass) {
     if (GetPseudoType() == kPseudoUnparsed) {
-      builder.Append(Value());
+      builder.Append(Value().ToStringView());
     } else if (GetPseudoType() != kPseudoStateDeprecatedSyntax &&
                GetPseudoType() != kPseudoParent &&
                GetPseudoType() != kPseudoTrue) {
       builder.Append(':');
-      builder.Append(SerializingValue());
+      builder.Append(SerializingValue().ToStringView());
     }
 
     switch (GetPseudoType()) {
@@ -1035,7 +1035,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
       case kPseudoLang:
       case kPseudoState:
         builder.Append('(');
-        SerializeIdentifier(Argument().value(), builder);
+        SerializeIdentifier(Argument().ToStringView(), builder);
         builder.Append(')');
         break;
       case kPseudoHas:
@@ -1044,7 +1044,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
         break;
       case kPseudoStateDeprecatedSyntax:
         builder.Append(':');
-        SerializeIdentifier(SerializingValue(), builder);
+        SerializeIdentifier(SerializingValue().ToStringView(), builder);
         break;
       case kPseudoHost:
       case kPseudoHostContext:
@@ -1061,12 +1061,12 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
       case kPseudoActiveViewTransitionType: {
         CHECK(!IdentList().empty());
         std::string separator = "(";
-        for (const std::optional<std::string>& type : IdentList()) {
+        for (const AtomicString& type : IdentList()) {
           builder.Append(separator);
           if (separator == "(") {
             separator = ", ";
           }
-          SerializeIdentifier(*type, builder);
+          SerializeIdentifier(type.ToStringView(), builder);
         }
         builder.Append(')');
         break;
@@ -1076,23 +1076,23 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
     }
   } else if (Match() == kPseudoElement) {
     builder.Append("::");
-    SerializeIdentifier(SerializingValue(), builder);
+    SerializeIdentifier(SerializingValue().ToStringView(), builder);
     switch (GetPseudoType()) {
       case kPseudoPart: {
         char separator = '(';
-        for (const std::optional<std::string>& part : IdentList()) {
+        for (const AtomicString& part : IdentList()) {
           builder.Append(separator);
           if (separator == '(') {
             separator = ' ';
           }
-          SerializeIdentifier(part.value_or(""), builder);
+          SerializeIdentifier(part.ToStringView(), builder);
         }
         builder.Append(')');
         break;
       }
       case kPseudoHighlight: {
         builder.Append('(');
-        builder.Append(Argument().value());
+        builder.Append(Argument().ToStringView());
         builder.Append(')');
         break;
       }
@@ -1102,16 +1102,16 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
       case kPseudoViewTransitionOld: {
         builder.Append('(');
         bool first = true;
-        for (const std::optional<std::string>& name_or_class : IdentList()) {
+        for (const AtomicString& name_or_class : IdentList()) {
           if (!first) {
             builder.Append('.');
           }
 
           first = false;
-          if (name_or_class == UniversalSelector()) {
+          if (name_or_class == UniversalSelectorAtom()) {
             builder.Append("*");
           } else {
-            SerializeIdentifier(name_or_class.value_or(""), builder);
+            SerializeIdentifier(name_or_class.ToStringView(), builder);
           }
         }
         builder.Append(')');
@@ -1122,9 +1122,9 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
     }
   } else if (IsAttributeSelector()) {
     builder.Append('[');
-    SerializeNamespacePrefixIfNeeded(Attribute().Prefix(), "*", builder,
+    SerializeNamespacePrefixIfNeeded(Attribute().Prefix(), g_star_atom, builder,
                                      IsAttributeSelector());
-    SerializeIdentifier(Attribute().LocalName().value_or(""), builder);
+    SerializeIdentifier(Attribute().LocalName().Characters8(), builder);
     switch (Match()) {
       case kAttributeExact:
         builder.Append('=');
@@ -1152,7 +1152,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
         break;
     }
     if (Match() != kAttributeSet) {
-      SerializeString(SerializingValue(), builder);
+      SerializeString(SerializingValue().ToStringView(), builder);
       if (AttributeMatch() == AttributeMatchType::kCaseInsensitive) {
         builder.Append(" i");
       } else if (AttributeMatch() == AttributeMatchType::kCaseSensitiveAlways) {
@@ -1173,9 +1173,9 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
 const CSSSelector* CSSSelector::SerializeCompound(
     StringBuilder& builder) const {
   if (Match() == kTag && !IsImplicit()) {
-    SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), "*", builder,
+    SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), g_star_atom, builder,
                                      IsAttributeSelector());
-    SerializeIdentifierOrAny(TagQName().LocalName(), UniversalSelector(),
+    SerializeIdentifierOrAny(TagQName().LocalName(), UniversalSelectorAtom(),
                              builder);
   }
 
@@ -1262,9 +1262,9 @@ std::string CSSSelector::SelectorText() const {
 std::string CSSSelector::SimpleSelectorTextForDebug() const {
   StringBuilder builder;
   if (Match() == kTag && !IsImplicit()) {
-    SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), std::optional<std::string>("*"), builder,
+    SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), g_star_atom, builder,
                                      IsAttributeSelector());
-    SerializeIdentifierOrAny(TagQName().LocalName(), UniversalSelector(),
+    SerializeIdentifierOrAny(TagQName().LocalName(), UniversalSelectorAtom(),
                              builder);
   } else {
     SerializeSimpleSelector(builder);
@@ -1272,7 +1272,7 @@ std::string CSSSelector::SimpleSelectorTextForDebug() const {
   return builder.ReleaseString();
 }
 
-void CSSSelector::SetArgument(const std::string& value) {
+void CSSSelector::SetArgument(const AtomicString& value) {
   CreateRareData();
   data_.rare_data_->argument_ = value;
 }
@@ -1538,12 +1538,12 @@ std::string CSSSelector::FormatPseudoTypeForDebugging(PseudoType type) {
   return builder.ReleaseString();
 }
 
-CSSSelector::RareData::RareData(const std::string& value)
+CSSSelector::RareData::RareData(const AtomicString& value)
     : matching_value_(value),
       serializing_value_(value),
       bits_(),
       attribute_(AnyQName()),
-      argument_(std::nullopt) {}
+      argument_(g_null_atom) {}
 
 CSSSelector::RareData::~RareData() = default;
 
@@ -1576,7 +1576,7 @@ bool CSSSelector::RareData::MatchNth(unsigned unsigned_count) {
 }
 
 void CSSSelector::SetIdentList(
-    std::unique_ptr<std::vector<std::optional<std::string>>> ident_list) {
+    std::unique_ptr<std::vector<AtomicString>> ident_list) {
   CreateRareData();
   data_.rare_data_->ident_list_ = std::move(ident_list);
 }

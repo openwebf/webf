@@ -52,6 +52,20 @@ unsigned ContainerNode::CountChildren() const {
   return count;
 }
 
+Element* ContainerNode::QuerySelector(const AtomicString& selectors,
+                                      ExceptionState& exception_state) {
+//  SelectorQuery* selector_query = GetDocument().GetSelectorQueryCache().Add(
+//      selectors, GetDocument(), exception_state);
+//  if (!selector_query)
+//    return nullptr;
+//  return selector_query->QueryFirst(*this);
+    return nullptr;
+}
+
+Element* ContainerNode::QuerySelector(const AtomicString& selectors) {
+  return QuerySelector(selectors, ASSERT_NO_EXCEPTION());
+}
+
 inline void GetChildNodes(ContainerNode& node, NodeVector& nodes) {
   assert(!nodes.size());
   for (Node* child = node.firstChild(); child; child = child->nextSibling())
@@ -536,6 +550,21 @@ void ContainerNode::ParserTakeAllChildrenFrom(webf::ContainerNode& old_parent) {
 
 AtomicString ContainerNode::nodeValue() const {
   return AtomicString::Null();
+}
+
+Element* ContainerNode::querySelector(const webf::AtomicString& selectors, webf::ExceptionState& exception_state) {
+  return nullptr;
+}
+
+Element* ContainerNode::OwnerShadowHost() const {
+  return nullptr;
+}
+
+inline ContainerNode* Node::ParentElementOrShadowRoot() const {
+  ContainerNode* parent = parentNode();
+  return parent && (parent->IsElementNode() || parent->IsShadowRoot())
+             ? parent
+             : nullptr;
 }
 
 ContainerNode::ContainerNode(TreeScope* tree_scope, ConstructionType type)

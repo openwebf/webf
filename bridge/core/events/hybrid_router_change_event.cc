@@ -44,20 +44,16 @@ HybridRouterChangeEvent::HybridRouterChangeEvent(ExecutingContext* context,
                                            reinterpret_cast<const char*>(native_event->state),
                                            strlen(reinterpret_cast<const char*>(native_event->state)))),
       kind_(AtomicString(
-          ctx(),
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_event->kind)))),
       name_(AtomicString(
-          ctx(),
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_event->name))))
 #else
       state_(ScriptValue::CreateJsonObject(context->ctx(),
                                            static_cast<const char*>(native_event->state),
                                            strlen(static_cast<const char*>(native_event->state)))),
       kind_(AtomicString(
-          ctx(),
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_event->kind)))),
       name_(AtomicString(
-          ctx(),
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_event->name))))
 #endif
 {

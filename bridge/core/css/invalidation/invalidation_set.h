@@ -38,7 +38,6 @@
 #include <memory>
 #include <unordered_set>
 
-#include "global_string.h"
 #include "core/css/invalidation/invalidation_flags.h"
 #include "foundation/casting.h"
 
@@ -287,7 +286,7 @@ class InvalidationSet {
     size_t Size(const Flags&) const;
     bool IsHashSet(const Flags& flags) const { return flags.bits_ & GetMask(); }
 
-    const AtomicString* GetString(const Flags& flags) const {
+    const AtomicString* GetString(const Flags flags) const {
       return IsHashSet(flags) ? nullptr : &string_; }
     const std::unordered_set<AtomicString, AtomicString::KeyHasher>* GetHashSet(const Flags& flags) const {
       return IsHashSet(flags) ? hash_set_ : nullptr;
@@ -316,7 +315,7 @@ class InvalidationSet {
       bool operator!=(const Iterator& other) const { return !(*this == other); }
       void operator++() {
         if (type_ == Type::kString) {
-          string_ = global_string::knull_atom;
+          string_ = g_null_atom;
         } else {
           ++hash_set_iterator_;
         }
@@ -350,7 +349,7 @@ class InvalidationSet {
       Iterator begin =
           IsHashSet(flags) ? Iterator(hash_set_->begin()) : Iterator(string_);
       Iterator end =
-          IsHashSet(flags) ? Iterator(hash_set_->end()) : Iterator(global_string::knull_atom);
+          IsHashSet(flags) ? Iterator(hash_set_->end()) : Iterator(g_null_atom);
       return Range(begin, end);
     }
 
@@ -359,7 +358,7 @@ class InvalidationSet {
     void SetIsString(Flags& flags) { flags.bits_ &= ~GetMask(); }
     void SetIsHashSet(Flags& flags) { flags.bits_ |= GetMask(); }
 
-    AtomicString string_{};
+    AtomicString string_;
     std::unordered_set<AtomicString, AtomicString::KeyHasher>* hash_set_;
   };
 
@@ -537,7 +536,7 @@ void InvalidationSet::Backing<type>::Add(InvalidationSet::BackingFlags& flags,
   assert(!string.IsNull());
   if (IsHashSet(flags)) {
     hash_set_->insert(string);
-  } else if (!string_.IsEmpty()) {
+  } else if (string_) {
     if (string_ == string) {
       return;
     }
@@ -580,7 +579,7 @@ bool InvalidationSet::Backing<type>::Contains(
 template <typename InvalidationSet::BackingType type>
 bool InvalidationSet::Backing<type>::IsEmpty(
     const InvalidationSet::BackingFlags& flags) const {
-  return !IsHashSet(flags) && !string_.IsEmpty();
+  return !IsHashSet(flags) && !string_;
 }
 
 template <typename InvalidationSet::BackingType type>

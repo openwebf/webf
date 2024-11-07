@@ -5,7 +5,6 @@
 #ifndef KRAKE_CONSOLE_H
 #define KRAKE_CONSOLE_H
 
-#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/script_value.h"
 #include "core/executing_context.h"
 

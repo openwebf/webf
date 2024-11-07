@@ -501,10 +501,10 @@ AtomicString Node::textContent(bool convert_brs_to_newlines) const {
   std::string content;
   for (const Node& node : NodeTraversal::InclusiveDescendantsOf(*this)) {
     if (auto* text_node = DynamicTo<Text>(node)) {
-      content.append(text_node->data().ToStdString(ctx()));
+      content.append(text_node->data().ToStdString());
     }
   }
-  return AtomicString(ctx(), content);
+  return AtomicString(content);
 }
 
 void Node::setTextContent(const AtomicString& text, ExceptionState& exception_state) {
@@ -522,14 +522,14 @@ void Node::setTextContent(const AtomicString& text, ExceptionState& exception_st
       // Note: This is an intentional optimization.
       // See crbug.com/352836 also.
       // No need to do anything if the text is identical.
-      if (container->HasOneTextChild() && To<Text>(container->firstChild())->data() == text && !text.IsEmpty())
+      if (container->HasOneTextChild() && To<Text>(container->firstChild())->data() == text && !text.empty())
         return;
 
       ChildListMutationScope mutation(*this);
 
       // Note: This API will not insert empty text nodes:
       // https://dom.spec.whatwg.org/#dom-node-textcontent
-      if (text.IsEmpty()) {
+      if (text.empty()) {
         container->RemoveChildren();
       } else {
         container->RemoveChildren();
@@ -630,6 +630,22 @@ void Node::ClearNodeLists() {
 Document* Node::ownerDocument() const {
   Document* doc = &GetDocument();
   return doc == this ? nullptr : doc;
+}
+
+Element* Node::OwnerShadowHost() const {
+  return nullptr;
+}
+
+ShadowRoot* Node::ContainingShadowRoot() const {
+  return nullptr;
+}
+
+ShadowRoot* Node::GetShadowRoot() const {
+  return nullptr;
+}
+
+bool Node::IsInUserAgentShadowRoot() const {
+  return false;
 }
 
 bool Node::IsNode() const {

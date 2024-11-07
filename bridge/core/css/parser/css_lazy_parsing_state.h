@@ -9,7 +9,6 @@
 #ifndef WEBF_CSS_LAZY_PARSING_STATE_H
 #define WEBF_CSS_LAZY_PARSING_STATE_H
 
-#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/member.h"
 
 namespace webf {

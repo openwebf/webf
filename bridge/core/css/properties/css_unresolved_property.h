@@ -11,7 +11,7 @@
 
 #include "core/css/properties/css_exposure.h"
 #include "css_property_instance.h"
-#include "built_in_string.h"
+#include "foundation/atomic_string.h"
 //#include ""
 
 namespace webf {
@@ -48,7 +48,7 @@ class CSSUnresolvedProperty {
   }
   virtual const AtomicString& GetPropertyNameAtomicString() const {
     assert_m(false, "NOTREACHED_IN_MIGRATION");
-    return built_in_string::kempty_string;
+    return g_empty_atom;
   }
   virtual const char* GetJSPropertyName() const {
     assert_m(false, "NOTREACHED_IN_MIGRATION");

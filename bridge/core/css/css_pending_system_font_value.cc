@@ -25,7 +25,7 @@ std::shared_ptr<CSSPendingSystemFontValue> CSSPendingSystemFontValue::Create(
 }
 
 const AtomicString& CSSPendingSystemFontValue::ResolveFontFamily() const {
-  return AtomicString::Empty();
+  return g_empty_atom;
 }
 
 float CSSPendingSystemFontValue::ResolveFontSize(

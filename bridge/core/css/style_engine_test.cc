@@ -3,7 +3,6 @@
  */
 
 #include "style_engine.h"
-#include "bindings/qjs/atomic_string.h"
 #include "core/dom/document.h"
 #include "core/html/html_style_element.h"
 #include "core/platform/text/text_position.h"

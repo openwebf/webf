@@ -16,11 +16,13 @@
 #include "parent_node.h"
 #include "plugin_api/element.h"
 #include "qjs_scroll_to_options.h"
+#include "foundation/atomic_string.h"
 #include "core/platform/gfx/geometry/vector2d_f.h"
 
 namespace webf {
 
 class ShadowRoot;
+class StyleScopeData;
 
 enum class ElementFlags {
   kTabIndexWasSetExplicitly = 1 << 0,
@@ -205,12 +207,12 @@ class Element : public ContainerNode {
   //   return *computed_style_;
   // }
 
+  StyleScopeData& EnsureStyleScopeData();
+  StyleScopeData* GetStyleScopeData() const;
+
   void SetComputedStyle(const ComputedStyle* computed_style) {
     //computed_style_ = computed_style;
   }
-
-  // ElementRareDataVector* GetElementRareData() const;
-  // ElementRareDataVector& EnsureElementRareData();
 
   AtomicString LocalNameForSelectorMatching() const;
 

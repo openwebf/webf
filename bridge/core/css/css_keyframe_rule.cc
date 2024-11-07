@@ -44,9 +44,9 @@ void CSSKeyframeRule::setKeyText(const ExecutingContext* execution_context,
                                  ExceptionState& exception_state) {
   CSSStyleSheet::RuleMutationScope rule_mutation_scope(this);
 
-  if (!keyframe_->SetKeyText(execution_context, key_text.ToStdString(ctx()))) {
+  if (!keyframe_->SetKeyText(execution_context, key_text.ToStdString())) {
     exception_state.ThrowException(ctx(), ErrorType::SyntaxError,
-                                   "The key '" + key_text.ToStdString(ctx()) + "' is invalid and cannot be parsed");
+                                   "The key '" + key_text.ToStdString() + "' is invalid and cannot be parsed");
     return;
   }
 

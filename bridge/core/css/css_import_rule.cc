@@ -31,7 +31,7 @@ CSSImportRule::CSSImportRule(StyleRuleImport* import_rule,
 CSSImportRule::~CSSImportRule() = default;
 
 AtomicString CSSImportRule::href() const {
-  return AtomicString(ctx(), import_rule_->Href());
+  return AtomicString(import_rule_->Href());
 }
 
 MediaList* CSSImportRule::media() {
@@ -51,7 +51,7 @@ AtomicString CSSImportRule::cssText() const {
     AtomicString layer_name = layerName();
     if (layer_name.length()) {
       result.Append("(");
-      result.Append(layer_name.ToStdString(ctx()));
+      result.Append(layer_name.ToStdString());
       result.Append(")");
     }
   }
@@ -72,7 +72,7 @@ AtomicString CSSImportRule::cssText() const {
   }
   result.Append(';');
 
-  return AtomicString(ctx(), result.ReleaseString());
+  return AtomicString(result.ReleaseString());
 }
 
 CSSStyleSheet* CSSImportRule::styleSheet() const {
@@ -94,11 +94,11 @@ AtomicString CSSImportRule::layerName() const {
   if (!import_rule_->IsLayered()) {
     return AtomicString::Empty();
   }
-  return AtomicString(ctx(), import_rule_->GetLayerNameAsString());
+  return AtomicString(import_rule_->GetLayerNameAsString());
 }
 
 AtomicString CSSImportRule::supportsText() const {
-  return AtomicString(ctx(), import_rule_->GetSupportsString());
+  return AtomicString(import_rule_->GetSupportsString());
 }
 
 void CSSImportRule::Reattach(std::shared_ptr<StyleRuleBase>) {

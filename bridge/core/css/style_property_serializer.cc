@@ -227,7 +227,7 @@ std::string StylePropertySerializer::GetCustomPropertyText(const PropertyValueFo
     result.Append(' ');
   }
   const std::shared_ptr<const CSSValue>* value = property.Value();
-  SerializeIdentifier(property.Name().ToString(), result, is_not_first_decl);
+  SerializeIdentifier(property.Name().ToAtomicString().Characters8(), result, is_not_first_decl);
   result.Append(": ");
   result.Append(value->get()->CssText());
   if (property.IsImportant()) {
@@ -245,7 +245,7 @@ std::string StylePropertySerializer::GetPropertyText(const CSSPropertyName& name
   if (is_not_first_decl) {
     result.append(" ");
   }
-  result.append(name.ToString());
+  result.append(name.ToAtomicString().Characters8());
   result.append(": ");
   result.append(value);
   if (is_important) {
@@ -611,7 +611,7 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
     case CSSPropertyID::kWebkitColumnBreakBefore:
     case CSSPropertyID::kWebkitColumnBreakInside:
     default:
-      assert_m(false, ("Shorthand property " + CSSPropertyName(property_id).ToString() +
+      assert_m(false, ("Shorthand property " + (CSSPropertyName(property_id).ToAtomicString().ToStdString()) +
                                             " must be handled in StylePropertySerializer::SerializeShorthand.").c_str());
       return "";
   }

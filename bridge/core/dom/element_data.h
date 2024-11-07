@@ -7,12 +7,11 @@
 #define WEBF_CORE_DOM_ELEMENT_DATA_H_
 
 #include <core/base/bit_field.h>
-#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/cppgc/member.h"
+#include "core/base/strings/string_util.h"
 #include "core/dom/attribute_collection.h"
 #include "dom_string_map.h"
-#include "core/base/strings/string_util.h"
 #include "dom_token_list.h"
 #include "foundation/ascii_types.h"
 
@@ -28,15 +27,15 @@ class ElementData {
  public:
   ElementData();
   void ClearClass() const { class_names_.Clear(); }
-  void SetClass(JSContext* ctx, const AtomicString& class_names) const {
-    DCHECK(!class_names.IsEmpty());
-    class_names_.Set(ctx, class_names);
+  void SetClass(const AtomicString& class_names) const {
+    DCHECK(!class_names.empty());
+    class_names_.Set(class_names);
   }
   void SetClassFoldingCase(JSContext* ctx, const AtomicString& class_names) const {
-    if (IsLowerASCII(reinterpret_cast<const char*>(class_names.Character8()), class_names.length())) {
-      return SetClass(ctx, class_names);
+    if (class_names.IsLowerASCII()) {
+      return SetClass(class_names);
     }
-    return SetClass(ctx, class_names.ToLowerIfNecessary(ctx));
+    return SetClass(class_names.LowerASCII());
   }
   const SpaceSplitString& ClassNames() const { return class_names_; }
 

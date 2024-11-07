@@ -6,7 +6,6 @@
 
 #include <utility>
 #include "bindings/qjs/converter_impl.h"
-#include "built_in_string.h"
 #include "core/dom/document.h"
 #include "core/dom/mutation_observer.h"
 #include "core/events/error_event.h"

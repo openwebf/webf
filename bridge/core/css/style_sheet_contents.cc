@@ -28,7 +28,6 @@
 #include <utility>
 
 #include <utility>
-#include "built_in_string.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/parser/css_parser.h"
 #include "core/css/parser/css_parser_context.h"
@@ -332,9 +331,10 @@ void StyleSheetContents::Trace(webf::GCVisitor* gc_visitor) const {
   }
 }
 
-const std::optional<std::string> StyleSheetContents::NamespaceURIFromPrefix(const std::string& prefix) const {
+const AtomicString& StyleSheetContents::NamespaceURIFromPrefix(
+    const AtomicString& prefix) const {
   auto it = namespaces_.find(prefix);
-  return it != namespaces_.end() ? std::optional<std::string>(it->second) : std::nullopt;
+  return it != namespaces_.end() ? it->second : g_null_atom;
 }
 
 void StyleSheetContents::ParserAddNamespace(const std::optional<std::string>& prefix, const std::optional<std::string>& uri) {

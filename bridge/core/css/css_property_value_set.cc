@@ -61,7 +61,7 @@ static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet>
 }
 
 static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> property_set,
-                                 const std::string& custom_property_name) {
+                                 const AtomicString& custom_property_name) {
   // Custom properties are never shorthands.
   return "";
 }
@@ -79,7 +79,7 @@ std::string CSSPropertyValueSet::GetPropertyValue(const T& property) const {
   return "";
 }
 template std::string CSSPropertyValueSet::GetPropertyValue<CSSPropertyID>(const CSSPropertyID&) const;
-template std::string CSSPropertyValueSet::GetPropertyValue<std::string>(const std::string&) const;
+template std::string CSSPropertyValueSet::GetPropertyValue<AtomicString>(const AtomicString&) const;
 
 template const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValue<CSSPropertyID>(
     const CSSPropertyID&) const;
@@ -93,16 +93,16 @@ bool CSSPropertyValueSet::PropertyIsImportant(const T& property) const {
   return ShorthandIsImportant(property);
 }
 template bool CSSPropertyValueSet::PropertyIsImportant<CSSPropertyID>(const CSSPropertyID&) const;
-template bool CSSPropertyValueSet::PropertyIsImportant<std::string>(const std::string&) const;
+template bool CSSPropertyValueSet::PropertyIsImportant<AtomicString>(const AtomicString&) const;
 
 const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValueWithHint(
-    const std::string& property_name,
+    const AtomicString& property_name,
     unsigned index) const {
-  assert(property_name == PropertyAt(index).Name().ToString());
+  assert(property_name == PropertyAt(index).Name().ToAtomicString());
   return PropertyAt(index).Value();
 }
 
-std::string CSSPropertyValueSet::GetPropertyValueWithHint(const std::string& property_name, unsigned int index) const {
+std::string CSSPropertyValueSet::GetPropertyValueWithHint(const AtomicString& property_name, unsigned int index) const {
   auto value = GetPropertyCSSValueWithHint(property_name, index);
   if (value) {
     return value->get()->CssText();
@@ -110,8 +110,8 @@ std::string CSSPropertyValueSet::GetPropertyValueWithHint(const std::string& pro
   return "";
 }
 
-bool CSSPropertyValueSet::PropertyIsImportantWithHint(const std::string& property_name, unsigned int index) const {
-  assert(property_name == PropertyAt(index).Name().ToString());
+bool CSSPropertyValueSet::PropertyIsImportantWithHint(const AtomicString& property_name, unsigned int index) const {
+  assert(property_name == PropertyAt(index).Name().ToAtomicString());
   return PropertyAt(index).IsImportant();
 }
 
@@ -241,7 +241,7 @@ static uint16_t GetConvertedCSSPropertyID(CSSPropertyID property_id) {
   return static_cast<uint16_t>(property_id);
 }
 
-static uint16_t GetConvertedCSSPropertyID(const std::string&) {
+static uint16_t GetConvertedCSSPropertyID(const AtomicString&) {
   return static_cast<uint16_t>(CSSPropertyID::kVariable);
 }
 
@@ -264,7 +264,7 @@ static bool IsPropertyMatch(const CSSPropertyValueMetadata& metadata, uint16_t i
 
 static bool IsPropertyMatch(const CSSPropertyValueMetadata& metadata,
                             uint16_t id,
-                            const std::string& custom_property_name) {
+                            const AtomicString& custom_property_name) {
   DCHECK_EQ(id, static_cast<uint16_t>(CSSPropertyID::kVariable));
   return metadata.Name() == CSSPropertyName(custom_property_name);
 }
@@ -289,7 +289,7 @@ int ImmutableCSSPropertyValueSet::FindPropertyIndex(const T& property) const {
 }
 
 template int ImmutableCSSPropertyValueSet::FindPropertyIndex(const CSSPropertyID&) const;
-template int ImmutableCSSPropertyValueSet::FindPropertyIndex(const std::string&) const;
+template int ImmutableCSSPropertyValueSet::FindPropertyIndex(const AtomicString&) const;
 // template int ImmutableCSSPropertyValueSet::FindPropertyIndex(
 //     const AtRuleDescriptorID&) const;
 
@@ -389,7 +389,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetPro
 }
 
 MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCustomProperty(
-    const std::string& custom_property_name,
+    const AtomicString& custom_property_name,
     const std::string& value,
     bool important,
     std::shared_ptr<StyleSheetContents> context_style_sheet,
@@ -397,7 +397,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCus
   if (value.empty()) {
     return RemoveProperty(custom_property_name) ? kChangedPropertySet : kUnchanged;
   }
-  return CSSParser::ParseValueForCustomProperty(this, custom_property_name, value, important, context_style_sheet,
+  return CSSParser::ParseValueForCustomProperty(this, custom_property_name.Characters8(), value, important, context_style_sheet,
                                                 is_animation_tainted);
 }
 
@@ -406,7 +406,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::SetLonghandPro
   DCHECK_EQ(shorthandForProperty(id).length(), 0u);
   CSSPropertyValue* to_replace;
   if (id == CSSPropertyID::kVariable) {
-    to_replace = const_cast<CSSPropertyValue*>(FindPropertyPointer(property.Name().ToString()));
+    to_replace = const_cast<CSSPropertyValue*>(FindPropertyPointer(property.Name().ToAtomicString()));
   } else {
     to_replace = FindInsertionPointForID(id);
   }
@@ -457,7 +457,7 @@ template bool MutableCSSPropertyValueSet::RemoveProperty(
     const CSSPropertyID&,
     std::string*);
 template bool MutableCSSPropertyValueSet::RemoveProperty(
-    const std::string&,
+    const AtomicString&,
     std::string*);
 
 
@@ -534,7 +534,7 @@ void MutableCSSPropertyValueSet::Clear() {
   may_have_logical_properties_ = false;
 }
 
-void MutableCSSPropertyValueSet::ParseDeclarationList(const std::string& style_declaration,
+void MutableCSSPropertyValueSet::ParseDeclarationList(const AtomicString& style_declaration,
                                                       std::shared_ptr<StyleSheetContents> context_style_sheet) {
   property_vector_.clear();
 
@@ -546,7 +546,7 @@ void MutableCSSPropertyValueSet::ParseDeclarationList(const std::string& style_d
     context = std::make_shared<CSSParserContext>(CssParserMode());
   }
 
-  CSSParser::ParseDeclarationList(std::move(context), this, style_declaration);
+  CSSParser::ParseDeclarationList(std::move(context), this, style_declaration.Characters8());
 }
 
 CSSStyleDeclaration* MutableCSSPropertyValueSet::EnsureCSSStyleDeclaration(ExecutingContext* execution_context) {
@@ -570,7 +570,7 @@ int MutableCSSPropertyValueSet::FindPropertyIndex(const T& property) const {
   return (it == nullptr) ? -1 : static_cast<int>(it - begin);
 }
 template int MutableCSSPropertyValueSet::FindPropertyIndex(const CSSPropertyID&) const;
-template int MutableCSSPropertyValueSet::FindPropertyIndex(const std::string&) const;
+template int MutableCSSPropertyValueSet::FindPropertyIndex(const AtomicString&) const;
 
 void MutableCSSPropertyValueSet::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSPropertyValueSet::TraceAfterDispatch(visitor);
@@ -639,7 +639,7 @@ bool MutableCSSPropertyValueSet::RemoveShorthandProperty(CSSPropertyID property_
 }
 
 CSSPropertyValue* MutableCSSPropertyValueSet::FindCSSPropertyWithName(const CSSPropertyName& name) {
-  return const_cast<CSSPropertyValue*>(name.IsCustomProperty() ? FindPropertyPointer(name.ToString())
+  return const_cast<CSSPropertyValue*>(name.IsCustomProperty() ? FindPropertyPointer(name.ToAtomicString())
                                                                : FindPropertyPointer(name.Id()));
 }
 

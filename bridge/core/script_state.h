@@ -6,6 +6,7 @@
 #define BRIDGE_CORE_SCRIPT_STATE_H_
 
 #include <quickjs/quickjs.h>
+#include "bindings/qjs/value_cache.h"
 #include <cassert>
 
 namespace webf {

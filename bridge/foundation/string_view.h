@@ -78,7 +78,7 @@ class StringView final {
   bool Empty() const { return length_ == 0; }
   bool IsNull() const { return !bytes_; }
 
-  AtomicString ToAtomicString(JSContext* ctx) const;
+  AtomicString ToAtomicString() const;
 
   // TODO(guopengfei)：just support utf-8
   [[nodiscard]] std::string Characters8ToStdString() const;

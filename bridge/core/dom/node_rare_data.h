@@ -36,13 +36,7 @@ class FlatTreeNodeData;
 class MutationObserverRegistration;
 class NodeListsNodeData;
 class NodeRareData;
-/*
-// TODO(guopengfei)：
-class Part;f
-class ScrollTimeline;
 
-using PartsList = HeapDeque<Member<Part>>;
-*/
 
 class ChildNodeList;
 class EmptyNodeList;
@@ -146,9 +140,6 @@ class NodeRareData {
   std::shared_ptr<NodeListsNodeData> node_lists_;
   std::shared_ptr<NodeMutationObserverData> mutation_observer_data_;
   std::shared_ptr<FlatTreeNodeData> flat_tree_node_data_;
-  // Keeps strong scroll timeline pointers linked to this node to ensure
-  // the timelines are alive as long as the node is alive.
-  // Member<std::unordered_set<Member<ScrollTimeline>>> scroll_timelines_;
 
   // An ordered set of DOM Parts for this Node, in order of construction. This
   // order is important, since `getParts()` returns a tree-ordered set of parts,

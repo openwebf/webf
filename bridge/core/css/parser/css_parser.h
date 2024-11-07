@@ -9,7 +9,6 @@
 #ifndef WEBF_CSS_PARSER_H
 #define WEBF_CSS_PARSER_H
 
-#include "bindings/qjs/atomic_string.h"
 #include "core/base/containers/span.h"
 #include "core/css/css_color.h"
 #include "core/css/css_primitive_value.h"

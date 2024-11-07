@@ -30,7 +30,7 @@ ErrorEvent::ErrorEvent(ExecutingContext* context, const std::string& message, st
 
 ErrorEvent::ErrorEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
     : Event(context, event_type_names::kerror),
-      message_(type.ToStdString(ctx())),
+      message_(type.ToStdString()),
       source_location_(std::make_unique<SourceLocation>("", 0, 0)) {}
 
 ErrorEvent::ErrorEvent(ExecutingContext* context,
@@ -38,10 +38,10 @@ ErrorEvent::ErrorEvent(ExecutingContext* context,
                        const std::shared_ptr<ErrorEventInit>& initializer,
                        ExceptionState& exception_state)
     : Event(context, event_type_names::kerror),
-      message_(initializer->hasMessage() ? type.ToStdString(ctx()) : ""),
+      message_(initializer->hasMessage() ? type.ToStdString() : ""),
       error_(initializer->hasError() ? initializer->error() : ScriptValue::Empty(ctx())),
       source_location_(
-          std::make_unique<SourceLocation>(initializer->hasFilename() ? initializer->filename().ToStdString(ctx()) : "",
+          std::make_unique<SourceLocation>(initializer->hasFilename() ? initializer->filename().ToStdString() : "",
                                            initializer->hasLineno() ? initializer->lineno() : 0,
                                            initializer->hasColno() ? initializer->colno() : 0)) {}
 

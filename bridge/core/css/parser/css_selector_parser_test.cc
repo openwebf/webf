@@ -549,15 +549,15 @@ static const SelectorTestCase is_where_forgiving_data[] = {
 INSTANTIATE_TEST_SUITE_P(IsWhereForgiving, SelectorParseTest, testing::ValuesIn(is_where_forgiving_data));
 namespace {
 
-std::optional<std::string> TagLocalName(const CSSSelector* selector) {
+AtomicString TagLocalName(const CSSSelector* selector) {
   return selector->TagQName().LocalName();
 }
 
-std::optional<std::string> AttributeLocalName(const CSSSelector* selector) {
+AtomicString AttributeLocalName(const CSSSelector* selector) {
   return selector->Attribute().LocalName();
 }
 
-std::optional<std::string> SelectorValue(const CSSSelector* selector) {
+AtomicString SelectorValue(const CSSSelector* selector) {
   return selector->Value();
 }
 
@@ -612,44 +612,44 @@ TEST(CSSSelectorParserTest, ShadowPartAndBeforeAfterPseudoElementValid) {
 TEST(CSSSelectorParserTest, ImplicitShadowCrossingCombinators) {
   struct ShadowCombinatorTest {
     const char* input;
-    std::vector<std::pair<std::optional<std::string>, CSSSelector::RelationType>> expectation;
+    std::vector<std::pair<AtomicString, CSSSelector::RelationType>> expectation;
   };
 
   const ShadowCombinatorTest test_cases[] = {
       {
           "*::placeholder",
           {
-              {"placeholder", CSSSelector::kUAShadow},
-              {std::nullopt, CSSSelector::kSubSelector},
+              {AtomicString("placeholder"), CSSSelector::kUAShadow},
+              {g_null_atom, CSSSelector::kSubSelector},
           },
       },
       {
           "div::slotted(*)",
           {
-              {"slotted", CSSSelector::kShadowSlot},
-              {"div", CSSSelector::kSubSelector},
+              {AtomicString("slotted"), CSSSelector::kShadowSlot},
+              {AtomicString("div"), CSSSelector::kSubSelector},
           },
       },
       {
           "::slotted(*)::placeholder",
           {
-              {"placeholder", CSSSelector::kUAShadow},
-              {"slotted", CSSSelector::kShadowSlot},
-              {std::nullopt, CSSSelector::kSubSelector},
+              {AtomicString("placeholder"), CSSSelector::kUAShadow},
+              {AtomicString("slotted"), CSSSelector::kShadowSlot},
+              {g_null_atom, CSSSelector::kSubSelector},
           },
       },
       {
           "span::part(my-part)",
           {
-              {"part", CSSSelector::kShadowPart},
-              {"span", CSSSelector::kSubSelector},
+              {AtomicString("part"), CSSSelector::kShadowPart},
+              {AtomicString("span"), CSSSelector::kSubSelector},
           },
       },
       {
           "video::-webkit-media-controls",
           {
-              {"-webkit-media-controls", CSSSelector::kUAShadow},
-              {"video", CSSSelector::kSubSelector},
+              {AtomicString("-webkit-media-controls"), CSSSelector::kUAShadow},
+              {AtomicString("video"), CSSSelector::kSubSelector},
           },
       },
   };
@@ -671,7 +671,7 @@ TEST(CSSSelectorParserTest, ImplicitShadowCrossingCombinators) {
     const CSSSelector* selector = list->First();
     for (auto sub_expectation : test_case.expectation) {
       ASSERT_TRUE(selector);
-      std::optional<std::string> selector_value =
+      AtomicString selector_value =
           selector->Match() == CSSSelector::kTag ? selector->TagQName().LocalName() : selector->Value();
       EXPECT_EQ(sub_expectation.first, selector_value);
       EXPECT_EQ(sub_expectation.second, selector->Relation());

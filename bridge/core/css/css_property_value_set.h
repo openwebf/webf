@@ -99,13 +99,13 @@ class CSSPropertyValueSet : public std::enable_shared_from_this<CSSPropertyValue
   template <typename T>  // CSSPropertyID or std::string
   bool PropertyIsImportant(const T& property) const;
 
-  const std::shared_ptr<const CSSValue>* GetPropertyCSSValueWithHint(const std::string& property_name,
+  const std::shared_ptr<const CSSValue>* GetPropertyCSSValueWithHint(const AtomicString& property_name,
                                                                      unsigned index) const;
-  std::string GetPropertyValueWithHint(const std::string& property_name, unsigned index) const;
-  bool PropertyIsImportantWithHint(const std::string& property_name, unsigned index) const;
+  std::string GetPropertyValueWithHint(const AtomicString& property_name, unsigned index) const;
+  bool PropertyIsImportantWithHint(const AtomicString& property_name, unsigned index) const;
 
   bool ShorthandIsImportant(CSSPropertyID) const;
-  bool ShorthandIsImportant(const std::string& custom_property_name) const {
+  bool ShorthandIsImportant(const AtomicString& custom_property_name) const {
     // Custom properties are never shorthands.
     return false;
   }
@@ -267,7 +267,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   // (By implementation quirk, it attempts shorthand expansion, even though
   // custom properties can never be shorthands.) If the value is empty,
   // the property is removed.
-  SetResult ParseAndSetCustomProperty(const std::string& custom_property_name,
+  SetResult ParseAndSetCustomProperty(const AtomicString& custom_property_name,
                                       const std::string& value,
                                       bool important,
                                       std::shared_ptr<StyleSheetContents> context_style_sheet,
@@ -296,7 +296,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   void MergeAndOverrideOnConflict(const CSSPropertyValueSet*);
 
   void Clear();
-  void ParseDeclarationList(const std::string& style_declaration, std::shared_ptr<StyleSheetContents> context_style_sheet);
+  void ParseDeclarationList(const AtomicString& style_declaration, std::shared_ptr<StyleSheetContents> context_style_sheet);
 
   CSSStyleDeclaration* EnsureCSSStyleDeclaration(ExecutingContext* execution_context);
 
@@ -319,7 +319,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   bool RemovePropertyAtIndex(int, std::string* return_text);
 
   bool RemoveShorthandProperty(CSSPropertyID);
-  bool RemoveShorthandProperty(const std::string& custom_property_name) { return false; }
+  bool RemoveShorthandProperty(const AtomicString& custom_property_name) { return false; }
   CSSPropertyValue* FindCSSPropertyWithName(const CSSPropertyName&);
   std::shared_ptr<PropertySetCSSStyleDeclaration> cssom_wrapper_;
 

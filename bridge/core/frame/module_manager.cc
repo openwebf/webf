@@ -143,8 +143,8 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
   }
 
   NativeValue* result;
-  auto module_name_string = module_name.ToNativeString(context->ctx());
-  auto method_name_string = method.ToNativeString(context->ctx());
+  auto module_name_string = module_name.ToNativeString();
+  auto method_name_string = method.ToNativeString();
 
   context->dartIsolateContext()->profiler()->StartTrackLinkSteps("Call To Dart");
 

@@ -35,6 +35,7 @@
 #include <cstring>
 #include <cassert>
 #include "macros.h"
+#include "core/base/compiler_specific.h"
 
 #ifndef BRIDGE_FOUNDATION_ASCII_TYPES_H_
 #define BRIDGE_FOUNDATION_ASCII_TYPES_H_
@@ -107,6 +108,16 @@ inline bool IsLowerASCII(const CharacterType* characters, size_t length) {
 template <typename CharacterType>
 inline bool IsASCIILower(CharacterType character) {
   return character >= 'a' && character <= 'z';
+}
+
+template <typename CharacterType>
+ALWAYS_INLINE bool IsUpperASCII(const CharacterType* characters,
+                                size_t length) {
+  bool contains_lower_case = false;
+  for (size_t i = 0; i < length; i++) {
+    contains_lower_case |= IsASCIILower(characters[i]);
+  }
+  return !contains_lower_case;
 }
 
 template <typename CharacterType>

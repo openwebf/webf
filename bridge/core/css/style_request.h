@@ -26,11 +26,7 @@
 #define WEBF_CORE_CSS_STYLE_REQUEST_H_
 
 #include "core/css/style_color.h"
-// TODO(guopengfei)：暂时忽略scroll_types.h
-//#include "third_party/blink/renderer/core/scroll/scroll_types.h"
 #include "core/style/computed_style_constants.h"
-//#include "third_party/blink/renderer/platform/wtf/text/atomic_string.h"
-#include "bindings/qjs/atomic_string.h"
 
 namespace webf {
 
@@ -69,7 +65,7 @@ class StyleRequest {
   // TODO(guopengfei)：暂不支持Scrollbar
   //ScrollbarPart scrollbar_part{kNoPart};
   CustomScrollbar* scrollbar{nullptr};
-  AtomicString pseudo_argument{g_null_atom};
+  AtomicString pseudo_argument{g_empty_atom};
   std::vector<AtomicString> pseudo_ident_list;
   RulesToInclude rules_to_include{kAll};
   bool can_trigger_animations{true};
@@ -82,25 +78,24 @@ class StyleRequest {
   StyleRequest(PseudoId pseudo_id,
                const ComputedStyle* parent_override,
                const ComputedStyle* originating_element_style = nullptr,
-               const AtomicString& pseudo_argument = g_null_atom)
+               const AtomicString& pseudo_argument = AtomicString::Null())
       : parent_override(parent_override),
         layout_parent_override(parent_override),
         originating_element_style(originating_element_style),
         pseudo_id(pseudo_id),
         pseudo_argument(pseudo_argument) {
     assert(!IsTransitionPseudoElement(pseudo_id) ||
-           pseudo_id == kPseudoIdViewTransition || pseudo_argument.IsEmpty());
+           pseudo_id == kPseudoIdViewTransition || pseudo_argument.empty());
   }
 
-  StyleRequest(PseudoId pseudo_id,
-               CustomScrollbar* scrollbar,
-               ScrollbarPart scrollbar_part,
-               const ComputedStyle* parent_override)
-      : parent_override(parent_override),
-        layout_parent_override(parent_override),
-        pseudo_id(pseudo_id),
-        //scrollbar_part(scrollbar_part),
-        scrollbar(scrollbar) {}
+//  StyleRequest(PseudoId pseudo_id,
+//               CustomScrollbar* scrollbar,
+//               const ComputedStyle* parent_override)
+//      : parent_override(parent_override),
+//        layout_parent_override(parent_override),
+//        pseudo_id(pseudo_id),
+//        //scrollbar_part(scrollbar_part),
+//        scrollbar(scrollbar) {}
 
   StyleRequest(PseudoId pseudo_id, RequestType request_type)
       : pseudo_id(pseudo_id), type(request_type) {}

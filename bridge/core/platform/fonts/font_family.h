@@ -30,7 +30,6 @@
 
 #include <cstdint>
 #include <iostream>
-#include "bindings/qjs/atomic_string.h"
 #include "foundation/macros.h"
 
 namespace webf {

@@ -14,4 +14,6 @@ export interface ParentNode {
 
   prepend(...node: (string | Node)[]): void;
   append(...node: (string | Node) []): void;
+
+  querySelector(selectors: string): Element | null;
 }

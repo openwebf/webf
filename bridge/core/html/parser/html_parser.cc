@@ -121,13 +121,13 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
 
         switch (child->v.element.tag_namespace) {
           case ::GUMBO_NAMESPACE_SVG: {
-            element = context->document()->createElementNS(element_namespace_uris::ksvg, AtomicString(ctx, tagName),
+            element = context->document()->createElementNS(element_namespace_uris::ksvg, AtomicString(tagName),
                                                            ASSERT_NO_EXCEPTION());
             break;
           }
 
           default: {
-            element = context->document()->createElement(AtomicString(ctx, tagName), ASSERT_NO_EXCEPTION());
+            element = context->document()->createElement(AtomicString(tagName), ASSERT_NO_EXCEPTION());
           }
         }
 
@@ -137,7 +137,7 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
         element->FinishParsingChildren();
         parseProperty(element, &child->v.element);
       } else if (child->type == GUMBO_NODE_TEXT) {
-        auto* text = context->document()->createTextNode(AtomicString(ctx, child->v.text.text), ASSERT_NO_EXCEPTION());
+        auto* text = context->document()->createTextNode(AtomicString(child->v.text.text), ASSERT_NO_EXCEPTION());
         root_container->AppendChild(text);
       }
     }
@@ -216,7 +216,7 @@ void HTMLParser::parseProperty(Element* element, GumboElement* gumboElement) {
 
     std::string strName = attribute->name;
     std::string strValue = attribute->value;
-    element->setAttribute(AtomicString(ctx, strName), AtomicString(ctx, strValue), ASSERT_NO_EXCEPTION());
+    element->setAttribute(AtomicString(strName), AtomicString(strValue), ASSERT_NO_EXCEPTION());
   }
 }
 

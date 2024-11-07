@@ -124,7 +124,7 @@ CSSStyleSheet::CSSStyleSheet(ExecutingContext* context,
       break;
     case QJSUnionDomStringMediaList::ContentType::kDomString:
       media_queries_ =
-          MediaQuerySet::Create(options->media()->GetAsDomString().ToStdString(ctx()), document.GetExecutingContext());
+          MediaQuerySet::Create(options->media()->GetAsDomString().ToStdString(), document.GetExecutingContext());
       break;
   }
   if (options->alternate()) {
@@ -334,12 +334,12 @@ unsigned CSSStyleSheet::insertRule(const AtomicString& rule_string, unsigned ind
 
   std::shared_ptr<StyleRuleBase> rule =
       CSSParser::ParseRule(context, contents_, CSSNestingType::kNone,
-                           /*parent_rule_for_nesting=*/nullptr, rule_string.ToStdString(ctx()));
+                           /*parent_rule_for_nesting=*/nullptr, rule_string.ToStdString());
 
   if (!rule) {
     return 0;
     exception_state.ThrowException(ctx(), ErrorType::InternalError,
-                                   "Failed to parse the rule '" + rule_string.ToStdString(ctx()) + "'.");
+                                   "Failed to parse the rule '" + rule_string.ToStdString() + "'.");
   }
   RuleMutationScope mutation_scope(this);
   if (rule->IsImportRule() && IsConstructed()) {
@@ -398,14 +398,14 @@ int CSSStyleSheet::addRule(const AtomicString& selector,
                            int index,
                            ExceptionState& exception_state) {
   StringBuilder text;
-  text.Append(selector.ToStdString(ctx()));
+  text.Append(selector.ToStdString());
   text.Append(" { ");
-  text.Append(style.ToStdString(ctx()));
-  if (!style.IsEmpty()) {
+  text.Append(style.ToStdString());
+  if (!style.empty()) {
     text.Append(' ');
   }
   text.Append('}');
-  insertRule(AtomicString(ctx(), text.ReleaseString()), index, exception_state);
+  insertRule(AtomicString(text.ReleaseString()), index, exception_state);
 
   // As per Microsoft documentation, always return -1.
   return -1;
@@ -450,7 +450,7 @@ CSSRuleList* CSSStyleSheet::cssRules(ExceptionState& exception_state) {
 }
 
 AtomicString CSSStyleSheet::href() const {
-  return AtomicString(ctx(), contents_->OriginalURL());
+  return AtomicString(contents_->OriginalURL());
 }
 
 KURL CSSStyleSheet::BaseURL() const {
@@ -519,7 +519,7 @@ void CSSStyleSheet::SetText(const AtomicString& text, CSSImportRules import_rule
   CSSStyleSheet::RuleMutationScope mutation_scope(this);
   contents_->ClearRules();
   bool allow_imports = import_rules == CSSImportRules::kAllow;
-  if (contents_->ParseString(text.ToStdString(ctx()), allow_imports) == ParseSheetResult::kHasUnallowedImportRule &&
+  if (contents_->ParseString(text.ToStdString(), allow_imports) == ParseSheetResult::kHasUnallowedImportRule &&
       import_rules == CSSImportRules::kIgnoreWithWarning) {
     WEBF_LOG(VERBOSE) << "@import rules are not allowed here. See "
                          "https://github.com/WICG/construct-stylesheets/issues/"

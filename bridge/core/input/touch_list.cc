@@ -52,13 +52,13 @@ bool TouchList::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& 
 }
 
 bool TouchList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
-  uint32_t index = std::stoi(key.ToStdString(ctx()));
+  uint32_t index = std::stoi(key.ToStdString());
   return index >= 0 && index < values_.size();
 }
 
 void TouchList::NamedPropertyEnumerator(std::vector<AtomicString>& props, ExceptionState& exception_state) {
   for (int i = 0; i < values_.size(); i++) {
-    props.emplace_back(AtomicString(ctx(), std::to_string(i)));
+    props.emplace_back(AtomicString(std::to_string(i)));
   }
 }
 

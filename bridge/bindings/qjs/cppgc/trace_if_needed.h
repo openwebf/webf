@@ -6,7 +6,6 @@
 #define WEBF_BINDINGS_QJS_CPPGC_TRACE_IF_NEEDED_H_
 
 // clang-format off
-#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/js_event_handler.h"
 #include "bindings/qjs/js_event_listener.h"
 #include "bindings/qjs/script_promise.h"

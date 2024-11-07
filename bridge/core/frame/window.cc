@@ -30,13 +30,13 @@ bool IsAsciiWhitespace(CharType character) {
 }
 
 AtomicString Window::btoa(const AtomicString& source, ExceptionState& exception_state) {
-  if (source.IsEmpty())
+  if (source.empty())
     return AtomicString::Empty();
   size_t encode_len = modp_b64_encode_data_len(source.length());
   std::vector<char> buffer;
   buffer.resize(encode_len + 1);
 
-  std::string source_string = source.ToStdString(ctx());
+  std::string source_string = source.ToStdString();
 
   const size_t output_size =
       modp_b64_encode(reinterpret_cast<char*>(buffer.data()), source_string.c_str(), source.length());
@@ -48,15 +48,15 @@ AtomicString Window::btoa(const AtomicString& source, ExceptionState& exception_
     exception_state.ThrowException(ctx(), ErrorType::TypeError, "The string encode failed.");
     return AtomicString::Empty();
   }
-  return {ctx(), encode_str, encode_str_len};
+  return {encode_str, encode_str_len};
 }
 
 // Invokes modp_b64 without stripping whitespace.
-bool Base64DecodeRaw(JSContext* ctx, const AtomicString& in, std::vector<uint8_t>& out, ModpDecodePolicy policy) {
+bool Base64DecodeRaw(const AtomicString& in, std::vector<uint8_t>& out, ModpDecodePolicy policy) {
   size_t decode_len = modp_b64_decode_len(in.length());
   out.resize(decode_len);
 
-  std::string in_string = in.ToStdString(ctx);
+  std::string in_string = in.ToStdString();
 
   const size_t output_size =
       modp_b64_decode(reinterpret_cast<char*>(out.data()), in_string.c_str(), in.length(), policy);
@@ -78,11 +78,11 @@ bool Base64Decode(JSContext* ctx, AtomicString in, std::vector<uint8_t>& out, Mo
       // TODO(csharrison): Most callers use String inputs so ToString() should
       // be fast. Still, we should add a RemoveCharacters method to StringView
       // to avoid a double allocation for non-String-backed StringViews.
-      return Base64DecodeRaw(ctx, in, out, policy) ||
-             Base64DecodeRaw(ctx, in.RemoveCharacters(ctx, &IsAsciiWhitespace), out, policy);
+      return Base64DecodeRaw(in, out, policy) ||
+             Base64DecodeRaw(in.RemoveCharacters(&IsAsciiWhitespace), out, policy);
     }
     case ModpDecodePolicy::kNoPaddingValidation: {
-      return Base64DecodeRaw(ctx, in, out, policy);
+      return Base64DecodeRaw(in, out, policy);
     }
     case ModpDecodePolicy::kStrict:
       return false;
@@ -90,7 +90,7 @@ bool Base64Decode(JSContext* ctx, AtomicString in, std::vector<uint8_t>& out, Mo
 }
 
 AtomicString Window::atob(const AtomicString& source, ExceptionState& exception_state) {
-  if (source.IsEmpty())
+  if (source.empty())
     return AtomicString::Empty();
   if (!source.ContainsOnlyLatin1OrEmpty()) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError,

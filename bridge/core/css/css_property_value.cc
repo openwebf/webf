@@ -48,7 +48,7 @@ CSSPropertyValueMetadata::CSSPropertyValueMetadata(
       important_(important),
       implicit_(implicit) {
   if (name.IsCustomProperty()) {
-    custom_name_ = name.ToString();
+    custom_name_ = name.ToAtomicString();
   }
 }
 

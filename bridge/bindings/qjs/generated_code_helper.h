@@ -6,7 +6,6 @@
 #ifndef BRIDGE_GENERATED_CODE_HELPER_H
 #define BRIDGE_GENERATED_CODE_HELPER_H
 
-#include "atomic_string.h"
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/qjs_interface_bridge.h"
 #include "script_value.h"

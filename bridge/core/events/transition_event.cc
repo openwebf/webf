@@ -46,11 +46,9 @@ TransitionEvent::TransitionEvent(ExecutingContext* context,
                                    std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(
                                        native_transition_event->pseudoElement))))
 #else
-      property_name_(AtomicString(ctx(),
-                                  std::unique_ptr<AutoFreeNativeString>(
+      property_name_(AtomicString(std::unique_ptr<AutoFreeNativeString>(
                                       reinterpret_cast<AutoFreeNativeString*>(native_transition_event->propertyName)))),
-      pseudo_element_(AtomicString(ctx(),
-                                   std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(
+      pseudo_element_(AtomicString(std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(
                                        native_transition_event->pseudoElement))))
 #endif
 {

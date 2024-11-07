@@ -7,6 +7,7 @@
 
 #include <set>
 #include "bindings/qjs/script_value.h"
+#include "bindings/qjs/value_cache.h"
 #include "dart_context_data.h"
 #include "dart_methods.h"
 #include "foundation/profiler.h"
@@ -38,7 +39,7 @@ struct DartWireContext {
   multi_threading::Dispatcher* dispatcher;
 };
 
-void InitializeBuiltInStrings(JSContext* ctx);
+void InitializeBuiltInStrings();
 
 void WatchDartWire(DartWireContext* wire);
 bool IsDartWireAlive(DartWireContext* wire);
@@ -57,6 +58,9 @@ class DartIsolateContext {
     dispatcher_ = std::move(dispatcher);
   }
   FORCE_INLINE WebFProfiler* profiler() const { return profiler_.get(); };
+  FORCE_INLINE StringCache* stringCache() const { return string_cache_.get(); }
+
+  void EnsureStringCacheInitialized();
 
   const std::unique_ptr<DartContextData>& EnsureData() const;
 
@@ -107,6 +111,7 @@ class DartIsolateContext {
   std::thread::id running_thread_;
   mutable std::unique_ptr<DartContextData> data_;
   std::unordered_set<std::unique_ptr<WebFPage>> pages_in_ui_thread_;
+  std::unique_ptr<StringCache> string_cache_ = nullptr;
   std::unique_ptr<multi_threading::Dispatcher> dispatcher_ = nullptr;
   // Dart methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = nullptr;

@@ -10,9 +10,11 @@
 namespace webf {
 
 class ScriptWrappable;
+class GCVisitor;
 
 class ElementRareDataField {
  public:
+  virtual void Trace(GCVisitor*) const = 0;
 };
 
 }  // namespace webf

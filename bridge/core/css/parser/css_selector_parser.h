@@ -62,7 +62,7 @@ class CSSSelectorParser {
                                                  bool has_arguments,
                                                  const Document*);
 
-  static PseudoId ParsePseudoElement(const std::string& selector_string, const Node* parent, std::string& argument);
+  static PseudoId ParsePseudoElement(const std::string& selector_string, const Node* parent, AtomicString& argument);
 
   // https://drafts.csswg.org/css-cascade-6/#typedef-scope-start
   // https://drafts.csswg.org/css-cascade-6/#typedef-scope-end
@@ -152,8 +152,8 @@ class CSSSelectorParser {
       CSSNestingType);
 
   bool ConsumeName(CSSParserTokenStream&,
-                   std::optional<std::string>& name,
-                   std::optional<std::string>& namespace_prefix);
+                   AtomicString& name,
+                   AtomicString& namespace_prefix);
 
   // These will return true iff the selector is valid;
   // otherwise, the vector will be pushed onto output_.
@@ -166,7 +166,7 @@ class CSSSelectorParser {
   bool ConsumeSimpleSelector(CSSParserTokenStream&);
 
   const std::string DefaultNamespace() const;
-  std::optional<std::string> DetermineNamespace(const std::optional<std::string>& prefix);
+  AtomicString DetermineNamespace(const AtomicString& prefix);
 
   // Returns an empty range on error.
   tcb::span<CSSSelector> ConsumeCompoundSelector(CSSParserTokenStream&,
@@ -177,9 +177,9 @@ class CSSSelectorParser {
   CSSSelector::MatchType ConsumeAttributeMatch(CSSParserTokenStream&);
   CSSSelector::AttributeMatchType ConsumeAttributeFlags(CSSParserTokenStream&);
 
-  void PrependTypeSelectorIfNeeded(const std::optional<std::string>& namespace_prefix,
+  void PrependTypeSelectorIfNeeded(const AtomicString& namespace_prefix,
                                    bool has_element_name,
-                                   const std::optional<std::string>& element_name,
+                                   const AtomicString& element_name,
                                    size_t start_index_of_compound_selector);
   void SplitCompoundAtImplicitShadowCrossingCombinator(
       tcb::span<CSSSelector> compound_selector);

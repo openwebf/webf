@@ -63,6 +63,9 @@ class ContainerNode : public Node {
 
   unsigned CountChildren() const;
 
+  Element* QuerySelector(const AtomicString& selectors, ExceptionState&);
+  Element* QuerySelector(const AtomicString& selectors);
+
   Node* InsertBefore(Node* new_child, Node* ref_child, ExceptionState&);
   Node* ReplaceChild(Node* new_child, Node* old_child, ExceptionState&);
   Node* RemoveChild(Node* child, ExceptionState&);
@@ -216,6 +219,14 @@ class ContainerNode : public Node {
     SetRestyleFlag(
         DynamicRestyleFlags::kChildrenAffectedByForwardPositionalRules);
   }
+  void SetChildrenAffectedByDirectAdjacentRules() {
+    SetRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByDirectAdjacentRules);
+  }
+
+  void SetChildrenAffectedByIndirectAdjacentRules() {
+    SetRestyleFlag(
+        DynamicRestyleFlags::kChildrenAffectedByIndirectAdjacentRules);
+  }
 
   bool ChildrenAffectedByBackwardPositionalRules() const {
     return HasRestyleFlag(
@@ -225,6 +236,12 @@ class ContainerNode : public Node {
     SetRestyleFlag(
         DynamicRestyleFlags::kChildrenAffectedByBackwardPositionalRules);
   }
+
+  Element* querySelector(const AtomicString& selectors, ExceptionState& exception_state);
+
+  // If this node is in a shadow tree, returns its shadow host. Otherwise,
+  // returns nullptr.
+  Element* OwnerShadowHost() const;
 
  protected:
   ContainerNode(TreeScope* tree_scope, ConstructionType = kCreateContainer);

@@ -5,7 +5,6 @@
 
 #include "widget_element.h"
 #include "binding_call_methods.h"
-#include "built_in_string.h"
 #include "core/dom/document.h"
 #include "foundation/native_value_converter.h"
 
@@ -16,9 +15,9 @@ WidgetElement::WidgetElement(const AtomicString& tag_name, Document* document)
 
 bool WidgetElement::IsValidName(const AtomicString& name) {
   assert(Document::IsValidName(name));
-  StringView string_view = name.ToStringView();
+  std::string_view string_view = name.ToStringView();
 
-  const char* string = string_view.Characters8();
+  const char* string = string_view.data();
   for (int i = 0; i < string_view.length(); i++) {
     if (string[i] == '-')
       return true;
@@ -28,7 +27,7 @@ bool WidgetElement::IsValidName(const AtomicString& name) {
 }
 
 bool WidgetElement::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
-  return GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(key.ToStdString(ctx()));
+  return GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(key.ToStdString());
 }
 
 void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) {
@@ -52,8 +51,8 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     return unimplemented_properties_[key];
   }
 
-  std::string shape_key = tagName().ToStdString(ctx());
-  std::string property_key = key.ToStdString(ctx());
+  std::string shape_key = tagName().ToStdString();
+  std::string property_key = key.ToStdString();
   bool have_shape = true;
 
   if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(shape_key)) {
@@ -61,8 +60,8 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     have_shape = false;
   }
 
-  if (key == built_in_string::kSymbol_toStringTag) {
-    return ScriptValue(ctx(), tagName().ToNativeString(ctx()).release());
+  if (key == AtomicString(ctx(), JS_ATOM_Symbol_toStringTag)) {
+    return ScriptValue(ctx(), tagName().ToNativeString().release());
   }
 
   const WidgetElementShape* shape = nullptr;
@@ -109,14 +108,14 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 }
 
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {
-  if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(tagName().ToStdString(ctx()))) {
+  if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(tagName().ToStdString())) {
     GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsOnElement);
   }
 
   auto shape =
-      GetExecutingContext()->dartIsolateContext()->EnsureData()->GetWidgetElementShape(tagName().ToStdString(ctx()));
+      GetExecutingContext()->dartIsolateContext()->EnsureData()->GetWidgetElementShape(tagName().ToStdString());
   // This property is defined in the Dart side
-  if (shape != nullptr && shape->built_in_properties_.count(key.ToStdString(ctx())) > 0) {
+  if (shape != nullptr && shape->built_in_properties_.count(key.ToStdString()) > 0) {
     NativeValue result = SetBindingProperty(key, value.ToNative(ctx(), exception_state), exception_state);
     return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
   }
@@ -124,7 +123,7 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
   // This property is defined in WidgetElement.prototype, should return false to let it handled in the prototype
   // methods.
   JSValue prototypeObject = GetExecutingContext()->contextData()->prototypeForType(GetWrapperTypeInfo());
-  if (JS_HasProperty(ctx(), prototypeObject, key.Impl())) {
+  if (JS_HasProperty(ctx(), prototypeObject, GetExecutingContext()->stringCache()->GetJSAtomFromString(ctx(), key.Impl()))) {
     return false;
   }
 
@@ -165,7 +164,7 @@ void WidgetElement::CloneNonAttributePropertiesFrom(const Element& other, CloneC
 
 const WidgetElementShape* WidgetElement::SaveWidgetElementsShapeData(const NativeValue* argv) {
   AtomicString key = tagName();
-  assert(!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(key.ToStdString(ctx())));
+  assert(!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(key.ToStdString()));
 
   auto shape = std::make_shared<WidgetElementShape>();
 
@@ -174,32 +173,32 @@ const WidgetElementShape* WidgetElement::SaveWidgetElementsShapeData(const Nativ
   auto&& async_methods = NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), argv[2]);
 
   for (auto& property : properties) {
-    shape->built_in_properties_.emplace(property.ToStdString(ctx()));
+    shape->built_in_properties_.emplace(property.ToStdString());
   }
 
   for (auto& method : sync_methods) {
-    shape->built_in_methods_.emplace(method.ToStdString(ctx()));
+    shape->built_in_methods_.emplace(method.ToStdString());
   }
 
   for (auto& method : async_methods) {
-    shape->built_in_async_methods_.emplace(method.ToStdString(ctx()));
+    shape->built_in_async_methods_.emplace(method.ToStdString());
   }
 
-  GetExecutingContext()->dartIsolateContext()->EnsureData()->SetWidgetElementShape(key.ToStdString(ctx()), shape);
+  GetExecutingContext()->dartIsolateContext()->EnsureData()->SetWidgetElementShape(key.ToStdString(), shape);
 
   return shape.get();
 }
 
 ScriptValue WidgetElement::CreateSyncMethodFunc(const AtomicString& method_name) {
   auto* data = new BindingObject::AnonymousFunctionData();
-  data->method_name = method_name.ToStdString(ctx());
+  data->method_name = method_name.ToStdString();
   return ScriptValue(ctx(),
                      QJSFunction::Create(ctx(), BindingObject::AnonymousFunctionCallback, 1, data)->ToQuickJSUnsafe());
 }
 
 ScriptValue WidgetElement::CreateAsyncMethodFunc(const AtomicString& method_name) {
   auto* data = new BindingObject::AnonymousFunctionData();
-  data->method_name = method_name.ToStdString(ctx());
+  data->method_name = method_name.ToStdString();
   return ScriptValue(
       ctx(), QJSFunction::Create(ctx(), BindingObject::AnonymousAsyncFunctionCallback, 4, data)->ToQuickJSUnsafe());
 }

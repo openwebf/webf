@@ -25,14 +25,12 @@
 #define WEBF_CORE_DOM_NODE_LISTS_NODE_DATA_H_
 
 #include <unordered_map>
-#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "core/dom/child_node_list.h"
 #include "core/dom/empty_node_list.h"
 #include "core/dom/qualified_name.h"
 #include "core/dom/tag_collection.h"
 #include "core/html/collection_type.h"
-#include "global_string.h"
 
 namespace webf {
 
@@ -59,15 +57,15 @@ class NodeListsNodeData final {
     return list;
   }
 
-  using NamedNodeListKey = std::pair<CollectionType, std::optional<std::string>>;
+  using NamedNodeListKey = std::pair<CollectionType, AtomicString>;
   struct NodeListAtomicCacheMapEntryHashTraits {
     NodeListAtomicCacheMapEntryHashTraits() = default;
 
     struct Hash {
       size_t operator()(const NamedNodeListKey& entry) const {
-        size_t hash1 = entry.second == CSSSelector::UniversalSelector()
-                           ? global_string::kstar_atom.Hash()
-                           : SuperFastHash(entry.second->c_str(), entry.second->length());
+        size_t hash1 = entry.second == CSSSelector::UniversalSelectorAtom()
+                           ? g_star_atom.Hash()
+                           : entry.second.Hash();
         size_t hash2 = std::hash<CollectionType>()(entry.first);
         return hash1 ^ (hash2 << 1);  // Combine the two hash values
       }
@@ -88,7 +86,7 @@ class NodeListsNodeData final {
   typedef std::unordered_map<QualifiedName, Member<TagCollectionNS>> TagCollectionNSCache;
 
   template <typename T>
-  T* AddCache(ContainerNode& node, CollectionType collection_type, const std::string& name) {
+  T* AddCache(ContainerNode& node, CollectionType collection_type, const AtomicString& name) {
     NamedNodeListKey key(collection_type, name);
     auto result = atomic_name_caches_.insert({key, nullptr});
     if (!result.second) {
@@ -102,7 +100,7 @@ class NodeListsNodeData final {
 
   template <typename T>
   T* AddCache(ContainerNode& node, CollectionType collection_type) {
-    NamedNodeListKey key(collection_type, CSSSelector::UniversalSelector());
+    NamedNodeListKey key(collection_type, CSSSelector::UniversalSelectorAtom());
     auto result = atomic_name_caches_.insert({key, nullptr});
     if (!result.second) {
       return static_cast<T*>(result.first->second.get());
@@ -115,13 +113,12 @@ class NodeListsNodeData final {
 
   template <typename T>
   T* Cached(CollectionType collection_type) {
-    auto it = atomic_name_caches_.find(NamedNodeListKey(collection_type, CSSSelector::UniversalSelector()));
+    auto it = atomic_name_caches_.find(NamedNodeListKey(collection_type, CSSSelector::UniversalSelectorAtom()));
     return static_cast<T*>(it != atomic_name_caches_.end() ? it->second.get() : nullptr);
   }
 
   TagCollectionNS* AddCache(ContainerNode& node, const AtomicString& namespace_uri, const AtomicString& local_name) {
-    QualifiedName name("", local_name.ToStdString(node.ctx()),
-                       namespace_uri.ToStdString(node.ctx()));
+    QualifiedName name(g_null_atom, local_name, namespace_uri);
     auto result = tag_collection_ns_caches_.insert({name, nullptr});
     if (!result.second) {  // result.second 表示插入是否成功
       return result.first->second.Get();

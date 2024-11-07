@@ -212,7 +212,7 @@ class CSSStyleSheet final : public StyleSheet, public MediaQuerySetOwner {
  private:
   bool IsAlternate() const;
   bool IsCSSStyleSheet() const override { return true; }
-  AtomicString type() const override { return AtomicString(ctx(), "text/css"); }
+  AtomicString type() const override { return AtomicString("text/css"); }
 
   void SetLoadCompleted(bool);
 
@@ -233,7 +233,7 @@ class CSSStyleSheet final : public StyleSheet, public MediaQuerySetOwner {
   // The Document this stylesheet was constructed for. Always non-null for
   // constructed stylesheets. Always null for other sheets.
   Member<Document> constructor_document_;
-  std::set<AtomicString> custom_element_tag_names_;
+  std::unordered_set<AtomicString, AtomicString::KeyHasher> custom_element_tag_names_;
 
   TextPosition start_position_;
   Member<MediaList> media_cssom_wrapper_;

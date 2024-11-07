@@ -20,12 +20,12 @@ static bool IsValidAttributeName(const AtomicString& name) {
   if (!name.Is8Bit())
     return false;
 
-  if (!startsWith((const char*)name.Character8(), "data-"))
+  if (!startsWith((const char*)name.Characters8(), "data-"))
     return false;
 
   const int64_t length = name.length();
   for (unsigned i = 5; i < length; ++i) {
-    if (IsASCIIUpper(name.Character8()[i]))
+    if (IsASCIIUpper(name.Characters8()[i]))
       return false;
   }
 
@@ -35,7 +35,7 @@ static bool IsValidAttributeName(const AtomicString& name) {
 static bool IsValidPropertyName(const AtomicString& name) {
   const int64_t length = name.length();
   for (unsigned i = 0; i < length; ++i) {
-    if (name.Character8()[i] == '-' && (i + 1 < length) && IsASCIILower(name.Character8()[i + 1]))
+    if (name.Characters8()[i] == '-' && (i + 1 < length) && IsASCIILower(name.Characters8()[i + 1]))
       return false;
   }
   return true;
@@ -49,12 +49,12 @@ static bool PropertyNameMatchesAttributeName(const AtomicString& property_name,
   unsigned p = 0;
   bool word_boundary = false;
   while (a < attribute_length && p < property_length) {
-    if (attribute_name.Character8()[a] == '-' && a + 1 < attribute_length &&
-        IsASCIILower(attribute_name.Character8()[a + 1])) {
+    if (attribute_name.Characters8()[a] == '-' && a + 1 < attribute_length &&
+        IsASCIILower(attribute_name.Characters8()[a + 1])) {
       word_boundary = true;
     } else {
-      if ((word_boundary ? ToASCIIUpper(attribute_name.Character8()[a])
-                         : std::tolower(attribute_name.Character8()[a])) != (property_name.Character8()[p]))
+      if ((word_boundary ? ToASCIIUpper(attribute_name.Characters8()[a])
+                         : std::tolower(attribute_name.Characters8()[a])) != (property_name.Characters8()[p]))
         return false;
       p++;
       word_boundary = false;
@@ -115,7 +115,7 @@ void DOMStringMap::NamedPropertyEnumerator(std::vector<AtomicString>& props, web
   for (auto& attribute : *attributes) {
     auto key = attribute.first;
     if (IsValidAttributeName(key)) {
-      auto v = AtomicString(ctx(), ConvertAttributeNameToPropertyName(key.ToStdString(ctx())));
+      auto v = AtomicString(ConvertAttributeNameToPropertyName(key.ToStdString()));
       props.emplace_back(v);
     }
   }
@@ -145,17 +145,17 @@ bool DOMStringMap::SetItem(const webf::AtomicString& key,
                            webf::ExceptionState& exception_state) {
   if (!IsValidPropertyName(key)) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError,
-                                   "'" + key.ToStdString(ctx()) + "' is not a valid property name.");
+                                   "'" + key.ToStdString() + "' is not a valid property name.");
     return false;
   }
 
-  auto attribute_name = AtomicString(ctx(), ConvertPropertyNameToAttributeName(key.ToStdString(ctx())));
+  auto attribute_name = AtomicString(ConvertPropertyNameToAttributeName(key.ToStdString()));
   return owner_element_->attributes()->setAttribute(attribute_name, value, exception_state);
 }
 
 bool DOMStringMap::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
   if (IsValidPropertyName(key)) {
-    auto attribute_name = AtomicString(ctx(), ConvertPropertyNameToAttributeName(key.ToStdString(ctx())));
+    auto attribute_name = AtomicString(ConvertPropertyNameToAttributeName(key.ToStdString()));
     owner_element_->attributes()->removeAttribute(attribute_name, exception_state);
     return true;
   }

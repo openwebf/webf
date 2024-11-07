@@ -48,9 +48,6 @@ class Document : public ContainerNode, public TreeScope {
   using ImplType = Document*;
 
   explicit Document(ExecutingContext* context);
-  ~Document() {
-    WEBF_LOG(VERBOSE) << " Delte Document";
-  }
 
   static Document* Create(ExecutingContext* context, ExceptionState& exception_state);
 
@@ -72,7 +69,6 @@ class Document : public ContainerNode, public TreeScope {
   [[nodiscard]] NodeType nodeType() const override;
   [[nodiscard]] bool ChildTypeAllowed(NodeType) const override;
 
-  Element* querySelector(const AtomicString& selectors, ExceptionState& exception_state);
   std::vector<Element*> querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state);
 
   Element* getElementById(const AtomicString& id, ExceptionState& exception_state);

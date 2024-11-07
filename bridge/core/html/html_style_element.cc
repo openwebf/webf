@@ -7,7 +7,6 @@
 #include "html_names.h"
 #include "core/dom/node.h"
 #include "core/css/style_element.h"
-#include "built_in_string.h"
 #include "defined_properties.h"
 
 namespace webf {
@@ -57,7 +56,7 @@ NativeValue HTMLStyleElement::HandleParseAuthorStyleSheet(int32_t argc, const we
 }
 
 AtomicString HTMLStyleElement::type() const {
-  return built_in_string::kempty_string;
+  return g_empty_atom;
 }
 
 void HTMLStyleElement::Trace(webf::GCVisitor* visitor) const {

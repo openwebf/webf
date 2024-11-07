@@ -89,7 +89,7 @@ class MediaList final : public ScriptWrappable {
   // Prefer MediaTextInternal for internal use. (Avoids use-counter).
   AtomicString mediaText(ExecutingContext*) const;
   void setMediaText(ExecutingContext*, const AtomicString&);
-  AtomicString MediaTextInternal() const { return AtomicString(ctx(), Queries()->MediaText()); }
+  std::string MediaTextInternal() const { return Queries()->MediaText(); }
 
   // Not part of CSSOM.
   CSSRule* ParentRule() const { return parent_rule_.Get(); }

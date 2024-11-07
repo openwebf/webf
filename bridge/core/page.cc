@@ -5,7 +5,6 @@
 #include "page.h"
 #include <atomic>
 #include <unordered_map>
-#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/binding_initializer.h"
 #include "core/dart_methods.h"
 #include "core/dom/document.h"
@@ -87,13 +86,13 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
   if (ptr != nullptr) {
     std::string type = std::string(eventType);
     auto* raw_event = static_cast<RawEvent*>(ptr);
-    event = EventFactory::Create(context_, AtomicString(ctx, type), raw_event);
+    event = EventFactory::Create(context_, AtomicString(type), raw_event);
     delete raw_event;
   }
 
   ScriptValue extraObject = ScriptValue(ctx, const_cast<const NativeValue&>(*extra));
   AtomicString module_name = AtomicString(
-      ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_module_name)));
+      std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_module_name)));
   auto listener = context_->ModuleListeners()->listener(module_name);
 
   if (listener == nullptr) {

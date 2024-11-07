@@ -30,9 +30,7 @@
 #ifndef WEBF_RENDERER_CORE_DOM_ATTRIBUTE_H_
 #define WEBF_RENDERER_CORE_DOM_ATTRIBUTE_H_
 
-#include "bindings/qjs/atomic_string.h"
 #include "core/dom/qualified_name.h"
-#include "global_string.h"
 
 namespace webf {
 
@@ -53,16 +51,16 @@ class Attribute {
   WEBF_DISALLOW_NEW();
 
  public:
-  Attribute(const QualifiedName& name, const std::string& value) : name_(name), value_(value) {}
-  Attribute(QualifiedName&& name, std::string&& value) : name_(std::move(name)), value_(std::move(value)) {}
+  Attribute(const QualifiedName& name, const AtomicString& value) : name_(name), value_(value) {}
+  Attribute(QualifiedName&& name, AtomicString&& value) : name_(std::move(name)), value_(std::move(value)) {}
 
   // NOTE: The references returned by these functions are only valid for as long
   // as the Attribute stays in place. For example, calling a function that
   // mutates an Element's internal attribute storage may invalidate them.
-  const std::string& Value() const { return value_; }
-  const std::optional<std::string>& Prefix() const { return name_.Prefix(); }
-  const std::optional<std::string>& LocalName() const { return name_.LocalName(); }
-  const std::optional<std::string>& NamespaceURI() const { return name_.NamespaceURI(); }
+  const AtomicString& Value() const { return value_; }
+  const AtomicString& Prefix() const { return name_.Prefix(); }
+  const AtomicString& LocalName() const { return name_.LocalName(); }
+  const AtomicString& NamespaceURI() const { return name_.NamespaceURI(); }
 
   const QualifiedName& GetName() const { return name_; }
 
@@ -70,7 +68,7 @@ class Attribute {
   bool Matches(const QualifiedName&) const;
   bool MatchesCaseInsensitive(const QualifiedName&) const;
 
-  void SetValue(const std::string& value) { value_ = value; }
+  void SetValue(const AtomicString& value) { value_ = value; }
 
   // Note: This API is only for HTMLTreeBuilder.  It is not safe to change the
   // name of an attribute once parseAttribute has been called as DOM
@@ -87,7 +85,7 @@ class Attribute {
 
  private:
   QualifiedName name_;
-  std::string value_;
+  AtomicString value_;
 };
 static_assert(sizeof(Attribute) == sizeof(QualifiedName) + sizeof(std::string),
               "AttributeHash() assumes Attribute has no padding");
@@ -95,13 +93,13 @@ static_assert(sizeof(Attribute) == sizeof(QualifiedName) + sizeof(std::string),
 inline bool Attribute::Matches(const QualifiedName& qualified_name) const {
   if (qualified_name.LocalName() != LocalName())
     return false;
-  return qualified_name.Prefix() == "*" ||
+  return qualified_name.Prefix() == g_star_atom ||
          qualified_name.NamespaceURI() == NamespaceURI();
 }
 
 inline bool Attribute::MatchesCaseInsensitive(const QualifiedName& qualified_name) const {
   return qualified_name.LocalNameUpper() == name_.LocalNameUpper() &&
-         (qualified_name.Prefix() == "*" ||
+         (qualified_name.Prefix() == g_star_atom ||
           qualified_name.NamespaceURI() == NamespaceURI());
 }
 

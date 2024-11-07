@@ -23,9 +23,8 @@
 #ifndef WEBF_CORE_CSS_STYLE_ATTRIBUTE_MUTATION_SCOPE_H_
 #define WEBF_CORE_CSS_STYLE_ATTRIBUTE_MUTATION_SCOPE_H_
 
-#include "foundation/macros.h"
-#include "bindings/qjs/atomic_string.h"
 #include "core/dom/mutation_observer_interest_group.h"
+#include "foundation/macros.h"
 
 namespace webf {
 

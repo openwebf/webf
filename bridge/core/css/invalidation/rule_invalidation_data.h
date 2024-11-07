@@ -7,7 +7,7 @@
 #ifndef WEBF_CORE_CSS_INVALIDATION_RULE_INVALIDATION_DATA_H_
 #define WEBF_CORE_CSS_INVALIDATION_RULE_INVALIDATION_DATA_H_
 
-#include "bindings/qjs/atomic_string.h"
+#include "bindings/qjs/qjs_atomic_string.h"
 #include "core/css/css_selector.h"
 #include "core/css/invalidation/invalidation_set.h"
 #include "core/platform/bloom_filter.h"

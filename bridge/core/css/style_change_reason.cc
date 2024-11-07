@@ -60,30 +60,30 @@ const char kZoom[] = "Zoom";
 }  // namespace style_change_reason
 
 namespace style_change_extra_data {
-DEFINE_GLOBAL(std::string, g_active);
-DEFINE_GLOBAL(std::string, g_active_view_transition);
-DEFINE_GLOBAL(std::string, g_active_view_transition_type);
-DEFINE_GLOBAL(std::string, g_disabled);
-DEFINE_GLOBAL(std::string, g_drag);
-DEFINE_GLOBAL(std::string, g_focus);
-DEFINE_GLOBAL(std::string, g_focus_visible);
-DEFINE_GLOBAL(std::string, g_focus_within);
-DEFINE_GLOBAL(std::string, g_hover);
-DEFINE_GLOBAL(std::string, g_past);
-DEFINE_GLOBAL(std::string, g_unresolved);
+DEFINE_GLOBAL(AtomicString, g_active);
+DEFINE_GLOBAL(AtomicString, g_active_view_transition);
+DEFINE_GLOBAL(AtomicString, g_active_view_transition_type);
+DEFINE_GLOBAL(AtomicString, g_disabled);
+DEFINE_GLOBAL(AtomicString, g_drag);
+DEFINE_GLOBAL(AtomicString, g_focus);
+DEFINE_GLOBAL(AtomicString, g_focus_visible);
+DEFINE_GLOBAL(AtomicString, g_focus_within);
+DEFINE_GLOBAL(AtomicString, g_hover);
+DEFINE_GLOBAL(AtomicString, g_past);
+DEFINE_GLOBAL(AtomicString, g_unresolved);
 
 void Init() {
-  new ((void*)&g_active) std::string(":active");
-  new ((void*)&g_active_view_transition) std::string(":active_view_transition");
-  new ((void*)&g_active_view_transition_type) std::string(":active_view_transition_type");
-  new ((void*)&g_disabled) std::string(":disabled");
-  new ((void*)&g_drag) std::string(":-webkit-drag");
-  new ((void*)&g_focus) std::string(":focus");
-  new ((void*)&g_focus_visible) std::string(":focus-visible");
-  new ((void*)&g_focus_within) std::string(":focus-within");
-  new ((void*)&g_hover) std::string(":hover");
-  new ((void*)&g_past) std::string(":past");
-  new ((void*)&g_unresolved) std::string(":unresolved");
+  new ((void*)&g_active) AtomicString(":active");
+  new ((void*)&g_active_view_transition) AtomicString(":active_view_transition");
+  new ((void*)&g_active_view_transition_type) AtomicString(":active_view_transition_type");
+  new ((void*)&g_disabled) AtomicString(":disabled");
+  new ((void*)&g_drag) AtomicString(":-webkit-drag");
+  new ((void*)&g_focus) AtomicString(":focus");
+  new ((void*)&g_focus_visible) AtomicString(":focus-visible");
+  new ((void*)&g_focus_within) AtomicString(":focus-within");
+  new ((void*)&g_hover) AtomicString(":hover");
+  new ((void*)&g_past) AtomicString(":past");
+  new ((void*)&g_unresolved) AtomicString(":unresolved");
 }
 
 }  // namespace style_change_extra_data

@@ -3,7 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "string_view.h"
-#include "bindings/qjs/atomic_string.h"
+#include "foundation/atomic_string.h"
 
 namespace webf {
 
@@ -22,17 +22,17 @@ StringView::StringView(const unsigned char* string)
 
 StringView::StringView(AtomicString& string) : length_(string.length()), is_8bit_(string.Is8Bit()) {
   if (string.Is8Bit()) {
-    bytes_ = string.Character8();
+    bytes_ = string.Characters8();
   } else {
-    bytes_ = string.Character16();
+    bytes_ = string.Characters16();
   }
 }
 
 StringView::StringView(const AtomicString& string) : length_(string.length()), is_8bit_(string.Is8Bit()) {
   if (string.Is8Bit()) {
-    bytes_ = string.Character8();
+    bytes_ = string.Characters8();
   } else {
-    bytes_ = string.Character16();
+    bytes_ = string.Characters16();
   }
 }
 
@@ -49,11 +49,11 @@ StringView::StringView(const char* view, unsigned length) : bytes_(view), length
 StringView::StringView(const unsigned char* view, unsigned length) : bytes_(view), length_(length), is_8bit_(true){};
 StringView::StringView(const char16_t* view, unsigned length) : bytes_(view), length_(length), is_8bit_(false){};
 
-AtomicString StringView::ToAtomicString(JSContext* ctx) const {
+AtomicString StringView::ToAtomicString() const {
   if (Is8Bit()) {
-    return {ctx, Characters8(), length()};
+    return {Characters8(), length()};
   } else {
-    return {ctx, reinterpret_cast<const uint16_t*>(Characters16()), length()};
+    return {reinterpret_cast<const uint16_t*>(Characters16()), length()};
   }
 }
 

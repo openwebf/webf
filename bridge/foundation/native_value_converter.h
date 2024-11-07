@@ -34,24 +34,28 @@ struct NativeValueConverter<NativeTypeNull> : public NativeValueConverterBase<Na
 template <>
 struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<NativeTypeString> {
   static NativeValue ToNativeValue(JSContext* ctx, const ImplType& value) {
-    return Native_NewString(value.ToNativeString(ctx).release());
+    return Native_NewString(value.ToNativeString().release());
   }
   static NativeValue ToNativeValue(const std::string& value) { return Native_NewCString(value); }
 
-  static ImplType FromNativeValue(JSContext* ctx, NativeValue&& value) {
+  static ImplType FromNativeValue(NativeValue&& value) {
     if (value.tag == NativeTag::TAG_NULL) {
       return AtomicString::Empty();
     }
     assert(value.tag == NativeTag::TAG_STRING);
-    return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
+    return {std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
   }
 
-  static ImplType FromNativeValue(JSContext* ctx, NativeValue& value) {
+  static ImplType FromNativeValue(NativeValue& value) {
     if (value.tag == NativeTag::TAG_NULL) {
       return AtomicString::Empty();
     }
     assert(value.tag == NativeTag::TAG_STRING);
-    return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
+    return {std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
+  }
+
+  static ImplType FromNativeValue(JSContext* ctx, NativeValue&& value) {
+    return FromNativeValue(value);
   }
 };
 

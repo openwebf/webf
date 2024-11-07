@@ -32,7 +32,6 @@
 #include <cstring>
 #include <functional>
 #include <optional>
-#include "bindings/qjs/atomic_string.h"
 #include "core/platform/geometry/layout_unit.h"
 #include "core/platform/math_extras.h"
 

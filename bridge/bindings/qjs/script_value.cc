@@ -190,7 +190,7 @@ AtomicString ScriptValue::ToLegacyDOMString(JSContext* ctx) const {
 }
 
 std::unique_ptr<SharedNativeString> ScriptValue::ToNativeString(JSContext* ctx) const {
-  return ToString(ctx).ToNativeString(ctx);
+  return ToString(ctx).ToNativeString();
 }
 
 NativeValue ScriptValue::ToNative(JSContext* ctx, ExceptionState& exception_state, bool shared_js_value) const {

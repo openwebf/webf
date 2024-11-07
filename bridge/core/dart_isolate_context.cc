@@ -64,9 +64,9 @@ thread_local JSRuntime* runtime_{nullptr};
 thread_local uint32_t running_dart_isolates = 0;
 thread_local bool is_name_installed_ = false;
 
-void InitializeBuiltInStrings(JSContext* ctx) {
+void InitializeBuiltInStrings() {
   if (!is_name_installed_) {
-    names_installer::Init(ctx);
+    names_installer::Init();
     is_name_installed_ = true;
   }
 }
@@ -117,6 +117,14 @@ JSRuntime* DartIsolateContext::runtime() {
 
 DartIsolateContext::~DartIsolateContext() {}
 
+void DartIsolateContext::EnsureStringCacheInitialized() {
+  DCHECK(runtime_ != nullptr);
+  if (string_cache_ == nullptr) {
+    string_cache_ = std::make_unique<StringCache>(runtime_);
+  }
+  InitializeBuiltInStrings();
+}
+
 void DartIsolateContext::Dispose(multi_threading::Callback callback) {
   dispatcher_->Dispose([this, &callback]() {
     is_valid_ = false;
@@ -136,6 +144,7 @@ void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
                                                      AllocateNewPageCallback result_callback) {
   dart_isolate_context->profiler()->StartTrackInitialize();
   DartIsolateContext::InitializeJSRuntime();
+  dart_isolate_context->EnsureStringCacheInitialized();
   auto* page = new WebFPage(dart_isolate_context, true, sync_buffer_size, page_context_id, nullptr);
 
   dart_isolate_context->profiler()->FinishTrackInitialize();
@@ -193,6 +202,7 @@ std::unique_ptr<WebFPage> DartIsolateContext::InitializeNewPageSync(DartIsolateC
                                                                     double page_context_id) {
   dart_isolate_context->profiler()->StartTrackInitialize();
   DartIsolateContext::InitializeJSRuntime();
+  dart_isolate_context->EnsureStringCacheInitialized();
   auto page = std::make_unique<WebFPage>(dart_isolate_context, false, sync_buffer_size, page_context_id, nullptr);
   dart_isolate_context->profiler()->FinishTrackInitialize();
 

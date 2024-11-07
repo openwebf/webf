@@ -7,7 +7,7 @@
 #ifndef <%= _.snakeCase(name).toUpperCase() %>_STD_H_
 #define <%= _.snakeCase(name).toUpperCase() %>_STD_H_
 
-#include "bindings/qjs/atomic_string.h"
+#include "foundation/atomic_string.h"
 
 namespace webf {
 

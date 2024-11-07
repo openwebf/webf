@@ -673,7 +673,7 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeRelativeSelector(CSSParserToken
   selector.SetMatch(CSSSelector::kPseudoClass);
   // TODO(xiezuobing): 需要传入ExecutingContext
   ExecutingContext* context;
-  selector.UpdatePseudoType("-internal-relative-anchor", *context_, false /*has_arguments*/, context_->Mode());
+  selector.UpdatePseudoType(AtomicString("-internal-relative-anchor"), *context_, false /*has_arguments*/, context_->Mode());
   assert(selector.GetPseudoType() == CSSSelector::kPseudoRelativeAnchor);
   output_.push_back(selector);
 
@@ -727,7 +727,7 @@ static CSSSelector CreateImplicitAnchor(CSSNestingType nesting_type,
   assert(nesting_type == CSSNestingType::kScope);
   // TODO(xiezuobing): 需要传入ExecutingContext
   ExecutingContext* context;
-  return CSSSelector("scope", /*is_implicit=*/true);
+  return CSSSelector(AtomicString("scope"), /*is_implicit=*/true);
 }
 
 // Within @scope, each compound that contains either :scope or '&' is prepended
@@ -924,7 +924,7 @@ CSSSelector::PseudoType CSSSelectorParser::ParsePseudoType(const std::string& na
 // static
 PseudoId CSSSelectorParser::ParsePseudoElement(const std::string& selector_string,
                                                const Node* parent,
-                                               std::string& argument) {
+                                               AtomicString& argument) {
   // For old pseudos (before, after, first-letter, first-line), we
   // allow the legacy behavior of single-colon / no-colon.
   {
@@ -999,7 +999,7 @@ PseudoId CSSSelectorParser::ParsePseudoElement(const std::string& selector_strin
 
   switch (pseudo_id) {
     case kPseudoIdHighlight: {
-      argument = result.Argument().value_or("");
+      argument = result.Argument();
       return pseudo_id;
     }
 
@@ -1007,10 +1007,10 @@ PseudoId CSSSelectorParser::ParsePseudoElement(const std::string& selector_strin
     case kPseudoIdViewTransitionImagePair:
     case kPseudoIdViewTransitionOld:
     case kPseudoIdViewTransitionNew: {
-      if (result.IdentList().size() != 1 || result.IdentList()[0] == CSSSelector::UniversalSelector()) {
+      if (result.IdentList().size() != 1 || result.IdentList()[0] == CSSSelector::UniversalSelectorAtom()) {
         return kPseudoIdInvalid;
       }
-      argument = result.IdentList()[0].value_or("");
+      argument = result.IdentList()[0];
       return pseudo_id;
     }
 
@@ -1195,21 +1195,21 @@ static bool SelectorListRequiresScopeActivation(const CSSSelectorList& list) {
 }  // namespace
 
 bool CSSSelectorParser::ConsumeName(CSSParserTokenStream& stream,
-                                    std::optional<std::string>& name,
-                                    std::optional<std::string>& namespace_prefix) {
-  name = std::nullopt;
-  namespace_prefix = std::nullopt;
+                                    AtomicString& name,
+                                    AtomicString& namespace_prefix) {
+  name = g_null_atom;
+  namespace_prefix = g_null_atom;
 
   const CSSParserToken& first_token = stream.Peek();
   if (first_token.GetType() == kIdentToken) {
-    name = first_token.Value();
+    name = AtomicString(first_token.Value().data(), first_token.Value().size());
     stream.Consume();
   } else if (first_token.GetType() == kDelimiterToken && first_token.Delimiter() == '*') {
-    name = CSSSelector::UniversalSelector();
+    name = CSSSelector::UniversalSelectorAtom();
     stream.Consume();
   } else if (first_token.GetType() == kDelimiterToken && first_token.Delimiter() == '|') {
     // This is an empty namespace, which'll get assigned this value below
-    name = "";
+    name = g_empty_atom;
   } else {
     return false;
   }
@@ -1221,15 +1221,15 @@ bool CSSSelectorParser::ConsumeName(CSSParserTokenStream& stream,
   CSSParserSavePoint savepoint(stream);
   stream.Consume();
 
-  namespace_prefix = name == CSSSelector::UniversalSelector() ? "*" : name.value();
+  namespace_prefix = name == CSSSelector::UniversalSelectorAtom() ? g_star_atom : name;
   if (stream.Peek().GetType() == kIdentToken) {
-    name = stream.Consume().Value();
+    name = AtomicString(stream.Consume().Value());
   } else if (stream.Peek().GetType() == kDelimiterToken && stream.Peek().Delimiter() == '*') {
     stream.Consume();
-    name = CSSSelector::UniversalSelector();
+    name = CSSSelector::UniversalSelectorAtom();
   } else {
-    name = "";
-    namespace_prefix = "";
+    name = g_empty_atom;
+    namespace_prefix = g_empty_atom;
     return false;
   }
 
@@ -1270,26 +1270,27 @@ bool CSSSelectorParser::ConsumeAttribute(CSSParserTokenStream& stream) {
   CSSParserTokenStream::BlockGuard guard(stream);
   stream.ConsumeWhitespace();
 
-  std::optional<std::string> namespace_prefix;
-  std::optional<std::string> attribute_name;
+  AtomicString namespace_prefix;
+  AtomicString attribute_name;
   if (!ConsumeName(stream, attribute_name, namespace_prefix)) {
     return false;
   }
-  if (attribute_name == CSSSelector::UniversalSelector()) {
+  if (attribute_name == CSSSelector::UniversalSelectorAtom()) {
     return false;
   }
   stream.ConsumeWhitespace();
 
-  std::transform(attribute_name->begin(), attribute_name->end(), attribute_name->begin(), tolower);
+  attribute_name = attribute_name.LowerASCII();
 
-  std::optional<std::string> namespace_uri = DetermineNamespace(namespace_prefix);
-  if (!namespace_uri.has_value()) {
+  AtomicString namespace_uri = DetermineNamespace(namespace_prefix);
+  if (namespace_uri.IsNull()) {
     return false;
   }
 
-  QualifiedName qualified_name = !namespace_prefix.has_value()
-                                     ? QualifiedName(attribute_name)
-                                     : QualifiedName(namespace_prefix, attribute_name, namespace_uri);
+  QualifiedName qualified_name =
+      namespace_prefix.IsNull()
+          ? QualifiedName(attribute_name)
+          : QualifiedName(namespace_prefix, attribute_name, namespace_uri);
 
   if (stream.AtEnd()) {
     CSSSelector selector(CSSSelector::kAttributeSet, qualified_name, CSSSelector::AttributeMatchType::kCaseSensitive);
@@ -1484,7 +1485,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
       return true;
     }
     case CSSSelector::kPseudoPart: {
-      std::vector<std::optional<std::string>> parts;
+      std::vector<AtomicString> parts;
       do {
         const CSSParserToken& ident = stream.Peek();
         if (ident.GetType() != kIdentToken) {
@@ -1493,12 +1494,12 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
         parts.push_back(std::string(ident.Value()));
         stream.ConsumeIncludingWhitespace();
       } while (!stream.AtEnd());
-      selector.SetIdentList(std::make_unique<std::vector<std::optional<std::string>>>(parts));
+      selector.SetIdentList(std::make_unique<std::vector<AtomicString>>(parts));
       output_.push_back(std::move(selector));
       return true;
     }
     case CSSSelector::kPseudoActiveViewTransitionType: {
-      std::vector<std::optional<std::string>> types;
+      std::vector<AtomicString> types;
       for (;;) {
         const CSSParserToken& ident = stream.Peek();
         if (ident.GetType() != kIdentToken) {
@@ -1520,7 +1521,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
           return false;
         }
       }
-      selector.SetIdentList(std::make_unique<std::vector<std::optional<std::string>>>(types));
+      selector.SetIdentList(std::make_unique<std::vector<AtomicString>>(types));
       output_.push_back(std::move(selector));
       return true;
     }
@@ -1528,8 +1529,8 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
     case CSSSelector::kPseudoViewTransitionImagePair:
     case CSSSelector::kPseudoViewTransitionOld:
     case CSSSelector::kPseudoViewTransitionNew: {
-      std::unique_ptr<std::vector<std::optional<std::string>>> name_and_classes =
-          std::make_unique<std::vector<std::optional<std::string>>>();
+      std::unique_ptr<std::vector<AtomicString>> name_and_classes =
+          std::make_unique<std::vector<AtomicString>>();
 
       if (name_and_classes->empty()) {
         const CSSParserToken& ident = stream.Peek();
@@ -1537,7 +1538,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
           name_and_classes->push_back(std::string(ident.Value()));
           stream.Consume();
         } else if (ident.GetType() == kDelimiterToken && ident.Delimiter() == '*') {
-          name_and_classes->push_back(CSSSelector::UniversalSelector());
+          name_and_classes->push_back(CSSSelector::UniversalSelectorAtom());
           stream.Consume();
         } else {
           return false;
@@ -1727,22 +1728,22 @@ const std::string CSSSelectorParser::DefaultNamespace() const {
   return style_sheet_->DefaultNamespace();
 }
 
-std::optional<std::string> CSSSelectorParser::DetermineNamespace(const std::optional<std::string>& prefix) {
-  if (!prefix.has_value()) {
+AtomicString CSSSelectorParser::DetermineNamespace(const AtomicString& prefix) {
+  if (prefix.IsNull()) {
     return DefaultNamespace();
   }
-  if (prefix->empty()) {
-    return "";  // No namespace. If an element/attribute has a
-                // namespace, we won't match it.
+  if (prefix.empty()) {
+    return g_empty_atom;  // No namespace. If an element/attribute has a
+                          // namespace, we won't match it.
   }
-  if (prefix == "*") {
-    return "*";  // We'll match any namespace.
+  if (prefix == g_star_atom) {
+    return g_star_atom;  // We'll match any namespace.
   }
   if (!style_sheet_) {
-    return std::nullopt;  // Cannot resolve prefix to namespace without a
-                          // stylesheet, syntax error.
+    return g_null_atom;  // Cannot resolve prefix to namespace without a
+                         // stylesheet, syntax error.
   }
-  return style_sheet_->NamespaceURIFromPrefix(prefix.value());
+  return style_sheet_->NamespaceURIFromPrefix(prefix);
 }
 
 tcb::span<CSSSelector> CSSSelectorParser::ConsumeCompoundSelector(CSSParserTokenStream& stream,
@@ -1762,12 +1763,10 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeCompoundSelector(CSSParserToken
   // gets very complex with having to deal with both the explicit and the
   // implicit case. Consider just inserting it, and then removing it
   // afterwards if we really don't need it.
-  std::optional<std::string> namespace_prefix;
-  std::optional<std::string> element_name;
+  AtomicString namespace_prefix;
+  AtomicString element_name;
   const bool has_q_name = ConsumeName(stream, element_name, namespace_prefix);
-  if (element_name.has_value()) {
-    std::transform(element_name->begin(), element_name->end(), element_name->begin(), tolower);
-  }
+  element_name = element_name.LowerASCII();
 
   // A tag name is not valid following a pseudo-element. This can happen for
   // e.g. :::part(x):is(div).
@@ -1805,16 +1804,17 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeCompoundSelector(CSSParserToken
       // No tag name either, so we fail parsing of this selector.
       return {};
     }
-
-    std::optional<std::string> namespace_uri = DetermineNamespace(namespace_prefix);
-    if (!namespace_uri.has_value()) {
+    DCHECK(has_q_name);
+    AtomicString namespace_uri = DetermineNamespace(namespace_prefix);
+    if (namespace_uri.IsNull()) {
       failed_parsing_ = true;
       return {};
     }
-
-    DCHECK(has_q_name);
-    namespace_prefix = "";
-    output_.push_back(CSSSelector(QualifiedName(namespace_prefix, element_name, "")));
+    if (namespace_uri == DefaultNamespace()) {
+      namespace_prefix = g_null_atom;
+    }
+    output_.push_back(CSSSelector(
+        QualifiedName(namespace_prefix, element_name, namespace_uri)));
     return reset_vector.CommitAddedElements();
   }
 
@@ -1930,9 +1930,9 @@ CSSSelector::AttributeMatchType CSSSelectorParser::ConsumeAttributeFlags(CSSPars
   return CSSSelector::AttributeMatchType::kCaseSensitive;
 }
 
-void CSSSelectorParser::PrependTypeSelectorIfNeeded(const std::optional<std::string>& namespace_prefix,
+void CSSSelectorParser::PrependTypeSelectorIfNeeded(const AtomicString& namespace_prefix,
                                                     bool has_q_name,
-                                                    const std::optional<std::string>& element_name,
+                                                    const AtomicString& element_name,
                                                     size_t start_index_of_compound_selector) {
   const CSSSelector& compound_selector = output_[start_index_of_compound_selector];
 
@@ -1940,18 +1940,18 @@ void CSSSelectorParser::PrependTypeSelectorIfNeeded(const std::optional<std::str
     return;
   }
 
-  std::optional<std::string> determined_element_name = !has_q_name ? CSSSelector::UniversalSelector() : element_name;
+  AtomicString determined_element_name = !has_q_name ? CSSSelector::UniversalSelectorAtom() : element_name;
 
-  std::optional<std::string> namespace_uri = DetermineNamespace(namespace_prefix);
-  if (!namespace_uri.has_value()) {
+  AtomicString namespace_uri = DetermineNamespace(namespace_prefix);
+  if (namespace_uri.IsNull()) {
     failed_parsing_ = true;
     return;
   }
 
-  std::optional<std::string> determined_prefix = namespace_prefix;
+  AtomicString determined_prefix = namespace_prefix;
 
   if (namespace_uri == DefaultNamespace()) {
-    determined_prefix = std::nullopt;
+    determined_prefix = g_null_atom;
   }
 
   QualifiedName tag = QualifiedName(determined_prefix, determined_element_name, namespace_uri);
@@ -1965,14 +1965,18 @@ void CSSSelectorParser::PrependTypeSelectorIfNeeded(const std::optional<std::str
   // (relation) on in the cases where there are no simple selectors preceding
   // the pseudo element.
   bool is_host_pseudo = IsHostPseudoSelector(compound_selector);
-  if (is_host_pseudo && !has_q_name && !namespace_prefix.has_value()) {
+  if (is_host_pseudo && !has_q_name && namespace_prefix.IsNull()) {
     return;
   }
-  if (tag != AnyQName() || is_host_pseudo || NeedsImplicitShadowCombinatorForMatching(compound_selector)) {
-    const bool is_implicit = !determined_prefix.has_value() &&
-                             determined_element_name == CSSSelector::UniversalSelector() && !is_host_pseudo;
+  if (tag != AnyQName() || is_host_pseudo ||
+      NeedsImplicitShadowCombinatorForMatching(compound_selector)) {
+    const bool is_implicit =
+        determined_prefix == g_null_atom &&
+        determined_element_name == CSSSelector::UniversalSelectorAtom() &&
+        !is_host_pseudo;
 
-    output_.insert(output_.begin() + start_index_of_compound_selector, CSSSelector(tag, is_implicit));
+    output_.insert(output_.begin() + start_index_of_compound_selector,
+                   CSSSelector(tag, is_implicit));
   }
 }
 

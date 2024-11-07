@@ -5,15 +5,16 @@
 #ifndef WEBF_CORE_DOM_ELEMENT_RARE_DATA_VECTOR_H_
 #define WEBF_CORE_DOM_ELEMENT_RARE_DATA_VECTOR_H_
 
-#include "core/dom/node_rare_data.h"
-#include "core/dom/dom_token_list.h"
 #include "core/dom/dom_string_map.h"
+#include "core/dom/dom_token_list.h"
 #include "core/dom/element_rare_data_field.h"
+#include "core/dom/node_rare_data.h"
 
 namespace webf {
 
 class CSSStyleDeclaration;
 class Element;
+class StyleScopeData;
 
 // This class stores lazily-initialized state associated with Elements, each of
 // which is identified in the FieldId enum. Since storing pointers to all of
@@ -73,74 +74,87 @@ class ElementRareDataVector final : public NodeRareData {
     kNumFields = 32,
   };
 
-  ScriptWrappable* GetField(FieldId field_id) const;
+  std::shared_ptr<ElementRareDataField> GetElementRareDataField(FieldId field_id) const;
+  ScriptWrappable* GetScriptWrappableField(FieldId field_id) const;
+
   // GetFieldIndex returns the index in |fields_| that |field_id| is stored in.
   // If |fields_| isn't storing a field for |field_id|, then this returns the
   // index which the data for |field_id| should be inserted into.
   unsigned GetFieldIndex(FieldId field_id) const;
-  void SetField(FieldId field_id, ScriptWrappable* field);
+  void SetElementRareDataField(FieldId field_id, std::shared_ptr<ElementRareDataField> field);
+  void SetScriptWrappableField(FieldId field_id, ScriptWrappable* field);
 
-  std::vector<Member<ScriptWrappable>> fields_;
+  std::vector<std::shared_ptr<ElementRareDataField>> element_rare_data_fields_;
+  std::vector<Member<ScriptWrappable>> script_wrappable_fields_;
   using BitfieldType = uint32_t;
   BitfieldType fields_bitfield_;
-  static_assert(sizeof(fields_bitfield_) * 8 >=
-                    static_cast<unsigned>(FieldId::kNumFields),
+  static_assert(sizeof(fields_bitfield_) * 8 >= static_cast<unsigned>(FieldId::kNumFields),
                 "field_bitfield_ must be big enough to have a bit for each "
                 "field in FieldId.");
 
-  template <typename T>
-  class DataFieldWrapper final : public ElementRareDataField {
-   public:
-    T& Get() { return data_; }
-    void Trace(GCVisitor* visitor) const {
-      visitor->TraceMember(data_);
-    }
-
-   private:
-    Member<T> data_;
-  };
-
   template <typename T, typename... Args>
-  T& EnsureField(FieldId field_id, Args&&... args) {
-    T* field = static_cast<T*>(GetField(field_id));
+  T& EnsureWrappedField(FieldId field_id, Args&&... args) {
+    T* field = static_cast<T*>(GetScriptWrappableField(field_id));
     if (!field) {
-      field = MakeGarbageCollected<T>(std::forward<Args>(args)...);
-      SetField(field_id, field);
+      SetScriptWrappableField(field_id, field);
     }
+
     return *field;
   }
 
-  template <typename T>
-  T& EnsureWrappedField(FieldId field_id) {
-    return EnsureField<DataFieldWrapper<T>>(field_id).Get();
+  template <typename T, typename... Args>
+  T& EnsureElementRareDataField(FieldId field_id, Args&&... args) {
+    std::shared_ptr<T> field_shared = std::static_pointer_cast<T>(GetElementRareDataField(field_id));
+    if (!field_shared) {
+      field_shared = std::make_shared<T>(std::forward<Args>(args)...);
+      SetElementRareDataField(field_id, field_shared);
+    }
+    return *field_shared;
   }
 
   template <typename T, typename U>
   void SetWrappedField(FieldId field_id, U data) {
-    EnsureWrappedField<T>(field_id) = std::move(data);
+    EnsureWrappedField<T>(field_id, data);
   }
 
   template <typename T>
   T* GetWrappedField(FieldId field_id) const {
-    auto* wrapper = static_cast<DataFieldWrapper<T>*>(GetField(field_id));
-    return wrapper ? &wrapper->Get() : nullptr;
+    auto* wrapper = static_cast<T*>(GetScriptWrappableField(field_id));
+    return wrapper;
   }
 
   template <typename T>
   void SetOptionalField(FieldId field_id, std::optional<T> data) {
-    if (data) {
-      SetWrappedField<T>(field_id, *data);
-    } else {
-      SetField(field_id, nullptr);
+    switch (field_id) {
+      case FieldId::kClassList:
+      case FieldId::kCssomWrapper: {
+        SetScriptWrappableField(field_id, data.has_value() ? *data : nullptr);
+        break;
+      }
+      default: {
+        SetElementRareDataField(field_id, data.has_value() ? *data : nullptr);
+        break;
+      }
     }
   }
 
   template <typename T>
   std::optional<T> GetOptionalField(FieldId field_id) const {
-    if (auto* value = GetWrappedField<T>(field_id)) {
-      return *value;
+    switch (field_id) {
+      case FieldId::kClassList:
+      case FieldId::kCssomWrapper: {
+        if (auto* value = GetScriptWrappableField<T>(field_id)) {
+          return *value;
+        }
+        return std::nullopt;
+      }
+      default: {
+        if (auto* value = GetElementRareDataField<T>(field_id)) {
+          return *value;
+        }
+        return std::nullopt;
+      }
     }
-    return std::nullopt;
   }
 
  public:
@@ -150,36 +164,28 @@ class ElementRareDataVector final : public NodeRareData {
   CSSStyleDeclaration& EnsureInlineCSSStyleDeclaration(Element* owner_element);
 
   DOMTokenList* GetClassList() const {
-    return static_cast<DOMTokenList*>(GetField(FieldId::kClassList));
+    return static_cast<DOMTokenList*>(GetWrappedField<DOMTokenList>(FieldId::kClassList));
   }
-  void SetClassList(DOMTokenList* class_list) {
-    SetField(FieldId::kClassList, class_list);
-  }
+  void SetClassList(DOMTokenList* class_list) { SetWrappedField<DOMTokenList>(FieldId::kClassList, class_list); }
 
-  DOMStringMap* Dataset() const {
-    return static_cast<DOMStringMap*>(GetField(FieldId::kDataset));
-  }
-  void SetDataset(DOMStringMap* dataset) {
-    SetField(FieldId::kDataset, dataset);
-  }
+  DOMStringMap* Dataset() const { return GetWrappedField<DOMStringMap>(FieldId::kDataset); }
+  void SetDataset(DOMStringMap* dataset) { SetWrappedField<DOMTokenList>(FieldId::kDataset, dataset); }
 
-  bool HasElementFlag(ElementFlags mask) const {
-    return element_flags_ & static_cast<uint16_t>(mask);
-  }
+  bool HasElementFlag(ElementFlags mask) const { return element_flags_ & static_cast<uint16_t>(mask); }
   void SetElementFlag(ElementFlags mask, bool value) {
     element_flags_ =
-        (element_flags_ & ~static_cast<uint16_t>(mask)) |
-        (-static_cast<uint16_t>(value) & static_cast<uint16_t>(mask));
+        (element_flags_ & ~static_cast<uint16_t>(mask)) | (-static_cast<uint16_t>(value) & static_cast<uint16_t>(mask));
   }
-  void ClearElementFlag(ElementFlags mask) {
-    element_flags_ &= ~static_cast<uint16_t>(mask);
-  }
+  void ClearElementFlag(ElementFlags mask) { element_flags_ &= ~static_cast<uint16_t>(mask); }
+
+  StyleScopeData& EnsureStyleScopeData();
+  StyleScopeData* GetStyleScopeData() const;
 
   void Trace(GCVisitor*) const override;
 
  private:
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_DOM_ELEMENT_RARE_DATA_VECTOR_H_

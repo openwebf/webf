@@ -32,7 +32,7 @@
 
 
 #include <string>
-#include "bindings/qjs/atomic_string.h"
+#include "foundation/macros.h"
 
 namespace webf {
 

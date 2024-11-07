@@ -24,13 +24,13 @@ class Variable : public Longhand {
   bool IsAffectedByAll() const override { return false; }
   CSSPropertyName GetCSSPropertyName() const override {
     assert_m(false, "NOTREACHED_IN_MIGRATION");
-    return CSSPropertyName("");
+    return CSSPropertyName(g_empty_atom);
   }
   const char* GetPropertyName() const override { return "variable"; }
   const AtomicString& GetPropertyNameAtomicString() const override {
     // TODO(xiezuobing):
     ExecutingContext* context;
-    static const AtomicString name = AtomicString(context->ctx(), "variable");
+    static const AtomicString name = AtomicString("variable");
     return name;
   }
 

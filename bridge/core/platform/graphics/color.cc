@@ -245,6 +245,8 @@ void Color::ConvertToColorSpace(webf::Color::ColorSpace destination_color_space,
       color_space_ = ColorSpace::kHWB;
       return;
     }
+    case ColorSpace::kNone:
+      break;
   }
 }
 

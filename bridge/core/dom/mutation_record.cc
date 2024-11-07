@@ -4,7 +4,6 @@
 
 #include "mutation_record.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
-#include "built_in_string.h"
 #include "mutation_record_types.h"
 #include "node.h"
 #include "static_node_list.h"

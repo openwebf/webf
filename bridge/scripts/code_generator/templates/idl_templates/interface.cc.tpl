@@ -34,7 +34,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     auto size = props.size() == 0 ? 1 : props.size();
     auto tabs = (JSPropertyEnum *)js_malloc(ctx, sizeof(JSPropertyEnum *) * size);
     for(int i = 0; i < props.size(); i ++) {
-      tabs[i].atom = JS_DupAtom(ctx, props[i].Impl());
+      tabs[i].atom = JS_DupAtom(ctx, context->stringCache()->GetJSAtomFromString(ctx, props[i].Impl()));
       tabs[i].is_enumerable = true;
     }
 

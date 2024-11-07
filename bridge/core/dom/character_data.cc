@@ -4,7 +4,7 @@
  */
 
 #include "character_data.h"
-#include "built_in_string.h"
+#include "foundation/atomic_string.h"
 #include "core/dom/document.h"
 #include "mutation_observer_interest_group.h"
 #include "qjs_character_data.h"
@@ -15,7 +15,7 @@ void CharacterData::setData(const AtomicString& data, ExceptionState& exception_
   AtomicString old_data = data_;
   data_ = data;
 
-  std::unique_ptr<SharedNativeString> args_01 = data.ToNativeString(ctx());
+  std::unique_ptr<SharedNativeString> args_01 = data.ToNativeString();
   std::unique_ptr<SharedNativeString> args_02 = stringToNativeString("data");
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetAttribute, std::move(args_01), bindingObject(),
                                                        args_02.release());
@@ -40,7 +40,7 @@ bool CharacterData::IsCharacterDataNode() const {
 }
 
 void CharacterData::setNodeValue(const AtomicString& value, ExceptionState& exception_state) {
-  setData(!value.IsEmpty() ? value : built_in_string::kempty_string, exception_state);
+  setData(!value.empty() ? value : g_empty_atom, exception_state);
 }
 
 CharacterData::CharacterData(TreeScope& tree_scope, const AtomicString& text, Node::ConstructionType type)

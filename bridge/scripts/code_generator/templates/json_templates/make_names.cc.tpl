@@ -3,6 +3,7 @@
 // and input files:
 //   <%= template_path %>
 
+#include "quickjs/quickjs.h"
 #include "<%= name %>.h"
 
 namespace webf {
@@ -30,7 +31,7 @@ thread_local const AtomicString& k<%= options.camelcase ? upperCamelCase(name) :
   <% }) %>
 <% } %>
 
-void Init(JSContext* ctx) {
+void Init() {
   struct NameEntry {
     <% if (options.add_atom_prefix) { %>
       JSAtom atom;
@@ -64,9 +65,9 @@ void Init(JSContext* ctx) {
   for(size_t i = 0; i < std::size(kNames); i ++) {
     void* address = reinterpret_cast<AtomicString*>(&names_storage) + i;
     <% if (options.add_atom_prefix) { %>
-      new (address) AtomicString(ctx, kNames[i].atom);
+      new (address) AtomicString(kNames[i].atom);
     <% } else { %>
-      new (address) AtomicString(ctx, kNames[i].str);
+      new (address) AtomicString(kNames[i].str);
     <% } %>
 
   }
@@ -74,7 +75,7 @@ void Init(JSContext* ctx) {
   <% if (deps && deps.html_attribute_names) { %>
     for(size_t i = 0; i < std::size(kHtmlAttributeNames); i ++) {
       void* address = reinterpret_cast<AtomicString*>(&html_attribute_names_storage) + i;
-      new (address) AtomicString(ctx, kHtmlAttributeNames[i].str);
+      new (address) AtomicString(kHtmlAttributeNames[i].str);
     }
   <% } %>
 };

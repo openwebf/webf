@@ -37,25 +37,17 @@ static QualifiedNameCache& GetQualifiedNameCache() {
   return g_name_cache;
 }
 
-QualifiedName::QualifiedName(const std::optional<std::string>& p,
-                             const std::optional<std::string>& l,
-                             const std::optional<std::string>& n) {
-  std::shared_ptr<QualifiedNameImpl> data =
-      std::make_shared<QualifiedNameImpl>(p, l, n.has_value() && n.value().empty() ? std::nullopt : n, false);
+QualifiedName::QualifiedName(const AtomicString& p, const AtomicString& l, const AtomicString& n) {
+  std::shared_ptr<QualifiedNameImpl> data = QualifiedNameImpl::Create(p, l, n, false);
   QualifiedNameCache& cache = GetQualifiedNameCache();
   auto result = cache.insert(data);
   impl_ = data;
 }
 
-QualifiedName::QualifiedName(const std::optional<std::string>& local_name)
-    : QualifiedName(std::nullopt, local_name, std::nullopt) {}
+QualifiedName::QualifiedName(const AtomicString& local_name) : QualifiedName(g_null_atom, local_name, g_null_atom) {}
 
-QualifiedName::QualifiedName(const std::optional<std::string>& p,
-                             const std::optional<std::string>& l,
-                             const std::optional<std::string>& n,
-                             bool is_static) {
-  std::shared_ptr<QualifiedNameImpl> data =
-      std::make_shared<QualifiedNameImpl>(p, l, n.has_value() && n.value().empty() ? "" : n, is_static);
+QualifiedName::QualifiedName(const AtomicString& p, const AtomicString& l, const AtomicString& n, bool is_static) {
+  std::shared_ptr<QualifiedNameImpl> data = QualifiedNameImpl::Create(p, l, n, is_static);
   QualifiedNameCache& cache = GetQualifiedNameCache();
   cache.insert(data);
   impl_ = data;
@@ -63,19 +55,19 @@ QualifiedName::QualifiedName(const std::optional<std::string>& p,
 
 void QualifiedName::InitAndReserveCapacityForSize(unsigned size) {
   GetQualifiedNameCache().reserve(size + 2 /*g_star_atom and g_null_atom */);
-  new ((void*)&g_any_name) QualifiedName(std::nullopt, std::nullopt, std::optional<std::string>("*"), true);
-  new ((void*)&g_null_name) QualifiedName(std::nullopt, std::nullopt, std::nullopt, true);
+  new ((void*)&g_any_name) QualifiedName(g_null_atom, g_null_atom, g_star_atom, true);
+  new ((void*)&g_null_name) QualifiedName(g_null_atom, g_null_atom, g_null_atom, true);
 }
 
 std::string QualifiedName::ToString() const {
-  std::optional<std::string> local = LocalName();
+  AtomicString local = LocalName();
   if (HasPrefix())
-    return Prefix().value() + ":" + local.value();
-  return local.value();
+    return Prefix().ToStdString() + ":" + local.ToStdString();
+  return local.ToStdString();
 }
 
 unsigned QualifiedName::QualifiedNameImpl::ComputeHash() const {
-  QualifiedNameComponents components = {prefix_.value(), local_name_.value(), namespace_.value()};
+  QualifiedNameComponents components = {prefix_.Impl(), local_name_.Impl(), namespace_.Impl()};
   return HashComponents(components);
 }
 

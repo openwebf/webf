@@ -171,8 +171,8 @@ bool CSSStyleDeclaration::AnonymousNamedSetter(const webf::AtomicString& name, c
   }
 
   if (value.IsString()) {
-    StringView string = value.ToString(ctx()).ToStringView();
-    if (string.length() <= 128 && string.Is8Bit()) {
+    std::string_view string = value.ToString(ctx()).ToStringView();
+    if (string.length() <= 128) {
       uint8_t buffer[128];
       int len = string.length();
       SetPropertyInternal(unresolved_property, AtomicString::Empty(), StringView(buffer, len), false, exception_state);

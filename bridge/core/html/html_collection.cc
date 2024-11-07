@@ -280,7 +280,7 @@ Element* HTMLCollection::TraverseBackwardToOffset(unsigned offset,
 }
 
 Element* HTMLCollection::namedItem(const AtomicString& name) const {
-  int32_t index = std::stoi(name.ToStdString(ctx()));
+  int32_t index = std::stoi(name.ToStdString());
   return collection_items_cache_.NodeAt(*this, index);
 }
 
@@ -291,7 +291,7 @@ bool HTMLCollection::NamedPropertyQuery(const AtomicString& name, ExceptionState
 void HTMLCollection::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) {
   uint32_t size = collection_items_cache_.NodeCount(*this);
   for (int i = 0; i < size; i++) {
-    names.emplace_back(AtomicString(ctx(), std::to_string(i)));
+    names.emplace_back(AtomicString(std::to_string(i)));
   }
 }
 

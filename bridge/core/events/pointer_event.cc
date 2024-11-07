@@ -47,12 +47,10 @@ PointerEvent::PointerEvent(ExecutingContext* context,
       is_primary(native_pointer_event->isPrimary),
       pointer_id_(native_pointer_event->pointerId),
 #if ANDROID_32_BIT
-      pointer_type_(AtomicString(ctx(),
-                                 std::unique_ptr<AutoFreeNativeString>(
+      pointer_type_(AtomicString(std::unique_ptr<AutoFreeNativeString>(
                                      reinterpret_cast<AutoFreeNativeString*>(native_pointer_event->pointerType)))),
 #else
-      pointer_type_(AtomicString(ctx(),
-                                 std::unique_ptr<AutoFreeNativeString>(
+      pointer_type_(AtomicString(std::unique_ptr<AutoFreeNativeString>(
                                      reinterpret_cast<AutoFreeNativeString*>(native_pointer_event->pointerType)))),
 #endif
       pressure_(native_pointer_event->pressure),

@@ -6,7 +6,6 @@
 #define BRIDGE_CSS_STYLE_DECLARATION_H
 
 #include <unordered_map>
-#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_value.h"

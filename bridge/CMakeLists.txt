@@ -121,6 +121,10 @@ list(APPEND BRIDGE_SOURCE
   foundation/ui_command_buffer.cc
   foundation/ui_command_strategy.cc
   foundation/dtoa.cc
+  foundation/string_impl.cc
+  foundation/atomic_string.cc
+  foundation/string_statics.cc
+  foundation/atomic_string_table.cc
   foundation/decimal.cc
   polyfill/dist/polyfill.cc
   multiple_threading/dispatcher.cc
@@ -304,7 +308,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/script_value.cc
     bindings/qjs/script_promise.cc
     bindings/qjs/script_promise_resolver.cc
-    bindings/qjs/atomic_string.cc
+    bindings/qjs/value_cache.cc
     bindings/qjs/exception_state.cc
     bindings/qjs/exception_message.cc
     bindings/qjs/rejected_promises.cc
@@ -505,6 +509,15 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/css_color.cc
     core/css/anchor_query.h
     core/css/css_length_resolver.cc
+
+    ## CSS Selector
+    core/css/selector_query.cc
+    core/css/part_names.cc
+    core/css/selector_checker.cc
+    core/css/style_scope_data.cc
+    core/css/style_scope_frame.cc
+
+
     core/style/scoped_css_name.cc
     core/style/grid_area.h
 
@@ -577,6 +590,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/qualified_name.cc
     core/dom/dom_token_list.cc
     core/dom/dom_string_map.cc
+    core/dom/names_map.cc
     core/dom/element_rare_data_vector.cc
     core/dom/space_split_string.cc
     core/dom/scripted_animation_controller.cc
@@ -610,6 +624,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/keyboard_event.cc
     core/events/promise_rejection_event.cc
     core/html/parser/html_parser.cc
+    core/html/parser/html_parser_idioms.cc
     core/html/html_element.cc
     core/html/html_div_element.cc
     core/html/html_head_element.cc
@@ -775,8 +790,6 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_node_list.cc
     out/event_type_names.cc
     out/at_rule_descriptors.cc
-    out/built_in_string.cc
-    out/global_string.cc
     out/media_type_names.cc
     out/mutation_record_types.cc
     out/binding_call_methods.cc

@@ -9,7 +9,6 @@
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
-#include "bindings/qjs/atomic_string.h"
 
 namespace webf {
 

@@ -3,6 +3,7 @@
  */
 
 #include "dart_context_data.h"
+#include <cassert>
 
 namespace webf {
 

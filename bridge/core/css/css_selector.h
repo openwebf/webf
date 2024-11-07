@@ -28,7 +28,6 @@
 #define WEBF_CSS_SELECTOR_H
 
 #include "bindings/qjs/cppgc/gc_visitor.h"
-#include "built_in_string.h"
 #include "core/base/strings/string_util.h"
 #include "core/base/bit_field.h"
 #include "core/css/parser/css_nesting_type.h"
@@ -37,7 +36,6 @@
 #include "core/style/computed_style_constants.h"
 #include "foundation/macros.h"
 #include "foundation/string_builder.h"
-#include "global_string.h"
 
 namespace webf {
 
@@ -139,9 +137,9 @@ class CSSSelector {
   explicit CSSSelector(MatchType match_type,
                        const QualifiedName& attribute,
                        AttributeMatchType case_sensitivity,
-                       const std::string& value);
+                       const AtomicString& value);
   explicit CSSSelector(std::shared_ptr<const StyleRule> parent_rule, bool is_implicit);
-  explicit CSSSelector(const std::string& pseudo_name, bool is_implicit);
+  explicit CSSSelector(const AtomicString& pseudo_name, bool is_implicit);
 
   ~CSSSelector();
 
@@ -392,8 +390,8 @@ class CSSSelector {
 
   PseudoType GetPseudoType() const { return static_cast<PseudoType>(bits_.get<PseudoTypeField>()); }
 
-  void UpdatePseudoType(const std::string&, const CSSParserContext&, bool has_arguments, CSSParserMode);
-  void SetUnparsedPlaceholder(CSSNestingType, const std::string&);
+  void UpdatePseudoType(const AtomicString&, const CSSParserContext&, bool has_arguments, CSSParserMode);
+  void SetUnparsedPlaceholder(CSSNestingType, const AtomicString&);
   // If this simple selector contains a parent selector (&), returns kNesting.
   // Otherwise, if this simple selector contains a :scope pseudo-class,
   // returns kScope. Otherwise, returns kNone.
@@ -409,8 +407,8 @@ class CSSSelector {
   //
   // Note that :true is always implicit (see IsImplicit).
   void SetTrue();
-  void UpdatePseudoPage(const std::string&, const Document*);
-  static PseudoType NameToPseudoType(const std::optional<std::string>&, bool has_arguments, const Document* document);
+  void UpdatePseudoPage(const AtomicString&, const Document*);
+  static PseudoType NameToPseudoType(const AtomicString&, bool has_arguments, const Document* document);
   static PseudoId GetPseudoId(PseudoType);
 
   // Replaces the parent pointer held by kPseudoParent selectors found
@@ -424,11 +422,11 @@ class CSSSelector {
   const CSSSelector* NextSimpleSelector() const { return IsLastInComplexSelector() ? nullptr : this + 1; }
   CSSSelector* NextSimpleSelector() { return IsLastInComplexSelector() ? nullptr : this + 1; }
 
-  static const std::nullopt_t UniversalSelector() { return std::nullopt; }
+  static const AtomicString& UniversalSelectorAtom() { return g_null_atom; }
   const QualifiedName& TagQName() const;
   std::shared_ptr<const StyleRule> ParentRule() const;  // Only valid for kPseudoParent.
-  const std::string& Value() const;
-  const std::string& SerializingValue() const;
+  const AtomicString& Value() const;
+  const AtomicString& SerializingValue() const;
 
   // WARNING: Use of QualifiedName by attribute() is a lie.
   // attribute() will return a QualifiedName with prefix and namespaceURI
@@ -442,7 +440,9 @@ class CSSSelector {
   // would have an argument of en-US.
   // Note that :nth-* selectors don't store an argument and just store the
   // numbers.
-  const std::optional<std::string> Argument() const { return HasRareData() ? data_.rare_data_->argument_ : ""; }
+  const AtomicString& Argument() const {
+    return HasRareData() ? data_.rare_data_->argument_ : g_null_atom;
+  }
   const CSSSelectorList* SelectorList() const {
     return HasRareData() ? data_.rare_data_->selector_list_.get() : nullptr;
   }
@@ -452,7 +452,7 @@ class CSSSelector {
   // pseudo selector at all), or if we are a & rule that's in a non-nesting
   // context (which is valid, but won't match anything).
   const CSSSelector* SelectorListOrParent() const;
-  const std::vector<std::optional<std::string>>& IdentList() const {
+  const std::vector<AtomicString>& IdentList() const {
     CHECK(HasRareData() && data_.rare_data_->ident_list_);
     return *data_.rare_data_->ident_list_;
   }
@@ -468,11 +468,11 @@ class CSSSelector {
   void Show(int indent) const;
 #endif  // DCHECK_IS_ON()
 
-  bool IsASCIILower(const std::string& value);
-  void SetValue(const std::string&, bool match_lower_case);
-  void SetArgument(const std::string&);
+  bool IsASCIILower(const AtomicString& value);
+  void SetValue(const AtomicString&, bool match_lower_case);
+  void SetArgument(const AtomicString&);
   void SetSelectorList(std::shared_ptr<CSSSelectorList>);
-  void SetIdentList(std::unique_ptr<std::vector<std::optional<std::string>>>);
+  void SetIdentList(std::unique_ptr<std::vector<AtomicString>>);
   void SetContainsPseudoInsideHasPseudoClass();
   void SetContainsComplexLogicalCombinationsInsideHasPseudoClass();
 
@@ -655,15 +655,15 @@ class CSSSelector {
   const CSSSelector* SerializeCompound(StringBuilder&) const;
 
   struct RareData {
-    explicit RareData(const std::string& value);
+    explicit RareData(const AtomicString& value);
     ~RareData();
 
     bool MatchNth(unsigned count);
     int NthAValue() const { return bits_.nth_.a_; }
     int NthBValue() const { return bits_.nth_.b_; }
 
-    std::string matching_value_;
-    std::string serializing_value_;
+    AtomicString matching_value_;
+    AtomicString serializing_value_;
     union {
       struct {
         int a_;  // Used for :nth-*
@@ -683,9 +683,9 @@ class CSSSelector {
       CSSNestingType unparsed_nesting_type_;
     } bits_;
     QualifiedName attribute_;                           // Used for attribute selector
-    std::optional<std::string> argument_;                             // Used for :contains, :lang, :dir, etc.
+    AtomicString argument_;                             // Used for :contains, :lang, :dir, etc.
     std::shared_ptr<CSSSelectorList> selector_list_;             // Used :is, :not, :-webkit-any, etc.
-    std::unique_ptr<std::vector<std::optional<std::string>>> ident_list_;  // Used for ::part(), :active-view-transition-type().
+    std::unique_ptr<std::vector<AtomicString>> ident_list_;  // Used for ::part(), :active-view-transition-type().
 
     void Trace(GCVisitor* visitor) const;
   };
@@ -723,7 +723,7 @@ class CSSSelector {
     // part of the selector. For example the name of a pseudo class (without
     // the colon), the class name of a class selector (without the dot),
     // the attribute of an attribute selector (without the brackets), etc.
-    explicit DataUnion(const std::string& value) : value_(std::move(value)) {}
+    explicit DataUnion(const AtomicString& value) : value_(value) {}
 
     explicit DataUnion(const QualifiedName& tag_q_name_or_attribute)
         : tag_q_name_or_attribute_(tag_q_name_or_attribute) {}
@@ -734,7 +734,7 @@ class CSSSelector {
 
     ~DataUnion() {}
 
-    std::string value_;
+    AtomicString value_;
 
     // For kTag, used for tag_q_name. For kAttributeSet, used for the attribute
     // selector if and only if it's a value-less match (for other kAttribute*,
@@ -766,7 +766,7 @@ inline bool CSSSelector::IsCaseSensitiveAttribute() const {
   return bits_.get<IsCaseSensitiveAttributeField>();
 }
 
-inline bool CSSSelector::IsASCIILower(const std::string& value) {
+inline bool CSSSelector::IsASCIILower(const AtomicString& value) {
   for (size_t i = 0; i < value.length(); ++i) {
     if (IsASCIIUpper(value[i])) {
       return false;
@@ -775,7 +775,7 @@ inline bool CSSSelector::IsASCIILower(const std::string& value) {
   return true;
 }
 
-inline void CSSSelector::SetValue(const std::string& value, bool match_lower_case = false) {
+inline void CSSSelector::SetValue(const AtomicString& value, bool match_lower_case = false) {
   DCHECK_NE(Match(), static_cast<unsigned>(kTag));
   DCHECK(!(Match() == kPseudoClass && GetPseudoType() == kPseudoParent));
   if (match_lower_case && !HasRareData() && !IsASCIILower(value)) {
@@ -786,7 +786,7 @@ inline void CSSSelector::SetValue(const std::string& value, bool match_lower_cas
     data_.value_ = value;
     return;
   }
-  data_.rare_data_->matching_value_ = match_lower_case ? base::ToLowerASCII(value) : value;
+  data_.rare_data_->matching_value_ = match_lower_case ? value.LowerASCII() : value;
   data_.rare_data_->serializing_value_ = value;
 }
 
@@ -819,7 +819,7 @@ inline CSSSelector::CSSSelector(std::shared_ptr<const StyleRule> parent_rule, bo
             IsCaseSensitiveAttributeField::encode(false)),
       data_(parent_rule) {}
 
-inline CSSSelector::CSSSelector(const std::string& pseudo_name, bool is_implicit)
+inline CSSSelector::CSSSelector(const AtomicString& pseudo_name, bool is_implicit)
     : bits_(RelationField::encode(kSubSelector) | MatchField::encode(kPseudoClass) |
             PseudoTypeField::encode(NameToPseudoType(pseudo_name,
                                                      /* has_arguments */ false,
@@ -839,7 +839,7 @@ inline CSSSelector::CSSSelector(const CSSSelector& o) : bits_(o.bits_), data_(Da
   } else if (o.HasRareData()) {
     data_.rare_data_ = o.data_.rare_data_;  // Oilpan-managed.
   } else {
-    new (&data_.value_) std::string(o.data_.value_);
+    new (&data_.value_) AtomicString(o.data_.value_);
   }
 }
 
@@ -875,7 +875,7 @@ inline std::shared_ptr<const StyleRule> CSSSelector::ParentRule() const {
   return data_.parent_rule_;
 }
 
-inline const std::string& CSSSelector::Value() const {
+inline const AtomicString& CSSSelector::Value() const {
   DCHECK_NE(Match(), static_cast<unsigned>(kTag));
   if (HasRareData()) {
     return data_.rare_data_->matching_value_;
@@ -883,7 +883,7 @@ inline const std::string& CSSSelector::Value() const {
   return data_.value_;
 }
 
-inline const std::string& CSSSelector::SerializingValue() const {
+inline const AtomicString& CSSSelector::SerializingValue() const {
   DCHECK_NE(Match(), static_cast<unsigned>(kTag));
   if (HasRareData()) {
     return data_.rare_data_->serializing_value_;

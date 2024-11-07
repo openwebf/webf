@@ -9,7 +9,6 @@
 #ifndef WEBF_CSS_PARSER_CONTEXT_H
 #define WEBF_CSS_PARSER_CONTEXT_H
 
-#include "bindings/qjs/atomic_string.h"
 #include "core/base/auto_reset.h"
 #include "core/dom/document.h"
 #include "core/executing_context.h"

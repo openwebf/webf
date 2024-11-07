@@ -30,7 +30,6 @@
 #define WEBF_CORE_CSS_CSS_MARKUP_H_
 
 #include <string>
-#include "bindings/qjs/atomic_string.h"
 #include "foundation/string_builder.h"
 
 // Helper functions for converting from CSSValues to text.

@@ -164,7 +164,7 @@ static inline void FilterProperties(bool important,
       continue;
     }
     if (property.Id() == CSSPropertyID::kVariable) {
-      const std::string& name = property.CustomPropertyName();
+      const std::string& name = property.CustomPropertyName().ToStdString();
       if (seen_custom_properties.count(name) > 0) {
         continue;
       }
@@ -287,7 +287,7 @@ std::shared_ptr<const CSSSelectorList> CSSParserImpl::ParsePageSelector(
     std::shared_ptr<const CSSParserContext> context) {
   // We only support a small subset of the css-page spec.
   range.ConsumeWhitespace();
-  std::string type_selector;
+  std::optional<std::string> type_selector;
   if (range.Peek().GetType() == kIdentToken) {
     type_selector = range.Consume().Value();
   }
@@ -307,8 +307,9 @@ std::shared_ptr<const CSSSelectorList> CSSParserImpl::ParsePageSelector(
   }
 
   std::vector<CSSSelector> selectors;
-  if (!type_selector.empty()) {
-    selectors.push_back(CSSSelector(QualifiedName("", type_selector, "*")));
+  if(type_selector.has_value()) {
+    selectors.push_back(
+        CSSSelector(QualifiedName(g_null_atom, AtomicString(type_selector.value()), g_star_atom)));
   }
   if (!pseudo.empty()) {
     CSSSelector selector;
@@ -1730,7 +1731,7 @@ std::shared_ptr<StyleRule> CSSParserImpl::CreateImplicitNestedRule(
       selector.SetRelation(CSSSelector::kScopeActivation);
       selector.SetSignal(signal);
       selectors.push_back(selector);
-      selectors.push_back(CSSSelector("scope", kNotImplicit));
+      selectors.push_back(CSSSelector(AtomicString("scope"), kNotImplicit));
       selectors.back().SetSignal(signal);
       break;
     }

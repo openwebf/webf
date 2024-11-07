@@ -35,7 +35,6 @@
 #include <tuple>
 
 #include "SkColor.h"
-#include "bindings/qjs/atomic_string.h"
 #include "foundation/macros.h"
 
 namespace webf {

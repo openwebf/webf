@@ -52,7 +52,7 @@ struct CSSPropertyValueMetadata {
 
   CSSPropertyName Name() const;
 
-  std::string custom_name_;
+  AtomicString custom_name_;
   unsigned property_id_ : kCSSPropertyIDBitLength;
   unsigned is_set_from_shorthand_ : 1;
   // If this property was set as part of an ambiguous shorthand, gives the index
@@ -85,7 +85,7 @@ class CSSPropertyValue {
       : metadata_(std::move(metadata)), value_(std::move(value)) {}
 
   CSSPropertyID Id() const { return metadata_.PropertyID(); }
-  const std::string& CustomPropertyName() const {
+  const AtomicString& CustomPropertyName() const {
     assert(Id() == CSSPropertyID::kVariable);
     return metadata_.custom_name_;
   }

@@ -50,7 +50,6 @@
 #include "space_split_string.h"
 #include <sstream>
 #include <unordered_set>
-#include "built_in_string.h"
 
 namespace webf {
 
@@ -59,26 +58,26 @@ inline bool IsNotHTMLSpace(CharType character) {
   return !IsHTMLSpace<CharType>(character);
 }
 
-void SpaceSplitString::Set(JSContext* ctx, const AtomicString& value) {
+void SpaceSplitString::Set(const AtomicString& value) {
   if (value.IsNull()) {
     Clear();
     return;
   }
-  data_ = std::make_shared<Data>(ctx, value);
+  data_ = std::make_shared<Data>(value);
 }
 
 void SpaceSplitString::Clear() {
   data_ = nullptr;
 }
 
-void SpaceSplitString::Add(JSContext* ctx, const AtomicString& string) {
+void SpaceSplitString::Add(const AtomicString& string) {
   if (Contains(string))
     return;
   EnsureShared();
   if (data_) {
     data_->Add(string);
   } else {
-    data_ = std::make_unique<Data>(ctx, string);
+    data_ = std::make_unique<Data>(string);
   }
 }
 
@@ -112,30 +111,29 @@ void SpaceSplitString::ReplaceAt(size_t index, const AtomicString& string) {
   (*data_)[index] = string;
 }
 
-AtomicString SpaceSplitString::SerializeToString(JSContext* ctx) const {
+AtomicString SpaceSplitString::SerializeToString() const {
   size_t size = this->size();
   if (size == 0)
-    return built_in_string::kempty_string;
+    return g_empty_atom;
   if (size == 1)
     return (*data_)[0];
 
   std::stringstream ss;
-  ss << (*data_)[0].Character8();
+  ss << (*data_)[0].Characters8();
   for (size_t i = 1; i < size; ++i) {
     ss << " ";
-    ss << (*data_)[i].Character8();
+    ss << (*data_)[i].Characters8();
   }
 
-  return {ctx, ss.str()};
+  return {ss.str()};
 }
 
 template <typename CharacterType>
-inline void SpaceSplitString::Data::CreateVector(JSContext* ctx,
-                                                 const AtomicString& source,
+inline void SpaceSplitString::Data::CreateVector(const AtomicString& source,
                                                  const CharacterType* characters,
                                                  unsigned int length) {
   assert(vector_.empty());
-  std::unordered_set<JSAtom> token_set;
+  std::unordered_set<AtomicString, AtomicString::KeyHasher> token_set;
   unsigned start = 0;
   while (true) {
     while (start < length && IsHTMLSpace<CharacterType>(characters[start]))
@@ -151,7 +149,7 @@ inline void SpaceSplitString::Data::CreateVector(JSContext* ctx,
       return;
     }
 
-    AtomicString token = AtomicString(ctx, characters + start, end - start);
+    AtomicString token = AtomicString(characters + start, end - start);
     // We skip adding |token| to |token_set| for the first token to reduce the
     // cost of HashSet<>::insert(), and adjust |token_set| when the second
     // unique token is found.
@@ -172,9 +170,9 @@ inline void SpaceSplitString::Data::CreateVector(JSContext* ctx,
   }
 }
 
-SpaceSplitString::Data::Data(JSContext* ctx, const AtomicString& string) : key_string_(string) {
+SpaceSplitString::Data::Data(const AtomicString& string) : key_string_(string) {
   assert(!string.IsNull());
-  CreateVector(ctx, string);
+  CreateVector(string);
 }
 
 SpaceSplitString::Data::Data(const Data& other) : vector_(other.vector_) {}
@@ -207,14 +205,14 @@ void SpaceSplitString::Data::Remove(unsigned int index) {
   vector_.erase(vector_.begin() + index);
 }
 
-void SpaceSplitString::Data::CreateVector(JSContext* ctx, const AtomicString& string) {
+void SpaceSplitString::Data::CreateVector(const AtomicString& string) {
   unsigned length = string.length();
   if (string.Is8Bit()) {
-    CreateVector<char>(ctx, string, reinterpret_cast<const char*>(string.Character8()), length);
+    CreateVector<char>(string, reinterpret_cast<const char*>(string.Characters8()), length);
     return;
   }
 
-  CreateVector<uint16_t>(ctx, string, string.Character16(), length);
+  CreateVector<uint16_t>(string, reinterpret_cast<const uint16_t*>(string.Characters16()), length);
 }
 
 std::unordered_map<JSAtom, SpaceSplitString::Data*>& SpaceSplitString::SharedDataMap() {

@@ -48,7 +48,7 @@ AtomicString ComputedCssStyleDeclaration::removeProperty(const AtomicString& key
   NativeValue result = InvokeBindingMethod(
       binding_call_methods::kremoveProperty, 1, arguments,
       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
-  return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result));
+  return NativeValueConverter<NativeTypeString>::FromNativeValue(result);
 }
 
 bool ComputedCssStyleDeclaration::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {

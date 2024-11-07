@@ -23,7 +23,7 @@ class Text : public CharacterData {
 
   Text(TreeScope& tree_scope, const AtomicString& data, ConstructionType type) : CharacterData(tree_scope, data, type) {
     GetExecutingContext()->uiCommandBuffer()->AddCommand(
-        UICommand::kCreateTextNode, std::move(data.ToNativeString(ctx())), bindingObject(), nullptr);
+        UICommand::kCreateTextNode, std::move(data.ToNativeString()), bindingObject(), nullptr);
   }
 
   NodeType nodeType() const override;

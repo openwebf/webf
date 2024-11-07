@@ -7,7 +7,6 @@
 #define BRIDGE_BINDINGS_QJS_CONVERTER_IMPL_H_
 
 #include <type_traits>
-#include "atomic_string.h"
 #include "bindings/qjs/union_base.h"
 #include "converter.h"
 #include "core/dom/events/event.h"
@@ -26,6 +25,7 @@
 #include "js_event_handler.h"
 #include "js_event_listener.h"
 #include "native_string_utils.h"
+#include "foundation/atomic_string.h"
 #include "script_promise.h"
 
 namespace webf {
@@ -253,7 +253,7 @@ struct Converter<IDLNullable<IDLDOMString>> : public ConverterBase<IDLDOMString>
     return Converter<IDLDOMString>::FromValue(ctx, value, exception_state);
   }
 
-  static JSValue ToValue(JSContext* ctx, const std::string& value) { return AtomicString(ctx, value).ToQuickJS(ctx); }
+  static JSValue ToValue(JSContext* ctx, const std::string& value) { return AtomicString(value).ToQuickJS(ctx); }
   static JSValue ToValue(JSContext* ctx, const AtomicString& value) {
     if (value == AtomicString::Null()) {
       return JS_NULL;
@@ -271,7 +271,7 @@ struct Converter<IDLLegacyDOMString> : public ConverterBase<IDLLegacyDOMString> 
     return AtomicString(ctx, value);
   }
 
-  static JSValue ToValue(JSContext* ctx, const std::string& value) { return AtomicString(ctx, value).ToQuickJS(ctx); }
+  static JSValue ToValue(JSContext* ctx, const std::string& value) { return AtomicString(value).ToQuickJS(ctx); }
   static JSValue ToValue(JSContext* ctx, const AtomicString& value) { return value.ToQuickJS(ctx); }
 };
 

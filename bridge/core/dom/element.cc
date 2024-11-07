@@ -15,7 +15,7 @@
 #include "core/css/parser/css_parser.h"
 #include "core/css/inline_css_style_declaration.h"
 #include "core/css/css_style_sheet.h"
-#include "built_in_string.h"
+#include "core/css/style_scope_data.h"
 #include "child_list_mutation_scope.h"
 #include "comment.h"
 #include "core/dom/document_fragment.h"
@@ -41,17 +41,17 @@ Element::Element(const AtomicString& namespace_uri,
     : ContainerNode(document, construction_type),
       local_name_(local_name),
       namespace_uri_(namespace_uri),
-      tag_name_(local_name.ToStdString(document->ctx())) {
+      tag_name_(local_name.ToStdString()) {
   auto buffer = GetExecutingContext()->uiCommandBuffer();
   if (namespace_uri == element_namespace_uris::khtml) {
-    buffer->AddCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())), bindingObject(),
+    buffer->AddCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString()), bindingObject(),
                        nullptr);
   } else if (namespace_uri == element_namespace_uris::ksvg) {
-    buffer->AddCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString(ctx())), bindingObject(),
+    buffer->AddCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString()), bindingObject(),
                        nullptr);
   } else {
-    buffer->AddCommand(UICommand::kCreateElementNS, std::move(local_name.ToNativeString(ctx())), bindingObject(),
-                       namespace_uri.ToNativeString(ctx()).release());
+    buffer->AddCommand(UICommand::kCreateElementNS, std::move(local_name.ToNativeString()), bindingObject(),
+                       namespace_uri.ToNativeString().release());
   }
 }
 
@@ -193,7 +193,7 @@ AtomicString Element::nodeValue() const {
 }
 
 std::string Element::nodeName() const {
-  return tagName().ToStdString(ctx());
+  return tagName().ToStdString();
 }
 
 AtomicString Element::className() const {
@@ -284,7 +284,7 @@ DOMTokenList* Element::classList() {
   if (rare_data.GetClassList() == nullptr) {
     auto* class_list = MakeGarbageCollected<DOMTokenList>(this, html_names::kClassAttr);
     AtomicString classValue = getAttribute(html_names::kClassAttr, ASSERT_NO_EXCEPTION());
-    class_list->DidUpdateAttributeValue(built_in_string::kNULL, classValue);
+    class_list->DidUpdateAttributeValue(g_null_atom, classValue);
     rare_data.SetClassList(class_list);
   }
   return rare_data.GetClassList();
@@ -451,7 +451,7 @@ const AtomicString Element::getUppercasedQualifiedName() const {
   auto name = getQualifiedName();
 
   if (namespace_uri_ == element_namespace_uris::khtml) {
-    return name.ToUpperIfNecessary(ctx());
+    return name.LowerASCII();
   }
 
   return name;
@@ -692,18 +692,18 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
 
   if (!inline_style) {
     inline_style =
-        CSSParser::ParseInlineStyleDeclaration(reinterpret_cast<const char*>(new_style_string.Character8()), this);
+        CSSParser::ParseInlineStyleDeclaration(reinterpret_cast<const char*>(new_style_string.Characters8()), this);
   } else {
     DCHECK(inline_style->IsMutable());
     static_cast<MutableCSSPropertyValueSet*>(const_cast<CSSPropertyValueSet*>(inline_style.get()))
         ->ParseDeclarationList(
-            reinterpret_cast<const char*>(new_style_string.Character8()),
+            new_style_string,
             GetDocument().ElementSheet().Contents());
   }
 }
 
 std::string Element::outerHTML() {
-  std::string tagname = local_name_.ToStdString(ctx());
+  std::string tagname = local_name_.ToStdString();
   std::string s = "<" + tagname;
 
   // Read attributes
@@ -741,9 +741,9 @@ std::string Element::innerHTML() {
     if (auto* element = DynamicTo<Element>(child)) {
       s += element->outerHTML();
     } else if (auto* text = DynamicTo<Text>(child)) {
-      s += text->data().ToStdString(ctx());
+      s += text->data().ToStdString();
     } else if (auto* comment = DynamicTo<Comment>(child)) {
-      s += "<!--" + comment->data().ToStdString(ctx()) + "-->";
+      s += "<!--" + comment->data().ToStdString() + "-->";
     }
     child = child->nextSibling();
   }
@@ -752,14 +752,14 @@ std::string Element::innerHTML() {
 }
 
 AtomicString Element::TextFromChildren() {
-  return {ctx(), innerHTML()};
+  return {innerHTML()};
 }
 
 void Element::setInnerHTML(const AtomicString& value, ExceptionState& exception_state) {
-  auto html = value.ToStdString(ctx());
+  auto html = value.ToStdString();
   ChildListMutationScope scope{*this};
 
-  if (value.IsEmpty()) {
+  if (value.empty()) {
     setTextContent(value, exception_state);
   } else {
     if (auto* template_element = DynamicTo<HTMLTemplateElement>(this)) {
@@ -814,6 +814,17 @@ void Element::FinishParsingChildren() {
   //      .GetStyleEngine()
   // .ScheduleInvalidationsForHasPseudoAffectedByInsertion(
   //   parentElement(), previousSibling(), *this);
+}
+
+StyleScopeData& Element::EnsureStyleScopeData() {
+  return EnsureElementRareData().EnsureStyleScopeData();
+}
+
+StyleScopeData* Element::GetStyleScopeData() const {
+  if (const ElementRareDataVector* data = GetElementRareData()) {
+    return data->GetStyleScopeData();
+  }
+  return nullptr;
 }
 
 // inline ElementRareDataVector* Element::GetElementRareData() const {
@@ -877,21 +888,9 @@ void Element::SetNeedsAnimationStyleRecalc() {
   }
 
   SetNeedsStyleRecalc(kLocalStyleChange, StyleChangeReasonForTracing::Create(style_change_reason::kAnimation));
-  /*
-    // TODO(guopengfei)：未迁移ComputedStyle
-    // Setting this flag to 'true' only makes sense if there's an existing style,
-    // otherwise there is no previous style to use as the basis for the new one.
-    if (NeedsStyleRecalc() && GetComputedStyle() &&
-        !GetComputedStyle()->IsEnsuredInDisplayNone()) {
-      SetAnimationStyleChange(true);
-      }
-    */
 }
 
 bool Element::ChildStyleRecalcBlockedByDisplayLock() const {
-  // TODO(guopengfei)：暂不支持
-  // auto* context = GetDisplayLockContext();
-  // return context && !context->ShouldStyleChildren();
   return false;
 }
 

@@ -32,22 +32,17 @@
 
 #include "core/dom/node_rare_data.h"
 
-//#include "third_party/blink/renderer/core/animation/scroll_timeline.h"
 #include "core/dom/container_node.h"
 #include "core/dom/element.h"
 #include "core/dom/flat_tree_node_data.h"
 #include "core/dom/mutation_observer_registration.h"
 #include "core/dom/node_lists_node_data.h"
-//#include "core/dom/part.h"
-//#include "third_party/blink/renderer/core/layout/layout_object.h"
 #include "core/page.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
 
 namespace webf {
 
 void NodeMutationObserverData::Trace(GCVisitor* visitor) const {
-  //visitor->Trace(registry_);
-  //visitor->Trace(transient_registry_);
 }
 
 void NodeMutationObserverData::AddTransientRegistration(
@@ -72,71 +67,7 @@ void NodeMutationObserverData::RemoveRegistration(
   registry_.erase_at(registry_.find(registration));
 }
 
-/*
-// TODO(guopengfei)：先注释
-void NodeRareData::RegisterScrollTimeline(ScrollTimeline* timeline) {
-  if (!scroll_timelines_) {
-    scroll_timelines_ =
-        MakeGarbageCollected<HeapHashSet<Member<ScrollTimeline>>>();
-  }
-  scroll_timelines_->insert(timeline);
-}
-void NodeRareData::UnregisterScrollTimeline(ScrollTimeline* timeline) {
-  scroll_timelines_->erase(timeline);
-}
-
-void NodeRareData::InvalidateAssociatedAnimationEffects() {
-  if (!scroll_timelines_)
-    return;
-
-  for (ScrollTimeline* scroll_timeline : *scroll_timelines_) {
-    scroll_timeline->InvalidateEffectTargetStyle();
-  }
-}
-
-void NodeRareData::AddDOMPart(Part& part) {
-  assert(!RuntimeEnabledFeatures::DOMPartsAPIMinimalEnabled());
-  if (!dom_parts_) {
-    dom_parts_ = MakeGarbageCollected<PartsList>();
-  }
-  assert(!base::Contains(*dom_parts_, &part));
-  dom_parts_->push_back(&part);
-}
-
-void NodeRareData::RemoveDOMPart(Part& part) {
-  assert(!RuntimeEnabledFeatures::DOMPartsAPIMinimalEnabled());
-  assert(dom_parts_ && base::Contains(*dom_parts_, &part));
-  // Common case is that one node has one part:
-  if (dom_parts_->size() == 1) {
-    DCHECK_EQ(dom_parts_->front(), &part);
-    dom_parts_->clear();
-  } else {
-    // This is the very slow case - multiple parts for a single node.
-    PartsList new_list;
-    for (auto p : *dom_parts_) {
-      if (p != &part) {
-        new_list.push_back(p);
-      }
-    }
-    dom_parts_->Swap(new_list);
-  }
-  if (dom_parts_->empty()) {
-    dom_parts_ = nullptr;
-  }
-}
-
-PartsList* NodeRareData::GetDOMParts() const {
-  assert(!dom_parts_ || !RuntimeEnabledFeatures::DOMPartsAPIMinimalEnabled());
-  return dom_parts_.Get();
-}
-*/
-void NodeRareData::Trace(GCVisitor* visitor) const {
-  //visitor->TraceMember(mutation_observer_data_);
-  //visitor->TraceMember(flat_tree_node_data_);
-  //visitor->TraceMember(node_lists_);
-  //visitor->TraceMember(scroll_timelines_);
-  //visitor->TraceMember(dom_parts_);
-}
+void NodeRareData::Trace(GCVisitor* visitor) const {}
 
 void NodeRareData::IncrementConnectedSubframeCount() {
   assert((connected_frame_count_ + 1) <= WebFPage::MaxNumberOfFrames());
@@ -170,7 +101,6 @@ EmptyNodeList* NodeRareData::EnsureEmptyChildNodeList(Node& node) {
   return list;
 }
 
-// TODO(guopengfei)：
 static_assert(static_cast<int>(NodeRareData::kNumberOfElementFlags) ==
                   static_cast<int>(ElementFlags::kNumberOfElementFlags),
               "kNumberOfElementFlags must match.");

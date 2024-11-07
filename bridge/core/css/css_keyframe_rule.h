@@ -44,10 +44,10 @@ class CSSKeyframeRule final : public CSSRule {
   CSSKeyframeRule(std::shared_ptr<StyleRuleKeyframe>, CSSKeyframesRule* parent);
   ~CSSKeyframeRule() override;
 
-  AtomicString cssText() const override { return AtomicString(ctx(), keyframe_->CssText()); }
+  AtomicString cssText() const override { return AtomicString(keyframe_->CssText()); }
   void Reattach(std::shared_ptr<StyleRuleBase>) override;
 
-  AtomicString keyText() const { return AtomicString(ctx(), keyframe_->KeyText()); }
+  AtomicString keyText() const { return AtomicString(keyframe_->KeyText()); }
   void setKeyText(const ExecutingContext*, const AtomicString&, ExceptionState&);
 
   CSSStyleDeclaration* style() const;

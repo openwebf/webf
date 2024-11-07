@@ -20,14 +20,14 @@ Node* ChildNodeList::item(unsigned index, ExceptionState& exception_state) const
 }
 
 bool ChildNodeList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
-  int32_t index = std::stoi(key.ToStdString(ctx()));
+  int32_t index = std::stoi(key.ToStdString());
   return collection_index_cache_.NodeAt(*this, index);
 }
 
 void ChildNodeList::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) {
   uint32_t size = collection_index_cache_.NodeCount(*this);
   for (int i = 0; i < size; i++) {
-    names.emplace_back(AtomicString(ctx(), std::to_string(i)));
+    names.emplace_back(AtomicString(std::to_string(i)));
   }
 }
 

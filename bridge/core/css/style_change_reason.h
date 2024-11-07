@@ -9,7 +9,6 @@
 
 #include "core/dom/qualified_name.h"
 #include "foundation/macros.h"
-#include "global_string.h"
 
 namespace webf {
 
@@ -68,17 +67,17 @@ typedef const char StyleChangeReasonString[];
 
 namespace style_change_extra_data {
 
-extern const std::string& g_active;
-extern const std::string& g_active_view_transition;
-extern const std::string& g_active_view_transition_type;
-extern const std::string& g_disabled;
-extern const std::string& g_drag;
-extern const std::string& g_focus;
-extern const std::string& g_focus_visible;
-extern const std::string& g_focus_within;
-extern const std::string& g_hover;
-extern const std::string& g_past;
-extern const std::string& g_unresolved;
+extern const AtomicString& g_active;
+extern const AtomicString& g_active_view_transition;
+extern const AtomicString& g_active_view_transition_type;
+extern const AtomicString& g_disabled;
+extern const AtomicString& g_drag;
+extern const AtomicString& g_focus;
+extern const AtomicString& g_focus_visible;
+extern const AtomicString& g_focus_within;
+extern const AtomicString& g_hover;
+extern const AtomicString& g_past;
+extern const AtomicString& g_unresolved;
 
 void Init();
 
@@ -95,27 +94,27 @@ class StyleChangeReasonForTracing {
  public:
   static StyleChangeReasonForTracing Create(
       StyleChangeReasonString reason_string) {
-    return StyleChangeReasonForTracing(reason_string, "");
+    return StyleChangeReasonForTracing(reason_string, g_null_atom);
   }
 
   static StyleChangeReasonForTracing CreateWithExtraData(
       StyleChangeReasonString reason_string,
-      const std::string& extra_data) {
+      const AtomicString& extra_data) {
     return StyleChangeReasonForTracing(reason_string, extra_data);
   }
 
   static StyleChangeReasonForTracing FromAttribute(
       const QualifiedName& attribute_name) {
     return StyleChangeReasonForTracing(style_change_reason::kAttribute,
-                                       attribute_name.LocalName().value_or(""));
+                                       attribute_name.LocalName());
   }
 
   std::string ReasonString() const { return std::string(reason_); }
-  const std::string& GetExtraData() const { return extra_data_; }
+  const AtomicString& GetExtraData() const { return extra_data_; }
 
  private:
   StyleChangeReasonForTracing(StyleChangeReasonString reason_string,
-                              const std::string& extra_data)
+                              const AtomicString& extra_data)
       : reason_(reason_string), extra_data_(extra_data) {}
 
   // disable comparisons
@@ -123,7 +122,7 @@ class StyleChangeReasonForTracing {
   void operator!=(const StyleChangeReasonForTracing&) const {}
 
   const char* reason_;
-  std::string extra_data_;
+  AtomicString extra_data_;
 };
 
 }  // namespace webf

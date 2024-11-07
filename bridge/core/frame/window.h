@@ -5,7 +5,6 @@
 #ifndef BRIDGE_WINDOW_H
 #define BRIDGE_WINDOW_H
 
-#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/wrapper_type_info.h"
 #include "core/css/computed_css_style_declaration.h"
 #include "core/dom/events/event_target.h"

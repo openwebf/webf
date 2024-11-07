@@ -47,8 +47,6 @@
 
 namespace webf {
 
-const uint32_t kNotFound = UINT_MAX;
-
 class WeakResult;
 
 template <typename Container, typename ContainerMemberType = Container>
@@ -173,12 +171,12 @@ class MutableAttributeCollection
             attributes) {}
 
   // These functions do no error/duplicate checking.
-  void Append(const QualifiedName&, const std::string& value);
+  void Append(const QualifiedName&, const AtomicString& value);
   void Remove(unsigned index);
 };
 
 inline void MutableAttributeCollection::Append(const QualifiedName& name,
-                                               const std::string& value) {
+                                               const AtomicString& value) {
   attributes_.push_back(Attribute(name, value));
 }
 

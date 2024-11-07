@@ -8,9 +8,9 @@
 namespace webf {
 namespace <%= name %> {
 
-void Init(JSContext* ctx) {
+void Init() {
 <% names.forEach(function(k) { %>
-  <%= k %>::Init(ctx);
+  <%= k %>::Init();
 <% }); %>
 }
 

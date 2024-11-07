@@ -26,7 +26,6 @@
 #ifndef WEBF_CSS_VALUE_H
 #define WEBF_CSS_VALUE_H
 
-#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/base/memory/values_equivalent.h"
 

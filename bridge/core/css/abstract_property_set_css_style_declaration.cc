@@ -40,17 +40,17 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::item(unsigned i) const {
   if (i >= PropertySet().PropertyCount()) {
     return AtomicString::Empty();
   }
-  return AtomicString(ctx(), PropertySet().PropertyAt(i).Name().ToString());
+  return AtomicString(PropertySet().PropertyAt(i).Name().ToAtomicString());
 }
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::cssText() const {
-  return AtomicString(ctx(), PropertySet().AsText());
+  return AtomicString(PropertySet().AsText());
 }
 
 void AbstractPropertySetCSSStyleDeclaration::setCssText(const AtomicString& text, ExceptionState&) {
   StyleAttributeMutationScope mutation_scope(this);
   WillMutate();
-  PropertySet().ParseDeclarationList(reinterpret_cast<const char*>(text.Character8()), ContextStyleSheet());
+  PropertySet().ParseDeclarationList(text, ContextStyleSheet());
 
   DidMutate(kPropertyChanged);
 
@@ -59,35 +59,35 @@ void AbstractPropertySetCSSStyleDeclaration::setCssText(const AtomicString& text
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyValue(const AtomicString& property_name, ExceptionState& exception_state) {
   CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Characters8()));
   if (!IsValidCSSPropertyID(property_id)) {
-    return AtomicString();
+    return g_empty_atom;
   }
   if (property_id == CSSPropertyID::kVariable) {
-    return AtomicString(ctx(), PropertySet().GetPropertyValue(property_name.ToStdString(ctx())));
+    return AtomicString(PropertySet().GetPropertyValue(property_name.ToStdString()));
   }
-  return AtomicString(ctx(), PropertySet().GetPropertyValue(property_id));
+  return AtomicString(PropertySet().GetPropertyValue(property_id));
 }
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyPriority(const AtomicString& property_name) {
   CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Characters8()));
   if (!IsValidCSSPropertyID(property_id)) {
     return AtomicString::Empty();
   }
 
   bool important = false;
   if (property_id == CSSPropertyID::kVariable) {
-    important = PropertySet().PropertyIsImportant(property_name.ToStdString(ctx()));
+    important = PropertySet().PropertyIsImportant(property_name.ToStdString());
   } else {
     important = PropertySet().PropertyIsImportant(property_id);
   }
-  return important ? AtomicString(ctx(), "important") : AtomicString::Empty();
+  return important ? AtomicString("important") : AtomicString::Empty();
 }
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyShorthand(const AtomicString& property_name) {
   CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Characters8()));
 
   // Custom properties don't have shorthands, so we can ignore them here.
   if (!IsValidCSSPropertyID(property_id) || !CSSProperty::Get(property_id).IsLonghand()) {
@@ -102,7 +102,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyShorthand(const 
 
 bool AbstractPropertySetCSSStyleDeclaration::IsPropertyImplicit(const AtomicString& property_name) {
   CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Characters8()));
 
   // Custom properties don't have shorthands, so we can ignore them here.
   if (property_id < kFirstCSSProperty) {
@@ -117,13 +117,13 @@ void AbstractPropertySetCSSStyleDeclaration::setProperty(const ExecutingContext*
                                                          const AtomicString& priority,
                                                          ExceptionState& exception_state) {
   CSSPropertyID property_id =
-      UnresolvedCSSPropertyID(execution_context, reinterpret_cast<const char*>(property_name.Character8()));
+      UnresolvedCSSPropertyID(execution_context, reinterpret_cast<const char*>(property_name.Characters8()));
   if (!IsValidCSSPropertyID(property_id) || !IsPropertyValid(property_id)) {
     return;
   }
 
-  bool important = EqualIgnoringASCIICase(reinterpret_cast<const char*>(priority.Character8()), "important");
-  if (!important && !priority.IsEmpty()) {
+  bool important = EqualIgnoringASCIICase(reinterpret_cast<const char*>(priority.Characters8()), "important");
+  if (!important && !priority.empty()) {
     return;
   }
 
@@ -133,7 +133,7 @@ void AbstractPropertySetCSSStyleDeclaration::setProperty(const ExecutingContext*
 AtomicString AbstractPropertySetCSSStyleDeclaration::removeProperty(const AtomicString& property_name,
                                                                     ExceptionState& exception_state) {
   CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Characters8()));
   if (!IsValidCSSPropertyID(property_id)) {
     return AtomicString::Empty();
   }
@@ -144,7 +144,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::removeProperty(const Atomic
   std::string result;
   bool changed = false;
   if (property_id == CSSPropertyID::kVariable) {
-    changed = PropertySet().RemoveProperty(property_name.ToStdString(ctx()), &result);
+    changed = PropertySet().RemoveProperty(property_name, &result);
   } else {
     changed = PropertySet().RemoveProperty(property_id, &result);
   }
@@ -154,7 +154,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::removeProperty(const Atomic
   if (changed) {
     mutation_scope.EnqueueMutationRecord();
   }
-  return AtomicString(ctx(), result);
+  return AtomicString(result);
 }
 
 const std::shared_ptr<const CSSValue>* AbstractPropertySetCSSStyleDeclaration::GetPropertyCSSValueInternal(
@@ -165,43 +165,43 @@ const std::shared_ptr<const CSSValue>* AbstractPropertySetCSSStyleDeclaration::G
 const std::shared_ptr<const CSSValue>* AbstractPropertySetCSSStyleDeclaration::GetPropertyCSSValueInternal(
     const AtomicString& custom_property_name) {
   DCHECK_EQ(CSSPropertyID::kVariable,
-            CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(custom_property_name.Character8())));
-  return PropertySet().GetPropertyCSSValue(custom_property_name.ToStdString(ctx()));
+            CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(custom_property_name.Characters8())));
+  return PropertySet().GetPropertyCSSValue(custom_property_name.ToStdString());
 }
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyValueInternal(CSSPropertyID property_id) {
-  return AtomicString(ctx(), PropertySet().GetPropertyValue(property_id));
+  return AtomicString(PropertySet().GetPropertyValue(property_id));
 }
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyValueWithHint(const AtomicString& property_name,
                                                                               unsigned index) {
   CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Characters8()));
   if (!IsValidCSSPropertyID(property_id)) {
     return AtomicString::Empty();
   }
   if (property_id == CSSPropertyID::kVariable) {
-    return AtomicString(ctx(), PropertySet().GetPropertyValueWithHint(
-                                   reinterpret_cast<const char*>(property_name.Character8()), index));
+    return AtomicString(PropertySet().GetPropertyValueWithHint(
+                                   property_name, index));
   }
-  return AtomicString(ctx(), PropertySet().GetPropertyValue(property_id));
+  return AtomicString(PropertySet().GetPropertyValue(property_id));
 }
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyPriorityWithHint(const AtomicString& property_name,
                                                                                  unsigned index) {
   CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Character8()));
+      CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(property_name.Characters8()));
   if (!IsValidCSSPropertyID(property_id)) {
     return AtomicString::Empty();
   }
   bool important = false;
   if (property_id == CSSPropertyID::kVariable) {
     important =
-        PropertySet().PropertyIsImportantWithHint(reinterpret_cast<const char*>(property_name.Character8()), index);
+        PropertySet().PropertyIsImportantWithHint(property_name, index);
   } else {
     important = PropertySet().PropertyIsImportant(property_id);
   }
-  return important ? AtomicString(ctx(), "important") : AtomicString::Empty();
+  return important ? AtomicString("important") : AtomicString::Empty();
 }
 
 void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(CSSPropertyID unresolved_property,
@@ -217,7 +217,7 @@ void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(CSSPropertyID u
     AtomicString atomic_name(custom_property_name);
 
     bool is_animation_tainted = IsKeyframeStyle();
-    result = PropertySet().ParseAndSetCustomProperty(reinterpret_cast<const char*>(atomic_name.Character8()),
+    result = PropertySet().ParseAndSetCustomProperty(atomic_name,
                                                      value.Characters8(), important, ContextStyleSheet(),
                                                      is_animation_tainted);
   } else {

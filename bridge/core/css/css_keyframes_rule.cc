@@ -60,7 +60,7 @@ void StyleRuleKeyframes::WrapperRemoveKeyframe(unsigned index) {
 int StyleRuleKeyframes::FindKeyframeIndex(std::shared_ptr<CSSParserContext> context,
                                           const AtomicString& key) const {
   std::unique_ptr<std::vector<KeyframeOffset>> keys =
-      CSSParser::ParseKeyframeKeyList(std::move(context), reinterpret_cast<const char*>(key.Character8()));
+      CSSParser::ParseKeyframeKeyList(std::move(context), reinterpret_cast<const char*>(key.Characters8()));
   if (!keys) {
     return -1;
   }
@@ -91,7 +91,7 @@ void CSSKeyframesRule::setName(const AtomicString& name) {
     parentStyleSheet()->Contents()->NotifyDiffUnrepresentable();
   }
 
-  keyframes_rule_->SetName(name.ToStdString(ctx()));
+  keyframes_rule_->SetName(name.ToStdString());
 }
 
 void CSSKeyframesRule::appendRule(const ExecutingContext* execution_context,
@@ -102,7 +102,7 @@ void CSSKeyframesRule::appendRule(const ExecutingContext* execution_context,
   CSSStyleSheet* style_sheet = parentStyleSheet();
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto keyframe =
-      CSSParser::ParseKeyframeRule(context, reinterpret_cast<const char*>(rule_text.Character8()));
+      CSSParser::ParseKeyframeRule(context, reinterpret_cast<const char*>(rule_text.Characters8()));
   if (!keyframe) {
     return;
   }
@@ -158,7 +158,7 @@ AtomicString CSSKeyframesRule::cssText() const {
   } else {
     result.Append("@keyframes ");
   }
-  SerializeIdentifier(reinterpret_cast<const char*>(name().Character8()), result);
+  SerializeIdentifier(reinterpret_cast<const char*>(name().Characters8()), result);
   result.Append(" { \n");
 
   unsigned size = length();
@@ -168,7 +168,7 @@ AtomicString CSSKeyframesRule::cssText() const {
     result.Append('\n');
   }
   result.Append('}');
-  return AtomicString(ctx(), result.ReleaseString());
+  return AtomicString(result.ReleaseString());
 }
 
 unsigned CSSKeyframesRule::length() const {

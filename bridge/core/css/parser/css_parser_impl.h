@@ -12,7 +12,6 @@
 #include <span>
 #include <vector>
 
-#include "bindings/qjs/atomic_string.h"
 #include "core/css/css_at_rule_id.h"
 #include "core/css/parser/css_tokenized_value.h"
 #include "core/css/style_rule_keyframe.h"

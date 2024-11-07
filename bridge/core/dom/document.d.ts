@@ -41,7 +41,6 @@ interface Document extends Node, ParentNode {
   getElementsByTagName(tagName: string): Element[];
   getElementsByName(name: string): Element[];
 
-  querySelector(selectors: string): Element | null;
   querySelectorAll(selectors: string): Element[];
 
   elementFromPoint(x: number, y: number): Element | null;
