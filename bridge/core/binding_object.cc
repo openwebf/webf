@@ -179,12 +179,14 @@ static void handleAsyncInvokeCallback(ScriptPromiseResolver* resolver,
   if (success_result != nullptr) {
     ScriptValue result = ScriptValue(resolver->context()->ctx(), *success_result, false);
     resolver->Resolve(result.QJSValue());
+    dart_free(success_result);
   } else if (error_msg != nullptr) {
     ExceptionState exception_state;
     exception_state.ThrowException(context->ctx(), ErrorType::InternalError, error_msg);
     JSValue exception_value = ExceptionState::CurrentException(context->ctx());
     resolver->Reject(exception_value);
     JS_FreeValue(context->ctx(), exception_value);
+    dart_free((void*) error_msg);
   } else {
     assert(false);
   }

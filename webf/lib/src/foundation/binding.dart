@@ -413,5 +413,6 @@ void asyncInvokeBindingMethodFromNativeImpl(WebFViewController view, Pointer<Bin
     f(asyncCallContext.ref.resolver, nullptr, '$e\n$stack'.toNativeUtf8());
   }
 
+  malloc.free(asyncCallContext);
 }
 
