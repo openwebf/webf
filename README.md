@@ -9,8 +9,8 @@
 <a href="https://openwebf.com" alt="openwebf-site">OpenWebF</a>
 </h1>
 <p align="center">
-  <b>Build flutter apps with HTML/CSS and JavaScript.</b><br/>
-  Building Flutter apps that are friendly to web developers
+  <b>A Web Rendering Engine Optimized for the Client.</b><br/>
+  Built using React/Vue and Tailwind CSS, rendered through Flutter.
 </p>
 <p align="center">
   <a href="https://openwebf.com/docs/tutorials/getting-started/quick-start">
