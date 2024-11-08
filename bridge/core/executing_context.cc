@@ -112,6 +112,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
 ExecutingContext::~ExecutingContext() {
   is_context_valid_ = false;
   valid_contexts[context_id_] = false;
+  executing_context_status_->disposed = true;
 
   // Check if current context have unhandled exceptions.
   JSValue exception = JS_GetException(script_state_.ctx());

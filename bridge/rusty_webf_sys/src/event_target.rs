@@ -29,6 +29,7 @@ struct EventCallbackContext {
 struct EventCallbackContextData {
   executing_context_ptr: *const OpaquePtr,
   executing_context_method_pointer: *const ExecutingContextRustMethods,
+  executing_context_status: *const RustValueStatus,
   func: EventListenerCallback,
 }
 
@@ -112,7 +113,7 @@ extern "C" fn handle_event_listener_callback(
   unsafe {
     let func = &(*callback_context_data).func;
     let callback_data = &(*callback_context_data);
-    let executing_context = ExecutingContext::initialize(callback_data.executing_context_ptr, callback_data.executing_context_method_pointer);
+    let executing_context = ExecutingContext::initialize(callback_data.executing_context_ptr, callback_data.executing_context_method_pointer, callback_data.executing_context_status);
     let event = Event::initialize(event_ptr, &executing_context, event_method_pointer, status);
     func(&event);
   }
@@ -148,6 +149,7 @@ impl EventTarget {
     let callback_context_data = Box::new(EventCallbackContextData {
       executing_context_ptr: self.context().ptr,
       executing_context_method_pointer: self.context().method_pointer(),
+      executing_context_status: self.context().status,
       func: callback,
     });
     let callback_context_data_ptr = Box::into_raw(callback_context_data);
@@ -178,6 +180,7 @@ impl EventTarget {
     let callback_context_data = Box::new(EventCallbackContextData {
       executing_context_ptr: self.context().ptr,
       executing_context_method_pointer: self.context().method_pointer(),
+      executing_context_status: self.context().status,
       func: callback,
     });
     let callback_context_data_ptr = Box::into_raw(callback_context_data);
