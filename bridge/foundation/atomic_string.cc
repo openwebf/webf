@@ -103,6 +103,18 @@ AtomicString AtomicString::LowerASCII(AtomicString source) {
   return {std::move(new_impl)};
 }
 
+
+AtomicString AtomicString::LowerASCII() const {
+  return AtomicString::LowerASCII(*this);
+}
+
+AtomicString AtomicString::UpperASCII() const {
+  std::shared_ptr<StringImpl> impl = Impl();
+  if (UNLIKELY(!impl))
+    return *this;
+  return AtomicString(impl->UpperASCII());
+}
+
 std::unique_ptr<SharedNativeString> AtomicString::ToNativeString() const {
   if (string_ == nullptr) {
     return nullptr;

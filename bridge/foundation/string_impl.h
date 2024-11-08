@@ -290,6 +290,23 @@ ALWAYS_INLINE const char16_t* StringImpl::GetCharacters<char16_t>() const {
   return Characters16();
 }
 
+ALWAYS_INLINE bool StringImpl::IsLowerASCII() const {
+  uint32_t flags = hash_and_flags_.load(std::memory_order_relaxed);
+  if (flags & kAsciiPropertyCheckDone)
+    return flags & kIsLowerAscii;
+  return ComputeASCIIFlags() & kIsLowerAscii;
+}
+
+
+ALWAYS_INLINE bool StringImpl::ContainsOnlyASCIIOrEmpty() const {
+  uint32_t flags = hash_and_flags_.load(std::memory_order_relaxed);
+  if (flags & kAsciiPropertyCheckDone)
+    return flags & kContainsOnlyAscii;
+  return ComputeASCIIFlags() & kContainsOnlyAscii;
+}
+
+
+
 }  // namespace webf
 
 #endif  // WEBF_FOUNDATION_STRING_IMPL_H_

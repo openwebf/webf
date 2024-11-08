@@ -26,7 +26,7 @@ void StringImpl::InitStatics() {
 
 std::shared_ptr<StringImpl> StringImpl::Create(const char* characters, size_t length) {
   if (!characters || !length)
-    return std::shared_ptr<StringImpl>(empty_);
+    return empty_shared();
 
   char* data;
   std::shared_ptr<StringImpl> string = CreateUninitialized(length, data);
@@ -36,7 +36,7 @@ std::shared_ptr<StringImpl> StringImpl::Create(const char* characters, size_t le
 
 std::shared_ptr<StringImpl> StringImpl::Create(const char16_t* characters, size_t length) {
   if (!characters || !length)
-    return std::shared_ptr<StringImpl>(empty_);
+    return empty_shared();
 
   char16_t* data;
   std::shared_ptr<StringImpl> string = CreateUninitialized(length, data);
@@ -47,7 +47,7 @@ std::shared_ptr<StringImpl> StringImpl::Create(const char16_t* characters, size_
 std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char*& data) {
   if (!length) {
     data = nullptr;
-    return std::shared_ptr<StringImpl>(empty_);
+    return empty_shared();
   }
 
   // Allocate a single buffer large enough to contain the StringImpl
@@ -61,7 +61,7 @@ std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char*
 std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char16_t*& data) {
   if (!length) {
     data = nullptr;
-    return std::shared_ptr<StringImpl>(empty_);
+    return empty_shared();
   }
 
   // Allocate a single buffer large enough to contain the StringImpl
@@ -137,19 +137,6 @@ std::shared_ptr<StringImpl> StringImpl::RemoveCharacters(
   return RemoveCharacters(Characters16(), find_match);
 }
 
-ALWAYS_INLINE bool StringImpl::ContainsOnlyASCIIOrEmpty() const {
-  uint32_t flags = hash_and_flags_.load(std::memory_order_relaxed);
-  if (flags & kAsciiPropertyCheckDone)
-    return flags & kContainsOnlyAscii;
-  return ComputeASCIIFlags() & kContainsOnlyAscii;
-}
-
-ALWAYS_INLINE bool StringImpl::IsLowerASCII() const {
-  uint32_t flags = hash_and_flags_.load(std::memory_order_relaxed);
-  if (flags & kAsciiPropertyCheckDone)
-    return flags & kIsLowerAscii;
-  return ComputeASCIIFlags() & kIsLowerAscii;
-}
 
 bool StringImpl::IsDigit() const {
   std::string str = std::string(Characters8());
@@ -166,7 +153,7 @@ size_t StringImpl::Find(CharacterMatchFunctionPtr match_function,
 std::shared_ptr<StringImpl> StringImpl::Substring(size_t start,
                                                   size_t length) const {
   if (start >= length_)
-    return {empty_, [](StringImpl*) {}};
+    return empty_shared();
   size_t max_length = length_ - start;
   if (length >= max_length) {
     // RefPtr has trouble dealing with const arguments. It should be updated

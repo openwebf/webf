@@ -25,9 +25,9 @@ class StyleScopeData final : public ElementRareDataField {
  public:
   void Trace(GCVisitor*) const override;
 
-  void AddTriggeredImplicitScope(const StyleScope&);
-  void RemoveTriggeredImplicitScope(const StyleScope&);
-  bool TriggersScope(const StyleScope&) const;
+//  void AddTriggeredImplicitScope(const StyleScope&);
+//  void RemoveTriggeredImplicitScope(const StyleScope&);
+//  bool TriggersScope(const StyleScope&) const;
 
   const std::vector<std::shared_ptr<const StyleScope>>& GetTriggeredScopes() const {
     return triggered_implicit_scopes_;

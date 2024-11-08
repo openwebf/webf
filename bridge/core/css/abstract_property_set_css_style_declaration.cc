@@ -64,7 +64,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyValue(const Atom
     return g_empty_atom;
   }
   if (property_id == CSSPropertyID::kVariable) {
-    return AtomicString(PropertySet().GetPropertyValue(property_name.ToStdString()));
+    return AtomicString(PropertySet().GetPropertyValue(property_name));
   }
   return AtomicString(PropertySet().GetPropertyValue(property_id));
 }
@@ -78,7 +78,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyPriority(const A
 
   bool important = false;
   if (property_id == CSSPropertyID::kVariable) {
-    important = PropertySet().PropertyIsImportant(property_name.ToStdString());
+    important = PropertySet().PropertyIsImportant(property_name);
   } else {
     important = PropertySet().PropertyIsImportant(property_id);
   }
@@ -166,7 +166,7 @@ const std::shared_ptr<const CSSValue>* AbstractPropertySetCSSStyleDeclaration::G
     const AtomicString& custom_property_name) {
   DCHECK_EQ(CSSPropertyID::kVariable,
             CssPropertyID(GetExecutingContext(), reinterpret_cast<const char*>(custom_property_name.Characters8())));
-  return PropertySet().GetPropertyCSSValue(custom_property_name.ToStdString());
+  return PropertySet().GetPropertyCSSValue(custom_property_name);
 }
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyValueInternal(CSSPropertyID property_id) {

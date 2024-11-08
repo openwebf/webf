@@ -19,6 +19,8 @@ void TestAtomicString(TestCallback callback) {
   JSRuntime* runtime = JS_NewRuntime();
   JSContext* ctx = JS_NewContext(runtime);
 
+  StringImpl::InitStatics();
+
   callback(ctx);
 
   JS_FreeContext(ctx);
