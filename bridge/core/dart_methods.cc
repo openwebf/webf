@@ -36,8 +36,6 @@ DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
   on_js_error_ = reinterpret_cast<OnJSError>(dart_methods[i++]);
   on_js_log_ = reinterpret_cast<OnJSLog>(dart_methods[i++]);
 
-  WEBF_LOG(VERBOSE) << "2 on Js" << load_native_library_;
-
   assert_m(i == dart_methods_length, "Dart native methods count is not equal with C++ side method registrations.");
 }
 
