@@ -1,10 +1,11 @@
 /*
  * Copyright (C) 2022-present The Kraken authors. All rights reserved.
  */
-const { spawn, spawnSync } = require('child_process');
+const {spawn, spawnSync} = require('child_process');
 const path = require('path');
 const os = require('os');
-const { startWsServer } = require('./ws_server');
+const {startWsServer} = require('./ws_server');
+const {getRandomPort} = require('get-port-please');
 
 function getRunningPlatform() {
   if (os.platform() == 'darwin') return 'macos';
@@ -13,7 +14,7 @@ function getRunningPlatform() {
 }
 
 // Dart null safety error didn't report in dist binaries. Should run integration test with flutter run directly.
-function startIntegrationTest() {
+function startIntegrationTest(websocketPort) {
   const shouldSkipBuild = /skip\-build/.test(process.argv);
   if (!shouldSkipBuild) {
     console.log('Building integration tests macOS application from "lib/main.dart"...');
@@ -38,6 +39,7 @@ function startIntegrationTest() {
     env: {
       ...process.env,
       WEBF_ENABLE_TEST: 'true',
+      WEBF_WEBSOCKET_SERVER_PORT: websocketPort,
       'enable-software-rendering': true,
       'skia-deterministic-rendering': true,
       WEBF_TEST_DIR: path.join(__dirname, '../')
@@ -72,5 +74,11 @@ function startIntegrationTest() {
   });
 }
 
-startIntegrationTest();
-startWsServer(8399);
+async function main() {
+  const port = await getRandomPort();
+
+  startIntegrationTest(port);
+  startWsServer(port);
+}
+
+main();
