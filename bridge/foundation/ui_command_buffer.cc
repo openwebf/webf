@@ -57,6 +57,10 @@ void UICommandBuffer::addCommand(UICommand command,
                                  void* nativePtr,
                                  void* nativePtr2,
                                  bool request_ui_update) {
+  if (command == UICommand::kFinishRecordingCommand) {
+    return;
+  }
+
   UICommandItem item{static_cast<int32_t>(command), args_01.get(), nativePtr, nativePtr2};
   updateFlags(command);
   addCommand(item, request_ui_update);
