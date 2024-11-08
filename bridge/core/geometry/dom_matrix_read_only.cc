@@ -7,6 +7,7 @@
 #include "binding_call_methods.h"
 #include "native_value_converter.h"
 #include "core/executing_context.h"
+#include "core/frame/module_manager.h"
 #include "core/geometry/dom_matrix.h"
 #include "core/geometry/dom_point.h"
 
@@ -24,13 +25,22 @@ DOMMatrixReadOnly* DOMMatrixReadOnly::Create(webf::ExecutingContext* context, we
 DOMMatrix* DOMMatrixReadOnly::fromMatrix(ExecutingContext* context,
                                          DOMMatrixReadOnly* matrix,
                                          ExceptionState& exception_state) {
-  // TODO 使用 Module 方法
-  // NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<DOMMatrixReadOnly>>::ToNativeValue(matrix)};
-  // auto execute_context = matrix->GetExecutingContext();
-  // execute_context()->dartMethodPtr()->createBindingObject(execute_context()->isDedicated(),
-  //                                                         execute_context()->contextId(), matrix->bindingObject(),
-  //                                                         CreateBindingObjectType::kCreateDOMMatrix, arguments, 1);
-  return MakeGarbageCollected<DOMMatrix>(context, exception_state);
+  NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<DOMMatrixReadOnly>>::ToNativeValue(matrix)};
+  // auto* context = matrix->GetExecutingContext();
+  AtomicString module_name = AtomicString(context->ctx(), "DOMMatrix");
+  AtomicString method_name = AtomicString(context->ctx(), "fromMatrix");
+
+  NativeValue* dart_result = context->dartMethodPtr()->invokeModule(
+      context->isDedicated(), nullptr, context->contextId(), context->dartIsolateContext()->profiler()->link_id(),
+      module_name.ToNativeString(context->ctx()).release(), method_name.ToNativeString(context->ctx()).release(),
+      arguments, nullptr);
+
+  NativeBindingObject* native_binding_object =
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(*dart_result);
+
+  if (native_binding_object == nullptr)
+    return nullptr;
+  return MakeGarbageCollected<DOMMatrix>(context, native_binding_object);
 }
 
 DOMMatrixReadOnly::DOMMatrixReadOnly(ExecutingContext* context,

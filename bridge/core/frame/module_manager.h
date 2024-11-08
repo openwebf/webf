@@ -10,6 +10,8 @@
 #include "bindings/qjs/qjs_function.h"
 #include "module_callback.h"
 
+#include <webf_bridge.h>
+
 namespace webf {
 
 class ModuleContext {
@@ -37,6 +39,12 @@ class ModuleManager {
                                             ScriptValue& params_value,
                                             const std::shared_ptr<QJSFunction>& callback,
                                             ExceptionState& exception);
+  static NativeValue* __webf_invoke_module__(ExecutingContext* context,
+                                             const AtomicString& module_name,
+                                             const AtomicString& method,
+                                             NativeValue& params_value,
+                                             const std::shared_ptr<QJSFunction>& callback,
+                                             ExceptionState& exception);
   static void __webf_add_module_listener__(ExecutingContext* context,
                                            const AtomicString& module_name,
                                            const std::shared_ptr<QJSFunction>& handler,
