@@ -141,6 +141,7 @@ class ExecutingContext {
     assert(dart_isolate_context_->valid());
     return dart_isolate_context_->dartMethodPtr();
   }
+  FORCE_INLINE WebFValueStatus* status() const { return executing_context_status_; }
   FORCE_INLINE ExecutingContextWebFMethods* publicMethodPtr() const { return public_method_ptr_.get(); }
   FORCE_INLINE bool isDedicated() { return is_dedicated_; }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
@@ -216,6 +217,7 @@ class ExecutingContext {
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
   std::unordered_set<ScriptWrappable*> active_wrappers_;
+  WebFValueStatus* executing_context_status_{new WebFValueStatus()};
   bool is_dedicated_;
 
   // Rust methods ptr should keep alive when ExecutingContext is disposing.

@@ -27,4 +27,8 @@ WebFValue<SharedExceptionState, ExceptionStatePublicMethods> ExecutingContextWeb
                                                                       ExceptionState::publicMethodPointer(), nullptr);
 }
 
+void ExecutingContextWebFMethods::FinishRecordingUIOperations(webf::ExecutingContext* context) {
+  context->uiCommandBuffer()->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr, false);
+}
+
 }  // namespace webf
