@@ -331,6 +331,9 @@ void invokeBindingMethodFromNativeImpl(double contextId, int profileId, Pointer<
     WebFProfiler.instance.startTrackBindingSteps(currentProfileOp!, 'fromNativeValue');
   }
 
+  // Make sure the dart object related to nativeBindingObject had been created.
+  flushUICommand(controller.view, nullptr);
+
   dynamic method = fromNativeValue(controller.view, nativeMethod);
   List<dynamic> values = List.generate(argc, (i) {
     Pointer<NativeValue> nativeValue = argv.elementAt(i);
@@ -340,9 +343,6 @@ void invokeBindingMethodFromNativeImpl(double contextId, int profileId, Pointer<
   if (enableWebFProfileTracking) {
     WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
   }
-
-  // Make sure the dart object related to nativeBindingObject had been created.
-  flushUICommand(controller.view, nullptr);
 
   BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
 

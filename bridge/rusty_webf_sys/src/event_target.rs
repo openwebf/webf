@@ -32,12 +32,6 @@ struct EventCallbackContextData {
   func: EventListenerCallback,
 }
 
-impl Drop for EventCallbackContextData {
-  fn drop(&mut self) {
-    println!("Drop event callback context data");
-  }
-}
-
 pub trait RustMethods {}
 
 
