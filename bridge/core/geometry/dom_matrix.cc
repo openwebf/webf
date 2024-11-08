@@ -8,7 +8,7 @@
 namespace webf {
 
 DOMMatrix* DOMMatrix::Create(ExecutingContext* context,
-                             const std::vector<double>& init,
+                             const std::shared_ptr<QJSUnionSequenceDoubleDOMMatrixInit>& init,
                              ExceptionState& exception_state) {
   return MakeGarbageCollected<DOMMatrix>(context, init, exception_state);
 }
@@ -27,7 +27,7 @@ DOMMatrix::DOMMatrix(webf::ExecutingContext* context, webf::ExceptionState& exce
       DOMMatrixReadOnly(context, exception_state) {}
 
 DOMMatrix::DOMMatrix(ExecutingContext* context,
-                     const std::vector<double>& init,
+                     const std::shared_ptr<QJSUnionSequenceDoubleDOMMatrixInit>& init,
                      ExceptionState& exception_state)
     : DOMMatrixReadOnly(context, init, exception_state) {}
 

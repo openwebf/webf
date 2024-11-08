@@ -35,23 +35,42 @@ class DOMMatrixReadonly extends DynamicBindingObject {
     if (!domMatrixInit.isNotEmpty) {
       return;
     }
-    if (domMatrixInit[0].runtimeType == List<dynamic>) {
-      List<dynamic> list = domMatrixInit[0];
-      if (list.isNotEmpty && list[0].runtimeType == double) {
-        List<double> doubleList = List<double>.from(list);
-        if (doubleList.length == 6) {
-          _matrix4[0] = doubleList[0]; // m11 = a
-          _matrix4[1] = doubleList[1]; // m12 = b
-          _matrix4[4] = doubleList[2]; // m21 = c
-          _matrix4[5] = doubleList[3]; // m22 = d
-          _matrix4[12] = doubleList[4]; // m41 = e
-          _matrix4[13] = doubleList[5]; // m42 = f
-        } else if (doubleList.length == 16) {
-          _is2D = false;
-          _matrix4 = Matrix4.fromList(doubleList);
-        } else {
-          throw TypeError();
+    if (domMatrixInit.length == 1) {
+      // List<double>
+      if (domMatrixInit[0].runtimeType == List<dynamic>) {
+        List<dynamic> list = domMatrixInit[0];
+        if (list.isNotEmpty && list[0].runtimeType == double) {
+          List<double> doubleList = List<double>.from(list);
+          if (doubleList.length == 6) {
+            _matrix4[0] = doubleList[0]; // m11 = a
+            _matrix4[1] = doubleList[1]; // m12 = b
+            _matrix4[4] = doubleList[2]; // m21 = c
+            _matrix4[5] = doubleList[3]; // m22 = d
+            _matrix4[12] = doubleList[4]; // m41 = e
+            _matrix4[13] = doubleList[5]; // m42 = f
+          } else if (doubleList.length == 16) {
+            _is2D = false;
+            _matrix4 = Matrix4.fromList(doubleList);
+          } else {
+            throw TypeError();
+          }
         }
+      }
+    } else if (domMatrixInit.length == 3) {
+      // List<double>, is2D, isIdentity
+      if (domMatrixInit[0].runtimeType == List<dynamic>) {
+        List<dynamic> list = domMatrixInit[0];
+        if (list.isNotEmpty && list[0].runtimeType == double) {
+          List<double> doubleList = List<double>.from(list);
+          if (doubleList.length == 16) {
+            _matrix4 = Matrix4.fromList(doubleList);
+          } else {
+            throw TypeError();
+          }
+        }
+        _is2D = castToType<bool>(domMatrixInit[1]);
+        //TODO isIdentity
+        // _isIdentity = castToType<bool>(domMatrixInit[2]);
       }
     }
   }

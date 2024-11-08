@@ -549,13 +549,17 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_canvas_gradient.cc
     out/qjs_canvas_pattern.cc
     out/qjs_path_2d.cc
+    out/qjs_dom_matrix_init.cc
     out/qjs_dom_matrix.cc
     out/qjs_dom_matrix_read_only.cc
+    out/qjs_dom_point_init.cc
     out/qjs_dom_point.cc
     out/qjs_dom_point_read_only.cc
     out/qjs_union_double_sequencedouble.cc
     out/qjs_unionhtml_image_elementhtml_canvas_element.cc
     out/qjs_union_dom_stringcanvas_gradient.cc
+    out/qjs_union_sequencedoubledom_matrix_init.cc
+    out/qjs_union_doubledom_point_init.cc
     out/canvas_types.cc
     out/qjs_html_button_element.cc
     out/qjs_html_input_element.cc

@@ -7,15 +7,10 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
+#include "qjs_dom_point_init.h"
+#include "qjs_union_doubledom_point_init.h"
 
 namespace webf {
-
-struct DOMPointData {
-  double x;
-  double y;
-  double z;
-  double w;
-};
 
 class DOMPoint;
 class DOMMatrix;
@@ -27,15 +22,20 @@ class DOMPointReadOnly : public BindingObject {
   using ImplType = DOMPointReadOnly*;
 
   static DOMPointReadOnly* Create(ExecutingContext* context, ExceptionState& exception_state);
-  static DOMPointReadOnly* Create(ExecutingContext* context, double x, ExceptionState& exception_state);
-  static DOMPointReadOnly* Create(ExecutingContext* context, double x, double y, ExceptionState& exception_state);
   static DOMPointReadOnly* Create(ExecutingContext* context,
-                                  double x,
+                                  const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
+                                  ExceptionState& exception_state);
+  static DOMPointReadOnly* Create(ExecutingContext* context,
+                                  const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
+                                  double y,
+                                  ExceptionState& exception_state);
+  static DOMPointReadOnly* Create(ExecutingContext* context,
+                                  const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
                                   double y,
                                   double z,
                                   ExceptionState& exception_state);
   static DOMPointReadOnly* Create(ExecutingContext* context,
-                                  double x,
+                                  const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
                                   double y,
                                   double z,
                                   double w,
@@ -44,11 +44,20 @@ class DOMPointReadOnly : public BindingObject {
   DOMPointReadOnly() = delete;
 
   explicit DOMPointReadOnly(ExecutingContext* context, ExceptionState& exception_state);
-  explicit DOMPointReadOnly(ExecutingContext* context, double x, ExceptionState& exception_state);
-  explicit DOMPointReadOnly(ExecutingContext* context, double x, double y, ExceptionState& exception_state);
-  explicit DOMPointReadOnly(ExecutingContext* context, double x, double y, double z, ExceptionState& exception_state);
   explicit DOMPointReadOnly(ExecutingContext* context,
-                            double x,
+                            const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
+                            ExceptionState& exception_state);
+  explicit DOMPointReadOnly(ExecutingContext* context,
+                            const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
+                            double y,
+                            ExceptionState& exception_state);
+  explicit DOMPointReadOnly(ExecutingContext* context,
+                            const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
+                            double y,
+                            double z,
+                            ExceptionState& exception_state);
+  explicit DOMPointReadOnly(ExecutingContext* context,
+                            const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
                             double y,
                             double z,
                             double w,
@@ -75,9 +84,15 @@ protected:
   explicit DOMPointReadOnly(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
  private:
-  [[nodiscard]] double getPointProperty(const AtomicString& prop) const;
+  void createWithDOMPointInit(ExecutingContext* context,
+                              ExceptionState& exception_state,
+                              const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
+                              double y = 0,
+                              double w = 0,
+                              double z = 1);
+
+      [[nodiscard]] double getPointProperty(const AtomicString& prop) const;
   void setPointProperty(const AtomicString& prop, double v, ExceptionState& exception_state);
-  std::shared_ptr<DOMPointData> dom_point_data_ = nullptr;
 };
 
 }  // namespace webf

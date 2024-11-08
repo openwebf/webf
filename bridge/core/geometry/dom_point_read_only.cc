@@ -3,13 +3,12 @@
  */
 
 #include "dom_point_read_only.h"
-
 #include "binding_call_methods.h"
-#include <native_value_converter.h>
-
+#include "native_value_converter.h"
+#include "bindings/qjs/converter_impl.h"
 #include "core/executing_context.h"
-#include "dom_point.h"
-#include "dom_matrix.h"
+#include "core/geometry/dom_point.h"
+#include "core/geometry/dom_matrix.h"
 
 namespace webf {
 
@@ -17,30 +16,30 @@ DOMPointReadOnly* DOMPointReadOnly::Create(webf::ExecutingContext* context, webf
   return MakeGarbageCollected<DOMPointReadOnly>(context, exception_state);
 }
 DOMPointReadOnly* DOMPointReadOnly::Create(webf::ExecutingContext* context,
-                                           double x,
+                                           const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
                                            webf::ExceptionState& exception_state) {
-  return MakeGarbageCollected<DOMPointReadOnly>(context, x, exception_state);
+  return MakeGarbageCollected<DOMPointReadOnly>(context, init, exception_state);
 }
 DOMPointReadOnly* DOMPointReadOnly::Create(webf::ExecutingContext* context,
-                                           double x,
+                                           const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
                                            double y,
                                            webf::ExceptionState& exception_state) {
-  return MakeGarbageCollected<DOMPointReadOnly>(context, x, y, exception_state);
+  return MakeGarbageCollected<DOMPointReadOnly>(context, init, y, exception_state);
 }
 DOMPointReadOnly* DOMPointReadOnly::Create(webf::ExecutingContext* context,
-                                           double x,
+                                           const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
                                            double y,
                                            double z,
                                            webf::ExceptionState& exception_state) {
-  return MakeGarbageCollected<DOMPointReadOnly>(context, x, y, z, exception_state);
+  return MakeGarbageCollected<DOMPointReadOnly>(context, init, y, z, exception_state);
 }
 DOMPointReadOnly* DOMPointReadOnly::Create(webf::ExecutingContext* context,
-                                           double x,
+                                           const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
                                            double y,
                                            double z,
                                            double w,
                                            webf::ExceptionState& exception_state) {
-  return MakeGarbageCollected<DOMPointReadOnly>(context, x, y, z, w, exception_state);
+  return MakeGarbageCollected<DOMPointReadOnly>(context, init, y, z, w, exception_state);
 }
 
 DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context, webf::ExceptionState& exception_state)
@@ -50,62 +49,67 @@ DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context, webf::Except
                                                               CreateBindingObjectType::kCreateDOMPoint, nullptr, 0);
 }
 
-DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context, double x, webf::ExceptionState& exception_state)
+DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context, const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init, webf::ExceptionState& exception_state)
     : BindingObject(context->ctx()) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(x)};
-
-  GetExecutingContext()->dartMethodPtr()->createBindingObject(
-      GetExecutingContext()->isDedicated(), GetExecutingContext()->contextId(), bindingObject(),
-      CreateBindingObjectType::kCreateDOMPoint, arguments, sizeof(arguments) / sizeof(NativeValue));
+  this->createWithDOMPointInit(context, exception_state, init);
 }
-
 DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context,
-                                   double x,
+                                   const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
                                    double y,
                                    webf::ExceptionState& exception_state)
     : BindingObject(context->ctx()) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(y)};
-
-  GetExecutingContext()->dartMethodPtr()->createBindingObject(
-      GetExecutingContext()->isDedicated(), GetExecutingContext()->contextId(), bindingObject(),
-      CreateBindingObjectType::kCreateDOMPoint, arguments, sizeof(arguments) / sizeof(NativeValue));
+  this->createWithDOMPointInit(context, exception_state, init, y);
 }
-
 DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context,
-                                   double x,
+                                   const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
                                    double y,
                                    double w,
                                    webf::ExceptionState& exception_state)
     : BindingObject(context->ctx()) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(w)};
-
-  GetExecutingContext()->dartMethodPtr()->createBindingObject(
-      GetExecutingContext()->isDedicated(), GetExecutingContext()->contextId(), bindingObject(),
-      CreateBindingObjectType::kCreateDOMPoint, arguments, sizeof(arguments) / sizeof(NativeValue));
+  this->createWithDOMPointInit(context, exception_state, init, y, w);
 }
 
 DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context,
-                                   double x,
+                                   const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
                                    double y,
                                    double w,
                                    double z,
                                    webf::ExceptionState& exception_state)
     : BindingObject(context->ctx()) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(w),
-                             NativeValueConverter<NativeTypeDouble>::ToNativeValue(z)};
-
-  GetExecutingContext()->dartMethodPtr()->createBindingObject(
-      GetExecutingContext()->isDedicated(), GetExecutingContext()->contextId(), bindingObject(),
-      CreateBindingObjectType::kCreateDOMPoint, arguments, sizeof(arguments) / sizeof(NativeValue));
+  this->createWithDOMPointInit(context, exception_state, init, y, w, z);
 }
 
 DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context, webf::NativeBindingObject* native_binding_object)
     : BindingObject(context->ctx(), native_binding_object) {}
+
+void DOMPointReadOnly::createWithDOMPointInit(ExecutingContext* context,
+                                              ExceptionState& exception_state,
+                                              const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
+                                              double y,
+                                              double w,
+                                              double z) {
+  if (init->IsDOMPointInit()) {
+    auto domPointInit = init->GetAsDOMPointInit();
+    NativeValue arguments[] = {
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(domPointInit->x()),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(domPointInit->y()),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(domPointInit->z()),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(domPointInit->w()),
+    };
+    GetExecutingContext()->dartMethodPtr()->createBindingObject(
+        GetExecutingContext()->isDedicated(), GetExecutingContext()->contextId(), bindingObject(),
+        CreateBindingObjectType::kCreateDOMPoint, arguments, sizeof(arguments) / sizeof(NativeValue));
+  } else if (init->IsDouble()) {
+    // DOMPointReadOnly(x,y,z,w)
+    NativeValue arguments[] = {NativeValueConverter<NativeTypeDouble>::ToNativeValue(init->GetAsDouble()),
+                               NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+                               NativeValueConverter<NativeTypeDouble>::ToNativeValue(w),
+                               NativeValueConverter<NativeTypeDouble>::ToNativeValue(z)};
+    GetExecutingContext()->dartMethodPtr()->createBindingObject(
+        GetExecutingContext()->isDedicated(), GetExecutingContext()->contextId(), bindingObject(),
+        CreateBindingObjectType::kCreateDOMPoint, arguments, sizeof(arguments) / sizeof(NativeValue));
+  }
+}
 
 double DOMPointReadOnly::getPointProperty(const AtomicString& prop) const {
   NativeValue dart_result = GetBindingProperty(prop, FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION());

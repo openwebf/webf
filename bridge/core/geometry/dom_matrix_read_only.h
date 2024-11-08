@@ -7,6 +7,8 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
+#include "qjs_dom_matrix_init.h"
+#include "qjs_union_sequencedoubledom_matrix_init.h"
 
 namespace webf {
 
@@ -19,7 +21,7 @@ class DOMMatrixReadOnly : public BindingObject {
  public:
   using ImplType = DOMMatrixReadOnly*;
   static DOMMatrixReadOnly* Create(ExecutingContext* context,
-                                   const std::vector<double>& init,
+                                   const std::shared_ptr<QJSUnionSequenceDoubleDOMMatrixInit>& init,
                                    ExceptionState& exception_state);
   static DOMMatrixReadOnly* Create(ExecutingContext* context,
                                    ExceptionState& exception_state);
@@ -27,7 +29,7 @@ class DOMMatrixReadOnly : public BindingObject {
 
   DOMMatrixReadOnly() = delete;
   explicit DOMMatrixReadOnly(ExecutingContext* context,
-                             const std::vector<double>& init,
+                             const std::shared_ptr<QJSUnionSequenceDoubleDOMMatrixInit>& init,
                              ExceptionState& exception_state);
   explicit DOMMatrixReadOnly(ExecutingContext* context, ExceptionState& exception_state);
 

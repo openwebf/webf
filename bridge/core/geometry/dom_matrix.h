@@ -15,7 +15,7 @@ class DOMMatrix : public DOMMatrixReadOnly {
  public:
   using ImplType = DOMMatrix*;
   static DOMMatrix* Create(ExecutingContext* context,
-                           const std::vector<double>& init,
+                           const std::shared_ptr<QJSUnionSequenceDoubleDOMMatrixInit>& init,
                            ExceptionState& exception_state);
   static DOMMatrix* Create(ExecutingContext* context,
                            ExceptionState& exception_state);
@@ -27,7 +27,7 @@ class DOMMatrix : public DOMMatrixReadOnly {
   explicit DOMMatrix(ExecutingContext* context,
                      ExceptionState& exception_state);
   explicit DOMMatrix(ExecutingContext* context,
-                     const std::vector<double>& init,
+                     const std::shared_ptr<QJSUnionSequenceDoubleDOMMatrixInit>& init,
                      ExceptionState& exception_state);
   explicit DOMMatrix(ExecutingContext* context,
                      NativeBindingObject* native_binding_object);

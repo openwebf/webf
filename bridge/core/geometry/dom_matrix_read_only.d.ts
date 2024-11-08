@@ -1,3 +1,7 @@
+import {DOMMatrixInit} from "./dom_matrix_init";
+import {DOMMatrix} from "./dom_matrix";
+import {DOMPoint} from "./dom_point";
+
 interface DOMMatrixReadOnly {
     readonly is2D: DartImpl<boolean>;
     readonly isIdentity: DartImpl<boolean>;
@@ -45,5 +49,5 @@ interface DOMMatrixReadOnly {
     // fromFloat32Array(): StaticMethod<DOMMatrix>;
     // fromFloat64Array(): StaticMethod<DOMMatrix>;
     fromMatrix(matrix: DOMMatrix): StaticMethod<DOMMatrix>;
-    new(init?: number[]): DOMMatrixReadOnly;
+    new(init?: number[] | DOMMatrixInit): DOMMatrixReadOnly;
 }
