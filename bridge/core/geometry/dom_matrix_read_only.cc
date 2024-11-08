@@ -3,19 +3,16 @@
  */
 
 #include "dom_matrix_read_only.h"
-
-#include <bindings/qjs/converter_impl.h>
-
+#include "bindings/qjs/converter_impl.h"
 #include "binding_call_methods.h"
+#include "native_value_converter.h"
 #include "core/executing_context.h"
 #include "core/geometry/dom_matrix.h"
 #include "core/geometry/dom_point.h"
-#include "foundation/native_value_converter.h"
-
 
 namespace webf {
 DOMMatrixReadOnly* DOMMatrixReadOnly::Create(ExecutingContext* context,
-                                             const std::vector<double>& init,
+                                             const std::shared_ptr<QJSUnionSequenceDoubleDOMMatrixInit>& init,
                                              ExceptionState& exception_state) {
   return MakeGarbageCollected<DOMMatrixReadOnly>(context, init, exception_state);
 }
@@ -37,14 +34,43 @@ DOMMatrix* DOMMatrixReadOnly::fromMatrix(ExecutingContext* context,
 }
 
 DOMMatrixReadOnly::DOMMatrixReadOnly(ExecutingContext* context,
-                                     const std::vector<double>& init,
+                                     const std::shared_ptr<QJSUnionSequenceDoubleDOMMatrixInit>& init,
                                      ExceptionState& exception_state)
     : BindingObject(context->ctx()) {
-  NativeValue arguments[1];
-  arguments[0] = NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(init);
-  GetExecutingContext()->dartMethodPtr()->createBindingObject(GetExecutingContext()->isDedicated(),
+
+  if (init->IsSequenceDouble()) {
+    NativeValue arguments[1];
+    arguments[0] = NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(init->GetAsSequenceDouble());
+    GetExecutingContext()->dartMethodPtr()->createBindingObject(GetExecutingContext()->isDedicated(),
                                                               GetExecutingContext()->contextId(), bindingObject(),
                                                               CreateBindingObjectType::kCreateDOMMatrix, arguments, 1);
+  } else if (init->IsDOMMatrixInit()) {
+    std::vector<double> domMatrixInitVectorDouble;
+    auto domMatrixInit = init->GetAsDOMMatrixInit();
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m11());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m12());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m13());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m14());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m21());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m22());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m23());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m24());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m31());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m32());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m33());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m34());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m41());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m42());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m43());
+    domMatrixInitVectorDouble.emplace_back(domMatrixInit->m44());
+    NativeValue arguments[3];
+    arguments[0] = NativeValueConverter<NativeTypeArray<NativeTypeDouble>>::ToNativeValue(domMatrixInitVectorDouble);
+    arguments[1] = NativeValueConverter<NativeTypeBool>::ToNativeValue(domMatrixInit->is2D());
+    arguments[2] = NativeValueConverter<NativeTypeBool>::ToNativeValue(domMatrixInit->isIdentity());
+    GetExecutingContext()->dartMethodPtr()->createBindingObject(GetExecutingContext()->isDedicated(),
+                                                              GetExecutingContext()->contextId(), bindingObject(),
+                                                              CreateBindingObjectType::kCreateDOMMatrix, arguments, 1);
+  }
 }
 
 DOMMatrixReadOnly::DOMMatrixReadOnly(webf::ExecutingContext* context, webf::ExceptionState& exception_state)
