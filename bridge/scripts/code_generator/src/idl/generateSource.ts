@@ -589,11 +589,16 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
           }
         }
 
+        function addObjectStaticMethods(method: FunctionDeclaration, i: number) {
+          options.staticMethodsInstallList.push(`{"${method.name}", ${method.name}, ${method.args.length}}`);
+        }
+
         object.props.forEach(addObjectProps);
 
         let overloadMethods: {[key: string]: FunctionDeclaration[] } = {};
         let filtedMethods: FunctionDeclaration[] = [];
         object.methods.forEach(addObjectMethods);
+        object.staticMethods.forEach(addObjectStaticMethods);
 
         if (object.construct) {
           options.constructorInstallList.push(`{defined_properties::k${className}.Impl(), nullptr, nullptr, constructor}`)

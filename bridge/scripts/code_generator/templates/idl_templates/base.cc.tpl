@@ -32,12 +32,14 @@ namespace webf {
 <% } %>
 <%= content %>
 
+<% console.log(staticMethodsInstallList) %>
 <% if (globalFunctionInstallList.length > 0 || classPropsInstallList.length > 0 || classMethodsInstallList.length > 0 || constructorInstallList.length > 0) { %>
 void QJS<%= className %>::Install(ExecutingContext* context) {
   <% if (globalFunctionInstallList.length > 0) { %> InstallGlobalFunctions(context); <% } %>
   <% if(classPropsInstallList.length > 0) { %> InstallPrototypeProperties(context); <% } %>
   <% if(classMethodsInstallList.length > 0) { %> InstallPrototypeMethods(context); <% } %>
   <% if(constructorInstallList.length > 0) { %> InstallConstructor(context); <% } %>
+  <% if (staticMethodsInstallList.length > 0) { %> InstallStaticMethods(context); <% } %>
 }
 
 <% } %>
@@ -72,6 +74,17 @@ void QJS<%= className %>::InstallPrototypeMethods(ExecutingContext* context) {
   };
 
   MemberInstaller::InstallAttributes(context, prototype, attributesConfig);
+}
+<% } %>
+
+<% if(staticMethodsInstallList.length > 0) { %>
+void QJS<%= className %>::InstallStaticMethods(ExecutingContext* context) {
+  const WrapperTypeInfo* wrapperTypeInfo = GetWrapperTypeInfo();
+  JSValue constructor = context->contextData()->constructorForType(wrapperTypeInfo);
+  std::initializer_list<MemberInstaller::FunctionConfig> functionConfig {
+       <%= staticMethodsInstallList.join(',\n') %>
+  };
+  MemberInstaller::InstallFunctions(context, constructor, functionConfig);
 }
 <% } %>
 

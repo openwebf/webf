@@ -156,7 +156,7 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
       // To make sure Promise then() and catch() executed before Promise callback called at JavaScript side.
       // We should make callback always async.
       Future.microtask(() {
-        if (controller.view != currentView || currentView.disposed) return;
+        if (controller.view != currentView || currentView.disposed || callback == nullptr) return;
 
         Pointer<NativeFunction<NativeHandleInvokeModuleResult>> handleResult =
             Pointer.fromFunction(_handleInvokeModuleResult);
@@ -192,6 +192,7 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
       print('Invoke module failed: $e\n$stack');
     }
     String error = '$e\n$stack';
+    if (callback == nullptr) return;
     callback(callbackContext, currentView.contextId, error.toNativeUtf8(), nullptr, {}, nullptr);
   }
 

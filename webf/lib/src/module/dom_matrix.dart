@@ -1,7 +1,7 @@
 import 'package:webf/module.dart';
 
-class DOMMatrix extends BaseModule {
-  DOMMatrix(super.moduleManager);
+class DOMMatrixModule extends BaseModule {
+  DOMMatrixModule(super.moduleManager);
 
   @override
   void dispose() {
