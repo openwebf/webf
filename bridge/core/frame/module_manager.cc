@@ -138,8 +138,23 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                   ExceptionState& exception) {
   NativeValue params = params_value.ToNative(context->ctx(), exception);
 
-  if (exception.HasException()) {
+  NativeValue* result = __webf_invoke_module__(context, module_name, method, params, callback, exception);
+  if (result == nullptr) {
     return ScriptValue::Empty(context->ctx());
+  }
+
+  ScriptValue return_value = ScriptValue(context->ctx(), *result);
+  dart_free(result);
+  return return_value;
+}
+NativeValue* ModuleManager::__webf_invoke_module__(ExecutingContext* context,
+                                                  const AtomicString& module_name,
+                                                  const AtomicString& method,
+                                                  NativeValue& params,
+                                                  const std::shared_ptr<QJSFunction>& callback,
+                                                  ExceptionState& exception) {
+  if (exception.HasException()) {
+    return nullptr;
   }
 
   NativeValue* result;
@@ -165,12 +180,12 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
   context->dartIsolateContext()->profiler()->FinishTrackLinkSteps();
 
   if (result == nullptr) {
-    return ScriptValue::Empty(context->ctx());
+    return nullptr;
   }
 
-  ScriptValue return_value = ScriptValue(context->ctx(), *result);
-  dart_free(result);
-  return return_value;
+  // ScriptValue return_value = ScriptValue(context->ctx(), *result);
+  // dart_free(result);
+  return result;
 }
 
 void ModuleManager::__webf_add_module_listener__(ExecutingContext* context,
