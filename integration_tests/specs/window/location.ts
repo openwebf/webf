@@ -1,18 +1,18 @@
 describe("Location API", function() {
   it('href', () => {
-    expect(location.href).toBe('http://localhost:4567/public/core.build.js?search=1234#hash=hashValue');
+    expect(location.href).toBe(`http://localhost:${window['SERVER_PORT']}/public/core.build.js?search=1234#hash=hashValue`);
   });
   it('protocol', () => {
     expect(location.protocol).toBe('http:');
   });
   it('host', () => {
-    expect(location.host).toBe('localhost:4567');
+    expect(location.host).toBe(`localhost:${window['SERVER_PORT']}`);
   });
   it('hostname', () => {
     expect(location.hostname).toBe('localhost');
   });
   it('port', () => {
-    expect(location.port).toBe('4567');
+    expect(location.port).toBe(String(window['SERVER_PORT']));
   });
   it('pathname', () => {
     expect(location.pathname).toBe('/public/core.build.js');

@@ -22,12 +22,25 @@ String? err = (AnsiPen()..red())('[TEST FAILED]');
 final String __dirname = path.dirname(Platform.script.path);
 final String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 
-const MOCK_SERVER_PORT = 4567;
+Future<int> findAvailablePort({int startPort = 4000, int endPort = 5000}) async {
+  for (var port = startPort; port <= endPort; port++) {
+    try {
+      final server = await ServerSocket.bind(InternetAddress.anyIPv4, port);
 
-Future<Process> startHttpMockServer() async {
+      // Handle incoming connections
+      server.listen((Socket client) {
+      });
+      server.close();
+      return port; // Exit once successfully bound to a port
+    } catch (e) {}
+  }
+  return -1;
+}
+
+Future<Process> startHttpMockServer(int port) async {
   return await Process.start(
       'node', [testDirectory + '/scripts/mock_http_server.js'],
-      environment: {'PORT': MOCK_SERVER_PORT.toString()},
+      environment: {'PORT': port.toString()},
       mode: ProcessStartMode.inheritStdio);
 }
 
@@ -40,8 +53,10 @@ void main() async {
   WebFDynamicLibrary.testLibName = 'webf_test';
   defineWebFCustomElements();
 
+  int mockServerPort = await findAvailablePort();
+
   ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
-  Process mockHttpServer = await startHttpMockServer();
+  Process mockHttpServer = await startHttpMockServer(mockServerPort);
   sleep(Duration(seconds: 2));
 
   // FIXME: This is a workaround for testcases.
@@ -53,7 +68,9 @@ void main() async {
 
   String codeInjection = '''
     // This segment inject variables for test environment.
-    LOCAL_HTTP_SERVER = '${httpServer.getUri().toString()}';
+    window.LOCAL_HTTP_SERVER = '${httpServer.getUri().toString()}';
+    window.SERVER_PORT = ${mockServerPort};
+    window.WEBSOCKET_PORT = ${Platform.environment['WEBF_WEBSOCKET_SERVER_PORT']};
   ''';
 
   // Set render font family AlibabaPuHuiTi to resolve rendering difference.
@@ -69,6 +86,7 @@ void main() async {
           children: [
             WebFTester(
               preCode: codeInjection,
+              mockServerPort: mockServerPort,
               onWillFinish: () {
                 mockHttpServer.kill(ProcessSignal.sigkill);
               },
