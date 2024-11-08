@@ -113,7 +113,7 @@ pub struct RustValue<T> {
 }
 
 pub fn initialize_webf_api(value: RustValue<ExecutingContextRustMethods>) -> ExecutingContext {
-  ExecutingContext::initialize(value.value, value.method_pointer)
+  ExecutingContext::initialize(value.value, value.method_pointer, value.status)
 }
 
 // This is the entrypoint when your rust app compiled as dynamic library and loaded & executed by WebF.

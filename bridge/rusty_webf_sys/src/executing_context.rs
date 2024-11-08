@@ -9,7 +9,7 @@ use libc::c_uint;
 use crate::document::{Document, DocumentRustMethods};
 use crate::event_target::EventTargetMethods;
 use crate::exception_state::{ExceptionState, ExceptionStateRustMethods};
-use crate::{OpaquePtr, RustValue};
+use crate::{OpaquePtr, RustValue, RustValueStatus};
 use crate::custom_event::{CustomEvent, CustomEventRustMethods};
 use crate::window::{Window, WindowRustMethods};
 
@@ -19,7 +19,7 @@ pub struct ExecutingContextRustMethods {
   pub get_document: extern "C" fn(*const OpaquePtr) -> RustValue<DocumentRustMethods>,
   pub get_window: extern "C" fn(*const OpaquePtr) -> RustValue<WindowRustMethods>,
   pub create_exception_state: extern "C" fn() -> RustValue<ExceptionStateRustMethods>,
-  pub create_custom_event: extern "C" fn() -> RustValue<CustomEventRustMethods>,
+  pub finish_recording_ui_operations: extern "C" fn(executing_context: *const OpaquePtr) -> c_void,
 }
 
 /// An environment contains all the necessary running states of a web page.
@@ -41,13 +41,15 @@ pub struct ExecutingContext {
   pub ptr: *const OpaquePtr,
   // Methods available for export from the C++ world for use.
   method_pointer: *const ExecutingContextRustMethods,
+  pub status: *const RustValueStatus,
 }
 
 impl ExecutingContext {
-  pub fn initialize(ptr: *const OpaquePtr, method_pointer: *const ExecutingContextRustMethods) -> ExecutingContext {
+  pub fn initialize(ptr: *const OpaquePtr, method_pointer: *const ExecutingContextRustMethods, status: *const RustValueStatus) -> ExecutingContext {
     ExecutingContext {
       ptr,
-      method_pointer
+      method_pointer,
+      status
     }
   }
 
@@ -78,5 +80,16 @@ impl ExecutingContext {
       ((*self.method_pointer).create_exception_state)()
     };
     ExceptionState::initialize(result.value, result.method_pointer)
+  }
+}
+
+impl Drop for ExecutingContext {
+  fn drop(&mut self) {
+    unsafe {
+      if (*((*self).status)).disposed {
+        return;
+      };
+      ((*self.method_pointer).finish_recording_ui_operations)(self.ptr);
+    }
   }
 }
