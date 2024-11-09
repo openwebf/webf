@@ -55,7 +55,7 @@ document.body.style.setProperty('--main-color', 'lightblue'); console.assert(doc
   UICommandItem* buffer = static_cast<UICommandItem*>(context->uiCommandBuffer()->data());
   size_t commandSize = context->uiCommandBuffer()->size();
 
-  UICommandItem& last = buffer[commandSize - 2];
+  UICommandItem& last = buffer[commandSize - 1];
 
   EXPECT_EQ(last.type, (int32_t)UICommand::kSetStyle);
   uint16_t* last_key = (uint16_t*)last.string_01;
