@@ -5,6 +5,7 @@
 #ifndef BRIDGE_CORE_SCRIPT_STATE_H_
 #define BRIDGE_CORE_SCRIPT_STATE_H_
 
+#include <atomic>
 #include <quickjs/quickjs.h>
 #include <cassert>
 
@@ -30,7 +31,7 @@ class ScriptState {
   JSRuntime* runtime();
 
  private:
-  bool ctx_invalid_{false};
+  std::atomic<bool> ctx_invalid_{false};
   JSContext* ctx_{nullptr};
   DartIsolateContext* dart_isolate_context_{nullptr};
 };

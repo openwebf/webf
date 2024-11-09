@@ -34,12 +34,14 @@ export class ParameterMode {
   dartImpl?: boolean;
   layoutDependent?: boolean;
   static?: boolean;
+  supportAsync?: boolean;
   staticMethod?: boolean;
 }
 
 export class PropsDeclaration {
   type: ParameterType;
   typeMode: ParameterMode;
+  async_type?: ParameterType;
   name: string;
   isSymbol?: boolean;
   readonly: boolean;

@@ -9,6 +9,7 @@
 #include <include/dart_api_dl.h>
 #include <cinttypes>
 #include <unordered_set>
+#include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/dart_methods.h"
@@ -78,6 +79,17 @@ struct BindingObjectPromiseContext : public DartReadable {
   std::shared_ptr<ScriptPromiseResolver> promise_resolver;
 };
 
+using BindingObjectAsyncCallback = void (*)(ScriptPromiseResolver* resolver, NativeValue* success_result, const char* error_msg);
+
+struct BindingObjectAsyncCallContext : public DartReadable {
+  NativeValue* method_name;
+  int64_t profile_id;
+  int32_t argc;
+  const webf::NativeValue* argv;
+  ScriptPromiseResolver* async_invoke_reader;
+  BindingObjectAsyncCallback callback;
+};
+
 class BindingObject : public ScriptWrappable {
  public:
   struct AnonymousFunctionData {
@@ -117,6 +129,10 @@ class BindingObject : public ScriptWrappable {
                                   ExceptionState& exception_state) const;
   NativeValue GetBindingProperty(const AtomicString& prop, uint32_t reason, ExceptionState& exception_state) const;
   NativeValue SetBindingProperty(const AtomicString& prop, NativeValue value, ExceptionState& exception_state) const;
+
+  ScriptPromise GetBindingPropertyAsync(const AtomicString& prop, ExceptionState& exception_state);
+  void SetBindingPropertyAsync(const AtomicString& prop, const AtomicString& value);
+
   NativeValue GetAllBindingPropertyNames(ExceptionState& exception_state) const;
 
   void CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& deps, size_t argc, const NativeValue* args) const;
@@ -145,6 +161,10 @@ class BindingObject : public ScriptWrappable {
                                   const NativeValue* args,
                                   uint32_t reason,
                                   ExceptionState& exception_state) const;
+  ScriptPromise InvokeBindingMethodAsync(BindingMethodCallOperations binding_method_call_operation,
+                                         int32_t argc,
+                                         const NativeValue* args,
+                                         ExceptionState& exception_state) const;
 
   // NativeBindingObject may allocated at Dart side. Binding this with Dart allocated NativeBindingObject.
   explicit BindingObject(JSContext* ctx, NativeBindingObject* native_binding_object);

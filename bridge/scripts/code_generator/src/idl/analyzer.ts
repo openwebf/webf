@@ -167,6 +167,11 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
       return getParameterBaseType(argument);
     } else if (identifier === 'LegacyNullToEmptyString') {
       return FunctionArgumentType.legacy_dom_string;
+    } else if (identifier === 'SupportAsync') {
+      if (mode) mode.supportAsync = true;
+      let argument = typeReference.typeArguments![0];
+      // @ts-ignore
+      return getParameterBaseType(argument);
     }
 
     return identifier;
@@ -286,6 +291,18 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
                 obj.methods.push(functionProps);
               } else {
                 obj.props.push(prop);
+
+                if (prop.typeMode.supportAsync) {
+                  let asyncProp = Object.assign({}, prop);
+                  asyncProp.name = asyncProp.name + '_async';
+                  definedPropertyCollector.properties.add(asyncProp.name);
+                  asyncProp.async_type = {
+                    isArray: false,
+                    value: FunctionArgumentType.promise
+                  };
+                  obj.props.push(asyncProp)
+                }
+
               }
             }
             break;

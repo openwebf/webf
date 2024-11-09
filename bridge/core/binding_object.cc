@@ -171,6 +171,84 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
   return return_value;
 }
 
+static void handleAsyncInvokeCallback(ScriptPromiseResolver* resolver,
+                                      NativeValue* success_result,
+                                      const char* error_msg) {
+  auto* context = resolver->context();
+  MemberMutationScope member_mutation_scope{context};
+  if (success_result != nullptr) {
+    ScriptValue result = ScriptValue(resolver->context()->ctx(), *success_result, false);
+    resolver->Resolve(result.QJSValue());
+  } else if (error_msg != nullptr) {
+    ExceptionState exception_state;
+    exception_state.ThrowException(context->ctx(), ErrorType::InternalError, error_msg);
+    JSValue exception_value = ExceptionState::CurrentException(context->ctx());
+    resolver->Reject(exception_value);
+    JS_FreeValue(context->ctx(), exception_value);
+  } else {
+    assert(false);
+  }
+}
+
+ScriptPromise BindingObject::InvokeBindingMethodAsync(BindingMethodCallOperations binding_method_call_operation,
+                                                      int32_t argc,
+                                                      const webf::NativeValue* argv,
+                                                      webf::ExceptionState& exception_state) const {
+  auto* context = GetExecutingContext();
+
+  auto* profiler = context->dartIsolateContext()->profiler();
+
+  NativeValue method_on_stack = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
+  NativeValue* dart_method_name = (NativeValue*)dart_malloc(sizeof(NativeValue));
+  memcpy(dart_method_name, &method_on_stack, sizeof(NativeValue));
+
+  std::shared_ptr<ScriptPromiseResolver> resolver = ScriptPromiseResolver::Create(context);
+
+  auto* binding_call_context = new BindingObjectAsyncCallContext();
+  binding_call_context->method_name = dart_method_name;
+  binding_call_context->profile_id = profiler->link_id();
+  binding_call_context->argc = argc;
+  binding_call_context->argv = (webf::NativeValue*)dart_malloc(sizeof(NativeValue) * argc);
+  memcpy((void*)binding_call_context->argv, argv, sizeof(NativeValue) * argc);
+  binding_call_context->async_invoke_reader = resolver.get();
+  binding_call_context->callback = [](ScriptPromiseResolver* resolver, NativeValue* success_result,
+                                      const char* error_msg) {
+    if (!resolver->isAlive())
+      return;
+
+    auto* context = resolver->context();
+    context->dartIsolateContext()->dispatcher()->PostToJs(
+        context->isDedicated(), context->contextId(), handleAsyncInvokeCallback, resolver, success_result, error_msg);
+  };
+
+  context->RegisterActiveScriptPromise(resolver);
+
+  context->uiCommandBuffer()->AddCommand(UICommand::kAsyncCaller, nullptr, bindingObject(), binding_call_context, true);
+
+  return resolver->Promise();
+}
+
+ScriptPromise BindingObject::GetBindingPropertyAsync(const webf::AtomicString& prop,
+                                                     webf::ExceptionState& exception_state) {
+  if (UNLIKELY(binding_object_->disposed_)) {
+    exception_state.ThrowException(
+        ctx(), ErrorType::InternalError,
+        "Can not get binding property on BindingObject, dart binding object had been disposed");
+    return ScriptPromise(ctx(), JS_NULL);
+  }
+
+  const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release())};
+  return InvokeBindingMethodAsync(BindingMethodCallOperations::kGetProperty, 1, argv, exception_state);
+}
+
+void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop, const webf::AtomicString& value) {
+  std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString(ctx());
+  std::unique_ptr<SharedNativeString> args_02 = prop.ToNativeString(ctx());
+
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetAttribute, std::move(args_01), bindingObject(),
+                                                       args_02.release());
+}
+
 NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,
                                                size_t argc,
                                                const NativeValue* argv,
