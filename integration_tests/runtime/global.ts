@@ -50,6 +50,15 @@ function xtest(fn, title) {
 }
 
 function assert_equals(a: any, b: any, message?: string) {
+  if(typeof a != typeof b) {
+    fail(message)
+    return;
+  }
+  if (b !== b) {
+    // NaN case 
+    expect(a !== a).toBe(true, message);
+    return;
+  }
   expect(a).toBe(b, message)
 }
 
