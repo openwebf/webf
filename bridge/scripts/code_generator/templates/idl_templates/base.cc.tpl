@@ -32,7 +32,6 @@ namespace webf {
 <% } %>
 <%= content %>
 
-<% console.log(staticMethodsInstallList) %>
 <% if (globalFunctionInstallList.length > 0 || classPropsInstallList.length > 0 || classMethodsInstallList.length > 0 || constructorInstallList.length > 0) { %>
 void QJS<%= className %>::Install(ExecutingContext* context) {
   <% if (globalFunctionInstallList.length > 0) { %> InstallGlobalFunctions(context); <% } %>
