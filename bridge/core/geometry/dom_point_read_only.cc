@@ -42,6 +42,24 @@ DOMPointReadOnly* DOMPointReadOnly::Create(webf::ExecutingContext* context,
   return MakeGarbageCollected<DOMPointReadOnly>(context, init, y, z, w, exception_state);
 }
 
+DOMPoint* DOMPointReadOnly::fromPoint(ExecutingContext* context, DOMPointReadOnly* point, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<DOMPointReadOnly>>::ToNativeValue(point)};
+  AtomicString module_name = AtomicString(context->ctx(), "DOMPoint");
+  AtomicString method_name = AtomicString(context->ctx(), "fromPoint");
+
+  NativeValue* dart_result = context->dartMethodPtr()->invokeModule(
+      context->isDedicated(), nullptr, context->contextId(), context->dartIsolateContext()->profiler()->link_id(),
+      module_name.ToNativeString(context->ctx()).release(), method_name.ToNativeString(context->ctx()).release(),
+      arguments, nullptr);
+
+  NativeBindingObject* native_binding_object =
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(*dart_result);
+
+  if (native_binding_object == nullptr)
+    return nullptr;
+  return MakeGarbageCollected<DOMPoint>(context, native_binding_object);
+}
+
 DOMPointReadOnly::DOMPointReadOnly(webf::ExecutingContext* context, webf::ExceptionState& exception_state)
     : BindingObject(context->ctx()) {
   GetExecutingContext()->dartMethodPtr()->createBindingObject(GetExecutingContext()->isDedicated(),

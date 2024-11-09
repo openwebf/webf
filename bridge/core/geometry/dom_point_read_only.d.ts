@@ -8,5 +8,6 @@ interface DOMPointReadOnly {
     z: number;
     w: number;
     matrixTransform(matrix: DOMMatrix): DOMPoint;
+    fromPoint(point: DOMPoint): StaticMethod<DOMPoint>;
     new(x?: number | DOMPointInit, y?: number, z?: number, w?: number): DOMPointReadOnly;
 }

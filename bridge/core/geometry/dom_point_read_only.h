@@ -40,6 +40,7 @@ class DOMPointReadOnly : public BindingObject {
                                   double z,
                                   double w,
                                   ExceptionState& exception_state);
+  static DOMPoint* fromPoint(ExecutingContext* context, DOMPointReadOnly* point, ExceptionState& exception_state);
 
   DOMPointReadOnly() = delete;
 

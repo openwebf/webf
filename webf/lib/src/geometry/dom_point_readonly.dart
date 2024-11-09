@@ -23,6 +23,15 @@ class DOMPointReadonly extends DynamicBindingObject {
     }
   }
 
+  DOMPointReadonly.fromPoint(BindingContext context, DOMPoint? point) : super(context) {
+    if (point != null) {
+      _data[0] = point.x;
+      _data[1] = point.y;
+      _data[2] = point.z;
+      _data[3] = point.w;
+    }
+  }
+
   double get x  => _data[0];
   double get y  => _data[1];
   double get w  => _data[2];
