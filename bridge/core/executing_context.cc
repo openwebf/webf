@@ -487,6 +487,12 @@ void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason
 void ExecutingContext::FlushUICommand(const webf::BindingObject* self,
                                       uint32_t reason,
                                       std::vector<NativeBindingObject*>& deps) {
+  if (SyncUICommandBuffer(self, reason, deps)) {
+    dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject());
+  }
+}
+
+bool ExecutingContext::SyncUICommandBuffer(const BindingObject* self, uint32_t reason, std::vector<NativeBindingObject*>& deps) {
   if (!uiCommandBuffer()->empty()) {
     if (is_dedicated_) {
       bool should_swap_ui_commands = false;
@@ -514,9 +520,10 @@ void ExecutingContext::FlushUICommand(const webf::BindingObject* self,
         ui_command_buffer_.SyncToActive();
       }
     }
-
-    dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject());
+    return true;
   }
+
+  return false;
 }
 
 void ExecutingContext::TurnOnJavaScriptGC() {
