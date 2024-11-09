@@ -10,4 +10,6 @@ import 'dom_point_readonly.dart';
 
 class DOMPoint extends DOMPointReadonly {
   DOMPoint(BindingContext context, List<dynamic> domPointInit) : super(context, domPointInit) {}
+
+  DOMPoint.fromPoint(BindingContext context, DOMPoint? point) : super.fromPoint(context, point) {}
 }
