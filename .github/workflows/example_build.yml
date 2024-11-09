@@ -14,7 +14,7 @@ env:
 
 jobs:
   build_windows-app_in_windows:
-    runs-on: windows-2022
+    runs-on: [self-hosted, windows, x64]
     strategy:
       fail-fast: false
     steps:
@@ -42,7 +42,7 @@ jobs:
           cd example/
           flutter build windows --release
   build_android-app_in_macos:
-    runs-on: macos-latest
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -75,7 +75,7 @@ jobs:
           flutter build apk --release
 
   build_ios-app_in_macos:
-    runs-on: macos-latest
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -102,7 +102,7 @@ jobs:
           flutter build ios --release --no-codesign
 
   build_macos-app_in_macos:
-    runs-on: macos-latest
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
       - uses: actions/checkout@v3
         with:

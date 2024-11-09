@@ -13,7 +13,7 @@ env:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build_windows_binary:
-    runs-on: windows-2022
+    runs-on: [self-hosted, windows, X64]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -54,7 +54,7 @@ jobs:
           name: linux_binary
           path: bridge/build/linux/
   build_macos_binary:
-    runs-on: macos-latest
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -74,7 +74,7 @@ jobs:
         name: macos_binary
         path: bridge/build/macos/
   build_ios_binary:
-    runs-on: macos-latest
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -94,7 +94,7 @@ jobs:
         name: ios_binary
         path: bridge/build/ios/
   build_android_binary:
-    runs-on: macos-12
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
     - uses: actions/checkout@v3
       with:
