@@ -23,11 +23,11 @@ void SharedUICommand::AddCommand(UICommand type,
                                  void* nativePtr2,
                                  bool request_ui_update) {
   if (!context_->isDedicated()) {
-    bool should_request_batch_update = active_buffer->size() > 1;
     active_buffer->addCommand(type, std::move(args_01), native_binding_object, nativePtr2, request_ui_update);
-    if (should_request_batch_update) {
+    if (type == UICommand::kFinishRecordingCommand && active_buffer->size() > 0) {
       context_->dartMethodPtr()->requestBatchUpdate(false, context_->contextId());
     }
+
     return;
   }
 
