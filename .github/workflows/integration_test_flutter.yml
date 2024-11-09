@@ -30,7 +30,7 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
-    - uses: jwlawson/actions-setup-cmake@v1.11
+    - uses: jwlawson/actions-setup-cmake@v2
       with:
         cmake-version: ${{ env.cmakeVersion }}
     - run: npm i
@@ -49,7 +49,7 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
-    - uses: jwlawson/actions-setup-cmake@v1.11
+    - uses: jwlawson/actions-setup-cmake@v2
       with:
         cmake-version: ${{ env.cmakeVersion }}
     - run: |
