@@ -14,13 +14,19 @@ env:
 
 jobs:
   build_windows-app_in_windows:
-    runs-on: [self-hosted, windows, x64]
+    runs-on: windows-2022
     strategy:
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ env.nodeVersion }}
+      - uses: jwlawson/actions-setup-cmake@v1.11
+        with:
+          cmake-version: ${{ env.cmakeVersion }}
       - run: npm i
       - name: Build windows dll
         run: npm run build:bridge:windows:release
@@ -36,7 +42,7 @@ jobs:
           cd example/
           flutter build windows --release
   build_android-app_in_macos:
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -49,10 +55,7 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "17"
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - uses: jwlawson/actions-setup-cmake@v2
+      - uses: jwlawson/actions-setup-cmake@v1.11
         with:
           cmake-version: ${{ env.cmakeVersion }}
       - run: npm i
@@ -72,7 +75,7 @@ jobs:
           flutter build apk --release
 
   build_ios-app_in_macos:
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -80,10 +83,9 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ env.nodeVersion }}
-      - uses: jwlawson/actions-setup-cmake@v2
+      - uses: jwlawson/actions-setup-cmake@v1.11
         with:
           cmake-version: ${{ env.cmakeVersion }}
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: npm i
       - run: npm run build:bridge:ios:release
 
@@ -100,7 +102,7 @@ jobs:
           flutter build ios --release --no-codesign
 
   build_macos-app_in_macos:
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -108,10 +110,9 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ env.nodeVersion }}
-      - uses: jwlawson/actions-setup-cmake@v2
+      - uses: jwlawson/actions-setup-cmake@v1.11
         with:
           cmake-version: ${{ env.cmakeVersion }}
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: npm i
       - run: npm run build:bridge:macos:release
 
@@ -137,7 +138,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ env.nodeVersion }}
-      - uses: jwlawson/actions-setup-cmake@v2
+      - uses: jwlawson/actions-setup-cmake@v1.11
         with:
           cmake-version: ${{ env.cmakeVersion }}
       - run: |
