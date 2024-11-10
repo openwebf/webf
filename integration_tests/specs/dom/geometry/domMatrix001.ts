@@ -59,7 +59,7 @@ var scaleTranslate2D = {
 
 
 
-["DOMMatrix", "DOMMatrixReadonly"].forEach(function (constr) {
+["DOMMatrix", "DOMMatrixReadOnly"].forEach(function (constr) {
   // constructor
   test(function () {
     checkDOMMatrix(new self[constr](), initial);
@@ -131,7 +131,7 @@ var scaleTranslate2D = {
 
   // TODO Test DOMMatrixReadOnly methods do not mutate the object
   function initialMatrix(){
-    // return DOMMatrixReadonly.fromMatrix(
+    // return DOMMatrixReadOnly.fromMatrix(
     //   {
     //     m11:1,   m12:-0.5, m13: 0.5,  m14:0,
     //     m21:0.5, m22:2,    m23: -0.5, m24:0,
@@ -140,7 +140,7 @@ var scaleTranslate2D = {
     //     is2D: false
     //   }
     // );
-    return new DOMMatrixReadonly(
+    return new DOMMatrixReadOnly(
         [
           1, -0.5, 0.5, 0, 
           0.5,2,-0.5,0,

@@ -14,7 +14,7 @@ function initialMatrix() {
 
 function initialDOMMatrix() {
   // return DOMMatrixReadOnly.fromMatrix(initialMatrix())
-  return new DOMMatrixReadonly([1, -0.5, 0.5, 0,0.5, 2, -0.5, 0, 0, 0, 1, 0,10, 20, 10, 1])
+  return new DOMMatrixReadOnly([1, -0.5, 0.5, 0,0.5, 2, -0.5, 0, 0, 0, 1, 0,10, 20, 10, 1])
 }
 
 function identity() {
@@ -130,9 +130,9 @@ test(function () {
 }, "test scale() with offsets");
 
 test(function () {
-  var result = new DOMMatrixReadonly([1, 2, 3, 4, 5, 6])
+  var result = new DOMMatrixReadOnly([1, 2, 3, 4, 5, 6])
     .scale(1, 1, 1, 1, 1, 1);
-  var expected = new DOMMatrixReadonly([1, 2, 0, 0, 3, 4, 0, 0, 0, 0, 1, 0, 5, 6, 0, 1]);
+  var expected = new DOMMatrixReadOnly([1, 2, 0, 0, 3, 4, 0, 0, 0, 0, 1, 0, 5, 6, 0, 1]);
   checkDOMMatrix(result, expected);
 }, "test scale() with identity scale and nonzero originZ");
 
@@ -261,7 +261,7 @@ test(function () {
 }, "test flipY()"); //  Expected false to be true, 'Expected value for is2D is true'.
 
 test(function () {
-  var point = new DOMPointReadonly(1, 2, 3, 4);
+  var point = new DOMPointReadOnly(1, 2, 3, 4);
   var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6]);
   var result = matrix.transformPoint(point);
   var expected = getMatrixTransform(matrix, point);
@@ -269,7 +269,7 @@ test(function () {
 }, "test transformPoint() - 2d matrix");
 
 test(function () {
-  var point = new DOMPointReadonly(1, 2, 3, 4);
+  var point = new DOMPointReadOnly(1, 2, 3, 4);
   var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
   var result = matrix.transformPoint(point);
   var expected = getMatrixTransform(matrix, point);
