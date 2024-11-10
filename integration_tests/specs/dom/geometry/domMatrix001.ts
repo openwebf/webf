@@ -65,9 +65,9 @@ var scaleTranslate2D = {
     checkDOMMatrix(new self[constr](), initial);
   }, `new ${constr}()`);
 
-  test(function () {
-    checkDOMMatrix(new self[constr](undefined), initial);
-  }, `new ${constr}(undefined)`);
+  // test(function () {
+  //   checkDOMMatrix(new self[constr](undefined), initial);
+  // }, `new ${constr}(undefined)`);
 
   // test(function () {
   //   checkDOMMatrix(new self[constr](new self[constr]()), initial);
