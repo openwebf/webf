@@ -20,10 +20,9 @@ Path2D* Path2D::Create(ExecutingContext* context,
 
 Path2D::Path2D(ExecutingContext* context, ExceptionState& exception_state)
   : BindingObject(context->ctx()) {
-  NativeValue arguments[0];
   GetExecutingContext()->dartMethodPtr()->createBindingObject(GetExecutingContext()->isDedicated(),
                                                               GetExecutingContext()->contextId(), bindingObject(),
-                                                              CreateBindingObjectType::kCreatePath2D, arguments, 0);
+                                                              CreateBindingObjectType::kCreatePath2D, nullptr, 0);
 }
 
 Path2D::Path2D(ExecutingContext* context,

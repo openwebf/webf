@@ -204,9 +204,8 @@ void DOMMatrixReadOnly::setM44(double v, ExceptionState& exception_state) {
 }
 
 DOMMatrix* DOMMatrixReadOnly::flipX(ExceptionState& exception_state) const {
-  NativeValue arguments[0];
-  NativeValue value = InvokeBindingMethod(binding_call_methods::kflipX, sizeof(arguments) / sizeof(NativeValue),
-                                          arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeValue value = InvokeBindingMethod(binding_call_methods::kflipX, 0,
+                                          nullptr, FlushUICommandReason::kDependentsOnElement, exception_state);
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
   if (native_binding_object == nullptr)
@@ -214,9 +213,8 @@ DOMMatrix* DOMMatrixReadOnly::flipX(ExceptionState& exception_state) const {
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
 DOMMatrix* DOMMatrixReadOnly::flipY(ExceptionState& exception_state) const {
-  NativeValue arguments[0];
-  NativeValue value = InvokeBindingMethod(binding_call_methods::kflipY, sizeof(arguments) / sizeof(NativeValue),
-                                          arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeValue value = InvokeBindingMethod(binding_call_methods::kflipY, 0,
+                                          nullptr, FlushUICommandReason::kDependentsOnElement, exception_state);
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
   if (native_binding_object == nullptr)
@@ -224,9 +222,8 @@ DOMMatrix* DOMMatrixReadOnly::flipY(ExceptionState& exception_state) const {
   return MakeGarbageCollected<DOMMatrix>(GetExecutingContext(), native_binding_object);
 }
 DOMMatrix* DOMMatrixReadOnly::inverse(ExceptionState& exception_state) const {
-  NativeValue arguments[0];
-  NativeValue value = InvokeBindingMethod(binding_call_methods::kinverse, sizeof(arguments) / sizeof(NativeValue),
-                                          arguments, FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeValue value = InvokeBindingMethod(binding_call_methods::kinverse, 0,
+                                          nullptr, FlushUICommandReason::kDependentsOnElement, exception_state);
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
   if (native_binding_object == nullptr)
@@ -461,9 +458,8 @@ DOMMatrix* DOMMatrixReadOnly::skewY(double sy, ExceptionState& exception_state) 
 // }
 // toJSON(): DartImpl<JSON>;
 AtomicString DOMMatrixReadOnly::toString(ExceptionState& exception_state) const {
-  NativeValue arguments[0];
   NativeValue dart_result =
-      InvokeBindingMethod(binding_call_methods::ktoString, sizeof(arguments) / sizeof(NativeValue), arguments,
+      InvokeBindingMethod(binding_call_methods::ktoString, 0, nullptr,
                           FlushUICommandReason::kDependentsOnElement, exception_state);
   return NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(dart_result));
 }
