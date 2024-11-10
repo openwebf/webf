@@ -19,6 +19,8 @@ describe('Canvas context 2d', () => {
     context.fillStyle = "red";
     context.fillRect(10, 10, 380, 380);
     await snapshot();
+    done();
+
   });
 
   it('should work with font and rect', async () => {
@@ -48,6 +50,8 @@ describe('Canvas context 2d', () => {
     document.body.appendChild(div);
 
     await snapshot(canvas);
+    done();
+
   });
 
   it('should work with lineWidth', async () => {
@@ -81,6 +85,8 @@ describe('Canvas context 2d', () => {
     ctx.lineTo(280, 150);
     ctx.stroke();
     await snapshot(canvas);
+    done();
+
   });
 
 
@@ -123,6 +129,8 @@ describe('Canvas context 2d', () => {
     ctx.textAlign = 'right';
     ctx.fillText('right-aligned', x, 130);
     await snapshot(canvas);
+    done();
+
   });
 
 
@@ -151,6 +159,8 @@ describe('Canvas context 2d', () => {
     ctx.stroke();
 
     await snapshot(canvas);
+    done();
+
   });
 
   it('should work with ellipse', async () => {
@@ -186,6 +196,8 @@ describe('Canvas context 2d', () => {
 
     ctx.fillRect(150, 40, 100, 100);
     await snapshot(canvas);
+    done();
+
   });
 
   it('should work with moveTO and lineTo', async () => {
@@ -198,6 +210,8 @@ describe('Canvas context 2d', () => {
     ctx.lineTo(200, 0);
     ctx.stroke();
     await snapshot(canvas);
+    done();
+
   });
 
   it('should work with rotate and translate', async () => {
@@ -217,6 +231,8 @@ describe('Canvas context 2d', () => {
     ctx.fillStyle = 'red';
     ctx.fillRect(80, 60, 140, 30);
     await snapshot(canvas);
+    done();
+
   });
 
   it('should work with roundRect', async (done) => {
@@ -278,6 +294,8 @@ describe('Canvas context 2d', () => {
     ctx.fillRect(40, 40, 50, 20);
     ctx.fillRect(40, 90, 50, 20);
     await snapshot(canvas);
+    done();
+
   });
 
   it('should work with strokeText', async () => {
@@ -288,6 +306,8 @@ describe('Canvas context 2d', () => {
     ctx.font = '50px serif';
     ctx.strokeText('Hello world', 50, 90);
     await snapshot(canvas);
+    done();
+
   });
 
   it('should work with fillText', async () => {
@@ -298,6 +318,8 @@ describe('Canvas context 2d', () => {
     ctx.font = '50px serif';
     ctx.fillText('Hello world', 50, 90);
     await snapshot(canvas);
+    done();
+
   });
 
   it('should work with rect and fill', async () => {
@@ -308,6 +330,8 @@ describe('Canvas context 2d', () => {
     ctx.rect(10, 20, 150, 100);
     ctx.fill();
     await snapshot(canvas);
+    done();
+
   });
 
   it('should work with bezierCurveTo', async () => {
@@ -341,6 +365,8 @@ describe('Canvas context 2d', () => {
     ctx.arc(cp2.x, cp2.y, 5, 0, 2 * Math.PI);  // Control point two
     ctx.fill();
     await snapshot(canvas);
+    done();
+
   });
 
   it('should work with quadraticCurveTo', async () => {
@@ -367,6 +393,8 @@ describe('Canvas context 2d', () => {
     ctx.arc(230, 30, 5, 0, 2 * Math.PI);
     ctx.fill();
     await snapshot(canvas);
+    done();
+
   });
 
   it('should work with fill and fillRect and clearRect', async () => {
@@ -391,6 +419,8 @@ describe('Canvas context 2d', () => {
     // Clear part of the canvas
     ctx.clearRect(10, 10, 120, 100);
     await snapshot(canvas);
+    done();
+
   });
 
   it('should work with clip', async () => {
@@ -409,6 +439,8 @@ describe('Canvas context 2d', () => {
     ctx.fillStyle = 'orange';
     ctx.fillRect(0, 0, 100, 100);
     await snapshot(canvas);
+    done();
+
   });
 
   it('should work with setTransform', async () => {
@@ -431,6 +463,8 @@ describe('Canvas context 2d', () => {
     ctx2.fill();
 
     await snapshot();
+    done();
+
   });
 
 
@@ -489,6 +523,8 @@ describe('Canvas context 2d', () => {
     ctx.fillRect(10, 10, 200, 200);
 
     await snapshot();
+    done();
+
   });
 
   it('should work with createLinearGradient', async (done) => {
