@@ -8,7 +8,7 @@ import 'package:vector_math/vector_math_64.dart';
 import 'package:webf/foundation.dart';
 import 'dom_matrix_readonly.dart';
 
-class DOMMatrix extends DOMMatrixReadonly {
+class DOMMatrix extends DOMMatrixReadOnly {
   DOMMatrix(BindingContext context, List<dynamic> domMatrixInit) : super(context, domMatrixInit) {
   }
 

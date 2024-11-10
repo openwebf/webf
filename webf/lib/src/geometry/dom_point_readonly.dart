@@ -13,9 +13,9 @@ import 'package:webf/src/css/matrix.dart';
 import 'package:webf/src/geometry/dom_point.dart';
 
 
-class DOMPointReadonly extends DynamicBindingObject {
+class DOMPointReadOnly extends DynamicBindingObject {
   final List<double> _data = [0,0,0,1];
-  DOMPointReadonly(BindingContext context, List<dynamic> domPointInit) : super(context) {
+  DOMPointReadOnly(BindingContext context, List<dynamic> domPointInit) : super(context) {
     for(int i = 0; i < domPointInit.length; i ++) {
       if(domPointInit[i].runtimeType == double) {
         _data[i] = domPointInit[i];
@@ -23,7 +23,7 @@ class DOMPointReadonly extends DynamicBindingObject {
     }
   }
 
-  DOMPointReadonly.fromPoint(BindingContext context, DOMPoint? point) : super(context) {
+  DOMPointReadOnly.fromPoint(BindingContext context, DOMPoint? point) : super(context) {
     if (point != null) {
       _data[0] = point.x;
       _data[1] = point.y;
@@ -70,7 +70,7 @@ class DOMPointReadonly extends DynamicBindingObject {
   DOMPoint matrixTransform(DOMMatrix domMatrix) {
     Matrix4 matrix = domMatrix.matrix;
     double x = _data[0], y = _data[1], z = _data[2], w = _data[3];
-    if ( DOMMatrixReadonly.isIdentityOrTranslation(matrix)) {
+    if ( DOMMatrixReadOnly.isIdentityOrTranslation(matrix)) {
       x += matrix[12];
       y += matrix[13];
       z += matrix[14];

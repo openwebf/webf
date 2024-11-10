@@ -12,7 +12,7 @@ import 'package:webf/geometry.dart';
 import 'package:webf/src/css/matrix.dart';
 import 'package:webf/src/geometry/dom_point.dart';
 
-class DOMMatrixReadonly extends DynamicBindingObject {
+class DOMMatrixReadOnly extends DynamicBindingObject {
   // Matrix4 Values are stored in column major order.
   Matrix4 _matrix4 = Matrix4.identity();
 
@@ -21,7 +21,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
 
   bool get is2D => _is2D;
 
-  DOMMatrixReadonly.fromMatrix4(BindingContext context, Matrix4? matrix4, bool flag2D) : super(context) {
+  DOMMatrixReadOnly.fromMatrix4(BindingContext context, Matrix4? matrix4, bool flag2D) : super(context) {
     if (matrix4 != null) {
       _matrix4 = matrix4;
       _is2D = flag2D;
@@ -31,7 +31,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
     }
   }
 
-  DOMMatrixReadonly(BindingContext context, List<dynamic> domMatrixInit) : super(context) {
+  DOMMatrixReadOnly(BindingContext context, List<dynamic> domMatrixInit) : super(context) {
     if (!domMatrixInit.isNotEmpty) {
       return;
     }
@@ -359,7 +359,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrix rotateAxisAngle(double x, double y, double z, double angle) {
-    Matrix4 m = DOMMatrixReadonly.rotate3d(x, y, z, angle);
+    Matrix4 m = DOMMatrixReadOnly.rotate3d(x, y, z, angle);
     bool flag2D = _is2D;
     if (x != 0 || y != 0) {
       flag2D = false;
@@ -376,7 +376,7 @@ class DOMMatrixReadonly extends DynamicBindingObject {
   }
 
   DOMMatrix rotate(double x, double y, double z) {
-    Matrix4 m = DOMMatrixReadonly.rotate3d(x, y, z, 0);
+    Matrix4 m = DOMMatrixReadOnly.rotate3d(x, y, z, 0);
     bool flag2D = _is2D;
     if (x != 0 || y == 0) {
       flag2D = false;
