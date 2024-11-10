@@ -12,6 +12,20 @@ import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/launcher.dart';
 
+typedef NativeBindingObjectAsyncCallCallback = Void Function(Pointer<Void> resolver, Pointer<NativeValue> successResult, Pointer<Utf8> errorMsg);
+typedef DartBindingObjectAsyncCallCallback = void Function(Pointer<Void> resolver, Pointer<NativeValue> successResult, Pointer<Utf8> errorMsg);
+
+class BindingObjectAsyncCallContext extends Struct {
+  external Pointer<NativeValue> method_name;
+  @Int64()
+  external int profileId;
+  @Int32()
+  external int argc;
+  external Pointer<NativeValue> argv;
+  external Pointer<Void> resolver;
+  external Pointer<NativeFunction<NativeBindingObjectAsyncCallCallback>> callback;
+}
+
 typedef BindingObjectOperation = void Function(WebFViewController? view, BindingObject bindingObject);
 
 class BindingContext {
@@ -370,6 +384,7 @@ void invokeBindingMethodFromNativeImpl(double contextId, int profileId, Pointer<
     }
   } catch (e, stack) {
     print('$e\n$stack');
+    rethrow;
   } finally {
     toNativeValue(returnValue, result, bindingObject);
   }
@@ -382,3 +397,22 @@ void invokeBindingMethodFromNativeImpl(double contextId, int profileId, Pointer<
     WebFProfiler.instance.finishTrackBinding(profileId);
   }
 }
+
+void asyncInvokeBindingMethodFromNativeImpl(WebFViewController view, Pointer<BindingObjectAsyncCallContext> asyncCallContext,
+    Pointer<NativeBindingObject> nativeBindingObject) {
+
+  Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
+  DartBindingObjectAsyncCallCallback f = asyncCallContext.ref.callback.asFunction(isLeaf: true);
+
+  try {
+    invokeBindingMethodFromNativeImpl(view.contextId, asyncCallContext.ref.profileId, nativeBindingObject, returnValue,
+        asyncCallContext.ref.method_name, asyncCallContext.ref.argc, asyncCallContext.ref.argv);
+
+    f(asyncCallContext.ref.resolver, returnValue, nullptr);
+  } catch (e, stack) {
+    f(asyncCallContext.ref.resolver, nullptr, '$e\n$stack'.toNativeUtf8());
+  }
+
+  malloc.free(asyncCallContext);
+}
+

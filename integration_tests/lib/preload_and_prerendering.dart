@@ -85,7 +85,7 @@ class PreRenderingPageState extends State<PreRenderingPage> {
 
   @override
   Widget build(BuildContext context) {
-    WebFBundle entrypoint = WebFBundle.fromUrl('file://${widget.path}');
+    WebFBundle entrypoint = WebFBundle.fromUrl('file://${widget.path}?time=${DateTime.now().microsecondsSinceEpoch}');
     return FutureBuilder(
         future: isPreloadMode
             ? controller.preload(entrypoint)

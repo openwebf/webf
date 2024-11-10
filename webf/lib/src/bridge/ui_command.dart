@@ -312,6 +312,23 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
+        case UICommandType.asyncCaller:
+          if (enableWebFProfileTracking) {
+            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.asyncCaller');
+          }
+
+          Pointer<BindingObjectAsyncCallContext> asyncCallContext =
+              command.nativePtr2.cast<BindingObjectAsyncCallContext>();
+
+          asyncInvokeBindingMethodFromNativeImpl(
+            view, asyncCallContext,
+            command.nativePtr.cast<NativeBindingObject>(),
+          );
+
+          if (enableWebFProfileTracking) {
+            WebFProfiler.instance.finishTrackUICommandStep();
+          }
+          break;
         default:
           break;
       }

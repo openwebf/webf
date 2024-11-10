@@ -687,6 +687,7 @@ enum UICommandType {
   // perf optimize
   createSVGElement,
   createElementNS,
+  asyncCaller,
   finishRecordingCommand,
 }
 

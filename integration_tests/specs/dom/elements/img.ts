@@ -164,6 +164,25 @@ describe('Tags img', () => {
     done();
   });
 
+  it('async set property', async (done) => {
+    const img = createElement('img', {
+      src: 'assets/rabbit.png'
+    }) as HTMLImageElement;
+    BODY.appendChild(img);
+    // @ts-ignore
+    let src = await img.src_async;
+    expect(src).toBe(`http://localhost:${location.port}/public/assets/rabbit.png`);
+    // have to wait for asset load?
+    await snapshot(0.1);
+    // @ts-ignore
+    img.src_async = 'assets/solidblue.png';
+    await snapshot(0.1);
+    // @ts-ignore
+    src = await img.src_async;
+    expect(src).toBe(`http://localhost:${location.port}/public/assets/solidblue.png`);
+    done();
+  });
+
   it('read image size through property', async (done) => {
     const img = document.createElement('img');
     img.onload = async () => {

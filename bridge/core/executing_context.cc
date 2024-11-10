@@ -6,6 +6,7 @@
 
 #include <utility>
 #include "bindings/qjs/converter_impl.h"
+#include "bindings/qjs/script_promise_resolver.h"
 #include "built_in_string.h"
 #include "core/dom/document.h"
 #include "core/dom/mutation_observer.h"
@@ -121,6 +122,8 @@ ExecutingContext::~ExecutingContext() {
     ReportError(exception);
     assert_m(false, "Unhandled exception found when Dispose JSContext.");
   }
+
+  active_pending_promises_.clear();
 
   JS_FreeValue(script_state_.ctx(), global_object_);
 
@@ -649,6 +652,10 @@ void ExecutingContext::RegisterActiveScriptWrappers(ScriptWrappable* script_wrap
 
 void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable) {
   active_wrappers_.erase(script_wrappable);
+}
+
+void ExecutingContext::RegisterActiveScriptPromise(std::shared_ptr<ScriptPromiseResolver> promise_resolver) {
+  active_pending_promises_.emplace(std::move(promise_resolver));
 }
 
 // A lock free context validator.

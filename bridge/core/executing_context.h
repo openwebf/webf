@@ -54,6 +54,7 @@ class MutationObserver;
 class BindingObject;
 struct NativeBindingObject;
 class ScriptWrappable;
+class ScriptPromiseResolver;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
 using MicrotaskCallback = void (*)(void* data);
@@ -111,6 +112,8 @@ class ExecutingContext {
   // Register active script wrappers.
   void RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable);
   void InActiveScriptWrappers(ScriptWrappable* script_wrappable);
+
+  void RegisterActiveScriptPromise(std::shared_ptr<ScriptPromiseResolver> promise_resolver);
 
   // Gets the DOMTimerCoordinator which maintains the "active timer
   // list" of tasks created by setTimeout and setInterval. The
@@ -220,6 +223,7 @@ class ExecutingContext {
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
   std::unordered_set<ScriptWrappable*> active_wrappers_;
+  std::unordered_set<std::shared_ptr<ScriptPromiseResolver>> active_pending_promises_;
   WebFValueStatus* executing_context_status_{new WebFValueStatus()};
   bool is_dedicated_;
 

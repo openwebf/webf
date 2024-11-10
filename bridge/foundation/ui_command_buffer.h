@@ -44,6 +44,7 @@ enum class UICommand {
   kCreateDocumentFragment,
   kCreateSVGElement,
   kCreateElementNS,
+  kAsyncCaller,
   kFinishRecordingCommand,
 };
 

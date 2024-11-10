@@ -6,6 +6,7 @@
 #include "html_image_element.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
+#include "bindings/qjs/script_promise_resolver.h"
 #include "foundation/native_value_converter.h"
 #include "html_names.h"
 #include "qjs_html_image_element.h"
@@ -35,6 +36,19 @@ AtomicString HTMLImageElement::src() const {
 void HTMLImageElement::setSrc(const AtomicString& value, ExceptionState& exception_state) {
   SetBindingProperty(binding_call_methods::ksrc, NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value),
                      exception_state);
+  if (!value.IsEmpty() && !keep_alive) {
+    KeepAlive();
+    keep_alive = true;
+  }
+}
+
+
+ScriptPromise HTMLImageElement::src_async(webf::ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(binding_call_methods::ksrc, exception_state);
+}
+
+void HTMLImageElement::setSrc_async(const AtomicString& value, ExceptionState& exception_state) {
+  SetBindingPropertyAsync(defined_properties::ksrc, value);
   if (!value.IsEmpty() && !keep_alive) {
     KeepAlive();
     keep_alive = true;

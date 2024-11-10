@@ -5,7 +5,6 @@ const {spawn, spawnSync} = require('child_process');
 const path = require('path');
 const os = require('os');
 const {startWsServer} = require('./ws_server');
-const {getRandomPort} = require('get-port-please');
 
 function getRunningPlatform() {
   if (os.platform() == 'darwin') return 'macos';
@@ -74,9 +73,13 @@ function startIntegrationTest(websocketPort) {
   });
 }
 
-async function main() {
-  const port = await getRandomPort();
+function getRandomNumber(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
+async function main() {
+  const port = await getRandomNumber(11000, 14000);
+  
   startIntegrationTest(port);
   startWsServer(port);
 }

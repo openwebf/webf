@@ -10,7 +10,7 @@ env:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   setup:
-    runs-on: 'macos-14'
+    runs-on: [self-hosted, macOS, ARM64]
     outputs:
       matrix: ${{ steps.matrix.outputs.value }}
     steps:
@@ -22,7 +22,7 @@ jobs:
           JSON=$(node -e "console.log(JSON.stringify(require('./integration_tests/spec_group.json').map(j=>j.name)))")
           echo "::set-output name=value::$(echo $JSON)"
   build_bridge:
-    runs-on: 'macos-14'
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -30,7 +30,7 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
-    - uses: jwlawson/actions-setup-cmake@v1.11
+    - uses: jwlawson/actions-setup-cmake@v2
       with:
         cmake-version: ${{ env.cmakeVersion }}
     - run: npm i
@@ -49,7 +49,7 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
-    - uses: jwlawson/actions-setup-cmake@v1.11
+    - uses: jwlawson/actions-setup-cmake@v2
       with:
         cmake-version: ${{ env.cmakeVersion }}
     - run: |
@@ -60,7 +60,7 @@ jobs:
     - run: node scripts/run_bridge_unit_test.js
 
   webf_unit_test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -73,7 +73,7 @@ jobs:
     - run: cd webf && flutter test
 
   integration_test:
-    runs-on: self-hosted
+    runs-on: [self-hosted, macOS, ARM64]
     needs: [ setup, build_bridge ]
     strategy:
       fail-fast: false
@@ -109,7 +109,7 @@ jobs:
       if: steps.test.outcome != 'success'
       run: exit 1
   multiple_page_test:
-    runs-on: 'macos-14'
+    runs-on: [self-hosted, macOS, ARM64]
     needs: [ build_bridge ]
     steps:
     - uses: actions/checkout@v3
@@ -136,7 +136,7 @@ jobs:
       run: exit 1
 
   preload_page_test:
-    runs-on: 'macos-14'
+    runs-on: [self-hosted, macOS, ARM64]
     needs: [ build_bridge ]
     steps:
     - uses: actions/checkout@v3
@@ -162,7 +162,7 @@ jobs:
       if: steps.test.outcome != 'success'
       run: exit 1
   prerendering_page_test:
-    runs-on: 'macos-14'
+    runs-on: [self-hosted, macOS, ARM64]
     needs: [ build_bridge ]
     steps:
     - uses: actions/checkout@v3
@@ -189,7 +189,7 @@ jobs:
       run: exit 1
 
   memory_leak_test:
-    runs-on: 'macos-14'
+    runs-on: [self-hosted, macOS, ARM64]
     needs: [ build_bridge ]
     steps:
     - uses: actions/checkout@v3

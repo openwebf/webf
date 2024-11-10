@@ -15,6 +15,7 @@ declare type LegacyNullToEmptyString = string | null;
 type DartImpl<T> = T;
 type StaticMember<T> = T;
 type StaticMethod<T> = T;
+type SupportAsync<T> = T;
 
 
 type DependentsOnLayout<T> = T;

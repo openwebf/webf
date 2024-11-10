@@ -174,7 +174,6 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   <% } %>
 
 <% } else { %>
-
   auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
   assert(<%= blob.filename %> != nullptr);
   ExecutingContext* context = ExecutingContext::From(ctx);
@@ -205,11 +204,18 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   context->dartIsolateContext()->profiler()->FinishTrackSteps();
   return result;
   <% } else { %>
-  auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= blob.filename %>-><%= prop.name %>());
+  <% if(prop.async_type) { %>
+  ExceptionState exception_state;
+  <% } %>
+  auto result = Converter<<%= generateIDLTypeConverter(prop.async_type ? prop.async_type : prop.type, prop.optional) %>>::ToValue(ctx, <%= blob.filename %>-><%= prop.name %>(<%= prop.async_type ? 'exception_state' : '' %>));
   context->dartIsolateContext()->profiler()->FinishTrackSteps();
   return result;
   <% } %>
-
+  <% if(prop.async_type) { %>
+  if (exception_state.HasException()) {
+    return exception_state.ToQuickJS();
+  }
+  <% } %>
 <% } %>
 }
 <% if (!prop.readonly) { %>
@@ -257,7 +263,7 @@ static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst
   ExecutingContext* context = ExecutingContext::From(ctx);
   if (!context->IsContextValid()) return JS_NULL;
   MemberMutationScope scope{context};
-  auto&& v = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::FromValue(ctx, argv[0], exception_state);
+  auto&& v = Converter<<%= generateIDLTypeConverter(prop.async_type ? prop.async_type : prop.type, prop.optional) %>>::FromValue(ctx, argv[0], exception_state);
   if (exception_state.HasException()) {
     return exception_state.ToQuickJS();
   }

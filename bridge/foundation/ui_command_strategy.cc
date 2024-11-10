@@ -57,6 +57,7 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
     case UICommand::kStartRecordingCommand:
     case UICommand::kCreateDocument:
     case UICommand::kCreateWindow:
+    case UICommand::kAsyncCaller:
     case UICommand::kRemoveAttribute: {
       SyncToReserve();
       host_->reserve_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2,
