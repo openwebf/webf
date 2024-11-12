@@ -464,6 +464,18 @@ ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& excepti
   return resolver->Promise();
 }
 
+ScriptValue Element::___testGlobalToLocal__(double x, double y, webf::ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+  };
+
+  NativeValue result = InvokeBindingMethod(binding_call_methods::k__test_global_to_local__, 2, args,
+                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
+
+  return ScriptValue(ctx(), result);
+}
+
 void Element::DidAddAttribute(const AtomicString& name, const AtomicString& value) {}
 
 void Element::WillModifyAttribute(const AtomicString& name,

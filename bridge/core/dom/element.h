@@ -81,6 +81,8 @@ class Element : public ContainerNode {
   ScriptPromise toBlob(double device_pixel_ratio, ExceptionState& exception_state);
   ScriptPromise toBlob(ExceptionState& exception_state);
 
+  ScriptValue ___testGlobalToLocal__(double x, double y, ExceptionState& exception_state);
+
   void DidAddAttribute(const AtomicString&, const AtomicString&);
   void WillModifyAttribute(const AtomicString&, const AtomicString& old_value, const AtomicString& new_value);
   void DidModifyAttribute(const AtomicString&,
