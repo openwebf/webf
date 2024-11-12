@@ -832,7 +832,7 @@ class RenderBoxModel extends RenderBox
   // child has percentage length and parent's size can not be calculated by style
   // thus parent needs relayout for its child calculate percentage length.
   void markParentNeedsRelayout() {
-    AbstractNode? parent = this.parent;
+    RenderObject? parent = this.parent;
     if (parent is RenderBoxModel) {
       parent.needsRelayout = true;
     }
@@ -865,7 +865,7 @@ class RenderBoxModel extends RenderBox
   /// Mark children needs layout when drop child as Flutter did
   ///
   @override
-  void dropChild(RenderBox child) {
+  void dropChild(RenderObject child) {
     super.dropChild(child);
     // Loop to mark all the children to needsLayout as flutter did
     _syncChildNeedsLayoutFlag(child);
@@ -1098,7 +1098,7 @@ class RenderBoxModel extends RenderBox
   /// Find scroll container
   RenderBoxModel? findScrollContainer() {
     RenderBoxModel? scrollContainer;
-    AbstractNode? parent = this.parent;
+    RenderObject? parent = this.parent;
 
     while (parent != null && parent is RenderLayoutBox) {
       if (parent.isScrollingContentBox && parent.parent is RenderLayoutBox) {
@@ -1453,7 +1453,7 @@ class RenderBoxModel extends RenderBox
   Offset getTotalScrollOffset() {
     double top = scrollTop;
     double left = scrollLeft;
-    AbstractNode? parentNode = parent;
+    RenderObject? parentNode = parent;
     while (parentNode is RenderBoxModel) {
       top += parentNode.scrollTop;
       left += parentNode.scrollLeft;

@@ -15,7 +15,7 @@ mixin RenderEventListenerMixin on RenderBox {
   HandleGetEventTarget? getEventTarget;
 
   GestureDispatcher? get gestureDispatcher {
-    AbstractNode? p = parent;
+    RenderObject? p = parent;
     while(p != null) {
       if (p is RenderViewportBox) {
         return p.gestureDispatcher;

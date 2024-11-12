@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 
+
 const String _kEllipsis = '\u2026';
 
 /// Forked from Flutter RenderParagraph
@@ -18,8 +19,8 @@ const String _kEllipsis = '\u2026';
 /// W3C line-height spec: https://www.w3.org/TR/css-inline-3/#inline-height
 class WebFRenderParagraph extends RenderBox
     with
-        ContainerRenderObjectMixin<RenderBox, TextParentData>,
-        RenderBoxContainerDefaultsMixin<RenderBox, TextParentData>,
+        ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>,
+        RenderBoxContainerDefaultsMixin<RenderBox, ContainerBoxParentData<RenderBox>>,
         RelayoutWhenSystemFontsChangeMixin {
   /// Creates a paragraph render object.
   ///
@@ -255,22 +256,22 @@ class WebFRenderParagraph extends RenderBox
   bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
     RenderBox? child = firstChild;
     while (child != null) {
-      final TextParentData textParentData = child.parentData as TextParentData;
+      final ContainerBoxParentData textParentData = child.parentData as ContainerBoxParentData;
       final Matrix4 transform = Matrix4.translationValues(
         textParentData.offset.dx,
         textParentData.offset.dy,
         0.0,
       )..scale(
-          textParentData.scale,
-          textParentData.scale,
-          textParentData.scale,
+          1,
+          1,
+          1,
         );
       final bool isHit = result.addWithPaintTransform(
         transform: transform,
         position: position!,
         hitTest: (BoxHitTestResult result, Offset transformed) {
           assert(() {
-            final Offset manualPosition = (position - textParentData.offset) / textParentData.scale!;
+            final Offset manualPosition = (position - textParentData.offset) / 1;
             return (transformed.dx - manualPosition.dx).abs() < precisionErrorTolerance &&
                 (transformed.dy - manualPosition.dy).abs() < precisionErrorTolerance;
           }());
