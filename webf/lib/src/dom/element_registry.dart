@@ -183,6 +183,16 @@ void defineBuiltInElements() {
   defineElement(CANVAS, (context) => CanvasElement(context));
   defineElement(LISTVIEW, (context) => FlutterListViewElement(context));
 
+  defineElement(BNIMAGE, (context) => BNImageElement(context));
+  defineElement(BNVIEW, (context) => BNViewElement(context));
+  defineElement(BNTEXT, (context) => BNTextElement(context));
+  defineElement(BNMARKDOWN, (context) => BNMarkdownElement(context));
+  defineElement(BNSPAN, (context) => BNSpanElement(context));
+  defineElement(BNCONTEXTMENU, (context) => BNContextMenuElement(context));
+  defineElement(BNCONTEXTMENUITEM, (context) => BNContextMenuItemElement(context));
+  defineElement(BNSCROLLVIEW, (context) => FlutterListViewElement(context));
+
+
   svgElementsRegistry.forEach((key, value) {
     _svgRegistry[key.toUpperCase()] = value;
   });

@@ -116,6 +116,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
+  void setDefaultID(String id) {
+    _id = id;
+  }
+
   // Is element an replaced element.
   // https://drafts.csswg.org/css-display/#replaced-element
   bool get isReplacedElement => false;

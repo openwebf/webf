@@ -9,6 +9,8 @@ class FlutterListViewElement extends WidgetElement {
 
   late ScrollController controller;
 
+  final Map<int, GlobalKey> _itemKeys = {};
+
   @override
   void initState() {
     super.initState();
@@ -27,28 +29,14 @@ class FlutterListViewElement extends WidgetElement {
   @override
   Widget build(BuildContext context, List<Widget> children) {
     return ListView.builder(
+      itemCount: children.length,
       itemBuilder: (BuildContext context, int index) {
-        return CupertinoContextMenu.builder(
-          actions: [
-          CupertinoContextMenuAction(
-            child: Text('Action 1'),
-            onPressed: () {
-              Navigator.pop(context);
-              print('1111');
-            },
-          ),
-          CupertinoContextMenuAction(
-            child: Text('Action 2'),
-            onPressed: () {
-              Navigator.pop(context);
-              print('2222');
-            },
-          ),
-        ],
-        builder: (BuildContext context, Animation<double> animation) {
-          return children[index];
-        }
-      );
+         final key = GlobalKey();
+        _itemKeys[index] = key;
+        return Container(
+          key: key,
+          child: children[index],
+        );
       },
       padding: const EdgeInsets.all(0),
       controller: controller,

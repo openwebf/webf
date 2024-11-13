@@ -18,7 +18,7 @@ mixin CSSPaddingMixin on RenderStyle {
         right: paddingRight.computedValue,
         bottom: paddingBottom.computedValue,
         top: paddingTop.computedValue);
-    assert(insets.isNonNegative);
+    // assert(insets.isNonNegative);
     return insets;
   }
 

@@ -42,6 +42,14 @@ class WebFWidgetElementToWidgetAdapter<T extends RenderObject> extends SingleChi
     }
   }
 
+   @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WebFWidgetElementToWidgetAdapter && runtimeType == other.runtimeType && widgetElement == other.widgetElement;
+
+  @override
+  int get hashCode => widgetElement.hashCode;
+
   @override
   String toStringShort() => debugShortDescription ?? super.toStringShort();
 }
