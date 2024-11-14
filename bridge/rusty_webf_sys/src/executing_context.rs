@@ -3,6 +3,8 @@
 */
 
 use std::ffi::*;
+use native_value::NativeValue;
+
 use crate::*;
 
 #[repr(C)]
@@ -12,6 +14,9 @@ pub struct ExecutingContextRustMethods {
   pub get_window: extern "C" fn(*const OpaquePtr) -> RustValue<WindowRustMethods>,
   pub create_exception_state: extern "C" fn() -> RustValue<ExceptionStateRustMethods>,
   pub finish_recording_ui_operations: extern "C" fn(executing_context: *const OpaquePtr) -> c_void,
+  pub webf_invoke_module: extern "C" fn(executing_context: *const OpaquePtr, module_name: *const c_char, method: *const c_char, exception_state: *const OpaquePtr) -> NativeValue,
+  pub webf_invoke_module_with_params: extern "C" fn(executing_context: *const OpaquePtr, module_name: *const c_char, method: *const c_char, params: *const NativeValue, exception_state: *const OpaquePtr) -> NativeValue,
+  pub webf_invoke_module_with_params_and_callback: extern "C" fn(executing_context: *const OpaquePtr, module_name: *const c_char, method: *const c_char, params: *const NativeValue, exception_state: *const OpaquePtr) -> NativeValue,
   pub set_timeout: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, c_int, *const OpaquePtr) -> c_int,
   pub set_interval: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, c_int, *const OpaquePtr) -> c_int,
   pub clear_timeout: extern "C" fn(*const OpaquePtr, c_int, *const OpaquePtr),
@@ -79,6 +84,34 @@ impl ExecutingContext {
       ((*self.method_pointer).create_exception_state)()
     };
     ExceptionState::initialize(result.value, result.method_pointer)
+  }
+
+  pub fn webf_invoke_module(&self, module_name: &str, method: &str, exception_state: &ExceptionState) -> Result<NativeValue, String> {
+    let module_name = CString::new(module_name).unwrap();
+    let method = CString::new(method).unwrap();
+    let result = unsafe {
+      ((*self.method_pointer).webf_invoke_module)(self.ptr, module_name.as_ptr(), method.as_ptr(), exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+
+    Ok(result)
+  }
+
+  pub fn webf_invoke_module_with_params(&self, module_name: &str, method: &str, params: &NativeValue, exception_state: &ExceptionState) -> Result<NativeValue, String> {
+    let module_name = CString::new(module_name).unwrap();
+    let method = CString::new(method).unwrap();
+    let result = unsafe {
+      ((*self.method_pointer).webf_invoke_module_with_params)(self.ptr, module_name.as_ptr(), method.as_ptr(), params, exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+
+    Ok(result)
   }
 
   pub fn set_timeout_with_callback(&self, callback: TimeoutCallback, exception_state: &ExceptionState) -> Result<i32, String> {

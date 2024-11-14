@@ -52,6 +52,7 @@ pub mod ui_event_init;
 pub mod webf_event_listener;
 pub mod webf_function;
 mod memory_utils;
+pub mod native_value;
 
 pub use executing_context::*;
 pub use document::*;
@@ -101,6 +102,7 @@ pub use transition_event_init::*;
 pub use ui_event_init::*;
 pub use webf_event_listener::*;
 pub use webf_function::*;
+pub use native_value::*;
 
 #[repr(C)]
 pub struct OpaquePtr;

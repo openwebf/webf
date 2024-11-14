@@ -7,7 +7,7 @@
 
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/exception_state.h"
-#include "bindings/qjs/qjs_function.h"
+#include "foundation/function.h"
 #include "module_callback.h"
 
 #include <webf_bridge.h>
@@ -37,17 +37,17 @@ class ModuleManager {
                                             const AtomicString& module_name,
                                             const AtomicString& method,
                                             ScriptValue& params_value,
-                                            const std::shared_ptr<QJSFunction>& callback,
+                                            const std::shared_ptr<Function>& callback,
                                             ExceptionState& exception);
   static NativeValue* __webf_invoke_module__(ExecutingContext* context,
                                              const AtomicString& module_name,
                                              const AtomicString& method,
                                              NativeValue& params_value,
-                                             const std::shared_ptr<QJSFunction>& callback,
+                                             const std::shared_ptr<Function>& callback,
                                              ExceptionState& exception);
   static void __webf_add_module_listener__(ExecutingContext* context,
                                            const AtomicString& module_name,
-                                           const std::shared_ptr<QJSFunction>& handler,
+                                           const std::shared_ptr<Function>& handler,
                                            ExceptionState& exception);
   static void __webf_remove_module_listener__(ExecutingContext* context,
                                               const AtomicString& module_name,

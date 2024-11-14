@@ -1,7 +1,7 @@
 use std::ffi::{c_void, CString};
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{element, initialize_webf_api, AddEventListenerOptions, EventMethods, EventTargetMethods, RustValue};
+use webf_sys::{element, initialize_webf_api, AddEventListenerOptions, EventMethods, EventTargetMethods, NativeValue, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
@@ -11,6 +11,20 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   println!("Context created");
   let exception_state = context.create_exception_state();
   let document = context.document();
+
+  let param1 = NativeValue::new_bool(true);
+  let param2 = NativeValue::new_bool(true);
+  let param3 = NativeValue::new_bool(true);
+  let param4 = NativeValue::new_bool(true);
+
+  let params_vec = vec![param1, param2, param3, param4];
+  let params = NativeValue::new_list(params_vec);
+
+  let ua_string = context.webf_invoke_module_with_params("Navigator", "getUserAgent", &params, &exception_state).unwrap();
+
+  let ua_string = ua_string.to_string();
+
+  println!("User Agent: {}", ua_string);
 
   let timer_callback = Box::new(move || {
     println!("Timer Callback");
