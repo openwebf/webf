@@ -46,28 +46,6 @@ struct NativeValue : public DartReadable {
   int32_t tag;
 };
 
-struct NativeFunctionContext;
-
-using CallNativeFunction = void (*)(NativeFunctionContext* functionContext,
-                                    int32_t argc,
-                                    NativeValue* argv,
-                                    NativeValue* returnValue);
-
-static void call_native_function(NativeFunctionContext* functionContext,
-                                 int32_t argc,
-                                 NativeValue* argv,
-                                 NativeValue* returnValue);
-
-struct NativeFunctionContext {
-  CallNativeFunction call;
-  NativeFunctionContext(ExecutingContext* context, JSValue callback);
-  ~NativeFunctionContext();
-  JSValue m_callback{JS_NULL};
-  ExecutingContext* m_context{nullptr};
-  JSContext* m_ctx{nullptr};
-  list_head link;
-};
-
 NativeValue Native_NewNull();
 NativeValue Native_NewString(SharedNativeString* string);
 NativeValue Native_NewCString(const std::string& string);

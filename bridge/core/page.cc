@@ -88,23 +88,42 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
     return nullptr;
   }
 
-  ScriptValue arguments[] = {event != nullptr ? event->ToValue() : ScriptValue::Empty(ctx), extraObject};
-  ScriptValue result = listener->value()->Invoke(ctx, ScriptValue::Empty(ctx), 2, arguments);
-  if (result.IsException()) {
-    context_->HandleException(&result);
+  auto callback_value = listener->value();
+  if (auto* callback = DynamicTo<QJSFunction>(callback_value.get())) {
+    ScriptValue arguments[] = {event != nullptr ? event->ToValue() : ScriptValue::Empty(ctx), extraObject};
+    ScriptValue result = callback->Invoke(ctx, ScriptValue::Empty(ctx), 2, arguments);
+    if (result.IsException()) {
+      context_->HandleException(&result);
+      return nullptr;
+    }
+
+    ExceptionState exception_state;
+    auto* return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
+    NativeValue tmp = result.ToNative(ctx, exception_state);
+    if (exception_state.HasException()) {
+      context_->HandleException(exception_state);
+      return nullptr;
+    }
+
+    memcpy(return_value, &tmp, sizeof(NativeValue));
+    return return_value;
+  } else if (auto* callback = DynamicTo<WebFNativeFunction>(callback_value.get())) {
+    NativeValue* params = new NativeValue[2];
+
+    ExceptionState exception_state;
+    ScriptValue eventValue = event != nullptr ? event->ToValue() : ScriptValue::Empty(ctx);
+    params[0] = eventValue.ToNative(ctx, exception_state);
+    params[1] = *extra;
+
+    
+    if (exception_state.HasException()) {
+      context_->HandleException(exception_state);
+      return nullptr;
+    }
+
+    callback->Invoke(context_, 2, params);
     return nullptr;
   }
-
-  ExceptionState exception_state;
-  auto* return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
-  NativeValue tmp = result.ToNative(ctx, exception_state);
-  if (exception_state.HasException()) {
-    context_->HandleException(exception_state);
-    return nullptr;
-  }
-
-  memcpy(return_value, &tmp, sizeof(NativeValue));
-  return return_value;
 }
 
 bool WebFPage::evaluateScript(const char* script,
