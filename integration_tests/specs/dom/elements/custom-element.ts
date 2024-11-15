@@ -645,4 +645,23 @@ describe('custom html element', () => {
       done();
     });
   });
+
+  it('should works with multiple build instance', async () => {
+    const container = createElement('multiple-rendering', async (done) => {
+      
+    }, [
+      createElement('div', {
+        style: {
+          border: '1px solid red'
+        }
+      }, [
+        createElement('div', {}, [
+          createText('AAA')
+        ])
+      ])
+    ]);
+
+    BODY.appendChild(container);
+    await snapshot();
+  });
 });
