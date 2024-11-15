@@ -147,28 +147,28 @@ void DOMPointReadOnly::setPointProperty(const AtomicString& prop, double v, Exce
 }
 
 double DOMPointReadOnly::x() const {
-  return getPointProperty(binding_call_methods::kx);
+  return getPointProperty(defined_properties::kx);
 }
 void DOMPointReadOnly::setX(double v, ExceptionState& exception_state) {
-  setPointProperty(binding_call_methods::kx, v, exception_state);
+  setPointProperty(defined_properties::kx, v, exception_state);
 }
 double DOMPointReadOnly::y() {
-  return getPointProperty(binding_call_methods::ky);
+  return getPointProperty(defined_properties::ky);
 }
 void DOMPointReadOnly::setY(double v, ExceptionState& exception_state) {
-  setPointProperty(binding_call_methods::ky, v, exception_state);
+  setPointProperty(defined_properties::ky, v, exception_state);
 }
 double DOMPointReadOnly::z() const {
-  return getPointProperty(binding_call_methods::kz);
+  return getPointProperty(defined_properties::kz);
 }
 void DOMPointReadOnly::setZ(double v, ExceptionState& exception_state) {
-  setPointProperty(binding_call_methods::kz, v, exception_state);
+  setPointProperty(defined_properties::kz, v, exception_state);
 }
 double DOMPointReadOnly::w() const {
-  return getPointProperty(binding_call_methods::kw);
+  return getPointProperty(defined_properties::kw);
 }
 void DOMPointReadOnly::setW(double v, ExceptionState& exception_state) {
-  setPointProperty(binding_call_methods::kw, v, exception_state);
+  setPointProperty(defined_properties::kw, v, exception_state);
 }
 
 DOMPoint* DOMPointReadOnly::matrixTransform(DOMMatrix* matrix, ExceptionState& exception_state) const {

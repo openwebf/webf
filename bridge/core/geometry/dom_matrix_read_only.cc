@@ -105,102 +105,102 @@ void DOMMatrixReadOnly::setMatrixProperty(const AtomicString& prop, double v, Ex
 }
 
 double DOMMatrixReadOnly::m11() const {
-  return getMatrixProperty(binding_call_methods::km11);
+  return getMatrixProperty(defined_properties::km11);
 }
 void DOMMatrixReadOnly::setM11(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km11, v, exception_state);
+  setMatrixProperty(defined_properties::km11, v, exception_state);
 }
 double DOMMatrixReadOnly::m12() const {
-  return getMatrixProperty(binding_call_methods::km12);
+  return getMatrixProperty(defined_properties::km12);
 }
 void DOMMatrixReadOnly::setM12(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km12, v, exception_state);
+  setMatrixProperty(defined_properties::km12, v, exception_state);
 }
 double DOMMatrixReadOnly::m13() const {
-  return getMatrixProperty(binding_call_methods::km13);
+  return getMatrixProperty(defined_properties::km13);
 }
 void DOMMatrixReadOnly::setM13(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km13, v, exception_state);
+  setMatrixProperty(defined_properties::km13, v, exception_state);
 }
 double DOMMatrixReadOnly::m14() const {
-  return getMatrixProperty(binding_call_methods::km14);
+  return getMatrixProperty(defined_properties::km14);
 }
 void DOMMatrixReadOnly::setM14(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km14, v, exception_state);
+  setMatrixProperty(defined_properties::km14, v, exception_state);
 }
 
 double DOMMatrixReadOnly::m21() const {
-  return getMatrixProperty(binding_call_methods::km21);
+  return getMatrixProperty(defined_properties::km21);
 }
 void DOMMatrixReadOnly::setM21(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km21, v, exception_state);
+  setMatrixProperty(defined_properties::km21, v, exception_state);
 }
 double DOMMatrixReadOnly::m22() const {
-  return getMatrixProperty(binding_call_methods::km22);
+  return getMatrixProperty(defined_properties::km22);
 }
 void DOMMatrixReadOnly::setM22(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km22, v, exception_state);
+  setMatrixProperty(defined_properties::km22, v, exception_state);
 }
 double DOMMatrixReadOnly::m23() const {
-  return getMatrixProperty(binding_call_methods::km23);
+  return getMatrixProperty(defined_properties::km23);
 }
 void DOMMatrixReadOnly::setM23(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km23, v, exception_state);
+  setMatrixProperty(defined_properties::km23, v, exception_state);
 }
 double DOMMatrixReadOnly::m24() const {
-  return getMatrixProperty(binding_call_methods::km24);
+  return getMatrixProperty(defined_properties::km24);
 }
 void DOMMatrixReadOnly::setM24(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km24, v, exception_state);
+  setMatrixProperty(defined_properties::km24, v, exception_state);
 }
 
 double DOMMatrixReadOnly::m31() const {
-  return getMatrixProperty(binding_call_methods::km31);
+  return getMatrixProperty(defined_properties::km31);
 }
 void DOMMatrixReadOnly::setM31(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km31, v, exception_state);
+  setMatrixProperty(defined_properties::km31, v, exception_state);
 }
 double DOMMatrixReadOnly::m32() const {
-  return getMatrixProperty(binding_call_methods::km32);
+  return getMatrixProperty(defined_properties::km32);
 }
 void DOMMatrixReadOnly::setM32(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km32, v, exception_state);
+  setMatrixProperty(defined_properties::km32, v, exception_state);
 }
 double DOMMatrixReadOnly::m33() const {
-  return getMatrixProperty(binding_call_methods::km33);
+  return getMatrixProperty(defined_properties::km33);
 }
 void DOMMatrixReadOnly::setM33(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km33, v, exception_state);
+  setMatrixProperty(defined_properties::km33, v, exception_state);
 }
 double DOMMatrixReadOnly::m34() const {
-  return getMatrixProperty(binding_call_methods::km34);
+  return getMatrixProperty(defined_properties::km34);
 }
 void DOMMatrixReadOnly::setM34(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km34, v, exception_state);
+  setMatrixProperty(defined_properties::km34, v, exception_state);
 }
 double DOMMatrixReadOnly::m41() const {
-  return getMatrixProperty(binding_call_methods::km41);
+  return getMatrixProperty(defined_properties::km41);
 }
 void DOMMatrixReadOnly::setM41(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km41, v, exception_state);
+  setMatrixProperty(defined_properties::km41, v, exception_state);
 }
 double DOMMatrixReadOnly::m42() const {
-  return getMatrixProperty(binding_call_methods::km42);
+  return getMatrixProperty(defined_properties::km42);
 }
 void DOMMatrixReadOnly::setM42(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km42, v, exception_state);
+  setMatrixProperty(defined_properties::km42, v, exception_state);
 }
 double DOMMatrixReadOnly::m43() const {
-  return getMatrixProperty(binding_call_methods::km43);
+  return getMatrixProperty(defined_properties::km43);
 }
 void DOMMatrixReadOnly::setM43(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km43, v, exception_state);
+  setMatrixProperty(defined_properties::km43, v, exception_state);
 }
 double DOMMatrixReadOnly::m44() const {
-  return getMatrixProperty(binding_call_methods::km44);
+  return getMatrixProperty(defined_properties::km44);
 }
 void DOMMatrixReadOnly::setM44(double v, ExceptionState& exception_state) {
-  setMatrixProperty(binding_call_methods::km44, v, exception_state);
+  setMatrixProperty(defined_properties::km44, v, exception_state);
 }
 
 DOMMatrix* DOMMatrixReadOnly::flipX(ExceptionState& exception_state) const {
