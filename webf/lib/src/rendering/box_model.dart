@@ -662,41 +662,59 @@ class RenderLayoutBox extends RenderBoxModel
   }
 
   /// Convert to [RenderFlexLayout]
-  RenderFlexLayout toFlexLayout() {
+  RenderFlexLayout toFlexLayout({ required bool ignoreChild }) {
     RenderFlexLayout flexLayout = RenderFlexLayout(
       renderStyle: renderStyle,
     );
     copyWith(flexLayout);
+    if (ignoreChild) {
+      return flexLayout;
+    }
     flexLayout.addAll(detachChildren());
     return flexLayout;
   }
 
   /// Convert to [RenderRepaintBoundaryFlexLayout]
-  RenderRepaintBoundaryFlexLayout toRepaintBoundaryFlexLayout() {
+  RenderRepaintBoundaryFlexLayout toRepaintBoundaryFlexLayout({ required bool ignoreChild }) {
     RenderRepaintBoundaryFlexLayout repaintBoundaryFlexLayout = RenderRepaintBoundaryFlexLayout(
       renderStyle: renderStyle,
     );
     copyWith(repaintBoundaryFlexLayout);
+
+    if (ignoreChild) {
+      return repaintBoundaryFlexLayout;
+    }
+
     repaintBoundaryFlexLayout.addAll(detachChildren());
     return repaintBoundaryFlexLayout;
   }
 
   /// Convert to [RenderFlowLayout]
-  RenderFlowLayout toFlowLayout() {
+  RenderFlowLayout toFlowLayout({ required bool ignoreChild }) {
     RenderFlowLayout flowLayout = RenderFlowLayout(
       renderStyle: renderStyle,
     );
     copyWith(flowLayout);
+
+    if (ignoreChild) {
+      return flowLayout;
+    }
+
     flowLayout.addAll(detachChildren());
     return flowLayout;
   }
 
   /// Convert to [RenderRepaintBoundaryFlowLayout]
-  RenderRepaintBoundaryFlowLayout toRepaintBoundaryFlowLayout() {
+  RenderRepaintBoundaryFlowLayout toRepaintBoundaryFlowLayout({ required bool ignoreChild }) {
     RenderRepaintBoundaryFlowLayout repaintBoundaryFlowLayout = RenderRepaintBoundaryFlowLayout(
       renderStyle: renderStyle,
     );
     copyWith(repaintBoundaryFlowLayout);
+
+    if (ignoreChild) {
+      return repaintBoundaryFlowLayout;
+    }
+
     repaintBoundaryFlowLayout.addAll(detachChildren());
     return repaintBoundaryFlowLayout;
   }

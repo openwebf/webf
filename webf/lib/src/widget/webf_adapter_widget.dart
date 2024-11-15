@@ -8,11 +8,10 @@ import 'package:webf/dom.dart' as dom;
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 
-
 class WebFWidgetElementStatefulWidget extends StatefulWidget {
   final WidgetElement widgetElement;
 
-  WebFWidgetElementStatefulWidget(this.widgetElement, {Key? key}): super(key: key);
+  WebFWidgetElementStatefulWidget(this.widgetElement, {Key? key}) : super(key: key);
 
   @override
   StatefulElement createElement() {
@@ -66,40 +65,11 @@ class WebFWidgetElementState extends State<WebFWidgetElementStatefulWidget> {
     }
   }
 
-  List<Widget>? _cachedChildren;
-  /// Return the previous built widget lists. When the DOM nodes change, the children property will be updated.
-  List<Widget>? get children => _cachedChildren;
-
-  void markChildrenNeedsUpdate() {
-    _cachedChildren = null;
-    if (mounted) {
-      requestUpdateState();
-    }
-  }
-
   Widget buildNodeWidget(dom.Node node, {Key? key}) {
     if (node is dom.CharacterData) {
       return WebFCharacterDataToWidgetAdaptor(node, key: key);
     }
     return WebFHTMLElementStatefulWidget(node as dom.Element, key: key);
-  }
-
-  List<Widget> convertNodeListToWidgetList(List<dom.Node> childNodes) {
-    if (_cachedChildren != null) return _cachedChildren!;
-
-    List<Widget> children = [];
-
-    for(dom.Node node in childNodes) {
-      if (node is WidgetElement) {
-        children.add((node.widget));
-      } else if (node is dom.TextNode && node.data.isNotEmpty || node is dom.Element) {
-        children.add(node.flutterWidget ?? buildNodeWidget(node, key: Key(node.hashCode.toString())));
-      }
-    }
-
-    _cachedChildren = children;
-
-    return children;
   }
 
   @override
@@ -115,6 +85,6 @@ class WebFWidgetElementState extends State<WebFWidgetElementStatefulWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return widgetElement.build(context, convertNodeListToWidgetList(widgetElement.childNodes.where((node) => !node.createdByFlutterWidget).toList()));
+    return widgetElement.build(context, widgetElement.childNodes as dom.ChildNodeList);
   }
 }

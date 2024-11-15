@@ -2,6 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/widgets.dart';
 import 'node.dart';
 import 'node_list.dart';
 import 'container_node.dart';
@@ -51,6 +52,10 @@ class ChildNodeList extends NodeList {
 
   Node? item(int index) {
     return _collectionIndexCache.nodeAt(this, index);
+  }
+
+  List<Widget> toWidgetList() {
+    return map((node) => node.toWidget()).toList();
   }
 
   void childrenChanged(ChildrenChange change) {

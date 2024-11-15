@@ -56,7 +56,7 @@ abstract class WidgetElement extends dom.Element {
   void propertyDidUpdate(String key, value) {}
   void styleDidUpdate(String property, String value) {}
 
-  Widget build(BuildContext context, List<Widget> children);
+  Widget build(BuildContext context, dom.ChildNodeList childNodes);
 
   // The render object is inserted by Flutter framework when element is WidgetElement.
   @override
@@ -103,7 +103,7 @@ abstract class WidgetElement extends dom.Element {
   // Reconfigure renderObjects when already rendered pages reattached to flutter tree
   void reactiveRenderer() {
     // The older one was disposed by flutter, should replace it with a new one.
-    updateRenderBoxModel(forceUpdate: true);
+    updateOrCreateRenderBoxModel(forceUpdate: true);
 
     if (renderStyle.display != CSSDisplay.none) {
       // Generate a new adapter for this RenderWidget
@@ -156,55 +156,6 @@ abstract class WidgetElement extends dom.Element {
       _state!.requestUpdateState();
     }
     attributeDidUpdate(key, value);
-  }
-
-  @nonVirtual
-  @override
-  dom.Node appendChild(dom.Node child) {
-    super.appendChild(child);
-
-    // Only trigger update if the child are created by JS. If it's created on Flutter widgets, the flutter framework will handle this.
-    if (_state != null && !child.createdByFlutterWidget) {
-      _state!.markChildrenNeedsUpdate();
-    }
-
-    return child;
-  }
-
-  @nonVirtual
-  @override
-  dom.Node insertBefore(dom.Node child, dom.Node referenceNode) {
-    dom.Node inserted = super.insertBefore(child, referenceNode);
-
-    if (_state != null) {
-      _state!.markChildrenNeedsUpdate();
-    }
-
-    return inserted;
-  }
-
-  @nonVirtual
-  @override
-  dom.Node? replaceChild(dom.Node newNode, dom.Node oldNode) {
-    dom.Node? replaced = super.replaceChild(newNode, oldNode);
-
-    if (_state != null) {
-      _state!.markChildrenNeedsUpdate();
-    }
-
-    return replaced;
-  }
-
-  @nonVirtual
-  @override
-  dom.Node removeChild(dom.Node child) {
-    super.removeChild(child);
-
-    if (_state != null) {
-      _state!.markChildrenNeedsUpdate();
-    }
-
-    return child;
   }
 
   static dom.Node? _getAncestorWidgetNode(WidgetElement element) {

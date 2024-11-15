@@ -29,11 +29,11 @@ class FlutterListViewElement extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context, ChildNodeList childNodes) {
     return WebFChildNodeSize(
         ownerElement: this,
         child: ListView(
-          children: children,
+          children: childNodes.toWidgetList(),
           padding: const EdgeInsets.all(0),
           controller: controller,
           physics: const AlwaysScrollableScrollPhysics(),

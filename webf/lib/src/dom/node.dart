@@ -39,15 +39,9 @@ enum ChildrenChangeType {
   TEXT_CHANGE
 }
 
-enum ChildrenChangeSource {
-  API,
-  PARSER
-}
+enum ChildrenChangeSource { API, PARSER }
 
-enum ChildrenChangeAffectsElements {
-  NO,
-  YES
-}
+enum ChildrenChangeAffectsElements { NO, YES }
 
 class ChildrenChange {
   final ChildrenChangeType type;
@@ -180,7 +174,9 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   ContainerNode? get parentNode => parentOrShadowHostNode;
 
   ContainerNode? _parentOrShadowHostNode;
+
   ContainerNode? get parentOrShadowHostNode => _parentOrShadowHostNode;
+
   set parentOrShadowHostNode(ContainerNode? value) {
     _parentOrShadowHostNode = value;
   }
@@ -189,13 +185,17 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   Node? _next;
 
   Node? get firstChild;
+
   Node? get lastChild;
 
   NodeType nodeType;
+
   String get nodeName;
 
   NodeData? _node_data;
+
   NodeData? get nodeData => _node_data;
+
   NodeData ensureNodeData() {
     _node_data ??= NodeData();
     return _node_data!;
@@ -232,7 +232,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   Element? get previousElementSibling {
     Node? previous = previousSibling;
-    while(previous != null) {
+    while (previous != null) {
       if (previous is Element) {
         return previous;
       }
@@ -243,7 +243,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   Element? get nextElementSibling {
     Node? next = nextSibling;
-    while(next != null) {
+    while (next != null) {
       if (next is Element) {
         return next;
       }
@@ -255,17 +255,22 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   Node(this.nodeType, [BindingContext? context]) : super(context);
 
   bool _isConnected = false;
+
   // If node is on the tree, the root parent is body.
   bool get isConnected => _isConnected;
 
-  bool isInTreeScope() { return isConnected; }
+  bool isInTreeScope() {
+    return isConnected;
+  }
 
   Node? get previousSibling => _previous;
+
   set previousSibling(Node? value) {
     _previous = value;
   }
 
   Node? get nextSibling => _next;
+
   set nextSibling(Node? value) {
     _next = value;
   }
@@ -277,8 +282,22 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return ensureNodeData().ensureEmptyChildNodeList(this);
   }
 
+  Widget toWidget() {
+    if (this is WidgetElement) {
+      return (this as WidgetElement).widget;
+    } else if (this is TextNode) {
+      return WebFCharacterDataToWidgetAdaptor(this as TextNode, key: Key(hashCode.toString()));
+    } else if (this is Element) {
+      return Portal(
+          ownerElement: this as Element,
+          child: WebFHTMLElementStatefulWidget(this as Element, key: Key(hashCode.toString())));
+    }
+    throw FlutterError('UnKnown node types for widget conversion');
+  }
+
   // Is child renderObject attached.
   bool get isRendererAttached => renderer != null && renderer!.attached;
+
   // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
   bool get isRendererAttachedToSegmentTree => renderer != null && renderer!.parent != null;
 
@@ -333,13 +352,21 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   @override
   void didDetachRenderer() {}
 
-  Node? appendChild(Node child) { return null; }
+  Node? appendChild(Node child) {
+    return null;
+  }
 
-  Node? insertBefore(Node child, Node referenceNode) { return null; }
+  Node? insertBefore(Node child, Node referenceNode) {
+    return null;
+  }
 
-  Node? removeChild(Node child) { return null; }
+  Node? removeChild(Node child) {
+    return null;
+  }
 
-  Node? replaceChild(Node newNode, Node oldNode) { return null; }
+  Node? replaceChild(Node newNode, Node oldNode) {
+    return null;
+  }
 
   /// Ensure child and child's child render object is attached.
   void ensureChildAttached() {}
@@ -390,11 +417,25 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     }
   }
 
-  bool isTextNode() { return this is TextNode; }
-  bool isContainerNode() { return this is ContainerNode; }
-  bool isElementNode() { return this is Element; }
-  bool isDocumentFragment() { return this is DocumentFragment;}
-  bool hasChildren() { return firstChild != null; }
+  bool isTextNode() {
+    return this is TextNode;
+  }
+
+  bool isContainerNode() {
+    return this is ContainerNode;
+  }
+
+  bool isElementNode() {
+    return this is Element;
+  }
+
+  bool isDocumentFragment() {
+    return this is DocumentFragment;
+  }
+
+  bool hasChildren() {
+    return firstChild != null;
+  }
 
   DocumentPosition compareDocumentPosition(Node other) {
     if (this == other) {

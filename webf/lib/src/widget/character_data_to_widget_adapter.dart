@@ -23,7 +23,7 @@ class WebFCharacterDataToWidgetAdaptor extends RenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return webFCharacterData.renderer!;
+    return webFCharacterData.createRenderer();
   }
 
   @override

@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 import 'package:webf/widget.dart';
 
@@ -35,17 +36,17 @@ class DefsAttributeElement extends WidgetElement {
 
   // Sub SVG element must to override this getter to add custom attributes
   get presentationAttributeConfigs => [
-    DefsAttributeConfig('font-size'),
-    DefsAttributeConfig('font-family'),
-    DefsAttributeConfig('fill'),
-    DefsAttributeConfig('fill-rule'),
-    DefsAttributeConfig('clip-path'),
-    DefsAttributeConfig('stroke'),
-    DefsAttributeConfig('stroke-width'),
-    DefsAttributeConfig('stroke-linecap'),
-    DefsAttributeConfig('stroke-linejoin'),
-    DefsAttributeConfig('transform')
-  ];
+        DefsAttributeConfig('font-size'),
+        DefsAttributeConfig('font-family'),
+        DefsAttributeConfig('fill'),
+        DefsAttributeConfig('fill-rule'),
+        DefsAttributeConfig('clip-path'),
+        DefsAttributeConfig('stroke'),
+        DefsAttributeConfig('stroke-width'),
+        DefsAttributeConfig('stroke-linecap'),
+        DefsAttributeConfig('stroke-linejoin'),
+        DefsAttributeConfig('transform')
+      ];
 
   DefsAttributeElement? findRoot() {
     var parent = parentElement;
@@ -66,8 +67,10 @@ class DefsAttributeElement extends WidgetElement {
   }
 
   @override
-  void updateRenderBoxModel({ bool forceUpdate = false }) {
+  RenderBoxModel? updateOrCreateRenderBoxModel(
+      {bool forceUpdate = false, bool ignoreChild = false, RenderObjectElement? ownerFlutterWidgetElement}) {
     // do not needs to update
+    return null;
   }
 
   @override
@@ -99,7 +102,7 @@ class DefsAttributeElement extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context, ChildNodeList children) {
     return SizedBox.shrink();
   }
 }

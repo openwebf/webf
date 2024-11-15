@@ -77,7 +77,7 @@ class FlutterInputElement extends WidgetElement
   }
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context, ChildNodeList childNodes) {
     switch (type) {
       case 'checkbox':
         return createCheckBox(context);

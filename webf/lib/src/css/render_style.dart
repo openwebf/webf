@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' show RenderObjectElement;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -215,9 +216,40 @@ abstract class RenderStyle {
   double getWidthByAspectRatio();
   double getHeightByAspectRatio();
 
+  RenderBoxModel? _domRenderObjects;
+  final Map<RenderObjectElement, RenderBoxModel> _widgetRenderObjects = {};
+
+  void setDomRenderObject(RenderBoxModel? renderBoxModel) {
+    _domRenderObjects = renderBoxModel;
+  }
+
+  void addWidgetRenderObjects(RenderObjectElement ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
+    assert(!_widgetRenderObjects.containsKey(ownerRenderObjectElement));
+    _widgetRenderObjects[ownerRenderObjectElement] = targetRenderBoxModel;
+  }
+
+  void unmountWidgetRenderObject(RenderObjectElement ownerRenderObjectElement) {
+    _widgetRenderObjects.remove(ownerRenderObjectElement);
+  }
+
+  void clearRenderObjects() {
+    _domRenderObjects = null;
+    _widgetRenderObjects.clear();
+  }
+
   // Following properties used for exposing APIs
   // for class that extends [AbstractRenderStyle].
-  RenderBoxModel? get renderBoxModel => target.renderBoxModel;
+  RenderBoxModel? get domRenderBoxModel {
+    return _domRenderObjects;
+  }
+
+  RenderBoxModel? get renderBoxModel {
+    return target.renderer as RenderBoxModel?;
+  }
+
+  RenderBoxModel? getWidgetPairedRenderBoxModel(RenderObjectElement targetRenderObjectElement) {
+    return _widgetRenderObjects[targetRenderObjectElement];
+  }
 
   Size get viewportSize => target.ownerDocument.viewport?.viewportSize ?? Size.zero;
   FlutterView get currentFlutterView => target.ownerDocument.controller.ownerFlutterView;
