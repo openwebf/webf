@@ -107,12 +107,18 @@ void DOMPointReadOnly::createWithDOMPointInit(ExecutingContext* context,
                                               double w,
                                               double z) {
   if (init->IsDOMPointInit()) {
+    // DOMPointReadOnly({x:1,y:2,z:3,w:4})
     auto domPointInit = init->GetAsDOMPointInit();
+    double x = domPointInit->hasX() ? domPointInit->x() : 0;
+    double y = domPointInit->hasY() ? domPointInit->y() : 0;
+    double z = domPointInit->hasZ() ? domPointInit->z() : 0;
+    double w = domPointInit->hasW() ? domPointInit->w() : 1;
+
     NativeValue arguments[] = {
-        NativeValueConverter<NativeTypeDouble>::ToNativeValue(domPointInit->x()),
-        NativeValueConverter<NativeTypeDouble>::ToNativeValue(domPointInit->y()),
-        NativeValueConverter<NativeTypeDouble>::ToNativeValue(domPointInit->z()),
-        NativeValueConverter<NativeTypeDouble>::ToNativeValue(domPointInit->w()),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(z),
+        NativeValueConverter<NativeTypeDouble>::ToNativeValue(w),
     };
     GetExecutingContext()->dartMethodPtr()->createBindingObject(
         GetExecutingContext()->isDedicated(), GetExecutingContext()->contextId(), bindingObject(),
