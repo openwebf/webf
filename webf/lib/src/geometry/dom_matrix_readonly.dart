@@ -446,7 +446,7 @@ class DOMMatrixReadOnly extends DynamicBindingObject {
     } else {
       // Multiply a homogeneous point by a matrix and return the transformed point
       // like method v4MulPointByMatrix(v,m) in WebKit TransformationMatrix
-      List input = [x, y, w, z];
+      List input = [x, y, z, w];
       x = dot(input, _matrix4.row0);
       y = dot(input, _matrix4.row1);
       z = dot(input, _matrix4.row2);

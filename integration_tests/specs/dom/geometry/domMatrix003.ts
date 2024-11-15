@@ -13,8 +13,8 @@ function initialMatrix() {
 }
 
 function initialDOMMatrix() {
-  // return DOMMatrixReadOnly.fromMatrix(initialMatrix())
-  return new DOMMatrixReadOnly([1, -0.5, 0.5, 0,0.5, 2, -0.5, 0, 0, 0, 1, 0,10, 20, 10, 1])
+  return DOMMatrixReadOnly.fromMatrix(initialMatrix())
+  // return new DOMMatrixReadOnly([1, -0.5, 0.5, 0,0.5, 2, -0.5, 0, 0, 0, 1, 0,10, 20, 10, 1])
 }
 
 function identity() {
