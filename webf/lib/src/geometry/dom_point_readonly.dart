@@ -34,8 +34,8 @@ class DOMPointReadOnly extends DynamicBindingObject {
 
   double get x  => _data[0];
   double get y  => _data[1];
-  double get w  => _data[2];
-  double get z  => _data[3];
+  double get z  => _data[2];
+  double get w  => _data[3];
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
