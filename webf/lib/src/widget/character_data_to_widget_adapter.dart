@@ -12,7 +12,6 @@ class WebFCharacterDataToWidgetAdaptor extends RenderObjectWidget {
   dom.CharacterData get webFCharacter => webFCharacterData;
 
   WebFCharacterDataToWidgetAdaptor(this.webFCharacterData, {Key? key}) : super(key: key) {
-    webFCharacterData.flutterWidget = this;
     webFCharacterData.managedByFlutterWidget = true;
   }
 

@@ -149,7 +149,9 @@ class TextNode extends CharacterData {
   @override
   RenderBox createRenderer() {
     RenderTextBox textBox = RenderTextBox(data, renderStyle: parentElement!.renderStyle);
-    if (!managedByFlutterWidget) {
+    if (managedByFlutterWidget) {
+      _widgetRenderObjects[flutterWidgetElement!] = textBox;
+    } else {
       _domRenderTextBox = textBox;
     }
     return textBox;

@@ -116,17 +116,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   bool get isSVGElement => false;
 
-  // Holding reference if this element are managed by Flutter framework.
-  WebFHTMLElementStatefulWidget? flutterWidget_;
-  WebFHTMLElementToFlutterElementAdaptor? flutterWidgetElement;
-
-  @override
-  WebFHTMLElementStatefulWidget? get flutterWidget => flutterWidget_;
-
-  set flutterWidget(WebFHTMLElementStatefulWidget? value) {
-    flutterWidget_ = value;
-  }
-
   HTMLElementState? flutterWidgetState;
 
   // The attrs.
@@ -355,7 +344,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   RenderBoxModel? updateOrCreateRenderBoxModel(
-      {bool forceUpdate = false, bool ignoreChild = false, RenderObjectElement? ownerFlutterWidgetElement}) {
+      {bool forceUpdate = false, bool ignoreChild = false}) {
     RenderBoxModel nextRenderBoxModel;
     if (isWidgetElement) {
       nextRenderBoxModel = _createRenderWidget(previousRenderWidget: _renderWidget, forceUpdate: forceUpdate);
@@ -409,9 +398,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       }
 
       if (managedByFlutterWidget) {
-        renderStyle.addWidgetRenderObjects(ownerFlutterWidgetElement!, nextRenderBoxModel);
+        renderStyle.addWidgetRenderObjects(flutterWidgetElement!, nextRenderBoxModel);
       } else {
-        renderBoxModel = nextRenderBoxModel;
+        renderStyle.setDomRenderObject(nextRenderBoxModel);
       }
 
       // Ensure that the event responder is bound.
@@ -1033,9 +1022,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     attributes.clear();
     disposeScrollable();
     _attributeProperties.clear();
-    flutterWidget = null;
     flutterWidgetElement = null;
-    ownerDocument.inactiveRenderObjects.add(renderer);
+    if (!managedByFlutterWidget) {
+      ownerDocument.inactiveRenderObjects.add(renderer);
+    }
     ownerDocument.clearElementStyleDirty(this);
     _beforeElement?.dispose();
     _beforeElement = null;
@@ -1150,7 +1140,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         } else if (box is RenderSVGContainer) {
           after = box.lastChild;
         }
-        if (!child.isRendererAttachedToSegmentTree || managedByFlutterWidget) {
+        if (!child.isRendererAttachedToSegmentTree) {
           child.attachTo(this, after: after);
           child.ensureChildAttached();
         }

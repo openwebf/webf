@@ -57,7 +57,6 @@ class _WebFElement extends MultiChildRenderObjectElement {
     }
     super.mount(parent, newSlot);
     htmlElement!.managedByFlutterWidget = true;
-    htmlElement!.createdByFlutterWidget = true;
 
     dom.Element? parentElement = findClosestAncestorHTMLElement(this);
 

@@ -13,7 +13,6 @@ import 'package:webf/webf.dart';
 class WebFHTMLElementStatefulWidget extends StatefulWidget {
   final dom.Element webFElement;
   WebFHTMLElementStatefulWidget(this.webFElement, {Key? key}): super(key: key) {
-    webFElement.flutterWidget = this;
     webFElement.managedByFlutterWidget = true;
   }
 
@@ -93,7 +92,7 @@ class WebFHTMLElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
   @override
   RenderObject createRenderObject(BuildContext context) {
     RenderBoxModel? renderObject = _webFElement.updateOrCreateRenderBoxModel(
-        forceUpdate: true, ignoreChild: true, ownerFlutterWidgetElement: context as RenderObjectElement);
+        forceUpdate: true, ignoreChild: true);
     return renderObject!;
   }
 
