@@ -6,11 +6,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart' show Widget;
+import 'package:flutter/widgets.dart' show RenderObjectElement, Widget;
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'node_data.dart';
+import 'node_traversal.dart';
 
 enum NodeType {
   ELEMENT_NODE,
@@ -161,14 +162,23 @@ abstract class LifecycleCallbacks {
 }
 
 abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCallbacks {
-  Widget? get flutterWidget => null;
+  RenderObjectElement? _flutterWidgetElement;
+  RenderObjectElement? get flutterWidgetElement => _flutterWidgetElement;
+  set flutterWidgetElement(RenderObjectElement? value) {
+    for (Node node in NodeTraversal.inclusiveDescendantsOf(this)) {
+      node._flutterWidgetElement = value;
+    }
+  }
 
   /// WebF nodes could be wrapped by [WebFHTMLElementToWidgetAdaptor] and the renderObject of this node is managed by Flutter framework.
   /// So if managedByFlutterWidget is true, WebF DOM can not disposed Node's renderObject directly.
-  bool managedByFlutterWidget = false;
-
-  /// true if node are created by Flutter widgets.
-  bool createdByFlutterWidget = false;
+  bool _managedByFlutterWidget = false;
+  bool get managedByFlutterWidget => _managedByFlutterWidget;
+  set managedByFlutterWidget(bool value) {
+    for (Node node in NodeTraversal.inclusiveDescendantsOf(this)) {
+      node._managedByFlutterWidget = true;
+    }
+  }
 
   /// The Node.parentNode read-only property returns the parent of the specified node in the DOM tree.
   ContainerNode? get parentNode => parentOrShadowHostNode;

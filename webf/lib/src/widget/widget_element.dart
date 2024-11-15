@@ -162,7 +162,7 @@ abstract class WidgetElement extends dom.Element {
     dom.Node? parent = element.parentNode;
 
     while (parent != null) {
-      if (parent.flutterWidget != null) {
+      if (parent.flutterWidgetElement != null) {
         return parent;
       }
 
