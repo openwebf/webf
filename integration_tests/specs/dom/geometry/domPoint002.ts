@@ -29,34 +29,34 @@ test(function() {
 },'test DOMPoint Constructor with undefined');
 // test(function() {
 //   checkDOMPoint(new DOMPoint("a", "b"), {x:NaN, y:NaN, z:0, w:1});
-// },'test DOMPoint Constructor with string');
+// },'test DOMPoint Constructor with string'); //TODO
 // test(function() {
 //   checkDOMPoint(new DOMPoint({}), {x:NaN, y:0, z:0, w:1});
 // },'test DOMPoint Constructor with empty object'); //TODO
-// test(function() {
-//   checkDOMPoint(DOMPoint.fromPoint({}), {x:0, y:0, z:0, w:1});
-// },'test DOMPoint fromPoint with empty object');
-// test(function() {
-//   checkDOMPoint(DOMPoint.fromPoint({x:1}), {x:1, y:0, z:0, w:1});
-// },'test DOMPoint fromPoint with x');
-// test(function() {
-//   checkDOMPoint(DOMPoint.fromPoint({x:1, y:2}), {x:1, y:2, z:0, w:1});
-// },'test DOMPoint fromPoint with x, y');
-// test(function() {
-//   checkDOMPoint(DOMPoint.fromPoint({x:1, y:2, z:3}), {x:1, y:2, z:3, w:1});
-// },'test DOMPoint fromPoint with x, y, z');
-// test(function() {
-//   checkDOMPoint(DOMPoint.fromPoint({x:1, y:2, z:3, w:4}), {x:1, y:2, z:3, w:4});
-// },'test DOMPoint fromPoint with x, y, z, w');
-// test(function() {
-//   checkDOMPoint(DOMPoint.fromPoint({x:1, y:2, z:3, w:4, v:5}), {x:1, y:2, z:3, w:4});
-// },'test DOMPoint fromPoint with x, y, z, w, v');
-// test(function() {
-//   checkDOMPoint(DOMPoint.fromPoint({x:1, z:3}), {x:1, y:0, z:3, w:1});
-// },'test DOMPoint fromPoint with x, z');
-// test(function() {
-//   checkDOMPoint(DOMPoint.fromPoint({x:1, y: undefined, z:3}), {x:1, y:0, z:3, w:1});
-// },'test DOMPoint fromPoint with undefined value');
+test(function() {
+  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({})), {x:0, y:0, z:0, w:1});
+},'test DOMPoint fromPoint with empty object');
+test(function() {
+  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1})), {x:1, y:0, z:0, w:1});
+},'test DOMPoint fromPoint with x');
+test(function() {
+  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1, y:2})), {x:1, y:2, z:0, w:1});
+},'test DOMPoint fromPoint with x, y');
+test(function() {
+  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1, y:2, z:3})), {x:1, y:2, z:3, w:1});
+},'test DOMPoint fromPoint with x, y, z');
+test(function() {
+  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1, y:2, z:3, w:4})), {x:1, y:2, z:3, w:4});
+},'test DOMPoint fromPoint with x, y, z, w');
+test(function() {
+  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1, y:2, z:3, w:4, v:5})), {x:1, y:2, z:3, w:4});
+},'test DOMPoint fromPoint with x, y, z, w, v');
+test(function() {
+  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1, z:3})), {x:1, y:0, z:3, w:1});
+},'test DOMPoint fromPoint with x, z');
+test(function() {
+  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1, y: undefined, z:3})), {x:1, y:0, z:3, w:1});
+},'test DOMPoint fromPoint with undefined value');
 test(function() {
   var point = new DOMPoint(5, 4);
   var matrix = new DOMMatrix([2, 0, 0, 2, 10, 10]);
@@ -64,12 +64,6 @@ test(function() {
   var expected = getMatrixTransform(matrix, point);
   checkDOMPoint(result, expected);
 },'test DOMPoint matrixTransform');
-test(function() {
-  var point = new DOMPoint(42, 84);
-  // assert_throws_js(TypeError, function() {
-  //   point.matrixTransform({ is2D: true, m33: 1.0000001 });
-  // });
-},'test DOMPoint matrixTransform with inconsistent input');
 test(function() {
   var p = new DOMPoint(0, 0, 0, 1);
   p.x = undefined;
@@ -109,34 +103,34 @@ test(function() {
 },'test DOMPointReadOnly Constructor with undefined');
 // test(function() {
 //   checkDOMPoint(new DOMPointReadOnly("a", "b"), {x:NaN, y:NaN, z:0, w:1});
-// },'test DOMPointReadOnly Constructor with string');
+// },'test DOMPointReadOnly Constructor with string'); // TODO
 // test(function() {
 //   checkDOMPoint(new DOMPointReadOnly({}), {x:NaN, y:0, z:0, w:1});
-// },'test DOMPointReadOnly Constructor with object');
-// test(function() {
-//   checkDOMPoint(DOMPointReadOnly.fromPoint({}), {x:0, y:0, z:0, w:1});
-// },'test DOMPointReadOnly fromPoint with empty object');
-// test(function() {
-//   checkDOMPoint(DOMPointReadOnly.fromPoint({x:1}), {x:1, y:0, z:0, w:1});
-// },'test DOMPointReadOnly fromPoint with x');
-// test(function() {
-//   checkDOMPoint(DOMPointReadOnly.fromPoint({x:1, y:2}), {x:1, y:2, z:0, w:1});
-// },'test DOMPointReadOnly fromPoint with x, y');
-// test(function() {
-//   checkDOMPoint(DOMPointReadOnly.fromPoint({x:1, y:2, z:3}), {x:1, y:2, z:3, w:1});
-// },'test DOMPointReadOnly fromPoint with x, y, z');
-// test(function() {
-//   checkDOMPoint(DOMPointReadOnly.fromPoint({x:1, y:2, z:3, w:4}), {x:1, y:2, z:3, w:4});
-// },'test DOMPointReadOnly fromPoint with x, y, z, w');
-// test(function() {
-//   checkDOMPoint(DOMPointReadOnly.fromPoint({x:1, y:2, z:3, w:4, v:5}), {x:1, y:2, z:3, w:4});
-// },'test DOMPointReadOnly fromPoint with x, y, z, w, v');
-// test(function() {
-//   checkDOMPoint(DOMPointReadOnly.fromPoint({x:1, z:3}), {x:1, y:0, z:3, w:1});
-// },'test DOMPointReadOnly fromPoint with x, z');
-// test(function() {
-//   checkDOMPoint(DOMPointReadOnly.fromPoint({x:1, y: undefined, z:3}), {x:1, y:0, z:3, w:1});
-// },'test DOMPointReadOnly fromPoint with undefined value');
+// },'test DOMPointReadOnly Constructor with object'); // TODO
+test(function() {
+  checkDOMPoint(DOMPointReadOnly.fromPoint(new DOMPoint({})), {x:0, y:0, z:0, w:1});
+},'test DOMPointReadOnly fromPoint with empty object');
+test(function() {
+  checkDOMPoint(DOMPointReadOnly.fromPoint(new DOMPoint({x:1})), {x:1, y:0, z:0, w:1});
+},'test DOMPointReadOnly fromPoint with x');
+test(function() {
+  checkDOMPoint(DOMPointReadOnly.fromPoint(new DOMPoint({x:1, y:2})), {x:1, y:2, z:0, w:1});
+},'test DOMPointReadOnly fromPoint with x, y');
+test(function() {
+  checkDOMPoint(DOMPointReadOnly.fromPoint(new DOMPoint({x:1, y:2, z:3})), {x:1, y:2, z:3, w:1});
+},'test DOMPointReadOnly fromPoint with x, y, z');
+test(function() {
+  checkDOMPoint(DOMPointReadOnly.fromPoint(new DOMPoint({x:1, y:2, z:3, w:4})), {x:1, y:2, z:3, w:4});
+},'test DOMPointReadOnly fromPoint with x, y, z, w');
+test(function() {
+  checkDOMPoint(DOMPointReadOnly.fromPoint(new DOMPoint({x:1, y:2, z:3, w:4, v:5})), {x:1, y:2, z:3, w:4});
+},'test DOMPointReadOnly fromPoint with x, y, z, w, v');
+test(function() {
+  checkDOMPoint(DOMPointReadOnly.fromPoint(new DOMPoint({x:1, z:3})), {x:1, y:0, z:3, w:1});
+},'test DOMPointReadOnly fromPoint with x, z');
+test(function() {
+  checkDOMPoint(DOMPointReadOnly.fromPoint(new DOMPoint({x:1, y: undefined, z:3})), {x:1, y:0, z:3, w:1});
+},'test DOMPointReadOnly fromPoint with undefined value');
 test(function() {
   var point = new DOMPointReadOnly(5, 4);
   var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6]);

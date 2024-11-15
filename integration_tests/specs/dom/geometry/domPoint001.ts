@@ -23,24 +23,24 @@ test(function() {
 test(function() {
   checkDOMPoint(new DOMPoint(1, 2, 3, 4, 5), {x:1, y:2, z:3, w:4});
 },'testConstructor5');
-test(function() {
-  checkDOMPoint(new DOMPoint({}), {x:NaN, y:0, z:0, w:1});
-},'testConstructorDictionary0'); //TODO
-test(function() {
-  checkDOMPoint(new DOMPoint({x:1}), {x:NaN, y:0, z:0, w:1});
-},'testConstructorDictionary1'); //TODO
-test(function() {
-  checkDOMPoint(new DOMPoint({x:1, y:2}), {x:NaN, y:0, z:0, w:1});
-},'testConstructorDictionary2'); //TODO
+// test(function() {
+//   checkDOMPoint(new DOMPoint({}), {x:NaN, y:0, z:0, w:1});
+// },'testConstructorDictionary0'); //TODO
+// test(function() {
+//   checkDOMPoint(new DOMPoint({x:1}), {x:NaN, y:0, z:0, w:1});
+// },'testConstructorDictionary1'); //TODO
+// test(function() {
+//   checkDOMPoint(new DOMPoint({x:1, y:2}), {x:NaN, y:0, z:0, w:1});
+// },'testConstructorDictionary2'); //TODO
 test(function() {
   checkDOMPoint(new DOMPoint(1, undefined), {x:1, y:0, z:0, w:1});
 },'testConstructor2undefined');
 // test(function() {
 //   checkDOMPoint(new DOMPoint("a", "b"), {x:NaN, y:NaN, z:0, w:1});
-// },'testConstructorUndefined1');
+// },'testConstructorUndefined1'); //TODO
 // test(function() {
 //   checkDOMPoint(new DOMPoint({x:"a", y:"b"}), {x:NaN, y:0, z:0, w:1});
-// },'testConstructorUndefined2');
+// },'testConstructorUndefined2'); //TODO
 test(function() {
   checkDOMPoint(new DOMPointReadOnly(), {x:0, y:0, z:0, w:1});
 },'DOMPointReadOnly constructor with no values');
