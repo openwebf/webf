@@ -7,6 +7,7 @@ import 'dart:collection';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
+import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 
 class WebFHTMLElementStatefulWidget extends StatefulWidget {
@@ -29,6 +30,7 @@ class HTMLElementState extends State<WebFHTMLElementStatefulWidget> {
   bool _disposed = false;
 
   HTMLElementState(this._webFElement);
+
   dom.Node get webFElement => _webFElement;
 
   void addWidgetChild(Widget widget) {
@@ -39,6 +41,7 @@ class HTMLElementState extends State<WebFHTMLElementStatefulWidget> {
       });
     });
   }
+
   void removeWidgetChild(Widget widget) {
     scheduleDelayForFrameCallback();
     Future.microtask(() {
@@ -64,41 +67,34 @@ class HTMLElementState extends State<WebFHTMLElementStatefulWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return WebFHTMLElementToWidgetAdaptor(_webFElement, children: customElementWidgets.toList(), key: ObjectKey(_webFElement.hashCode),);
+    return WebFHTMLElementToWidgetAdaptor(
+      _webFElement,
+      children: customElementWidgets.toList(),
+      key: ObjectKey(_webFElement.hashCode),
+    );
   }
 }
 
 class WebFHTMLElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
   WebFHTMLElementToWidgetAdaptor(this._webFElement, {Key? key, required List<Widget> children})
-      : super(key: key, children: children) {
-  }
+      : super(key: key, children: children) {}
 
   final dom.Element _webFElement;
+
   dom.Element get webFElement => _webFElement;
 
   @override
   WebFHTMLElementToFlutterElementAdaptor createElement() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
     WebFHTMLElementToFlutterElementAdaptor element = WebFHTMLElementToFlutterElementAdaptor(this);
-    // If a WebF element was already connected to a flutter element, should unmount the previous linked renderObjectt
-    if (_webFElement.flutterWidgetElement != null && _webFElement.flutterWidgetElement != element) {
-      _webFElement.unmountRenderObject(dispose: false, fromFlutterWidget: true);
-    }
-
     _webFElement.flutterWidgetElement = element;
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
-
     return element;
   }
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return _webFElement.createRenderer();
+    RenderBoxModel? renderObject = _webFElement.updateOrCreateRenderBoxModel(
+        forceUpdate: true, ignoreChild: true, ownerFlutterWidgetElement: context as RenderObjectElement);
+    return renderObject!;
   }
 
   @override

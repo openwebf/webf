@@ -7,7 +7,9 @@ import 'package:webf/foundation.dart';
 import 'package:webf/src/widget/character_data_to_widget_adapter.dart';
 
 class WebFCharacterDataToFlutterElementAdapter extends RenderObjectElement {
-  WebFCharacterDataToFlutterElementAdapter(WebFCharacterDataToWidgetAdaptor widget) : super(widget);
+  WebFCharacterDataToFlutterElementAdapter(WebFCharacterDataToWidgetAdaptor widget) : super(widget) {
+    widget.webFCharacter.flutterWidgetElement = this;
+  }
 
   @override
   WebFCharacterDataToWidgetAdaptor get widget => super.widget as WebFCharacterDataToWidgetAdaptor;

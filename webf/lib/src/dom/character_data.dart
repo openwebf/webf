@@ -10,6 +10,8 @@ class CharacterData extends Node {
   CharacterData(NodeType type, [context]) : super(type, context);
 
   WebFCharacterDataToWidgetAdaptor? _flutterWidget;
+  WebFCharacterDataToFlutterElementAdapter? flutterWidgetElement;
+
   @override
   WebFCharacterDataToWidgetAdaptor? get flutterWidget => _flutterWidget;
   set flutterWidget(WebFCharacterDataToWidgetAdaptor? adapter) {
@@ -26,6 +28,7 @@ class CharacterData extends Node {
   Future<void> dispose() async {
     super.dispose();
     flutterWidget = null;
+    flutterWidgetElement = null;
   }
 
   @override

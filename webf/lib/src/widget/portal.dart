@@ -6,13 +6,13 @@ import 'package:webf/dom.dart' as dom;
 /// Exp: using [showModalBottomSheet] or [showDialog], it will create a standalone Widget Tree alone side with the original Widget Tree.
 /// Use this widget to make the gesture dispatcher works.
 class Portal extends SingleChildRenderObjectWidget {
-  final dom.Element webFElement;
+  final dom.Element ownerElement;
 
-  Portal({Widget? child, required this.webFElement}) : super(child: child);
+  Portal({Widget? child, required this.ownerElement}) : super(child: child);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return RenderPortal(controller: webFElement.ownerDocument.controller);
+    return RenderPortal(controller: ownerElement.ownerDocument.controller);
   }
 
   @override

@@ -40,27 +40,9 @@ class WebFHTMLElementToFlutterElementAdaptor extends MultiChildRenderObjectEleme
 
   @override
   void unmount() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     dom.Element element = widget.webFElement;
-    if (element.flutterWidgetElement == this) {
-      element.unmountRenderObject(dispose: false, fromFlutterWidget: true);
-    }
+    element.renderStyle.unmountWidgetRenderObject(this);
     super.unmount();
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
-  }
-
-  @override
-  void insertRenderObjectChild(covariant RenderObject child, covariant IndexedSlot<Element?> slot) {
-  }
-  @override
-  void moveRenderObjectChild(covariant RenderObject child, covariant IndexedSlot<Element?> oldSlot, covariant IndexedSlot<Element?> newSlot) {
-  }
-  @override
-  void removeRenderObjectChild(covariant RenderObject child, covariant Object? slot) {
   }
 }

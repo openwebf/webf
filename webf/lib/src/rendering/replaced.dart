@@ -143,12 +143,30 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     }
   }
 
-  RenderRepaintBoundaryReplaced toRepaintBoundaryReplaced() {
-    RenderObject? childRenderObject = child;
-    child = null;
-    RenderRepaintBoundaryReplaced newChild = RenderRepaintBoundaryReplaced(renderStyle);
-    newChild.child = childRenderObject as RenderBox?;
-    return copyWith(newChild);
+  RenderRepaintBoundaryReplaced toRepaintBoundaryReplaced({ bool ignoreChild = false }) {
+    if (!ignoreChild) {
+      RenderObject? childRenderObject = child;
+      child = null;
+      RenderRepaintBoundaryReplaced newChild = RenderRepaintBoundaryReplaced(renderStyle);
+      newChild.child = childRenderObject as RenderBox?;
+      return copyWith(newChild);
+    } else {
+      RenderRepaintBoundaryReplaced newChild = RenderRepaintBoundaryReplaced(renderStyle);
+      return copyWith(newChild);
+    }
+  }
+
+  RenderReplaced toReplaced({ required bool ignoreChild }) {
+    if (!ignoreChild) {
+      RenderObject? childRenderObject = child;
+      child = null;
+      RenderReplaced newChild = RenderReplaced(renderStyle);
+      newChild.child = childRenderObject as RenderBox?;
+      return copyWith(newChild);
+    } else {
+      RenderReplaced newChild = RenderReplaced(renderStyle);
+      return copyWith(newChild);
+    }
   }
 
   @override
@@ -173,12 +191,4 @@ class RenderRepaintBoundaryReplaced extends RenderReplaced {
 
   @override
   bool get isRepaintBoundary => true;
-
-  RenderReplaced toReplaced() {
-    RenderObject? childRenderObject = child;
-    child = null;
-    RenderReplaced newChild = RenderReplaced(renderStyle);
-    newChild.child = childRenderObject as RenderBox?;
-    return copyWith(newChild);
-  }
 }

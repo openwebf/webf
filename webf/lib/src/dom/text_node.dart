@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' show RenderObjectElement;
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/foundation.dart';
@@ -19,7 +20,8 @@ class TextNode extends CharacterData {
   TextNode(this._data, [BindingContext? context]) : super(NodeType.TEXT_NODE, context);
 
   // Must be existed after text node is attached, and all text update will after text attached.
-  RenderTextBox? _renderTextBox;
+  RenderTextBox? _domRenderTextBox;
+  final Map<RenderObjectElement, RenderTextBox?> _widgetRenderObjects = {};
 
   // The text string.
   String _data = '';
@@ -49,17 +51,30 @@ class TextNode extends CharacterData {
   String get nodeName => '#text';
 
   @override
-  RenderBox? get renderer => _renderTextBox;
+  RenderTextBox? get renderer {
+    if (managedByFlutterWidget) {
+      return _widgetRenderObjects[flutterWidgetElement!];
+    }
+    return _domRenderTextBox;
+  }
+
+  set renderer(RenderTextBox? value) {
+    if (managedByFlutterWidget) {
+      _widgetRenderObjects[flutterWidgetElement!] = value;
+    } else {
+      _domRenderTextBox = value;
+    }
+  }
 
   void _applyTextStyle() {
     if (isRendererAttachedToSegmentTree) {
       Element _parentElement = parentElement!;
 
       // The parentNode must be an element.
-      _renderTextBox!.renderStyle = _parentElement.renderStyle;
-      _renderTextBox!.data = data;
+      renderer!.renderStyle = _parentElement.renderStyle;
+      renderer!.data = data;
 
-      WebFRenderParagraph renderParagraph = _renderTextBox!.child as WebFRenderParagraph;
+      WebFRenderParagraph renderParagraph = renderer!.child as WebFRenderParagraph;
       renderParagraph.markNeedsLayout();
 
       RenderBoxModel parentRenderLayoutBox = _parentElement.renderBoxModel!;
@@ -72,8 +87,8 @@ class TextNode extends CharacterData {
 
   void _setTextSizeType(BoxSizeType width, BoxSizeType height) {
     // Migrate element's size type to RenderTextBox.
-    _renderTextBox!.widthSizeType = width;
-    _renderTextBox!.heightSizeType = height;
+    renderer!.widthSizeType = width;
+    renderer!.heightSizeType = height;
   }
 
   // Attach renderObject of current node to parent
@@ -87,14 +102,14 @@ class TextNode extends CharacterData {
     // If element attach WidgetElement, render object should be attach to render tree when mount.
     if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE && parent.renderBoxModel != null) {
       ContainerRenderObjectMixin? parentRenderBox;
-      if (parent.renderBoxModel is RenderLayoutBox) {
+      if (parent.renderer is RenderLayoutBox) {
         final layoutBox = parent.renderBoxModel as RenderLayoutBox;
         parentRenderBox = layoutBox.renderScrollingContent ?? layoutBox;
-      } else if (parent.renderBoxModel is RenderSVGText) {
-        (parent.renderBoxModel as RenderSVGText).child = _renderTextBox;
+      } else if (parent.renderer is RenderSVGText) {
+        (parent.renderer as RenderSVGText).child = renderer;
       }
       if (parentRenderBox != null) {
-        parentRenderBox.insert(_renderTextBox!, after: after);
+        parentRenderBox.insert(renderer!, after: after);
       }
     }
 
@@ -104,7 +119,7 @@ class TextNode extends CharacterData {
   // Detach renderObject of current node from parent
   void _detachRenderTextBox() {
     if (isRendererAttachedToSegmentTree) {
-      RenderTextBox renderTextBox = _renderTextBox!;
+      RenderTextBox renderTextBox = renderer!;
       RenderBox parent = renderTextBox.parent as RenderBox;
       if (parent is ContainerRenderObjectMixin) {
         (parent as ContainerRenderObjectMixin).remove(renderTextBox);
@@ -128,12 +143,16 @@ class TextNode extends CharacterData {
       return;
     }
     _detachRenderTextBox();
-    _renderTextBox = null;
+    renderer = null;
   }
 
   @override
   RenderBox createRenderer() {
-    return _renderTextBox = RenderTextBox(data, renderStyle: parentElement!.renderStyle);
+    RenderTextBox textBox = RenderTextBox(data, renderStyle: parentElement!.renderStyle);
+    if (!managedByFlutterWidget) {
+      _domRenderTextBox = textBox;
+    }
+    return textBox;
   }
 
   @override
