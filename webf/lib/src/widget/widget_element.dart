@@ -158,6 +158,55 @@ abstract class WidgetElement extends dom.Element {
     attributeDidUpdate(key, value);
   }
 
+  @nonVirtual
+  @override
+  dom.Node appendChild(dom.Node child) {
+    super.appendChild(child);
+
+    // Only trigger update if the child are created by JS. If it's created on Flutter widgets, the flutter framework will handle this.
+    if (_state != null) {
+      _state!.requestUpdateState();
+    }
+
+    return child;
+  }
+
+  @nonVirtual
+  @override
+  dom.Node insertBefore(dom.Node child, dom.Node referenceNode) {
+    dom.Node inserted = super.insertBefore(child, referenceNode);
+
+    if (_state != null) {
+      _state!.requestUpdateState();
+    }
+
+    return inserted;
+  }
+
+  @nonVirtual
+  @override
+  dom.Node? replaceChild(dom.Node newNode, dom.Node oldNode) {
+    dom.Node? replaced = super.replaceChild(newNode, oldNode);
+
+    if (_state != null) {
+      _state!.requestUpdateState();
+    }
+
+    return replaced;
+  }
+
+  @nonVirtual
+  @override
+  dom.Node removeChild(dom.Node child) {
+    super.removeChild(child);
+
+    if (_state != null) {
+      _state!.requestUpdateState();
+    }
+
+    return child;
+  }
+
   static dom.Node? _getAncestorWidgetNode(WidgetElement element) {
     dom.Node? parent = element.parentNode;
 

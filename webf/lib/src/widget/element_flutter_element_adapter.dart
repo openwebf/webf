@@ -46,4 +46,14 @@ class WebFHTMLElementToFlutterElementAdaptor extends MultiChildRenderObjectEleme
     // element.renderStyle.unmountWidgetRenderObject(this);
     super.unmount();
   }
+
+  @override
+  void insertRenderObjectChild(covariant RenderObject child, covariant IndexedSlot<Element?> slot) {
+  }
+  @override
+  void moveRenderObjectChild(covariant RenderObject child, covariant IndexedSlot<Element?> oldSlot, covariant IndexedSlot<Element?> newSlot) {
+  }
+  @override
+  void removeRenderObjectChild(covariant RenderObject child, covariant Object? slot) {
+  }
 }
