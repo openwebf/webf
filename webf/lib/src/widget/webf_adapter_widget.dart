@@ -65,13 +65,6 @@ class WebFWidgetElementState extends State<WebFWidgetElementStatefulWidget> {
     }
   }
 
-  Widget buildNodeWidget(dom.Node node, {Key? key}) {
-    if (node is dom.CharacterData) {
-      return WebFCharacterDataToWidgetAdaptor(node, key: key);
-    }
-    return WebFHTMLElementStatefulWidget(node as dom.Element, key: key);
-  }
-
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'WidgetElement(${widgetElement.tagName}) adapterWidgetState';
