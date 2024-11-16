@@ -7,9 +7,11 @@
 
 #include "canvas_gradient.h"
 #include "canvas_pattern.h"
+#include "path_2d.h"
 #include "canvas_rendering_context.h"
 #include "qjs_union_dom_stringcanvas_gradient.h"
 #include "qjs_unionhtml_image_elementhtml_canvas_element.h"
+#include "qjs_unionpath_2_d_dom_string.h"
 
 namespace webf {
 
@@ -44,8 +46,19 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   void setFillStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);
   bool IsCanvas2d() const override;
 
+  void fill(ExceptionState& exception_state);
+  void fill(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern, ExceptionState& exception_state);
+  void fill(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern, const AtomicString& fillRule, ExceptionState& exception_state);
+
   std::shared_ptr<QJSUnionDomStringCanvasGradient> strokeStyle();
   void setStrokeStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);
+
+  void roundRect(double x,
+                 double y,
+                 double w,
+                 double h,
+                 std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
+                 ExceptionState& exception_state);
 
   void Trace(GCVisitor* visitor) const override;
 

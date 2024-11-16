@@ -219,6 +219,48 @@ describe('Canvas context 2d', () => {
     await snapshot(canvas);
   });
 
+  it('should work with roundRect', async (done) => {
+    const canvas = <canvas height="400" width="400" />;
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+
+    ctx.scale(0.6, 0.6);
+
+    // 半径为零的圆角矩形（指定为数字）
+    ctx.strokeStyle = "red";
+    ctx.beginPath();
+    ctx.roundRect(10, 20, 150, 100, 0);
+    ctx.stroke();
+    
+    // 半径为 40px 的圆角矩形（单元素列表）
+    ctx.strokeStyle = "blue";
+    ctx.beginPath();
+    ctx.roundRect(10, 20, 150, 100, [40]);
+    ctx.stroke();
+    
+    // 具有两个不同半径的圆角矩形
+    ctx.strokeStyle = "orange";
+    ctx.beginPath();
+    ctx.roundRect(10, 150, 150, 100, [10, 40]);
+    ctx.stroke();
+    
+    
+    // 具有四个不同半径的圆角矩形
+    ctx.strokeStyle = "green";
+    ctx.beginPath();
+    ctx.roundRect(400, 20, 200, 100, [0, 30, 50, 60]);
+    ctx.stroke();
+    
+    // 向后绘制的相同矩形
+    ctx.strokeStyle = "magenta";
+    ctx.beginPath();
+    ctx.roundRect(400, 150, -200, -100, [0, 30, 50, 60]);
+    ctx.stroke();
+    
+    await snapshot(canvas);
+    done();
+  });
+
   it('should work with transform and resetTransform', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
@@ -710,6 +752,109 @@ describe('Canvas context 2d', () => {
       done();
     };
 
+  })
+
+
+  it('should work with create default Path2D', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');    
+    let path1 = new Path2D();
+    path1.rect(10, 10, 100, 100);
+    context.stroke(path1)
+    await snapshot(canvas);
+    done();
+
+  })
+
+  it('should work with create Path2D with another Path2D instance', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');    
+    let path1 = new Path2D();
+    path1.rect(10, 10, 100, 100);
+
+    let path2 = new Path2D(path1);
+    path2.moveTo(220, 60);
+    path2.arc(170, 60, 50, 0, 2 * Math.PI);
+    context.stroke(path2);
+    await snapshot(canvas);
+    done();
+
+  })
+
+  it('should work with create Path2D with SVG path data', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');    
+    let path = new Path2D("M10 10 h 80 v 80 h -80 Z");
+    context.fill(path);
+    await snapshot(canvas);
+    done();
+    
+  })
+
+  it('should work with Path2D addPath(path)', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');    
+    
+   // Create first path and add a rectangle
+    let p1 = new Path2D();
+    p1.rect(10, 10, 100, 150);
+
+    // Create second path and add a rectangle
+    let p2 = new Path2D();
+    p2.rect(150, 10, 100, 75);
+
+    // Add second path to the first path
+    p1.addPath(p2);
+
+    // Draw the first path
+    context.fill(p1);
+
+    await snapshot(canvas);
+    done();
+    
+  })
+
+
+  it('should work with create Path2D addPath with DOMMatrix', async (done) => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+
+    var context = canvas.getContext('2d');    
+    
+   // Create first path and add a rectangle
+    let p1 = new Path2D();
+    p1.rect(0, 0, 100, 150);
+
+    // Create second path and add a rectangle
+    let p2 = new Path2D();
+    p2.rect(0, 0, 100, 75);
+
+    // Create transformation matrix that moves 200 points to the right
+    let m = new DOMMatrix();
+    m.a = 1;
+    m.b = 0;
+    m.c = 0;
+    m.d = 1;
+    m.e = 200;
+    m.f = 0;
+
+    // Add second path to the first path
+    p1.addPath(p2, m);
+
+    // Draw the first path
+    context.fill(p1);
+
+    await snapshot(canvas);
+    done();
+    
   })
 
 });

@@ -7,6 +7,7 @@ export function generateSupportedOptions(): GenerateOptions {
   let classMethodsInstallList: string[] = [];
   let constructorInstallList: string[] = [];
   let classPropsInstallList: string[] = [];
+  let staticMethodsInstallList: string[] = [];
   let indexedProperty: string = '';
   let wrapperTypeInfoInit = '';
 
@@ -14,6 +15,7 @@ export function generateSupportedOptions(): GenerateOptions {
     globalFunctionInstallList,
     classPropsInstallList,
     classMethodsInstallList,
+    staticMethodsInstallList,
     constructorInstallList,
     indexedProperty,
     wrapperTypeInfoInit
@@ -25,6 +27,7 @@ export type GenerateOptions = {
   classMethodsInstallList: string[];
   constructorInstallList: string[];
   classPropsInstallList: string[];
+  staticMethodsInstallList: string[];
   wrapperTypeInfoInit: string;
   indexedProperty: string;
 };

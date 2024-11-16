@@ -22,7 +22,7 @@ class WebFHTMLElementStatefulWidget extends StatefulWidget {
   }
 }
 
-class HTMLElementState extends State<WebFHTMLElementStatefulWidget> {
+class HTMLElementState extends State<WebFHTMLElementStatefulWidget> with AutomaticKeepAliveClientMixin {
   final Set<Widget> customElementWidgets = HashSet();
   final dom.Element _webFElement;
 
@@ -72,6 +72,9 @@ class HTMLElementState extends State<WebFHTMLElementStatefulWidget> {
       key: ObjectKey(_webFElement.hashCode),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }
 
 class WebFHTMLElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
