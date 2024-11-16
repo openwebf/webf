@@ -162,6 +162,26 @@ void Window::scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionSt
                       exception_state);
 }
 
+void Window::scroll_async(ExceptionState& exception_state) {
+  return scroll_async(0, 0, exception_state);
+}
+
+void Window::scroll_async(double x, double y, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscroll, 2, args, exception_state);
+}
+
+void Window::scroll_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscroll, 2, args, exception_state);
+}
+
 void Window::scrollBy(ExceptionState& exception_state) {
   return scrollBy(0, 0, exception_state);
 }
@@ -192,6 +212,18 @@ void Window::scrollTo(ExceptionState& exception_state) {
 
 void Window::scrollTo(double x, double y, ExceptionState& exception_state) {
   return scroll(x, y, exception_state);
+}
+
+void Window::scrollTo_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
+  return scroll_async(options, exception_state);
+}
+
+void Window::scrollTo_async(ExceptionState& exception_state) {
+  return scroll_async(exception_state);
+}
+
+void Window::scrollTo_async(double x, double y, ExceptionState& exception_state) {
+  return scroll_async(x, y, exception_state);
 }
 
 void Window::scrollTo(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {

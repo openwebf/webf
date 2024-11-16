@@ -325,6 +325,21 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
                 obj.staticMethods.push(f);
               }
             }
+            if (f.returnTypeMode?.supportAsync) {
+              let asyncFunc = new FunctionDeclaration();
+              asyncFunc.name = getPropName(m.name) + '_async';
+              asyncFunc.args = [];
+              m.parameters.forEach(params => {
+                let p = paramsNodeToArguments(params, unionTypeCollector);
+                asyncFunc.args.push(p);
+              });
+              obj.methods.push(asyncFunc);
+              if (m.type) {
+                let mode = new ParameterMode();
+                asyncFunc.returnType = getParameterType(m.type, unionTypeCollector, mode);
+                asyncFunc.returnTypeMode = mode;
+              }
+            }
             break;
           }
           case ts.SyntaxKind.IndexSignature: {
