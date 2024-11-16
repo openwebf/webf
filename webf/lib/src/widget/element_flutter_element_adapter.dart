@@ -42,7 +42,8 @@ class WebFHTMLElementToFlutterElementAdaptor extends MultiChildRenderObjectEleme
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     dom.Element element = widget.webFElement;
-    element.renderStyle.unmountWidgetRenderObject(this);
+    // @TODO return back when widget adapter 2.0 complete.
+    // element.renderStyle.unmountWidgetRenderObject(this);
     super.unmount();
   }
 }
