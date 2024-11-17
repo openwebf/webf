@@ -73,6 +73,7 @@ export class ClassObject {
   props: PropsDeclaration[] = [];
   indexedProp?: IndexedPropertyDeclaration;
   methods: FunctionDeclaration[] = [];
+  staticMethods: FunctionDeclaration[] = [];
   construct?: FunctionDeclaration;
   kind: ClassObjectKind = ClassObjectKind.interface;
 }

@@ -50,6 +50,15 @@ function xtest(fn, title) {
 }
 
 function assert_equals(a: any, b: any, message?: string) {
+  if(typeof a != typeof b) {
+    fail(message)
+    return;
+  }
+  if (b !== b) {
+    // NaN case 
+    expect(a !== a).toBe(true, message);
+    return;
+  }
   expect(a).toBe(b, message)
 }
 
@@ -74,6 +83,31 @@ function assert_not_equals(a: any, b: any, message?: string) {
 }
 function assert_false(value: any, message?: string) {
   expect(value).toBe(false, message)
+}
+
+/**
+     * Assert that ``actual`` is within ± ``epsilon`` of ``expected``.
+     *
+     * @param {number} actual - Test value.
+     * @param {number} expected - Value number is expected to be close to.
+     * @param {number} epsilon - Magnitude of allowed difference between ``actual`` and ``expected``.
+     * @param {string} [description] - Description of the condition being tested.
+     */
+function assert_approx_equals(actual, expected, epsilon, description)
+{
+    /*
+     * Test if two primitive numbers are equal within +/- epsilon
+     */
+    description = description + ", actual value is " + actual;
+    assert_true(typeof actual === "number", description);
+
+    // The epsilon math below does not place nice with NaN and Infinity
+    // But in this case Infinity = Infinity and NaN = NaN
+    if (isFinite(actual) || isFinite(expected)) {
+        assert_true(Math.abs(actual - expected) <= epsilon, description);
+    } else {
+        assert_equals(actual, expected);
+    }
 }
 
 function format_value(v: any) {
@@ -466,6 +500,7 @@ Object.assign(global, {
   assert_not_equals,
   assert_throws_exactly,
   assert_class_string,
+  assert_approx_equals,
   simulatePointDown,
   simulatePointUp,
   simulatePointRemove,

@@ -20,49 +20,9 @@
 #include "core/html/html_image_element.h"
 #include "html_element_type_helper.h"
 #include "plugin_api/add_event_listener_options.h"
+#include "plugin_api/webf_event_listener.h"
 
 namespace webf {
-
-class WebFPublicPluginEventListener : public EventListener {
- public:
-  WebFPublicPluginEventListener(WebFEventListenerContext* callback_context,
-                                SharedExceptionState* shared_exception_state)
-      : callback_context_(callback_context), shared_exception_state_(shared_exception_state) {}
-
-  ~WebFPublicPluginEventListener() {
-    callback_context_->free_ptr(callback_context_);
-    delete callback_context_;
-  }
-
-  static const std::shared_ptr<WebFPublicPluginEventListener> Create(WebFEventListenerContext* WebF_event_listener,
-                                                                     SharedExceptionState* shared_exception_state) {
-    return std::make_shared<WebFPublicPluginEventListener>(WebF_event_listener, shared_exception_state);
-  };
-
-  [[nodiscard]] bool IsPublicPluginEventHandler() const override { return true; }
-
-  void Invoke(ExecutingContext* context, Event* event, ExceptionState& exception_state) override {
-    WebFValueStatus* status_block = event->KeepAlive();
-    callback_context_->callback(callback_context_, event, event->eventPublicMethods(), status_block,
-                                shared_exception_state_);
-  }
-
-  [[nodiscard]] bool Matches(const EventListener& other) const override {
-    const auto* other_listener = DynamicTo<WebFPublicPluginEventListener>(other);
-    return other_listener && other_listener->callback_context_ &&
-           other_listener->callback_context_->callback == callback_context_->callback;
-  }
-
-  void Trace(GCVisitor* visitor) const override {}
-
-  WebFEventListenerContext* callback_context_;
-  SharedExceptionState* shared_exception_state_;
-};
-
-template <>
-struct DowncastTraits<WebFPublicPluginEventListener> {
-  static bool AllowFrom(const EventListener& event_listener) { return event_listener.IsPublicPluginEventHandler(); }
-};
 
 void EventTargetPublicMethods::AddEventListener(EventTarget* event_target,
                                                 const char* event_name_str,

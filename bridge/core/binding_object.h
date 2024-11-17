@@ -71,7 +71,11 @@ enum BindingMethodCallOperations {
   kAsyncAnonymousFunction,
 };
 
-enum CreateBindingObjectType { kCreateDOMMatrix = 0 };
+enum CreateBindingObjectType { 
+  kCreateDOMMatrix = 0,
+  kCreatePath2D = 1,
+  kCreateDOMPoint = 2,
+};
 
 struct BindingObjectPromiseContext : public DartReadable {
   ExecutingContext* context;

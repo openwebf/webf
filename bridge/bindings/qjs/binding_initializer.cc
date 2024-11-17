@@ -11,6 +11,7 @@
 #include "qjs_bounding_client_rect.h"
 #include "qjs_canvas_gradient.h"
 #include "qjs_canvas_pattern.h"
+#include "qjs_path_2d.h"
 #include "qjs_canvas_rendering_context.h"
 #include "qjs_canvas_rendering_context_2d.h"
 #include "qjs_character_data.h"
@@ -23,7 +24,9 @@
 #include "qjs_document.h"
 #include "qjs_document_fragment.h"
 #include "qjs_dom_matrix.h"
-#include "qjs_dom_matrix_readonly.h"
+#include "qjs_dom_matrix_read_only.h"
+#include "qjs_dom_point.h"
+#include "qjs_dom_point_read_only.h"
 #include "qjs_dom_string_map.h"
 #include "qjs_dom_token_list.h"
 #include "qjs_element.h"
@@ -163,8 +166,11 @@ void InstallBindings(ExecutingContext* context) {
   QJSCanvasRenderingContext2D::Install(context);
   QJSCanvasPattern::Install(context);
   QJSCanvasGradient::Install(context);
-  QJSDOMMatrixReadonly::Install(context);
+  QJSPath2D::Install(context);
+  QJSDOMMatrixReadOnly::Install(context);
   QJSDOMMatrix::Install(context);
+  QJSDOMPointReadOnly::Install(context);
+  QJSDOMPoint::Install(context);
   QJSCSSStyleDeclaration::Install(context);
   QJSInlineCssStyleDeclaration::Install(context);
   QJSComputedCssStyleDeclaration::Install(context);

@@ -223,8 +223,8 @@ class ExecutingContext {
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
   std::unordered_set<ScriptWrappable*> active_wrappers_;
-  std::unordered_set<std::shared_ptr<ScriptPromiseResolver>> active_pending_promises_;
   WebFValueStatus* executing_context_status_{new WebFValueStatus()};
+  std::unordered_set<std::shared_ptr<ScriptPromiseResolver>> active_pending_promises_;
   bool is_dedicated_;
 
   // Rust methods ptr should keep alive when ExecutingContext is disposing.

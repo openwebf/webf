@@ -2,16 +2,8 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-use std::ffi::{c_char, c_double, c_void};
-use std::ptr;
-use libc;
-use libc::c_uint;
-use crate::document::{Document, DocumentRustMethods};
-use crate::event_target::EventTargetMethods;
-use crate::exception_state::{ExceptionState, ExceptionStateRustMethods};
-use crate::{OpaquePtr, RustValue, RustValueStatus};
-use crate::custom_event::{CustomEvent, CustomEventRustMethods};
-use crate::window::{Window, WindowRustMethods};
+use std::ffi::*;
+use crate::*;
 
 #[repr(C)]
 pub struct ExecutingContextRustMethods {
@@ -20,7 +12,14 @@ pub struct ExecutingContextRustMethods {
   pub get_window: extern "C" fn(*const OpaquePtr) -> RustValue<WindowRustMethods>,
   pub create_exception_state: extern "C" fn() -> RustValue<ExceptionStateRustMethods>,
   pub finish_recording_ui_operations: extern "C" fn(executing_context: *const OpaquePtr) -> c_void,
+  pub set_timeout: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, c_int, *const OpaquePtr) -> c_int,
+  pub set_interval: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, c_int, *const OpaquePtr) -> c_int,
+  pub clear_timeout: extern "C" fn(*const OpaquePtr, c_int, *const OpaquePtr),
+  pub clear_interval: extern "C" fn(*const OpaquePtr, c_int, *const OpaquePtr),
 }
+
+pub type TimeoutCallback = Box<dyn Fn()>;
+pub type IntervalCallback = Box<dyn Fn()>;
 
 /// An environment contains all the necessary running states of a web page.
 ///
@@ -81,6 +80,97 @@ impl ExecutingContext {
     };
     ExceptionState::initialize(result.value, result.method_pointer)
   }
+
+  pub fn set_timeout_with_callback(&self, callback: TimeoutCallback, exception_state: &ExceptionState) -> Result<i32, String> {
+    self.set_timeout_with_callback_and_timeout(callback, 0, exception_state)
+  }
+
+  pub fn set_timeout_with_callback_and_timeout(&self, callback: TimeoutCallback, timeout: i32, exception_state: &ExceptionState) -> Result<i32, String> {
+    let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
+      if argc != 0 {
+        println!("Invalid argument count for timeout callback");
+        return;
+      }
+      callback();
+    });
+
+    let callback_data = Box::new(WebFNativeFunctionContextData {
+      func: general_callback,
+    });
+    let callback_context_data_ptr = Box::into_raw(callback_data);
+    let callback_context = Box::new(WebFNativeFunctionContext {
+      callback: invoke_webf_native_function,
+      free_ptr: release_webf_native_function,
+      ptr: callback_context_data_ptr,
+    });
+    let callback_context_ptr = Box::into_raw(callback_context);
+
+    let result = unsafe {
+      ((*self.method_pointer).set_timeout)(self.ptr, callback_context_ptr, timeout, exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      unsafe {
+        let _ = Box::from_raw(callback_context_ptr);
+        let _ = Box::from_raw(callback_context_data_ptr);
+      }
+      return Err(exception_state.stringify(self));
+    }
+
+    Ok(result)
+  }
+
+  pub fn set_interval_with_callback(&self, callback: IntervalCallback, exception_state: &ExceptionState) -> Result<i32, String> {
+    self.set_interval_with_callback_and_timeout(callback, 0, exception_state)
+  }
+
+  pub fn set_interval_with_callback_and_timeout(&self, callback: IntervalCallback, interval: i32, exception_state: &ExceptionState) -> Result<i32, String> {
+    let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
+      if argc != 0 {
+        println!("Invalid argument count for interval callback");
+        return;
+      }
+      callback();
+    });
+
+    let callback_data = Box::new(WebFNativeFunctionContextData {
+      func: general_callback,
+    });
+    let callback_context_data_ptr = Box::into_raw(callback_data);
+    let callback_context = Box::new(WebFNativeFunctionContext {
+      callback: invoke_webf_native_function,
+      free_ptr: release_webf_native_function,
+      ptr: callback_context_data_ptr,
+    });
+    let callback_context_ptr = Box::into_raw(callback_context);
+
+    let result = unsafe {
+      ((*self.method_pointer).set_interval)(self.ptr, callback_context_ptr, interval, exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      unsafe {
+        let _ = Box::from_raw(callback_context_ptr);
+        let _ = Box::from_raw(callback_context_data_ptr);
+      }
+      return Err(exception_state.stringify(self));
+    }
+
+    Ok(result)
+  }
+
+  pub fn clear_timeout(&self, timeout_id: i32, exception_state: &ExceptionState) {
+    unsafe {
+      ((*self.method_pointer).clear_timeout)(self.ptr, timeout_id, exception_state.ptr)
+    }
+  }
+
+  pub fn clear_interval(&self, interval_id: i32, exception_state: &ExceptionState) {
+    unsafe {
+      ((*self.method_pointer).clear_interval)(self.ptr, interval_id, exception_state.ptr)
+    }
+  }
+
 }
 
 impl Drop for ExecutingContext {

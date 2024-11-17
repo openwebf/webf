@@ -46,6 +46,7 @@ class QJS<%= className %> : public QJSInterfaceBridge<QJS<%= className %>, <%= c
  <% if (classMethodsInstallList.length > 0) { %> static void InstallPrototypeMethods(ExecutingContext* context); <% } %>
  <% if (classPropsInstallList.length > 0) { %> static void InstallPrototypeProperties(ExecutingContext* context); <% } %>
  <% if (object.construct) { %> static void InstallConstructor(ExecutingContext* context); <% } %>
+ <% if (staticMethodsInstallList.length > 0) { %> static void InstallStaticMethods(ExecutingContext* context); <% } %>
 
  <% if (object.indexedProp) { %>
   static int PropertyEnumerateCallback(JSContext* ctx, JSPropertyEnum** ptab, uint32_t* plen, JSValueConst obj);

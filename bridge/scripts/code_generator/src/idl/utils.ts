@@ -15,6 +15,11 @@ export function addIndent(str: String, space: number) {
 export function getClassName(blob: IDLBlob) {
   let raw = camelCase(blob.filename[4].toUpperCase() + blob.filename.slice(5));
   if (raw.slice(0, 3) == 'dom') {
+    if (raw === 'domMatrixReadonly') {
+      return `DOMMatrixReadOnly`;
+    } else if (raw === 'domPointReadonly') {
+      return `DOMPointReadOnly`;
+    }
     return 'DOM' + raw.slice(3);
   }
   if (raw.slice(0, 4) == 'html') {
