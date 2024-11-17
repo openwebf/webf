@@ -19,7 +19,7 @@ describe('window scroll API', () => {
     });
   });
 
-  fit('scrollTo async', async (doneFn) => {
+  it('scrollTo async', async (doneFn) => {
     let div = document.createElement('div');
     div.style.border = '2px solid #000';
     div.style.height = '1000px';
