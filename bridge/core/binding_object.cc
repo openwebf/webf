@@ -201,6 +201,14 @@ static void handleAsyncInvokeCallback(ScriptPromiseResolver* resolver,
 }
 
 ScriptPromise BindingObject::InvokeBindingMethodAsync(BindingMethodCallOperations binding_method_call_operation,
+                                       int32_t argc,
+                                       const NativeValue* args,
+                                       ExceptionState& exception_state) const {
+  NativeValue method_on_stack = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
+  return InvokeBindingMethodAsyncInternal(method_on_stack, argc, args, exception_state);
+}
+
+ScriptPromise BindingObject::InvokeBindingMethodAsyncInternal(NativeValue method,
                                                       int32_t argc,
                                                       const NativeValue* args,
                                                       ExceptionState& exception_state) const {

@@ -110,6 +110,10 @@ class BindingObject : public ScriptWrappable {
                                   uint32_t reason,
                                   ExceptionState& exception_state) const;
   ScriptPromise InvokeBindingMethodAsync(const AtomicString& method,
+                                  int32_t argc,
+                                  const NativeValue* args,
+                                  ExceptionState& exception_state) const;
+  ScriptPromise InvokeBindingMethodAsync(const AtomicString& method,
                                          int32_t argc,
                                          const NativeValue* args,
                                          ExceptionState& exception_state) const;

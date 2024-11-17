@@ -188,16 +188,16 @@ abstract class DynamicBindingObject<T> extends BindingObject<T> {
   @Deprecated(
       '''
     Migrate to use property defined map instead as follows.
-       
+
     static final StaticDefinedBindingPropertyMap _elementProperties = {
       'prop': StaticDefinedBindingProperty(getter: (element) => castToType<WidgetElement>(element).prop),
     };
-    
+
     String get prop => 'prop';
 
     @override
     List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _elementProperties];
-    
+
     This feature was deprecated after v0.16.3..
     '''
   )
@@ -207,20 +207,20 @@ abstract class DynamicBindingObject<T> extends BindingObject<T> {
   @Deprecated(
       '''
     Migrate to use methods getter and static defined map instead as follows.
-    
+
     static final StaticDefinedSyncBindingObjectMethodMap _elementSyncMethods = {
       'printHello': StaticDefinedSyncBindingObjectMethod(
           call: (element, args) => castToType<WidgetElement>(element).printHello(args)),
     };
-    
+
     String printHello(List<dynamic> args) {
       print('hello');
       return 'hello';
     }
-  
+
     @override
     List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _elementSyncMethods];
-    
+
     This feature was deprecated after v0.16.3..
     '''
   )
