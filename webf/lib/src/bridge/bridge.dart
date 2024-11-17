@@ -8,7 +8,7 @@ import 'dart:ffi';
 import 'package:webf/launcher.dart';
 
 import 'dynamic_library.dart';
-import 'binding.dart';
+import 'binding_bridge.dart';
 import 'from_native.dart';
 import 'to_native.dart';
 import 'multiple_thread.dart';

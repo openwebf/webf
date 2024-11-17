@@ -171,6 +171,14 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
   return return_value;
 }
 
+ScriptPromise BindingObject::InvokeBindingMethodAsync(const webf::AtomicString& method,
+                                                    int32_t argc,
+                                                    const webf::NativeValue* args,
+                                                    webf::ExceptionState& exception_state) const {
+  NativeValue method_on_stack = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), method);
+  return InvokeBindingMethodAsyncInternal(method_on_stack, argc, args, exception_state);
+}
+
 static void handleAsyncInvokeCallback(ScriptPromiseResolver* resolver,
                                       NativeValue* success_result,
                                       const char* error_msg) {
@@ -193,6 +201,14 @@ static void handleAsyncInvokeCallback(ScriptPromiseResolver* resolver,
 }
 
 ScriptPromise BindingObject::InvokeBindingMethodAsync(BindingMethodCallOperations binding_method_call_operation,
+                                       int32_t argc,
+                                       const NativeValue* args,
+                                       ExceptionState& exception_state) const {
+  NativeValue method_on_stack = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
+  return InvokeBindingMethodAsyncInternal(method_on_stack, argc, args, exception_state);
+}
+
+ScriptPromise BindingObject::InvokeBindingMethodAsyncInternal(NativeValue method,
                                                       int32_t argc,
                                                       const webf::NativeValue* argv,
                                                       webf::ExceptionState& exception_state) const {
@@ -200,9 +216,8 @@ ScriptPromise BindingObject::InvokeBindingMethodAsync(BindingMethodCallOperation
 
   auto* profiler = context->dartIsolateContext()->profiler();
 
-  NativeValue method_on_stack = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
   NativeValue* dart_method_name = (NativeValue*)dart_malloc(sizeof(NativeValue));
-  memcpy(dart_method_name, &method_on_stack, sizeof(NativeValue));
+  memcpy(dart_method_name, &method, sizeof(NativeValue));
 
   std::shared_ptr<ScriptPromiseResolver> resolver = ScriptPromiseResolver::Create(context);
 
@@ -243,12 +258,13 @@ ScriptPromise BindingObject::GetBindingPropertyAsync(const webf::AtomicString& p
   return InvokeBindingMethodAsync(BindingMethodCallOperations::kGetProperty, 1, argv, exception_state);
 }
 
-void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop, const webf::AtomicString& value) {
-  std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString(ctx());
-  std::unique_ptr<SharedNativeString> args_02 = prop.ToNativeString(ctx());
+void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop, NativeValue value) {
+  std::unique_ptr<SharedNativeString> args_01 = prop.ToNativeString(ctx());
+  auto* native_value = (NativeValue*)dart_malloc(sizeof(NativeValue));
+  memcpy(native_value, &value, sizeof(NativeValue));
 
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetAttribute, std::move(args_01), bindingObject(),
-                                                       args_02.release());
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetProperty, std::move(args_01), bindingObject(),
+                                                       native_value);
 }
 
 NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,
@@ -353,120 +369,6 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
   const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release()), value};
   return InvokeBindingMethod(BindingMethodCallOperations::kSetProperty, 2, argv,
                              FlushUICommandReason::kDependentsOnElement, exception_state);
-}
-
-ScriptValue BindingObject::AnonymousFunctionCallback(JSContext* ctx,
-                                                     const ScriptValue& this_val,
-                                                     uint32_t argc,
-                                                     const ScriptValue* argv,
-                                                     void* private_data) {
-  auto* data = reinterpret_cast<AnonymousFunctionData*>(private_data);
-  auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
-
-  std::vector<NativeValue> arguments;
-  arguments.reserve(argc + 1);
-  arguments.emplace_back(NativeValueConverter<NativeTypeString>::ToNativeValue(data->method_name));
-
-  ExceptionState exception_state;
-
-  for (int i = 0; i < argc; i++) {
-    arguments.emplace_back(argv[i].ToNative(ctx, exception_state));
-  }
-
-  if (exception_state.HasException()) {
-    event_target->GetExecutingContext()->HandleException(exception_state);
-    return ScriptValue::Empty(ctx);
-  }
-
-  NativeValue result =
-      event_target->InvokeBindingMethod(BindingMethodCallOperations::kAnonymousFunctionCall, arguments.size(),
-                                        arguments.data(), FlushUICommandReason::kDependentsOnElement, exception_state);
-
-  if (exception_state.HasException()) {
-    event_target->GetExecutingContext()->HandleException(exception_state);
-    return ScriptValue::Empty(ctx);
-  }
-  return ScriptValue(ctx, result);
-}
-
-void BindingObject::HandleAnonymousAsyncCalledFromDart(void* ptr,
-                                                       NativeValue* native_value,
-                                                       double contextId,
-                                                       const char* errmsg) {
-  auto* promise_context = static_cast<BindingObjectPromiseContext*>(ptr);
-  if (!promise_context->context->IsContextValid())
-    return;
-  if (promise_context->context->contextId() != contextId)
-    return;
-
-  auto* context = promise_context->context;
-
-  if (native_value != nullptr) {
-    ScriptValue params = ScriptValue(context->ctx(), *native_value);
-    promise_context->promise_resolver->Resolve(params.QJSValue());
-  } else if (errmsg != nullptr) {
-    ExceptionState exception_state;
-    exception_state.ThrowException(context->ctx(), ErrorType::TypeError, errmsg);
-    JSValue error_object = JS_GetException(context->ctx());
-    promise_context->promise_resolver->Reject(error_object);
-    JS_FreeValue(context->ctx(), error_object);
-  }
-
-  promise_context->binding_object->FullFillPendingPromise(promise_context);
-
-  delete promise_context;
-}
-
-static void HandleAnonymousAsyncCalledFromDartWrapper(void* ptr,
-                                                      NativeValue* native_value,
-                                                      double contextId,
-                                                      const char* errmsg) {
-  auto* promise_context = static_cast<BindingObjectPromiseContext*>(ptr);
-  promise_context->context->dartIsolateContext()->dispatcher()->PostToJs(
-      promise_context->context->isDedicated(), contextId, BindingObject::HandleAnonymousAsyncCalledFromDart,
-      promise_context, native_value, contextId, errmsg);
-}
-
-ScriptValue BindingObject::AnonymousAsyncFunctionCallback(JSContext* ctx,
-                                                          const ScriptValue& this_val,
-                                                          uint32_t argc,
-                                                          const ScriptValue* argv,
-                                                          void* private_data) {
-  auto* data = reinterpret_cast<AnonymousFunctionData*>(private_data);
-  auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
-
-  auto promise_resolver = ScriptPromiseResolver::Create(event_target->GetExecutingContext());
-
-  auto* promise_context =
-      new BindingObjectPromiseContext{{}, event_target->GetExecutingContext(), event_target, promise_resolver};
-  event_target->TrackPendingPromiseBindingContext(promise_context);
-
-  std::vector<NativeValue> arguments;
-  arguments.reserve(argc + 4);
-
-  arguments.emplace_back(NativeValueConverter<NativeTypeString>::ToNativeValue(data->method_name));
-  arguments.emplace_back(
-      NativeValueConverter<NativeTypeDouble>::ToNativeValue(event_target->GetExecutingContext()->contextId()));
-  arguments.emplace_back(
-      NativeValueConverter<NativeTypePointer<BindingObjectPromiseContext>>::ToNativeValue(promise_context));
-  arguments.emplace_back(NativeValueConverter<NativeTypePointer<void>>::ToNativeValue(
-      reinterpret_cast<void*>(HandleAnonymousAsyncCalledFromDartWrapper)));
-
-  ExceptionState exception_state;
-
-  for (int i = 0; i < argc; i++) {
-    arguments.emplace_back(argv[i].ToNative(ctx, exception_state));
-  }
-
-  event_target->InvokeBindingMethod(BindingMethodCallOperations::kAsyncAnonymousFunction, argc + 4, arguments.data(),
-                                    FlushUICommandReason::kDependentsOnElement, exception_state);
-
-  if (exception_state.HasException()) {
-    event_target->GetExecutingContext()->HandleException(exception_state);
-    return ScriptValue::Empty(ctx);
-  }
-
-  return promise_resolver->Promise().ToValue();
 }
 
 NativeValue BindingObject::GetAllBindingPropertyNames(ExceptionState& exception_state) const {

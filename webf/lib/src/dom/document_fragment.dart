@@ -5,7 +5,7 @@
 
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/src/foundation/binding.dart';
+import 'package:webf/src/bridge/binding_object.dart';
 
 const String DOCUMENT_FRAGMENT = 'DOCUMENTFRAGMENT';
 

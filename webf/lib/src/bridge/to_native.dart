@@ -680,6 +680,7 @@ enum UICommandType {
   setStyle,
   clearStyle,
   setAttribute,
+  setProperty,
   removeAttribute,
   cloneNode,
   removeEvent,

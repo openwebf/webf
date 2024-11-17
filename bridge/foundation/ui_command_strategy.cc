@@ -83,6 +83,7 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
     case UICommand::kSetStyle:
     case UICommand::kClearStyle:
     case UICommand::kSetAttribute:
+    case UICommand::kSetProperty:
     case UICommand::kRemoveEvent:
     case UICommand::kAddEvent:
     case UICommand::kDisposeBindingObject: {
