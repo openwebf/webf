@@ -40,6 +40,10 @@ function generateMethodArgumentsCheck(m: FunctionDeclaration) {
     return '';
   }
 
+  if (m.args.some(v => v.isDotDotDot)) {
+    requiredArgsCount--;
+  }
+
   return `  if (argc < ${requiredArgsCount}) {
     return JS_ThrowTypeError(ctx, "Failed to execute '${m.name}' : ${requiredArgsCount} argument required, but %d present.", argc);
   }

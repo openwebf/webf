@@ -21,9 +21,7 @@ import 'package:webf/src/html/canvas/canvas_path_2d.dart';
 enum BindingMethodCallOperations {
   GetProperty,
   SetProperty,
-  GetAllPropertyNames,
-  AnonymousFunctionCall,
-  AsyncAnonymousFunction,
+  GetAllPropertyNames
 }
 
 typedef NativeAsyncAnonymousFunctionCallback = Void Function(

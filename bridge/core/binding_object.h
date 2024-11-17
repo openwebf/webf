@@ -89,7 +89,6 @@ using BindingObjectAsyncCallback = void (*)(ScriptPromiseResolver* resolver,
 
 struct BindingObjectAsyncCallContext : public DartReadable {
   NativeValue* method_name;
-  int64_t profile_id;
   int32_t argc;
   const webf::NativeValue* argv;
   ScriptPromiseResolver* async_invoke_reader;
