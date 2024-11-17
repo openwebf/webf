@@ -17,8 +17,6 @@ typedef DartBindingObjectAsyncCallCallback = void Function(Pointer<Void> resolve
 
 class BindingObjectAsyncCallContext extends Struct {
   external Pointer<NativeValue> method_name;
-  @Int64()
-  external int profileId;
   @Int32()
   external int argc;
   external Pointer<NativeValue> argv;
@@ -133,26 +131,6 @@ abstract class DynamicBindingObject extends BindingObject {
   @mustCallSuper
   void initializeMethods(Map<String, BindingObjectMethod> methods);
 
-  void nativeGetPropertiesAndMethods(Pointer<NativeValue> data) async {
-    assert(pointer != null);
-
-    List<String> properties = _properties.keys.toList(growable: false);
-    List<String> syncMethods = [];
-    List<String> asyncMethods = [];
-
-    _methods.forEach((key, method) {
-      if (method is BindingObjectMethodSync) {
-        syncMethods.add(key);
-      } else if (method is AsyncBindingObjectMethod) {
-        asyncMethods.add(key);
-      }
-    });
-
-    toNativeValue(data.elementAt(0), properties);
-    toNativeValue(data.elementAt(1), syncMethods);
-    toNativeValue(data.elementAt(2), asyncMethods);
-  }
-
   dynamic _invokeBindingMethod(String method, List<dynamic> args) {
     BindingObjectMethod? fn = _methods[method];
     if (fn == null) {
@@ -189,8 +167,8 @@ dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args, { Bin
     stopwatch = Stopwatch()..start();
   }
 
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.startTrackBindingSteps(profileOp!, 'getterBindingCall');
+  if (enableWebFProfileTracking && profileOp != null) {
+    WebFProfiler.instance.startTrackBindingSteps(profileOp, 'getterBindingCall');
   }
 
   dynamic result = null;
@@ -201,8 +179,8 @@ dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args, { Bin
     }
   }
 
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.finishTrackBindingSteps(profileOp!);
+  if (enableWebFProfileTracking && profileOp != null) {
+    WebFProfiler.instance.finishTrackBindingSteps(profileOp);
   }
 
   return result;
@@ -243,8 +221,8 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, { Bin
 dynamic getPropertyNamesBindingCall(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp }) {
   assert(bindingObject is DynamicBindingObject);
 
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.startTrackBindingSteps(profileOp!, 'getPropertyNamesBindingCall');
+  if (enableWebFProfileTracking && profileOp != null) {
+    WebFProfiler.instance.startTrackBindingSteps(profileOp, 'getPropertyNamesBindingCall');
   }
 
   List<String> properties = (bindingObject as DynamicBindingObject)._properties.keys.toList();
@@ -255,8 +233,8 @@ dynamic getPropertyNamesBindingCall(BindingObject bindingObject, List<dynamic> a
     print('$bindingObject getPropertyNamesBindingCall value: $properties');
   }
 
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.finishTrackBindingSteps(profileOp!);
+  if (enableWebFProfileTracking && profileOp != null) {
+    WebFProfiler.instance.finishTrackBindingSteps(profileOp);
   }
 
   return properties;
@@ -266,14 +244,14 @@ Future<void> _invokeBindingMethodFromNativeImpl(double contextId, int profileId,
     Pointer<NativeValue> returnValue, Pointer<NativeValue> nativeMethod, int argc, Pointer<NativeValue> argv) async {
 
   BindingOpItem? currentProfileOp;
-  if (enableWebFProfileTracking) {
+  if (enableWebFProfileTracking && profileId != -1) {
     currentProfileOp = WebFProfiler.instance.startTrackBinding(profileId);
   }
 
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
 
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.startTrackBindingSteps(currentProfileOp!, 'fromNativeValue');
+  if (enableWebFProfileTracking && currentProfileOp != null) {
+    WebFProfiler.instance.startTrackBindingSteps(currentProfileOp, 'fromNativeValue');
   }
 
   // Make sure the dart object related to nativeBindingObject had been created.
@@ -281,18 +259,18 @@ Future<void> _invokeBindingMethodFromNativeImpl(double contextId, int profileId,
 
   dynamic method = fromNativeValue(controller.view, nativeMethod);
   List<dynamic> values = List.generate(argc, (i) {
-    Pointer<NativeValue> nativeValue = argv.elementAt(i);
+    Pointer<NativeValue> nativeValue = argv + i;
     return fromNativeValue(controller.view, nativeValue);
   });
 
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
+  if (enableWebFProfileTracking && currentProfileOp != null) {
+    WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp);
   }
 
   BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
 
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.startTrackBindingSteps(currentProfileOp!, 'invokeDartMethods');
+  if (enableWebFProfileTracking && currentProfileOp != null) {
+    WebFProfiler.instance.startTrackBindingSteps(currentProfileOp, 'invokeDartMethods');
   }
 
   var result = null;
@@ -322,14 +300,17 @@ Future<void> _invokeBindingMethodFromNativeImpl(double contextId, int profileId,
     print('$e\n$stack');
     rethrow;
   } finally {
+    if (result is Future) {
+      result = await result;
+    }
     toNativeValue(returnValue, result, bindingObject);
   }
 
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp!);
+  if (enableWebFProfileTracking && currentProfileOp != null) {
+    WebFProfiler.instance.finishTrackBindingSteps(currentProfileOp);
   }
 
-  if (enableWebFProfileTracking) {
+  if (enableWebFProfileTracking && profileId != -1) {
     WebFProfiler.instance.finishTrackBinding(profileId);
   }
 }
@@ -347,7 +328,7 @@ Future<void> asyncInvokeBindingMethodFromNativeImpl(WebFViewController view, Poi
   DartBindingObjectAsyncCallCallback f = asyncCallContext.ref.callback.asFunction(isLeaf: true);
 
   try {
-    await _invokeBindingMethodFromNativeImpl(view.contextId, asyncCallContext.ref.profileId, nativeBindingObject, returnValue,
+    await _invokeBindingMethodFromNativeImpl(view.contextId, -1, nativeBindingObject, returnValue,
         asyncCallContext.ref.method_name, asyncCallContext.ref.argc, asyncCallContext.ref.argv);
 
     f(asyncCallContext.ref.resolver, returnValue, nullptr);

@@ -452,28 +452,30 @@ describe('custom html element', () => {
     await snapshot();
   });
 
-  it('support custom properties in dart directly', () => {
+  it('support custom properties in dart directly', async () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');
     sampleElement.appendChild(text);
     document.body.appendChild(sampleElement);
 
     // @ts-ignore
-    expect(sampleElement.ping).toBe('pong');
+    expect(sampleElement.getPropertyValue('ping')).toBe('pong');
+    // @ts-ignore
+    expect(await sampleElement.getPropertyValueAsync('ping')).toBe('pong');
   });
 
-  it('support call js function but defined in dart directly', () => {
+  it('support call js function but defined in dart directly', async () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');
     sampleElement.appendChild(text);
     document.body.appendChild(sampleElement);
 
     let arrs = [1, 2, 4, 8, 16];
+
+     // @ts-ignore
+    expect(sampleElement.callMethod('fn', 1, 2, 4, 8, 16)).toEqual([2, 4, 8, 16, 32]);
     // @ts-ignore
-    let fn = sampleElement.fn;
-    expect(fn.apply(sampleElement, arrs)).toEqual([2, 4, 8, 16, 32]);
-    // @ts-ignore
-    expect(fn.apply(sampleElement, arrs)).toEqual([2, 4, 8, 16, 32]);
+    expect(await sampleElement.callAsyncMethod('fn', ...arrs)).toEqual([2, 4, 8, 16, 32]);
   });
 
   it('return promise when dart return future async function', async () => {
@@ -482,20 +484,20 @@ describe('custom html element', () => {
     sampleElement.appendChild(text);
     document.body.appendChild(sampleElement);
     // @ts-ignore
-    let p = sampleElement.asyncFn(1);
+    let p = sampleElement.callAsyncMethod('asyncFn', 1);
     expect(p instanceof Promise);
     let result = await p;
     expect(result).toBe(1);
     // @ts-ignore
-    let p2 = sampleElement.asyncFn('abc');
+    let p2 = sampleElement.callAsyncMethod('asyncFn', 'abc');
     expect(await p2).toBe('abc');
 
     // @ts-ignore
-    let p3 = sampleElement.asyncFn([1, 2, 3, 4]);
+    let p3 = sampleElement.callAsyncMethod('asyncFn', [1, 2, 3, 4]);
     expect(await p3).toEqual([1, 2, 3, 4]);
 
     // @ts-ignore
-    let p4 = sampleElement.asyncFn([{ name: 1 }]);
+    let p4 = sampleElement.callAsyncMethod('asyncFn', [{ name: 1 }]);
     expect(await p4).toEqual([{ name: 1 }]);
   });
 
@@ -505,7 +507,7 @@ describe('custom html element', () => {
     sampleElement.appendChild(text);
     document.body.appendChild(sampleElement);
     // @ts-ignore
-    let p = sampleElement.asyncFnNotComplete();
+    let p = sampleElement.callAsyncMethod('asyncFnNotComplete');
     expect(p instanceof Promise);
 
     p.then(() => {
@@ -523,7 +525,7 @@ describe('custom html element', () => {
     sampleElement.appendChild(text);
     document.body.appendChild(sampleElement);
     // @ts-ignore
-    let p = sampleElement.asyncFnFailed();
+    let p = sampleElement.callAsyncMethod('asyncFnFailed');
     expect(p instanceof Promise);
     try {
       let result = await p;
@@ -554,38 +556,6 @@ describe('custom html element', () => {
     expect(sampleElement._fn()).toBe(1);
     // @ts-ignore
     expect(sampleElement._self === sampleElement);
-  });
-
-  it('should work with cloneNode', () => {
-    let sampleElement = document.createElement('sample-element');
-    let text = document.createTextNode('helloworld');
-    sampleElement.appendChild(text);
-    document.body.appendChild(sampleElement);
-
-    // @ts-ignore
-    expect(sampleElement._fake).toBe(undefined);
-
-    // @ts-ignore
-    sampleElement._fake = [1, 2, 3, 4, 5];
-    // @ts-ignore
-    sampleElement._fn = () => 1;
-    // @ts-ignore
-    sampleElement._self = sampleElement;
-    // @ts-ignore
-    expect(sampleElement._fake).toEqual([1, 2, 3, 4, 5]);
-    // @ts-ignore
-    expect(sampleElement._fn()).toBe(1);
-    // @ts-ignore
-    expect(sampleElement._self === sampleElement);
-
-    let clone = sampleElement.cloneNode();
-
-    // @ts-ignore
-    expect(clone._fake).toEqual([1, 2, 3, 4, 5]);
-    // @ts-ignore
-    expect(clone._fn()).toEqual(1);
-    // @ts-ignore
-    expect(clone._self).toBe(sampleElement);
   });
 
   it('should work with checkbox', async (done) => {

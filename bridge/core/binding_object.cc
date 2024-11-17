@@ -214,8 +214,6 @@ ScriptPromise BindingObject::InvokeBindingMethodAsyncInternal(NativeValue method
                                                       webf::ExceptionState& exception_state) const {
   auto* context = GetExecutingContext();
 
-  auto* profiler = context->dartIsolateContext()->profiler();
-
   NativeValue* dart_method_name = (NativeValue*)dart_malloc(sizeof(NativeValue));
   memcpy(dart_method_name, &method, sizeof(NativeValue));
 
@@ -223,7 +221,6 @@ ScriptPromise BindingObject::InvokeBindingMethodAsyncInternal(NativeValue method
 
   auto* binding_call_context = new BindingObjectAsyncCallContext();
   binding_call_context->method_name = dart_method_name;
-  binding_call_context->profile_id = profiler->link_id();
   binding_call_context->argc = argc;
   binding_call_context->argv = (webf::NativeValue*)dart_malloc(sizeof(NativeValue) * argc);
   memcpy((void*)binding_call_context->argv, argv, sizeof(NativeValue) * argc);
