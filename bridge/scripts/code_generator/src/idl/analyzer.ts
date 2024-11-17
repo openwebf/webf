@@ -321,6 +321,9 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
               let mode = new ParameterMode();
               f.returnType = getParameterType(m.type, unionTypeCollector, mode);
               f.returnTypeMode = mode;
+              if (f.returnTypeMode.staticMethod) {
+                obj.staticMethods.push(f);
+              }
             }
             break;
           }

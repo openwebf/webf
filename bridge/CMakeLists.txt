@@ -411,8 +411,11 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/canvas/canvas_rendering_context_2d.cc
     core/html/canvas/canvas_gradient.cc
     core/html/canvas/canvas_pattern.cc
+    core/html/canvas/path_2d.cc
     core/geometry/dom_matrix.cc
-    core/geometry/dom_matrix_readonly.cc
+    core/geometry/dom_matrix_read_only.cc
+    core/geometry/dom_point.cc
+    core/geometry/dom_point_read_only.cc
     core/html/forms/html_button_element.cc
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
@@ -545,11 +548,18 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_canvas_rendering_context.cc
     out/qjs_canvas_gradient.cc
     out/qjs_canvas_pattern.cc
+    out/qjs_path_2d.cc
+    out/qjs_dom_matrix_init.cc
     out/qjs_dom_matrix.cc
-    out/qjs_dom_matrix_readonly.cc
-    out/qjs_union_dom_string_sequencedouble.cc
+    out/qjs_dom_matrix_read_only.cc
+    out/qjs_dom_point_init.cc
+    out/qjs_dom_point.cc
+    out/qjs_dom_point_read_only.cc
+    out/qjs_union_double_sequencedouble.cc
     out/qjs_unionhtml_image_elementhtml_canvas_element.cc
     out/qjs_union_dom_stringcanvas_gradient.cc
+    out/qjs_union_sequencedoubledom_matrix_init.cc
+    out/qjs_union_doubledom_point_init.cc
     out/canvas_types.cc
     out/qjs_html_button_element.cc
     out/qjs_html_input_element.cc
@@ -560,6 +570,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_promise_rejection_event_init.cc
     out/qjs_unionevent_listener_options_boolean.cc
     out/qjs_unionadd_event_listener_options_boolean.cc
+    out/qjs_unionpath_2_d_dom_string.cc
     out/qjs_html_template_element.cc
     out/qjs_html_unknown_element.cc
     out/qjs_performance.cc
