@@ -3,7 +3,7 @@
  */
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/src/foundation/binding.dart';
+import 'package:webf/src/bridge/binding_object.dart';
 import 'package:webf/widget.dart';
 
 class CharacterData extends Node {

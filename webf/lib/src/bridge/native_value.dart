@@ -128,7 +128,7 @@ void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBind
     Pointer<NativeValue> lists = malloc.allocate(sizeOf<NativeValue>() * value.length);
     target.ref.u = lists.address;
     for(int i = 0; i < value.length; i ++) {
-      toNativeValue(lists.elementAt(i), value[i], ownerBindingObject);
+      toNativeValue(lists + i, value[i], ownerBindingObject);
     }
   } else if (value is Object) {
     String str = jsonEncode(value);
@@ -141,7 +141,7 @@ Pointer<NativeValue> makeNativeValueArguments(BindingObject ownerBindingObject, 
   Pointer<NativeValue> buffer = malloc.allocate(sizeOf<NativeValue>() * args.length);
 
   for(int i = 0; i < args.length; i ++) {
-    toNativeValue(buffer.elementAt(i), args[i], ownerBindingObject);
+    toNativeValue(buffer + i, args[i], ownerBindingObject);
   }
 
   return buffer.cast<NativeValue>();

@@ -178,34 +178,6 @@ struct NativeValueConverter<NativeTypePointer<T>, std::enable_if_t<std::is_base_
   }
 };
 
-template <>
-struct NativeValueConverter<NativeTypeFunction> : public NativeValueConverterBase<NativeTypeFunction> {
-  static NativeValue ToNativeValue(ImplType value) {
-    // Not supported.
-    assert(false);
-    return Native_NewNull();
-  }
-
-  static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
-    assert(value.tag == NativeTag::TAG_FUNCTION);
-    return QJSFunction::Create(ctx, BindingObject::AnonymousFunctionCallback, 4, value.u.ptr);
-  };
-};
-
-template <>
-struct NativeValueConverter<NativeTypeAsyncFunction> : public NativeValueConverterBase<NativeTypeAsyncFunction> {
-  static NativeValue ToNativeValue(ImplType value) {
-    // Not supported.
-    assert(false);
-    return Native_NewNull();
-  }
-
-  static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
-    assert(value.tag == NativeTag::TAG_ASYNC_FUNCTION);
-    return QJSFunction::Create(ctx, BindingObject::AnonymousAsyncFunctionCallback, 4, value.u.ptr);
-  }
-};
-
 template <typename T>
 struct NativeValueConverter<NativeTypeArray<T>> : public NativeValueConverterBase<NativeTypeArray<T>> {
   using ImplType = typename NativeTypeArray<typename NativeValueConverter<T>::ImplType>::ImplType;

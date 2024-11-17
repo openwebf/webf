@@ -3,7 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-export 'src/foundation/binding.dart';
+export 'src/bridge/binding_object.dart';
 export 'src/foundation/bundle.dart';
 export 'src/foundation/convert.dart';
 export 'src/foundation/environment.dart';

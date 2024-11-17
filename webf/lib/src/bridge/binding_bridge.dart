@@ -36,9 +36,7 @@ typedef BindingCallFunc = dynamic Function(BindingObject bindingObject, List<dyn
 List<BindingCallFunc> bindingCallMethodDispatchTable = [
   getterBindingCall,
   setterBindingCall,
-  getPropertyNamesBindingCall,
-  invokeBindingMethodSync,
-  invokeBindingMethodAsync
+  getPropertyNamesBindingCall
 ];
 
 // Dispatch the event to the binding side.
@@ -165,11 +163,11 @@ enum CreateBindingObjectType {
 }
 
 abstract class BindingBridge {
-  static final Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> _invokeBindingMethodFromNative =
-      Pointer.fromFunction(invokeBindingMethodFromNativeImpl);
+  static final Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> _invokeBindingMethodFromNativeSync =
+      Pointer.fromFunction(invokeBindingMethodFromNativeSync);
 
   static Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> get nativeInvokeBindingMethod =>
-      _invokeBindingMethodFromNative;
+      _invokeBindingMethodFromNativeSync;
 
   static void createBindingObject(double contextId, Pointer<NativeBindingObject> pointer, CreateBindingObjectType type, Pointer<NativeValue> args, int argc) {
     WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
@@ -205,7 +203,7 @@ abstract class BindingBridge {
       }
 
       if (!isBindingObjectDisposed(nativeBindingObject)) {
-        nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNative;
+        nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNativeSync;
       }
     }
   }

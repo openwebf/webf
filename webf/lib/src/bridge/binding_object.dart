@@ -153,9 +153,7 @@ abstract class DynamicBindingObject extends BindingObject {
     toNativeValue(data.elementAt(2), asyncMethods);
   }
 
-  // Call a method, eg:
-  //   el.getContext('2x');
-  dynamic _invokeBindingMethodSync(String method, List args) {
+  dynamic _invokeBindingMethod(String method, List<dynamic> args) {
     BindingObjectMethod? fn = _methods[method];
     if (fn == null) {
       return;
@@ -165,45 +163,9 @@ abstract class DynamicBindingObject extends BindingObject {
       return fn.call(args);
     }
 
-    return null;
-  }
-
-  dynamic _invokeBindingMethodAsync(String method, List<dynamic> args) {
-    BindingObjectMethod? fn = _methods[method];
-    if (fn == null) {
-      return;
-    }
-
     if (fn is AsyncBindingObjectMethod) {
-      double contextId = args[0];
-      // Async callback should hold a context to store the current execution environment.
-      Pointer<Void> callbackContext = (args[1] as Pointer).cast<Void>();
-      DartAsyncAnonymousFunctionCallback callback =
-      (args[2] as Pointer).cast<NativeFunction<NativeAsyncAnonymousFunctionCallback>>().asFunction();
-      List<dynamic> functionArguments = args.sublist(3);
-      Future<dynamic> p = fn.call(functionArguments);
-      p.then((result) {
-        Stopwatch? stopwatch;
-        if (enableWebFCommandLog) {
-          stopwatch = Stopwatch()..start();
-        }
-        Pointer<NativeValue> nativeValue = malloc.allocate(sizeOf<NativeValue>());
-        toNativeValue(nativeValue, result, this);
-        callback(callbackContext, nativeValue, contextId, nullptr);
-        if (enableWebFCommandLog) {
-          print('AsyncAnonymousFunction call resolved callback: $method arguments:[$result] time: ${stopwatch!.elapsedMicroseconds}us');
-        }
-      }).catchError((e, stack) {
-        String errorMessage = '$e\n$stack';
-        Stopwatch? stopwatch;
-        if (enableWebFCommandLog) {
-          stopwatch = Stopwatch()..start();
-        }
-        callback(callbackContext, nullptr, contextId, errorMessage.toNativeUtf8());
-        if (enableWebFCommandLog) {
-          print('AsyncAnonymousFunction call rejected callback: $method, arguments:[$errorMessage] time: ${stopwatch!.elapsedMicroseconds}us');
-        }
-      });
+      Future<dynamic> p = fn.call(args);
+      return p;
     }
 
     return null;
@@ -252,8 +214,8 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, { Bin
     print('$bindingObject setBindingProperty key: ${args[0]} value: ${args[1]}');
   }
 
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.startTrackBindingSteps(profileOp!, 'setterBindingCall');
+  if (enableWebFProfileTracking && profileOp != null) {
+    WebFProfiler.instance.startTrackBindingSteps(profileOp, 'setterBindingCall');
   }
 
   String key = args[0];
@@ -271,8 +233,8 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, { Bin
     }
   }
 
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.finishTrackBindingSteps(profileOp!);
+  if (enableWebFProfileTracking && profileOp != null) {
+    WebFProfiler.instance.finishTrackBindingSteps(profileOp);
   }
 
   return true;
@@ -300,39 +262,8 @@ dynamic getPropertyNamesBindingCall(BindingObject bindingObject, List<dynamic> a
   return properties;
 }
 
-dynamic invokeBindingMethodSync(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp }) {
-  Stopwatch? stopwatch;
-  if (enableWebFCommandLog) {
-    stopwatch = Stopwatch()..start();
-  }
-
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.startTrackBindingSteps(profileOp!, 'invokeBindingMethodSync');
-  }
-
-  assert(bindingObject is DynamicBindingObject);
-  dynamic result = (bindingObject as DynamicBindingObject)._invokeBindingMethodSync(args[0], args.slice(1));
-  if (enableWebFCommandLog) {
-    print('$bindingObject invokeBindingMethodSync method: ${args[0]} args: ${args.slice(1)} time: ${stopwatch!.elapsedMilliseconds}ms');
-  }
-
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.finishTrackBindingSteps(profileOp!);
-  }
-
-  return result;
-}
-
-dynamic invokeBindingMethodAsync(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp }) {
-  if (enableWebFCommandLog) {
-    print('$bindingObject invokeBindingMethodSync method: ${args[0]} args: ${args.slice(1)}');
-  }
-  return (bindingObject as DynamicBindingObject)._invokeBindingMethodAsync(args[0], args.slice(1));
-}
-
-// This function receive calling from binding side.
-void invokeBindingMethodFromNativeImpl(double contextId, int profileId, Pointer<NativeBindingObject> nativeBindingObject,
-    Pointer<NativeValue> returnValue, Pointer<NativeValue> nativeMethod, int argc, Pointer<NativeValue> argv) {
+Future<void> _invokeBindingMethodFromNativeImpl(double contextId, int profileId, Pointer<NativeBindingObject> nativeBindingObject,
+    Pointer<NativeValue> returnValue, Pointer<NativeValue> nativeMethod, int argc, Pointer<NativeValue> argv) async {
 
   BindingOpItem? currentProfileOp;
   if (enableWebFProfileTracking) {
@@ -377,7 +308,12 @@ void invokeBindingMethodFromNativeImpl(double contextId, int profileId, Pointer<
       if (enableWebFCommandLog) {
         stopwatch = Stopwatch()..start();
       }
-      result = (bindingObject as DynamicBindingObject)._invokeBindingMethodSync(method, values);
+      result = (bindingObject as DynamicBindingObject)._invokeBindingMethod(method, values);
+
+      if (result is Future) {
+        result = await result;
+      }
+
       if (enableWebFCommandLog) {
         print('$bindingObject invokeBindingMethod method: $method args: $values result: $result time: ${stopwatch!.elapsedMicroseconds}us');
       }
@@ -398,14 +334,20 @@ void invokeBindingMethodFromNativeImpl(double contextId, int profileId, Pointer<
   }
 }
 
-void asyncInvokeBindingMethodFromNativeImpl(WebFViewController view, Pointer<BindingObjectAsyncCallContext> asyncCallContext,
-    Pointer<NativeBindingObject> nativeBindingObject) {
+// This function receive calling from binding side.
+void invokeBindingMethodFromNativeSync(double contextId, int profileId, Pointer<NativeBindingObject> nativeBindingObject,
+    Pointer<NativeValue> returnValue, Pointer<NativeValue> nativeMethod, int argc, Pointer<NativeValue> argv) {
+  _invokeBindingMethodFromNativeImpl(contextId, profileId, nativeBindingObject, returnValue, nativeMethod, argc, argv);
+}
+
+Future<void> asyncInvokeBindingMethodFromNativeImpl(WebFViewController view, Pointer<BindingObjectAsyncCallContext> asyncCallContext,
+    Pointer<NativeBindingObject> nativeBindingObject) async {
 
   Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
   DartBindingObjectAsyncCallCallback f = asyncCallContext.ref.callback.asFunction(isLeaf: true);
 
   try {
-    invokeBindingMethodFromNativeImpl(view.contextId, asyncCallContext.ref.profileId, nativeBindingObject, returnValue,
+    await _invokeBindingMethodFromNativeImpl(view.contextId, asyncCallContext.ref.profileId, nativeBindingObject, returnValue,
         asyncCallContext.ref.method_name, asyncCallContext.ref.argc, asyncCallContext.ref.argv);
 
     f(asyncCallContext.ref.resolver, returnValue, nullptr);
