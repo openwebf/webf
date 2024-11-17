@@ -492,7 +492,7 @@ describe('custom html element', () => {
     sampleElement.appendChild(text);
     document.body.appendChild(sampleElement);
     // @ts-ignore
-    let p = sampleElement.asyncFn(1);
+    let p = sampleElement.callAsyncMethod('asyncFn', 1);
     expect(p instanceof Promise);
     let result = await p;
     expect(result).toBe(1);
