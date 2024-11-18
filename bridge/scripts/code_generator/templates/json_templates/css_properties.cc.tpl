@@ -38,6 +38,11 @@ const char* <%= class_name %>::GetPropertyName() const {
   return "<%= exposed_property.name %>";
 }
 
+const AtomicString& <%= class_name %>::GetPropertyNameAtomicString() const {
+  thread_local static AtomicString name("<%= exposed_property.name %>");
+  return name;
+}
+
 const char* <%= class_name %>::GetJSPropertyName() const {
   return "<%= lowerCamelCase(exposed_property.name) %>";
 }

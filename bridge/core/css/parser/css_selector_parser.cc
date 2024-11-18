@@ -1766,7 +1766,6 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeCompoundSelector(CSSParserToken
   AtomicString namespace_prefix;
   AtomicString element_name;
   const bool has_q_name = ConsumeName(stream, element_name, namespace_prefix);
-  element_name = element_name.LowerASCII();
 
   // A tag name is not valid following a pseudo-element. This can happen for
   // e.g. :::part(x):is(div).
