@@ -15,41 +15,25 @@ using namespace webf;
 
 using TestCallback = void (*)(JSContext* ctx);
 
-void TestAtomicString(TestCallback callback) {
-  JSRuntime* runtime = JS_NewRuntime();
-  JSContext* ctx = JS_NewContext(runtime);
-
-  StringImpl::InitStatics();
-
-  callback(ctx);
-
-  JS_FreeContext(ctx);
-
-  JS_FreeRuntime(runtime);
-}
-
 TEST(AtomicString, Empty) {
-  TestAtomicString([](JSContext* ctx) {
-    AtomicString atomic_string = AtomicString::Empty();
-    EXPECT_STREQ(atomic_string.Impl()->Characters8(), "");
-  });
+  TEST_init();
+  AtomicString atomic_string = AtomicString::Empty();
+  EXPECT_STREQ(atomic_string.Impl()->Characters8(), "");
 }
 
 TEST(AtomicString, FromNativeString) {
-  TestAtomicString([](JSContext* ctx) {
-    auto nativeString = stringToNativeString("helloworld");
-    std::unique_ptr<AutoFreeNativeString> str =
-        std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(nativeString.release()));
-    AtomicString value = AtomicString(str);
-    EXPECT_EQ(std::u16string(value.Impl()->Characters16()), std::u16string(u"helloworld"));
-  });
+  TEST_init();
+  auto nativeString = stringToNativeString("helloworld");
+  std::unique_ptr<AutoFreeNativeString> str =
+      std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(nativeString.release()));
+  AtomicString value = AtomicString(str);
+  EXPECT_EQ(std::u16string(value.Impl()->Characters16()), std::u16string(u"helloworld"));
 }
 
 TEST(AtomicString, CreateFromStdString) {
-  TestAtomicString([](JSContext* ctx) {
-    AtomicString&& value = AtomicString("helloworld");
-    EXPECT_STREQ(value.Impl()->Characters8(), "helloworld");
-  });
+  TEST_init();
+  AtomicString&& value = AtomicString("helloworld");
+  EXPECT_STREQ(value.Impl()->Characters8(), "helloworld");
 }
 
 TEST(AtomicString, CreateFromJSValue) {

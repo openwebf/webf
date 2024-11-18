@@ -4,6 +4,7 @@
 
 #include "dart_isolate_context.h"
 #include "core/core_initializer.h"
+#include "foundation/atomic_string_table.h"
 #include <unordered_set>
 #include "defined_properties_initializer.h"
 #include "event_factory.h"
@@ -63,13 +64,13 @@ const std::unique_ptr<DartContextData>& DartIsolateContext::EnsureData() const {
 
 thread_local JSRuntime* runtime_{nullptr};
 thread_local uint32_t running_dart_isolates = 0;
-thread_local bool is_name_installed_ = false;
+thread_local bool is_core_global_initialized = false;
 thread_local std::unique_ptr<StringCache> DartIsolateContext::string_cache_{nullptr};
 
-void InitializeBuiltInStrings() {
-  if (!is_name_installed_) {
-    names_installer::Init();
-    is_name_installed_ = true;
+void InitializeCoreGlobals() {
+  if (!is_core_global_initialized) {
+    CoreInitializer::Initialize();
+    is_core_global_initialized = true;
   }
 }
 
@@ -93,6 +94,7 @@ void DartIsolateContext::FinalizeJSRuntime() {
 
   string_cache_->Dispose();
   string_cache_ = nullptr;
+  AtomicStringTable::Instance().Clear();
   // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
   names_installer::Dispose();
   HTMLElementFactory::Dispose();
@@ -102,7 +104,7 @@ void DartIsolateContext::FinalizeJSRuntime() {
   JS_TurnOnGC(runtime_);
   JS_FreeRuntime(runtime_);
   runtime_ = nullptr;
-  is_name_installed_ = false;
+  is_core_global_initialized = false;
 }
 
 DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length, bool profile_enabled)
@@ -126,8 +128,7 @@ void DartIsolateContext::InitializeGlobalsPerThread() {
   if (string_cache_ == nullptr) {
     string_cache_ = std::make_unique<StringCache>(runtime_);
   }
-  CoreInitializer::Initialize();
-  InitializeBuiltInStrings();
+  InitializeCoreGlobals();
 }
 
 void DartIsolateContext::Dispose(multi_threading::Callback callback) {

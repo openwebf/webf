@@ -32,6 +32,8 @@ class AtomicStringTable final {
   // the static strings.
   void ReserveCapacity(unsigned size);
 
+  void Clear();
+
   // Inserting strings into the table. Note that the return value from adding
   // a UChar string may be an LChar string as the table will attempt to
   // convert the string to save memory if possible.

@@ -8,6 +8,7 @@
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/media_query_evaluator.h"
 #include "foundation/dtoa.h"
+#include "names_installer.h"
 
 namespace webf {
 
@@ -19,6 +20,7 @@ void CoreInitializer::Initialize() {
   MediaQueryEvaluator::Init();
   internal::InitializeDoubleConverter();
   StringStatics::Init();
+  names_installer::Init();
 }
 
 }

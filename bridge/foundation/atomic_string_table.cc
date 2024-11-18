@@ -20,6 +20,10 @@ void AtomicStringTable::ReserveCapacity(unsigned int size) {
   table_.reserve(size);
 }
 
+void AtomicStringTable::Clear() {
+  table_.clear();
+}
+
 std::shared_ptr<StringImpl> AtomicStringTable::Add(std::shared_ptr<StringImpl> string) {
   if (!string->length())
     return nullptr;

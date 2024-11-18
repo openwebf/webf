@@ -39,7 +39,7 @@ struct DartWireContext {
   multi_threading::Dispatcher* dispatcher;
 };
 
-void InitializeBuiltInStrings();
+void InitializeCoreGlobals();
 
 void WatchDartWire(DartWireContext* wire);
 bool IsDartWireAlive(DartWireContext* wire);
