@@ -79,9 +79,16 @@ AtomicString::AtomicString(std::shared_ptr<StringImpl> string_impl) {
 
 AtomicString::AtomicString(JSContext* ctx, JSValue qjs_value) {
   auto* context = ExecutingContext::From(ctx);
-  JSAtom atom = JS_ValueToAtom(ctx, qjs_value);
-  string_ = context->dartIsolateContext()->stringCache()->GetStringFromJSAtom(ctx, atom);
-  JS_FreeAtom(ctx, atom);
+  if (context != nullptr) {
+    JSAtom atom = JS_ValueToAtom(ctx, qjs_value);
+    string_ = context->dartIsolateContext()->stringCache()->GetStringFromJSAtom(ctx, atom);
+    JS_FreeAtom(ctx, atom);
+  } else {
+    size_t len;
+    const char* str = JS_ToCStringLen(ctx, &len, qjs_value);
+    string_ = StringImpl::Create(str, len);
+    JS_FreeCString(ctx, str);
+  }
 }
 
 AtomicString::AtomicString(JSContext* ctx, JSAtom qjs_atom) {
@@ -102,7 +109,6 @@ AtomicString AtomicString::LowerASCII(AtomicString source) {
   std::shared_ptr<StringImpl> new_impl = impl->LowerASCII();
   return {std::move(new_impl)};
 }
-
 
 AtomicString AtomicString::LowerASCII() const {
   return AtomicString::LowerASCII(*this);
@@ -140,8 +146,8 @@ std::unique_ptr<SharedNativeString> AtomicString::ToNativeString() const {
     *length = utf16_str_len;
 #else
     uint32_t len = string_->length();
-    uint16_t* u16_buffer = (uint16_t*) dart_malloc(sizeof(uint16_t) * len);
-    for (size_t i = 0; i < len; i ++) {
+    uint16_t* u16_buffer = (uint16_t*)dart_malloc(sizeof(uint16_t) * len);
+    for (size_t i = 0; i < len; i++) {
       u16_buffer[i] = p[i];
     }
 

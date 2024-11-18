@@ -34,18 +34,20 @@ JSAtom StringCache::CreateStringAndInsertIntoCache(JSContext* ctx, std::shared_p
   DCHECK(!string_cache_.contains(string_impl));
   DCHECK(string_impl->length());
 
-  JSAtom new_string = JS_NewAtomLen(ctx, string_impl->Characters8(), string_impl->length());
-  string_cache_[string_impl] = new_string;
-  atom_to_string_cache[new_string] = string_impl;
+  JSAtom new_string_atom = JS_NewAtomLen(ctx, string_impl->Characters8(), string_impl->length());
+  string_cache_[string_impl] = JS_DupAtom(ctx, new_string_atom);
+  atom_to_string_cache[JS_DupAtom(ctx, new_string_atom)] = string_impl;
 
-  return new_string;
+  JS_FreeAtom(ctx, new_string_atom);
+
+  return new_string_atom;
 }
 
 std::shared_ptr<StringImpl> StringCache::GetStringFromJSAtom(JSContext* ctx, JSAtom atom) {
   if (atom_to_string_cache.find(atom) == atom_to_string_cache.end()) {
     const char* str = JS_AtomToCString(ctx, atom);
     std::shared_ptr<StringImpl> string_impl = AtomicStringTable::Instance().Add(str, strlen(str));
-    atom_to_string_cache[atom] = string_impl;
+    atom_to_string_cache[JS_DupAtom(ctx, atom)] = string_impl;
     JS_FreeCString(ctx, str);
     return string_impl;
   }
@@ -56,6 +58,10 @@ std::shared_ptr<StringImpl> StringCache::GetStringFromJSAtom(JSContext* ctx, JSA
 void StringCache::Dispose() {
   for(auto&& item : string_cache_) {
     JS_FreeAtomRT(runtime_, item.second);
+  }
+
+  for(auto&& item : atom_to_string_cache) {
+    JS_FreeAtomRT(runtime_, item.first);
   }
 }
 
