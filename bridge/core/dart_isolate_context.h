@@ -60,7 +60,7 @@ class DartIsolateContext {
   FORCE_INLINE WebFProfiler* profiler() const { return profiler_.get(); };
   FORCE_INLINE StringCache* stringCache() const { return string_cache_.get(); }
 
-  void EnsureStringCacheInitialized();
+  void InitializeGlobalsPerThread();
 
   const std::unique_ptr<DartContextData>& EnsureData() const;
 
@@ -111,7 +111,7 @@ class DartIsolateContext {
   std::thread::id running_thread_;
   mutable std::unique_ptr<DartContextData> data_;
   std::unordered_set<std::unique_ptr<WebFPage>> pages_in_ui_thread_;
-  std::unique_ptr<StringCache> string_cache_ = nullptr;
+  static thread_local std::unique_ptr<StringCache> string_cache_;
   std::unique_ptr<multi_threading::Dispatcher> dispatcher_ = nullptr;
   // Dart methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = nullptr;

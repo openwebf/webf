@@ -140,13 +140,12 @@ std::unique_ptr<SharedNativeString> AtomicString::ToNativeString() const {
     *length = utf16_str_len;
 #else
     uint32_t len = string_->length();
-    buffer = (uint8_t*)dart_malloc(sizeof(uint16_t) * len);
-    for (size_t i = 0; i < len * 2; i += 2) {
-      buffer[i] = p[i];
-      buffer[i + 1] = 0x00;
+    uint16_t* u16_buffer = (uint16_t*) dart_malloc(sizeof(uint16_t) * len);
+    for (size_t i = 0; i < len; i ++) {
+      u16_buffer[i] = p[i];
     }
 
-    return std::make_unique<SharedNativeString>(reinterpret_cast<uint16_t*>(buffer), len);
+    return std::make_unique<SharedNativeString>(reinterpret_cast<uint16_t*>(u16_buffer), len);
 #endif
   } else {
     const char16_t* p = string_->Characters16();

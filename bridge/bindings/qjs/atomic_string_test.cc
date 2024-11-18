@@ -40,9 +40,8 @@ TEST(AtomicString, FromNativeString) {
     auto nativeString = stringToNativeString("helloworld");
     std::unique_ptr<AutoFreeNativeString> str =
         std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(nativeString.release()));
-    AtomicString value = AtomicString();
-
-    EXPECT_STREQ(value.Impl()->Characters8(), "helloworld");
+    AtomicString value = AtomicString(str);
+    EXPECT_EQ(std::u16string(value.Impl()->Characters16()), std::u16string(u"helloworld"));
   });
 }
 

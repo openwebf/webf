@@ -87,7 +87,7 @@ class Attribute {
   QualifiedName name_;
   AtomicString value_;
 };
-static_assert(sizeof(Attribute) == sizeof(QualifiedName) + sizeof(std::string),
+static_assert(sizeof(Attribute) == sizeof(QualifiedName) + sizeof(AtomicString),
               "AttributeHash() assumes Attribute has no padding");
 
 inline bool Attribute::Matches(const QualifiedName& qualified_name) const {

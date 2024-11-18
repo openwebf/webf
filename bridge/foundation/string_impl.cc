@@ -53,7 +53,7 @@ std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char*
   // Allocate a single buffer large enough to contain the StringImpl
   // struct as well as the data which it contains. This removes one
   // heap allocation from this call.
-  auto* string = static_cast<StringImpl*>(malloc(sizeof(char) * length));
+  auto* string = static_cast<StringImpl*>(malloc(AllocationSize<char>(length)));
   data = reinterpret_cast<char*>(string + 1);
   return std::shared_ptr<StringImpl>(new (string) StringImpl(length, kForce8BitConstructor));
 }
@@ -67,7 +67,7 @@ std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char1
   // Allocate a single buffer large enough to contain the StringImpl
   // struct as well as the data which it contains. This removes one
   // heap allocation from this call.
-  StringImpl* string = static_cast<StringImpl*>(malloc(sizeof(char16_t) *length));
+  StringImpl* string = static_cast<StringImpl*>(malloc(AllocationSize<char16_t>(length)));
   data = reinterpret_cast<char16_t*>(string + 1);
 
   return std::shared_ptr<StringImpl>(new (string) StringImpl(length));

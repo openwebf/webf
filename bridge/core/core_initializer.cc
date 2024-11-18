@@ -12,6 +12,7 @@
 namespace webf {
 
 void CoreInitializer::Initialize() {
+  StringImpl::InitStatics();
   CSSParserTokenRange::InitStaticEOFToken();
   Length::Initialize();
   style_change_extra_data::Init();

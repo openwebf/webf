@@ -148,6 +148,11 @@ class StringImpl : public std::enable_shared_from_this<StringImpl> {
     return Characters16()[i];
   }
 
+  template <typename CharType>
+  static size_t AllocationSize(size_t length) {
+    return sizeof(StringImpl) + length * sizeof(CharType);
+  }
+
   ALWAYS_INLINE const char* Characters8() const {
     DCHECK(Is8Bit());
     return reinterpret_cast<const char*>(this + 1);

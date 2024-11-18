@@ -60,7 +60,7 @@ class AtomicString {
   char16_t operator[](size_t i) const { return string_->operator[](i); }
 
   size_t length() const { return string_->length(); }
-  bool Is8Bit() const { return is_8_bit_; }
+  bool Is8Bit() const { return string_->Is8Bit(); }
 
   const char* Characters8() const;
   const char16_t* Characters16() const;
@@ -119,7 +119,6 @@ class AtomicString {
   static std::shared_ptr<StringImpl> AddSlowCase(std::shared_ptr<StringImpl>&&);
 
   std::shared_ptr<StringImpl> string_ = nullptr;
-  bool is_8_bit_ = true;
 };
 
 inline bool operator==(const AtomicString& a, const AtomicString& b) {

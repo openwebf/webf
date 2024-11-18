@@ -30,7 +30,7 @@ namespace webf {
 
 struct SameSizeAsCSSPropertyValue {
   uint32_t bitfields;
-  std::string property;
+  AtomicString property;
   std::shared_ptr<void*> value;
 };
 

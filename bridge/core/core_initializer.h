@@ -11,7 +11,7 @@ class CoreInitializer {
  public:
 
   // Should be called by clients before trying to create Frames.
-  void Initialize();
+  static void Initialize();
 
 };
 

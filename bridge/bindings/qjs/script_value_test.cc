@@ -7,19 +7,15 @@
 #include <quickjs/quickjs.h>
 #include <codecvt>
 #include "gtest/gtest.h"
+#include "webf_test_env.h"
 
 using namespace webf;
 
 using TestCallback = void (*)(JSContext* ctx);
 
 void TestScriptValue(TestCallback callback) {
-  JSRuntime* runtime = JS_NewRuntime();
-  JSContext* ctx = JS_NewContext(runtime);
-
-  callback(ctx);
-
-  JS_FreeContext(ctx);
-  JS_FreeRuntime(runtime);
+  auto env= TEST_init();
+  callback(env->page()->executingContext()->ctx());
 }
 
 TEST(ScriptValue, createErrorObject) {
