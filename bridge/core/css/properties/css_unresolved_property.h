@@ -43,15 +43,15 @@ class CSSUnresolvedProperty {
 
   virtual bool IsResolvedProperty() const { return false; }
   virtual const char* GetPropertyName() const {
-    assert_m(false, "NOTREACHED_IN_MIGRATION");
+    NOTREACHED_IN_MIGRATION();
     return nullptr;
   }
   virtual const AtomicString& GetPropertyNameAtomicString() const {
-    assert_m(false, "NOTREACHED_IN_MIGRATION");
+    NOTREACHED_IN_MIGRATION();
     return g_empty_atom;
   }
   virtual const char* GetJSPropertyName() const {
-    assert_m(false, "NOTREACHED_IN_MIGRATION");
+    NOTREACHED_IN_MIGRATION();
     return "";
   }
   AtomicString GetPropertyNameString() const {

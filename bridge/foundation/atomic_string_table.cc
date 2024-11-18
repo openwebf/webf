@@ -26,7 +26,7 @@ void AtomicStringTable::Clear() {
 
 std::shared_ptr<StringImpl> AtomicStringTable::Add(std::shared_ptr<StringImpl> string) {
   if (!string->length())
-    return nullptr;
+    return StringImpl::empty_shared();
 
   table_.insert(string);
 
