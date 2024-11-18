@@ -6,6 +6,7 @@
 #ifndef WEBF_BINDINGS_QJS_VALUE_CACHE_H_
 #define WEBF_BINDINGS_QJS_VALUE_CACHE_H_
 
+#include <unordered_map>
 #include <quickjs/quickjs.h>
 #include "foundation/macros.h"
 #include "string_impl.h"

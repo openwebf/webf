@@ -32,6 +32,7 @@
 
 
 #include <string>
+#include <vector>
 #include "foundation/macros.h"
 
 namespace webf {

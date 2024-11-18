@@ -8,6 +8,10 @@
 #include "atomic_string_table.h"
 #include "core/executing_context.h"
 
+#if defined(_WIN32)
+#include <WinSock2.h>
+#endif
+
 namespace webf {
 
 namespace {
@@ -127,10 +131,10 @@ std::unique_ptr<SharedNativeString> AtomicString::ToNativeString() const {
   }
 
   if (string_->Is8Bit()) {
-    uint8_t* buffer;
     const uint8_t* p = reinterpret_cast<const uint8_t*>(string_->Characters8());
 
 #if defined(_WIN32)
+    uint16_t* buffer;
     int utf16_str_len = MultiByteToWideChar(CP_ACP, 0, reinterpret_cast<const char*>(p), -1, NULL, 0) - 1;
     if (utf16_str_len == -1) {
       return nullptr;
@@ -143,7 +147,8 @@ std::unique_ptr<SharedNativeString> AtomicString::ToNativeString() const {
 
     // Convert the ASCII string to UTF-16
     MultiByteToWideChar(CP_ACP, 0, reinterpret_cast<const char*>(p), -1, (WCHAR*)buffer, utf16_str_len + 1);
-    *length = utf16_str_len;
+    return std::make_unique<SharedNativeString>(buffer, utf16_str_len);
+    // *length = utf16_str_len;
 #else
     uint32_t len = string_->length();
     uint16_t* u16_buffer = (uint16_t*)dart_malloc(sizeof(uint16_t) * len);
