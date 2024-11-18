@@ -686,19 +686,19 @@ void CSSSelector::Show(int indent) const {
   printf("%*sSelectorText(): %s\n", indent, "", SelectorText().c_str());
   printf("%*smatch_: %d\n", indent, "", Match());
   if (Match() != kTag) {
-    printf("%*sValue(): %s\n", indent, "", Value().Characters8());
+    printf("%*sValue(): %s\n", indent, "", Value().ToStdString().c_str());
   }
   printf("%*sGetPseudoType(): %d\n", indent, "", GetPseudoType());
   if (Match() == kTag) {
     printf("%*sTagQName().LocalName(): %s\n", indent, "",
-           TagQName().LocalName().Characters8());
+           TagQName().LocalName().ToStdString().c_str());
   }
   printf("%*sIsAttributeSelector(): %d\n", indent, "", IsAttributeSelector());
   if (IsAttributeSelector()) {
     printf("%*sAttribute(): %s\n", indent, "",
-           Attribute().LocalName().Characters8());
+           Attribute().LocalName().ToStdString().c_str());
   }
-  printf("%*sArgument(): %s\n", indent, "", Argument().Characters8());
+  printf("%*sArgument(): %s\n", indent, "", Argument().ToStdString().c_str());
   printf("%*sSpecificity(): %u\n", indent, "", Specificity());
   if (NextSimpleSelector()) {
     printf("\n%*s--> (Relation() == %d)\n", indent, "", Relation());
@@ -720,7 +720,7 @@ void CSSSelector::UpdatePseudoPage(const AtomicString& value,
                                    const Document* document) {
   DCHECK_EQ(Match(), kPagePseudoClass);
   SetValue(value);
-  PseudoType type = CSSSelectorParser::ParsePseudoType(value.Characters8(), false, document);
+  PseudoType type = CSSSelectorParser::ParsePseudoType(value.ToStdString(), false, document);
   if (type != kPseudoFirstPage && type != kPseudoLeftPage &&
       type != kPseudoRightPage) {
     type = kPseudoUnknown;
@@ -735,7 +735,7 @@ void CSSSelector::UpdatePseudoType(const AtomicString& value,
   DCHECK(Match() == kPseudoClass || Match() == kPseudoElement);
   AtomicString lower_value = value.LowerASCII();
   PseudoType pseudo_type = CSSSelectorParser::ParsePseudoType(
-      lower_value.Characters8(), has_arguments, context.GetDocument());
+      lower_value.ToStdString(), has_arguments, context.GetDocument());
   SetPseudoType(pseudo_type);
   SetValue(pseudo_type == kPseudoStateDeprecatedSyntax ? value : lower_value);
 
@@ -1124,7 +1124,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
     builder.Append('[');
     SerializeNamespacePrefixIfNeeded(Attribute().Prefix(), g_star_atom, builder,
                                      IsAttributeSelector());
-    SerializeIdentifier(Attribute().LocalName().Characters8(), builder);
+    SerializeIdentifier(Attribute().LocalName().ToStdString(), builder);
     switch (Match()) {
       case kAttributeExact:
         builder.Append('=');

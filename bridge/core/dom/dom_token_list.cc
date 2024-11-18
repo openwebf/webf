@@ -112,7 +112,7 @@ void DOMTokenList::Trace(GCVisitor* visitor) const {
 bool DOMTokenList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
   if (key.Impl()->IsDigit()) {
     int64_t index;
-    base::StringToInt64(key.Characters8(), &index);
+    base::StringToInt64(key.ToStdString(), &index);
     return index < length();
   }
   return false;

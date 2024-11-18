@@ -60,7 +60,7 @@ class StyleRuleKeyframes final : public StyleRuleBase {
   bool IsVendorPrefixed() const { return is_prefixed_; }
   void SetVendorPrefixed(bool is_prefixed) { is_prefixed_ = is_prefixed; }
 
-  int FindKeyframeIndex(std::shared_ptr<CSSParserContext> context, const AtomicString& key) const;
+  int FindKeyframeIndex(std::shared_ptr<CSSParserContext> context, const std::string& key) const;
 
   std::shared_ptr<StyleRuleKeyframes> Copy() const {
     return std::make_shared<StyleRuleKeyframes>(*this);
@@ -106,9 +106,9 @@ class CSSKeyframesRule final : public CSSRule {
 
   CSSRuleList* cssRules() const override;
 
-  void appendRule(const ExecutingContext*, const AtomicString& rule);
-  void deleteRule(const ExecutingContext*, const AtomicString& key);
-  CSSKeyframeRule* findRule(const ExecutingContext*, const AtomicString& key);
+  void appendRule(const ExecutingContext*, const std::string& rule);
+  void deleteRule(const ExecutingContext*, const std::string& key);
+  CSSKeyframeRule* findRule(const ExecutingContext*, const std::string& key);
 
   // For IndexedGetter and CSSRuleList.
   unsigned length() const;

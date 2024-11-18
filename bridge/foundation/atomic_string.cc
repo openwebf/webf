@@ -147,8 +147,7 @@ std::unique_ptr<SharedNativeString> AtomicString::ToNativeString() const {
 
     // Convert the ASCII string to UTF-16
     MultiByteToWideChar(CP_ACP, 0, reinterpret_cast<const char*>(p), -1, (WCHAR*)buffer, utf16_str_len + 1);
-    return std::make_unique<SharedNativeString>(buffer, utf16_str_len);
-    // *length = utf16_str_len;
+    return std::make_unique<SharedNativeString>(buffer, string_->length());
 #else
     uint32_t len = string_->length();
     uint16_t* u16_buffer = (uint16_t*)dart_malloc(sizeof(uint16_t) * len);

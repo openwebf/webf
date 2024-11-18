@@ -119,10 +119,10 @@ AtomicString SpaceSplitString::SerializeToString() const {
     return (*data_)[0];
 
   std::stringstream ss;
-  ss << (*data_)[0].Characters8();
+  ss << (*data_)[0].ToStdString();
   for (size_t i = 1; i < size; ++i) {
     ss << " ";
-    ss << (*data_)[i].Characters8();
+    ss << (*data_)[i].ToStdString();
   }
 
   return {ss.str()};

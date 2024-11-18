@@ -397,7 +397,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCus
   if (value.empty()) {
     return RemoveProperty(custom_property_name) ? kChangedPropertySet : kUnchanged;
   }
-  return CSSParser::ParseValueForCustomProperty(this, custom_property_name.Characters8(), value, important, context_style_sheet,
+  return CSSParser::ParseValueForCustomProperty(this, custom_property_name.ToStdString(), value, important, context_style_sheet,
                                                 is_animation_tainted);
 }
 
@@ -546,7 +546,7 @@ void MutableCSSPropertyValueSet::ParseDeclarationList(const AtomicString& style_
     context = std::make_shared<CSSParserContext>(CssParserMode());
   }
 
-  CSSParser::ParseDeclarationList(std::move(context), this, style_declaration.Characters8());
+  CSSParser::ParseDeclarationList(std::move(context), this, style_declaration.ToStdString());
 }
 
 CSSStyleDeclaration* MutableCSSPropertyValueSet::EnsureCSSStyleDeclaration(ExecutingContext* execution_context) {

@@ -692,7 +692,7 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
 
   if (!inline_style) {
     inline_style =
-        CSSParser::ParseInlineStyleDeclaration(reinterpret_cast<const char*>(new_style_string.Characters8()), this);
+        CSSParser::ParseInlineStyleDeclaration(new_style_string.ToStdString(), this);
   } else {
     DCHECK(inline_style->IsMutable());
     static_cast<MutableCSSPropertyValueSet*>(const_cast<CSSPropertyValueSet*>(inline_style.get()))

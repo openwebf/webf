@@ -27,13 +27,13 @@ TEST(AtomicString, FromNativeString) {
   std::unique_ptr<AutoFreeNativeString> str =
       std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(nativeString.release()));
   AtomicString value = AtomicString(str);
-  EXPECT_EQ(std::u16string(value.Impl()->Characters16()), std::u16string(u"helloworld"));
+  EXPECT_EQ(std::u16string(value.Impl()->Characters16(), value.Impl()->length()), std::u16string(u"helloworld"));
 }
 
 TEST(AtomicString, CreateFromStdString) {
   TEST_init();
   AtomicString&& value = AtomicString("helloworld");
-  EXPECT_STREQ(value.Impl()->Characters8(), "helloworld");
+  EXPECT_EQ(std::string(value.Impl()->Characters8(), value.Impl()->length()), "helloworld");
 }
 
 TEST(AtomicString, CreateFromJSValue) {
@@ -42,7 +42,7 @@ TEST(AtomicString, CreateFromJSValue) {
   JSValue string = JS_NewString(ctx, "helloworld");
   std::shared_ptr<StringImpl> value =
       env->page()->dartIsolateContext()->stringCache()->GetStringFromJSAtom(ctx, JS_ValueToAtom(ctx, string));
-  EXPECT_STREQ(value->Characters8(), "helloworld");
+  EXPECT_EQ(std::string(value->Characters8(), value->length()), "helloworld");
   JS_FreeValue(ctx, string);
 }
 
@@ -83,7 +83,7 @@ TEST(AtomicString, CopyAssignment) {
 TEST(AtomicString, MoveAssignment) {
   auto&& str = AtomicString("helloworld");
   auto&& str2 = AtomicString(std::move(str));
-  EXPECT_STREQ(str2.Impl()->Characters8(), "helloworld");
+  EXPECT_EQ(str2.ToStdString(), "helloworld");
 }
 
 TEST(AtomicString, CopyToRightReference) {
@@ -91,5 +91,5 @@ TEST(AtomicString, CopyToRightReference) {
   if (1 + 1 == 2) {
     str = AtomicString("helloworld");
   }
-  EXPECT_STREQ(str.Impl()->Characters8(), "helloworld");
+  EXPECT_EQ(str.ToStdString(), "helloworld");
 }

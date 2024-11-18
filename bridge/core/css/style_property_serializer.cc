@@ -227,7 +227,7 @@ std::string StylePropertySerializer::GetCustomPropertyText(const PropertyValueFo
     result.Append(' ');
   }
   const std::shared_ptr<const CSSValue>* value = property.Value();
-  SerializeIdentifier(property.Name().ToAtomicString().Characters8(), result, is_not_first_decl);
+  SerializeIdentifier(property.Name().ToAtomicString().ToStdString(), result, is_not_first_decl);
   result.Append(": ");
   result.Append(value->get()->CssText());
   if (property.IsImportant()) {
@@ -245,7 +245,7 @@ std::string StylePropertySerializer::GetPropertyText(const CSSPropertyName& name
   if (is_not_first_decl) {
     result.append(" ");
   }
-  result.append(name.ToAtomicString().Characters8());
+  result.append(name.ToAtomicString().ToStdString());
   result.append(": ");
   result.append(value);
   if (is_important) {
