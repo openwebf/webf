@@ -3,7 +3,9 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
+#include "foundation/logging.h"
 #include "atomic_string_table.h"
+#include "foundation/string_hasher.h"
 
 namespace webf {
 
@@ -28,24 +30,40 @@ std::shared_ptr<StringImpl> AtomicStringTable::Add(std::shared_ptr<StringImpl> s
 }
 
 std::shared_ptr<StringImpl> AtomicStringTable::Add(const char* chars, unsigned int length) {
-  std::shared_ptr<StringImpl> ptr = StringImpl::Create(chars, length);
-  table_.insert(ptr);
+  if (!chars)
+    return nullptr;
 
-  return ptr;
+  if (!length)
+    return StringImpl::empty_shared();
+
+  std::shared_ptr<StringImpl> ptr = StringImpl::Create(chars, length);
+
+  auto result = table_.insert(ptr);
+
+  return *result.first;
 }
 
 std::shared_ptr<StringImpl> AtomicStringTable::Add(const char16_t* chars, unsigned int length) {
-  std::shared_ptr<StringImpl> ptr = StringImpl::Create(chars, length);
-  table_.insert(ptr);
+  if (!chars)
+    return nullptr;
 
-  return ptr;
+  if (!length)
+    return StringImpl::empty_shared();
+
+  std::shared_ptr<StringImpl> ptr = StringImpl::Create(chars, length);
+  auto result = table_.insert(ptr);
+
+  return *result.first;
 }
 
 std::shared_ptr<StringImpl> AtomicStringTable::Add(const std::string_view& string_view) {
-  std::shared_ptr<StringImpl> ptr = StringImpl::Create(string_view.data(), string_view.length());
-  table_.insert(ptr);
+  if (string_view.empty())
+    return StringImpl::empty_shared();
 
-  return ptr;
+  std::shared_ptr<StringImpl> ptr = StringImpl::Create(string_view.data(), string_view.length());
+  auto result = table_.insert(ptr);
+
+  return *result.first;
 }
 
 }

@@ -12,8 +12,6 @@
 #include <string>
 #include <string_view>
 
-#include "third_party/cityhash/city.h"
-
 namespace webf {
 
 #define get16bits(d) ((((uint32_t)(((const uint8_t *)(d))[1])) << 8)\

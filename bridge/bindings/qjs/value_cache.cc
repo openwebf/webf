@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include "value_cache.h"
+#include "foundation/atomic_string_table.h"
 
 namespace webf {
 
@@ -43,9 +44,9 @@ JSAtom StringCache::CreateStringAndInsertIntoCache(JSContext* ctx, std::shared_p
 std::shared_ptr<StringImpl> StringCache::GetStringFromJSAtom(JSContext* ctx, JSAtom atom) {
   if (atom_to_string_cache.find(atom) == atom_to_string_cache.end()) {
     const char* str = JS_AtomToCString(ctx, atom);
-    std::shared_ptr<StringImpl> string_impl = StringImpl::Create(str, strlen(str));
+    std::shared_ptr<StringImpl> string_impl = AtomicStringTable::Instance().Add(str, strlen(str));
+    atom_to_string_cache[atom] = string_impl;
     JS_FreeCString(ctx, str);
-
     return string_impl;
   }
 

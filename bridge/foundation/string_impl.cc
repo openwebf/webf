@@ -31,6 +31,8 @@ std::shared_ptr<StringImpl> StringImpl::Create(const char* characters, size_t le
   char* data;
   std::shared_ptr<StringImpl> string = CreateUninitialized(length, data);
   memcpy(data, characters, length * sizeof(char));
+  unsigned hash = StringHasher::ComputeHashAndMaskTop8Bits(characters, length);
+  string->SetHash(hash);
   return string;
 }
 
@@ -41,6 +43,8 @@ std::shared_ptr<StringImpl> StringImpl::Create(const char16_t* characters, size_
   char16_t* data;
   std::shared_ptr<StringImpl> string = CreateUninitialized(length, data);
   memcpy(data, characters, length * sizeof(char16_t));
+  unsigned hash = StringHasher::ComputeHashAndMaskTop8Bits(characters, length);
+  string->SetHash(hash);
   return string;
 }
 

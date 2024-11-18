@@ -339,7 +339,6 @@ std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
                                     reinterpret_cast<uint64_t>(TEST_LoadNativeLibrary),
                                     reinterpret_cast<uint64_t>(TEST_GetWidgetElementShape)};
 
-  WEBF_LOG(VERBOSE) << " ON JS ERROR" << onJSError;
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(onJSError));
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_onJsLog));
   return mockMethods;

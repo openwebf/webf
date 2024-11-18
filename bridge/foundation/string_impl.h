@@ -76,6 +76,19 @@ inline size_t Find(const char16_t* characters,
 
 class StringImpl : public std::enable_shared_from_this<StringImpl> {
  public:
+  struct StringImplHasher {
+    size_t operator()(const std::shared_ptr<StringImpl>& string_impl) const {
+      return string_impl->GetHash();
+    }
+  };
+
+  // Custom equality function
+  struct StringImplEqual {
+    bool operator()(const std::shared_ptr<StringImpl>& lhs, const std::shared_ptr<StringImpl>& rhs) const {
+      return lhs->GetHash() == rhs->GetHash();
+    }
+  };
+
   static inline constexpr uint32_t LengthToAsciiFlags(int length) {
     return length ? 0 : kAsciiPropertyCheckDone | kContainsOnlyAscii | kIsLowerAscii;
   }

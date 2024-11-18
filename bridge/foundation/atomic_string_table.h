@@ -77,7 +77,7 @@ class AtomicStringTable final {
 //  bool ReleaseAndRemoveIfNeeded(std::shared_ptr<std::string>);
 
  private:
-  std::unordered_set<std::shared_ptr<StringImpl>> table_;
+  std::unordered_set<std::shared_ptr<StringImpl>, StringImpl::StringImplHasher, StringImpl::StringImplEqual> table_;
 };
 
 }
