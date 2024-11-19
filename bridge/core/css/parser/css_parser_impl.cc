@@ -363,7 +363,6 @@ static CSSParserImpl::AllowedRulesType ComputeNewAllowedRules(CSSParserImpl::All
   return CSSParserImpl::kRegularRules;
 }
 
-// TODO:当前进度[ConsumeQualifiedRule]
 template <typename T>
 bool CSSParserImpl::ConsumeRuleList(CSSParserTokenStream& stream,
                                     RuleListType rule_list_type,

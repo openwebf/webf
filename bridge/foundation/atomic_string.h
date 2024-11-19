@@ -64,7 +64,7 @@ class AtomicString {
 
   const char* Characters8() const;
   const char16_t* Characters16() const;
-  std::string GetString() const { return string_->Characters8(); }
+  std::string GetString() const { return std::string(string_->Characters8(), string_->length()); }
 
   AtomicString RemoveCharacters(CharacterMatchFunctionPtr);
 
@@ -83,6 +83,12 @@ class AtomicString {
   size_t Find(CharacterMatchFunctionPtr match_function,
               size_t start = 0) const {
     return string_->Find(match_function, start);
+  }
+
+  bool StartsWith(
+      const std::string_view& prefix,
+      TextCaseSensitivity case_sensitivity = kTextCaseSensitive) const {
+    return string_->StartsWith(prefix);
   }
 
   inline bool ContainsOnlyLatin1OrEmpty() const {

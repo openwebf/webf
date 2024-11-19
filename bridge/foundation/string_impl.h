@@ -128,10 +128,10 @@ class StringImpl : public std::enable_shared_from_this<StringImpl> {
   static StringImpl* empty_;
   static StringImpl* empty16_bit_;
 
-  FORCE_INLINE static std::shared_ptr<StringImpl> empty_shared() {
+  ALWAYS_INLINE static std::shared_ptr<StringImpl> empty_shared() {
     return std::shared_ptr<StringImpl>(empty_, [](StringImpl*) {});
   }
-  FORCE_INLINE static std::shared_ptr<StringImpl> empty16_shared() {
+  ALWAYS_INLINE static std::shared_ptr<StringImpl> empty16_shared() {
     return std::shared_ptr<StringImpl>(empty16_bit_, [](StringImpl*) {});
   }
 
@@ -208,6 +208,9 @@ class StringImpl : public std::enable_shared_from_this<StringImpl> {
   size_t Find(CharacterMatchFunctionPtr, size_t index = 0);
   //  size_t Find(base::RepeatingCallback<bool(UChar)> match_callback,
   //                  wtf_size_t index = 0) const;
+
+  bool StartsWith(char) const;
+  bool StartsWith(const std::string_view&) const;
 
   std::shared_ptr<StringImpl> Substring(size_t pos, size_t len = UINT_MAX) const;
 

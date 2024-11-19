@@ -720,7 +720,7 @@ void CSSSelector::UpdatePseudoPage(const AtomicString& value,
                                    const Document* document) {
   DCHECK_EQ(Match(), kPagePseudoClass);
   SetValue(value);
-  PseudoType type = CSSSelectorParser::ParsePseudoType(value.ToStdString(), false, document);
+  PseudoType type = CSSSelectorParser::ParsePseudoType(value, false, document);
   if (type != kPseudoFirstPage && type != kPseudoLeftPage &&
       type != kPseudoRightPage) {
     type = kPseudoUnknown;
@@ -735,7 +735,7 @@ void CSSSelector::UpdatePseudoType(const AtomicString& value,
   DCHECK(Match() == kPseudoClass || Match() == kPseudoElement);
   AtomicString lower_value = value.LowerASCII();
   PseudoType pseudo_type = CSSSelectorParser::ParsePseudoType(
-      lower_value.ToStdString(), has_arguments, context.GetDocument());
+      lower_value, has_arguments, context.GetDocument());
   SetPseudoType(pseudo_type);
   SetValue(pseudo_type == kPseudoStateDeprecatedSyntax ? value : lower_value);
 

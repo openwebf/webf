@@ -14,6 +14,25 @@ namespace webf {
 DEFINE_GLOBAL(StringImpl, g_global_empty);
 DEFINE_GLOBAL(StringImpl, g_global_empty16_bit);
 
+ALWAYS_INLINE bool Equal(const char* a, const char16_t* b, size_t length) {
+  for (size_t i = 0; i < length; ++i) {
+    if (a[i] != b[i])
+      return false;
+  }
+  return true;
+}
+
+ALWAYS_INLINE bool Equal(const char16_t* a, const char* b, size_t length) {
+  return Equal(b, a, length);
+}
+
+template <typename CharType>
+ALWAYS_INLINE bool Equal(const CharType* a,
+                         const CharType* b,
+                         size_t length) {
+  return std::equal(a, a + length, b);
+}
+
 // Callers need the global empty strings to be non-const.
 StringImpl* StringImpl::empty_ = const_cast<StringImpl*>(&g_global_empty);
 StringImpl* StringImpl::empty16_bit_ =
@@ -152,6 +171,19 @@ size_t StringImpl::Find(CharacterMatchFunctionPtr match_function,
   if (Is8Bit())
     return internal::Find(Characters8(), length_, match_function, start);
   return internal::Find(Characters16(), length_, match_function, start);
+}
+
+bool StringImpl::StartsWith(char character) const {
+  return length_ && (*this)[0] == character;
+}
+
+bool StringImpl::StartsWith(const std::string_view& prefix) const {
+  if (prefix.length() > length())
+    return false;
+  if (Is8Bit()) {
+    return Equal(Characters8(), prefix.data(), prefix.length());
+  }
+  return Equal(Characters16(), prefix.data(), prefix.length());
 }
 
 std::shared_ptr<StringImpl> StringImpl::Substring(size_t start,

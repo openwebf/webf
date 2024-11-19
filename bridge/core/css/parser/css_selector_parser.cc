@@ -903,7 +903,7 @@ bool CSSSelectorParser::ConsumePartialComplexSelector(CSSParserTokenStream& stre
 }
 
 // static
-CSSSelector::PseudoType CSSSelectorParser::ParsePseudoType(const std::string& name,
+CSSSelector::PseudoType CSSSelectorParser::ParsePseudoType(const AtomicString& name,
                                                            bool has_arguments,
                                                            const Document* document) {
   CSSSelector::PseudoType pseudo_type = CSSSelector::NameToPseudoType(name, has_arguments, document);
@@ -912,10 +912,10 @@ CSSSelector::PseudoType CSSSelectorParser::ParsePseudoType(const std::string& na
     return pseudo_type;
   }
 
-  if (name.compare(0, 8, "-webkit-") == 0) {
+  if (name.StartsWith("-webkit-")) {
     return CSSSelector::PseudoType::kPseudoWebKitCustomElement;
   }
-  if (name.compare(0, 10, "-internal-") == 0) {
+  if (name.StartsWith("-internal-")) {
     return CSSSelector::PseudoType::kPseudoBlinkInternalElement;
   }
   return CSSSelector::PseudoType::kPseudoUnknown;
@@ -949,7 +949,7 @@ PseudoId CSSSelectorParser::ParsePseudoElement(const std::string& selector_strin
       }
 
       CSSSelector::PseudoType pseudo_type =
-          ParsePseudoType(std::string(selector_name_token.Value()),
+          ParsePseudoType(AtomicString(selector_name_token.Value()),
                           /*has_arguments=*/false, parent ? &parent->GetDocument() : nullptr);
 
       PseudoId pseudo_id = CSSSelector::GetPseudoId(pseudo_type);

@@ -15,7 +15,9 @@ class CSSLazyParsingTest : public testing::Test {
  public:
   bool HasParsedProperties(StyleRule* rule) { return rule->HasParsedProperties(); }
 
-  StyleRule* RuleAt(StyleSheetContents* sheet, size_t index) { return To<StyleRule>(sheet->ChildRules()[index].get()); }
+  StyleRule* RuleAt(StyleSheetContents* sheet, size_t index) {
+    return To<StyleRule>(sheet->ChildRules()[index].get());
+  }
 
  protected:
   std::shared_ptr<StyleSheetContents> cached_contents_;
