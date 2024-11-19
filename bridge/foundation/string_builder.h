@@ -6,15 +6,17 @@
 #ifndef WEBF_FOUNDATION_STRING_BUILDER_H_
 #define WEBF_FOUNDATION_STRING_BUILDER_H_
 
-#include <cstdarg>
 #include <codecvt>
-#include <string>
-#include <sstream>
+#include <cstdarg>
 #include <iomanip>
+#include <sstream>
+#include <string>
 #include <vector>
 #include "foundation/dtoa.h"
 #include "foundation/macros.h"
 #include "foundation/string_view.h"
+
+#include <logging.h>
 
 namespace webf {
 
@@ -99,13 +101,13 @@ class StringBuilder {
     // a Text node.
     const char* impl = view.data();
     if (!length_ && !HasBuffer() && impl != nullptr) {
-      string_ = impl;
+      string_ = std::string(impl, view.length());
       length_ = view.length();
       return;
     }
 
     EnsureBuffer8(view.length());
-    string_.append(view);
+    string_.append(std::string(view.data(), view.length()));
     length_ += view.length();
   }
 
