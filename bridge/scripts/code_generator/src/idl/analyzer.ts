@@ -169,7 +169,19 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
       return FunctionArgumentType.legacy_dom_string;
     } else if (identifier === 'SupportAsync') {
       if (mode) mode.supportAsync = true;
-      let argument = typeReference.typeArguments![0];
+      let argument = typeReference.typeArguments![0] as unknown as ts.TypeNode;
+      if (argument.kind == ts.SyntaxKind.TypeReference) {
+        let typeReference: ts.TypeReference = argument as unknown as ts.TypeReference;
+        // @ts-ignore
+        let identifier = (typeReference.typeName as ts.Identifier).text;
+        if (identifier == 'DartImpl') {
+          if (mode) {
+            mode.dartImpl = true;
+          }
+          argument = typeReference.typeArguments![0] as unknown as ts.TypeNode;
+        }
+      }
+
       // @ts-ignore
       return getParameterBaseType(argument);
     }
@@ -293,7 +305,12 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
                 obj.props.push(prop);
 
                 if (prop.typeMode.supportAsync) {
+                  // keep asyncProp supportAsync = true
                   let asyncProp = Object.assign({}, prop);
+                  // set prop supportAsync = false
+                  let syncMode = Object.assign({}, mode);
+                  syncMode.supportAsync = false;
+                  prop.typeMode = syncMode
                   asyncProp.name = asyncProp.name + '_async';
                   definedPropertyCollector.properties.add(asyncProp.name);
                   asyncProp.async_type = {
