@@ -198,20 +198,20 @@ TEST(CSSSelectorParserTest, TransitionPseudoStyles) {
   struct TestCase {
     const char* selector;
     bool valid;
-    std::optional<std::string> argument;
+    AtomicString argument;
     CSSSelector::PseudoType type;
   };
 
   TestCase test_cases[] = {
-      {"html::view-transition-group(*)", true, std::nullopt, CSSSelector::kPseudoViewTransitionGroup},
-      {"html::view-transition-group(foo)", true, "foo", CSSSelector::kPseudoViewTransitionGroup},
-      {"html::view-transition-image-pair(foo)", true, "foo", CSSSelector::kPseudoViewTransitionImagePair},
-      {"html::view-transition-old(foo)", true, "foo", CSSSelector::kPseudoViewTransitionOld},
-      {"html::view-transition-new(foo)", true, "foo", CSSSelector::kPseudoViewTransitionNew},
-      {"::view-transition-group(foo)", true, "foo", CSSSelector::kPseudoViewTransitionGroup},
-      {"div::view-transition-group(*)", true, std::nullopt, CSSSelector::kPseudoViewTransitionGroup},
-      {"::view-transition-group(*)::before", false, std::nullopt, CSSSelector::kPseudoUnknown},
-      {"::view-transition-group(*):hover", false, std::nullopt, CSSSelector::kPseudoUnknown},
+      {"html::view-transition-group(*)", true, g_null_atom, CSSSelector::kPseudoViewTransitionGroup},
+      {"html::view-transition-group(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionGroup},
+      {"html::view-transition-image-pair(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionImagePair},
+      {"html::view-transition-old(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionOld},
+      {"html::view-transition-new(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionNew},
+      {"::view-transition-group(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionGroup},
+      {"div::view-transition-group(*)", true, g_null_atom, CSSSelector::kPseudoViewTransitionGroup},
+      {"::view-transition-group(*)::before", false, g_null_atom, CSSSelector::kPseudoUnknown},
+      {"::view-transition-group(*):hover", false, g_null_atom, CSSSelector::kPseudoUnknown},
   };
 
   std::vector<CSSSelector> arena;
