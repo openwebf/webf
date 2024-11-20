@@ -3,9 +3,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/animation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' hide Element;
+import 'package:flutter/gestures.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -15,6 +15,8 @@ import 'package:webf/rendering.dart';
 // CSS Overflow: https://drafts.csswg.org/css-overflow-3/
 
 enum CSSOverflowType { auto, visible, hidden, scroll, clip }
+
+typedef HandlePointerCallback = void Function(WebFScrollable scrollable);
 
 // Styles which need to copy from outer scrolling box to inner scrolling content box.
 List<String> _scrollingContentBoxCopyStyles = [
@@ -43,7 +45,174 @@ List<String> _scrollingContentBoxCopyStyles = [
   LINE_CLAMP,
 ];
 
+enum ScrollableDirection { x, y }
+
 mixin CSSOverflowMixin on RenderStyle {
+  WebFScrollable? _domScrollableX;
+  WebFScrollable? _domScrollableY;
+
+  final Map<RenderObjectElement, WebFScrollable> _widgetScrollableX = {};
+  final Map<RenderObjectElement, WebFScrollable> _widgetScrollableY = {};
+
+  @pragma('vm:prefer-inline')
+  bool hasScrollableX() {
+    if (target.managedByFlutterWidget) {
+      return everyWidgetRenderBox((renderObjectElement, renderObject) {
+        return _widgetScrollableX[renderObjectElement] != null;
+      });
+    }
+
+    return _domScrollableX != null;
+  }
+
+  void clearScrollableX() {
+    if (target.managedByFlutterWidget) {
+      widgetRenderObjects.forEach((renderObjectElement, renderObject) {
+        _widgetScrollableX[renderObjectElement]?.position?.dispose();
+      });
+      _widgetScrollableX.clear();
+      return;
+    }
+
+    _domScrollableX?.position?.dispose();
+    _domScrollableX = null;
+  }
+
+  void _setUpScrollable(ScrollableDirection direction, ScrollListener listener) {
+    if (target.managedByFlutterWidget) {
+      everyWidgetRenderBox((renderObjectElement, renderBox) {
+        WebFScrollable scrollable;
+        var map = direction == ScrollableDirection.x ? _widgetScrollableX : _widgetScrollableY;
+        CSSOverflowType overflowType = direction == ScrollableDirection.x ? overflowX : overflowY;
+        if (!map.containsKey(renderObjectElement)) {
+          scrollable = WebFScrollable(
+              axisDirection: direction == ScrollableDirection.x ? AxisDirection.right : AxisDirection.down,
+              scrollListener: listener,
+              overflowType: overflowType,
+              currentView: currentFlutterView);
+          map[renderObjectElement!] = scrollable;
+        } else {
+          scrollable = map[renderObjectElement]!;
+        }
+
+        RenderBoxModel renderBoxModel = widgetRenderObjects[renderObjectElement]!;
+        if (direction == ScrollableDirection.x) {
+          renderBoxModel.scrollOffsetX = scrollable.position;
+        } else {
+          renderBoxModel.scrollOffsetY = scrollable.position;
+        }
+
+        renderBoxModel.scrollListener = listener;
+        renderBoxModel.scrollablePointerListener = _scrollablePointerListener;
+
+        // Reset canDrag by overflow because hidden is can't drag.
+        bool canDrag = overflowType != CSSOverflowType.hidden;
+        scrollable.overflowType = overflowType;
+        scrollable.setCanDrag(canDrag);
+        return true;
+      });
+      return;
+    }
+
+    CSSOverflowType overflowType = direction == ScrollableDirection.x ? overflowX : overflowY;
+    WebFScrollable scrollable = WebFScrollable(
+        axisDirection: direction == ScrollableDirection.x ? AxisDirection.right : AxisDirection.down,
+        scrollListener: listener,
+        overflowType: overflowType,
+        currentView: currentFlutterView);
+
+    if (direction == ScrollableDirection.x) {
+      domRenderBoxModel!.scrollOffsetX = scrollable.position;
+      _domScrollableX = scrollable;
+    } else {
+      domRenderBoxModel!.scrollOffsetY = scrollable.position;
+      _domScrollableY = scrollable;
+    }
+
+    bool canDrag = overflowType != CSSOverflowType.hidden;
+    scrollable.overflowType = overflowType;
+    scrollable.setCanDrag(canDrag);
+    domRenderBoxModel!.scrollListener = listener;
+    domRenderBoxModel!.scrollablePointerListener = _scrollablePointerListener;
+  }
+
+  void setUpScrollableX(ScrollListener listener) {
+    _setUpScrollable(ScrollableDirection.x, listener);
+  }
+
+  void setUpScrollableY(ScrollListener listener) {
+    _setUpScrollable(ScrollableDirection.y, listener);
+  }
+
+  void clearScrollableY() {
+    if (target.managedByFlutterWidget) {
+      widgetRenderObjects.forEach((renderObjectElement, renderObject) {
+        _widgetScrollableY[renderObjectElement]?.position?.dispose();
+      });
+      _widgetScrollableY.clear();
+    }
+
+    _domScrollableY?.position?.dispose();
+    _domScrollableY = null;
+  }
+
+  @override
+  void disposeScrollable() {
+    for (var scrollable in _widgetScrollableX.values) {
+      scrollable.position?.dispose();
+    }
+
+    for (var scrollable in _widgetScrollableY.values) {
+      scrollable.position?.dispose();
+    }
+
+    _widgetScrollableX.clear();
+    _widgetScrollableY.clear();
+
+    _domScrollableX?.position?.dispose();
+    _domScrollableY?.position?.dispose();
+
+    _domScrollableX = null;
+    _domScrollableY = null;
+  }
+
+  void handleScrollable(HandlePointerCallback callback) {
+    if (target.managedByFlutterWidget) {
+      for (var scrollable in _widgetScrollableX.values) {
+        callback(scrollable);
+      }
+
+      for (var scrollable in _widgetScrollableY.values) {
+        callback(scrollable);
+      }
+
+      return;
+    }
+
+    if (_domScrollableX != null) {
+      callback(_domScrollableX!);
+    }
+    if (_domScrollableY != null) {
+      callback(_domScrollableY!);
+    }
+  }
+
+  void _scrollablePointerListener(PointerEvent event) {
+    if (event is PointerDownEvent) {
+      handleScrollable((scrollable) {
+        scrollable.handlePointerDown(event);
+      });
+    } else if (event is PointerSignalEvent) {
+      handleScrollable((scrollable) {
+        scrollable.handlePinterSignal(event);
+      });
+    } else if (event is PointerPanZoomStartEvent) {
+      handleScrollable((scrollable) {
+        scrollable.handlePointerPanZoomStart(event);
+      });
+    }
+  }
+
   @override
   CSSOverflowType get overflowX => _overflowX ?? CSSOverflowType.visible;
   CSSOverflowType? _overflowX;
@@ -111,55 +280,34 @@ mixin ElementOverflowMixin on ElementBase {
   // The duration time for element scrolling to a significant place.
   static const SCROLL_DURATION = Duration(milliseconds: 250);
 
-  WebFScrollable? _scrollableX;
-  WebFScrollable? _scrollableY;
-
-  void disposeScrollable() {
-    _scrollableX?.position?.dispose();
-    _scrollableY?.position?.dispose();
-    _scrollableX = null;
-    _scrollableY = null;
-  }
-
   void updateRenderBoxModelWithOverflowX(ScrollListener scrollListener) {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.updateRenderBoxModelWithOverflowX');
     }
-    if (renderBoxModel is RenderSliverListLayout) {
-      RenderSliverListLayout renderBoxModel = this.renderBoxModel as RenderSliverListLayout;
-      renderBoxModel.scrollOffsetX = renderBoxModel.axis == Axis.horizontal ? renderBoxModel.scrollable.position : null;
-    } else if (renderBoxModel != null) {
-      RenderBoxModel renderBoxModel = this.renderBoxModel!;
+    if (renderStyle.isSelfRenderSliverListLayout()) {
+      if (managedByFlutterWidget) throw FlutterError('css display sliver not supported in with flutter widget adapter');
+      renderStyle.getSelfRenderBoxValue((renderBoxModel, _) {
+        RenderSliverListLayout sliverListLayout = renderBoxModel as RenderSliverListLayout;
+        sliverListLayout.scrollOffsetX =
+            sliverListLayout.axis == Axis.horizontal ? sliverListLayout.scrollable.position : null;
+      });
+    } else if (renderStyle.hasRenderBox()) {
       CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
       switch (overflowX) {
         case CSSOverflowType.clip:
-          _scrollableX = null;
+          renderStyle.clearScrollableX();
           break;
         case CSSOverflowType.hidden:
         case CSSOverflowType.auto:
         case CSSOverflowType.scroll:
           // If the render has been offset when previous overflow is auto or scroll, _scrollableX should not reset.
-          if (_scrollableX == null) {
-            _scrollableX = WebFScrollable(
-                axisDirection: AxisDirection.right,
-                scrollListener: scrollListener,
-                overflowType: overflowX,
-                currentView: renderStyle.currentFlutterView);
-            renderBoxModel.scrollOffsetX = _scrollableX!.position;
-          }
-          // Reset canDrag by overflow because hidden is can't drag.
-          bool canDrag = overflowX != CSSOverflowType.hidden;
-          _scrollableX!.overflowType = overflowX;
-          _scrollableX!.setCanDrag(canDrag);
+          renderStyle.setUpScrollableX(scrollListener);
           break;
         case CSSOverflowType.visible:
         default:
-          _scrollableX = null;
+          renderStyle.clearScrollableX();
           break;
       }
-
-      renderBoxModel.scrollListener = scrollListener;
-      renderBoxModel.scrollablePointerListener = _scrollablePointerListener;
     }
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
@@ -167,52 +315,38 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void updateRenderBoxModelWithOverflowY(ScrollListener scrollListener) {
-    if (renderBoxModel is RenderSliverListLayout) {
-      RenderSliverListLayout renderBoxModel = this.renderBoxModel as RenderSliverListLayout;
-      renderBoxModel.scrollOffsetY = renderBoxModel.axis == Axis.vertical ? renderBoxModel.scrollable.position : null;
-    } else if (renderBoxModel != null) {
-      RenderBoxModel renderBoxModel = this.renderBoxModel!;
+    if (renderStyle.isSelfRenderSliverListLayout()) {
+      renderStyle.getSelfRenderBoxValue((renderBoxModel, _) {
+        RenderSliverListLayout sliverListLayout = renderBoxModel as RenderSliverListLayout;
+        sliverListLayout.scrollOffsetY =
+            sliverListLayout.axis == Axis.vertical ? sliverListLayout.scrollable.position : null;
+      });
+    } else if (renderStyle.hasRenderBox()) {
       CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
       switch (overflowY) {
         case CSSOverflowType.clip:
-          _scrollableY = null;
+          renderStyle.clearScrollableY();
           break;
         case CSSOverflowType.hidden:
         case CSSOverflowType.auto:
         case CSSOverflowType.scroll:
           // If the render has been offset when previous overflow is auto or scroll, _scrollableY should not reset.
-          if (_scrollableY == null) {
-            _scrollableY = WebFScrollable(
-                axisDirection: AxisDirection.down,
-                scrollListener: scrollListener,
-                overflowType: overflowY,
-                currentView: renderStyle.currentFlutterView);
-            renderBoxModel.scrollOffsetY = _scrollableY!.position;
-          }
-          // Reset canDrag by overflow because hidden is can't drag.
-          bool canDrag = overflowY != CSSOverflowType.hidden;
-          _scrollableY!.overflowType = overflowY;
-          _scrollableY!.setCanDrag(canDrag);
+          renderStyle.setUpScrollableY(scrollListener);
           break;
         case CSSOverflowType.visible:
         default:
-          _scrollableY = null;
+          renderStyle.clearScrollableY();
           break;
       }
-
-      renderBoxModel.scrollListener = scrollListener;
-      renderBoxModel.scrollablePointerListener = _scrollablePointerListener;
     }
   }
 
   void scrollingContentBoxStyleListener(String property, String? original, String present, {String? baseHref}) {
-    if (renderBoxModel == null) return;
+    if (!renderStyle.hasRenderBox()) return;
 
-    RenderLayoutBox? scrollingContentBox = (renderBoxModel as RenderLayoutBox).renderScrollingContent;
+    CSSRenderStyle? scrollingContentRenderStyle = renderStyle.getScrollContentRenderStyle();
     // Sliver content has no multi scroll content box.
-    if (scrollingContentBox == null) return;
-
-    CSSRenderStyle scrollingContentRenderStyle = scrollingContentBox.renderStyle;
+    if (scrollingContentRenderStyle == null) return;
 
     switch (property) {
       case DISPLAY:
@@ -295,7 +429,8 @@ mixin ElementOverflowMixin on ElementBase {
     CSSOverflowType effectiveOverflowY = renderStyle.effectiveOverflowY;
     CSSOverflowType effectiveOverflowX = renderStyle.effectiveOverflowX;
 
-    if (renderBoxModel is RenderLayoutBox) {
+    // @TODO: optimize scroll performance for flutter widget adapter mode.
+    if (renderStyle.isSelfRenderLayoutBox() && !managedByFlutterWidget) {
       // Create two repaintBoundary for scroll container if any direction is scrollable.
       bool shouldScrolling =
           (effectiveOverflowX == CSSOverflowType.auto || effectiveOverflowX == CSSOverflowType.scroll) ||
@@ -321,7 +456,8 @@ mixin ElementOverflowMixin on ElementBase {
   // Outer repaintBoundary avoid repaint of parent and sibling renderObjects when scrolling.
   // Inner repaintBoundary avoid repaint of child renderObjects when scrolling.
   void _attachScrollingContentBox() {
-    RenderLayoutBox outerLayoutBox = renderBoxModel as RenderLayoutBox;
+    assert(!managedByFlutterWidget);
+    RenderLayoutBox outerLayoutBox = renderStyle.domRenderBoxModel as RenderLayoutBox;
     RenderLayoutBox? scrollingContentBox = outerLayoutBox.renderScrollingContent;
     if (scrollingContentBox != null) {
       return;
@@ -345,7 +481,8 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void _detachScrollingContentBox() {
-    RenderLayoutBox outerLayoutBox = renderBoxModel as RenderLayoutBox;
+    assert(!managedByFlutterWidget);
+    RenderLayoutBox outerLayoutBox = renderStyle.domRenderBoxModel as RenderLayoutBox;
     RenderLayoutBox? scrollingContentBox = outerLayoutBox.renderScrollingContent;
     if (scrollingContentBox == null) return;
 
@@ -356,19 +493,6 @@ mixin ElementOverflowMixin on ElementBase {
     (this as Element).style.removeStyleChangeListener(scrollingContentBoxStyleListener);
     // Move children of scrolling content box to the children to outer layout box.
     outerLayoutBox.addAll(children);
-  }
-
-  void _scrollablePointerListener(PointerEvent event) {
-    if (event is PointerDownEvent) {
-      _scrollableX?.handlePointerDown(event);
-      _scrollableY?.handlePointerDown(event);
-    } else if (event is PointerSignalEvent) {
-      _scrollableX?.handlePinterSignal(event);
-      _scrollableY?.handlePinterSignal(event);
-    } else if (event is PointerPanZoomStartEvent) {
-      _scrollableX?.handlePointerPanZoomStart(event);
-      _scrollableY?.handlePointerPanZoomStart(event);
-    }
   }
 
   double get scrollTop {
@@ -396,8 +520,8 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void _ensureRenderObjectHasLayout() {
-    if (renderBoxModel?.needsLayout == true) {
-      renderBoxModel!.owner?.flushLayout();
+    if (renderStyle.getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.needsLayout)?.needsLayout == true) {
+      RendererBinding.instance.rootPipelineOwner.flushLayout();
     }
   }
 
@@ -421,10 +545,10 @@ mixin ElementOverflowMixin on ElementBase {
     WebFScrollable? scrollable = _getScrollable(Axis.vertical);
     if (scrollable?.position?.maxScrollExtent != null) {
       // Viewport height + maxScrollExtent
-      return renderBoxModel!.clientHeight + scrollable!.position!.maxScrollExtent;
+      return renderStyle.clientHeight()! + scrollable!.position!.maxScrollExtent;
     }
 
-    Size scrollContainerSize = renderBoxModel!.scrollableSize;
+    Size scrollContainerSize = renderStyle.scrollableSize()!;
     return scrollContainerSize.height;
   }
 
@@ -435,9 +559,9 @@ mixin ElementOverflowMixin on ElementBase {
     _ensureRenderObjectHasLayout();
     WebFScrollable? scrollable = _getScrollable(Axis.horizontal);
     if (scrollable?.position?.maxScrollExtent != null) {
-      return renderBoxModel!.clientWidth + scrollable!.position!.maxScrollExtent;
+      return renderStyle.clientWidth()! + scrollable!.position!.maxScrollExtent;
     }
-    Size scrollContainerSize = renderBoxModel!.scrollableSize;
+    Size scrollContainerSize = renderStyle.scrollableSize()!;
     return scrollContainerSize.width;
   }
 
@@ -447,40 +571,34 @@ mixin ElementOverflowMixin on ElementBase {
 
   double get clientTop {
     _ensureRenderObjectHasLayout();
-    return renderBoxModel?.renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
+    return renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
   }
 
   double get clientLeft {
     _ensureRenderObjectHasLayout();
-    return renderBoxModel?.renderStyle.effectiveBorderLeftWidth.computedValue ?? 0.0;
+    return renderStyle.effectiveBorderLeftWidth.computedValue ?? 0.0;
   }
 
   double get clientWidth {
     _ensureRenderObjectHasLayout();
-    return renderBoxModel?.clientWidth ?? 0.0;
+    return renderStyle.clientWidth() ?? 0.0;
   }
 
   double get clientHeight {
     _ensureRenderObjectHasLayout();
-    return renderBoxModel?.clientHeight ?? 0.0;
+    return renderStyle.clientHeight() ?? 0.0;
   }
 
   double get offsetWidth {
     _ensureRenderObjectHasLayout();
-    RenderBoxModel? renderBox = renderBoxModel;
-    if (renderBox == null) {
-      return 0;
-    }
-    return renderBox.hasSize ? renderBox.size.width : 0.0;
+    if (!renderStyle.hasRenderBox()) return 0;
+    return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.width : 0.0);
   }
 
   double get offsetHeight {
     _ensureRenderObjectHasLayout();
-    RenderBoxModel? renderBox = renderBoxModel;
-    if (renderBox == null) {
-      return 0;
-    }
-    return renderBox.hasSize ? renderBox.size.height : 0.0;
+    if (!renderStyle.hasRenderBox()) return 0;
+    return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.height : 0.0);
   }
 
   void _scrollBy({double dx = 0.0, double dy = 0.0, bool? withAnimation}) {
@@ -509,9 +627,9 @@ mixin ElementOverflowMixin on ElementBase {
       scrollable = direction == recyclerLayout.axis ? recyclerLayout.scrollable : null;
     } else {
       if (direction == Axis.horizontal) {
-        scrollable = _scrollableX;
+        scrollable = renderStyle._domScrollableX;
       } else if (direction == Axis.vertical) {
-        scrollable = _scrollableY;
+        scrollable = renderStyle._domScrollableY;
       }
     }
     return scrollable;
