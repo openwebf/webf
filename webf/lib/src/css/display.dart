@@ -27,10 +27,10 @@ mixin CSSDisplayMixin on RenderStyle {
   set display(CSSDisplay? value) {
     if (_display != value) {
       _display = value;
-      renderBoxModel?.markNeedsLayout();
+      markNeedsLayout();
 
       // The display changes of the node may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
-      renderBoxModel?.markAdjacentRenderParagraphNeedsLayout();
+      markAdjacentRenderParagraphNeedsLayout();
     }
   }
 
@@ -71,17 +71,16 @@ mixin CSSDisplayMixin on RenderStyle {
       return CSSDisplay.inlineBlock;
     }
 
-    if (renderBoxModel != null) {
-      if (renderBoxModel!.parent is! RenderBoxModel) {
+    if (hasRenderBox()) {
+      if (isParentRenderBoxModel()) {
         return transformedDisplay;
-      } else if (renderBoxModel!.parent is RenderFlexLayout) {
+      } else if (isParentRenderFlexLayout()) {
         // Margin change in flex layout may affect transformed display
         // https://www.w3.org/TR/css-display-3/#transformations
 
         // Display as inline-block if parent node is flex
         transformedDisplay = CSSDisplay.inlineBlock;
-        RenderBoxModel parent = renderBoxModel!.parent as RenderBoxModel;
-        RenderStyle parentRenderStyle = parent.renderStyle;
+        RenderStyle parentRenderStyle = getParentRenderStyle()!;
 
         bool isVerticalDirection = parentRenderStyle.flexDirection == FlexDirection.column ||
             parentRenderStyle.flexDirection == FlexDirection.columnReverse;

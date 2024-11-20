@@ -284,6 +284,16 @@ abstract class RenderStyle {
   }
 
   @pragma('vm:prefer-inline')
+  bool isParentRenderBoxModel() {
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderBoxModel);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isParentRenderFlexLayout() {
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderFlexLayout);
+  }
+
+  @pragma('vm:prefer-inline')
   bool isLayoutBox() {
     return everyRenderObjectByTypeAndMatch(
         RenderObjectGetType.self, (renderObject, _) => renderObject is RenderLayoutBox);
@@ -374,6 +384,11 @@ abstract class RenderStyle {
   }
 
   @pragma('vm:prefer-inline')
+  dynamic getSelfRenderBoxValue(RenderBoxModelGetter getter) {
+    return getRenderBoxValueByType(RenderObjectGetType.self, getter);
+  }
+
+  @pragma('vm:prefer-inline')
   T? getSelfRenderStyle<T extends RenderStyle>() {
     return getRenderBoxValueByType(RenderObjectGetType.self, (_, renderStyle) => renderStyle) as T?;
   }
@@ -407,7 +422,35 @@ abstract class RenderStyle {
   void markNeedsLayout() {
     everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
       renderObject?.markNeedsLayout();
-      return false;
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void markNeedsPaint() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      renderObject?.markNeedsPaint();
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void markRenderParagraphNeedsLayout() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      if (renderObject is RenderTextBox) {
+        renderObject.markRenderParagraphNeedsLayout();
+      }
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void markAdjacentRenderParagraphNeedsLayout() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      if (renderObject is RenderBoxModel) {
+        renderObject.markAdjacentRenderParagraphNeedsLayout();
+      }
+      return true;
     });
   }
 
@@ -417,7 +460,17 @@ abstract class RenderStyle {
       if (renderObject is RenderBoxModel) {
         renderObject.markParentNeedsRelayout();
       }
-      return false;
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void markChildrenNeedsSort() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      if (renderObject is RenderLayoutBox) {
+        renderObject.markChildrenNeedsSort();
+      }
+      return true;
     });
   }
 
@@ -432,7 +485,7 @@ abstract class RenderStyle {
         renderObject!.parent!.markNeedsLayout();
       }
 
-      return false;
+      return true;
     });
   }
 

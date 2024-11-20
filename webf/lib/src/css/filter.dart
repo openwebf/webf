@@ -252,12 +252,10 @@ mixin CSSFilterEffectsMixin on RenderStyle {
     _cachedImageFilter = null;
 
     // Filter effect the stacking context.
-    RenderBoxModel? parentRenderer = parent?.renderBoxModel;
-    if (parentRenderer is RenderLayoutBox) {
-      parentRenderer.markChildrenNeedsSort();
-    }
+    RenderStyle? parentRenderStyle = getParentRenderStyle();
+    parentRenderStyle?.markChildrenNeedsSort();
 
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
 
     if (!kReleaseMode && functions != null) {
       ColorFilter? colorFilter = _parseColorFilters(functions);
