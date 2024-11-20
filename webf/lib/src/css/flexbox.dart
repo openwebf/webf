@@ -179,8 +179,8 @@ mixin CSSFlexboxMixin on RenderStyle {
   set flexDirection(FlexDirection? value) {
     if (value == _flexDirection) return;
     _flexDirection = value;
-    if (renderBoxModel is RenderFlexLayout) {
-      renderBoxModel!.markNeedsLayout();
+    if (isSelfRenderFlexLayout()) {
+      markNeedsLayout();
     }
   }
 
@@ -190,8 +190,8 @@ mixin CSSFlexboxMixin on RenderStyle {
   set flexWrap(FlexWrap? value) {
     if (_flexWrap == value) return;
     _flexWrap = value;
-    if (renderBoxModel is RenderFlexLayout) {
-      renderBoxModel!.markNeedsLayout();
+    if (isSelfRenderFlexLayout()) {
+      markNeedsLayout();
     }
   }
 
@@ -201,8 +201,8 @@ mixin CSSFlexboxMixin on RenderStyle {
   set justifyContent(JustifyContent? value) {
     if (_justifyContent == value) return;
     _justifyContent = value;
-    if (renderBoxModel is RenderFlexLayout) {
-      renderBoxModel!.markNeedsLayout();
+    if (isSelfRenderFlexLayout()) {
+      markNeedsLayout();
     }
   }
 
@@ -212,8 +212,8 @@ mixin CSSFlexboxMixin on RenderStyle {
   set alignItems(AlignItems? value) {
     if (_alignItems == value) return;
     _alignItems = value;
-    if (renderBoxModel is RenderFlexLayout) {
-      renderBoxModel!.markNeedsLayout();
+    if (isSelfRenderFlexLayout()) {
+      markNeedsLayout();
     }
   }
 
@@ -223,8 +223,8 @@ mixin CSSFlexboxMixin on RenderStyle {
   set alignContent(AlignContent? value) {
     if (_alignContent == value) return;
     _alignContent = value;
-    if (renderBoxModel is RenderFlexLayout) {
-      renderBoxModel!.markNeedsLayout();
+    if (isSelfRenderFlexLayout()) {
+      markNeedsLayout();
     }
   }
 
@@ -234,8 +234,8 @@ mixin CSSFlexboxMixin on RenderStyle {
   set alignSelf(AlignSelf? value) {
     if (_alignSelf == value) return;
     _alignSelf = value;
-    if (renderBoxModel?.parent is RenderFlexLayout) {
-      renderBoxModel!.markNeedsLayout();
+    if (isParentRenderFlexLayout()) {
+      markNeedsLayout();
     }
   }
 
@@ -248,8 +248,8 @@ mixin CSSFlexboxMixin on RenderStyle {
       return;
     }
     _flexBasis = value;
-    if (renderBoxModel?.parent is RenderFlexLayout) {
-      renderBoxModel!.markNeedsLayout();
+    if (isParentRenderFlexLayout()) {
+      markNeedsLayout();
     }
   }
 
@@ -259,8 +259,8 @@ mixin CSSFlexboxMixin on RenderStyle {
   set flexGrow(double? value) {
     if (_flexGrow == value) return;
     _flexGrow = value;
-    if (renderBoxModel?.parent is RenderFlexLayout) {
-      renderBoxModel!.markNeedsLayout();
+    if (isParentRenderFlexLayout()) {
+      markNeedsLayout();
     }
   }
 
@@ -270,8 +270,8 @@ mixin CSSFlexboxMixin on RenderStyle {
   set flexShrink(double? value) {
     if (_flexShrink == value) return;
     _flexShrink = value;
-    if (renderBoxModel?.parent is RenderFlexLayout) {
-      renderBoxModel!.markNeedsLayout();
+    if (isParentRenderFlexLayout()) {
+      markNeedsLayout();
     }
   }
 

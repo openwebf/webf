@@ -86,6 +86,11 @@ class WebFHTMLElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
 
   dom.Element get webFElement => _webFElement;
 
+  // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
+  void requestForBuild() {
+
+  }
+
   @override
   WebFHTMLElementToFlutterElementAdaptor createElement() {
     WebFHTMLElementToFlutterElementAdaptor element = WebFHTMLElementToFlutterElementAdaptor(this);
@@ -100,8 +105,9 @@ class WebFHTMLElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) {
+    // TODO obtains renderObjects from cache, since every renderObjectElements have it's corresponding renderObjects.
     RenderBoxModel? renderObject = _webFElement.updateOrCreateRenderBoxModel(
-        forceUpdate: true, ignoreChild: true);
+        forceUpdate: true, ignoreChild: true, ownerFlutterElement: context as RenderObjectElement);
     return renderObject!;
   }
 

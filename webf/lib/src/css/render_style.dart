@@ -235,6 +235,7 @@ abstract class RenderStyle {
 
   RenderBoxModel? _domRenderObjects;
   final Map<RenderObjectElement, RenderBoxModel> _widgetRenderObjects = {};
+  Map<RenderObjectElement, RenderBoxModel> get widgetRenderObjects => _widgetRenderObjects;
 
   Iterable<RenderBoxModel> get widgetRenderObjectIterator => _widgetRenderObjects.values;
 
@@ -275,6 +276,25 @@ abstract class RenderStyle {
   bool isScrollingContentBox() {
     return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self,
         (renderObject, _) => renderObject is RenderBoxModel && renderObject.isScrollingContentBox);
+  }
+
+  @pragma('vm:prefer-inline')
+  CSSRenderStyle? getScrollContentRenderStyle() {
+    if (target.managedByFlutterWidget) {
+      for (var renderBoxModel in widgetRenderObjectIterator) {
+        if (renderBoxModel is RenderLayoutBox) {
+          return renderBoxModel.renderScrollingContent?.renderStyle;
+        }
+      }
+      return null;
+    }
+
+    if (_domRenderObjects is RenderLayoutBox) {
+      RenderLayoutBox? scrollingContentBox = (_domRenderObjects as RenderLayoutBox).renderScrollingContent;
+      return scrollingContentBox?.renderStyle;
+    }
+
+    return null;
   }
 
   @pragma('vm:prefer-inline')
@@ -366,6 +386,21 @@ abstract class RenderStyle {
   }
 
   @pragma('vm:prefer-inline')
+  bool isSelfRenderFlexLayout() {
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) => renderObject is RenderFlexLayout);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfRenderLayoutBox() {
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) => renderObject is RenderLayoutBox);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfRenderSliverListLayout() {
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) => renderObject is RenderSliverListLayout);
+  }
+
+  @pragma('vm:prefer-inline')
   bool isSelfBoxModelMatch(RenderBoxModelMatcher matcher) {
     return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, renderStyle) {
       if (renderObject is! RenderBoxModel) return false;
@@ -416,6 +451,21 @@ abstract class RenderStyle {
   @pragma('vm:prefer-inline')
   T? getParentRenderStyle<T extends RenderStyle>() {
     return getRenderBoxValueByType(RenderObjectGetType.parent, (_, renderStyle) => renderStyle) as T?;
+  }
+
+  @pragma('vm:prefer-inline')
+  double? clientHeight() {
+    return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.clientHeight);
+  }
+
+  @pragma('vm:prefer-inline')
+  double? clientWidth() {
+    return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.clientWidth);
+  }
+
+  @pragma('vm:prefer-inline')
+  Size? scrollableSize() {
+    return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.scrollableSize);
   }
 
   @pragma('vm:prefer-inline')
@@ -485,6 +535,14 @@ abstract class RenderStyle {
         renderObject!.parent!.markNeedsLayout();
       }
 
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void markNeedsCompositingBitsUpdate() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      renderObject?.markNeedsCompositedLayerUpdate();
       return true;
     });
   }
@@ -626,11 +684,6 @@ abstract class RenderStyle {
     _widgetRenderObjects.remove(ownerRenderObjectElement);
   }
 
-  void clearRenderObjects() {
-    _domRenderObjects = null;
-    _widgetRenderObjects.clear();
-  }
-
   // Following properties used for exposing APIs
   // for class that extends [AbstractRenderStyle].
   RenderBoxModel? get domRenderBoxModel {
@@ -647,6 +700,14 @@ abstract class RenderStyle {
   double get rootFontSize => target.ownerDocument.documentElement!.renderStyle.fontSize.computedValue;
 
   void visitChildren<T extends RenderStyle>(RenderStyleVisitor<T> visitor);
+
+  void disposeScrollable();
+
+  void dispose() {
+    disposeScrollable();
+    _domRenderObjects = null;
+    _widgetRenderObjects.clear();
+  }
 }
 
 class CSSRenderStyle extends RenderStyle

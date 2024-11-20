@@ -53,20 +53,6 @@ enum BoxSizeType {
 }
 
 mixin ElementBase on Node {
-  RenderLayoutBox? get _renderLayoutBox => renderBoxModel as RenderLayoutBox?;
-
-  RenderReplaced? get _renderReplaced => renderBoxModel as RenderReplaced?;
-
-  RenderBoxModel? get _renderSVG => renderBoxModel;
-
-  RenderWidget? get _renderWidget => renderBoxModel as RenderWidget?;
-
-  RenderBoxModel? get renderBoxModel => renderer as RenderBoxModel?;
-
-  set renderBoxModel(RenderBoxModel? value) {
-    renderStyle.setDomRenderObject(value);
-  }
-
   late CSSRenderStyle renderStyle;
 }
 
@@ -347,8 +333,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return QuerySelector.closest(this, args.first);
   }
 
-  RenderBoxModel? updateOrCreateRenderBoxModel(
-      {bool forceUpdate = false, bool ignoreChild = false}) {
+  RenderBoxModel? updateOrCreateRenderBoxModel({bool forceUpdate = false, bool ignoreChild = false}) {
     RenderBoxModel nextRenderBoxModel;
     if (isWidgetElement) {
       nextRenderBoxModel = _createRenderWidget(previousRenderWidget: _renderWidget, forceUpdate: forceUpdate);
@@ -612,7 +597,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
 
     // Update scrolling content layout type.
-    if (previousRenderLayoutBox != nextRenderLayoutBox && previousRenderLayoutBox?.renderScrollingContent != null) {
+    if (previousRenderLayoutBox != nextRenderLayoutBox &&
+        previousRenderLayoutBox?.renderScrollingContent != null &&
+        !managedByFlutterWidget) {
       updateScrollingContentBox();
     }
 
@@ -1021,7 +1008,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   void dispose() async {
     renderStyle.detach();
-    renderStyle.clearRenderObjects();
+    renderStyle.dispose();
     style.dispose();
     attributes.clear();
     disposeScrollable();

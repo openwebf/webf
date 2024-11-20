@@ -13,7 +13,7 @@ mixin CSSObjectFitMixin on RenderStyle {
   set objectFit(BoxFit? value) {
     if (_objectFit == value) return;
     _objectFit = value;
-    renderBoxModel?.markNeedsLayout();
+    markNeedsLayout();
   }
 
   static BoxFit resolveBoxFit(String fit) {
