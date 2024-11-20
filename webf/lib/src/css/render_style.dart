@@ -18,6 +18,22 @@ import 'svg.dart';
 
 typedef RenderStyleVisitor<T extends RenderStyle> = void Function(T renderStyle);
 
+enum RenderObjectUpdateReason {
+  upgradeToRepaintBoundary,
+  replaceRenderObject,
+  removeRenderObject,
+  upgradeToStickyLayout
+}
+
+typedef SomeRenderBoxModelHandlerCallback = bool Function(RenderBoxModel renderBoxModel);
+typedef EveryRenderBoxModelHandlerCallback = bool Function(RenderObjectElement?, RenderBoxModel renderBoxModel);
+typedef RenderObjectStyleMatchers = bool Function(RenderObject? renderObject, RenderStyle? renderStyle);
+typedef RenderBoxModelMatcher = bool Function(RenderBoxModel renderBoxModel, RenderStyle renderStyle);
+typedef RenderStyleMatcher = bool Function(RenderStyle renderStyle);
+typedef RenderStyleValueGetter = dynamic Function(RenderStyle renderStyle);
+
+enum RenderObjectGetType { self, parent, firstChild, lastChild, previousSibling, nextSibling }
+
 /// The abstract class for render-style, declare the
 /// getter interface for all available CSS rule.
 abstract class RenderStyle {
@@ -219,11 +235,320 @@ abstract class RenderStyle {
   RenderBoxModel? _domRenderObjects;
   final Map<RenderObjectElement, RenderBoxModel> _widgetRenderObjects = {};
 
+  Iterable<RenderBoxModel> get widgetRenderObjectIterator => _widgetRenderObjects.values;
+
+  // For some style changes, we needs to upgrade
+  void requestWidgetToRebuild(RenderObjectUpdateReason reason) {}
+
+  bool someRenderBoxSatisfy(SomeRenderBoxModelHandlerCallback callback) {
+    for (var renderBoxModel in widgetRenderObjectIterator) {
+      bool success = callback(renderBoxModel);
+      if (success) {
+        return success;
+      }
+    }
+
+    if (domRenderBoxModel != null) {
+      return callback(domRenderBoxModel!);
+    }
+    return false;
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isDocumentRootBox() {
+    return _domRenderObjects?.isDocumentRootBox == true;
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isParentDocumentRootBox() {
+    if (_domRenderObjects?.parent is! RenderBoxModel) return false;
+    return (_domRenderObjects!.parent as RenderBoxModel).isDocumentRootBox;
+  }
+
+  @pragma('vm:prefer-inline')
+  bool hasRenderBox() {
+    return _widgetRenderObjects.isNotEmpty || domRenderBoxModel != null;
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isScrollingContentBox() {
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self,
+        (renderObject, _) => renderObject is RenderBoxModel && renderObject.isScrollingContentBox);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isParentScrollingContentBox() {
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent,
+            (renderObject, _) => renderObject is RenderBoxModel && renderObject.isScrollingContentBox);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isLayoutBox() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderLayoutBox);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isNextSiblingAreRenderBoxModel() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.nextSibling, (renderObject, _) => renderObject is RenderBoxModel);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isPreviousSiblingAreRenderBoxModel() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.previousSibling, (renderObject, _) => renderObject is RenderBoxModel);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isFirstChildAreRenderFlowLayoutBox() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.firstChild, (renderObject, _) => renderObject is RenderFlowLayout);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isLastChildAreRenderLayoutBox() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.lastChild, (renderObject, _) => renderObject is RenderLayoutBox);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isFirstChildAreRenderBoxModel() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.firstChild, (renderObject, _) => renderObject is RenderBoxModel);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isLastChildAreRenderBoxModel() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.lastChild, (renderObject, _) => renderObject is RenderBoxModel);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isFirstChildStyleMatch(RenderStyleMatcher matcher) {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.firstChild, (_, renderStyle) => renderStyle != null ? matcher(renderStyle) : false);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isLastChildStyleMatch(RenderStyleMatcher matcher) {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.lastChild, (_, renderStyle) => renderStyle != null ? matcher(renderStyle) : false);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isPreviousSiblingStyleMatch(RenderStyleMatcher matcher) {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.previousSibling, (_, renderStyle) => renderStyle != null ? matcher(renderStyle) : false);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isBoxModelHaveSize() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (boxModel, _) => boxModel is RenderBoxModel && boxModel.hasSize);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfBoxModelMatch(RenderBoxModelMatcher matcher) {
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, renderStyle) {
+      if (renderObject is! RenderBoxModel) return false;
+
+      return matcher(renderObject, renderObject.renderStyle);
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isParentBoxModelMatch(RenderBoxModelMatcher matcher) {
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent, (renderObject, renderStyle) {
+      if (renderObject is! RenderBoxModel) return false;
+
+      return matcher(renderObject, renderObject.renderStyle);
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  T? getSelfRenderStyle<T extends RenderStyle>() {
+    return getRenderStyleByType(RenderObjectGetType.self) as T?;
+  }
+
+  @pragma('vm:prefer-inline')
+  T? getFirstChildRenderStyle<T extends RenderStyle>() {
+    return getRenderStyleByType(RenderObjectGetType.firstChild) as T?;
+  }
+
+  @pragma('vm:prefer-inline')
+  T? getLastChildRenderStyle<T extends RenderStyle>() {
+    return getRenderStyleByType(RenderObjectGetType.lastChild) as T?;
+  }
+
+  @pragma('vm:prefer-inline')
+  T? getPreviousSiblingRenderStyle<T extends RenderStyle>() {
+    return getRenderStyleByType(RenderObjectGetType.previousSibling) as T?;
+  }
+
+  @pragma('vm:prefer-inline')
+  T? getNextSiblingRenderStyle<T extends RenderStyle>() {
+    return getRenderStyleByType(RenderObjectGetType.nextSibling) as T?;
+  }
+
+  @pragma('vm:prefer-inline')
+  T? getParentRenderStyle<T extends RenderStyle>() {
+    return getRenderStyleByType(RenderObjectGetType.parent) as T?;
+  }
+
+  @pragma('vm:prefer-inline')
+  void markNeedsLayout() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      renderObject?.markNeedsLayout();
+      return false;
+    });
+  }
+
+  // Sizing may affect parent size, mark parent as needsLayout in case
+  // renderBoxModel has tight constraints which will prevent parent from marking.
+  @pragma('vm:prefer-inline')
+  void markSelfAndParentBoxModelNeedsLayout() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      renderObject?.markNeedsLayout();
+
+      if (renderObject?.parent is RenderBoxModel) {
+        renderObject!.parent!.markNeedsLayout();
+      }
+
+      return false;
+    });
+  }
+
+  RenderStyle? getRenderStyleByType(RenderObjectGetType getType) {
+    if (target.managedByFlutterWidget) {
+      RenderBoxModel? widgetRenderBoxModel =
+          widgetRenderObjectIterator.isNotEmpty ? widgetRenderObjectIterator.first : null;
+
+      if (widgetRenderBoxModel == null) return null;
+
+      switch (getType) {
+        case RenderObjectGetType.self:
+          // RenderStyle are shared for all widget holding renderObjects.
+          return widgetRenderBoxModel.renderStyle;
+        case RenderObjectGetType.parent:
+          bool isParentBoxModel = widgetRenderBoxModel.parent is RenderBoxModel;
+
+          if (isParentBoxModel) {
+            RenderBoxModel parentBoxModel = widgetRenderBoxModel.parent as RenderBoxModel;
+            return parentBoxModel.renderStyle;
+          }
+
+          return null;
+        case RenderObjectGetType.firstChild:
+          if (widgetRenderBoxModel is RenderLayoutBox) {
+            RenderObject? firstChild = widgetRenderBoxModel.firstChild;
+            return firstChild is RenderBoxModel ? firstChild.renderStyle : null;
+          }
+          return null;
+        case RenderObjectGetType.lastChild:
+          if (widgetRenderBoxModel is RenderLayoutBox) {
+            RenderObject? lastChild = widgetRenderBoxModel.lastChild;
+            return lastChild is RenderBoxModel ? lastChild.renderStyle : null;
+          }
+          return null;
+        case RenderObjectGetType.previousSibling:
+          var parentData = widgetRenderBoxModel.parentData;
+          if (parentData is RenderLayoutParentData) {
+            RenderObject? previousSibling = parentData.previousSibling;
+            return previousSibling is RenderBoxModel ? previousSibling.renderStyle : null;
+          }
+          return null;
+        case RenderObjectGetType.nextSibling:
+          var parentData = widgetRenderBoxModel.parentData;
+          if (parentData is RenderLayoutParentData) {
+            RenderObject? nextSibling = parentData.nextSibling;
+            return nextSibling is RenderBoxModel ? nextSibling.renderStyle : null;
+          }
+          return null;
+      }
+    }
+    if (domRenderBoxModel != null) {
+      return domRenderBoxModel!.renderStyle;
+    }
+    return null;
+  }
+
+  bool everyRenderObjectByTypeAndMatch(RenderObjectGetType getType, RenderObjectStyleMatchers matcher) {
+    bool _matchFn(RenderBoxModel renderBoxModel) {
+      switch (getType) {
+        case RenderObjectGetType.self:
+          return matcher(renderBoxModel, renderBoxModel.renderStyle);
+        case RenderObjectGetType.parent:
+          return matcher(renderBoxModel.parent, renderBoxModel.renderStyle);
+        case RenderObjectGetType.firstChild:
+          if (renderBoxModel is RenderLayoutBox) {
+            RenderObject? firstChild = renderBoxModel.firstChild;
+
+            return matcher(firstChild, firstChild is RenderBoxModel ? firstChild.renderStyle : null);
+          }
+          return false;
+        case RenderObjectGetType.lastChild:
+          if (renderBoxModel is RenderLayoutBox) {
+            RenderObject? lastChild = renderBoxModel.lastChild;
+            return matcher(lastChild, lastChild is RenderBoxModel ? lastChild.renderStyle : null);
+          }
+          return false;
+        case RenderObjectGetType.previousSibling:
+          var parentData = renderBoxModel.parentData;
+          if (parentData is RenderLayoutParentData) {
+            RenderObject? previousSibling = parentData.previousSibling;
+            return matcher(previousSibling, previousSibling is RenderBoxModel ? previousSibling.renderStyle : null);
+          }
+          return false;
+        case RenderObjectGetType.nextSibling:
+          var parentData = renderBoxModel.parentData;
+          if (parentData is RenderLayoutParentData) {
+            RenderObject? nextSibling = parentData.nextSibling;
+            return matcher(nextSibling, nextSibling is RenderBoxModel ? nextSibling.renderStyle : null);
+          }
+          return false;
+      }
+    }
+
+    if (target.managedByFlutterWidget) {
+      return everyWidgetRenderBox((_, renderBoxModel) {
+        return _matchFn(renderBoxModel);
+      });
+    }
+    if (domRenderBoxModel != null) {
+      return _matchFn(domRenderBoxModel!);
+    }
+    return false;
+  }
+
+
+  bool everyRenderBox(EveryRenderBoxModelHandlerCallback callback) {
+    bool hasMatch = everyWidgetRenderBox(callback);
+    if (!hasMatch) {
+      return false;
+    }
+    if (target.managedByFlutterWidget && domRenderBoxModel != null) {
+      bool domMatch = callback(null, domRenderBoxModel!);
+      if (!domMatch) return false;
+    }
+    return true;
+  }
+
+  bool everyWidgetRenderBox(EveryRenderBoxModelHandlerCallback callback) {
+    for (var entry in _widgetRenderObjects.entries) {
+      bool result = callback(entry.key, entry.value);
+      if (!result) return false;
+    }
+
+    return true;
+  }
+
   void setDomRenderObject(RenderBoxModel? renderBoxModel) {
     _domRenderObjects = renderBoxModel;
   }
 
-  void addWidgetRenderObjects(RenderObjectElement ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
+  void addOrUpdateWidgetRenderObjects(
+      RenderObjectElement ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
     assert(!_widgetRenderObjects.containsKey(ownerRenderObjectElement));
     _widgetRenderObjects[ownerRenderObjectElement] = targetRenderBoxModel;
   }
@@ -241,10 +566,6 @@ abstract class RenderStyle {
   // for class that extends [AbstractRenderStyle].
   RenderBoxModel? get domRenderBoxModel {
     return _domRenderObjects;
-  }
-
-  RenderBoxModel? get renderBoxModel {
-    return target.renderer as RenderBoxModel?;
   }
 
   RenderBoxModel? getWidgetPairedRenderBoxModel(RenderObjectElement targetRenderObjectElement) {
