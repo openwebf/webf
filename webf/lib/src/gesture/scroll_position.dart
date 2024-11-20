@@ -14,7 +14,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/widgets.dart' show ScrollPhysics, ScrollMetrics;
+import 'package:flutter/widgets.dart' show BuildContext, ScrollMetrics, ScrollPhysics;
 
 import 'scroll_activity.dart';
 import 'scroll_context.dart';
@@ -130,6 +130,24 @@ abstract class ScrollPosition extends ViewportOffset with ScrollMetrics {
   @override
   bool get hasContentDimensions => _minScrollExtent != null && _maxScrollExtent != null;
 
+  /// The additional velocity added for a [forcePixels] change in a single
+  /// frame.
+  ///
+  /// This value is used by [recommendDeferredLoading] in addition to the
+  /// [activity]'s [ScrollActivity.velocity] to ask the [physics] whether or
+  /// not to defer loading. It accounts for the fact that a [forcePixels] call
+  /// may involve a [ScrollActivity] with 0 velocity, but the scrollable is
+  /// still instantaneously moving from its current position to a potentially
+  /// very far position, and which is of interest to callers of
+  /// [recommendDeferredLoading].
+  ///
+  /// For example, if a scrollable is currently at 5000 pixels, and we [jumpTo]
+  /// 0 to get back to the top of the list, we would have an implied velocity of
+  /// -5000 and an `activity.velocity` of 0. The jump may be going past a
+  /// number of resource intensive widgets which should avoid doing work if the
+  /// position jumps past them.
+  double _impliedVelocity = 0;
+
   @override
   double get minScrollExtent => _minScrollExtent!;
   double? _minScrollExtent;
@@ -208,6 +226,15 @@ abstract class ScrollPosition extends ViewportOffset with ScrollMetrics {
     other._activity = null;
     if (other.runtimeType != runtimeType) activity!.resetActivity();
     isScrollingNotifier.value = activity!.isScrolling;
+  }
+
+  bool recommendDeferredLoading(BuildContext buildContext) {
+    assert(activity != null);
+    return physics.recommendDeferredLoading(
+      activity!.velocity + _impliedVelocity,
+      copyWith(),
+      buildContext
+    );
   }
 
   /// Update the scroll position ([pixels]) to a given pixel value.
@@ -344,7 +371,13 @@ abstract class ScrollPosition extends ViewportOffset with ScrollMetrics {
   @protected
   void forcePixels(double? value) {
     _pixels = value;
+    if(value != null) {
+      _impliedVelocity = value - pixels;
+    }
     notifyListeners();
+    SchedulerBinding.instance.addPostFrameCallback((Duration timeStamp) {
+      _impliedVelocity = 0;
+    });
   }
 
   /// Returns the overscroll by applying the boundary conditions.

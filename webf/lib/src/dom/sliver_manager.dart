@@ -74,6 +74,9 @@ class RenderSliverElementChildManager implements RenderSliverBoxChildManager {
   }
 
   RenderSliverRepaintProxy _createRepaintRenderObject(RenderBox? child) {
+    if(child != null && child.parentData == null) {
+      child.parentData = RenderLayoutParentData();
+    }
     return RenderSliverRepaintProxy(child);
   }
 
