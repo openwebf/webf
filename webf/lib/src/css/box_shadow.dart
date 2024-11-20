@@ -9,7 +9,7 @@ mixin CSSBoxShadowMixin on RenderStyle {
   set boxShadow(List<CSSBoxShadow>? value) {
     if (value == _boxShadow) return;
     _boxShadow = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   List<CSSBoxShadow>? get boxShadow => _boxShadow;

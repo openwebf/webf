@@ -466,7 +466,6 @@ class _Interpolation {
 
 class KeyframeEffect extends AnimationEffect {
   RenderStyle renderStyle;
-  Element? target;
   late List<_Interpolation> _interpolations;
   List<_Interpolation> get interpolations => _interpolations;
   double? _progress;
@@ -479,7 +478,7 @@ class KeyframeEffect extends AnimationEffect {
   // Similarly, a playback rate of -1 will cause the animation’s current time to decrease at the same rate as the time values from its timeline increase.
   double _playbackRate = 1;
 
-  KeyframeEffect(this.renderStyle, this.target, List<Keyframe> keyframes, EffectTiming? options) {
+  KeyframeEffect(this.renderStyle, List<Keyframe> keyframes, EffectTiming? options) {
     timing = options ?? EffectTiming();
 
     _propertySpecificKeyframeGroups = _makePropertySpecificKeyframeGroups(keyframes);
@@ -601,10 +600,10 @@ class KeyframeEffect extends AnimationEffect {
           scaledLocalTime = 1;
         }
 
-        RenderBoxModel? renderBoxModel = target!.renderBoxModel;
-        if (renderBoxModel != null && interpolation.begin != null && interpolation.end != null) {
+        // RenderBoxModel? renderBoxModel = target!.renderBoxModel;
+        if (renderStyle.hasRenderBox() && interpolation.begin != null && interpolation.end != null) {
           interpolation.lerp(
-              interpolation.begin, interpolation.end, scaledLocalTime, property, renderBoxModel.renderStyle);
+              interpolation.begin, interpolation.end, scaledLocalTime, property, renderStyle);
         }
       }
     }
