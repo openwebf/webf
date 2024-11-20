@@ -31,6 +31,7 @@ typedef RenderObjectStyleMatchers = bool Function(RenderObject? renderObject, Re
 typedef RenderBoxModelMatcher = bool Function(RenderBoxModel renderBoxModel, RenderStyle renderStyle);
 typedef RenderStyleMatcher = bool Function(RenderStyle renderStyle);
 typedef RenderStyleValueGetter = dynamic Function(RenderStyle renderStyle);
+typedef RenderBoxModelGetter = dynamic Function(RenderBoxModel renderBoxModel, RenderStyle renderStyle);
 
 enum RenderObjectGetType { self, parent, firstChild, lastChild, previousSibling, nextSibling }
 
@@ -279,13 +280,19 @@ abstract class RenderStyle {
   @pragma('vm:prefer-inline')
   bool isParentScrollingContentBox() {
     return everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent,
-            (renderObject, _) => renderObject is RenderBoxModel && renderObject.isScrollingContentBox);
+        (renderObject, _) => renderObject is RenderBoxModel && renderObject.isScrollingContentBox);
   }
 
   @pragma('vm:prefer-inline')
   bool isLayoutBox() {
     return everyRenderObjectByTypeAndMatch(
         RenderObjectGetType.self, (renderObject, _) => renderObject is RenderLayoutBox);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isBoxModel() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderBoxModel);
   }
 
   @pragma('vm:prefer-inline')
@@ -368,38 +375,48 @@ abstract class RenderStyle {
 
   @pragma('vm:prefer-inline')
   T? getSelfRenderStyle<T extends RenderStyle>() {
-    return getRenderStyleByType(RenderObjectGetType.self) as T?;
+    return getRenderBoxValueByType(RenderObjectGetType.self, (_, renderStyle) => renderStyle) as T?;
   }
 
   @pragma('vm:prefer-inline')
   T? getFirstChildRenderStyle<T extends RenderStyle>() {
-    return getRenderStyleByType(RenderObjectGetType.firstChild) as T?;
+    return getRenderBoxValueByType(RenderObjectGetType.firstChild, (_, renderStyle) => renderStyle) as T?;
   }
 
   @pragma('vm:prefer-inline')
   T? getLastChildRenderStyle<T extends RenderStyle>() {
-    return getRenderStyleByType(RenderObjectGetType.lastChild) as T?;
+    return getRenderBoxValueByType(RenderObjectGetType.lastChild, (_, renderStyle) => renderStyle) as T?;
   }
 
   @pragma('vm:prefer-inline')
   T? getPreviousSiblingRenderStyle<T extends RenderStyle>() {
-    return getRenderStyleByType(RenderObjectGetType.previousSibling) as T?;
+    return getRenderBoxValueByType(RenderObjectGetType.previousSibling, (_, renderStyle) => renderStyle) as T?;
   }
 
   @pragma('vm:prefer-inline')
   T? getNextSiblingRenderStyle<T extends RenderStyle>() {
-    return getRenderStyleByType(RenderObjectGetType.nextSibling) as T?;
+    return getRenderBoxValueByType(RenderObjectGetType.nextSibling, (_, renderStyle) => renderStyle) as T?;
   }
 
   @pragma('vm:prefer-inline')
   T? getParentRenderStyle<T extends RenderStyle>() {
-    return getRenderStyleByType(RenderObjectGetType.parent) as T?;
+    return getRenderBoxValueByType(RenderObjectGetType.parent, (_, renderStyle) => renderStyle) as T?;
   }
 
   @pragma('vm:prefer-inline')
   void markNeedsLayout() {
     everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
       renderObject?.markNeedsLayout();
+      return false;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void markParentNeedsRelayout() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      if (renderObject is RenderBoxModel) {
+        renderObject.markParentNeedsRelayout();
+      }
       return false;
     });
   }
@@ -419,7 +436,7 @@ abstract class RenderStyle {
     });
   }
 
-  RenderStyle? getRenderStyleByType(RenderObjectGetType getType) {
+  dynamic getRenderBoxValueByType(RenderObjectGetType getType, RenderBoxModelGetter getter) {
     if (target.managedByFlutterWidget) {
       RenderBoxModel? widgetRenderBoxModel =
           widgetRenderObjectIterator.isNotEmpty ? widgetRenderObjectIterator.first : null;
@@ -429,40 +446,40 @@ abstract class RenderStyle {
       switch (getType) {
         case RenderObjectGetType.self:
           // RenderStyle are shared for all widget holding renderObjects.
-          return widgetRenderBoxModel.renderStyle;
+          return getter(widgetRenderBoxModel, widgetRenderBoxModel.renderStyle);
         case RenderObjectGetType.parent:
           bool isParentBoxModel = widgetRenderBoxModel.parent is RenderBoxModel;
 
           if (isParentBoxModel) {
             RenderBoxModel parentBoxModel = widgetRenderBoxModel.parent as RenderBoxModel;
-            return parentBoxModel.renderStyle;
+            return getter(parentBoxModel, parentBoxModel.renderStyle);
           }
 
           return null;
         case RenderObjectGetType.firstChild:
           if (widgetRenderBoxModel is RenderLayoutBox) {
             RenderObject? firstChild = widgetRenderBoxModel.firstChild;
-            return firstChild is RenderBoxModel ? firstChild.renderStyle : null;
+            return firstChild is RenderBoxModel ? getter(firstChild, firstChild.renderStyle) : null;
           }
           return null;
         case RenderObjectGetType.lastChild:
           if (widgetRenderBoxModel is RenderLayoutBox) {
             RenderObject? lastChild = widgetRenderBoxModel.lastChild;
-            return lastChild is RenderBoxModel ? lastChild.renderStyle : null;
+            return lastChild is RenderBoxModel ? getter(lastChild, lastChild.renderStyle) : null;
           }
           return null;
         case RenderObjectGetType.previousSibling:
           var parentData = widgetRenderBoxModel.parentData;
           if (parentData is RenderLayoutParentData) {
             RenderObject? previousSibling = parentData.previousSibling;
-            return previousSibling is RenderBoxModel ? previousSibling.renderStyle : null;
+            return previousSibling is RenderBoxModel ? getter(previousSibling, previousSibling.renderStyle) : null;
           }
           return null;
         case RenderObjectGetType.nextSibling:
           var parentData = widgetRenderBoxModel.parentData;
           if (parentData is RenderLayoutParentData) {
             RenderObject? nextSibling = parentData.nextSibling;
-            return nextSibling is RenderBoxModel ? nextSibling.renderStyle : null;
+            return nextSibling is RenderBoxModel ? getter(nextSibling, nextSibling.renderStyle) : null;
           }
           return null;
       }
@@ -520,7 +537,6 @@ abstract class RenderStyle {
     }
     return false;
   }
-
 
   bool everyRenderBox(EveryRenderBoxModelHandlerCallback callback) {
     bool hasMatch = everyWidgetRenderBox(callback);
