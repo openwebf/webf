@@ -463,8 +463,7 @@ abstract class RenderStyle {
 
   @pragma('vm:prefer-inline')
   bool isParentRenderBox() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderBox);
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderBox);
   }
 
   @pragma('vm:prefer-inline')
@@ -565,7 +564,8 @@ abstract class RenderStyle {
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderSVGShape() {
-    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) => renderObject is RenderSVGShape);
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderSVGShape);
   }
 
   @pragma('vm:prefer-inline')
@@ -709,6 +709,12 @@ abstract class RenderStyle {
   @pragma('vm:prefer-inline')
   bool isRepaintBoundary() {
     return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.isRepaintBoundary);
+  }
+
+  @pragma('vm:prefer-inline')
+  Offset localToGlobal(Offset point, {RenderObject? ancestor}) {
+    return getRenderBoxValueByType(
+        RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.localToGlobal(point, ancestor: ancestor));
   }
 
   @pragma('vm:prefer-inline')
