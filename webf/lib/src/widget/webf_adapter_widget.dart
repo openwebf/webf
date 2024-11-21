@@ -108,6 +108,12 @@ class WebFWidgetElementState extends State<WebFWidgetElementStatefulWidget> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    widgetElement.didChangeDependencies();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return widgetElement.build(context, convertNodeListToWidgetList(widgetElement.childNodes.where((node) => !node.createdByFlutterWidget).toList()));
   }
