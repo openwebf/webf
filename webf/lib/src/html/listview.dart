@@ -11,7 +11,6 @@ class FlutterListViewElement extends WidgetElement {
   @override
   void initState() {
     super.initState();
-    controller = ScrollController()..addListener(_scrollListener);
   }
 
   void _scrollListener() {
@@ -21,6 +20,12 @@ class FlutterListViewElement extends WidgetElement {
         dispatchEvent(Event('loadmore'));
       }
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didAttachRenderer();
+    controller = PrimaryScrollController.maybeOf(context)!..addListener(_scrollListener);
   }
 
   @override
