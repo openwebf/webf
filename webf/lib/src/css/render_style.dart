@@ -13,6 +13,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/css/css_animation.dart';
+import 'package:webf/src/svg/rendering/shape.dart';
 
 import 'svg.dart';
 
@@ -408,6 +409,11 @@ abstract class RenderStyle {
   }
 
   @pragma('vm:prefer-inline')
+  bool isParentRenderViewportBox() {
+    return _domRenderObjects?.parent is RenderViewportBox;
+  }
+
+  @pragma('vm:prefer-inline')
   bool hasRenderBox() {
     return _widgetRenderObjects.isNotEmpty || domRenderBoxModel != null;
   }
@@ -546,6 +552,39 @@ abstract class RenderStyle {
   }
 
   @pragma('vm:prefer-inline')
+  bool isSelfRenderSVGShape() {
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) => renderObject is RenderSVGShape);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfContainsRenderPositionPlaceHolder() {
+    assert(!target.managedByFlutterWidget, 'Currently not supported in widget mode');
+    return _domRenderObjects?.renderPositionPlaceholder != null;
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isPositionHolderParentIsRenderFlexLayout() {
+    assert(!target.managedByFlutterWidget, 'Currently not supported in widget mode');
+    return _domRenderObjects?.renderPositionPlaceholder?.parent is RenderFlexLayout;
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isPositionHolderParentIsRenderLayoutBox() {
+    assert(!target.managedByFlutterWidget, 'Currently not supported in widget mode');
+    return _domRenderObjects?.renderPositionPlaceholder?.parent is RenderLayoutBox;
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfPositioned() {
+    assert(!target.managedByFlutterWidget, 'Currently not supported in widget mode');
+    if (_domRenderObjects?.parentData is RenderLayoutParentData) {
+      RenderLayoutParentData childParentData = _domRenderObjects?.parentData as RenderLayoutParentData;
+      return childParentData.isPositioned;
+    }
+    return false;
+  }
+
+  @pragma('vm:prefer-inline')
   bool isSelfRenderReplaced() {
     return everyRenderObjectByTypeAndMatch(
         RenderObjectGetType.self, (renderObject, _) => renderObject is RenderReplaced);
@@ -653,6 +692,36 @@ abstract class RenderStyle {
   void markParentNeedsLayout() {
     everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
       renderObject?.parent?.markNeedsLayout();
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void markPositionHolderParentNeedsLayout() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      if (renderObject is RenderBoxModel) {
+        renderObject.renderPositionPlaceholder?.parent?.markNeedsLayout();
+      }
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void markScrollingContainerNeedsLayout() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      if (renderObject is! RenderBoxModel) return false;
+      RenderLayoutBox? scrollContainer = renderObject.findScrollContainer() as RenderLayoutBox?;
+      scrollContainer?.renderScrollingContent?.markNeedsLayout();
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void markSVGShapeNeedsUpdate() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      if (renderObject is RenderSVGShape) {
+        renderObject.markNeedUpdateShape();
+      }
       return true;
     });
   }
