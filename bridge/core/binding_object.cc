@@ -263,17 +263,13 @@ ScriptPromise BindingObject::GetBindingPropertyAsync(const webf::AtomicString& p
   return InvokeBindingMethodAsync(BindingMethodCallOperations::kGetProperty, 1, argv, exception_state);
 }
 
-ScriptPromise BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop,
-                                                     NativeValue value,
-                                                     webf::ExceptionState& exception_state) {
-  if (UNLIKELY(binding_object_->disposed_)) {
-    exception_state.ThrowException(
-        ctx(), ErrorType::InternalError,
-        "Can not set binding property on BindingObject, dart binding object had been disposed");
-    return ScriptPromise(ctx(), JS_NULL);
-  }
-  const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release()), value};
-  return InvokeBindingMethodAsync(BindingMethodCallOperations::kSetProperty, 2, argv,exception_state);
+void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop, NativeValue value) {
+  std::unique_ptr<SharedNativeString> args_01 = prop.ToNativeString(ctx());
+  auto* native_value = (NativeValue*)dart_malloc(sizeof(NativeValue));
+  memcpy(native_value, &value, sizeof(NativeValue));
+
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetProperty, std::move(args_01), bindingObject(),
+                                                       native_value);
 }
 
 NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,

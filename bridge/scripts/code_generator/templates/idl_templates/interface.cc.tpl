@@ -176,7 +176,6 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   return result;
   <% } %>
 
-}
 <% } else { %>
   auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
   assert(<%= blob.filename %> != nullptr);
@@ -185,16 +184,7 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   MemberMutationScope scope{context};
   context->dartIsolateContext()->profiler()->StartTrackSteps("<%= className %>::<%= prop.name %>");
 
-  <% if (prop.typeMode && prop.typeMode.dartImpl && prop.typeMode.supportAsync) { %>
-  ExceptionState exception_state;
-  ScriptPromise promise = <%= blob.filename %>->GetBindingPropertyAsync(binding_call_methods::k<%= prop.name.split('_async')[0] %>, exception_state);
-  if (UNLIKELY(exception_state.HasException())) {
-    return exception_state.ToQuickJS();
-  }
-  auto result = Converter<IDLPromise>::ToValue(ctx, promise);
-  return result;
-  <% } else { %>
-  <% if (prop.typeMode && prop.typeMode.dartImpl && !prop.typeMode.supportAsync) { %>
+  <% if (prop.typeMode && prop.typeMode.dartImpl) { %>
   ExceptionState exception_state;
   <% if (isTypeNeedAllocate(prop.type)) { %>
   typename <%= generateNativeValueTypeConverter(prop.type) %>::ImplType v = NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::FromNativeValue(ctx, <%= blob.filename %>->GetBindingProperty(binding_call_methods::k<%= prop.name %>, FlushUICommandReason::kDependentsOnElement  <%= prop.typeMode.layoutDependent ? '| FlushUICommandReason::kDependentsOnLayout' : '' %>, exception_state));
@@ -242,16 +232,7 @@ static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst
   if (exception_state.HasException()) {
     return exception_state.ToQuickJS();
   }
-  <% if (prop.typeMode && prop.typeMode.dartImpl && prop.typeMode.supportAsync) { %>
-  ScriptPromise promise = <%= blob.filename %>->SetBindingPropertyAsync(binding_call_methods::k<%= prop.name.split('_async')[0] %>, NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::ToNativeValue(<% if (isDOMStringType(prop.type)) { %>ctx, <% } %>v),exception_state);
-  if (UNLIKELY(exception_state.HasException())) {
-    return exception_state.ToQuickJS();
-  }
-  auto result = Converter<IDLPromise>::ToValue(ctx, promise);
-  return result;
-}
-  <% } else { %>
-  <% if (prop.typeMode && prop.typeMode.dartImpl && !prop.typeMode.supportAsync) { %>
+  <% if (prop.typeMode && prop.typeMode.dartImpl) { %>
   <%= blob.filename %>->SetBindingProperty(binding_call_methods::k<%= prop.name %>, NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::ToNativeValue(<% if (isDOMStringType(prop.type)) { %>ctx, <% } %>v),exception_state);
   <% } else {%>
   <%= blob.filename %>->set<%= prop.name[0].toUpperCase() + prop.name.slice(1) %>(v, exception_state);
@@ -262,8 +243,6 @@ static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst
 
   return JS_DupValue(ctx, argv[0]);
 }
-<% } %>
-<% } %>
 <% } %>
 <% }); %>
 
