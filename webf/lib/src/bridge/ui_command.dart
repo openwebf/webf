@@ -290,7 +290,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           break;
         case UICommandType.removeAttribute:
           if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.setAttribute');
+            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.removeAttribute');
           }
           String key = command.args;
           view.removeAttribute(nativePtr, key);

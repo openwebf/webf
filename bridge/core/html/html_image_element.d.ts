@@ -5,7 +5,7 @@ interface HTMLImageElement extends HTMLElement {
     // src: DartImpl<string>;
     src: SupportAsync<string>;
     // srcset: DartImpl<string>;
-    sizes: DartImpl<string>;
+    sizes: SupportAsync<DartImpl<string>>;
     width: DartImpl<DependentsOnLayout<int64>>;
     height: DartImpl<DependentsOnLayout<int64>>;
     readonly naturalWidth: DartImpl<DependentsOnLayout<int64>>;
