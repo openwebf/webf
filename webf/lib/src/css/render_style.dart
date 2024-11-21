@@ -17,7 +17,7 @@ import 'package:webf/src/svg/rendering/shape.dart';
 
 import 'svg.dart';
 
-typedef RenderStyleVisitor<T extends RenderStyle> = void Function(T renderStyle);
+typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
 
 enum RenderObjectUpdateReason {
   upgradeToRepaintBoundary,
@@ -462,6 +462,12 @@ abstract class RenderStyle {
   }
 
   @pragma('vm:prefer-inline')
+  bool isParentRenderBox() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderBox);
+  }
+
+  @pragma('vm:prefer-inline')
   bool isParentRenderLayoutBox() {
     return everyRenderObjectByTypeAndMatch(
         RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderLayoutBox);
@@ -552,6 +558,12 @@ abstract class RenderStyle {
   }
 
   @pragma('vm:prefer-inline')
+  bool isSelfRenderFlowLayout() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderFlowLayout);
+  }
+
+  @pragma('vm:prefer-inline')
   bool isSelfRenderSVGShape() {
     return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) => renderObject is RenderSVGShape);
   }
@@ -608,6 +620,15 @@ abstract class RenderStyle {
       if (renderObject is! RenderBoxModel) return false;
 
       return matcher(renderObject, renderObject.renderStyle);
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfBoxModelSizeTight() {
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, renderStyle) {
+      if (renderObject is! RenderBoxModel) return false;
+
+      return renderObject.isSizeTight == true;
     });
   }
 
@@ -678,6 +699,16 @@ abstract class RenderStyle {
   @pragma('vm:prefer-inline')
   BoxConstraints? contentConstraints() {
     return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.contentConstraints);
+  }
+
+  @pragma('vm:prefer-inline')
+  Size? boxSize() {
+    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.boxSize);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isRepaintBoundary() {
+    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.isRepaintBoundary);
   }
 
   @pragma('vm:prefer-inline')
@@ -960,7 +991,16 @@ abstract class RenderStyle {
 
   double get rootFontSize => target.ownerDocument.documentElement!.renderStyle.fontSize.computedValue;
 
-  void visitChildren<T extends RenderStyle>(RenderStyleVisitor<T> visitor);
+  void visitChildren(RenderObjectVisitor visitor) {
+    if (target.managedByFlutterWidget) {
+      everyWidgetRenderBox((_, renderBoxMode) {
+        visitor(renderBoxMode);
+        return true;
+      });
+      return;
+    }
+    _domRenderObjects!.visitChildren(visitor);
+  }
 
   void disposeScrollable();
 
@@ -2359,13 +2399,6 @@ class CSSRenderStyle extends RenderStyle
     double borderBoxWidth = wrapPaddingBorderWidth(contentBoxWidth);
 
     return borderBoxWidth;
-  }
-
-  @override
-  void visitChildren<T extends RenderStyle>(RenderStyleVisitor<T> visitor) {
-    target.children.forEach((Element childElement) {
-      visitor(childElement.renderStyle as T);
-    });
   }
 
   // Mark this node as detached.

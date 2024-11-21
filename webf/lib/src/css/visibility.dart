@@ -15,7 +15,7 @@ mixin CSSVisibilityMixin on RenderStyle {
   set visibility(Visibility? value) {
     if (_visibility == value) return;
     _visibility = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   @override

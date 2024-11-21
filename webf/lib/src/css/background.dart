@@ -142,8 +142,10 @@ mixin CSSBackgroundMixin on RenderStyle {
     final isTextLayout = _backgroundClip == CSSBackgroundBoundary.text || value == CSSBackgroundBoundary.text;
     _backgroundClip = value;
     if (isTextLayout) {
-      visitChildren<RenderStyle>((child) {
-        child.markRenderParagraphNeedsLayout();
+      visitChildren((child) {
+        if (child is RenderTextBox) {
+          child.markRenderParagraphNeedsLayout();
+        }
       });
     }
     markNeedsPaint();
