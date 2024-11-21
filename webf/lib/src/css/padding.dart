@@ -63,12 +63,11 @@ mixin CSSPaddingMixin on RenderStyle {
   CSSLengthValue get paddingTop => _paddingTop ?? CSSLengthValue.zero;
 
   void _markSelfAndParentNeedsLayout() {
-    RenderBoxModel boxModel = renderBoxModel!;
-    boxModel.markNeedsLayout();
+    markNeedsLayout();
     // Sizing may affect parent size, mark parent as needsLayout in case
     // renderBoxModel has tight constraints which will prevent parent from marking.
-    if (boxModel.parent is RenderBoxModel) {
-      (boxModel.parent as RenderBoxModel).markNeedsLayout();
+    if (isParentRenderBoxModel()) {
+      markParentNeedsLayout();
     }
   }
 
