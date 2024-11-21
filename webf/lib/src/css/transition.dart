@@ -138,7 +138,7 @@ Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue 
   var beginMatrix = CSSMatrix.computeTransformMatrix(begin.value, renderStyle);
   var endMatrix = CSSMatrix.computeTransformMatrix(end.value, renderStyle);
 
-  if (!renderStyle.renderBoxModel!.isRepaintBoundary) {
+  if (!renderStyle.isRepaintBoundary()) {
     renderStyle.target.updateOrCreateRenderBoxModel();
   }
 
@@ -347,8 +347,8 @@ mixin CSSTransitionMixin on RenderStyle {
     }
 
     // Transition does not work when renderBoxModel has not been layout yet.
-    if (renderBoxModel != null &&
-        renderBoxModel!.hasSize &&
+    if (hasRenderBox() &&
+        isBoxModelHaveSize() &&
         CSSTransitionHandlers[property] != null &&
         (effectiveTransitions.containsKey(property) || effectiveTransitions.containsKey(ALL))) {
       bool shouldTransition = false;

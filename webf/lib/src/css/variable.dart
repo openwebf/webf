@@ -4,6 +4,7 @@
  */
 
 import 'dart:collection';
+import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 
 mixin CSSVariableMixin on RenderStyle {
@@ -80,8 +81,9 @@ mixin CSSVariableMixin on RenderStyle {
     propertyNames?.forEach((String propertyName) {
       target.setRenderStyle(propertyName, value);
     });
-    visitChildren((CSSRenderStyle childRenderStyle) {
-      childRenderStyle._notifyCSSVariableChanged(identifier, value);
+
+    target.children.forEach((Element childElement) {
+      childElement.renderStyle._notifyCSSVariableChanged(identifier, value);
     });
   }
 }
