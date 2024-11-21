@@ -40,7 +40,9 @@ enum RenderObjectGetType { self, parent, firstChild, lastChild, previousSibling,
 abstract class RenderStyle {
   // Common
   Element get target;
+
   RenderStyle? get parent;
+
   dynamic getProperty(String key);
 
   /// Resolve the style value.
@@ -48,81 +50,145 @@ abstract class RenderStyle {
 
   // CSSVariable
   dynamic getCSSVariable(String identifier, String propertyName);
+
   void setCSSVariable(String identifier, String value);
 
   // Geometry
   CSSLengthValue get top;
+
   CSSLengthValue get right;
+
   CSSLengthValue get bottom;
+
   CSSLengthValue get left;
+
   int? get zIndex;
+
   CSSLengthValue get width;
+
   CSSLengthValue get height;
+
   CSSLengthValue get minWidth;
+
   CSSLengthValue get minHeight;
+
   CSSLengthValue get maxWidth;
+
   CSSLengthValue get maxHeight;
+
   EdgeInsets get margin;
+
   CSSLengthValue get marginLeft;
+
   CSSLengthValue get marginRight;
+
   CSSLengthValue get marginTop;
+
   CSSLengthValue get marginBottom;
+
   EdgeInsets get padding;
+
   CSSLengthValue get paddingLeft;
+
   CSSLengthValue get paddingRight;
+
   CSSLengthValue get paddingBottom;
+
   CSSLengthValue get paddingTop;
 
   // Border
   EdgeInsets get border;
+
   CSSLengthValue? get borderTopWidth;
+
   CSSLengthValue? get borderRightWidth;
+
   CSSLengthValue? get borderBottomWidth;
+
   CSSLengthValue? get borderLeftWidth;
+
   CSSBorderStyleType get borderLeftStyle;
+
   CSSBorderStyleType get borderRightStyle;
+
   CSSBorderStyleType get borderTopStyle;
+
   CSSBorderStyleType get borderBottomStyle;
+
   CSSLengthValue get effectiveBorderLeftWidth;
+
   CSSLengthValue get effectiveBorderRightWidth;
+
   CSSLengthValue get effectiveBorderTopWidth;
+
   CSSLengthValue get effectiveBorderBottomWidth;
+
   double get contentMaxConstraintsWidth;
+
   CSSColor get borderLeftColor;
+
   CSSColor get borderRightColor;
+
   CSSColor get borderTopColor;
+
   CSSColor get borderBottomColor;
+
   List<Radius>? get borderRadius;
+
   CSSBorderRadius get borderTopLeftRadius;
+
   CSSBorderRadius get borderTopRightRadius;
+
   CSSBorderRadius get borderBottomRightRadius;
+
   CSSBorderRadius get borderBottomLeftRadius;
+
   List<BorderSide>? get borderSides;
+
   List<WebFBoxShadow>? get shadows;
 
   // Decorations
   CSSColor? get backgroundColor;
+
   CSSBackgroundImage? get backgroundImage;
+
   CSSBackgroundRepeatType get backgroundRepeat;
+
   CSSBackgroundPosition get backgroundPositionX;
+
   CSSBackgroundPosition get backgroundPositionY;
+
   CSSBackgroundSize get backgroundSize;
+
   CSSBackgroundAttachmentType? get backgroundAttachment;
+
   CSSBackgroundBoundary? get backgroundClip;
+
   CSSBackgroundBoundary? get backgroundOrigin;
 
   // Text
   CSSLengthValue get fontSize;
+
   FontWeight get fontWeight;
+
   FontStyle get fontStyle;
+
   List<String>? get fontFamily;
+
   List<Shadow>? get textShadow;
+
   WhiteSpace get whiteSpace;
+
   TextOverflow get textOverflow;
+
   TextAlign get textAlign;
+
   int? get lineClamp;
+
   CSSLengthValue get lineHeight;
+
   CSSLengthValue? get letterSpacing;
+
   CSSLengthValue? get wordSpacing;
 
   // input
@@ -130,61 +196,102 @@ abstract class RenderStyle {
 
   // BoxModel
   double? get borderBoxLogicalWidth;
+
   double? get borderBoxLogicalHeight;
+
   double? get borderBoxWidth;
+
   double? get borderBoxHeight;
+
   double? get paddingBoxLogicalWidth;
+
   double? get paddingBoxLogicalHeight;
+
   double? get paddingBoxWidth;
+
   double? get paddingBoxHeight;
+
   double? get contentBoxLogicalWidth;
+
   double? get contentBoxLogicalHeight;
+
   double? get contentBoxWidth;
+
   double? get contentBoxHeight;
+
   CSSPositionType get position;
+
   CSSDisplay get display;
+
   CSSDisplay get effectiveDisplay;
+
   Alignment get objectPosition;
+
   CSSOverflowType get overflowX;
+
   CSSOverflowType get overflowY;
+
   CSSOverflowType get effectiveOverflowX;
+
   CSSOverflowType get effectiveOverflowY;
+
   double get intrinsicWidth;
+
   double get intrinsicHeight;
+
   double? get aspectRatio;
 
   // Flex
   FlexDirection get flexDirection;
+
   FlexWrap get flexWrap;
+
   JustifyContent get justifyContent;
+
   AlignItems get alignItems;
+
   AlignContent get alignContent;
+
   AlignSelf get alignSelf;
+
   CSSLengthValue? get flexBasis;
+
   double get flexGrow;
+
   double get flexShrink;
 
   // Color
   CSSColor get color;
+
   CSSColor get currentColor;
 
   // Filter
   ColorFilter? get colorFilter;
+
   ImageFilter? get imageFilter;
+
   List<CSSFunctionalNotation>? get filter;
 
   // Misc
   double get opacity;
+
   Visibility get visibility;
+
   ContentVisibility get contentVisibility;
+
   VerticalAlign get verticalAlign;
+
   BoxFit get objectFit;
+
   bool get isHeightStretch;
 
   // Transition
   List<String> get transitionProperty;
+
   List<String> get transitionDuration;
+
   List<String> get transitionTimingFunction;
+
   List<String> get transitionDelay;
 
   // Sliver
@@ -192,49 +299,82 @@ abstract class RenderStyle {
 
   // Animation
   List<String> get animationName;
+
   List<String> get animationDuration;
+
   List<String> get animationTimingFunction;
+
   List<String> get animationDelay;
+
   List<String> get animationIterationCount;
+
   List<String> get animationDirection;
+
   List<String> get animationFillMode;
+
   List<String> get animationPlayState;
 
   // transform
   List<CSSFunctionalNotation>? get transform;
+
   Matrix4? get effectiveTransformMatrix;
+
   CSSOrigin get transformOrigin;
+
   double get effectiveTransformScale;
 
   // SVG
   CSSPaint get fill;
+
   CSSPaint get stroke;
+
   CSSLengthValue get x;
+
   CSSLengthValue get y;
+
   CSSLengthValue get rx;
+
   CSSLengthValue get ry;
+
   CSSLengthValue get cx;
+
   CSSLengthValue get cy;
+
   CSSLengthValue get r;
+
   CSSLengthValue get strokeWidth;
+
   CSSPath get d;
+
   CSSFillRule get fillRule;
+
   CSSStrokeLinecap get strokeLinecap;
+
   CSSStrokeLinejoin get strokeLinejoin;
+
   CSSLengthValue get x1;
+
   CSSLengthValue get y1;
+
   CSSLengthValue get x2;
+
   CSSLengthValue get y2;
 
   void addFontRelativeProperty(String propertyName);
+
   void addRootFontRelativeProperty(String propertyName);
+
   void addColorRelativeProperty(String propertyName);
+
   void addViewportSizeRelativeProperty();
+
   double getWidthByAspectRatio();
+
   double getHeightByAspectRatio();
 
   RenderBoxModel? _domRenderObjects;
   final Map<RenderObjectElement, RenderBoxModel> _widgetRenderObjects = {};
+
   Map<RenderObjectElement, RenderBoxModel> get widgetRenderObjects => _widgetRenderObjects;
 
   Iterable<RenderBoxModel> get widgetRenderObjectIterator => _widgetRenderObjects.values;
@@ -279,6 +419,12 @@ abstract class RenderStyle {
   }
 
   @pragma('vm:prefer-inline')
+  bool isParentDataAreRenderLayoutParentData() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (renderObject, _) => renderObject?.parent is RenderLayoutParentData);
+  }
+
+  @pragma('vm:prefer-inline')
   CSSRenderStyle? getScrollContentRenderStyle() {
     if (target.managedByFlutterWidget) {
       for (var renderBoxModel in widgetRenderObjectIterator) {
@@ -305,12 +451,20 @@ abstract class RenderStyle {
 
   @pragma('vm:prefer-inline')
   bool isParentRenderBoxModel() {
-    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderBoxModel);
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderBoxModel);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isParentRenderLayoutBox() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderLayoutBox);
   }
 
   @pragma('vm:prefer-inline')
   bool isParentRenderFlexLayout() {
-    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderFlexLayout);
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderFlexLayout);
   }
 
   @pragma('vm:prefer-inline')
@@ -387,17 +541,26 @@ abstract class RenderStyle {
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderFlexLayout() {
-    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) => renderObject is RenderFlexLayout);
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderFlexLayout);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfRenderReplaced() {
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderReplaced);
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderLayoutBox() {
-    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) => renderObject is RenderLayoutBox);
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderLayoutBox);
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderSliverListLayout() {
-    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) => renderObject is RenderSliverListLayout);
+    return everyRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderSliverListLayout);
   }
 
   @pragma('vm:prefer-inline')
@@ -469,9 +632,27 @@ abstract class RenderStyle {
   }
 
   @pragma('vm:prefer-inline')
+  BoxConstraints constraints() {
+    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.constraints);
+  }
+
+  @pragma('vm:prefer-inline')
+  BoxConstraints? contentConstraints() {
+    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.contentConstraints);
+  }
+
+  @pragma('vm:prefer-inline')
   void markNeedsLayout() {
     everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
       renderObject?.markNeedsLayout();
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void markParentNeedsLayout() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      renderObject?.parent?.markNeedsLayout();
       return true;
     });
   }
@@ -517,6 +698,16 @@ abstract class RenderStyle {
   @pragma('vm:prefer-inline')
   void markChildrenNeedsSort() {
     everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      if (renderObject is RenderLayoutBox) {
+        renderObject.markChildrenNeedsSort();
+      }
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void markParentNeedsSort() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent, (renderObject, _) {
       if (renderObject is RenderLayoutBox) {
         renderObject.markChildrenNeedsSort();
       }
@@ -695,6 +886,7 @@ abstract class RenderStyle {
   }
 
   Size get viewportSize => target.ownerDocument.viewport?.viewportSize ?? Size.zero;
+
   FlutterView get currentFlutterView => target.ownerDocument.controller.ownerFlutterView;
 
   double get rootFontSize => target.ownerDocument.documentElement!.renderStyle.fontSize.computedValue;
@@ -1313,7 +1505,7 @@ class CSSRenderStyle extends RenderStyle
   }
 
   @override
-  dynamic resolveValue(String propertyName, String propertyValue, { String? baseHref }) {
+  dynamic resolveValue(String propertyName, String propertyValue, {String? baseHref}) {
     bool uiCommandTracked = false;
     if (enableWebFProfileTracking) {
       if (!WebFProfiler.instance.currentPipeline.containsActiveUICommand()) {
@@ -1622,7 +1814,7 @@ class CSSRenderStyle extends RenderStyle
 
   // Compute the content box width from render style.
   void computeContentBoxLogicalWidth() {
-    RenderBoxModel current = renderBoxModel!;
+    // RenderBoxModel current = renderBoxModel!;
     RenderStyle renderStyle = this;
     double? logicalWidth;
 
@@ -1630,7 +1822,7 @@ class CSSRenderStyle extends RenderStyle
 
     // Width applies to all elements except non-replaced inline elements.
     // https://drafts.csswg.org/css-sizing-3/#propdef-width
-    if (effectiveDisplay == CSSDisplay.inline && current is! RenderReplaced) {
+    if (effectiveDisplay == CSSDisplay.inline && !renderStyle.isSelfRenderReplaced()) {
       _contentBoxLogicalWidth = null;
       return;
     } else if (effectiveDisplay == CSSDisplay.block ||
@@ -1640,11 +1832,9 @@ class CSSRenderStyle extends RenderStyle
       if (renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
       } else if (renderStyle.parent != null) {
-        RenderStyle parentRenderStyle = renderStyle.parent!;
-        RenderBoxModel parent = parentRenderStyle.renderBoxModel!;
         // Block element (except replaced element) will stretch to the content width of its parent in flow layout.
         // Replaced element also stretch in flex layout if align-items is stretch.
-        if (current is! RenderReplaced || parent is RenderFlexLayout) {
+        if (!renderStyle.isSelfRenderReplaced() || renderStyle.isParentRenderFlexLayout()) {
           RenderStyle? ancestorRenderStyle = _findAncestorWithNoDisplayInline();
           // Should ignore renderStyle of display inline when searching for ancestors to stretch width.
           if (ancestorRenderStyle != null) {
@@ -1662,30 +1852,31 @@ class CSSRenderStyle extends RenderStyle
       if (renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
       } else if ((renderStyle.position == CSSPositionType.absolute || renderStyle.position == CSSPositionType.fixed) &&
-          current is! RenderReplaced &&
+          !renderStyle.isSelfRenderReplaced() &&
           renderStyle.width.isAuto &&
           renderStyle.left.isNotAuto &&
           renderStyle.right.isNotAuto) {
         // The width of positioned, non-replaced element is determined as following algorithm.
         // https://www.w3.org/TR/css-position-3/#abs-non-replaced-width
-        if (current.parent is! RenderBoxModel) {
+        if (!renderStyle.isParentRenderBoxModel()) {
           logicalWidth = null;
         }
         // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
         // cause the element of renderStyle parent may not equal to containing block.
-        RenderBoxModel parent = current.parent as RenderBoxModel;
+        // RenderBoxModel parent = current.parent as RenderBoxModel;
         // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
         // content box is only a fraction of the complete renderStyle.
-        RenderStyle parentRenderStyle =
-            parent.isScrollingContentBox ? (parent.parent as RenderBoxModel).renderStyle : parent.renderStyle;
+        RenderStyle parentRenderStyle = renderStyle.isParentScrollingContentBox()
+            ? (renderStyle.getParentRenderStyle())!.getParentRenderStyle()!
+            : renderStyle.getParentRenderStyle()!;
         // Width of positioned element should subtract its horizontal margin.
         logicalWidth = (parentRenderStyle.paddingBoxLogicalWidth ?? 0) -
             renderStyle.left.computedValue -
             renderStyle.right.computedValue -
             renderStyle.marginLeft.computedValue -
             renderStyle.marginRight.computedValue;
-      } else if (current.hasSize && current.constraints.hasTightWidth) {
-        logicalWidth = current.constraints.maxWidth;
+      } else if (renderStyle.isBoxModelHaveSize() && renderStyle.constraints().hasTightWidth) {
+        logicalWidth = renderStyle.constraints().maxWidth;
       }
     }
 
@@ -1722,7 +1913,6 @@ class CSSRenderStyle extends RenderStyle
 
   // Compute the content box height from render style.
   void computeContentBoxLogicalHeight() {
-    RenderBoxModel current = renderBoxModel!;
     RenderStyle renderStyle = this;
     double? logicalHeight;
 
@@ -1730,29 +1920,30 @@ class CSSRenderStyle extends RenderStyle
 
     // Height applies to all elements except non-replaced inline elements.
     // https://drafts.csswg.org/css-sizing-3/#propdef-height
-    if (effectiveDisplay == CSSDisplay.inline && current is! RenderReplaced) {
+    if (effectiveDisplay == CSSDisplay.inline && !renderStyle.isSelfRenderReplaced()) {
       _contentBoxLogicalHeight = null;
       return;
     } else {
       if (renderStyle.height.isNotAuto) {
         logicalHeight = renderStyle.height.computedValue;
       } else if ((renderStyle.position == CSSPositionType.absolute || renderStyle.position == CSSPositionType.fixed) &&
-          current is! RenderReplaced &&
+          !renderStyle.isSelfRenderReplaced() &&
           renderStyle.height.isAuto &&
           renderStyle.top.isNotAuto &&
           renderStyle.bottom.isNotAuto) {
         // The height of positioned, non-replaced element is determined as following algorithm.
         // https://www.w3.org/TR/css-position-3/#abs-non-replaced-height
-        if (current.parent is! RenderBoxModel) {
+        if (!renderStyle.isParentRenderBoxModel()) {
           logicalHeight = null;
         }
         // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
         // cause the element of renderStyle parent may not equal to containing block.
-        RenderBoxModel parent = current.parent as RenderBoxModel;
+        // RenderBoxModel parent = current.parent as RenderBoxModel;
         // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
         // content box is only a fraction of the complete renderStyle.
-        RenderStyle parentRenderStyle =
-            parent.isScrollingContentBox ? (parent.parent as RenderBoxModel).renderStyle : parent.renderStyle;
+        RenderStyle parentRenderStyle = renderStyle.isParentScrollingContentBox()
+            ? renderStyle.getParentRenderStyle()!.getParentRenderStyle()!
+            : renderStyle.getParentRenderStyle()!;
         // Height of positioned element should subtract its vertical margin.
         logicalHeight = (parentRenderStyle.paddingBoxLogicalHeight ?? 0) -
             renderStyle.top.computedValue -
@@ -1861,7 +2052,7 @@ class CSSRenderStyle extends RenderStyle
     }
 
     // If renderBoxModel definite content constraints, use it as max constrains width of content.
-    BoxConstraints? contentConstraints = renderBoxModel!.contentConstraints;
+    BoxConstraints? contentConstraints = this.contentConstraints();
     if (contentConstraints != null && contentConstraints.maxWidth != double.infinity) {
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackLayoutStep();
@@ -1903,6 +2094,7 @@ class CSSRenderStyle extends RenderStyle
   // https://www.w3.org/TR/css-box-3/#valdef-box-content-box
   // Use double.infinity refers to the value is not computed yet.
   double? _contentBoxLogicalWidth = double.infinity;
+
   @override
   double? get contentBoxLogicalWidth {
     // If renderBox has tight width, its logical size equals max size.
@@ -1923,6 +2115,7 @@ class CSSRenderStyle extends RenderStyle
   // https://www.w3.org/TR/css-box-3/#valdef-box-content-box
   // Use double.infinity refers to the value is not computed yet.
   double? _contentBoxLogicalHeight = double.infinity;
+
   @override
   double? get contentBoxLogicalHeight {
     // Compute logical height directly in case as renderBoxModel is not layouted yet,
@@ -1982,8 +2175,8 @@ class CSSRenderStyle extends RenderStyle
   // https://www.w3.org/TR/css-box-3/#valdef-box-border-box
   @override
   double? get borderBoxWidth {
-    if (renderBoxModel?.hasSize == true && renderBoxModel?.boxSize != null) {
-      return renderBoxModel!.boxSize!.width;
+    if (isBoxModelHaveSize()) {
+      return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.boxSize!.width);
     }
     return null;
   }
@@ -1992,8 +2185,8 @@ class CSSRenderStyle extends RenderStyle
   // https://www.w3.org/TR/css-box-3/#valdef-box-border-box
   @override
   double? get borderBoxHeight {
-    if (renderBoxModel?.hasSize == true && renderBoxModel!.boxSize != null) {
-      return renderBoxModel!.boxSize!.height;
+    if (isBoxModelHaveSize()) {
+      return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.boxSize!.height);
     }
     return null;
   }
@@ -2141,8 +2334,11 @@ class CSSRenderStyle extends RenderStyle
         bool isGrandParentFlex = grandParentRenderStyle.display == CSSDisplay.flex ||
             grandParentRenderStyle.display == CSSDisplay.inlineFlex;
         bool isHorizontalDirection = CSSFlex.isHorizontalFlexDirection(grandParentRenderStyle.flexDirection);
-        if (isGrandParentFlex && isHorizontalDirection && parentRenderStyle.flexShrink == 0 &&
-            parentRenderStyle.contentBoxLogicalWidth == null && parentRenderStyle.maxWidth.value == null) {
+        if (isGrandParentFlex &&
+            isHorizontalDirection &&
+            parentRenderStyle.flexShrink == 0 &&
+            parentRenderStyle.contentBoxLogicalWidth == null &&
+            parentRenderStyle.maxWidth.value == null) {
           return null;
         }
       }

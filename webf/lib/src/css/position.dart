@@ -100,14 +100,13 @@ mixin CSSPositionMixin on RenderStyle {
     // https://www.w3.org/TR/css-display-3/#transformations
 
     // The position changes of the node may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
-    renderBoxModel?.markAdjacentRenderParagraphNeedsLayout();
+    markAdjacentRenderParagraphNeedsLayout();
   }
 
   void _markNeedsSort() {
-    if (renderBoxModel?.parentData is RenderLayoutParentData) {
-      RenderObject? parent = renderBoxModel!.parent;
-      if (parent is RenderLayoutBox) {
-        parent.markChildrenNeedsSort();
+    if (isParentDataAreRenderLayoutParentData()) {
+      if (isParentRenderLayoutBox()) {
+        markParentNeedsSort();
       }
     }
   }
@@ -118,13 +117,10 @@ mixin CSSPositionMixin on RenderStyle {
     // Should mark positioned element's containing block needs layout directly
     // cause RelayoutBoundary of positioned element will prevent the needsLayout flag
     // to bubble up in the RenderObject tree.
-    if (renderBoxModel?.parentData is RenderLayoutParentData) {
-      RenderStyle renderStyle = renderBoxModel!.renderStyle;
+    if (isParentDataAreRenderLayoutParentData()) {
+      RenderStyle renderStyle = this;
       if (force || renderStyle.position != DEFAULT_POSITION_TYPE) {
-        RenderObject? parent = renderBoxModel!.parent;
-        if (parent is RenderObject) {
-          parent.markNeedsLayout();
-        }
+        markParentNeedsLayout();
       }
     }
   }
@@ -133,17 +129,14 @@ mixin CSSPositionMixin on RenderStyle {
     // Should mark positioned element's containing block needs layout directly
     // cause RepaintBoundary of positioned element will prevent the needsLayout flag
     // to bubble up in the RenderObject tree.
-    if (renderBoxModel!.parentData is RenderLayoutParentData) {
-      RenderStyle renderStyle = renderBoxModel!.renderStyle;
+    if (isParentDataAreRenderLayoutParentData()) {
+      RenderStyle renderStyle = this;
       RenderStyle? parentRenderStyle = renderStyle.parent;
       // The z-index CSS property sets the z-order of a positioned element and its descendants or flex items.
       if (renderStyle.position != DEFAULT_POSITION_TYPE ||
           parentRenderStyle?.effectiveDisplay == CSSDisplay.flex ||
           parentRenderStyle?.effectiveDisplay == CSSDisplay.inlineFlex) {
-        RenderObject? parent = renderBoxModel!.parent;
-        if (parent is RenderObject) {
-          parent.markNeedsPaint();
-        }
+        markParentNeedsLayout();
       }
     }
   }
