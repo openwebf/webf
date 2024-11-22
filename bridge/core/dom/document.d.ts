@@ -14,9 +14,9 @@ import {ParentNode} from "./parent_node";
 
 interface Document extends Node, ParentNode {
   readonly all: HTMLAllCollection;
-  title: DartImpl<string>;
+  title: SupportAsync<DartImpl<string>>;
   body: HTMLBodyElement | null;
-  cookie: DartImpl<string>;
+  cookie: SupportAsync<DartImpl<string>>;
   __clear_cookies__(): DartImpl<void>;
   domain: string;
   readonly head: HTMLHeadElement | null;
@@ -25,7 +25,7 @@ interface Document extends Node, ParentNode {
   readonly location: any;
   readonly compatMode: string;
   readonly readyState: string;
-  readonly visibilityState: DartImpl<string>;
+  readonly visibilityState: SupportAsync<DartImpl<string>>;
   readonly hidden: boolean;
   readonly defaultView: Window;
 

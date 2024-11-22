@@ -249,7 +249,7 @@ describe('Tags img', () => {
     expect(img.naturalHeight).toEqual(0);
   });
 
-  it('image size and image natural size async', (done) => {
+  it('image size and image natural size async', async (done) => {
     var imageURL = 'https://img.alicdn.com/tfs/TB1RRzFeKL2gK0jSZFmXXc7iXXa-200-200.png?network';
     var img = document.createElement('img');
     img.onload = function() {
