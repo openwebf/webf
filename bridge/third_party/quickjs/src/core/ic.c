@@ -135,7 +135,7 @@ int free_ic(InlineCache *ic) {
 }
 
 #if _MSC_VER
-uint32_t add_ic_slot(InlineCacheUpdate *icu, JSAtom atom, JSObject *object,
+void add_ic_slot(InlineCacheUpdate *icu, JSAtom atom, JSObject *object,
                      uint32_t prop_offset, JSObject* prototype)
 #else
 force_inline void add_ic_slot(InlineCacheUpdate *icu, JSAtom atom, JSObject *object,
