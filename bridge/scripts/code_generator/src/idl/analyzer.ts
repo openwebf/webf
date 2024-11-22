@@ -155,6 +155,12 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
 
       // @ts-ignore
       return getParameterBaseType(argument);
+    } else if (identifier == 'DependentsOnLayout') {
+      if (mode) mode.layoutDependent = true;
+      let argument: ts.TypeNode = typeReference.typeArguments![0] as unknown as ts.TypeNode;
+      argument = typeReference.typeArguments![0] as unknown as ts.TypeNode;
+      // @ts-ignore
+      return getParameterBaseType(argument);
     } else if (identifier === 'StaticMember') {
       if (mode) mode.static = true;
       let argument = typeReference.typeArguments![0];
