@@ -107,7 +107,7 @@ class WebFHTMLElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
   RenderObject createRenderObject(BuildContext context) {
     // TODO obtains renderObjects from cache, since every renderObjectElements have it's corresponding renderObjects.
     RenderBoxModel? renderObject = _webFElement.updateOrCreateRenderBoxModel(
-        forceUpdate: true, ignoreChild: true, ownerFlutterElement: context as RenderObjectElement);
+        forceUpdate: true, ownerFlutterElement: context as RenderObjectElement);
     return renderObject!;
   }
 

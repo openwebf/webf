@@ -5,6 +5,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' show RenderObjectElement;
 import 'package:webf/dom.dart';
+import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/src/svg/rendering/text.dart';
@@ -25,7 +26,9 @@ class TextNode extends CharacterData {
 
   // The text string.
   String _data = '';
+
   String get data => _data;
+
   set data(String newData) {
     String oldData = data;
     if (oldData == newData) return;
@@ -43,7 +46,8 @@ class TextNode extends CharacterData {
       // To replace data of node node with offset offset, count count, and data data, run step 12 from the spec:
       // 12. If node’s parent is non-null, then run the children changed steps for node’s parent.
       // https://dom.spec.whatwg.org/#concept-cd-replace
-      parentNode?.childrenChanged(ChildrenChange.forInsertion(this, previousSibling, nextSibling, ChildrenChangeSource.API));
+      parentNode
+          ?.childrenChanged(ChildrenChange.forInsertion(this, previousSibling, nextSibling, ChildrenChangeSource.API));
     }
   }
 
@@ -77,11 +81,14 @@ class TextNode extends CharacterData {
       WebFRenderParagraph renderParagraph = renderer!.child as WebFRenderParagraph;
       renderParagraph.markNeedsLayout();
 
-      RenderBoxModel parentRenderLayoutBox = _parentElement.renderBoxModel!;
-      if (parentRenderLayoutBox is RenderLayoutBox) {
-        parentRenderLayoutBox = parentRenderLayoutBox.renderScrollingContent ?? parentRenderLayoutBox;
+      RenderStyle parentElementRenderStyle = _parentElement.renderStyle;
+
+      if (parentElementRenderStyle.isSelfRenderLayoutBox()) {
+        parentElementRenderStyle = parentElementRenderStyle.isScrollingContentBox()
+            ? parentElementRenderStyle.getScrollContentRenderStyle()!
+            : parentElementRenderStyle;
       }
-      _setTextSizeType(parentRenderLayoutBox.widthSizeType, parentRenderLayoutBox.heightSizeType);
+      _setTextSizeType(parentElementRenderStyle.widthSizeType(), parentElementRenderStyle.heightSizeType());
     }
   }
 
@@ -100,7 +107,7 @@ class TextNode extends CharacterData {
     createRenderer();
 
     // If element attach WidgetElement, render object should be attach to render tree when mount.
-    if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE && parent.renderBoxModel != null) {
+    if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE && parent.renderStyle.hasRenderBox()) {
       ContainerRenderObjectMixin? parentRenderBox;
       if (parent.renderer is RenderLayoutBox) {
         final layoutBox = parent.renderBoxModel as RenderLayoutBox;
