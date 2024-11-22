@@ -562,9 +562,16 @@ typedef struct InlineCache {
     JSContext* ctx;
     InlineCacheHashSlot **hash;
     InlineCacheRingSlot *cache;
-    uint32_t updated_offset;
-    BOOL updated;
 } InlineCache;
+
+#define INLINE_CACHE_MISS ((uint32_t)-1) // sentinel
+// This is a struct so we don't tie up two argument registers in calls to
+// JS_GetPropertyInternal and JS_SetPropertyInternal in the common case
+// where there is no IC and therefore no offset to update.
+typedef struct InlineCacheUpdate {
+  InlineCache *ic;
+  uint32_t offset;
+} InlineCacheUpdate;
 
 typedef struct JSFunctionBytecode {
     JSGCObjectHeader header; /* must come first */
