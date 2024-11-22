@@ -389,7 +389,7 @@ JSValue JS_GetPropertyInternal(JSContext *ctx, JSValueConst obj,
                                InlineCacheUpdate *icu,
                                BOOL throw_ref_error)
 {
-  JSObject *p;
+  JSObject *p, *p1;
   JSProperty *pr;
   JSShapeProperty *prs;
   uint32_t tag, offset, proto_depth;
@@ -433,6 +433,7 @@ JSValue JS_GetPropertyInternal(JSContext *ctx, JSValueConst obj,
     p = JS_VALUE_GET_OBJ(obj);
   }
 
+  p1 = p;
   for(;;) {
     prs = find_own_property_ic(&pr, p, prop, &offset);
     if (prs) {
@@ -459,9 +460,9 @@ JSValue JS_GetPropertyInternal(JSContext *ctx, JSValueConst obj,
           continue;
         }
       } else {
-        // basic poly ic and prototype ic is only used for fast path
-        if (icu && proto_depth == 0 && p->shape->is_hashed) {
-          add_ic_slot(icu, prop, p, offset, proto_depth > 0 ? p : NULL);
+        // basic poly ic is only used for fast path
+        if (p1->shape->is_hashed && p->shape->is_hashed) {
+          add_ic_slot(icu, prop, p1, offset, proto_depth > 0 ? p : NULL);
         }
         return JS_DupValue(ctx, pr->u.value);
       }
