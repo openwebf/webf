@@ -249,6 +249,40 @@ describe('Tags img', () => {
     expect(img.naturalHeight).toEqual(0);
   });
 
+  it('image size and image natural size async', (done) => {
+    var imageURL = 'https://img.alicdn.com/tfs/TB1RRzFeKL2gK0jSZFmXXc7iXXa-200-200.png?network';
+    var img = document.createElement('img');
+    img.onload = function() {
+      img.naturalWidth_async.then((v)=>{
+        expect(v).toEqual(200)
+        img.naturalHeight_async.then((v)=>{
+          expect(v).toEqual(200)
+          done();
+        })
+      })
+      
+    };
+    img.src = imageURL;
+    Object.assign(img.style, {
+      width: '20px',
+      height: '20px',
+    });
+
+    document.body.style.background = 'green';
+    document.body.appendChild(img);
+
+    expect(img.width).toEqual(20);
+    expect(img.height).toEqual(20);
+    // Image has not been loaded.
+    img.naturalWidth_async.then((v)=>{
+      expect(v).toEqual(0)
+      img.naturalHeight_async.then((v)=>{
+        expect(v).toEqual(0)
+        done()
+      })
+    })
+  });
+
   it('should work with loading=lazy', (done) => {
     const img = document.createElement('img');
     // Make image loading=lazy.
@@ -411,6 +445,21 @@ describe('Tags img', () => {
 
     requestAnimationFrame(async () => {
       img.width = 200;
+      await snapshot(0.1);
+      done();
+    });
+  });
+
+  it('width property change async should work when width of style is not set', async (done) => {
+    let img = createElement('img', {
+      src: 'assets/300x150-green.png',
+      width: 100,
+      height: 100,
+    });
+    BODY.appendChild(img);
+
+    requestAnimationFrame(async () => {
+      img.width_async = 200;
       await snapshot(0.1);
       done();
     });
