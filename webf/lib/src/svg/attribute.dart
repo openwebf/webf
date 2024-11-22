@@ -68,7 +68,7 @@ class DefsAttributeElement extends WidgetElement {
 
   @override
   RenderBoxModel? updateOrCreateRenderBoxModel(
-      {bool forceUpdate = false, bool ignoreChild = false, RenderObjectElement? ownerFlutterWidgetElement}) {
+      {bool forceUpdate = false, RenderObjectElement? ownerFlutterWidgetElement}) {
     // do not needs to update
     return null;
   }

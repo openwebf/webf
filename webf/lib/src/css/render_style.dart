@@ -707,6 +707,16 @@ abstract class RenderStyle {
   }
 
   @pragma('vm:prefer-inline')
+  BoxSizeType widthSizeType() {
+    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.widthSizeType);
+  }
+
+  @pragma('vm:prefer-inline')
+  BoxSizeType heightSizeType() {
+    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.heightSizeType);
+  }
+
+  @pragma('vm:prefer-inline')
   bool isRepaintBoundary() {
     return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.isRepaintBoundary);
   }
@@ -840,6 +850,33 @@ abstract class RenderStyle {
   void markNeedsCompositingBitsUpdate() {
     everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
       renderObject?.markNeedsCompositedLayerUpdate();
+      return true;
+    });
+  }
+
+  void ensureEventResponderBound() {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+      if (renderObject is! RenderBoxModel) return true;
+      // Must bind event responder on render box model whatever there is no event listener.
+
+      // Make sure pointer responder bind.
+      renderObject.getEventTarget = target.getEventTarget;
+
+      if (target.hasIntersectionObserverEvent()) {
+        renderObject.addIntersectionChangeListener(target.handleIntersectionChange);
+        // Mark the compositing state for this render object as dirty
+        // cause it will create new layer.
+        renderObject.markNeedsCompositingBitsUpdate();
+      } else {
+        // Remove listener when no intersection related event
+        renderObject.removeIntersectionChangeListener(target.handleIntersectionChange);
+      }
+      if (target.hasResizeObserverEvent()) {
+        renderObject.addResizeListener(target.handleResizeChange);
+      } else {
+        renderObject.removeResizeListener(target.handleResizeChange);
+      }
+
       return true;
     });
   }
@@ -2344,6 +2381,215 @@ class CSSRenderStyle extends RenderStyle
       return null;
     }
     return paddingBoxHeight! - paddingTop.computedValue - paddingBottom.computedValue;
+  }
+
+  RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget}) {
+    RenderWidget nextReplaced;
+
+    if (previousRenderWidget == null || target.managedByFlutterWidget) {
+      nextReplaced = RenderWidget(
+        renderStyle: this,
+      );
+    } else {
+      nextReplaced = previousRenderWidget;
+    }
+    return nextReplaced;
+  }
+
+  // Create renderLayoutBox if type changed and copy children if there has previous renderLayoutBox.
+  RenderLayoutBox _createRenderLayout(
+      {RenderLayoutBox? previousRenderLayoutBox,
+      bool isRepaintBoundary = false}) {
+    CSSDisplay display = this.display;
+    RenderLayoutBox? nextRenderLayoutBox;
+
+    if (display == CSSDisplay.flex || display == CSSDisplay.inlineFlex) {
+      if (previousRenderLayoutBox == null || target.managedByFlutterWidget) {
+        if (isRepaintBoundary) {
+          nextRenderLayoutBox = RenderRepaintBoundaryFlexLayout(
+            renderStyle: this,
+          );
+        } else {
+          nextRenderLayoutBox = RenderFlexLayout(
+            renderStyle: this,
+          );
+        }
+      } else if (previousRenderLayoutBox is RenderFlowLayout) {
+        if (previousRenderLayoutBox is RenderRepaintBoundaryFlowLayout) {
+          if (isRepaintBoundary) {
+            // RenderRepaintBoundaryFlowLayout --> RenderRepaintBoundaryFlexLayout
+            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlexLayout();
+          } else {
+            // RenderRepaintBoundaryFlowLayout --> RenderFlexLayout
+            nextRenderLayoutBox = previousRenderLayoutBox.toFlexLayout();
+          }
+        } else {
+          if (isRepaintBoundary) {
+            // RenderFlowLayout --> RenderRepaintBoundaryFlexLayout
+            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlexLayout();
+          } else {
+            // RenderFlowLayout --> RenderFlexLayout
+            nextRenderLayoutBox = previousRenderLayoutBox.toFlexLayout();
+          }
+        }
+      } else if (previousRenderLayoutBox is RenderFlexLayout) {
+        if (previousRenderLayoutBox is RenderRepaintBoundaryFlexLayout) {
+          if (isRepaintBoundary) {
+            // RenderRepaintBoundaryFlexLayout --> RenderRepaintBoundaryFlexLayout
+            nextRenderLayoutBox = previousRenderLayoutBox;
+          } else {
+            // RenderRepaintBoundaryFlexLayout --> RenderFlexLayout
+            nextRenderLayoutBox = previousRenderLayoutBox.toFlexLayout();
+          }
+        } else {
+          if (isRepaintBoundary) {
+            // RenderFlexLayout --> RenderRepaintBoundaryFlexLayout
+            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlexLayout();
+          } else {
+            // RenderFlexLayout --> RenderFlexLayout
+            nextRenderLayoutBox = previousRenderLayoutBox;
+          }
+        }
+      } else if (previousRenderLayoutBox is RenderSliverListLayout) {
+        // RenderSliverListLayout --> RenderFlexLayout
+        nextRenderLayoutBox = previousRenderLayoutBox.toFlexLayout();
+      }
+    } else if (display == CSSDisplay.block ||
+        display == CSSDisplay.none ||
+        display == CSSDisplay.inline ||
+        display == CSSDisplay.inlineBlock) {
+      if (previousRenderLayoutBox == null || target.managedByFlutterWidget) {
+        if (isRepaintBoundary) {
+          nextRenderLayoutBox = RenderRepaintBoundaryFlowLayout(
+            renderStyle: this,
+          );
+        } else {
+          nextRenderLayoutBox = RenderFlowLayout(
+            renderStyle: this,
+          );
+        }
+      } else if (previousRenderLayoutBox is RenderFlowLayout) {
+        if (previousRenderLayoutBox is RenderRepaintBoundaryFlowLayout) {
+          if (isRepaintBoundary) {
+            // RenderRepaintBoundaryFlowLayout --> RenderRepaintBoundaryFlowLayout
+            nextRenderLayoutBox = previousRenderLayoutBox;
+          } else {
+            // RenderRepaintBoundaryFlowLayout --> RenderFlowLayout
+            nextRenderLayoutBox = previousRenderLayoutBox.toFlowLayout();
+          }
+        } else {
+          if (isRepaintBoundary) {
+            // RenderFlowLayout --> RenderRepaintBoundaryFlowLayout
+            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlowLayout();
+          } else {
+            // RenderFlowLayout --> RenderFlowLayout
+            nextRenderLayoutBox = previousRenderLayoutBox;
+          }
+        }
+      } else if (previousRenderLayoutBox is RenderFlexLayout) {
+        if (previousRenderLayoutBox is RenderRepaintBoundaryFlexLayout) {
+          if (isRepaintBoundary) {
+            // RenderRepaintBoundaryFlexLayout --> RenderRepaintBoundaryFlowLayout
+            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlowLayout();
+          } else {
+            // RenderRepaintBoundaryFlexLayout --> RenderFlowLayout
+            nextRenderLayoutBox = previousRenderLayoutBox.toFlowLayout();
+          }
+        } else {
+          if (isRepaintBoundary) {
+            // RenderFlexLayout --> RenderRepaintBoundaryFlowLayout
+            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlowLayout();
+          } else {
+            // RenderFlexLayout --> RenderFlowLayout
+            nextRenderLayoutBox = previousRenderLayoutBox.toFlowLayout();
+          }
+        }
+      } else if (previousRenderLayoutBox is RenderSliverListLayout) {
+        // RenderSliverListLayout --> RenderFlowLayout
+        nextRenderLayoutBox = previousRenderLayoutBox.toFlowLayout();
+      }
+    } else if (display == CSSDisplay.sliver) {
+      if (previousRenderLayoutBox == null || target.managedByFlutterWidget) {
+        nextRenderLayoutBox = RenderSliverListLayout(
+            renderStyle: this,
+            manager: RenderSliverElementChildManager(target),
+            onScroll: target.handleScroll,
+            currentView: currentFlutterView);
+      } else if (previousRenderLayoutBox is RenderFlowLayout || previousRenderLayoutBox is RenderFlexLayout) {
+        //  RenderFlow/FlexLayout --> RenderSliverListLayout
+        nextRenderLayoutBox =
+            previousRenderLayoutBox.toSliverLayout(RenderSliverElementChildManager(target), target.handleScroll);
+      } else if (previousRenderLayoutBox is RenderSliverListLayout) {
+        nextRenderLayoutBox = previousRenderLayoutBox;
+      }
+    } else {
+      throw FlutterError('Not supported display type $display');
+    }
+
+    // Update scrolling content layout type.
+    if (previousRenderLayoutBox != nextRenderLayoutBox &&
+        previousRenderLayoutBox?.renderScrollingContent != null &&
+        !target.managedByFlutterWidget) {
+      target.updateScrollingContentBox();
+    }
+
+    return nextRenderLayoutBox!;
+  }
+
+  RenderReplaced _createRenderReplaced(
+      {RenderReplaced? previousReplaced,
+      bool isRepaintBoundary = false}) {
+    RenderReplaced nextReplaced;
+
+    if (previousReplaced == null || target.managedByFlutterWidget) {
+      if (isRepaintBoundary) {
+        nextReplaced = RenderRepaintBoundaryReplaced(
+          this,
+        );
+      } else {
+        nextReplaced = RenderReplaced(
+          this,
+        );
+      }
+    } else {
+      if (previousReplaced is RenderRepaintBoundaryReplaced) {
+        if (isRepaintBoundary) {
+          // RenderRepaintBoundaryReplaced --> RenderRepaintBoundaryReplaced
+          nextReplaced = previousReplaced;
+        } else {
+          // RenderRepaintBoundaryReplaced --> RenderReplaced
+          nextReplaced = previousReplaced.toReplaced();
+        }
+      } else {
+        if (isRepaintBoundary) {
+          // RenderReplaced --> RenderRepaintBoundaryReplaced
+          nextReplaced = previousReplaced.toRepaintBoundaryReplaced();
+        } else {
+          // RenderReplaced --> RenderReplaced
+          nextReplaced = previousReplaced;
+        }
+      }
+    }
+    return nextReplaced;
+  }
+
+  RenderBoxModel updateOrCreateRenderBoxModel() {
+    RenderBoxModel nextRenderBoxModel;
+    if (target.isWidgetElement) {
+      nextRenderBoxModel = _createRenderWidget();
+    } else if (target.isReplacedElement) {
+      nextRenderBoxModel = _createRenderReplaced(
+          isRepaintBoundary: target.isRepaintBoundary,
+          previousReplaced: _domRenderObjects is RenderReplaced ? _domRenderObjects as RenderReplaced : null);
+    } else if (target.isSVGElement) {
+      nextRenderBoxModel = target.createRenderSVG(isRepaintBoundary: target.isRepaintBoundary, previous: _domRenderObjects);
+    } else {
+      nextRenderBoxModel = _createRenderLayout(
+        isRepaintBoundary: target.isRepaintBoundary,
+        previousRenderLayoutBox: _domRenderObjects is RenderLayoutBox ? _domRenderObjects as RenderLayoutBox : null);
+    }
+
+    return nextRenderBoxModel;
   }
 
   // Get height of replaced element by aspect ratio if height is not defined.
