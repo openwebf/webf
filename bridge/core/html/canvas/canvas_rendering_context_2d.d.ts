@@ -3,16 +3,16 @@ import {HTMLCanvasElement} from "./html_canvas_element";
 
 interface CanvasRenderingContext2D extends CanvasRenderingContext {
     fillStyle: string | CanvasGradient | null;
-    direction: DartImpl<string>;
-    font: DartImpl<string>;
+    direction: SupportAsync<DartImpl<string>>;
+    font: SupportAsync<DartImpl<string>>;
     strokeStyle: string | CanvasGradient | null;
-    lineCap: DartImpl<string>;
-    lineDashOffset: DartImpl<double>;
-    lineJoin: DartImpl<string>;
-    lineWidth: DartImpl<double>;
-    miterLimit: DartImpl<double>;
-    textAlign: DartImpl<string>;
-    textBaseline: DartImpl<string>;
+    lineCap: SupportAsync<DartImpl<string>>;
+    lineDashOffset: SupportAsync<DartImpl<double>>;
+    lineJoin: SupportAsync<DartImpl<string>>;
+    lineWidth: SupportAsync<DartImpl<double>>;
+    miterLimit: SupportAsync<DartImpl<double>>;
+    textAlign: SupportAsync<DartImpl<string>>;
+    textBaseline: SupportAsync<DartImpl<string>>;
     // @TODO: Following number should be double.
     // Reference https://html.spec.whatwg.org/multipage/canvas.html
     arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise?: boolean): DartImpl<void>;
