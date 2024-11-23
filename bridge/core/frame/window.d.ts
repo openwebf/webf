@@ -32,14 +32,14 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   readonly self: Window;
   readonly screen: Screen;
 
-  readonly scrollX: DartImpl<DependentsOnLayout<double>>;
-  readonly scrollY: DartImpl<DependentsOnLayout<double>>;
-  readonly pageXOffset: DartImpl<DependentsOnLayout<double>>;
-  readonly pageYOffset: DartImpl<DependentsOnLayout<double>>;
-  readonly devicePixelRatio: DartImpl<double>;
-  readonly colorScheme: DartImpl<string>;
-  readonly innerWidth: DartImpl<double>;
-  readonly innerHeight: DartImpl<double>;
+  readonly scrollX: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
+  readonly scrollY: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
+  readonly pageXOffset: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
+  readonly pageYOffset: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
+  readonly devicePixelRatio: SupportAsync<DartImpl<double>>;
+  readonly colorScheme: SupportAsync<DartImpl<string>>;
+  readonly innerWidth: SupportAsync<DartImpl<double>>;
+  readonly innerHeight: SupportAsync<DartImpl<double>>;
 
   new(): void;
 }
