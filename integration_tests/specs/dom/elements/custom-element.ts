@@ -31,15 +31,15 @@ describe('custom widget element', () => {
   it('work with click event', async (done) => {
     const image = document.createElement('flutter-asset-image');
     image.setAttribute('src', 'assets/rabbit.png');
-    document.body.appendChild(image);
 
     image.addEventListener('click', function (e) {
       done();
     });
 
-    await sleep(0.2);
+    await sleep(1);
 
-    simulateClick(20, 20);
+    document.body.appendChild(image);
+    await simulateClick(10, 10);
   });
 
   it('text node should be child of flutter container', async () => {
