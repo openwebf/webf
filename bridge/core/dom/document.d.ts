@@ -18,15 +18,15 @@ interface Document extends Node, ParentNode {
   body: HTMLBodyElement | null;
   cookie: SupportAsync<DartImpl<string>>;
   __clear_cookies__(): DartImpl<void>;
-  domain: string;
+  domain: SupportAsync<DartImpl<string>>;
   readonly head: HTMLHeadElement | null;
   readonly documentElement: HTMLHtmlElement | null;
   // Legacy impl: get the polyfill implements from global object.
   readonly location: any;
-  readonly compatMode: string;
-  readonly readyState: string;
+  readonly compatMode: SupportAsync<DartImpl<string>>;
+  readonly readyState: SupportAsync<DartImpl<string>>;
   readonly visibilityState: SupportAsync<DartImpl<string>>;
-  readonly hidden: boolean;
+  readonly hidden: SupportAsync<DartImpl<boolean>>;
   readonly defaultView: Window;
 
   createElement(tagName: string, options?: any): Element;
