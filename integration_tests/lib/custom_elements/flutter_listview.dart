@@ -7,11 +7,8 @@ class FlutterListViewElement extends WidgetElement {
 
   late ScrollController controller;
 
-
   @override
-  Map<String, dynamic> get defaultStyle => {
-    'display': 'block'
-  };
+  Map<String, dynamic> get defaultStyle => {'display': 'block'};
 
   @override
   void initState() {
@@ -30,10 +27,17 @@ class FlutterListViewElement extends WidgetElement {
 
   @override
   Widget build(BuildContext context, List<Widget> children) {
-    return ListView(
-      children: children,
-      controller: controller,
-      physics: const AlwaysScrollableScrollPhysics(),
-    );
+    return Padding(
+        padding: EdgeInsets.all(10),
+        child: WebFChildNodeSize(
+          ownerElement: this,
+          child: ListView(
+            children: children,
+            controller: controller,
+            physics: const AlwaysScrollableScrollPhysics(),
+          ),
+        ));
+
+    ;
   }
 }

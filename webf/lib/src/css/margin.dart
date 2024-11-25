@@ -106,9 +106,13 @@ mixin CSSMarginMixin on RenderStyle {
       cacheComputedValue(hashCode, propertyName, _marginTop);
       return _marginTop;
     }
-    RenderLayoutParentData childParentData = boxModel.parentData as RenderLayoutParentData;
-    RenderObject? preSibling =
-        childParentData.previousSibling != null ? childParentData.previousSibling as RenderObject : null;
+    ParentData? childParentData = boxModel.parentData;
+
+    RenderObject? preSibling;
+
+    if (childParentData is RenderLayoutParentData && childParentData.previousSibling != null) {
+      preSibling = childParentData.previousSibling as RenderObject;
+    }
 
     if (preSibling == null) {
       // Margin top collapse with its parent if it is the first child of its parent and its value is 0.
@@ -198,20 +202,22 @@ mixin CSSMarginMixin on RenderStyle {
   double get _collapsedMarginTopWithParent {
     double marginTop = _collapsedMarginTopWithFirstChild;
     RenderBoxModel boxModel = renderBoxModel!;
-    RenderLayoutBox parent = boxModel.parent as RenderLayoutBox;
+    RenderBox parent = boxModel.parent as RenderBox;
 
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle parentRenderStyle =
-        parent.isScrollingContentBox ? (parent.parent as RenderBoxModel).renderStyle : parent.renderStyle;
+    RenderStyle? parentRenderStyle;
+    if (parent is RenderBoxModel) {
+      parentRenderStyle = parent.isScrollingContentBox ? (parent.parent as RenderBoxModel).renderStyle : parent.renderStyle;;
+    }
 
-    bool isParentOverflowVisible = parentRenderStyle.effectiveOverflowY == CSSOverflowType.visible;
-    bool isParentOverflowClip = parentRenderStyle.effectiveOverflowY == CSSOverflowType.clip;
+    bool isParentOverflowVisible = parentRenderStyle?.effectiveOverflowY == CSSOverflowType.visible;
+    bool isParentOverflowClip = parentRenderStyle?.effectiveOverflowY == CSSOverflowType.clip;
 
     // Margin top of first child with parent which is in flow layout collapse with parent
     // which makes the margin top of itself 0.
     // Margin collapse does not work on document root box.
-    if (!parent.isDocumentRootBox &&
+    if (parentRenderStyle != null && !(parent as RenderBoxModel).isDocumentRootBox &&
         parentRenderStyle.effectiveDisplay == CSSDisplay.block &&
         (isParentOverflowVisible || isParentOverflowClip) &&
         parentRenderStyle.paddingTop.computedValue == 0 &&
@@ -227,9 +233,13 @@ mixin CSSMarginMixin on RenderStyle {
   double get _collapsedMarginTopWithPreSibling {
     double marginTop = _collapsedMarginTopWithFirstChild;
     RenderBoxModel boxModel = renderBoxModel!;
-    RenderLayoutParentData childParentData = boxModel.parentData as RenderLayoutParentData;
-    RenderObject? preSibling =
-        childParentData.previousSibling != null ? childParentData.previousSibling as RenderObject : null;
+    ParentData? parentData = boxModel.parentData;
+
+    RenderObject? preSibling;
+    if (boxModel.parent is RenderLayoutBox) {
+      parentData = parentData as RenderLayoutParentData;
+      preSibling = parentData.previousSibling != null ? parentData.previousSibling as RenderObject : null;
+    }
 
     if (preSibling is RenderBoxModel &&
         (preSibling.renderStyle.effectiveDisplay == CSSDisplay.block ||
@@ -277,9 +287,12 @@ mixin CSSMarginMixin on RenderStyle {
       return _marginBottom;
     }
 
-    RenderLayoutParentData childParentData = boxModel.parentData as RenderLayoutParentData;
-    RenderObject? nextSibling =
-        childParentData.nextSibling != null ? childParentData.nextSibling as RenderObject : null;
+    RenderObject? nextSibling;
+
+    if (boxModel.parentData is RenderLayoutParentData) {
+      RenderLayoutParentData childParentData = boxModel.parentData as RenderLayoutParentData;
+      nextSibling = childParentData.nextSibling != null ? childParentData.nextSibling as RenderObject : null;
+    }
 
     if (nextSibling == null) {
       // Margin bottom collapse with its parent if it is the last child of its parent and its value is 0.
@@ -372,18 +385,21 @@ mixin CSSMarginMixin on RenderStyle {
   double get _collapsedMarginBottomWithParent {
     double marginBottom = _collapsedMarginBottomWithLastChild;
     RenderBoxModel boxModel = renderBoxModel!;
-    RenderLayoutBox parent = boxModel.parent as RenderLayoutBox;
+    RenderObject? parent = boxModel.parent;
+
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle parentRenderStyle =
-        parent.isScrollingContentBox ? (parent.parent as RenderBoxModel).renderStyle : parent.renderStyle;
+    RenderStyle? parentRenderStyle;
+    if (parent is RenderLayoutBox) {
+      parentRenderStyle = parent.isScrollingContentBox ? (parent.parent as RenderBoxModel).renderStyle : parent.renderStyle;
+    }
 
-    bool isParentOverflowVisible = parentRenderStyle.effectiveOverflowY == CSSOverflowType.visible;
-    bool isParentOverflowClip = parentRenderStyle.effectiveOverflowY == CSSOverflowType.clip;
+    bool isParentOverflowVisible = parentRenderStyle?.effectiveOverflowY == CSSOverflowType.visible;
+    bool isParentOverflowClip = parentRenderStyle?.effectiveOverflowY == CSSOverflowType.clip;
     // Margin bottom of first child with parent which is in flow layout collapse with parent
     // which makes the margin top of itself 0.
     // Margin collapse does not work on document root box.
-    if (!parent.isDocumentRootBox &&
+    if (parentRenderStyle != null && !(parent as RenderBoxModel).isDocumentRootBox &&
         parentRenderStyle.effectiveDisplay == CSSDisplay.block &&
         (isParentOverflowVisible || isParentOverflowClip) &&
         parentRenderStyle.paddingBottom.computedValue == 0 &&
