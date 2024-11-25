@@ -79,9 +79,6 @@ class RenderChildSize extends RenderProxyBox {
 
   // Get distance from top to baseline of child.
   double getChildAscent(RenderBox child) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._getChildAscent');
-    }
     // Distance from top to baseline of child.
     // double? childAscent = child.getDistanceToBaseline(TextBaseline.alphabetic, onlyReal: true);
     double? childAscent = null;
@@ -90,10 +87,6 @@ class RenderChildSize extends RenderProxyBox {
     double baseline = childSize!.height;
     // When baseline of children not found, use boundary of margin bottom as baseline.
     double extentAboveBaseline = childAscent ?? baseline;
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayoutStep();
-    }
 
     return extentAboveBaseline;
   }
@@ -209,15 +202,8 @@ class RenderChildSize extends RenderProxyBox {
   }
 
   double _getCrossAxisExtent(RenderBox child) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._getCrossAxisExtent');
-    }
     double? lineHeight = isLineHeightValid(child) ? _getLineHeight(child) : 0;
     Size childSize = _getChildSize(child) ?? Size.zero;
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayoutStep();
-    }
 
     return lineHeight != null
         ? math.max(lineHeight, childSize.height)
@@ -274,11 +260,6 @@ class RenderChildSize extends RenderProxyBox {
       }
       runMainAxisExtent += childMainAxisExtent;
 
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackLayoutStep();
-        WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout.computeChildCrossAxisExtent');
-      }
-
       // Calculate baseline extent of layout box.
       RenderStyle? childRenderStyle = getChildRenderStyle(child);
       VerticalAlign verticalAlign = VerticalAlign.baseline;
@@ -315,10 +296,6 @@ class RenderChildSize extends RenderProxyBox {
         runCrossAxisExtent = runCrossAxisExtent + childCrossAxisExtent;
       }
 
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackLayoutStep();
-      }
-
       runChildren[childNodeId] = child;
 
       if (childParentData is RenderLayoutParentData) {
@@ -326,10 +303,6 @@ class RenderChildSize extends RenderProxyBox {
       }
 
       preChild = child;
-
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackLayoutStep();
-      }
     });
 
     if (runChildren.isNotEmpty) {
