@@ -80,7 +80,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       // Refs:
       //   https://github.com/WebKit/WebKit/blob/6a970b217d59f36e64606ed03f5238d572c23c48/Source/WebCore/layout/inlineformatting/InlineLineBuilder.cpp#L295
       RenderObject? previousSibling;
-      if (parent is RenderBoxModel) {
+      if (parent is RenderLayoutBox) {
         previousSibling = (parentData as RenderLayoutParentData).previousSibling;
       }
 
@@ -99,7 +99,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       }
 
       RenderObject? nextSibling;
-      if (parent is RenderBoxModel) {
+      if (parent is RenderLayoutBox) {
         nextSibling = (parentData as RenderLayoutParentData).nextSibling;
       }
 
