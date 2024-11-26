@@ -206,6 +206,13 @@ export const console = {
   log(...args: any) {
     printer(logger(arguments));
   },
+  inspect(...args: any) {
+    var result = [];
+    for (var i = 0; i < arguments.length; i++) {
+      result.push(formatter(arguments[i], Number.MAX_VALUE, []));
+    }
+    printer(result.join(SEPARATOR));
+  },
   info(...args: any) {
     printer(logger(arguments), 'info');
   },
