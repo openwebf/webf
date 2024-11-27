@@ -363,6 +363,28 @@ ${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverte
   `.trim();
 }
 
+function generateAsyncDartImplCallCode(blob: IDLBlob, declare: FunctionDeclaration, args: FunctionArguments[]): string {
+  console.log("generateAsyncDartImplCallCode", declare.name)
+  let nativeArguments = args.map(i => {
+    return `NativeValueConverter<${generateNativeValueTypeConverter(i.type)}>::ToNativeValue(${isDOMStringType(i.type) ? 'ctx, ' : ''}args_${i.name})`;
+  });
+
+  let returnValueAssignment = '';
+
+  if (declare.returnType.value != FunctionArgumentType.void) {
+    returnValueAssignment = 'auto&& native_value =';
+  }
+
+  return `
+auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
+${nativeArguments.length > 0 ? `NativeValue arguments[] = {
+  ${nativeArguments.join(',\n')}
+}` : 'NativeValue* arguments = nullptr;'};
+${returnValueAssignment}self->InvokeBindingMethodAsync(binding_call_methods::k${declare.name.split('_async')[0]}, ${nativeArguments.length}, arguments, exception_state);
+${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverter(declare.returnType)}>::ToValue(NativeValueConverter<${generateNativeValueTypeConverter(declare.returnType)}>::FromNativeValue(native_value))` : ''};
+  `.trim();
+}
+
 function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, argument: FunctionArguments, argsIndex: number, argsLength: number, previousArguments: string[], options: GenFunctionBodyOptions) {
   let call = '';
   let returnValueAssignment = '';
@@ -430,7 +452,12 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
     returnValueAssignment = 'return_value =';
   }
   if (declaration.returnTypeMode?.dartImpl) {
-    call = generateDartImplCallCode(blob, declaration, declaration.returnTypeMode?.layoutDependent ?? false, declaration.args.slice(0, minimalRequiredArgc));
+    if (declaration.returnTypeMode?.supportAsync) {
+      call = generateAsyncDartImplCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc));
+    } else {
+      // console.log("method:supportAsync:dartImpl SYNC", declaration.name)
+      call = generateDartImplCallCode(blob, declaration, declaration.returnTypeMode?.layoutDependent ?? false, declaration.args.slice(0, minimalRequiredArgc));
+    }
   } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
 ${returnValueAssignment} self->${generateCallMethodName(declaration.name)}(${minimalRequiredArgc > 0 ? `${requiredArguments.join(',')}` : 'exception_state'});`;

@@ -349,7 +349,12 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
               }
             }
             if (f.returnTypeMode?.supportAsync) {
-              let asyncFunc = new FunctionDeclaration();
+              // keep asyncFunc supportAsync = true
+              let asyncFunc = Object.assign({}, f);
+              // set f supportAsync = false
+              let mode = Object.assign({}, f.returnTypeMode);
+              mode.supportAsync = false;
+              f.returnTypeMode = mode
               asyncFunc.name = getPropName(m.name) + '_async';
               asyncFunc.args = [];
               m.parameters.forEach(params => {
@@ -357,11 +362,11 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
                 asyncFunc.args.push(p);
               });
               obj.methods.push(asyncFunc);
-              if (m.type) {
-                let mode = new ParameterMode();
-                asyncFunc.returnType = getParameterType(m.type, unionTypeCollector, mode);
-                asyncFunc.returnTypeMode = mode;
-              }
+              // if (m.type) {
+              //   let mode = new ParameterMode();
+              //   asyncFunc.returnType = getParameterType(m.type, unionTypeCollector, mode);
+              //   asyncFunc.returnTypeMode = mode;
+              // }
             }
             break;
           }

@@ -1,5 +1,5 @@
 interface Path2D {
-  closePath(): DartImpl<void>;
+  closePath(): SupportAsync<DartImpl<void>>;
   moveTo(x: number, y: number): DartImpl<void>;
   lineTo(x: number, y: number): DartImpl<void>;
   bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): DartImpl<void>;
