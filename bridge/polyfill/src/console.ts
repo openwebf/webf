@@ -55,6 +55,13 @@ function formatter(obj: any, limit: number, stack: Array<any>): string {
   var kind = Object.prototype.toString.call(obj).slice(8, -1);
   if (kind == 'Object') {
     prefix = '';
+  } else if (kind == 'Array') {
+    var itemList: any[] = obj.map((item: any) => formatter(item, limit - 1, stack));
+    return '[' + itemList.join(', ') + ']';
+  } else if (kind == 'Set') {
+    var itemList: any[] = [];
+    obj.forEach((item: any) =>itemList.push(formatter(item, limit - 1, stack)));
+    return 'Set {' + itemList.join(', ') + '}';
   } else {
     prefix = kind + ' ';
     var primitive;
@@ -85,6 +92,10 @@ function formatter(obj: any, limit: number, stack: Array<any>): string {
   stack[stackLength++] = obj;
   var indent = INDENT.repeat(stackLength);
   var keys = Object.getOwnPropertyNames(obj);
+
+  if (obj instanceof Map) {
+    keys = Object.keys(obj);
+  }
 
   var result = prefix + '{';
   if (!keys.length) {
