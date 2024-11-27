@@ -392,7 +392,11 @@ function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, a
     returnValueAssignment = 'return_value =';
   }
   if (declare.returnTypeMode?.dartImpl) {
-    call = generateDartImplCallCode(blob, declare, declare.returnTypeMode?.layoutDependent ?? false, declare.args.slice(0, argsIndex + 1));
+    if (declare.returnTypeMode?.supportAsync) {
+      call = generateAsyncDartImplCallCode(blob, declare, declare.args.slice(0, argsIndex + 1));
+    } else {
+      call = generateDartImplCallCode(blob, declare, declare.returnTypeMode?.layoutDependent ?? false, declare.args.slice(0, argsIndex + 1));
+    }
   } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
 ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...previousArguments, `args_${argument.name}`, 'exception_state'].join(',')});`;
@@ -455,7 +459,6 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
     if (declaration.returnTypeMode?.supportAsync) {
       call = generateAsyncDartImplCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc));
     } else {
-      // console.log("method:supportAsync:dartImpl SYNC", declaration.name)
       call = generateDartImplCallCode(blob, declaration, declaration.returnTypeMode?.layoutDependent ?? false, declaration.args.slice(0, minimalRequiredArgc));
     }
   } else if (options.isInstanceMethod) {
