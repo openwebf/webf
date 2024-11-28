@@ -17,6 +17,7 @@ import 'package:webf/html.dart';
   4. invalidated element
  */
 class StyleNodeManager {
+  List<Node> get styleSheetCandidateNodes => _styleSheetCandidateNodes;
   final List<Node> _styleSheetCandidateNodes = [];
 
   final List<CSSStyleSheet> _pendingStyleSheets = [];

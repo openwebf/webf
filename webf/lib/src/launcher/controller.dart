@@ -809,7 +809,9 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   @override
-  void didChangePlatformBrightness() {}
+  void didChangePlatformBrightness() {
+    document.recalculateStyleImmediately();
+  }
 
   @override
   void didChangeTextScaleFactor() {}

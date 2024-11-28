@@ -598,6 +598,17 @@ class Document extends ContainerNode {
     }
   }
 
+  void recalculateStyleImmediately() {
+    var styleSheetNodes = styleNodeManager.styleSheetCandidateNodes;
+    styleSheetNodes.forEach((element) {
+      if (element is StyleElementMixin) {
+        element.reloadStyle();
+      } else if (element is LinkElement) {
+        element.fetchAndApplyCSSStyle();
+      }
+    });
+  }
+
   @override
   Future<void> dispose() async {
     gestureListener = null;

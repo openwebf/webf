@@ -113,6 +113,12 @@ class LinkElement extends Element {
     internalSetAttribute('type', value);
   }
 
+  void fetchAndApplyCSSStyle() {
+    Future.microtask(() {
+      _fetchAndApplyCSSStyle();
+    });
+  }
+
   Future<void> _resolveHyperlink() async {
     String? href = getAttribute('href');
     String? rel = getAttribute('rel');
@@ -142,9 +148,7 @@ class LinkElement extends Element {
     if (_styleSheet != null) {
       ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
     }
-    Future.microtask(() {
-      _fetchAndApplyCSSStyle();
-    });
+    fetchAndApplyCSSStyle();
   }
 
   void _fetchAndApplyCSSStyle() async {
@@ -283,6 +287,10 @@ mixin StyleElementMixin on Element {
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
     attributes['type'] = ElementAttributeProperty(setter: (value) => type = attributeToProperty<String>(value));
+  }
+
+  void reloadStyle() {
+    _recalculateStyle();
   }
 
   void _recalculateStyle() {
