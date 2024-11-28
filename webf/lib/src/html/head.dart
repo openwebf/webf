@@ -199,7 +199,7 @@ class LinkElement extends Element {
         }
 
         _styleSheet = CSSParser(cssString, href: href)
-            .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
+            .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         _styleSheet?.href = href;
 
         if (enableWebFProfileTracking) {
@@ -241,10 +241,6 @@ class LinkElement extends Element {
 
   double get windowHeight {
     return ownerDocument.viewport?.viewportSize.height ?? ownerDocument.preloadViewportSize?.height ?? -1;
-  }
-
-  bool get isDarkMode {
-    return ownerDocument.viewport?.controller.isDarkMode ?? ownerDocument.preloadDarkMode ?? false;
   }
 
   @override
@@ -394,9 +390,9 @@ mixin StyleElementMixin on Element {
     String? text = collectElementChildText();
     if (text != null) {
       if (_styleSheet != null) {
-         _styleSheet!.replaceSync(text, windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
+         _styleSheet!.replaceSync(text, windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
       } else {
-        _styleSheet = CSSParser(text).parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
+        _styleSheet = CSSParser(text).parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
       }
       if (_styleSheet != null) {
         ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
@@ -416,10 +412,6 @@ mixin StyleElementMixin on Element {
 
   double get windowHeight {
     return ownerDocument.preloadViewportSize?.height ?? ownerDocument.viewport?.viewportSize.height ?? -1;
-  }
-
-  bool get isDarkMode {
-    return ownerDocument.preloadDarkMode ?? ownerDocument.viewport?.controller.isDarkMode ?? false;
   }
 
   @override

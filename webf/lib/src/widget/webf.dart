@@ -98,8 +98,6 @@ class WebF extends StatefulWidget {
   /// Use this property to reduce loading times when a WebF application attempts to load external resources on pages.
   final List<WebFBundle>? preloadedBundles;
 
-  bool? isDarkMode = false;
-
   /// The initial cookies to set.
   final List<Cookie>? initialCookies;
 
@@ -172,7 +170,6 @@ class WebF extends StatefulWidget {
       WebFThread? runningThread,
       this.routeObserver,
       this.initialCookies,
-      this.isDarkMode,
       this.preloadedBundles,
       WebFController? controller,
       // webf's viewportWidth options only works fine when viewportWidth is equal to window.physicalSize.width / window.devicePixelRatio.
@@ -370,11 +367,9 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
     if (controller != null) {
       _webfWidget.viewportWidth ??= controller.viewportSize?.width;
       _webfWidget.viewportHeight ??= controller.viewportSize?.height;
-      _webfWidget.isDarkMode ??= controller.isDarkMode;
     } else {
       controller = WebFController(context,
         name: shortHash(_webfWidget),
-        isDarkMode: _webfWidget.isDarkMode,
         background: _webfWidget.background,
         bundle: _webfWidget.bundle,
         externalController: false,

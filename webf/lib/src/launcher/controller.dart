@@ -948,7 +948,9 @@ class WebFController {
 
   List<BuildContext> buildContextStack = [];
   bool resizeToAvoidBottomInsets;
-  bool? isDarkMode = false;
+  bool get isDarkMode {
+    return ownerFlutterView.platformDispatcher.platformBrightness != Brightness.light;
+  }
 
   String? _name;
 
@@ -1014,7 +1016,6 @@ class WebFController {
     this.onCustomElementDetached,
     this.onLoad,
     this.onDOMContentLoaded,
-    this.isDarkMode,
     this.onLoadError,
     this.onJSError,
     this.httpClientInterceptor,
@@ -1284,6 +1285,7 @@ class WebFController {
   /// Using this mode can save up to 50% of loading time, while maintaining a high level of compatibility with the standard mode.
   /// It's safe and recommended to use this mode for all types of pages.
   Future<void> preload(WebFBundle bundle, {ui.Size? viewportSize}) async {
+    if (_preloadStatus == PreloadingStatus.done) return;
     controllerPreloadingCompleter = Completer();
 
     await controlledInitCompleter.future;
@@ -1308,7 +1310,6 @@ class WebFController {
       WebFProfiler.instance.startTrackUICommand();
     }
 
-    view.document.preloadDarkMode = isDarkMode;
     view.document.preloadViewportSize = _viewportSize;
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
@@ -1382,6 +1383,8 @@ class WebFController {
   /// These callbacks are triggered once the WebF widget is mounted into the Flutter tree.
   /// Apps optimized for this mode remain compatible with both `standard` and `preloading` modes.
   Future<void> preRendering(WebFBundle bundle) async {
+    if (_preRenderingStatus == PreRenderingStatus.done) return;
+
     controllerPreRenderingCompleter = Completer();
 
     await controlledInitCompleter.future;

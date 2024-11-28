@@ -158,15 +158,6 @@ class Document extends ContainerNode {
 
   ui.Size? get preloadViewportSize => _preloadViewportSize;
 
-  bool? _preloadDarkMode;
-
-  set preloadDarkMode(isDarkMode) {
-    _preloadDarkMode = isDarkMode;
-  }
-
-  bool? get preloadDarkMode => _preloadDarkMode;
-
-
   @override
   Document get ownerDocument => this;
 
