@@ -78,7 +78,9 @@ mixin CSSVariableMixin on RenderStyle {
   void _notifyCSSVariableChanged(String identifier,String value) {
     List<String>? propertyNames = _propertyDependencies[identifier];
     propertyNames?.forEach((String propertyName) {
-      target.setRenderStyle(propertyName, value);
+      if (target.style.contains(propertyName)) {
+        target.setRenderStyle(propertyName, value);
+      }
     });
     visitChildren((CSSRenderStyle childRenderStyle) {
       childRenderStyle._notifyCSSVariableChanged(identifier, value);
