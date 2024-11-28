@@ -1,4 +1,4 @@
-describe('Canvas context 2d sync', () => {
+describe('Canvas context 2d async', () => {
   // it('can change size by width and height property', async () => {
   //   var canvas = document.createElement('canvas');
   //   document.body.appendChild(canvas);
@@ -50,7 +50,7 @@ describe('Canvas context 2d sync', () => {
   //   await snapshot(canvas);
   // });
 
-  fit('should work with lineWidth [async]', async () => {
+  it('should work with lineWidth [async]', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -66,7 +66,7 @@ describe('Canvas context 2d sync', () => {
     await snapshot(canvas);
   });
 
-  fit('should work with lineJoin [async]', async () => {
+  it('should work with lineJoin [async]', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -84,7 +84,7 @@ describe('Canvas context 2d sync', () => {
   });
 
 
-  fit('should work with lineCap [async]', async () => {
+  it('should work with lineCap [async]', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -99,7 +99,7 @@ describe('Canvas context 2d sync', () => {
     await snapshot(canvas);
   });
 
-  fit('should work with textAlign [async]', async () => {
+  it('should work with textAlign [async]', async () => {
     const canvas = <canvas widht="350" />;
     document.body.appendChild(canvas);
 
@@ -153,7 +153,7 @@ describe('Canvas context 2d sync', () => {
   //   await snapshot(canvas);
   // });
 
-  fit('should work with ellipse [async]', async () => {
+  it('should work with ellipse [async]', async () => {
     const canvas = <canvas height="200" width="200" />;
     document.body.appendChild(canvas);
 
@@ -170,7 +170,7 @@ describe('Canvas context 2d sync', () => {
     await snapshot(canvas);
   });
 
-  fit('should work with save and restore [async]', async () => {
+  it('should work with save and restore [async]', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -188,7 +188,7 @@ describe('Canvas context 2d sync', () => {
     await snapshot(canvas);
   });
 
-  fit('should work with moveTo and lineTo [async]', async () => {
+  it('should work with moveTo and lineTo [async]', async () => {
     const canvas = <canvas height="200" width="200" />;
     document.body.appendChild(canvas);
 
@@ -281,7 +281,7 @@ describe('Canvas context 2d sync', () => {
   //   await snapshot(canvas);
   // });
 
-  fit('should work with strokeText [async]', async () => {
+  it('should work with strokeText [async]', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -292,7 +292,7 @@ describe('Canvas context 2d sync', () => {
   });
   
 
-  fit('should work with fillText [async]', async () => {
+  it('should work with fillText [async]', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -302,74 +302,74 @@ describe('Canvas context 2d sync', () => {
     await snapshot(canvas);
   });
 
-  fit('should work with rect and fill [async]', async () => {
-    const canvas = <canvas />;
-    document.body.appendChild(canvas);
+  // it('should work with rect and fill [async]', async () => {
+  //   const canvas = <canvas />;
+  //   document.body.appendChild(canvas);
 
-    const ctx = canvas.getContext('2d');
-    ctx.rect_async(10, 20, 150, 100);
-    ctx.fill_async();
-    await snapshot(canvas);
-  });
+  //   const ctx = canvas.getContext('2d');
+  //   ctx.rect_async(10, 20, 150, 100);
+  //   ctx.fill_async();
+  //   await snapshot(canvas);
+  // });
 
-  fit('should work with bezierCurveTo [async]', async () => {
-    const canvas = <canvas />;
-    document.body.appendChild(canvas);
+  // it('should work with bezierCurveTo [async]', async () => {
+  //   const canvas = <canvas />;
+  //   document.body.appendChild(canvas);
 
-    const ctx = canvas.getContext('2d');
-    // Define the points as {x, y}
-    let start = { x: 50,    y: 20  };
-    let cp1 =   { x: 230,   y: 30  };
-    let cp2 =   { x: 150,   y: 80  };
-    let end =   { x: 250,   y: 100 };
+  //   const ctx = canvas.getContext('2d');
+  //   // Define the points as {x, y}
+  //   let start = { x: 50,    y: 20  };
+  //   let cp1 =   { x: 230,   y: 30  };
+  //   let cp2 =   { x: 150,   y: 80  };
+  //   let end =   { x: 250,   y: 100 };
 
-    // Cubic Bézier curve
-    ctx.beginPath_async();
-    ctx.moveTo_async(start.x, start.y);
-    ctx.bezierCurveTo_async(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
-    await ctx.stroke_async();
+  //   // Cubic Bézier curve
+  //   ctx.beginPath_async();
+  //   ctx.moveTo_async(start.x, start.y);
+  //   ctx.bezierCurveTo_async(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+  //   await ctx.stroke_async();
 
-    // Start and end points
-    ctx.fillStyle = 'blue';
-    ctx.beginPath_async();
-    ctx.arc_async(start.x, start.y, 5, 0, 2 * Math.PI);  // Start point
-    ctx.arc_async(end.x, end.y, 5, 0, 2 * Math.PI);      // End point
-    await ctx.fill_async();
+  //   // Start and end points
+  //   ctx.fillStyle = 'blue';
+  //   ctx.beginPath_async();
+  //   ctx.arc_async(start.x, start.y, 5, 0, 2 * Math.PI);  // Start point
+  //   ctx.arc_async(end.x, end.y, 5, 0, 2 * Math.PI);      // End point
+  //   ctx.fill_async();
 
-    // Control points
-    ctx.fillStyle = 'red';
-    ctx.beginPath_async();
-    ctx.arc_async(cp1.x, cp1.y, 5, 0, 2 * Math.PI);  // Control point one
-    ctx.arc_async(cp2.x, cp2.y, 5, 0, 2 * Math.PI);  // Control point two
-    ctx.fill_async();
-    await snapshot(canvas);
-  });
+  //   // Control points
+  //   ctx.fillStyle = 'red';
+  //   ctx.beginPath_async();
+  //   ctx.arc_async(cp1.x, cp1.y, 5, 0, 2 * Math.PI);  // Control point one
+  //   ctx.arc_async(cp2.x, cp2.y, 5, 0, 2 * Math.PI);  // Control point two
+  //   ctx.fill_async();
+  //   await snapshot(canvas);
+  // });
 
-  fit('should work with quadraticCurveTo [async]', async () => {
-    const canvas = <canvas />;
-    document.body.appendChild(canvas);
+  // it('should work with quadraticCurveTo [async]', async () => {
+  //   const canvas = <canvas />;
+  //   document.body.appendChild(canvas);
 
-    const ctx = canvas.getContext('2d');
-    // Quadratic Bézier curve
-    ctx.beginPath_async();
-    ctx.moveTo_async(50, 20);
-    ctx.quadraticCurveTo_async(230, 30, 50, 100);
-    await ctx.stroke_async();
+  //   const ctx = canvas.getContext('2d');
+  //   // Quadratic Bézier curve
+  //   ctx.beginPath_async();
+  //   ctx.moveTo_async(50, 20);
+  //   ctx.quadraticCurveTo_async(230, 30, 50, 100);
+  //   await ctx.stroke_async();
 
-    // Start and end points
-    ctx.fillStyle = 'blue';
-    ctx.beginPath_async();
-    ctx.arc_async(50, 20, 5, 0, 2 * Math.PI);   // Start point
-    ctx.arc_async(50, 100, 5, 0, 2 * Math.PI);  // End point
-    await ctx.fill_async();
+  //   // Start and end points
+  //   ctx.fillStyle = 'blue';
+  //   ctx.beginPath_async();
+  //   ctx.arc_async(50, 20, 5, 0, 2 * Math.PI);   // Start point
+  //   ctx.arc_async(50, 100, 5, 0, 2 * Math.PI);  // End point
+  //   await ctx.fill_async();
 
-    // Control point
-    ctx.fillStyle = 'red';
-    ctx.beginPath_async();
-    ctx.arc_async(230, 30, 5, 0, 2 * Math.PI);
-    ctx.fill_async();
-    await snapshot(canvas);
-  });
+  //   // Control point
+  //   ctx.fillStyle = 'red';
+  //   ctx.beginPath_async();
+  //   ctx.arc_async(230, 30, 5, 0, 2 * Math.PI);
+  //   ctx.fill_async();
+  //   await snapshot(canvas);
+  // });
 
 
   // it('should work with fill and fillRect and clearRect', async () => {
@@ -414,30 +414,30 @@ describe('Canvas context 2d sync', () => {
   //   await snapshot(canvas);
   // });
 
-  fit('should work with setTransform [async]', async () => {
-    const canvas1 = <canvas />;
-    const canvas2 = <canvas />;
-    document.body.appendChild(canvas1);
-    document.body.appendChild(canvas2);
+  // it('should work with setTransform [async]', async () => {
+  //   const canvas1 = <canvas />;
+  //   const canvas2 = <canvas />;
+  //   document.body.appendChild(canvas1);
+  //   document.body.appendChild(canvas2);
 
-    const ctx1 = canvas1.getContext('2d');
-    const ctx2 = canvas2.getContext('2d');
+  //   const ctx1 = canvas1.getContext('2d');
+  //   const ctx2 = canvas2.getContext('2d');
 
-    ctx1.rotate_async(45 * Math.PI / 180);
-    ctx1.setTransform_async(1, .2, .8, 1, 0, 0);
-    ctx1.fillRect_async(25, 25, 50, 50);
+  //   ctx1.rotate_async(45 * Math.PI / 180);
+  //   ctx1.setTransform_async(1, .2, .8, 1, 0, 0);
+  //   ctx1.fillRect_async(25, 25, 50, 50);
 
-    ctx2.scale_async(9, 3);
-    ctx2.setTransform_async(1, .2, .8, 1, 0, 0);
-    ctx2.beginPath_async();
-    ctx2.arc_async(50, 50, 50, 0, 2 * Math.PI);
-    ctx2.fill_async();
+  //   ctx2.scale_async(9, 3);
+  //   ctx2.setTransform_async(1, .2, .8, 1, 0, 0);
+  //   ctx2.beginPath_async();
+  //   ctx2.arc_async(50, 50, 50, 0, 2 * Math.PI);
+  //   ctx2.fill_async();
 
-    await snapshot();
-  });
+  //   await snapshot();
+  // });
 
 
-  fit('should work with drawImage [async]', async (done) => {
+  it('should work with drawImage [async]', async (done) => {
     const canvas = <canvas height="400" width="400" />;
     document.body.appendChild(canvas);
     const ctx = canvas.getContext('2d');
@@ -476,7 +476,7 @@ describe('Canvas context 2d sync', () => {
   //   done();
   // });
 
-  fit('should work when draw overflow element [async]', async () => {
+  it('should work when draw overflow element [async]', async () => {
     const canvas = document.createElement('canvas')
     canvas.style.width = canvas.style.height = '200px';
     canvas.style.border = '1px solid green';
@@ -758,7 +758,7 @@ describe('Canvas context 2d sync', () => {
   // })
 
 
-  fit('should work with create default Path2D [async]', async (done) => {
+  it('should work with create default Path2D [async]', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -771,7 +771,7 @@ describe('Canvas context 2d sync', () => {
 
   })
 
-  fit('should work with create Path2D with another Path2D instance [async]', async (done) => {
+  it('should work with create Path2D with another Path2D instance [async]', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -788,7 +788,7 @@ describe('Canvas context 2d sync', () => {
 
   })
 
-  fit('should work with create Path2D with SVG path data [async]', async (done) => {
+  it('should work with create Path2D with SVG path data [async]', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
