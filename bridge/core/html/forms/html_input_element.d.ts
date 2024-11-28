@@ -24,7 +24,7 @@ interface HTMLInputElement extends HTMLElement {
   placeholder: SupportAsync<DartImpl<string>>
   type: SupportAsync<DartImpl<string>>;
   inputMode: DartImpl<string>;
-  focus(): DartImpl<void>;
-  blur(): DartImpl<void>;
+  focus(): SupportAsync<DartImpl<void>>;
+  blur(): SupportAsync<DartImpl<void>>;
   new(): void;
 }

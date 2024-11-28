@@ -3,8 +3,8 @@ import {DOMMatrix} from "./dom_matrix";
 import {DOMPoint} from "./dom_point";
 
 interface DOMMatrixReadOnly {
-    readonly is2D: DartImpl<boolean>;
-    readonly isIdentity: DartImpl<boolean>;
+    readonly is2D: SupportAsync<DartImpl<boolean>>;
+    readonly isIdentity: SupportAsync<DartImpl<boolean>>;
     m11: number;
     m12: number;
     m13: number;
