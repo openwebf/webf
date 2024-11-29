@@ -13,7 +13,6 @@ mixin CSSVariableMixin on RenderStyle {
   final Map<String, List<String>> _propertyDependencies = {};
 
   void _addDependency(String identifier, String propertyName) {
-    if (propertyName.isEmpty) return;
     List<String>? dep = _propertyDependencies[identifier];
     if (dep == null) {
       _propertyDependencies[identifier] = [propertyName];
@@ -89,11 +88,11 @@ mixin CSSVariableMixin on RenderStyle {
 
       if (target.style.contains(propertyName)) {
         scheduleMicrotask(() {
-          String propertyValue = variableString ?? propertyName;
+          String propertyValue = variableString ?? value;
           if (CSSColor.isColor(propertyValue)) {
             CSSColor.clearCachedColorValue(propertyValue);
           }
-          target.setRenderStyle(propertyName, variableString ?? propertyName);
+          target.setRenderStyle(propertyName, variableString ?? value);
         });
       }
     });
