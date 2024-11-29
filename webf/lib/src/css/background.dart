@@ -142,13 +142,13 @@ mixin CSSBackgroundMixin on RenderStyle {
     final isTextLayout = _backgroundClip == CSSBackgroundBoundary.text || value == CSSBackgroundBoundary.text;
     _backgroundClip = value;
     if (isTextLayout) {
-      renderBoxModel?.visitChildren((child) {
+      visitChildren((child) {
         if (child is RenderTextBox) {
           child.markRenderParagraphNeedsLayout();
         }
       });
     }
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   /// Background-origin
@@ -159,7 +159,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   set backgroundOrigin(CSSBackgroundBoundary? value) {
     if (value == _backgroundOrigin) return;
     _backgroundOrigin = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   @override
@@ -169,7 +169,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   set backgroundColor(CSSColor? value) {
     if (value == _backgroundColor) return;
     _backgroundColor = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   /// Background-image
@@ -184,7 +184,7 @@ mixin CSSBackgroundMixin on RenderStyle {
     }
 
     _backgroundImage = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   /// Background-position-x
@@ -195,7 +195,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   set backgroundPositionX(CSSBackgroundPosition? value) {
     if (value == _backgroundPositionX) return;
     _backgroundPositionX = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   /// Background-position-y
@@ -206,7 +206,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   set backgroundPositionY(CSSBackgroundPosition? value) {
     if (value == _backgroundPositionY) return;
     _backgroundPositionY = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   /// Background-size
@@ -217,7 +217,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   set backgroundSize(CSSBackgroundSize? value) {
     if (value == _backgroundSize) return;
     _backgroundSize = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   /// Background-attachment
@@ -228,7 +228,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   set backgroundAttachment(CSSBackgroundAttachmentType? value) {
     if (value == _backgroundAttachment) return;
     _backgroundAttachment = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   /// Background-repeat
@@ -239,7 +239,7 @@ mixin CSSBackgroundMixin on RenderStyle {
   set backgroundRepeat(CSSBackgroundRepeatType? value) {
     if (value == _backgroundRepeat) return;
     _backgroundRepeat = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 }
 
@@ -276,7 +276,9 @@ class CSSBackgroundImage {
       Element element, int naturalWidth, int naturalHeight, int frameCount) {
     if (frameCount > 1 && !element.isRepaintBoundary) {
       element.forceToRepaintBoundary = true;
-      element.renderBoxModel!.invalidateBoxPainter();
+      element.renderStyle.getSelfRenderBoxValue((renderBox, _) {
+        renderBox.invalidateBoxPainter();
+      });
     }
   }
 

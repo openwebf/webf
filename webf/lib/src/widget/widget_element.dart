@@ -54,7 +54,7 @@ abstract class WidgetElement extends dom.Element {
   void propertyDidUpdate(String key, value) {}
   void styleDidUpdate(String property, String value) {}
 
-  Widget build(BuildContext context, List<Widget> children);
+  Widget build(BuildContext context, dom.ChildNodeList childNodes);
 
   // The render object is inserted by Flutter framework when element is WidgetElement.
   @override
@@ -101,7 +101,7 @@ abstract class WidgetElement extends dom.Element {
   // Reconfigure renderObjects when already rendered pages reattached to flutter tree
   void reactiveRenderer() {
     // The older one was disposed by flutter, should replace it with a new one.
-    updateRenderBoxModel(forceUpdate: true);
+    updateOrCreateRenderBoxModel(forceUpdate: true);
 
     if (renderStyle.display != CSSDisplay.none) {
       // Generate a new adapter for this RenderWidget
@@ -162,8 +162,8 @@ abstract class WidgetElement extends dom.Element {
     super.appendChild(child);
 
     // Only trigger update if the child are created by JS. If it's created on Flutter widgets, the flutter framework will handle this.
-    if (_state != null && !child.createdByFlutterWidget) {
-      _state!.markChildrenNeedsUpdate();
+    if (_state != null) {
+      _state!.requestUpdateState();
     }
 
     return child;
@@ -175,7 +175,7 @@ abstract class WidgetElement extends dom.Element {
     dom.Node inserted = super.insertBefore(child, referenceNode);
 
     if (_state != null) {
-      _state!.markChildrenNeedsUpdate();
+      _state!.requestUpdateState();
     }
 
     return inserted;
@@ -187,7 +187,7 @@ abstract class WidgetElement extends dom.Element {
     dom.Node? replaced = super.replaceChild(newNode, oldNode);
 
     if (_state != null) {
-      _state!.markChildrenNeedsUpdate();
+      _state!.requestUpdateState();
     }
 
     return replaced;
@@ -199,7 +199,7 @@ abstract class WidgetElement extends dom.Element {
     super.removeChild(child);
 
     if (_state != null) {
-      _state!.markChildrenNeedsUpdate();
+      _state!.requestUpdateState();
     }
 
     return child;
@@ -209,7 +209,7 @@ abstract class WidgetElement extends dom.Element {
     dom.Node? parent = element.parentNode;
 
     while (parent != null) {
-      if (parent.flutterWidget != null) {
+      if (parent.flutterWidgetElement != null) {
         return parent;
       }
 

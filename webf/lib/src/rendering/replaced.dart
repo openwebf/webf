@@ -151,6 +151,14 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     return copyWith(newChild);
   }
 
+  RenderReplaced toReplaced() {
+    RenderObject? childRenderObject = child;
+    child = null;
+    RenderReplaced newChild = RenderReplaced(renderStyle);
+    newChild.child = childRenderObject as RenderBox?;
+    return copyWith(newChild);
+  }
+
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
     if (!hasSize || child?.hasSize == false) return false;
@@ -173,12 +181,4 @@ class RenderRepaintBoundaryReplaced extends RenderReplaced {
 
   @override
   bool get isRepaintBoundary => true;
-
-  RenderReplaced toReplaced() {
-    RenderObject? childRenderObject = child;
-    child = null;
-    RenderReplaced newChild = RenderReplaced(renderStyle);
-    newChild.child = childRenderObject as RenderBox?;
-    return copyWith(newChild);
-  }
 }

@@ -42,7 +42,7 @@ class FlutterTextAreaElement extends WidgetElement with BaseInputElement {
   }
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context, ChildNodeList childNodes) {
     return createInput(context, minLines: 3, maxLines: 5);
   }
 }

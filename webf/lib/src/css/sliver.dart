@@ -13,7 +13,7 @@ mixin CSSSliverMixin on RenderStyle {
   set sliverDirection(Axis? value) {
     if (_sliverDirection == value) return;
     _sliverDirection = value;
-    renderBoxModel?.markNeedsLayout();
+    markNeedsLayout();
   }
 
   static Axis resolveAxis(String sliverDirection) {

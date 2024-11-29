@@ -64,14 +64,14 @@ final _CSSStrokeLinejoinMap = CSSStrokeLinejoin.values.asNameMap();
 
 mixin CSSSvgMixin on RenderStyle {
   _markRepaint() {
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   _markShapeUpdate() {
-    if (renderBoxModel is RenderSVGShape) {
-      (renderBoxModel as RenderSVGShape).markNeedUpdateShape();
+    if (isSelfRenderSVGShape()) {
+      markSVGShapeNeedsUpdate();
     } else {
-      renderBoxModel?.markNeedsLayout();
+      markNeedsLayout();
     }
   }
 

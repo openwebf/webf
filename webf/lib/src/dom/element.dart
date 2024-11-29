@@ -9,6 +9,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart' show RenderObjectElement;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
@@ -16,7 +17,6 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/bridge/native_types.dart';
 import 'package:webf/src/svg/rendering/container.dart';
-import 'package:webf/svg.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 
@@ -53,32 +53,6 @@ enum BoxSizeType {
 }
 
 mixin ElementBase on Node {
-  RenderLayoutBox? _renderLayoutBox;
-  RenderReplaced? _renderReplaced;
-  RenderBoxModel? _renderSVG;
-  RenderWidget? _renderWidget;
-
-  RenderBoxModel? get renderBoxModel => _renderLayoutBox ?? _renderReplaced ?? _renderWidget ?? _renderSVG;
-
-  set renderBoxModel(RenderBoxModel? value) {
-    if (value == null) {
-      _renderReplaced = null;
-      _renderLayoutBox = null;
-      _renderWidget = null;
-      _renderSVG = null;
-    } else if (value is RenderReplaced) {
-      _renderReplaced = value;
-    } else if (value is RenderLayoutBox) {
-      _renderLayoutBox = value;
-    } else if (value is RenderWidget) {
-      _renderWidget = value;
-    } else if (value is RenderSVGShape || value is RenderSVGContainer || value is RenderSVGText) {
-      _renderSVG = value;
-    } else {
-      if (!kReleaseMode) throw FlutterError('Unknown RenderBoxModel value.');
-    }
-  }
-
   late CSSRenderStyle renderStyle;
 }
 
@@ -127,17 +101,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   bool get isWidgetElement => false;
 
   bool get isSVGElement => false;
-
-  // Holding reference if this element are managed by Flutter framework.
-  WebFHTMLElementStatefulWidget? flutterWidget_;
-  WebFHTMLElementToFlutterElementAdaptor? flutterWidgetElement;
-
-  @override
-  WebFHTMLElementStatefulWidget? get flutterWidget => flutterWidget_;
-
-  set flutterWidget(WebFHTMLElementStatefulWidget? value) {
-    flutterWidget_ = value;
-  }
 
   HTMLElementState? flutterWidgetState;
 
@@ -204,7 +167,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       return;
     }
     _forceToRepaintBoundary = value;
-    updateRenderBoxModel();
+    updateOrCreateRenderBoxModel();
   }
 
   final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
@@ -224,7 +187,13 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   String get nodeName => tagName;
 
   @override
-  RenderBox? get renderer => renderBoxModel;
+  RenderBox? get renderer {
+    if (managedByFlutterWidget) {
+      return renderStyle.getWidgetPairedRenderBoxModel(flutterWidgetElement!);
+    }
+
+    return renderStyle.domRenderBoxModel;
+  }
 
   HTMLCollection? _collection;
 
@@ -239,8 +208,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @override
   RenderBox createRenderer() {
-    updateRenderBoxModel();
-    return renderBoxModel!;
+    return updateOrCreateRenderBoxModel()!;
   }
 
   String? collectElementChildText() {
@@ -364,22 +332,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return QuerySelector.closest(this, args.first);
   }
 
-  void updateRenderBoxModel({ bool forceUpdate = false }) {
-    RenderBoxModel nextRenderBoxModel;
-    if (isWidgetElement) {
-      nextRenderBoxModel = _createRenderWidget(previousRenderWidget: _renderWidget, forceUpdate: forceUpdate);
-    } else if (isReplacedElement) {
-      nextRenderBoxModel =
-          _createRenderReplaced(isRepaintBoundary: isRepaintBoundary, previousReplaced: _renderReplaced);
-    } else if (isSVGElement) {
-      nextRenderBoxModel = createRenderSVG(isRepaintBoundary: isRepaintBoundary, previous: _renderSVG);
-    } else {
-      nextRenderBoxModel =
-          _createRenderLayout(isRepaintBoundary: isRepaintBoundary, previousRenderLayoutBox: _renderLayoutBox);
-    }
+  RenderBoxModel? updateOrCreateRenderBoxModel({RenderObjectElement? ownerRenderObjectElement}) {
+    RenderBoxModel? previousRenderBoxModel = renderStyle.domRenderBoxModel;
+    RenderBoxModel nextRenderBoxModel = renderStyle.updateOrCreateRenderBoxModel();
 
-    RenderBoxModel? previousRenderBoxModel = renderBoxModel;
-    if (nextRenderBoxModel != previousRenderBoxModel) {
+    if (managedByFlutterWidget && previousRenderBoxModel != nextRenderBoxModel) {
       RenderObject? parentRenderObject;
       RenderBox? after;
       if (previousRenderBoxModel != null) {
@@ -396,207 +353,29 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         }
 
         SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-          if (!previousRenderBoxModel.disposed && !managedByFlutterWidget) {
+          if (!previousRenderBoxModel.disposed) {
             previousRenderBoxModel.dispose();
           }
         });
       }
-      renderBoxModel = nextRenderBoxModel;
-      assert(renderBoxModel!.renderStyle.renderBoxModel == renderBoxModel);
-
-      // Ensure that the event responder is bound.
-      ensureEventResponderBound();
     }
-  }
 
-  RenderReplaced _createRenderReplaced({RenderReplaced? previousReplaced, bool isRepaintBoundary = false}) {
-    RenderReplaced nextReplaced;
-
-    if (previousReplaced == null) {
-      if (isRepaintBoundary) {
-        nextReplaced = RenderRepaintBoundaryReplaced(
-          renderStyle,
-        );
-      } else {
-        nextReplaced = RenderReplaced(
-          renderStyle,
-        );
-      }
+    if (managedByFlutterWidget) {
+      assert(ownerRenderObjectElement != null);
+      renderStyle.addOrUpdateWidgetRenderObjects(ownerRenderObjectElement!, nextRenderBoxModel);
     } else {
-      if (previousReplaced is RenderRepaintBoundaryReplaced) {
-        if (isRepaintBoundary) {
-          // RenderRepaintBoundaryReplaced --> RenderRepaintBoundaryReplaced
-          nextReplaced = previousReplaced;
-        } else {
-          // RenderRepaintBoundaryReplaced --> RenderReplaced
-          nextReplaced = previousReplaced.toReplaced();
-        }
-      } else {
-        if (isRepaintBoundary) {
-          // RenderReplaced --> RenderRepaintBoundaryReplaced
-          nextReplaced = previousReplaced.toRepaintBoundaryReplaced();
-        } else {
-          // RenderReplaced --> RenderReplaced
-          nextReplaced = previousReplaced;
-        }
-      }
+      renderStyle.setDomRenderObject(nextRenderBoxModel);
     }
-    return nextReplaced;
+
+    // Ensure that the event responder is bound.
+    renderStyle.ensureEventResponderBound();
+
+    return nextRenderBoxModel;
   }
+
 
   RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
     throw UnimplementedError();
-  }
-
-  RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget, bool forceUpdate = false }) {
-    RenderWidget nextReplaced;
-
-    if (previousRenderWidget == null || forceUpdate) {
-      nextReplaced = RenderWidget(
-        renderStyle: renderStyle,
-      );
-    } else {
-      nextReplaced = previousRenderWidget;
-    }
-    return nextReplaced;
-  }
-
-  // Create renderLayoutBox if type changed and copy children if there has previous renderLayoutBox.
-  RenderLayoutBox _createRenderLayout(
-      {RenderLayoutBox? previousRenderLayoutBox, CSSRenderStyle? renderStyle, bool isRepaintBoundary = false}) {
-    renderStyle = renderStyle ?? this.renderStyle;
-    CSSDisplay display = this.renderStyle.display;
-    RenderLayoutBox? nextRenderLayoutBox;
-
-    if (display == CSSDisplay.flex || display == CSSDisplay.inlineFlex) {
-      if (previousRenderLayoutBox == null) {
-        if (isRepaintBoundary) {
-          nextRenderLayoutBox = RenderRepaintBoundaryFlexLayout(
-            renderStyle: renderStyle,
-          );
-        } else {
-          nextRenderLayoutBox = RenderFlexLayout(
-            renderStyle: renderStyle,
-          );
-        }
-      } else if (previousRenderLayoutBox is RenderFlowLayout) {
-        if (previousRenderLayoutBox is RenderRepaintBoundaryFlowLayout) {
-          if (isRepaintBoundary) {
-            // RenderRepaintBoundaryFlowLayout --> RenderRepaintBoundaryFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlexLayout();
-          } else {
-            // RenderRepaintBoundaryFlowLayout --> RenderFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toFlexLayout();
-          }
-        } else {
-          if (isRepaintBoundary) {
-            // RenderFlowLayout --> RenderRepaintBoundaryFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlexLayout();
-          } else {
-            // RenderFlowLayout --> RenderFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toFlexLayout();
-          }
-        }
-      } else if (previousRenderLayoutBox is RenderFlexLayout) {
-        if (previousRenderLayoutBox is RenderRepaintBoundaryFlexLayout) {
-          if (isRepaintBoundary) {
-            // RenderRepaintBoundaryFlexLayout --> RenderRepaintBoundaryFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox;
-          } else {
-            // RenderRepaintBoundaryFlexLayout --> RenderFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toFlexLayout();
-          }
-        } else {
-          if (isRepaintBoundary) {
-            // RenderFlexLayout --> RenderRepaintBoundaryFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlexLayout();
-          } else {
-            // RenderFlexLayout --> RenderFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox;
-          }
-        }
-      } else if (previousRenderLayoutBox is RenderSliverListLayout) {
-        // RenderSliverListLayout --> RenderFlexLayout
-        nextRenderLayoutBox = previousRenderLayoutBox.toFlexLayout();
-      }
-    } else if (display == CSSDisplay.block ||
-        display == CSSDisplay.none ||
-        display == CSSDisplay.inline ||
-        display == CSSDisplay.inlineBlock) {
-      if (previousRenderLayoutBox == null) {
-        if (isRepaintBoundary) {
-          nextRenderLayoutBox = RenderRepaintBoundaryFlowLayout(
-            renderStyle: renderStyle,
-          );
-        } else {
-          nextRenderLayoutBox = RenderFlowLayout(
-            renderStyle: renderStyle,
-          );
-        }
-      } else if (previousRenderLayoutBox is RenderFlowLayout) {
-        if (previousRenderLayoutBox is RenderRepaintBoundaryFlowLayout) {
-          if (isRepaintBoundary) {
-            // RenderRepaintBoundaryFlowLayout --> RenderRepaintBoundaryFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox;
-          } else {
-            // RenderRepaintBoundaryFlowLayout --> RenderFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toFlowLayout();
-          }
-        } else {
-          if (isRepaintBoundary) {
-            // RenderFlowLayout --> RenderRepaintBoundaryFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlowLayout();
-          } else {
-            // RenderFlowLayout --> RenderFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox;
-          }
-        }
-      } else if (previousRenderLayoutBox is RenderFlexLayout) {
-        if (previousRenderLayoutBox is RenderRepaintBoundaryFlexLayout) {
-          if (isRepaintBoundary) {
-            // RenderRepaintBoundaryFlexLayout --> RenderRepaintBoundaryFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlowLayout();
-          } else {
-            // RenderRepaintBoundaryFlexLayout --> RenderFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toFlowLayout();
-          }
-        } else {
-          if (isRepaintBoundary) {
-            // RenderFlexLayout --> RenderRepaintBoundaryFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlowLayout();
-          } else {
-            // RenderFlexLayout --> RenderFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toFlowLayout();
-          }
-        }
-      } else if (previousRenderLayoutBox is RenderSliverListLayout) {
-        // RenderSliverListLayout --> RenderFlowLayout
-        nextRenderLayoutBox = previousRenderLayoutBox.toFlowLayout();
-      }
-    } else if (display == CSSDisplay.sliver) {
-      if (previousRenderLayoutBox == null) {
-        nextRenderLayoutBox = RenderSliverListLayout(
-            renderStyle: renderStyle,
-            manager: RenderSliverElementChildManager(this),
-            onScroll: _handleScroll,
-            currentView: ownerDocument.controller.ownerFlutterView);
-      } else if (previousRenderLayoutBox is RenderFlowLayout || previousRenderLayoutBox is RenderFlexLayout) {
-        //  RenderFlow/FlexLayout --> RenderSliverListLayout
-        nextRenderLayoutBox =
-            previousRenderLayoutBox.toSliverLayout(RenderSliverElementChildManager(this), _handleScroll);
-      } else if (previousRenderLayoutBox is RenderSliverListLayout) {
-        nextRenderLayoutBox = previousRenderLayoutBox;
-      }
-    } else {
-      throw FlutterError('Not supported display type $display');
-    }
-
-    // Update scrolling content layout type.
-    if (previousRenderLayoutBox != nextRenderLayoutBox && previousRenderLayoutBox?.renderScrollingContent != null) {
-      updateScrollingContentBox();
-    }
-
-    return nextRenderLayoutBox!;
   }
 
   @override
@@ -629,11 +408,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     bool needUpdateOverflowRenderBox = false;
     if (renderStyle.overflowX != CSSOverflowType.visible) {
       needUpdateOverflowRenderBox = true;
-      updateRenderBoxModelWithOverflowX(_handleScroll);
+      updateRenderBoxModelWithOverflowX(handleScroll);
     }
     if (renderStyle.overflowY != CSSOverflowType.visible) {
       needUpdateOverflowRenderBox = true;
-      updateRenderBoxModelWithOverflowY(_handleScroll);
+      updateRenderBoxModelWithOverflowY(handleScroll);
     }
     if (needUpdateOverflowRenderBox) {
       updateOverflowRenderBox();
@@ -696,7 +475,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     dispatchEvent(Event(EVENT_SCROLL));
   }
 
-  void _handleScroll(double scrollOffset, AxisDirection axisDirection) {
+  void handleScroll(double scrollOffset, AxisDirection axisDirection) {
     if (renderBoxModel == null) return;
     _applyStickyChildrenOffset();
     _applyFixedChildrenOffset(scrollOffset, axisDirection);
@@ -838,7 +617,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       _renderBoxModel.detachFromContainingBlock();
       // Change renderBoxModel type in cases such as position changes to fixed which
       // need to create repaintBoundary.
-      updateRenderBoxModel();
+      updateOrCreateRenderBoxModel();
       // Original parent renderBox.
       RenderBox parentRenderBox = parentNode!.renderer!;
       // Attach renderBoxModel to its containing block.
@@ -880,8 +659,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     bool shouldMutateBeforeElement =
         previousPseudoElement == null || ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
 
-    previousPseudoElement ??=
-        PseudoElement(kind, this, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
+    previousPseudoElement ??= PseudoElement(
+        kind, this, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
     previousPseudoElement.style
         .merge(kind == PseudoKind.kPseudoBefore ? style.pseudoBeforeStyle! : style.pseudoAfterStyle!);
 
@@ -909,7 +688,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       if (previousPseudoElement.firstChild != null) {
         (previousPseudoElement.firstChild as TextNode).data = pseudoValue.value;
       } else {
-        final textNode = ownerDocument.createTextNode(pseudoValue.value, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
+        final textNode = ownerDocument.createTextNode(
+            pseudoValue.value, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
         previousPseudoElement.appendChild(textNode);
       }
     }
@@ -985,7 +765,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   void addChild(RenderBox child) {
-    if (_renderLayoutBox != null) {
+    if (renderBoxModel != null && (renderBoxModel is RenderLayoutBox)) {
       RenderLayoutBox? scrollingContentBox = _renderLayoutBox!.renderScrollingContent;
       if (scrollingContentBox != null) {
         scrollingContentBox.add(child);
@@ -1000,13 +780,15 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   void dispose() async {
     renderStyle.detach();
+    renderStyle.dispose();
     style.dispose();
     attributes.clear();
     disposeScrollable();
     _attributeProperties.clear();
-    flutterWidget = null;
     flutterWidgetElement = null;
-    ownerDocument.inactiveRenderObjects.add(renderer);
+    if (!managedByFlutterWidget) {
+      ownerDocument.inactiveRenderObjects.add(renderer);
+    }
     ownerDocument.clearElementStyleDirty(this);
     _beforeElement?.dispose();
     _beforeElement = null;
@@ -1107,7 +889,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   void ensureChildAttached() {
     if (isRendererAttachedToSegmentTree) {
-      final box = renderBoxModel;
+      final box = renderer;
       if (box == null) return;
       for (Node child in childNodes) {
         RenderBox? after;
@@ -1144,7 +926,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     final box = renderBoxModel;
     if (isRendererAttachedToSegmentTree) {
       // Only append child renderer when which is not attached.
-      if (!child.isRendererAttachedToSegmentTree && box != null && renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
+      if (!child.isRendererAttachedToSegmentTree &&
+          box != null &&
+          renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         RenderBox? after;
         if (box is RenderLayoutBox) {
           RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
@@ -1439,7 +1223,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     willAttachRenderer();
 
     // Update renderBoxModel.
-    updateRenderBoxModel();
+    updateOrCreateRenderBoxModel();
     // Attach renderBoxModel to parent if change from `display: none` to other values.
     if (!isRendererAttachedToSegmentTree && parentElement != null && parentElement!.isRendererAttachedToSegmentTree) {
       // If element attach WidgetElement, render object should be attach to render tree when mount.
@@ -1461,7 +1245,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
         // Original parent renderBox.
         RenderBox parentRenderBox = parentNode!.renderer!;
-        _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: previousSiblingRenderBox);
+        _renderBoxModel.attachToContainingBlock(containingBlockRenderBox,
+            parent: parentRenderBox, after: previousSiblingRenderBox);
       }
     }
 
@@ -1486,7 +1271,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     dynamic oldValue;
 
-    switch(name) {
+    switch (name) {
       case DISPLAY:
       case OVERFLOW_X:
       case OVERFLOW_Y:
@@ -1507,26 +1292,26 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       case OVERFLOW_X:
         assert(oldValue != null);
         CSSOverflowType oldEffectiveOverflowY = oldValue;
-        updateRenderBoxModel();
-        updateRenderBoxModelWithOverflowX(_handleScroll);
+        updateOrCreateRenderBoxModel();
+        updateRenderBoxModelWithOverflowX(handleScroll);
         // Change overflowX may affect effectiveOverflowY.
         // https://drafts.csswg.org/css-overflow/#overflow-properties
         CSSOverflowType effectiveOverflowY = renderStyle.effectiveOverflowY;
         if (effectiveOverflowY != oldEffectiveOverflowY) {
-          updateRenderBoxModelWithOverflowY(_handleScroll);
+          updateRenderBoxModelWithOverflowY(handleScroll);
         }
         updateOverflowRenderBox();
         break;
       case OVERFLOW_Y:
         assert(oldValue != null);
         CSSOverflowType oldEffectiveOverflowX = oldValue;
-        updateRenderBoxModel();
-        updateRenderBoxModelWithOverflowY(_handleScroll);
+        updateOrCreateRenderBoxModel();
+        updateRenderBoxModelWithOverflowY(handleScroll);
         // Change overflowY may affect the effectiveOverflowX.
         // https://drafts.csswg.org/css-overflow/#overflow-properties
         CSSOverflowType effectiveOverflowX = renderStyle.effectiveOverflowX;
         if (effectiveOverflowX != oldEffectiveOverflowX) {
-          updateRenderBoxModelWithOverflowX(_handleScroll);
+          updateRenderBoxModelWithOverflowX(handleScroll);
         }
         updateOverflowRenderBox();
         break;
@@ -1541,7 +1326,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         _updateFontRelativeLengthWithFontSize();
         break;
       case TRANSFORM:
-        updateRenderBoxModel();
+        updateOrCreateRenderBoxModel();
         break;
     }
 
@@ -1642,6 +1427,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   bool _scheduledRunTransitions = false;
+
   void scheduleRunTransitionAnimations(String propertyName, String? prevValue, String currentValue) {
     if (_scheduledRunTransitions) return;
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
@@ -1783,7 +1569,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // about the size of an element and its position relative to the viewport.
   // https://drafts.csswg.org/cssom-view/#dom-element-getboundingclientrect
   BoundingClientRect get boundingClientRect {
-    BoundingClientRect boundingClientRect = BoundingClientRect.zero(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
+    BoundingClientRect boundingClientRect =
+        BoundingClientRect.zero(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
     if (isRendererAttached) {
       flushLayout();
       RenderBoxModel sizedBox = renderBoxModel!;
@@ -1970,6 +1757,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       isRepaintBoundary: true,
       renderStyle: scrollingContentRenderStyle,
     );
+    scrollingContentRenderStyle.setDomRenderObject(scrollingContentLayoutBox);
     scrollingContentLayoutBox.isScrollingContentBox = true;
     return scrollingContentLayoutBox;
   }

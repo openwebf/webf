@@ -14,7 +14,7 @@ class TextWidgetElement extends WidgetElement {
   };
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context, dom.ChildNodeList childNodes) {
     return Text(getAttribute('value') ?? '',
         textDirection: TextDirection.ltr,
         style: TextStyle(color: Color.fromARGB(255, 100, 100, 100)));

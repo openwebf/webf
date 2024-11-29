@@ -24,8 +24,8 @@ class FlutterButtonElement extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context, ChildNodeList childNodes) {
     String type = getAttribute('type') ?? 'default';
-    return buildButton(context, type, children.isNotEmpty ? children[0] : Container());
+    return buildButton(context, type, childNodes.isNotEmpty ? childNodes.first.toWidget() : Container());
   }
 }

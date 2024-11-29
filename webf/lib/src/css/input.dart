@@ -9,6 +9,6 @@ mixin CSSInputMixin on RenderStyle {
   set caretColor(Color? value) {
     if (_caretColor == value) return;
     _caretColor = value;
-    renderBoxModel?.markNeedsLayout();
+    markNeedsLayout();
   }
 }

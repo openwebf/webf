@@ -123,7 +123,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderTopWidth(CSSLengthValue? value) {
     if (value == _borderTopWidth) return;
     _borderTopWidth = value;
-    renderBoxModel?.markNeedsLayout();
+    markNeedsLayout();
   }
 
   @override
@@ -137,7 +137,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderRightWidth(CSSLengthValue? value) {
     if (value == _borderRightWidth) return;
     _borderRightWidth = value;
-    renderBoxModel?.markNeedsLayout();
+    markNeedsLayout();
   }
 
   @override
@@ -151,7 +151,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderBottomWidth(CSSLengthValue? value) {
     if (value == _borderBottomWidth) return;
     _borderBottomWidth = value;
-    renderBoxModel?.markNeedsLayout();
+    markNeedsLayout();
   }
 
   @override
@@ -165,7 +165,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderLeftWidth(CSSLengthValue? value) {
     if (value == _borderLeftWidth) return;
     _borderLeftWidth = value;
-    renderBoxModel?.markNeedsLayout();
+    markNeedsLayout();
   }
 
   @override
@@ -182,7 +182,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderTopColor(CSSColor? value) {
     if (value == _borderTopColor) return;
     _borderTopColor = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   @override
@@ -191,7 +191,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderRightColor(CSSColor? value) {
     if (value == _borderRightColor) return;
     _borderRightColor = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   @override
@@ -200,7 +200,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderBottomColor(CSSColor? value) {
     if (value == _borderBottomColor) return;
     _borderBottomColor = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   @override
@@ -209,7 +209,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderLeftColor(CSSColor? value) {
     if (value == _borderLeftColor) return;
     _borderLeftColor = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   /// Border-style
@@ -219,7 +219,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderTopStyle(CSSBorderStyleType? value) {
     if (value == _borderTopStyle) return;
     _borderTopStyle = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   @override
@@ -228,7 +228,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderRightStyle(CSSBorderStyleType? value) {
     if (value == _borderRightStyle) return;
     _borderRightStyle = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   @override
@@ -237,7 +237,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderBottomStyle(CSSBorderStyleType? value) {
     if (value == _borderBottomStyle) return;
     _borderBottomStyle = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   @override
@@ -246,7 +246,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderLeftStyle(CSSBorderStyleType? value) {
     if (value == _borderLeftStyle) return;
     _borderLeftStyle = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 }
 

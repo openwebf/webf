@@ -7,12 +7,12 @@ import 'dart:collection';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
+import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 
 class WebFHTMLElementStatefulWidget extends StatefulWidget {
   final dom.Element webFElement;
   WebFHTMLElementStatefulWidget(this.webFElement, {Key? key}): super(key: key) {
-    webFElement.flutterWidget = this;
     webFElement.managedByFlutterWidget = true;
   }
 
@@ -29,6 +29,7 @@ class HTMLElementState extends State<WebFHTMLElementStatefulWidget> with Automat
   bool _disposed = false;
 
   HTMLElementState(this._webFElement);
+
   dom.Node get webFElement => _webFElement;
 
   void addWidgetChild(Widget widget) {
@@ -39,6 +40,7 @@ class HTMLElementState extends State<WebFHTMLElementStatefulWidget> with Automat
       });
     });
   }
+
   void removeWidgetChild(Widget widget) {
     scheduleDelayForFrameCallback();
     Future.microtask(() {
@@ -64,8 +66,11 @@ class HTMLElementState extends State<WebFHTMLElementStatefulWidget> with Automat
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-    return WebFHTMLElementToWidgetAdaptor(_webFElement, children: customElementWidgets.toList(), key: ObjectKey(_webFElement.hashCode),);
+    return WebFHTMLElementToWidgetAdaptor(
+      _webFElement,
+      children: customElementWidgets.toList(),
+      key: ObjectKey(_webFElement.hashCode),
+    );
   }
 
   @override
@@ -74,35 +79,30 @@ class HTMLElementState extends State<WebFHTMLElementStatefulWidget> with Automat
 
 class WebFHTMLElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
   WebFHTMLElementToWidgetAdaptor(this._webFElement, {Key? key, required List<Widget> children})
-      : super(key: key, children: children) {
-  }
+      : super(key: key, children: children) {}
 
   final dom.Element _webFElement;
+
   dom.Element get webFElement => _webFElement;
+
+  // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
+  void requestForBuild() {
+
+  }
 
   @override
   WebFHTMLElementToFlutterElementAdaptor createElement() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
     WebFHTMLElementToFlutterElementAdaptor element = WebFHTMLElementToFlutterElementAdaptor(this);
-    // If a WebF element was already connected to a flutter element, should unmount the previous linked renderObjectt
-    if (_webFElement.flutterWidgetElement != null && _webFElement.flutterWidgetElement != element) {
-      _webFElement.unmountRenderObject(dispose: false, fromFlutterWidget: true);
-    }
-
     _webFElement.flutterWidgetElement = element;
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
-
     return element;
   }
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return _webFElement.createRenderer();
+    // TODO obtains renderObjects from cache, since every renderObjectElements have it's corresponding renderObjects.
+    RenderBoxModel? renderObject = _webFElement.updateOrCreateRenderBoxModel(
+        forceUpdate: true, ownerFlutterElement: context as RenderObjectElement);
+    return renderObject!;
   }
 
   @override

@@ -457,8 +457,7 @@ class CSSStyleDeclaration extends DynamicBindingObject {
       _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
 
-    RenderBoxModel? renderBoxModel = _target.renderBoxModel;
-    if (_pendingProperties.isEmpty || renderBoxModel == null) {
+    if (_pendingProperties.isEmpty || !_target.renderStyle.hasRenderBox()) {
       return;
     }
 

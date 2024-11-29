@@ -37,7 +37,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_color == value) return;
     _color = value?.value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsPaint(renderBoxModel!, COLOR);
+    _markChildrenTextNeedsPaint(this, COLOR);
   }
 
   // Current not update the dependent property relative to the color.
@@ -62,7 +62,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_textDecorationLine == value) return;
     _textDecorationLine = value;
     // Non inheritable style change should only update text node in direct children.
-    renderBoxModel?.markNeedsLayout();
+    markNeedsLayout();
   }
 
   CSSColor? _textDecorationColor;
@@ -106,7 +106,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_fontWeight == value) return;
     _fontWeight = value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsLayout(renderBoxModel!, FONT_WEIGHT);
+    _markChildrenTextNeedsLayout(this, FONT_WEIGHT);
   }
 
   FontStyle? _fontStyle;
@@ -127,7 +127,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_fontStyle == value) return;
     _fontStyle = value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsPaint(renderBoxModel!, FONT_STYLE);
+    _markChildrenTextNeedsPaint(this, FONT_STYLE);
   }
 
   List<String>? _fontFamily;
@@ -146,7 +146,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_fontFamily == value) return;
     _fontFamily = value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsLayout(renderBoxModel!, FONT_FAMILY);
+    _markChildrenTextNeedsLayout(this, FONT_FAMILY);
   }
 
   bool get hasFontSize => _fontSize != null;
@@ -171,7 +171,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_fontSize == value) return;
     _fontSize = value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsLayout(renderBoxModel!, FONT_SIZE);
+    _markChildrenTextNeedsLayout(this, FONT_SIZE);
   }
 
   // Current not update the dependent property relative to the font-size.
@@ -185,9 +185,9 @@ mixin CSSTextMixin on RenderStyle {
 
   void updateFontRelativeLength() {
     if (_fontRelativeProperties.isEmpty) return;
-    renderBoxModel?.markNeedsLayout();
-    if (renderBoxModel?.isSizeTight == true && renderBoxModel?.parent != null) {
-      (renderBoxModel?.parent as RenderBox?)?.markNeedsLayout();
+    markNeedsLayout();
+    if (isSelfBoxModelSizeTight() && isParentRenderBox()) {
+      markParentNeedsLayout();
     }
   }
 
@@ -198,9 +198,9 @@ mixin CSSTextMixin on RenderStyle {
 
   void updateRootFontRelativeLength() {
     if (_rootFontRelativeProperties.isEmpty) return;
-    renderBoxModel?.markNeedsLayout();
-    if (renderBoxModel?.isSizeTight == true && renderBoxModel?.parent != null) {
-      (renderBoxModel?.parent as RenderBox?)?.markNeedsLayout();
+    markNeedsLayout();
+    if (isSelfBoxModelSizeTight() && isParentRenderBox()) {
+      markParentNeedsLayout();
     }
   }
 
@@ -219,7 +219,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_lineHeight == value) return;
     _lineHeight = value;
     // Update all the children layout and text with specified style property not set due to style inheritance.
-    _markNestChildrenTextAndLayoutNeedsLayout(renderBoxModel!, LINE_HEIGHT);
+    _markNestChildrenTextAndLayoutNeedsLayout(this, LINE_HEIGHT);
   }
 
   CSSLengthValue? _letterSpacing;
@@ -238,7 +238,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_letterSpacing == value) return;
     _letterSpacing = value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsLayout(renderBoxModel!, LETTER_SPACING);
+    _markChildrenTextNeedsLayout(this, LETTER_SPACING);
   }
 
   CSSLengthValue? _wordSpacing;
@@ -257,7 +257,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_wordSpacing == value) return;
     _wordSpacing = value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsLayout(renderBoxModel!, WORD_SPACING);
+    _markChildrenTextNeedsLayout(this, WORD_SPACING);
   }
 
   List<Shadow>? _textShadow;
@@ -276,7 +276,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_textShadow == value) return;
     _textShadow = value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsPaint(renderBoxModel!, TEXT_SHADOW);
+    _markChildrenTextNeedsPaint(this, TEXT_SHADOW);
   }
 
   WhiteSpace? _whiteSpace;
@@ -295,7 +295,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_whiteSpace == value) return;
     _whiteSpace = value;
     // Update all the children layout and text with specified style property not set due to style inheritance.
-    _markNestChildrenTextAndLayoutNeedsLayout(renderBoxModel!, WHITE_SPACE);
+    _markNestChildrenTextAndLayoutNeedsLayout(this, WHITE_SPACE);
   }
 
   TextOverflow _textOverflow = TextOverflow.clip;
@@ -360,18 +360,18 @@ mixin CSSTextMixin on RenderStyle {
     if (_textAlign == value) return;
     _textAlign = value;
     // Update all the children flow layout with specified style property not set due to style inheritance.
-    _markNestFlowLayoutNeedsLayout(renderBoxModel, TEXT_ALIGN);
+    _markNestFlowLayoutNeedsLayout(this, TEXT_ALIGN);
   }
 
   // Mark flow layout and all the children flow layout with specified style property not set needs layout.
-  void _markNestFlowLayoutNeedsLayout(RenderBoxModel? renderBoxModel, String styleProperty) {
-    if (renderBoxModel is RenderFlowLayout) {
-      renderBoxModel.markNeedsLayout();
-      renderBoxModel.visitChildren((RenderObject child) {
+  void _markNestFlowLayoutNeedsLayout(RenderStyle renderStyle, String styleProperty) {
+    if (renderStyle.isSelfRenderFlowLayout()) {
+      renderStyle.markNeedsLayout();
+      renderStyle.visitChildren((RenderObject child) {
         if (child is RenderFlowLayout) {
           // Only need to layout when the specified style property is not set.
           if (child.renderStyle.target.style[styleProperty].isEmpty) {
-            _markNestFlowLayoutNeedsLayout(child, styleProperty);
+            _markNestFlowLayoutNeedsLayout(child.renderStyle, styleProperty);
           }
         }
       });
@@ -380,14 +380,14 @@ mixin CSSTextMixin on RenderStyle {
 
   // Mark all nested layout and text children as needs layout when properties that will affect both
   // text and layout (line-height, white-space) changes.
-  void _markNestChildrenTextAndLayoutNeedsLayout(RenderBoxModel renderBoxModel, String styleProperty) {
-    if (renderBoxModel is RenderLayoutBox) {
-      renderBoxModel.markNeedsLayout();
-      renderBoxModel.visitChildren((RenderObject child) {
+  void _markNestChildrenTextAndLayoutNeedsLayout(RenderStyle renderStyle, String styleProperty) {
+    if (renderStyle.isSelfRenderLayoutBox()) {
+      renderStyle.markNeedsLayout();
+      renderStyle.visitChildren((RenderObject child) {
         if (child is RenderLayoutBox) {
           // Only need to layout when the specified style property is not set.
           if (child.renderStyle.target.style[styleProperty].isEmpty) {
-            _markNestChildrenTextAndLayoutNeedsLayout(child, styleProperty);
+            _markNestChildrenTextAndLayoutNeedsLayout(child.renderStyle, styleProperty);
           }
         } else if (child is RenderTextBox) {
           WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
@@ -401,7 +401,7 @@ mixin CSSTextMixin on RenderStyle {
   // None inheritable style change should only loop direct children to update text node with specified
   // style property not set in its parent.
   void _markTextNeedsLayout() {
-    renderBoxModel!.visitChildren((RenderObject child) {
+    visitChildren((RenderObject child) {
       if (child is RenderTextBox) {
         WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
         renderParagraph.markNeedsLayout();
@@ -412,12 +412,12 @@ mixin CSSTextMixin on RenderStyle {
   // Mark nested children text as needs layout.
   // Inheritable style change should loop nest children to update text node with specified style property
   // not set in its parent.
-  void _markChildrenTextNeedsLayout(RenderBoxModel renderBoxModel, String styleProperty) {
-    renderBoxModel.visitChildren((RenderObject child) {
+  void _markChildrenTextNeedsLayout(RenderStyle renderStyle, String styleProperty) {
+    renderStyle.visitChildren((RenderObject child) {
       if (child is RenderBoxModel) {
         // Only need to update child text when style property is not set.
         if (child.renderStyle.target.style[styleProperty].isEmpty) {
-          _markChildrenTextNeedsLayout(child, styleProperty);
+          _markChildrenTextNeedsLayout(child.renderStyle, styleProperty);
         }
       } else if (child is RenderTextBox) {
         WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
@@ -429,12 +429,12 @@ mixin CSSTextMixin on RenderStyle {
   // Mark nested children text as needs paint.
   // Inheritable style change should loop nest children to update text node with specified style property
   // not set in its parent.
-  void _markChildrenTextNeedsPaint(RenderBoxModel renderBoxModel, String styleProperty) {
-    renderBoxModel.visitChildren((RenderObject child) {
+  void _markChildrenTextNeedsPaint(RenderStyle renderStyle, String styleProperty) {
+    renderStyle.visitChildren((RenderObject child) {
       if (child is RenderBoxModel) {
         // Only need to update child text when style property is not set.
         if (child.renderStyle.target.style[styleProperty].isEmpty) {
-          _markChildrenTextNeedsPaint(child, styleProperty);
+          _markChildrenTextNeedsPaint(child.renderStyle, styleProperty);
         }
       } else if (child is RenderTextBox) {
         WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;

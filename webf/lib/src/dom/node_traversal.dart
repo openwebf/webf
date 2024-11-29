@@ -28,7 +28,7 @@ class InclusiveDescendantsOfIterator<T extends Node> extends Iterator<T> {
       _current = current.nextSibling as T?;
       return true;
     }
-    _current = NodeTraversal.nextAncestorSibling(current) as T?;
+    _current = NodeTraversal.nextAncestorSibling(current, _root as Node) as T?;
     return _current != null;
   }
 }
@@ -65,9 +65,13 @@ class AncestorOfIterable<T extends Node> extends Iterable<T> {
 }
 
 class NodeTraversal {
-  static Node? nextAncestorSibling(Node current) {
+  static Node? nextAncestorSibling(Node current, Node stayWithin) {
     assert(current.nextSibling == null);
     for (Node parent in ancestorsOf(current)) {
+      if (parent == stayWithin) {
+        return null;
+      }
+
       if (parent.nextSibling != null) {
         return parent.nextSibling;
       }

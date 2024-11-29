@@ -78,56 +78,26 @@ mixin ElementEventMixin on ElementBase {
     renderBox.getEventTarget = null;
   }
 
-  void ensureEventResponderBound() {
-    // Must bind event responder on render box model whatever there is no event listener.
-    RenderBoxModel? renderBox = renderBoxModel;
-    if (renderBox != null) {
-      // Make sure pointer responder bind.
-      renderBox.getEventTarget = getEventTarget;
-
-      if (_hasIntersectionObserverEvent()) {
-        renderBox.addIntersectionChangeListener(handleIntersectionChange);
-        // Mark the compositing state for this render object as dirty
-        // cause it will create new layer.
-        renderBox.markNeedsCompositingBitsUpdate();
-      } else {
-        // Remove listener when no intersection related event
-        renderBox.removeIntersectionChangeListener(handleIntersectionChange);
-      }
-      if (_hasResizeObserverEvent()) {
-        renderBox.addResizeListener(handleResizeChange);
-      } else {
-        renderBox.removeResizeListener(handleResizeChange);
-      }
-    }
-  }
-
-  bool _hasIntersectionObserverEvent() {
+  bool hasIntersectionObserverEvent() {
     return hasEventListener(EVENT_APPEAR) ||
         hasEventListener(EVENT_DISAPPEAR) ||
         hasEventListener(EVENT_INTERSECTION_CHANGE);
   }
 
-  bool _hasResizeObserverEvent() {
+  bool hasResizeObserverEvent() {
     return hasEventListener(EVENT_RESIZE);
   }
 
   @override
   void addEventListener(String eventType, EventHandler handler, {EventListenerOptions? addEventListenerOptions}) {
     super.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
-    RenderBoxModel? renderBox = renderBoxModel;
-    if (renderBox != null) {
-      ensureEventResponderBound();
-    }
+    renderStyle.ensureEventResponderBound();
   }
 
   @override
   void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false}) {
     super.removeEventListener(eventType, handler, isCapture: isCapture);
-    RenderBoxModel? renderBox = renderBoxModel;
-    if (renderBox != null) {
-      ensureEventResponderBound();
-    }
+    renderStyle.ensureEventResponderBound();
   }
 
   EventTarget getEventTarget() {

@@ -30,7 +30,7 @@ mixin CSSInlineMixin on RenderStyle {
   set verticalAlign(VerticalAlign? value) {
     if (_verticalAlign != value) {
       _verticalAlign = value;
-      renderBoxModel?.markNeedsLayout();
+      markNeedsLayout();
     }
   }
 

@@ -14,7 +14,7 @@ class ImageWidgetElement extends WidgetElement {
   };
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context, dom.ChildNodeList childNodes) {
     return Image(image: AssetImage(getAttribute('src')!));
   }
 }

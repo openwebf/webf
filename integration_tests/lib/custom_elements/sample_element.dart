@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:webf/widget.dart';
+import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 
 class SampleElement extends WidgetElement {
@@ -61,7 +62,7 @@ class SampleElement extends WidgetElement {
   };
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context, ChildNodeList childNodes) {
     return Container();
   }
 }

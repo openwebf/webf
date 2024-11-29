@@ -189,24 +189,19 @@ mixin CSSSizingMixin on RenderStyle {
   }
 
   void _markScrollContainerNeedsLayout() {
-    if (renderBoxModel == null) return;
-    RenderLayoutBox? scrollContainer = renderBoxModel!.findScrollContainer() as RenderLayoutBox?;
-    scrollContainer?.renderScrollingContent?.markNeedsLayout();
+    if (!hasRenderBox()) return;
+    markScrollingContainerNeedsLayout();
   }
 
   void _markSelfAndParentNeedsLayout() {
-    if (renderBoxModel == null) return;
-    RenderBoxModel boxModel = renderBoxModel!;
-    boxModel.markNeedsLayout();
-    if (boxModel is RenderSVGShape) {
-      // should update svg shape based on width/height
-      boxModel.markNeedUpdateShape();
-    }
+    if (!hasRenderBox()) return;
+    markNeedsLayout();
+    markSVGShapeNeedsUpdate();
 
     // Sizing may affect parent size, mark parent as needsLayout in case
     // renderBoxModel has tight constraints which will prevent parent from marking.
-    if (boxModel.parent is RenderBoxModel) {
-      (boxModel.parent as RenderBoxModel).markNeedsLayout();
+    if (isParentRenderBoxModel()) {
+      markParentNeedsLayout();
 
       // For positioned element with no left&right or top&bottom, the offset of its positioned placeholder will change
       // when its size has changed in flex layout.
@@ -221,25 +216,24 @@ mixin CSSSizingMixin on RenderStyle {
       // The renderBox of position element and its positioned placeholder will not always share the same parent,
       // so it needs to mark the positioned placeholder as needs layout additionally to mark sure the renderBox
       // of position element can get the updated offset of its positioned placeholder when it is layouted.
-      RenderStyle renderStyle = boxModel.renderStyle;
-      RenderLayoutParentData childParentData = boxModel.parentData as RenderLayoutParentData;
-
-      RenderPositionPlaceholder? renderPositionPlaceholder = boxModel.renderPositionPlaceholder;
-      if (renderPositionPlaceholder != null &&
-          renderPositionPlaceholder.parent is RenderFlexLayout &&
-          childParentData.isPositioned &&
+      RenderStyle renderStyle = this;
+      if (isSelfContainsRenderPositionPlaceHolder() &&
+          isPositionHolderParentIsRenderFlexLayout() &&
+          isSelfPositioned() &&
           ((renderStyle.left.isAuto && renderStyle.right.isAuto) ||
               (renderStyle.top.isAuto && renderStyle.bottom.isAuto))) {
-        RenderLayoutBox? placeholderParent = renderPositionPlaceholder.parent as RenderLayoutBox;
-        // Mark parent as _needsLayout directly as RenderPositionHolder has tight constraints which will
-        // prevent the _needsLayout flag to bubble up the renderObject tree.
-        placeholderParent.markNeedsLayout();
+
+        if (isPositionHolderParentIsRenderLayoutBox()) {
+          // Mark parent as _needsLayout directly as RenderPositionHolder has tight constraints which will
+          // prevent the _needsLayout flag to bubble up the renderObject tree.
+          markPositionHolderParentNeedsLayout();
+        }
       }
     }
 
     // Should notify to window's renderObject.
-    if (boxModel.parent is RenderViewportBox) {
-      (boxModel.parent as RenderBox).markNeedsLayout();
+    if (isParentRenderViewportBox()) {
+      markParentNeedsLayout();
     }
   }
 }

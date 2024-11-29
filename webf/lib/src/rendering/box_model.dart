@@ -677,6 +677,7 @@ class RenderLayoutBox extends RenderBoxModel
       renderStyle: renderStyle,
     );
     copyWith(repaintBoundaryFlexLayout);
+
     repaintBoundaryFlexLayout.addAll(detachChildren());
     return repaintBoundaryFlexLayout;
   }
@@ -687,6 +688,7 @@ class RenderLayoutBox extends RenderBoxModel
       renderStyle: renderStyle,
     );
     copyWith(flowLayout);
+
     flowLayout.addAll(detachChildren());
     return flowLayout;
   }
@@ -697,6 +699,7 @@ class RenderLayoutBox extends RenderBoxModel
       renderStyle: renderStyle,
     );
     copyWith(repaintBoundaryFlowLayout);
+
     repaintBoundaryFlowLayout.addAll(detachChildren());
     return repaintBoundaryFlowLayout;
   }

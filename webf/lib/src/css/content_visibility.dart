@@ -26,7 +26,7 @@ mixin CSSContentVisibilityMixin on RenderStyle {
   set contentVisibility(ContentVisibility? value) {
     if (value == _contentVisibility) return;
     _contentVisibility = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   static ContentVisibility resolveContentVisibility(String value) {

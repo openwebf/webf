@@ -4,6 +4,7 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
+import 'package:webf/dom.dart';
 import 'package:webf/widget.dart';
 
 const ROUTER_LINK = 'WEBF-ROUTER-LINK';
@@ -64,8 +65,8 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
-    return WebFHTMLElement(tagName: 'HTML', children: children, inlineStyle: {
+  Widget build(BuildContext context, ChildNodeList childNodes) {
+    return WebFHTMLElement(tagName: 'HTML', children: childNodes.toWidgetList(), inlineStyle: {
       'overflow': 'auto',
       'position': 'relative'
     });

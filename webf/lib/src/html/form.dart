@@ -24,10 +24,10 @@ class FlutterFormElement extends WidgetElement {
   // final _formKey = GlobalKey<FormState>();
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context, ChildNodeList childNodes) {
     return Form(
         child: FlutterFormElementContext(
-      child: WebFHTMLElement(tagName: 'DIV', children: children),
+      child: WebFHTMLElement(tagName: 'DIV', children: childNodes.toWidgetList()),
     ));
   }
 }

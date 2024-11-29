@@ -6,9 +6,9 @@ class FlutterLayoutBox extends WidgetElement {
   FlutterLayoutBox(BindingContext? context) : super(context);
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context, ChildNodeList childNodes) {
     return WebFHTMLElement(tagName: 'DIV', children: [
-      WebFHTMLElement(tagName: 'P', children: children)
+      WebFHTMLElement(tagName: 'P', children: childNodes.toWidgetList())
     ], inlineStyle: {
       'width': '100px',
       'height': '100px',

@@ -15,7 +15,7 @@ class FlutterContainerElement extends WidgetElement {
   Map<String, dynamic> get defaultStyle => _flutterContainerDefaultStyle;
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context,ChildNodeList childNodes) {
     double? topWidth = renderStyle.borderTopWidth?.value;
     double? rightWidth = renderStyle.borderRightWidth?.value;
     double? bottomWidth = renderStyle.borderBottomWidth?.value;
@@ -40,7 +40,7 @@ class FlutterContainerElement extends WidgetElement {
                 color: renderStyle.borderRightColor.value)),
       ),
       child: Column(
-        children: children,
+        children: childNodes.toWidgetList(),
       ),
     );
   }

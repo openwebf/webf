@@ -29,9 +29,9 @@ class FlutterListViewElement extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context, ChildNodeList childNodes) {
     return ListView(
-      children: children,
+      children: childNodes.toWidgetList(),
       controller: controller,
       physics: const AlwaysScrollableScrollPhysics(),
     );
