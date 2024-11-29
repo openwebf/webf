@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
 import 'dart:collection';
 import 'package:webf/css.dart';
 
@@ -12,6 +13,7 @@ mixin CSSVariableMixin on RenderStyle {
   final Map<String, List<String>> _propertyDependencies = {};
 
   void _addDependency(String identifier, String propertyName) {
+    if (propertyName.isEmpty) return;
     List<String>? dep = _propertyDependencies[identifier];
     if (dep == null) {
       _propertyDependencies[identifier] = [propertyName];
@@ -75,11 +77,24 @@ mixin CSSVariableMixin on RenderStyle {
     }
   }
 
-  void _notifyCSSVariableChanged(String identifier,String value) {
-    List<String>? propertyNames = _propertyDependencies[identifier];
-    propertyNames?.forEach((String propertyName) {
+  void _notifyCSSVariableChanged(String identifier, String value) {
+    List<String>? propertyNamesWithPattern = _propertyDependencies[identifier];
+    propertyNamesWithPattern?.forEach((String propertyNameWithPattern) {
+      List<String> group = propertyNameWithPattern.split('_');
+      String propertyName = group[0];
+      String? variableString;
+      if (group.length > 1) {
+        variableString = group[1];
+      }
+
       if (target.style.contains(propertyName)) {
-        target.setRenderStyle(propertyName, value);
+        scheduleMicrotask(() {
+          String propertyValue = variableString ?? propertyName;
+          if (CSSColor.isColor(propertyValue)) {
+            CSSColor.clearCachedColorValue(propertyValue);
+          }
+          target.setRenderStyle(propertyName, variableString ?? propertyName);
+        });
       }
     });
     visitChildren((CSSRenderStyle childRenderStyle) {

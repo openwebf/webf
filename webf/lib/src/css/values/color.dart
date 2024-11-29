@@ -172,6 +172,7 @@ final _colorHslRegExp =
     RegExp(r'^([0-9.-]+)(deg|rad|grad|turn)?[,\s]+([0-9.]+%)[,\s]+([0-9.]+%)([,\s/]+([0-9.]+%?))?\s*$');
 final _colorRgbRegExp =
     RegExp(r'^([+-]?[^\s,]+%?)[,\s]+([+-]?[^\s,]+%?)[,\s]+([+-]?[^\s,]+%?)([,\s/]+([+-]?[^\s,]+%?))?\s*$');
+final _variableRgbRegExp = RegExp(r'var\(([^()]*\(.*?\)[^()]*)\)|var\(([^()]*)\)');
 
 final LinkedLruHashMap<String, Color> _cachedParsedColor = LinkedLruHashMap(maximumSize: 100);
 
@@ -234,6 +235,10 @@ class CSSColor {
     return color == CURRENT_COLOR || parseColor(color) != null;
   }
 
+  static void clearCachedColorValue(String color) {
+    _cachedParsedColor.remove(color);
+  }
+
   static CSSColor? resolveColor(String color, RenderStyle renderStyle, String propertyName) {
     if (color == CURRENT_COLOR) {
       if (propertyName == COLOR) {
@@ -243,14 +248,27 @@ class CSSColor {
       renderStyle.addColorRelativeProperty(propertyName);
       return renderStyle.color;
     }
-    Color? value = parseColor(color, renderStyle: renderStyle);
+    Color? value = parseColor(color, renderStyle: renderStyle, propertyName: propertyName);
     if (value == null) {
       return null;
     }
     return CSSColor(value);
   }
 
-  static Color? parseColor(String color, {RenderStyle? renderStyle}) {
+  static String tryParserCSSColorWithVariable(String fullColor, String input, RenderStyle renderStyle, String propertyName) {
+    return input.replaceAllMapped(_variableRgbRegExp, (Match match) {
+      String? varString = match[0];
+      if (varString == null) return '';
+      var variable = renderStyle.resolveValue(propertyName, varString);
+
+      if (variable is CSSVariable) {
+        return renderStyle.getCSSVariable(variable.identifier, propertyName + '_' + fullColor) ?? '';
+      }
+      return '';
+    });
+  }
+
+  static Color? parseColor(String color, {RenderStyle? renderStyle, String? propertyName}) {
     color = color.trim().toLowerCase();
 
     if (color == TRANSPARENT) {
@@ -290,7 +308,7 @@ class CSSColor {
 
       final rgbMatch;
       if (renderStyle != null && colorBody.contains('var')) {
-        final result = CSSVariable.tryReplaceVariableInString(colorBody, renderStyle);
+        final result = tryParserCSSColorWithVariable(color, colorBody, renderStyle, propertyName ?? '');
         rgbMatch = _colorRgbRegExp.firstMatch(result);
       } else {
         rgbMatch = _colorRgbRegExp.firstMatch(colorBody);
@@ -311,7 +329,7 @@ class CSSColor {
 
       final hslMatch;
       if (renderStyle != null && colorBody.contains('var')) {
-        final result = CSSVariable.tryReplaceVariableInString(colorBody, renderStyle);
+        final result = tryParserCSSColorWithVariable(color, colorBody, renderStyle, propertyName ?? '');
         hslMatch = _colorHslRegExp.firstMatch(result);
       } else {
         hslMatch = _colorHslRegExp.firstMatch(colorBody);

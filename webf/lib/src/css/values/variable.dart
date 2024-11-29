@@ -5,8 +5,6 @@
 
 import 'package:webf/css.dart';
 
-final _variableRgbRegExp = RegExp(r'var\(\-\-[\w\-]+\)');
-
 const int _HYPHEN_CODE = 45; // -
 
 // https://www.w3.org/TR/css-variables-1/#defining-variables
@@ -39,15 +37,6 @@ class CSSVariable {
       }
     }
     return null;
-  }
-
-  static String tryReplaceVariableInString(String input, RenderStyle renderStyle) {
-    return input.replaceAllMapped(_variableRgbRegExp, (Match match) {
-      String? varString = match[0];
-      final variable = CSSVariable.tryParse(renderStyle, varString!);
-      final computedValue = variable?.computedValue('');
-      return computedValue;
-    });
   }
 
   final String identifier;
