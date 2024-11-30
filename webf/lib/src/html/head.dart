@@ -308,17 +308,10 @@ class LinkElement extends Element {
         }
       }
     }
-    //mediaType:screen, lastOperator:and, andMap {max-width: 300px}, onlyMap {}, notMap {}
-    // print('mediaType:$mediaType, lastOperator:$lastOperator, andMap $andMap, onlyMap $onlyMap, notMap $notMap');
+    // mediaType:screen, lastOperator:and, andMap {max-width: 300px}, onlyMap {}, notMap {}
     if (mediaType == MediaType.ALL || mediaType == MediaType.SCREEN) {
-      //for onlyMap
-
-      //for notMap
-
-      //for andMap
       double maxWidthValue = CSSLength.parseLength(andMap['max-width'] ?? '0px', null).value ?? -1;
       double minWidthValue = CSSLength.parseLength(andMap['min-width'] ?? '0px', null).value ?? -1;
-      // print('windowWidth:$windowWidth, maxWidthValue:$maxWidthValue, minWidthValue:$minWidthValue, ');
       if (maxWidthValue < windowWidth || minWidthValue > windowWidth) {
         isValid = false;
       }
