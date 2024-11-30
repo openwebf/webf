@@ -483,8 +483,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     propertyNames.sort((left, right) {
-      final isVariableLeft = CSSVariable.isVariable(left) ? 1 : 0;
-      final isVariableRight = CSSVariable.isVariable(right) ? 1 : 0;
+      final isVariableLeft = CSSVariable.isCSSSVariableProperty(left) ? 1 : 0;
+      final isVariableRight = CSSVariable.isCSSSVariableProperty(right) ? 1 : 0;
       if (isVariableLeft == 1 || isVariableRight == 1) {
         return isVariableRight - isVariableLeft;
       }

@@ -513,6 +513,8 @@ double? _parseColorPart(String value, double min, double max, RenderStyle? rende
 
   v ??= double.tryParse(value);
 
+  if (v == null) return null;
+
   return v! < min ? min : (v > max ? max : v);
 }
 
