@@ -948,8 +948,14 @@ class WebFController {
 
   List<BuildContext> buildContextStack = [];
   bool resizeToAvoidBottomInsets;
+
+  bool? _darkModeOverride;
+  set darkModeOverride(value) {
+    _darkModeOverride = value;
+  }
+
   bool get isDarkMode {
-    return ownerFlutterView.platformDispatcher.platformBrightness != Brightness.light;
+    return _darkModeOverride ?? ownerFlutterView.platformDispatcher.platformBrightness != Brightness.light;
   }
 
   String? _name;

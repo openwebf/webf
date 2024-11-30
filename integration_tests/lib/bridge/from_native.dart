@@ -88,6 +88,7 @@ Pointer<Utf8> _environment() {
 final Pointer<NativeFunction<NativeEnvironment>> _nativeEnvironment = Pointer.fromFunction(_environment);
 
 typedef NativeSimulatePointer = Void Function(Pointer<Void> context, Pointer<MousePointer>, Int32 length, Int32 pointer, Pointer<NativeFunction<NativeAsyncCallback>> callback);
+typedef NativeSimulateDarkModeChange = Void Function(Double contextId, Int8 isDarkMode);
 typedef NativeSimulateInputText = Void Function(Pointer<NativeString>);
 
 PointerChange _getPointerChange(double change) {
@@ -174,6 +175,15 @@ void _simulatePointer(Pointer<Void> context, Pointer<MousePointer> mousePointerL
   malloc.free(mousePointerList);
 }
 
+
+final Pointer<NativeFunction<NativeSimulateDarkModeChange>> _nativeChangeDarkMode = Pointer.fromFunction(_simulateDarkModeChange);
+
+void _simulateDarkModeChange(double contextId, int isDartMode) {
+  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  controller.darkModeOverride = isDartMode == 1;
+  controller.view.didChangePlatformBrightness();
+}
+
 final Pointer<NativeFunction<NativeSimulatePointer>> _nativeSimulatePointer = Pointer.fromFunction(_simulatePointer);
 late TestTextInput testTextInput;
 
@@ -190,6 +200,7 @@ final List<int> _dartNativeMethods = [
   _nativeMatchImageSnapshot.address,
   _nativeMatchImageSnapshotBytes.address,
   _nativeEnvironment.address,
+  _nativeChangeDarkMode.address,
   _nativeSimulatePointer.address,
   _nativeSimulateInputText.address
 ];
