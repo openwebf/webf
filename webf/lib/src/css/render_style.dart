@@ -831,14 +831,6 @@ class CSSRenderStyle extends RenderStyle
 
   @override
   dynamic resolveValue(String propertyName, String propertyValue, { String? baseHref }) {
-    bool uiCommandTracked = false;
-    if (enableWebFProfileTracking) {
-      if (!WebFProfiler.instance.currentPipeline.containsActiveUICommand()) {
-        WebFProfiler.instance.startTrackUICommand();
-        uiCommandTracked = true;
-      }
-      WebFProfiler.instance.startTrackUICommandStep('$this.renderStyle.resolveValue');
-    }
     RenderStyle renderStyle = this;
 
     if (propertyValue == INITIAL) {
@@ -848,12 +840,6 @@ class CSSRenderStyle extends RenderStyle
     // Process CSSVariable.
     dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
     if (value != null) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackUICommandStep();
-        if (uiCommandTracked) {
-          WebFProfiler.instance.finishTrackUICommand();
-        }
-      }
       return value;
     }
 
@@ -1119,13 +1105,6 @@ class CSSRenderStyle extends RenderStyle
       case STROKE_LINEJOIN:
         value = CSSSvgMixin.resolveStrokeLinejoin(propertyValue);
         break;
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-      if (uiCommandTracked) {
-        WebFProfiler.instance.finishTrackUICommand();
-      }
     }
 
     // --x: foo;
