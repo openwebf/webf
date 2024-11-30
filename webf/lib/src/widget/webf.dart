@@ -23,10 +23,10 @@ class WebF extends StatefulWidget {
   final Color? background;
 
   /// the width of webFWidget
-  double? viewportWidth;
+  final double? viewportWidth;
 
   /// the height of webFWidget
-  double? viewportHeight;
+  final double? viewportHeight;
 
   ///  The initial bundle to load.
   final WebFBundle? bundle;
@@ -363,34 +363,31 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    WebFController? controller = _webfWidget.controller;
-    if (controller != null) {
-      _webfWidget.viewportWidth ??= controller.viewportSize?.width;
-      _webfWidget.viewportHeight ??= controller.viewportSize?.height;
-    } else {
-      controller = WebFController(context,
-        name: shortHash(_webfWidget),
-        background: _webfWidget.background,
-        bundle: _webfWidget.bundle,
-        externalController: false,
-        onLoad: _webfWidget.onLoad,
-        routeObserver: _webfWidget.routeObserver,
-        onDOMContentLoaded: _webfWidget.onDOMContentLoaded,
-        onLoadError: _webfWidget.onLoadError,
-        onJSError: _webfWidget.onJSError,
-        runningThread: _webfWidget.runningThread,
-        methodChannel: _webfWidget.javaScriptChannel,
-        gestureListener: _webfWidget.gestureListener,
-        navigationDelegate: _webfWidget.navigationDelegate,
-        devToolsService: _webfWidget.devToolsService,
-        httpClientInterceptor: _webfWidget.httpClientInterceptor,
-        onCustomElementAttached: onCustomElementAttached,
-        onCustomElementDetached: onCustomElementDetached,
-        initialCookies: _webfWidget.initialCookies,
-        uriParser: _webfWidget.uriParser,
-        preloadedBundles: _webfWidget.preloadedBundles,
-        resizeToAvoidBottomInsets: resizeToAvoidBottomInsets);
-    }
+    WebFController controller = _webfWidget.controller ??
+        WebFController(context,
+          name: shortHash(_webfWidget),
+          viewportWidth: _webfWidget.viewportWidth,
+          viewportHeight: _webfWidget.viewportHeight,
+          background: _webfWidget.background,
+          bundle: _webfWidget.bundle,
+          externalController: false,
+          onLoad: _webfWidget.onLoad,
+          routeObserver: _webfWidget.routeObserver,
+          onDOMContentLoaded: _webfWidget.onDOMContentLoaded,
+          onLoadError: _webfWidget.onLoadError,
+          onJSError: _webfWidget.onJSError,
+          runningThread: _webfWidget.runningThread,
+          methodChannel: _webfWidget.javaScriptChannel,
+          gestureListener: _webfWidget.gestureListener,
+          navigationDelegate: _webfWidget.navigationDelegate,
+          devToolsService: _webfWidget.devToolsService,
+          httpClientInterceptor: _webfWidget.httpClientInterceptor,
+          onCustomElementAttached: onCustomElementAttached,
+          onCustomElementDetached: onCustomElementDetached,
+          initialCookies: _webfWidget.initialCookies,
+          uriParser: _webfWidget.uriParser,
+          preloadedBundles: _webfWidget.preloadedBundles,
+          resizeToAvoidBottomInsets: resizeToAvoidBottomInsets);
 
     (context as _WebFRenderObjectElement).controller = controller;
 

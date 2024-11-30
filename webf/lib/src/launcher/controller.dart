@@ -1005,6 +1005,8 @@ class WebFController {
 
   WebFController(BuildContext context, {
     String? name,
+    double? viewportWidth,
+    double? viewportHeight,
     bool enableDebug = false,
     Color? background,
     GestureListener? gestureListener,
