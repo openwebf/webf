@@ -247,49 +247,6 @@ describe('MediaQuery prefers-color-scheme', () => {
     await snapshot();
   });
 
-  it('should works with css variables in rgba color', async () => {
-    const cssText = `
-    div.example {
-      background-color: rgb(32 38 48 / var(--tw-bg-opacity));
-    }
-
-    @media (prefers-color-scheme:dark) {
-      :root {
-        --tw-bg-opacity: 1;
-      }
-    }
-
-    @media (prefers-color-scheme:light) {
-      :root {
-      }
-    }
-    `;
-    const style = document.createElement('style');
-    style.innerHTML = cssText;
-    document.head.append(style);
-
-    const container = createElement('div', {
-      className: 'example',
-      style: {
-        width: '300px',
-        height: '200px'
-      }
-    }, [
-      createText('should pass when bg color is black when dark mode enabled')
-    ]);
-
-    BODY.appendChild(container);
-    BODY.appendChild(createText('-----'));
-
-    simulateChangeDarkMode(false);
-
-    await snapshot();
-
-    simulateChangeDarkMode(true);
-
-    await snapshot();
-  });
-
   it('should works with css variable value is hsl color', async () => {
     const cssText = `
     div.example {

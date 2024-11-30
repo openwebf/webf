@@ -22,6 +22,12 @@
     ]
   },
   {
+    "name": "MediaQueries",
+    "specs": [
+      "specs/css/css-mediaqueries/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
     "name": "Storage",
     "specs": [
       "specs/storage/**/*.{js,jsx,ts,tsx,html}"
