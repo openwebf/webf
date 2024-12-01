@@ -52,8 +52,6 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
     // Apply the layout transform for renderBoxModel and fallback to paint transform for other renderObject type.
     if (parentRenderer is RenderBoxModel) {
       offset += parentRenderer.obtainLayoutTransform(childRenderer, excludeScrollOffset);
-    } else if (parentRenderer is RenderSliverRepaintProxy) {
-      parentRenderer.applyLayoutTransform(childRenderer, transform, excludeScrollOffset);
     } else if (parentRenderer is RenderBox) {
       assert(childRenderer.parent == parentRenderer);
       if (childRenderer.parentData is BoxParentData) {
@@ -696,15 +694,6 @@ class RenderLayoutBox extends RenderBoxModel
     return repaintBoundaryFlowLayout;
   }
 
-  RenderSliverListLayout toSliverLayout(RenderSliverElementChildManager manager, ScrollListener? onScroll) {
-    RenderSliverListLayout sliverListLayout = RenderSliverListLayout(
-        renderStyle: renderStyle, manager: manager, onScroll: onScroll, currentView: renderStyle.currentFlutterView);
-    manager.setupSliverListLayout(sliverListLayout);
-    copyWith(sliverListLayout);
-    sliverListLayout.addAll(detachChildren());
-    return sliverListLayout;
-  }
-
   @override
   void dispose() {
     super.dispose();
@@ -1187,16 +1176,7 @@ class RenderBoxModel extends RenderBox
   // Base layout methods to compute content constraints before content box layout.
   // Call this method before content box layout.
   void beforeLayout() {
-    BoxConstraints contentConstraints;
-    // @FIXME: Normally constraints is calculated in getConstraints by parent RenderLayoutBox in Kraken,
-    // except in sliver layout, constraints is calculated by [RenderSliverList] which kraken can not control,
-    // so it needs to invoke getConstraints here for sliver container's direct child.
-    if (parent is RenderSliverRepaintProxy || parent is RenderSliverList) {
-      contentConstraints = getConstraints();
-    } else {
-      // Constraints is already calculated in parent layout.
-      contentConstraints = constraints;
-    }
+    BoxConstraints contentConstraints = constraints;
 
     // Deflate border constraints.
     contentConstraints = renderStyle.deflateBorderConstraints(contentConstraints);

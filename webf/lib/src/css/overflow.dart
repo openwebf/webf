@@ -202,14 +202,7 @@ mixin ElementOverflowMixin on ElementBase {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.updateRenderBoxModelWithOverflowX');
     }
-    if (renderStyle.isSelfRenderSliverListLayout()) {
-      if (managedByFlutterWidget) throw FlutterError('css display sliver not supported in with flutter widget adapter');
-      renderStyle.getSelfRenderBoxValue((renderBoxModel, _) {
-        RenderSliverListLayout sliverListLayout = renderBoxModel as RenderSliverListLayout;
-        sliverListLayout.scrollOffsetX =
-            sliverListLayout.axis == Axis.horizontal ? sliverListLayout.scrollable.position : null;
-      });
-    } else if (renderStyle.hasRenderBox()) {
+    if (renderStyle.hasRenderBox()) {
       CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
       switch (overflowX) {
         case CSSOverflowType.clip:
@@ -233,13 +226,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void updateRenderBoxModelWithOverflowY(ScrollListener scrollListener) {
-    if (renderStyle.isSelfRenderSliverListLayout()) {
-      renderStyle.getSelfRenderBoxValue((renderBoxModel, _) {
-        RenderSliverListLayout sliverListLayout = renderBoxModel as RenderSliverListLayout;
-        sliverListLayout.scrollOffsetY =
-            sliverListLayout.axis == Axis.vertical ? sliverListLayout.scrollable.position : null;
-      });
-    } else if (renderStyle.hasRenderBox()) {
+    if (renderStyle.hasRenderBox()) {
       CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
       switch (overflowY) {
         case CSSOverflowType.clip:
@@ -540,15 +527,11 @@ mixin ElementOverflowMixin on ElementBase {
 
   WebFScrollable? _getScrollable(Axis direction) {
     WebFScrollable? scrollable;
-    if (renderer is RenderSliverListLayout) {
-      RenderSliverListLayout recyclerLayout = renderer as RenderSliverListLayout;
-      scrollable = direction == recyclerLayout.axis ? recyclerLayout.scrollable : null;
-    } else {
-      if (direction == Axis.horizontal) {
-        scrollable = renderStyle._scrollableX;
-      } else if (direction == Axis.vertical) {
-        scrollable = renderStyle._scrollableY;
-      }
+
+    if (direction == Axis.horizontal) {
+      scrollable = renderStyle._scrollableX;
+    } else if (direction == Axis.vertical) {
+      scrollable = renderStyle._scrollableY;
     }
     return scrollable;
   }
@@ -560,7 +543,7 @@ mixin ElementOverflowMixin on ElementBase {
 
       // Apply scroll effect after layout.
       assert(isRendererAttached, 'Overflow can only be added to a RenderBox.');
-      renderer!.owner!.flushLayout();
+      RendererBinding.instance.rootPipelineOwner.flushLayout();
 
       scrollable.position!.moveTo(
         distance,

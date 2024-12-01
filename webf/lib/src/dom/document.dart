@@ -7,6 +7,7 @@ import 'dart:ffi';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
@@ -161,9 +162,6 @@ class Document extends ContainerNode {
 
   @override
   String get nodeName => '#document';
-
-  @override
-  RenderBox? get renderer => viewport;
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L770
   bool parsing = false;
@@ -337,7 +335,7 @@ class Document extends ContainerNode {
   HitTestResult HitTestInDocument(double x, double y) {
     BoxHitTestResult boxHitTestResult = BoxHitTestResult();
     Offset offset = Offset(x, y);
-    documentElement?.renderer?.hitTest(boxHitTestResult, position: offset);
+    documentElement?.getRenderer(null)?.hitTest(boxHitTestResult, position: offset);
     return boxHitTestResult;
   }
 
@@ -588,4 +586,15 @@ class Document extends ContainerNode {
     pendingPreloadingScriptCallbacks.clear();
     super.dispose();
   }
+
+  @override
+  RenderBox? getRenderer([flutter.Element? flutterRenderObjectElement]) {
+    return viewport;
+  }
+
+  @override
+  bool get isRendererAttached => viewport?.attached == true;
+
+  @override
+  bool get isRendererAttachedToSegmentTree => viewport?.parent != null;
 }

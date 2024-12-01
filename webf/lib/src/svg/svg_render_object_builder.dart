@@ -111,13 +111,13 @@ class SVGRenderBoxBuilder {
       element.tagName = tagName;
       element.namespaceURI = SVG_ELEMENT_URI;
       element.createRenderer();
-      return element.renderBoxModel!;
+      return element.renderStyle.domRenderBoxModel!;
     }
     print('Unknown SVG element $tagName');
     final element = SVGUnknownElement(null);
     element.tagName = tagName;
     element.namespaceURI = SVG_ELEMENT_URI;
-    return element.renderBoxModel!;
+    return element.renderStyle.domRenderBoxModel!;
   }
 
   void setAttribute(

@@ -5,6 +5,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -86,7 +87,7 @@ class CanvasElement extends Element {
   }
 
   @override
-  void willAttachRenderer() {
+  void willAttachRenderer([flutter.Element? flutterWidgetElement]) {
     super.willAttachRenderer();
     renderCustomPaint = RenderCanvasPaint(
       painter: painter,
@@ -131,7 +132,6 @@ class CanvasElement extends Element {
     double? width;
     double? height;
 
-    RenderStyle renderStyle = renderBoxModel!.renderStyle;
     double? styleWidth = renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
     double? styleHeight = renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
 
@@ -180,7 +180,6 @@ class CanvasElement extends Element {
       // to the object-fit CSS property.
       // @TODO: CSS object-fit for canvas.
       // To fill (default value of object-fit) the bitmap content, use scale to get the same performed.
-      RenderStyle renderStyle = renderBoxModel!.renderStyle;
       double? styleWidth = renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
       double? styleHeight = renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
 

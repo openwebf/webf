@@ -6,10 +6,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart' show RenderObjectElement, Widget;
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
+import 'package:webf/rendering.dart';
 import 'node_data.dart';
 import 'node_traversal.dart';
 
@@ -110,7 +111,7 @@ typedef NodeVisitor = void Function(Node node);
 /// [Node] or [Element]s, which wrap [RenderObject]s, which provide the actual
 /// rendering of the application.
 abstract class RenderObjectNode {
-  RenderBox? get renderer;
+  RenderBox? getRenderer([flutter.Element? flutterRenderObjectElement]);
 
   /// Creates an instance of the [RenderObject] class that this
   /// [RenderObjectNode] represents, using the configuration described by this
@@ -173,7 +174,9 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   /// WebF nodes could be wrapped by [WebFHTMLElementToWidgetAdaptor] and the renderObject of this node is managed by Flutter framework.
   /// So if managedByFlutterWidget is true, WebF DOM can not disposed Node's renderObject directly.
   bool _managedByFlutterWidget = false;
+
   bool get managedByFlutterWidget => _managedByFlutterWidget;
+
   set managedByFlutterWidget(bool value) {
     for (Node node in NodeTraversal.inclusiveDescendantsOf(this)) {
       node._managedByFlutterWidget = true;
@@ -292,7 +295,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return ensureNodeData().ensureEmptyChildNodeList(this);
   }
 
-  Widget toWidget() {
+  flutter.Widget toWidget() {
     if (this is WidgetElement) {
       return (this as WidgetElement).widget;
     } else if (this is TextNode) {
@@ -306,10 +309,10 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   // Is child renderObject attached.
-  bool get isRendererAttached => renderer != null && renderer!.attached;
+  bool get isRendererAttached;
 
   // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
-  bool get isRendererAttachedToSegmentTree => renderer != null && renderer!.parent != null;
+  bool get isRendererAttachedToSegmentTree;
 
   bool isDescendantOf(Node? other) {
     // Return true if other is an ancestor of this, otherwise false
@@ -330,10 +333,10 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   /// Attach a renderObject to parent.
-  void attachTo(Element parent, {RenderBox? after}) {}
+  void attachTo(Element parent, {flutter.Element? flutterWidgetElement, Node? previousSibling}) {}
 
   /// Unmount referenced render object.
-  void unmountRenderObject({bool deep = false, bool keepFixedAlive = false}) {}
+  void unmountRenderObject({bool keepFixedAlive = false, flutter.Element? flutterWidgetElement}) {}
 
   /// Release any resources held by this node.
   @override
@@ -348,10 +351,11 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   @override
-  RenderBox createRenderer() => throw FlutterError('[createRenderer] is not implemented.');
+  RenderBox createRenderer([flutter.Element? flutterWidgetElement]) =>
+      throw FlutterError('[createRenderer] is not implemented.');
 
   @override
-  void willAttachRenderer() {}
+  void willAttachRenderer([flutter.Element? flutterWidgetElement]) {}
 
   @override
   void didAttachRenderer() {}
@@ -379,7 +383,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   /// Ensure child and child's child render object is attached.
-  void ensureChildAttached() {}
+  void ensureChildAttached([flutter.Element? flutterWidgetElement]) {}
 
   @override
   void connectedCallback() {
@@ -445,6 +449,31 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   bool hasChildren() {
     return firstChild != null;
+  }
+
+  static RenderBox? findMostClosedSiblings(Node? previousSibling, { flutter.Element? flutterWidgetElement }) {
+    RenderBox? afterRenderObject = previousSibling?.getRenderer(flutterWidgetElement);
+
+    // Found the most closed
+    if (afterRenderObject == null) {
+      Node? ref = previousSibling?.previousSibling;
+      while (ref != null && afterRenderObject == null) {
+        afterRenderObject = ref.getRenderer(null);
+        ref = ref.previousSibling;
+      }
+    }
+
+    // Renderer of referenceNode may not moved to a difference place compared to its original place
+    // in the dom tree due to position absolute/fixed.
+    // Use the renderPositionPlaceholder to get the same place as dom tree in this case.
+    if (afterRenderObject is RenderBoxModel) {
+      RenderBox? renderPositionPlaceholder = afterRenderObject.renderPositionPlaceholder;
+      if (renderPositionPlaceholder != null) {
+        afterRenderObject = renderPositionPlaceholder;
+      }
+    }
+
+    return afterRenderObject;
   }
 
   DocumentPosition compareDocumentPosition(Node other) {

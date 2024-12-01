@@ -84,10 +84,10 @@ abstract class WidgetElement extends dom.Element {
   /// place the equivalence altitude to the [willAttachRenderer] and [didAttachRenderer].
   @mustCallSuper
   @override
-  void willAttachRenderer() {
+  void willAttachRenderer([Element? flutterWidgetElement]) {
     super.willAttachRenderer();
     if (renderStyle.display != CSSDisplay.none && attachedAdapter == null) {
-      attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!, widgetElement: this);
+      attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderStyle.domRenderBoxModel!, widgetElement: this);
     }
   }
 
@@ -101,11 +101,11 @@ abstract class WidgetElement extends dom.Element {
   // Reconfigure renderObjects when already rendered pages reattached to flutter tree
   void reactiveRenderer() {
     // The older one was disposed by flutter, should replace it with a new one.
-    updateOrCreateRenderBoxModel(forceUpdate: true);
+    updateOrCreateRenderBoxModel(flutterWidgetElement: _state!.context as Element);
 
     if (renderStyle.display != CSSDisplay.none) {
       // Generate a new adapter for this RenderWidget
-      attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!, widgetElement: this);
+      attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderStyle.domRenderBoxModel!, widgetElement: this);
 
       // Reattach to Flutter
       ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
@@ -209,7 +209,7 @@ abstract class WidgetElement extends dom.Element {
     dom.Node? parent = element.parentNode;
 
     while (parent != null) {
-      if (parent.flutterWidgetElement != null) {
+      if (parent.managedByFlutterWidget) {
         return parent;
       }
 

@@ -9,6 +9,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
@@ -146,15 +147,14 @@ class ImageElement extends Element {
         height = input.value!.toInt();
       }
     });
-    attributes['scaling'] = ElementAttributeProperty(
-        setter: (value) => scaling = attributeToProperty<String>(value));
+    attributes['scaling'] = ElementAttributeProperty(setter: (value) => scaling = attributeToProperty<String>(value));
   }
 
   @override
-  void willAttachRenderer() {
+  void willAttachRenderer([flutter.Element? flutterWidgetElement]) {
     super.willAttachRenderer();
     style.addStyleChangeListener(_stylePropertyChanged);
-    RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
+    RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
     if (_didWatchAnimationImage && renderReplaced?.hasIntersectionObserver() == false) {
       renderReplaced!.addIntersectionChangeListener(_handleIntersectionChange);
     }
@@ -171,9 +171,9 @@ class ImageElement extends Element {
     super.didDetachRenderer();
     style.removeStyleChangeListener(_stylePropertyChanged);
 
-    if (renderBoxModel != null) {
+    if (renderStyle.hasRenderBox()) {
       // unlink render object and self render object
-      final replaced = renderBoxModel as RenderReplaced;
+      final replaced = renderStyle.domRenderBoxModel as RenderReplaced;
       replaced.child = null;
     }
   }
@@ -227,8 +227,8 @@ class ImageElement extends Element {
 
   // Drop the current [RenderImage] off to render replaced.
   void _dropChild() {
-    if (renderBoxModel != null) {
-      RenderReplaced renderReplaced = renderBoxModel as RenderReplaced;
+    if (renderStyle.hasRenderBox()) {
+      RenderReplaced renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced;
       renderReplaced.child = null;
       if (_renderImage != null) {
         _renderImage!.image = null;
@@ -257,7 +257,7 @@ class ImageElement extends Element {
 
   bool _didWatchAnimationImage = false;
   void _watchAnimatedImageWhenVisible() {
-    RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
+    RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
     if (_isListeningStream && !_didWatchAnimationImage) {
       _stopListeningStream(keepStreamAlive: true);
       renderReplaced?.addIntersectionChangeListener(_handleIntersectionChange);
@@ -269,7 +269,7 @@ class ImageElement extends Element {
   void dispose() async {
     super.dispose();
 
-    RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
+    RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
     renderReplaced?.removeIntersectionChangeListener(_handleIntersectionChange);
 
     // Stop and remove image stream reference.
@@ -554,7 +554,7 @@ class ImageElement extends Element {
       final completer = Completer<bool?>();
       _updateImageDataLazyCompleter = completer;
 
-      RenderReplaced? renderReplaced = renderBoxModel as RenderReplaced?;
+      RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
       renderReplaced
         ?..isInLazyRendering = true
         // When detach renderer, all listeners will be cleared.
@@ -573,7 +573,7 @@ class ImageElement extends Element {
       // Because the renderObject can changed between rendering, So we need to reassign the value;
       _updateImageDataLazyCompleter = null;
 
-      renderReplaced = renderBoxModel as RenderReplaced?;
+      renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
       renderReplaced?.isInLazyRendering = false;
     }
 
@@ -731,9 +731,9 @@ class ImageElement extends Element {
         _resizeImage();
       }
     } else if (property == OBJECT_FIT && _renderImage != null) {
-      _renderImage!.fit = renderBoxModel!.renderStyle.objectFit;
+      _renderImage!.fit = renderStyle.objectFit;
     } else if (property == OBJECT_POSITION && _renderImage != null) {
-      _renderImage!.alignment = renderBoxModel!.renderStyle.objectPosition;
+      _renderImage!.alignment = renderStyle.objectPosition;
     }
   }
 }

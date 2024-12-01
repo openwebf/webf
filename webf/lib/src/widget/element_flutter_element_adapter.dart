@@ -27,7 +27,7 @@ class WebFHTMLElementToFlutterElementAdaptor extends MultiChildRenderObjectEleme
     dom.Element element = widget.webFElement;
     element.applyStyle(element.style);
 
-    if (element.renderer != null) {
+    if (element.renderStyle.domRenderBoxModel != null) {
       if (element.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
         // Flush pending style before child attached.
         element.style.flushPendingProperties();

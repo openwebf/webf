@@ -2,7 +2,7 @@
  * Copyright (C) 2023-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -68,7 +68,7 @@ class DefsAttributeElement extends WidgetElement {
 
   @override
   RenderBoxModel? updateOrCreateRenderBoxModel(
-      {bool forceUpdate = false, RenderObjectElement? ownerFlutterWidgetElement}) {
+      {flutter.Element? flutterWidgetElement}) {
     // do not needs to update
     return null;
   }
@@ -102,7 +102,7 @@ class DefsAttributeElement extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList children) {
-    return SizedBox.shrink();
+  flutter.Widget build(flutter.BuildContext context, ChildNodeList children) {
+    return flutter.SizedBox.shrink();
   }
 }

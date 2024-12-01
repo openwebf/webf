@@ -7,7 +7,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart' show RenderObjectElement;
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -27,7 +27,7 @@ enum RenderObjectUpdateReason {
 }
 
 typedef SomeRenderBoxModelHandlerCallback = bool Function(RenderBoxModel renderBoxModel);
-typedef EveryRenderBoxModelHandlerCallback = bool Function(RenderObjectElement?, RenderBoxModel renderBoxModel);
+typedef EveryRenderBoxModelHandlerCallback = bool Function(flutter.Element?, RenderBoxModel renderBoxModel);
 typedef RenderObjectStyleMatchers = bool Function(RenderObject? renderObject, RenderStyle? renderStyle);
 typedef RenderBoxModelMatcher = bool Function(RenderBoxModel renderBoxModel, RenderStyle renderStyle);
 typedef RenderStyleMatcher = bool Function(RenderStyle renderStyle);
@@ -374,9 +374,9 @@ abstract class RenderStyle {
   double getHeightByAspectRatio();
 
   RenderBoxModel? _domRenderObjects;
-  final Map<RenderObjectElement, RenderBoxModel> _widgetRenderObjects = {};
+  final Map<flutter.Element, RenderBoxModel> _widgetRenderObjects = {};
 
-  Map<RenderObjectElement, RenderBoxModel> get widgetRenderObjects => _widgetRenderObjects;
+  Map<flutter.Element, RenderBoxModel> get widgetRenderObjects => _widgetRenderObjects;
 
   Iterable<RenderBoxModel> get widgetRenderObjectIterator => _widgetRenderObjects.values;
 
@@ -551,6 +551,16 @@ abstract class RenderStyle {
   }
 
   @pragma('vm:prefer-inline')
+  bool isSelfRenderBoxAttachedToSegmentTree() {
+    return someRenderBoxSatisfy((boxModel) => boxModel.parent != null);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfRenderBoxAttached() {
+    return someRenderBoxSatisfy((boxModel) => boxModel.attached == true);
+  }
+
+  @pragma('vm:prefer-inline')
   bool isSelfRenderFlexLayout() {
     return everyRenderObjectByTypeAndMatch(
         RenderObjectGetType.self, (renderObject, _) => renderObject is RenderFlexLayout);
@@ -606,12 +616,6 @@ abstract class RenderStyle {
   bool isSelfRenderLayoutBox() {
     return everyRenderObjectByTypeAndMatch(
         RenderObjectGetType.self, (renderObject, _) => renderObject is RenderLayoutBox);
-  }
-
-  @pragma('vm:prefer-inline')
-  bool isSelfRenderSliverListLayout() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderSliverListLayout);
   }
 
   @pragma('vm:prefer-inline')
@@ -686,6 +690,28 @@ abstract class RenderStyle {
     return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.clientWidth);
   }
 
+  // Get the offset of current element relative to specified ancestor element.
+  Offset getOffset({RenderBoxModel? ancestorRenderBox, bool excludeScrollOffset = false}) {
+    // Need to flush layout to get correct size.
+    flushLayout();
+
+    // Returns (0, 0) when ancestor is null.
+    if (ancestorRenderBox == null) {
+      return Offset.zero;
+    }
+
+    return getSelfRenderBoxValue((renderBoxModel, _) {
+      return renderBoxModel.getOffsetToAncestor(Offset.zero, ancestorRenderBox,
+          excludeScrollOffset: excludeScrollOffset);
+    });
+  }
+
+  Future<Image> toImage(double pixelRatio) {
+    return getSelfRenderBoxValue((renderBoxModel, _) {
+      return renderBoxModel.toImage(pixelRatio: pixelRatio);
+    });
+  }
+
   @pragma('vm:prefer-inline')
   Size? scrollableSize() {
     return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.scrollableSize);
@@ -725,6 +751,25 @@ abstract class RenderStyle {
   Offset localToGlobal(Offset point, {RenderObject? ancestor}) {
     return getRenderBoxValueByType(
         RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.localToGlobal(point, ancestor: ancestor));
+  }
+
+  @pragma('vm:prefer-inline')
+  void flushLayout() {
+    everyRenderBox((_, renderObject) {
+      renderObject.performLayout();
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void clearIntersectionChangeListeners() {
+    everyRenderBox((_, renderBoxModel) {
+      renderBoxModel.clearIntersectionChangeListeners();
+      return true;
+    });
+  }
+
+  void attachToRenderBoxModel() {
   }
 
   @pragma('vm:prefer-inline')
@@ -1004,17 +1049,31 @@ abstract class RenderStyle {
     return true;
   }
 
+  void removeRenderObject(flutter.Element? flutterWidgetElement) {
+    if (flutterWidgetElement != null) {
+      unmountWidgetRenderObject(flutterWidgetElement);
+    } else {
+      setDomRenderObject(null);
+    }
+  }
+
   void setDomRenderObject(RenderBoxModel? renderBoxModel) {
     _domRenderObjects = renderBoxModel;
   }
 
-  void addOrUpdateWidgetRenderObjects(
-      RenderObjectElement ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
+  void setDebugShouldPaintOverlay(bool value) {
+    getSelfRenderBoxValue((renderBoxModel, _) {
+      renderBoxModel.debugShouldPaintOverlay = value;
+      return null;
+    });
+  }
+
+  void addOrUpdateWidgetRenderObjects(flutter.Element ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
     assert(!_widgetRenderObjects.containsKey(ownerRenderObjectElement));
     _widgetRenderObjects[ownerRenderObjectElement] = targetRenderBoxModel;
   }
 
-  void unmountWidgetRenderObject(RenderObjectElement ownerRenderObjectElement) {
+  void unmountWidgetRenderObject(flutter.Element ownerRenderObjectElement) {
     _widgetRenderObjects.remove(ownerRenderObjectElement);
   }
 
@@ -1024,7 +1083,7 @@ abstract class RenderStyle {
     return _domRenderObjects;
   }
 
-  RenderBoxModel? getWidgetPairedRenderBoxModel(RenderObjectElement targetRenderObjectElement) {
+  RenderBoxModel? getWidgetPairedRenderBoxModel(flutter.Element targetRenderObjectElement) {
     return _widgetRenderObjects[targetRenderObjectElement];
   }
 
@@ -1977,9 +2036,7 @@ class CSSRenderStyle extends RenderStyle
     if (effectiveDisplay == CSSDisplay.inline && !renderStyle.isSelfRenderReplaced()) {
       _contentBoxLogicalWidth = null;
       return;
-    } else if (effectiveDisplay == CSSDisplay.block ||
-        effectiveDisplay == CSSDisplay.flex ||
-        effectiveDisplay == CSSDisplay.sliver) {
+    } else if (effectiveDisplay == CSSDisplay.block || effectiveDisplay == CSSDisplay.flex) {
       // Use width directly if defined.
       if (renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
@@ -2397,9 +2454,8 @@ class CSSRenderStyle extends RenderStyle
   }
 
   // Create renderLayoutBox if type changed and copy children if there has previous renderLayoutBox.
-  RenderLayoutBox _createRenderLayout(
-      {RenderLayoutBox? previousRenderLayoutBox,
-      bool isRepaintBoundary = false}) {
+  RenderLayoutBox createRenderLayout(
+      {RenderLayoutBox? previousRenderLayoutBox, bool isRepaintBoundary = false, CSSRenderStyle? cssRenderStyle}) {
     CSSDisplay display = this.display;
     RenderLayoutBox? nextRenderLayoutBox;
 
@@ -2407,11 +2463,11 @@ class CSSRenderStyle extends RenderStyle
       if (previousRenderLayoutBox == null || target.managedByFlutterWidget) {
         if (isRepaintBoundary) {
           nextRenderLayoutBox = RenderRepaintBoundaryFlexLayout(
-            renderStyle: this,
+            renderStyle: cssRenderStyle ?? this,
           );
         } else {
           nextRenderLayoutBox = RenderFlexLayout(
-            renderStyle: this,
+            renderStyle: cssRenderStyle ?? this,
           );
         }
       } else if (previousRenderLayoutBox is RenderFlowLayout) {
@@ -2450,9 +2506,6 @@ class CSSRenderStyle extends RenderStyle
             nextRenderLayoutBox = previousRenderLayoutBox;
           }
         }
-      } else if (previousRenderLayoutBox is RenderSliverListLayout) {
-        // RenderSliverListLayout --> RenderFlexLayout
-        nextRenderLayoutBox = previousRenderLayoutBox.toFlexLayout();
       }
     } else if (display == CSSDisplay.block ||
         display == CSSDisplay.none ||
@@ -2461,11 +2514,11 @@ class CSSRenderStyle extends RenderStyle
       if (previousRenderLayoutBox == null || target.managedByFlutterWidget) {
         if (isRepaintBoundary) {
           nextRenderLayoutBox = RenderRepaintBoundaryFlowLayout(
-            renderStyle: this,
+            renderStyle: cssRenderStyle ?? this,
           );
         } else {
           nextRenderLayoutBox = RenderFlowLayout(
-            renderStyle: this,
+            renderStyle: cssRenderStyle ?? this,
           );
         }
       } else if (previousRenderLayoutBox is RenderFlowLayout) {
@@ -2504,23 +2557,6 @@ class CSSRenderStyle extends RenderStyle
             nextRenderLayoutBox = previousRenderLayoutBox.toFlowLayout();
           }
         }
-      } else if (previousRenderLayoutBox is RenderSliverListLayout) {
-        // RenderSliverListLayout --> RenderFlowLayout
-        nextRenderLayoutBox = previousRenderLayoutBox.toFlowLayout();
-      }
-    } else if (display == CSSDisplay.sliver) {
-      if (previousRenderLayoutBox == null || target.managedByFlutterWidget) {
-        nextRenderLayoutBox = RenderSliverListLayout(
-            renderStyle: this,
-            manager: RenderSliverElementChildManager(target),
-            onScroll: target.handleScroll,
-            currentView: currentFlutterView);
-      } else if (previousRenderLayoutBox is RenderFlowLayout || previousRenderLayoutBox is RenderFlexLayout) {
-        //  RenderFlow/FlexLayout --> RenderSliverListLayout
-        nextRenderLayoutBox =
-            previousRenderLayoutBox.toSliverLayout(RenderSliverElementChildManager(target), target.handleScroll);
-      } else if (previousRenderLayoutBox is RenderSliverListLayout) {
-        nextRenderLayoutBox = previousRenderLayoutBox;
       }
     } else {
       throw FlutterError('Not supported display type $display');
@@ -2536,9 +2572,7 @@ class CSSRenderStyle extends RenderStyle
     return nextRenderLayoutBox!;
   }
 
-  RenderReplaced _createRenderReplaced(
-      {RenderReplaced? previousReplaced,
-      bool isRepaintBoundary = false}) {
+  RenderReplaced _createRenderReplaced({RenderReplaced? previousReplaced, bool isRepaintBoundary = false}) {
     RenderReplaced nextReplaced;
 
     if (previousReplaced == null || target.managedByFlutterWidget) {
@@ -2582,11 +2616,12 @@ class CSSRenderStyle extends RenderStyle
           isRepaintBoundary: target.isRepaintBoundary,
           previousReplaced: _domRenderObjects is RenderReplaced ? _domRenderObjects as RenderReplaced : null);
     } else if (target.isSVGElement) {
-      nextRenderBoxModel = target.createRenderSVG(isRepaintBoundary: target.isRepaintBoundary, previous: _domRenderObjects);
+      nextRenderBoxModel =
+          target.createRenderSVG(isRepaintBoundary: target.isRepaintBoundary, previous: _domRenderObjects);
     } else {
-      nextRenderBoxModel = _createRenderLayout(
-        isRepaintBoundary: target.isRepaintBoundary,
-        previousRenderLayoutBox: _domRenderObjects is RenderLayoutBox ? _domRenderObjects as RenderLayoutBox : null);
+      nextRenderBoxModel = createRenderLayout(
+          isRepaintBoundary: target.isRepaintBoundary,
+          previousRenderLayoutBox: _domRenderObjects is RenderLayoutBox ? _domRenderObjects as RenderLayoutBox : null);
     }
 
     return nextRenderBoxModel;

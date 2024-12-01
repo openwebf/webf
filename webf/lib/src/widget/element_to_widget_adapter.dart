@@ -93,15 +93,13 @@ class WebFHTMLElementToWidgetAdaptor extends MultiChildRenderObjectWidget {
   @override
   WebFHTMLElementToFlutterElementAdaptor createElement() {
     WebFHTMLElementToFlutterElementAdaptor element = WebFHTMLElementToFlutterElementAdaptor(this);
-    _webFElement.flutterWidgetElement = element;
     return element;
   }
 
   @override
   RenderObject createRenderObject(BuildContext context) {
     // TODO obtains renderObjects from cache, since every renderObjectElements have it's corresponding renderObjects.
-    RenderBoxModel? renderObject = _webFElement.updateOrCreateRenderBoxModel(
-        forceUpdate: true, ownerFlutterElement: context as RenderObjectElement);
+    RenderBoxModel? renderObject = _webFElement.updateOrCreateRenderBoxModel(flutterWidgetElement: context as Element);
     return renderObject!;
   }
 
