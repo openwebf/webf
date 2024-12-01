@@ -31,8 +31,6 @@ pub use script_value_ref::*;
 pub use webf_event_listener::*;
 pub use webf_function::*;
 
-
-
 #[repr(C)]
 pub struct OpaquePtr;
 
