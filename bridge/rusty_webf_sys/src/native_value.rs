@@ -147,4 +147,16 @@ impl NativeValue {
     value.uint32 = size as u32;
     value
   }
+
+  pub fn to_list(&self) -> Vec<NativeValue> {
+    let mut values = Vec::new();
+    let ptr = unsafe {
+      self.u.ptr as *mut NativeValue
+    };
+    for i in 0..self.uint32 {
+      let val = unsafe { ptr.add(i).read() };
+      values.push(val);
+    }
+    values
+  }
 }
