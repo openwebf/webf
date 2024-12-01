@@ -1,7 +1,7 @@
-import {ClassObject, ClassObjectKind, FunctionObject} from "../../declaration";
+import {ClassObject, ClassObjectKind, FunctionObject} from "./declaration";
 import _ from "lodash";
-import {IDLBlob} from "../../IDLBlob";
-import {getClassName} from "../../utils";
+import {IDLBlob} from "./IDLBlob";
+import {getClassName} from "./utils";
 import fs from 'fs';
 import path from 'path';
 import {
@@ -11,12 +11,13 @@ import {
   isPointerType,
   isTypeHaveNull
 } from "./generateSource";
-import {GenerateOptions, generateUnionTypeFileName, readTemplate} from "../../generator";
-import {ParameterType} from "../../analyzer";
+import {GenerateOptions} from "./generator";
+import {ParameterType} from "./analyzer";
 import {
   generateUnionConstructor,
   generateUnionContentType, generateUnionMemberName, generateUnionMemberType, generateUnionPropertyHeaders,
   generateUnionTypeClassName,
+  generateUnionTypeFileName
 } from "./generateUnionTypes";
 
 export enum TemplateKind {
@@ -40,8 +41,12 @@ export function getTemplateKind(object: ClassObject | FunctionObject | null): Te
   return TemplateKind.null;
 }
 
-export function generateV8CppHeader(blob: IDLBlob, options: GenerateOptions) {
-  const baseTemplate = fs.readFileSync(path.join(__dirname, '../../../../templates/idl_templates/v8/base.h.tpl'), {encoding: 'utf-8'});
+function readTemplate(name: string) {
+  return fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/' + name + '.h.tpl'), {encoding: 'utf-8'});
+}
+
+export function generateCppHeader(blob: IDLBlob, options: GenerateOptions) {
+  const baseTemplate = fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/base.h.tpl'), {encoding: 'utf-8'});
   let headerOptions = {
     interface: false,
     dictionary: false,
@@ -56,7 +61,7 @@ export function generateV8CppHeader(blob: IDLBlob, options: GenerateOptions) {
         if (!headerOptions.interface) {
           object = (object as ClassObject);
           headerOptions.interface = true;
-          return _.template(readTemplate('v8', 'interface'))({
+          return _.template(readTemplate('interface'))({
             className: getClassName(blob),
             parentClassName: object.parent,
             blob: blob,
@@ -71,7 +76,7 @@ export function generateV8CppHeader(blob: IDLBlob, options: GenerateOptions) {
         if (!headerOptions.dictionary) {
           headerOptions.dictionary = true;
           let props = (object as ClassObject).props;
-          return _.template(readTemplate('v8', 'dictionary'))({
+          return _.template(readTemplate('dictionary'))({
             className: getClassName(blob),
             blob: blob,
             object: object,
@@ -84,7 +89,7 @@ export function generateV8CppHeader(blob: IDLBlob, options: GenerateOptions) {
       case TemplateKind.globalFunction: {
         if (!headerOptions.global_function) {
           headerOptions.global_function = true;
-          return _.template(readTemplate('v8', 'global_function'))({
+          return _.template(readTemplate('global_function'))({
             className: getClassName(blob),
             blob: blob
           });
@@ -97,6 +102,25 @@ export function generateV8CppHeader(blob: IDLBlob, options: GenerateOptions) {
   return _.template(baseTemplate)({
     content: contents.join('\n'),
     blob: blob
+  }).split('\n').filter(str => {
+    return str.trim().length > 0;
+  }).join('\n');
+}
+
+export function generateUnionTypeHeader(unionType: ParameterType): string {
+  return _.template(readTemplate('union'))({
+    unionType,
+    generateUnionTypeClassName,
+    generateUnionTypeFileName,
+    generateUnionContentType,
+    generateUnionConstructor,
+    generateUnionPropertyHeaders,
+    generateCoreTypeValue,
+    generateUnionMemberType,
+    generateUnionMemberName,
+    isTypeHaveNull,
+    isPointerType,
+    getPointerType,
   }).split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');

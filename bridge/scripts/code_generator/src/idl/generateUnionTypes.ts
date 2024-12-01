@@ -1,6 +1,7 @@
-import {ParameterType} from "../../analyzer";
-import {FunctionArgumentType} from "../../declaration";
+import {ParameterType} from "./analyzer";
+import {FunctionArgumentType} from "./declaration";
 import _ from "lodash";
+import {generateUnionTypeHeader} from "./generateHeader";
 import {
   generateCoreTypeValue,
   generateUnionTypeSource, isDictionary,
@@ -9,6 +10,22 @@ import {
   trimNullTypeFromType
 } from "./generateSource";
 
+export function generateUnionTypeFileName(unionType: ParameterType[]) {
+  let filename = 'qjs_union';
+  for (let i = 0; i < unionType.length; i++) {
+    let v = unionType[i].value;
+    if (isTypeHaveNull(unionType[i])) continue;
+    if (typeof v == 'number') {
+      filename += '_' + FunctionArgumentType[v];
+    } else if (unionType[i].isArray && typeof v == 'object' && !Array.isArray(v)) {
+      filename += '_' + 'sequence' + FunctionArgumentType[v.value as number];
+    } else if (typeof v == 'string') {
+      filename += _.snakeCase(v);
+    }
+  }
+  return filename;
+}
+
 export function generateUnionTypeClassName(unionTypes: ParameterType[]) {
   let className = 'QJSUnion';
   for (let i = 0; i < unionTypes.length; i++) {
@@ -16,6 +33,15 @@ export function generateUnionTypeClassName(unionTypes: ParameterType[]) {
     className += getUnionTypeName(unionTypes[i]);
   }
   return className;
+}
+
+export function generateUnionTypes(unionType: ParameterType) {
+  let header = generateUnionTypeHeader(unionType);
+  let source = generateUnionTypeSource(unionType);
+  return {
+    header,
+    source
+  }
 }
 
 export function getUnionTypeName(unionType: ParameterType) {

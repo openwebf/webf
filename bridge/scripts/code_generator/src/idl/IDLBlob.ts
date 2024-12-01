@@ -7,15 +7,13 @@ export class IDLBlob {
   source: string;
   filename: string;
   implement: string;
-  platformPrefix: string;
   objects: (ClassObject | FunctionObject)[];
 
-  constructor(source: string, dist: string, filename: string, implement: string, platformPrefix: string) {
+  constructor(source: string, dist: string, filename: string, implement: string) {
     this.source = source;
     this.raw = fs.readFileSync(source, {encoding: 'utf-8'});
     this.dist = dist;
     this.filename = filename;
     this.implement = implement;
-    this.platformPrefix = platformPrefix;
   }
 }

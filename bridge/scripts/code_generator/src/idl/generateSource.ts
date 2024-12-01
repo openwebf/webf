@@ -1,4 +1,4 @@
-import {IDLBlob} from "../../IDLBlob";
+import {IDLBlob} from "./IDLBlob";
 import {
   ClassObject,
   FunctionArguments,
@@ -7,20 +7,21 @@ import {
   FunctionObject,
   ParameterMode,
   PropsDeclaration,
-} from "../../declaration";
-import {addIndent, getClassName, getWrapperTypeInfoNameOfClassName} from "../../utils";
-import {ParameterType} from "../../analyzer";
+} from "./declaration";
+import {addIndent, getClassName, getWrapperTypeInfoNameOfClassName} from "./utils";
+import {ParameterType} from "./analyzer";
 import _ from 'lodash';
 import fs from 'fs';
 import path from 'path';
 import {getTemplateKind, TemplateKind} from "./generateHeader";
-import {GenerateOptions, generateUnionTypeFileName} from "../../generator";
+import {GenerateOptions} from "./generator";
 import {
   generateTypeRawChecker,
   generateUnionConstructorImpl,
   generateUnionMemberName,
   generateUnionTypeClassName,
   generateUnionTypeClear,
+  generateUnionTypeFileName,
   generateUnionTypeSetter,
   getUnionTypeName
 } from "./generateUnionTypes";
@@ -39,11 +40,8 @@ function generateMethodArgumentsCheck(m: FunctionDeclaration) {
     return '';
   }
 
-  return `  if (args.Length() < ${requiredArgsCount}) {
-    v8::Isolate* isolate = args.GetIsolate();
-    std::string error_message = std::format("Failed to execute '${m.name}' : ${requiredArgsCount} argument required, but {} present.", args.Length());
-    V8ThrowException::ThrowError(isolate, error_message);
-    args.GetReturnValue().SetUndefined();
+  return `  if (argc < ${requiredArgsCount}) {
+    return JS_ThrowTypeError(ctx, "Failed to execute '${m.name}' : ${requiredArgsCount} argument required, but %d present.", argc);
   }
 `;
 }
@@ -150,14 +148,18 @@ export function isTypeHaveNull(type: ParameterType): boolean {
   return type.value.some(t => t.value === FunctionArgumentType.null);
 }
 
-export function isTypeHaveString(types: ParameterType[]): boolean {
-  return types.some(t => {
-    if (t.isArray) return isTypeHaveString(t.value as ParameterType[]);
-    if (!Array.isArray(t.value)) {
-      return t.value === FunctionArgumentType.dom_string;
-    }
-    return t.value.some(t => t.value === FunctionArgumentType.dom_string);
-  });
+export function isTypeHaveString(types: ParameterType[] | ParameterType): boolean {
+  if (Array.isArray(types)) {
+    return types.some(t => {
+      if (t.isArray) return isTypeHaveString(t.value as ParameterType);
+      if (!Array.isArray(t.value)) {
+        return t.value === FunctionArgumentType.dom_string;
+      }
+      return t.value.some(t => t.value === FunctionArgumentType.dom_string);
+    });
+  }
+
+  return types.value === FunctionArgumentType.dom_string;
 }
 
 export function isPointerType(type: ParameterType): boolean {
@@ -314,21 +316,20 @@ function generateNativeValueTypeConverter(type: ParameterType): string {
 function generateRequiredInitBody(argument: FunctionArguments, argsIndex: number) {
   let type = generateIDLTypeConverter(argument.type, !argument.required);
 
-  let hasArgumentCheck = type.indexOf('Element') >= 0 || type.indexOf('Node') >= 0 || type === 'EventTarget' || type.indexOf('DOMMatrix') >= 0;
+  let hasArgumentCheck = type.indexOf('Element') >= 0 || type.indexOf('Node') >= 0 || type === 'EventTarget' || type.indexOf('DOMMatrix') >= 0 || type.indexOf('Path2D') >= 0;
 
   let body = '';
   if (argument.isDotDotDot) {
-    body = `Converter<${type}>::FromValue(isolate, args + ${argsIndex}, args - ${argsIndex}, exception_state)`
+    body = `Converter<${type}>::FromValue(ctx, argv + ${argsIndex}, argc - ${argsIndex}, exception_state)`
   } else if (hasArgumentCheck) {
     body = `Converter<${type}>::ArgumentsValue(context, argv[${argsIndex}], ${argsIndex}, exception_state)`;
   } else {
-    body = `Converter<${type}>::FromValue(isolate, args[${argsIndex}], exception_state)`;
+    body = `Converter<${type}>::FromValue(ctx, argv[${argsIndex}], exception_state)`;
   }
 
-  return `auto args_${argument.name} = ${body};
+  return `auto&& args_${argument.name} = ${body};
 if (UNLIKELY(exception_state.HasException())) {
-  args.GetReturnValue().SetUndefined();
-  return;
+  return exception_state.ToQuickJS();
 }`;
 }
 
@@ -358,7 +359,7 @@ ${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverte
   `.trim();
 }
 
-function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, argument: FunctionArguments, argsIndex: number, previousArguments: string[], options: GenFunctionBodyOptions) {
+function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, argument: FunctionArguments, argsIndex: number, argsLength: number, previousArguments: string[], options: GenFunctionBodyOptions) {
   let call = '';
   let returnValueAssignment = '';
   if (declare.returnType.value != FunctionArgumentType.void) {
@@ -374,16 +375,17 @@ ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...pre
   }
 
 
-  return `auto args_${argument.name} = Converter<IDLOptional<${generateIDLTypeConverter(argument.type)}>>::FromValue(isolate, args[${argsIndex}], exception_state);
+  return `auto&& args_${argument.name} = Converter<IDLOptional<${generateIDLTypeConverter(argument.type)}>>::FromValue(ctx, argv[${argsIndex}], exception_state);
 if (UNLIKELY(exception_state.HasException())) {
-  args.GetReturnValue().SetUndefined();
-  return;
+  return exception_state.ToQuickJS();
 }
 
-if (args.Length() <= ${argsIndex + 1}) {
+if (argc <= ${argsIndex + 1}) {
   ${call}
   break;
-}`;
+}
+${(argsIndex) + 1 == argsLength ? call : ''}
+`;
 }
 
 function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaration, options: GenFunctionBodyOptions = {
@@ -391,9 +393,7 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
   isInstanceMethod: false
 }) {
   if (options.isConstructor && declaration.returnType.value == FunctionArgumentType.void) {
-    // TODO V8 handle "Illegal constructor"
-    // return 'return JS_ThrowTypeError(ctx, "Illegal constructor");';
-    return 'return';
+    return 'return JS_ThrowTypeError(ctx, "Illegal constructor");';
   }
 
   let minimalRequiredArgc = 0;
@@ -414,7 +414,7 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
   let totalArguments: string[] = requiredArguments.slice();
 
   for (let i = minimalRequiredArgc; i < declaration.args.length; i++) {
-    optionalArgumentsInit.push(generateOptionalInitBody(blob, declaration, declaration.args[i], i, totalArguments, options));
+    optionalArgumentsInit.push(generateOptionalInitBody(blob, declaration, declaration.args[i], i, declaration.args.length, totalArguments, options));
     totalArguments.push(`args_${declaration.args[i].name}`);
   }
 
@@ -434,7 +434,7 @@ ${returnValueAssignment} self->${generateCallMethodName(declaration.name)}(${min
     call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declaration.name)}(context, ${requiredArguments.join(',')});`;
   }
 
-  let minimalRequiredCall = (declaration.args.length == 0 || (declaration.args[0].isDotDotDot)) ? call : `if (args.Length() <= ${minimalRequiredArgc}) {
+  let minimalRequiredCall = (declaration.args.length == 0 || (declaration.args[0].isDotDotDot)) ? call : `if (argc <= ${minimalRequiredArgc}) {
   ${call}
   break;
 }`;
@@ -513,7 +513,7 @@ function generateReturnValueResult(blob: IDLBlob, type: ParameterType, mode?: Pa
     return `return_value->${method}()`;
   }
 
-  return `Converter<${generateIDLTypeConverter(type)}>::ToValue(isolate, return_value)`;
+  return `Converter<${generateIDLTypeConverter(type)}>::ToValue(ctx, std::move(return_value))`;
 }
 
 type GenFunctionBodyOptions = { isConstructor?: boolean, isInstanceMethod?: boolean };
@@ -527,47 +527,41 @@ function generateFunctionBody(blob: IDLBlob, declare: FunctionDeclaration, optio
   let returnValueInit = generateReturnValueInit(blob, declare.returnType, options);
   let returnValueResult = generateReturnValueResult(blob, declare.returnType, declare.returnTypeMode, options);
 
-  // let constructorPrototypeInit = (options.isConstructor && returnValueInit.length > 0) ? `JSValue proto = JS_GetPropertyStr(ctx, this_val, "prototype");
-  // JS_SetPrototype(ctx, return_value->ToQuickJSUnsafe(), proto);
-  // JS_FreeValue(ctx, proto);` : '';
-  let constructorPrototypeInit = '';
+  let constructorPrototypeInit = (options.isConstructor && returnValueInit.length > 0) ? `JSValue proto = JS_GetPropertyStr(ctx, this_val, "prototype");
+  JS_SetPrototype(ctx, return_value->ToQuickJSUnsafe(), proto);
+  JS_FreeValue(ctx, proto);` : '';
 
   return `${paramCheck}
 
   ExceptionState exception_state;
-  v8::Isolate* isolate = args.GetIsolate();
-  ExecutingContext* context = ExecutingContext::From(isolate);
-  if (!context->IsContextValid()) {
-    args.GetReturnValue().SetUndefined();
-    return;
-  }
-  
-  // context->dartIsolateContext()->profiler()->StartTrackSteps("${getClassName(blob)}::${declare.name}");
-  
-  v8::HandleScope handle_scope(isolate);
+  ExecutingContext* context = ExecutingContext::From(ctx);
+  if (!context->IsContextValid()) return JS_NULL;
+
+  context->dartIsolateContext()->profiler()->StartTrackSteps("${getClassName(blob)}::${declare.name}");
+
+  MemberMutationScope scope{context};
   ${returnValueInit}
 
   do {  // Dummy loop for use of 'break'.
 ${addIndent(callBody, 4)}
   } while (false);
-  
-  // context->dartIsolateContext()->profiler()->FinishTrackSteps();
+
+   context->dartIsolateContext()->profiler()->FinishTrackSteps();
 
   if (UNLIKELY(exception_state.HasException())) {
-    args.GetReturnValue().SetUndefined();
-    return;
+    return exception_state.ToQuickJS();
   }
   ${constructorPrototypeInit}
-  args.GetReturnValue().Set(${returnValueResult});
+  return ${returnValueResult};
 `;
 }
 
 function readTemplate(name: string) {
-  return fs.readFileSync(path.join(__dirname, '../../../../templates/idl_templates/v8/' + name + '.cc.tpl'), {encoding: 'utf-8'});
+  return fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/' + name + '.cc.tpl'), {encoding: 'utf-8'});
 }
 
-export function generateV8CppSource(blob: IDLBlob, options: GenerateOptions) {
-  const baseTemplate = fs.readFileSync(path.join(__dirname, '../../../../templates/idl_templates/v8/base.cc.tpl'), {encoding: 'utf-8'});
+export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
+  const baseTemplate = fs.readFileSync(path.join(__dirname, '../../templates/idl_templates/base.cc.tpl'), {encoding: 'utf-8'});
   const className = getClassName(blob)
 
   const contents = blob.objects.map(object => {
@@ -595,11 +589,16 @@ export function generateV8CppSource(blob: IDLBlob, options: GenerateOptions) {
           }
         }
 
+        function addObjectStaticMethods(method: FunctionDeclaration, i: number) {
+          options.staticMethodsInstallList.push(`{"${method.name}", ${method.name}, ${method.args.length}}`);
+        }
+
         object.props.forEach(addObjectProps);
 
-        let overloadMethods = {};
+        let overloadMethods: {[key: string]: FunctionDeclaration[] } = {};
         let filtedMethods: FunctionDeclaration[] = [];
         object.methods.forEach(addObjectMethods);
+        object.staticMethods.forEach(addObjectStaticMethods);
 
         if (object.construct) {
           options.constructorInstallList.push(`{defined_properties::k${className}.Impl(), nullptr, nullptr, constructor}`)
@@ -690,7 +689,7 @@ const WrapperTypeInfo& ${className}::wrapper_type_info_ = QJS${className}::wrapp
       }
       case TemplateKind.globalFunction: {
         object = object as FunctionObject;
-        options.globalFunctionInstallList.push(` {"${object.declare.name}", ${object.declare.name}}`);
+        options.globalFunctionInstallList.push(` {"${object.declare.name}", ${object.declare.name}, ${object.declare.args.length}}`);
         return _.template(readTemplate('global_function'))({
           className,
           blob: blob,
