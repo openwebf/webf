@@ -154,7 +154,8 @@ impl NativeValue {
       self.u.ptr as *mut NativeValue
     };
     for i in 0..self.uint32 {
-      let val = unsafe { ptr.add(i).read() };
+      let offset = i.try_into().unwrap();
+      let val = unsafe { ptr.add(offset).read() };
       values.push(val);
     }
     values
