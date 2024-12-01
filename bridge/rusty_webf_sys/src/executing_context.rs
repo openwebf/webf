@@ -79,6 +79,10 @@ impl ExecutingContext {
     return Document::initialize::<DocumentRustMethods>(result.value, self, result.method_pointer, result.status);
   }
 
+  pub fn navigator(&self) -> Navigator {
+    Navigator::initialize(self)
+  }
+
   pub fn create_exception_state(&self) -> ExceptionState {
     let result = unsafe {
       ((*self.method_pointer).create_exception_state)()
