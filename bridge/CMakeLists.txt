@@ -91,18 +91,18 @@ list(APPEND BRIDGE_SOURCE
   foundation/logging.cc
   foundation/native_string.cc
   foundation/ui_task_queue.cc
-  foundation/shared_ui_command.cc
+#  foundation/shared_ui_command.cc
   foundation/inspector_task_queue.cc
   foundation/task_queue.cc
   foundation/string_view.cc
   foundation/native_value.cc
   foundation/native_type.cc
   foundation/stop_watch.cc
-  foundation/profiler.cc
+#  foundation/profiler.cc
   foundation/dart_readable.cc
   foundation/rust_readable.cc
-  foundation/ui_command_buffer.cc
-  foundation/ui_command_strategy.cc
+#  foundation/ui_command_buffer.cc
+#  foundation/ui_command_strategy.cc
   polyfill/dist/polyfill.cc
   multiple_threading/dispatcher.cc
   multiple_threading/looper.cc
@@ -613,6 +613,21 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_svg_ellipse_element.cc
     out/qjs_svg_style_element.cc
     out/qjs_svg_line_element.cc
+
+    # plugin api
+    out/plugin_api_event.cc
+    out/plugin_api_animation_event.cc
+    out/plugin_api_close_event.cc
+    out/plugin_api_focus_event.cc
+    out/plugin_api_gesture_event.cc
+    out/plugin_api_hashchange_event.cc
+    out/plugin_api_input_event.cc
+    out/plugin_api_intersection_change_event.cc
+    out/plugin_api_mouse_event.cc
+    out/plugin_api_pointer_event.cc
+    out/plugin_api_transition_event.cc
+    out/plugin_api_ui_event.cc
+    out/plugin_api_custom_event.cc
   )
 
   if (NOT MSVC)
@@ -658,131 +673,131 @@ list(APPEND BRIDGE_SOURCE
   core/dart_isolate_context.cc
   core/dart_context_data.cc
   core/executing_context_data.cc
-  core/fileapi/blob.cc
-  core/fileapi/blob_part.cc
-  core/fileapi/blob_property_bag.cc
-  core/frame/console.cc
-  core/frame/dom_timer.cc
-  core/frame/dom_timer_coordinator.cc
-  core/frame/window_or_worker_global_scope.cc
-  core/frame/module_listener.cc
-  core/frame/module_listener_container.cc
-  core/frame/module_manager.cc
-  core/frame/module_callback.cc
-  core/frame/module_context_coordinator.cc
-  core/frame/window.cc
-  core/frame/screen.cc
-  core/frame/legacy/location.cc
-  core/timing/performance.cc
-  core/timing/performance_mark.cc
-  core/timing/performance_entry.cc
-  core/timing/performance_measure.cc
-  core/css/css_style_declaration.cc
-  core/css/inline_css_style_declaration.cc
-  core/css/computed_css_style_declaration.cc
-  core/dom/frame_request_callback_collection.cc
-  core/dom/events/registered_eventListener.cc
-  core/dom/events/event_listener_map.cc
-  core/dom/events/event.cc
-  core/dom/events/custom_event.cc
-  core/dom/events/event_target.cc
-  core/dom/events/event_listener_map.cc
-  core/dom/events/event_target_impl.cc
-  core/binding_object.cc
-  core/dom/node.cc
-  core/dom/node_list.cc
-  core/dom/static_node_list.cc
-  core/dom/node_traversal.cc
-  core/dom/live_node_list_base.cc
-  core/dom/character_data.cc
-  core/dom/comment.cc
-  core/dom/text.cc
-  core/dom/tree_scope.cc
-  core/dom/element.cc
-  core/dom/parent_node.cc
-  core/dom/element_data.cc
-  core/dom/document.cc
-  core/dom/dom_token_list.cc
-  core/dom/dom_string_map.cc
-  core/dom/space_split_string.cc
-  core/dom/scripted_animation_controller.cc
-  core/dom/node_data.cc
-  core/dom/document_fragment.cc
-  core/dom/child_node_list.cc
-  core/dom/empty_node_list.cc
-  core/dom/mutation_observer.cc
-  core/dom/mutation_observer_registration.cc
-  core/dom/mutation_observer_interest_group.cc
-  core/dom/mutation_record.cc
-  core/dom/child_list_mutation_scope.cc
-  core/dom/container_node.cc
-  core/html/custom/widget_element.cc
-  core/events/error_event.cc
-  core/events/message_event.cc
-  core/events/animation_event.cc
-  core/events/close_event.cc
-  core/events/ui_event.cc
-  core/events/focus_event.cc
-  core/events/gesture_event.cc
-  core/events/input_event.cc
-  core/events/touch_event.cc
-  core/events/mouse_event.cc
-  core/events/pop_state_event.cc
-  core/events/pointer_event.cc
-  core/events/transition_event.cc
-  core/events/intersection_change_event.cc
-  core/events/keyboard_event.cc
-  core/events/promise_rejection_event.cc
-  core/html/parser/html_parser.cc
-  core/html/html_element.cc
-  core/html/html_div_element.cc
-  core/html/html_head_element.cc
-  core/html/html_body_element.cc
-  core/html/html_html_element.cc
-  core/html/html_template_element.cc
-  core/html/html_all_collection.cc
-  core/html/html_anchor_element.cc
-  core/html/html_image_element.cc
-  core/html/html_script_element.cc
-  core/html/html_iframe_element.cc
-  core/html/html_link_element.cc
-  core/html/html_unknown_element.cc
-  core/html/image.cc
-  core/html/html_collection.cc
-  core/html/canvas/html_canvas_element.cc
-  core/html/canvas/canvas_rendering_context.cc
-  core/html/canvas/canvas_rendering_context_2d.cc
-  core/html/canvas/canvas_gradient.cc
-  core/html/canvas/canvas_pattern.cc
-  core/geometry/dom_matrix.cc
-  core/geometry/dom_matrix_readonly.cc
-  core/html/forms/html_button_element.cc
-  core/html/forms/html_input_element.cc
-  core/html/forms/html_form_element.cc
-  core/html/forms/html_textarea_element.cc
+#  core/fileapi/blob.cc
+#  core/fileapi/blob_part.cc
+#  core/fileapi/blob_property_bag.cc
+#  core/frame/console.cc
+#  core/frame/dom_timer.cc
+#  core/frame/dom_timer_coordinator.cc
+#  core/frame/window_or_worker_global_scope.cc
+#  core/frame/module_listener.cc
+#  core/frame/module_listener_container.cc
+#  core/frame/module_manager.cc
+#  core/frame/module_callback.cc
+#  core/frame/module_context_coordinator.cc
+#  core/frame/window.cc
+#  core/frame/screen.cc
+#  core/frame/legacy/location.cc
+#  core/timing/performance.cc
+#  core/timing/performance_mark.cc
+#  core/timing/performance_entry.cc
+#  core/timing/performance_measure.cc
+#  core/css/css_style_declaration.cc
+#  core/css/inline_css_style_declaration.cc
+#  core/css/computed_css_style_declaration.cc
+#  core/dom/frame_request_callback_collection.cc
+#  core/dom/events/registered_eventListener.cc
+#  core/dom/events/event_listener_map.cc
+#  core/dom/events/event.cc
+#  core/dom/events/custom_event.cc
+#  core/dom/events/event_target.cc
+#  core/dom/events/event_listener_map.cc
+#  core/dom/events/event_target_impl.cc
+#  core/binding_object.cc
+#  core/dom/node.cc
+#  core/dom/node_list.cc
+#  core/dom/static_node_list.cc
+#  core/dom/node_traversal.cc
+#  core/dom/live_node_list_base.cc
+#  core/dom/character_data.cc
+#  core/dom/comment.cc
+#  core/dom/text.cc
+#  core/dom/tree_scope.cc
+#  core/dom/element.cc
+#  core/dom/parent_node.cc
+#  core/dom/element_data.cc
+#  core/dom/document.cc
+#  core/dom/dom_token_list.cc
+#  core/dom/dom_string_map.cc
+#  core/dom/space_split_string.cc
+#  core/dom/scripted_animation_controller.cc
+#  core/dom/node_data.cc
+#  core/dom/document_fragment.cc
+#  core/dom/child_node_list.cc
+#  core/dom/empty_node_list.cc
+#  core/dom/mutation_observer.cc
+#  core/dom/mutation_observer_registration.cc
+#  core/dom/mutation_observer_interest_group.cc
+#  core/dom/mutation_record.cc
+#  core/dom/child_list_mutation_scope.cc
+#  core/dom/container_node.cc
+#  core/html/custom/widget_element.cc
+#  core/events/error_event.cc
+#  core/events/message_event.cc
+#  core/events/animation_event.cc
+#  core/events/close_event.cc
+#  core/events/ui_event.cc
+#  core/events/focus_event.cc
+#  core/events/gesture_event.cc
+#  core/events/input_event.cc
+#  core/events/touch_event.cc
+#  core/events/mouse_event.cc
+#  core/events/pop_state_event.cc
+#  core/events/pointer_event.cc
+#  core/events/transition_event.cc
+#  core/events/intersection_change_event.cc
+#  core/events/keyboard_event.cc
+#  core/events/promise_rejection_event.cc
+#  core/html/parser/html_parser.cc
+#  core/html/html_element.cc
+#  core/html/html_div_element.cc
+#  core/html/html_head_element.cc
+#  core/html/html_body_element.cc
+#  core/html/html_html_element.cc
+#  core/html/html_template_element.cc
+#  core/html/html_all_collection.cc
+#  core/html/html_anchor_element.cc
+#  core/html/html_image_element.cc
+#  core/html/html_script_element.cc
+#  core/html/html_iframe_element.cc
+#  core/html/html_link_element.cc
+#  core/html/html_unknown_element.cc
+#  core/html/image.cc
+#  core/html/html_collection.cc
+#  core/html/canvas/html_canvas_element.cc
+#  core/html/canvas/canvas_rendering_context.cc
+#  core/html/canvas/canvas_rendering_context_2d.cc
+#  core/html/canvas/canvas_gradient.cc
+#  core/html/canvas/canvas_pattern.cc
+#  core/geometry/dom_matrix.cc
+#  core/geometry/dom_matrix_readonly.cc
+#  core/html/forms/html_button_element.cc
+#  core/html/forms/html_input_element.cc
+#  core/html/forms/html_form_element.cc
+#  core/html/forms/html_textarea_element.cc
 
   # SVG files
-  core/svg/svg_element.cc
-  core/svg/svg_graphics_element.cc
-  core/svg/svg_geometry_element.cc
-  core/svg/svg_text_content_element.cc
-  core/svg/svg_text_positioning_element.cc
-
-  core/svg/svg_svg_element.cc
-  core/svg/svg_path_element.cc
-  core/svg/svg_rect_element.cc
-  core/svg/svg_text_element.cc
-  core/svg/svg_g_element.cc
-  core/svg/svg_circle_element.cc
-  core/svg/svg_ellipse_element.cc
-  core/svg/svg_style_element.cc
-  core/svg/svg_line_element.cc
+#  core/svg/svg_element.cc
+#  core/svg/svg_graphics_element.cc
+#  core/svg/svg_geometry_element.cc
+#  core/svg/svg_text_content_element.cc
+#  core/svg/svg_text_positioning_element.cc
+#
+#  core/svg/svg_svg_element.cc
+#  core/svg/svg_path_element.cc
+#  core/svg/svg_rect_element.cc
+#  core/svg/svg_text_element.cc
+#  core/svg/svg_g_element.cc
+#  core/svg/svg_circle_element.cc
+#  core/svg/svg_ellipse_element.cc
+#  core/svg/svg_style_element.cc
+#  core/svg/svg_line_element.cc
 
   # Legacy implements, should remove them in the future.
-  core/dom/legacy/element_attributes.cc
-  core/dom/legacy/bounding_client_rect.cc
-  core/input/touch.cc
-  core/input/touch_list.cc
+#  core/dom/legacy/element_attributes.cc
+#  core/dom/legacy/bounding_client_rect.cc
+#  core/input/touch.cc
+#  core/input/touch_list.cc
 )
 
 list(APPEND PUBLIC_HEADER
