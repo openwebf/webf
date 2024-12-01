@@ -2,7 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -58,7 +58,7 @@ class SVGSVGElement extends SVGGraphicsElement {
   }
 
   @override
-  void willAttachRenderer() {
+  void willAttachRenderer([flutter.Element? flutterWidgetElement]) {
     super.willAttachRenderer();
     style.addStyleChangeListener(_stylePropertyChanged);
   }
@@ -66,10 +66,9 @@ class SVGSVGElement extends SVGGraphicsElement {
   void _stylePropertyChanged(String property, String? original, String present,
       {String? baseHref}) {
     if (property == COLOR) {
-      renderBoxModel?.markNeedsPaint();
+      renderStyle.markNeedsPaint();
     }
   }
-
 
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
@@ -81,8 +80,8 @@ class SVGSVGElement extends SVGGraphicsElement {
           setter: (val) {
             final nextViewBox = parseViewBox(val);
             _viewBox = nextViewBox;
-            if (nextViewBox != (renderBoxModel as RenderSVGRoot?)?.viewBox) {
-              (renderBoxModel as RenderSVGRoot?)?.viewBox = nextViewBox;
+            if (nextViewBox != (renderStyle.domRenderBoxModel as RenderSVGRoot?)?.viewBox) {
+              (renderStyle.domRenderBoxModel as RenderSVGRoot?)?.viewBox = nextViewBox;
             }
           }),
       'preserveAspectRatio': ElementAttributeProperty(setter: (val) {

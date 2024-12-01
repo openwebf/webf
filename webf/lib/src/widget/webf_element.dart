@@ -20,7 +20,7 @@ class WebFHTMLElement extends MultiChildRenderObjectWidget {
     _WebFElement webfElement = context as _WebFElement;
     WebFContextInheritElement? webfContext = context.getElementForInheritedWidgetOfExactType<WebFContext>() as WebFContextInheritElement;
     context.htmlElement = dom.createElement(tagName, BindingContext(webfContext.controller!.view, webfContext.controller!.view.contextId, allocateNewBindingObject()));
-    RenderObject renderObject = webfElement.htmlElement!.createRenderer();
+    RenderObject renderObject = webfElement.htmlElement!.createRenderer(context as Element);
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
@@ -111,6 +111,6 @@ class _WebFElement extends MultiChildRenderObjectElement {
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     super.unmount();
-    htmlElement!.unmountRenderObject(dispose: false, fromFlutterWidget: true);
+    htmlElement!.unmountRenderObject(dispose: false, flutterWidgetElement: this);
   }
 }

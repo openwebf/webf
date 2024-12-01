@@ -653,8 +653,6 @@ extension CSSDisplayText on CSSDisplay {
     switch (this) {
       case CSSDisplay.none:
         return 'none';
-      case CSSDisplay.sliver:
-        return 'sliver';
       case CSSDisplay.block:
         return 'block';
       case CSSDisplay.inlineBlock:

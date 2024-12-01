@@ -448,8 +448,7 @@ class CSSStyleDeclaration extends DynamicBindingObject {
 
     // Display change from none to other value that the renderBoxModel is null.
     if (_pendingProperties.containsKey(DISPLAY) &&
-        _target.isConnected &&
-        _target.parentElement?.renderStyle.display != CSSDisplay.sliver) {
+        _target.isConnected) {
       CSSPropertyValue? prevValue = _properties[DISPLAY];
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;

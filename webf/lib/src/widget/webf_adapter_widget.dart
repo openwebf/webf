@@ -39,9 +39,7 @@ class WebFWidgetElementElement extends StatefulElement {
     }
     super.mount(parent, newSlot);
     // Make sure RenderWidget had been created.
-    if (widget.widgetElement.renderer == null) {
-      widget.widgetElement.createRenderer();
-    }
+    widget.widgetElement.createRenderer(this);
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
     }

@@ -20,13 +20,13 @@ abstract class RenderSVGShape extends RenderBoxModel {
     if (_rootRenderSVGContainer != null) {
       return _rootRenderSVGContainer;
     }
-    var parent = renderStyle.target.parentElement?.renderer;
+    var parent = renderStyle.target.parentElement?.getRenderer(null);
     while (parent is RenderBoxModel) {
       if (parent is RenderSVGContainer) {
         _rootRenderSVGContainer = parent;
         return parent;
       }
-      parent = parent.renderStyle.target.parentElement?.renderer;
+      parent = parent.renderStyle.target.parentElement?.getRenderer(null);
     }
     return null;
   }

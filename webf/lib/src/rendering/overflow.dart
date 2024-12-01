@@ -26,12 +26,6 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   bool get clipX {
     RenderBoxModel renderBoxModel = this as RenderBoxModel;
 
-    // Recycler layout not need repaintBoundary and scroll/pointer listeners,
-    // ignoring overflowX or overflowY sets, which handle it self.
-    if (renderBoxModel is RenderSliverListLayout) {
-      return false;
-    }
-
     List<Radius>? borderRadius = renderBoxModel.renderStyle.borderRadius;
 
     // The content of replaced elements is always trimmed to the content edge curve.
@@ -59,12 +53,6 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
   bool get clipY {
     RenderBoxModel renderBoxModel = this as RenderBoxModel;
-
-    // Recycler layout not need repaintBoundary and scroll/pointer listeners,
-    // ignoring overflowX or overflowY sets, which handle it self.
-    if (renderBoxModel is RenderSliverListLayout) {
-      return false;
-    }
 
     List<Radius>? borderRadius = renderStyle.borderRadius;
 
@@ -142,12 +130,6 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
 
   void setUpOverflowScroller(Size scrollableSize, Size viewportSize) {
-    // Recycler layout not need repaintBoundary and scroll/pointer listeners,
-    // ignoring overflowX or overflowY sets, which handle it self.
-    if (this is RenderSliverListLayout) {
-      return;
-    }
-
     assert(scrollableSize.isFinite);
 
     _scrollableSize = scrollableSize;

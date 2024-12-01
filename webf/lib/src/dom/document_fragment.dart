@@ -4,6 +4,7 @@
  */
 
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 import 'package:webf/src/foundation/binding.dart';
 
@@ -16,13 +17,21 @@ class DocumentFragment extends ContainerNode {
   String get nodeName => '#documentfragment';
 
   @override
-  RenderBox? get renderer => null;
-
-  @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
   }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
   }
+
+  @override
+  RenderBox? getRenderer([flutter.Element? flutterRenderObjectElement]) {
+    return null;
+  }
+
+  @override
+  bool get isRendererAttached => false;
+
+  @override
+  bool get isRendererAttachedToSegmentTree => false;
 }

@@ -7,9 +7,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/src/widget/character_data_to_widget_adapter.dart';
 
 class WebFCharacterDataToFlutterElementAdapter extends RenderObjectElement {
-  WebFCharacterDataToFlutterElementAdapter(WebFCharacterDataToWidgetAdaptor widget) : super(widget) {
-    widget.webFCharacter.flutterWidgetElement = this;
-  }
+  WebFCharacterDataToFlutterElementAdapter(WebFCharacterDataToWidgetAdaptor widget) : super(widget);
 
   @override
   WebFCharacterDataToWidgetAdaptor get widget => super.widget as WebFCharacterDataToWidgetAdaptor;
@@ -19,7 +17,7 @@ class WebFCharacterDataToFlutterElementAdapter extends RenderObjectElement {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommand();
     }
-    widget.webFCharacter.createRenderer();
+    widget.webFCharacter.createRenderer(this);
     super.mount(parent, newSlot);
     widget.webFCharacter.ensureChildAttached();
     if (enableWebFProfileTracking) {

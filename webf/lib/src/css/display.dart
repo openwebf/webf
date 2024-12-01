@@ -14,8 +14,6 @@ enum CSSDisplay {
   flex,
   inlineFlex,
 
-  sliver,
-
   none
 }
 
@@ -43,8 +41,6 @@ mixin CSSDisplayMixin on RenderStyle {
     switch (displayString) {
       case 'none':
         return CSSDisplay.none;
-      case 'sliver':
-        return CSSDisplay.sliver;
       case 'block':
         return CSSDisplay.block;
       case 'inline-block':
