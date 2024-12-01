@@ -55,6 +55,7 @@ export class IndexedPropertyDeclaration extends PropsDeclaration {
 export class FunctionDeclaration extends PropsDeclaration {
   args: FunctionArguments[] =  [];
   returnType: ParameterType;
+  async_returnType?: ParameterType;
   returnTypeMode?: ParameterMode;
 }
 

@@ -42,7 +42,7 @@ interface Document extends Node, ParentNode {
   getElementsByName(name: string): Element[];
 
   querySelector(selectors: string): Element | null;
-  querySelectorAll(selectors: string): Element[];
+  querySelectorAll(selectors: string): SupportAsync<Element[]>;
 
   elementFromPoint(x: number, y: number): Element | null;
 
