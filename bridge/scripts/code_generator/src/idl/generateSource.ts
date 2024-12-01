@@ -364,7 +364,6 @@ ${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverte
 }
 
 function generateAsyncDartImplCallCode(blob: IDLBlob, declare: FunctionDeclaration, args: FunctionArguments[]): string {
-  // console.log("generateAsyncDartImplCallCode", declare.name)
   let nativeArguments = args.map(i => {
     return `NativeValueConverter<${generateNativeValueTypeConverter(i.type)}>::ToNativeValue(${isDOMStringType(i.type) ? 'ctx, ' : ''}args_${i.name})`;
   });
@@ -419,9 +418,6 @@ function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, a
     } else {
       call = generateDartImplCallCode(blob, declare, declare.returnTypeMode?.layoutDependent ?? false, declare.args.slice(0, argsIndex + 1));
     }
-  // } else if (declare.returnTypeMode?.supportAsync && declare.returnType.value != FunctionArgumentType.void) {
-  //   console.log("declare.name:", declare.name, "declare.returnType:", declare.returnType)
-  //   call = generateReturnPromiseCallCode(blob, declare, declare.args.slice(0, argsIndex + 1));
   } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
 ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...previousArguments, `args_${argument.name}`, 'exception_state'].join(',')});`;
@@ -487,7 +483,6 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
       call = generateDartImplCallCode(blob, declaration, declaration.returnTypeMode?.layoutDependent ?? false, declaration.args.slice(0, minimalRequiredArgc));
     }
   } else if (declaration.returnTypeMode?.supportAsync && declaration.returnType.value != FunctionArgumentType.void) {
-    // console.log("declaration.name:", declaration.name, "declaration.returnType:", declaration.returnType)
     call = generateReturnPromiseCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc))
   } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
@@ -552,27 +547,13 @@ function generateReturnValueInit(blob: IDLBlob, declare: FunctionDeclaration, op
   let type = declare.returnType;
   if (type.value == FunctionArgumentType.void) return '';
 
-  if (declare.name.indexOf("querySelectorAll") >= 0 ||
-      declare.name.indexOf("getElementsByTagName") >= 0) {
-    console.log("returnValueInit", declare.name, "returnType", type)
-    console.log("returnValueResult", declare.name, "returnType", type)
-  }
-
   if(declare.returnTypeMode?.supportAsync) {
-    // console.log("supportAsync returnType", declare.name)
     return 'ScriptPromise return_value;';
   }
 
   if (options.isConstructor) {
     return `${getClassName(blob)}* return_value = nullptr;`
   }
-
-  // if(declare.name == 'querySelectorAll') {
-  //   console.log('[generateReturnValueInit] declare.name:', declare.name, ',type:', type)
-  // }
-  // if(declare.name == 'getElementsByTagName') {
-  //   console.log('[generateReturnValueInit] declare.name:', declare.name, ',type:', type)
-  // }
 
   if (isPointerType(type)) {
     if (getPointerType(type) === 'Promise') {
@@ -600,7 +581,6 @@ function generateReturnValueResult(blob: IDLBlob, declare: FunctionDeclaration, 
   }
 
   if (declare.returnTypeMode?.supportAsync && declare.async_returnType ) {
-    console.log("generateReturnValueResult is supportAsync=true :", declare.name, declare.async_returnType)
     return `Converter<${generateIDLTypeConverter(declare.async_returnType)}>::ToValue(ctx, std::move(return_value))`
   }
 
@@ -618,15 +598,6 @@ function generateFunctionBody(blob: IDLBlob, declare: FunctionDeclaration, optio
   let callBody = generateFunctionCallBody(blob, declare, options);
   let returnValueInit = generateReturnValueInit(blob, declare, options);
   let returnValueResult = generateReturnValueResult(blob, declare, options);
-
-  // if (declare.name.indexOf("querySelectorAll") >= 0) {
-  //   console.log("returnValueInit", declare.name, returnValueInit)
-  //   console.log("returnValueResult", declare.name, returnValueResult)
-  // }
-  // if (declare.name.indexOf("getElementsByTagName") >= 0) {
-  //   console.log("returnValueInit 11", declare.name, returnValueInit)
-  //   console.log("returnValueResult 11", declare.name, returnValueResult)
-  // }
 
   let constructorPrototypeInit = (options.isConstructor && returnValueInit.length > 0) ? `JSValue proto = JS_GetPropertyStr(ctx, this_val, "prototype");
   JS_SetPrototype(ctx, return_value->ToQuickJSUnsafe(), proto);

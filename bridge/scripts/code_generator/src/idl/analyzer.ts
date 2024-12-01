@@ -185,12 +185,11 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
             mode.dartImpl = true;
           }
           argument = typeReference.typeArguments![0] as unknown as ts.TypeNode;
-        } else {
-          console.log("identifier..", identifier)
         }
-      } else {
-        let typeReference: ts.TypeReference = argument as unknown as ts.TypeReference;
-        console.log("============== argument.kind:", argument.kind)
+      } else if (argument.kind == ts.SyntaxKind.ArrayType) {
+        let elementType = (argument as ts.ArrayTypeNode).elementType as ts.TypeReferenceNode;
+        if (mode) mode.supportAsyncArrayValue = true;
+        return getParameterBaseType(elementType);
       }
 
       // @ts-ignore
@@ -202,7 +201,6 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
     // @ts-ignore
     return getParameterBaseType((type as ts.LiteralTypeNode).literal, mode);
   }
-  console.log('-----------------2 FunctionArgumentType.any')
   return FunctionArgumentType.any;
 }
 
@@ -229,14 +227,6 @@ function getParameterType(type: ts.TypeNode, unionTypeCollector: UnionTypeCollec
       unionTypeCollector.types.add(result.value);
     }
     return result;
-  // } else if (type.kind === ts.SyntaxKind.TypeReference) {
-  //   let typeReference: ts.TypeReference = type as unknown as ts.TypeReference;
-  //   // @ts-ignore
-  //   let identifier = (typeReference.typeName as ts.Identifier).text;
-  //   if (identifier === 'SupportAsync') {
-  //     let argument: ts.TypeNode = typeReference.typeArguments![0] as unknown as ts.TypeNode;
-  //     return getParameterType(argument, unionTypeCollector, mode);
-  //   }
   }
   return {
     isArray: false,
@@ -355,25 +345,16 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
             obj.methods.push(f);
             if (m.type) {
               let mode = new ParameterMode();
-              // 这里 returnType 需要做修改
-              if (m.type.kind === ts.SyntaxKind.TypeReference ) {
-                console.log("m.type.kind is TypeReference")
-                  // let typeReference: ts.TypeReference = type as unknown as ts.TypeReference;
-                  // // @ts-ignore
-                  // let identifier = (typeReference.typeName as ts.Identifier).text;
-                  // if (identifier === 'SupportAsync') {
-                  //   let argument: ts.TypeNode = typeReference.typeArguments![0] as unknown as ts.TypeNode;
-                  //   return getParameterType(argument, unionTypeCollector, mode);
-                  // }
-              }
               f.returnType = getParameterType(m.type, unionTypeCollector, mode);
-              // for test
-              if(f.name.indexOf('getElementsByTagName')>=0 ||
-                  f.name.indexOf('querySelectorAll')>=0
-              ) {
-                console.log("f.name", f.name, ",m.type:", m.type)
-                console.log("f.name", f.name, "f.returnType:", f.returnType)
+
+              // Override the default type for SupportAsync<Type[]> to support ArrayTypes;
+              if (mode.supportAsyncArrayValue) {
+                f.returnType = {
+                  isArray: true,
+                  value: f.returnType
+                };
               }
+
               f.returnTypeMode = mode;
               if (f.returnTypeMode.staticMethod) {
                 obj.staticMethods.push(f);
@@ -386,16 +367,6 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
               let mode = Object.assign({}, f.returnTypeMode);
               mode.supportAsync = false;
               f.returnTypeMode = mode
-
-              if (m.type) {
-                // TODO 测试代码输出类型
-                if(f.name.indexOf('querySelectorAll') >= 0) {
-                  let mode = new ParameterMode();
-                  let returnType = getParameterType(m.type, unionTypeCollector, mode);
-                  console.log('--------------1', f.name, ',returnType', returnType, ',type:', m.type)
-                }
-              }
-
               asyncFunc.name = getPropName(m.name) + '_async';
               asyncFunc.args = [];
               m.parameters.forEach(params => {
@@ -408,12 +379,6 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
               }
 
               obj.methods.push(asyncFunc);
-
-              // if (m.type) {
-              //   let mode = new ParameterMode();
-              //   asyncFunc.returnType = getParameterType(m.type, unionTypeCollector, mode);
-              //   asyncFunc.returnTypeMode = mode;
-              // }
             }
             break;
           }
