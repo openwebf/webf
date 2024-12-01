@@ -59,21 +59,13 @@ NativeValue ExecutingContextWebFMethods::WebFInvokeModuleWithParams(ExecutingCon
   AtomicString module_name_atomic = AtomicString(context->ctx(), module_name);
   AtomicString method_atomic = webf::AtomicString(context->ctx(), method);
 
-  if (params->tag == NativeTag::TAG_LIST) {
-    NativeValue* ptr = static_cast<NativeValue*>(params->u.ptr);
-    auto value_xxx = NativeValueConverter<NativeTypeBool>::FromNativeValue(*ptr);
-    WEBF_LOG(VERBOSE) << "Value: " << value_xxx;
-  }
-
-  ScriptValue params_value = ScriptValue(context->ctx(), *params);
-
-  ScriptValue result = ModuleManager::__webf_invoke_module__(context, module_name_atomic, method_atomic, params_value, shared_exception_state->exception_state);
-  NativeValue return_result = result.ToNative(context->ctx(), shared_exception_state->exception_state);
+  const NativeValue* result = ModuleManager::__webf_invoke_module__(context, module_name_atomic, method_atomic, *params, nullptr, shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
     return Native_NewNull();
   }
 
+  NativeValue return_result = *result;
   return return_result;
 }
 
@@ -86,17 +78,15 @@ NativeValue ExecutingContextWebFMethods::WebFInvokeModuleWithParamsAndCallback(E
   AtomicString module_name_atomic = AtomicString(context->ctx(), module_name);
   AtomicString method_atomic = webf::AtomicString(context->ctx(), method);
 
-  ScriptValue params_value = ScriptValue(context->ctx(), *params);
-
   auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
 
-  ScriptValue result = ModuleManager::__webf_invoke_module__(context, module_name_atomic, method_atomic, params_value, callback_impl, shared_exception_state->exception_state);
-  NativeValue return_result = result.ToNative(context->ctx(), shared_exception_state->exception_state);
+  const NativeValue*  result = ModuleManager::__webf_invoke_module__(context, module_name_atomic, method_atomic, *params, callback_impl, shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
     return Native_NewNull();
   }
 
+  NativeValue return_result = *result;
   return return_result;
 }
 

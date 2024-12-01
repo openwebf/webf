@@ -163,11 +163,11 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
   return return_value;
 }
 NativeValue* ModuleManager::__webf_invoke_module__(ExecutingContext* context,
-                                                   const AtomicString& module_name,
-                                                   const AtomicString& method,
-                                                   NativeValue& params,
-                                                   const std::shared_ptr<QJSFunction>& callback,
-                                                   ExceptionState& exception) {
+                                                  const AtomicString& module_name,
+                                                  const AtomicString& method,
+                                                  NativeValue& params,
+                                                  const std::shared_ptr<Function>& callback,
+                                                  ExceptionState& exception) {
   if (exception.HasException()) {
     return nullptr;
   }
