@@ -23,8 +23,7 @@ class DOMMatrixReadOnly : public BindingObject {
   static DOMMatrixReadOnly* Create(ExecutingContext* context,
                                    const std::shared_ptr<QJSUnionSequenceDoubleDOMMatrixInit>& init,
                                    ExceptionState& exception_state);
-  static DOMMatrixReadOnly* Create(ExecutingContext* context,
-                                   ExceptionState& exception_state);
+  static DOMMatrixReadOnly* Create(ExecutingContext* context, ExceptionState& exception_state);
   static DOMMatrix* fromMatrix(ExecutingContext* context, DOMMatrixReadOnly* matrix, ExceptionState& exception_state);
 
   DOMMatrixReadOnly() = delete;
@@ -101,7 +100,8 @@ class DOMMatrixReadOnly : public BindingObject {
   DOMMatrix* scale(double sx, double sy, double sz, ExceptionState& exception_state) const;
   DOMMatrix* scale(double sx, double sy, double sz, double ox, ExceptionState& exception_state) const;
   DOMMatrix* scale(double sx, double sy, double sz, double ox, double oy, ExceptionState& exception_state) const;
-  DOMMatrix* scale(double sx, double sy, double sz, double ox, double oy, double oz, ExceptionState& exception_state) const;
+  DOMMatrix* scale(double sx, double sy, double sz, double ox, double oy, double oz, ExceptionState& exception_state)
+      const;
   DOMMatrix* scale3d(ExceptionState& exception_state) const;
   DOMMatrix* scale3d(double scale, ExceptionState& exception_state) const;
   DOMMatrix* scale3d(double scale, double ox, ExceptionState& exception_state) const;
@@ -127,13 +127,13 @@ class DOMMatrixReadOnly : public BindingObject {
                                      int32_t argc,
                                      const NativeValue* argv,
                                      Dart_Handle dart_object) override;
+
  protected:
   explicit DOMMatrixReadOnly(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
-private:
+ private:
   [[nodiscard]] double getMatrixProperty(const AtomicString& prop) const;
   void setMatrixProperty(const AtomicString& prop, double v, ExceptionState& exception_state);
-
 };
 
 }  // namespace webf

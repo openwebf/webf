@@ -115,7 +115,6 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
     params[0] = eventValue.ToNative(ctx, exception_state);
     params[1] = *extra;
 
-    
     if (exception_state.HasException()) {
       context_->HandleException(exception_state);
       return nullptr;
