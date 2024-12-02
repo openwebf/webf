@@ -358,7 +358,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   void willAttachRenderer([flutter.Element? flutterWidgetElement]) {}
 
   @override
-  void didAttachRenderer() {}
+  void didAttachRenderer([flutter.Element? flutterWidgetElement]) {}
 
   @override
   void willDetachRenderer() {}

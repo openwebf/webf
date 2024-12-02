@@ -395,7 +395,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   @override
-  void didAttachRenderer() {
+  void didAttachRenderer([flutter.Element? flutterWidgetElement]) {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.didAttachRenderer');
     }
@@ -403,7 +403,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // The node attach may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
     renderStyle.markAdjacentRenderParagraphNeedsLayout();
     // Ensure that the child is attached.
-    ensureChildAttached();
+    ensureChildAttached(flutterWidgetElement);
 
     // Reconfigure scrollable contents.
     bool needUpdateOverflowRenderBox = false;
@@ -819,13 +819,13 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     willAttachRenderer(flutterWidgetElement);
 
-    if (getRenderer() != null) {
+    if (getRenderer(flutterWidgetElement) != null) {
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         // If afterRenderObject is null, which means insert child at the head of parent.
         RenderBox? afterRenderObject = Node.findMostClosedSiblings(previousSibling, flutterWidgetElement: flutterWidgetElement);
 
-        RenderBoxModel.attachRenderBox(parent.getRenderer()!, getRenderer()!, after: afterRenderObject);
+        RenderBoxModel.attachRenderBox(parent.getRenderer(flutterWidgetElement)!, getRenderer(flutterWidgetElement)!, after: afterRenderObject);
         if (renderStyle.position != CSSPositionType.static) {
           _updateRenderBoxModelWithPosition(CSSPositionType.static);
         }
@@ -838,7 +838,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         style.flushPendingProperties();
       }
 
-      didAttachRenderer();
+      didAttachRenderer(flutterWidgetElement);
     }
 
     if (enableWebFProfileTracking) {
