@@ -44,5 +44,4 @@ void DartReadable::operator delete[](void* memory) noexcept {
   dart_free(memory);
 }
 
-
 }  // namespace webf
