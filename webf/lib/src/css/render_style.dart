@@ -6,6 +6,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
@@ -38,7 +39,7 @@ enum RenderObjectGetType { self, parent, firstChild, lastChild, previousSibling,
 
 /// The abstract class for render-style, declare the
 /// getter interface for all available CSS rule.
-abstract class RenderStyle {
+abstract class RenderStyle extends DiagnosticableTree {
   // Common
   Element get target;
 
@@ -2743,4 +2744,26 @@ class CSSRenderStyle extends RenderStyle
   double deflatePaddingBorderWidth(double borderBoxWidth) {
     return borderBoxWidth - paddingLeft.computedValue - paddingRight.computedValue - border.left - border.right;
   }
+
+  @override
+  List<DiagnosticsNode> getChildren() {
+    // TODO: implement getChildren
+    throw UnimplementedError();
+  }
+
+  @override
+  List<DiagnosticsNode> getProperties() {
+    // TODO: implement getProperties
+    throw UnimplementedError();
+  }
+
+  @override
+  String toDescription({TextTreeConfiguration? parentConfiguration}) {
+    // TODO: implement toDescription
+    throw UnimplementedError();
+  }
+
+  @override
+  // TODO: implement value
+  Object? get value => throw UnimplementedError();
 }

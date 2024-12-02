@@ -296,15 +296,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   flutter.Widget toWidget() {
-    if (this is WidgetElement) {
-      return (this as WidgetElement).widget;
-    } else if (this is TextNode) {
-      return WebFCharacterDataToWidgetAdaptor(this as TextNode, key: Key(hashCode.toString()));
-    } else if (this is Element) {
-      return Portal(
-          ownerElement: this as Element,
-          child: WebFHTMLElementStatefulWidget(this as Element, key: Key(hashCode.toString())));
-    }
     throw FlutterError('UnKnown node types for widget conversion');
   }
 

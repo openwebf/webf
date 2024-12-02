@@ -18,6 +18,7 @@ import 'package:webf/rendering.dart';
 import 'package:webf/src/bridge/native_types.dart';
 import 'package:webf/src/svg/rendering/container.dart';
 import 'package:webf/widget.dart';
+import 'element_widget_adapter.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 
 final RegExp classNameSplitRegExp = RegExp(r'\s+');
@@ -79,7 +80,7 @@ class ElementAttributeProperty {
   final ElementAttributeDeleter? deleter;
 }
 
-abstract class Element extends ContainerNode with ElementBase, ElementEventMixin, ElementOverflowMixin {
+abstract class Element extends ContainerNode with ElementBase, ElementEventMixin, ElementOverflowMixin, ElementAdapterMixin {
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = UNKNOWN;
 
