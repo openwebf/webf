@@ -65,7 +65,6 @@ class Document : public ContainerNode, public TreeScope {
   [[nodiscard]] bool ChildTypeAllowed(NodeType) const override;
 
   Element* querySelector(const AtomicString& selectors, ExceptionState& exception_state);
-  ScriptPromise querySelector_async(const AtomicString& selectors, ExceptionState& exception_state);
   std::vector<Element*> querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state);
 
   Element* getElementById(const AtomicString& id, ExceptionState& exception_state);
