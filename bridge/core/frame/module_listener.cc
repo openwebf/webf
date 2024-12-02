@@ -8,13 +8,13 @@
 
 namespace webf {
 
-std::shared_ptr<ModuleListener> ModuleListener::Create(const std::shared_ptr<QJSFunction>& function) {
+std::shared_ptr<ModuleListener> ModuleListener::Create(const std::shared_ptr<Function>& function) {
   return std::make_shared<ModuleListener>(function);
 }
 
-ModuleListener::ModuleListener(std::shared_ptr<QJSFunction> function) : function_(std::move(function)) {}
+ModuleListener::ModuleListener(std::shared_ptr<Function> function) : function_(std::move(function)) {}
 
-const std::shared_ptr<QJSFunction>& ModuleListener::value() {
+const std::shared_ptr<Function>& ModuleListener::value() {
   return function_;
 }
 
