@@ -4,9 +4,9 @@
 
 import 'dart:collection';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
+import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/module.dart';
@@ -35,36 +35,27 @@ class WebFHTMLElementStatefulWidget extends flutter.StatefulWidget {
   flutter.State<flutter.StatefulWidget> createState() {
     return HTMLElementState(webFElement);
   }
+
+  @override
+  String toStringShort() {
+    String attributes = '';
+    if (webFElement.id != null) {
+      attributes += 'id="' + webFElement.id! + '"';
+    }
+    if (webFElement.className.isNotEmpty) {
+      attributes += 'class="' + webFElement.className + '"';
+    }
+
+    return '<${webFElement.tagName.toLowerCase()} $attributes>';
+  }
 }
 
 class HTMLElementState extends flutter.State<WebFHTMLElementStatefulWidget> with flutter.AutomaticKeepAliveClientMixin {
-  final Set<flutter.Widget> customElementWidgets = HashSet();
   final Element _webFElement;
-
-  bool _disposed = false;
 
   HTMLElementState(this._webFElement);
 
   Node get webFElement => _webFElement;
-
-  void addWidgetChild(flutter.Widget widget) {
-    scheduleDelayForFrameCallback();
-    Future.microtask(() {
-      setState(() {
-        customElementWidgets.add(widget);
-      });
-    });
-  }
-
-  void removeWidgetChild(flutter.Widget widget) {
-    scheduleDelayForFrameCallback();
-    Future.microtask(() {
-      if (_disposed) return;
-      setState(() {
-        customElementWidgets.remove(widget);
-      });
-    });
-  }
 
   @override
   void initState() {
@@ -73,17 +64,17 @@ class HTMLElementState extends flutter.State<WebFHTMLElementStatefulWidget> with
   }
 
   @override
-  void dispose() {
-    super.dispose();
-    _disposed = true;
-    customElementWidgets.clear();
-  }
-
-  @override
   flutter.Widget build(flutter.BuildContext context) {
+    List<flutter.Widget> children;
+    if (_webFElement.childNodes.isEmpty) {
+      children = List.empty();
+    } else {
+      children = (webFElement.childNodes as ChildNodeList).toWidgetList();
+    }
+
     return WebFHTMLElementToWidgetAdaptor(
       _webFElement,
-      children: customElementWidgets.toList(),
+      children: children,
       key: flutter.ObjectKey(_webFElement),
     );
   }
@@ -115,6 +106,11 @@ class WebFHTMLElementToWidgetAdaptor extends flutter.MultiChildRenderObjectWidge
     RenderBoxModel? renderObject =
         _webFElement.updateOrCreateRenderBoxModel(flutterWidgetElement: context as flutter.Element);
     return renderObject!;
+  }
+
+  @override
+  String toStringShort() {
+    return 'RenderObjectAdapter(${_webFElement.tagName.toLowerCase()})';
   }
 
   @override

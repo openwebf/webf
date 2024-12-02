@@ -203,11 +203,10 @@ class TextNode extends CharacterData {
 }
 
 class TextNodeAdapter extends flutter.RenderObjectWidget {
-  final CharacterData webFCharacterData;
-  CharacterData get webFCharacter => webFCharacterData;
+  final TextNode textNode;
 
-  TextNodeAdapter(this.webFCharacterData, {Key? key}) : super(key: key) {
-    webFCharacterData.managedByFlutterWidget = true;
+  TextNodeAdapter(this.textNode, {Key? key}) : super(key: key) {
+    textNode.managedByFlutterWidget = true;
   }
 
   @override
@@ -217,14 +216,18 @@ class TextNodeAdapter extends flutter.RenderObjectWidget {
 
   @override
   RenderObject createRenderObject(flutter.BuildContext context) {
-    return webFCharacterData.createRenderer(context as flutter.RenderObjectElement);
+    return textNode.createRenderer(context as flutter.RenderObjectElement);
+  }
+
+  @override
+  String toStringShort() {
+    return '"${textNode.data}"';
   }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(AttributedStringProperty('WebFNodeType', AttributedString(webFCharacterData.nodeType.toString())));
-    properties.add(AttributedStringProperty('WebFNodeName', AttributedString(webFCharacterData.nodeName.toString())));
+    properties.add(AttributedStringProperty('data', AttributedString(textNode.data)));
   }
 }
 
@@ -239,9 +242,9 @@ class _TextNodeAdapterElement extends flutter.RenderObjectElement {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommand();
     }
-    widget.webFCharacter.createRenderer(this);
+    widget.textNode.createRenderer(this);
     super.mount(parent, newSlot);
-    widget.webFCharacter.ensureChildAttached();
+    widget.textNode.ensureChildAttached();
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
     }
