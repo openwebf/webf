@@ -57,10 +57,10 @@ interface Element extends Node, ParentNode, ChildNode {
   getClientRects(): BoundingClientRect[];
 
   getElementsByClassName(className: string) : Element[];
-  // getElementsByTagName(tagName: string): Element[];
+  getElementsByTagName(tagName: string): Element[];
 
   querySelector(selectors: string): Element | null;
-  // querySelectorAll(selectors: string): Element[];
+  querySelectorAll(selectors: string): Element[];
   matches(selectors: string): boolean;
 
   closest(selectors: string): Element | null;
