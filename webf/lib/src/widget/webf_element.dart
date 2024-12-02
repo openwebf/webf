@@ -98,7 +98,7 @@ class _WebFElement extends MultiChildRenderObjectElement {
       } else if (element is _WebFElement) {
         target = element.htmlElement;
         return false;
-      } else if (element is WebFHTMLElementToFlutterElementAdaptor) {
+      } else if (element is WebRenderLayoutWidgetElement) {
         target = element.webFElement;
         return false;
       }

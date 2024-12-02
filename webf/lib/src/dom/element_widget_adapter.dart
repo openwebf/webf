@@ -9,7 +9,6 @@ import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/module.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 import 'element.dart';
@@ -20,20 +19,20 @@ mixin ElementAdapterMixin on ElementBase {
   flutter.Widget toWidget() {
     return Portal(
         ownerElement: this as Element,
-        child: WebFHTMLElementStatefulWidget(this as Element, key: flutter.ObjectKey(this)));
+        child: _WebFElementWidget(this as Element, key: flutter.ObjectKey(this)));
   }
 }
 
-class WebFHTMLElementStatefulWidget extends flutter.StatefulWidget {
+class _WebFElementWidget extends flutter.StatefulWidget {
   final Element webFElement;
 
-  WebFHTMLElementStatefulWidget(this.webFElement, {flutter.Key? key}) : super(key: key) {
+  _WebFElementWidget(this.webFElement, {flutter.Key? key}) : super(key: key) {
     webFElement.managedByFlutterWidget = true;
   }
 
   @override
   flutter.State<flutter.StatefulWidget> createState() {
-    return HTMLElementState(webFElement);
+    return _WebFElementWidgetState(webFElement);
   }
 
   @override
@@ -50,17 +49,16 @@ class WebFHTMLElementStatefulWidget extends flutter.StatefulWidget {
   }
 }
 
-class HTMLElementState extends flutter.State<WebFHTMLElementStatefulWidget> with flutter.AutomaticKeepAliveClientMixin {
+class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flutter.AutomaticKeepAliveClientMixin {
   final Element _webFElement;
 
-  HTMLElementState(this._webFElement);
+  _WebFElementWidgetState(this._webFElement);
 
   Node get webFElement => _webFElement;
 
   @override
   void initState() {
     super.initState();
-    _webFElement.flutterWidgetState = this;
   }
 
   @override
@@ -72,7 +70,7 @@ class HTMLElementState extends flutter.State<WebFHTMLElementStatefulWidget> with
       children = (webFElement.childNodes as ChildNodeList).toWidgetList();
     }
 
-    return WebFHTMLElementToWidgetAdaptor(
+    return WebFRenderLayoutWidgetAdaptor(
       _webFElement,
       children: children,
       key: flutter.ObjectKey(_webFElement),
@@ -83,8 +81,8 @@ class HTMLElementState extends flutter.State<WebFHTMLElementStatefulWidget> with
   bool get wantKeepAlive => true;
 }
 
-class WebFHTMLElementToWidgetAdaptor extends flutter.MultiChildRenderObjectWidget {
-  WebFHTMLElementToWidgetAdaptor(this._webFElement, {flutter.Key? key, required List<flutter.Widget> children})
+class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget {
+  WebFRenderLayoutWidgetAdaptor(this._webFElement, {flutter.Key? key, required List<flutter.Widget> children})
       : super(key: key, children: children) {}
 
   final Element _webFElement;
@@ -95,8 +93,8 @@ class WebFHTMLElementToWidgetAdaptor extends flutter.MultiChildRenderObjectWidge
   void requestForBuild() {}
 
   @override
-  WebFHTMLElementToFlutterElementAdaptor createElement() {
-    WebFHTMLElementToFlutterElementAdaptor element = WebFHTMLElementToFlutterElementAdaptor(this);
+  WebRenderLayoutWidgetElement createElement() {
+    WebRenderLayoutWidgetElement element = WebRenderLayoutWidgetElement(this);
     return element;
   }
 
@@ -121,11 +119,11 @@ class WebFHTMLElementToWidgetAdaptor extends flutter.MultiChildRenderObjectWidge
   }
 }
 
-class WebFHTMLElementToFlutterElementAdaptor extends flutter.MultiChildRenderObjectElement {
-  WebFHTMLElementToFlutterElementAdaptor(WebFHTMLElementToWidgetAdaptor widget) : super(widget);
+class WebRenderLayoutWidgetElement extends flutter.MultiChildRenderObjectElement {
+  WebRenderLayoutWidgetElement(WebFRenderLayoutWidgetAdaptor widget) : super(widget);
 
   @override
-  WebFHTMLElementToWidgetAdaptor get widget => super.widget as WebFHTMLElementToWidgetAdaptor;
+  WebFRenderLayoutWidgetAdaptor get widget => super.widget as WebFRenderLayoutWidgetAdaptor;
 
   Element get webFElement => widget.webFElement;
 

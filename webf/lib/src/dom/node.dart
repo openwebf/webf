@@ -171,7 +171,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   //   }
   // }
 
-  /// WebF nodes could be wrapped by [WebFHTMLElementToWidgetAdaptor] and the renderObject of this node is managed by Flutter framework.
+  /// WebF nodes could be wrapped by [WebFRenderLayoutWidgetAdaptor] and the renderObject of this node is managed by Flutter framework.
   /// So if managedByFlutterWidget is true, WebF DOM can not disposed Node's renderObject directly.
   bool _managedByFlutterWidget = false;
 

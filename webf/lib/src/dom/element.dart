@@ -103,8 +103,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   bool get isSVGElement => false;
 
-  HTMLElementState? flutterWidgetState;
-
   // The attrs.
   final Map<String, String> attributes = <String, String>{};
 
