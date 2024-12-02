@@ -8,7 +8,6 @@ import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/foundation.dart';
-import 'package:webf/src/svg/rendering/text.dart';
 
 const String WHITE_SPACE_CHAR = ' ';
 const String NEW_LINE_CHAR = '\n';
@@ -21,6 +20,11 @@ class TextNode extends CharacterData {
   static const String NORMAL_SPACE = '\u0020';
 
   TextNode(this._data, [BindingContext? context]) : super(NodeType.TEXT_NODE, context);
+
+  @override
+  flutter.Widget toWidget() {
+    return TextNodeAdapter(this, key: flutter.ObjectKey(this));
+  }
 
   // Must be existed after text node is attached, and all text update will after text attached.
   RenderTextBox? _domRenderTextBox;
@@ -35,7 +39,6 @@ class TextNode extends CharacterData {
       handler(_domRenderTextBox);
     }
   }
-
 
   // The text string.
   String _data = '';
@@ -196,5 +199,66 @@ class TextNode extends CharacterData {
   Future<void> dispose() async {
     unmountRenderObject();
     super.dispose();
+  }
+}
+
+class TextNodeAdapter extends flutter.RenderObjectWidget {
+  final CharacterData webFCharacterData;
+  CharacterData get webFCharacter => webFCharacterData;
+
+  TextNodeAdapter(this.webFCharacterData, {Key? key}) : super(key: key) {
+    webFCharacterData.managedByFlutterWidget = true;
+  }
+
+  @override
+  flutter.RenderObjectElement createElement() {
+    return _TextNodeAdapterElement(this);
+  }
+
+  @override
+  RenderObject createRenderObject(flutter.BuildContext context) {
+    return webFCharacterData.createRenderer(context as flutter.RenderObjectElement);
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(AttributedStringProperty('WebFNodeType', AttributedString(webFCharacterData.nodeType.toString())));
+    properties.add(AttributedStringProperty('WebFNodeName', AttributedString(webFCharacterData.nodeName.toString())));
+  }
+}
+
+class _TextNodeAdapterElement extends flutter.RenderObjectElement {
+  _TextNodeAdapterElement(TextNodeAdapter widget) : super(widget);
+
+  @override
+  TextNodeAdapter get widget => super.widget as TextNodeAdapter;
+
+  @override
+  void mount(flutter.Element? parent, Object? newSlot) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
+    widget.webFCharacter.createRenderer(this);
+    super.mount(parent, newSlot);
+    widget.webFCharacter.ensureChildAttached();
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
+  }
+
+  @override
+  void unmount() {
+    super.unmount();
+  }
+
+  // CharacterData have no children
+  @override
+  void insertRenderObjectChild(RenderObject child, Object? slot) {}
+  @override
+  void moveRenderObjectChild(covariant RenderObject child, covariant Object? oldSlot, covariant Object? newSlot) {}
+
+  @override
+  void removeRenderObjectChild(covariant RenderObject child, covariant Object? slot) {
   }
 }

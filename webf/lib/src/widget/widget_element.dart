@@ -2,14 +2,14 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:meta/meta.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/launcher.dart';
-import 'webf_adapter_widget.dart';
-import 'render_object_to_widget_adaptor.dart';
 
 const Map<String, dynamic> _defaultStyle = {
   DISPLAY: BLOCK,
@@ -18,14 +18,14 @@ const Map<String, dynamic> _defaultStyle = {
 // WidgetElement is the base class for custom elements which rendering details are implemented by Flutter widgets.
 abstract class WidgetElement extends dom.Element {
   // An state
-  late WebFWidgetElementStatefulWidget _widget;
-  WebFWidgetElementStatefulWidget get widget => _widget;
+  late _WidgetElementAdapter _widget;
+  _WidgetElementAdapter get widget => _widget;
 
-  WebFWidgetElementState? _state;
-  set state(WebFWidgetElementState? newState) {
+  _WebFWidgetElementState? _state;
+  set state(_WebFWidgetElementState? newState) {
     _state = newState;
   }
-  WebFWidgetElementToWidgetAdapter? attachedAdapter;
+  WidgetElementAdapter? attachedAdapter;
 
   bool isRouterLinkElement = false;
 
@@ -35,7 +35,12 @@ abstract class WidgetElement extends dom.Element {
 
   WidgetElement(BindingContext? context) : super(context) {
     WidgetsFlutterBinding.ensureInitialized();
-    _widget = WebFWidgetElementStatefulWidget(this);
+    _widget = _WidgetElementAdapter(this);
+  }
+
+  @override
+  Widget toWidget() {
+    return widget;
   }
 
   @override
@@ -89,7 +94,7 @@ abstract class WidgetElement extends dom.Element {
   void willAttachRenderer([Element? flutterWidgetElement]) {
     super.willAttachRenderer();
     if (renderStyle.display != CSSDisplay.none && attachedAdapter == null) {
-      attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderStyle.domRenderBoxModel!, widgetElement: this);
+      attachedAdapter = WidgetElementAdapter(child: widget, container: renderStyle.domRenderBoxModel!, widgetElement: this);
     }
   }
 
@@ -107,7 +112,7 @@ abstract class WidgetElement extends dom.Element {
 
     if (renderStyle.display != CSSDisplay.none) {
       // Generate a new adapter for this RenderWidget
-      attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderStyle.domRenderBoxModel!, widgetElement: this);
+      attachedAdapter = WidgetElementAdapter(child: widget, container: renderStyle.domRenderBoxModel!, widgetElement: this);
 
       // Reattach to Flutter
       ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
@@ -251,5 +256,161 @@ abstract class WidgetElement extends dom.Element {
   void dispose() {
     super.dispose();
     ownerDocument.aliveWidgetElements.remove(this);
+  }
+}
+
+class _WidgetElementAdapter extends StatefulWidget {
+  final WidgetElement widgetElement;
+
+  _WidgetElementAdapter(this.widgetElement, {Key? key}) : super(key: key);
+
+  @override
+  StatefulElement createElement() {
+    return WebFWidgetElementElement(this);
+  }
+
+  @override
+  State<StatefulWidget> createState() {
+    _WebFWidgetElementState state = _WebFWidgetElementState(widgetElement);
+    widgetElement.state = state;
+    return state;
+  }
+
+  @override
+  String toStringShort() {
+    return '_WidgetElementAdapter(${widgetElement.tagName})';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty('ABC', '1234'));
+  }
+}
+
+class WebFWidgetElementElement extends StatefulElement {
+  WebFWidgetElementElement(super.widget);
+
+  @override
+  _WidgetElementAdapter get widget => super.widget as _WidgetElementAdapter;
+
+  @override
+  void mount(Element? parent, Object? newSlot) {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackUICommand();
+    }
+    super.mount(parent, newSlot);
+    // Make sure RenderWidget had been created.
+    widget.widgetElement.createRenderer(this);
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackUICommand();
+    }
+  }
+}
+
+class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
+  final WidgetElement widgetElement;
+
+  _WebFWidgetElementState(this.widgetElement);
+
+  @override
+  void initState() {
+    super.initState();
+    widgetElement.initState();
+  }
+
+  void requestUpdateState([VoidCallback? callback]) {
+    if (mounted) {
+      setState(callback ?? () {});
+    }
+  }
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'WidgetElement(${widgetElement.tagName}) adapterWidgetState';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widgetElement.build(context, widgetElement.childNodes as dom.ChildNodeList);
+  }
+}
+
+class WidgetElementAdapter<T extends RenderObject> extends SingleChildRenderObjectWidget {
+  WidgetElementAdapter({
+    Widget? child,
+    required this.container,
+    required this.widgetElement,
+    this.debugShortDescription,
+  }) : super(key: GlobalObjectKey(container), child: child);
+
+  /// The [RenderObject] that is the parent of the [Element] created by this widget.
+  final RenderObject container;
+
+  final WidgetElement widgetElement;
+
+  /// A short description of this widget used by debugging aids.
+  final String? debugShortDescription;
+
+  @override
+  WebFRenderObjectToWidgetElement<T> createElement() => WebFRenderObjectToWidgetElement<T>(this);
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => container;
+
+  @override
+  void updateRenderObject(BuildContext context, RenderObject renderObject) {}
+
+  @override
+  void didUnmountRenderObject(covariant RenderObject renderObject) {
+    // WidgetElement can be remounted to the DOM tree and trigger widget adapter updates.
+    // We need to check if the widgetElement is actually disconnected before unmounting the renderWidget.
+    if (!widgetElement.isConnected) {
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.startTrackUICommand();
+      }
+      widgetElement.unmountRenderObject();
+      if (enableWebFProfileTracking) {
+        WebFProfiler.instance.finishTrackUICommand();
+      }
+    }
+  }
+
+  @override
+  String toStringShort() => '<${widgetElement.tagName} />';
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty('renderStyle', widgetElement.renderStyle));
+    properties.add(DiagnosticsProperty('id', widgetElement.id));
+    properties.add(DiagnosticsProperty('className', widgetElement.className));
+  }
+}
+
+/// Creates an element that is hosted by a [RenderObject].
+class WebFRenderObjectToWidgetElement<T extends RenderObject> extends SingleChildRenderObjectElement {
+  WebFRenderObjectToWidgetElement(WidgetElementAdapter<T> widget) : super(widget);
+
+  @override
+  WidgetElementAdapter get widget => super.widget as WidgetElementAdapter<T>;
+
+  @override
+  RenderObjectWithChildMixin<RenderObject> get renderObject => super.renderObject as RenderObjectWithChildMixin<RenderObject>;
+
+  @override
+  void insertRenderObjectChild(RenderObject child, Object? slot) {
+    assert(renderObject.debugValidateChild(child));
+    renderObject.child = child;
+  }
+
+  @override
+  void moveRenderObjectChild(RenderObject child, Object? oldSlot, Object? newSlot) {
+    assert(false);
+  }
+
+  @override
+  void removeRenderObjectChild(RenderObject child, Object? slot) {
+    renderObject.child = null;
   }
 }

@@ -34,8 +34,8 @@ typedef TitleChangedHandler = void Function(String title);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
-typedef OnCustomElementAttached = void Function(WebFWidgetElementToWidgetAdapter newWidget);
-typedef OnCustomElementDetached = void Function(WebFWidgetElementToWidgetAdapter detachedWidget);
+typedef OnCustomElementAttached = void Function(WidgetElementAdapter newWidget);
+typedef OnCustomElementDetached = void Function(WidgetElementAdapter detachedWidget);
 
 typedef TraverseElementCallback = void Function(Element element);
 
@@ -1473,7 +1473,7 @@ class WebFController {
     _pendingCallbacks.clear();
   }
 
-  final List<WebFWidgetElementToWidgetAdapter> pendingWidgetElements = [];
+  final List<WidgetElementAdapter> pendingWidgetElements = [];
 
   void flushPendingUnAttachedWidgetElements() {
     assert(onCustomElementAttached != null);
