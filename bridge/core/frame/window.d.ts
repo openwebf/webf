@@ -25,7 +25,7 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   requestAnimationFrame(callback: Function): double;
   cancelAnimationFrame(request_id: double): void;
 
-  getComputedStyle(element: Element, pseudoElt?: string): SupportAsync<ComputedCssStyleDeclaration>;
+  getComputedStyle(element: Element, pseudoElt?: string): ComputedCssStyleDeclaration;
 
   readonly window: Window;
   readonly parent: Window;
