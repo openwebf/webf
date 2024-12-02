@@ -338,7 +338,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     RenderBoxModel? previousRenderBoxModel = renderStyle.domRenderBoxModel;
     RenderBoxModel nextRenderBoxModel = renderStyle.updateOrCreateRenderBoxModel();
 
-    if (managedByFlutterWidget && previousRenderBoxModel != nextRenderBoxModel) {
+    if (!managedByFlutterWidget && previousRenderBoxModel != nextRenderBoxModel) {
       RenderObject? parentRenderObject;
       RenderBox? after;
       if (previousRenderBoxModel != null) {
@@ -789,7 +789,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     attributes.clear();
     _attributeProperties.clear();
     if (!managedByFlutterWidget) {
-      ownerDocument.inactiveRenderObjects.add(renderStyle.domRenderBoxModel!);
+      ownerDocument.inactiveRenderObjects.add(renderStyle.domRenderBoxModel);
     }
     ownerDocument.clearElementStyleDirty(this);
     _beforeElement?.dispose();
@@ -822,8 +822,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (getRenderer() != null) {
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
-        previousSibling ??= parent.lastChild;
-
         // If afterRenderObject is null, which means insert child at the head of parent.
         RenderBox? afterRenderObject = Node.findMostClosedSiblings(previousSibling, flutterWidgetElement: flutterWidgetElement);
 
@@ -887,17 +885,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (isRendererAttachedToSegmentTree) {
       if (!renderStyle.hasRenderBox()) return;
       for (Node child in childNodes) {
-        // RenderBox? after;
-        // if (box is RenderLayoutBox) {
-        //   RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
-        //   if (scrollingContentBox != null) {
-        //     after = scrollingContentBox.lastChild;
-        //   } else {
-        //     after = box.lastChild;
-        //   }
-        // } else if (box is RenderSVGContainer) {
-        //   after = box.lastChild;
-        // }
         if (!child.isRendererAttachedToSegmentTree) {
           child.attachTo(this, flutterWidgetElement: flutterWidgetElement);
           child.ensureChildAttached(flutterWidgetElement);
@@ -924,19 +911,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       if (!child.isRendererAttachedToSegmentTree &&
           renderStyle.hasRenderBox() &&
           renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
-        RenderBox? after;
-        // if (box is RenderLayoutBox) {
-        //   RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
-        //   if (scrollingContentBox != null) {
-        //     after = scrollingContentBox.lastChild;
-        //   } else {
-        //     after = box.lastChild;
-        //   }
-        // } else if (box is ContainerRenderObjectMixin<RenderBox, ContainerParentDataMixin<RenderBox>>) {
-        //   // TODO: improve implements
-        //   after = (box as ContainerRenderObjectMixin<RenderBox, ContainerParentDataMixin<RenderBox>>).lastChild;
-        // }
-
         child.attachTo(this);
       }
     }
