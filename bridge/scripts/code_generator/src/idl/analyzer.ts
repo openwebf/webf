@@ -227,6 +227,26 @@ function getParameterType(type: ts.TypeNode, unionTypeCollector: UnionTypeCollec
       unionTypeCollector.types.add(result.value);
     }
     return result;
+  } else if (type.kind === ts.SyntaxKind.TypeReference) {
+    let typeReference: ts.TypeReference = type as unknown as ts.TypeReference;
+    // @ts-ignore
+    let identifier = (typeReference.typeName as ts.Identifier).text;
+    if (identifier === 'SupportAsync') {
+      let argument = typeReference.typeArguments![0] as unknown as ts.TypeNode;
+      if (argument.kind == ts.SyntaxKind.UnionType) {
+        if (mode) mode.supportAsync = true
+        let node = argument as unknown as ts.UnionType;
+        let types = node.types;
+        let result = {
+          isArray: false,
+          value: types.map(type => getParameterType(type as unknown as ts.TypeNode, unionTypeCollector, mode))
+        };
+        if (isUnionType(result)) {
+          unionTypeCollector.types.add(result.value);
+        }
+        return result;
+      }
+    }
   }
   return {
     isArray: false,
