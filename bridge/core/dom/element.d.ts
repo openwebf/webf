@@ -53,14 +53,14 @@ interface Element extends Node, ParentNode, ChildNode {
 
   // CSSOM View Module
   // https://drafts.csswg.org/cssom-view/#extension-to-the-element-interface
-  getBoundingClientRect(): BoundingClientRect;
-  getClientRects(): BoundingClientRect[];
+  getBoundingClientRect(): SupportAsync<BoundingClientRect>;
+  getClientRects(): SupportAsync<BoundingClientRect[]>;
 
-  getElementsByClassName(className: string) : Element[];
-  getElementsByTagName(tagName: string): Element[];
+  getElementsByClassName(className: string) : SupportAsync<Element[]>;
+  getElementsByTagName(tagName: string): SupportAsync<Element[]>;
 
   querySelector(selectors: string): Element | null;
-  querySelectorAll(selectors: string): Element[];
+  querySelectorAll(selectors: string):SupportAsync<Element[]>;
   matches(selectors: string): boolean;
 
   closest(selectors: string): Element | null;
