@@ -229,7 +229,8 @@ abstract class WidgetElement extends dom.Element {
 
     dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
     if (ancestorWidgetNode != null) {
-      (ancestorWidgetNode as dom.Element).flutterWidgetState!.addWidgetChild(attachedAdapter!);
+      assert(false);
+      // (ancestorWidgetNode as dom.Element).flutterWidgetState!.addWidgetChild(attachedAdapter!);
     } else if (ownerDocument.controller.mode == WebFLoadingMode.standard ||
         ownerDocument.controller.isPreLoadingOrPreRenderingComplete) {
       ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
@@ -242,7 +243,8 @@ abstract class WidgetElement extends dom.Element {
     if (attachedAdapter != null) {
       dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
       if (ancestorWidgetNode != null) {
-        (ancestorWidgetNode as dom.Element).flutterWidgetState!.removeWidgetChild(attachedAdapter!);
+        assert(false);
+        // (ancestorWidgetNode as dom.Element).flutterWidgetState!.removeWidgetChild(attachedAdapter!);
       } else {
         ownerDocument.controller.onCustomElementDetached!(attachedAdapter!);
       }
