@@ -18,13 +18,19 @@ const Map<String, dynamic> _defaultStyle = {
 // WidgetElement is the base class for custom elements which rendering details are implemented by Flutter widgets.
 abstract class WidgetElement extends dom.Element {
   // An state
-  late _WidgetElementAdapter _widget;
-  _WidgetElementAdapter get widget => _widget;
+  _WidgetElementAdapter? _widget;
+
+  _WidgetElementAdapter get widget {
+    _widget ??= _WidgetElementAdapter(this);
+    return _widget!;
+  }
 
   _WebFWidgetElementState? _state;
+
   set state(_WebFWidgetElementState? newState) {
     _state = newState;
   }
+
   WidgetElementAdapter? attachedAdapter;
 
   bool isRouterLinkElement = false;
@@ -35,12 +41,11 @@ abstract class WidgetElement extends dom.Element {
 
   WidgetElement(BindingContext? context) : super(context) {
     WidgetsFlutterBinding.ensureInitialized();
-    _widget = _WidgetElementAdapter(this);
   }
 
   @override
   Widget toWidget() {
-    return widget;
+    return _widget = _WidgetElementAdapter(this);
   }
 
   @override
@@ -53,10 +58,13 @@ abstract class WidgetElement extends dom.Element {
 
   // React to properties and attributes changes
   void attributeDidUpdate(String key, String value) {}
+
   bool shouldElementRebuild(String key, previousValue, nextValue) {
     return previousValue == nextValue;
   }
+
   void propertyDidUpdate(String key, value) {}
+
   void styleDidUpdate(String property, String value) {}
 
   Widget build(BuildContext context, dom.ChildNodeList childNodes);
@@ -90,9 +98,12 @@ abstract class WidgetElement extends dom.Element {
   @mustCallSuper
   @override
   void willAttachRenderer([Element? flutterWidgetElement]) {
-    super.willAttachRenderer();
-    if (renderStyle.display != CSSDisplay.none && attachedAdapter == null) {
-      attachedAdapter = WidgetElementAdapter(child: widget, container: renderStyle.domRenderBoxModel!, widgetElement: this);
+    super.willAttachRenderer(flutterWidgetElement);
+    if (renderStyle.display != CSSDisplay.none) {
+      RenderObject hostedRenderObject = flutterWidgetElement != null
+          ? renderStyle.getWidgetPairedRenderBoxModel(flutterWidgetElement)!
+          : renderStyle.domRenderBoxModel!;
+      attachedAdapter = WidgetElementAdapter(child: widget, container: hostedRenderObject, widgetElement: this);
     }
   }
 
@@ -100,7 +111,7 @@ abstract class WidgetElement extends dom.Element {
   @override
   void didAttachRenderer([Element? flutterWidgetElement]) {
     // Children of WidgetElement should insert render object by Flutter Framework.
-    attachWidget(_widget);
+    attachWidget(widget);
   }
 
   // Reconfigure renderObjects when already rendered pages reattached to flutter tree
@@ -110,7 +121,8 @@ abstract class WidgetElement extends dom.Element {
 
     if (renderStyle.display != CSSDisplay.none) {
       // Generate a new adapter for this RenderWidget
-      attachedAdapter = WidgetElementAdapter(child: widget, container: renderStyle.domRenderBoxModel!, widgetElement: this);
+      attachedAdapter =
+          WidgetElementAdapter(child: widget, container: renderStyle.domRenderBoxModel!, widgetElement: this);
 
       // Reattach to Flutter
       ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
@@ -278,13 +290,12 @@ class _WidgetElementAdapter extends StatefulWidget {
 
   @override
   String toStringShort() {
-    return '_WidgetElementAdapter(${widgetElement.tagName})';
+    return '_WidgetElementAdapter(${widgetElement.tagName.toLowerCase()})';
   }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty('ABC', '1234'));
   }
 }
 
@@ -301,7 +312,9 @@ class WebFWidgetElementElement extends StatefulElement {
     }
     super.mount(parent, newSlot);
     // Make sure RenderWidget had been created.
-    widget.widgetElement.createRenderer(this);
+    if (!widget.widgetElement.renderStyle.hasRenderBox()) {
+      widget.widgetElement.createRenderer(this);
+    }
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
     }
@@ -327,7 +340,7 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'WidgetElement(${widgetElement.tagName}) adapterWidgetState';
+    return 'WidgetElement(${widgetElement.tagName.toLowerCase()}) adapterWidgetState';
   }
 
   @override
@@ -377,7 +390,7 @@ class WidgetElementAdapter<T extends RenderObject> extends SingleChildRenderObje
   }
 
   @override
-  String toStringShort() => '<${widgetElement.tagName} />';
+  String toStringShort() => '<${widgetElement.tagName.toLowerCase()} />';
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -396,7 +409,8 @@ class WebFRenderObjectToWidgetElement<T extends RenderObject> extends SingleChil
   WidgetElementAdapter get widget => super.widget as WidgetElementAdapter<T>;
 
   @override
-  RenderObjectWithChildMixin<RenderObject> get renderObject => super.renderObject as RenderObjectWithChildMixin<RenderObject>;
+  RenderObjectWithChildMixin<RenderObject> get renderObject =>
+      super.renderObject as RenderObjectWithChildMixin<RenderObject>;
 
   @override
   void insertRenderObjectChild(RenderObject child, Object? slot) {
@@ -408,7 +422,6 @@ class WebFRenderObjectToWidgetElement<T extends RenderObject> extends SingleChil
   void moveRenderObjectChild(RenderObject child, Object? oldSlot, Object? newSlot) {
     assert(false);
   }
-
   @override
   void removeRenderObjectChild(RenderObject child, Object? slot) {
     renderObject.child = null;
