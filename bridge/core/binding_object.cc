@@ -201,9 +201,9 @@ static void handleAsyncInvokeCallback(ScriptPromiseResolver* resolver,
 }
 
 ScriptPromise BindingObject::InvokeBindingMethodAsync(BindingMethodCallOperations binding_method_call_operation,
-                                       int32_t argc,
-                                       const NativeValue* args,
-                                       ExceptionState& exception_state) const {
+                                                      int32_t argc,
+                                                      const NativeValue* args,
+                                                      ExceptionState& exception_state) const {
   NativeValue method_on_stack = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
   return InvokeBindingMethodAsyncInternal(method_on_stack, argc, args, exception_state);
 }
@@ -273,7 +273,7 @@ ScriptPromise BindingObject::SetBindingPropertyAsync(const webf::AtomicString& p
     return ScriptPromise(ctx(), JS_NULL);
   }
   const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release()), value};
-  return InvokeBindingMethodAsync(BindingMethodCallOperations::kSetProperty, 2, argv,exception_state);
+  return InvokeBindingMethodAsync(BindingMethodCallOperations::kSetProperty, 2, argv, exception_state);
 }
 
 NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,

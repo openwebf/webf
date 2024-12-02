@@ -174,7 +174,8 @@ Element* Document::querySelector(const AtomicString& selectors, ExceptionState& 
 
 ScriptPromise Document::querySelector_async(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
-  ScriptPromise scriptPromise = InvokeBindingMethodAsync(binding_call_methods::kquerySelector, 1, arguments, exception_state);
+  ScriptPromise scriptPromise =
+      InvokeBindingMethodAsync(binding_call_methods::kquerySelector, 1, arguments, exception_state);
   if (exception_state.HasException()) {
     return ScriptPromise(ctx(), JS_NULL);
   }
