@@ -470,8 +470,9 @@ ScriptValue Element::___testGlobalToLocal__(double x, double y, webf::ExceptionS
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
   };
 
-  NativeValue result = InvokeBindingMethod(binding_call_methods::k__test_global_to_local__, 2, args,
-                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
+  NativeValue result = InvokeBindingMethod(
+      binding_call_methods::k__test_global_to_local__, 2, args,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
 
   return ScriptValue(ctx(), result);
 }

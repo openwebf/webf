@@ -18,8 +18,7 @@ Path2D* Path2D::Create(ExecutingContext* context,
   return MakeGarbageCollected<Path2D>(context, init, exception_state);
 }
 
-Path2D::Path2D(ExecutingContext* context, ExceptionState& exception_state)
-  : BindingObject(context->ctx()) {
+Path2D::Path2D(ExecutingContext* context, ExceptionState& exception_state) : BindingObject(context->ctx()) {
   GetExecutingContext()->dartMethodPtr()->createBindingObject(GetExecutingContext()->isDedicated(),
                                                               GetExecutingContext()->contextId(), bindingObject(),
                                                               CreateBindingObjectType::kCreatePath2D, nullptr, 0);
@@ -28,7 +27,7 @@ Path2D::Path2D(ExecutingContext* context, ExceptionState& exception_state)
 Path2D::Path2D(ExecutingContext* context,
                const std::shared_ptr<QJSUnionPath2DDomString>& init,
                ExceptionState& exception_state)
-  : BindingObject(context->ctx()) {
+    : BindingObject(context->ctx()) {
   NativeValue arguments[1];
   if (init->IsDomString()) {
     arguments[0] = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), init->GetAsDomString());
@@ -43,7 +42,7 @@ Path2D::Path2D(ExecutingContext* context,
 
 void Path2D::addPath(Path2D* path, DOMMatrixReadOnly* dom_matrix, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<Path2D>>::ToNativeValue(path),
-                            NativeValueConverter<NativeTypePointer<DOMMatrixReadOnly>>::ToNativeValue(dom_matrix)};
+                             NativeValueConverter<NativeTypePointer<DOMMatrixReadOnly>>::ToNativeValue(dom_matrix)};
   InvokeBindingMethod(binding_call_methods::kaddPath, 2, arguments, FlushUICommandReason::kDependentsOnElement,
                       exception_state);
 }
@@ -79,9 +78,9 @@ void Path2D::roundRect(double x,
 }
 
 NativeValue Path2D::HandleCallFromDartSide(const AtomicString& method,
-                                          int32_t argc,
-                                          const NativeValue* argv,
-                                          Dart_Handle dart_object) {
+                                           int32_t argc,
+                                           const NativeValue* argv,
+                                           Dart_Handle dart_object) {
   return Native_NewNull();
 }
 

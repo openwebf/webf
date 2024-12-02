@@ -25,9 +25,9 @@ using PublicContextSetTimeout = int32_t (*)(ExecutingContext*,
                                             int32_t,
                                             SharedExceptionState*);
 using PublicContextSetInterval = int32_t (*)(ExecutingContext*,
-                                            WebFNativeFunctionContext*,
-                                            int32_t,
-                                            SharedExceptionState*);
+                                             WebFNativeFunctionContext*,
+                                             int32_t,
+                                             SharedExceptionState*);
 using PublicContextClearTimeout = void (*)(ExecutingContext*, int32_t, SharedExceptionState*);
 using PublicContextClearInterval = void (*)(ExecutingContext*, int32_t, SharedExceptionState*);
 
@@ -43,11 +43,13 @@ struct ExecutingContextWebFMethods {
                             int32_t timeout,
                             SharedExceptionState* shared_exception_state);
   static int32_t SetInterval(ExecutingContext* context,
-                            WebFNativeFunctionContext* callback_context,
-                            int32_t timeout,
-                            SharedExceptionState* shared_exception_state);
+                             WebFNativeFunctionContext* callback_context,
+                             int32_t timeout,
+                             SharedExceptionState* shared_exception_state);
   static void ClearTimeout(ExecutingContext* context, int32_t timeout_id, SharedExceptionState* shared_exception_state);
-  static void ClearInterval(ExecutingContext* context, int32_t interval_id, SharedExceptionState* shared_exception_state);
+  static void ClearInterval(ExecutingContext* context,
+                            int32_t interval_id,
+                            SharedExceptionState* shared_exception_state);
 
   double version{1.0};
   PublicContextGetDocument context_get_document{document};
