@@ -37,9 +37,9 @@ interface Document extends Node, ParentNode {
   createEvent(event_type: string): Event;
 
   getElementById(id: string): Element | null;
-  getElementsByClassName(className: string) : Element[];
-  getElementsByTagName(tagName: string): Element[];
-  getElementsByName(name: string): Element[];
+  getElementsByClassName(className: string) : SupportAsync<Element[]>;
+  getElementsByTagName(tagName: string): SupportAsync<Element[]>;
+  getElementsByName(name: string): SupportAsync<Element[]>;
 
   querySelector(selectors: string): Element | null;
   querySelectorAll(selectors: string): SupportAsync<Element[]>;
