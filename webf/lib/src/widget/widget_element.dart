@@ -95,7 +95,7 @@ abstract class WidgetElement extends dom.Element {
 
   @mustCallSuper
   @override
-  void didAttachRenderer() {
+  void didAttachRenderer([Element? flutterWidgetElement]) {
     // Children of WidgetElement should insert render object by Flutter Framework.
     attachWidget(_widget);
   }

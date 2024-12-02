@@ -22,7 +22,7 @@ class WebFHTMLElementToFlutterElementAdaptor extends MultiChildRenderObjectEleme
       WebFProfiler.instance.startTrackUICommand();
     }
     super.mount(parent, newSlot);
-    widget.webFElement.ensureChildAttached();
+    widget.webFElement.ensureChildAttached(this);
 
     dom.Element element = widget.webFElement;
     element.applyStyle(element.style);

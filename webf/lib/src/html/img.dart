@@ -161,7 +161,7 @@ class ImageElement extends Element {
   }
 
   @override
-  void didAttachRenderer() {
+  void didAttachRenderer([flutter.Element? flutterWidgetElement]) {
     super.didAttachRenderer();
     _reattachRenderObject();
   }
