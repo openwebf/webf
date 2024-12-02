@@ -28,7 +28,7 @@ enum RenderObjectUpdateReason {
 
 typedef SomeRenderBoxModelHandlerCallback = bool Function(RenderBoxModel renderBoxModel);
 typedef EveryRenderBoxModelHandlerCallback = bool Function(flutter.Element?, RenderBoxModel renderBoxModel);
-typedef RenderObjectStyleMatchers = bool Function(RenderObject? renderObject, RenderStyle? renderStyle);
+typedef RenderObjectMatchers = dynamic Function(RenderObject? renderObject, RenderStyle? renderStyle);
 typedef RenderBoxModelMatcher = bool Function(RenderBoxModel renderBoxModel, RenderStyle renderStyle);
 typedef RenderStyleMatcher = bool Function(RenderStyle renderStyle);
 typedef RenderStyleValueGetter = dynamic Function(RenderStyle renderStyle);
@@ -933,97 +933,68 @@ abstract class RenderStyle {
 
       if (widgetRenderBoxModel == null) return null;
 
-      switch (getType) {
-        case RenderObjectGetType.self:
-          // RenderStyle are shared for all widget holding renderObjects.
-          return getter(widgetRenderBoxModel, widgetRenderBoxModel.renderStyle);
-        case RenderObjectGetType.parent:
-          bool isParentBoxModel = widgetRenderBoxModel.parent is RenderBoxModel;
-
-          if (isParentBoxModel) {
-            RenderBoxModel parentBoxModel = widgetRenderBoxModel.parent as RenderBoxModel;
-            return getter(parentBoxModel, parentBoxModel.renderStyle);
-          }
-
-          return null;
-        case RenderObjectGetType.firstChild:
-          if (widgetRenderBoxModel is RenderLayoutBox) {
-            RenderObject? firstChild = widgetRenderBoxModel.firstChild;
-            return firstChild is RenderBoxModel ? getter(firstChild, firstChild.renderStyle) : null;
-          }
-          return null;
-        case RenderObjectGetType.lastChild:
-          if (widgetRenderBoxModel is RenderLayoutBox) {
-            RenderObject? lastChild = widgetRenderBoxModel.lastChild;
-            return lastChild is RenderBoxModel ? getter(lastChild, lastChild.renderStyle) : null;
-          }
-          return null;
-        case RenderObjectGetType.previousSibling:
-          var parentData = widgetRenderBoxModel.parentData;
-          if (parentData is RenderLayoutParentData) {
-            RenderObject? previousSibling = parentData.previousSibling;
-            return previousSibling is RenderBoxModel ? getter(previousSibling, previousSibling.renderStyle) : null;
-          }
-          return null;
-        case RenderObjectGetType.nextSibling:
-          var parentData = widgetRenderBoxModel.parentData;
-          if (parentData is RenderLayoutParentData) {
-            RenderObject? nextSibling = parentData.nextSibling;
-            return nextSibling is RenderBoxModel ? getter(nextSibling, nextSibling.renderStyle) : null;
-          }
-          return null;
-      }
+      return _renderObjectMatchFn(widgetRenderBoxModel, getType, (renderObject, renderStyle) {
+        if (renderObject is RenderBoxModel) {
+          return getter(renderObject, renderStyle!);
+        }
+        return null;
+      });
     }
     if (domRenderBoxModel != null) {
-      return domRenderBoxModel!.renderStyle;
+      return _renderObjectMatchFn(domRenderBoxModel!, getType, (renderObject, renderStyle) {
+        if (renderObject is RenderBoxModel) {
+          return getter(renderObject, renderStyle!);
+        }
+        return null;
+      });
     }
     return null;
   }
 
-  bool everyRenderObjectByTypeAndMatch(RenderObjectGetType getType, RenderObjectStyleMatchers matcher) {
-    bool _matchFn(RenderBoxModel renderBoxModel) {
-      switch (getType) {
-        case RenderObjectGetType.self:
-          return matcher(renderBoxModel, renderBoxModel.renderStyle);
-        case RenderObjectGetType.parent:
-          return matcher(renderBoxModel.parent, renderBoxModel.renderStyle);
-        case RenderObjectGetType.firstChild:
-          if (renderBoxModel is RenderLayoutBox) {
-            RenderObject? firstChild = renderBoxModel.firstChild;
+  dynamic _renderObjectMatchFn(RenderBoxModel renderBoxModel, RenderObjectGetType getType, RenderObjectMatchers matcher) {
+    switch (getType) {
+      case RenderObjectGetType.self:
+        return matcher(renderBoxModel, renderBoxModel.renderStyle);
+      case RenderObjectGetType.parent:
+        return matcher(renderBoxModel.parent, renderBoxModel.renderStyle);
+      case RenderObjectGetType.firstChild:
+        if (renderBoxModel is RenderLayoutBox) {
+          RenderObject? firstChild = renderBoxModel.firstChild;
 
-            return matcher(firstChild, firstChild is RenderBoxModel ? firstChild.renderStyle : null);
-          }
-          return false;
-        case RenderObjectGetType.lastChild:
-          if (renderBoxModel is RenderLayoutBox) {
-            RenderObject? lastChild = renderBoxModel.lastChild;
-            return matcher(lastChild, lastChild is RenderBoxModel ? lastChild.renderStyle : null);
-          }
-          return false;
-        case RenderObjectGetType.previousSibling:
-          var parentData = renderBoxModel.parentData;
-          if (parentData is RenderLayoutParentData) {
-            RenderObject? previousSibling = parentData.previousSibling;
-            return matcher(previousSibling, previousSibling is RenderBoxModel ? previousSibling.renderStyle : null);
-          }
-          return false;
-        case RenderObjectGetType.nextSibling:
-          var parentData = renderBoxModel.parentData;
-          if (parentData is RenderLayoutParentData) {
-            RenderObject? nextSibling = parentData.nextSibling;
-            return matcher(nextSibling, nextSibling is RenderBoxModel ? nextSibling.renderStyle : null);
-          }
-          return false;
-      }
+          return matcher(firstChild, firstChild is RenderBoxModel ? firstChild.renderStyle : null);
+        }
+        return false;
+      case RenderObjectGetType.lastChild:
+        if (renderBoxModel is RenderLayoutBox) {
+          RenderObject? lastChild = renderBoxModel.lastChild;
+          return matcher(lastChild, lastChild is RenderBoxModel ? lastChild.renderStyle : null);
+        }
+        return false;
+      case RenderObjectGetType.previousSibling:
+        var parentData = renderBoxModel.parentData;
+        if (parentData is RenderLayoutParentData) {
+          RenderObject? previousSibling = parentData.previousSibling;
+          return matcher(previousSibling, previousSibling is RenderBoxModel ? previousSibling.renderStyle : null);
+        }
+        return false;
+      case RenderObjectGetType.nextSibling:
+        var parentData = renderBoxModel.parentData;
+        if (parentData is RenderLayoutParentData) {
+          RenderObject? nextSibling = parentData.nextSibling;
+          return matcher(nextSibling, nextSibling is RenderBoxModel ? nextSibling.renderStyle : null);
+        }
+        return false;
     }
+  }
 
+  bool everyRenderObjectByTypeAndMatch(RenderObjectGetType getType, RenderObjectMatchers matcher) {
     if (target.managedByFlutterWidget) {
       return everyWidgetRenderBox((_, renderBoxModel) {
-        return _matchFn(renderBoxModel);
+        return _renderObjectMatchFn(renderBoxModel, getType, matcher);
       });
     }
     if (domRenderBoxModel != null) {
-      return _matchFn(domRenderBoxModel!);
+      return _renderObjectMatchFn(domRenderBoxModel!, getType, matcher);
     }
     return false;
   }
