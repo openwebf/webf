@@ -29,7 +29,7 @@ DOMPoint* DOMPoint::Create(ExecutingContext* context,
   return MakeGarbageCollected<DOMPoint>(context, init, y, z, exception_state);
 }
 DOMPoint* DOMPoint::Create(ExecutingContext* context,
-                           const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init ,
+                           const std::shared_ptr<QJSUnionDoubleDOMPointInit>& init,
                            double y,
                            double z,
                            double w,

@@ -63,4 +63,4 @@ struct DowncastTraits<DOMPoint> {
 };
 }  // namespace webf
 
-#endif // WEBF_CORE_GEOMETRY_DOM_POINT_H_
+#endif  // WEBF_CORE_GEOMETRY_DOM_POINT_H_
