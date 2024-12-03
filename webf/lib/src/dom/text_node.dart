@@ -81,7 +81,7 @@ class TextNode extends CharacterData {
   String get nodeName => '#text';
 
   @override
-  RenderBox? getRenderer([flutter.Element? flutterWidgetElement]) {
+  RenderBox? get domRenderer {
     assert(!managedByFlutterWidget);
     return _domRenderTextBox;
   }

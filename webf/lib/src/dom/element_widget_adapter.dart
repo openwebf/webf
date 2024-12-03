@@ -102,7 +102,6 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
 
   @override
   flutter.RenderObject createRenderObject(flutter.BuildContext context) {
-    // TODO obtains renderObjects from cache, since every renderObjectElements have it's corresponding renderObjects.
     RenderBoxModel? renderObject =
         _webFElement.updateOrCreateRenderBoxModel(flutterWidgetElement: context as WebRenderLayoutWidgetElement);
     return renderObject!;
