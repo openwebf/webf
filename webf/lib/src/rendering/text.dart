@@ -333,11 +333,6 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     return string.replaceAllMapped(_trimRightWhitespaceReg, (Match m) => '${m[1]}');
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-    print('text $this dispose');
-  }
 
   @override
   void performLayout() {

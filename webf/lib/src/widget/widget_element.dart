@@ -116,13 +116,9 @@ abstract class WidgetElement extends dom.Element {
 
   // Reconfigure renderObjects when already rendered pages reattached to flutter tree
   void reactiveRenderer() {
-    // The older one was disposed by flutter, should replace it with a new one.
-    updateOrCreateRenderBoxModel(flutterWidgetElement: _state!.context as dom.WebRenderLayoutWidgetElement);
-
     if (renderStyle.display != CSSDisplay.none) {
       // Generate a new adapter for this RenderWidget
-      attachedAdapter =
-          WidgetElementAdapter(child: widget, container: renderStyle.domRenderBoxModel!, widgetElement: this);
+      willAttachRenderer();
 
       // Reattach to Flutter
       ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
