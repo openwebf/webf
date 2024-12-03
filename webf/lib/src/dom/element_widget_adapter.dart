@@ -18,8 +18,9 @@ mixin ElementAdapterMixin on ElementBase {
   @override
   flutter.Widget toWidget() {
     return Portal(
+        key: flutter.ObjectKey(this),
         ownerElement: this as Element,
-        child: _WebFElementWidget(this as Element, key: flutter.ObjectKey(this)));
+        child: _WebFElementWidget(this as Element));
   }
 }
 
@@ -63,6 +64,7 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
 
   @override
   flutter.Widget build(flutter.BuildContext context) {
+    super.build(context);
     List<flutter.Widget> children;
     if (_webFElement.childNodes.isEmpty) {
       children = List.empty();
@@ -157,14 +159,4 @@ class WebRenderLayoutWidgetElement extends flutter.MultiChildRenderObjectElement
     // element.renderStyle.unmountWidgetRenderObject(this);
     super.unmount();
   }
-
-  @override
-  void insertRenderObjectChild(covariant RenderObject child, covariant flutter.IndexedSlot<flutter.Element?> slot) {}
-
-  @override
-  void moveRenderObjectChild(covariant RenderObject child, covariant flutter.IndexedSlot<flutter.Element?> oldSlot,
-      covariant flutter.IndexedSlot<flutter.Element?> newSlot) {}
-
-  @override
-  void removeRenderObjectChild(covariant RenderObject child, covariant Object? slot) {}
 }
