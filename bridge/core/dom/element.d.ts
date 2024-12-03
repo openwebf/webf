@@ -59,11 +59,11 @@ interface Element extends Node, ParentNode, ChildNode {
   getElementsByClassName(className: string) : SupportAsync<Element[]>;
   getElementsByTagName(tagName: string): SupportAsync<Element[]>;
 
-  querySelector(selectors: string): Element | null;
-  querySelectorAll(selectors: string):SupportAsync<Element[]>;
-  matches(selectors: string): boolean;
+  querySelector(selectors: string): SupportAsync<Element | null>;
+  querySelectorAll(selectors: string): SupportAsync<Element[]>;
+  matches(selectors: string): SupportAsync<boolean>;
 
-  closest(selectors: string): Element | null;
+  closest(selectors: string): SupportAsync<Element | null>;
 
   scroll(options?: ScrollToOptions): void;
   scroll(x: number, y: number): void;

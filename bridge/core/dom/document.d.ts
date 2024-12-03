@@ -36,15 +36,15 @@ interface Document extends Node, ParentNode {
   createComment(data: string): Comment;
   createEvent(event_type: string): Event;
 
-  getElementById(id: string): Element | null;
+  getElementById(id: string): SupportAsync<Element | null>;
   getElementsByClassName(className: string) : SupportAsync<Element[]>;
   getElementsByTagName(tagName: string): SupportAsync<Element[]>;
   getElementsByName(name: string): SupportAsync<Element[]>;
 
-  querySelector(selectors: string): Element | null;
+  querySelector(selectors: string): SupportAsync<Element | null>;
   querySelectorAll(selectors: string): SupportAsync<Element[]>;
 
-  elementFromPoint(x: number, y: number): Element | null;
+  elementFromPoint(x: number, y: number): SupportAsync<Element | null>;
 
   onreadystatechange: IDLEventHandler | null;
   new(): Document;
