@@ -25,9 +25,7 @@ class DocumentFragment extends ContainerNode {
   }
 
   @override
-  RenderBox? getRenderer([flutter.Element? flutterRenderObjectElement]) {
-    return null;
-  }
+  RenderBox? get domRenderer => null;
 
   @override
   bool get isRendererAttached => false;

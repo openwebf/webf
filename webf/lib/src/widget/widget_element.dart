@@ -99,8 +99,8 @@ abstract class WidgetElement extends dom.Element {
   /// place the equivalence altitude to the [willAttachRenderer] and [didAttachRenderer].
   @mustCallSuper
   @override
-  void willAttachRenderer([Element? flutterWidgetElement]) {
-    super.willAttachRenderer(flutterWidgetElement);
+  void willAttachRenderer([dom.WebRenderLayoutWidgetElement? flutterWidgetElement]) {
+    super.willAttachRenderer();
     if (renderStyle.display != CSSDisplay.none) {
       RenderObject hostedRenderObject = flutterWidgetElement != null
           ? renderStyle.getWidgetPairedRenderBoxModel(flutterWidgetElement)!
@@ -119,7 +119,7 @@ abstract class WidgetElement extends dom.Element {
   // Reconfigure renderObjects when already rendered pages reattached to flutter tree
   void reactiveRenderer() {
     // The older one was disposed by flutter, should replace it with a new one.
-    updateOrCreateRenderBoxModel(flutterWidgetElement: _state!.context as Element);
+    updateOrCreateRenderBoxModel(flutterWidgetElement: _state!.context as dom.WebRenderLayoutWidgetElement);
 
     if (renderStyle.display != CSSDisplay.none) {
       // Generate a new adapter for this RenderWidget
@@ -314,9 +314,9 @@ class WebFWidgetElementElement extends StatefulElement {
     }
     super.mount(parent, newSlot);
     // Make sure RenderWidget had been created.
-    if (!widget.widgetElement.renderStyle.hasRenderBox()) {
-      widget.widgetElement.createRenderer(this);
-    }
+    // if (!widget.widgetElement.renderStyle.hasRenderBox()) {
+    //   widget.widgetElement.createRenderer(this);
+    // }
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
     }

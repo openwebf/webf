@@ -89,7 +89,7 @@ class Window extends EventTarget {
 
   void resizeViewportRelatedElements() {
     _watchedViewportElements.forEach((element) {
-      element.getRenderer(null)?.markNeedsLayout();
+      element.domRenderer?.markNeedsLayout();
     });
   }
 

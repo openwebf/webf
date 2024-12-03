@@ -366,7 +366,8 @@ class GestureDispatcher {
     if (_target == null) {
       return;
     }
-    RenderBox? root = (_target as Node).ownerDocument.getRenderer();
+
+    RenderBox? root = (_target as Node).ownerDocument.domRenderer;
 
     if (root == null) {
       return;

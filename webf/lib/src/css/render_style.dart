@@ -21,6 +21,7 @@ import 'svg.dart';
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
 
 enum RenderObjectUpdateReason {
+  addRenderObject,
   upgradeToRepaintBoundary,
   replaceRenderObject,
   removeRenderObject,
@@ -375,14 +376,18 @@ abstract class RenderStyle extends DiagnosticableTree {
   double getHeightByAspectRatio();
 
   RenderBoxModel? _domRenderObjects;
-  final Map<flutter.Element, RenderBoxModel> _widgetRenderObjects = {};
+  final Map<WebRenderLayoutWidgetElement, RenderBoxModel> _widgetRenderObjects = {};
 
-  Map<flutter.Element, RenderBoxModel> get widgetRenderObjects => _widgetRenderObjects;
+  Map<WebRenderLayoutWidgetElement, RenderBoxModel> get widgetRenderObjects => _widgetRenderObjects;
 
   Iterable<RenderBoxModel> get widgetRenderObjectIterator => _widgetRenderObjects.values;
 
   // For some style changes, we needs to upgrade
-  void requestWidgetToRebuild(RenderObjectUpdateReason reason) {}
+  void requestWidgetToRebuild(RenderObjectUpdateReason reason) {
+    _widgetRenderObjects.keys.forEach((element) {
+      element.requestForBuild();
+    });
+  }
 
   bool someRenderBoxSatisfy(SomeRenderBoxModelHandlerCallback callback) {
     for (var renderBoxModel in widgetRenderObjectIterator) {
@@ -1040,7 +1045,7 @@ abstract class RenderStyle extends DiagnosticableTree {
     });
   }
 
-  void addOrUpdateWidgetRenderObjects(flutter.Element ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
+  void addOrUpdateWidgetRenderObjects(WebRenderLayoutWidgetElement ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
     assert(!_widgetRenderObjects.containsKey(ownerRenderObjectElement));
     _widgetRenderObjects[ownerRenderObjectElement] = targetRenderBoxModel;
   }

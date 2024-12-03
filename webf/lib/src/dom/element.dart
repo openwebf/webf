@@ -191,14 +191,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   String get nodeName => tagName;
 
-  @override
-  RenderBox? getRenderer([flutter.Element? flutterElement]) {
-    if (managedByFlutterWidget) {
-      return renderStyle.getWidgetPairedRenderBoxModel(flutterElement!);
-    }
-
-    return renderStyle.domRenderBoxModel;
-  }
+  RenderBoxModel? get domRenderer => renderStyle.domRenderBoxModel;
 
   HTMLCollection? _collection;
 
@@ -212,7 +205,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   HTMLCollection get children => ensureCachedCollection();
 
   @override
-  RenderBox createRenderer([flutter.Element? flutterWidgetElement]) {
+  RenderBox createRenderer([WebRenderLayoutWidgetElement? flutterWidgetElement]) {
     return updateOrCreateRenderBoxModel(flutterWidgetElement: flutterWidgetElement)!;
   }
 
@@ -337,7 +330,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return QuerySelector.closest(this, args.first);
   }
 
-  RenderBoxModel? updateOrCreateRenderBoxModel({flutter.Element? flutterWidgetElement}) {
+  RenderBoxModel? updateOrCreateRenderBoxModel({WebRenderLayoutWidgetElement? flutterWidgetElement}) {
     RenderBoxModel? previousRenderBoxModel = renderStyle.domRenderBoxModel;
     RenderBoxModel nextRenderBoxModel = renderStyle.updateOrCreateRenderBoxModel();
 
@@ -383,7 +376,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   @override
-  void willAttachRenderer([flutter.Element? flutterWidgetElement]) {
+  void willAttachRenderer([WebRenderLayoutWidgetElement? flutterWidgetElement]) {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.willAttachRenderer');
     }
@@ -813,22 +806,24 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   // Attach renderObject of current node to parent
   @override
-  void attachTo(Node parent, {flutter.Element? flutterWidgetElement, Node? previousSibling}) {
+  void attachTo(Node parent, {Node? previousSibling}) {
+    assert(!managedByFlutterWidget);
+
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.attachTo');
     }
 
     applyStyle(style);
 
-    willAttachRenderer(flutterWidgetElement);
+    willAttachRenderer();
 
-    if (getRenderer(flutterWidgetElement) != null) {
+    if (domRenderer != null) {
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         // If afterRenderObject is null, which means insert child at the head of parent.
-        RenderBox? afterRenderObject = Node.findMostClosedSiblings(previousSibling, flutterWidgetElement: flutterWidgetElement);
+        RenderBox? afterRenderObject = Node.findMostClosedSiblings(previousSibling);
 
-        RenderBoxModel.attachRenderBox(parent.getRenderer(flutterWidgetElement)!, getRenderer(flutterWidgetElement)!, after: afterRenderObject);
+        RenderBoxModel.attachRenderBox(parentElement!.domRenderer!, domRenderer!, after: afterRenderObject);
         if (renderStyle.position != CSSPositionType.static) {
           _updateRenderBoxModelWithPosition(CSSPositionType.static);
         }
@@ -841,7 +836,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         style.flushPendingProperties();
       }
 
-      didAttachRenderer(flutterWidgetElement);
+      didAttachRenderer();
     }
 
     if (enableWebFProfileTracking) {
@@ -885,11 +880,12 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @override
   void ensureChildAttached([flutter.Element? flutterWidgetElement]) {
+    assert(!managedByFlutterWidget);
     if (isRendererAttachedToSegmentTree) {
       if (!renderStyle.hasRenderBox()) return;
       for (Node child in childNodes) {
         if (!child.isRendererAttachedToSegmentTree) {
-          child.attachTo(this, flutterWidgetElement: flutterWidgetElement);
+          child.attachTo(this);
           child.ensureChildAttached(flutterWidgetElement);
         }
       }
@@ -908,16 +904,20 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       child.renderStyle.parent = renderStyle;
     }
 
-    // final box = renderBoxModel;
-    if (isRendererAttachedToSegmentTree) {
-      // Only append child renderer when which is not attached.
-      if (!child.isRendererAttachedToSegmentTree &&
-          renderStyle.hasRenderBox() &&
-          renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
-        child.attachTo(this);
+    if (managedByFlutterWidget) {
+      child.managedByFlutterWidget = managedByFlutterWidget;
+      renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.replaceRenderObject);
+    } else {
+      // final box = renderBoxModel;
+      if (isRendererAttachedToSegmentTree) {
+        // Only append child renderer when which is not attached.
+        if (!child.isRendererAttachedToSegmentTree &&
+            renderStyle.hasRenderBox() &&
+            renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
+          child.attachTo(this);
+        }
       }
     }
-
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
@@ -956,6 +956,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (child is Element) {
       child.renderStyle.parent = renderStyle;
     }
+
+    child.managedByFlutterWidget = managedByFlutterWidget;
 
     if (!managedByFlutterWidget && isRendererAttachedToSegmentTree) {
       // Only append child renderer when which is not attached.
@@ -1047,7 +1049,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       case CSSPositionType.relative:
       case CSSPositionType.static:
       case CSSPositionType.sticky:
-        containingBlockRenderBox = parentNode!.getRenderer(null);
+        containingBlockRenderBox = parentNode!.domRenderer;
         break;
       case CSSPositionType.absolute:
         Element viewportElement = ownerDocument.documentElement!;
@@ -1073,7 +1075,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
         // If the element has 'position: fixed', the containing block is established by the viewport
         // in the case of continuous media or the page area in the case of paged media.
-        containingBlockRenderBox = viewportElement.getRenderer(null);
+        containingBlockRenderBox = viewportElement.domRenderer;
         break;
     }
     return containingBlockRenderBox;
@@ -1166,18 +1168,18 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         RenderBox? containingBlockRenderBox = getContainingBlockRenderBox();
         Node? previousSiblingNode = previousSibling;
         // Find the previous siblings to insert before renderBoxModel is detached.
-        RenderBox? previousSiblingRenderBox = previousSiblingNode?.getRenderer(null);
+        RenderBox? previousSiblingRenderBox = previousSiblingNode?.domRenderer;
 
         // Search for elements whose style is not display: none.
         while (previousSiblingRenderBox == null &&
             previousSiblingNode is Element &&
             previousSiblingNode.renderStyle.display == CSSDisplay.none) {
           previousSiblingNode = previousSiblingNode.previousSibling;
-          previousSiblingRenderBox = previousSiblingNode?.getRenderer(null);
+          previousSiblingRenderBox = previousSiblingNode?.domRenderer;
         }
 
         // Original parent renderBox.
-        RenderBox parentRenderBox = parentNode!.getRenderer(null)!;
+        RenderBox parentRenderBox = parentNode!.domRenderer!;
         _renderBoxModel.attachToContainingBlock(containingBlockRenderBox,
             parent: parentRenderBox, after: previousSiblingRenderBox);
       }
@@ -1515,7 +1517,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
       if (renderStyle.isBoxModelHaveSize()) {
         Offset offset = renderStyle.getOffset(
-            ancestorRenderBox: ownerDocument.documentElement!.getRenderer(null) as RenderBoxModel,
+            ancestorRenderBox: ownerDocument.documentElement!.domRenderer as RenderBoxModel,
             excludeScrollOffset: true);
         Size size = renderStyle.boxSize()!;
         boundingClientRect = BoundingClientRect(
@@ -1542,7 +1544,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (!isRendererAttached) {
       return offset;
     }
-    Offset relative = renderStyle.getOffset(ancestorRenderBox: offsetParent?.getRenderer(null) as RenderBoxModel?);
+    Offset relative = renderStyle.getOffset(ancestorRenderBox: offsetParent?.domRenderer);
     offset += relative.dx;
     return offset;
   }
@@ -1565,7 +1567,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (!isRendererAttached) {
       return offset;
     }
-    Offset relative = renderStyle.getOffset(ancestorRenderBox: offsetParent?.getRenderer(null) as RenderBoxModel?);
+    Offset relative = renderStyle.getOffset(ancestorRenderBox: offsetParent?.domRenderer);
     offset += relative.dy;
     return offset;
   }
