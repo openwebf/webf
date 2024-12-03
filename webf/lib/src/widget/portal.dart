@@ -8,7 +8,7 @@ import 'package:webf/dom.dart' as dom;
 class Portal extends SingleChildRenderObjectWidget {
   final dom.Element ownerElement;
 
-  Portal({Widget? child, required this.ownerElement}) : super(child: child);
+  Portal({Widget? child, required this.ownerElement, Key? key}) : super(child: child, key: key);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
@@ -17,9 +17,6 @@ class Portal extends SingleChildRenderObjectWidget {
 
   @override
   _PortalElement createElement() => _PortalElement(this);
-
-  @override
-  void updateRenderObject(BuildContext context, RenderObject renderObject) {}
 }
 
 class _PortalElement extends SingleChildRenderObjectElement {
@@ -35,11 +32,6 @@ class _PortalElement extends SingleChildRenderObjectElement {
   void insertRenderObjectChild(RenderObject child, Object? slot) {
     assert(renderObject.debugValidateChild(child));
     renderObject.child = child as RenderBox;
-  }
-
-  @override
-  void moveRenderObjectChild(RenderObject child, Object? oldSlot, Object? newSlot) {
-    assert(false);
   }
 
   @override

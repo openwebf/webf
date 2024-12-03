@@ -19,6 +19,11 @@ class CharacterData extends Node {
   }
 
   @override
+  flutter.Widget toWidget() {
+    return const flutter.SizedBox.shrink();
+  }
+
+  @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
   }
 
