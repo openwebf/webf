@@ -387,7 +387,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   @override
-  void didAttachRenderer([flutter.Element? flutterWidgetElement]) {
+  void didAttachRenderer() {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.didAttachRenderer');
     }
@@ -395,7 +395,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // The node attach may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
     renderStyle.markAdjacentRenderParagraphNeedsLayout();
     // Ensure that the child is attached.
-    ensureChildAttached(flutterWidgetElement);
+    ensureChildAttached();
 
     // Reconfigure scrollable contents.
     bool needUpdateOverflowRenderBox = false;
@@ -817,7 +817,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         // If afterRenderObject is null, which means insert child at the head of parent.
-        RenderBox? afterRenderObject = Node.findMostClosedSiblings(previousSibling);
+        RenderBox? afterRenderObject = Node.findMostClosedSiblings(previousSibling ?? this.previousSibling);
 
         RenderBoxModel.attachRenderBox(parentElement!.domRenderer!, domRenderer!, after: afterRenderObject);
         if (renderStyle.position != CSSPositionType.static) {
@@ -875,14 +875,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   @override
-  void ensureChildAttached([flutter.Element? flutterWidgetElement]) {
+  void ensureChildAttached() {
     assert(!managedByFlutterWidget);
     if (isRendererAttachedToSegmentTree) {
       if (!renderStyle.hasRenderBox()) return;
       for (Node child in childNodes) {
         if (!child.isRendererAttachedToSegmentTree) {
           child.attachTo(this);
-          child.ensureChildAttached(flutterWidgetElement);
+          child.ensureChildAttached();
         }
       }
     }

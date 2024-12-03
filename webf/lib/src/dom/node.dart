@@ -180,7 +180,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   set managedByFlutterWidget(bool value) {
     if (_managedByFlutterWidget) return;
     for (Node node in NodeTraversal.inclusiveDescendantsOf(this)) {
-      node._managedByFlutterWidget = true;
+      node._managedByFlutterWidget = value;
     }
   }
 
@@ -375,7 +375,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   /// Ensure child and child's child render object is attached.
-  void ensureChildAttached([flutter.Element? flutterWidgetElement]) {}
+  void ensureChildAttached() {}
 
   @override
   void connectedCallback() {
