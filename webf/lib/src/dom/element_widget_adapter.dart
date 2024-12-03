@@ -18,9 +18,7 @@ mixin ElementAdapterMixin on ElementBase {
   @override
   flutter.Widget toWidget() {
     return Portal(
-        key: flutter.ObjectKey(this),
-        ownerElement: this as Element,
-        child: _WebFElementWidget(this as Element));
+        key: flutter.ObjectKey(this), ownerElement: this as Element, child: _WebFElementWidget(this as Element));
   }
 }
 
@@ -65,14 +63,14 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
   flutter.Widget build(flutter.BuildContext context) {
     super.build(context);
     List<flutter.Widget> children;
-    if (_webFElement.childNodes.isEmpty) {
+    if (webFElement.childNodes.isEmpty) {
       children = List.empty();
     } else {
       children = (webFElement.childNodes as ChildNodeList).toWidgetList();
     }
 
     return WebFRenderLayoutWidgetAdaptor(
-      _webFElement,
+      webFElement: _webFElement,
       children: children,
       key: flutter.ObjectKey(_webFElement),
     );
@@ -82,51 +80,41 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
   bool get wantKeepAlive => true;
 }
 
-class RenderLayoutWidgetChangeReason {
-
-}
+class RenderLayoutWidgetChangeReason {}
 
 class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget {
-  WebFRenderLayoutWidgetAdaptor(this._webFElement, {flutter.Key? key, required List<flutter.Widget> children})
+  WebFRenderLayoutWidgetAdaptor({this.webFElement, flutter.Key? key, required List<flutter.Widget> children})
       : super(key: key, children: children) {}
 
-  final Element _webFElement;
-
-  Element get webFElement => _webFElement;
+  final Element? webFElement;
 
   @override
   WebRenderLayoutWidgetElement createElement() {
-    WebRenderLayoutWidgetElement element = WebRenderLayoutWidgetElement(this);
+    WebRenderLayoutWidgetElement element = ExternalWebRenderLayoutWidgetElement(webFElement!, this);
     return element;
   }
 
   @override
   flutter.RenderObject createRenderObject(flutter.BuildContext context) {
-    RenderBoxModel? renderObject =
-        _webFElement.updateOrCreateRenderBoxModel(flutterWidgetElement: context as WebRenderLayoutWidgetElement);
+    RenderBoxModel? renderObject = (context as WebRenderLayoutWidgetElement)
+        .webFElement
+        .updateOrCreateRenderBoxModel(flutterWidgetElement: context);
     return renderObject!;
   }
 
   @override
   String toStringShort() {
-    return 'RenderObjectAdapter(${_webFElement.tagName.toLowerCase()})';
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(AttributedStringProperty('WebFNodeType', AttributedString(_webFElement.nodeType.toString())));
-    properties.add(AttributedStringProperty('WebFNodeName', AttributedString(_webFElement.nodeName.toString())));
+    return 'RenderObjectAdapter(${webFElement?.tagName.toLowerCase()})';
   }
 }
 
-class WebRenderLayoutWidgetElement extends flutter.MultiChildRenderObjectElement {
+abstract class WebRenderLayoutWidgetElement extends flutter.MultiChildRenderObjectElement {
   WebRenderLayoutWidgetElement(WebFRenderLayoutWidgetAdaptor widget) : super(widget);
 
   @override
   WebFRenderLayoutWidgetAdaptor get widget => super.widget as WebFRenderLayoutWidgetAdaptor;
 
-  Element get webFElement => widget.webFElement;
+  Element get webFElement;
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
   void requestForBuild() {
@@ -159,9 +147,18 @@ class WebRenderLayoutWidgetElement extends flutter.MultiChildRenderObjectElement
   @override
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
-    Element element = widget.webFElement;
+    Element element = webFElement;
     // @TODO return back when widget adapter 2.0 complete.
     // element.renderStyle.unmountWidgetRenderObject(this);
     super.unmount();
   }
+}
+
+class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutWidgetElement {
+  final Element _webfElement;
+
+  ExternalWebRenderLayoutWidgetElement(this._webfElement, WebFRenderLayoutWidgetAdaptor widget) : super(widget);
+
+  @override
+  Element get webFElement => _webfElement;
 }
