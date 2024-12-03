@@ -163,6 +163,9 @@ class Document extends ContainerNode {
   @override
   String get nodeName => '#document';
 
+  @override
+  RenderBox? get domRenderer => viewport;
+
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L770
   bool parsing = false;
 
@@ -335,7 +338,7 @@ class Document extends ContainerNode {
   HitTestResult HitTestInDocument(double x, double y) {
     BoxHitTestResult boxHitTestResult = BoxHitTestResult();
     Offset offset = Offset(x, y);
-    documentElement?.getRenderer(null)?.hitTest(boxHitTestResult, position: offset);
+    documentElement?.domRenderer?.hitTest(boxHitTestResult, position: offset);
     return boxHitTestResult;
   }
 
@@ -585,11 +588,6 @@ class Document extends ContainerNode {
     fixedChildren.clear();
     pendingPreloadingScriptCallbacks.clear();
     super.dispose();
-  }
-
-  @override
-  RenderBox? getRenderer([flutter.Element? flutterRenderObjectElement]) {
-    return viewport;
   }
 
   @override

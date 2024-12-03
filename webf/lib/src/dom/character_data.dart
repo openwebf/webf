@@ -19,6 +19,9 @@ class CharacterData extends Node {
   }
 
   @override
+  RenderBox? get domRenderer => throw UnimplementedError();
+
+  @override
   flutter.Widget toWidget() {
     return const flutter.SizedBox.shrink();
   }
@@ -36,11 +39,6 @@ class CharacterData extends Node {
 
   @override
   Node? get lastChild => null;
-
-  @override
-  RenderBox? getRenderer([flutter.Element? flutterRenderObjectElement]) {
-    throw UnimplementedError();
-  }
 
   @override
   bool get isRendererAttached => throw UnimplementedError();

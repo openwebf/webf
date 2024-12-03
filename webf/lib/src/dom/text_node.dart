@@ -26,19 +26,20 @@ class TextNode extends CharacterData {
     return TextNodeAdapter(this, key: flutter.ObjectKey(this));
   }
 
-  // Must be existed after text node is attached, and all text update will after text attached.
-  RenderTextBox? _domRenderTextBox;
-  final Map<flutter.Element, RenderTextBox?> _widgetRenderObjects = {};
+  final Set<_TextNodeAdapterElement> _attachedFlutterWidgetElements = {};
 
   void everyRenderTextBox(EveryRenderTextBoxHandler handler) {
     if (managedByFlutterWidget) {
-      for (var textNode in _widgetRenderObjects.values) {
-        handler(textNode);
+      for (var textNode in _attachedFlutterWidgetElements) {
+        handler(textNode.renderObject);
       }
     } else {
       handler(_domRenderTextBox);
     }
   }
+
+  // Must be existed after text node is attached, and all text update will after text attached.
+  RenderTextBox? _domRenderTextBox;
 
   // The text string.
   String _data = '';
@@ -51,19 +52,28 @@ class TextNode extends CharacterData {
 
     _data = newData;
 
-    // Empty string of textNode should not attach to render tree.
-    if (oldData.isNotEmpty && newData.isEmpty) {
-      _detachRenderTextBox();
-    } else if (oldData.isEmpty && newData.isNotEmpty) {
-      attachTo(parentElement!);
-    } else {
+    if (managedByFlutterWidget) {
       _applyTextStyle();
-
       // To replace data of node node with offset offset, count count, and data data, run step 12 from the spec:
       // 12. If node’s parent is non-null, then run the children changed steps for node’s parent.
       // https://dom.spec.whatwg.org/#concept-cd-replace
       parentNode
           ?.childrenChanged(ChildrenChange.forInsertion(this, previousSibling, nextSibling, ChildrenChangeSource.API));
+    } else {
+      // Empty string of textNode should not attach to render tree.
+      if (oldData.isNotEmpty && newData.isEmpty) {
+        _detachRenderTextBox();
+      } else if (oldData.isEmpty && newData.isNotEmpty) {
+        attachTo(parentElement!);
+      } else {
+        _applyTextStyle();
+
+        // To replace data of node node with offset offset, count count, and data data, run step 12 from the spec:
+        // 12. If node’s parent is non-null, then run the children changed steps for node’s parent.
+        // https://dom.spec.whatwg.org/#concept-cd-replace
+        parentNode
+            ?.childrenChanged(ChildrenChange.forInsertion(this, previousSibling, nextSibling, ChildrenChangeSource.API));
+      }
     }
   }
 
@@ -72,29 +82,20 @@ class TextNode extends CharacterData {
 
   @override
   RenderBox? getRenderer([flutter.Element? flutterWidgetElement]) {
-    if (managedByFlutterWidget) {
-      return _widgetRenderObjects[flutterWidgetElement];
-    }
+    assert(!managedByFlutterWidget);
     return _domRenderTextBox;
   }
 
   @override
   bool get isRendererAttached {
-    if (managedByFlutterWidget) {
-      for (var renderText in _widgetRenderObjects.values) {
-        if (renderText?.attached == true) return true;
-      }
-      return false;
-    }
-
     return _domRenderTextBox?.attached == true;
   }
 
   @override
   bool get isRendererAttachedToSegmentTree {
     if (managedByFlutterWidget) {
-      for (var renderText in _widgetRenderObjects.values) {
-        if (renderText?.parent != null) return true;
+      for (var renderText in _attachedFlutterWidgetElements) {
+        if (renderText.renderObject.parent != null) return true;
       }
       return false;
     }
@@ -107,10 +108,11 @@ class TextNode extends CharacterData {
       Element _parentElement = parentElement!;
 
       everyRenderTextBox((textNode) {
-        // The parentNode must be an element.
-        textNode!.renderStyle = _parentElement.renderStyle;
-        textNode.data = data;
+        if (textNode == null) return;
 
+        // The parentNode must be an element.
+        textNode.renderStyle = _parentElement.renderStyle;
+        textNode.data = data;
 
         WebFRenderParagraph renderParagraph = textNode.child as WebFRenderParagraph;
         renderParagraph.markNeedsLayout();
@@ -122,6 +124,7 @@ class TextNode extends CharacterData {
               ? parentElementRenderStyle.getScrollContentRenderStyle()!
               : parentElementRenderStyle;
         }
+
         _setTextSizeType(textNode, parentElementRenderStyle.widthSizeType(), parentElementRenderStyle.heightSizeType());
       });
     }
@@ -135,19 +138,19 @@ class TextNode extends CharacterData {
 
   // Attach renderObject of current node to parent
   @override
-  void attachTo(Element parent, {flutter.Element? flutterWidgetElement, Node? previousSibling}) {
+  void attachTo(Element parent, {Node? previousSibling}) {
     // Empty string of TextNode should not attach to render tree.
     if (_data.isEmpty) return;
 
-    createRenderer(flutterWidgetElement);
+    createRenderer();
 
     // If element attach WidgetElement, render object should be attach to render tree when mount.
     if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE && parent.renderStyle.hasRenderBox()) {
-      RenderBox renderBox = getRenderer(flutterWidgetElement)!;
+      RenderBox renderBox = domRenderer!;
 
-      RenderBox? afterRenderObject = Node.findMostClosedSiblings(previousSibling, flutterWidgetElement: flutterWidgetElement);
+      RenderBox? afterRenderObject = Node.findMostClosedSiblings(previousSibling);
 
-      RenderBoxModel.attachRenderBox(parent.getRenderer(flutterWidgetElement)!, renderBox, after: afterRenderObject);
+      RenderBoxModel.attachRenderBox(parent.domRenderer!, renderBox, after: afterRenderObject);
     }
 
     _applyTextStyle();
@@ -177,7 +180,6 @@ class TextNode extends CharacterData {
     /// If a node is managed by flutter framework, the ownership of this render object will transferred to Flutter framework.
     /// So we do nothing here.
     if (managedByFlutterWidget) {
-      _widgetRenderObjects.remove(flutterWidgetElement);
       return;
     }
     _detachRenderTextBox();
@@ -187,22 +189,25 @@ class TextNode extends CharacterData {
   @override
   RenderBox createRenderer([flutter.Element? flutterWidgetElement]) {
     RenderTextBox textBox = RenderTextBox(data, renderStyle: parentElement!.renderStyle);
-    if (managedByFlutterWidget) {
-      _widgetRenderObjects[flutterWidgetElement!] = textBox;
-    } else {
+    if (flutterWidgetElement == null) {
       _domRenderTextBox = textBox;
+    } else {
+      _attachedFlutterWidgetElements.add(flutterWidgetElement as _TextNodeAdapterElement);
     }
+
     return textBox;
   }
 
   @override
   Future<void> dispose() async {
     unmountRenderObject();
+    _attachedFlutterWidgetElements.clear();
     super.dispose();
   }
 }
 
-class TextNodeAdapter extends flutter.RenderObjectWidget {
+// Flutter adapters, controlled the renderObject by flutter frameworks when wrapped TextNode into any WidgetElements.
+class TextNodeAdapter extends flutter.SingleChildRenderObjectWidget {
   final TextNode textNode;
 
   TextNodeAdapter(this.textNode, {Key? key}) : super(key: key) {
@@ -210,7 +215,7 @@ class TextNodeAdapter extends flutter.RenderObjectWidget {
   }
 
   @override
-  flutter.RenderObjectElement createElement() {
+  _TextNodeAdapterElement createElement() {
     return _TextNodeAdapterElement(this);
   }
 
@@ -231,37 +236,12 @@ class TextNodeAdapter extends flutter.RenderObjectWidget {
   }
 }
 
-class _TextNodeAdapterElement extends flutter.RenderObjectElement {
+class _TextNodeAdapterElement extends flutter.SingleChildRenderObjectElement {
   _TextNodeAdapterElement(TextNodeAdapter widget) : super(widget);
 
   @override
+  RenderTextBox get renderObject => super.renderObject as RenderTextBox;
+
+  @override
   TextNodeAdapter get widget => super.widget as TextNodeAdapter;
-
-  @override
-  void mount(flutter.Element? parent, Object? newSlot) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
-    widget.textNode.createRenderer(this);
-    super.mount(parent, newSlot);
-    widget.textNode.ensureChildAttached();
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
-  }
-
-  @override
-  void unmount() {
-    super.unmount();
-  }
-
-  // CharacterData have no children
-  @override
-  void insertRenderObjectChild(RenderObject child, Object? slot) {}
-  @override
-  void moveRenderObjectChild(covariant RenderObject child, covariant Object? oldSlot, covariant Object? newSlot) {}
-
-  @override
-  void removeRenderObjectChild(covariant RenderObject child, covariant Object? slot) {
-  }
 }

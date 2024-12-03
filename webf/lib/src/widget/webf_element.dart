@@ -20,7 +20,7 @@ class WebFHTMLElement extends MultiChildRenderObjectWidget {
     _WebFElement webfElement = context as _WebFElement;
     WebFContextInheritElement? webfContext = context.getElementForInheritedWidgetOfExactType<WebFContext>() as WebFContextInheritElement;
     context.htmlElement = dom.createElement(tagName, BindingContext(webfContext.controller!.view, webfContext.controller!.view.contextId, allocateNewBindingObject()));
-    RenderObject renderObject = webfElement.htmlElement!.createRenderer(context as Element);
+    RenderObject renderObject = webfElement.htmlElement!.createRenderer(context as WebRenderLayoutWidgetElement);
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();

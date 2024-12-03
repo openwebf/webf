@@ -57,9 +57,8 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
 
   Node get webFElement => _webFElement;
 
-  @override
-  void initState() {
-    super.initState();
+  void requestForChildNodeUpdate() {
+    setState(() {});
   }
 
   @override
@@ -83,6 +82,10 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
   bool get wantKeepAlive => true;
 }
 
+class RenderLayoutWidgetChangeReason {
+
+}
+
 class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget {
   WebFRenderLayoutWidgetAdaptor(this._webFElement, {flutter.Key? key, required List<flutter.Widget> children})
       : super(key: key, children: children) {}
@@ -90,9 +93,6 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
   final Element _webFElement;
 
   Element get webFElement => _webFElement;
-
-  // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
-  void requestForBuild() {}
 
   @override
   WebRenderLayoutWidgetElement createElement() {
@@ -104,7 +104,7 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
   flutter.RenderObject createRenderObject(flutter.BuildContext context) {
     // TODO obtains renderObjects from cache, since every renderObjectElements have it's corresponding renderObjects.
     RenderBoxModel? renderObject =
-        _webFElement.updateOrCreateRenderBoxModel(flutterWidgetElement: context as flutter.Element);
+        _webFElement.updateOrCreateRenderBoxModel(flutterWidgetElement: context as WebRenderLayoutWidgetElement);
     return renderObject!;
   }
 
@@ -129,26 +129,32 @@ class WebRenderLayoutWidgetElement extends flutter.MultiChildRenderObjectElement
 
   Element get webFElement => widget.webFElement;
 
+  // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
+  void requestForBuild() {
+    _WebFElementWidgetState state = findAncestorStateOfType<_WebFElementWidgetState>()!;
+    state.requestForChildNodeUpdate();
+  }
+
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
+    // if (enableWebFProfileTracking) {
+    //   WebFProfiler.instance.startTrackUICommand();
+    // }
     super.mount(parent, newSlot);
-    widget.webFElement.ensureChildAttached(this);
-
-    Element element = widget.webFElement;
-    element.applyStyle(element.style);
-
-    if (element.renderStyle.domRenderBoxModel != null) {
-      if (element.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
-        // Flush pending style before child attached.
-        element.style.flushPendingProperties();
-      }
-    }
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
+    // widget.webFElement.ensureChildAttached(this);
+    //
+    // Element element = widget.webFElement;
+    // element.applyStyle(element.style);
+    //
+    // if (element.renderStyle.domRenderBoxModel != null) {
+    //   if (element.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
+    //     // Flush pending style before child attached.
+    //     element.style.flushPendingProperties();
+    //   }
+    // }
+    // if (enableWebFProfileTracking) {
+    //   WebFProfiler.instance.finishTrackUICommand();
+    // }
   }
 
   @override

@@ -334,7 +334,14 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   }
 
   @override
+  void dispose() {
+    super.dispose();
+    print('text $this dispose');
+  }
+
+  @override
   void performLayout() {
+    print('text layout: $this');
     WebFRenderParagraph? paragraph = child as WebFRenderParagraph?;
     if (paragraph != null) {
       paragraph.overflow = renderStyle.effectiveTextOverflow;

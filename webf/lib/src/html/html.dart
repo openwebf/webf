@@ -40,26 +40,20 @@ class HTMLElement extends Element {
 
   @override
   void ensureChildAttached([flutter.Element? flutterWidgetElement]) {
-    // final box = renderBoxModel as RenderLayoutBox?;
-    // if (box == null) return;
-    // for (Node child in childNodes) {
-    //   RenderBox? after;
-    //   RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
-    //   if (scrollingContentBox != null) {
-    //     after = scrollingContentBox.lastChild;
-    //   } else {
-    //     after = box.lastChild;
-    //   }
-    //   if (!child.isRendererAttachedToSegmentTree) {
-    //     child.attachTo(this, after: after);
-    //     child.ensureChildAttached();
-    //   }
-    // }
+    assert(!managedByFlutterWidget);
+    final box = domRenderer as RenderLayoutBox?;
+    if (box == null) return;
+    for (Node child in childNodes) {
+      if (!child.isRendererAttachedToSegmentTree) {
+        child.attachTo(this);
+        child.ensureChildAttached();
+      }
+    }
   }
 
   // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
   @override
-  bool get isRendererAttachedToSegmentTree => getRenderer() != null;
+  bool get isRendererAttachedToSegmentTree => domRenderer != null;
 
   @override
   void setRenderStyle(String property, String present, { String? baseHref }) {

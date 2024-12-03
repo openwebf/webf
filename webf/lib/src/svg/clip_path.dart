@@ -31,12 +31,12 @@ class SVGClipPathElement extends DefsAttributeElement {
     Iterator iterator = nodeList.iterator;
     while (iterator.moveNext()) {
       if (iterator.current is SVGRectElement) {
-        RenderBox? renderBox = (iterator.current as SVGRectElement).getRenderer();
+        RenderBox? renderBox = (iterator.current as SVGRectElement).domRenderer;
         if (renderBox is RenderSVGRect) {
           return SVGClipPath(renderBox.asDefNodePath(), BoxShape.rectangle);
         }
       } else if (iterator.current is SVGCircleElement) {
-        RenderBox? renderBox = (iterator.current as SVGCircleElement).getRenderer();
+        RenderBox? renderBox = (iterator.current as SVGCircleElement).domRenderer;
         if (renderBox is RenderSVGCircle) {
           return SVGClipPath(renderBox.asDefNodePath(), BoxShape.circle);
         }

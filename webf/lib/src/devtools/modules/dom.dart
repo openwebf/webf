@@ -45,7 +45,7 @@ class InspectDOMModule extends UIInspectorModule {
     int x = params['x'];
     int y = params['y'];
 
-    RenderBox rootRenderObject = document.getRenderer(null)!;
+    RenderBox rootRenderObject = document.domRenderer!;
     BoxHitTestResult result = BoxHitTestResult();
     rootRenderObject.hitTest(result, position: Offset(x.toDouble(), y.toDouble()));
     var hitPath = result.path;

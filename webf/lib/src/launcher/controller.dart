@@ -388,9 +388,9 @@ class WebFViewController implements WidgetsBindingObserver {
   // Attach kraken's renderObject to an renderObject.
   void attachTo(RenderObject parent, [RenderObject? previousSibling]) {
     if (parent is ContainerRenderObjectMixin) {
-      parent.insert(document.getRenderer()!, after: previousSibling);
+      parent.insert(document.domRenderer!, after: previousSibling);
     } else if (parent is RenderObjectWithChildMixin) {
-      parent.child = document.getRenderer();
+      parent.child = document.domRenderer;
     }
   }
 
@@ -740,7 +740,7 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   RenderBox? getRootRenderObject() {
-    return document.documentElement?.getRenderer();
+    return document.documentElement?.domRenderer;
   }
 
   @override
@@ -788,7 +788,7 @@ class WebFViewController implements WidgetsBindingObserver {
       Element? focusedElement = document.focusedElement;
       double scrollOffset = 0;
       if (focusedElement != null) {
-        RenderBox? renderer = focusedElement.getRenderer();
+        RenderBox? renderer = focusedElement.domRenderer;
         if (renderer != null && renderer.attached && renderer.hasSize) {
           Offset focusOffset = renderer.localToGlobal(Offset.zero);
           // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.

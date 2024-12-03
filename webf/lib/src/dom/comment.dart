@@ -12,7 +12,7 @@ class Comment extends CharacterData {
   String get nodeName => '#comment';
 
   @override
-  RenderBox? get renderer => null;
+  RenderBox? get domRenderer => null;
 
   // @TODO: Get data from bridge side.
   String get data => '';

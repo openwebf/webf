@@ -111,7 +111,7 @@ typedef NodeVisitor = void Function(Node node);
 /// [Node] or [Element]s, which wrap [RenderObject]s, which provide the actual
 /// rendering of the application.
 abstract class RenderObjectNode {
-  RenderBox? getRenderer([flutter.Element? flutterRenderObjectElement]);
+  RenderBox? get domRenderer;
 
   /// Creates an instance of the [RenderObject] class that this
   /// [RenderObjectNode] represents, using the configuration described by this
@@ -325,7 +325,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   /// Attach a renderObject to parent.
-  void attachTo(Element parent, {flutter.Element? flutterWidgetElement, Node? previousSibling}) {}
+  void attachTo(Element parent, {Node? previousSibling}) {}
 
   /// Unmount referenced render object.
   void unmountRenderObject({bool keepFixedAlive = false, flutter.Element? flutterWidgetElement}) {}
@@ -343,14 +343,14 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   @override
-  RenderBox createRenderer([flutter.Element? flutterWidgetElement]) =>
+  RenderBox createRenderer([WebRenderLayoutWidgetElement? flutterWidgetElement]) =>
       throw FlutterError('[createRenderer] is not implemented.');
 
   @override
-  void willAttachRenderer([flutter.Element? flutterWidgetElement]) {}
+  void willAttachRenderer() {}
 
   @override
-  void didAttachRenderer([flutter.Element? flutterWidgetElement]) {}
+  void didAttachRenderer() {}
 
   @override
   void willDetachRenderer() {}
@@ -443,14 +443,14 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return firstChild != null;
   }
 
-  static RenderBox? findMostClosedSiblings(Node? previousSibling, { flutter.Element? flutterWidgetElement }) {
-    RenderBox? afterRenderObject = previousSibling?.getRenderer(flutterWidgetElement);
+  static RenderBox? findMostClosedSiblings(Node? previousSibling) {
+    RenderBox? afterRenderObject = previousSibling?.domRenderer;
 
     // Found the most closed
     if (afterRenderObject == null) {
       Node? ref = previousSibling?.previousSibling;
       while (ref != null && afterRenderObject == null) {
-        afterRenderObject = ref.getRenderer(null);
+        afterRenderObject = ref.domRenderer;
         ref = ref.previousSibling;
       }
     }
