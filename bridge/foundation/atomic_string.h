@@ -85,11 +85,29 @@ class AtomicString {
     return string_->Find(match_function, start);
   }
 
+  // Find substrings.
+  size_t Find(
+      const AtomicString& value,
+      size_t start = 0) const {
+    return string_->Find(value, start);
+  }
+
+  bool Contains(char c) const { return find(c) != kNotFound; }
+  bool Contains(
+      const AtomicString& value) const {
+    return Find(value, 0) != kNotFound;
+  }
+
   bool StartsWith(
-      const std::string_view& prefix,
-      TextCaseSensitivity case_sensitivity = kTextCaseSensitive) const {
+      const AtomicString& prefix) const {
     return string_->StartsWith(prefix);
   }
+
+  bool EndsWith(
+    const AtomicString& suffix) const {
+    return string_.EndsWith(suffix);
+  }
+  bool EndsWith(char16_t character) const { return string_.EndsWith(character); }
 
   inline bool ContainsOnlyLatin1OrEmpty() const {
     if (empty())

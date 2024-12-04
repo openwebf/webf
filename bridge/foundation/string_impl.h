@@ -18,6 +18,8 @@
 
 namespace webf {
 
+class AtomicString;
+
 typedef bool (*CharacterMatchFunctionPtr)(char16_t);
 
 enum TextCaseSensitivity {
@@ -209,8 +211,14 @@ class StringImpl : public std::enable_shared_from_this<StringImpl> {
   //  size_t Find(base::RepeatingCallback<bool(UChar)> match_callback,
   //                  wtf_size_t index = 0) const;
 
-  bool StartsWith(char) const;
-  bool StartsWith(const std::string_view&) const;
+  // Find substrings.
+  size_t Find(const AtomicString&, size_t index = 0);
+
+  bool StartsWith(char16_t) const;
+  bool StartsWith(const AtomicString&) const;
+
+  bool EndsWith(char16_t) const;
+  bool EndsWith(const AtomicString&) const;
 
   std::shared_ptr<StringImpl> Substring(size_t pos, size_t len = UINT_MAX) const;
 
