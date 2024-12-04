@@ -232,7 +232,12 @@ class CSSColor {
   }
 
   static bool isColor(String color) {
-    return color == CURRENT_COLOR || parseColor(color) != null;
+    return color == CURRENT_COLOR ||
+        color == TRANSPARENT ||
+        color.startsWith('#') ||
+        color.startsWith(RGB) ||
+        color.startsWith(HSL) ||
+        _namedColors.containsKey(color);
   }
 
   static void clearCachedColorValue(String color) {
@@ -255,7 +260,8 @@ class CSSColor {
     return CSSColor(value);
   }
 
-  static String tryParserCSSColorWithVariable(String fullColor, String input, RenderStyle renderStyle, String propertyName) {
+  static String tryParserCSSColorWithVariable(
+      String fullColor, String input, RenderStyle renderStyle, String propertyName) {
     return input.replaceAllMapped(_variableRgbRegExp, (Match match) {
       String? varString = match[0];
       if (varString == null) return '';
