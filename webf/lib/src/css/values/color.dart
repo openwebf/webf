@@ -236,7 +236,7 @@ class CSSColor {
   }
 
   static void clearCachedColorValue(String color) {
-    _cachedParsedColor.remove(color);
+    _cachedParsedColor.remove(color.toLowerCase());
   }
 
   static CSSColor? resolveColor(String color, RenderStyle renderStyle, String propertyName) {
@@ -269,7 +269,8 @@ class CSSColor {
   }
 
   static Color? parseColor(String color, {RenderStyle? renderStyle, String? propertyName}) {
-    color = color.trim().toLowerCase();
+    String originalColor = color.trim();
+    color = originalColor.toLowerCase();
 
     if (color == TRANSPARENT) {
       return CSSColor.transparent;
@@ -304,11 +305,11 @@ class CSSColor {
       }
     } else if (color.startsWith(RGB)) {
       bool isRgba = color.startsWith(RGBA);
-      String colorBody = color.substring(isRgba ? 5 : 4, color.length - 1);
+      String colorBody = originalColor.substring(isRgba ? 5 : 4, color.length - 1);
 
       final rgbMatch;
       if (renderStyle != null && colorBody.contains('var')) {
-        final result = tryParserCSSColorWithVariable(color, colorBody, renderStyle, propertyName ?? '');
+        final result = tryParserCSSColorWithVariable(originalColor, colorBody, renderStyle, propertyName ?? '');
         rgbMatch = _colorRgbRegExp.firstMatch(result);
       } else {
         rgbMatch = _colorRgbRegExp.firstMatch(colorBody);
@@ -325,11 +326,11 @@ class CSSColor {
       }
     } else if (color.startsWith(HSL)) {
       bool isHsla = color.startsWith(HSLA);
-      String colorBody = color.substring(isHsla ? 5 : 4, color.length - 1);
+      String colorBody = originalColor.substring(isHsla ? 5 : 4, color.length - 1);
 
       final hslMatch;
       if (renderStyle != null && colorBody.contains('var')) {
-        final result = tryParserCSSColorWithVariable(color, colorBody, renderStyle, propertyName ?? '');
+        final result = tryParserCSSColorWithVariable(originalColor, colorBody, renderStyle, propertyName ?? '');
         hslMatch = _colorHslRegExp.firstMatch(result);
       } else {
         hslMatch = _colorHslRegExp.firstMatch(colorBody);
