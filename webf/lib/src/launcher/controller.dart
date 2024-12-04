@@ -19,7 +19,16 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart'
-    show AnimationController, BuildContext, ModalRoute, RouteInformation, RouteObserver, View, Widget, WidgetsBinding, WidgetsBindingObserver;
+    show
+        AnimationController,
+        BuildContext,
+        ModalRoute,
+        RouteInformation,
+        RouteObserver,
+        View,
+        Widget,
+        WidgetsBinding,
+        WidgetsBindingObserver;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
@@ -149,13 +158,7 @@ enum PreloadingStatus {
   done,
 }
 
-enum PreRenderingStatus {
-  none,
-  preloading,
-  evaluate,
-  rendering,
-  done
-}
+enum PreRenderingStatus { none, preloading, evaluate, rendering, done }
 
 // An kraken View Controller designed for multiple kraken view control.
 class WebFViewController implements WidgetsBindingObserver {
@@ -183,8 +186,7 @@ class WebFViewController implements WidgetsBindingObserver {
       required this.runningThread,
       this.navigationDelegate,
       this.gestureListener,
-      this.initialCookies}) {
-  }
+      this.initialCookies}) {}
 
   Future<void> initialize() async {
     if (enableDebug) {
@@ -287,7 +289,7 @@ class WebFViewController implements WidgetsBindingObserver {
       if (targetIdToDevNodeIdMap[nativeAddress] != null) {
         return targetIdToDevNodeIdMap[nativeAddress]!;
       }
-      _nodeIdCount ++;
+      _nodeIdCount++;
       targetIdToDevNodeIdMap[nativeAddress] = _nodeIdCount;
       return _nodeIdCount;
     }
@@ -323,19 +325,23 @@ class WebFViewController implements WidgetsBindingObserver {
     if (gestureListener != null) {
       GestureListener listener = gestureListener!;
       if (listener.onTouchStart != null) {
-        document.addEventListener(EVENT_TOUCH_START, (Event event) async => listener.onTouchStart!(event as TouchEvent));
+        document.addEventListener(EVENT_TOUCH_START, (Event event) async => listener.onTouchStart!(event as TouchEvent),
+            builtInCallback: true);
       }
 
       if (listener.onTouchMove != null) {
-        document.addEventListener(EVENT_TOUCH_MOVE, (Event event) async => listener.onTouchMove!(event as TouchEvent));
+        document.addEventListener(EVENT_TOUCH_MOVE, (Event event) async => listener.onTouchMove!(event as TouchEvent),
+            builtInCallback: true);
       }
 
       if (listener.onTouchEnd != null) {
-        document.addEventListener(EVENT_TOUCH_END, (Event event) async => listener.onTouchEnd!(event as TouchEvent));
+        document.addEventListener(EVENT_TOUCH_END, (Event event) async => listener.onTouchEnd!(event as TouchEvent),
+            builtInCallback: true);
       }
 
       if (listener.onDrag != null) {
-        document.addEventListener(EVENT_DRAG, (Event event) async => listener.onDrag!(event as GestureEvent));
+        document.addEventListener(EVENT_DRAG, (Event event) async => listener.onDrag!(event as GestureEvent),
+            builtInCallback: true);
       }
     }
 
@@ -360,7 +366,7 @@ class WebFViewController implements WidgetsBindingObserver {
         }
         (event.target as Element).focus();
       }
-    });
+    }, builtInCallback: true);
   }
 
   void setCookie(List<Cookie> cookies, [Uri? uri]) {
@@ -707,13 +713,14 @@ class WebFViewController implements WidgetsBindingObserver {
         String oldUrl = rootController.url;
         HistoryModule historyModule = rootController.module.moduleManager.getModule('History')!;
         historyModule.pushState(null, url: targetPath);
-        window.dispatchEvent(HashChangeEvent(newUrl: targetPath, oldUrl: oldUrl));
+        await window.dispatchEvent(HashChangeEvent(newUrl: targetPath, oldUrl: oldUrl));
         return;
       }
 
       switch (action.navigationType) {
         case WebFNavigationType.navigate:
-          await rootController.load(rootController.getPreloadBundleFromUrl(targetPath) ?? WebFBundle.fromUrl(targetPath));
+          await rootController
+              .load(rootController.getPreloadBundleFromUrl(targetPath) ?? WebFBundle.fromUrl(targetPath));
           break;
         case WebFNavigationType.reload:
           await rootController.reload();
@@ -794,8 +801,10 @@ class WebFViewController implements WidgetsBindingObserver {
           // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
           if (focusOffset.dy > viewport!.size.height - bottomInsets - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
             shouldScrollByToCenter = true;
-            scrollOffset =
-                focusOffset.dy - (viewport!.size.height - bottomInsets) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
+            scrollOffset = focusOffset.dy -
+                (viewport!.size.height - bottomInsets) +
+                renderer.size.height +
+                FOCUS_VIEWINSET_BOTTOM_OVERALL;
           }
         }
       }
@@ -838,12 +847,10 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   @override
-  void handleCancelBackGesture() {
-  }
+  void handleCancelBackGesture() {}
 
   @override
-  void handleCommitBackGesture() {
-  }
+  void handleCommitBackGesture() {}
 
   @override
   bool handleStartBackGesture(backEvent) {
@@ -851,8 +858,7 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   @override
-  void handleUpdateBackGestureProgress(backEvent) {
-  }
+  void handleUpdateBackGestureProgress(backEvent) {}
 
   @override
   void didChangeViewFocus(event) {}
@@ -1314,10 +1320,7 @@ class WebFController {
       WebFProfiler.instance.finishTrackUICommand();
     }
 
-    await Future.wait([
-      _resolveEntrypoint(),
-      module.initialize()
-    ]);
+    await Future.wait([_resolveEntrypoint(), module.initialize()]);
 
     if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
       // Convert the JavaScript code into bytecode.
@@ -1410,10 +1413,7 @@ class WebFController {
     }
 
     // Preparing the entrypoint
-    await Future.wait([
-      _resolveEntrypoint(),
-      module.initialize()
-    ]);
+    await Future.wait([_resolveEntrypoint(), module.initialize()]);
 
     // Stop the animation frame
     module.pauseAnimationFrame();
@@ -1477,15 +1477,13 @@ class WebFController {
 
   void flushPendingUnAttachedWidgetElements() {
     assert(onCustomElementAttached != null);
-    for (int i = 0; i < pendingWidgetElements.length; i ++) {
+    for (int i = 0; i < pendingWidgetElements.length; i++) {
       onCustomElementAttached!(pendingWidgetElements[i]);
     }
     pendingWidgetElements.clear();
   }
 
-  void reactiveWidgetElements() {
-
-  }
+  void reactiveWidgetElements() {}
 
   // Pause all timers and callbacks if kraken page are invisible.
   void pause() {
@@ -1542,10 +1540,7 @@ class WebFController {
       {bool shouldResolve = true, bool shouldEvaluate = true, AnimationController? animationController}) async {
     if (_entrypoint != null && shouldResolve) {
       await controlledInitCompleter.future;
-      await Future.wait([
-        _resolveEntrypoint(),
-        _module.initialize()
-      ]);
+      await Future.wait([_resolveEntrypoint(), _module.initialize()]);
       if (_entrypoint!.isResolved && shouldEvaluate) {
         await evaluateEntrypoint(animationController: animationController);
       } else {

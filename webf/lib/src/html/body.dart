@@ -16,7 +16,8 @@ class BodyElement extends Element {
   BodyElement([BindingContext? context]) : super(context);
 
   @override
-  void addEventListener(String eventType, EventHandler eventHandler, {EventListenerOptions? addEventListenerOptions}) {
+  void addEventListener(String eventType, EventHandler eventHandler,
+      {EventListenerOptions? addEventListenerOptions, bool builtInCallback = false}) {
     // Scroll event not working on body.
     if (eventType == EVENT_SCROLL) return;
 
@@ -27,7 +28,7 @@ class BodyElement extends Element {
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   @override
-  void setRenderStyle(String property, String present, { String? baseHref }) {
+  void setRenderStyle(String property, String present, {String? baseHref}) {
     switch (property) {
       // The overflow of body should apply to html.
       // https://drafts.csswg.org/css-overflow-3/#overflow-propagation
@@ -41,7 +42,8 @@ class BodyElement extends Element {
       case BACKGROUND_COLOR:
       case BACKGROUND_IMAGE:
         if (ownerDocument.documentElement?.renderStyle.backgroundImage == null &&
-            (ownerDocument.documentElement?.renderStyle.backgroundColor == null || ownerDocument.documentElement?.renderStyle.backgroundColor?.value == CSSColor.transparent)) {
+            (ownerDocument.documentElement?.renderStyle.backgroundColor == null ||
+                ownerDocument.documentElement?.renderStyle.backgroundColor?.value == CSSColor.transparent)) {
           ownerDocument.documentElement?.setRenderStyle(property, present);
         }
         super.setRenderStyle(property, present);
