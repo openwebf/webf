@@ -32,18 +32,16 @@
  */
 
 #include "media_query_exp.h"
-#include "media_feature_names.h"
-#include "core/css/parser/css_parser_context.h"
-#include "core/css/parser/css_variable_parser.h"
-#include "core/css/parser/css_parser_impl.h"
-#include "core/css/properties/css_parsing_utils.h"
 #include "core/base/strings/string_util.h"
+#include "core/css/parser/css_parser_context.h"
+#include "core/css/parser/css_parser_impl.h"
+#include "core/css/parser/css_variable_parser.h"
+#include "core/css/properties/css_parsing_utils.h"
+#include "media_feature_names.h"
 
 namespace webf {
 
-static inline bool FeatureWithValidIdent(const std::string& media_feature,
-                                         CSSValueID ident) {
-
+static inline bool FeatureWithValidIdent(const std::string& media_feature, CSSValueID ident) {
   if (media_feature == media_feature_names_stdstring::kVideoDynamicRange) {
     return ident == CSSValueID::kStandard || ident == CSSValueID::kHigh;
   }
@@ -75,9 +73,7 @@ static inline bool FeatureWithValidLength(const std::string& media_feature, cons
          media_feature == media_feature_names_stdstring::kMaxDeviceWidth;
 }
 
-
-static inline bool FeatureWithValidDensity(const std::string& media_feature,
-                                           const CSSPrimitiveValue* value) {
+static inline bool FeatureWithValidDensity(const std::string& media_feature, const CSSPrimitiveValue* value) {
   // NOTE: The allowed range of <resolution> values always excludes negative
   // values, in addition to any explicit ranges that might be specified.
   // https://drafts.csswg.org/css-values/#resolution
@@ -88,7 +84,6 @@ static inline bool FeatureWithValidDensity(const std::string& media_feature,
   return media_feature == media_feature_names_stdstring::kMinResolution ||
          media_feature == media_feature_names_stdstring::kMaxResolution;
 }
-
 
 static inline bool FeatureExpectingInteger(const std::string& media_feature) {
   if (media_feature == media_feature_names_stdstring::kColor ||
@@ -102,16 +97,14 @@ static inline bool FeatureExpectingInteger(const std::string& media_feature) {
   return false;
 }
 
-static inline bool FeatureWithInteger(const std::string& media_feature,
-                                      const CSSPrimitiveValue* value) {
+static inline bool FeatureWithInteger(const std::string& media_feature, const CSSPrimitiveValue* value) {
   if (!value->IsInteger()) {
     return false;
   }
   return FeatureExpectingInteger(media_feature);
 }
 
-static inline bool FeatureWithNumber(const std::string& media_feature,
-                                     const CSSPrimitiveValue* value) {
+static inline bool FeatureWithNumber(const std::string& media_feature, const CSSPrimitiveValue* value) {
   if (!value->IsNumber()) {
     return false;
   }
@@ -119,10 +112,8 @@ static inline bool FeatureWithNumber(const std::string& media_feature,
   return false;
 }
 
-static inline bool FeatureWithZeroOrOne(const std::string& media_feature,
-                                        const CSSPrimitiveValue* value) {
-  if (!value->IsInteger() ||
-      !(value->GetDoubleValue() == 1 || !value->GetDoubleValue())) {
+static inline bool FeatureWithZeroOrOne(const std::string& media_feature, const CSSPrimitiveValue* value) {
+  if (!value->IsInteger() || !(value->GetDoubleValue() == 1 || !value->GetDoubleValue())) {
     return false;
   }
 
@@ -151,8 +142,7 @@ bool MediaQueryExp::IsViewportDependent() const {
 }
 
 bool MediaQueryExp::IsDeviceDependent() const {
-  return media_feature_ ==
-             media_feature_names_stdstring::kDeviceAspectRatio ||
+  return media_feature_ == media_feature_names_stdstring::kDeviceAspectRatio ||
          media_feature_ == media_feature_names_stdstring::kDeviceWidth ||
          media_feature_ == media_feature_names_stdstring::kDeviceHeight ||
          media_feature_ == media_feature_names_stdstring::kMinDeviceWidth ||
@@ -191,47 +181,37 @@ bool MediaQueryExp::IsBlockSizeDependent() const {
          media_feature_ == media_feature_names_stdstring::kMaxBlockSize;
 }
 
-
 MediaQueryExp::MediaQueryExp(const MediaQueryExp& other)
     : media_feature_(other.MediaFeature()), bounds_(other.bounds_) {}
 
-MediaQueryExp::MediaQueryExp(const std::string& media_feature,
-                             const MediaQueryExpValue& value)
-    : MediaQueryExp(media_feature,
-                    MediaQueryExpBounds(MediaQueryExpComparison(value))) {}
+MediaQueryExp::MediaQueryExp(const std::string& media_feature, const MediaQueryExpValue& value)
+    : MediaQueryExp(media_feature, MediaQueryExpBounds(MediaQueryExpComparison(value))) {}
 
-MediaQueryExp::MediaQueryExp(const std::string& media_feature,
-                             const MediaQueryExpBounds& bounds)
+MediaQueryExp::MediaQueryExp(const std::string& media_feature, const MediaQueryExpBounds& bounds)
     : media_feature_(media_feature), bounds_(bounds) {}
 
 MediaQueryExp MediaQueryExp::Create(const std::string& media_feature,
                                     CSSParserTokenRange& range,
                                     const CSSParserTokenOffsets& offsets,
                                     std::shared_ptr<const CSSParserContext> context) {
-  if (auto value =
-          MediaQueryExpValue::Consume(media_feature, range, offsets, context)) {
+  if (auto value = MediaQueryExpValue::Consume(media_feature, range, offsets, context)) {
     return MediaQueryExp(media_feature, *value);
   }
   return Invalid();
 }
 
-
-std::optional<MediaQueryExpValue> MediaQueryExpValue::Consume(
-    const std::string& media_feature,
-    CSSParserTokenRange& range,
-    const CSSParserTokenOffsets& offsets,
-    std::shared_ptr<const CSSParserContext> context) {
+std::optional<MediaQueryExpValue> MediaQueryExpValue::Consume(const std::string& media_feature,
+                                                              CSSParserTokenRange& range,
+                                                              const CSSParserTokenOffsets& offsets,
+                                                              std::shared_ptr<const CSSParserContext> context) {
   CSSParserContext::ParserModeOverridingScope scope(*context, kHTMLStandardMode);
 
   if (CSSVariableParser::IsValidVariableName(media_feature)) {
     tcb::span span = range.RemainingSpan();
-    std::string_view original_string =
-        offsets.StringForTokens(span.data(), span.data() + span.size());
+    std::string_view original_string = offsets.StringForTokens(span.data(), span.data() + span.size());
     CSSTokenizedValue tokenized_value{range, original_string};
     CSSParserImpl::RemoveImportantAnnotationIfPresent(tokenized_value);
-    if (auto value =
-            CSSVariableParser::ParseDeclarationIncludingCSSWide(
-                tokenized_value, false, context)) {
+    if (auto value = CSSVariableParser::ParseDeclarationIncludingCSSWide(tokenized_value, false, context)) {
       while (!range.AtEnd()) {
         range.Consume();
       }
@@ -242,15 +222,13 @@ std::optional<MediaQueryExpValue> MediaQueryExpValue::Consume(
 
   DCHECK_EQ(media_feature, base::ToLowerASCII(media_feature));
 
-  std::shared_ptr<const CSSPrimitiveValue> value = css_parsing_utils::ConsumeInteger(
-      range, context, -std::numeric_limits<double>::max() /* minimum_value */);
+  std::shared_ptr<const CSSPrimitiveValue> value =
+      css_parsing_utils::ConsumeInteger(range, context, -std::numeric_limits<double>::max() /* minimum_value */);
   if (!value && !FeatureExpectingInteger(media_feature)) {
-    value = css_parsing_utils::ConsumeNumber(
-        range, context, CSSPrimitiveValue::ValueRange::kAll);
+    value = css_parsing_utils::ConsumeNumber(range, context, CSSPrimitiveValue::ValueRange::kAll);
   }
   if (!value) {
-    value = css_parsing_utils::ConsumeLength(
-        range, context, CSSPrimitiveValue::ValueRange::kAll);
+    value = css_parsing_utils::ConsumeLength(range, context, CSSPrimitiveValue::ValueRange::kAll);
   }
   if (!value) {
     value = css_parsing_utils::ConsumeResolution(range, context);
@@ -274,35 +252,28 @@ std::optional<MediaQueryExpValue> MediaQueryExpValue::Consume(
       return std::nullopt;
     }
     if (!css_parsing_utils::ConsumeSlashIncludingWhitespace(range)) {
-      return MediaQueryExpValue(*value,
-                                *CSSNumericLiteralValue::Create(
-                                    1, CSSPrimitiveValue::UnitType::kNumber));
+      return MediaQueryExpValue(*value, *CSSNumericLiteralValue::Create(1, CSSPrimitiveValue::UnitType::kNumber));
     }
-    std::shared_ptr<const CSSPrimitiveValue> denominator = css_parsing_utils::ConsumeNumber(
-        range, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+    std::shared_ptr<const CSSPrimitiveValue> denominator =
+        css_parsing_utils::ConsumeNumber(range, context, CSSPrimitiveValue::ValueRange::kNonNegative);
     if (!denominator) {
       return std::nullopt;
     }
     if (value->GetDoubleValue() == 0 && denominator->GetDoubleValue() == 0) {
-      return MediaQueryExpValue(*CSSNumericLiteralValue::Create(
-                                    1, CSSPrimitiveValue::UnitType::kNumber),
-                                *CSSNumericLiteralValue::Create(
-                                    0, CSSPrimitiveValue::UnitType::kNumber));
+      return MediaQueryExpValue(*CSSNumericLiteralValue::Create(1, CSSPrimitiveValue::UnitType::kNumber),
+                                *CSSNumericLiteralValue::Create(0, CSSPrimitiveValue::UnitType::kNumber));
     }
     return MediaQueryExpValue(*value, *denominator);
   }
 
-  if (FeatureWithInteger(media_feature, value.get()) ||
-      FeatureWithNumber(media_feature, value.get()) ||
-      FeatureWithZeroOrOne(media_feature, value.get()) ||
-      FeatureWithValidLength(media_feature, value.get()) ||
+  if (FeatureWithInteger(media_feature, value.get()) || FeatureWithNumber(media_feature, value.get()) ||
+      FeatureWithZeroOrOne(media_feature, value.get()) || FeatureWithValidLength(media_feature, value.get()) ||
       FeatureWithValidDensity(media_feature, value.get())) {
     return MediaQueryExpValue(value);
   }
 
   return std::nullopt;
 }
-
 
 namespace {
 
@@ -326,18 +297,15 @@ const char* MediaQueryOperatorToString(MediaQueryOperator op) {
   return "";
 }
 
-}
+}  // namespace
 
-
-MediaQueryExp MediaQueryExp::Create(const std::string& media_feature,
-                                    const MediaQueryExpBounds& bounds) {
+MediaQueryExp MediaQueryExp::Create(const std::string& media_feature, const MediaQueryExpBounds& bounds) {
   return MediaQueryExp(media_feature, bounds);
 }
 
 MediaQueryExp::~MediaQueryExp() = default;
 
-void MediaQueryExp::Trace(GCVisitor* visitor) const {
-}
+void MediaQueryExp::Trace(GCVisitor* visitor) const {}
 
 bool MediaQueryExp::operator==(const MediaQueryExp& other) const {
   return (other.media_feature_ == media_feature_) && (bounds_ == other.bounds_);
@@ -419,20 +387,16 @@ unsigned MediaQueryExpValue::GetUnitFlags() const {
       length_type_flags.test(CSSPrimitiveValue::kUnitTypeFontXSize) ||
       length_type_flags.test(CSSPrimitiveValue::kUnitTypeZeroCharacterWidth) ||
       length_type_flags.test(CSSPrimitiveValue::kUnitTypeFontCapitalHeight) ||
-      length_type_flags.test(
-          CSSPrimitiveValue::kUnitTypeIdeographicFullWidth) ||
+      length_type_flags.test(CSSPrimitiveValue::kUnitTypeIdeographicFullWidth) ||
       length_type_flags.test(CSSPrimitiveValue::kUnitTypeLineHeight)) {
     unit_flags |= UnitFlags::kFontRelative;
   }
 
   if (length_type_flags.test(CSSPrimitiveValue::kUnitTypeRootFontSize) ||
       length_type_flags.test(CSSPrimitiveValue::kUnitTypeRootFontXSize) ||
-      length_type_flags.test(
-          CSSPrimitiveValue::kUnitTypeRootFontCapitalHeight) ||
-      length_type_flags.test(
-          CSSPrimitiveValue::kUnitTypeRootFontZeroCharacterWidth) ||
-      length_type_flags.test(
-          CSSPrimitiveValue::kUnitTypeRootFontIdeographicFullWidth) ||
+      length_type_flags.test(CSSPrimitiveValue::kUnitTypeRootFontCapitalHeight) ||
+      length_type_flags.test(CSSPrimitiveValue::kUnitTypeRootFontZeroCharacterWidth) ||
+      length_type_flags.test(CSSPrimitiveValue::kUnitTypeRootFontIdeographicFullWidth) ||
       length_type_flags.test(CSSPrimitiveValue::kUnitTypeRootLineHeight)) {
     unit_flags |= UnitFlags::kRootFontRelative;
   }
@@ -463,34 +427,30 @@ std::string MediaQueryExpNode::Serialize() const {
   return builder.ReleaseString();
 }
 
-std::shared_ptr<const MediaQueryExpNode> MediaQueryExpNode::Not(
-    std::shared_ptr<const MediaQueryExpNode> operand) {
+std::shared_ptr<const MediaQueryExpNode> MediaQueryExpNode::Not(std::shared_ptr<const MediaQueryExpNode> operand) {
   if (!operand) {
     return nullptr;
   }
   return std::make_shared<MediaQueryNotExpNode>(std::move(operand));
 }
 
-std::shared_ptr<const MediaQueryExpNode> MediaQueryExpNode::Nested(
-    std::shared_ptr<const MediaQueryExpNode> operand) {
+std::shared_ptr<const MediaQueryExpNode> MediaQueryExpNode::Nested(std::shared_ptr<const MediaQueryExpNode> operand) {
   if (!operand) {
     return nullptr;
   }
   return std::make_shared<MediaQueryNestedExpNode>(std::move(operand));
 }
 
-std::shared_ptr<const MediaQueryExpNode> MediaQueryExpNode::Function(
-    std::shared_ptr<const MediaQueryExpNode> operand,
-    const std::string& name) {
+std::shared_ptr<const MediaQueryExpNode> MediaQueryExpNode::Function(std::shared_ptr<const MediaQueryExpNode> operand,
+                                                                     const std::string& name) {
   if (!operand) {
     return nullptr;
   }
   return std::make_shared<MediaQueryFunctionExpNode>(operand, name);
 }
 
-std::shared_ptr<const MediaQueryExpNode> MediaQueryExpNode::And(
-    std::shared_ptr<const MediaQueryExpNode> left,
-    std::shared_ptr<const MediaQueryExpNode> right) {
+std::shared_ptr<const MediaQueryExpNode> MediaQueryExpNode::And(std::shared_ptr<const MediaQueryExpNode> left,
+                                                                std::shared_ptr<const MediaQueryExpNode> right) {
   if (!left || !right) {
     return nullptr;
   }
@@ -498,7 +458,7 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryExpNode::And(
 }
 
 std::shared_ptr<const MediaQueryExpNode> MediaQueryExpNode::Or(std::shared_ptr<const MediaQueryExpNode> left,
-                                               std::shared_ptr<const MediaQueryExpNode> right) {
+                                                               std::shared_ptr<const MediaQueryExpNode> right) {
   if (!left || !right) {
     return nullptr;
   }
@@ -537,13 +497,11 @@ void MediaQueryFeatureExpNode::SerializeTo(StringBuilder& builder) const {
   builder.Append(exp_.Serialize());
 }
 
-void MediaQueryFeatureExpNode::CollectExpressions(
-    std::vector<MediaQueryExp>& result) const {
+void MediaQueryFeatureExpNode::CollectExpressions(std::vector<MediaQueryExp>& result) const {
   result.push_back(exp_);
 }
 
-MediaQueryExpNode::FeatureFlags MediaQueryFeatureExpNode::CollectFeatureFlags()
-    const {
+MediaQueryExpNode::FeatureFlags MediaQueryFeatureExpNode::CollectFeatureFlags() const {
   if (exp_.IsInlineSizeDependent()) {
     return kFeatureInlineSize;
   } else if (exp_.IsBlockSizeDependent()) {
@@ -560,19 +518,15 @@ MediaQueryExpNode::FeatureFlags MediaQueryFeatureExpNode::CollectFeatureFlags()
   }
 }
 
-void MediaQueryFeatureExpNode::Trace(GCVisitor* visitor) const {
-}
+void MediaQueryFeatureExpNode::Trace(GCVisitor* visitor) const {}
 
-void MediaQueryUnaryExpNode::Trace(GCVisitor* visitor) const {
-}
+void MediaQueryUnaryExpNode::Trace(GCVisitor* visitor) const {}
 
-void MediaQueryUnaryExpNode::CollectExpressions(
-    std::vector<MediaQueryExp>& result) const {
+void MediaQueryUnaryExpNode::CollectExpressions(std::vector<MediaQueryExp>& result) const {
   operand_->CollectExpressions(result);
 }
 
-MediaQueryExpNode::FeatureFlags MediaQueryUnaryExpNode::CollectFeatureFlags()
-    const {
+MediaQueryExpNode::FeatureFlags MediaQueryUnaryExpNode::CollectFeatureFlags() const {
   return operand_->CollectFeatureFlags();
 }
 
@@ -589,8 +543,7 @@ void MediaQueryFunctionExpNode::SerializeTo(StringBuilder& builder) const {
   builder.Append(")");
 }
 
-MediaQueryExpNode::FeatureFlags MediaQueryFunctionExpNode::CollectFeatureFlags()
-    const {
+MediaQueryExpNode::FeatureFlags MediaQueryFunctionExpNode::CollectFeatureFlags() const {
   FeatureFlags flags = MediaQueryUnaryExpNode::CollectFeatureFlags();
   if (name_ == "style") {
     flags |= kFeatureStyle;
@@ -603,17 +556,14 @@ void MediaQueryNotExpNode::SerializeTo(StringBuilder& builder) const {
   Operand().SerializeTo(builder);
 }
 
-void MediaQueryCompoundExpNode::Trace(GCVisitor* visitor) const {
-}
+void MediaQueryCompoundExpNode::Trace(GCVisitor* visitor) const {}
 
-void MediaQueryCompoundExpNode::CollectExpressions(
-    std::vector<MediaQueryExp>& result) const {
+void MediaQueryCompoundExpNode::CollectExpressions(std::vector<MediaQueryExp>& result) const {
   left_->CollectExpressions(result);
   right_->CollectExpressions(result);
 }
 
-MediaQueryExpNode::FeatureFlags MediaQueryCompoundExpNode::CollectFeatureFlags()
-    const {
+MediaQueryExpNode::FeatureFlags MediaQueryCompoundExpNode::CollectFeatureFlags() const {
   return left_->CollectFeatureFlags() | right_->CollectFeatureFlags();
 }
 
@@ -633,11 +583,9 @@ void MediaQueryUnknownExpNode::SerializeTo(StringBuilder& builder) const {
   builder.Append(string_);
 }
 
-void MediaQueryUnknownExpNode::CollectExpressions(
-    std::vector<MediaQueryExp>&) const {}
+void MediaQueryUnknownExpNode::CollectExpressions(std::vector<MediaQueryExp>&) const {}
 
-MediaQueryExpNode::FeatureFlags MediaQueryUnknownExpNode::CollectFeatureFlags()
-    const {
+MediaQueryExpNode::FeatureFlags MediaQueryUnknownExpNode::CollectFeatureFlags() const {
   return kFeatureUnknown;
 }
 

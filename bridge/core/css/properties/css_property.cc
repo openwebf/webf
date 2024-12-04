@@ -32,18 +32,15 @@ bool CSSProperty::IsRepeated(const CSSPropertyName& name) {
   return !name.IsCustomProperty() && Get(name.Id()).IsRepeated();
 }
 
-std::shared_ptr<const CSSValue> CSSProperty::CSSValueFromComputedStyle(
-    const ComputedStyle& style,
-    const LayoutObject* layout_object,
-    bool allow_visited_style,
-    CSSValuePhase value_phase) const {
+std::shared_ptr<const CSSValue> CSSProperty::CSSValueFromComputedStyle(const ComputedStyle& style,
+                                                                       const LayoutObject* layout_object,
+                                                                       bool allow_visited_style,
+                                                                       CSSValuePhase value_phase) const {
   return nullptr;
-//  const CSSProperty& resolved_property =
-//      ResolveDirectionAwareProperty(style.GetWritingDirection());
-//  return resolved_property.CSSValueFromComputedStyleInternal(
-//      style, layout_object, allow_visited_style, value_phase);
+  //  const CSSProperty& resolved_property =
+  //      ResolveDirectionAwareProperty(style.GetWritingDirection());
+  //  return resolved_property.CSSValueFromComputedStyleInternal(
+  //      style, layout_object, allow_visited_style, value_phase);
 }
-
-
 
 }  // namespace webf

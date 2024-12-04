@@ -31,7 +31,7 @@ class NamesMap {
 
   size_t size() const { return data_.size(); }
 
-  void Trace(GCVisitor* visitor) const { }
+  void Trace(GCVisitor* visitor) const {}
 
  private:
   template <typename CharacterType>
@@ -40,6 +40,6 @@ class NamesMap {
   std::unordered_map<AtomicString, std::shared_ptr<SpaceSplitString>, AtomicString::KeyHasher> data_;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_DOM_NAMES_MAP_H_

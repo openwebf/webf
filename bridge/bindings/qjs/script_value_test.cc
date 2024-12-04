@@ -14,7 +14,7 @@ using namespace webf;
 using TestCallback = void (*)(JSContext* ctx);
 
 void TestScriptValue(TestCallback callback) {
-  auto env= TEST_init();
+  auto env = TEST_init();
   callback(env->page()->executingContext()->ctx());
 }
 

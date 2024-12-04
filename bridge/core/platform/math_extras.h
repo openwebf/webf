@@ -30,10 +30,10 @@
 #ifndef WEBF_MATH_EXTRAS_H
 #define WEBF_MATH_EXTRAS_H
 
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <limits>
-#include <cassert>
 #include "foundation/macros.h"
 
 #if defined(_WIN32)
@@ -126,8 +126,7 @@ constexpr double RoundHalfTowardsPositiveInfinity(double value) {
 }
 
 constexpr float RoundHalfTowardsPositiveInfinity(float value) {
-  return (value > 0) ? static_cast<float>(static_cast<int>(value + 0.5f))
-                     : static_cast<float>(static_cast<int>(value));
+  return (value > 0) ? static_cast<float>(static_cast<int>(value + 0.5f)) : static_cast<float>(static_cast<int>(value));
 }
 
 // ClampTo() is implemented by templated helper classes (to allow for partial
@@ -139,9 +138,7 @@ constexpr float RoundHalfTowardsPositiveInfinity(float value) {
 // (2) The default type promotions/conversions are sufficient to handle things
 //     correctly
 template <typename LimitType, typename ValueType>
-inline constexpr LimitType ClampToDirectComparison(ValueType value,
-                                                   LimitType min,
-                                                   LimitType max) {
+inline constexpr LimitType ClampToDirectComparison(ValueType value, LimitType min, LimitType max) {
   if (value >= max)
     return max;
   return (value <= min) ? min : static_cast<LimitType>(value);
@@ -159,9 +156,7 @@ inline constexpr LimitType ClampToDirectComparison(ValueType value,
 // order to only compile the ClampToDirectComparison() code for cases where it
 // will actually be used; this prevents the compiler from emitting warnings
 // about unsafe code (even though we wouldn't actually be executing that code).
-template <bool can_use_direct_comparison,
-          typename LimitType,
-          typename ValueType>
+template <bool can_use_direct_comparison, typename LimitType, typename ValueType>
 class ClampToNonLongLongHelper;
 
 template <typename LimitType, typename ValueType>
@@ -169,9 +164,7 @@ class ClampToNonLongLongHelper<true, LimitType, ValueType> {
   WEBF_STATIC_ONLY(ClampToNonLongLongHelper);
 
  public:
-  static inline constexpr LimitType ClampTo(ValueType value,
-                                            LimitType min,
-                                            LimitType max) {
+  static inline constexpr LimitType ClampTo(ValueType value, LimitType min, LimitType max) {
     return ClampToDirectComparison(value, min, max);
   }
 };
@@ -181,9 +174,7 @@ class ClampToNonLongLongHelper<false, LimitType, ValueType> {
   WEBF_STATIC_ONLY(ClampToNonLongLongHelper);
 
  public:
-  static inline constexpr LimitType ClampTo(ValueType value,
-                                            LimitType min,
-                                            LimitType max) {
+  static inline constexpr LimitType ClampTo(ValueType value, LimitType min, LimitType max) {
     const double double_value = static_cast<double>(value);
     if (double_value >= static_cast<double>(max))
       return max;
@@ -191,9 +182,8 @@ class ClampToNonLongLongHelper<false, LimitType, ValueType> {
       return min;
     // If the limit type is integer, we might get better performance by
     // casting |value| (as opposed to |double_value|) to the limit type.
-    return std::numeric_limits<LimitType>::is_integer
-               ? static_cast<LimitType>(value)
-               : static_cast<LimitType>(double_value);
+    return std::numeric_limits<LimitType>::is_integer ? static_cast<LimitType>(value)
+                                                      : static_cast<LimitType>(double_value);
   }
 };
 
@@ -203,9 +193,7 @@ class ClampToNonLongLongHelper<false, LimitType, ValueType> {
 template <typename LimitType, typename ValueType>
 class ClampToHelper {
  public:
-  static inline constexpr LimitType ClampTo(ValueType value,
-                                            LimitType min,
-                                            LimitType max) {
+  static inline constexpr LimitType ClampTo(ValueType value, LimitType min, LimitType max) {
     // We only use ClampToDirectComparison() when the integerness and
     // signedness of the two types matches.
     //
@@ -220,11 +208,9 @@ class ClampToHelper {
     // produce warnings about comparing signed vs. unsigned, which are apt
     // since negative signed values will be converted to large unsigned ones
     // and we'll get incorrect results.
-    return ClampToNonLongLongHelper <
-                       std::numeric_limits<LimitType>::is_integer ==
+    return ClampToNonLongLongHelper < std::numeric_limits<LimitType>::is_integer ==
                    std::numeric_limits<ValueType>::is_integer &&
-               std::numeric_limits<LimitType>::is_signed ==
-                   std::numeric_limits<ValueType>::is_signed,
+               std::numeric_limits<LimitType>::is_signed == std::numeric_limits<ValueType>::is_signed,
            LimitType, ValueType > ::ClampTo(value, min, max);
   }
 };
@@ -242,11 +228,9 @@ class ClampToHelper<int64_t, ValueType> {
   static inline int64_t ClampTo(ValueType value, int64_t min, int64_t max) {
     if (!std::numeric_limits<ValueType>::is_integer) {
       if (value > 0) {
-        if (static_cast<double>(value) >=
-            static_cast<double>(std::numeric_limits<int64_t>::max()))
+        if (static_cast<double>(value) >= static_cast<double>(std::numeric_limits<int64_t>::max()))
           return max;
-      } else if (static_cast<double>(value) <=
-                 static_cast<double>(std::numeric_limits<int64_t>::min())) {
+      } else if (static_cast<double>(value) <= static_cast<double>(std::numeric_limits<int64_t>::min())) {
         return min;
       }
     }
@@ -284,8 +268,7 @@ class ClampToHelper<uint64_t, ValueType> {
     if (value <= 0)
       return min;
     if (!std::numeric_limits<ValueType>::is_integer) {
-      if (static_cast<double>(value) >=
-          static_cast<double>(std::numeric_limits<uint64_t>::max()))
+      if (static_cast<double>(value) >= static_cast<double>(std::numeric_limits<uint64_t>::max()))
         return max;
     }
     return ClampToDirectComparison(static_cast<uint64_t>(value), min, max);
@@ -303,10 +286,9 @@ constexpr T DefaultMinimumForClamp() {
 
 // And, finally, the actual function for people to call.
 template <typename LimitType, typename ValueType>
-constexpr LimitType ClampTo(
-    ValueType value,
-    LimitType min = DefaultMinimumForClamp<LimitType>(),
-    LimitType max = DefaultMaximumForClamp<LimitType>()) {
+constexpr LimitType ClampTo(ValueType value,
+                            LimitType min = DefaultMinimumForClamp<LimitType>(),
+                            LimitType max = DefaultMaximumForClamp<LimitType>()) {
   // We use __builtin_isnan instead of std::isnan here because std::isnan
   // is not constexpr prior to C++23.
   assert(!__builtin_isnan(static_cast<double>(value)));
@@ -315,10 +297,9 @@ constexpr LimitType ClampTo(
 }
 
 template <typename LimitType, typename ValueType>
-constexpr LimitType ClampToWithNaNTo0(
-    ValueType value,
-    LimitType min = DefaultMinimumForClamp<LimitType>(),
-    LimitType max = DefaultMaximumForClamp<LimitType>()) {
+constexpr LimitType ClampToWithNaNTo0(ValueType value,
+                                      LimitType min = DefaultMinimumForClamp<LimitType>(),
+                                      LimitType max = DefaultMaximumForClamp<LimitType>()) {
   static_assert(std::numeric_limits<ValueType>::has_quiet_NaN);
   if (UNLIKELY(std::isnan(value)))
     return 0;
@@ -337,6 +318,5 @@ static constexpr size_t GreatestCommonDivisor(size_t a, size_t b) {
 constexpr size_t LowestCommonMultiple(size_t a, size_t b) {
   return a && b ? a / GreatestCommonDivisor(a, b) * b : 0;
 }
-
 
 #endif  // WEBF_MATH_EXTRAS_H

@@ -32,9 +32,7 @@ class HeapVector final {
   void clear() { entries_.clear(); }
   void reserve(size_t size) { entries_.reserve(size); }
 
-  bool contains(const V& value) const {
-    return std::find(entries_.begin(), entries_.end(), value) != entries_.end();
-  }
+  bool contains(const V& value) const { return std::find(entries_.begin(), entries_.end(), value) != entries_.end(); }
 
   int find(const V& value) const {
     auto it = std::find(entries_.begin(), entries_.end(), value);

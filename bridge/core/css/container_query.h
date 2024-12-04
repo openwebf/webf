@@ -34,6 +34,6 @@ class ContainerQuery final {
   std::shared_ptr<const ContainerQuery> parent_;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_CONTAINER_QUERY_H_

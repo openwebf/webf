@@ -47,8 +47,7 @@ void StyleInvalidator::Invalidate(Document& document, Element* root_element) {
         Invalidate(*child, sibling_data);
       }
     }
-    for (Node* ancestor = root_element; ancestor;
-         ancestor = ancestor->ParentOrShadowHostNode()) {
+    for (Node* ancestor = root_element; ancestor; ancestor = ancestor->ParentOrShadowHostNode()) {
       ancestor->ClearChildNeedsStyleInvalidation();
     }
   }
@@ -57,10 +56,8 @@ void StyleInvalidator::Invalidate(Document& document, Element* root_element) {
   pending_nth_sets_.clear();
 }
 
-StyleInvalidator::StyleInvalidator(
-    PendingInvalidationMap& pending_invalidation_map)
+StyleInvalidator::StyleInvalidator(PendingInvalidationMap& pending_invalidation_map)
     : pending_invalidation_map_(pending_invalidation_map) {
-
   /* TODO(guopengfei)：代码迁移
   g_style_invalidator_tracing_enabled =
       TRACE_EVENT_API_GET_CATEGORY_GROUP_ENABLED(
@@ -70,8 +67,7 @@ StyleInvalidator::StyleInvalidator(
 
 StyleInvalidator::~StyleInvalidator() = default;
 
-void StyleInvalidator::PushInvalidationSet(
-    const InvalidationSet& invalidation_set) {
+void StyleInvalidator::PushInvalidationSet(const InvalidationSet& invalidation_set) {
   assert(!invalidation_flags_.WholeSubtreeInvalid());
   assert(!invalidation_set.WholeSubtreeInvalid());
   assert(!invalidation_set.IsEmpty());
@@ -93,11 +89,9 @@ void StyleInvalidator::PushInvalidationSet(
   invalidation_sets_.push_back(&invalidation_set);
 }
 
-inline bool StyleInvalidator::MatchesCurrentInvalidationSets(
-    Element& element) const {
-  if (invalidation_flags_.InvalidateCustomPseudo() &&
-      element.ShadowPseudoId() != g_null_atom) {
-    //TRACE_STYLE_INVALIDATOR_INVALIDATION_IF_ENABLED(element,
+inline bool StyleInvalidator::MatchesCurrentInvalidationSets(Element& element) const {
+  if (invalidation_flags_.InvalidateCustomPseudo() && element.ShadowPseudoId() != g_null_atom) {
+    // TRACE_STYLE_INVALIDATOR_INVALIDATION_IF_ENABLED(element,
     //                                                kInvalidateCustomPseudo);
     return true;
   }
@@ -111,8 +105,7 @@ inline bool StyleInvalidator::MatchesCurrentInvalidationSets(
   return false;
 }
 
-bool StyleInvalidator::MatchesCurrentInvalidationSetsAsSlotted(
-    Element& element) const {
+bool StyleInvalidator::MatchesCurrentInvalidationSetsAsSlotted(Element& element) const {
   assert(invalidation_flags_.InvalidatesSlotted());
 
   for (auto* const invalidation_set : invalidation_sets_) {
@@ -126,8 +119,7 @@ bool StyleInvalidator::MatchesCurrentInvalidationSetsAsSlotted(
   return false;
 }
 
-bool StyleInvalidator::MatchesCurrentInvalidationSetsAsParts(
-    Element& element) const {
+bool StyleInvalidator::MatchesCurrentInvalidationSetsAsParts(Element& element) const {
   assert(invalidation_flags_.InvalidatesParts());
 
   for (auto* const invalidation_set : invalidation_sets_) {
@@ -141,21 +133,18 @@ bool StyleInvalidator::MatchesCurrentInvalidationSetsAsParts(
   return false;
 }
 
-void StyleInvalidator::SiblingData::PushInvalidationSet(
-    const SiblingInvalidationSet& invalidation_set) {
+void StyleInvalidator::SiblingData::PushInvalidationSet(const SiblingInvalidationSet& invalidation_set) {
   unsigned invalidation_limit;
   if (invalidation_set.MaxDirectAdjacentSelectors() == UINT_MAX) {
     invalidation_limit = UINT_MAX;
   } else {
-    invalidation_limit =
-        element_index_ + invalidation_set.MaxDirectAdjacentSelectors();
+    invalidation_limit = element_index_ + invalidation_set.MaxDirectAdjacentSelectors();
   }
   invalidation_entries_.push_back(Entry(&invalidation_set, invalidation_limit));
 }
 
-bool StyleInvalidator::SiblingData::MatchCurrentInvalidationSets(
-    Element& element,
-    StyleInvalidator& style_invalidator) {
+bool StyleInvalidator::SiblingData::MatchCurrentInvalidationSets(Element& element,
+                                                                 StyleInvalidator& style_invalidator) {
   bool this_element_needs_style_recalc = false;
   assert(!style_invalidator.WholeSubtreeInvalid());
 
@@ -169,8 +158,7 @@ bool StyleInvalidator::SiblingData::MatchCurrentInvalidationSets(
       continue;
     }
 
-    const SiblingInvalidationSet& invalidation_set =
-        *invalidation_entries_[index].invalidation_set_;
+    const SiblingInvalidationSet& invalidation_set = *invalidation_entries_[index].invalidation_set_;
     ++index;
     if (!invalidation_set.InvalidatesElement(element)) {
       continue;
@@ -180,14 +168,12 @@ bool StyleInvalidator::SiblingData::MatchCurrentInvalidationSets(
       this_element_needs_style_recalc = true;
     }
 
-    if (const std::shared_ptr<DescendantInvalidationSet> descendants =
-            invalidation_set.SiblingDescendants()) {
+    if (const std::shared_ptr<DescendantInvalidationSet> descendants = invalidation_set.SiblingDescendants()) {
       if (descendants->WholeSubtreeInvalid()) {
-        //TRACE_STYLE_INVALIDATOR_INVALIDATION_SET(
+        // TRACE_STYLE_INVALIDATOR_INVALIDATION_SET(
         //    element, kInvalidationSetInvalidatesSubtree, *descendants);
-        element.SetNeedsStyleRecalc(
-            kSubtreeStyleChange, StyleChangeReasonForTracing::Create(
-                                     style_change_reason::kRelatedStyleRule));
+        element.SetNeedsStyleRecalc(kSubtreeStyleChange,
+                                    StyleChangeReasonForTracing::Create(style_change_reason::kRelatedStyleRule));
         return true;
       }
 
@@ -199,29 +185,24 @@ bool StyleInvalidator::SiblingData::MatchCurrentInvalidationSets(
   return this_element_needs_style_recalc;
 }
 
-void StyleInvalidator::PushInvalidationSetsForContainerNode(
-    ContainerNode& node,
-    SiblingData& sibling_data) {
+void StyleInvalidator::PushInvalidationSetsForContainerNode(ContainerNode& node, SiblingData& sibling_data) {
   auto pending_invalidations_iterator = pending_invalidation_map_.find(&node);
   if (pending_invalidations_iterator == pending_invalidation_map_.end()) {
-    //NOTREACHED_IN_MIGRATION()
+    // NOTREACHED_IN_MIGRATION()
     //    << "We should strictly not have marked an element for "
     //       "invalidation without any pending invalidations.";
     return;
   }
-  NodeInvalidationSets& pending_invalidations =
-      pending_invalidations_iterator->second;
+  NodeInvalidationSets& pending_invalidations = pending_invalidations_iterator->second;
 
   assert(pending_nth_sets_.empty());
 
   for (const auto& invalidation_set : pending_invalidations.Siblings()) {
     assert(invalidation_set->IsAlive());
     if (invalidation_set->IsNthSiblingInvalidationSet()) {
-      AddPendingNthSiblingInvalidationSet(
-          To<NthSiblingInvalidationSet>(*invalidation_set));
+      AddPendingNthSiblingInvalidationSet(To<NthSiblingInvalidationSet>(*invalidation_set));
     } else {
-      sibling_data.PushInvalidationSet(
-          To<SiblingInvalidationSet>(*invalidation_set));
+      sibling_data.PushInvalidationSet(To<SiblingInvalidationSet>(*invalidation_set));
     }
   }
 
@@ -235,57 +216,53 @@ void StyleInvalidator::PushInvalidationSetsForContainerNode(
       PushInvalidationSet(*invalidation_set);
     }
     if (UNLIKELY(*g_style_invalidator_tracing_enabled)) {
-    /*
-      DEVTOOLS_TIMELINE_TRACE_EVENT_INSTANT_WITH_CATEGORIES(
-          TRACE_DISABLED_BY_DEFAULT("devtools.timeline.invalidationTracking"),
-          "StyleInvalidatorInvalidationTracking",
-          inspector_style_invalidator_invalidate_event::InvalidationList, node,
-          pending_invalidations.Descendants());
-     */
+      /*
+        DEVTOOLS_TIMELINE_TRACE_EVENT_INSTANT_WITH_CATEGORIES(
+            TRACE_DISABLED_BY_DEFAULT("devtools.timeline.invalidationTracking"),
+            "StyleInvalidatorInvalidationTracking",
+            inspector_style_invalidator_invalidate_event::InvalidationList, node,
+            pending_invalidations.Descendants());
+       */
     }
   }
 }
 
-FORCE_INLINE bool StyleInvalidator::CheckInvalidationSetsAgainstElement(
-    Element& element,
-    SiblingData& sibling_data) {
+FORCE_INLINE bool StyleInvalidator::CheckInvalidationSetsAgainstElement(Element& element, SiblingData& sibling_data) {
   // We need to call both because the sibling data may invalidate the whole
   // subtree at which point we can stop recursing.
   bool matches_current = MatchesCurrentInvalidationSets(element);
-  bool matches_sibling =
-      UNLIKELY(!sibling_data.IsEmpty()) &&
-      sibling_data.MatchCurrentInvalidationSets(element, *this);
+  bool matches_sibling = UNLIKELY(!sibling_data.IsEmpty()) && sibling_data.MatchCurrentInvalidationSets(element, *this);
   return matches_current || matches_sibling;
 }
 
 void StyleInvalidator::InvalidateShadowRootChildren(Element& element) {
-/*
-  // TODO(guopengfei)：注释实现
-  if (ShadowRoot* root = element.GetShadowRoot()) {
-    if (!TreeBoundaryCrossing() && !root->ChildNeedsStyleInvalidation() &&
-        !root->NeedsStyleInvalidation()) {
-      return;
-    }
-    RecursionCheckpoint checkpoint(this);
-    SiblingData sibling_data;
-    if (!WholeSubtreeInvalid()) {
-      if (UNLIKELY(root->NeedsStyleInvalidation())) {
-        // The shadow root does not have any siblings. There should never be any
-        // other sets than the nth set to schedule.
-        assert(sibling_data.IsEmpty());
-        PushInvalidationSetsForContainerNode(*root, sibling_data);
+  /*
+    // TODO(guopengfei)：注释实现
+    if (ShadowRoot* root = element.GetShadowRoot()) {
+      if (!TreeBoundaryCrossing() && !root->ChildNeedsStyleInvalidation() &&
+          !root->NeedsStyleInvalidation()) {
+        return;
       }
+      RecursionCheckpoint checkpoint(this);
+      SiblingData sibling_data;
+      if (!WholeSubtreeInvalid()) {
+        if (UNLIKELY(root->NeedsStyleInvalidation())) {
+          // The shadow root does not have any siblings. There should never be any
+          // other sets than the nth set to schedule.
+          assert(sibling_data.IsEmpty());
+          PushInvalidationSetsForContainerNode(*root, sibling_data);
+        }
+      }
+      PushNthSiblingInvalidationSets(sibling_data);
+      for (Element* child = ElementTraversal::FirstChild(*root); child;
+           child = ElementTraversal::NextSibling(*child)) {
+        Invalidate(*child, sibling_data);
+      }
+      root->ClearChildNeedsStyleInvalidation();
+      root->ClearNeedsStyleInvalidation();
     }
-    PushNthSiblingInvalidationSets(sibling_data);
-    for (Element* child = ElementTraversal::FirstChild(*root); child;
-         child = ElementTraversal::NextSibling(*child)) {
-      Invalidate(*child, sibling_data);
-    }
-    root->ClearChildNeedsStyleInvalidation();
-    root->ClearNeedsStyleInvalidation();
-  }
 
- */
+   */
 }
 
 void StyleInvalidator::InvalidateChildren(Element& element) {
@@ -298,8 +275,7 @@ void StyleInvalidator::InvalidateChildren(Element& element) {
   SiblingData sibling_data STACK_UNINITIALIZED;
   PushNthSiblingInvalidationSets(sibling_data);
 
-  for (Element* child = ElementTraversal::FirstChild(element); child;
-       child = ElementTraversal::NextSibling(*child)) {
+  for (Element* child = ElementTraversal::FirstChild(element); child; child = ElementTraversal::NextSibling(*child)) {
     Invalidate(*child, sibling_data);
   }
 }
@@ -319,8 +295,7 @@ void StyleInvalidator::Invalidate(Element& element, SiblingData& sibling_data) {
       SetWholeSubtreeInvalid();
     } else if (CheckInvalidationSetsAgainstElement(element, sibling_data)) {
       element.SetNeedsStyleRecalc(kLocalStyleChange,
-                                  StyleChangeReasonForTracing::Create(
-                                      style_change_reason::kRelatedStyleRule));
+                                  StyleChangeReasonForTracing::Create(style_change_reason::kRelatedStyleRule));
     }
     if (UNLIKELY(element.NeedsStyleInvalidation())) {
       PushInvalidationSetsForContainerNode(element, sibling_data);
@@ -339,8 +314,7 @@ void StyleInvalidator::Invalidate(Element& element, SiblingData& sibling_data) {
   //   could apply to the descendants.
   // * there are invalidation sets attached to descendants then we need to
   //   clear the flags on the nodes, whether we use the sets or not.
-  if ((!WholeSubtreeInvalid() && HasInvalidationSets() &&
-       element.GetComputedStyle()) ||
+  if ((!WholeSubtreeInvalid() && HasInvalidationSets() && element.GetComputedStyle()) ||
       element.ChildNeedsStyleInvalidation()) {
     InvalidateChildren(element);
   } else {

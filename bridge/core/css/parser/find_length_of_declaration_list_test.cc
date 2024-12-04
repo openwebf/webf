@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "gtest/gtest.h"
 #include "find_length_of_declaration_list-inl.h"
+#include "gtest/gtest.h"
 
 namespace webf {
 
@@ -108,20 +108,13 @@ TEST(FindLengthOfDeclarationListTest, String) {
 }
 
 TEST(FindLengthOfDeclarationListTest, IgnoringDangerousAfterBlock) {
-  EXPECT_EQ(
-      0u,
-      FindLengthOfDeclarationList(
-          "a:b[selector containing difficult stuff]}paddingpaddingpadding"));
-  EXPECT_EQ(
-      3u,
-      FindLengthOfDeclarationList(
-          "a:b}[selector containing difficult stuff]paddingpaddingpadding"));
+  EXPECT_EQ(0u, FindLengthOfDeclarationList("a:b[selector containing difficult stuff]}paddingpaddingpadding"));
+  EXPECT_EQ(3u, FindLengthOfDeclarationList("a:b}[selector containing difficult stuff]paddingpaddingpadding"));
 }
 
 TEST(FindLengthOfDeclarationListTest, NonASCII) {
   // Non-ASCII long after the block should not matter.
-  EXPECT_EQ(10u, FindLengthOfDeclarationList(
-                     ("--foo: bar}                   ❤️")));
+  EXPECT_EQ(10u, FindLengthOfDeclarationList(("--foo: bar}                   ❤️")));
 
   // We should also support these characters inside the block itself.
   EXPECT_TRUE(BlockAccepted(("--foo: \"❤️\"")));
@@ -135,5 +128,4 @@ TEST(FindLengthOfDeclarationListTest, NonASCII) {
 
 #endif  // SIMD
 
-
-}
+}  // namespace webf

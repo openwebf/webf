@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "gtest/gtest.h"
 #include "core/css/parser/css_parser_token.h"
 #include "core/css/parser/css_tokenizer.h"
+#include "gtest/gtest.h"
 
 namespace webf {
 
@@ -34,5 +34,4 @@ TEST(CSSParserTokenTest, SerializeDoubles) {
   EXPECT_EQ("0.00001525878rad", RoundTripToken("0.00001525878rad"));
 }
 
-
-}
+}  // namespace webf

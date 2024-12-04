@@ -52,9 +52,8 @@ namespace {
 // match the given |type| in SharedCharTypes. This version will accept 8 or 16
 // bit characters, but assumes that they have only 7-bit values. It also assumes
 // that all UTF-8 values are correct, so doesn't bother checking
-template<typename CHAR>
-void AppendRaw8BitQueryString(const CHAR* source, int length,
-                              CanonOutput* output) {
+template <typename CHAR>
+void AppendRaw8BitQueryString(const CHAR* source, int length, CanonOutput* output) {
   for (int i = 0; i < length; i++) {
     if (!IsQueryChar(static_cast<unsigned char>(source[i])))
       AppendEscapedChar(static_cast<unsigned char>(source[i]), output);
@@ -63,18 +62,12 @@ void AppendRaw8BitQueryString(const CHAR* source, int length,
   }
 }
 
-void DoConvertToQueryEncoding(const char* spec,
-                              const Component& query,
-                              CanonOutput* output) {
+void DoConvertToQueryEncoding(const char* spec, const Component& query, CanonOutput* output) {
   // No converter, do our own UTF-8 conversion.
-  AppendStringOfType(&spec[query.begin], static_cast<size_t>(query.len),
-                     CHAR_QUERY, output);
+  AppendStringOfType(&spec[query.begin], static_cast<size_t>(query.len), CHAR_QUERY, output);
 }
 
-void DoCanonicalizeQuery(const char* spec,
-                         const Component& query,
-                         CanonOutput* output,
-                         Component* out_query) {
+void DoCanonicalizeQuery(const char* spec, const Component& query, CanonOutput* output, Component* out_query) {
   if (!query.is_valid()) {
     *out_query = Component();
     return;
@@ -90,15 +83,10 @@ void DoCanonicalizeQuery(const char* spec,
 
 }  // namespace
 
-void CanonicalizeQuery(const char* spec,
-                       const Component& query,
-                       CanonOutput* output,
-                       Component* out_query) {
-  DoCanonicalizeQuery(spec, query,
-                                           output, out_query);
+void CanonicalizeQuery(const char* spec, const Component& query, CanonOutput* output, Component* out_query) {
+  DoCanonicalizeQuery(spec, query, output, out_query);
 }
 
 }  // namespace url
 
-
-}
+}  // namespace webf

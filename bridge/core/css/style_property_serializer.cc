@@ -279,10 +279,8 @@ std::string StylePropertySerializer::AsText() const {
       // Only web exposed properties should be part of the style.
       DCHECK(property_class.IsWebExposed());
       // All shorthand properties should have been expanded at parse time.
-      DCHECK(property_set_.IsDescriptorContext() ||
-             (property_class.IsProperty() && !property_class.IsShorthand()));
-      DCHECK(!property_set_.IsDescriptorContext() ||
-             property_class.IsDescriptor());
+      DCHECK(property_set_.IsDescriptorContext() || (property_class.IsProperty() && !property_class.IsShorthand()));
+      DCHECK(!property_set_.IsDescriptorContext() || property_class.IsDescriptor());
     }
 #endif  // DCHECK_IS_ON()
 
@@ -395,7 +393,8 @@ static bool AllowInitialInShorthand(CSSPropertyID property_id) {
   }
 }
 
-std::string StylePropertySerializer::CommonShorthandChecks(const StylePropertyShorthand& shorthand, bool* is_check_success) const {
+std::string StylePropertySerializer::CommonShorthandChecks(const StylePropertyShorthand& shorthand,
+                                                           bool* is_check_success) const {
   unsigned longhand_count = shorthand.length();
   if (!longhand_count || longhand_count > kMaxShorthandExpansion) {
     NOTREACHED_IN_MIGRATION();
@@ -543,8 +542,8 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
       return GetShorthandValueForDoubleBarCombinator(flexFlowShorthand());
     case CSSPropertyID::kGrid:
       return GetShorthandValueForGrid(gridShorthand());
-//    case CSSPropertyID::kGridTemplate:
-//      return GetShorthandValueForGridTemplate(gridTemplateShorthand());
+      //    case CSSPropertyID::kGridTemplate:
+      //      return GetShorthandValueForGridTemplate(gridTemplateShorthand());
     case CSSPropertyID::kGridColumn:
       return GetShorthandValueForGridLine(gridColumnShorthand());
     case CSSPropertyID::kGridRow:
@@ -581,8 +580,8 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
       return OffsetValue();
     case CSSPropertyID::kOverflow:
       return Get2Values(overflowShorthand());
-//    case CSSPropertyID::kOverscrollBehavior:
-//      return Get2Values(overscrollBehaviorShorthand());
+      //    case CSSPropertyID::kOverscrollBehavior:
+      //      return Get2Values(overscrollBehaviorShorthand());
     case CSSPropertyID::kPadding:
       return Get4Values(paddingShorthand());
     case CSSPropertyID::kPaddingBlock:
@@ -595,10 +594,10 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
       return GetLayeredShorthandValue(transitionShorthand());
     case CSSPropertyID::kTextEmphasis:
       return GetShorthandValue(textEmphasisShorthand());
-//    case CSSPropertyID::kTextSpacing:
-//      return TextSpacingValue();
-//    case CSSPropertyID::kWebkitTextStroke:
-//      return GetShorthandValue(webkitTextStrokeShorthand());
+      //    case CSSPropertyID::kTextSpacing:
+      //      return TextSpacingValue();
+      //    case CSSPropertyID::kWebkitTextStroke:
+      //      return GetShorthandValue(webkitTextStrokeShorthand());
     case CSSPropertyID::kBorderRadius:
       return BorderRadiusValue();
     case CSSPropertyID::kPageBreakAfter:
@@ -612,7 +611,8 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
     case CSSPropertyID::kWebkitColumnBreakInside:
     default:
       assert_m(false, ("Shorthand property " + (CSSPropertyName(property_id).ToAtomicString().ToStdString()) +
-                                            " must be handled in StylePropertySerializer::SerializeShorthand.").c_str());
+                       " must be handled in StylePropertySerializer::SerializeShorthand.")
+                          .c_str());
       return "";
   }
 }

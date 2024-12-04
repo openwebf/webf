@@ -80,6 +80,6 @@ class FontVariantLigaturesParser {
   std::shared_ptr<CSSValueList> result_;
 };
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_CSS_PARSER_FONT_VARIANT_LIGATURES_PARSER_H_

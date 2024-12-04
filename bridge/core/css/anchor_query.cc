@@ -15,13 +15,12 @@ namespace webf {
 
 bool AnchorQuery::operator==(const AnchorQuery& other) const {
   return query_type_ == other.query_type_ && percentage_ == other.percentage_ &&
-         webf::ValuesEquivalent(anchor_specifier_, other.anchor_specifier_) &&
-         value_ == other.value_;
+         webf::ValuesEquivalent(anchor_specifier_, other.anchor_specifier_) && value_ == other.value_;
 }
 
 void AnchorQuery::Trace(GCVisitor* visitor) const {
   // TODO(guopengfei)：
-  //visitor->Trace(anchor_specifier_);
+  // visitor->Trace(anchor_specifier_);
 }
 
 }  // namespace webf

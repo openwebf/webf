@@ -5,11 +5,11 @@
 #include "rect_conversions.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cassert>
+#include <cmath>
 
-#include "foundation/macros.h"
 #include "core/base/numerics/safe_conversions.h"
+#include "foundation/macros.h"
 
 namespace gfx {
 
@@ -51,8 +51,7 @@ Rect ToEnclosingRectIgnoringError(const RectF& r, float error) {
 
 Rect ToEnclosedRect(const RectF& rect) {
   Rect result;
-  result.SetByBounds(base::ClampCeil(rect.x()), base::ClampCeil(rect.y()),
-                     base::ClampFloor(rect.right()),
+  result.SetByBounds(base::ClampCeil(rect.x()), base::ClampCeil(rect.y()), base::ClampFloor(rect.right()),
                      base::ClampFloor(rect.bottom()));
   return result;
 }
@@ -103,10 +102,8 @@ bool IsNearestRectWithinDistance(const gfx::RectF& rect, float distance) {
   int max_x = base::ClampRound(float_max_x);
   int max_y = base::ClampRound(float_max_y);
 
-  return (std::abs(min_x - float_min_x) < distance) &&
-         (std::abs(min_y - float_min_y) < distance) &&
-         (std::abs(max_x - float_max_x) < distance) &&
-         (std::abs(max_y - float_max_y) < distance);
+  return (std::abs(min_x - float_min_x) < distance) && (std::abs(min_y - float_min_y) < distance) &&
+         (std::abs(max_x - float_max_x) < distance) && (std::abs(max_y - float_max_y) < distance);
 }
 
 gfx::Rect ToRoundedRect(const gfx::RectF& rect) {
@@ -120,8 +117,8 @@ gfx::Rect ToRoundedRect(const gfx::RectF& rect) {
 }
 
 Rect ToFlooredRectDeprecated(const RectF& rect) {
-  return Rect(base::ClampFloor(rect.x()), base::ClampFloor(rect.y()),
-              base::ClampFloor(rect.width()), base::ClampFloor(rect.height()));
+  return Rect(base::ClampFloor(rect.x()), base::ClampFloor(rect.y()), base::ClampFloor(rect.width()),
+              base::ClampFloor(rect.height()));
 }
 
 }  // namespace gfx

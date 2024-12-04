@@ -11,22 +11,22 @@
 #include "webf_test_context.h"
 
 #ifdef __linux__
-    #include <execinfo.h>
-    #include <signal.h>
-    #include <unistd.h>
+#include <execinfo.h>
+#include <signal.h>
+#include <unistd.h>
 #elif _WIN32
-    #include <windows.h>
-    #include <dbghelp.h>
-#pragma comment(lib, "dbghelp.lib") // Link with dbghelp library on Windows
+#include <dbghelp.h>
+#include <windows.h>
+#pragma comment(lib, "dbghelp.lib")  // Link with dbghelp library on Windows
 #endif
 
 std::unordered_map<int, webf::WebFTestContext*> testContextPool = std::unordered_map<int, webf::WebFTestContext*>();
 
 void printStackTrace() {
 #ifdef __linux__
-  void *array[10];
+  void* array[10];
   size_t size = backtrace(array, 10);
-  char **strings = backtrace_symbols(array, size);
+  char** strings = backtrace_symbols(array, size);
 
   std::cout << "Stack trace:" << std::endl;
   for (size_t i = 0; i < size; i++) {
@@ -35,11 +35,11 @@ void printStackTrace() {
 
   free(strings);
 #elif _WIN32
-  void *stack[62];
+  void* stack[62];
   HANDLE process = GetCurrentProcess();
   SymInitialize(process, NULL, TRUE);
   WORD frames = CaptureStackBackTrace(0, 62, stack, NULL);
-  SYMBOL_INFO *symbol = (SYMBOL_INFO *)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
+  SYMBOL_INFO* symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
   symbol->MaxNameLen = 255;
   symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 

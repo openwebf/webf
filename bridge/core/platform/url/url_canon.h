@@ -7,7 +7,6 @@
 #ifndef WEBF_URL_CANON_H
 #define WEBF_URL_CANON_H
 
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -18,9 +17,7 @@
 #include "foundation/macros.h"
 #include "url_parse.h"
 
-
 namespace webf {
-
 
 namespace url {
 
@@ -76,9 +73,7 @@ class CanonOutputT {
   size_t capacity() const { return buffer_len_; }
 
   // Returns the contents of the buffer as a string_view.
-  std::basic_string_view<T> view() const {
-    return std::basic_string_view<T>(data(), length());
-  }
+  std::basic_string_view<T> view() const { return std::basic_string_view<T>(data(), length()); }
 
   // Called by the user of this class to get the output. The output will NOT
   // be NULL-terminated. Call length() to get the
@@ -161,7 +156,7 @@ class CanonOutputT {
   // RAW_PTR_EXCLUSION: Performance (based on analysis of sampling profiler
   // data).
   // NOTE(xiezuobing): remove RAW_PTR_EXCLUSION？
-//  RAW_PTR_EXCLUSION T* buffer_ = nullptr;
+  //  RAW_PTR_EXCLUSION T* buffer_ = nullptr;
   T* buffer_ = nullptr;
   size_t buffer_len_ = 0;
 
@@ -186,8 +181,7 @@ class RawCanonOutputT : public CanonOutputT<T> {
 
   void Resize(size_t sz) override {
     T* new_buf = new T[sz];
-    memcpy(new_buf, this->buffer_,
-           sizeof(T) * (this->cur_len_ < sz ? this->cur_len_ : sz));
+    memcpy(new_buf, this->buffer_, sizeof(T) * (this->cur_len_ < sz ? this->cur_len_ : sz));
     if (this->buffer_ != fixed_buffer_)
       delete[] this->buffer_;
     this->buffer_ = new_buf;
@@ -214,7 +208,7 @@ class RawCanonOutput : public RawCanonOutputT<char, fixed_capacity> {};
 //
 // Embedders will want to see the unit test for the ICU version.
 
-class  CharsetConverter {
+class CharsetConverter {
  public:
   CharsetConverter() {}
   virtual ~CharsetConverter() {}
@@ -298,10 +292,7 @@ const char* RemoveURLWhitespace(const char* input,
 //
 // The 8-bit version requires UTF-8 encoding.
 
-bool CanonicalizeScheme(const char* spec,
-                        const Component& scheme,
-                        CanonOutput* output,
-                        Component* out_scheme);
+bool CanonicalizeScheme(const char* spec, const Component& scheme, CanonOutput* output, Component* out_scheme);
 
 // User info: username/password. If present, this will add the delimiters so
 // the output will be "<username>:<password>@" or "<username>@". Empty
@@ -362,9 +353,7 @@ struct CanonHostInfo {
 
   // Convenience function to calculate the length of an IP address corresponding
   // to the current IP version in |family|, if any. For use with |address|.
-  int AddressLength() const {
-    return family == IPV4 ? 4 : (family == IPV6 ? 16 : 0);
-  }
+  int AddressLength() const { return family == IPV4 ? 4 : (family == IPV6 ? 16 : 0); }
 };
 
 // Deprecated. Please call either CanonicalizeSpecialHost or
@@ -372,30 +361,21 @@ struct CanonHostInfo {
 //
 // TODO(crbug.com/40063064): Check the callers of these functions.
 
-bool CanonicalizeHost(const char* spec,
-                      const Component& host,
-                      CanonOutput* output,
-                      Component* out_host);
+bool CanonicalizeHost(const char* spec, const Component& host, CanonOutput* output, Component* out_host);
 
 // Host in special URLs.
 //
 // The 8-bit version requires UTF-8 encoding. Use this version when you only
 // need to know whether canonicalization succeeded.
 
-bool CanonicalizeSpecialHost(const char* spec,
-                             const Component& host,
-                             CanonOutput& output,
-                             Component& out_host);
+bool CanonicalizeSpecialHost(const char* spec, const Component& host, CanonOutput& output, Component& out_host);
 
 // Deprecated. Please call either CanonicalizeSpecialHostVerbose or
 // CanonicalizeNonSpecialHostVerbose.
 //
 // TODO(crbug.com/40063064): Check the callers of these functions.
 
-void CanonicalizeHostVerbose(const char* spec,
-                             const Component& host,
-                             CanonOutput* output,
-                             CanonHostInfo* host_info);
+void CanonicalizeHostVerbose(const char* spec, const Component& host, CanonOutput* output, CanonHostInfo* host_info);
 
 // Extended version of CanonicalizeSpecialHost, which returns additional
 // information. Use this when you need to know whether the hostname was an IP
@@ -428,16 +408,11 @@ void CanonicalizeSpecialHostVerbose(const char* spec,
 // host as valid (because it's designed to be used for substrings) while the
 // full version above will mark empty hosts as broken.
 
-bool CanonicalizeHostSubstring(const char* spec,
-                               const Component& host,
-                               CanonOutput* output);
+bool CanonicalizeHostSubstring(const char* spec, const Component& host, CanonOutput* output);
 
 // Host in non-special URLs.
 
-bool CanonicalizeNonSpecialHost(const char* spec,
-                                const Component& host,
-                                CanonOutput& output,
-                                Component& out_host);
+bool CanonicalizeNonSpecialHost(const char* spec, const Component& host, CanonOutput& output, Component& out_host);
 
 // Extended version of CanonicalizeNonSpecialHost, which returns additional
 // information. See CanonicalizeSpecialHost for details.
@@ -457,17 +432,11 @@ void CanonicalizeNonSpecialHostVerbose(const char* spec,
 // the input is unescaped and name-prepped, etc. It should not normally be
 // necessary or wise to call this directly.
 
-void CanonicalizeIPAddress(const char* spec,
-                           const Component& host,
-                           CanonOutput* output,
-                           CanonHostInfo* host_info);
+void CanonicalizeIPAddress(const char* spec, const Component& host, CanonOutput* output, CanonHostInfo* host_info);
 
 // Similar to CanonicalizeIPAddress, but supports only IPv6 address.
 
-void CanonicalizeIPv6Address(const char* spec,
-                             const Component& host,
-                             CanonOutput& output,
-                             CanonHostInfo& host_info);
+void CanonicalizeIPv6Address(const char* spec, const Component& host, CanonOutput& output, CanonHostInfo& host_info);
 
 // Port: this function will add the colon for the port if a port is present.
 // The caller can pass PORT_UNSPECIFIED as the
@@ -507,18 +476,12 @@ bool CanonicalizePath(const char* spec,
 // These functions are also used in net/third_party code. So removing these
 // functions requires several steps.
 
-bool CanonicalizePath(const char* spec,
-                      const Component& path,
-                      CanonOutput* output,
-                      Component* out_path);
+bool CanonicalizePath(const char* spec, const Component& path, CanonOutput* output, Component* out_path);
 
 // Like CanonicalizePath(), but does not assume that its operating on the
 // entire path.  It therefore does not prepend a slash, etc.
 
-bool CanonicalizePartialPath(const char* spec,
-                             const Component& path,
-                             CanonOutput* output,
-                             Component* out_path);
+bool CanonicalizePartialPath(const char* spec, const Component& path, CanonOutput* output, Component* out_path);
 
 // Canonicalizes the input as a file path. This is like CanonicalizePath except
 // that it also handles Windows drive specs. For example, the path can begin
@@ -527,10 +490,7 @@ bool CanonicalizePartialPath(const char* spec,
 //
 // The 8-bit version requires UTF-8 encoding.
 
-bool FileCanonicalizePath(const char* spec,
-                          const Component& path,
-                          CanonOutput* output,
-                          Component* out_path);
+bool FileCanonicalizePath(const char* spec, const Component& path, CanonOutput* output, Component* out_path);
 
 // Query: Prepends the ? if needed.
 //
@@ -545,10 +505,7 @@ bool FileCanonicalizePath(const char* spec,
 //
 // The converter can be NULL. In this case, the output encoding will be UTF-8.
 
-void CanonicalizeQuery(const char* spec,
-                       const Component& query,
-                       CanonOutput* output,
-                       Component* out_query);
+void CanonicalizeQuery(const char* spec, const Component& query, CanonOutput* output, Component* out_query);
 
 // Ref: Prepends the # if needed. The output will be UTF-8 (this is the only
 // canonicalizer that does not produce ASCII output). The output is
@@ -557,10 +514,7 @@ void CanonicalizeQuery(const char* spec,
 // This function will not fail. If the input is invalid UTF-8/UTF-16, we'll use
 // the "Unicode replacement character" for the confusing bits and copy the rest.
 
-void CanonicalizeRef(const char* spec,
-                     const Component& path,
-                     CanonOutput* output,
-                     Component* out_path);
+void CanonicalizeRef(const char* spec, const Component& path, CanonOutput* output, Component* out_path);
 // Full canonicalizer ---------------------------------------------------------
 //
 // These functions replace any string contents, rather than append as above.
@@ -589,27 +543,16 @@ bool CanonicalizeNonSpecialURL(const char* spec,
 
 // Use for file URLs.
 
-bool CanonicalizeFileURL(const char* spec,
-                         int spec_len,
-                         const Parsed& parsed,
-                         CanonOutput* output,
-                         Parsed* new_parsed);
+bool CanonicalizeFileURL(const char* spec, int spec_len, const Parsed& parsed, CanonOutput* output, Parsed* new_parsed);
 
 // Use for filesystem URLs.
 
-bool CanonicalizeFileSystemURL(const char* spec,
-                               const Parsed& parsed,
-                               CanonOutput* output,
-                               Parsed* new_parsed);
+bool CanonicalizeFileSystemURL(const char* spec, const Parsed& parsed, CanonOutput* output, Parsed* new_parsed);
 
 // Use for path URLs such as javascript. This does not modify the path in any
 // way, for example, by escaping it.
 
-bool CanonicalizePathURL(const char* spec,
-                         int spec_len,
-                         const Parsed& parsed,
-                         CanonOutput* output,
-                         Parsed* new_parsed);
+bool CanonicalizePathURL(const char* spec, int spec_len, const Parsed& parsed, CanonOutput* output, Parsed* new_parsed);
 // Use to canonicalize just the path component of a "path" URL; e.g. the
 // path of a javascript URL.
 

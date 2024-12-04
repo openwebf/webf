@@ -7,9 +7,9 @@
 #include "cubic_bezier.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <limits>
-#include <cassert>
 
 namespace gfx {
 
@@ -41,10 +41,7 @@ CubicBezier::CubicBezier(double p1x, double p1y, double p2x, double p2y) {
 
 CubicBezier::CubicBezier(const CubicBezier& other) = default;
 
-void CubicBezier::InitCoefficients(double p1x,
-                                   double p1y,
-                                   double p2x,
-                                   double p2y) {
+void CubicBezier::InitCoefficients(double p1x, double p1y, double p2x, double p2y) {
   // Calculate the polynomial coefficients, implicit first and last control
   // points are (0,0) and (1,1).
   cx_ = 3.0 * p1x;
@@ -63,10 +60,7 @@ void CubicBezier::InitCoefficients(double p1x,
 #endif
 }
 
-void CubicBezier::InitGradients(double p1x,
-                                double p1y,
-                                double p2x,
-                                double p2y) {
+void CubicBezier::InitGradients(double p1x, double p1y, double p2x, double p2y) {
   // End-point gradients are used to calculate timing function results
   // outside the range [0, 1].
   //
@@ -199,8 +193,7 @@ double CubicBezier::SolveCurveX(double x, double epsilon) const {
     if (x <= spline_samples_[i]) {
       t1 = delta_t * i;
       t0 = t1 - delta_t;
-      t2 = t0 + (t1 - t0) * (x - spline_samples_[i - 1]) /
-                    (spline_samples_[i] - spline_samples_[i - 1]);
+      t2 = t0 + (t1 - t0) * (x - spline_samples_[i - 1]) / (spline_samples_[i] - spline_samples_[i - 1]);
       break;
     }
   }

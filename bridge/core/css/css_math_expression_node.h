@@ -39,8 +39,8 @@
 #include <optional>
 #include <span>
 
-#include "core/base/memory/shared_ptr.h"
 #include "core/base/containers/enum_set.h"
+#include "core/base/memory/shared_ptr.h"
 #include "core/css/anchor_query.h"
 #include "core/css/css_anchor_query_enums.h"
 #include "core/css/css_custom_ident_value.h"
@@ -51,7 +51,6 @@
 #include "core/css/css_value.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/dom/tree_scope.h"
-#include "core/platform/geometry/calculation_value.h"
 #include "core/layout/geometry/axis.h"
 #include "core/platform/geometry/calculation_value.h"
 #include "css_value_keywords.h"
@@ -612,7 +611,8 @@ struct DowncastTraits<CSSMathExpressionOperation> {
 
 class CSSMathExpressionContainerFeature final : public CSSMathExpressionNode {
  public:
-  CSSMathExpressionContainerFeature(std::shared_ptr<const CSSIdentifierValue> size_feature, std::shared_ptr<const CSSCustomIdentValue> container_name);
+  CSSMathExpressionContainerFeature(std::shared_ptr<const CSSIdentifierValue> size_feature,
+                                    std::shared_ptr<const CSSCustomIdentValue> container_name);
 
   std::shared_ptr<CSSMathExpressionNode> Copy() const final {
     return std::make_shared<CSSMathExpressionContainerFeature>(size_feature_, container_name_);
@@ -636,9 +636,7 @@ class CSSMathExpressionContainerFeature final : public CSSMathExpressionNode {
 
   CSSValueID GetValue() const { return size_feature_->GetValueID(); }
 
-   CSSPrimitiveValue::BoolStatus IsNegative() const final {
-     return CSSPrimitiveValue::BoolStatus::kUnresolvable;
-   }
+  CSSPrimitiveValue::BoolStatus IsNegative() const final { return CSSPrimitiveValue::BoolStatus::kUnresolvable; }
 
   std::string CustomCSSText() const final;
   std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
@@ -648,8 +646,7 @@ class CSSMathExpressionContainerFeature final : public CSSMathExpressionNode {
     return 0;
   }
   std::optional<double> ComputeValueInCanonicalUnit() const final { return std::nullopt; }
-  std::optional<double> ComputeValueInCanonicalUnit(
-      const CSSLengthResolver& length_resolver) const final {
+  std::optional<double> ComputeValueInCanonicalUnit(const CSSLengthResolver& length_resolver) const final {
     assert(false);
   }
   double ComputeLengthPx(const CSSLengthResolver& length_resolver) const final {
@@ -692,7 +689,7 @@ struct DowncastTraits<CSSMathExpressionContainerFeature> {
 };
 
 //// anchor() and anchor-size()
-//class CSSMathExpressionAnchorQuery final : public CSSMathExpressionNode {
+// class CSSMathExpressionAnchorQuery final : public CSSMathExpressionNode {
 // public:
 //  CSSMathExpressionAnchorQuery(CSSAnchorQueryType type,
 //                               std::shared_ptr<const CSSValue> anchor_specifier,
@@ -768,8 +765,8 @@ struct DowncastTraits<CSSMathExpressionContainerFeature> {
 //  std::shared_ptr<const CSSPrimitiveValue> fallback_;
 //};
 //
-//template <>
-//struct DowncastTraits<CSSMathExpressionAnchorQuery> {
+// template <>
+// struct DowncastTraits<CSSMathExpressionAnchorQuery> {
 //  static bool AllowFrom(const CSSMathExpressionNode& node) { return node.IsAnchorQuery(); }
 //};
 

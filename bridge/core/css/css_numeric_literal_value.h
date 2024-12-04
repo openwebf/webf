@@ -22,9 +22,7 @@ class CSSNumericLiteralValue : public CSSPrimitiveValue {
 
   CSSNumericLiteralValue(double num, UnitType type);
 
-  UnitType GetType() const {
-    return static_cast<UnitType>(numeric_literal_unit_type_);
-  }
+  UnitType GetType() const { return static_cast<UnitType>(numeric_literal_unit_type_); }
 
   bool IsAngle() const { return CSSPrimitiveValue::IsAngle(GetType()); }
   bool IsFontRelativeLength() const {
@@ -48,31 +46,19 @@ class CSSNumericLiteralValue : public CSSPrimitiveValue {
     }
   }
   bool IsQuirkyEms() const { return GetType() == UnitType::kQuirkyEms; }
-  bool IsViewportPercentageLength() const {
-    return CSSPrimitiveValue::IsViewportPercentageLength(GetType());
-  }
+  bool IsViewportPercentageLength() const { return CSSPrimitiveValue::IsViewportPercentageLength(GetType()); }
   bool IsLength() const { return CSSPrimitiveValue::IsLength(GetType()); }
   bool IsPx() const { return GetType() == UnitType::kPixels; }
-  bool IsNumber() const {
-    return GetType() == UnitType::kNumber || GetType() == UnitType::kInteger;
-  }
+  bool IsNumber() const { return GetType() == UnitType::kNumber || GetType() == UnitType::kInteger; }
   bool IsInteger() const { return GetType() == UnitType::kInteger; }
   bool IsPercentage() const { return GetType() == UnitType::kPercentage; }
   bool IsTime() const { return CSSPrimitiveValue::IsTime(GetType()); }
-  bool IsResolution() const {
-    return CSSPrimitiveValue::IsResolution(GetType());
-  }
+  bool IsResolution() const { return CSSPrimitiveValue::IsResolution(GetType()); }
   bool IsFlex() const { return CSSPrimitiveValue::IsFlex(GetType()); }
 
-  BoolStatus IsZero() const {
-    return !DoubleValue() ? BoolStatus::kTrue : BoolStatus::kFalse;
-  }
-  BoolStatus IsOne() const {
-    return DoubleValue() == 1.0 ? BoolStatus::kTrue : BoolStatus::kFalse;
-  }
-  BoolStatus IsNegative() const {
-    return DoubleValue() < 0.0 ? BoolStatus::kTrue : BoolStatus::kFalse;
-  }
+  BoolStatus IsZero() const { return !DoubleValue() ? BoolStatus::kTrue : BoolStatus::kFalse; }
+  BoolStatus IsOne() const { return DoubleValue() == 1.0 ? BoolStatus::kTrue : BoolStatus::kFalse; }
+  BoolStatus IsNegative() const { return DoubleValue() < 0.0 ? BoolStatus::kTrue : BoolStatus::kFalse; }
 
   bool IsComputationallyIndependent() const;
 
@@ -87,8 +73,7 @@ class CSSNumericLiteralValue : public CSSPrimitiveValue {
   double ComputeNumber() const;
   double ComputePercentage() const;
   double ComputeLengthPx(const CSSLengthResolver&) const;
-  bool AccumulateLengthArray(CSSLengthArray& length_array,
-                             double multiplier) const;
+  bool AccumulateLengthArray(CSSLengthArray& length_array, double multiplier) const;
   void AccumulateLengthUnitTypes(LengthTypeFlags& types) const;
 
   std::string CustomCSSText() const;
@@ -105,9 +90,7 @@ class CSSNumericLiteralValue : public CSSPrimitiveValue {
 
 template <>
 struct DowncastTraits<CSSNumericLiteralValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsNumericLiteralValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsNumericLiteralValue(); }
 };
 
 }  // namespace webf

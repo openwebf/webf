@@ -7,12 +7,10 @@
 
 namespace webf {
 
-
 TEST(CSSParserLocalContextTest, Constructor) {
   EXPECT_FALSE(CSSParserLocalContext().UseAliasParsing());
   EXPECT_FALSE(CSSParserLocalContext().IsAnimationTainted());
-  EXPECT_EQ(CSSPropertyID::kInvalid,
-            CSSParserLocalContext().CurrentShorthand());
+  EXPECT_EQ(CSSPropertyID::kInvalid, CSSParserLocalContext().CurrentShorthand());
 }
 
 TEST(CSSParserLocalContextTest, WithAliasParsing) {
@@ -30,8 +28,7 @@ TEST(CSSParserLocalContextTest, WithAnimationTainted) {
 TEST(CSSParserLocalContextTest, WithCurrentShorthand) {
   const CSSParserLocalContext context;
   const CSSPropertyID shorthand = CSSPropertyID::kBackground;
-  EXPECT_EQ(shorthand,
-            context.WithCurrentShorthand(shorthand).CurrentShorthand());
+  EXPECT_EQ(shorthand, context.WithCurrentShorthand(shorthand).CurrentShorthand());
 }
 
 TEST(CSSParserLocalContextTest, LocalMutation) {
@@ -65,5 +62,4 @@ TEST(CSSParserLocalContextTest, LocalMutation) {
   }
 }
 
-
-}
+}  // namespace webf

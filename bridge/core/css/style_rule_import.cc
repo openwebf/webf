@@ -28,7 +28,6 @@
 
 namespace webf {
 
-
 StyleRuleImport::StyleRuleImport(const std::string& href,
                                  LayerName&& layer,
                                  bool supported,
@@ -57,13 +56,10 @@ bool StyleRuleImport::IsLoading() const {
   return loading_ || (style_sheet_ && style_sheet_->IsLoading());
 }
 
-void StyleRuleImport::RequestStyleSheet() {
-
-}
+void StyleRuleImport::RequestStyleSheet() {}
 
 std::string StyleRuleImport::GetLayerNameAsString() const {
   return LayerNameAsString(layer_);
 }
-
 
 }  // namespace webf

@@ -27,12 +27,12 @@
 /*
 #include "core/animation/css/css_animation_data.h"
 #include "core/animation/css/css_transition_data.h"
+#include "core/animation/effect_model.h"
 #include "core/animation/timing.h"
-#include "css_property_names.h"
+#include "core/platform/animation/timing_function.h"
 #include "core/style/computed_style_constants.h"
 #include "core/style/style_timeline.h"
-#include "core/platform/animation/timing_function.h"
-#include "core/animation/effect_model.h"
+#include "css_property_names.h"
 
 namespace webf {
 

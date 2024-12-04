@@ -5,7 +5,6 @@
 #include "names_map.h"
 #include "core/html/parser/html_parser_idioms.h"
 
-
 namespace webf {
 
 NamesMap::NamesMap(const AtomicString& string) {

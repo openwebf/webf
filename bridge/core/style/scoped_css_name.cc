@@ -4,6 +4,4 @@
 
 #include "core/style/scoped_css_name.h"
 
-namespace webf {
-
-}
+namespace webf {}

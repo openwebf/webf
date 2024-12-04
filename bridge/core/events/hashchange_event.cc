@@ -46,9 +46,9 @@ HashchangeEvent::HashchangeEvent(webf::ExecutingContext* context,
                                 reinterpret_cast<AutoFreeNativeString*>(native_hash_change_event->oldURL))))
 #else
       new_url_(AtomicString(std::unique_ptr<AutoFreeNativeString>(
-                                reinterpret_cast<AutoFreeNativeString*>(native_hash_change_event->newURL)))),
+          reinterpret_cast<AutoFreeNativeString*>(native_hash_change_event->newURL)))),
       old_url_(AtomicString(std::unique_ptr<AutoFreeNativeString>(
-                                reinterpret_cast<AutoFreeNativeString*>(native_hash_change_event->oldURL))))
+          reinterpret_cast<AutoFreeNativeString*>(native_hash_change_event->oldURL))))
 #endif
 {
 }

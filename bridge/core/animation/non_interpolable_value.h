@@ -7,7 +7,6 @@
 #ifndef WEBF_CORE_ANIMATION_NON_INTERPOLABLE_VALUE_H_
 #define WEBF_CORE_ANIMATION_NON_INTERPOLABLE_VALUE_H_
 
-
 namespace webf {
 
 // Represents components of a PropertySpecificKeyframe's value that either do
@@ -27,8 +26,7 @@ class NonInterpolableValue {
   Type GetType() const final { return static_type_; } \
   static Type static_type_
 
-#define DEFINE_NON_INTERPOLABLE_VALUE_TYPE(T) \
-  NonInterpolableValue::Type T::static_type_ = &T::static_type_
+#define DEFINE_NON_INTERPOLABLE_VALUE_TYPE(T) NonInterpolableValue::Type T::static_type_ = &T::static_type_
 
 }  // namespace webf
 

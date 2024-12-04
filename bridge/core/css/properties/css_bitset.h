@@ -9,15 +9,14 @@
 #ifndef WEBF_CSS_BITSET_H
 #define WEBF_CSS_BITSET_H
 
-
 #include <algorithm>
 #include <array>
 #include <bit>
 #include <cstring>
 #include <initializer_list>
 
-#include "css_property_names.h"
 #include "core/base/bits.h"
+#include "css_property_names.h"
 
 namespace webf {
 
@@ -32,10 +31,9 @@ namespace webf {
 template <size_t kBits>
 class CSSBitsetBase {
  public:
-  static_assert(
-      kBits <= kNumCSSPropertyIDs,
-      "Bit count must not exceed kNumCSSPropertyIDs, as each bit position must "
-      "be representable as a CSSPropertyID");
+  static_assert(kBits <= kNumCSSPropertyIDs,
+                "Bit count must not exceed kNumCSSPropertyIDs, as each bit position must "
+                "be representable as a CSSPropertyID");
   static_assert(kBits > 0, "Iterator assumes at least one chunk.");
 
   static const size_t kChunks = (kBits + 63) / 64;
@@ -46,17 +44,14 @@ class CSSBitsetBase {
   // This slightly weird construction helps Clang make an actual
   // compile-time static value, until we have constinit.
   template <int N>
-  explicit constexpr CSSBitsetBase(const CSSPropertyID (&list)[N])
-      : chunks_(CreateChunks(list)) {}
+  explicit constexpr CSSBitsetBase(const CSSPropertyID (&list)[N]) : chunks_(CreateChunks(list)) {}
 
   CSSBitsetBase& operator=(const CSSBitsetBase& o) = default;
 
   bool operator==(const CSSBitsetBase& o) const { return chunks_ == o.chunks_; }
   bool operator!=(const CSSBitsetBase& o) const { return !(*this == o); }
 
-  inline uint64_t HighPriorityBits() const {
-    return chunks_.data()[0] & HighPriorityBitMask();
-  }
+  inline uint64_t HighPriorityBits() const { return chunks_.data()[0] & HighPriorityBitMask(); }
 
   inline void Set(CSSPropertyID id) {
     size_t bit = static_cast<size_t>(static_cast<unsigned>(id));
@@ -92,10 +87,7 @@ class CSSBitsetBase {
    public:
     // Only meant for internal use (from begin() or end()).
     Iterator(const uint64_t* chunks, size_t chunk_index, size_t index)
-        : chunks_(chunks),
-          index_(index),
-          chunk_index_(chunk_index),
-          chunk_(chunks_[0]) {
+        : chunks_(chunks), index_(index), chunk_index_(chunk_index), chunk_(chunks_[0]) {
       assert(index == 0 || index == kBits);
       if (index < kBits) {
         ++*this;  // Go to the first set bit.
@@ -128,12 +120,8 @@ class CSSBitsetBase {
       return static_cast<CSSPropertyID>(index_);
     }
 
-    inline bool operator==(const Iterator& o) const {
-      return index_ == o.index_;
-    }
-    inline bool operator!=(const Iterator& o) const {
-      return index_ != o.index_;
-    }
+    inline bool operator==(const Iterator& o) const { return index_ == o.index_; }
+    inline bool operator!=(const Iterator& o) const { return index_ != o.index_; }
 
    private:
     const uint64_t* chunks_;
@@ -158,16 +146,14 @@ class CSSBitsetBase {
   // Like begin(), except that it skips all high-priority properties
   // (so starts at the first set bit after kLastHighPriorityCSSProperty).
   Iterator BeginAfterHighPriority() const {
-    return Iterator(chunks_.data(),
-                    typename Iterator::FirstNonHighPriorityTag());
+    return Iterator(chunks_.data(), typename Iterator::FirstNonHighPriorityTag());
   }
 
  private:
   std::array<uint64_t, kChunks> chunks_;
 
   template <int N>
-  static constexpr std::array<uint64_t, kChunks> CreateChunks(
-      const CSSPropertyID (&list)[N]) {
+  static constexpr std::array<uint64_t, kChunks> CreateChunks(const CSSPropertyID (&list)[N]) {
     std::array<uint64_t, kChunks> chunks{};
     for (CSSPropertyID id : list) {
       unsigned bit = static_cast<unsigned>(id);
@@ -178,14 +164,9 @@ class CSSBitsetBase {
 
   static constexpr uint64_t HighPriorityBitMask() {
     constexpr int from = static_cast<int>(kFirstHighPriorityCSSProperty);
-    constexpr int to_exclusive =
-        static_cast<int>(kLastHighPriorityCSSProperty) + 1;
-    static_assert(
-        from >= 0,
-        "This function assumes all high-priority properties fit in 64 bits");
-    static_assert(
-        to_exclusive < 64,
-        "This function assumes all high-priority properties fit in 64 bits");
+    constexpr int to_exclusive = static_cast<int>(kLastHighPriorityCSSProperty) + 1;
+    static_assert(from >= 0, "This function assumes all high-priority properties fit in 64 bits");
+    static_assert(to_exclusive < 64, "This function assumes all high-priority properties fit in 64 bits");
 
     // NOTE: We need to_exclusive < 64 to have defined shifts.
     return ((uint64_t{1} << to_exclusive) - 1) & ~((uint64_t{1} << from) - 1);

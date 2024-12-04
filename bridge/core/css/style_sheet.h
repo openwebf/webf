@@ -36,6 +36,7 @@ class MediaList;
 
 class StyleSheet : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   StyleSheet() = delete;
   explicit StyleSheet(JSContext* ctx);

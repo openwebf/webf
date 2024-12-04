@@ -35,9 +35,7 @@
 
 namespace webf {
 
-Color StyleColor::Resolve(const Color& current_color,
-                          ColorScheme color_scheme,
-                          bool* is_current_color) const {
+Color StyleColor::Resolve(const Color& current_color, ColorScheme color_scheme, bool* is_current_color) const {
   if (is_current_color) {
     *is_current_color = IsCurrentColor();
   }

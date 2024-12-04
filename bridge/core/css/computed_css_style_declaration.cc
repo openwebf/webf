@@ -15,7 +15,7 @@ ComputedCssStyleDeclaration::ComputedCssStyleDeclaration(ExecutingContext* conte
                                                          NativeBindingObject* native_binding_object)
     : CSSStyleDeclaration(context->ctx(), native_binding_object) {}
 
-//ScriptValue ComputedCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
+// ScriptValue ComputedCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
 //  if (IsPrototypeMethods(key)) {
 //    return ScriptValue::Undefined(ctx());
 //  }
@@ -28,7 +28,7 @@ ComputedCssStyleDeclaration::ComputedCssStyleDeclaration(ExecutingContext* conte
 //  return ScriptValue(ctx(), NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result)));
 //}
 
-//bool ComputedCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
+// bool ComputedCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
 //  return true;
 //}
 

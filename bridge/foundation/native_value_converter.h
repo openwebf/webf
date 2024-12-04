@@ -54,9 +54,7 @@ struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<
     return {std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
   }
 
-  static ImplType FromNativeValue(JSContext* ctx, NativeValue&& value) {
-    return FromNativeValue(value);
-  }
+  static ImplType FromNativeValue(JSContext* ctx, NativeValue&& value) { return FromNativeValue(value); }
 };
 
 template <>

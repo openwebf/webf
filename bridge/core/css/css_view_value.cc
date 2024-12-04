@@ -7,8 +7,8 @@
  */
 
 #include "css_view_value.h"
-#include "foundation/string_builder.h"
 #include "core/base/memory/values_equivalent.h"
+#include "foundation/string_builder.h"
 
 namespace webf {
 
@@ -34,8 +34,7 @@ std::string CSSViewValue::CustomCSSText() const {
 }
 
 bool CSSViewValue::Equals(const CSSViewValue& other) const {
-  return webf::ValuesEquivalent(axis_, other.axis_) &&
-         webf::ValuesEquivalent(inset_, other.inset_);
+  return webf::ValuesEquivalent(axis_, other.axis_) && webf::ValuesEquivalent(inset_, other.inset_);
 }
 
 void CSSViewValue::TraceAfterDispatch(GCVisitor* visitor) const {

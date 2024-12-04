@@ -5,13 +5,12 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "core/css/css_repeat_style_value.h"
-#include "foundation/string_builder.h"
 #include "core/base/memory/values_equivalent.h"
+#include "foundation/string_builder.h"
 
 namespace webf {
 
-CSSRepeatStyleValue::CSSRepeatStyleValue(std::shared_ptr<const CSSIdentifierValue> id)
-    : CSSValue(kRepeatStyleClass) {
+CSSRepeatStyleValue::CSSRepeatStyleValue(std::shared_ptr<const CSSIdentifierValue> id) : CSSValue(kRepeatStyleClass) {
   switch (id->GetValueID()) {
     case CSSValueID::kRepeatX:
       x_ = CSSIdentifierValue::Create(CSSValueID::kRepeat);
@@ -40,11 +39,9 @@ std::string CSSRepeatStyleValue::CustomCSSText() const {
 
   if (webf::ValuesEquivalent(x_, y_)) {
     result.Append(x_->CssText());
-  } else if (x_->GetValueID() == CSSValueID::kRepeat &&
-             y_->GetValueID() == CSSValueID::kNoRepeat) {
+  } else if (x_->GetValueID() == CSSValueID::kRepeat && y_->GetValueID() == CSSValueID::kNoRepeat) {
     result.Append(getValueName(CSSValueID::kRepeatX));
-  } else if (x_->GetValueID() == CSSValueID::kNoRepeat &&
-             y_->GetValueID() == CSSValueID::kRepeat) {
+  } else if (x_->GetValueID() == CSSValueID::kNoRepeat && y_->GetValueID() == CSSValueID::kRepeat) {
     result.Append(getValueName(CSSValueID::kRepeatY));
   } else {
     result.Append(x_->CssText());
@@ -56,18 +53,16 @@ std::string CSSRepeatStyleValue::CustomCSSText() const {
 }
 
 bool CSSRepeatStyleValue::Equals(const CSSRepeatStyleValue& other) const {
-  return webf::ValuesEquivalent(x_, other.x_) &&
-         webf::ValuesEquivalent(y_, other.y_);
+  return webf::ValuesEquivalent(x_, other.x_) && webf::ValuesEquivalent(y_, other.y_);
 }
 
 bool CSSRepeatStyleValue::IsRepeat() const {
-  return x_->GetValueID() == CSSValueID::kRepeat &&
-         y_->GetValueID() == CSSValueID::kRepeat;
+  return x_->GetValueID() == CSSValueID::kRepeat && y_->GetValueID() == CSSValueID::kRepeat;
 }
 
 void CSSRepeatStyleValue::TraceAfterDispatch(GCVisitor* visitor) const {
-  //visitor->Trace(x_);
-  //visitor->Trace(y_);
+  // visitor->Trace(x_);
+  // visitor->Trace(y_);
 
   CSSValue::TraceAfterDispatch(visitor);
 }

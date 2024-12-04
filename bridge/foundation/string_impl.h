@@ -79,9 +79,7 @@ inline size_t Find(const char16_t* characters,
 class StringImpl : public std::enable_shared_from_this<StringImpl> {
  public:
   struct StringImplHasher {
-    size_t operator()(const std::shared_ptr<StringImpl>& string_impl) const {
-      return string_impl->GetHash();
-    }
+    size_t operator()(const std::shared_ptr<StringImpl>& string_impl) const { return string_impl->GetHash(); }
   };
 
   // Custom equality function
@@ -326,15 +324,12 @@ ALWAYS_INLINE bool StringImpl::IsLowerASCII() const {
   return ComputeASCIIFlags() & kIsLowerAscii;
 }
 
-
 ALWAYS_INLINE bool StringImpl::ContainsOnlyASCIIOrEmpty() const {
   uint32_t flags = hash_and_flags_.load(std::memory_order_relaxed);
   if (flags & kAsciiPropertyCheckDone)
     return flags & kContainsOnlyAscii;
   return ComputeASCIIFlags() & kContainsOnlyAscii;
 }
-
-
 
 }  // namespace webf
 

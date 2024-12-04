@@ -10,9 +10,9 @@
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/dom/node.h"
-#include "qjs_union_dom_stringmedia_list.h"
-#include "qjs_css_style_sheet_init.h"
 #include "core/platform/text/text_position.h"
+#include "qjs_css_style_sheet_init.h"
+#include "qjs_union_dom_stringmedia_list.h"
 #include "style_sheet.h"
 
 namespace webf {
@@ -59,7 +59,10 @@ class CSSStyleSheet final : public StyleSheet, public MediaQuerySetOwner {
   explicit CSSStyleSheet(ExecutingContext* context,
                          std::shared_ptr<StyleSheetContents>,
                          CSSImportRule* owner_rule = nullptr);
-  CSSStyleSheet(ExecutingContext* context, std::shared_ptr<StyleSheetContents>, Document&, std::shared_ptr<const CSSStyleSheetInit>);
+  CSSStyleSheet(ExecutingContext* context,
+                std::shared_ptr<StyleSheetContents>,
+                Document&,
+                std::shared_ptr<const CSSStyleSheetInit>);
   CSSStyleSheet(ExecutingContext* context,
                 std::shared_ptr<StyleSheetContents>,
                 Node& owner_node,

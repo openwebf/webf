@@ -25,30 +25,23 @@ class CSSParserTokenStream;
 
 class Longhand : public CSSProperty {
  public:
-//   Parses and consumes a longhand property value from the token stream.
-//   Returns nullptr if the input is invalid.
-//
-//   NOTE: This function must accept arbitrary tokens after the value,
-//   without returning error. In particular, it must not check for
-//   end-of-stream, since it may be called as part of parsing a shorthand, or
-//   there may be “!important” after the value that the caller is responsible
-//   the caller is responsible for consuming. End-of-stream is checked
-//   by the caller (after potentially consuming “!important”).
-  virtual std::shared_ptr<const CSSValue> ParseSingleValue(
-      CSSParserTokenStream& stream,
-      std::shared_ptr<const CSSParserContext> context,
-      const CSSParserLocalContext& local_tokenizer) const {
+  //   Parses and consumes a longhand property value from the token stream.
+  //   Returns nullptr if the input is invalid.
+  //
+  //   NOTE: This function must accept arbitrary tokens after the value,
+  //   without returning error. In particular, it must not check for
+  //   end-of-stream, since it may be called as part of parsing a shorthand, or
+  //   there may be “!important” after the value that the caller is responsible
+  //   the caller is responsible for consuming. End-of-stream is checked
+  //   by the caller (after potentially consuming “!important”).
+  virtual std::shared_ptr<const CSSValue> ParseSingleValue(CSSParserTokenStream& stream,
+                                                           std::shared_ptr<const CSSParserContext> context,
+                                                           const CSSParserLocalContext& local_tokenizer) const {
     return nullptr;
   }
-  virtual void ApplyInitial(StyleResolverState&) const {
-    assert_m(false, "NOTREACHED_IN_MIGRATION");
-  }
-  virtual void ApplyInherit(StyleResolverState&) const {
-    assert_m(false, "NOTREACHED_IN_MIGRATION");
-  }
-  virtual void ApplyValue(StyleResolverState&,
-                          const CSSValue&,
-                          ValueMode) const {
+  virtual void ApplyInitial(StyleResolverState&) const { assert_m(false, "NOTREACHED_IN_MIGRATION"); }
+  virtual void ApplyInherit(StyleResolverState&) const { assert_m(false, "NOTREACHED_IN_MIGRATION"); }
+  virtual void ApplyValue(StyleResolverState&, const CSSValue&, ValueMode) const {
     assert_m(false, "NOTREACHED_IN_MIGRATION");
   }
   void ApplyUnset(StyleResolverState& state) const {
@@ -58,26 +51,21 @@ class Longhand : public CSSProperty {
       ApplyInitial(state);
     }
   }
-  virtual const webf::Color ColorIncludingFallback(
-      bool,
-      const ComputedStyle&,
-      bool* is_current_color = nullptr) const {
+  virtual const webf::Color ColorIncludingFallback(bool, const ComputedStyle&, bool* is_current_color = nullptr) const {
     assert_m(false, "NOTREACHED_IN_MIGRATION");
     return Color();
   }
-  virtual std::shared_ptr<const CSSValue> InitialValue() const {
-    return CSSInitialValue::Create();
-  }
+  virtual std::shared_ptr<const CSSValue> InitialValue() const { return CSSInitialValue::Create(); }
 
  protected:
   constexpr Longhand(CSSPropertyID id, Flags flags, char repetition_separator)
       : CSSProperty(id, flags | kLonghand, repetition_separator) {}
 
-//   Applies the computed CSSValue of the parent style using ApplyValue.
-//   This generally achieves the same as ApplyInherit, but effectively
-//   "rezooms" the value.
-//
-//   https://github.com/w3c/csswg-drafts/issues/9397
+  //   Applies the computed CSSValue of the parent style using ApplyValue.
+  //   This generally achieves the same as ApplyInherit, but effectively
+  //   "rezooms" the value.
+  //
+  //   https://github.com/w3c/csswg-drafts/issues/9397
   void ApplyParentValue(StyleResolverState&) const;
   // If our zoom is different from the parent zoom, calls ApplyParentValue
   // and returns true. Otherwise does nothing and returns false.
@@ -86,11 +74,8 @@ class Longhand : public CSSProperty {
 
 template <>
 struct DowncastTraits<Longhand> {
-  static bool AllowFrom(const CSSProperty& longhand) {
-    return longhand.IsLonghand();
-  }
+  static bool AllowFrom(const CSSProperty& longhand) { return longhand.IsLonghand(); }
 };
-
 
 }  // namespace webf
 

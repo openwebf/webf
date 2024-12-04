@@ -39,11 +39,11 @@ class StyleScope final {
   // selector and style rules within the scope's body will use
   // CSSNestingType::kScope and `RuleForNesting()` instead.
   static std::shared_ptr<StyleScope> Parse(CSSParserTokenRange prelude,
-                           std::shared_ptr<const CSSParserContext> context,
-                           CSSNestingType nesting_type,
-                           std::shared_ptr<const StyleRule>& parent_rule_for_nesting,
-                           bool is_within_scope,
-                           std::shared_ptr<StyleSheetContents>& style_sheet);
+                                           std::shared_ptr<const CSSParserContext> context,
+                                           CSSNestingType nesting_type,
+                                           std::shared_ptr<const StyleRule>& parent_rule_for_nesting,
+                                           bool is_within_scope,
+                                           std::shared_ptr<StyleSheetContents>& style_sheet);
 
   void Trace(GCVisitor*) const;
 
@@ -66,8 +66,8 @@ class StyleScope final {
   // If `contents_` is not nullptr, then this is a prelude-less @scope rule
   // which is implicitly scoped to the owner node's parent.
   std::shared_ptr<StyleSheetContents> contents_;
-  std::shared_ptr<StyleRule> from_;        // May be nullptr.
-  std::shared_ptr<CSSSelectorList> to_;    // May be nullptr.
+  std::shared_ptr<StyleRule> from_;      // May be nullptr.
+  std::shared_ptr<CSSSelectorList> to_;  // May be nullptr.
   std::shared_ptr<const StyleScope> parent_;
   mutable std::optional<unsigned> specificity_;
 };

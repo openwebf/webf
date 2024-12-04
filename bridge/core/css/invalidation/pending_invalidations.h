@@ -9,8 +9,8 @@
 
 #include <unordered_map>
 #include "bindings/qjs/cppgc/member.h"
-#include "foundation/macros.h"
 #include "core/css/invalidation/node_invalidation_sets.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -73,20 +73,15 @@ class PendingInvalidations {
   ~PendingInvalidations() {}
   // May immediately invalidate the node and/or add pending invalidation sets to
   // this node.
-  void ScheduleInvalidationSetsForNode(const InvalidationLists&,
-                                       ContainerNode&);
-  void ScheduleSiblingInvalidationsAsDescendants(
-      const InvalidationLists&,
-      ContainerNode& scheduling_parent);
+  void ScheduleInvalidationSetsForNode(const InvalidationLists&, ContainerNode&);
+  void ScheduleSiblingInvalidationsAsDescendants(const InvalidationLists&, ContainerNode& scheduling_parent);
   void RescheduleSiblingInvalidationsAsDescendants(Element&);
   void ClearInvalidation(ContainerNode&);
 
-  PendingInvalidationMap& GetPendingInvalidationMap() {
-    return pending_invalidation_map_;
-  }
+  PendingInvalidationMap& GetPendingInvalidationMap() { return pending_invalidation_map_; }
   void Trace(GCVisitor* visitor) const {
     // TODO(guopengfei)：先注释
-    //visitor->TraceMember(pending_invalidation_map_);
+    // visitor->TraceMember(pending_invalidation_map_);
   }
 
  private:

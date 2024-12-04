@@ -30,13 +30,11 @@
 #ifndef WEBF_TEXT_STREAM_H
 #define WEBF_TEXT_STREAM_H
 
-
 #include <string>
 #include <vector>
 #include "foundation/macros.h"
 
 namespace webf {
-
 
 class TextStream final {
   WEBF_STACK_ALLOCATED();

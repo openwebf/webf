@@ -57,9 +57,9 @@ void AbstractPropertySetCSSStyleDeclaration::setCssText(const AtomicString& text
   mutation_scope.EnqueueMutationRecord();
 }
 
-AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyValue(const AtomicString& property_name, ExceptionState& exception_state) {
-  CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyValue(const AtomicString& property_name,
+                                                                      ExceptionState& exception_state) {
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
   if (!IsValidCSSPropertyID(property_id)) {
     return g_empty_atom;
   }
@@ -70,8 +70,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyValue(const Atom
 }
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyPriority(const AtomicString& property_name) {
-  CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
   if (!IsValidCSSPropertyID(property_id)) {
     return AtomicString::Empty();
   }
@@ -86,8 +85,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyPriority(const A
 }
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyShorthand(const AtomicString& property_name) {
-  CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
 
   // Custom properties don't have shorthands, so we can ignore them here.
   if (!IsValidCSSPropertyID(property_id) || !CSSProperty::Get(property_id).IsLonghand()) {
@@ -101,8 +99,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyShorthand(const 
 }
 
 bool AbstractPropertySetCSSStyleDeclaration::IsPropertyImplicit(const AtomicString& property_name) {
-  CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
 
   // Custom properties don't have shorthands, so we can ignore them here.
   if (property_id < kFirstCSSProperty) {
@@ -116,8 +113,7 @@ void AbstractPropertySetCSSStyleDeclaration::setProperty(const ExecutingContext*
                                                          const AtomicString& value,
                                                          const AtomicString& priority,
                                                          ExceptionState& exception_state) {
-  CSSPropertyID property_id =
-      UnresolvedCSSPropertyID(execution_context, property_name.ToStringView());
+  CSSPropertyID property_id = UnresolvedCSSPropertyID(execution_context, property_name.ToStringView());
   if (!IsValidCSSPropertyID(property_id) || !IsPropertyValid(property_id)) {
     return;
   }
@@ -132,8 +128,7 @@ void AbstractPropertySetCSSStyleDeclaration::setProperty(const ExecutingContext*
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::removeProperty(const AtomicString& property_name,
                                                                     ExceptionState& exception_state) {
-  CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
   if (!IsValidCSSPropertyID(property_id)) {
     return AtomicString::Empty();
   }
@@ -164,8 +159,7 @@ const std::shared_ptr<const CSSValue>* AbstractPropertySetCSSStyleDeclaration::G
 
 const std::shared_ptr<const CSSValue>* AbstractPropertySetCSSStyleDeclaration::GetPropertyCSSValueInternal(
     const AtomicString& custom_property_name) {
-  DCHECK_EQ(CSSPropertyID::kVariable,
-            CssPropertyID(GetExecutingContext(), custom_property_name.ToStdString()));
+  DCHECK_EQ(CSSPropertyID::kVariable, CssPropertyID(GetExecutingContext(), custom_property_name.ToStdString()));
   return PropertySet().GetPropertyCSSValue(custom_property_name);
 }
 
@@ -175,29 +169,25 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyValueInternal(CS
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyValueWithHint(const AtomicString& property_name,
                                                                               unsigned index) {
-  CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
   if (!IsValidCSSPropertyID(property_id)) {
     return AtomicString::Empty();
   }
   if (property_id == CSSPropertyID::kVariable) {
-    return AtomicString(PropertySet().GetPropertyValueWithHint(
-                                   property_name, index));
+    return AtomicString(PropertySet().GetPropertyValueWithHint(property_name, index));
   }
   return AtomicString(PropertySet().GetPropertyValue(property_id));
 }
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyPriorityWithHint(const AtomicString& property_name,
                                                                                  unsigned index) {
-  CSSPropertyID property_id =
-      CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
   if (!IsValidCSSPropertyID(property_id)) {
     return AtomicString::Empty();
   }
   bool important = false;
   if (property_id == CSSPropertyID::kVariable) {
-    important =
-        PropertySet().PropertyIsImportantWithHint(property_name, index);
+    important = PropertySet().PropertyIsImportantWithHint(property_name, index);
   } else {
     important = PropertySet().PropertyIsImportant(property_id);
   }
@@ -217,8 +207,7 @@ void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(CSSPropertyID u
     AtomicString atomic_name(custom_property_name);
 
     bool is_animation_tainted = IsKeyframeStyle();
-    result = PropertySet().ParseAndSetCustomProperty(atomic_name,
-                                                     value.Characters8(), important, ContextStyleSheet(),
+    result = PropertySet().ParseAndSetCustomProperty(atomic_name, value.Characters8(), important, ContextStyleSheet(),
                                                      is_animation_tainted);
   } else {
     result =

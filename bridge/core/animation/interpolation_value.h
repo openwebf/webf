@@ -20,10 +20,8 @@ struct InterpolationValue {
   WEBF_DISALLOW_NEW();
 
   explicit InterpolationValue(std::shared_ptr<InterpolableValue> interpolable_value,
-                              std::shared_ptr<const NonInterpolableValue>
-                                  non_interpolable_value = nullptr)
-      : interpolable_value(interpolable_value),
-        non_interpolable_value(std::move(non_interpolable_value)) {}
+                              std::shared_ptr<const NonInterpolableValue> non_interpolable_value = nullptr)
+      : interpolable_value(interpolable_value), non_interpolable_value(std::move(non_interpolable_value)) {}
 
   InterpolationValue(std::nullptr_t) {}
 
@@ -39,9 +37,7 @@ struct InterpolationValue {
   operator bool() const { return interpolable_value.get(); }
 
   InterpolationValue Clone() const {
-    return InterpolationValue(
-        interpolable_value ? interpolable_value->Clone() : nullptr,
-        non_interpolable_value);
+    return InterpolationValue(interpolable_value ? interpolable_value->Clone() : nullptr, non_interpolable_value);
   }
 
   void Clear() {
@@ -49,7 +45,7 @@ struct InterpolationValue {
     non_interpolable_value = nullptr;
   }
 
-  //void Trace(GCVisitor* v) const { v->Trace(interpolable_value); }
+  // void Trace(GCVisitor* v) const { v->Trace(interpolable_value); }
 
   std::shared_ptr<InterpolableValue> interpolable_value;
   std::shared_ptr<const NonInterpolableValue> non_interpolable_value;
@@ -58,10 +54,9 @@ struct InterpolationValue {
 // Wrapper to be used with MakeGarbageCollected<>.
 class InterpolationValueGCed {
  public:
-  explicit InterpolationValueGCed(const InterpolationValue& underlying)
-      : underlying_(underlying.Clone()) {}
+  explicit InterpolationValueGCed(const InterpolationValue& underlying) : underlying_(underlying.Clone()) {}
 
-  //void Trace(GCVisitor* v) const { v->Trace(underlying_); }
+  // void Trace(GCVisitor* v) const { v->Trace(underlying_); }
 
   InterpolationValue& underlying() { return underlying_; }
   const InterpolationValue& underlying() const { return underlying_; }
@@ -72,6 +67,6 @@ class InterpolationValueGCed {
 
 }  // namespace webf
 
-//WTF_ALLOW_CLEAR_UNUSED_SLOTS_WITH_MEM_FUNCTIONS(blink::InterpolationValue)
+// WTF_ALLOW_CLEAR_UNUSED_SLOTS_WITH_MEM_FUNCTIONS(blink::InterpolationValue)
 
 #endif  // WEBF_CORE_ANIMATION_INTERPOLATION_VALUE_H_

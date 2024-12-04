@@ -4,14 +4,13 @@
 
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
-#include <string>
 #include "timeline_offset.h"
+#include <string>
 
 namespace webf {
 
 /* static */
-std::string TimelineOffset::TimelineRangeNameToString(
-    TimelineOffset::NamedRange range_name) {
+std::string TimelineOffset::TimelineRangeNameToString(TimelineOffset::NamedRange range_name) {
   switch (range_name) {
     case NamedRange::kNone:
       return "none";

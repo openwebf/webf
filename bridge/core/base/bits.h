@@ -7,16 +7,16 @@
 #ifndef BASE_BITS_H_
 #define BASE_BITS_H_
 
-#include <cassert>
 #include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <cassert>
 
 #include <type_traits>
 
-#include "foundation/macros.h"
-#include "core/base/compiler_specific.h"
 #include "core/base/build_config.h"
+#include "core/base/compiler_specific.h"
+#include "foundation/macros.h"
 
 #if defined(COMPILER_MSVC)
 #include <intrin.h>
@@ -47,8 +47,7 @@ inline constexpr size_t AlignDown(size_t size, size_t alignment) {
 // of two. Defined for types where sizeof(T) is one byte.
 template <typename T, typename = typename std::enable_if<sizeof(T) == 1>::type>
 inline T* AlignDown(T* ptr, size_t alignment) {
-  return reinterpret_cast<T*>(
-      AlignDown(reinterpret_cast<size_t>(ptr), alignment));
+  return reinterpret_cast<T*>(AlignDown(reinterpret_cast<size_t>(ptr), alignment));
 }
 
 // Round up |size| to a multiple of alignment, which must be a power of two.
@@ -61,8 +60,7 @@ inline constexpr size_t AlignUp(size_t size, size_t alignment) {
 // two. Defined for types where sizeof(T) is one byte.
 template <typename T, typename = typename std::enable_if<sizeof(T) == 1>::type>
 inline T* AlignUp(T* ptr, size_t alignment) {
-  return reinterpret_cast<T*>(
-      AlignUp(reinterpret_cast<size_t>(ptr), alignment));
+  return reinterpret_cast<T*>(AlignUp(reinterpret_cast<size_t>(ptr), alignment));
 }
 
 // CountLeadingZeroBits(value) returns the number of zero bits following the
@@ -83,29 +81,21 @@ inline T* AlignUp(T* ptr, size_t alignment) {
 #if defined(COMPILER_MSVC) && !defined(__clang__)
 
 template <typename T, unsigned bits = sizeof(T) * 8>
-ALWAYS_INLINE
-    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 4,
-                            unsigned>::type
-    CountLeadingZeroBits(T x) {
+ALWAYS_INLINE typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 4, unsigned>::type
+CountLeadingZeroBits(T x) {
   static_assert(bits > 0, "invalid instantiation");
   unsigned long index;
-  return LIKELY(_BitScanReverse(&index, static_cast<uint32_t>(x)))
-             ? (31 - index - (32 - bits))
-             : bits;
+  return LIKELY(_BitScanReverse(&index, static_cast<uint32_t>(x))) ? (31 - index - (32 - bits)) : bits;
 }
 
 template <typename T, unsigned bits = sizeof(T) * 8>
-ALWAYS_INLINE
-    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) == 8,
-                            unsigned>::type
-    CountLeadingZeroBits(T x) {
+ALWAYS_INLINE typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) == 8, unsigned>::type
+CountLeadingZeroBits(T x) {
   static_assert(bits > 0, "invalid instantiation");
   unsigned long index;
 // MSVC only supplies _BitScanReverse64 when building for a 64-bit target.
 #if defined(ARCH_CPU_64_BITS)
-  return LIKELY(_BitScanReverse64(&index, static_cast<uint64_t>(x)))
-             ? (63 - index)
-             : 64;
+  return LIKELY(_BitScanReverse64(&index, static_cast<uint64_t>(x))) ? (63 - index) : 64;
 #else
   uint32_t left = static_cast<uint32_t>(x >> 32);
   if (LIKELY(_BitScanReverse(&index, left)))
@@ -120,27 +110,21 @@ ALWAYS_INLINE
 }
 
 template <typename T, unsigned bits = sizeof(T) * 8>
-ALWAYS_INLINE
-    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 4,
-                            unsigned>::type
-    CountTrailingZeroBits(T x) {
+ALWAYS_INLINE typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 4, unsigned>::type
+CountTrailingZeroBits(T x) {
   static_assert(bits > 0, "invalid instantiation");
   unsigned long index;
-  return LIKELY(_BitScanForward(&index, static_cast<uint32_t>(x))) ? index
-                                                                   : bits;
+  return LIKELY(_BitScanForward(&index, static_cast<uint32_t>(x))) ? index : bits;
 }
 
 template <typename T, unsigned bits = sizeof(T) * 8>
-ALWAYS_INLINE
-    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) == 8,
-                            unsigned>::type
-    CountTrailingZeroBits(T x) {
+ALWAYS_INLINE typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) == 8, unsigned>::type
+CountTrailingZeroBits(T x) {
   static_assert(bits > 0, "invalid instantiation");
   unsigned long index;
 // MSVC only supplies _BitScanForward64 when building for a 64-bit target.
 #if defined(ARCH_CPU_64_BITS)
-  return LIKELY(_BitScanForward64(&index, static_cast<uint64_t>(x))) ? index
-                                                                     : 64;
+  return LIKELY(_BitScanForward64(&index, static_cast<uint64_t>(x))) ? index : 64;
 #else
   uint32_t right = static_cast<uint32_t>(x);
   if (LIKELY(_BitScanForward(&index, right)))
@@ -169,27 +153,20 @@ ALWAYS_INLINE uint64_t CountLeadingZeroBits64(uint64_t x) {
 // instructions have defined behaviour for 0. We could drop to raw __asm__ to
 // do better, but we'll avoid doing that unless we see proof that we need to.
 template <typename T, unsigned bits = sizeof(T) * 8>
-ALWAYS_INLINE constexpr
-    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 8,
-                            unsigned>::type
-    CountLeadingZeroBits(T value) {
+ALWAYS_INLINE constexpr typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 8, unsigned>::type
+CountLeadingZeroBits(T value) {
   static_assert(bits > 0, "invalid instantiation");
-  return LIKELY(value)
-             ? bits == 64
-                   ? __builtin_clzll(static_cast<uint64_t>(value))
-                   : __builtin_clz(static_cast<uint32_t>(value)) - (32 - bits)
-             : bits;
+  return LIKELY(value) ? bits == 64 ? __builtin_clzll(static_cast<uint64_t>(value))
+                                    : __builtin_clz(static_cast<uint32_t>(value)) - (32 - bits)
+                       : bits;
 }
 
 template <typename T, unsigned bits = sizeof(T) * 8>
-ALWAYS_INLINE constexpr
-    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 8,
-                            unsigned>::type
-    CountTrailingZeroBits(T value) {
-  return LIKELY(value) ? bits == 64
-                             ? __builtin_ctzll(static_cast<uint64_t>(value))
-                             : __builtin_ctz(static_cast<uint32_t>(value))
-                       : bits;
+ALWAYS_INLINE constexpr typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 8, unsigned>::type
+CountTrailingZeroBits(T value) {
+  return LIKELY(value)
+             ? bits == 64 ? __builtin_ctzll(static_cast<uint64_t>(value)) : __builtin_ctz(static_cast<uint32_t>(value))
+             : bits;
 }
 
 ALWAYS_INLINE constexpr uint32_t CountLeadingZeroBits32(uint32_t x) {
@@ -227,8 +204,7 @@ constexpr int Log2Ceiling(uint32_t n) {
 // Can be used instead of manually shifting a 1 to the left.
 template <typename T>
 constexpr T LeftmostBit() {
-  static_assert(std::is_integral<T>::value,
-                "This function can only be used with integral types.");
+  static_assert(std::is_integral<T>::value, "This function can only be used with integral types.");
   T one(1u);
   return one << ((CHAR_BIT * sizeof(T) - 1));
 }

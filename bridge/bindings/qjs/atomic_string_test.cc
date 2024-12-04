@@ -50,8 +50,7 @@ TEST(AtomicString, ToQuickJS) {
   auto env = TEST_init();
   AtomicString value = AtomicString("helloworld");
   JSContext* ctx = env->page()->executingContext()->ctx();
-  JSValue qjs_value = env->page()->dartIsolateContext()->stringCache()->GetJSValueFromString(
-      ctx, value.Impl());
+  JSValue qjs_value = env->page()->dartIsolateContext()->stringCache()->GetJSValueFromString(ctx, value.Impl());
   const char* buffer = JS_ToCString(ctx, qjs_value);
   EXPECT_STREQ(buffer, "helloworld");
   JS_FreeValue(ctx, qjs_value);

@@ -35,9 +35,7 @@ class CSSSyntaxComponent {
   WEBF_DISALLOW_NEW();
 
  public:
-  CSSSyntaxComponent(CSSSyntaxType type,
-                     const std::string& string,
-                     CSSSyntaxRepeat repeat)
+  CSSSyntaxComponent(CSSSyntaxType type, const std::string& string, CSSSyntaxRepeat repeat)
       : type_(type), string_(string), repeat_(repeat) {}
 
   bool operator==(const CSSSyntaxComponent& a) const {
@@ -60,6 +58,6 @@ class CSSSyntaxComponent {
   CSSSyntaxRepeat repeat_;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_CSS_SYNTAX_COMPONENT_H_

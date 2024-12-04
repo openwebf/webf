@@ -33,16 +33,16 @@
 #ifndef WEBF_CORE_CSS_STYLE_COLOR_H_
 #define WEBF_CORE_CSS_STYLE_COLOR_H_
 
+#include <memory>
 #include "core/css/css_color.h"
 #include "css_value_keywords.h"
-#include <memory>
 
 //#include "third_party/blink/public/mojom/frame/color_scheme.mojom-blink-forward.h"
-#include "css_value_keywords.h"
-#include "core/platform/graphics/color.h"
-#include "foundation/macros.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/cppgc/member.h"
+#include "core/platform/graphics/color.h"
+#include "css_value_keywords.h"
+#include "foundation/macros.h"
 
 namespace ui {
 class ColorProvider;
@@ -53,7 +53,6 @@ namespace webf {
 namespace mojom {
 enum class ColorScheme : int32_t;
 }
-
 
 class StyleColor {
   WEBF_DISALLOW_NEW();
@@ -75,9 +74,9 @@ class StyleColor {
   StyleColor() = default;
   explicit StyleColor(Color color) : color_keyword_(CSSValueID::kInvalid) {}
   explicit StyleColor(CSSValueID keyword) : color_keyword_(keyword) {}
-//  explicit StyleColor(const UnresolvedColorMix* color_mix)
-//      : color_keyword_(CSSValueID::kColorMix),
-//        color_or_unresolved_color_mix_(color_mix) {}
+  //  explicit StyleColor(const UnresolvedColorMix* color_mix)
+  //      : color_keyword_(CSSValueID::kColorMix),
+  //        color_or_unresolved_color_mix_(color_mix) {}
   // We need to store the color and keyword for system colors to be able to
   // distinguish system colors from a normal color. System colors won't be
   // overridden by forced colors mode, even if forced-color-adjust is 'auto'.
@@ -89,9 +88,7 @@ class StyleColor {
 
   bool IsCurrentColor() const { return color_keyword_ == CSSValueID::kCurrentcolor; }
   bool IsSystemColorIncludingDeprecated() const { return IsSystemColorIncludingDeprecated(color_keyword_); }
-  bool IsUnresolvedColorMixFunction() const {
-    return color_keyword_ == CSSValueID::kColorMix;
-  }
+  bool IsUnresolvedColorMixFunction() const { return color_keyword_ == CSSValueID::kColorMix; }
   bool IsSystemColor() const { return IsSystemColor(color_keyword_); }
   bool IsAbsoluteColor() const { return !IsCurrentColor(); }
   Color GetColor() const;

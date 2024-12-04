@@ -18,7 +18,7 @@ namespace webf {
 
 template <typename T>
 class HeapDeque {
-public:
+ public:
   HeapDeque() = default;
 
   explicit HeapDeque(size_t size) : deque_(size) {}
@@ -39,37 +39,21 @@ public:
     return *this;
   }
 
-  void push_back(const T& value) {
-    deque_.push_back(value);
-  }
+  void push_back(const T& value) { deque_.push_back(value); }
 
-  void push_front(const T& value) {
-    deque_.push_front(value);
-  }
+  void push_front(const T& value) { deque_.push_front(value); }
 
-  void pop_back() {
-    deque_.pop_back();
-  }
+  void pop_back() { deque_.pop_back(); }
 
-  void pop_front() {
-    deque_.pop_front();
-  }
+  void pop_front() { deque_.pop_front(); }
 
-  T& front() {
-    return deque_.front();
-  }
+  T& front() { return deque_.front(); }
 
-  T& back() {
-    return deque_.back();
-  }
+  T& back() { return deque_.back(); }
 
-  bool empty() const {
-    return deque_.empty();
-  }
+  bool empty() const { return deque_.empty(); }
 
-  size_t size() const {
-    return deque_.size();
-  }
+  size_t size() const { return deque_.size(); }
 
   void TraceValue(GCVisitor* visitor) const {
     for (auto& item : deque_) {
@@ -83,7 +67,7 @@ public:
     }
   }
 
-private:
+ private:
   std::deque<T> deque_;
 };
 

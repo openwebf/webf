@@ -83,8 +83,7 @@ class StrongAlias {
 
   StrongAlias() = default;
   constexpr explicit StrongAlias(const UnderlyingType& v) : value_(v) {}
-  constexpr explicit StrongAlias(UnderlyingType&& v) noexcept
-      : value_(std::move(v)) {}
+  constexpr explicit StrongAlias(UnderlyingType&& v) noexcept : value_(std::move(v)) {}
 
   constexpr UnderlyingType* operator->() { return &value_; }
   constexpr const UnderlyingType* operator->() const { return &value_; }
@@ -92,9 +91,7 @@ class StrongAlias {
   constexpr UnderlyingType& operator*() & { return value_; }
   constexpr const UnderlyingType& operator*() const& { return value_; }
   constexpr UnderlyingType&& operator*() && { return std::move(value_); }
-  constexpr const UnderlyingType&& operator*() const&& {
-    return std::move(value_);
-  }
+  constexpr const UnderlyingType&& operator*() const&& { return std::move(value_); }
 
   constexpr UnderlyingType& value() & { return value_; }
   constexpr const UnderlyingType& value() const& { return value_; }
@@ -110,10 +107,8 @@ class StrongAlias {
   // because it is from an external library), then a work-around is to create a
   // thin wrapper `W` around it, define `operator<=>` for the wrapper and create
   // a `StrongAlias<W>`.
-  friend auto operator<=>(const StrongAlias& lhs,
-                          const StrongAlias& rhs) = default;
-  friend bool operator==(const StrongAlias& lhs,
-                         const StrongAlias& rhs) = default;
+  friend auto operator<=>(const StrongAlias& lhs, const StrongAlias& rhs) = default;
+  friend bool operator==(const StrongAlias& lhs, const StrongAlias& rhs) = default;
 
   // Hasher to use in std::unordered_map, std::unordered_set, etc.
   //
@@ -129,9 +124,7 @@ class StrongAlias {
   struct Hasher {
     using argument_type = StrongAlias;
     using result_type = std::size_t;
-    result_type operator()(const argument_type& id) const {
-      return std::hash<UnderlyingType>()(id.value());
-    }
+    result_type operator()(const argument_type& id) const { return std::hash<UnderlyingType>()(id.value()); }
   };
   /*
   // TODO(guopengfei)：忽略trace相关

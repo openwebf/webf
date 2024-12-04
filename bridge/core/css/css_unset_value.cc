@@ -6,7 +6,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-
 #include "css_unset_value.h"
 #include "core/css/css_value_pool.h"
 
@@ -22,6 +21,6 @@ std::string CSSUnsetValue::CustomCSSText() const {
   return "unset";
 }
 
-}
+}  // namespace cssvalue
 
 }  // namespace webf

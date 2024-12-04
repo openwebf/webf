@@ -11,8 +11,8 @@ namespace webf {
 namespace url {
 
 template class CanonOutputT<char>;
-//template class CanonOutputT<char>;
-//template class CanonOutputT<char16_t>;
+// template class CanonOutputT<char>;
+// template class CanonOutputT<char16_t>;
 
 }  // namespace url
 }  // namespace webf

@@ -6,23 +6,21 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "core/platform/url/kurl.h"
 #include "css_uri_value.h"
-#include "core/css/css_uri_value.h"
 #include "core/css/css_markup.h"
+#include "core/css/css_uri_value.h"
 #include "core/dom/document.h"
-
+#include "core/platform/url/kurl.h"
 
 namespace webf {
 
 namespace cssvalue {
 
-CSSURIValue::CSSURIValue(CSSUrlData url_data)
-    : CSSValue(kURIClass), url_data_(std::move(url_data)) {}
+CSSURIValue::CSSURIValue(CSSUrlData url_data) : CSSValue(kURIClass), url_data_(std::move(url_data)) {}
 
 CSSURIValue::~CSSURIValue() = default;
 
-//SVGResource* CSSURIValue::EnsureResourceReference() const {
+// SVGResource* CSSURIValue::EnsureResourceReference() const {
 //  if (!resource_) {
 //    resource_ =
 //        MakeGarbageCollected<ExternalSVGResourceDocumentContent>(AbsoluteUrl());
@@ -46,7 +44,7 @@ std::string CSSURIValue::FragmentIdentifier() const {
   return std::string(AbsoluteUrl().FragmentIdentifier());
 }
 
-//const AtomicString& CSSURIValue::NormalizedFragmentIdentifier() const {
+// const AtomicString& CSSURIValue::NormalizedFragmentIdentifier() const {
 //  if (normalized_fragment_identifier_cache_ == nullptr) {
 //    normalized_fragment_identifier_cache_ =
 //        AtomicString(DecodeURLEscapeSequences(
@@ -76,14 +74,12 @@ bool CSSURIValue::Equals(const CSSURIValue& other) const {
   return url_data_ == other.url_data_;
 }
 
-std::shared_ptr<const CSSURIValue> CSSURIValue::ComputedCSSValue(
-    const KURL& base_url) const {
-  return std::make_shared<CSSURIValue>(
-      url_data_.MakeResolved(base_url));
+std::shared_ptr<const CSSURIValue> CSSURIValue::ComputedCSSValue(const KURL& base_url) const {
+  return std::make_shared<CSSURIValue>(url_data_.MakeResolved(base_url));
 }
 
 void CSSURIValue::TraceAfterDispatch(GCVisitor* visitor) const {
-//  visitor->Trace(resource_);
+  //  visitor->Trace(resource_);
   CSSValue::TraceAfterDispatch(visitor);
 }
 

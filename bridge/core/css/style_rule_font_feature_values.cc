@@ -8,8 +8,8 @@
 
 #include "style_rule_font_feature_values.h"
 
-#include "core/css/style_rule_font_feature_values.h"
 #include "core/css/cascade_layer.h"
+#include "core/css/style_rule_font_feature_values.h"
 //#include "platform/wtf/assertions.h"
 #include "foundation/string_builder.h"
 
@@ -17,23 +17,18 @@
 
 namespace webf {
 
-
-StyleRuleFontFeature::StyleRuleFontFeature(
-    StyleRuleFontFeature::FeatureType type)
+StyleRuleFontFeature::StyleRuleFontFeature(StyleRuleFontFeature::FeatureType type)
     : StyleRuleBase(kFontFeature), type_(type) {}
 
-StyleRuleFontFeature::StyleRuleFontFeature(const StyleRuleFontFeature&) =
-    default;
+StyleRuleFontFeature::StyleRuleFontFeature(const StyleRuleFontFeature&) = default;
 StyleRuleFontFeature::~StyleRuleFontFeature() = default;
 
 void StyleRuleFontFeature::TraceAfterDispatch(GCVisitor* visitor) const {
   StyleRuleBase::TraceAfterDispatch(visitor);
 }
 
-void StyleRuleFontFeature::UpdateAlias(AtomicString alias,
-                                       const std::vector<uint32_t>& features) {
-  feature_aliases_[alias] = FeatureIndicesWithPriority{features,
-                                                       std::numeric_limits<unsigned>::max()};
+void StyleRuleFontFeature::UpdateAlias(AtomicString alias, const std::vector<uint32_t>& features) {
+  feature_aliases_[alias] = FeatureIndicesWithPriority{features, std::numeric_limits<unsigned>::max()};
 }
 
 void StyleRuleFontFeature::OverrideAliasesIn(FontFeatureAliases& destination) {
@@ -42,13 +37,12 @@ void StyleRuleFontFeature::OverrideAliasesIn(FontFeatureAliases& destination) {
   }
 }
 
-FontFeatureValuesStorage::FontFeatureValuesStorage(
-    FontFeatureAliases stylistic,
-    FontFeatureAliases styleset,
-    FontFeatureAliases character_variant,
-    FontFeatureAliases swash,
-    FontFeatureAliases ornaments,
-    FontFeatureAliases annotation)
+FontFeatureValuesStorage::FontFeatureValuesStorage(FontFeatureAliases stylistic,
+                                                   FontFeatureAliases styleset,
+                                                   FontFeatureAliases character_variant,
+                                                   FontFeatureAliases swash,
+                                                   FontFeatureAliases ornaments,
+                                                   FontFeatureAliases annotation)
     : stylistic_(stylistic),
       styleset_(styleset),
       character_variant_(character_variant),
@@ -56,32 +50,26 @@ FontFeatureValuesStorage::FontFeatureValuesStorage(
       ornaments_(ornaments),
       annotation_(annotation) {}
 
-std::vector<uint32_t> FontFeatureValuesStorage::ResolveStylistic(
-    AtomicString alias) const {
+std::vector<uint32_t> FontFeatureValuesStorage::ResolveStylistic(AtomicString alias) const {
   return ResolveInternal(stylistic_, alias);
 }
 
-std::vector<uint32_t> FontFeatureValuesStorage::ResolveStyleset(
-    AtomicString alias) const {
+std::vector<uint32_t> FontFeatureValuesStorage::ResolveStyleset(AtomicString alias) const {
   return ResolveInternal(styleset_, alias);
 }
 
-std::vector<uint32_t> FontFeatureValuesStorage::ResolveCharacterVariant(
-    AtomicString alias) const {
+std::vector<uint32_t> FontFeatureValuesStorage::ResolveCharacterVariant(AtomicString alias) const {
   return ResolveInternal(character_variant_, alias);
 }
 
-std::vector<uint32_t> FontFeatureValuesStorage::ResolveSwash(
-    AtomicString alias) const {
+std::vector<uint32_t> FontFeatureValuesStorage::ResolveSwash(AtomicString alias) const {
   return ResolveInternal(swash_, alias);
 }
 
-std::vector<uint32_t> FontFeatureValuesStorage::ResolveOrnaments(
-    AtomicString alias) const {
+std::vector<uint32_t> FontFeatureValuesStorage::ResolveOrnaments(AtomicString alias) const {
   return ResolveInternal(ornaments_, alias);
 }
-std::vector<uint32_t> FontFeatureValuesStorage::ResolveAnnotation(
-    AtomicString alias) const {
+std::vector<uint32_t> FontFeatureValuesStorage::ResolveAnnotation(AtomicString alias) const {
   return ResolveInternal(annotation_, alias);
 }
 
@@ -100,18 +88,15 @@ void FontFeatureValuesStorage::SetLayerOrder(unsigned layer_order) {
   set_layer_order(annotation_);
 }
 
-void FontFeatureValuesStorage::FuseUpdate(const FontFeatureValuesStorage& other,
-                                          unsigned other_layer_order) {
-  auto merge_maps = [other_layer_order](FontFeatureAliases& own,
-                                        const FontFeatureAliases& other) {
+void FontFeatureValuesStorage::FuseUpdate(const FontFeatureValuesStorage& other, unsigned other_layer_order) {
+  auto merge_maps = [other_layer_order](FontFeatureAliases& own, const FontFeatureAliases& other) {
     for (auto entry : other) {
       FeatureIndicesWithPriority entry_updated_order(entry.second);
       entry_updated_order.layer_order = other_layer_order;
       auto insert_result = own.insert({entry.first, entry_updated_order});
       // TODO(xiezuobing)：这里要确认这个stored_value干什么用，不然用std::unordered_map后面不好查bug
       if (!insert_result.second) {
-        unsigned existing_layer_order =
-            insert_result.stored_value->value.layer_order;
+        unsigned existing_layer_order = insert_result.stored_value->value.layer_order;
         if (other_layer_order >= existing_layer_order) {
           insert_result.stored_value->value = entry_updated_order;
         }
@@ -128,9 +113,7 @@ void FontFeatureValuesStorage::FuseUpdate(const FontFeatureValuesStorage& other,
 }
 
 /* static */
-std::vector<uint32_t> FontFeatureValuesStorage::ResolveInternal(
-    const FontFeatureAliases& aliases,
-    AtomicString alias) {
+std::vector<uint32_t> FontFeatureValuesStorage::ResolveInternal(const FontFeatureAliases& aliases, AtomicString alias) {
   auto find_result = aliases.find(alias);
   if (find_result == aliases.end()) {
     return {};
@@ -138,25 +121,18 @@ std::vector<uint32_t> FontFeatureValuesStorage::ResolveInternal(
   return find_result->second.indices;
 }
 
-StyleRuleFontFeatureValues::StyleRuleFontFeatureValues(
-    std::vector<AtomicString> families,
-    FontFeatureAliases stylistic,
-    FontFeatureAliases styleset,
-    FontFeatureAliases character_variant,
-    FontFeatureAliases swash,
-    FontFeatureAliases ornaments,
-    FontFeatureAliases annotation)
+StyleRuleFontFeatureValues::StyleRuleFontFeatureValues(std::vector<AtomicString> families,
+                                                       FontFeatureAliases stylistic,
+                                                       FontFeatureAliases styleset,
+                                                       FontFeatureAliases character_variant,
+                                                       FontFeatureAliases swash,
+                                                       FontFeatureAliases ornaments,
+                                                       FontFeatureAliases annotation)
     : StyleRuleBase(kFontFeatureValues),
       families_(std::move(families)),
-      feature_values_storage_(stylistic,
-                              styleset,
-                              character_variant,
-                              swash,
-                              ornaments,
-                              annotation) {}
+      feature_values_storage_(stylistic, styleset, character_variant, swash, ornaments, annotation) {}
 
-StyleRuleFontFeatureValues::StyleRuleFontFeatureValues(
-    const StyleRuleFontFeatureValues&) = default;
+StyleRuleFontFeatureValues::StyleRuleFontFeatureValues(const StyleRuleFontFeatureValues&) = default;
 
 StyleRuleFontFeatureValues::~StyleRuleFontFeatureValues() = default;
 
@@ -175,10 +151,9 @@ AtomicString StyleRuleFontFeatureValues::FamilyAsString() const {
   return families.ReleaseString();
 }
 
-void StyleRuleFontFeatureValues::TraceAfterDispatch(
-    GCVisitor* visitor) const {
+void StyleRuleFontFeatureValues::TraceAfterDispatch(GCVisitor* visitor) const {
   StyleRuleBase::TraceAfterDispatch(visitor);
-//  visitor->Trace(layer_);
+  //  visitor->Trace(layer_);
 }
 
 }  // namespace webf

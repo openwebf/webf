@@ -9,13 +9,13 @@
 #ifndef WEBF_CSS_PARSER_TOKEN_H
 #define WEBF_CSS_PARSER_TOKEN_H
 
+#include "at_rule_descriptors.h"
+#include "core/css/css_primitive_value.h"
+#include "css_property_names.h"
+#include "css_value_keywords.h"
+#include "foundation/macros.h"
 #include "foundation/string_builder.h"
 #include "foundation/string_view.h"
-#include "foundation/macros.h"
-#include "core/css/css_primitive_value.h"
-#include "css_value_keywords.h"
-#include "css_property_names.h"
-#include "at_rule_descriptors.h"
 
 namespace webf {
 
@@ -91,7 +91,7 @@ class CSSParserToken {
         numeric_sign_(0),        // Don't care.
         unit_(0),                // Don't care.
         value_is_inline_(false),
-        padding_(0)             // Don't care.
+        padding_(0)  // Don't care.
   {}
 
   CSSParserToken(CSSParserTokenType type, std::string_view value, BlockType block_type = kNotBlock)
@@ -108,9 +108,7 @@ class CSSParserToken {
   CSSParserToken(HashTokenType, std::string_view);
 
   bool operator==(const CSSParserToken& other) const;
-  bool operator!=(const CSSParserToken& other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const CSSParserToken& other) const { return !(*this == other); }
 
   // Converts NumberToken to DimensionToken.
   void ConvertToDimensionWithUnit(std::string_view);
@@ -122,11 +120,9 @@ class CSSParserToken {
 
   std::string_view Value() const {
     if (value_is_inline_) {
-      return {reinterpret_cast<const char*>(value_data_char_inline_),
-                        value_length_};
+      return {reinterpret_cast<const char*>(value_data_char_inline_), value_length_};
     }
-    return {reinterpret_cast<const char*>(value_data_char_raw_),
-            value_length_};
+    return {reinterpret_cast<const char*>(value_data_char_raw_), value_length_};
   }
 
   bool IsEOF() const { return type_ == static_cast<unsigned>(kEOFToken); }
@@ -140,9 +136,7 @@ class CSSParserToken {
     return hash_token_type_;
   }
   BlockType GetBlockType() const { return static_cast<BlockType>(block_type_); }
-  CSSPrimitiveValue::UnitType GetUnitType() const {
-    return static_cast<CSSPrimitiveValue::UnitType>(unit_);
-  }
+  CSSPrimitiveValue::UnitType GetUnitType() const { return static_cast<CSSPrimitiveValue::UnitType>(unit_); }
   int32_t UnicodeRangeStart() const {
     assert(type_ == static_cast<unsigned>(kUnicodeRangeToken));
     return unicode_range_.start;
@@ -156,9 +150,8 @@ class CSSParserToken {
 
   bool HasStringBacking() const;
 
-  CSSPropertyID ParseAsUnresolvedCSSPropertyID(
-      const ExecutingContext* execution_context,
-      CSSParserMode mode = kHTMLStandardMode) const;
+  CSSPropertyID ParseAsUnresolvedCSSPropertyID(const ExecutingContext* execution_context,
+                                               CSSParserMode mode = kHTMLStandardMode) const;
   AtRuleDescriptorID ParseAsAtRuleDescriptorID() const;
 
   void Serialize(StringBuilder&) const;
@@ -181,8 +174,7 @@ class CSSParserToken {
   }
 
   // For debugging/logging only.
-  friend std::ostream& operator<<(std::ostream& stream,
-                                  const CSSParserToken& token) {
+  friend std::ostream& operator<<(std::ostream& stream, const CSSParserToken& token) {
     if (token.GetType() == kEOFToken) {
       return stream << "<EOF>";
     } else if (token.GetType() == kCommentToken) {
@@ -193,7 +185,6 @@ class CSSParserToken {
       return stream << sb.ReleaseString();
     }
   }
-
 
  private:
   void InitValueFromStringView(std::string_view string) {

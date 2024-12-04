@@ -25,9 +25,9 @@
 #define WEBF_QUALIFIED_NAME_H
 
 #include <optional>
-#include "foundation/atomic_string.h"
 #include "core/base/hash/hash.h"
 #include "core/platform/static_constructors.h"
+#include "foundation/atomic_string.h"
 
 namespace webf {
 
@@ -95,9 +95,7 @@ class QualifiedName {
     std::size_t operator()(const QualifiedName& k) const { return k.hash(); }
   };
 
-  QualifiedName(const AtomicString& prefix,
-                const AtomicString& local_name,
-                const AtomicString& namespace_uri);
+  QualifiedName(const AtomicString& prefix, const AtomicString& local_name, const AtomicString& namespace_uri);
   // Creates a QualifiedName instance with null prefix, the specified local
   // name, and null namespace.
   explicit QualifiedName(const AtomicString& local_name);
@@ -144,7 +142,9 @@ class QualifiedName {
   // Init routine for globals
   static void InitAndReserveCapacityForSize(unsigned size);
 
-  static const QualifiedName Null() { return QualifiedName(AtomicString::Empty(), AtomicString::Empty(), AtomicString::Empty()); }
+  static const QualifiedName Null() {
+    return QualifiedName(AtomicString::Empty(), AtomicString::Empty(), AtomicString::Empty());
+  }
 
   // The below methods are only for creating static global QNames that need no
   // ref counting.

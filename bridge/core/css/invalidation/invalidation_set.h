@@ -45,11 +45,7 @@ namespace webf {
 
 class Element;
 
-enum class InvalidationType {
-  kInvalidateDescendants,
-  kInvalidateSiblings,
-  kInvalidateNthSiblings
-};
+enum class InvalidationType { kInvalidateDescendants, kInvalidateSiblings, kInvalidateNthSiblings };
 
 class InvalidationSet;
 
@@ -96,18 +92,10 @@ class InvalidationSet {
   bool operator==(const InvalidationSet&) const;
   bool operator!=(const InvalidationSet& o) const { return !(*this == o); }
 
-  InvalidationType GetType() const {
-    return static_cast<InvalidationType>(type_);
-  }
-  bool IsDescendantInvalidationSet() const {
-    return GetType() == InvalidationType::kInvalidateDescendants;
-  }
-  bool IsSiblingInvalidationSet() const {
-    return GetType() != InvalidationType::kInvalidateDescendants;
-  }
-  bool IsNthSiblingInvalidationSet() const {
-    return GetType() == InvalidationType::kInvalidateNthSiblings;
-  }
+  InvalidationType GetType() const { return static_cast<InvalidationType>(type_); }
+  bool IsDescendantInvalidationSet() const { return GetType() == InvalidationType::kInvalidateDescendants; }
+  bool IsSiblingInvalidationSet() const { return GetType() != InvalidationType::kInvalidateDescendants; }
+  bool IsNthSiblingInvalidationSet() const { return GetType() == InvalidationType::kInvalidateNthSiblings; }
 
   bool InvalidatesElement(Element&) const;
   bool InvalidatesTagName(Element&) const;
@@ -117,14 +105,10 @@ class InvalidationSet {
   void AddTagName(const AtomicString& tag_name);
   void AddAttribute(const AtomicString& attribute_local_name);
 
-  void SetInvalidationFlags(InvalidationFlags flags) {
-    invalidation_flags_ = flags;
-  }
+  void SetInvalidationFlags(InvalidationFlags flags) { invalidation_flags_ = flags; }
 
   void SetWholeSubtreeInvalid();
-  bool WholeSubtreeInvalid() const {
-    return invalidation_flags_.WholeSubtreeInvalid();
-  }
+  bool WholeSubtreeInvalid() const { return invalidation_flags_.WholeSubtreeInvalid(); }
 
   void SetInvalidatesSelf() { invalidates_self_ = true; }
   bool InvalidatesSelf() const { return invalidates_self_; }
@@ -135,54 +119,32 @@ class InvalidationSet {
   }
   bool InvalidatesNth() const { return invalidates_nth_; }
 
-  void SetTreeBoundaryCrossing() {
-    invalidation_flags_.SetTreeBoundaryCrossing(true);
-  }
-  bool TreeBoundaryCrossing() const {
-    return invalidation_flags_.TreeBoundaryCrossing();
-  }
+  void SetTreeBoundaryCrossing() { invalidation_flags_.SetTreeBoundaryCrossing(true); }
+  bool TreeBoundaryCrossing() const { return invalidation_flags_.TreeBoundaryCrossing(); }
 
-  void SetInsertionPointCrossing() {
-    invalidation_flags_.SetInsertionPointCrossing(true);
-  }
-  bool InsertionPointCrossing() const {
-    return invalidation_flags_.InsertionPointCrossing();
-  }
+  void SetInsertionPointCrossing() { invalidation_flags_.SetInsertionPointCrossing(true); }
+  bool InsertionPointCrossing() const { return invalidation_flags_.InsertionPointCrossing(); }
 
-  void SetCustomPseudoInvalid() {
-    invalidation_flags_.SetInvalidateCustomPseudo(true);
-  }
-  bool CustomPseudoInvalid() const {
-    return invalidation_flags_.InvalidateCustomPseudo();
-  }
+  void SetCustomPseudoInvalid() { invalidation_flags_.SetInvalidateCustomPseudo(true); }
+  bool CustomPseudoInvalid() const { return invalidation_flags_.InvalidateCustomPseudo(); }
 
-  void SetInvalidatesSlotted() {
-    invalidation_flags_.SetInvalidatesSlotted(true);
-  }
-  bool InvalidatesSlotted() const {
-    return invalidation_flags_.InvalidatesSlotted();
-  }
+  void SetInvalidatesSlotted() { invalidation_flags_.SetInvalidatesSlotted(true); }
+  bool InvalidatesSlotted() const { return invalidation_flags_.InvalidatesSlotted(); }
 
-  const InvalidationFlags GetInvalidationFlags() const {
-    return invalidation_flags_;
-  }
+  const InvalidationFlags GetInvalidationFlags() const { return invalidation_flags_; }
 
   void SetInvalidatesParts() { invalidation_flags_.SetInvalidatesParts(true); }
-  bool InvalidatesParts() const {
-    return invalidation_flags_.InvalidatesParts();
-  }
+  bool InvalidatesParts() const { return invalidation_flags_.InvalidatesParts(); }
 
   bool IsEmpty() const {
-    return HasEmptyBackings() &&
-           !invalidation_flags_.InvalidateCustomPseudo() &&
-           !invalidation_flags_.InsertionPointCrossing() &&
-           !invalidation_flags_.InvalidatesSlotted() &&
+    return HasEmptyBackings() && !invalidation_flags_.InvalidateCustomPseudo() &&
+           !invalidation_flags_.InsertionPointCrossing() && !invalidation_flags_.InvalidatesSlotted() &&
            !invalidation_flags_.InvalidatesParts();
   }
 
   bool IsAlive() const { return is_alive_; }
 
-  //void WriteIntoTrace(perfetto::TracedValue context) const;
+  // void WriteIntoTrace(perfetto::TracedValue context) const;
 
   // Format the InvalidationSet for debugging purposes.
   //
@@ -265,8 +227,7 @@ class InvalidationSet {
   template <BackingType type>
   union Backing {
     using Flags = BackingFlags;
-    static_assert(static_cast<size_t>(type) < sizeof(BackingFlags::bits_) * 8,
-                  "Enough bits in BackingFlags");
+    static_assert(static_cast<size_t>(type) < sizeof(BackingFlags::bits_) * 8, "Enough bits in BackingFlags");
 
     ~Backing() {
       // Destruction is done by Clear(), since we don't know
@@ -286,8 +247,7 @@ class InvalidationSet {
     size_t Size(const Flags&) const;
     bool IsHashSet(const Flags& flags) const { return flags.bits_ & GetMask(); }
 
-    const AtomicString* GetString(const Flags flags) const {
-      return IsHashSet(flags) ? nullptr : &string_; }
+    const AtomicString* GetString(const Flags flags) const { return IsHashSet(flags) ? nullptr : &string_; }
     const std::unordered_set<AtomicString, AtomicString::KeyHasher>* GetHashSet(const Flags& flags) const {
       return IsHashSet(flags) ? hash_set_ : nullptr;
     }
@@ -298,8 +258,7 @@ class InvalidationSet {
      public:
       enum class Type { kString, kHashSet };
 
-      explicit Iterator(const AtomicString& string_impl)
-          : type_(Type::kString), string_(string_impl) {}
+      explicit Iterator(const AtomicString& string_impl) : type_(Type::kString), string_(string_impl) {}
       explicit Iterator(std::unordered_set<AtomicString, AtomicString::KeyHasher>::iterator iterator)
           : type_(Type::kHashSet), hash_set_iterator_(iterator) {}
 
@@ -321,9 +280,7 @@ class InvalidationSet {
         }
       }
 
-      const AtomicString& operator*() const {
-        return type_ == Type::kString ? string_ : *hash_set_iterator_;
-      }
+      const AtomicString& operator*() const { return type_ == Type::kString ? string_ : *hash_set_iterator_; }
 
      private:
       Type type_;
@@ -331,7 +288,7 @@ class InvalidationSet {
       AtomicString string_;
       // Used when type_ is kHashSet.
       std::unordered_set<AtomicString, AtomicString::KeyHasher>::iterator hash_set_iterator_;
-      //HashSet<AtomicString>::iterator hash_set_iterator_;
+      // HashSet<AtomicString>::iterator hash_set_iterator_;
     };
 
     class Range {
@@ -346,10 +303,8 @@ class InvalidationSet {
     };
 
     Range Items(const Flags& flags) const {
-      Iterator begin =
-          IsHashSet(flags) ? Iterator(hash_set_->begin()) : Iterator(string_);
-      Iterator end =
-          IsHashSet(flags) ? Iterator(hash_set_->end()) : Iterator(g_null_atom);
+      Iterator begin = IsHashSet(flags) ? Iterator(hash_set_->begin()) : Iterator(string_);
+      Iterator end = IsHashSet(flags) ? Iterator(hash_set_->end()) : Iterator(g_null_atom);
       return Range(begin, end);
     }
 
@@ -383,29 +338,17 @@ class InvalidationSet {
   bool HasTagNames() const { return !tag_names_.IsEmpty(backing_flags_); }
   bool HasAttributes() const { return !attributes_.IsEmpty(backing_flags_); }
 
-  bool HasId(const AtomicString& string) const {
-    return ids_.Contains(backing_flags_, string);
-  }
+  bool HasId(const AtomicString& string) const { return ids_.Contains(backing_flags_, string); }
 
-  bool HasTagName(const AtomicString& string) const {
-    return tag_names_.Contains(backing_flags_, string);
-  }
+  bool HasTagName(const AtomicString& string) const { return tag_names_.Contains(backing_flags_, string); }
 
-  Backing<BackingType::kClasses>::Range Classes() const {
-    return classes_.Items(backing_flags_);
-  }
+  Backing<BackingType::kClasses>::Range Classes() const { return classes_.Items(backing_flags_); }
 
-  Backing<BackingType::kIds>::Range Ids() const {
-    return ids_.Items(backing_flags_);
-  }
+  Backing<BackingType::kIds>::Range Ids() const { return ids_.Items(backing_flags_); }
 
-  Backing<BackingType::kTagNames>::Range TagNames() const {
-    return tag_names_.Items(backing_flags_);
-  }
+  Backing<BackingType::kTagNames>::Range TagNames() const { return tag_names_.Items(backing_flags_); }
 
-  Backing<BackingType::kAttributes>::Range Attributes() const {
-    return attributes_.Items(backing_flags_);
-  }
+  Backing<BackingType::kAttributes>::Range Attributes() const { return attributes_.Items(backing_flags_); }
 
   // Look for any class name on Element that is contained in |classes_|.
   const AtomicString* FindAnyClass(Element&) const;
@@ -437,49 +380,38 @@ class InvalidationSet {
 
 class DescendantInvalidationSet final : public InvalidationSet {
  public:
-  static std::shared_ptr<DescendantInvalidationSet> Create() {
-    return std::make_shared<DescendantInvalidationSet>();
-  }
+  static std::shared_ptr<DescendantInvalidationSet> Create() { return std::make_shared<DescendantInvalidationSet>(); }
 
-  DescendantInvalidationSet()
-      : InvalidationSet(InvalidationType::kInvalidateDescendants) {}
+  DescendantInvalidationSet() : InvalidationSet(InvalidationType::kInvalidateDescendants) {}
 };
 
 class SiblingInvalidationSet : public InvalidationSet {
-public:
+ public:
   static std::shared_ptr<SiblingInvalidationSet> Create(const std::shared_ptr<DescendantInvalidationSet>& descendants) {
     return std::make_shared<SiblingInvalidationSet>(descendants);
   }
 
-  static constexpr unsigned kDirectAdjacentMax =
-      std::numeric_limits<unsigned>::max();
+  static constexpr unsigned kDirectAdjacentMax = std::numeric_limits<unsigned>::max();
 
-  unsigned MaxDirectAdjacentSelectors() const {
-    return max_direct_adjacent_selectors_;
-  }
+  unsigned MaxDirectAdjacentSelectors() const { return max_direct_adjacent_selectors_; }
   void UpdateMaxDirectAdjacentSelectors(unsigned value) {
-    max_direct_adjacent_selectors_ =
-        std::max(value, max_direct_adjacent_selectors_);
+    max_direct_adjacent_selectors_ = std::max(value, max_direct_adjacent_selectors_);
   }
 
-  std::shared_ptr<DescendantInvalidationSet> SiblingDescendants() const {
-    return sibling_descendant_invalidation_set_;
-  }
+  std::shared_ptr<DescendantInvalidationSet> SiblingDescendants() const { return sibling_descendant_invalidation_set_; }
   DescendantInvalidationSet& EnsureSiblingDescendants();
 
-  std::shared_ptr<DescendantInvalidationSet> Descendants() const {
-    return descendant_invalidation_set_;
-  }
+  std::shared_ptr<DescendantInvalidationSet> Descendants() const { return descendant_invalidation_set_; }
   DescendantInvalidationSet& EnsureDescendants();
 
-protected:
+ protected:
   // Base constructor for NthSiblingInvalidationSet.
   SiblingInvalidationSet();
 
-public: // for std::make_shared
+ public:  // for std::make_shared
   explicit SiblingInvalidationSet(const std::shared_ptr<DescendantInvalidationSet>& descendants);
 
-private:
+ private:
   // Indicates the maximum possible number of siblings affected.
   unsigned max_direct_adjacent_selectors_;
 
@@ -516,9 +448,7 @@ private:
 
 class NthSiblingInvalidationSet final : public SiblingInvalidationSet {
  public:
-  static std::shared_ptr<NthSiblingInvalidationSet> Create() {
-    return std::make_shared<NthSiblingInvalidationSet>();
-  }
+  static std::shared_ptr<NthSiblingInvalidationSet> Create() { return std::make_shared<NthSiblingInvalidationSet>(); }
 
   NthSiblingInvalidationSet() = default;
 };
@@ -531,8 +461,7 @@ struct InvalidationLists {
 };
 
 template <typename InvalidationSet::BackingType type>
-void InvalidationSet::Backing<type>::Add(InvalidationSet::BackingFlags& flags,
-                                         const AtomicString& string) {
+void InvalidationSet::Backing<type>::Add(InvalidationSet::BackingFlags& flags, const AtomicString& string) {
   assert(!string.IsNull());
   if (IsHashSet(flags)) {
     hash_set_->insert(string);
@@ -552,8 +481,7 @@ void InvalidationSet::Backing<type>::Add(InvalidationSet::BackingFlags& flags,
 }
 
 template <typename InvalidationSet::BackingType type>
-void InvalidationSet::Backing<type>::Clear(
-    InvalidationSet::BackingFlags& flags) {
+void InvalidationSet::Backing<type>::Clear(InvalidationSet::BackingFlags& flags) {
   if (IsHashSet(flags)) {
     if (hash_set_) {
       delete hash_set_;
@@ -566,25 +494,22 @@ void InvalidationSet::Backing<type>::Clear(
 }
 
 template <typename InvalidationSet::BackingType type>
-bool InvalidationSet::Backing<type>::Contains(
-    const InvalidationSet::BackingFlags& flags,
-    const AtomicString& string) const {
+bool InvalidationSet::Backing<type>::Contains(const InvalidationSet::BackingFlags& flags,
+                                              const AtomicString& string) const {
   if (IsHashSet(flags)) {
-    //return hash_set_->Contains(string);
+    // return hash_set_->Contains(string);
     return hash_set_->find(string) != hash_set_->end();
   }
   return string == string_;
 }
 
 template <typename InvalidationSet::BackingType type>
-bool InvalidationSet::Backing<type>::IsEmpty(
-    const InvalidationSet::BackingFlags& flags) const {
+bool InvalidationSet::Backing<type>::IsEmpty(const InvalidationSet::BackingFlags& flags) const {
   return !IsHashSet(flags) && !string_;
 }
 
 template <typename InvalidationSet::BackingType type>
-size_t InvalidationSet::Backing<type>::Size(
-    const InvalidationSet::BackingFlags& flags) const {
+size_t InvalidationSet::Backing<type>::Size(const InvalidationSet::BackingFlags& flags) const {
   if (const std::unordered_set<AtomicString, AtomicString::KeyHasher>* set = GetHashSet(flags)) {
     return set->size();
   }
@@ -596,23 +521,17 @@ size_t InvalidationSet::Backing<type>::Size(
 
 template <>
 struct DowncastTraits<DescendantInvalidationSet> {
-  static bool AllowFrom(const InvalidationSet& value) {
-    return value.IsDescendantInvalidationSet();
-  }
+  static bool AllowFrom(const InvalidationSet& value) { return value.IsDescendantInvalidationSet(); }
 };
 
 template <>
 struct DowncastTraits<SiblingInvalidationSet> {
-  static bool AllowFrom(const InvalidationSet& value) {
-    return value.IsSiblingInvalidationSet();
-  }
+  static bool AllowFrom(const InvalidationSet& value) { return value.IsSiblingInvalidationSet(); }
 };
 
 template <>
 struct DowncastTraits<NthSiblingInvalidationSet> {
-  static bool AllowFrom(const InvalidationSet& value) {
-    return value.IsNthSiblingInvalidationSet();
-  }
+  static bool AllowFrom(const InvalidationSet& value) { return value.IsNthSiblingInvalidationSet(); }
 };
 
 std::ostream& operator<<(std::ostream&, const InvalidationSet&);

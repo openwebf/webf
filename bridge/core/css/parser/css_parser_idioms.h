@@ -42,7 +42,6 @@ namespace webf {
 
 class CSSTokenizerInputStream;
 
-
 // TODO: ---------------这个处理本来在html_parser_idioms中[start]--------------------
 const char kEndOfFileMarker = 0;
 // https://html.spec.whatwg.org/C/#parse-error-unexpected-null-character
@@ -64,8 +63,7 @@ inline bool IsHTMLSpace(CharType character) {
   // newline, then tab, then the other characters.
 
   return character <= ' ' &&
-         (character == ' ' || character == '\n' || character == '\t' ||
-          character == '\r' || character == '\f');
+         (character == ' ' || character == '\n' || character == '\t' || character == '\r' || character == '\f');
 }
 // TODO: ---------------这个处理本来在html_parser_idioms中[end]--------------------
 

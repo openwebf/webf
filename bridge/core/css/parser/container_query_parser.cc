@@ -88,9 +88,7 @@ class StateFeatureSet : public MediaQueryParser::FeatureSet {
   WEBF_STACK_ALLOCATED();
 
  public:
-  bool IsAllowed(const std::string& feature) const override {
-    return false;
-  }
+  bool IsAllowed(const std::string& feature) const override { return false; }
   bool IsAllowedWithoutValue(const std::string& feature) const override { return true; }
   bool IsCaseSensitive(const std::string& feature) const override { return false; }
   bool SupportsRange() const override { return false; }

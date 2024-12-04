@@ -30,7 +30,6 @@
 
 namespace webf {
 
-
 class CSSInitialValue : public CSSValue {
  public:
   static std::shared_ptr<const CSSInitialValue> Create();
@@ -41,9 +40,7 @@ class CSSInitialValue : public CSSValue {
 
   bool Equals(const CSSInitialValue&) const { return true; }
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-    CSSValue::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const { CSSValue::TraceAfterDispatch(visitor); }
 
  private:
   friend class CSSValuePool;
@@ -51,11 +48,8 @@ class CSSInitialValue : public CSSValue {
 
 template <>
 struct DowncastTraits<CSSInitialValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsInitialValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsInitialValue(); }
 };
-
 
 }  // namespace webf
 

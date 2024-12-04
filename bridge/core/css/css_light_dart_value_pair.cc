@@ -12,4 +12,4 @@ std::string CSSLightDarkValuePair::CustomCSSText() const {
   return "light-dark(" + first + ", " + second + ")";
 }
 
-}
+}  // namespace webf

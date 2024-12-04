@@ -78,8 +78,7 @@ bool Base64Decode(JSContext* ctx, AtomicString in, std::vector<uint8_t>& out, Mo
       // TODO(csharrison): Most callers use String inputs so ToString() should
       // be fast. Still, we should add a RemoveCharacters method to StringView
       // to avoid a double allocation for non-String-backed StringViews.
-      return Base64DecodeRaw(in, out, policy) ||
-             Base64DecodeRaw(in.RemoveCharacters(&IsAsciiWhitespace), out, policy);
+      return Base64DecodeRaw(in, out, policy) || Base64DecodeRaw(in.RemoveCharacters(&IsAsciiWhitespace), out, policy);
     }
     case ModpDecodePolicy::kNoPaddingValidation: {
       return Base64DecodeRaw(in, out, policy);
@@ -229,7 +228,7 @@ ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element, Exceptio
   if (native_binding_object == nullptr)
     return nullptr;
 
-//  return MakeGarbageCollected<ComputedCssStyleDeclaration>(GetExecutingContext(), native_binding_object);
+  //  return MakeGarbageCollected<ComputedCssStyleDeclaration>(GetExecutingContext(), native_binding_object);
   return nullptr;
 }
 

@@ -11,7 +11,7 @@
 
 namespace webf {
 
-//class StyleRecalcRoot : public StyleTraversalRoot {
+// class StyleRecalcRoot : public StyleTraversalRoot {
 //  WEBF_DISALLOW_NEW();
 //
 // public:

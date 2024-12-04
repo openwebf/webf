@@ -32,10 +32,10 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include <cstring>
 #include <cassert>
-#include "macros.h"
+#include <cstring>
 #include "core/base/compiler_specific.h"
+#include "macros.h"
 
 #ifndef BRIDGE_FOUNDATION_ASCII_TYPES_H_
 #define BRIDGE_FOUNDATION_ASCII_TYPES_H_
@@ -111,8 +111,7 @@ inline bool IsASCIILower(CharacterType character) {
 }
 
 template <typename CharacterType>
-ALWAYS_INLINE bool IsUpperASCII(const CharacterType* characters,
-                                size_t length) {
+ALWAYS_INLINE bool IsUpperASCII(const CharacterType* characters, size_t length) {
   bool contains_lower_case = false;
   for (size_t i = 0; i < length; i++) {
     contains_lower_case |= IsASCIILower(characters[i]);
@@ -131,7 +130,6 @@ template <typename CharType>
 inline CharType ToASCIILower(CharType c) {
   return c | ((c >= 'A' && c <= 'Z') << 5);
 }
-
 
 inline unsigned char ToASCIILower(unsigned char c) {
   return kASCIICaseFoldTable[c];

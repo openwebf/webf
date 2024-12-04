@@ -47,7 +47,6 @@ class CSSParserContext final {
   // Like CompleteURL(), but if `url` is empty a null KURL is returned.
   KURL CompleteNonEmptyURL(const std::string& url) const;
 
-
   // Overrides |mode_| of a CSSParserContext within the scope, allowing us to
   // switching parsing mode while parsing different parts of a style sheet.
   // TODO(xiaochengh): This isn't the right approach, as it breaks the
@@ -56,8 +55,7 @@ class CSSParserContext final {
     WEBF_STACK_ALLOCATED();
 
    public:
-    ParserModeOverridingScope(const CSSParserContext& context,
-                              CSSParserMode mode)
+    ParserModeOverridingScope(const CSSParserContext& context, CSSParserMode mode)
         : mode_reset_(const_cast<CSSParserMode*>(&context.mode_), mode) {}
 
    private:

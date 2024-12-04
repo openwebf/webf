@@ -26,7 +26,6 @@
 #define WEBF_CSS_PROPERTY_VALUE_SET_H
 
 #include <span>
-#include "core/base/bits.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/base/bits.h"
 #include "core/base/compiler_specific.h"
@@ -179,9 +178,9 @@ class alignas(std::max(alignof(std::shared_ptr<const CSSValue>),
                                bool contains_cursor_hand = false);
 
   static std::shared_ptr<ImmutableCSSPropertyValueSet> Create(const CSSPropertyValue* properties,
-                                                                    unsigned count,
-                                                                    CSSParserMode,
-                                                                    bool contains_cursor_hand = false);
+                                                              unsigned count,
+                                                              CSSParserMode,
+                                                              bool contains_cursor_hand = false);
 
   unsigned PropertyCount() const { return array_size_; }
 
@@ -296,7 +295,8 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   void MergeAndOverrideOnConflict(const CSSPropertyValueSet*);
 
   void Clear();
-  void ParseDeclarationList(const AtomicString& style_declaration, std::shared_ptr<StyleSheetContents> context_style_sheet);
+  void ParseDeclarationList(const AtomicString& style_declaration,
+                            std::shared_ptr<StyleSheetContents> context_style_sheet);
 
   CSSStyleDeclaration* EnsureCSSStyleDeclaration(ExecutingContext* execution_context);
 

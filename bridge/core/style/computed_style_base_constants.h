@@ -14,7 +14,6 @@
 
 namespace webf {
 
-
 enum class EAlignmentBaseline : uint8_t {
   kBaseline,
   kMiddle,
@@ -746,27 +745,21 @@ enum class TextDecorationLine : unsigned {
 static const int kTextDecorationLineBits = 6;
 
 inline TextDecorationLine operator|(TextDecorationLine a, TextDecorationLine b) {
-  return static_cast<TextDecorationLine>(
-      static_cast<unsigned>(a) | static_cast<unsigned>(b)
-  );
+  return static_cast<TextDecorationLine>(static_cast<unsigned>(a) | static_cast<unsigned>(b));
 }
 inline TextDecorationLine& operator|=(TextDecorationLine& a, TextDecorationLine b) {
   return a = a | b;
 }
 
 inline TextDecorationLine operator^(TextDecorationLine a, TextDecorationLine b) {
-  return static_cast<TextDecorationLine>(
-      static_cast<unsigned>(a) ^ static_cast<unsigned>(b)
-  );
+  return static_cast<TextDecorationLine>(static_cast<unsigned>(a) ^ static_cast<unsigned>(b));
 }
 inline TextDecorationLine& operator^=(TextDecorationLine& a, TextDecorationLine b) {
   return a = a ^ b;
 }
 
 inline TextDecorationLine operator&(TextDecorationLine a, TextDecorationLine b) {
-  return static_cast<TextDecorationLine>(
-      static_cast<unsigned>(a) & static_cast<unsigned>(b)
-  );
+  return static_cast<TextDecorationLine>(static_cast<unsigned>(a) & static_cast<unsigned>(b));
 }
 inline TextDecorationLine& operator&=(TextDecorationLine& a, TextDecorationLine b) {
   return a = a & b;
@@ -782,7 +775,6 @@ enum class TextEmphasisFill : uint8_t {
   kMaxEnumValue = kOpen,
 };
 
-
 enum class TextEmphasisMark : uint8_t {
   kNone,
   kAuto,
@@ -794,7 +786,6 @@ enum class TextEmphasisMark : uint8_t {
   kCustom,
   kMaxEnumValue = kCustom,
 };
-
 
 }  // namespace webf
 

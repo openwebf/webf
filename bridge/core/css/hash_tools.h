@@ -31,6 +31,7 @@ namespace webf {
 
 struct Property {
   WEBF_DISALLOW_NEW();
+
  public:
   int name_offset;
   int id;
@@ -38,6 +39,7 @@ struct Property {
 
 struct Value {
   WEBF_DISALLOW_NEW();
+
  public:
   int name_offset;
   int id;
@@ -45,7 +47,6 @@ struct Value {
 
 const Property* FindProperty(const char* str, unsigned len);
 const Value* FindValue(const char* str, unsigned len);
-
 
 }  // namespace webf
 

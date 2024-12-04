@@ -73,15 +73,14 @@ class Interpolation {
   // optimise away computing underlying values.
   virtual bool DependsOnUnderlyingValue() const { return false; }
 
-  //virtual void Trace(Visitor*) const {}
+  // virtual void Trace(Visitor*) const {}
 
  protected:
   Interpolation() = default;
 };
 
 using ActiveInterpolations = std::vector<std::shared_ptr<Interpolation>>;
-using ActiveInterpolationsMap =
-    std::unordered_map<PropertyHandle, Member<ActiveInterpolations>>;
+using ActiveInterpolationsMap = std::unordered_map<PropertyHandle, Member<ActiveInterpolations>>;
 
 }  // namespace webf
 

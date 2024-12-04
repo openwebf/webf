@@ -17,7 +17,7 @@ namespace webf {
 
 class Document;
 class KURL;
-class SVGResource; // TODO(xiezuobing): SVGResource还未迁移
+class SVGResource;  // TODO(xiezuobing): SVGResource还未迁移
 
 namespace cssvalue {
 
@@ -29,9 +29,7 @@ class CSSURIValue : public CSSValue {
   SVGResource* EnsureResourceReference() const;
   void ReResolveUrl(const Document&) const;
 
-  const std::string& ValueForSerialization() const {
-    return url_data_.ValueForSerialization();
-  }
+  const std::string& ValueForSerialization() const { return url_data_.ValueForSerialization(); }
 
   std::string CustomCSSText() const;
 

@@ -14,7 +14,6 @@
 
 namespace webf {
 
-
 // Copyable and immutable object representing number parsing flags.
 class NumberParsingOptions final {
   WEBF_STACK_ALLOCATED();
@@ -25,9 +24,7 @@ class NumberParsingOptions final {
     return NumberParsingOptions().SetAcceptLeadingPlus().SetAcceptWhiteSpace();
   }
   // Non-'Strict' behavior for WTF::String.
-  static constexpr NumberParsingOptions Loose() {
-    return Strict().SetAcceptTrailingGarbage();
-  }
+  static constexpr NumberParsingOptions Loose() { return Strict().SetAcceptTrailingGarbage(); }
 
   // Construct an instance without any flags set.
   constexpr NumberParsingOptions()
@@ -68,9 +65,7 @@ class NumberParsingOptions final {
   bool AcceptTrailingGarbage() const { return accept_trailing_garbage_; }
   bool AcceptLeadingPlus() const { return accept_leading_plus_; }
   bool AcceptWhitespace() const { return accept_leading_trailing_whitespace_; }
-  bool AcceptMinusZeroForUnsigned() const {
-    return accept_minus_zero_for_unsigned_;
-  }
+  bool AcceptMinusZeroForUnsigned() const { return accept_minus_zero_for_unsigned_; }
 
  private:
   unsigned accept_trailing_garbage_ : 1;

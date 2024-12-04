@@ -8,8 +8,8 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
-#include "defined_properties.h"
 #include "css_property_names.h"
+#include "defined_properties.h"
 
 namespace webf {
 
@@ -33,7 +33,6 @@ class CSSStyleDeclaration : public BindingObject {
   explicit CSSStyleDeclaration(JSContext* ctx);
   explicit CSSStyleDeclaration(JSContext* ctx, NativeBindingObject* native_binding_object);
 
-
   virtual bool IsAbstractPropertySet() const { return false; }
 
   virtual CSSRule* parentRule() const = 0;
@@ -56,8 +55,7 @@ class CSSStyleDeclaration : public BindingObject {
                            const AtomicString& value,
                            const AtomicString& priority,
                            ExceptionState&) = 0;
-  virtual AtomicString removeProperty(const AtomicString& property_name,
-                                ExceptionState&) = 0;
+  virtual AtomicString removeProperty(const AtomicString& property_name, ExceptionState&) = 0;
 
   // CSSPropertyID versions of the CSSOM functions to support bindings and
   // editing.
@@ -75,17 +73,14 @@ class CSSStyleDeclaration : public BindingObject {
   // getPropertyValue and getPropertyPriority are O(n),
   // because the array needs to be traversed to find the index.
   // See https://crbug.com/1339812 for more details.
-  virtual AtomicString GetPropertyValueWithHint(const AtomicString& property_name,
-                                          unsigned index) = 0;
-  virtual AtomicString GetPropertyPriorityWithHint(const AtomicString& property_name,
-                                             unsigned index) = 0;
+  virtual AtomicString GetPropertyValueWithHint(const AtomicString& property_name, unsigned index) = 0;
+  virtual AtomicString GetPropertyPriorityWithHint(const AtomicString& property_name, unsigned index) = 0;
 
   virtual void SetPropertyInternal(CSSPropertyID,
                                    const AtomicString& property_value,
                                    StringView value,
                                    bool important,
                                    ExceptionState&) = 0;
-
 
   virtual bool CssPropertyMatches(CSSPropertyID, const CSSValue&) const = 0;
   virtual CSSStyleSheet* ParentStyleSheet() const { return nullptr; }
@@ -115,10 +110,7 @@ class CSSStyleDeclaration : public BindingObject {
   //
   // Returns true if the fast path succeeded (in which case we need to
   // go through the normal string path).
-  virtual bool FastPathSetProperty(CSSPropertyID unresolved_property,
-                                   double value) {
-    return false;
-  }
+  virtual bool FastPathSetProperty(CSSPropertyID unresolved_property, double value) { return false; }
 };
 
 }  // namespace webf

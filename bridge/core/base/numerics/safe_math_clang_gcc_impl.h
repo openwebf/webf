@@ -94,18 +94,15 @@ struct CheckedMulFastOp {
   // https://crbug.com/613003
   // We can support intptr_t, uintptr_t, or a smaller common type.
   static const bool is_supported =
-      (IsTypeInRangeForNumericType<intptr_t, T>::value &&
-       IsTypeInRangeForNumericType<intptr_t, U>::value) ||
-      (IsTypeInRangeForNumericType<uintptr_t, T>::value &&
-       IsTypeInRangeForNumericType<uintptr_t, U>::value);
+      (IsTypeInRangeForNumericType<intptr_t, T>::value && IsTypeInRangeForNumericType<intptr_t, U>::value) ||
+      (IsTypeInRangeForNumericType<uintptr_t, T>::value && IsTypeInRangeForNumericType<uintptr_t, U>::value);
 #else
   static const bool is_supported = true;
 #endif
   template <typename V>
   __attribute__((always_inline)) static constexpr bool Do(T x, U y, V* result) {
-    return CheckedMulFastAsmOp<T, U>::is_supported
-               ? CheckedMulFastAsmOp<T, U>::Do(x, y, result)
-               : !__builtin_mul_overflow(x, y, result);
+    return CheckedMulFastAsmOp<T, U>::is_supported ? CheckedMulFastAsmOp<T, U>::Do(x, y, result)
+                                                   : !__builtin_mul_overflow(x, y, result);
   }
 };
 
@@ -143,9 +140,7 @@ struct ClampedNegFastOp {
     // Use this when there is no assembler path available.
     if (!ClampedSubFastAsmOp<T, T>::is_supported) {
       T result;
-      return !__builtin_sub_overflow(T(0), value, &result)
-                 ? result
-                 : std::numeric_limits<T>::max();
+      return !__builtin_sub_overflow(T(0), value, &result) ? result : std::numeric_limits<T>::max();
     }
 
     // Fallback to the normal subtraction path.

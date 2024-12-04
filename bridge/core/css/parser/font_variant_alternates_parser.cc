@@ -24,7 +24,8 @@ FontVariantAlternatesParser::ParseResult FontVariantAlternatesParser::ConsumeAlt
   return ParseResult::kConsumedValue;
 }
 
-bool FontVariantAlternatesParser::ConsumeAlternate(CSSParserTokenStream& stream, std::shared_ptr<const CSSParserContext> context) {
+bool FontVariantAlternatesParser::ConsumeAlternate(CSSParserTokenStream& stream,
+                                                   std::shared_ptr<const CSSParserContext> context) {
   auto peek = stream.Peek().FunctionId();
   std::shared_ptr<cssvalue::CSSAlternateValue>* value_to_set = nullptr;
   switch (peek) {

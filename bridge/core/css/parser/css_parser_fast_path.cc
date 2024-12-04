@@ -8,7 +8,6 @@
 #include <arm_neon.h>
 #endif
 
-#include "core/css/parser/css_parser_idioms.h"
 #include "core/css/css_function_value.h"
 #include "core/css/css_inherit_value.h"
 #include "core/css/css_initial_value.h"
@@ -17,6 +16,7 @@
 #include "core/css/css_revert_layer_value.h"
 #include "core/css/css_revert_value.h"
 #include "core/css/css_unset_value.h"
+#include "core/css/parser/css_parser_idioms.h"
 #include "core/css/parser/css_property_parser.h"
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/style_color.h"
@@ -64,11 +64,11 @@ static inline bool IsSimpleLengthPropertyID(CSSPropertyID property_id, bool& acc
       CSSPropertyID::kMarginInlineStart,
   }};
   // A subset of the above.
-  static CSSBitset accept_negative{
-      {CSSPropertyID::kBottom, CSSPropertyID::kLeft,
-       CSSPropertyID::kMarginBottom, CSSPropertyID::kMarginLeft, CSSPropertyID::kMarginRight, CSSPropertyID::kMarginTop,
-       CSSPropertyID::kOffsetDistance, CSSPropertyID::kRight, CSSPropertyID::kTop, CSSPropertyID::kMarginBlockEnd,
-       CSSPropertyID::kMarginBlockStart, CSSPropertyID::kMarginInlineEnd, CSSPropertyID::kMarginInlineStart}};
+  static CSSBitset accept_negative{{CSSPropertyID::kBottom, CSSPropertyID::kLeft, CSSPropertyID::kMarginBottom,
+                                    CSSPropertyID::kMarginLeft, CSSPropertyID::kMarginRight, CSSPropertyID::kMarginTop,
+                                    CSSPropertyID::kOffsetDistance, CSSPropertyID::kRight, CSSPropertyID::kTop,
+                                    CSSPropertyID::kMarginBlockEnd, CSSPropertyID::kMarginBlockStart,
+                                    CSSPropertyID::kMarginInlineEnd, CSSPropertyID::kMarginInlineStart}};
 
   accepts_negative_numbers = accept_negative.Has(property_id);
   if (accepts_negative_numbers) {
@@ -1075,8 +1075,8 @@ bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(CSSPropertyID property_i
     case CSSPropertyID::kImageRendering:
       return value_id == CSSValueID::kAuto || value_id == CSSValueID::kWebkitOptimizeContrast ||
              value_id == CSSValueID::kPixelated;
-//    case CSSPropertyID::kInterpolateSize:
-//      return value_id == CSSValueID::kNumericOnly || value_id == CSSValueID::kAllowKeywords;
+      //    case CSSPropertyID::kInterpolateSize:
+      //      return value_id == CSSValueID::kNumericOnly || value_id == CSSValueID::kAllowKeywords;
     case CSSPropertyID::kIsolation:
       return value_id == CSSValueID::kAuto || value_id == CSSValueID::kIsolate;
     case CSSPropertyID::kMathShift:
@@ -1249,9 +1249,10 @@ bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(CSSPropertyID property_i
     case CSSPropertyID::kWhiteSpaceCollapse:
       return value_id == CSSValueID::kCollapse || value_id == CSSValueID::kPreserve ||
              value_id == CSSValueID::kPreserveBreaks || value_id == CSSValueID::kBreakSpaces;
-//    case CSSPropertyID::kWordBreak:
-//      return value_id == CSSValueID::kNormal || value_id == CSSValueID::kBreakAll || value_id == CSSValueID::kKeepAll ||
-//             value_id == CSSValueID::kBreakWord || value_id == CSSValueID::kAutoPhrase;
+      //    case CSSPropertyID::kWordBreak:
+      //      return value_id == CSSValueID::kNormal || value_id == CSSValueID::kBreakAll || value_id ==
+      //      CSSValueID::kKeepAll ||
+      //             value_id == CSSValueID::kBreakWord || value_id == CSSValueID::kAutoPhrase;
     case CSSPropertyID::kOriginTrialTestProperty:
       return value_id == CSSValueID::kNormal || value_id == CSSValueID::kNone;
     case CSSPropertyID::kTextBoxTrim:
@@ -1347,7 +1348,7 @@ CSSBitset CSSParserFastPaths::handled_by_keyword_fast_paths_properties_{{
     CSSPropertyID::kUserSelect,
     CSSPropertyID::kWebkitWritingMode,
     CSSPropertyID::kWhiteSpaceCollapse,
-//    CSSPropertyID::kWordBreak,
+    //    CSSPropertyID::kWordBreak,
     CSSPropertyID::kWritingMode,
     CSSPropertyID::kOriginTrialTestProperty,
     CSSPropertyID::kOverlay,

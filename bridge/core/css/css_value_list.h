@@ -30,7 +30,6 @@
 #include <memory>
 #include "core/css/css_value.h"
 
-
 namespace webf {
 
 class CSSValueList : public CSSValue {

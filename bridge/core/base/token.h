@@ -44,8 +44,7 @@ class Token {
   // Constructs a new Token with random |high| and |low| values taken from a
   // cryptographically strong random source. The result's |is_zero()| is
   // guaranteed to be false.
-  //static Token CreateRandom();
-
+  // static Token CreateRandom();
 
   // The high and low 64 bits of this Token.
   constexpr uint64_t high() const { return words_[0]; }
@@ -53,22 +52,17 @@ class Token {
 
   constexpr bool is_zero() const { return words_[0] == 0 && words_[1] == 0; }
 
-  webf::span<const uint8_t, 16> AsBytes() const {
-    return as_bytes(webf::span<const uint64_t, 2>(words_));
-  }
+  webf::span<const uint8_t, 16> AsBytes() const { return as_bytes(webf::span<const uint64_t, 2>(words_)); }
 
-  friend constexpr auto operator<=>(const Token& lhs,
-                                    const Token& rhs) = default;
-  friend constexpr bool operator==(const Token& lhs,
-                                   const Token& rhs) = default;
+  friend constexpr auto operator<=>(const Token& lhs, const Token& rhs) = default;
+  friend constexpr bool operator==(const Token& lhs, const Token& rhs) = default;
 
   // Generates a string representation of this Token useful for e.g. logging.
   std::string ToString() const;
 
   // FromString is the opposite of ToString. It returns std::nullopt if the
   // |string_representation| is invalid.
-  static std::optional<Token> FromString(
-      std::string_view string_representation);
+  static std::optional<Token> FromString(std::string_view string_representation);
 
  private:
   // Note: Two uint64_t are used instead of uint8_t[16] in order to have a

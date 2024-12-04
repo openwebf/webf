@@ -28,10 +28,7 @@ inline bool IsWindowsDriveSeparator(char ch) {
 // larger than the spec_len, and caps max_offset appropriately to simplify
 // callers. max_offset must be at least start_offset.
 template <typename CHAR>
-inline int DoesContainWindowsDriveSpecUntil(const CHAR* spec,
-                                            int start_offset,
-                                            int max_offset,
-                                            int spec_len) {
+inline int DoesContainWindowsDriveSpecUntil(const CHAR* spec, int start_offset, int max_offset, int spec_len) {
   assert(start_offset <= max_offset);
   if (start_offset > spec_len - 2)
     return -1;  // Not enough room.
@@ -55,11 +52,8 @@ inline int DoesContainWindowsDriveSpecUntil(const CHAR* spec,
 // If this returns true, the spec is guaranteed to have a valid drive letter
 // plus a drive letter separator (a colon or a pipe) starting at |start_offset|.
 template <typename CHAR>
-inline bool DoesBeginWindowsDriveSpec(const CHAR* spec,
-                                      int start_offset,
-                                      int spec_len) {
-  return DoesContainWindowsDriveSpecUntil(spec, start_offset, start_offset,
-                                          spec_len) == start_offset;
+inline bool DoesBeginWindowsDriveSpec(const CHAR* spec, int start_offset, int spec_len) {
+  return DoesContainWindowsDriveSpecUntil(spec, start_offset, start_offset, spec_len) == start_offset;
 }
 
 #ifdef WIN32
@@ -71,19 +65,15 @@ inline bool DoesBeginWindowsDriveSpec(const CHAR* spec,
 // When strict_slashes is set, this function will only accept backslashes as is
 // standard for Windows. Otherwise, it will accept forward slashes as well
 // which we use for a lot of URL handling.
-template<typename CHAR>
-inline bool DoesBeginUNCPath(const CHAR* text,
-                             int start_offset,
-                             int len,
-                             bool strict_slashes) {
+template <typename CHAR>
+inline bool DoesBeginUNCPath(const CHAR* text, int start_offset, int len, bool strict_slashes) {
   int remaining_len = len - start_offset;
   if (remaining_len < 2)
     return false;
 
   if (strict_slashes)
     return text[start_offset] == '\\' && text[start_offset + 1] == '\\';
-  return IsSlashOrBackslash(text[start_offset]) &&
-         IsSlashOrBackslash(text[start_offset + 1]);
+  return IsSlashOrBackslash(text[start_offset]) && IsSlashOrBackslash(text[start_offset + 1]);
 }
 
 #endif  // WIN32

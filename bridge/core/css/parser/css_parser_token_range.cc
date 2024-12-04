@@ -17,7 +17,6 @@ void CSSParserTokenRange::InitStaticEOFToken() {
   new ((void*)&g_static_eof_token) CSSParserToken(kEOFToken);
 }
 
-
 CSSParserTokenRange CSSParserTokenRange::MakeSubRange(const webf::CSSParserToken* first,
                                                       const webf::CSSParserToken* last) const {
   if (first == &g_static_eof_token) {
@@ -61,17 +60,14 @@ void CSSParserTokenRange::ConsumeComponentValue() {
   } while (nesting_level && first_ < last_);
 }
 
-
 // https://www.w3.org/TR/css-syntax-3/#serialization
 bool NeedsInsertedComment(const CSSParserToken& a, const CSSParserToken& b) {
   CSSParserTokenType at = a.GetType();
   CSSParserTokenType bt = b.GetType();
 
   // Row 1–7 of the table.
-  if (at == kIdentToken || at == kAtKeywordToken || at == kHashToken ||
-      at == kDimensionToken || at == kNumberToken ||
-      (at == kDelimiterToken &&
-       (a.Delimiter() == '#' || a.Delimiter() == '-'))) {
+  if (at == kIdentToken || at == kAtKeywordToken || at == kHashToken || at == kDimensionToken || at == kNumberToken ||
+      (at == kDelimiterToken && (a.Delimiter() == '#' || a.Delimiter() == '-'))) {
     if (at == kIdentToken && bt == kLeftParenthesisToken) {
       return true;
     }
@@ -83,30 +79,25 @@ bool NeedsInsertedComment(const CSSParserToken& a, const CSSParserToken& b) {
         return true;
       }
     }
-    return bt == kIdentToken || bt == kFunctionToken || bt == kUrlToken ||
-           bt == kBadUrlToken || bt == kNumberToken || bt == kPercentageToken ||
-           bt == kDimensionToken || bt == kCDCToken ||
+    return bt == kIdentToken || bt == kFunctionToken || bt == kUrlToken || bt == kBadUrlToken || bt == kNumberToken ||
+           bt == kPercentageToken || bt == kDimensionToken || bt == kCDCToken ||
            (bt == kDelimiterToken && b.Delimiter() == '-');
   }
 
   // Row 8.
   if (at == kDelimiterToken && a.Delimiter() == '@') {
-    return bt == kIdentToken || bt == kFunctionToken || bt == kUrlToken ||
-           bt == kBadUrlToken || bt == kCDCToken ||
+    return bt == kIdentToken || bt == kFunctionToken || bt == kUrlToken || bt == kBadUrlToken || bt == kCDCToken ||
            (bt == kDelimiterToken && b.Delimiter() == '-');
   }
 
   // Rows 9 and 10.
   if (at == kDelimiterToken && (a.Delimiter() == '.' || a.Delimiter() == '+')) {
-    return bt == kNumberToken || bt == kPercentageToken ||
-           bt == kDimensionToken;
+    return bt == kNumberToken || bt == kPercentageToken || bt == kDimensionToken;
   }
 
   // Final row (all other cases are false).
-  return at == kDelimiterToken && bt == kDelimiterToken &&
-         a.Delimiter() == '/' && b.Delimiter() == '*';
+  return at == kDelimiterToken && bt == kDelimiterToken && a.Delimiter() == '/' && b.Delimiter() == '*';
 }
-
 
 std::string CSSParserTokenRange::Serialize() const {
   StringBuilder result;
@@ -118,6 +109,5 @@ std::string CSSParserTokenRange::Serialize() const {
   }
   return result.ReleaseString();
 }
-
 
 }  // namespace webf

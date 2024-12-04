@@ -71,9 +71,7 @@ class Point {
   // other.
   // This comparison is required to use Point in sets, or sorted
   // vectors.
-  bool operator<(const Point& rhs) const {
-    return std::tie(y_, x_) < std::tie(rhs.y_, rhs.x_);
-  }
+  bool operator<(const Point& rhs) const { return std::tie(y_, x_) < std::tie(rhs.y_, rhs.x_); }
 
   // Returns a string representation of point.
   std::string ToString() const;
@@ -104,8 +102,7 @@ inline Point operator-(const Point& lhs, const Vector2d& rhs) {
 }
 
 inline Vector2d operator-(const Point& lhs, const Point& rhs) {
-  return Vector2d(base::ClampSub(lhs.x(), rhs.x()),
-                  base::ClampSub(lhs.y(), rhs.y()));
+  return Vector2d(base::ClampSub(lhs.x(), rhs.x()), base::ClampSub(lhs.y(), rhs.y()));
 }
 
 inline Point PointAtOffsetFromOrigin(const Vector2d& offset_from_origin) {
@@ -122,17 +119,11 @@ inline Point TransposePoint(const gfx::Point& p) {
 void PrintTo(const Point& point, ::std::ostream* os);
 
 // Helper methods to scale a gfx::Point to a new gfx::Point.
-Point ScaleToCeiledPoint(const Point& point,
-                                         float x_scale,
-                                         float y_scale);
+Point ScaleToCeiledPoint(const Point& point, float x_scale, float y_scale);
 Point ScaleToCeiledPoint(const Point& point, float x_scale);
-Point ScaleToFlooredPoint(const Point& point,
-                                          float x_scale,
-                                          float y_scale);
+Point ScaleToFlooredPoint(const Point& point, float x_scale, float y_scale);
 Point ScaleToFlooredPoint(const Point& point, float x_scale);
-Point ScaleToRoundedPoint(const Point& point,
-                                          float x_scale,
-                                          float y_scale);
+Point ScaleToRoundedPoint(const Point& point, float x_scale, float y_scale);
 Point ScaleToRoundedPoint(const Point& point, float x_scale);
 
 }  // namespace gfx

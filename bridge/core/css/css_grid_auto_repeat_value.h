@@ -26,9 +26,7 @@ namespace cssvalue {
 // intact.
 class CSSGridAutoRepeatValue : public CSSValueList {
  public:
-  CSSGridAutoRepeatValue(CSSValueID id)
-      : CSSValueList(kGridAutoRepeatClass, kSpaceSeparator),
-        auto_repeat_id_(id) {
+  CSSGridAutoRepeatValue(CSSValueID id) : CSSValueList(kGridAutoRepeatClass, kSpaceSeparator), auto_repeat_id_(id) {
     DCHECK(id == CSSValueID::kAutoFill || id == CSSValueID::kAutoFit);
   }
 
@@ -37,9 +35,7 @@ class CSSGridAutoRepeatValue : public CSSValueList {
 
   CSSValueID AutoRepeatID() const { return auto_repeat_id_; }
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-    CSSValueList::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const { CSSValueList::TraceAfterDispatch(visitor); }
 
  private:
   const CSSValueID auto_repeat_id_;
@@ -49,11 +45,9 @@ class CSSGridAutoRepeatValue : public CSSValueList {
 
 template <>
 struct DowncastTraits<cssvalue::CSSGridAutoRepeatValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsGridAutoRepeatValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsGridAutoRepeatValue(); }
 };
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_CSS_CSS_GRID_AUTO_REPEAT_VALUE_H_

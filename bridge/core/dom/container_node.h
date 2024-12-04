@@ -9,8 +9,8 @@
 #include <vector>
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/heap_vector.h"
-#include "core/html/collection_type.h"
 #include "core/dom/node.h"
+#include "core/html/collection_type.h"
 #include "plugin_api/container_node.h"
 
 namespace webf {
@@ -41,10 +41,8 @@ enum class DynamicRestyleFlags {
   kNumberOfDynamicRestyleFlags = 14,
 
   kChildrenAffectedByStructuralRules =
-      kChildrenAffectedByFirstChildRules | kChildrenAffectedByLastChildRules |
-      kChildrenAffectedByDirectAdjacentRules |
-      kChildrenAffectedByIndirectAdjacentRules |
-      kChildrenAffectedByForwardPositionalRules |
+      kChildrenAffectedByFirstChildRules | kChildrenAffectedByLastChildRules | kChildrenAffectedByDirectAdjacentRules |
+      kChildrenAffectedByIndirectAdjacentRules | kChildrenAffectedByForwardPositionalRules |
       kChildrenAffectedByBackwardPositionalRules
 };
 
@@ -212,29 +210,24 @@ class ContainerNode : public Node {
   }
 
   bool ChildrenAffectedByForwardPositionalRules() const {
-    return HasRestyleFlag(
-        DynamicRestyleFlags::kChildrenAffectedByForwardPositionalRules);
+    return HasRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByForwardPositionalRules);
   }
   void SetChildrenAffectedByForwardPositionalRules() {
-    SetRestyleFlag(
-        DynamicRestyleFlags::kChildrenAffectedByForwardPositionalRules);
+    SetRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByForwardPositionalRules);
   }
   void SetChildrenAffectedByDirectAdjacentRules() {
     SetRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByDirectAdjacentRules);
   }
 
   void SetChildrenAffectedByIndirectAdjacentRules() {
-    SetRestyleFlag(
-        DynamicRestyleFlags::kChildrenAffectedByIndirectAdjacentRules);
+    SetRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByIndirectAdjacentRules);
   }
 
   bool ChildrenAffectedByBackwardPositionalRules() const {
-    return HasRestyleFlag(
-        DynamicRestyleFlags::kChildrenAffectedByBackwardPositionalRules);
+    return HasRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByBackwardPositionalRules);
   }
   void SetChildrenAffectedByBackwardPositionalRules() {
-    SetRestyleFlag(
-        DynamicRestyleFlags::kChildrenAffectedByBackwardPositionalRules);
+    SetRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByBackwardPositionalRules);
   }
 
   Element* querySelector(const AtomicString& selectors, ExceptionState& exception_state);
@@ -249,9 +242,7 @@ class ContainerNode : public Node {
 
   // Called from ParserFinishedBuildingDocumentFragment() to notify `node` that
   // it was inserted.
-  void NotifyNodeAtEndOfBuildingFragmentTree(Node& node,
-                                             const ChildrenChange& change,
-                                             bool may_contain_shadow_roots);
+  void NotifyNodeAtEndOfBuildingFragmentTree(Node& node, const ChildrenChange& change, bool may_contain_shadow_roots);
 
   // |attr_name| and |owner_element| are only used for element attribute
   // modifications. |ChildrenChange| is either nullptr or points to a
@@ -270,9 +261,7 @@ class ContainerNode : public Node {
   template <typename Collection>
   Collection* EnsureCachedCollection(CollectionType, const AtomicString& name);
   template <typename Collection>
-  Collection* EnsureCachedCollection(CollectionType,
-                                     const AtomicString& namespace_uri,
-                                     const AtomicString& local_name);
+  Collection* EnsureCachedCollection(CollectionType, const AtomicString& namespace_uri, const AtomicString& local_name);
   template <typename Collection>
   Collection* CachedCollection(CollectionType);
 
@@ -297,8 +286,7 @@ class ContainerNode : public Node {
   void InsertBeforeCommon(Node& next_child, Node& new_child);
   void AppendChildCommon(Node& child);
 
-  void NotifyNodeInserted(Node&,
-                          ChildrenChangeSource = ChildrenChangeSource::kAPI);
+  void NotifyNodeInserted(Node&, ChildrenChangeSource = ChildrenChangeSource::kAPI);
   void NotifyNodeInsertedInternal(Node&, NodeVector& post_insertion_notification_targets);
   void NotifyNodeRemoved(Node&);
 

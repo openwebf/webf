@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #include "color_conversions.h"
-#include "core/base/numerics/angle_conversion.h"
 #include <tuple>
+#include "core/base/numerics/angle_conversion.h"
 
 namespace webf {
 
@@ -16,7 +16,7 @@ namespace {
 // accuracy if the intermediate floats are in the range that only holds integers (adding 0.5f to an
 // odd integer then snaps to nearest even). Using double for the rounding math gives maximum
 // accuracy for (float -> fixed -> float), but that's usually overkill.
-#define SkFixedToFloat(x) ((x) * 1.52587890625e-5f)
+#define SkFixedToFloat(x) ((x)*1.52587890625e-5f)
 
 typedef struct {
   float vals[2];
@@ -59,9 +59,7 @@ std::tuple<float, float, float> SRGBToHSL(float r, float g, float b) {
   float d = max - min;
 
   if (d != 0.0f) {
-    saturation = (ligth == 0.0f || ligth == 1.0f)
-                     ? 0.0f
-                     : (max - ligth) / std::min(ligth, 1 - ligth);
+    saturation = (ligth == 0.0f || ligth == 1.0f) ? 0.0f : (max - ligth) / std::min(ligth, 1 - ligth);
     if (max == r) {
       hue = (g - b) / d + (g < b ? 6.0f : 0.0f);
     } else if (max == g) {

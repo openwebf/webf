@@ -21,7 +21,6 @@
 
 namespace webf {
 
-
 namespace url {
 
 namespace {
@@ -39,8 +38,7 @@ int DoFindWindowsDriveLetter(const char* spec, int begin, int end) {
   // First guess the beginning of the drive letter.
   // If there is something that looks like a drive letter in the spec between
   // begin and end, store its position in drive_letter_pos.
-  int drive_letter_pos =
-      DoesContainWindowsDriveSpecUntil(spec, begin, end, end);
+  int drive_letter_pos = DoesContainWindowsDriveSpecUntil(spec, begin, end, end);
   if (drive_letter_pos < begin)
     return -1;
 
@@ -88,10 +86,7 @@ int FileDoDriveSpec(const CHAR* spec, int begin, int end, CanonOutput* output) {
 
 #endif  // WIN32
 
-bool DoFileCanonicalizePath(const char* spec,
-                            const Component& path,
-                            CanonOutput* output,
-                            Component* out_path) {
+bool DoFileCanonicalizePath(const char* spec, const Component& path, CanonOutput* output, Component* out_path) {
   // Copies and normalizes the "c:" at the beginning, if present.
   out_path->begin = output->length();
   int after_drive;
@@ -150,8 +145,7 @@ bool DoCanonicalizeFileURL(const URLComponentSource<char>& source,
   // transformation should be done regardless of the path.
   Component host_range = parsed.host;
   if (IsLocalhost(source.host, host_range.begin, host_range.end()) &&
-      FindWindowsDriveLetter(source.path, parsed.path.begin,
-                             parsed.path.end()) >= parsed.path.begin) {
+      FindWindowsDriveLetter(source.path, parsed.path.begin, parsed.path.end()) >= parsed.path.begin) {
     host_range.reset();
   }
 
@@ -160,19 +154,16 @@ bool DoCanonicalizeFileURL(const URLComponentSource<char>& source,
   // TODO(brettw) This doesn't do any checking for host name validity. We
   // should probably handle validity checking of UNC hosts differently than
   // for regular IP hosts.
-  bool success =
-      CanonicalizeHost(source.host, host_range, output, &new_parsed->host);
-  success &= DoFileCanonicalizePath(source.path, parsed.path,
-                                                 output, &new_parsed->path);
+  bool success = CanonicalizeHost(source.host, host_range, output, &new_parsed->host);
+  success &= DoFileCanonicalizePath(source.path, parsed.path, output, &new_parsed->path);
 
-  CanonicalizeQuery(source.query, parsed.query,
-                    output, &new_parsed->query);
+  CanonicalizeQuery(source.query, parsed.query, output, &new_parsed->query);
   CanonicalizeRef(source.ref, parsed.ref, output, &new_parsed->ref);
 
   return success;
 }
 
-} // namespace
+}  // namespace
 
 int FindWindowsDriveLetter(const char* spec, int begin, int end) {
   return DoFindWindowsDriveLetter(spec, begin, end);
@@ -183,17 +174,11 @@ bool CanonicalizeFileURL(const char* spec,
                          const Parsed& parsed,
                          CanonOutput* output,
                          Parsed* new_parsed) {
-  return DoCanonicalizeFileURL(
-      URLComponentSource<char>(spec), parsed,
-      output, new_parsed);
+  return DoCanonicalizeFileURL(URLComponentSource<char>(spec), parsed, output, new_parsed);
 }
 
-bool FileCanonicalizePath(const char* spec,
-                          const Component& path,
-                          CanonOutput* output,
-                          Component* out_path) {
-  return DoFileCanonicalizePath(spec, path,
-                                                     output, out_path);
+bool FileCanonicalizePath(const char* spec, const Component& path, CanonOutput* output, Component* out_path) {
+  return DoFileCanonicalizePath(spec, path, output, out_path);
 }
 
 bool ReplaceFileURL(const char* base,
@@ -204,11 +189,9 @@ bool ReplaceFileURL(const char* base,
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupOverrideComponents(base, replacements, &source, &parsed);
-  return DoCanonicalizeFileURL(
-      source, parsed, output, new_parsed);
+  return DoCanonicalizeFileURL(source, parsed, output, new_parsed);
 }
 
 }  // namespace url
 
-
-}
+}  // namespace webf

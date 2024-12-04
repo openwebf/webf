@@ -32,12 +32,11 @@
 #ifndef WEBF_COMPUTED_STYLE_CONSTANTS_H
 #define WEBF_COMPUTED_STYLE_CONSTANTS_H
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <cassert>
 
 namespace webf {
-
 
 template <typename Enum>
 inline bool EnumHasFlags(Enum v, Enum mask) {
@@ -125,10 +124,8 @@ inline bool UsesHighlightPseudoInheritance(PseudoId pseudo_id) {
   // inheritance rather than originating inheritance, regardless of whether the
   // highlight inheritance feature is enabled.
   // TODO(xiezuobing): RuntimeEnabledFeatures::HighlightInheritanceEnabled()
-  return ((IsHighlightPseudoElement(pseudo_id)) ||
-          pseudo_id == PseudoId::kPseudoIdSearchText ||
-          pseudo_id == PseudoId::kPseudoIdHighlight ||
-          pseudo_id == PseudoId::kPseudoIdSpellingError ||
+  return ((IsHighlightPseudoElement(pseudo_id)) || pseudo_id == PseudoId::kPseudoIdSearchText ||
+          pseudo_id == PseudoId::kPseudoIdHighlight || pseudo_id == PseudoId::kPseudoIdSpellingError ||
           pseudo_id == PseudoId::kPseudoIdGrammarError);
 }
 
@@ -191,16 +188,7 @@ enum class EFillAttachment : unsigned { kScroll, kLocal, kFixed };
 // Mask-origin (https://drafts.fxtf.org/css-masking/#the-mask-origin) supports
 // <coord-box> (border-box, padding-box, content-box, fill-box, stroke-box,
 // view-box).
-enum class EFillBox : unsigned {
-  kBorder,
-  kPadding,
-  kContent,
-  kText,
-  kFillBox,
-  kStrokeBox,
-  kViewBox,
-  kNoClip
-};
+enum class EFillBox : unsigned { kBorder, kPadding, kContent, kText, kFillBox, kStrokeBox, kViewBox, kNoClip };
 
 inline EFillBox EnclosingFillBox(EFillBox box_a, EFillBox box_b) {
   if (box_a == EFillBox::kNoClip || box_b == EFillBox::kNoClip) {
@@ -213,8 +201,8 @@ inline EFillBox EnclosingFillBox(EFillBox box_a, EFillBox box_b) {
     return EFillBox::kStrokeBox;
   }
   // background-clip:text is clipped to the border box.
-  if (box_a == EFillBox::kBorder || box_a == EFillBox::kText ||
-      box_b == EFillBox::kBorder || box_b == EFillBox::kText) {
+  if (box_a == EFillBox::kBorder || box_a == EFillBox::kText || box_b == EFillBox::kBorder ||
+      box_b == EFillBox::kText) {
     return EFillBox::kBorder;
   }
   if (box_a == EFillBox::kPadding || box_b == EFillBox::kPadding) {
@@ -228,24 +216,14 @@ inline EFillBox EnclosingFillBox(EFillBox box_a, EFillBox box_b) {
   return EFillBox::kContent;
 }
 
-enum class EFillRepeat : unsigned {
-  kRepeatFill,
-  kNoRepeatFill,
-  kRoundFill,
-  kSpaceFill
-};
+enum class EFillRepeat : unsigned { kRepeatFill, kNoRepeatFill, kRoundFill, kSpaceFill };
 
 enum class EFillMaskMode : unsigned { kAlpha, kLuminance, kMatchSource };
 
 enum class EFillLayerType : unsigned { kBackground, kMask };
 
 // CSS3 Background Values
-enum class EFillSizeType : unsigned {
-  kContain,
-  kCover,
-  kSizeLength,
-  kSizeNone
-};
+enum class EFillSizeType : unsigned { kContain, kCover, kSizeLength, kSizeNone };
 
 // CSS3 Background Position
 enum class BackgroundEdgeOrigin : unsigned { kTop, kRight, kBottom, kLeft };
@@ -258,25 +236,15 @@ enum class EAnimPlayState : unsigned { kPlaying, kPaused };
 enum class OffsetRotationType : unsigned { kAuto, kFixed };
 
 static const size_t kGridAutoFlowBits = 4;
-enum InternalGridAutoFlowAlgorithm {
-  kInternalAutoFlowAlgorithmSparse = 0x1,
-  kInternalAutoFlowAlgorithmDense = 0x2
-};
+enum InternalGridAutoFlowAlgorithm { kInternalAutoFlowAlgorithmSparse = 0x1, kInternalAutoFlowAlgorithmDense = 0x2 };
 
-enum InternalGridAutoFlowDirection {
-  kInternalAutoFlowDirectionRow = 0x4,
-  kInternalAutoFlowDirectionColumn = 0x8
-};
+enum InternalGridAutoFlowDirection { kInternalAutoFlowDirectionRow = 0x4, kInternalAutoFlowDirectionColumn = 0x8 };
 
 enum GridAutoFlow {
-  kAutoFlowRow = int(kInternalAutoFlowAlgorithmSparse) |
-                 int(kInternalAutoFlowDirectionRow),
-  kAutoFlowColumn = int(kInternalAutoFlowAlgorithmSparse) |
-                    int(kInternalAutoFlowDirectionColumn),
-  kAutoFlowRowDense =
-      int(kInternalAutoFlowAlgorithmDense) | int(kInternalAutoFlowDirectionRow),
-  kAutoFlowColumnDense = int(kInternalAutoFlowAlgorithmDense) |
-                         int(kInternalAutoFlowDirectionColumn)
+  kAutoFlowRow = int(kInternalAutoFlowAlgorithmSparse) | int(kInternalAutoFlowDirectionRow),
+  kAutoFlowColumn = int(kInternalAutoFlowAlgorithmSparse) | int(kInternalAutoFlowDirectionColumn),
+  kAutoFlowRowDense = int(kInternalAutoFlowAlgorithmDense) | int(kInternalAutoFlowDirectionRow),
+  kAutoFlowColumnDense = int(kInternalAutoFlowAlgorithmDense) | int(kInternalAutoFlowDirectionColumn)
 };
 
 static const size_t kContainmentBits = 5;
@@ -288,8 +256,7 @@ enum Containment {
   kContainsBlockSize = 0x8,
   kContainsInlineSize = 0x10,
   kContainsSize = kContainsBlockSize | kContainsInlineSize,
-  kContainsStrict =
-      kContainsStyle | kContainsLayout | kContainsPaint | kContainsSize,
+  kContainsStrict = kContainsStyle | kContainsLayout | kContainsPaint | kContainsSize,
   kContainsContent = kContainsStyle | kContainsLayout | kContainsPaint,
 };
 inline Containment operator|(Containment a, Containment b) {
@@ -315,19 +282,11 @@ inline EContainerType& operator|=(EContainerType& a, EContainerType b) {
 }
 
 static const size_t kTextUnderlinePositionBits = 4;
-enum class TextUnderlinePosition : unsigned {
-  kAuto = 0x0,
-  kFromFont = 0x1,
-  kUnder = 0x2,
-  kLeft = 0x4,
-  kRight = 0x8
-};
-inline TextUnderlinePosition operator|(TextUnderlinePosition a,
-                                       TextUnderlinePosition b) {
+enum class TextUnderlinePosition : unsigned { kAuto = 0x0, kFromFont = 0x1, kUnder = 0x2, kLeft = 0x4, kRight = 0x8 };
+inline TextUnderlinePosition operator|(TextUnderlinePosition a, TextUnderlinePosition b) {
   return TextUnderlinePosition(int(a) | int(b));
 }
-inline TextUnderlinePosition& operator|=(TextUnderlinePosition& a,
-                                         TextUnderlinePosition b) {
+inline TextUnderlinePosition& operator|=(TextUnderlinePosition& a, TextUnderlinePosition b) {
   return a = a | b;
 }
 
@@ -367,25 +326,13 @@ enum class ContentPosition : unsigned {
   kRight
 };
 
-enum class ContentDistributionType : unsigned {
-  kDefault,
-  kSpaceBetween,
-  kSpaceAround,
-  kSpaceEvenly,
-  kStretch
-};
+enum class ContentDistributionType : unsigned { kDefault, kSpaceBetween, kSpaceAround, kSpaceEvenly, kStretch };
 
 // Reasonable maximum to prevent insane font sizes from causing crashes on some
 // platforms (such as Windows).
 static const float kMaximumAllowedFontSize = 10000.0f;
 
-enum class CSSBoxType : unsigned {
-  kMissing,
-  kMargin,
-  kBorder,
-  kPadding,
-  kContent
-};
+enum class CSSBoxType : unsigned { kMissing, kMargin, kBorder, kPadding, kContent };
 
 enum class TextEmphasisPosition : unsigned {
   kOverRight,
@@ -395,13 +342,11 @@ enum class TextEmphasisPosition : unsigned {
 };
 
 inline bool IsOver(TextEmphasisPosition position) {
-  return position == TextEmphasisPosition::kOverRight ||
-         position == TextEmphasisPosition::kOverLeft;
+  return position == TextEmphasisPosition::kOverRight || position == TextEmphasisPosition::kOverLeft;
 }
 
 inline bool IsRight(TextEmphasisPosition position) {
-  return position == TextEmphasisPosition::kOverRight ||
-         position == TextEmphasisPosition::kUnderRight;
+  return position == TextEmphasisPosition::kOverRight || position == TextEmphasisPosition::kUnderRight;
 }
 
 inline bool IsLeft(TextEmphasisPosition position) {
@@ -428,12 +373,7 @@ inline ScrollbarGutter& operator|=(ScrollbarGutter& a, ScrollbarGutter b) {
 
 enum class EBaselineShiftType : unsigned { kLength, kSub, kSuper };
 
-enum EPaintOrderType : uint8_t {
-  PT_NONE = 0,
-  PT_FILL = 1,
-  PT_STROKE = 2,
-  PT_MARKERS = 3
-};
+enum EPaintOrderType : uint8_t { PT_NONE = 0, PT_FILL = 1, PT_STROKE = 2, PT_MARKERS = 3 };
 
 enum EPaintOrder {
   kPaintOrderNormal,
@@ -456,14 +396,7 @@ enum class ViewportUnitFlag {
 enum class TimelineAxis { kBlock, kInline, kX, kY };
 enum class TimelineScroller { kNearest, kRoot, kSelf };
 
-enum class CoordBox {
-  kContentBox,
-  kPaddingBox,
-  kBorderBox,
-  kFillBox,
-  kStrokeBox,
-  kViewBox
-};
+enum class CoordBox { kContentBox, kPaddingBox, kBorderBox, kFillBox, kStrokeBox, kViewBox };
 
 // https://drafts.fxtf.org/css-masking/#typedef-geometry-box
 enum class GeometryBox {
@@ -517,15 +450,12 @@ enum class PositionVisibility : uint8_t {
   kAnchorsVisible = 0x1,
   kNoOverflow = 0x2,
 };
-inline PositionVisibility operator|(PositionVisibility a,
-                                    PositionVisibility b) {
+inline PositionVisibility operator|(PositionVisibility a, PositionVisibility b) {
   return PositionVisibility(int(a) | int(b));
 }
-inline PositionVisibility& operator|=(PositionVisibility& a,
-                                      PositionVisibility b) {
+inline PositionVisibility& operator|=(PositionVisibility& a, PositionVisibility b) {
   return a = a | b;
 }
-
 
 }  // namespace webf
 

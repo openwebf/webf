@@ -138,11 +138,9 @@
 
 // For access to standard POSIXish features, use OS_POSIX instead of a
 // more specific macro.
-#if defined(OS_AIX) || defined(OS_ANDROID) || defined(OS_ASMJS) ||  \
-    defined(OS_FREEBSD) || defined(OS_IOS) || defined(OS_LINUX) ||  \
-    defined(OS_CHROMEOS) || defined(OS_MAC) || defined(OS_NACL) ||  \
-    defined(OS_NETBSD) || defined(OS_OPENBSD) || defined(OS_QNX) || \
-    defined(OS_SOLARIS) || defined(OS_ZOS)
+#if defined(OS_AIX) || defined(OS_ANDROID) || defined(OS_ASMJS) || defined(OS_FREEBSD) || defined(OS_IOS) ||  \
+    defined(OS_LINUX) || defined(OS_CHROMEOS) || defined(OS_MAC) || defined(OS_NACL) || defined(OS_NETBSD) || \
+    defined(OS_OPENBSD) || defined(OS_QNX) || defined(OS_SOLARIS) || defined(OS_ZOS)
 #define OS_POSIX 1
 #endif
 

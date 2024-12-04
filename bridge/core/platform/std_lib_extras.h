@@ -39,12 +39,10 @@
 //#include "third_party/blink/renderer/platform/wtf/threading.h"
 //#endif
 
-#define DEFINE_STATIC_LOCAL_IMPL(Type, Name, Arguments, allow_cross_thread)    \
-  static WTF::StaticSingleton<Type> s_##Name(                                  \
-      [&]() { return new WTF::StaticSingleton<Type>::WrapperType Arguments; }, \
-      [&](void* leaked_ptr) {                                                  \
-        new (leaked_ptr) WTF::StaticSingleton<Type>::WrapperType Arguments;    \
-      });                                                                      \
+#define DEFINE_STATIC_LOCAL_IMPL(Type, Name, Arguments, allow_cross_thread)                           \
+  static WTF::StaticSingleton<Type> s_##Name(                                                         \
+      [&]() { return new WTF::StaticSingleton<Type>::WrapperType Arguments; },                        \
+      [&](void* leaked_ptr) { new (leaked_ptr) WTF::StaticSingleton<Type>::WrapperType Arguments; }); \
   Type& Name = s_##Name.Get(allow_cross_thread)
 
 // Use |DEFINE_STATIC_LOCAL()| to declare and define a static local variable
@@ -54,16 +52,14 @@
 // A |DEFINE_STATIC_LOCAL()| static should only be used on the thread it was
 // created on.
 //
-#define DEFINE_STATIC_LOCAL(Type, Name, Arguments) \
-  DEFINE_STATIC_LOCAL_IMPL(Type, Name, Arguments, false)
+#define DEFINE_STATIC_LOCAL(Type, Name, Arguments) DEFINE_STATIC_LOCAL_IMPL(Type, Name, Arguments, false)
 
 // |DEFINE_THREAD_SAFE_STATIC_LOCAL()| is the cross-thread accessible variant
 // of |DEFINE_STATIC_LOCAL()|; use it if the singleton can be accessed by
 // multiple threads.
 //
 // TODO: rename as DEFINE_CROSS_THREAD_STATIC_LOCAL() ?
-#define DEFINE_THREAD_SAFE_STATIC_LOCAL(Type, Name, Arguments) \
-  DEFINE_STATIC_LOCAL_IMPL(Type, Name, Arguments, true)
+#define DEFINE_THREAD_SAFE_STATIC_LOCAL(Type, Name, Arguments) DEFINE_STATIC_LOCAL_IMPL(Type, Name, Arguments, true)
 
 namespace WTF {
 
@@ -82,15 +78,15 @@ class StaticSingleton final {
   template <typename HeapNew, typename PlacementNew>
   StaticSingleton(const HeapNew& heap_new, const PlacementNew& placement_new)
       : instance_(heap_new, placement_new)
-//#if DCHECK_IS_ON()
-//        ,
-//        safely_initialized_(WTF::IsBeforeThreadCreated()),
-//        thread_(WTF::CurrentThread())
-//#endif
+  //#if DCHECK_IS_ON()
+  //        ,
+  //        safely_initialized_(WTF::IsBeforeThreadCreated()),
+  //        thread_(WTF::CurrentThread())
+  //#endif
   {
-  // TODO(guopengfei)：注释IsGarbageCollectedType，以通过编译
-  //  static_assert(!WTF::IsGarbageCollectedType<Type>::value,
-  //                "Garbage collected objects must be wrapped in a Persistent");
+    // TODO(guopengfei)：注释IsGarbageCollectedType，以通过编译
+    //  static_assert(!WTF::IsGarbageCollectedType<Type>::value,
+    //                "Garbage collected objects must be wrapped in a Persistent");
     ((void)0)(instance_.Get());
   }
 
@@ -98,31 +94,30 @@ class StaticSingleton final {
   StaticSingleton& operator=(const StaticSingleton&) = delete;
 
   Type& Get([[maybe_unused]] bool allow_cross_thread_use) {
-//#if DCHECK_IS_ON()
-//    DCHECK(IsNotRacy(allow_cross_thread_use));
-//#endif
+    //#if DCHECK_IS_ON()
+    //    DCHECK(IsNotRacy(allow_cross_thread_use));
+    //#endif
     return Wrapper<Type>::Unwrap(instance_.Get());
   }
 
   operator Type&() { return Get(); }
 
  private:
-/*#if DCHECK_IS_ON()
+  /*#if DCHECK_IS_ON()
 
-  bool IsNotRacy(bool allow_cross_thread_use) const {
-    // Make sure that singleton is safely initialized, or
-    // keeps being called on the same thread if cross-thread
-    // use is not permitted.
-    return allow_cross_thread_use || safely_initialized_ ||
-           thread_ == WTF::CurrentThread();
-  }
-#endif*/
+    bool IsNotRacy(bool allow_cross_thread_use) const {
+      // Make sure that singleton is safely initialized, or
+      // keeps being called on the same thread if cross-thread
+      // use is not permitted.
+      return allow_cross_thread_use || safely_initialized_ ||
+             thread_ == WTF::CurrentThread();
+    }
+  #endif*/
   template <typename T, bool is_small = sizeof(T) <= 32>
   class InstanceStorage {
    public:
     template <typename HeapNew, typename PlacementNew>
-    InstanceStorage(const HeapNew& heap_new, const PlacementNew&)
-        : pointer_(heap_new()) {}
+    InstanceStorage(const HeapNew& heap_new, const PlacementNew&) : pointer_(heap_new()) {}
     T* Get() { return pointer_; }
 
    private:
@@ -143,13 +138,13 @@ class StaticSingleton final {
   };
 
   InstanceStorage<WrapperType> instance_;
-/*#if DCHECK_IS_ON()
-  bool safely_initialized_;
-  base::PlatformThreadId thread_;
-#endif*/
+  /*#if DCHECK_IS_ON()
+    bool safely_initialized_;
+    base::PlatformThreadId thread_;
+  #endif*/
 };
 
-}  // namespace webf
+}  // namespace WTF
 /* // TODO(guopengfei)：
 // Use this to declare and define a static local pointer to a ref-counted object
 // so that it is leaked so that the object's destructors are not called at
@@ -200,8 +195,7 @@ bool isPointerTypeAlignmentOkay(Type*) {
 #endif
 
 template <typename TypePtr>
-NO_SANITIZE_UNRELATED_CAST
-TypePtr unsafe_reinterpret_cast_ptr(void* ptr) {
+NO_SANITIZE_UNRELATED_CAST TypePtr unsafe_reinterpret_cast_ptr(void* ptr) {
 #if defined(ARCH_CPU_ARMEL) && defined(COMPILER_GCC)
   assert(isPointerTypeAlignmentOkay(reinterpret_cast<TypePtr>(ptr)));
 #endif
@@ -209,8 +203,7 @@ TypePtr unsafe_reinterpret_cast_ptr(void* ptr) {
 }
 
 template <typename TypePtr>
-NO_SANITIZE_UNRELATED_CAST
-TypePtr unsafe_reinterpret_cast_ptr(const void* ptr) {
+NO_SANITIZE_UNRELATED_CAST TypePtr unsafe_reinterpret_cast_ptr(const void* ptr) {
 #if defined(ARCH_CPU_ARMEL) && defined(COMPILER_GCC)
   assert(isPointerTypeAlignmentOkay(reinterpret_cast<TypePtr>(ptr)));
 #endif
@@ -236,25 +229,20 @@ namespace WTF {
 // 'int'. On a 32-bit build, it will prevent use of an 'unsigned long long'.
 #define HAS_STRICTLY_TYPED_ARG template <typename ActualArgType>
 #define STRICTLY_TYPED_ARG(argName) ActualArgType argName
-#define STRICT_ARG_TYPE(ExpectedArgType)                                     \
-  static_assert(std::is_same<ActualArgType, ExpectedArgType>::value,         \
-                "Strictly typed argument must be of type '" #ExpectedArgType \
-                "'.")
-#define ALLOW_NUMERIC_ARG_TYPES_PROMOTABLE_TO(ExpectedArgType)              \
-  static_assert(                                                            \
-      std::numeric_limits<ExpectedArgType>::is_integer ==                   \
-          std::numeric_limits<ActualArgType>::is_integer,                   \
-      "Conversion between integer and non-integer types not allowed.");     \
-  static_assert(sizeof(ExpectedArgType) >= sizeof(ActualArgType),           \
-                "Truncating conversions not allowed.");                     \
-  static_assert(!std::numeric_limits<ActualArgType>::is_signed ||           \
-                    std::numeric_limits<ExpectedArgType>::is_signed,        \
-                "Signed to unsigned conversion not allowed.");              \
-  static_assert((sizeof(ExpectedArgType) != sizeof(ActualArgType)) ||       \
-                    (std::numeric_limits<ActualArgType>::is_signed ==       \
-                     std::numeric_limits<ExpectedArgType>::is_signed),      \
-                "Unsigned to signed conversion not allowed for types with " \
-                "identical size (could overflow).");
+#define STRICT_ARG_TYPE(ExpectedArgType)                             \
+  static_assert(std::is_same<ActualArgType, ExpectedArgType>::value, \
+                "Strictly typed argument must be of type '" #ExpectedArgType "'.")
+#define ALLOW_NUMERIC_ARG_TYPES_PROMOTABLE_TO(ExpectedArgType)                                                      \
+  static_assert(std::numeric_limits<ExpectedArgType>::is_integer == std::numeric_limits<ActualArgType>::is_integer, \
+                "Conversion between integer and non-integer types not allowed.");                                   \
+  static_assert(sizeof(ExpectedArgType) >= sizeof(ActualArgType), "Truncating conversions not allowed.");           \
+  static_assert(!std::numeric_limits<ActualArgType>::is_signed || std::numeric_limits<ExpectedArgType>::is_signed,  \
+                "Signed to unsigned conversion not allowed.");                                                      \
+  static_assert(                                                                                                    \
+      (sizeof(ExpectedArgType) != sizeof(ActualArgType)) ||                                                         \
+          (std::numeric_limits<ActualArgType>::is_signed == std::numeric_limits<ExpectedArgType>::is_signed),       \
+      "Unsigned to signed conversion not allowed for types with "                                                   \
+      "identical size (could overflow).");
 
 }  // namespace WTF
 

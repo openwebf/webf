@@ -10,13 +10,12 @@
 #define WEBF_CSS_COLOR_H
 
 #include "core/css/css_value.h"
-#include "foundation/casting.h"
 #include "core/platform/graphics/color.h"
+#include "foundation/casting.h"
 
 namespace webf {
 
-
-class CSSValuePool; // TODO(xiezuobing): core/css/css_value_pool.h
+class CSSValuePool;  // TODO(xiezuobing): core/css/css_value_pool.h
 
 // The color scheme used for painting the native controls.
 enum class ColorScheme {
@@ -36,16 +35,13 @@ class CSSColor : public CSSValue {
 
   CSSColor(Color color) : CSSValue(kColorClass), color_(color) {}
 
-  std::string CustomCSSText() const {
-    return SerializeAsCSSComponentValue(color_);
-  }
+  std::string CustomCSSText() const { return SerializeAsCSSComponentValue(color_); }
 
   Color Value() const { return color_; }
 
   bool Equals(const CSSColor& other) const { return color_ == other.color_; }
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const {}
 
   // Returns the color serialized according to CSSOM:
   // https://drafts.csswg.org/cssom/#serialize-a-css-component-value
@@ -63,7 +59,6 @@ template <>
 struct DowncastTraits<cssvalue::CSSColor> {
   static bool AllowFrom(const CSSValue& value) { return value.IsColorValue(); }
 };
-
 
 }  // namespace webf
 

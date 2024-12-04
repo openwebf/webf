@@ -13,8 +13,4 @@
 //#include "core/dom/node_computed_style.h"
 //#include "core/html/html_slot_element.h"
 
-namespace webf {
-
-
-
-}  // namespace webf
+namespace webf {}  // namespace webf

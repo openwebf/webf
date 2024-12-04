@@ -11,14 +11,14 @@
 
 #include <cassert>
 #include <memory>
-#include "core/style/scoped_css_name.h"
 #include "core/base/types/pass_key.h"
+#include "core/style/scoped_css_name.h"
 
 namespace webf {
 
 class ScopedCSSName;
 
-//TODO::代码迁移，删除继承GarbageCollected，by guopengfei
+// TODO::代码迁移，删除继承GarbageCollected，by guopengfei
 
 // Represents an anchor specifier: default | auto | <dashed-ident>
 // https://drafts4.csswg.org/css-anchor-1/#target-anchor-element
@@ -47,13 +47,11 @@ class AnchorSpecifierValue {
   }
 
   bool operator==(const AnchorSpecifierValue&) const;
-  bool operator!=(const AnchorSpecifierValue& other) const {
-    return !operator==(other);
-  }
+  bool operator!=(const AnchorSpecifierValue& other) const { return !operator==(other); }
 
   unsigned GetHash() const;
-  //TODO::代码迁移 by guopengfei
-  //void Trace(Visitor*) const;
+  // TODO::代码迁移 by guopengfei
+  // void Trace(Visitor*) const;
 
  private:
   Type type_;

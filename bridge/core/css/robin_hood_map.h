@@ -5,8 +5,8 @@
 #ifndef WEBF_CORE_CSS_ROBIN_HOOD_MAP_H_
 #define WEBF_CORE_CSS_ROBIN_HOOD_MAP_H_
 
-#include <memory>
 #include <cassert>
+#include <memory>
 #include <type_traits>
 #include "core/base/compiler_specific.h"
 #include "foundation/macros.h"
@@ -65,8 +65,7 @@ namespace webf {
 //    (depending, of course, on Value).
 template <class Key, class Value>
 struct RobinHoodMap {
-  static_assert(std::is_same_v<Key, std::string>,
-                "We currently only support std::string as key.");
+  static_assert(std::is_same_v<Key, std::string>, "We currently only support std::string as key.");
 
  public:
   // Number of possible different places a key can be put in.
@@ -98,9 +97,7 @@ struct RobinHoodMap {
   // Constructs a map that can hold no elements; the only thing
   // you can do with it is check IsNull() (which will be true).
   RobinHoodMap() = default;
-  explicit RobinHoodMap(unsigned size)
-      : buckets_(new Bucket[size + kPossibleBucketsPerKey]),
-        num_buckets_(size) {}
+  explicit RobinHoodMap(unsigned size) : buckets_(new Bucket[size + kPossibleBucketsPerKey]), num_buckets_(size) {}
 
   bool IsNull() const { return buckets_ == nullptr; }
 
@@ -113,9 +110,7 @@ struct RobinHoodMap {
     }
     return nullptr;
   }
-  const Bucket* Find(const Key& key) const {
-    return const_cast<RobinHoodMap*>(this)->Find(key);
-  }
+  const Bucket* Find(const Key& key) const { return const_cast<RobinHoodMap*>(this)->Find(key); }
 
   // Inserts the given key, with a default-constructed value.
   // Returns the bucket it was put in, so that you can change
@@ -153,8 +148,7 @@ struct RobinHoodMap {
   };
   class const_iterator {
    public:
-    const_iterator(const Bucket* pos, const Bucket* end)
-        : pos_(pos), end_(end) {
+    const_iterator(const Bucket* pos, const Bucket* end) : pos_(pos), end_(end) {
       while (pos_ != end_ && pos_->key.IsNull()) {
         ++pos_;
       }
@@ -168,12 +162,8 @@ struct RobinHoodMap {
       }
       return *this;
     }
-    bool operator==(const const_iterator& other) const {
-      return pos_ == other.pos_;
-    }
-    bool operator!=(const const_iterator& other) const {
-      return pos_ != other.pos_;
-    }
+    bool operator==(const const_iterator& other) const { return pos_ == other.pos_; }
+    bool operator!=(const const_iterator& other) const { return pos_ != other.pos_; }
 
    private:
     const Bucket* pos_;
@@ -187,23 +177,16 @@ struct RobinHoodMap {
   const_iterator end() const { return {EndBucket(), EndBucket()}; }
 
  private:
-  Bucket* EndBucket() {
-    return buckets_.get()
-               ? buckets_.get() + num_buckets_ + kPossibleBucketsPerKey
-               : nullptr;
-  }
+  Bucket* EndBucket() { return buckets_.get() ? buckets_.get() + num_buckets_ + kPossibleBucketsPerKey : nullptr; }
   const Bucket* EndBucket() const {
-    return buckets_.get()
-               ? buckets_.get() + num_buckets_ + kPossibleBucketsPerKey
-               : nullptr;
+    return buckets_.get() ? buckets_.get() + num_buckets_ + kPossibleBucketsPerKey : nullptr;
   }
   unsigned FindBucketIndex(const Key& key) const {
     // AtomicString has a 24-bit hash, so we treat it as a number in
     // 0.24 fixed-point, multiply it by the number of buckets and truncate.
     // This gives a fair map to [0,N) based on (mostly) the high bits
     // of the hash, with only a multiplication and shift.
-    unsigned bucket =
-        static_cast<unsigned>(((uint64_t)key.Hash() * num_buckets_) >> 24);
+    unsigned bucket = static_cast<unsigned>(((uint64_t)key.Hash() * num_buckets_) >> 24);
     DCHECK_LT(bucket, num_buckets_);
     return bucket;
   }
@@ -212,12 +195,8 @@ struct RobinHoodMap {
   // check both this and the next (kPossibleBucketsPerKey - 1) buckets
   // to find the element. This can never overflow; see the definition
   // of buckets_ below.
-  Bucket* FindBucket(const Key& key) {
-    return buckets_.get() + FindBucketIndex(key);
-  }
-  const Bucket* FindBucket(const Key& key) const {
-    return buckets_.get() + FindBucketIndex(key);
-  }
+  Bucket* FindBucket(const Key& key) { return buckets_.get() + FindBucketIndex(key); }
+  const Bucket* FindBucket(const Key& key) const { return buckets_.get() + FindBucketIndex(key); }
 
   // Inserts the given key/value, possibly displacing other buckets in the
   // process, returning where the element was inserted. If it fails
@@ -251,7 +230,6 @@ struct RobinHoodMap {
   unsigned num_buckets_ = 0;
 };
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_ROBIN_HOOD_MAP_H_

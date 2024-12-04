@@ -28,9 +28,7 @@ class InvalidationFlags {
   void Merge(const InvalidationFlags& other);
 
   bool InvalidateCustomPseudo() const { return invalidate_custom_pseudo_; }
-  void SetInvalidateCustomPseudo(bool value) {
-    invalidate_custom_pseudo_ = value;
-  }
+  void SetInvalidateCustomPseudo(bool value) { invalidate_custom_pseudo_ = value; }
 
   bool WholeSubtreeInvalid() const { return whole_subtree_invalid_; }
   void SetWholeSubtreeInvalid(bool value) { whole_subtree_invalid_ = value; }
@@ -39,9 +37,7 @@ class InvalidationFlags {
   void SetTreeBoundaryCrossing(bool value) { tree_boundary_crossing_ = value; }
 
   bool InsertionPointCrossing() const { return insertion_point_crossing_; }
-  void SetInsertionPointCrossing(bool value) {
-    insertion_point_crossing_ = value;
-  }
+  void SetInsertionPointCrossing(bool value) { insertion_point_crossing_ = value; }
 
   bool InvalidatesSlotted() const { return invalidates_slotted_; }
   void SetInvalidatesSlotted(bool value) { invalidates_slotted_ = value; }

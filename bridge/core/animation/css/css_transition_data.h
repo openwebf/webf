@@ -7,9 +7,9 @@
 
 #include <memory>
 
-#include "foundation/ptr_util.h"
 #include "core/animation/css/css_timing_data.h"
 #include "core/css/css_property_names.h"
+#include "foundation/ptr_util.h"
 
 namespace webf {
 
@@ -26,8 +26,7 @@ class CSSTransitionData final : public CSSTimingData {
   // FIXME: We shouldn't allow 'none' to be used alongside other properties.
   struct TransitionProperty {
     WEBF_DISALLOW_NEW();
-    TransitionProperty(CSSPropertyID id)
-        : property_type(kTransitionKnownProperty), unresolved_property(id) {
+    TransitionProperty(CSSPropertyID id) : property_type(kTransitionKnownProperty), unresolved_property(id) {
       assert(id != CSSPropertyID::kInvalid);
     }
 
@@ -42,52 +41,39 @@ class CSSTransitionData final : public CSSTimingData {
     }
 
     bool operator==(const TransitionProperty& other) const {
-      return property_type == other.property_type &&
-             unresolved_property == other.unresolved_property &&
+      return property_type == other.property_type && unresolved_property == other.unresolved_property &&
              property_string == other.property_string;
     }
 
     TransitionAnimationType property_type;
     CSSPropertyID unresolved_property;
-    AtomicString property_string; // std::string
+    AtomicString property_string;  // std::string
   };
 
   using TransitionPropertyVector = std::vector<TransitionProperty>;
   using TransitionBehaviorVector = std::vector<TransitionBehavior>;
 
-  std::unique_ptr<CSSTransitionData> Clone() {
-    return base::WrapUnique(new CSSTransitionData(*this));
-  }
+  std::unique_ptr<CSSTransitionData> Clone() { return base::WrapUnique(new CSSTransitionData(*this)); }
 
   CSSTransitionData();
   explicit CSSTransitionData(const CSSTransitionData&);
 
   bool TransitionsMatchForStyleRecalc(const CSSTransitionData& other) const;
-  bool operator==(const CSSTransitionData& other) const {
-    return TransitionsMatchForStyleRecalc(other);
-  }
+  bool operator==(const CSSTransitionData& other) const { return TransitionsMatchForStyleRecalc(other); }
 
   Timing ConvertToTiming(size_t index) const;
 
-  const TransitionPropertyVector& PropertyList() const {
-    return property_list_;
-  }
+  const TransitionPropertyVector& PropertyList() const { return property_list_; }
   TransitionPropertyVector& PropertyList() { return property_list_; }
 
-  const TransitionBehaviorVector& BehaviorList() const {
-    return behavior_list_;
-  }
+  const TransitionBehaviorVector& BehaviorList() const { return behavior_list_; }
   TransitionBehaviorVector& BehaviorList() { return behavior_list_; }
 
   static std::optional<double> InitialDuration() { return 0; }
 
-  static TransitionProperty InitialProperty() {
-    return TransitionProperty(CSSPropertyID::kAll);
-  }
+  static TransitionProperty InitialProperty() { return TransitionProperty(CSSPropertyID::kAll); }
 
-  static TransitionBehavior InitialBehavior() {
-    return TransitionBehavior::kNormal;
-  }
+  static TransitionBehavior InitialBehavior() { return TransitionBehavior::kNormal; }
 
  private:
   TransitionPropertyVector property_list_;

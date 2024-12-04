@@ -118,7 +118,8 @@ void Event::NamedPropertyEnumerator(std::vector<AtomicString>& names, webf::Exce
 #endif
   for (int i = 0; i < raw_event_->props_len; i++) {
     std::shared_ptr<StringImpl> string =
-        GetExecutingContext()->dartIsolateContext()->stringCache()->GetStringFromJSAtom(ctx(), raw_event_props[i].key_atom);
+        GetExecutingContext()->dartIsolateContext()->stringCache()->GetStringFromJSAtom(ctx(),
+                                                                                        raw_event_props[i].key_atom);
     AtomicString key = AtomicString(string);
     names.emplace_back(key);
   }
@@ -171,7 +172,9 @@ void set_event_prop(JSContext* ctx,
                     const ScriptValue& value,
                     ExceptionState& exception_state) {
   event->customized_event_props_.emplace_back(value);
-  prop->key_atom = ExecutingContext::From(ctx)->dartIsolateContext()->stringCache()->GetJSAtomFromString(ctx, key.Impl());;
+  prop->key_atom =
+      ExecutingContext::From(ctx)->dartIsolateContext()->stringCache()->GetJSAtomFromString(ctx, key.Impl());
+  ;
   prop->value = value.ToNative(ctx, exception_state, true);
 }
 

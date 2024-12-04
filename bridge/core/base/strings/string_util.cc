@@ -14,13 +14,11 @@
 namespace base {
 
 bool StartsWith(std::string_view str, std::string_view search_for) {
-  return str.size() >= search_for.size() &&
-         str.substr(0, search_for.size()) == search_for;
+  return str.size() >= search_for.size() && str.substr(0, search_for.size()) == search_for;
 }
 
 bool EndsWith(std::string_view str, std::string_view search_for) {
-  return str.size() >= search_for.size() &&
-         str.substr(str.size() - search_for.size()) == search_for;
+  return str.size() >= search_for.size() && str.substr(str.size() - search_for.size()) == search_for;
 }
 
 size_t Find(const std::string_view needle, const std::string_view& haystack) {
@@ -35,10 +33,7 @@ size_t Find(const std::string_view needle, const std::string_view& haystack) {
   return std::string::npos;
 }
 
-bool ReplaceChars(std::string_view input,
-                  std::string_view from,
-                  std::string_view to,
-                  std::string* output) {
+bool ReplaceChars(std::string_view input, std::string_view from, std::string_view to, std::string* output) {
   // Commonly, this is called with output and input being the same string; in
   // that case, skip the copy.
   if (input.data() != output->data() || input.size() != output->size())
@@ -48,7 +43,7 @@ bool ReplaceChars(std::string_view input,
   *output = std::string(input.data(), input.size());
   while ((start_pos = input.find(from, start_pos)) != std::string::npos) {
     output->replace(start_pos, from.length(), to);
-    start_pos += to.length(); // Move past the last replacement
+    start_pos += to.length();  // Move past the last replacement
   }
 
   return true;
@@ -70,6 +65,5 @@ std::string ToLowerASCII(const std::string& string) {
   std::transform(result.begin(), result.end(), result.begin(), tolower);
   return result;
 }
-
 
 }  // namespace base

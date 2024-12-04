@@ -105,24 +105,16 @@ Document& StyleEngine::GetDocument() const {
   return *document_;
 }
 
-void StyleEngine::Trace(GCVisitor* visitor) {
-}
+void StyleEngine::Trace(GCVisitor* visitor) {}
 
-void StyleEngine::UpdateStyleInvalidationRoot(ContainerNode* ancestor,
-                                              Node* dirty_node) {
-}
+void StyleEngine::UpdateStyleInvalidationRoot(ContainerNode* ancestor, Node* dirty_node) {}
 
-void StyleEngine::UpdateStyleRecalcRoot(ContainerNode* ancestor,
-                                        Node* dirty_node) {
+void StyleEngine::UpdateStyleRecalcRoot(ContainerNode* ancestor, Node* dirty_node) {}
 
-}
-
-void StyleEngine::ScheduleNthPseudoInvalidations(ContainerNode& nth_parent) {
-}
+void StyleEngine::ScheduleNthPseudoInvalidations(ContainerNode& nth_parent) {}
 
 bool StyleEngine::MarkReattachAllowed() const {
-  return !InRebuildLayoutTree() ||
-         allow_mark_for_reattach_from_rebuild_layout_tree_;
+  return !InRebuildLayoutTree() || allow_mark_for_reattach_from_rebuild_layout_tree_;
 }
 
 bool StyleEngine::MarkStyleDirtyAllowed() const {
@@ -133,5 +125,3 @@ bool StyleEngine::MarkStyleDirtyAllowed() const {
 }
 
 }  // namespace webf
-
-

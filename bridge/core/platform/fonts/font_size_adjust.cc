@@ -7,15 +7,14 @@
  */
 
 #include "font_size_adjust.h"
-#include <format>
 #include <cassert>
+#include <format>
 
-#include "foundation/macros.h"
-#include "core/platform/hash_functions.h"
 #include "core/base/strings/string_number_conversions.h"
+#include "core/platform/hash_functions.h"
+#include "foundation/macros.h"
 
 namespace webf {
-
 
 unsigned FontSizeAdjust::GetHash() const {
   unsigned computed_hash = 0;
@@ -48,14 +47,10 @@ std::string FontSizeAdjust::ToString() const {
   }
 
   if (metric_ == Metric::kExHeight) {
-    return IsFromFont()
-               ? "from-font"
-               : std::format("{}", base::NumberToString(value_).c_str());
+    return IsFromFont() ? "from-font" : std::format("{}", base::NumberToString(value_).c_str());
   }
 
-  return IsFromFont()
-             ? std::format("{} from-font", ToString(metric_).c_str())
-             : std::format("{} {}", ToString(metric_).c_str(),
-                              base::NumberToString(value_).c_str());
+  return IsFromFont() ? std::format("{} from-font", ToString(metric_).c_str())
+                      : std::format("{} {}", ToString(metric_).c_str(), base::NumberToString(value_).c_str());
 }
 }  // namespace webf

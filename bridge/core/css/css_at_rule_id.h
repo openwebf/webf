@@ -67,7 +67,6 @@ enum class CSSAtRuleID {
 CSSAtRuleID CssAtRuleID(const std::string_view& name);
 std::string CssAtRuleIDToString(CSSAtRuleID id);
 
-
 }  // namespace webf
 
 #endif  // WEBF_CSS_AT_RULE_ID_H

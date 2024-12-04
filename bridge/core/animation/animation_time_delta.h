@@ -9,10 +9,10 @@
 #ifndef WEBF_CORE_ANIMATION_ANIMATION_TIME_DELTA_H_
 #define WEBF_CORE_ANIMATION_ANIMATION_TIME_DELTA_H_
 
-#include "foundation/macros.h"
 #include <cassert>
 #include <limits>
 #include <ostream>
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -45,31 +45,21 @@ class AnimationTimeDelta {
 #define ANIMATION_TIME_DELTA_FROM_SECONDS(x) AnimationTimeDelta(x)
 #define ANIMATION_TIME_DELTA_FROM_MILLISECONDS(x) AnimationTimeDelta(x / 1000.0)
 
-  static constexpr AnimationTimeDelta Max() {
-    return AnimationTimeDelta(std::numeric_limits<double>::infinity());
-  }
+  static constexpr AnimationTimeDelta Max() { return AnimationTimeDelta(std::numeric_limits<double>::infinity()); }
 
   double InSecondsF() const { return delta_; }
   double InMillisecondsF() const { return delta_ * 1000; }
   double InMicrosecondsF() const { return delta_ * 1000000; }
 
-  bool is_max() const {
-    return delta_ == std::numeric_limits<double>::infinity();
-  }
+  bool is_max() const { return delta_ == std::numeric_limits<double>::infinity(); }
 
   bool is_inf() const { return std::isinf(delta_); }
 
   bool is_zero() const { return delta_ == 0; }
 
-  AnimationTimeDelta operator+(AnimationTimeDelta other) const {
-    return AnimationTimeDelta(delta_ + other.delta_);
-  }
-  AnimationTimeDelta& operator+=(AnimationTimeDelta other) {
-    return *this = (*this + other);
-  }
-  AnimationTimeDelta operator-(AnimationTimeDelta other) const {
-    return AnimationTimeDelta(delta_ - other.delta_);
-  }
+  AnimationTimeDelta operator+(AnimationTimeDelta other) const { return AnimationTimeDelta(delta_ + other.delta_); }
+  AnimationTimeDelta& operator+=(AnimationTimeDelta other) { return *this = (*this + other); }
+  AnimationTimeDelta operator-(AnimationTimeDelta other) const { return AnimationTimeDelta(delta_ - other.delta_); }
   AnimationTimeDelta operator-() { return AnimationTimeDelta(-delta_); }
   template <typename T>
   AnimationTimeDelta operator*(T a) const {
@@ -105,22 +95,15 @@ AnimationTimeDelta operator*(T a, AnimationTimeDelta td) {
 }
 
 // Comparison operators on AnimationTimeDelta.
-bool operator==(const AnimationTimeDelta& lhs,
-                            const AnimationTimeDelta& rhs);
-bool operator!=(const AnimationTimeDelta& lhs,
-                            const AnimationTimeDelta& rhs);
-bool operator>(const AnimationTimeDelta& lhs,
-                           const AnimationTimeDelta& rhs);
-bool operator<(const AnimationTimeDelta& lhs,
-                           const AnimationTimeDelta& rhs);
-bool operator>=(const AnimationTimeDelta& lhs,
-                            const AnimationTimeDelta& rhs);
-bool operator<=(const AnimationTimeDelta& lhs,
-                            const AnimationTimeDelta& rhs);
+bool operator==(const AnimationTimeDelta& lhs, const AnimationTimeDelta& rhs);
+bool operator!=(const AnimationTimeDelta& lhs, const AnimationTimeDelta& rhs);
+bool operator>(const AnimationTimeDelta& lhs, const AnimationTimeDelta& rhs);
+bool operator<(const AnimationTimeDelta& lhs, const AnimationTimeDelta& rhs);
+bool operator>=(const AnimationTimeDelta& lhs, const AnimationTimeDelta& rhs);
+bool operator<=(const AnimationTimeDelta& lhs, const AnimationTimeDelta& rhs);
 
 // Defined to allow DCHECK_EQ/etc to work with the class.
-std::ostream& operator<<(std::ostream& os,
-                                     const AnimationTimeDelta& time);
+std::ostream& operator<<(std::ostream& os, const AnimationTimeDelta& time);
 /* // TODO(guopengfei)：默认使用双精度，by guopengfei
 #else  // !BUILDFLAG(BLINK_ANIMATION_USE_TIME_DELTA)
 

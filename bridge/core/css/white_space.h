@@ -121,6 +121,6 @@ inline TextWrap ToTextWrap(EWhiteSpace whitespace) {
   return static_cast<TextWrap>(static_cast<uint8_t>(whitespace) >> kWhiteSpaceCollapseBits);
 }
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // WEBF_RENDERER_CORE_CSS_WHITE_SPACE_H_

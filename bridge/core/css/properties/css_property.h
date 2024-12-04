@@ -14,13 +14,12 @@
 #include "core/css/css_value.h"
 #include "core/css/properties/css_unresolved_property.h"
 #include "core/platform/text/writing_direction_mode.h"
-#include "foundation/casting.h"
 #include "css_property_instance.h"
-
+#include "foundation/casting.h"
 
 namespace webf {
 
-class CSSUnresolvedProperty; //TODO(xiezuobing): core/css/properties/css_unresolved_property.h
+class CSSUnresolvedProperty;  // TODO(xiezuobing): core/css/properties/css_unresolved_property.h
 
 class ComputedStyle;
 class ExecutingContext;
@@ -45,7 +44,7 @@ enum class CSSValuePhase {
 extern const uint8_t kPropertyVisitedIDs[];
 extern const uint16_t kPropertyUnvisitedIDs[];
 
-class CSSProperty: public CSSUnresolvedProperty {
+class CSSProperty : public CSSUnresolvedProperty {
  public:
   using Flags = uint64_t;
 
@@ -72,12 +71,8 @@ class CSSProperty: public CSSUnresolvedProperty {
   // For backwards compatibility when passing around CSSUnresolvedProperty
   // references. In case we need to call a function that hasn't been converted
   // to using property classes yet.
-  CSSPropertyID PropertyID() const {
-    return static_cast<CSSPropertyID>(property_id_);
-  }
-  virtual CSSPropertyName GetCSSPropertyName() const {
-    return CSSPropertyName(PropertyID());
-  }
+  CSSPropertyID PropertyID() const { return static_cast<CSSPropertyID>(property_id_); }
+  virtual CSSPropertyName GetCSSPropertyName() const { return CSSPropertyName(PropertyID()); }
   virtual bool HasEqualCSSPropertyName(const CSSProperty& other) const;
 
   bool IDEquals(CSSPropertyID id) const { return PropertyID() == id; }
@@ -94,21 +89,15 @@ class CSSProperty: public CSSUnresolvedProperty {
   bool IsVisited() const { return flags_ & kVisited; }
   bool IsInternal() const { return flags_ & kInternal; }
   bool IsAnimationProperty() const { return flags_ & kAnimation; }
-  bool SupportsIncrementalStyle() const {
-    return flags_ & kSupportsIncrementalStyle;
-  }
+  bool SupportsIncrementalStyle() const { return flags_ & kSupportsIncrementalStyle; }
   bool IsIdempotent() const { return flags_ & kIdempotent; }
   bool AcceptsNumericLiteral() const { return flags_ & kAcceptsNumericLiteral; }
   bool IsValidForFirstLetter() const { return flags_ & kValidForFirstLetter; }
   bool IsValidForFirstLine() const { return flags_ & kValidForFirstLine; }
   bool IsValidForCue() const { return flags_ & kValidForCue; }
   bool IsValidForMarker() const { return flags_ & kValidForMarker; }
-  bool IsValidForFormattedText() const {
-    return flags_ & kValidForFormattedText;
-  }
-  bool IsValidForFormattedTextRun() const {
-    return flags_ & kValidForFormattedTextRun;
-  }
+  bool IsValidForFormattedText() const { return flags_ & kValidForFormattedText; }
+  bool IsValidForFormattedTextRun() const { return flags_ & kValidForFormattedTextRun; }
   bool IsValidForKeyframe() const { return flags_ & kValidForKeyframe; }
   bool IsValidForPositionTry() const { return flags_ & kValidForPositionTry; }
   bool IsSurrogate() const { return flags_ & kSurrogate; }
@@ -116,36 +105,27 @@ class CSSProperty: public CSSUnresolvedProperty {
   bool IsBackground() const { return flags_ & kBackground; }
   bool IsBorder() const { return flags_ & kBorder; }
   bool IsBorderRadius() const { return flags_ & kBorderRadius; }
-  bool IsInLogicalPropertyGroup() const {
-    return flags_ & kInLogicalPropertyGroup;
-  }
+  bool IsInLogicalPropertyGroup() const { return flags_ & kInLogicalPropertyGroup; }
 
   bool IsRepeated() const { return repetition_separator_ != '\0'; }
   char RepetitionSeparator() const { return repetition_separator_; }
 
-  virtual bool IsAffectedByAll() const {
-    return IsWebExposed() && IsProperty();
-  }
+  virtual bool IsAffectedByAll() const { return IsWebExposed() && IsProperty(); }
   virtual bool IsLayoutDependentProperty() const { return false; }
-  virtual bool IsLayoutDependent(const ComputedStyle* style,
-                                 LayoutObject* layout_object) const {
-    return false;
-  }
+  virtual bool IsLayoutDependent(const ComputedStyle* style, LayoutObject* layout_object) const { return false; }
 
-  virtual std::shared_ptr<const CSSValue> CSSValueFromComputedStyleInternal(
-      const ComputedStyle&,
-      const LayoutObject*,
-      bool allow_visited_style,
-      CSSValuePhase value_phase) const {
+  virtual std::shared_ptr<const CSSValue> CSSValueFromComputedStyleInternal(const ComputedStyle&,
+                                                                            const LayoutObject*,
+                                                                            bool allow_visited_style,
+                                                                            CSSValuePhase value_phase) const {
     return nullptr;
   }
   std::shared_ptr<const CSSValue> CSSValueFromComputedStyle(const ComputedStyle&,
-                                            const LayoutObject*,
-                                            bool allow_visited_style,
-                                            CSSValuePhase) const;
+                                                            const LayoutObject*,
+                                                            bool allow_visited_style,
+                                                            CSSValuePhase) const;
 
-  [[nodiscard]] const CSSProperty& ResolveDirectionAwareProperty(
-      WritingDirectionMode writing_direction) const {
+  [[nodiscard]] const CSSProperty& ResolveDirectionAwareProperty(WritingDirectionMode writing_direction) const {
     if (!IsInLogicalPropertyGroup()) {
       // Avoid the potentially expensive virtual function call.
       return *this;
@@ -157,13 +137,9 @@ class CSSProperty: public CSSUnresolvedProperty {
   virtual const CSSProperty& ResolveDirectionAwarePropertyInternal(WritingDirectionMode writing_direction_mode) const {
     return *this;
   }
-  virtual bool IsInSameLogicalPropertyGroupWithDifferentMappingLogic(
-      CSSPropertyID) const {
-    return false;
-  }
+  virtual bool IsInSameLogicalPropertyGroupWithDifferentMappingLogic(CSSPropertyID) const { return false; }
   const CSSProperty* GetVisitedProperty() const {
-    CSSPropertyID visited_id = static_cast<CSSPropertyID>(
-        kPropertyVisitedIDs[static_cast<unsigned>(property_id_)]);
+    CSSPropertyID visited_id = static_cast<CSSPropertyID>(kPropertyVisitedIDs[static_cast<unsigned>(property_id_)]);
     if (visited_id == CSSPropertyID::kInvalid) {
       return nullptr;
     } else {
@@ -171,8 +147,7 @@ class CSSProperty: public CSSUnresolvedProperty {
     }
   }
   const CSSProperty* GetUnvisitedProperty() const {
-    CSSPropertyID unvisited_id = static_cast<CSSPropertyID>(
-        kPropertyUnvisitedIDs[static_cast<unsigned>(property_id_)]);
+    CSSPropertyID unvisited_id = static_cast<CSSPropertyID>(kPropertyUnvisitedIDs[static_cast<unsigned>(property_id_)]);
     if (unvisited_id == CSSPropertyID::kInvalid) {
       return nullptr;
     } else {
@@ -180,9 +155,7 @@ class CSSProperty: public CSSUnresolvedProperty {
     }
   }
 
-  virtual const CSSProperty* SurrogateFor(WritingDirectionMode writing_direction_mode) const {
-    return nullptr;
-  }
+  virtual const CSSProperty* SurrogateFor(WritingDirectionMode writing_direction_mode) const { return nullptr; }
 
   enum Flag : Flags {
     kInterpolable = 1 << 0,
@@ -260,12 +233,8 @@ class CSSProperty: public CSSUnresolvedProperty {
     kValidForPageContext = 1ull << 35,
   };
 
-  constexpr CSSProperty(CSSPropertyID property_id,
-                        Flags flags,
-                        char repetition_separator)
-      : property_id_(static_cast<uint16_t>(property_id)),
-        repetition_separator_(repetition_separator),
-        flags_(flags) {}
+  constexpr CSSProperty(CSSPropertyID property_id, Flags flags, char repetition_separator)
+      : property_id_(static_cast<uint16_t>(property_id)), repetition_separator_(repetition_separator), flags_(flags) {}
 
   enum class ValueMode {
     kNormal,
@@ -289,9 +258,7 @@ static_assert(sizeof(CSSProperty) <= 16);
 
 template <>
 struct DowncastTraits<CSSProperty> {
-  static bool AllowFrom(const CSSUnresolvedProperty& unresolved) {
-    return unresolved.IsResolvedProperty();
-  }
+  static bool AllowFrom(const CSSUnresolvedProperty& unresolved) { return unresolved.IsResolvedProperty(); }
 };
 
 const CSSProperty& GetCSSPropertyVariable();

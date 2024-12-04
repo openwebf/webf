@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "gtest/gtest.h"
-#include "core/css/parser/css_tokenizer.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_parser_save_point.h"
+#include "core/css/parser/css_tokenizer.h"
+#include "gtest/gtest.h"
 
 namespace webf {
 
@@ -496,8 +496,7 @@ TEST(CSSParserTokenStreamTest, IneffectiveBoundary) {
     {
       // It's valid to add another boundary, but it has no affect in this
       // case, since kColonToken appears first.
-      CSSParserTokenStream::Boundary boundary_semicolon(stream,
-                                                        kSemicolonToken);
+      CSSParserTokenStream::Boundary boundary_semicolon(stream, kSemicolonToken);
 
       CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
       EXPECT_EQ("a", range.Consume().Value());
@@ -775,12 +774,9 @@ RestartData restart_data[] = {
     // clang-format on
 };
 
-class RestartTest : public testing::Test,
-                    public testing::WithParamInterface<RestartData> {};
+class RestartTest : public testing::Test, public testing::WithParamInterface<RestartData> {};
 
-INSTANTIATE_TEST_SUITE_P(CSSParserTokenStreamTest,
-                         RestartTest,
-                         testing::ValuesIn(restart_data));
+INSTANTIATE_TEST_SUITE_P(CSSParserTokenStreamTest, RestartTest, testing::ValuesIn(restart_data));
 
 TEST_P(RestartTest, All) {
   RestartData param = GetParam();
@@ -798,12 +794,8 @@ TEST_P(RestartTest, All) {
   std::vector<CSSParserToken> actual_tokens;
   TokenizeInto(stream, restart_target, restart_offset, actual_tokens);
 
-  SCOPED_TRACE(testing::Message()
-               << "Expected (serialized): "
-               << CSSParserTokenRange(ref_tokens).Serialize());
-  SCOPED_TRACE(testing::Message()
-               << "Actual (serialized): "
-               << CSSParserTokenRange(actual_tokens).Serialize());
+  SCOPED_TRACE(testing::Message() << "Expected (serialized): " << CSSParserTokenRange(ref_tokens).Serialize());
+  SCOPED_TRACE(testing::Message() << "Actual (serialized): " << CSSParserTokenRange(actual_tokens).Serialize());
 
   SCOPED_TRACE(param.ref);
   SCOPED_TRACE(param.restart);
@@ -813,12 +805,9 @@ TEST_P(RestartTest, All) {
 }
 
 // Same as RestartTest, except performs all restarts during a boundary.
-class BoundaryRestartTest : public testing::Test,
-                            public testing::WithParamInterface<RestartData> {};
+class BoundaryRestartTest : public testing::Test, public testing::WithParamInterface<RestartData> {};
 
-INSTANTIATE_TEST_SUITE_P(CSSParserTokenStreamTest,
-                         BoundaryRestartTest,
-                         testing::ValuesIn(restart_data));
+INSTANTIATE_TEST_SUITE_P(CSSParserTokenStreamTest, BoundaryRestartTest, testing::ValuesIn(restart_data));
 
 TEST_P(BoundaryRestartTest, All) {
   RestartData param = GetParam();
@@ -836,12 +825,8 @@ TEST_P(BoundaryRestartTest, All) {
   std::vector<CSSParserToken> actual_tokens;
   TokenizeInto(stream, restart_target, restart_offset, actual_tokens);
 
-  SCOPED_TRACE(testing::Message()
-               << "Expected (serialized): "
-               << CSSParserTokenRange(ref_tokens).Serialize());
-  SCOPED_TRACE(testing::Message()
-               << "Actual (serialized): "
-               << CSSParserTokenRange(actual_tokens).Serialize());
+  SCOPED_TRACE(testing::Message() << "Expected (serialized): " << CSSParserTokenRange(ref_tokens).Serialize());
+  SCOPED_TRACE(testing::Message() << "Actual (serialized): " << CSSParserTokenRange(actual_tokens).Serialize());
 
   SCOPED_TRACE(param.ref);
   SCOPED_TRACE(param.restart);
@@ -850,12 +835,9 @@ TEST_P(BoundaryRestartTest, All) {
   EXPECT_EQ(actual_tokens, ref_tokens);
 }
 
-class NullRestartTest : public testing::Test,
-                        public testing::WithParamInterface<RestartData> {};
+class NullRestartTest : public testing::Test, public testing::WithParamInterface<RestartData> {};
 
-INSTANTIATE_TEST_SUITE_P(CSSParserTokenStreamTest,
-                         NullRestartTest,
-                         testing::ValuesIn(restart_data));
+INSTANTIATE_TEST_SUITE_P(CSSParserTokenStreamTest, NullRestartTest, testing::ValuesIn(restart_data));
 
 // Ignores RestartData.restart, and instead tests restarting to and from
 // the same offset, i.e. "restarting" to the offset we're already on.
@@ -865,21 +847,15 @@ TEST_P(NullRestartTest, All) {
   std::string input(param.input);
   std::vector<CSSParserToken> ref_tokens = TokenizeAll(input);
 
-  for (size_t restart_offset = 0; restart_offset <= input.length();
-       ++restart_offset) {
+  for (size_t restart_offset = 0; restart_offset <= input.length(); ++restart_offset) {
     CSSTokenizer tokenizer(input);
     CSSParserTokenStream stream(tokenizer);
 
     std::vector<CSSParserToken> actual_tokens;
-    TokenizeInto(stream, /* restart_target */ restart_offset, restart_offset,
-                 actual_tokens);
+    TokenizeInto(stream, /* restart_target */ restart_offset, restart_offset, actual_tokens);
 
-    SCOPED_TRACE(testing::Message()
-                 << "Expected (serialized): "
-                 << CSSParserTokenRange(ref_tokens).Serialize());
-    SCOPED_TRACE(testing::Message()
-                 << "Actual (serialized): "
-                 << CSSParserTokenRange(actual_tokens).Serialize());
+    SCOPED_TRACE(testing::Message() << "Expected (serialized): " << CSSParserTokenRange(ref_tokens).Serialize());
+    SCOPED_TRACE(testing::Message() << "Actual (serialized): " << CSSParserTokenRange(actual_tokens).Serialize());
 
     SCOPED_TRACE(param.input);
     SCOPED_TRACE(testing::Message() << "restart_offset:" << restart_offset);
@@ -892,8 +868,7 @@ class TestStream {
   WEBF_STACK_ALLOCATED();
 
  public:
-  explicit TestStream(std::string input)
-      : input_(input), tokenizer_(input_), stream_(tokenizer_) {
+  explicit TestStream(std::string input) : input_(input), tokenizer_(input_), stream_(tokenizer_) {
     stream_.EnsureLookAhead();
   }
 
@@ -935,8 +910,7 @@ class TestRestoringBlockGuard {
   WEBF_STACK_ALLOCATED();
 
  public:
-  explicit TestRestoringBlockGuard(TestStream& stream)
-      : guard_(stream.stream_) {}
+  explicit TestRestoringBlockGuard(TestStream& stream) : guard_(stream.stream_) {}
   bool Release() { return guard_.Release(); }
 
  private:
@@ -1200,5 +1174,4 @@ TEST_F(RestoringBlockGuardTest, RestoreDuringBoundary) {
 
 }  // namespace
 
-
-}
+}  // namespace webf

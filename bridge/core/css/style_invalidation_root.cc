@@ -16,7 +16,7 @@ Element* StyleInvalidationRoot::RootElement() const {
   assert(root_node);
   // TODO(guopengfei)：先忽略ShadowRoot，收敛报错问题
   // 使用 auto 关键字和 if 语句来进行条件判断
-  //if (auto* shadow_root = DynamicTo<ShadowRoot>(root_node)) {
+  // if (auto* shadow_root = DynamicTo<ShadowRoot>(root_node)) {
   //  return &shadow_root->host();
   //}
   if (root_node->IsDocumentNode()) {
@@ -43,8 +43,7 @@ void StyleInvalidationRoot::SubtreeModified(ContainerNode& parent) {
   if (!GetRootNode() || GetRootNode()->isConnected()) {
     return;
   }
-  for (Node* ancestor = &parent; ancestor;
-       ancestor = ancestor->ParentOrShadowHostNode()) {
+  for (Node* ancestor = &parent; ancestor; ancestor = ancestor->ParentOrShadowHostNode()) {
     assert(ancestor->ChildNeedsStyleInvalidation());
     assert(!ancestor->NeedsStyleInvalidation());
     ancestor->ClearChildNeedsStyleInvalidation();

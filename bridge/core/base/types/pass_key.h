@@ -20,4 +20,3 @@ class PassKey {
 }  // namespace webf
 
 #endif  // WEBF_PASS_KEY_H
-

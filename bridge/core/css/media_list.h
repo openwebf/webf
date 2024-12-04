@@ -41,11 +41,8 @@ class MediaQuerySetOwner;
 
 class MediaQuerySet : std::enable_shared_from_this<MediaQuerySet> {
  public:
-  static std::shared_ptr<MediaQuerySet> Create() {
-    return std::make_shared<MediaQuerySet>();
-  }
-  static std::shared_ptr<MediaQuerySet> Create(const std::string& media_string,
-                               const ExecutingContext*);
+  static std::shared_ptr<MediaQuerySet> Create() { return std::make_shared<MediaQuerySet>(); }
+  static std::shared_ptr<MediaQuerySet> Create(const std::string& media_string, const ExecutingContext*);
 
   MediaQuerySet();
   MediaQuerySet(const MediaQuerySet&);
@@ -53,12 +50,9 @@ class MediaQuerySet : std::enable_shared_from_this<MediaQuerySet> {
   void Trace(GCVisitor*) const;
 
   std::shared_ptr<const MediaQuerySet> CopyAndAdd(const std::string&, const ExecutingContext*) const;
-  std::shared_ptr<const MediaQuerySet> CopyAndRemove(const std::string&,
-                                     const ExecutingContext*) const;
+  std::shared_ptr<const MediaQuerySet> CopyAndRemove(const std::string&, const ExecutingContext*) const;
 
-  const std::vector<std::shared_ptr<const MediaQuery>>& QueryVector() const {
-    return queries_;
-  }
+  const std::vector<std::shared_ptr<const MediaQuery>>& QueryVector() const { return queries_; }
 
   std::string MediaText() const;
 
@@ -76,9 +70,7 @@ class MediaList final : public ScriptWrappable {
 
   unsigned length() const { return Queries()->QueryVector().size(); }
   AtomicString item(unsigned index) const;
-  void deleteMedium(const ExecutingContext*,
-                    const AtomicString& old_medium,
-                    ExceptionState&);
+  void deleteMedium(const ExecutingContext*, const AtomicString& old_medium, ExceptionState&);
   void appendMedium(const ExecutingContext*, const AtomicString& new_medium);
 
   // Note that this getter doesn't require the ExecutingContext (except for
@@ -106,7 +98,6 @@ class MediaList final : public ScriptWrappable {
   Member<CSSStyleSheet> parent_style_sheet_;
   Member<CSSRule> parent_rule_;
 };
-
 
 }  // namespace webf
 

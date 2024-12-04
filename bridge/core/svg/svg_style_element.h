@@ -24,9 +24,7 @@ struct DowncastTraits<SVGStyleElement> {
   static bool AllowFrom(const Element& element) {
     return element.IsSVGElement() && element.HasTagName(svg_names::kstyle);
   }
-  static bool AllowFrom(const Node& node) {
-    return node.IsHTMLElement() && IsA<SVGStyleElement>(To<SVGElement>(node));
-  }
+  static bool AllowFrom(const Node& node) { return node.IsHTMLElement() && IsA<SVGStyleElement>(To<SVGElement>(node)); }
 };
 
 }  // namespace webf

@@ -18,7 +18,6 @@
 
 namespace webf {
 
-
 namespace url {
 
 namespace {
@@ -63,8 +62,7 @@ bool DoCanonicalizePathURL(const URLComponentSource<CHAR>& source,
                            CanonOutput* output,
                            Parsed* new_parsed) {
   // Scheme: this will append the colon.
-  bool success = CanonicalizeScheme(source.scheme, parsed.scheme,
-                                    output, &new_parsed->scheme);
+  bool success = CanonicalizeScheme(source.scheme, parsed.scheme, output, &new_parsed->scheme);
 
   // We assume there's no authority for path URLs. Note that hosts should never
   // have -1 length.
@@ -77,13 +75,11 @@ bool DoCanonicalizePathURL(const URLComponentSource<CHAR>& source,
   //
   // Note: parsing the path part should never cause a failure, see
   // https://url.spec.whatwg.org/#cannot-be-a-base-url-path-state
-  DoCanonicalizePathComponent(source.path, parsed.path, '\0',
-                                           output, &new_parsed->path);
+  DoCanonicalizePathComponent(source.path, parsed.path, '\0', output, &new_parsed->path);
 
   // Similar to mailto:, always use the default UTF-8 charset converter for
   // query.
-  CanonicalizeQuery(source.query, parsed.query, output,
-                    &new_parsed->query);
+  CanonicalizeQuery(source.query, parsed.query, output, &new_parsed->query);
 
   CanonicalizeRef(source.ref, parsed.ref, output, &new_parsed->ref);
 
@@ -97,16 +93,14 @@ bool CanonicalizePathURL(const char* spec,
                          const Parsed& parsed,
                          CanonOutput* output,
                          Parsed* new_parsed) {
-  return DoCanonicalizePathURL<char, unsigned char>(
-      URLComponentSource<char>(spec), parsed, output, new_parsed);
+  return DoCanonicalizePathURL<char, unsigned char>(URLComponentSource<char>(spec), parsed, output, new_parsed);
 }
 
 void CanonicalizePathURLPath(const char* source,
                              const Component& component,
                              CanonOutput* output,
                              Component* new_component) {
-  DoCanonicalizePathComponent(source, component, '\0',
-                                                   output, new_component);
+  DoCanonicalizePathComponent(source, component, '\0', output, new_component);
 }
 
 bool ReplacePathURL(const char* base,
@@ -117,10 +111,9 @@ bool ReplacePathURL(const char* base,
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupOverrideComponents(base, replacements, &source, &parsed);
-  return DoCanonicalizePathURL<char, unsigned char>(
-      source, parsed, output, new_parsed);
+  return DoCanonicalizePathURL<char, unsigned char>(source, parsed, output, new_parsed);
 }
 
 }  // namespace url
 
-} // namespace webf
+}  // namespace webf

@@ -28,9 +28,8 @@ CSSAnimationData::CSSAnimationData() : CSSTimingData(InitialDuration()) {
 CSSAnimationData::CSSAnimationData(const CSSAnimationData& other) = default;
 
 std::optional<double> CSSAnimationData::InitialDuration() {
-
   // TODO(guopengfei)：not use std::nullopt
-  //if (RuntimeEnabledFeatures::ScrollTimelineEnabled()) {
+  // if (RuntimeEnabledFeatures::ScrollTimelineEnabled()) {
   //  return std::nullopt;
   //}
 
@@ -39,28 +38,23 @@ std::optional<double> CSSAnimationData::InitialDuration() {
 
 const AtomicString& CSSAnimationData::InitialName() {
   // TODO(guopengfei)：
-  //DEFINE_STATIC_LOCAL(const AtomicString, name, ("none"));
-  //return name;
+  // DEFINE_STATIC_LOCAL(const AtomicString, name, ("none"));
+  // return name;
   return AtomicString::Empty();
 }
 
 const StyleTimeline& CSSAnimationData::InitialTimeline() {
-  //DEFINE_STATIC_LOCAL(const StyleTimeline, timeline, (CSSValueID::kAuto));
+  // DEFINE_STATIC_LOCAL(const StyleTimeline, timeline, (CSSValueID::kAuto));
   thread_local static const StyleTimeline timeline = new StyleTimeline(CSSValueID::kAuto)
 
-  return timeline;
+      return timeline;
 }
 
-bool CSSAnimationData::AnimationsMatchForStyleRecalc(
-    const CSSAnimationData& other) const {
-  return name_list_ == other.name_list_ &&
-         timeline_list_ == other.timeline_list_ &&
-         play_state_list_ == other.play_state_list_ &&
-         iteration_count_list_ == other.iteration_count_list_ &&
-         direction_list_ == other.direction_list_ &&
-         fill_mode_list_ == other.fill_mode_list_ &&
-         range_start_list_ == other.range_start_list_ &&
-         range_end_list_ == other.range_end_list_ &&
+bool CSSAnimationData::AnimationsMatchForStyleRecalc(const CSSAnimationData& other) const {
+  return name_list_ == other.name_list_ && timeline_list_ == other.timeline_list_ &&
+         play_state_list_ == other.play_state_list_ && iteration_count_list_ == other.iteration_count_list_ &&
+         direction_list_ == other.direction_list_ && fill_mode_list_ == other.fill_mode_list_ &&
+         range_start_list_ == other.range_start_list_ && range_end_list_ == other.range_end_list_ &&
          TimingMatchForStyleRecalc(other);
 }
 

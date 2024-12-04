@@ -134,9 +134,9 @@ class CalculationExpressionIdentifierNode final : public CalculationExpressionNo
   }
   std::shared_ptr<const CalculationExpressionNode> Zoom(double factor) const final { return shared_from_this(); }
   bool IsIdentifier() const final { return true; }
-  #if DCHECK_IS_ON()
-    ResultType ResolvedResultType() const final { return ResultType::kIdent; }
-  #endif
+#if DCHECK_IS_ON()
+  ResultType ResolvedResultType() const final { return ResultType::kIdent; }
+#endif
 
  private:
   std::string identifier_;
@@ -153,7 +153,7 @@ class CalculationExpressionSizingKeywordNode final : public CalculationExpressio
     kSize,
     kAny,
     kAuto,
-//    kContent,
+    //    kContent,
     // The keywords below should match those accepted by
     // css_parsing_utils::ValidWidthOrHeightKeyword.
     kMinContent,

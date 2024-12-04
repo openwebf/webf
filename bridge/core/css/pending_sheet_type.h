@@ -28,12 +28,10 @@ enum class PendingSheetType {
   kBlocking
 };
 
-
-std::pair<PendingSheetType, RenderBlockingBehavior>
-ComputePendingSheetTypeAndRenderBlockingBehavior(Element& sheet_owner,
-                                                 bool is_critical_sheet,
-                                                 bool is_created_by_parser);
-
+std::pair<PendingSheetType, RenderBlockingBehavior> ComputePendingSheetTypeAndRenderBlockingBehavior(
+    Element& sheet_owner,
+    bool is_critical_sheet,
+    bool is_created_by_parser);
 
 }  // namespace webf
 

@@ -4,7 +4,6 @@
 
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
-
 #ifndef WEBF_SCHEME_HOST_PORT_H
 #define WEBF_SCHEME_HOST_PORT_H
 
@@ -12,7 +11,6 @@
 
 #include <string>
 #include <string_view>
-
 
 namespace webf {
 
@@ -74,7 +72,7 @@ struct Parsed;
 //
 //     GURL url("https://example.com/");
 //     tuple == url::SchemeHostPort(url); // true
-class  SchemeHostPort {
+class SchemeHostPort {
  public:
   // Creates an invalid (scheme, host, port) tuple, which represents an invalid
   // or non-standard URL.
@@ -96,10 +94,7 @@ class  SchemeHostPort {
   // that the host and port are canonicalized. This should only be used when
   // converting between already normalized types, and should NOT be used for
   // IPC.
-  SchemeHostPort(std::string scheme,
-                 std::string host,
-                 uint16_t port,
-                 ConstructPolicy policy);
+  SchemeHostPort(std::string scheme, std::string host, uint16_t port, ConstructPolicy policy);
 
   // Copyable and movable.
   SchemeHostPort(const SchemeHostPort&) = default;
@@ -136,12 +131,9 @@ class  SchemeHostPort {
   // In particular, invalid SchemeHostPort objects match each other (and
   // themselves). Opaque origins, on the other hand, would not.
   bool operator==(const SchemeHostPort& other) const {
-    return port_ == other.port() && scheme_ == other.scheme() &&
-           host_ == other.host();
+    return port_ == other.port() && scheme_ == other.scheme() && host_ == other.host();
   }
-  bool operator!=(const SchemeHostPort& other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const SchemeHostPort& other) const { return !(*this == other); }
   // Allows SchemeHostPort to be used as a key in STL (for example, a std::set
   // or std::map).
   bool operator<(const SchemeHostPort& other) const;
@@ -161,9 +153,7 @@ class  SchemeHostPort {
   uint16_t port_ = 0;
 };
 
-
-std::ostream& operator<<(std::ostream& out,
-                         const SchemeHostPort& scheme_host_port);
+std::ostream& operator<<(std::ostream& out, const SchemeHostPort& scheme_host_port);
 
 }  // namespace url
 }  // namespace webf

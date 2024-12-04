@@ -15,7 +15,6 @@
 
 namespace webf {
 
-
 namespace url {
 
 namespace {
@@ -51,17 +50,13 @@ bool DoCanonicalizeFileSystemURL(const char* spec,
     new_inner_parsed.scheme.begin = output->length();
     output->Append("file://");
     new_inner_parsed.scheme.len = 4;
-    success &= CanonicalizePath(spec, inner_parsed->path, output,
-                                &new_inner_parsed.path);
-  } else if (GetStandardSchemeType(spec, inner_parsed->scheme,
-                                   &inner_scheme_type)) {
+    success &= CanonicalizePath(spec, inner_parsed->path, output, &new_inner_parsed.path);
+  } else if (GetStandardSchemeType(spec, inner_parsed->scheme, &inner_scheme_type)) {
     if (inner_scheme_type == SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION) {
       // Strip out the user information from the inner URL, if any.
       inner_scheme_type = SCHEME_WITH_HOST_AND_PORT;
     }
-    success =
-        CanonicalizeStandardURL(spec, *inner_parsed, inner_scheme_type,
-                                output, &new_inner_parsed);
+    success = CanonicalizeStandardURL(spec, *inner_parsed, inner_scheme_type, output, &new_inner_parsed);
   } else {
     // TODO(ericu): The URL is wrong, but should we try to output more of what
     // we were given?  Echoing back filesystem:mailto etc. doesn't seem all that
@@ -71,12 +66,10 @@ bool DoCanonicalizeFileSystemURL(const char* spec,
   // The filesystem type must be more than just a leading slash for validity.
   success &= new_inner_parsed.path.len > 1;
 
-  success &= CanonicalizePath(source.path, parsed.path, output,
-                              &new_parsed->path);
+  success &= CanonicalizePath(source.path, parsed.path, output, &new_parsed->path);
 
   // Ignore failures for query/ref since the URL can probably still be loaded.
-  CanonicalizeQuery(source.query, parsed.query,
-                    output, &new_parsed->query);
+  CanonicalizeQuery(source.query, parsed.query, output, &new_parsed->query);
   CanonicalizeRef(source.ref, parsed.ref, output, &new_parsed->ref);
   if (success)
     new_parsed->set_inner_parsed(new_inner_parsed);
@@ -86,12 +79,8 @@ bool DoCanonicalizeFileSystemURL(const char* spec,
 
 }  // namespace
 
-bool CanonicalizeFileSystemURL(const char* spec,
-                               const Parsed& parsed,
-                               CanonOutput* output,
-                               Parsed* new_parsed) {
-  return DoCanonicalizeFileSystemURL(spec, URLComponentSource(spec), parsed,
-                                     output, new_parsed);
+bool CanonicalizeFileSystemURL(const char* spec, const Parsed& parsed, CanonOutput* output, Parsed* new_parsed) {
+  return DoCanonicalizeFileSystemURL(spec, URLComponentSource(spec), parsed, output, new_parsed);
 }
 
 bool ReplaceFileSystemURL(const char* base,
@@ -102,10 +91,9 @@ bool ReplaceFileSystemURL(const char* base,
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupOverrideComponents(base, replacements, &source, &parsed);
-  return DoCanonicalizeFileSystemURL(base, source, parsed,
-                                     output, new_parsed);
+  return DoCanonicalizeFileSystemURL(base, source, parsed, output, new_parsed);
 }
 
 }  // namespace url
 
-} // namespace webf
+}  // namespace webf

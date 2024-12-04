@@ -7,7 +7,7 @@
 
 using namespace webf;
 //
-//TEST(HTMLCollection, children) {
+// TEST(HTMLCollection, children) {
 //  bool static errorCalled = false;
 //  bool static logCalled = false;
 //  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
@@ -32,7 +32,7 @@ using namespace webf;
 //  EXPECT_EQ(errorCalled, false);
 //}
 //
-//TEST(HTMLCollection, childrenWillNotChangeWithNoElementsNodes) {
+// TEST(HTMLCollection, childrenWillNotChangeWithNoElementsNodes) {
 //  bool static errorCalled = false;
 //  bool static logCalled = false;
 //  auto env = TEST_init([](double contextId, const char* errmsg) {
@@ -47,10 +47,12 @@ using namespace webf;
 //      "document.body.appendChild(div);"
 //      "document.body.appendChild(text);"
 //      "document.body.appendChild(div2);"
-//      "console.assert(document.body.children.length == 2, document.body.children[0] == div, document.body.children[1] "
+//      "console.assert(document.body.children.length == 2, document.body.children[0] == div, document.body.children[1]
+//      "
 //      "== div2);"
 //      "document.body.appendChild(document.createTextNode('AA'));"
-//      "console.assert(document.body.children.length == 2, document.body.children[0] == div, document.body.children[1] "
+//      "console.assert(document.body.children.length == 2, document.body.children[0] == div, document.body.children[1]
+//      "
 //      "== div2);"
 //      "const div3 = document.createElement('div');"
 //      "document.body.appendChild(div3);"

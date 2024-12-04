@@ -85,8 +85,7 @@ std::string ToRoundingStrategyString(CSSMathOperator op) {
 }
 
 bool IsComparison(CSSMathOperator op) {
-  return op == CSSMathOperator::kMin || op == CSSMathOperator::kMax ||
-         op == CSSMathOperator::kClamp;
+  return op == CSSMathOperator::kMin || op == CSSMathOperator::kMax || op == CSSMathOperator::kClamp;
 }
 
-}
+}  // namespace webf

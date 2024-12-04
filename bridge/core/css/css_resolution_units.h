@@ -30,10 +30,8 @@ namespace webf {
 
 // These conversions are defined in css-values
 const double kCssPixelsPerCentimeter = kCssPixelsPerInch / kCentimetersPerInch;
-const double kCssPixelsPerMillimeter =
-    kCssPixelsPerCentimeter / kMillimetersPerCentimeter;
-const double kCssPixelsPerQuarterMillimeter =
-    kCssPixelsPerCentimeter / kQuarterMillimetersPerCentimeter;
+const double kCssPixelsPerMillimeter = kCssPixelsPerCentimeter / kMillimetersPerCentimeter;
+const double kCssPixelsPerQuarterMillimeter = kCssPixelsPerCentimeter / kQuarterMillimetersPerCentimeter;
 const double kCssPixelsPerPica = kCssPixelsPerInch / kPicasPerInch;
 
 }  // namespace webf

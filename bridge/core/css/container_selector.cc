@@ -4,14 +4,12 @@
 
 #include "container_selector.h"
 #include "core/base/hash/hash.h"
-#include "core/style/computed_style_constants.h"
 #include "core/platform/hash_functions.h"
+#include "core/style/computed_style_constants.h"
 
 namespace webf {
 
-ContainerSelector::ContainerSelector(const std::string& name,
-                                     const MediaQueryExpNode& query)
-    : name_(std::move(name)) {
+ContainerSelector::ContainerSelector(const std::string& name, const MediaQueryExpNode& query) : name_(std::move(name)) {
   MediaQueryExpNode::FeatureFlags feature_flags = query.CollectFeatureFlags();
 
   if (feature_flags & MediaQueryExpNode::kFeatureInlineSize) {
@@ -52,8 +50,7 @@ unsigned ContainerSelector::GetHash() const {
 unsigned ContainerSelector::Type(WritingMode writing_mode) const {
   unsigned type = kContainerTypeNormal;
 
-  LogicalAxes axes =
-      logical_axes_ | ToLogicalAxes(physical_axes_, writing_mode);
+  LogicalAxes axes = logical_axes_ | ToLogicalAxes(physical_axes_, writing_mode);
 
   if ((axes & kLogicalAxesInline).value()) {
     type |= kContainerTypeInlineSize;
@@ -67,7 +64,6 @@ unsigned ContainerSelector::Type(WritingMode writing_mode) const {
   return type;
 }
 
-void ScopedContainerSelector::Trace(GCVisitor* visitor) const {
-}
+void ScopedContainerSelector::Trace(GCVisitor* visitor) const {}
 
-}
+}  // namespace webf

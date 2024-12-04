@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "core/css/parser/css_parser.h"
 #include "core/css/style_rule.h"
 #include "core/css/style_sheet_contents.h"
-#include "core/css/parser/css_parser.h"
 #include "gtest/gtest.h"
 
 namespace webf {
@@ -15,9 +15,7 @@ class CSSLazyParsingTest : public testing::Test {
  public:
   bool HasParsedProperties(StyleRule* rule) { return rule->HasParsedProperties(); }
 
-  StyleRule* RuleAt(StyleSheetContents* sheet, size_t index) {
-    return To<StyleRule>(sheet->ChildRules()[index].get());
-  }
+  StyleRule* RuleAt(StyleSheetContents* sheet, size_t index) { return To<StyleRule>(sheet->ChildRules()[index].get()); }
 
  protected:
   std::shared_ptr<StyleSheetContents> cached_contents_;

@@ -107,7 +107,7 @@ class CSSParserTokenStream {
   // only needed for declarations which are easier to think about?
   static constexpr int kInitialBufferSize = 128;
 
-  explicit CSSParserTokenStream(CSSTokenizer& tokenizer) : tokenizer_(tokenizer), next_(kEOFToken){
+  explicit CSSParserTokenStream(CSSTokenizer& tokenizer) : tokenizer_(tokenizer), next_(kEOFToken) {
     buffer_.reserve(kInitialBufferSize);
   };
 

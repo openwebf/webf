@@ -36,12 +36,11 @@ struct SameSizeAsCSSPropertyValue {
 
 static_assert(sizeof(CSSPropertyValue) == sizeof(SameSizeAsCSSPropertyValue));
 
-CSSPropertyValueMetadata::CSSPropertyValueMetadata(
-    const CSSPropertyName& name,
-    bool is_set_from_shorthand,
-    int index_in_shorthands_vector,
-    bool important,
-    bool implicit)
+CSSPropertyValueMetadata::CSSPropertyValueMetadata(const CSSPropertyName& name,
+                                                   bool is_set_from_shorthand,
+                                                   int index_in_shorthands_vector,
+                                                   bool important,
+                                                   bool implicit)
     : property_id_(static_cast<unsigned>(name.Id())),
       is_set_from_shorthand_(is_set_from_shorthand),
       index_in_shorthands_vector_(index_in_shorthands_vector),

@@ -7,9 +7,9 @@
  */
 
 #include "css_lazy_parsing_state.h"
+#include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/css/style_sheet_contents.h"
 #include "css_parser_context.h"
-#include "bindings/qjs/cppgc/gc_visitor.h"
 
 namespace webf {
 
@@ -19,7 +19,7 @@ CSSLazyParsingState::CSSLazyParsingState(std::shared_ptr<const CSSParserContext>
     : context_(context),
       sheet_text_(sheet_text),
       owning_contents_(contents),
-      should_use_count_(context_->IsUseCounterRecordingEnabled()){}
+      should_use_count_(context_->IsUseCounterRecordingEnabled()) {}
 
 std::shared_ptr<const CSSParserContext> CSSLazyParsingState::Context() {
   assert(owning_contents_);

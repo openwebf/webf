@@ -13,7 +13,6 @@
 
 namespace webf {
 
-
 struct FeatureIndicesWithPriority {
   std::vector<uint32_t> indices;
   unsigned layer_order = std::numeric_limits<unsigned>::max();
@@ -23,14 +22,7 @@ using FontFeatureAliases = std::unordered_map<AtomicString, FeatureIndicesWithPr
 
 class StyleRuleFontFeature : public StyleRuleBase {
  public:
-  enum class FeatureType {
-    kStylistic,
-    kStyleset,
-    kCharacterVariant,
-    kSwash,
-    kOrnaments,
-    kAnnotation
-  };
+  enum class FeatureType { kStylistic, kStyleset, kCharacterVariant, kSwash, kOrnaments, kAnnotation };
 
   explicit StyleRuleFontFeature(FeatureType);
   StyleRuleFontFeature(const StyleRuleFontFeature&);
@@ -51,9 +43,7 @@ class StyleRuleFontFeature : public StyleRuleBase {
 
 template <>
 struct DowncastTraits<StyleRuleFontFeature> {
-  static bool AllowFrom(const StyleRuleBase& rule) {
-    return rule.IsFontFeatureRule();
-  }
+  static bool AllowFrom(const StyleRuleBase& rule) { return rule.IsFontFeatureRule(); }
 };
 
 class FontFeatureValuesStorage {
@@ -68,8 +58,7 @@ class FontFeatureValuesStorage {
   FontFeatureValuesStorage() = default;
   FontFeatureValuesStorage(const FontFeatureValuesStorage& other) = default;
 
-  FontFeatureValuesStorage& operator=(const FontFeatureValuesStorage& other) =
-      default;
+  FontFeatureValuesStorage& operator=(const FontFeatureValuesStorage& other) = default;
 
   std::vector<uint32_t> ResolveStylistic(AtomicString) const;
   std::vector<uint32_t> ResolveStyleset(AtomicString) const;
@@ -100,8 +89,7 @@ class FontFeatureValuesStorage {
   FontFeatureAliases swash_;
   FontFeatureAliases ornaments_;
   FontFeatureAliases annotation_;
-  static std::vector<uint32_t> ResolveInternal(const FontFeatureAliases&,
-                                          AtomicString);
+  static std::vector<uint32_t> ResolveInternal(const FontFeatureAliases&, AtomicString);
 
   friend class StyleRuleFontFeatureValues;
 };
@@ -130,22 +118,12 @@ class StyleRuleFontFeatureValues : public StyleRuleBase {
   const FontFeatureValuesStorage& Storage() { return feature_values_storage_; }
 
   // Accessors needed for cssom implementation.
-  FontFeatureAliases* GetStylistic() {
-    return &feature_values_storage_.stylistic_;
-  }
-  FontFeatureAliases* GetStyleset() {
-    return &feature_values_storage_.styleset_;
-  }
-  FontFeatureAliases* GetCharacterVariant() {
-    return &feature_values_storage_.character_variant_;
-  }
+  FontFeatureAliases* GetStylistic() { return &feature_values_storage_.stylistic_; }
+  FontFeatureAliases* GetStyleset() { return &feature_values_storage_.styleset_; }
+  FontFeatureAliases* GetCharacterVariant() { return &feature_values_storage_.character_variant_; }
   FontFeatureAliases* GetSwash() { return &feature_values_storage_.swash_; }
-  FontFeatureAliases* GetOrnaments() {
-    return &feature_values_storage_.ornaments_;
-  }
-  FontFeatureAliases* GetAnnotation() {
-    return &feature_values_storage_.annotation_;
-  }
+  FontFeatureAliases* GetOrnaments() { return &feature_values_storage_.ornaments_; }
+  FontFeatureAliases* GetAnnotation() { return &feature_values_storage_.annotation_; }
 
   void SetCascadeLayer(const CascadeLayer* layer) { layer_ = layer; }
   const CascadeLayer* GetCascadeLayer() const { return layer_.Get(); }
@@ -160,11 +138,8 @@ class StyleRuleFontFeatureValues : public StyleRuleBase {
 
 template <>
 struct DowncastTraits<StyleRuleFontFeatureValues> {
-  static bool AllowFrom(const StyleRuleBase& rule) {
-    return rule.IsFontFeatureValuesRule();
-  }
+  static bool AllowFrom(const StyleRuleBase& rule) { return rule.IsFontFeatureValuesRule(); }
 };
-
 
 }  // namespace webf
 

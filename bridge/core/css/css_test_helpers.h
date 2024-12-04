@@ -6,9 +6,9 @@
 #define WEBF_CORE_CSS_CSS_TEST_HELPERS_H_
 
 #include <optional>
-#include "core/executing_context.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/style_rule.h"
+#include "core/executing_context.h"
 #include "foundation/macros.h"
 
 namespace webf {
@@ -38,8 +38,8 @@ class TestStyleSheet {
   const Document& GetDocument() { return *document_; }
 
   void AddCSSRules(const std::string& rule_text, bool is_empty_sheet = false);
-//  RuleSet& GetRuleSet();
-//  CSSRuleList* CssRules();
+  //  RuleSet& GetRuleSet();
+  //  CSSRuleList* CssRules();
 
  private:
   ExecutingContext* execution_context_;
@@ -51,12 +51,9 @@ CSSStyleSheet* CreateStyleSheet(Document& document);
 
 std::shared_ptr<CSSVariableData> CreateVariableData(std::string);
 std::shared_ptr<const CSSValue> CreateCustomIdent(const char*);
-std::shared_ptr<const CSSValue> ParseLonghand(Document& document,
-                              const CSSProperty&,
-                              const std::string& value);
-std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationBlock(
-    const std::string& block_text,
-    CSSParserMode mode = kHTMLStandardMode);
+std::shared_ptr<const CSSValue> ParseLonghand(Document& document, const CSSProperty&, const std::string& value);
+std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationBlock(const std::string& block_text,
+                                                                 CSSParserMode mode = kHTMLStandardMode);
 std::shared_ptr<StyleRuleBase> ParseRule(Document& document, const std::string& text);
 
 // Parse a value according to syntax defined by:
@@ -68,11 +65,11 @@ std::shared_ptr<CSSSelectorList> ParseSelectorList(const std::string&);
 // the specified StyleRule to resolve either the parent selector "&"
 // (for kNesting), or the :scope pseudo-class (for kScope).
 std::shared_ptr<CSSSelectorList> ParseSelectorList(const std::string&,
-                                   CSSNestingType,
-                                   std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-                                   bool is_within_scope);
+                                                   CSSNestingType,
+                                                   std::shared_ptr<const StyleRule> parent_rule_for_nesting,
+                                                   bool is_within_scope);
 
 }  // namespace css_test_helpers
-}  // namespace blink
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_CSS_TEST_HELPERS_H_

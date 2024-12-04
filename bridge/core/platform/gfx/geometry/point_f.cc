@@ -20,8 +20,7 @@ void PointF::SetToMax(const PointF& other) {
   y_ = std::max(y_, other.y_);
 }
 
-bool PointF::IsWithinDistance(const PointF& rhs,
-                              const float allowed_distance) const {
+bool PointF::IsWithinDistance(const PointF& rhs, const float allowed_distance) const {
   DCHECK(allowed_distance > 0);
   float diff_x = x_ - rhs.x();
   float diff_y = y_ - rhs.y();
@@ -40,6 +39,5 @@ PointF ScalePoint(const PointF& p, float x_scale, float y_scale) {
   scaled_p.Scale(x_scale, y_scale);
   return scaled_p;
 }
-
 
 }  // namespace gfx

@@ -1,35 +1,34 @@
 /*
-* Copyright (C) 2006 Apple Computer, Inc.  All rights reserved.
-* Copyright (C) 2012 Rik Cabanier (cabanier@adobe.com)
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions
-* are met:
-* 1. Redistributions of source code must retain the above copyright
-*    notice, this list of conditions and the following disclaimer.
-* 2. Redistributions in binary form must reproduce the above copyright
-*    notice, this list of conditions and the following disclaimer in the
-*    documentation and/or other materials provided with the distribution.
-*
-* THIS SOFTWARE IS PROVIDED BY APPLE COMPUTER, INC. ``AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-* PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE COMPUTER, INC. OR
-* CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-* EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-* PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-* PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-* OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (C) 2006 Apple Computer, Inc.  All rights reserved.
+ * Copyright (C) 2012 Rik Cabanier (cabanier@adobe.com)
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY APPLE COMPUTER, INC. ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE COMPUTER, INC. OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
-#include <cassert>
 #include "core/platform/graphics/graphic_types.h"
+#include <cassert>
 #include "foundation/macros.h"
 
 namespace webf {
-
 
 // TODO(vmpstr): Move these closer to canvas, along with the parsing code.
 static const char* const kCanvasCompositeOperatorNames[] = {"clear",
@@ -45,19 +44,14 @@ static const char* const kCanvasCompositeOperatorNames[] = {"clear",
                                                             "xor",
                                                             "lighter"};
 
-
 static const char* const kCanvasBlendModeNames[] = {
-    "normal",     "multiply",   "screen",      "overlay",
-    "darken",     "lighten",    "color-dodge", "color-burn",
-    "hard-light", "soft-light", "difference",  "exclusion",
-    "hue",        "saturation", "color",       "luminosity"};
+    "normal",     "multiply",   "screen",     "overlay",   "darken", "lighten",    "color-dodge", "color-burn",
+    "hard-light", "soft-light", "difference", "exclusion", "hue",    "saturation", "color",       "luminosity"};
 
 const int kNumCompositeOperatorNames = std::size(kCanvasCompositeOperatorNames);
 const int kNumBlendModeNames = std::size(kCanvasBlendModeNames);
 
-bool ParseCanvasCompositeAndBlendMode(const std::string& s,
-                                      CompositeOperator& op,
-                                      BlendMode& blend_op) {
+bool ParseCanvasCompositeAndBlendMode(const std::string& s, CompositeOperator& op, BlendMode& blend_op) {
   for (int i = 0; i < kNumCompositeOperatorNames; i++) {
     if (s == kCanvasCompositeOperatorNames[i]) {
       op = static_cast<CompositeOperator>(i);
@@ -128,8 +122,7 @@ std::string BlendModeToString(BlendMode blend_op) {
   return "";
 }
 
-bool ParseImageEncodingMimeType(const std::string& mime_type_name,
-                                ImageEncodingMimeType& mime_type) {
+bool ParseImageEncodingMimeType(const std::string& mime_type_name, ImageEncodingMimeType& mime_type) {
   if (mime_type_name == "image/png")
     mime_type = kMimeTypePng;
   else if (mime_type_name == "image/jpeg")
@@ -144,8 +137,7 @@ bool ParseImageEncodingMimeType(const std::string& mime_type_name,
 std::string ImageEncodingMimeTypeName(ImageEncodingMimeType mime_type) {
   DCHECK_GE(mime_type, 0);
   DCHECK_LT(mime_type, 3);
-  const char* const kMimeTypeNames[3] = {"image/png", "image/jpeg",
-                                         "image/webp"};
+  const char* const kMimeTypeNames[3] = {"image/png", "image/jpeg", "image/webp"};
   return kMimeTypeNames[mime_type];
 }
 
@@ -183,8 +175,7 @@ bool ParseTextAlign(const std::string& s, TextAlign& align) {
 std::string TextBaselineName(TextBaseline baseline) {
   DCHECK_GE(baseline, 0);
   DCHECK_LT(baseline, 6);
-  const char* const kNames[6] = {"alphabetic", "top",         "middle",
-                                 "bottom",     "ideographic", "hanging"};
+  const char* const kNames[6] = {"alphabetic", "top", "middle", "bottom", "ideographic", "hanging"};
   return kNames[baseline];
 }
 
@@ -259,5 +250,4 @@ std::string CanvasPixelFormatName(CanvasPixelFormat pixel_format) {
   return "";
 }
 
-
-}
+}  // namespace webf

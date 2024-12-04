@@ -23,8 +23,7 @@ namespace cssvalue {
 class CSSGridIntegerRepeatValue : public CSSValueList {
  public:
   CSSGridIntegerRepeatValue(size_t repetitions)
-      : CSSValueList(kGridIntegerRepeatClass, kSpaceSeparator),
-        repetitions_(repetitions) {
+      : CSSValueList(kGridIntegerRepeatClass, kSpaceSeparator), repetitions_(repetitions) {
     DCHECK_GT(repetitions, 0UL);
   }
 
@@ -33,8 +32,7 @@ class CSSGridIntegerRepeatValue : public CSSValueList {
 
   size_t Repetitions() const { return repetitions_; }
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const {}
 
  private:
   const size_t repetitions_;
@@ -44,11 +42,9 @@ class CSSGridIntegerRepeatValue : public CSSValueList {
 
 template <>
 struct DowncastTraits<cssvalue::CSSGridIntegerRepeatValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsGridIntegerRepeatValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsGridIntegerRepeatValue(); }
 };
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // CORE_CSS_CSS_GRID_INTEGER_REPEAT_VALUE_H_

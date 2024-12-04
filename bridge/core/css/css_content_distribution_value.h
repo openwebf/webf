@@ -19,9 +19,7 @@ namespace cssvalue {
 
 class CSSContentDistributionValue : public CSSValue {
  public:
-  CSSContentDistributionValue(CSSValueID distribution,
-                              CSSValueID position,
-                              CSSValueID overflow);
+  CSSContentDistributionValue(CSSValueID distribution, CSSValueID position, CSSValueID overflow);
 
   CSSValueID Distribution() const { return distribution_; }
 
@@ -33,9 +31,7 @@ class CSSContentDistributionValue : public CSSValue {
 
   bool Equals(const CSSContentDistributionValue&) const;
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-    CSSValue::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const { CSSValue::TraceAfterDispatch(visitor); }
 
  private:
   CSSValueID distribution_;
@@ -47,11 +43,8 @@ class CSSContentDistributionValue : public CSSValue {
 
 template <>
 struct DowncastTraits<cssvalue::CSSContentDistributionValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsContentDistributionValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsContentDistributionValue(); }
 };
-
 
 }  // namespace webf
 

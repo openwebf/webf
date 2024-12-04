@@ -27,8 +27,8 @@
 #ifndef WEBF_PLATFORM_ANIMATION_TIMING_FUNCTION_H_
 #define WEBF_PLATFORM_ANIMATION_TIMING_FUNCTION_H_
 
-#include <vector>
 #include <cassert>
+#include <vector>
 #include "foundation/macros.h"
 //#include "base/memory/scoped_refptr.h"
 //#include "third_party/blink/renderer/platform/wtf/casting.h"
@@ -53,8 +53,7 @@ class TimingFunction {
   // Evaluates the timing function at the given fraction. The limit direction
   // applies when evaluating a function at a discontinuous boundary and
   // indicates if the left or right limit should be applied.
-  virtual double Evaluate(double fraction,
-                          LimitDirection limit_direction) const = 0;
+  virtual double Evaluate(double fraction, LimitDirection limit_direction) const = 0;
 
   // This function returns the minimum and maximum values obtainable when
   // calling evaluate();
@@ -77,8 +76,7 @@ class LinearTimingFunction final : public TimingFunction {
     return linear;
   }
 
-  static std::shared_ptr<LinearTimingFunction> Create(
-      std::vector<gfx::LinearEasingPoint> points) {
+  static std::shared_ptr<LinearTimingFunction> Create(std::vector<gfx::LinearEasingPoint> points) {
     return std::make_shared<LinearTimingFunction>(std::move(points));
   }
   /*
@@ -95,42 +93,31 @@ class LinearTimingFunction final : public TimingFunction {
 
   // TimingFunction implementation.
   std::string ToString() const override;
-  double Evaluate(
-      double fraction,
-      LimitDirection limit_direction = LimitDirection::RIGHT) const override;
+  double Evaluate(double fraction, LimitDirection limit_direction = LimitDirection::RIGHT) const override;
   void Range(double* min_value, double* max_value) const override;
   std::unique_ptr<gfx::TimingFunction> CloneToCC() const override;
 
-  const std::vector<gfx::LinearEasingPoint>& Points() const {
-    return linear_->Points();
-  }
+  const std::vector<gfx::LinearEasingPoint>& Points() const { return linear_->Points(); }
   bool IsTrivial() const { return linear_->IsTrivial(); }
 
   bool operator==(const LinearTimingFunction& other) const {
-    return std::equal(Points().begin(), Points().end(), other.Points().begin(),
-               other.Points().end());
+    return std::equal(Points().begin(), Points().end(), other.Points().begin(), other.Points().end());
   }
 
-public:
-  LinearTimingFunction()
-      : TimingFunction(Type::LINEAR),
-        linear_(gfx::LinearTimingFunction::Create()) {}
+ public:
+  LinearTimingFunction() : TimingFunction(Type::LINEAR), linear_(gfx::LinearTimingFunction::Create()) {}
   explicit LinearTimingFunction(std::vector<gfx::LinearEasingPoint> points)
-      : TimingFunction(Type::LINEAR),
-        linear_(gfx::LinearTimingFunction::Create(std::move(points))) {}
+      : TimingFunction(Type::LINEAR), linear_(gfx::LinearTimingFunction::Create(std::move(points))) {}
 
-private:
+ private:
   std::unique_ptr<gfx::LinearTimingFunction> linear_;
 };
 
-class  CubicBezierTimingFunction final : public TimingFunction {
+class CubicBezierTimingFunction final : public TimingFunction {
  public:
   using EaseType = gfx::CubicBezierTimingFunction::EaseType;
 
-  static std::shared_ptr<CubicBezierTimingFunction> Create(double x1,
-                                                         double y1,
-                                                         double x2,
-                                                         double y2) {
+  static std::shared_ptr<CubicBezierTimingFunction> Create(double x1, double y1, double x2, double y2) {
     return std::make_shared<CubicBezierTimingFunction>(x1, y1, x2, y2);
   }
 
@@ -140,9 +127,7 @@ class  CubicBezierTimingFunction final : public TimingFunction {
 
   // TimingFunction implementation.
   std::string ToString() const override;
-  double Evaluate(
-      double fraction,
-      LimitDirection limit_direction = LimitDirection::RIGHT) const override;
+  double Evaluate(double fraction, LimitDirection limit_direction = LimitDirection::RIGHT) const override;
   void Range(double* min_value, double* max_value) const override;
   std::unique_ptr<gfx::TimingFunction> CloneToCC() const override;
 
@@ -180,7 +165,8 @@ class  CubicBezierTimingFunction final : public TimingFunction {
         y1_(y1),
         x2_(x2),
         y2_(y2) {}
-private:
+
+ private:
   std::unique_ptr<gfx::CubicBezierTimingFunction> bezier_;
 
   // TODO(loyso): Get these values from m_bezier->bezier_ (gfx::CubicBezier)
@@ -190,18 +176,17 @@ private:
   const double y2_;
 };
 
-class  StepsTimingFunction final : public TimingFunction {
+class StepsTimingFunction final : public TimingFunction {
  public:
   using StepPosition = gfx::StepsTimingFunction::StepPosition;
 
-  static std::shared_ptr<StepsTimingFunction> Create(int steps,
-                                                   StepPosition step_position) {
+  static std::shared_ptr<StepsTimingFunction> Create(int steps, StepPosition step_position) {
     return std::make_shared<StepsTimingFunction>(steps, step_position);
   }
 
   static std::shared_ptr<StepsTimingFunction> Preset(StepPosition position) {
-    //DEFINE_STATIC_REF(StepsTimingFunction, start,Create(1, StepPosition::START));
-    //DEFINE_STATIC_REF(StepsTimingFunction, end, Create(1, StepPosition::END));
+    // DEFINE_STATIC_REF(StepsTimingFunction, start,Create(1, StepPosition::START));
+    // DEFINE_STATIC_REF(StepsTimingFunction, end, Create(1, StepPosition::END));
     thread_local static std::shared_ptr<StepsTimingFunction> start = Create(1, StepPosition::START);
     thread_local static std::shared_ptr<StepsTimingFunction> end = Create(1, StepPosition::END);
     switch (position) {
@@ -219,8 +204,7 @@ class  StepsTimingFunction final : public TimingFunction {
 
   // TimingFunction implementation.
   std::string ToString() const override;
-  double Evaluate(double fraction,
-                  LimitDirection limit_direction) const override;
+  double Evaluate(double fraction, LimitDirection limit_direction) const override;
 
   void Range(double* min_value, double* max_value) const override;
   std::unique_ptr<gfx::TimingFunction> CloneToCC() const override;
@@ -230,42 +214,32 @@ class  StepsTimingFunction final : public TimingFunction {
 
  public:
   StepsTimingFunction(int steps, StepPosition step_position)
-      : TimingFunction(Type::STEPS),
-        steps_(gfx::StepsTimingFunction::Create(steps, step_position)) {}
-private:
+      : TimingFunction(Type::STEPS), steps_(gfx::StepsTimingFunction::Create(steps, step_position)) {}
+
+ private:
   std::unique_ptr<gfx::StepsTimingFunction> steps_;
 };
 
-std::shared_ptr<TimingFunction>
-CreateCompositorTimingFunctionFromCC(const gfx::TimingFunction*);
+std::shared_ptr<TimingFunction> CreateCompositorTimingFunctionFromCC(const gfx::TimingFunction*);
 
- bool operator==(const LinearTimingFunction&,
-                                const TimingFunction&);
- bool operator==(const CubicBezierTimingFunction&,
-                                const TimingFunction&);
- bool operator==(const StepsTimingFunction&,
-                                const TimingFunction&);
+bool operator==(const LinearTimingFunction&, const TimingFunction&);
+bool operator==(const CubicBezierTimingFunction&, const TimingFunction&);
+bool operator==(const StepsTimingFunction&, const TimingFunction&);
 
- bool operator==(const TimingFunction&, const TimingFunction&);
- bool operator!=(const TimingFunction&, const TimingFunction&);
+bool operator==(const TimingFunction&, const TimingFunction&);
+bool operator!=(const TimingFunction&, const TimingFunction&);
 
 template <>
 struct DowncastTraits<LinearTimingFunction> {
-  static bool AllowFrom(const TimingFunction& value) {
-    return value.GetType() == TimingFunction::Type::LINEAR;
-  }
+  static bool AllowFrom(const TimingFunction& value) { return value.GetType() == TimingFunction::Type::LINEAR; }
 };
 template <>
 struct DowncastTraits<CubicBezierTimingFunction> {
-  static bool AllowFrom(const TimingFunction& value) {
-    return value.GetType() == TimingFunction::Type::CUBIC_BEZIER;
-  }
+  static bool AllowFrom(const TimingFunction& value) { return value.GetType() == TimingFunction::Type::CUBIC_BEZIER; }
 };
 template <>
 struct DowncastTraits<StepsTimingFunction> {
-  static bool AllowFrom(const TimingFunction& value) {
-    return value.GetType() == TimingFunction::Type::STEPS;
-  }
+  static bool AllowFrom(const TimingFunction& value) { return value.GetType() == TimingFunction::Type::STEPS; }
 };
 
 }  // namespace webf

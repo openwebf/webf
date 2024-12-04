@@ -18,11 +18,7 @@ class Outsets : public InsetsOutsetsBase<Outsets> {
   using InsetsOutsetsBase::InsetsOutsetsBase;
 
   // Conversion from Outsets to Insets negates all components.
-  Insets ToInsets() const {
-    return Insets()
-        .set_left_right(-left(), -right())
-        .set_top_bottom(-top(), -bottom());
-  }
+  Insets ToInsets() const { return Insets().set_left_right(-left(), -right()).set_top_bottom(-top(), -bottom()); }
 };
 
 inline Outsets operator+(Outsets lhs, const Outsets& rhs) {

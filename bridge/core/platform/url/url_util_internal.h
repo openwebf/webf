@@ -15,9 +15,7 @@ namespace url {
 
 // Given a string and a range inside the string, compares it to the given
 // lower-case |compare_to| buffer.
-bool CompareSchemeComponent(const char* spec,
-                            const Component& component,
-                            const char* compare_to);
+bool CompareSchemeComponent(const char* spec, const Component& component, const char* compare_to);
 
 }  // namespace url
 

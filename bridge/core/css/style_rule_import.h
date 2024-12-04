@@ -32,7 +32,6 @@
 
 namespace webf {
 
-
 class MediaQuerySet;
 class StyleSheetContents;
 
@@ -45,9 +44,7 @@ class StyleRuleImport : public StyleRuleBase {
                   std::shared_ptr<const MediaQuerySet>);
   ~StyleRuleImport();
 
-  const StyleSheetContents* ParentStyleSheet() const {
-    return parent_style_sheet_.get();
-  }
+  const StyleSheetContents* ParentStyleSheet() const { return parent_style_sheet_.get(); }
   void SetParentStyleSheet(std::shared_ptr<const StyleSheetContents> sheet) {
     DCHECK(sheet);
     parent_style_sheet_ = std::move(sheet);
@@ -60,13 +57,9 @@ class StyleRuleImport : public StyleRuleBase {
   bool IsLoading() const;
 
   std::shared_ptr<const MediaQuerySet> MediaQueries() const { return media_queries_; }
-  void SetMediaQueries(std::shared_ptr<const MediaQuerySet> media_queries) {
-    media_queries_ = media_queries;
-  }
+  void SetMediaQueries(std::shared_ptr<const MediaQuerySet> media_queries) { media_queries_ = media_queries; }
 
-  void SetPositionHint(const TextPosition& position_hint) {
-    position_hint_ = position_hint;
-  }
+  void SetPositionHint(const TextPosition& position_hint) { position_hint_ = position_hint; }
   void RequestStyleSheet();
 
   bool IsLayered() const { return layer_.size(); }
@@ -96,11 +89,8 @@ class StyleRuleImport : public StyleRuleBase {
 
 template <>
 struct DowncastTraits<StyleRuleImport> {
-  static bool AllowFrom(const StyleRuleBase& rule) {
-    return rule.IsImportRule();
-  }
+  static bool AllowFrom(const StyleRuleBase& rule) { return rule.IsImportRule(); }
 };
-
 
 }  // namespace webf
 

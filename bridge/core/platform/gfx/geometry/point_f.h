@@ -21,8 +21,7 @@ class PointF {
   constexpr PointF() : x_(0.f), y_(0.f) {}
   constexpr PointF(float x, float y) : x_(x), y_(y) {}
 
-  constexpr explicit PointF(const Point& p)
-      : PointF(static_cast<float>(p.x()), static_cast<float>(p.y())) {}
+  constexpr explicit PointF(const Point& p) : PointF(static_cast<float>(p.x()), static_cast<float>(p.y())) {}
 
   constexpr float x() const { return x_; }
   constexpr float y() const { return y_; }
@@ -62,17 +61,11 @@ class PointF {
   // other.
   // This comparison is required to use PointF in sets, or sorted
   // vectors.
-  bool operator<(const PointF& rhs) const {
-    return std::tie(y_, x_) < std::tie(rhs.y_, rhs.x_);
-  }
+  bool operator<(const PointF& rhs) const { return std::tie(y_, x_) < std::tie(rhs.y_, rhs.x_); }
 
-  void Scale(float scale) {
-    Scale(scale, scale);
-  }
+  void Scale(float scale) { Scale(scale, scale); }
 
-  void Scale(float x_scale, float y_scale) {
-    SetPoint(x() * x_scale, y() * y_scale);
-  }
+  void Scale(float x_scale, float y_scale) { SetPoint(x() * x_scale, y() * y_scale); }
 
   // Scales the point by the inverse of the given scale.
   void InvScale(float inv_scale) { InvScale(inv_scale, inv_scale); }
@@ -129,9 +122,7 @@ inline PointF PointAtOffsetFromOrigin(const Vector2dF& offset_from_origin) {
   return PointF(offset_from_origin.x(), offset_from_origin.y());
 }
 
-PointF ScalePoint(const PointF& p,
-                                  float x_scale,
-                                  float y_scale);
+PointF ScalePoint(const PointF& p, float x_scale, float y_scale);
 
 inline PointF ScalePoint(const PointF& p, float scale) {
   return ScalePoint(p, scale, scale);

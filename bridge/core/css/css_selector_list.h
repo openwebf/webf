@@ -32,10 +32,10 @@
 
 #include <memory>
 #include <span>
-#include "core/base/containers/span.h"
-#include "core/css/css_selector.h"
-#include "core/base/types/pass_key.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
+#include "core/base/containers/span.h"
+#include "core/base/types/pass_key.h"
+#include "core/css/css_selector.h"
 
 namespace webf {
 
@@ -71,7 +71,7 @@ namespace webf {
 // but not as part of a CSSSelectorList (see its class comments).
 // It reuses many of the exposed static member functions from CSSSelectorList
 // to provide a subset of its API.
-class CSSSelectorList  {
+class CSSSelectorList {
  public:
   // Constructs an empty selector list, for which IsValid() returns false.
   // TODO(sesse): Consider making this a singleton.
@@ -80,24 +80,16 @@ class CSSSelectorList  {
   // Do not call; for Empty() and AdoptSelectorVector() only.
   explicit CSSSelectorList(webf::PassKey<CSSSelectorList>) {}
 
-  CSSSelectorList(CSSSelectorList&& o) {
-    memcpy(this, o.first_selector_, ComputeLength() * sizeof(CSSSelector));
-  }
+  CSSSelectorList(CSSSelectorList&& o) { memcpy(this, o.first_selector_, ComputeLength() * sizeof(CSSSelector)); }
   ~CSSSelectorList() = default;
 
-  static std::shared_ptr<CSSSelectorList> AdoptSelectorVector(
-      tcb::span<CSSSelector> selector_vector);
-  static void AdoptSelectorVector(tcb::span<CSSSelector> selector_vector,
-                                  CSSSelector* selector_array);
+  static std::shared_ptr<CSSSelectorList> AdoptSelectorVector(tcb::span<CSSSelector> selector_vector);
+  static void AdoptSelectorVector(tcb::span<CSSSelector> selector_vector, CSSSelector* selector_array);
 
   std::shared_ptr<CSSSelectorList> Copy() const;
 
-  bool IsValid() const {
-    return first_selector_[0].Match() != CSSSelector::kInvalidList;
-  }
-  const CSSSelector* First() const {
-    return IsValid() ? first_selector_ : nullptr;
-  }
+  bool IsValid() const { return first_selector_[0].Match() != CSSSelector::kInvalidList; }
+  const CSSSelector* First() const { return IsValid() ? first_selector_ : nullptr; }
   static const CSSSelector* Next(const CSSSelector&);
   static CSSSelector* Next(CSSSelector&);
 
@@ -135,9 +127,7 @@ class CSSSelectorList  {
   // See CSSSelector::Reparent.
   static void Reparent(CSSSelector* selector_list, std::shared_ptr<StyleRule> new_parent);
 
-  void Reparent(std::shared_ptr<StyleRule> new_parent) {
-    CSSSelectorList::Reparent(first_selector_, new_parent);
-  }
+  void Reparent(std::shared_ptr<StyleRule> new_parent) { CSSSelectorList::Reparent(first_selector_, new_parent); }
 
   CSSSelectorList(const CSSSelectorList&) = delete;
   CSSSelectorList& operator=(const CSSSelectorList&) = delete;
@@ -165,7 +155,6 @@ inline CSSSelector* CSSSelectorList::Next(CSSSelector& current) {
   }
   return last->IsLastInSelectorList() ? nullptr : last + 1;
 }
-
 
 }  // namespace webf
 

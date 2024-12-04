@@ -11,6 +11,6 @@ namespace webf {
 
 enum class PhysicalDirection : uint8_t { kUp = 0, kRight, kDown, kLeft };
 
-}  // namespace blink
+}  // namespace webf
    //
 #endif  // WEBF_CORE_PLATFORM_GEOMETRY_PHYSICAL_DIRECTION_H_

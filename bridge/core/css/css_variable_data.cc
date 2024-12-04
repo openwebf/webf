@@ -65,8 +65,8 @@ std::shared_ptr<CSSVariableData> CSSVariableData::Create(CSSTokenizedValue value
   while (!value.range.AtEnd()) {
     ExtractFeatures(value.range.Consume(), has_font_units, has_root_font_units, has_line_height_units);
   }
-  return Create(value.text.data(), is_animation_tainted, needs_variable_resolution, has_font_units,
-                has_root_font_units, has_line_height_units);
+  return Create(value.text.data(), is_animation_tainted, needs_variable_resolution, has_font_units, has_root_font_units,
+                has_line_height_units);
 }
 
 std::shared_ptr<CSSVariableData> CSSVariableData::Create(const std::string& original_text,

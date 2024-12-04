@@ -134,17 +134,18 @@ class Color {
   // parameter will also be clamped to be non-negative.
   static Color FromColorSpace(ColorSpace color_space,
                               std::optional<float> param0,
-                         std::optional<float> param1,
-                         std::optional<float> param2,
-                         std::optional<float> alpha);
-  static Color FromColorSpace(ColorSpace color_space, std::optional<float> param0, std::optional<float> param1, std::optional<float> param2) {
+                              std::optional<float> param1,
+                              std::optional<float> param2,
+                              std::optional<float> alpha);
+  static Color FromColorSpace(ColorSpace color_space,
+                              std::optional<float> param0,
+                              std::optional<float> param1,
+                              std::optional<float> param2) {
     return FromColorSpace(color_space, param0, param1, param2, 1.0f);
   }
 
   ColorSpace GetColorSpace() const { return color_space_; }
-  void ConvertToColorSpace(ColorSpace destination_color_space,
-                           bool resolve_missing_components = true);
-
+  void ConvertToColorSpace(ColorSpace destination_color_space, bool resolve_missing_components = true);
 
   // Create a color using the hsl() syntax.
   static Color FromHSLA(std::optional<float> h, std::optional<float> s, std::optional<float> l, std::optional<float> a);
@@ -157,8 +158,7 @@ class Color {
   // rgb(), rgba(), hex color, named color, hsl() and hwb() types. These colors
   // interpolate and serialize differently from other color types.
   static bool IsLegacyColorSpace(ColorSpace color_space) {
-    return color_space == ColorSpace::kSRGBLegacy ||
-           color_space == ColorSpace::kHSL || color_space == ColorSpace::kHWB;
+    return color_space == ColorSpace::kSRGBLegacy || color_space == ColorSpace::kHSL || color_space == ColorSpace::kHWB;
   }
 
   enum class HueInterpolationMethod : uint8_t {
@@ -247,10 +247,9 @@ class Color {
   static const Color kTransparent;
 
   inline bool operator==(const Color& other) const {
-    return param0_is_none_ == other.param0_is_none_ &&
-           param1_is_none_ == other.param1_is_none_ && param2_is_none_ == other.param2_is_none_ &&
-           alpha_is_none_ == other.alpha_is_none_ && param0_ == other.param0_ && param1_ == other.param1_ &&
-           param2_ == other.param2_ && alpha_ == other.alpha_;
+    return param0_is_none_ == other.param0_is_none_ && param1_is_none_ == other.param1_is_none_ &&
+           param2_is_none_ == other.param2_is_none_ && alpha_is_none_ == other.alpha_is_none_ &&
+           param0_ == other.param0_ && param1_ == other.param1_ && param2_ == other.param2_ && alpha_ == other.alpha_;
   }
   inline bool operator!=(const Color& other) const { return !(*this == other); }
 
@@ -261,6 +260,7 @@ class Color {
   // maximum/minimum values, if they exist. It leaves finite values unchanged.
   // See https://github.com/w3c/csswg-drafts/issues/8629
   void ResolveNonFiniteValues();
+
  private:
   std::string SerializeLegacyColorAsCSSColor() const;
   constexpr explicit Color(RGBA32 color)

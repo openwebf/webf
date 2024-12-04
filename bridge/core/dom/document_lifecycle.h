@@ -124,16 +124,13 @@ class DocumentLifecycle {
     WEBF_STACK_ALLOCATED();
 
    public:
-    explicit DisallowTransitionScope(DocumentLifecycle& document_lifecycle)
-        : document_lifecycle_(document_lifecycle) {
+    explicit DisallowTransitionScope(DocumentLifecycle& document_lifecycle) : document_lifecycle_(document_lifecycle) {
       document_lifecycle_.IncrementNoTransitionCount();
     }
     DisallowTransitionScope(const DisallowTransitionScope&) = delete;
     DisallowTransitionScope& operator=(const DisallowTransitionScope&) = delete;
 
-    ~DisallowTransitionScope() {
-      document_lifecycle_.DecrementNoTransitionCount();
-    }
+    ~DisallowTransitionScope() { document_lifecycle_.DecrementNoTransitionCount(); }
 
    private:
     DocumentLifecycle& document_lifecycle_;
@@ -143,8 +140,7 @@ class DocumentLifecycle {
     WEBF_STACK_ALLOCATED();
 
    public:
-    explicit DetachScope(DocumentLifecycle& document_lifecycle)
-        : document_lifecycle_(document_lifecycle) {
+    explicit DetachScope(DocumentLifecycle& document_lifecycle) : document_lifecycle_(document_lifecycle) {
       document_lifecycle_.IncrementDetachCount();
     }
     DetachScope(const DetachScope&) = delete;
@@ -164,13 +160,10 @@ class DocumentLifecycle {
     USING_FAST_MALLOC(PostponeTransitionScope);
 
    public:
-    explicit PostponeTransitionScope(DocumentLifecycle& document_lifecycle)
-        : document_lifecycle_(document_lifecycle) {
+    explicit PostponeTransitionScope(DocumentLifecycle& document_lifecycle) : document_lifecycle_(document_lifecycle) {
       document_lifecycle_.SetLifecyclePostponed();
     }
-    ~PostponeTransitionScope() {
-      document_lifecycle_.ResetLifecyclePostponed();
-    }
+    ~PostponeTransitionScope() { document_lifecycle_.ResetLifecyclePostponed(); }
 
    private:
     DocumentLifecycle& document_lifecycle_;
@@ -217,16 +210,16 @@ class DocumentLifecycle {
 
   bool LifecyclePostponed() const { return life_cycle_postponed_; }
 
-//#if DCHECK_IS_ON()
-//  WTF::String ToString() const;
-//#endif
+  //#if DCHECK_IS_ON()
+  //  WTF::String ToString() const;
+  //#endif
  private:
   friend class PostponeTransitionScope;
   friend class CheckNoTransitionScope;
-//#if DCHECK_IS_ON()
-//  bool CanAdvanceTo(LifecycleState) const;
-//  bool CanRewindTo(LifecycleState) const;
-//#endif
+  //#if DCHECK_IS_ON()
+  //  bool CanAdvanceTo(LifecycleState) const;
+  //  bool CanRewindTo(LifecycleState) const;
+  //#endif
 
   void SetLifecyclePostponed() { life_cycle_postponed_ = true; }
   void ResetLifecyclePostponed() { life_cycle_postponed_ = false; }
@@ -241,9 +234,8 @@ class DocumentLifecycle {
 inline bool DocumentLifecycle::StateAllowsTreeMutations() const {
   // TODO: We should not allow mutations in AfterPerformLayout
   // either, but we need to fix MediaList listeners and plugins first.
-  return state_ != kInStyleRecalc && state_ != kInPerformLayout &&
-         state_ != kInCompositingInputsUpdate && state_ != kInPrePaint &&
-         state_ != kInPaint;
+  return state_ != kInStyleRecalc && state_ != kInPerformLayout && state_ != kInCompositingInputsUpdate &&
+         state_ != kInPrePaint && state_ != kInPaint;
 }
 
 inline bool DocumentLifecycle::StateAllowsLayoutTreeMutations() const {
@@ -251,9 +243,8 @@ inline bool DocumentLifecycle::StateAllowsLayoutTreeMutations() const {
 }
 
 inline bool DocumentLifecycle::StateAllowsDetach() const {
-  return state_ == kVisualUpdatePending || state_ == kInStyleRecalc ||
-         state_ == kStyleClean || state_ == kLayoutClean ||
-         state_ == kCompositingInputsClean || state_ == kPrePaintClean ||
+  return state_ == kVisualUpdatePending || state_ == kInStyleRecalc || state_ == kStyleClean ||
+         state_ == kLayoutClean || state_ == kCompositingInputsClean || state_ == kPrePaintClean ||
          state_ == kPaintClean || state_ == kStopping || state_ == kInactive;
 }
 

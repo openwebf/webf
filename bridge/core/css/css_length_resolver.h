@@ -8,9 +8,9 @@
 #define WEBF_CORE_CSS_CSS_LENGTH_RESOLVER_H_
 
 #include "core/css/css_primitive_value.h"
-#include "core/style/scoped_css_name.h"
 #include "core/platform/geometry/length.h"
 #include "core/platform/text/writing_mode.h"
+#include "core/style/scoped_css_name.h"
 
 namespace webf {
 
@@ -70,9 +70,7 @@ class CSSLengthResolver {
   double ZoomedComputedPixels(double value, CSSPrimitiveValue::UnitType) const;
 
  private:
-  bool IsHorizontalWritingMode() const {
-    return webf::IsHorizontalWritingMode(GetWritingMode());
-  }
+  bool IsHorizontalWritingMode() const { return webf::IsHorizontalWritingMode(GetWritingMode()); }
   double ViewportWidthPercent() const;
   double ViewportHeightPercent() const;
   double ViewportInlineSizePercent() const;

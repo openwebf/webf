@@ -35,12 +35,12 @@ InputEvent::InputEvent(ExecutingContext* context, const AtomicString& type, Nati
     : UIEvent(context, type, &native_input_event->native_event),
 #if ANDROID_32_BIT
       input_type_(AtomicString(std::unique_ptr<AutoFreeNativeString>(
-                                   reinterpret_cast<AutoFreeNativeString*>(native_input_event->inputType)))),
+          reinterpret_cast<AutoFreeNativeString*>(native_input_event->inputType)))),
       data_(AtomicString(
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_input_event->data))))
 #else
       input_type_(AtomicString(std::unique_ptr<AutoFreeNativeString>(
-                                   reinterpret_cast<AutoFreeNativeString*>(native_input_event->inputType)))),
+          reinterpret_cast<AutoFreeNativeString*>(native_input_event->inputType)))),
       data_(AtomicString(
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_input_event->data))))
 #endif

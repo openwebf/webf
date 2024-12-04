@@ -32,37 +32,32 @@
 
 #include "core/dom/node_rare_data.h"
 
+#include "bindings/qjs/cppgc/garbage_collected.h"
 #include "core/dom/container_node.h"
 #include "core/dom/element.h"
 #include "core/dom/flat_tree_node_data.h"
 #include "core/dom/mutation_observer_registration.h"
 #include "core/dom/node_lists_node_data.h"
 #include "core/page.h"
-#include "bindings/qjs/cppgc/garbage_collected.h"
 
 namespace webf {
 
-void NodeMutationObserverData::Trace(GCVisitor* visitor) const {
-}
+void NodeMutationObserverData::Trace(GCVisitor* visitor) const {}
 
-void NodeMutationObserverData::AddTransientRegistration(
-    MutationObserverRegistration* registration) {
+void NodeMutationObserverData::AddTransientRegistration(MutationObserverRegistration* registration) {
   transient_registry_.insert(registration);
 }
 
-void NodeMutationObserverData::RemoveTransientRegistration(
-    MutationObserverRegistration* registration) {
+void NodeMutationObserverData::RemoveTransientRegistration(MutationObserverRegistration* registration) {
   assert(transient_registry_.find(registration) != transient_registry_.end());
   transient_registry_.erase(registration);
 }
 
-void NodeMutationObserverData::AddRegistration(
-    MutationObserverRegistration* registration) {
+void NodeMutationObserverData::AddRegistration(MutationObserverRegistration* registration) {
   registry_.push_back(registration);
 }
 
-void NodeMutationObserverData::RemoveRegistration(
-    MutationObserverRegistration* registration) {
+void NodeMutationObserverData::RemoveRegistration(MutationObserverRegistration* registration) {
   assert(registry_.contains(registration));
   registry_.erase_at(registry_.find(registration));
 }
@@ -104,9 +99,8 @@ EmptyNodeList* NodeRareData::EnsureEmptyChildNodeList(Node& node) {
 static_assert(static_cast<int>(NodeRareData::kNumberOfElementFlags) ==
                   static_cast<int>(ElementFlags::kNumberOfElementFlags),
               "kNumberOfElementFlags must match.");
-static_assert(
-    static_cast<int>(NodeRareData::kNumberOfDynamicRestyleFlags) ==
-        static_cast<int>(DynamicRestyleFlags::kNumberOfDynamicRestyleFlags),
-    "kNumberOfDynamicRestyleFlags must match.");
+static_assert(static_cast<int>(NodeRareData::kNumberOfDynamicRestyleFlags) ==
+                  static_cast<int>(DynamicRestyleFlags::kNumberOfDynamicRestyleFlags),
+              "kNumberOfDynamicRestyleFlags must match.");
 
 }  // namespace webf

@@ -63,7 +63,7 @@ class StyleRequest {
   PseudoId pseudo_id{kPseudoIdNone};
   RequestType type{kForRenderer};
   // TODO(guopengfei)：暂不支持Scrollbar
-  //ScrollbarPart scrollbar_part{kNoPart};
+  // ScrollbarPart scrollbar_part{kNoPart};
   CustomScrollbar* scrollbar{nullptr};
   AtomicString pseudo_argument{g_empty_atom};
   std::vector<AtomicString> pseudo_ident_list;
@@ -72,8 +72,7 @@ class StyleRequest {
   SearchTextRequest search_text_request{kNone};
 
   explicit StyleRequest(const ComputedStyle* parent_override)
-      : parent_override(parent_override),
-        layout_parent_override(parent_override) {}
+      : parent_override(parent_override), layout_parent_override(parent_override) {}
 
   StyleRequest(PseudoId pseudo_id,
                const ComputedStyle* parent_override,
@@ -84,21 +83,19 @@ class StyleRequest {
         originating_element_style(originating_element_style),
         pseudo_id(pseudo_id),
         pseudo_argument(pseudo_argument) {
-    assert(!IsTransitionPseudoElement(pseudo_id) ||
-           pseudo_id == kPseudoIdViewTransition || pseudo_argument.empty());
+    assert(!IsTransitionPseudoElement(pseudo_id) || pseudo_id == kPseudoIdViewTransition || pseudo_argument.empty());
   }
 
-//  StyleRequest(PseudoId pseudo_id,
-//               CustomScrollbar* scrollbar,
-//               const ComputedStyle* parent_override)
-//      : parent_override(parent_override),
-//        layout_parent_override(parent_override),
-//        pseudo_id(pseudo_id),
-//        //scrollbar_part(scrollbar_part),
-//        scrollbar(scrollbar) {}
+  //  StyleRequest(PseudoId pseudo_id,
+  //               CustomScrollbar* scrollbar,
+  //               const ComputedStyle* parent_override)
+  //      : parent_override(parent_override),
+  //        layout_parent_override(parent_override),
+  //        pseudo_id(pseudo_id),
+  //        //scrollbar_part(scrollbar_part),
+  //        scrollbar(scrollbar) {}
 
-  StyleRequest(PseudoId pseudo_id, RequestType request_type)
-      : pseudo_id(pseudo_id), type(request_type) {}
+  StyleRequest(PseudoId pseudo_id, RequestType request_type) : pseudo_id(pseudo_id), type(request_type) {}
 };
 
 }  // namespace webf

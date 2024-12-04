@@ -33,14 +33,14 @@
 #include "core/base/types/pass_key.h"
 #include "core/css/css_color.h"
 #include "core/css/css_identifier_value.h"
-#include "core/css/css_initial_value.h"
 #include "core/css/css_inherit_value.h"
+#include "core/css/css_initial_color_value.h"
+#include "core/css/css_initial_value.h"
+#include "core/css/css_invalid_variable_value.h"
 #include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_revert_layer_value.h"
 #include "core/css/css_revert_value.h"
 #include "core/css/css_unset_value.h"
-#include "core/css/css_initial_color_value.h"
-#include "core/css/css_invalid_variable_value.h"
 #include "css_property_names.h"
 #include "css_value_keywords.h"
 // #include "core/css/css_custom_ident_value.h"
@@ -73,9 +73,9 @@ class CSSValuePool {
   //    static Color EmptyValue() { return Color::kTransparent; }
   //    static Color DeletedValue() { return Color::kWhite; }
   //  };
-    using FontFaceValueCache = std::unordered_map<std::string, std::shared_ptr<const CSSValueList>>;
-    static const unsigned kMaximumFontFaceCacheSize = 128;
-    using FontFamilyValueCache = std::unordered_map<std::string, std::shared_ptr<CSSFontFamilyValue>>;
+  using FontFaceValueCache = std::unordered_map<std::string, std::shared_ptr<const CSSValueList>>;
+  static const unsigned kMaximumFontFaceCacheSize = 128;
+  using FontFamilyValueCache = std::unordered_map<std::string, std::shared_ptr<CSSFontFamilyValue>>;
   //
   //  CSSValuePool();
   //  CSSValuePool(const CSSValuePool&) = delete;
@@ -170,14 +170,11 @@ class CSSValuePool {
     return color_value_cache_[color];
   }
 
-
-  auto GetFontFamilyCacheEntry(
-      const std::string& family_name) {
+  auto GetFontFamilyCacheEntry(const std::string& family_name) {
     return font_family_value_cache_.insert({family_name, nullptr});
   }
 
-  auto GetFontFaceCacheEntry(
-      const std::string& string) {
+  auto GetFontFaceCacheEntry(const std::string& string) {
     // Just wipe out the cache and start rebuilding if it gets too big.
     if (font_face_value_cache_.size() > kMaximumFontFaceCacheSize) {
       font_face_value_cache_.clear();
@@ -185,13 +182,9 @@ class CSSValuePool {
     return font_face_value_cache_.insert({string, nullptr});
   }
 
-  FontFamilyValueCache GetFontFamilyCache() {
-    return font_family_value_cache_;
-  }
+  FontFamilyValueCache GetFontFamilyCache() { return font_family_value_cache_; }
 
-  FontFaceValueCache GetFontFaceValueCache() {
-    return font_face_value_cache_;
-  }
+  FontFaceValueCache GetFontFaceValueCache() { return font_face_value_cache_; }
 
  private:
   //  // Cached individual values.

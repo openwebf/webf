@@ -9,11 +9,7 @@ namespace gfx {
 
 OutsetsF InsetsF::ToOutsets() const {
   // Conversion from InsetsF to OutsetsF negates all components.
-  return OutsetsF()
-      .set_left(-left())
-      .set_right(-right())
-      .set_top(-top())
-      .set_bottom(-bottom());
+  return OutsetsF().set_left(-left()).set_right(-right()).set_top(-top()).set_bottom(-bottom());
 }
 
 }  // namespace gfx

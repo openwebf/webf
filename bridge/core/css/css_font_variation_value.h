@@ -24,9 +24,7 @@ class CSSFontVariationValue : public CSSValue {
 
   bool Equals(const CSSFontVariationValue&) const;
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-    CSSValue::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const { CSSValue::TraceAfterDispatch(visitor); }
 
  private:
   std::string tag_;
@@ -37,9 +35,7 @@ class CSSFontVariationValue : public CSSValue {
 
 template <>
 struct DowncastTraits<cssvalue::CSSFontVariationValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsFontVariationValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsFontVariationValue(); }
 };
 
 }  // namespace webf

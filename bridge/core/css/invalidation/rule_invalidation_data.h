@@ -92,72 +92,46 @@ class RuleInvalidationData {
 
   // Note that class invalidations will sometimes return self-invalidation
   // even when it is not necessary; see comment on class_invalidation_sets_.
-  void CollectInvalidationSetsForClass(InvalidationLists&,
-                                       Element&,
-                                       const std::string& class_name) const;
+  void CollectInvalidationSetsForClass(InvalidationLists&, Element&, const std::string& class_name) const;
 
-  void CollectInvalidationSetsForId(InvalidationLists&,
-                                    Element&,
-                                    const std::string& id) const;
-  void CollectInvalidationSetsForAttribute(
-      InvalidationLists&,
-      Element&,
-      const QualifiedName& attribute_name) const;
-  void CollectInvalidationSetsForPseudoClass(InvalidationLists&,
+  void CollectInvalidationSetsForId(InvalidationLists&, Element&, const std::string& id) const;
+  void CollectInvalidationSetsForAttribute(InvalidationLists&, Element&, const QualifiedName& attribute_name) const;
+  void CollectInvalidationSetsForPseudoClass(InvalidationLists&, Element&, CSSSelector::PseudoType) const;
+
+  void CollectSiblingInvalidationSetForClass(InvalidationLists&,
                                              Element&,
-                                             CSSSelector::PseudoType) const;
-
-  void CollectSiblingInvalidationSetForClass(
-      InvalidationLists&,
-      Element&,
-      const std::string& class_name,
-      unsigned min_direct_adjacent) const;
+                                             const std::string& class_name,
+                                             unsigned min_direct_adjacent) const;
   void CollectSiblingInvalidationSetForId(InvalidationLists&,
                                           Element&,
                                           const std::string& id,
                                           unsigned min_direct_adjacent) const;
-  void CollectSiblingInvalidationSetForAttribute(
-      InvalidationLists&,
-      Element&,
-      const QualifiedName& attribute_name,
-      unsigned min_direct_adjacent) const;
+  void CollectSiblingInvalidationSetForAttribute(InvalidationLists&,
+                                                 Element&,
+                                                 const QualifiedName& attribute_name,
+                                                 unsigned min_direct_adjacent) const;
 
   // TODO: Document.
-  void CollectUniversalSiblingInvalidationSet(
-      InvalidationLists&,
-      unsigned min_direct_adjacent) const;
+  void CollectUniversalSiblingInvalidationSet(InvalidationLists&, unsigned min_direct_adjacent) const;
   void CollectNthInvalidationSet(InvalidationLists&) const;
   void CollectPartInvalidationSet(InvalidationLists&) const;
 
   // Quick tests for whether we need to consider :has() invalidation.
   bool NeedsHasInvalidationForClass(const AtomicString& class_name) const;
-  bool NeedsHasInvalidationForAttribute(
-      const QualifiedName& attribute_name) const;
+  bool NeedsHasInvalidationForAttribute(const QualifiedName& attribute_name) const;
   bool NeedsHasInvalidationForId(const AtomicString& id) const;
   bool NeedsHasInvalidationForTagName(const AtomicString& tag_name) const;
   bool NeedsHasInvalidationForInsertedOrRemovedElement(Element&) const;
-  bool NeedsHasInvalidationForPseudoClass(
-      CSSSelector::PseudoType pseudo_type) const;
+  bool NeedsHasInvalidationForPseudoClass(CSSSelector::PseudoType pseudo_type) const;
 
-  inline bool NeedsHasInvalidationForClassChange() const {
-    return !classes_in_has_argument.empty();
-  }
-  inline bool NeedsHasInvalidationForAttributeChange() const {
-    return !attributes_in_has_argument.empty();
-  }
-  inline bool NeedsHasInvalidationForIdChange() const {
-    return !ids_in_has_argument.empty();
-  }
-  inline bool NeedsHasInvalidationForPseudoStateChange() const {
-    return !pseudos_in_has_argument.empty();
-  }
+  inline bool NeedsHasInvalidationForClassChange() const { return !classes_in_has_argument.empty(); }
+  inline bool NeedsHasInvalidationForAttributeChange() const { return !attributes_in_has_argument.empty(); }
+  inline bool NeedsHasInvalidationForIdChange() const { return !ids_in_has_argument.empty(); }
+  inline bool NeedsHasInvalidationForPseudoStateChange() const { return !pseudos_in_has_argument.empty(); }
   inline bool NeedsHasInvalidationForInsertionOrRemoval() const {
-    return not_pseudo_in_has_argument || universal_in_has_argument ||
-           !tag_names_in_has_argument.empty() ||
-           NeedsHasInvalidationForClassChange() ||
-           NeedsHasInvalidationForAttributeChange() ||
-           NeedsHasInvalidationForIdChange() ||
-           NeedsHasInvalidationForPseudoStateChange();
+    return not_pseudo_in_has_argument || universal_in_has_argument || !tag_names_in_has_argument.empty() ||
+           NeedsHasInvalidationForClassChange() || NeedsHasInvalidationForAttributeChange() ||
+           NeedsHasInvalidationForIdChange() || NeedsHasInvalidationForPseudoStateChange();
   }
 
   bool HasSelectorForId(const std::string& id_value) const {
@@ -169,12 +143,8 @@ class RuleInvalidationData {
   // :has() selector.
   bool UsesHasInsideNth() const { return uses_has_inside_nth; }
   bool UsesFirstLineRules() const { return uses_first_line_rules; }
-  bool UsesWindowInactiveSelector() const {
-    return uses_window_inactive_selector;
-  }
-  unsigned MaxDirectAdjacentSelectors() const {
-    return max_direct_adjacent_selectors;
-  }
+  bool UsesWindowInactiveSelector() const { return uses_window_inactive_selector; }
+  unsigned MaxDirectAdjacentSelectors() const { return max_direct_adjacent_selectors; }
 
   // Format the RuleInvalidationData for debugging purposes.
   //
@@ -213,11 +183,8 @@ class RuleInvalidationData {
   // SiblingInvalidationSet.
   // When both are needed, we store the SiblingInvalidationSet, and use it to
   // hold the DescendantInvalidationSet.
-  using InvalidationSetMap =
-      std::unordered_map<std::string, std::shared_ptr<InvalidationSet>>;
-  using PseudoTypeInvalidationSetMap =
-      std::unordered_map<CSSSelector::PseudoType,
-              std::shared_ptr<InvalidationSet>>;
+  using InvalidationSetMap = std::unordered_map<std::string, std::shared_ptr<InvalidationSet>>;
+  using PseudoTypeInvalidationSetMap = std::unordered_map<CSSSelector::PseudoType, std::shared_ptr<InvalidationSet>>;
   using ValuesInHasArgument = std::unordered_set<AtomicString, AtomicString::KeyHasher>;
   using PseudosInHasArgument = std::unordered_set<CSSSelector::PseudoType>;
 

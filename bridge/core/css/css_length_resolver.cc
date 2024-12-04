@@ -9,11 +9,10 @@
 //#include "core/css/anchor_evaluator.h"
 #include "core/css/css_primitive_value.h"
 //#include "core/style/inset_area.h"
-#include "core/style/scoped_css_name.h"
 #include "core/platform/geometry/length.h"
-#include "core/platform/text/writing_mode.h"
 #include "core/platform/math_extras.h"
-
+#include "core/platform/text/writing_mode.h"
+#include "core/style/scoped_css_name.h"
 
 namespace webf {
 
@@ -50,15 +49,11 @@ double CSSLengthResolver::SmallViewportHeightPercent() const {
 }
 
 double CSSLengthResolver::SmallViewportInlineSizePercent() const {
-  return (IsHorizontalWritingMode() ? SmallViewportWidth()
-                                    : SmallViewportHeight()) /
-         100;
+  return (IsHorizontalWritingMode() ? SmallViewportWidth() : SmallViewportHeight()) / 100;
 }
 
 double CSSLengthResolver::SmallViewportBlockSizePercent() const {
-  return (IsHorizontalWritingMode() ? SmallViewportHeight()
-                                    : SmallViewportWidth()) /
-         100;
+  return (IsHorizontalWritingMode() ? SmallViewportHeight() : SmallViewportWidth()) / 100;
 }
 
 double CSSLengthResolver::SmallViewportMinPercent() const {
@@ -78,15 +73,11 @@ double CSSLengthResolver::LargeViewportHeightPercent() const {
 }
 
 double CSSLengthResolver::LargeViewportInlineSizePercent() const {
-  return (IsHorizontalWritingMode() ? LargeViewportWidth()
-                                    : LargeViewportHeight()) /
-         100;
+  return (IsHorizontalWritingMode() ? LargeViewportWidth() : LargeViewportHeight()) / 100;
 }
 
 double CSSLengthResolver::LargeViewportBlockSizePercent() const {
-  return (IsHorizontalWritingMode() ? LargeViewportHeight()
-                                    : LargeViewportWidth()) /
-         100;
+  return (IsHorizontalWritingMode() ? LargeViewportHeight() : LargeViewportWidth()) / 100;
 }
 
 double CSSLengthResolver::LargeViewportMinPercent() const {
@@ -106,15 +97,11 @@ double CSSLengthResolver::DynamicViewportHeightPercent() const {
 }
 
 double CSSLengthResolver::DynamicViewportInlineSizePercent() const {
-  return (IsHorizontalWritingMode() ? DynamicViewportWidth()
-                                    : DynamicViewportHeight()) /
-         100;
+  return (IsHorizontalWritingMode() ? DynamicViewportWidth() : DynamicViewportHeight()) / 100;
 }
 
 double CSSLengthResolver::DynamicViewportBlockSizePercent() const {
-  return (IsHorizontalWritingMode() ? DynamicViewportHeight()
-                                    : DynamicViewportWidth()) /
-         100;
+  return (IsHorizontalWritingMode() ? DynamicViewportHeight() : DynamicViewportWidth()) / 100;
 }
 
 double CSSLengthResolver::DynamicViewportMinPercent() const {
@@ -134,13 +121,11 @@ double CSSLengthResolver::ContainerHeightPercent() const {
 }
 
 double CSSLengthResolver::ContainerInlineSizePercent() const {
-  return IsHorizontalWritingMode() ? ContainerWidthPercent()
-                                   : ContainerHeightPercent();
+  return IsHorizontalWritingMode() ? ContainerWidthPercent() : ContainerHeightPercent();
 }
 
 double CSSLengthResolver::ContainerBlockSizePercent() const {
-  return IsHorizontalWritingMode() ? ContainerHeightPercent()
-                                   : ContainerWidthPercent();
+  return IsHorizontalWritingMode() ? ContainerHeightPercent() : ContainerWidthPercent();
 }
 
 double CSSLengthResolver::ContainerMinPercent() const {
@@ -151,9 +136,7 @@ double CSSLengthResolver::ContainerMaxPercent() const {
   return std::max(ContainerWidthPercent(), ContainerHeightPercent());
 }
 
-double CSSLengthResolver::ZoomedComputedPixels(
-    double value,
-    CSSPrimitiveValue::UnitType type) const {
+double CSSLengthResolver::ZoomedComputedPixels(double value, CSSPrimitiveValue::UnitType type) const {
   switch (type) {
     case CSSPrimitiveValue::UnitType::kPixels:
     case CSSPrimitiveValue::UnitType::kUserUnits:

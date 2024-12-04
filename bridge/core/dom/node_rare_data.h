@@ -37,7 +37,6 @@ class MutationObserverRegistration;
 class NodeListsNodeData;
 class NodeRareData;
 
-
 class ChildNodeList;
 class EmptyNodeList;
 class ContainerNode;
@@ -79,7 +78,7 @@ class NodeRareData {
     // 0 bits remaining.
   };
 
-  NodeRareData() : restyle_flags_(0u), connected_frame_count_(0u), element_flags_(0u) {};
+  NodeRareData() : restyle_flags_(0u), connected_frame_count_(0u), element_flags_(0u){};
   ~NodeRareData() = default;
   NodeRareData(const NodeRareData&) = delete;
   NodeRareData& operator=(const NodeRareData&) = delete;

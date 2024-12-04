@@ -131,7 +131,6 @@ class StyleRecalcContext {
   bool is_interleaved_oof = false;
 };
 
-
 }  // namespace webf
 
 #endif  // WEBF_STYLE_RECALC_CONTEXT_H

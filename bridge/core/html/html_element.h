@@ -24,7 +24,7 @@ class HTMLElement : public Element {
     return &html_element_public_methods;
   }
 
-  void ParseAttribute(const webf::Element::AttributeModificationParams &) override;
+  void ParseAttribute(const webf::Element::AttributeModificationParams&) override;
 };
 
 template <typename T>

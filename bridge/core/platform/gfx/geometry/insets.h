@@ -54,17 +54,11 @@ inline Insets operator+(Insets insets, const gfx::Vector2d& offset) {
 }
 
 // Helper methods to scale a gfx::Insets to a new gfx::Insets.
-Insets ScaleToCeiledInsets(const Insets& insets,
-                                           float x_scale,
-                                           float y_scale);
+Insets ScaleToCeiledInsets(const Insets& insets, float x_scale, float y_scale);
 Insets ScaleToCeiledInsets(const Insets& insets, float scale);
-Insets ScaleToFlooredInsets(const Insets& insets,
-                                            float x_scale,
-                                            float y_scale);
+Insets ScaleToFlooredInsets(const Insets& insets, float x_scale, float y_scale);
 Insets ScaleToFlooredInsets(const Insets& insets, float scale);
-Insets ScaleToRoundedInsets(const Insets& insets,
-                                            float x_scale,
-                                            float y_scale);
+Insets ScaleToRoundedInsets(const Insets& insets, float x_scale, float y_scale);
 Insets ScaleToRoundedInsets(const Insets& insets, float scale);
 
 // This is declared here for use in gtest-based unit tests but is defined in

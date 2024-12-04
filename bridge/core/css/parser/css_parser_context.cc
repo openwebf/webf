@@ -28,7 +28,8 @@ CSSParserContext::CSSParserContext(const std::string& base_url,
                                    const webf::Document* use_counter_document)
     : document_(use_counter_document), mode_(mode), base_url_(base_url) {}
 
-CSSParserContext::CSSParserContext(const webf::ExecutingContext* context): document_(context->document()), base_url_("") {}
+CSSParserContext::CSSParserContext(const webf::ExecutingContext* context)
+    : document_(context->document()), base_url_("") {}
 
 ExecutingContext* CSSParserContext::GetExecutingContext() const {
   return (document_.Get()) ? document_.Get()->GetExecutingContext() : nullptr;
@@ -55,7 +56,6 @@ KURL CSSParserContext::CompleteNonEmptyURL(const std::string& url) const {
   }
   return CompleteURL(url);
 }
-
 
 bool CSSParserContext::IsForMarkupSanitization() const {
   return document_ && document_->IsForMarkupSanitization();

@@ -29,7 +29,7 @@ const int kMaxNumberOfFrames = 1000;
 const int kTenFrames = 10;
 
 bool g_limit_max_frames_to_ten_for_testing = false;
-}
+}  // namespace
 
 ConsoleMessageHandler WebFPage::consoleMessageHandler{nullptr};
 
@@ -91,8 +91,8 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
   }
 
   ScriptValue extraObject = ScriptValue(ctx, const_cast<const NativeValue&>(*extra));
-  AtomicString module_name = AtomicString(
-      std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_module_name)));
+  AtomicString module_name =
+      AtomicString(std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_module_name)));
   auto listener = context_->ModuleListeners()->listener(module_name);
 
   if (listener == nullptr) {

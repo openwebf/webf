@@ -17,20 +17,18 @@ namespace webf {
 // static
 AnchorSpecifierValue* AnchorSpecifierValue::Default() {
   // TODO(guopengfei)：使用智能指针替换
-  //DEFINE_STATIC_LOCAL(
+  // DEFINE_STATIC_LOCAL(
   //   Persistent<AnchorSpecifierValue>, instance,
   //    {MakeGarbageCollected<AnchorSpecifierValue>(
   //       webf::PassKey<AnchorSpecifierValue>(), Type::kDefault)});
-  //return instance;
+  // return instance;
 
-   thread_local static std::shared_ptr<AnchorSpecifierValue> instance =
-   std::make_shared<AnchorSpecifierValue>(webf::PassKey<AnchorSpecifierValue>(), Type::kDefault);
+  thread_local static std::shared_ptr<AnchorSpecifierValue> instance =
+      std::make_shared<AnchorSpecifierValue>(webf::PassKey<AnchorSpecifierValue>(), Type::kDefault);
   return instance.get();
 }
 
-AnchorSpecifierValue::AnchorSpecifierValue(webf::PassKey<AnchorSpecifierValue>,
-                                           Type type)
-    : type_(type) {
+AnchorSpecifierValue::AnchorSpecifierValue(webf::PassKey<AnchorSpecifierValue>, Type type) : type_(type) {
   assert(type != Type::kNamed);
 }
 

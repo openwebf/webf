@@ -57,9 +57,7 @@ class CSSParser {
   static std::shared_ptr<StyleRuleBase> ParseMarginRule(std::shared_ptr<const CSSParserContext> context,
                                                         std::shared_ptr<StyleSheetContents>,
                                                         const std::string&);
-  static bool ParseDeclarationList(std::shared_ptr<CSSParserContext>,
-                                   MutableCSSPropertyValueSet*,
-                                   const std::string&);
+  static bool ParseDeclarationList(std::shared_ptr<CSSParserContext>, MutableCSSPropertyValueSet*, const std::string&);
 
   static MutableCSSPropertyValueSet::SetResult ParseValue(MutableCSSPropertyValueSet*,
                                                           CSSPropertyID unresolved_property,
@@ -74,10 +72,10 @@ class CSSParser {
                                                           const ExecutingContext* execution_context = nullptr);
 
   static MutableCSSPropertyValueSet::SetResult ParseValue(MutableCSSPropertyValueSet* declaration,
-                                                   CSSPropertyID unresolved_property,
-                                                   const std::string& string,
-                                                   bool important,
-                                                   std::shared_ptr<const CSSParserContext> context);
+                                                          CSSPropertyID unresolved_property,
+                                                          const std::string& string,
+                                                          bool important,
+                                                          std::shared_ptr<const CSSParserContext> context);
 
   static MutableCSSPropertyValueSet::SetResult ParseValueForCustomProperty(MutableCSSPropertyValueSet*,
                                                                            const std::string& property_name,
@@ -87,12 +85,18 @@ class CSSParser {
                                                                            bool is_animation_tainted);
 
   // This is for non-shorthands only
-  static std::shared_ptr<const CSSValue> ParseSingleValue(CSSPropertyID, const std::string&, std::shared_ptr<CSSParserContext>);
+  static std::shared_ptr<const CSSValue> ParseSingleValue(CSSPropertyID,
+                                                          const std::string&,
+                                                          std::shared_ptr<CSSParserContext>);
 
-  static const std::shared_ptr<const CSSValue>* ParseFontFaceDescriptor(CSSPropertyID, const std::string&, std::shared_ptr<CSSParserContext>);
+  static const std::shared_ptr<const CSSValue>* ParseFontFaceDescriptor(CSSPropertyID,
+                                                                        const std::string&,
+                                                                        std::shared_ptr<CSSParserContext>);
 
   static std::shared_ptr<const ImmutableCSSPropertyValueSet> ParseInlineStyleDeclaration(const std::string&, Element*);
-  static std::shared_ptr<const ImmutableCSSPropertyValueSet> ParseInlineStyleDeclaration(const std::string&, CSSParserMode, const Document*);
+  static std::shared_ptr<const ImmutableCSSPropertyValueSet> ParseInlineStyleDeclaration(const std::string&,
+                                                                                         CSSParserMode,
+                                                                                         const Document*);
 
   static std::unique_ptr<std::vector<KeyframeOffset>> ParseKeyframeKeyList(std::shared_ptr<CSSParserContext>,
                                                                            const std::string&);
@@ -110,8 +114,8 @@ class CSSParser {
                                                CSSParserObserver&);
 
   static std::shared_ptr<const CSSPrimitiveValue> ParseLengthPercentage(const std::string&,
-                                                  std::shared_ptr<CSSParserContext>,
-                                                  CSSPrimitiveValue::ValueRange);
+                                                                        std::shared_ptr<CSSParserContext>,
+                                                                        CSSPrimitiveValue::ValueRange);
 
   // https://html.spec.whatwg.org/multipage/canvas.html#dom-context-2d-font
   // https://drafts.csswg.org/css-font-loading/#find-the-matching-font-faces

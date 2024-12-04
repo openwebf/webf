@@ -1,7 +1,7 @@
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_FOUNDATION_STRING_HASHER_H_
 #define WEBF_FOUNDATION_STRING_HASHER_H_
@@ -24,8 +24,7 @@ class StringHasher {
   WEBF_DISALLOW_NEW();
 
  public:
-  static const unsigned kFlagCount =
-      8;  // Save 8 bits for StringImpl to use as flags.
+  static const unsigned kFlagCount = 8;  // Save 8 bits for StringImpl to use as flags.
 
   constexpr StringHasher() = default;
 
@@ -69,26 +68,22 @@ class StringHasher {
 
   template <typename T, char16_t Converter(T)>
   void AddCharactersAssumingAligned(const T* data, unsigned length) {
-    AddCharactersAssumingAligned_internal<T, Converter>(
-        reinterpret_cast<const unsigned char*>(data), length);
+    AddCharactersAssumingAligned_internal<T, Converter>(reinterpret_cast<const unsigned char*>(data), length);
   }
 
   template <typename T>
   void AddCharactersAssumingAligned(const T* data, unsigned length) {
-    AddCharactersAssumingAligned_internal<T>(
-        reinterpret_cast<const unsigned char*>(data), length);
+    AddCharactersAssumingAligned_internal<T>(reinterpret_cast<const unsigned char*>(data), length);
   }
 
   template <typename T, char16_t Converter(T)>
   void AddCharacters(const T* data, unsigned length) {
-    AddCharacters_internal<T, Converter>(
-        reinterpret_cast<const unsigned char*>(data), length);
+    AddCharacters_internal<T, Converter>(reinterpret_cast<const unsigned char*>(data), length);
   }
 
   template <typename T>
   void AddCharacters(const T* data, unsigned length) {
-    AddCharacters_internal<T>(reinterpret_cast<const unsigned char*>(data),
-                              length);
+    AddCharacters_internal<T>(reinterpret_cast<const unsigned char*>(data), length);
   }
 
   unsigned HashWithTop8BitsMasked() const {
@@ -123,14 +118,12 @@ class StringHasher {
 
   template <typename T, char16_t Converter(T)>
   static unsigned ComputeHashAndMaskTop8Bits(const T* data, unsigned length) {
-    return ComputeHashAndMaskTop8Bits_internal<T, Converter>(
-        reinterpret_cast<const unsigned char*>(data), length);
+    return ComputeHashAndMaskTop8Bits_internal<T, Converter>(reinterpret_cast<const unsigned char*>(data), length);
   }
 
   template <typename T>
   static unsigned ComputeHashAndMaskTop8Bits(const T* data, unsigned length) {
-    return ComputeHashAndMaskTop8Bits_internal<T>(
-        reinterpret_cast<const unsigned char*>(data), length);
+    return ComputeHashAndMaskTop8Bits_internal<T>(reinterpret_cast<const unsigned char*>(data), length);
   }
 
   template <typename T, char16_t Converter(T)>
@@ -151,8 +144,8 @@ class StringHasher {
     // bits in StringImpl and hash strings consistently, but I don't see why
     // we'd want that for general memory hashing.
     DCHECK(!(length % 2));
-    return ComputeHashAndMaskTop8Bits_internal<char16_t>(
-        static_cast<const unsigned char*>(data), length / sizeof(char16_t));
+    return ComputeHashAndMaskTop8Bits_internal<char16_t>(static_cast<const unsigned char*>(data),
+                                                         length / sizeof(char16_t));
   }
 
   template <size_t length>
@@ -168,20 +161,17 @@ class StringHasher {
   static char16_t DefaultConverter(char character) { return character; }
 
   template <typename T, char16_t Converter(T)>
-  void AddCharactersAssumingAligned_internal(const unsigned char* data,
-                                             unsigned length) {
+  void AddCharactersAssumingAligned_internal(const unsigned char* data, unsigned length) {
     DCHECK(!has_pending_character_);
 
-    static_assert(std::is_trivial_v<T> && std::is_standard_layout_v<T>,
-                  "we only support hashing POD types");
+    static_assert(std::is_trivial_v<T> && std::is_standard_layout_v<T>, "we only support hashing POD types");
     bool remainder = length & 1;
     length >>= 1;
 
     while (length--) {
       T data_converted[2];
       std::memcpy(data_converted, data, sizeof(T) * 2);
-      AddCharactersAssumingAligned(Converter(data_converted[0]),
-                                   Converter(data_converted[1]));
+      AddCharactersAssumingAligned(Converter(data_converted[0]), Converter(data_converted[1]));
       data += sizeof(T) * 2;
     }
 
@@ -193,22 +183,19 @@ class StringHasher {
   }
 
   template <typename T>
-  void AddCharactersAssumingAligned_internal(const unsigned char* data,
-                                             unsigned length) {
+  void AddCharactersAssumingAligned_internal(const unsigned char* data, unsigned length) {
     AddCharactersAssumingAligned_internal<T, DefaultConverter>(data, length);
   }
 
   template <typename T, char16_t Converter(T)>
   void AddCharacters_internal(const unsigned char* data, unsigned length) {
-    static_assert(std::is_trivial_v<T> && std::is_standard_layout_v<T>,
-                  "we only support hashing POD types");
+    static_assert(std::is_trivial_v<T> && std::is_standard_layout_v<T>, "we only support hashing POD types");
 
     if (has_pending_character_ && length) {
       has_pending_character_ = false;
       T data_converted;
       std::memcpy(&data_converted, data, sizeof(T));
-      AddCharactersAssumingAligned(pending_character_,
-                                   Converter(data_converted));
+      AddCharactersAssumingAligned(pending_character_, Converter(data_converted));
       data += sizeof(T);
       --length;
     }
@@ -221,18 +208,15 @@ class StringHasher {
   }
 
   template <typename T, char16_t Converter(T)>
-  static unsigned ComputeHashAndMaskTop8Bits_internal(const unsigned char* data,
-                                                      unsigned length) {
+  static unsigned ComputeHashAndMaskTop8Bits_internal(const unsigned char* data, unsigned length) {
     StringHasher hasher;
     hasher.AddCharactersAssumingAligned_internal<T, Converter>(data, length);
     return hasher.HashWithTop8BitsMasked();
   }
 
   template <typename T>
-  static unsigned ComputeHashAndMaskTop8Bits_internal(const unsigned char* data,
-                                                      unsigned length) {
-    return ComputeHashAndMaskTop8Bits_internal<T, DefaultConverter>(data,
-                                                                    length);
+  static unsigned ComputeHashAndMaskTop8Bits_internal(const unsigned char* data, unsigned length) {
+    return ComputeHashAndMaskTop8Bits_internal<T, DefaultConverter>(data, length);
   }
 
   constexpr unsigned AvalancheBits() const {
@@ -260,7 +244,6 @@ class StringHasher {
   char16_t pending_character_ = 0;
 };
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_FOUNDATION_STRING_HASHER_H_

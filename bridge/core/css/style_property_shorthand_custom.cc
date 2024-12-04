@@ -32,13 +32,15 @@ const StylePropertyShorthand& transitionShorthandForParsing() {
   static const CSSProperty* kTransitionPropertiesWithAnimationType[] = {
       &GetCSSPropertyTransitionBehavior(), &GetCSSPropertyTransitionDuration(),
       &GetCSSPropertyTransitionTimingFunction(), &GetCSSPropertyTransitionDelay(), &GetCSSPropertyTransitionProperty()};
-  static StylePropertyShorthand transition_longhands_with_animation_type(CSSPropertyID::kTransition,
-                                                                         kTransitionPropertiesWithAnimationType, std::size(kTransitionPropertiesWithAnimationType));
+  static StylePropertyShorthand transition_longhands_with_animation_type(
+      CSSPropertyID::kTransition, kTransitionPropertiesWithAnimationType,
+      std::size(kTransitionPropertiesWithAnimationType));
 
   return transition_longhands_with_animation_type;
 }
 
-unsigned indexOfShorthandForLonghand(CSSPropertyID shorthand_id, const std::vector<StylePropertyShorthand>& shorthands) {
+unsigned indexOfShorthandForLonghand(CSSPropertyID shorthand_id,
+                                     const std::vector<StylePropertyShorthand>& shorthands) {
   for (unsigned i = 0; i < shorthands.size(); ++i) {
     if (shorthands.at(i).id() == shorthand_id) {
       return i;

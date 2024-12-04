@@ -21,8 +21,6 @@ namespace webf {
 
 uint32_t SuperFastHash(const char* data, int len);
 
-
-
-}  // namespace base
+}  // namespace webf
 
 #endif  // BASE_HASH_HASH_H_

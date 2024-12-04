@@ -3,33 +3,30 @@
 // found in the LICENSE file.
 
 #include "style_scope_frame.h"
+#include "core/css/style_scope_data.h"
 #include "core/dom/container_node.h"
 #include "core/dom/element.h"
-#include "core/css/style_scope_data.h"
 
 namespace webf {
-
 
 void StyleScopeActivation::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(root);
 }
 
 void StyleScopeActivations::Trace(GCVisitor* visitor) const {
-  for(auto&& item : vector) {
+  for (auto&& item : vector) {
     item.Trace(visitor);
   }
 }
 
-StyleScopeFrame* StyleScopeFrame::GetParentFrameOrNull(
-    Element& parent_element) {
+StyleScopeFrame* StyleScopeFrame::GetParentFrameOrNull(Element& parent_element) {
   if (parent_ && (&parent_->element_ == &parent_element)) {
     return parent_;
   }
   return nullptr;
 }
 
-StyleScopeFrame& StyleScopeFrame::GetParentFrameOrThis(
-    Element& parent_element) {
+StyleScopeFrame& StyleScopeFrame::GetParentFrameOrThis(Element& parent_element) {
   StyleScopeFrame* parent_frame = GetParentFrameOrNull(parent_element);
   return parent_frame ? *parent_frame : *this;
 }
@@ -47,8 +44,7 @@ std::shared_ptr<StyleScopeFrame::ScopeSet> StyleScopeFrame::CalculateSeenImplici
 
   auto add_triggered_scopes = [&owns_set, &scopes](Element& element) {
     if (const StyleScopeData* style_scope_data = element.GetStyleScopeData()) {
-      for (const std::shared_ptr<const StyleScope>& style_scope :
-           style_scope_data->GetTriggeredScopes()) {
+      for (const std::shared_ptr<const StyleScope>& style_scope : style_scope_data->GetTriggeredScopes()) {
         if (!owns_set) {
           // Copy-on-write.
           scopes = std::make_shared<ScopeSet>(*scopes);
@@ -60,9 +56,7 @@ std::shared_ptr<StyleScopeFrame::ScopeSet> StyleScopeFrame::CalculateSeenImplici
   };
 
   Element* parent_element = element_.ParentOrShadowHostElement();
-  StyleScopeFrame* parent_frame =
-      parent_element ? StyleScopeFrame::GetParentFrameOrNull(*parent_element)
-                     : nullptr;
+  StyleScopeFrame* parent_frame = parent_element ? StyleScopeFrame::GetParentFrameOrNull(*parent_element) : nullptr;
   if (parent_frame) {
     // We've seen all scopes that the parent has seen ...
     owns_set = false;
@@ -84,4 +78,4 @@ std::shared_ptr<StyleScopeFrame::ScopeSet> StyleScopeFrame::CalculateSeenImplici
   return scopes;
 }
 
-}
+}  // namespace webf

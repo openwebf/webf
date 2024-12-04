@@ -24,9 +24,9 @@
  */
 
 #include "css_rule.h"
+#include "bindings/qjs/script_wrappable.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/style_sheet_contents.h"
-#include "bindings/qjs/script_wrappable.h"
 
 namespace webf {
 
@@ -61,13 +61,11 @@ std::shared_ptr<CSSParserContext> CSSRule::ParserContext() const {
 }
 
 bool CSSRule::VerifyParentIsCSSRule() const {
-  return !parent_ || parent_->GetWrapperTypeInfo()->isSubclass(
-                         CSSRule::GetStaticWrapperTypeInfo());
+  return !parent_ || parent_->GetWrapperTypeInfo()->isSubclass(CSSRule::GetStaticWrapperTypeInfo());
 }
 
 bool CSSRule::VerifyParentIsCSSStyleSheet() const {
-  return !parent_ || parent_->GetWrapperTypeInfo()->isSubclass(
-                         CSSStyleSheet::GetStaticWrapperTypeInfo());
+  return !parent_ || parent_->GetWrapperTypeInfo()->isSubclass(CSSStyleSheet::GetStaticWrapperTypeInfo());
 }
 
 }  // namespace webf

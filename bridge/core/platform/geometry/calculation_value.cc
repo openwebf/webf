@@ -32,8 +32,7 @@ CalculationValue::CalculationValue(std::shared_ptr<const CalculationExpressionNo
                                    Length::ValueRange range)
     : data_(std::move(expression)), is_expression_(true), is_non_negative_(range == Length::ValueRange::kNonNegative) {}
 
-CalculationValue::~CalculationValue() {
-}
+CalculationValue::~CalculationValue() {}
 
 float CalculationValue::Evaluate(float max_value, const Length::EvaluationInput& input) const {
   float value = ClampTo<float>(is_expression_ ? data_.expression->Evaluate(max_value, input)

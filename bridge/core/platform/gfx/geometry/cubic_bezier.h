@@ -11,7 +11,7 @@ namespace gfx {
 
 #define CUBIC_BEZIER_SPLINE_SAMPLES 11
 
-class  CubicBezier {
+class CubicBezier {
  public:
   CubicBezier(double p1x, double p1y, double p2x, double p2y);
   CubicBezier(const CubicBezier& other);
@@ -26,17 +26,12 @@ class  CubicBezier {
     return ((ax_ * t + bx_) * t + cx_) * t;
   }
 
-  double SampleCurveY(double t) const {
-    return ToFinite(((ay_ * t + by_) * t + cy_) * t);
-  }
+  double SampleCurveY(double t) const { return ToFinite(((ay_ * t + by_) * t + cy_) * t); }
 
-  double SampleCurveDerivativeX(double t) const {
-    return (3.0 * ax_ * t + 2.0 * bx_) * t + cx_;
-  }
+  double SampleCurveDerivativeX(double t) const { return (3.0 * ax_ * t + 2.0 * bx_) * t + cx_; }
 
   double SampleCurveDerivativeY(double t) const {
-    return ToFinite(
-        ToFinite(ToFinite(3.0 * ay_) * t + ToFinite(2.0 * by_)) * t + cy_);
+    return ToFinite(ToFinite(ToFinite(3.0 * ay_) * t + ToFinite(2.0 * by_)) * t + cy_);
   }
 
   static double GetDefaultEpsilon();

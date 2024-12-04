@@ -22,6 +22,6 @@ class MediaQuerySetOwner {
   virtual void SetMediaQueries(std::shared_ptr<const MediaQuerySet>) = 0;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_MEDIA_QUERY_SET_OWNER_H_

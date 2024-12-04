@@ -30,9 +30,7 @@ class CSSTimingData {
   const DelayVector& DelayStartList() const { return delay_start_list_; }
   const DelayVector& DelayEndList() const { return delay_end_list_; }
   const DurationVector& DurationList() const { return duration_list_; }
-  const TimingFunctionVector& TimingFunctionList() const {
-    return timing_function_list_;
-  }
+  const TimingFunctionVector& TimingFunctionList() const { return timing_function_list_; }
 
   DelayVector& DelayStartList() { return delay_start_list_; }
   DelayVector& DelayEndList() { return delay_end_list_; }
@@ -40,20 +38,17 @@ class CSSTimingData {
   TimingFunctionVector& TimingFunctionList() { return timing_function_list_; }
 
   bool HasSingleInitialDelayStart() const {
-    return delay_start_list_.size() == 1u &&
-           delay_start_list_.front() == InitialDelayStart();
+    return delay_start_list_.size() == 1u && delay_start_list_.front() == InitialDelayStart();
   }
 
   bool HasSingleInitialDelayEnd() const {
-    return delay_end_list_.size() == 1u &&
-           delay_end_list_.front() == InitialDelayEnd();
+    return delay_end_list_.size() == 1u && delay_end_list_.front() == InitialDelayEnd();
   }
 
   static Timing::Delay InitialDelayStart() { return Timing::Delay(); }
   static Timing::Delay InitialDelayEnd() { return Timing::Delay(); }
   static std::shared_ptr<TimingFunction> InitialTimingFunction() {
-    return CubicBezierTimingFunction::Preset(
-        CubicBezierTimingFunction::EaseType::EASE);
+    return CubicBezierTimingFunction::Preset(CubicBezierTimingFunction::EaseType::EASE);
   }
 
   template <class T>

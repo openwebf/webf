@@ -21,8 +21,7 @@ namespace cssvalue {
 // https://drafts.csswg.org/css-fonts-4/#font-variant-alternates-prop
 class CSSAlternateValue : public CSSValue {
  public:
-  CSSAlternateValue(std::shared_ptr<const CSSFunctionValue>& function,
-                    std::shared_ptr<const CSSValueList>& alias_list);
+  CSSAlternateValue(std::shared_ptr<const CSSFunctionValue>& function, std::shared_ptr<const CSSValueList>& alias_list);
 
   const CSSFunctionValue& Function() const { return *function_; }
   const CSSValueList& Aliases() const { return *aliases_; }
@@ -31,8 +30,8 @@ class CSSAlternateValue : public CSSValue {
   bool Equals(const CSSAlternateValue&) const;
 
   void TraceAfterDispatch(GCVisitor* visitor) const {
-//    visitor->Trace(function_);
-//    visitor->Trace(aliases_);
+    //    visitor->Trace(function_);
+    //    visitor->Trace(aliases_);
     CSSValue::TraceAfterDispatch(visitor);
   }
 
@@ -45,11 +44,8 @@ class CSSAlternateValue : public CSSValue {
 
 template <>
 struct DowncastTraits<cssvalue::CSSAlternateValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsAlternateValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsAlternateValue(); }
 };
-
 
 }  // namespace webf
 

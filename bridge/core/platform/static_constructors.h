@@ -38,7 +38,7 @@ namespace webf {
 
 // Use an array of pointers instead of an array of char in case there is some
 // alignment issue.
-#define DEFINE_GLOBAL(type, name)                                          \
+#define DEFINE_GLOBAL(type, name)                                    \
   std::aligned_storage_t<sizeof(type), alignof(type)> name##Storage; \
   const type& name = *std::launder(reinterpret_cast<type*>(&name##Storage))
 

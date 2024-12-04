@@ -20,6 +20,6 @@ class CSSValueClampingUtils {
   static float ClampLength(float value);
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_CSS_VALUE_CLAMPING_UTILS_H_

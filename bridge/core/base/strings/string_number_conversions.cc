@@ -118,8 +118,7 @@ bool StringToDouble(std::string_view input, double* output) {
 }
 
 bool StringToDouble(std::u16string_view input, double* output) {
-  return internal::StringToDoubleImpl(
-      input, reinterpret_cast<const uint16_t*>(input.data()), *output);
+  return internal::StringToDoubleImpl(input, reinterpret_cast<const uint16_t*>(input.data()), *output);
 }
 
 std::string HexEncode(const void* bytes, size_t size) {
@@ -180,7 +179,7 @@ bool HexStringToString(std::string_view input, std::string* output) {
   return internal::HexStringToByteContainer<char>(input, std::back_inserter(*output));
 }
 
-//bool HexStringToSpan(std::string_view input, tcb::span<uint8_t> output) {
+// bool HexStringToSpan(std::string_view input, tcb::span<uint8_t> output) {
 //  if (input.size() / 2 != output.size())
 //    return false;
 //

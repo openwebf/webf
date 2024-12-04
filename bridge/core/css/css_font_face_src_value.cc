@@ -23,12 +23,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "core/base/memory/values_equivalent.h"
 #include "css_font_face_src_value.h"
+#include "core/base/memory/values_equivalent.h"
 #include "core/base/strings/string_util.h"
+#include "core/css/css_markup.h"
 #include "core/css/css_uri_value.h"
 #include "core/platform/url/kurl.h"
-#include "core/css/css_markup.h"
 #include "foundation/string_builder.h"
 
 namespace webf {

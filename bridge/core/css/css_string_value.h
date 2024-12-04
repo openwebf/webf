@@ -18,9 +18,7 @@ class CSSStringValue : public CSSValue {
 
   std::string CustomCSSText() const;
 
-  bool Equals(const CSSStringValue& other) const {
-    return string_ == other.string_;
-  }
+  bool Equals(const CSSStringValue& other) const { return string_ == other.string_; }
 
   void TraceAfterDispatch(GCVisitor*) const;
 
@@ -33,6 +31,6 @@ struct DowncastTraits<CSSStringValue> {
   static bool AllowFrom(const CSSValue& value) { return value.IsStringValue(); }
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_CSS_STRING_VALUE_H_

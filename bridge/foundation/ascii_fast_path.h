@@ -1,23 +1,23 @@
 /*
-* Copyright (C) 2011, 2012 Apple Inc. All rights reserved.
-* Copyright (C) 2011 Nokia Corporation and/or its subsidiary(-ies).
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Library General Public
-* License as published by the Free Software Foundation; either
-* version 2 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Library General Public License for more details.
-*
-* You should have received a copy of the GNU Library General Public License
-* along with this library; see the file COPYING.LIB.  If not, write to
-* the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-* Boston, MA 02110-1301, USA.
-*
-*/
+ * Copyright (C) 2011, 2012 Apple Inc. All rights reserved.
+ * Copyright (C) 2011 Nokia Corporation and/or its subsidiary(-ies).
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public License
+ * along with this library; see the file COPYING.LIB.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301, USA.
+ *
+ */
 
 #ifndef WEBF_FOUNDATION_ASCII_FAST_PATH_H_
 #define WEBF_FOUNDATION_ASCII_FAST_PATH_H_
@@ -25,12 +25,11 @@
 #include <cassert>
 #include <cinttypes>
 #include <limits>
-#include "foundation/macros.h"
 #include "ascii_types.h"
 #include "core/base/compiler_specific.h"
+#include "foundation/macros.h"
 
 namespace webf {
-
 
 class LowerConverter {
  public:
@@ -59,10 +58,9 @@ class UpperConverter {
 };
 
 template <typename StringType, typename Converter, typename Allocator>
-ALWAYS_INLINE typename Allocator::ResultStringType ConvertASCIICase(
-    const StringType& string,
-    Converter&& converter,
-    Allocator&& allocator) {
+ALWAYS_INLINE typename Allocator::ResultStringType ConvertASCIICase(const StringType& string,
+                                                                    Converter&& converter,
+                                                                    Allocator&& allocator) {
   CHECK_LE(string.length(), std::numeric_limits<size_t>::max());
 
   // First scan the string for uppercase and non-ASCII characters:
@@ -96,18 +94,15 @@ ALWAYS_INLINE typename Allocator::ResultStringType ConvertASCIICase(
 
 struct ASCIIStringAttributes {
   ASCIIStringAttributes(bool contains_only_ascii, bool is_lower_ascii)
-      : contains_only_ascii(contains_only_ascii),
-        is_lower_ascii(is_lower_ascii) {}
+      : contains_only_ascii(contains_only_ascii), is_lower_ascii(is_lower_ascii) {}
   unsigned contains_only_ascii : 1;
   unsigned is_lower_ascii : 1;
 };
 
-
 // Note: This function assumes the input is likely all ASCII, and
 // does not leave early if it is not the case.
 template <typename CharacterType>
-ALWAYS_INLINE ASCIIStringAttributes
-CharacterAttributes(const CharacterType* characters, size_t length) {
+ALWAYS_INLINE ASCIIStringAttributes CharacterAttributes(const CharacterType* characters, size_t length) {
   DCHECK_GT(length, 0u);
 
   // Performance note: This loop will not vectorize properly in -Oz. Ensure
@@ -122,6 +117,6 @@ CharacterAttributes(const CharacterType* characters, size_t length) {
   return ASCIIStringAttributes(IsASCII(all_char_bits), !contains_upper_case);
 }
 
-}
+}  // namespace webf
 
 #endif  // WEBF_FOUNDATION_ASCII_FAST_PATH_H_

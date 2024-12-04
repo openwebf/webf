@@ -7,12 +7,11 @@
  */
 
 #include "string_to_number.h"
-#include <cstddef>
 #include <cassert>
+#include <cstddef>
 #include <type_traits>
 #include "foundation/ascii_types.h"
 #include "foundation/string_builder.h"
-
 
 namespace webf {
 
@@ -38,14 +37,10 @@ static inline IntegralType ToIntegralType(const unsigned char* data,
                                           size_t length,
                                           NumberParsingOptions options,
                                           NumberParsingResult* parsing_result) {
-  static_assert(std::is_integral<IntegralType>::value,
-                "IntegralType must be an integral type.");
-  static constexpr IntegralType kIntegralMax =
-      std::numeric_limits<IntegralType>::max();
-  static constexpr IntegralType kIntegralMin =
-      std::numeric_limits<IntegralType>::min();
-  static constexpr bool kIsSigned =
-      std::numeric_limits<IntegralType>::is_signed;
+  static_assert(std::is_integral<IntegralType>::value, "IntegralType must be an integral type.");
+  static constexpr IntegralType kIntegralMax = std::numeric_limits<IntegralType>::max();
+  static constexpr IntegralType kIntegralMin = std::numeric_limits<IntegralType>::min();
+  static constexpr bool kIsSigned = std::numeric_limits<IntegralType>::is_signed;
   assert(parsing_result);
 
   IntegralType value = 0;
@@ -144,13 +139,9 @@ bye:
 }
 
 template <typename IntegralType, int base>
-static inline IntegralType ToIntegralType(const uint8_t* data,
-                                          size_t length,
-                                          NumberParsingOptions options,
-                                          bool* ok) {
+static inline IntegralType ToIntegralType(const uint8_t* data, size_t length, NumberParsingOptions options, bool* ok) {
   NumberParsingResult result;
-  IntegralType value = ToIntegralType<IntegralType, base>(
-      data, length, options, &result);
+  IntegralType value = ToIntegralType<IntegralType, base>(data, length, options, &result);
   if (ok)
     *ok = result == NumberParsingResult::kSuccess;
   return value;
@@ -163,18 +154,11 @@ unsigned CharactersToUInt(const unsigned char* data,
   return ToIntegralType<unsigned, 10>(data, length, options, result);
 }
 
-
-unsigned HexCharactersToUInt(const unsigned char* data,
-                             size_t length,
-                             NumberParsingOptions options,
-                             bool* ok) {
+unsigned HexCharactersToUInt(const unsigned char* data, size_t length, NumberParsingOptions options, bool* ok) {
   return ToIntegralType<unsigned, 16>(data, length, options, ok);
 }
 
-uint64_t HexCharactersToUInt64(const unsigned char* data,
-                               size_t length,
-                               NumberParsingOptions options,
-                               bool* ok) {
+uint64_t HexCharactersToUInt64(const unsigned char* data, size_t length, NumberParsingOptions options, bool* ok) {
   return ToIntegralType<uint64_t, 16>(data, length, options, ok);
 }
 
@@ -189,17 +173,12 @@ double ParseDouble(const unsigned char* string, size_t length, size_t& parsed_le
 enum TrailingJunkPolicy { kDisallowTrailingJunk, kAllowTrailingJunk };
 
 template <TrailingJunkPolicy policy>
-static inline double ToDoubleType(const unsigned char* data,
-                                  size_t length,
-                                  bool* ok,
-                                  size_t& parsed_length) {
+static inline double ToDoubleType(const unsigned char* data, size_t length, bool* ok, size_t& parsed_length) {
   size_t leading_spaces_length = 0;
-  while (leading_spaces_length < length &&
-         IsASCIISpace(data[leading_spaces_length]))
+  while (leading_spaces_length < length && IsASCIISpace(data[leading_spaces_length]))
     ++leading_spaces_length;
 
-  double number = ParseDouble(data + leading_spaces_length,
-                              length - leading_spaces_length, parsed_length);
+  double number = ParseDouble(data + leading_spaces_length, length - leading_spaces_length, parsed_length);
   if (!parsed_length) {
     if (ok)
       *ok = false;
@@ -214,32 +193,24 @@ static inline double ToDoubleType(const unsigned char* data,
 
 double CharactersToDouble(const char* data, size_t length, bool* ok) {
   size_t parsed_length;
-  return ToDoubleType<kDisallowTrailingJunk>(reinterpret_cast<const unsigned char*>(data), length, ok,
-                                                    parsed_length);
+  return ToDoubleType<kDisallowTrailingJunk>(reinterpret_cast<const unsigned char*>(data), length, ok, parsed_length);
 }
 
-double CharactersToDouble(const unsigned char* data,
-                          size_t length,
-                          size_t& parsed_length) {
-  return ToDoubleType<kAllowTrailingJunk>(data, length, nullptr,
-                                                 parsed_length);
+double CharactersToDouble(const unsigned char* data, size_t length, size_t& parsed_length) {
+  return ToDoubleType<kAllowTrailingJunk>(data, length, nullptr, parsed_length);
 }
 
 float CharactersToFloat(const unsigned char* data, size_t length, bool* ok) {
   // FIXME: This will return ok even when the string fits into a double but
   // not a float.
   size_t parsed_length;
-  return static_cast<float>(ToDoubleType<kDisallowTrailingJunk>(
-      data, length, ok, parsed_length));
+  return static_cast<float>(ToDoubleType<kDisallowTrailingJunk>(data, length, ok, parsed_length));
 }
 
-float CharactersToFloat(const unsigned char* data,
-                        size_t length,
-                        size_t& parsed_length) {
+float CharactersToFloat(const unsigned char* data, size_t length, size_t& parsed_length) {
   // FIXME: This will return ok even when the string fits into a double but
   // not a float.
-  return static_cast<float>(ToDoubleType<kAllowTrailingJunk>(
-      data, length, nullptr, parsed_length));
+  return static_cast<float>(ToDoubleType<kAllowTrailingJunk>(data, length, nullptr, parsed_length));
 }
 
 }  // namespace webf

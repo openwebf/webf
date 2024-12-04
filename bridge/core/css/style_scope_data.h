@@ -5,8 +5,8 @@
 #ifndef WEBF_CORE_CSS_STYLE_SCOPE_DATA_H_
 #define WEBF_CORE_CSS_STYLE_SCOPE_DATA_H_
 
-#include "core/dom/element_rare_data_field.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
+#include "core/dom/element_rare_data_field.h"
 
 namespace webf {
 
@@ -25,9 +25,9 @@ class StyleScopeData final : public ElementRareDataField {
  public:
   void Trace(GCVisitor*) const override;
 
-//  void AddTriggeredImplicitScope(const StyleScope&);
-//  void RemoveTriggeredImplicitScope(const StyleScope&);
-//  bool TriggersScope(const StyleScope&) const;
+  //  void AddTriggeredImplicitScope(const StyleScope&);
+  //  void RemoveTriggeredImplicitScope(const StyleScope&);
+  //  bool TriggersScope(const StyleScope&) const;
 
   const std::vector<std::shared_ptr<const StyleScope>>& GetTriggeredScopes() const {
     return triggered_implicit_scopes_;
@@ -50,7 +50,6 @@ class StyleScopeData final : public ElementRareDataField {
   std::vector<std::shared_ptr<const StyleScope>> triggered_implicit_scopes_;
 };
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_STYLE_SCOPE_DATA_H_

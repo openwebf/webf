@@ -1,32 +1,32 @@
 /*
-* Copyright (C) 2012 Google Inc. All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are
-* met:
-*
-*     * Redistributions of source code must retain the above copyright
-* notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above
-* copyright notice, this list of conditions and the following disclaimer
-* in the documentation and/or other materials provided with the
-* distribution.
-*     * Neither the name of Google Inc. nor the names of its
-* contributors may be used to endorse or promote products derived from
-* this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-* A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-* OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (C) 2012 Google Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef WEBF_FOUNDATION_DECIMAL_H_
 #define WEBF_FOUNDATION_DECIMAL_H_
@@ -56,9 +56,7 @@ class Decimal {
     EncodedData(Sign, int exponent, uint64_t coefficient);
 
     bool operator==(const EncodedData&) const;
-    bool operator!=(const EncodedData& another) const {
-      return !operator==(another);
-    }
+    bool operator!=(const EncodedData& another) const { return !operator==(another); }
 
     uint64_t Coefficient() const { return coefficient_; }
     int CountDigits() const;
@@ -66,9 +64,7 @@ class Decimal {
     bool IsFinite() const { return !IsSpecial(); }
     bool IsInfinity() const { return format_class_ == kClassInfinity; }
     bool IsNaN() const { return format_class_ == kClassNaN; }
-    bool IsSpecial() const {
-      return format_class_ == kClassInfinity || format_class_ == kClassNaN;
-    }
+    bool IsSpecial() const { return format_class_ == kClassInfinity || format_class_ == kClassNaN; }
     bool IsZero() const { return format_class_ == kClassZero; }
     Sign GetSign() const { return sign_; }
     void SetSign(Sign sign) { sign_ = sign; }
@@ -111,7 +107,7 @@ class Decimal {
 
   Decimal operator+(const Decimal&) const;
   Decimal operator-(const Decimal&) const;
-  Decimal operator*(const Decimal&)const;
+  Decimal operator*(const Decimal&) const;
   Decimal operator/(const Decimal&) const;
 
   int Exponent() const {
@@ -165,9 +161,7 @@ class Decimal {
   Decimal CompareTo(const Decimal&) const;
 
   static AlignedOperands AlignOperands(const Decimal& lhs, const Decimal& rhs);
-  static inline Sign InvertSign(Sign sign) {
-    return sign == kNegative ? kPositive : kNegative;
-  }
+  static inline Sign InvertSign(Sign sign) { return sign == kNegative ? kPositive : kNegative; }
 
   Sign GetSign() const { return data_.GetSign(); }
 
@@ -176,7 +170,6 @@ class Decimal {
 
 std::ostream& operator<<(std::ostream&, const Decimal&);
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_FOUNDATION_DECIMAL_H_

@@ -22,14 +22,12 @@ class FontVariantAlternatesParser {
 
   enum class ParseResult { kConsumedValue, kDisallowedValue, kUnknownValue };
 
-  ParseResult ConsumeAlternates(CSSParserTokenStream& stream,
-                                std::shared_ptr<const CSSParserContext> context);
+  ParseResult ConsumeAlternates(CSSParserTokenStream& stream, std::shared_ptr<const CSSParserContext> context);
 
   std::shared_ptr<const CSSValue> FinalizeValue();
 
  private:
-  bool ConsumeAlternate(CSSParserTokenStream& stream,
-                        std::shared_ptr<const CSSParserContext> context);
+  bool ConsumeAlternate(CSSParserTokenStream& stream, std::shared_ptr<const CSSParserContext> context);
 
   bool ConsumeHistoricalForms(CSSParserTokenStream& stream);
 
@@ -43,6 +41,6 @@ class FontVariantAlternatesParser {
   std::shared_ptr<cssvalue::CSSAlternateValue> annotation_ = nullptr;
 };
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_CSS_PARSER_FONT_VARIANT_ALTERNATES_PARSER_H_

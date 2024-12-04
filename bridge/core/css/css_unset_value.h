@@ -9,7 +9,6 @@
 #ifndef WEBF_CSS_UNSET_VALUE_H
 #define WEBF_CSS_UNSET_VALUE_H
 
-
 #include "core/base/types/pass_key.h"
 #include "core/css/css_value.h"
 #include "foundation/casting.h"
@@ -30,9 +29,7 @@ class CSSUnsetValue : public CSSValue {
 
   bool Equals(const CSSUnsetValue&) const { return true; }
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-    CSSValue::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const { CSSValue::TraceAfterDispatch(visitor); }
 };
 
 }  // namespace cssvalue

@@ -11,9 +11,9 @@
 
 #include <cassert>
 #include <variant>
-#include "foundation/macros.h"
 #include "core/css/css_anchor_query_enums.h"
 #include "core/style/anchor_specifier_value.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -31,17 +31,12 @@ class AnchorQuery {
               const AnchorSpecifierValue* anchor_specifier,
               float percentage,
               std::variant<CSSAnchorValue, CSSAnchorSizeValue> value)
-      : query_type_(query_type),
-        anchor_specifier_(anchor_specifier),
-        percentage_(percentage),
-        value_(value) {
+      : query_type_(query_type), anchor_specifier_(anchor_specifier), percentage_(percentage), value_(value) {
     assert(anchor_specifier);
   }
 
   CSSAnchorQueryType Type() const { return query_type_; }
-  const AnchorSpecifierValue& AnchorSpecifier() const {
-    return *anchor_specifier_;
-  }
+  const AnchorSpecifierValue& AnchorSpecifier() const { return *anchor_specifier_; }
   CSSAnchorValue AnchorSide() const {
     assert(query_type_ == CSSAnchorQueryType::kAnchor);
     return std::get<CSSAnchorValue>(value_);

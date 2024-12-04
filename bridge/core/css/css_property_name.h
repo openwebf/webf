@@ -10,9 +10,9 @@
 #define WEBF_CSS_PROPERTY_NAME_H
 
 #include <optional>
-#include "foundation/macros.h"
-#include "foundation/atomic_string.h"
 #include "css_property_names.h"
+#include "foundation/atomic_string.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -24,21 +24,17 @@ class CSSPropertyName {
   WEBF_STACK_ALLOCATED();
 
  public:
-  explicit CSSPropertyName(CSSPropertyID property_id)
-      : value_(static_cast<int>(property_id)) {
+  explicit CSSPropertyName(CSSPropertyID property_id) : value_(static_cast<int>(property_id)) {
     assert(Id() != CSSPropertyID::kInvalid);
     assert(Id() != CSSPropertyID::kVariable);
   }
 
   explicit CSSPropertyName(const AtomicString& custom_property_name)
-      : value_(static_cast<int>(CSSPropertyID::kVariable)),
-        custom_property_name_(custom_property_name) {
+      : value_(static_cast<int>(CSSPropertyID::kVariable)), custom_property_name_(custom_property_name) {
     assert(!custom_property_name.empty());
   }
 
-  static std::optional<CSSPropertyName> From(
-      const ExecutingContext* execution_context,
-      const std::string& value) {
+  static std::optional<CSSPropertyName> From(const ExecutingContext* execution_context, const std::string& value) {
     const CSSPropertyID property_id = CssPropertyID(execution_context, value);
     if (property_id == CSSPropertyID::kInvalid) {
       return std::nullopt;
@@ -50,9 +46,7 @@ class CSSPropertyName {
   }
 
   bool operator==(const CSSPropertyName&) const;
-  bool operator!=(const CSSPropertyName& other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const CSSPropertyName& other) const { return !(*this == other); }
 
   [[nodiscard]] CSSPropertyID Id() const {
     assert(!IsEmptyValue() && !IsDeletedValue());
@@ -69,9 +63,7 @@ class CSSPropertyName {
   // For HashTraits::ConstructDeletedValue(...).
   static constexpr int kDeletedValue = -2;
 
-  explicit CSSPropertyName(int value) : value_(value) {
-    assert(value == kEmptyValue || value == kDeletedValue);
-  }
+  explicit CSSPropertyName(int value) : value_(value) { assert(value == kEmptyValue || value == kDeletedValue); }
 
   unsigned GetHash() const;
   bool IsEmptyValue() const { return value_ == kEmptyValue; }
@@ -82,7 +74,6 @@ class CSSPropertyName {
   int value_;
   AtomicString custom_property_name_;
 };
-
 
 }  // namespace webf
 

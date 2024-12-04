@@ -4,8 +4,8 @@
 
 #include "css_direction_aware_resolver.h"
 #include "css_property_instance.h"
-#include "shorthands.h"
 #include "longhands.h"
+#include "shorthands.h"
 #include "style_property_shorthand.h"
 
 namespace webf {
@@ -32,9 +32,7 @@ constexpr uint8_t kEndEndMap[kWritingModeSize] = {kBottomRightCorner, kBottomLef
                                                   kBottomLeftCorner, kTopRightCorner};
 
 // Check at compile time that related enums stay in sync.
-#define STATIC_ASSERT_ENUM(a, b)                            \
-  static_assert(static_cast<int>(a) == static_cast<int>(b), \
-                "mismatching enum: " #a)
+#define STATIC_ASSERT_ENUM(a, b) static_assert(static_cast<int>(a) == static_cast<int>(b), "mismatching enum: " #a)
 
 // Prerequisites for Physical*Mapping().
 STATIC_ASSERT_ENUM(PhysicalDirection::kUp, 0);

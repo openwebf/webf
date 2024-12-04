@@ -108,8 +108,7 @@ TextStream& TextStream::operator<<(const std::string& string) {
   return *this;
 }
 
-TextStream& TextStream::operator<<(
-    const FormatNumberRespectingIntegers& number_to_format) {
+TextStream& TextStream::operator<<(const FormatNumberRespectingIntegers& number_to_format) {
   if (HasFractions(number_to_format.value))
     return *this << number_to_format.value;
 

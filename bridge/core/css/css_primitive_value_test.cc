@@ -3,13 +3,13 @@
 // found in the LICENSE file.
 
 #include "core/css/css_primitive_value.h"
+#include "core/css/css_math_function_value.h"
+#include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_test_helpers.h"
 #include "core/css/css_to_length_conversion_data.h"
 #include "core/dom/document.h"
-#include "core/css/css_math_function_value.h"
-#include "core/css/css_numeric_literal_value.h"
-#include "gtest/gtest.h"
 #include "core/dom/tree_scope.h"
+#include "gtest/gtest.h"
 #include "webf_test_env.h"
 
 namespace webf {
@@ -58,25 +58,21 @@ std::shared_ptr<const CSSNumericLiteralValue> Create(UnitValue v) {
 }
 
 std::shared_ptr<CSSPrimitiveValue> CreateAddition(UnitValue a, UnitValue b) {
-  return CSSMathFunctionValue::Create(
-      CSSMathExpressionOperation::CreateArithmeticOperation(
-          CSSMathExpressionNumericLiteral::Create(Create(a)),
-          CSSMathExpressionNumericLiteral::Create(Create(b)),
-          CSSMathOperator::kAdd));
+  return CSSMathFunctionValue::Create(CSSMathExpressionOperation::CreateArithmeticOperation(
+      CSSMathExpressionNumericLiteral::Create(Create(a)), CSSMathExpressionNumericLiteral::Create(Create(b)),
+      CSSMathOperator::kAdd));
 }
 
 std::shared_ptr<CSSPrimitiveValue> CreateNonNegativeSubtraction(UnitValue a, UnitValue b) {
   return CSSMathFunctionValue::Create(
-      CSSMathExpressionOperation::CreateArithmeticOperation(
-          CSSMathExpressionNumericLiteral::Create(Create(a)),
-          CSSMathExpressionNumericLiteral::Create(Create(b)),
-          CSSMathOperator::kSubtract),
+      CSSMathExpressionOperation::CreateArithmeticOperation(CSSMathExpressionNumericLiteral::Create(Create(a)),
+                                                            CSSMathExpressionNumericLiteral::Create(Create(b)),
+                                                            CSSMathOperator::kSubtract),
       CSSPrimitiveValue::ValueRange::kNonNegative);
 }
 
 UnitType ToCanonicalUnit(CSSPrimitiveValue::UnitType unit) {
-  return CSSPrimitiveValue::CanonicalUnitTypeForCategory(
-      CSSPrimitiveValue::UnitTypeToUnitCategory(unit));
+  return CSSPrimitiveValue::CanonicalUnitTypeForCategory(CSSPrimitiveValue::UnitTypeToUnitCategory(unit));
 }
 
 TEST_F(CSSPrimitiveValueTest, IsTime) {
@@ -108,8 +104,7 @@ TEST_F(CSSPrimitiveValueTest, ClampTimeToNonNegative) {
 TEST_F(CSSPrimitiveValueTest, ClampAngleToNonNegative) {
   UnitValue a = {89, UnitType::kDegrees};
   UnitValue b = {0.25, UnitType::kTurns};
-  EXPECT_EQ(0.0, CreateNonNegativeSubtraction(a, b)->ComputeDegrees(
-                     CSSToLengthConversionData()));
+  EXPECT_EQ(0.0, CreateNonNegativeSubtraction(a, b)->ComputeDegrees(CSSToLengthConversionData()));
 }
 
 TEST_F(CSSPrimitiveValueTest, IsResolution) {
@@ -149,8 +144,7 @@ TEST_F(CSSPrimitiveValueTest, PositiveInfinityLengthClamp) {
   UnitValue b = {1, UnitType::kPixels};
   std::shared_ptr<const CSSPrimitiveValue> value = CreateAddition(a, b);
   CSSToLengthConversionData conversion_data;
-  EXPECT_EQ(std::numeric_limits<double>::max(),
-            value->ComputeLength<double>(conversion_data));
+  EXPECT_EQ(std::numeric_limits<double>::max(), value->ComputeLength<double>(conversion_data));
 }
 
 TEST_F(CSSPrimitiveValueTest, NegativeInfinityLengthClamp) {
@@ -158,8 +152,7 @@ TEST_F(CSSPrimitiveValueTest, NegativeInfinityLengthClamp) {
   UnitValue b = {1, UnitType::kPixels};
   std::shared_ptr<const CSSPrimitiveValue> value = CreateAddition(a, b);
   CSSToLengthConversionData conversion_data;
-  EXPECT_EQ(std::numeric_limits<double>::lowest(),
-            value->ComputeLength<double>(conversion_data));
+  EXPECT_EQ(std::numeric_limits<double>::lowest(), value->ComputeLength<double>(conversion_data));
 }
 
 TEST_F(CSSPrimitiveValueTest, NaNLengthClamp) {
@@ -187,8 +180,8 @@ TEST_F(CSSPrimitiveValueTest, NegativeInfinityPercentLengthClamp) {
 }
 
 TEST_F(CSSPrimitiveValueTest, NaNPercentLengthClamp) {
-  std::shared_ptr<const CSSPrimitiveValue> value = Create(
-      {-std::numeric_limits<double>::quiet_NaN(), UnitType::kPercentage});
+  std::shared_ptr<const CSSPrimitiveValue> value =
+      Create({-std::numeric_limits<double>::quiet_NaN(), UnitType::kPercentage});
   CSSToLengthConversionData conversion_data;
   Length length = value->ConvertToLength(conversion_data);
   EXPECT_EQ(0.0, length.Percent());
@@ -200,21 +193,16 @@ TEST_F(CSSPrimitiveValueTest, GetDoubleValueWithoutClampingAllowNaN) {
   EXPECT_TRUE(std::isnan(value->GetDoubleValueWithoutClamping()));
 }
 
-TEST_F(CSSPrimitiveValueTest,
-       GetDoubleValueWithoutClampingAllowPositveInfinity) {
-  std::shared_ptr<const CSSPrimitiveValue> value =
-      Create({std::numeric_limits<double>::infinity(), UnitType::kPixels});
-  EXPECT_TRUE(std::isinf(value->GetDoubleValueWithoutClamping()) &&
-              value->GetDoubleValueWithoutClamping() > 0);
+TEST_F(CSSPrimitiveValueTest, GetDoubleValueWithoutClampingAllowPositveInfinity) {
+  std::shared_ptr<const CSSPrimitiveValue> value = Create({std::numeric_limits<double>::infinity(), UnitType::kPixels});
+  EXPECT_TRUE(std::isinf(value->GetDoubleValueWithoutClamping()) && value->GetDoubleValueWithoutClamping() > 0);
 }
 
-TEST_F(CSSPrimitiveValueTest,
-       GetDoubleValueWithoutClampingAllowNegativeInfinity) {
+TEST_F(CSSPrimitiveValueTest, GetDoubleValueWithoutClampingAllowNegativeInfinity) {
   std::shared_ptr<const CSSPrimitiveValue> value =
       Create({-std::numeric_limits<double>::infinity(), UnitType::kPixels});
 
-  EXPECT_TRUE(std::isinf(value->GetDoubleValueWithoutClamping()) &&
-              value->GetDoubleValueWithoutClamping() < 0);
+  EXPECT_TRUE(std::isinf(value->GetDoubleValueWithoutClamping()) && value->GetDoubleValueWithoutClamping() < 0);
 }
 
 TEST_F(CSSPrimitiveValueTest, GetDoubleValueClampNaN) {
@@ -224,8 +212,7 @@ TEST_F(CSSPrimitiveValueTest, GetDoubleValueClampNaN) {
 }
 
 TEST_F(CSSPrimitiveValueTest, GetDoubleValueClampPositiveInfinity) {
-  std::shared_ptr<const CSSPrimitiveValue> value =
-      Create({std::numeric_limits<double>::infinity(), UnitType::kPixels});
+  std::shared_ptr<const CSSPrimitiveValue> value = Create({std::numeric_limits<double>::infinity(), UnitType::kPixels});
   EXPECT_EQ(std::numeric_limits<double>::max(), value->GetDoubleValue());
 }
 
@@ -244,9 +231,7 @@ TEST_F(CSSPrimitiveValueTest, TestCanonicalizingNumberUnitCategory) {
 }
 
 TEST_F(CSSPrimitiveValueTest, HasContainerRelativeUnits) {
-  auto env = TEST_init([](double contextId, const char* errmsg) {
-    WEBF_LOG(VERBOSE) << errmsg;
-  });
+  auto env = TEST_init([](double contextId, const char* errmsg) { WEBF_LOG(VERBOSE) << errmsg; });
   auto* document = env->page()->executingContext()->document();
   EXPECT_TRUE(HasContainerRelativeUnits("1cqw", document));
   EXPECT_TRUE(HasContainerRelativeUnits("1cqh", document));
@@ -267,9 +252,7 @@ TEST_F(CSSPrimitiveValueTest, HasContainerRelativeUnits) {
 }
 
 TEST_F(CSSPrimitiveValueTest, HasStaticViewportUnits) {
-  auto env = TEST_init([](double contextId, const char* errmsg) {
-    WEBF_LOG(VERBOSE) << errmsg;
-  });
+  auto env = TEST_init([](double contextId, const char* errmsg) { WEBF_LOG(VERBOSE) << errmsg; });
   auto* document = env->page()->executingContext()->document();
   // v*
   EXPECT_TRUE(HasStaticViewportUnits("1vw", document));
@@ -321,9 +304,7 @@ TEST_F(CSSPrimitiveValueTest, HasStaticViewportUnits) {
 }
 
 TEST_F(CSSPrimitiveValueTest, HasDynamicViewportUnits) {
-  auto env = TEST_init([](double contextId, const char* errmsg) {
-    WEBF_LOG(VERBOSE) << errmsg;
-  });
+  auto env = TEST_init([](double contextId, const char* errmsg) { WEBF_LOG(VERBOSE) << errmsg; });
   auto* document = env->page()->executingContext()->document();
   // dv*
   EXPECT_TRUE(HasDynamicViewportUnits("1dvw", document));
@@ -344,110 +325,81 @@ TEST_F(CSSPrimitiveValueTest, HasDynamicViewportUnits) {
 
 TEST_F(CSSPrimitiveValueTest, ComputeMethodsWithLengthResolver) {
   {
-    auto pxs = CSSMathExpressionNumericLiteral::Create(
-        12.0, CSSPrimitiveValue::UnitType::kPixels);
-    auto ems = CSSMathExpressionNumericLiteral::Create(
-        1.0, CSSPrimitiveValue::UnitType::kEms);
-    auto subtraction = CSSMathExpressionOperation::CreateArithmeticOperation(
-        pxs, ems, CSSMathOperator::kSubtract);
-    auto sign = CSSMathExpressionOperation::CreateSignRelatedFunction(
-        {subtraction}, CSSValueID::kSign);
-    auto degs = CSSMathExpressionNumericLiteral::Create(
-        10.0, CSSPrimitiveValue::UnitType::kDegrees);
-    auto expression = CSSMathExpressionOperation::CreateArithmeticOperation(
-        sign, degs, CSSMathOperator::kMultiply);
+    auto pxs = CSSMathExpressionNumericLiteral::Create(12.0, CSSPrimitiveValue::UnitType::kPixels);
+    auto ems = CSSMathExpressionNumericLiteral::Create(1.0, CSSPrimitiveValue::UnitType::kEms);
+    auto subtraction = CSSMathExpressionOperation::CreateArithmeticOperation(pxs, ems, CSSMathOperator::kSubtract);
+    auto sign = CSSMathExpressionOperation::CreateSignRelatedFunction({subtraction}, CSSValueID::kSign);
+    auto degs = CSSMathExpressionNumericLiteral::Create(10.0, CSSPrimitiveValue::UnitType::kDegrees);
+    auto expression = CSSMathExpressionOperation::CreateArithmeticOperation(sign, degs, CSSMathOperator::kMultiply);
     std::shared_ptr<const CSSPrimitiveValue> value = CSSMathFunctionValue::Create(expression);
 
     Font font;
     CSSToLengthConversionData length_resolver = CSSToLengthConversionData();
-    length_resolver.SetFontSizes(
-        CSSToLengthConversionData::FontSizes(10.0f, 10.0f, &font, 1.0f));
+    length_resolver.SetFontSizes(CSSToLengthConversionData::FontSizes(10.0f, 10.0f, &font, 1.0f));
     EXPECT_EQ(10.0, value->ComputeDegrees(length_resolver));
     EXPECT_EQ("calc(sign(-1em + 12px) * 10deg)", value->CustomCSSText());
   }
 }
 
 TEST_F(CSSPrimitiveValueTest, ContainerProgressTreeScope) {
-  auto env = TEST_init([](double contextId, const char* errmsg) {
-    WEBF_LOG(VERBOSE) << errmsg;
-  });
+  auto env = TEST_init([](double contextId, const char* errmsg) { WEBF_LOG(VERBOSE) << errmsg; });
   auto* document = env->page()->executingContext()->document();
-  std::shared_ptr<const CSSValue> value = css_test_helpers::ParseValue(
-      *document, "<number>",
-      "container-progress(width of my-container from 0px to 1px)");
+  std::shared_ptr<const CSSValue> value =
+      css_test_helpers::ParseValue(*document, "<number>", "container-progress(width of my-container from 0px to 1px)");
   ASSERT_TRUE(value);
 
   std::shared_ptr<const CSSValue> scoped_value = value->EnsureScopedValue(const_cast<const Document*>(document));
   EXPECT_NE(value, scoped_value);
   EXPECT_TRUE(scoped_value->IsScopedValue());
   // Don't crash:
-  std::shared_ptr<const CSSValue> scoped_value2 =
-      scoped_value->EnsureScopedValue(document);
+  std::shared_ptr<const CSSValue> scoped_value2 = scoped_value->EnsureScopedValue(document);
   EXPECT_TRUE(scoped_value2->IsScopedValue());
   EXPECT_EQ(scoped_value, scoped_value2);
 }
 
 TEST_F(CSSPrimitiveValueTest, CSSPrimitiveValueOperations) {
-  auto numeric_percentage = CSSNumericLiteralValue::Create(
-      10, CSSPrimitiveValue::UnitType::kPercentage);
-  auto numeric_number =
-      CSSNumericLiteralValue::Create(10, CSSPrimitiveValue::UnitType::kNumber);
-  auto node_10_px = CSSMathExpressionNumericLiteral::Create(
-      10, CSSPrimitiveValue::UnitType::kPixels);
-  auto node_20_em = CSSMathExpressionNumericLiteral::Create(
-      20, CSSPrimitiveValue::UnitType::kEms);
-  auto node_subtract = CSSMathExpressionOperation::CreateArithmeticOperation(
-      node_10_px, node_20_em, CSSMathOperator::kSubtract);
-  auto node_sign = CSSMathExpressionOperation::CreateSignRelatedFunction(
-      {node_subtract}, CSSValueID::kSign);
+  auto numeric_percentage = CSSNumericLiteralValue::Create(10, CSSPrimitiveValue::UnitType::kPercentage);
+  auto numeric_number = CSSNumericLiteralValue::Create(10, CSSPrimitiveValue::UnitType::kNumber);
+  auto node_10_px = CSSMathExpressionNumericLiteral::Create(10, CSSPrimitiveValue::UnitType::kPixels);
+  auto node_20_em = CSSMathExpressionNumericLiteral::Create(20, CSSPrimitiveValue::UnitType::kEms);
+  auto node_subtract =
+      CSSMathExpressionOperation::CreateArithmeticOperation(node_10_px, node_20_em, CSSMathOperator::kSubtract);
+  auto node_sign = CSSMathExpressionOperation::CreateSignRelatedFunction({node_subtract}, CSSValueID::kSign);
   auto function = CSSMathFunctionValue::Create(node_sign);
   EXPECT_EQ(function->Multiply(1, CSSPrimitiveValue::UnitType::kPixels)
                 ->Add(10, CSSPrimitiveValue::UnitType::kPixels)
                 ->CustomCSSText(),
             "calc(10px + sign(-20em + 10px) * 1px)");
-  EXPECT_EQ(function->MultiplyBy(10, CSSPrimitiveValue::UnitType::kNumber)
-                ->CustomCSSText(),
+  EXPECT_EQ(function->MultiplyBy(10, CSSPrimitiveValue::UnitType::kNumber)->CustomCSSText(),
             "calc(10 * sign(-20em + 10px))");
-  EXPECT_EQ(function->MultiplyBy(1, CSSPrimitiveValue::UnitType::kPixels)
-                ->Subtract(*numeric_percentage)
-                ->CustomCSSText(),
-            "calc(-10% + 1px * sign(-20em + 10px))");
-  EXPECT_EQ(function->Divide(20, CSSPrimitiveValue::UnitType::kNumber)
-                ->CustomCSSText(),
-            "calc(sign(-20em + 10px) / 20)");
-  EXPECT_EQ(function->Subtract(*function)->CustomCSSText(),
-            "calc(sign(-20em + 10px) - sign(-20em + 10px))");
   EXPECT_EQ(
-      numeric_percentage->SubtractFrom(10, CSSPrimitiveValue::UnitType::kPixels)
-          ->CustomCSSText(),
-      "calc(-10% + 10px)");
-  EXPECT_EQ(numeric_number->Subtract(10, CSSPrimitiveValue::UnitType::kNumber)
-                ->CustomCSSText(),
-            "0");
+      function->MultiplyBy(1, CSSPrimitiveValue::UnitType::kPixels)->Subtract(*numeric_percentage)->CustomCSSText(),
+      "calc(-10% + 1px * sign(-20em + 10px))");
+  EXPECT_EQ(function->Divide(20, CSSPrimitiveValue::UnitType::kNumber)->CustomCSSText(),
+            "calc(sign(-20em + 10px) / 20)");
+  EXPECT_EQ(function->Subtract(*function)->CustomCSSText(), "calc(sign(-20em + 10px) - sign(-20em + 10px))");
+  EXPECT_EQ(numeric_percentage->SubtractFrom(10, CSSPrimitiveValue::UnitType::kPixels)->CustomCSSText(),
+            "calc(-10% + 10px)");
+  EXPECT_EQ(numeric_number->Subtract(10, CSSPrimitiveValue::UnitType::kNumber)->CustomCSSText(), "0");
 }
 
 TEST_F(CSSPrimitiveValueTest, ComputeValueToCanonicalUnit) {
-  std::shared_ptr<const CSSNumericLiteralValue> numeric_percentage = CSSNumericLiteralValue::Create(
-      10, CSSPrimitiveValue::UnitType::kPercentage);
-  auto node_20_px = CSSMathExpressionNumericLiteral::Create(
-      20, CSSPrimitiveValue::UnitType::kPixels);
-  auto node_2_em = CSSMathExpressionNumericLiteral::Create(
-      2, CSSPrimitiveValue::UnitType::kEms);
+  std::shared_ptr<const CSSNumericLiteralValue> numeric_percentage =
+      CSSNumericLiteralValue::Create(10, CSSPrimitiveValue::UnitType::kPercentage);
+  auto node_20_px = CSSMathExpressionNumericLiteral::Create(20, CSSPrimitiveValue::UnitType::kPixels);
+  auto node_2_em = CSSMathExpressionNumericLiteral::Create(2, CSSPrimitiveValue::UnitType::kEms);
   auto node_sub =
-      CSSMathExpressionOperation::CreateArithmeticOperation(
-          node_20_px, node_2_em, CSSMathOperator::kSubtract);
+      CSSMathExpressionOperation::CreateArithmeticOperation(node_20_px, node_2_em, CSSMathOperator::kSubtract);
   auto function = CSSMathFunctionValue::Create(node_sub);
 
   Font font;
   CSSToLengthConversionData length_resolver = CSSToLengthConversionData();
-  length_resolver.SetFontSizes(
-      CSSToLengthConversionData::FontSizes(10.0f, 10.0f, &font, 1.0f));
+  length_resolver.SetFontSizes(CSSToLengthConversionData::FontSizes(10.0f, 10.0f, &font, 1.0f));
 
   EXPECT_EQ(function->ComputeValueInCanonicalUnit(length_resolver), 0);
-  EXPECT_EQ(numeric_percentage->ComputeValueInCanonicalUnit(length_resolver),
-            10);
+  EXPECT_EQ(numeric_percentage->ComputeValueInCanonicalUnit(length_resolver), 10);
 }
 
 }  // namespace
 
-}
+}  // namespace webf

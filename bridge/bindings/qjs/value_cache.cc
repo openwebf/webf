@@ -1,10 +1,10 @@
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
-#include <cassert>
 #include "value_cache.h"
+#include <cassert>
 #include "foundation/atomic_string_table.h"
 
 namespace webf {
@@ -56,13 +56,13 @@ std::shared_ptr<StringImpl> StringCache::GetStringFromJSAtom(JSContext* ctx, JSA
 }
 
 void StringCache::Dispose() {
-  for(auto&& item : string_cache_) {
+  for (auto&& item : string_cache_) {
     JS_FreeAtomRT(runtime_, item.second);
   }
 
-  for(auto&& item : atom_to_string_cache) {
+  for (auto&& item : atom_to_string_cache) {
     JS_FreeAtomRT(runtime_, item.first);
   }
 }
 
-}
+}  // namespace webf

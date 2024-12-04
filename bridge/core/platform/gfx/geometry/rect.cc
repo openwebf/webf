@@ -94,8 +94,7 @@ void Rect::Offset(const Vector2d& distance) {
 }
 
 Insets Rect::InsetsFrom(const Rect& inner) const {
-  return Insets::TLBR(inner.y() - y(), inner.x() - x(),
-                      bottom() - inner.bottom(), right() - inner.right());
+  return Insets::TLBR(inner.y() - y(), inner.x() - x(), bottom() - inner.bottom(), right() - inner.right());
 }
 
 bool Rect::operator<(const Rect& other) const {
@@ -111,18 +110,16 @@ bool Rect::operator<(const Rect& other) const {
 }
 
 bool Rect::Contains(int point_x, int point_y) const {
-  return (point_x >= x()) && (point_x < right()) && (point_y >= y()) &&
-         (point_y < bottom());
+  return (point_x >= x()) && (point_x < right()) && (point_y >= y()) && (point_y < bottom());
 }
 
 bool Rect::Contains(const Rect& rect) const {
-  return (rect.x() >= x() && rect.right() <= right() && rect.y() >= y() &&
-          rect.bottom() <= bottom());
+  return (rect.x() >= x() && rect.right() <= right() && rect.y() >= y() && rect.bottom() <= bottom());
 }
 
 bool Rect::Intersects(const Rect& rect) const {
-  return !(IsEmpty() || rect.IsEmpty() || rect.x() >= right() ||
-           rect.right() <= x() || rect.y() >= bottom() || rect.bottom() <= y());
+  return !(IsEmpty() || rect.IsEmpty() || rect.x() >= right() || rect.right() <= x() || rect.y() >= bottom() ||
+           rect.bottom() <= y());
 }
 
 void Rect::Intersect(const Rect& rect) {
@@ -172,8 +169,7 @@ void Rect::Union(const Rect& rect) {
 }
 
 void Rect::UnionEvenIfEmpty(const Rect& rect) {
-  SetByBounds(std::min(x(), rect.x()), std::min(y(), rect.y()),
-              std::max(right(), rect.right()),
+  SetByBounds(std::min(x(), rect.x()), std::min(y(), rect.y()), std::max(right(), rect.right()),
               std::max(bottom(), rect.bottom()));
 }
 
@@ -236,28 +232,22 @@ void Rect::Transpose() {
 
 void Rect::SplitVertically(Rect& left_half, Rect& right_half) const {
   left_half.SetRect(x(), y(), width() / 2, height());
-  right_half.SetRect(left_half.right(), y(), width() - left_half.width(),
-                     height());
+  right_half.SetRect(left_half.right(), y(), width() - left_half.width(), height());
 }
 
 void Rect::SplitHorizontally(Rect& top_half, Rect& bottom_half) const {
   top_half.SetRect(x(), y(), width(), height() / 2);
-  bottom_half.SetRect(x(), top_half.bottom(), width(),
-                      height() - top_half.height());
+  bottom_half.SetRect(x(), top_half.bottom(), width(), height() - top_half.height());
 }
 
 bool Rect::SharesEdgeWith(const Rect& rect) const {
-  return (y() == rect.y() && height() == rect.height() &&
-          (x() == rect.right() || right() == rect.x())) ||
-         (x() == rect.x() && width() == rect.width() &&
-          (y() == rect.bottom() || bottom() == rect.y()));
+  return (y() == rect.y() && height() == rect.height() && (x() == rect.right() || right() == rect.x())) ||
+         (x() == rect.x() && width() == rect.width() && (y() == rect.bottom() || bottom() == rect.y()));
 }
 
 int Rect::ManhattanDistanceToPoint(const Point& point) const {
-  int x_distance =
-      std::max<int>(0, std::max(x() - point.x(), point.x() - right()));
-  int y_distance =
-      std::max<int>(0, std::max(y() - point.y(), point.y() - bottom()));
+  int x_distance = std::max<int>(0, std::max(x() - point.x(), point.x() - right()));
+  int y_distance = std::max<int>(0, std::max(y() - point.y(), point.y() - bottom()));
 
   return x_distance + y_distance;
 }
@@ -273,17 +263,13 @@ int Rect::ManhattanInternalDistance(const Rect& rect) const {
 
 std::string Rect::ToString() const {
   char buffer[20];
-  snprintf(buffer, 10, "%s %s",
-           origin().ToString().c_str(),
-           size().ToString().c_str());
+  snprintf(buffer, 10, "%s %s", origin().ToString().c_str(), size().ToString().c_str());
   return buffer;
 }
 
 bool Rect::ApproximatelyEqual(const Rect& rect, int tolerance) const {
-  return std::abs(x() - rect.x()) <= tolerance &&
-         std::abs(y() - rect.y()) <= tolerance &&
-         std::abs(right() - rect.right()) <= tolerance &&
-         std::abs(bottom() - rect.bottom()) <= tolerance;
+  return std::abs(x() - rect.x()) <= tolerance && std::abs(y() - rect.y()) <= tolerance &&
+         std::abs(right() - rect.right()) <= tolerance && std::abs(bottom() - rect.bottom()) <= tolerance;
 }
 
 Rect operator+(const Rect& lhs, const Vector2d& rhs) {
@@ -324,14 +310,12 @@ Rect SubtractRects(const Rect& a, const Rect& b) {
 
 Rect BoundingRect(const Point& p1, const Point& p2) {
   Rect result;
-  result.SetByBounds(std::min(p1.x(), p2.x()), std::min(p1.y(), p2.y()),
-                     std::max(p1.x(), p2.x()), std::max(p1.y(), p2.y()));
+  result.SetByBounds(std::min(p1.x(), p2.x()), std::min(p1.y(), p2.y()), std::max(p1.x(), p2.x()),
+                     std::max(p1.y(), p2.y()));
   return result;
 }
 
-Rect ScaleToEnclosingRectIgnoringError(const Rect& rect,
-                                       float scale,
-                                       float epsilon) {
+Rect ScaleToEnclosingRectIgnoringError(const Rect& rect, float scale, float epsilon) {
   RectF rect_f(rect);
   rect_f.Scale(scale);
   return ToEnclosingRectIgnoringError(rect_f, epsilon);
@@ -353,15 +337,13 @@ Rect MaximumCoveredRect(const Rect& a, const Rect& b) {
   intersection.InclusiveIntersect(b);
   if (!intersection.size().IsZero()) {
     Rect vert_expanded_intersection = intersection;
-    vert_expanded_intersection.SetVerticalBounds(
-        std::min(a.y(), b.y()), std::max(a.bottom(), b.bottom()));
+    vert_expanded_intersection.SetVerticalBounds(std::min(a.y(), b.y()), std::max(a.bottom(), b.bottom()));
     if (vert_expanded_intersection.size().Area64() > maximum_area) {
       maximum = vert_expanded_intersection;
       maximum_area = vert_expanded_intersection.size().Area64();
     }
     Rect horiz_expanded_intersection = intersection;
-    horiz_expanded_intersection.SetHorizontalBounds(
-        std::min(a.x(), b.x()), std::max(a.right(), b.right()));
+    horiz_expanded_intersection.SetHorizontalBounds(std::min(a.x(), b.x()), std::max(a.right(), b.right()));
     if (horiz_expanded_intersection.size().Area64() > maximum_area) {
       maximum = horiz_expanded_intersection;
       maximum_area = horiz_expanded_intersection.size().Area64();

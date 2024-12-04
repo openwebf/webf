@@ -10,9 +10,9 @@
 #ifndef WEBF_STRING_UTIL_H
 #define WEBF_STRING_UTIL_H
 
-#include <string_view>
 #include <cctype>
 #include <string>
+#include <string_view>
 #include <type_traits>
 
 namespace base {
@@ -62,7 +62,6 @@ inline bool IsAsciiControl(Char c) {
   return c <= 0x1f || c == 0x7f;
 }
 
-
 // These threadsafe functions return references to globally unique empty
 // strings.
 //
@@ -90,7 +89,6 @@ extern const char kInfraAsciiWhitespace[];
 // Null-terminated string representing the UTF-8 byte order mark.
 extern const char kUtf8ByteOrderMark[];
 
-
 // Determines the type of ASCII character, independent of locale (the C
 // library versions will change based on locale).
 template <typename Char>
@@ -109,8 +107,7 @@ constexpr bool IsAsciiWhitespace(Char c) {
 // be individual units of a multi-unit code point.  Convert to 16- or 32-bit
 // values known to hold the full code point before calling this.
 template <typename Char>
-requires(sizeof(Char) > 1)
-    constexpr bool IsUnicodeWhitespace(Char c) {
+requires(sizeof(Char) > 1) constexpr bool IsUnicodeWhitespace(Char c) {
   // kWhitespaceWide is a null-terminated string.
   for (const auto* cur = kWhitespaceWide; *cur; ++cur) {
     if (static_cast<typename std::make_unsigned_t<wchar_t>>(*cur) ==
@@ -119,7 +116,6 @@ requires(sizeof(Char) > 1)
   }
   return false;
 }
-
 
 template <typename Char>
 inline bool IsUnicodeControl(Char c) {
@@ -138,7 +134,6 @@ inline bool IsHexDigit(Char c) {
   return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
 }
 
-
 bool ContainsOnlyASCIIOrEmpty(const std::string& string);
 
 // ASCII-specific tolower.  The standard library's tolower is locale sensitive,
@@ -147,8 +142,7 @@ std::string ToLowerASCII(const std::string& string);
 
 // ASCII-specific toupper.  The standard library's toupper is locale sensitive,
 // so we don't want to use it here.
-template <typename CharT,
-          typename = std::enable_if_t<std::is_integral_v<CharT>>>
+template <typename CharT, typename = std::enable_if_t<std::is_integral_v<CharT>>>
 CharT ToUpperASCII(CharT c) {
   return (c >= 'a' && c <= 'z') ? static_cast<CharT>(c + 'A' - 'a') : c;
 }
@@ -165,13 +159,10 @@ inline bool IsWhitespace(Char c) {
   }
 }
 
-inline bool EqualsCaseInsensitiveASCII(std::string_view a,
-                                        std::string b) {
-  return std::equal(a.begin(), a.end(), b.begin(), b.end(), [](char lhs, char rhs) -> bool {
-    return tolower(lhs) == tolower(rhs);
-  });
+inline bool EqualsCaseInsensitiveASCII(std::string_view a, std::string b) {
+  return std::equal(a.begin(), a.end(), b.begin(), b.end(),
+                    [](char lhs, char rhs) -> bool { return tolower(lhs) == tolower(rhs); });
 }
-
 
 }  // namespace base
 

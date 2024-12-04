@@ -9,8 +9,7 @@ namespace webf {
 
 namespace {
 // Adds the names to the set.
-static void AddToSet(const SpaceSplitString& strings,
-                     std::unordered_set<AtomicString, AtomicString::KeyHasher>* set) {
+static void AddToSet(const SpaceSplitString& strings, std::unordered_set<AtomicString, AtomicString::KeyHasher>* set) {
   for (size_t i = 0; i < strings.size(); i++) {
     set->emplace(strings[i]);
   }
@@ -50,4 +49,4 @@ size_t PartNames::size() {
   return names_.size();
 }
 
-}
+}  // namespace webf

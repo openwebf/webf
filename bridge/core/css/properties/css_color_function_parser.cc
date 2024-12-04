@@ -167,11 +167,11 @@ std::optional<double> ConsumeRelativeColorChannel(CSSParserTokenRange& input_ran
 
     // Don't consume the range if the parsing fails.
     CSSParserTokenRange calc_range = input_range;
-    auto calc_value =
-        CSSMathFunctionValue::Create(CSSMathExpressionNode::ParseMathFunction(
-                                         token.FunctionId(), css_parsing_utils::ConsumeFunction(calc_range), std::move(context),
-                                         Flags({AllowPercent}), kCSSAnchorQueryTypesNone, color_channel_map),
-                                     CSSPrimitiveValue::ValueRange::kAll);
+    auto calc_value = CSSMathFunctionValue::Create(
+        CSSMathExpressionNode::ParseMathFunction(token.FunctionId(), css_parsing_utils::ConsumeFunction(calc_range),
+                                                 std::move(context), Flags({AllowPercent}), kCSSAnchorQueryTypesNone,
+                                                 color_channel_map),
+        CSSPrimitiveValue::ValueRange::kAll);
     if (calc_value) {
       const CalculationResultCategory category = calc_value->Category();
       if (!expected_categories.Has(category)) {
@@ -287,7 +287,9 @@ static std::optional<double> ConsumeHue(CSSParserTokenRange& range, std::shared_
   return angle_value;
 }
 
-bool ColorFunctionParser::ConsumeChannel(CSSParserTokenRange& args, std::shared_ptr<const CSSParserContext> context, int i) {
+bool ColorFunctionParser::ConsumeChannel(CSSParserTokenRange& args,
+                                         std::shared_ptr<const CSSParserContext> context,
+                                         int i) {
   if (css_parsing_utils::ConsumeIdent<CSSValueID::kNone>(args)) {
     channel_types_[i] = ChannelType::kNone;
     has_none_ = true;
@@ -437,13 +439,15 @@ bool ColorFunctionParser::MakePerColorSpaceAdjustments() {
   return true;
 }
 
-std::shared_ptr<const CSSValue> ColorFunctionParser::ConsumeFunctionalSyntaxColor(CSSParserTokenRange& input_range,
-                                                                                  std::shared_ptr<const CSSParserContext> context) {
+std::shared_ptr<const CSSValue> ColorFunctionParser::ConsumeFunctionalSyntaxColor(
+    CSSParserTokenRange& input_range,
+    std::shared_ptr<const CSSParserContext> context) {
   return ConsumeFunctionalSyntaxColorInternal(input_range, context);
 }
 
-std::shared_ptr<const CSSValue> ColorFunctionParser::ConsumeFunctionalSyntaxColor(CSSParserTokenStream& input_stream,
-                                                                                  std::shared_ptr<const CSSParserContext> context) {
+std::shared_ptr<const CSSValue> ColorFunctionParser::ConsumeFunctionalSyntaxColor(
+    CSSParserTokenStream& input_stream,
+    std::shared_ptr<const CSSParserContext> context) {
   return ConsumeFunctionalSyntaxColorInternal(input_stream, context);
 }
 

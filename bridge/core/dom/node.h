@@ -9,15 +9,15 @@
 #include <set>
 #include <utility>
 
+#include "core/css/style_change_reason.h"
+#include "core/dom/node_rare_data.h"
 #include "events/event_target.h"
 #include "foundation/macros.h"
 #include "mutation_observer.h"
 #include "mutation_observer_registration.h"
 #include "plugin_api/node.h"
-#include "core/dom/node_rare_data.h"
 #include "qjs_union_dom_stringnode.h"
 #include "tree_scope.h"
-#include "core/css/style_change_reason.h"
 
 namespace webf {
 
@@ -220,10 +220,7 @@ class Node : public EventTarget {
   // dispatch synchronous events. On the other hand,
   // DidNotifySubtreeInsertionsToDocument() may modify the DOM tree, and may
   // dispatch synchronous events.
-  enum InsertionNotificationRequest {
-    kInsertionDone,
-    kInsertionShouldCallDidNotifySubtreeInsertions
-  };
+  enum InsertionNotificationRequest { kInsertionDone, kInsertionShouldCallDidNotifySubtreeInsertions };
 
   virtual InsertionNotificationRequest InsertedInto(ContainerNode& insertion_point);
 
@@ -327,9 +324,7 @@ class Node : public EventTarget {
 
   const MutationObserverRegistrationVector* MutationObserverRegistry();
   const MutationObserverRegistrationSet* TransientMutationObserverRegistry();
-  void SetIsFinishedParsingChildren(bool value) {
-    SetFlag(value, kIsFinishedParsingChildrenFlag);
-  }
+  void SetIsFinishedParsingChildren(bool value) { SetFlag(value, kIsFinishedParsingChildrenFlag); }
 
   void Trace(GCVisitor*) const override;
   const NodePublicMethods* nodePublicMethods();
@@ -342,14 +337,10 @@ class Node : public EventTarget {
   void ClearFlatTreeNodeData();
   void ClearFlatTreeNodeDataIfHostChanged(const ContainerNode& parent);
 
-  void SetStyleChange(StyleChangeType change_type) {
-    node_flags_ = (node_flags_ & ~kStyleChangeMask) | change_type;
-  }
+  void SetStyleChange(StyleChangeType change_type) { node_flags_ = (node_flags_ & ~kStyleChangeMask) | change_type; }
 
   Element* FlatTreeParentForChildDirty() const;
-  Element* GetStyleRecalcParent() const {
-    return FlatTreeParentForChildDirty();
-  }
+  Element* GetStyleRecalcParent() const { return FlatTreeParentForChildDirty(); }
   Element* GetReattachParent() const { return FlatTreeParentForChildDirty(); }
 
   bool IsTreeScope() const;
@@ -358,56 +349,47 @@ class Node : public EventTarget {
   bool InActiveDocument() const;
 
   // True if the style recalc process should recalculate style for this node.
-  bool NeedsStyleRecalc() const {
-    return GetStyleChangeType() != kNoStyleChange;
-  }
-  StyleChangeType GetStyleChangeType() const {
-    return static_cast<StyleChangeType>(node_flags_ & kStyleChangeMask);
-  }
+  bool NeedsStyleRecalc() const { return GetStyleChangeType() != kNoStyleChange; }
+  StyleChangeType GetStyleChangeType() const { return static_cast<StyleChangeType>(node_flags_ & kStyleChangeMask); }
   // True if the style recalculation process should traverse this node's
   // children when looking for nodes that need recalculation.
-  bool ChildNeedsStyleRecalc() const {
-    return GetFlag(kChildNeedsStyleRecalcFlag);
-  }
+  bool ChildNeedsStyleRecalc() const { return GetFlag(kChildNeedsStyleRecalcFlag); }
 
   // Mark node for forced layout tree re-attach during next lifecycle update.
   // This is to trigger layout tree re-attachment when we cannot detect that we
   // need to re-attach based on the computed style changes. This can happen when
   // re-slotting shadow host children, for instance.
-//  void SetForceReattachLayoutTree();
-//  bool GetForceReattachLayoutTree() const {
-//    return GetFlag(kForceReattachLayoutTree);
-//  }
+  //  void SetForceReattachLayoutTree();
+  //  bool GetForceReattachLayoutTree() const {
+  //    return GetFlag(kForceReattachLayoutTree);
+  //  }
 
-//  bool NeedsLayoutSubtreeUpdate() const;
-//  bool NeedsWhitespaceChildrenUpdate() const;
-//  bool IsDirtyForStyleRecalc() const {
-//    return NeedsStyleRecalc() || GetForceReattachLayoutTree() ||
-//           NeedsLayoutSubtreeUpdate();
-//  }
-//  bool IsDirtyForRebuildLayoutTree() const {
-//    return NeedsReattachLayoutTree() || NeedsLayoutSubtreeUpdate();
-//  }
+  //  bool NeedsLayoutSubtreeUpdate() const;
+  //  bool NeedsWhitespaceChildrenUpdate() const;
+  //  bool IsDirtyForStyleRecalc() const {
+  //    return NeedsStyleRecalc() || GetForceReattachLayoutTree() ||
+  //           NeedsLayoutSubtreeUpdate();
+  //  }
+  //  bool IsDirtyForRebuildLayoutTree() const {
+  //    return NeedsReattachLayoutTree() || NeedsLayoutSubtreeUpdate();
+  //  }
 
-  bool NeedsReattachLayoutTree() const {
-    return GetFlag(kNeedsReattachLayoutTree);
-  }
+  bool NeedsReattachLayoutTree() const { return GetFlag(kNeedsReattachLayoutTree); }
 
   void SetChildNeedsStyleRecalc() { SetFlag(kChildNeedsStyleRecalcFlag); }
   void ClearChildNeedsStyleRecalc() { ClearFlag(kChildNeedsStyleRecalcFlag); }
 
   // Sets the flag for the current node and also calls
   // MarkAncestorsWithChildNeedsStyleRecalc
-  void SetNeedsStyleRecalc(StyleChangeType, const StyleChangeReasonForTracing& = StyleChangeReasonForTracing::Create(""));
+  void SetNeedsStyleRecalc(StyleChangeType,
+                           const StyleChangeReasonForTracing& = StyleChangeReasonForTracing::Create(""));
   void ClearNeedsStyleRecalc();
 
   // Propagates a dirty bit breadcrumb for this element up the ancestor chain.
   void MarkAncestorsWithChildNeedsStyleRecalc();
 
   // True if there are pending invalidations against this node.
-  bool NeedsStyleInvalidation() const {
-    return GetFlag(kNeedsStyleInvalidationFlag);
-  }
+  bool NeedsStyleInvalidation() const { return GetFlag(kNeedsStyleInvalidationFlag); }
   void ClearNeedsStyleInvalidation() { ClearFlag(kNeedsStyleInvalidationFlag); }
   // Sets the flag for the current node and also calls
   // MarkAncestorsWithChildNeedsStyleInvalidation
@@ -420,19 +402,13 @@ class Node : public EventTarget {
   // but in node_computed_style.h. Please include that file if you want to use
   // this function.
   inline const ComputedStyle* GetComputedStyle() const;
-//  bool ShouldSkipMarkingStyleDirty() const;
+  //  bool ShouldSkipMarkingStyleDirty() const;
 
   // True if the style invalidation process should traverse this node's children
   // when looking for pending invalidations.
-  bool ChildNeedsStyleInvalidation() const {
-    return GetFlag(kChildNeedsStyleInvalidationFlag);
-  }
-  void SetChildNeedsStyleInvalidation() {
-    SetFlag(kChildNeedsStyleInvalidationFlag);
-  }
-  void ClearChildNeedsStyleInvalidation() {
-    ClearFlag(kChildNeedsStyleInvalidationFlag);
-  }
+  bool ChildNeedsStyleInvalidation() const { return GetFlag(kChildNeedsStyleInvalidationFlag); }
+  void SetChildNeedsStyleInvalidation() { SetFlag(kChildNeedsStyleInvalidationFlag); }
+  void ClearChildNeedsStyleInvalidation() { ClearFlag(kChildNeedsStyleInvalidationFlag); }
   void MarkAncestorsWithChildNeedsStyleInvalidation();
 
  private:

@@ -19,9 +19,8 @@
 
 namespace webf {
 
-void PendingInvalidations::ScheduleInvalidationSetsForNode(
-    const InvalidationLists& invalidation_lists,
-    ContainerNode& node) {
+void PendingInvalidations::ScheduleInvalidationSetsForNode(const InvalidationLists& invalidation_lists,
+                                                           ContainerNode& node) {
   assert(node.InActiveDocument());
   assert(!node.GetDocument().InStyleRecalc());
   bool requires_descendant_invalidation = false;
@@ -34,17 +33,16 @@ void PendingInvalidations::ScheduleInvalidationSetsForNode(
 
       if (invalidation_set->WholeSubtreeInvalid()) {
         // TODO(guopengfei)：暂不支持ShadowRoot，直接赋值&node
-        //auto* shadow_root = DynamicTo<ShadowRoot>(node);
-        //auto* subtree_root = shadow_root ? &shadow_root->host() : &node;
+        // auto* shadow_root = DynamicTo<ShadowRoot>(node);
+        // auto* subtree_root = shadow_root ? &shadow_root->host() : &node;
         auto* subtree_root = &node;
         /*if (subtree_root->IsElementNode()) {
           TRACE_STYLE_INVALIDATOR_INVALIDATION_SET(
               To<Element>(*subtree_root), kInvalidationSetInvalidatesSubtree,
               *invalidation_set);
         }*/
-        subtree_root->SetNeedsStyleRecalc(
-            kSubtreeStyleChange, StyleChangeReasonForTracing::Create(
-                                     style_change_reason::kRelatedStyleRule));
+        subtree_root->SetNeedsStyleRecalc(kSubtreeStyleChange,
+                                          StyleChangeReasonForTracing::Create(style_change_reason::kRelatedStyleRule));
         requires_descendant_invalidation = false;
         break;
       }
@@ -54,8 +52,7 @@ void PendingInvalidations::ScheduleInvalidationSetsForNode(
             To<Element>(node), kInvalidationSetInvalidatesSelf,
             *invalidation_set);*/
         node.SetNeedsStyleRecalc(kLocalStyleChange,
-                                 StyleChangeReasonForTracing::Create(
-                                     style_change_reason::kRelatedStyleRule));
+                                 StyleChangeReasonForTracing::Create(style_change_reason::kRelatedStyleRule));
       }
 
       if (!invalidation_set->IsEmpty()) {
@@ -71,8 +68,7 @@ void PendingInvalidations::ScheduleInvalidationSetsForNode(
      */
   }
 
-  if (!requires_descendant_invalidation &&
-      invalidation_lists.siblings.empty()) {
+  if (!requires_descendant_invalidation && invalidation_lists.siblings.empty()) {
     return;
   }
 
@@ -81,8 +77,7 @@ void PendingInvalidations::ScheduleInvalidationSetsForNode(
   // parent node which may not have a sibling.
   bool nth_only = !node.nextSibling();
   bool requires_sibling_invalidation = false;
-  NodeInvalidationSets& pending_invalidations =
-      EnsurePendingInvalidations(node);
+  NodeInvalidationSets& pending_invalidations = EnsurePendingInvalidations(node);
   for (auto& invalidation_set : invalidation_lists.siblings) {
     if (nth_only && !invalidation_set->IsNthSiblingInvalidationSet()) {
       continue;
@@ -117,74 +112,67 @@ void PendingInvalidations::ScheduleInvalidationSetsForNode(
   }
 }
 
-void PendingInvalidations::ScheduleSiblingInvalidationsAsDescendants(
-    const InvalidationLists& invalidation_lists,
-    ContainerNode& scheduling_parent) {
+void PendingInvalidations::ScheduleSiblingInvalidationsAsDescendants(const InvalidationLists& invalidation_lists,
+                                                                     ContainerNode& scheduling_parent) {
   assert(invalidation_lists.descendants.empty());
 
   if (invalidation_lists.siblings.empty()) {
     return;
   }
 
-  NodeInvalidationSets& pending_invalidations =
-      EnsurePendingInvalidations(scheduling_parent);
+  NodeInvalidationSets& pending_invalidations = EnsurePendingInvalidations(scheduling_parent);
 
   scheduling_parent.SetNeedsStyleInvalidation();
 
   Element* subtree_root = DynamicTo<Element>(scheduling_parent);
   if (!subtree_root) {
     // TODO(guopengfei)：暂不支持ShadowRoot，直接return
-    //subtree_root = &To<ShadowRoot>(scheduling_parent).host();
+    // subtree_root = &To<ShadowRoot>(scheduling_parent).host();
     return;
   }
 
   for (auto& invalidation_set : invalidation_lists.siblings) {
-    std::shared_ptr<DescendantInvalidationSet> descendants = std::shared_ptr<DescendantInvalidationSet>(
-        To<SiblingInvalidationSet>(*invalidation_set).SiblingDescendants());
+    std::shared_ptr<DescendantInvalidationSet> descendants =
+        std::shared_ptr<DescendantInvalidationSet>(To<SiblingInvalidationSet>(*invalidation_set).SiblingDescendants());
     bool whole_subtree_invalid = false;
     if (invalidation_set->WholeSubtreeInvalid()) {
-      //TRACE_STYLE_INVALIDATOR_INVALIDATION_SET(
+      // TRACE_STYLE_INVALIDATOR_INVALIDATION_SET(
       //    *subtree_root, kInvalidationSetInvalidatesSubtree, *invalidation_set);
       whole_subtree_invalid = true;
     } else if (descendants && descendants->WholeSubtreeInvalid()) {
-      //TRACE_STYLE_INVALIDATOR_INVALIDATION_SET(
+      // TRACE_STYLE_INVALIDATOR_INVALIDATION_SET(
       //    *subtree_root, kInvalidationSetInvalidatesSubtree, *descendants);
       whole_subtree_invalid = true;
     }
     if (whole_subtree_invalid) {
-      subtree_root->SetNeedsStyleRecalc(
-          kSubtreeStyleChange, StyleChangeReasonForTracing::Create(
-                                   style_change_reason::kRelatedStyleRule));
+      subtree_root->SetNeedsStyleRecalc(kSubtreeStyleChange,
+                                        StyleChangeReasonForTracing::Create(style_change_reason::kRelatedStyleRule));
       return;
     }
 
     if (invalidation_set->InvalidatesSelf() &&
         !pending_invalidations.Contains(pending_invalidations.Descendants(), invalidation_set)) {
       pending_invalidations.Descendants().push_back(invalidation_set);
-        }
+    }
 
-    if (descendants &&
-        !pending_invalidations.Contains(pending_invalidations.Descendants(), descendants)) {
+    if (descendants && !pending_invalidations.Contains(pending_invalidations.Descendants(), descendants)) {
       pending_invalidations.Descendants().push_back(descendants);
-        }
+    }
   }
 }
 
-void PendingInvalidations::RescheduleSiblingInvalidationsAsDescendants(
-    Element& element) {
+void PendingInvalidations::RescheduleSiblingInvalidationsAsDescendants(Element& element) {
   auto* parent = element.parentNode();
   assert(parent);
   if (parent->IsDocumentNode()) {
     return;
   }
-  auto pending_invalidations_iterator =
-      pending_invalidation_map_.find(&element);
+  auto pending_invalidations_iterator = pending_invalidation_map_.find(&element);
   if (pending_invalidations_iterator == pending_invalidation_map_.end() ||
       pending_invalidations_iterator->second.Siblings().empty()) {
     return;
   }
-  NodeInvalidationSets& pending_invalidations =
-      pending_invalidations_iterator->second;
+  NodeInvalidationSets& pending_invalidations = pending_invalidations_iterator->second;
 
   InvalidationLists invalidation_lists;
   for (const auto& invalidation_set : pending_invalidations.Siblings()) {
@@ -203,13 +191,12 @@ void PendingInvalidations::ClearInvalidation(ContainerNode& node) {
   node.ClearNeedsStyleInvalidation();
 }
 
-NodeInvalidationSets& PendingInvalidations::EnsurePendingInvalidations(
-    ContainerNode& node) {
+NodeInvalidationSets& PendingInvalidations::EnsurePendingInvalidations(ContainerNode& node) {
   auto it = pending_invalidation_map_.find(&node);
   if (it != pending_invalidation_map_.end()) {
     return it->second;
   }
-  auto add_result =pending_invalidation_map_.emplace(&node, NodeInvalidationSets());
+  auto add_result = pending_invalidation_map_.emplace(&node, NodeInvalidationSets());
   return add_result.first->second;
 }
 

@@ -81,6 +81,6 @@ class FontVariantNumericParser {
   std::shared_ptr<CSSValueList> result_;
 };
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_CSS_PARSER_FONT_VARIANT_NUMERIC_PARSER_H_

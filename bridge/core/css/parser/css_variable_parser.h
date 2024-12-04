@@ -37,9 +37,8 @@ class CSSVariableParser {
   // this function.
   //
   // https://drafts.css-houdini.org/css-properties-values-api-1/#universal-syntax-definition
-  static std::shared_ptr<const CSSUnparsedDeclarationValue> ParseUniversalSyntaxValue(const std::string&,
-                                                                                      std::shared_ptr<const CSSParserContext>&,
-                                                                                      bool is_animation_tainted);
+  static std::shared_ptr<const CSSUnparsedDeclarationValue>
+  ParseUniversalSyntaxValue(const std::string&, std::shared_ptr<const CSSParserContext>&, bool is_animation_tainted);
 
   // Consume a declaration without trying to parse it as any specific
   // property. This is mostly useful for either custom property declarations,
@@ -67,15 +66,14 @@ class CSSVariableParser {
   // will simply consume until AtEnd(), unless an error is encountered.
   //
   // [1] https://github.com/w3c/csswg-drafts/issues/9317
-  static std::shared_ptr<CSSVariableData> ConsumeUnparsedDeclaration(
-      CSSParserTokenStream& stream,
-      bool allow_important_annotation,
-      bool is_animation_tainted,
-      bool must_contain_variable_reference,
-      bool restricted_value,
-      bool comma_ends_declaration,
-      bool& important,
-      const ExecutingContext* context);
+  static std::shared_ptr<CSSVariableData> ConsumeUnparsedDeclaration(CSSParserTokenStream& stream,
+                                                                     bool allow_important_annotation,
+                                                                     bool is_animation_tainted,
+                                                                     bool must_contain_variable_reference,
+                                                                     bool restricted_value,
+                                                                     bool comma_ends_declaration,
+                                                                     bool& important,
+                                                                     const ExecutingContext* context);
 
   static bool IsValidVariableName(const CSSParserToken&);
   static bool IsValidVariableName(const std::string_view&);

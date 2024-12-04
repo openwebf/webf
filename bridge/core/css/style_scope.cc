@@ -5,17 +5,16 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "core/css/style_scope.h"
+#include "core/base/containers/span.h"
 #include "core/css/parser/css_selector_parser.h"
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/style_rule.h"
 #include "core/css/style_sheet_contents.h"
 #include "core/dom/element.h"
-#include "core/base/containers/span.h"
 
 namespace webf {
 
-StyleScope::StyleScope(std::shared_ptr<StyleRule> from, std::shared_ptr<CSSSelectorList> to)
-    : from_(from), to_(to) {}
+StyleScope::StyleScope(std::shared_ptr<StyleRule> from, std::shared_ptr<CSSSelectorList> to) : from_(from), to_(to) {}
 
 StyleScope::StyleScope(std::shared_ptr<StyleSheetContents> contents, std::shared_ptr<CSSSelectorList> to)
     : contents_(contents), to_(to) {}
@@ -47,11 +46,11 @@ const CSSSelector* StyleScope::To() const {
 }
 
 std::shared_ptr<StyleScope> StyleScope::Parse(CSSParserTokenRange prelude,
-                           std::shared_ptr<const CSSParserContext> context,
-                           CSSNestingType nesting_type,
-                           std::shared_ptr<const StyleRule>& parent_rule_for_nesting,
-                           bool is_within_scope,
-                           std::shared_ptr<StyleSheetContents>& style_sheet) {
+                                              std::shared_ptr<const CSSParserContext> context,
+                                              CSSNestingType nesting_type,
+                                              std::shared_ptr<const StyleRule>& parent_rule_for_nesting,
+                                              bool is_within_scope,
+                                              std::shared_ptr<StyleSheetContents>& style_sheet) {
   std::vector<CSSSelector> arena;
 
   std::optional<tcb::span<CSSSelector>> from;
@@ -65,9 +64,8 @@ std::shared_ptr<StyleScope> StyleScope::Parse(CSSParserTokenRange prelude,
     std::string text = block.Serialize();
     CSSTokenizer tokenizer(text);
     CSSParserTokenStream stream(tokenizer);
-    from = CSSSelectorParser::ParseScopeBoundary(
-        stream, context, nesting_type, parent_rule_for_nesting, is_within_scope,
-        style_sheet, arena);
+    from = CSSSelectorParser::ParseScopeBoundary(stream, context, nesting_type, parent_rule_for_nesting,
+                                                 is_within_scope, style_sheet, arena);
     if (!from.has_value()) {
       return nullptr;
     }
@@ -77,8 +75,7 @@ std::shared_ptr<StyleScope> StyleScope::Parse(CSSParserTokenRange prelude,
   if (from.has_value() && !from.value().empty()) {
     std::shared_ptr<ImmutableCSSPropertyValueSet> properties = std::make_shared<ImmutableCSSPropertyValueSet>(
         /* properties */ nullptr,
-         /* count */ 0,
-        CSSParserMode::kHTMLStandardMode);
+        /* count */ 0, CSSParserMode::kHTMLStandardMode);
     from_rule = StyleRule::Create(from.value(), properties);
   }
 
@@ -100,10 +97,9 @@ std::shared_ptr<StyleScope> StyleScope::Parse(CSSParserTokenRange prelude,
     std::string text = block.Serialize();
     CSSTokenizer tokenizer(text);
     CSSParserTokenStream stream(tokenizer);
-    to = CSSSelectorParser::ParseScopeBoundary(
-        stream, context, CSSNestingType::kScope,
-        /* parent_rule_for_nesting */ from_rule,
-        /* is_within_scope */ true, style_sheet, arena);
+    to = CSSSelectorParser::ParseScopeBoundary(stream, context, CSSNestingType::kScope,
+                                               /* parent_rule_for_nesting */ from_rule,
+                                               /* is_within_scope */ true, style_sheet, arena);
     if (!to.has_value()) {
       return nullptr;
     }
@@ -116,8 +112,7 @@ std::shared_ptr<StyleScope> StyleScope::Parse(CSSParserTokenRange prelude,
   }
 
   std::shared_ptr<CSSSelectorList> to_list =
-      to.has_value() ? CSSSelectorList::AdoptSelectorVector(to.value())
-                     : nullptr;
+      to.has_value() ? CSSSelectorList::AdoptSelectorVector(to.value()) : nullptr;
 
   if (!from.has_value()) {
     // Implicitly rooted.
@@ -127,7 +122,6 @@ std::shared_ptr<StyleScope> StyleScope::Parse(CSSParserTokenRange prelude,
   return std::make_shared<StyleScope>(from_rule, to_list);
 }
 
-void StyleScope::Trace(GCVisitor* visitor) const {
-}
+void StyleScope::Trace(GCVisitor* visitor) const {}
 
 }  // namespace webf

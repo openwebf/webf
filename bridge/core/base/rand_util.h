@@ -42,32 +42,32 @@ void ConfigureRandBytesFieldTrial();
  */
 
 //#if !BUILDFLAG(IS_NACL)
-//void ConfigureBoringSSLBackedRandBytesFieldTrial();
+// void ConfigureBoringSSLBackedRandBytesFieldTrial();
 //#endif
 
 // Returns a random double in range [0, 1). For use in allocator shim to avoid
 // infinite recursion. Thread-safe.
- double RandDoubleAvoidAllocation();
+double RandDoubleAvoidAllocation();
 
 }  // namespace internal
 
 // Returns a random number in range [0, UINT64_MAX]. Thread-safe.
- uint64_t RandUint64();
+uint64_t RandUint64();
 
 // Returns a random number between min and max (inclusive). Thread-safe.
 //
 // TODO(crbug.com/40283703): Change from fully-closed to half-closed (i.e.
 // exclude `max`) to parallel other APIs here.
- int RandInt(int min, int max);
+int RandInt(int min, int max);
 
 // Returns a random number in range [0, range).  Thread-safe.
- uint64_t RandGenerator(uint64_t range);
+uint64_t RandGenerator(uint64_t range);
 
 // Returns a random double in range [0, 1). Thread-safe.
- double RandDouble();
+double RandDouble();
 
 // Returns a random float in range [0, 1). Thread-safe.
- float RandFloat();
+float RandFloat();
 /*
 // Returns a random duration in [`start`, `limit`). Thread-safe.
 //
@@ -81,18 +81,18 @@ void ConfigureRandBytesFieldTrial();
 */
 // Given input |bits|, convert with maximum precision to a double in
 // the range [0, 1). Thread-safe.
- double BitsToOpenEndedUnitInterval(uint64_t bits);
+double BitsToOpenEndedUnitInterval(uint64_t bits);
 
 // Given input `bits`, convert with maximum precision to a float in the range
 // [0, 1). Thread-safe.
- float BitsToOpenEndedUnitIntervalF(uint64_t bits);
+float BitsToOpenEndedUnitIntervalF(uint64_t bits);
 
 // Fills `output` with cryptographically secure random data. Thread-safe.
 //
 // Although implementations are required to use a cryptographically secure
 // random number source, code outside of base/ that relies on this should use
 // crypto::RandBytes instead to ensure the requirement is easily discoverable.
- void RandBytes(span<uint8_t> output);
+void RandBytes(span<uint8_t> output);
 /*
 // Creates a vector of `length` bytes, fills it with random data, and returns
 // it. Thread-safe.
@@ -184,7 +184,7 @@ class MetricsSubSampler;
 // re-seeded during use.
 //
 // Uses the XorShift128+ generator under the hood.
-class  InsecureRandomGenerator {
+class InsecureRandomGenerator {
  public:
   // Never use outside testing, not enough entropy.
   void ReseedForTesting(uint64_t seed);
@@ -209,17 +209,17 @@ class  InsecureRandomGenerator {
   friend class memory_simulator::MemoryHolder;
   // Uses the generator to sub-sample metrics.
   friend class MetricsSubSampler;
-/*
-  FRIEND_TEST_ALL_PREFIXES(RandUtilTest,
-                           InsecureRandomGeneratorProducesBothValuesOfAllBits);
-  FRIEND_TEST_ALL_PREFIXES(RandUtilTest, InsecureRandomGeneratorChiSquared);
-  FRIEND_TEST_ALL_PREFIXES(RandUtilTest, InsecureRandomGeneratorRandDouble);
-  FRIEND_TEST_ALL_PREFIXES(RandUtilPerfTest, InsecureRandomRandUint64);
+  /*
+    FRIEND_TEST_ALL_PREFIXES(RandUtilTest,
+                             InsecureRandomGeneratorProducesBothValuesOfAllBits);
+    FRIEND_TEST_ALL_PREFIXES(RandUtilTest, InsecureRandomGeneratorChiSquared);
+    FRIEND_TEST_ALL_PREFIXES(RandUtilTest, InsecureRandomGeneratorRandDouble);
+    FRIEND_TEST_ALL_PREFIXES(RandUtilPerfTest, InsecureRandomRandUint64);
 
- */
+   */
 };
 
-class  MetricsSubSampler {
+class MetricsSubSampler {
  public:
   MetricsSubSampler();
   bool ShouldSample(double probability);

@@ -8,7 +8,6 @@
 
 namespace webf {
 
-
 namespace url {
 
 StdStringCanonOutput::StdStringCanonOutput(std::string* str) : str_(str) {

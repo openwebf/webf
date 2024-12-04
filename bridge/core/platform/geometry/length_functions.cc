@@ -22,8 +22,8 @@
 */
 
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #include "core/platform/geometry/length_functions.h"
 
@@ -37,9 +37,7 @@ int IntValueForLength(const Length& length, int maximum_value) {
   return ValueForLength(length, LayoutUnit(maximum_value)).ToInt();
 }
 
-float FloatValueForLength(const Length& length,
-                          float maximum_value,
-                          const Length::EvaluationInput& input) {
+float FloatValueForLength(const Length& length, float maximum_value, const Length::EvaluationInput& input) {
   switch (length.GetType()) {
     case Length::kFixed:
       return length.GetFloatValue();
@@ -60,7 +58,7 @@ float FloatValueForLength(const Length& length,
     case Length::kDeviceWidth:
     case Length::kDeviceHeight:
     case Length::kNone:
-    assert_m(false, "NOTREACHED_IN_MIGRATION");
+      assert_m(false, "NOTREACHED_IN_MIGRATION");
       return 0;
   }
   assert_m(false, "NOTREACHED_IN_MIGRATION");
@@ -74,8 +72,7 @@ LayoutUnit MinimumValueForLengthInternal(const Length& length,
     case Length::kPercent:
       // Don't remove the extra cast to float. It is needed for rounding on
       // 32-bit Intel machines that use the FPU stack.
-      return LayoutUnit(
-          static_cast<float>(maximum_value * length.Percent() / 100.0f));
+      return LayoutUnit(static_cast<float>(maximum_value * length.Percent() / 100.0f));
     case Length::kCalculated:
       return LayoutUnit(length.NonNanCalculatedValue(maximum_value, input));
     case Length::kFillAvailable:
@@ -92,16 +89,14 @@ LayoutUnit MinimumValueForLengthInternal(const Length& length,
     case Length::kDeviceWidth:
     case Length::kDeviceHeight:
     case Length::kNone:
-    assert_m(false, 'NOTREACHED_IN_MIGRATION');
+      assert_m(false, 'NOTREACHED_IN_MIGRATION');
       return LayoutUnit();
   }
   assert_m(false, 'NOTREACHED_IN_MIGRATION');
   return LayoutUnit();
 }
 
-LayoutUnit ValueForLength(const Length& length,
-                          LayoutUnit maximum_value,
-                          const Length::EvaluationInput& input) {
+LayoutUnit ValueForLength(const Length& length, LayoutUnit maximum_value, const Length::EvaluationInput& input) {
   switch (length.GetType()) {
     case Length::kFixed:
     case Length::kPercent:

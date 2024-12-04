@@ -1,13 +1,13 @@
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_BINDINGS_QJS_VALUE_CACHE_H_
 #define WEBF_BINDINGS_QJS_VALUE_CACHE_H_
 
-#include <unordered_map>
 #include <quickjs/quickjs.h>
+#include <unordered_map>
 #include "foundation/macros.h"
 #include "string_impl.h"
 
@@ -20,7 +20,7 @@ class StringCache {
   USING_FAST_MALLOC(StringCache);
 
  public:
-  explicit StringCache(JSRuntime* runtime): runtime_(runtime) {}
+  explicit StringCache(JSRuntime* runtime) : runtime_(runtime) {}
   StringCache(const StringCache&) = delete;
   StringCache() = delete;
   StringCache& operator=(const StringCache&) = delete;
@@ -39,6 +39,6 @@ class StringCache {
   std::unordered_map<JSAtom, std::shared_ptr<StringImpl>> atom_to_string_cache;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_BINDINGS_QJS_VALUE_CACHE_H_

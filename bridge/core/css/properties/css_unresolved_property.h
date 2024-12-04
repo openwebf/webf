@@ -31,15 +31,9 @@ class CSSUnresolvedProperty {
 
   // Origin trials are taken into account only when a non-nullptr
   // ExecutingContext is provided.
-  bool IsWebExposed(const ExecutingContext* context = nullptr) const {
-    return webf::IsWebExposed(Exposure(context));
-  }
-  bool IsUAExposed(const ExecutingContext* context = nullptr) const {
-    return webf::IsUAExposed(Exposure(context));
-  }
-  virtual CSSExposure Exposure(const ExecutingContext* = nullptr) const {
-    return CSSExposure::kWeb;
-  }
+  bool IsWebExposed(const ExecutingContext* context = nullptr) const { return webf::IsWebExposed(Exposure(context)); }
+  bool IsUAExposed(const ExecutingContext* context = nullptr) const { return webf::IsUAExposed(Exposure(context)); }
+  virtual CSSExposure Exposure(const ExecutingContext* = nullptr) const { return CSSExposure::kWeb; }
 
   virtual bool IsResolvedProperty() const { return false; }
   virtual const char* GetPropertyName() const {
@@ -59,9 +53,7 @@ class CSSUnresolvedProperty {
     return GetPropertyNameAtomicString();
   }
   // See documentation near "alternative_of" in css_properties.json5.
-  virtual CSSPropertyID GetAlternative() const {
-    return CSSPropertyID::kInvalid;
-  }
+  virtual CSSPropertyID GetAlternative() const { return CSSPropertyID::kInvalid; }
 
  protected:
   constexpr CSSUnresolvedProperty() = default;

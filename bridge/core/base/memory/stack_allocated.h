@@ -33,6 +33,6 @@ namespace webf {
 // new (base::NotNullTag::kNotNull, &u.i) int(3);
 enum class NotNullTag { kNotNull };
 
-}  // namespace base
+}  // namespace webf
 
 #endif  // BASE_MEMORY_STACK_ALLOCATED_H_

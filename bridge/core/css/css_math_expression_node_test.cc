@@ -330,11 +330,11 @@ TEST(CSSMathExpressionNode, TestSteppedValueFunctions) {
     const std::string input;
     const double output;
   } test_cases[] = {
-//      {"round(10, 10)", 10.0f},
-//      {"calc(round(up, 101, 10))", 110.0f},
+      //      {"round(10, 10)", 10.0f},
+      //      {"calc(round(up, 101, 10))", 110.0f},
       {"calc(round(down, 106, 10))", 100.0f},
-//      {"mod(18,5)", 3.0f},
-//      {"rem(18,5)", 3.0f},
+      //      {"mod(18,5)", 3.0f},
+      //      {"rem(18,5)", 3.0f},
   };
 
   for (const auto& test_case : test_cases) {
@@ -529,10 +529,9 @@ TEST(CSSMathExpressionNode, TestInvalidProgressNotation) {
     CSSTokenizer tokenizer(test_case);
     const auto tokens = tokenizer.TokenizeToEOF();
     const CSSParserTokenRange range(tokens);
-    auto context =
-        std::make_shared<CSSParserContext>(kHTMLStandardMode);
-    auto res = CSSMathExpressionNode::ParseMathFunction(
-        CSSValueID::kCalc, range, context, Flags({Flag::AllowPercent}), kCSSAnchorQueryTypesNone);
+    auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+    auto res = CSSMathExpressionNode::ParseMathFunction(CSSValueID::kCalc, range, context, Flags({Flag::AllowPercent}),
+                                                        kCSSAnchorQueryTypesNone);
     EXPECT_FALSE(res);
   }
 }
@@ -552,10 +551,9 @@ TEST(CSSMathExpressionNode, TestFunctionsWithNumberReturn) {
     CSSTokenizer tokenizer(test_case.input);
     const auto tokens = tokenizer.TokenizeToEOF();
     const CSSParserTokenRange range(tokens);
-    auto context =
-        std::make_shared<CSSParserContext>(kHTMLStandardMode);
-    auto css_node = CSSMathExpressionNode::ParseMathFunction(
-        CSSValueID::kCalc, range, context, Flags({Flag::AllowPercent}), kCSSAnchorQueryTypesNone);
+    auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+    auto css_node = CSSMathExpressionNode::ParseMathFunction(CSSValueID::kCalc, range, context,
+                                                             Flags({Flag::AllowPercent}), kCSSAnchorQueryTypesNone);
     EXPECT_EQ(css_node->CustomCSSText(), test_case.input);
     EXPECT_EQ(css_node->Category(), test_case.category);
     EXPECT_TRUE(css_node->IsOperation());

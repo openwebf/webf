@@ -112,7 +112,7 @@ console.log(div.outerHTML, div.innerHTML, document.body.innerHTML);
   EXPECT_EQ(errorCalled, false);
 }
 
-//TEST(Element, style) {
+// TEST(Element, style) {
 //  bool static errorCalled = false;
 //  bool static logCalled = false;
 //  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {

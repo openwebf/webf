@@ -32,9 +32,8 @@ constexpr bool CheckedAddImpl(T x, T y, T* result) {
   const UnsignedDst uresult = static_cast<UnsignedDst>(ux + uy);
   // Addition is valid if the sign of (x + y) is equal to either that of x or
   // that of y.
-  if (std::is_signed_v<T>
-          ? static_cast<SignedDst>((uresult ^ ux) & (uresult ^ uy)) < 0
-          : uresult < uy) {  // Unsigned is either valid or underflow.
+  if (std::is_signed_v<T> ? static_cast<SignedDst>((uresult ^ ux) & (uresult ^ uy)) < 0
+                          : uresult < uy) {  // Unsigned is either valid or underflow.
     return false;
   }
   *result = static_cast<T>(uresult);
@@ -45,10 +44,7 @@ template <typename T, typename U, class Enable = void>
 struct CheckedAddOp {};
 
 template <typename T, typename U>
-struct CheckedAddOp<
-    T,
-    U,
-    std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
+struct CheckedAddOp<T, U, std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
   using result_type = typename MaxExponentPromotion<T, U>::type;
   template <typename V>
   static constexpr bool Do(T x, U y, V* result) {
@@ -58,10 +54,8 @@ struct CheckedAddOp<
     // Double the underlying type up to a full machine word.
     using FastPromotion = typename FastIntegerArithmeticPromotion<T, U>::type;
     using Promotion =
-        typename std::conditional<(IntegerBitsPlusSign<FastPromotion>::value >
-                                   IntegerBitsPlusSign<intptr_t>::value),
-                                  typename BigEnoughPromotion<T, U>::type,
-                                  FastPromotion>::type;
+        typename std::conditional<(IntegerBitsPlusSign<FastPromotion>::value > IntegerBitsPlusSign<intptr_t>::value),
+                                  typename BigEnoughPromotion<T, U>::type, FastPromotion>::type;
     // Fail if either operand is out of range for the promoted type.
     // TODO(jschuh): This could be made to work for a broader range of values.
     if (BASE_NUMERICS_UNLIKELY(!IsValueInRangeForNumericType<Promotion>(x) ||
@@ -74,8 +68,7 @@ struct CheckedAddOp<
     if (IsIntegerArithmeticSafe<Promotion, T, U>::value) {
       presult = static_cast<Promotion>(x) + static_cast<Promotion>(y);
     } else {
-      is_valid = CheckedAddImpl(static_cast<Promotion>(x),
-                                static_cast<Promotion>(y), &presult);
+      is_valid = CheckedAddImpl(static_cast<Promotion>(x), static_cast<Promotion>(y), &presult);
     }
     if (!is_valid || !IsValueInRangeForNumericType<V>(presult))
       return false;
@@ -96,9 +89,7 @@ constexpr bool CheckedSubImpl(T x, T y, T* result) {
   const UnsignedDst uresult = static_cast<UnsignedDst>(ux - uy);
   // Subtraction is valid if either x and y have same sign, or (x-y) and x have
   // the same sign.
-  if (std::is_signed_v<T>
-          ? static_cast<SignedDst>((uresult ^ ux) & (ux ^ uy)) < 0
-          : x < y) {
+  if (std::is_signed_v<T> ? static_cast<SignedDst>((uresult ^ ux) & (ux ^ uy)) < 0 : x < y) {
     return false;
   }
   *result = static_cast<T>(uresult);
@@ -109,10 +100,7 @@ template <typename T, typename U, class Enable = void>
 struct CheckedSubOp {};
 
 template <typename T, typename U>
-struct CheckedSubOp<
-    T,
-    U,
-    std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
+struct CheckedSubOp<T, U, std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
   using result_type = typename MaxExponentPromotion<T, U>::type;
   template <typename V>
   static constexpr bool Do(T x, U y, V* result) {
@@ -122,10 +110,8 @@ struct CheckedSubOp<
     // Double the underlying type up to a full machine word.
     using FastPromotion = typename FastIntegerArithmeticPromotion<T, U>::type;
     using Promotion =
-        typename std::conditional<(IntegerBitsPlusSign<FastPromotion>::value >
-                                   IntegerBitsPlusSign<intptr_t>::value),
-                                  typename BigEnoughPromotion<T, U>::type,
-                                  FastPromotion>::type;
+        typename std::conditional<(IntegerBitsPlusSign<FastPromotion>::value > IntegerBitsPlusSign<intptr_t>::value),
+                                  typename BigEnoughPromotion<T, U>::type, FastPromotion>::type;
     // Fail if either operand is out of range for the promoted type.
     // TODO(jschuh): This could be made to work for a broader range of values.
     if (BASE_NUMERICS_UNLIKELY(!IsValueInRangeForNumericType<Promotion>(x) ||
@@ -138,8 +124,7 @@ struct CheckedSubOp<
     if (IsIntegerArithmeticSafe<Promotion, T, U>::value) {
       presult = static_cast<Promotion>(x) - static_cast<Promotion>(y);
     } else {
-      is_valid = CheckedSubImpl(static_cast<Promotion>(x),
-                                static_cast<Promotion>(y), &presult);
+      is_valid = CheckedSubImpl(static_cast<Promotion>(x), static_cast<Promotion>(y), &presult);
     }
     if (!is_valid || !IsValueInRangeForNumericType<V>(presult))
       return false;
@@ -158,8 +143,7 @@ constexpr bool CheckedMulImpl(T x, T y, T* result) {
   const UnsignedDst ux = SafeUnsignedAbs(x);
   const UnsignedDst uy = SafeUnsignedAbs(y);
   const UnsignedDst uresult = static_cast<UnsignedDst>(ux * uy);
-  const bool is_negative =
-      std::is_signed_v<T> && static_cast<SignedDst>(x ^ y) < 0;
+  const bool is_negative = std::is_signed_v<T> && static_cast<SignedDst>(x ^ y) < 0;
   // We have a fast out for unsigned identity or zero on the second operand.
   // After that it's an unsigned overflow check on the absolute value, with
   // a +1 bound for a negative result.
@@ -175,10 +159,7 @@ template <typename T, typename U, class Enable = void>
 struct CheckedMulOp {};
 
 template <typename T, typename U>
-struct CheckedMulOp<
-    T,
-    U,
-    std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
+struct CheckedMulOp<T, U, std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
   using result_type = typename MaxExponentPromotion<T, U>::type;
   template <typename V>
   static constexpr bool Do(T x, U y, V* result) {
@@ -187,9 +168,8 @@ struct CheckedMulOp<
 
     using Promotion = typename FastIntegerArithmeticPromotion<T, U>::type;
     // Verify the destination type can hold the result (always true for 0).
-    if (BASE_NUMERICS_UNLIKELY((!IsValueInRangeForNumericType<Promotion>(x) ||
-                                !IsValueInRangeForNumericType<Promotion>(y)) &&
-                               x && y)) {
+    if (BASE_NUMERICS_UNLIKELY(
+            (!IsValueInRangeForNumericType<Promotion>(x) || !IsValueInRangeForNumericType<Promotion>(y)) && x && y)) {
       return false;
     }
 
@@ -199,13 +179,12 @@ struct CheckedMulOp<
       // The fast op may be available with the promoted type.
       // The casts here are safe because of the "value in range" conditional
       // above.
-      is_valid = CheckedMulFastOp<Promotion, Promotion>::Do(
-          static_cast<Promotion>(x), static_cast<Promotion>(y), &presult);
+      is_valid =
+          CheckedMulFastOp<Promotion, Promotion>::Do(static_cast<Promotion>(x), static_cast<Promotion>(y), &presult);
     } else if (IsIntegerArithmeticSafe<Promotion, T, U>::value) {
       presult = static_cast<Promotion>(x) * static_cast<Promotion>(y);
     } else {
-      is_valid = CheckedMulImpl(static_cast<Promotion>(x),
-                                static_cast<Promotion>(y), &presult);
+      is_valid = CheckedMulImpl(static_cast<Promotion>(x), static_cast<Promotion>(y), &presult);
     }
     if (!is_valid || !IsValueInRangeForNumericType<V>(presult))
       return false;
@@ -220,10 +199,7 @@ template <typename T, typename U, class Enable = void>
 struct CheckedDivOp {};
 
 template <typename T, typename U>
-struct CheckedDivOp<
-    T,
-    U,
-    std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
+struct CheckedDivOp<T, U, std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
   using result_type = typename MaxExponentPromotion<T, U>::type;
   template <typename V>
   static constexpr bool Do(T x, U y, V* result) {
@@ -234,18 +210,14 @@ struct CheckedDivOp<
     // combination of types needed to trigger this case.
     using Promotion = typename BigEnoughPromotion<T, U>::type;
     if (BASE_NUMERICS_UNLIKELY(
-            (std::is_signed_v<T> && std::is_signed_v<U> &&
-             IsTypeInRangeForNumericType<T, Promotion>::value &&
-             static_cast<Promotion>(x) ==
-                 std::numeric_limits<Promotion>::lowest() &&
-             y == static_cast<U>(-1)))) {
+            (std::is_signed_v<T> && std::is_signed_v<U> && IsTypeInRangeForNumericType<T, Promotion>::value &&
+             static_cast<Promotion>(x) == std::numeric_limits<Promotion>::lowest() && y == static_cast<U>(-1)))) {
       return false;
     }
 
     // This branch always compiles away if the above branch wasn't removed.
-    if (BASE_NUMERICS_UNLIKELY((!IsValueInRangeForNumericType<Promotion>(x) ||
-                                !IsValueInRangeForNumericType<Promotion>(y)) &&
-                               x)) {
+    if (BASE_NUMERICS_UNLIKELY(
+            (!IsValueInRangeForNumericType<Promotion>(x) || !IsValueInRangeForNumericType<Promotion>(y)) && x)) {
       return false;
     }
 
@@ -261,10 +233,7 @@ template <typename T, typename U, class Enable = void>
 struct CheckedModOp {};
 
 template <typename T, typename U>
-struct CheckedModOp<
-    T,
-    U,
-    std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
+struct CheckedModOp<T, U, std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
   using result_type = typename MaxExponentPromotion<T, U>::type;
   template <typename V>
   static constexpr bool Do(T x, U y, V* result) {
@@ -273,17 +242,13 @@ struct CheckedModOp<
 
     using Promotion = typename BigEnoughPromotion<T, U>::type;
     if (BASE_NUMERICS_UNLIKELY(
-            (std::is_signed_v<T> && std::is_signed_v<U> &&
-             IsTypeInRangeForNumericType<T, Promotion>::value &&
-             static_cast<Promotion>(x) ==
-                 std::numeric_limits<Promotion>::lowest() &&
-             y == static_cast<U>(-1)))) {
+            (std::is_signed_v<T> && std::is_signed_v<U> && IsTypeInRangeForNumericType<T, Promotion>::value &&
+             static_cast<Promotion>(x) == std::numeric_limits<Promotion>::lowest() && y == static_cast<U>(-1)))) {
       *result = 0;
       return true;
     }
 
-    const Promotion presult =
-        static_cast<Promotion>(x) % static_cast<Promotion>(y);
+    const Promotion presult = static_cast<Promotion>(x) % static_cast<Promotion>(y);
     if (!IsValueInRangeForNumericType<V>(presult))
       return false;
     *result = static_cast<Promotion>(presult);
@@ -298,17 +263,12 @@ struct CheckedLshOp {};
 // of bits in the promoted type are undefined. Shifts of negative values
 // are undefined. Otherwise it is defined when the result fits.
 template <typename T, typename U>
-struct CheckedLshOp<
-    T,
-    U,
-    std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
+struct CheckedLshOp<T, U, std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
   using result_type = T;
   template <typename V>
   static constexpr bool Do(T x, U shift, V* result) {
     // Disallow negative numbers and verify the shift is in bounds.
-    if (BASE_NUMERICS_LIKELY(!IsValueNegative(x) &&
-                             as_unsigned(shift) <
-                                 as_unsigned(std::numeric_limits<T>::digits))) {
+    if (BASE_NUMERICS_LIKELY(!IsValueNegative(x) && as_unsigned(shift) < as_unsigned(std::numeric_limits<T>::digits))) {
       // Shift as unsigned to avoid undefined behavior.
       *result = static_cast<V>(as_unsigned(x) << shift);
       // If the shift can be reversed, we know it was valid.
@@ -316,8 +276,7 @@ struct CheckedLshOp<
     }
 
     // Handle the legal corner-case of a full-width signed shift of zero.
-    if (!std::is_signed_v<T> || x ||
-        as_unsigned(shift) != as_unsigned(std::numeric_limits<T>::digits)) {
+    if (!std::is_signed_v<T> || x || as_unsigned(shift) != as_unsigned(std::numeric_limits<T>::digits)) {
       return false;
     }
     *result = 0;
@@ -332,16 +291,12 @@ struct CheckedRshOp {};
 // of bits in the promoted type are undefined. Otherwise, it is always defined,
 // but a right shift of a negative value is implementation-dependent.
 template <typename T, typename U>
-struct CheckedRshOp<
-    T,
-    U,
-    std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
+struct CheckedRshOp<T, U, std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
   using result_type = T;
   template <typename V>
   static constexpr bool Do(T x, U shift, V* result) {
     // Use sign conversion to push negative values out of range.
-    if (BASE_NUMERICS_UNLIKELY(as_unsigned(shift) >=
-                               IntegerBitsPlusSign<T>::value)) {
+    if (BASE_NUMERICS_UNLIKELY(as_unsigned(shift) >= IntegerBitsPlusSign<T>::value)) {
       return false;
     }
 
@@ -358,16 +313,11 @@ struct CheckedAndOp {};
 
 // For simplicity we support only unsigned integer results.
 template <typename T, typename U>
-struct CheckedAndOp<
-    T,
-    U,
-    std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
-  using result_type = typename std::make_unsigned<
-      typename MaxExponentPromotion<T, U>::type>::type;
+struct CheckedAndOp<T, U, std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
+  using result_type = typename std::make_unsigned<typename MaxExponentPromotion<T, U>::type>::type;
   template <typename V>
   static constexpr bool Do(T x, U y, V* result) {
-    const result_type tmp =
-        static_cast<result_type>(x) & static_cast<result_type>(y);
+    const result_type tmp = static_cast<result_type>(x) & static_cast<result_type>(y);
     if (!IsValueInRangeForNumericType<V>(tmp))
       return false;
     *result = static_cast<V>(tmp);
@@ -380,16 +330,11 @@ struct CheckedOrOp {};
 
 // For simplicity we support only unsigned integers.
 template <typename T, typename U>
-struct CheckedOrOp<
-    T,
-    U,
-    std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
-  using result_type = typename std::make_unsigned<
-      typename MaxExponentPromotion<T, U>::type>::type;
+struct CheckedOrOp<T, U, std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
+  using result_type = typename std::make_unsigned<typename MaxExponentPromotion<T, U>::type>::type;
   template <typename V>
   static constexpr bool Do(T x, U y, V* result) {
-    const result_type tmp =
-        static_cast<result_type>(x) | static_cast<result_type>(y);
+    const result_type tmp = static_cast<result_type>(x) | static_cast<result_type>(y);
     if (!IsValueInRangeForNumericType<V>(tmp))
       return false;
     *result = static_cast<V>(tmp);
@@ -402,16 +347,11 @@ struct CheckedXorOp {};
 
 // For simplicity we support only unsigned integers.
 template <typename T, typename U>
-struct CheckedXorOp<
-    T,
-    U,
-    std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
-  using result_type = typename std::make_unsigned<
-      typename MaxExponentPromotion<T, U>::type>::type;
+struct CheckedXorOp<T, U, std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>>> {
+  using result_type = typename std::make_unsigned<typename MaxExponentPromotion<T, U>::type>::type;
   template <typename V>
   static constexpr bool Do(T x, U y, V* result) {
-    const result_type tmp =
-        static_cast<result_type>(x) ^ static_cast<result_type>(y);
+    const result_type tmp = static_cast<result_type>(x) ^ static_cast<result_type>(y);
     if (!IsValueInRangeForNumericType<V>(tmp))
       return false;
     *result = static_cast<V>(tmp);
@@ -425,16 +365,11 @@ template <typename T, typename U, class Enable = void>
 struct CheckedMaxOp {};
 
 template <typename T, typename U>
-struct CheckedMaxOp<
-    T,
-    U,
-    std::enable_if_t<std::is_arithmetic_v<T> && std::is_arithmetic_v<U>>> {
+struct CheckedMaxOp<T, U, std::enable_if_t<std::is_arithmetic_v<T> && std::is_arithmetic_v<U>>> {
   using result_type = typename MaxExponentPromotion<T, U>::type;
   template <typename V>
   static constexpr bool Do(T x, U y, V* result) {
-    const result_type tmp = IsGreater<T, U>::Test(x, y)
-                                ? static_cast<result_type>(x)
-                                : static_cast<result_type>(y);
+    const result_type tmp = IsGreater<T, U>::Test(x, y) ? static_cast<result_type>(x) : static_cast<result_type>(y);
     if (!IsValueInRangeForNumericType<V>(tmp))
       return false;
     *result = static_cast<V>(tmp);
@@ -448,16 +383,11 @@ template <typename T, typename U, class Enable = void>
 struct CheckedMinOp {};
 
 template <typename T, typename U>
-struct CheckedMinOp<
-    T,
-    U,
-    std::enable_if_t<std::is_arithmetic_v<T> && std::is_arithmetic_v<U>>> {
+struct CheckedMinOp<T, U, std::enable_if_t<std::is_arithmetic_v<T> && std::is_arithmetic_v<U>>> {
   using result_type = typename LowestValuePromotion<T, U>::type;
   template <typename V>
   static constexpr bool Do(T x, U y, V* result) {
-    const result_type tmp = IsLess<T, U>::Test(x, y)
-                                ? static_cast<result_type>(x)
-                                : static_cast<result_type>(y);
+    const result_type tmp = IsLess<T, U>::Test(x, y) ? static_cast<result_type>(x) : static_cast<result_type>(y);
     if (!IsValueInRangeForNumericType<V>(tmp))
       return false;
     *result = static_cast<V>(tmp);
@@ -467,21 +397,19 @@ struct CheckedMinOp<
 
 // This is just boilerplate that wraps the standard floating point arithmetic.
 // A macro isn't the nicest solution, but it beats rewriting these repeatedly.
-#define BASE_FLOAT_ARITHMETIC_OPS(NAME, OP)                                 \
-  template <typename T, typename U>                                         \
-  struct Checked##NAME##Op<T, U,                                            \
-                           std::enable_if_t<std::is_floating_point_v<T> ||  \
-                                            std::is_floating_point_v<U>>> { \
-    using result_type = typename MaxExponentPromotion<T, U>::type;          \
-    template <typename V>                                                   \
-    static constexpr bool Do(T x, U y, V* result) {                         \
-      using Promotion = typename MaxExponentPromotion<T, U>::type;          \
-      const Promotion presult = x OP y;                                     \
-      if (!IsValueInRangeForNumericType<V>(presult))                        \
-        return false;                                                       \
-      *result = static_cast<V>(presult);                                    \
-      return true;                                                          \
-    }                                                                       \
+#define BASE_FLOAT_ARITHMETIC_OPS(NAME, OP)                                                                      \
+  template <typename T, typename U>                                                                              \
+  struct Checked##NAME##Op<T, U, std::enable_if_t<std::is_floating_point_v<T> || std::is_floating_point_v<U>>> { \
+    using result_type = typename MaxExponentPromotion<T, U>::type;                                               \
+    template <typename V>                                                                                        \
+    static constexpr bool Do(T x, U y, V* result) {                                                              \
+      using Promotion = typename MaxExponentPromotion<T, U>::type;                                               \
+      const Promotion presult = x OP y;                                                                          \
+      if (!IsValueInRangeForNumericType<V>(presult))                                                             \
+        return false;                                                                                            \
+      *result = static_cast<V>(presult);                                                                         \
+      return true;                                                                                               \
+    }                                                                                                            \
   };
 
 BASE_FLOAT_ARITHMETIC_OPS(Add, +)
@@ -494,23 +422,16 @@ BASE_FLOAT_ARITHMETIC_OPS(Div, /)
 // Floats carry around their validity state with them, but integers do not. So,
 // we wrap the underlying value in a specialization in order to hide that detail
 // and expose an interface via accessors.
-enum NumericRepresentation {
-  NUMERIC_INTEGER,
-  NUMERIC_FLOATING,
-  NUMERIC_UNKNOWN
-};
+enum NumericRepresentation { NUMERIC_INTEGER, NUMERIC_FLOATING, NUMERIC_UNKNOWN };
 
 template <typename NumericType>
 struct GetNumericRepresentation {
   static const NumericRepresentation value =
-      std::is_integral_v<NumericType>
-          ? NUMERIC_INTEGER
-          : (std::is_floating_point_v<NumericType> ? NUMERIC_FLOATING
-                                                   : NUMERIC_UNKNOWN);
+      std::is_integral_v<NumericType> ? NUMERIC_INTEGER
+                                      : (std::is_floating_point_v<NumericType> ? NUMERIC_FLOATING : NUMERIC_UNKNOWN);
 };
 
-template <typename T,
-          NumericRepresentation type = GetNumericRepresentation<T>::value>
+template <typename T, NumericRepresentation type = GetNumericRepresentation<T>::value>
 class CheckedNumericState {};
 
 // Integrals require quite a bit of additional housekeeping to manage state.
@@ -537,8 +458,7 @@ class CheckedNumericState<T, NUMERIC_INTEGER> {
   template <typename Src>
   static constexpr T WellDefinedConversionOrZero(Src value, bool is_valid) {
     using SrcType = typename internal::UnderlyingType<Src>::type;
-    return (std::is_integral_v<SrcType> || is_valid) ? static_cast<T>(value)
-                                                     : 0;
+    return (std::is_integral_v<SrcType> || is_valid) ? static_cast<T>(value) : 0;
   }
 
   // is_valid_ precedes value_ because member initializers in the constructors
@@ -554,9 +474,7 @@ class CheckedNumericState<T, NUMERIC_FLOATING> {
  public:
   template <typename Src = double>
   constexpr explicit CheckedNumericState(Src value = 0.0, bool is_valid = true)
-      : value_(WellDefinedConversionOrNaN(
-            value,
-            is_valid && IsValueInRangeForNumericType<T>(value))) {}
+      : value_(WellDefinedConversionOrNaN(value, is_valid && IsValueInRangeForNumericType<T>(value))) {}
 
   template <typename Src>
   constexpr CheckedNumericState(const CheckedNumericState<Src>& rhs)
@@ -564,10 +482,8 @@ class CheckedNumericState<T, NUMERIC_FLOATING> {
 
   constexpr bool is_valid() const {
     // Written this way because std::isfinite is not reliably constexpr.
-    return IsConstantEvaluated()
-               ? value_ <= std::numeric_limits<T>::max() &&
-                     value_ >= std::numeric_limits<T>::lowest()
-               : std::isfinite(value_);
+    return IsConstantEvaluated() ? value_ <= std::numeric_limits<T>::max() && value_ >= std::numeric_limits<T>::lowest()
+                                 : std::isfinite(value_);
   }
 
   constexpr T value() const { return value_; }
@@ -577,9 +493,7 @@ class CheckedNumericState<T, NUMERIC_FLOATING> {
   template <typename Src>
   static constexpr T WellDefinedConversionOrNaN(Src value, bool is_valid) {
     using SrcType = typename internal::UnderlyingType<Src>::type;
-    return (StaticDstRangeRelationToSrcRange<T, SrcType>::value ==
-                NUMERIC_RANGE_CONTAINED ||
-            is_valid)
+    return (StaticDstRangeRelationToSrcRange<T, SrcType>::value == NUMERIC_RANGE_CONTAINED || is_valid)
                ? static_cast<T>(value)
                : std::numeric_limits<T>::quiet_NaN();
   }

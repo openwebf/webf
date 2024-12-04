@@ -23,12 +23,12 @@
  */
 
 #include "media_list.h"
-#include "core/executing_context.h"
-#include "core/css/parser/media_query_parser.h"
-#include "core/css/css_style_sheet.h"
-#include "core/css/style_sheet_contents.h"
 #include "core/css/css_rule.h"
+#include "core/css/css_style_sheet.h"
+#include "core/css/parser/media_query_parser.h"
 #include "core/css/style_rule.h"
+#include "core/css/style_sheet_contents.h"
+#include "core/executing_context.h"
 
 namespace webf {
 
@@ -57,12 +57,10 @@ MediaQuerySet::MediaQuerySet() = default;
 
 MediaQuerySet::MediaQuerySet(const MediaQuerySet&) = default;
 
-MediaQuerySet::MediaQuerySet(std::vector<std::shared_ptr<const MediaQuery>> queries)
-    : queries_(std::move(queries)) {}
+MediaQuerySet::MediaQuerySet(std::vector<std::shared_ptr<const MediaQuery>> queries) : queries_(std::move(queries)) {}
 
-std::shared_ptr<MediaQuerySet> MediaQuerySet::Create(
-    const std::string& media_string,
-    const ExecutingContext* execution_context) {
+std::shared_ptr<MediaQuerySet> MediaQuerySet::Create(const std::string& media_string,
+                                                     const ExecutingContext* execution_context) {
   if (media_string.empty()) {
     return MediaQuerySet::Create();
   }
@@ -70,12 +68,10 @@ std::shared_ptr<MediaQuerySet> MediaQuerySet::Create(
   return MediaQueryParser::ParseMediaQuerySet(media_string, execution_context);
 }
 
-void MediaQuerySet::Trace(GCVisitor* visitor) const {
-}
+void MediaQuerySet::Trace(GCVisitor* visitor) const {}
 
-std::shared_ptr<const MediaQuerySet> MediaQuerySet::CopyAndAdd(
-    const std::string& query_string,
-    const ExecutingContext* execution_context) const {
+std::shared_ptr<const MediaQuerySet> MediaQuerySet::CopyAndAdd(const std::string& query_string,
+                                                               const ExecutingContext* execution_context) const {
   // To "parse a media query" for a given string means to follow "the parse
   // a media query list" steps and return "null" if more than one media query
   // is returned, or else the returned media query.
@@ -104,9 +100,8 @@ std::shared_ptr<const MediaQuerySet> MediaQuerySet::CopyAndAdd(
   return std::make_shared<MediaQuerySet>(std::move(new_queries));
 }
 
-std::shared_ptr<const MediaQuerySet> MediaQuerySet::CopyAndRemove(
-    const std::string& query_string_to_remove,
-    const ExecutingContext* execution_context) const {
+std::shared_ptr<const MediaQuerySet> MediaQuerySet::CopyAndRemove(const std::string& query_string_to_remove,
+                                                                  const ExecutingContext* execution_context) const {
   // To "parse a media query" for a given string means to follow "the parse
   // a media query list" steps and return "null" if more than one media query
   // is returned, or else the returned media query.
@@ -170,8 +165,7 @@ AtomicString MediaList::mediaText(ExecutingContext* execution_context) const {
   return MediaTextInternal();
 }
 
-void MediaList::setMediaText(ExecutingContext* execution_context,
-                             const AtomicString& value) {
+void MediaList::setMediaText(ExecutingContext* execution_context, const AtomicString& value) {
   CSSStyleSheet::RuleMutationScope mutation_scope(parent_rule_);
 
   Owner()->SetMediaQueries(MediaQuerySet::Create(value.ToStdString(), execution_context));
@@ -180,8 +174,7 @@ void MediaList::setMediaText(ExecutingContext* execution_context,
 }
 
 AtomicString MediaList::item(unsigned index) const {
-  const std::vector<std::shared_ptr<const MediaQuery>>& queries =
-      Queries()->QueryVector();
+  const std::vector<std::shared_ptr<const MediaQuery>>& queries = Queries()->QueryVector();
   if (index < queries.size()) {
     return AtomicString(queries[index]->CssText());
   }
@@ -196,8 +189,7 @@ void MediaList::deleteMedium(const ExecutingContext* execution_context,
   std::shared_ptr<const MediaQuerySet> new_media_queries =
       Queries()->CopyAndRemove(medium.ToStdString(), execution_context);
   if (!new_media_queries) {
-    exception_state.ThrowException(ctx(), ErrorType::InternalError,
-                                      "Failed to delete '" + medium.ToStdString() + "'.");
+    exception_state.ThrowException(ctx(), ErrorType::InternalError, "Failed to delete '" + medium.ToStdString() + "'.");
     return;
   }
   Owner()->SetMediaQueries(new_media_queries);
@@ -205,12 +197,10 @@ void MediaList::deleteMedium(const ExecutingContext* execution_context,
   NotifyMutation();
 }
 
-void MediaList::appendMedium(const ExecutingContext* execution_context,
-                             const AtomicString& medium) {
+void MediaList::appendMedium(const ExecutingContext* execution_context, const AtomicString& medium) {
   CSSStyleSheet::RuleMutationScope mutation_scope(parent_rule_);
 
-  auto new_media_queries =
-      Queries()->CopyAndAdd(medium.ToStdString(), execution_context);
+  auto new_media_queries = Queries()->CopyAndAdd(medium.ToStdString(), execution_context);
   if (!new_media_queries) {
     return;
   }
@@ -230,20 +220,18 @@ void MediaList::Trace(GCVisitor* visitor) const {
 }
 
 MediaQuerySetOwner* MediaList::Owner() const {
-  return parent_rule_ ? parent_rule_->GetMediaQuerySetOwner()
-                      : parent_style_sheet_.Get();
+  return parent_rule_ ? parent_rule_->GetMediaQuerySetOwner() : parent_style_sheet_.Get();
 }
 
 void MediaList::NotifyMutation() {
   if (parent_rule_ && parent_rule_->parentStyleSheet()) {
-    std::shared_ptr<StyleSheetContents> parent_contents =
-        parent_rule_->parentStyleSheet()->Contents();
+    std::shared_ptr<StyleSheetContents> parent_contents = parent_rule_->parentStyleSheet()->Contents();
     if (parent_rule_->GetType() == CSSRule::kStyleRule) {
       assert(false);
-//      parent_contents->NotifyRuleChanged(static_cast<CSSStyleRule>(parent_rule_.Get())->GetStyleRule())
-//      parent_contents->No
-//      parent_contents->NotifyRuleChanged(
-//          static_cast<CSSStyleRule*>(parent_rule_.Get())->GetStyleRule());
+      //      parent_contents->NotifyRuleChanged(static_cast<CSSStyleRule>(parent_rule_.Get())->GetStyleRule())
+      //      parent_contents->No
+      //      parent_contents->NotifyRuleChanged(
+      //          static_cast<CSSStyleRule*>(parent_rule_.Get())->GetStyleRule());
     } else {
       parent_contents->NotifyDiffUnrepresentable();
     }

@@ -35,12 +35,8 @@ class CSSGlobalRuleSet final {
   void Update(Document&);
 
   const RuleFeatureSet& GetRuleFeatureSet() const { return features_; }
-  RuleSet* WatchedSelectorsRuleSet() const {
-    return watched_selectors_rule_set_.Get();
-  }
-  RuleSet* DocumentRulesSelectorsRuleSet() const {
-    return document_rules_selectors_rule_set_.Get();
-  }
+  RuleSet* WatchedSelectorsRuleSet() const { return watched_selectors_rule_set_.Get(); }
+  RuleSet* DocumentRulesSelectorsRuleSet() const { return document_rules_selectors_rule_set_.Get(); }
   bool HasFullscreenUAStyle() const { return has_fullscreen_ua_style_; }
 
   void Trace(GCVisitor*) const;

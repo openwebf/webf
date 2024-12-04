@@ -8,40 +8,29 @@
 
 #include "css_parser_token.h"
 #include <cassert>
+#include "core/css/css_markup.h"
 #include "core/css/css_primitive_value.h"
 #include "core/css/parser/css_property_parser.h"
-#include "core/css/css_markup.h"
 
 namespace webf {
 
 // Just a helper used for Delimiter tokens.
 CSSParserToken::CSSParserToken(CSSParserTokenType type, unsigned char c)
-    : type_(type),
-      block_type_(kNotBlock),
-      value_is_inline_(false),
-      delimiter_(c) {
+    : type_(type), block_type_(kNotBlock), value_is_inline_(false), delimiter_(c) {
   assert(type_ == static_cast<unsigned>(kDelimiterToken));
 }
 
 CSSParserToken::CSSParserToken(HashTokenType type, std::string_view value)
-    : type_(kHashToken),
-      block_type_(kNotBlock),
-      value_is_inline_(false),
-      hash_token_type_(type) {
+    : type_(kHashToken), block_type_(kNotBlock), value_is_inline_(false), hash_token_type_(type) {
   InitValueFromStringView(value);
 }
 
-CSSParserToken::CSSParserToken(CSSParserTokenType type,
-                               int32_t start,
-                               int32_t end)
-    : type_(kUnicodeRangeToken),
-      block_type_(kNotBlock),
-      value_is_inline_(false) {
+CSSParserToken::CSSParserToken(CSSParserTokenType type, int32_t start, int32_t end)
+    : type_(kUnicodeRangeToken), block_type_(kNotBlock), value_is_inline_(false) {
   assert(type == kUnicodeRangeToken);
   unicode_range_.start = start;
   unicode_range_.end = end;
 }
-
 
 CSSParserToken::CSSParserToken(CSSParserTokenType type,
                                double numeric_value,
@@ -55,8 +44,7 @@ CSSParserToken::CSSParserToken(CSSParserTokenType type,
       value_is_inline_(false) {
   assert(type == kNumberToken);
   numeric_value_ =
-      ClampTo<double>(numeric_value, -std::numeric_limits<float>::max(),
-                      std::numeric_limits<float>::max());
+      ClampTo<double>(numeric_value, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
 }
 
 bool CSSParserToken::operator==(const CSSParserToken& other) const {
@@ -83,12 +71,10 @@ bool CSSParserToken::operator==(const CSSParserToken& other) const {
       [[fallthrough]];
     case kNumberToken:
     case kPercentageToken:
-      return numeric_sign_ == other.numeric_sign_ &&
-             numeric_value_ == other.numeric_value_ &&
+      return numeric_sign_ == other.numeric_sign_ && numeric_value_ == other.numeric_value_ &&
              numeric_value_type_ == other.numeric_value_type_;
     case kUnicodeRangeToken:
-      return unicode_range_.start == other.unicode_range_.start &&
-             unicode_range_.end == other.unicode_range_.end;
+      return unicode_range_.start == other.unicode_range_.start && unicode_range_.end == other.unicode_range_.end;
     default:
       return true;
   }
@@ -107,14 +93,12 @@ NumericSign CSSParserToken::GetNumericSign() const {
 }
 
 NumericValueType CSSParserToken::GetNumericValueType() const {
-  assert(type_ == kNumberToken || type_ == kPercentageToken ||
-         type_ == kDimensionToken);
+  assert(type_ == kNumberToken || type_ == kPercentageToken || type_ == kDimensionToken);
   return static_cast<NumericValueType>(numeric_value_type_);
 }
 
 double CSSParserToken::NumericValue() const {
-  assert(type_ == kNumberToken || type_ == kPercentageToken ||
-         type_ == kDimensionToken);
+  assert(type_ == kNumberToken || type_ == kPercentageToken || type_ == kDimensionToken);
   return numeric_value_;
 }
 
@@ -143,22 +127,19 @@ bool CSSParserToken::HasStringBacking() const {
   if (value_is_inline_) {
     return false;
   }
-  return token_type == kIdentToken || token_type == kFunctionToken ||
-         token_type == kAtKeywordToken || token_type == kHashToken ||
-         token_type == kUrlToken || token_type == kDimensionToken ||
+  return token_type == kIdentToken || token_type == kFunctionToken || token_type == kAtKeywordToken ||
+         token_type == kHashToken || token_type == kUrlToken || token_type == kDimensionToken ||
          token_type == kStringToken;
 }
 
-CSSParserToken CSSParserToken::CopyWithUpdatedString(
-    const std::string_view& string) const {
+CSSParserToken CSSParserToken::CopyWithUpdatedString(const std::string_view& string) const {
   CSSParserToken copy(*this);
   copy.InitValueFromStringView(string);
   return copy;
 }
 
-CSSPropertyID CSSParserToken::ParseAsUnresolvedCSSPropertyID(
-    const ExecutingContext* execution_context,
-    CSSParserMode mode) const {
+CSSPropertyID CSSParserToken::ParseAsUnresolvedCSSPropertyID(const ExecutingContext* execution_context,
+                                                             CSSParserMode mode) const {
   assert(type_ == static_cast<unsigned>(kIdentToken));
   return UnresolvedCSSPropertyID(execution_context, Value(), mode);
 }
@@ -182,9 +163,7 @@ void CSSParserToken::ConvertToPercentage() {
 }
 
 template <typename CharType>
-FORCE_INLINE bool Equal(const CharType* a,
-                         const CharType* b,
-                         size_t length) {
+FORCE_INLINE bool Equal(const CharType* a, const CharType* b, size_t length) {
   return std::equal(a, a + length, b);
 }
 
@@ -197,9 +176,8 @@ bool CSSParserToken::ValueDataCharRawEqual(const webf::CSSParserToken& other) co
     return true;
   }
 
-  return Equal(static_cast<const char *>(ValueDataCharRaw()),
-        static_cast<const char*>(other.ValueDataCharRaw()),
-        value_length_);
+  return Equal(static_cast<const char*>(ValueDataCharRaw()), static_cast<const char*>(other.ValueDataCharRaw()),
+               value_length_);
 }
 
 void CSSParserToken::Serialize(StringBuilder& builder) const {
@@ -218,8 +196,7 @@ void CSSParserToken::Serialize(StringBuilder& builder) const {
       break;
     case kHashToken:
       builder.Append('#');
-      SerializeIdentifier(Value(), builder,
-                          (GetHashTokenType() == kHashTokenUnrestricted));
+      SerializeIdentifier(Value(), builder, (GetHashTokenType() == kHashTokenUnrestricted));
       break;
     case kUrlToken:
       builder.Append("url(");

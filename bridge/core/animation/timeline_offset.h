@@ -11,26 +11,16 @@
 
 namespace webf {
 
-
 class Document;
 class Element;
 class CSSValue;
 
-enum class Enum : size_t {
-  kNone,
-  kCover,
-  kContain,
-  kEntry,
-  kEntryCrossing,
-  kExit,
-  kExitCrossing
-};
+enum class Enum : size_t { kNone, kCover, kContain, kEntry, kEntryCrossing, kExit, kExitCrossing };
 
 struct TimelineOffset {
   using NamedRange = Enum;
 
   static std::string TimelineRangeNameToString(NamedRange range_name);
-
 };
 
 }  // namespace webf

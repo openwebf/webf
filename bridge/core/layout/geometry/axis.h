@@ -64,20 +64,14 @@ inline constexpr PhysicalAxes operator^=(PhysicalAxes& a, PhysicalAxes b) {
 }
 
 inline constexpr LogicalAxes kLogicalAxesNone = LogicalAxes(0);
-inline constexpr LogicalAxes kLogicalAxesInline =
-    LogicalAxes(static_cast<uint8_t>(LogicalAxis::kInline));
-inline constexpr LogicalAxes kLogicalAxesBlock =
-    LogicalAxes(static_cast<uint8_t>(LogicalAxis::kBlock));
-inline constexpr LogicalAxes kLogicalAxesBoth =
-    kLogicalAxesInline | kLogicalAxesBlock;
+inline constexpr LogicalAxes kLogicalAxesInline = LogicalAxes(static_cast<uint8_t>(LogicalAxis::kInline));
+inline constexpr LogicalAxes kLogicalAxesBlock = LogicalAxes(static_cast<uint8_t>(LogicalAxis::kBlock));
+inline constexpr LogicalAxes kLogicalAxesBoth = kLogicalAxesInline | kLogicalAxesBlock;
 
 inline constexpr PhysicalAxes kPhysicalAxesNone = PhysicalAxes(0);
-inline constexpr PhysicalAxes kPhysicalAxesHorizontal =
-    PhysicalAxes(static_cast<uint8_t>(PhysicalAxis::kHorizontal));
-inline constexpr PhysicalAxes kPhysicalAxesVertical =
-    PhysicalAxes(static_cast<uint8_t>(PhysicalAxis::kVertical));
-inline constexpr PhysicalAxes kPhysicalAxesBoth =
-    kPhysicalAxesHorizontal | kPhysicalAxesVertical;
+inline constexpr PhysicalAxes kPhysicalAxesHorizontal = PhysicalAxes(static_cast<uint8_t>(PhysicalAxis::kHorizontal));
+inline constexpr PhysicalAxes kPhysicalAxesVertical = PhysicalAxes(static_cast<uint8_t>(PhysicalAxis::kVertical));
+inline constexpr PhysicalAxes kPhysicalAxesBoth = kPhysicalAxesHorizontal | kPhysicalAxesVertical;
 
 // ConvertAxes relies on the fact that the underlying values for
 // for Inline/Horizontal are the same, and that the underlying values for

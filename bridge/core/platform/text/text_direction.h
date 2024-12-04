@@ -80,7 +80,7 @@ inline i18n::TextDirection ToBaseTextDirection(TextDirection direction) {
     case TextDirection::kRtl:
       return i18n::TextDirection::RIGHT_TO_LEFT;
   }
-  assert_m(false,  "NOTREACHED_IN_MIGRATION");
+  assert_m(false, "NOTREACHED_IN_MIGRATION");
   return i18n::TextDirection::UNKNOWN_DIRECTION;
 }
 

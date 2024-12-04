@@ -44,8 +44,7 @@ namespace webf {
  * @return trail surrogate (U+dc00..U+dfff) for supplementary
  * @stable ICU 2.4
  */
-#define U16_TRAIL(supplementary) (char16_t)(((supplementary) & 0x3ff) | 0xdc00)
-
+#define U16_TRAIL(supplementary) (char16_t)(((supplementary)&0x3ff) | 0xdc00)
 
 class StringBuilder {
   WEBF_STACK_ALLOCATED();
@@ -135,13 +134,11 @@ class StringBuilder {
     Append(buffer);
   }
 
-  void Append(int64_t v) {
-    Append(std::to_string(v));
-  }
+  void Append(int64_t v) { Append(std::to_string(v)); }
 
   void Append(int32_t c) {
     if (U_IS_BMP(c)) {
-      Append(static_cast<char16_t >(c));
+      Append(static_cast<char16_t>(c));
       return;
     }
     Append(U16_LEAD(c));

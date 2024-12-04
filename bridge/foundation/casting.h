@@ -36,8 +36,8 @@
 #define BRIDGE_FOUNDATION_CASTING_H_
 
 #include <cassert>
-#include <type_traits>
 #include <memory>
+#include <type_traits>
 
 namespace webf {
 

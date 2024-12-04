@@ -13,7 +13,6 @@
 
 namespace webf {
 
-
 namespace cssvalue {
 
 // The 'font' shorthand accepts some special system font values, like 'caption'
@@ -40,9 +39,7 @@ class CSSPendingSystemFontValue : public CSSValue {
   const AtomicString& ResolveFontFamily() const;
   float ResolveFontSize(const Document*) const;
 
-  bool Equals(const CSSPendingSystemFontValue& other) const {
-    return system_font_id_ == other.system_font_id_;
-  }
+  bool Equals(const CSSPendingSystemFontValue& other) const { return system_font_id_ == other.system_font_id_; }
 
   std::string CustomCSSText() const;
 
@@ -56,11 +53,8 @@ class CSSPendingSystemFontValue : public CSSValue {
 
 template <>
 struct DowncastTraits<cssvalue::CSSPendingSystemFontValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsPendingSystemFontValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsPendingSystemFontValue(); }
 };
-
 
 }  // namespace webf
 

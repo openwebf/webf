@@ -33,14 +33,12 @@
 #include "media_query.h"
 
 #include <algorithm>
-#include "core/css/media_query_exp.h"
 #include "core/base/strings/string_util.h"
-#include "media_type_names.h"
-#include "media_type_names.h"
+#include "core/css/media_query_exp.h"
 #include "foundation/string_builder.h"
+#include "media_type_names.h"
 
 namespace webf {
-
 
 // https://drafts.csswg.org/cssom/#serialize-a-media-query
 std::string MediaQuery::Serialize() const {
@@ -63,8 +61,7 @@ std::string MediaQuery::Serialize() const {
     return result.ReleaseString();
   }
 
-  if (MediaType() != media_type_names_stdstring::kAll ||
-      Restrictor() != RestrictorType::kNone) {
+  if (MediaType() != media_type_names_stdstring::kAll || Restrictor() != RestrictorType::kNone) {
     result.Append(MediaType());
     result.Append(" and ");
   }
@@ -77,8 +74,7 @@ std::string MediaQuery::Serialize() const {
 }
 
 std::shared_ptr<MediaQuery> MediaQuery::CreateNotAll() {
-  return std::make_shared<MediaQuery>(
-      RestrictorType::kNot, media_type_names_stdstring::kAll, nullptr /* exp_node */);
+  return std::make_shared<MediaQuery>(RestrictorType::kNot, media_type_names_stdstring::kAll, nullptr /* exp_node */);
 }
 
 MediaQuery::MediaQuery(RestrictorType restrictor,
@@ -99,7 +95,7 @@ MediaQuery::MediaQuery(const MediaQuery& o)
 MediaQuery::~MediaQuery() = default;
 
 void MediaQuery::Trace(GCVisitor* visitor) const {
-//  visitor->Trace(exp_node_);
+  //  visitor->Trace(exp_node_);
 }
 
 MediaQuery::RestrictorType MediaQuery::Restrictor() const {

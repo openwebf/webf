@@ -9,11 +9,11 @@
 #ifndef BRIDGE_FOUNDATION_STRING_VIEW_H_
 #define BRIDGE_FOUNDATION_STRING_VIEW_H_
 
-#include <string>
 #include <cassert>
+#include <string>
 #include "ascii_types.h"
-#include "native_string.h"
 #include "foundation/ascii_types.h"
+#include "native_string.h"
 
 namespace webf {
 
@@ -34,8 +34,7 @@ class StringView final {
 
   // From a StringView:
   explicit StringView(const StringView& view, unsigned offset, unsigned length);
-  explicit StringView(const StringView& view, unsigned offset)
-      : StringView(view, offset, view.length_ - offset) {}
+  explicit StringView(const StringView& view, unsigned offset) : StringView(view, offset, view.length_ - offset) {}
 
   // From a StringImpl:
   explicit StringView(const char*);
@@ -53,9 +52,7 @@ class StringView final {
 
   bool Is8Bit() const { return is_8bit_; }
 
-  FORCE_INLINE const void* Bytes() const {
-    return bytes_;
-  }
+  FORCE_INLINE const void* Bytes() const { return bytes_; }
 
   bool IsLowerASCII() const {
     if (is_8bit_) {
@@ -68,9 +65,7 @@ class StringView final {
 
   const char16_t* Characters16() const { return static_cast<const char16_t*>(bytes_); }
 
-  size_t CharactersSizeInBytes() const {
-    return length() * (Is8Bit() ? sizeof(char) : sizeof(char16_t));
-  }
+  size_t CharactersSizeInBytes() const { return length() * (Is8Bit() ? sizeof(char) : sizeof(char16_t)); }
 
   void Clear();
 
@@ -102,7 +97,6 @@ inline void StringView::Clear() {
 }
 
 bool EqualIgnoringASCIICase(const std::string_view&, const std::string_view&);
-
 
 }  // namespace webf
 

@@ -34,9 +34,9 @@
 #define WEBF_CORE_GEOMETRY_CALCULATION_VALUE_H_
 
 #include <memory>
-#include "foundation/macros.h"
 #include "core/platform/geometry/length.h"
 #include "core/platform/geometry/length_functions.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -46,9 +46,7 @@ class CalculationValue {
   USING_FAST_MALLOC(CalculationValue);
 
  public:
-  static std::shared_ptr<const CalculationValue> Create(
-      PixelsAndPercent value,
-      Length::ValueRange range) {
+  static std::shared_ptr<const CalculationValue> Create(PixelsAndPercent value, Length::ValueRange range) {
     return std::shared_ptr<const CalculationValue>(new CalculationValue(value, range));
   }
 
@@ -59,12 +57,9 @@ class CalculationValue {
       Length::ValueRange range);
 
   explicit CalculationValue(PixelsAndPercent value, Length::ValueRange range)
-      : data_(value),
-        is_expression_(false),
-        is_non_negative_(range == Length::ValueRange::kNonNegative) {}
+      : data_(value), is_expression_(false), is_non_negative_(range == Length::ValueRange::kNonNegative) {}
 
-  explicit CalculationValue(std::shared_ptr<const CalculationExpressionNode> expression,
-                            Length::ValueRange range);
+  explicit CalculationValue(std::shared_ptr<const CalculationExpressionNode> expression, Length::ValueRange range);
   ~CalculationValue();
 
   float Evaluate(float max_value, const Length::EvaluationInput& = {}) const;
@@ -72,8 +67,7 @@ class CalculationValue {
   bool IsExpression() const { return is_expression_; }
   bool IsNonNegative() const { return is_non_negative_; }
   Length::ValueRange GetValueRange() const {
-    return is_non_negative_ ? Length::ValueRange::kNonNegative
-                            : Length::ValueRange::kAll;
+    return is_non_negative_ ? Length::ValueRange::kNonNegative : Length::ValueRange::kAll;
   }
   bool HasAuto() const;
   bool HasContentOrIntrinsicSize() const;
@@ -112,8 +106,8 @@ class CalculationValue {
   std::shared_ptr<const CalculationExpressionNode> GetOrCreateExpression() const;
 
   std::shared_ptr<const CalculationValue> Blend(const CalculationValue& from,
-                                              double progress,
-                                              Length::ValueRange) const;
+                                                double progress,
+                                                Length::ValueRange) const;
   std::shared_ptr<const CalculationValue> SubtractFromOneHundredPercent() const;
   std::shared_ptr<const CalculationValue> Add(const CalculationValue&) const;
   std::shared_ptr<const CalculationValue> Zoom(double factor) const;
@@ -121,8 +115,7 @@ class CalculationValue {
  private:
   union DataUnion {
     explicit DataUnion(PixelsAndPercent value) : value(value) {}
-    explicit DataUnion(
-        std::shared_ptr<const CalculationExpressionNode> expression);
+    explicit DataUnion(std::shared_ptr<const CalculationExpressionNode> expression);
     ~DataUnion();
 
     PixelsAndPercent value;

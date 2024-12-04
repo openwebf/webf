@@ -41,16 +41,8 @@ class PhysicalToLogical {
   WEBF_STACK_ALLOCATED();
 
  public:
-  PhysicalToLogical(WritingDirectionMode writing_direction,
-                    Value top,
-                    Value right,
-                    Value bottom,
-                    Value left)
-      : writing_direction_(writing_direction),
-        top_(top),
-        right_(right),
-        bottom_(bottom),
-        left_(left) {}
+  PhysicalToLogical(WritingDirectionMode writing_direction, Value top, Value right, Value bottom, Value left)
+      : writing_direction_(writing_direction), top_(top), right_(right), bottom_(bottom), left_(left) {}
 
   Value InlineStart() const {
     if (writing_direction_.IsHorizontal())
@@ -76,16 +68,10 @@ class PhysicalToLogical {
     return ValueFor(writing_direction_.BlockEnd());
   }
 
-  Value LineOver() const {
-    return writing_direction_.IsHorizontal()
-               ? top_
-               : ValueFor(writing_direction_.LineOver());
-  }
+  Value LineOver() const { return writing_direction_.IsHorizontal() ? top_ : ValueFor(writing_direction_.LineOver()); }
 
   Value LineUnder() const {
-    return writing_direction_.IsHorizontal()
-               ? bottom_
-               : ValueFor(writing_direction_.LineUnder());
+    return writing_direction_.IsHorizontal() ? bottom_ : ValueFor(writing_direction_.LineUnder());
   }
 
  private:
@@ -175,12 +161,9 @@ class LogicalToLogical {
                    Value inline_end,
                    Value block_start,
                    Value block_end)
-      : LogicalToLogical(to_writing_direction,
-                         LogicalToPhysical<Value>(from_writing_direction,
-                                                  inline_start,
-                                                  inline_end,
-                                                  block_start,
-                                                  block_end)) {}
+      : LogicalToLogical(
+            to_writing_direction,
+            LogicalToPhysical<Value>(from_writing_direction, inline_start, inline_end, block_start, block_end)) {}
 
   Value InlineStart() const { return logical_.InlineStart(); }
   Value BlockStart() const { return logical_.BlockStart(); }
@@ -188,13 +171,8 @@ class LogicalToLogical {
   Value BlockEnd() const { return logical_.BlockEnd(); }
 
  private:
-  LogicalToLogical(WritingDirectionMode to_writing_direction,
-                   LogicalToPhysical<Value> physical)
-      : logical_(to_writing_direction,
-                 physical.Top(),
-                 physical.Right(),
-                 physical.Bottom(),
-                 physical.Left()) {}
+  LogicalToLogical(WritingDirectionMode to_writing_direction, LogicalToPhysical<Value> physical)
+      : logical_(to_writing_direction, physical.Top(), physical.Right(), physical.Bottom(), physical.Left()) {}
 
   PhysicalToLogical<Value> logical_;
 };
@@ -212,11 +190,7 @@ class LogicalToPhysicalGetter {
                           Getter block_start_getter,
                           Getter block_end_getter)
       : object_(object),
-        converter_(writing_direction,
-                   inline_start_getter,
-                   inline_end_getter,
-                   block_start_getter,
-                   block_end_getter) {}
+        converter_(writing_direction, inline_start_getter, inline_end_getter, block_start_getter, block_end_getter) {}
 
   Value Left() const { return (object_.*converter_.Left())(); }
   Value Right() const { return (object_.*converter_.Right())(); }
@@ -240,12 +214,7 @@ class PhysicalToLogicalGetter {
                           Getter right_getter,
                           Getter bottom_getter,
                           Getter left_getter)
-      : object_(object),
-        converter_(writing_direction,
-                   top_getter,
-                   right_getter,
-                   bottom_getter,
-                   left_getter) {}
+      : object_(object), converter_(writing_direction, top_getter, right_getter, bottom_getter, left_getter) {}
 
   Value InlineStart() const { return (object_.*converter_.InlineStart())(); }
   Value InlineEnd() const { return (object_.*converter_.InlineEnd())(); }
@@ -269,12 +238,7 @@ class LogicalToPhysicalSetter {
                           Setter right_setter,
                           Setter bottom_setter,
                           Setter left_setter)
-      : object_(object),
-        converter_(writing_direction,
-                   top_setter,
-                   right_setter,
-                   bottom_setter,
-                   left_setter) {}
+      : object_(object), converter_(writing_direction, top_setter, right_setter, bottom_setter, left_setter) {}
 
   void SetInlineStart(Value v) { (object_.*converter_.InlineStart())(v); }
   void SetInlineEnd(Value v) { (object_.*converter_.InlineEnd())(v); }

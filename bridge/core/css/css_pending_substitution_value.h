@@ -7,13 +7,12 @@
 #ifndef WEBF_CSS_PENDING_SUBSTITUTION_VALUE_H
 #define WEBF_CSS_PENDING_SUBSTITUTION_VALUE_H
 
-#include "css_property_names.h"
 #include "core/css/css_unparsed_declaration_value.h"
 #include "core/css/css_value.h"
+#include "css_property_names.h"
 #include "foundation/casting.h"
 
 namespace webf {
-
 
 namespace cssvalue {
 
@@ -25,15 +24,11 @@ class CSSPendingSubstitutionValue : public CSSValue {
         shorthand_property_id_(shorthand_property_id),
         shorthand_value_(std::move(shorthand_value)) {}
 
-  CSSUnparsedDeclarationValue* ShorthandValue() const {
-    return shorthand_value_.get();
-  }
+  CSSUnparsedDeclarationValue* ShorthandValue() const { return shorthand_value_.get(); }
 
   CSSPropertyID ShorthandPropertyId() const { return shorthand_property_id_; }
 
-  bool Equals(const CSSPendingSubstitutionValue& other) const {
-    return shorthand_value_ == other.shorthand_value_;
-  }
+  bool Equals(const CSSPendingSubstitutionValue& other) const { return shorthand_value_ == other.shorthand_value_; }
   std::string CustomCSSText() const;
 
   void TraceAfterDispatch(GCVisitor*) const;
@@ -47,9 +42,7 @@ class CSSPendingSubstitutionValue : public CSSValue {
 
 template <>
 struct DowncastTraits<cssvalue::CSSPendingSubstitutionValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsPendingSubstitutionValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsPendingSubstitutionValue(); }
 };
 
 }  // namespace webf

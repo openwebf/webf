@@ -27,12 +27,12 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include <unordered_map>
 #include "length.h"
+#include <unordered_map>
 #include "core/platform/geometry/blend.h"
 #include "core/platform/geometry/calculation_value.h"
-#include "foundation/macros.h"
 #include "core/platform/static_constructors.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -67,7 +67,8 @@ PixelsAndPercent Length::GetPixelsAndPercent() const {
   }
 }
 
-Length::Length(std::shared_ptr<const CalculationValue> calc) : quirk_(false), type_(kCalculated), calc_value_(std::move(calc)) {}
+Length::Length(std::shared_ptr<const CalculationValue> calc)
+    : quirk_(false), type_(kCalculated), calc_value_(std::move(calc)) {}
 
 bool Length::HasAuto() const {
   if (GetType() == kCalculated) {
@@ -215,7 +216,7 @@ std::string Length::ToString() const {
     builder.append("?");
   builder.append(", ");
   if (IsCalculated()) {
-    builder.append(std::to_string((uint64_t) calc_value_.get()));
+    builder.append(std::to_string((uint64_t)calc_value_.get()));
   } else {
     builder.append(std::to_string(value_));
   }

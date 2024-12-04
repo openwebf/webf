@@ -39,10 +39,8 @@ class CSSUnparsedDeclarationValue final : public CSSValue {
       : CSSValue(kUnparsedDeclarationClass), data_(std::move(data)) {}
 
   explicit CSSUnparsedDeclarationValue(std::shared_ptr<CSSVariableData> data,
-                              std::shared_ptr<const CSSParserContext>& context)
-      : CSSValue(kUnparsedDeclarationClass),
-        parser_context_(context),
-        data_(std::move(data)) {}
+                                       std::shared_ptr<const CSSParserContext>& context)
+      : CSSValue(kUnparsedDeclarationClass), parser_context_(context), data_(std::move(data)) {}
 
   std::shared_ptr<CSSVariableData> VariableDataValue() const { return data_; }
   std::shared_ptr<const CSSParserContext> ParserContext() const {
@@ -51,9 +49,7 @@ class CSSUnparsedDeclarationValue final : public CSSValue {
     return parser_context_;
   }
 
-  bool Equals(const CSSUnparsedDeclarationValue& other) const {
-    return data_ == other.data_;
-  }
+  bool Equals(const CSSUnparsedDeclarationValue& other) const { return data_ == other.data_; }
   std::string CustomCSSText() const;
 
   void TraceAfterDispatch(GCVisitor*) const;
@@ -67,9 +63,7 @@ class CSSUnparsedDeclarationValue final : public CSSValue {
 
 template <>
 struct DowncastTraits<CSSUnparsedDeclarationValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsUnparsedDeclaration();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsUnparsedDeclaration(); }
 };
 
 }  // namespace webf

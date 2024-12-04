@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "gtest/gtest.h"
 #include "core/css/parser/container_query_parser.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_tokenizer.h"
+#include "gtest/gtest.h"
 
 namespace webf {
 
@@ -13,8 +13,7 @@ class ContainerQueryParserTest : public testing::Test {
  public:
   std::string ParseQuery(const std::string&& string) {
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-    std::shared_ptr<const MediaQueryExpNode> node =
-        ContainerQueryParser(*context).ParseCondition(string);
+    std::shared_ptr<const MediaQueryExpNode> node = ContainerQueryParser(*context).ParseCondition(string);
     if (!node) {
       return "";
     }
@@ -30,39 +29,26 @@ class ContainerQueryParserTest : public testing::Test {
     WEBF_STACK_ALLOCATED();
 
    public:
-    bool IsAllowed(const std::string& feature) const override {
-      return feature == "width";
-    }
-    bool IsAllowedWithoutValue(const std::string& feature) const override {
-      return true;
-    }
-    bool IsCaseSensitive(const std::string& feature) const {
-      return false;
-    }
+    bool IsAllowed(const std::string& feature) const override { return feature == "width"; }
+    bool IsAllowedWithoutValue(const std::string& feature) const override { return true; }
+    bool IsCaseSensitive(const std::string& feature) const { return false; }
 
-    bool SupportsRange() const {
-      return true;
-    }
+    bool SupportsRange() const { return true; }
   };
 
   // E.g. https://drafts.csswg.org/css-contain-3/#typedef-style-query
   std::string ParseFeatureQuery(std::string feature_query) {
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-    auto [tokens, raw_offsets] =
-        CSSTokenizer(feature_query).TokenizeToEOFWithOffsets();
+    auto [tokens, raw_offsets] = CSSTokenizer(feature_query).TokenizeToEOFWithOffsets();
     CSSParserTokenRange range(tokens);
-    CSSParserTokenOffsets offsets(tokens, std::move(raw_offsets),
-                                  feature_query);
-    auto node =
-        ContainerQueryParser(*context).ConsumeFeatureQuery(range, offsets,
-                                                           TestFeatureSet());
+    CSSParserTokenOffsets offsets(tokens, std::move(raw_offsets), feature_query);
+    auto node = ContainerQueryParser(*context).ConsumeFeatureQuery(range, offsets, TestFeatureSet());
     if (!node || !range.AtEnd()) {
       return "";
     }
     return node->Serialize();
   }
 };
-
 
 TEST_F(ContainerQueryParserTest, ParseQuery) {
   const char* tests[] = {
@@ -123,5 +109,4 @@ TEST_F(ContainerQueryParserTest, ParseFeatureQuery) {
   EXPECT_EQ("", ParseFeatureQuery("(width) and (width) or (width)"));
 }
 
-
-}
+}  // namespace webf

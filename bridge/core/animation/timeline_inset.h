@@ -15,8 +15,7 @@ namespace webf {
 class TimelineInset {
  public:
   TimelineInset() = default;
-  TimelineInset(const Length& start, const Length& end)
-      : start_(start), end_(end) {}
+  TimelineInset(const Length& start, const Length& end) : start_(start), end_(end) {}
 
   // Note these represent the logical start/end sides of the source scroller,
   // not the start/end of the timeline.
@@ -24,9 +23,7 @@ class TimelineInset {
   const Length& GetStart() const { return start_; }
   const Length& GetEnd() const { return end_; }
 
-  bool operator==(const TimelineInset& o) const {
-    return start_ == o.start_ && end_ == o.end_;
-  }
+  bool operator==(const TimelineInset& o) const { return start_ == o.start_ && end_ == o.end_; }
 
   bool operator!=(const TimelineInset& o) const { return !(*this == o); }
 

@@ -13,12 +13,10 @@ namespace base {
 
 // CountUnicodeCharacters ------------------------------------------------------
 
-std::optional<size_t> CountUnicodeCharacters(std::string_view text,
-                                             size_t limit) {
+std::optional<size_t> CountUnicodeCharacters(std::string_view text, size_t limit) {
   int32_t unused = 0;
   size_t count = 0;
-  for (size_t index = 0; count < limit && index < text.size();
-       ++count, ++index) {
+  for (size_t index = 0; count < limit && index < text.size(); ++count, ++index) {
     if (!ReadUnicodeCharacter(text.data(), text.size(), &index, &unused)) {
       return std::nullopt;
     }
@@ -28,13 +26,9 @@ std::optional<size_t> CountUnicodeCharacters(std::string_view text,
 
 // ReadUnicodeCharacter --------------------------------------------------------
 
-bool ReadUnicodeCharacter(const char* src,
-                          size_t src_len,
-                          size_t* char_index,
-                          int32_t* code_point_out) {
+bool ReadUnicodeCharacter(const char* src, size_t src_len, size_t* char_index, int32_t* code_point_out) {
   int32_t code_point;
-  CBU8_NEXT(reinterpret_cast<const uint8_t*>(src), *char_index, src_len,
-            code_point);
+  CBU8_NEXT(reinterpret_cast<const uint8_t*>(src), *char_index, src_len, code_point);
   *code_point_out = code_point;
 
   // The ICU macro above moves to the next char, we want to point to the last
@@ -45,20 +39,16 @@ bool ReadUnicodeCharacter(const char* src,
   return IsValidCodepoint(code_point);
 }
 
-bool ReadUnicodeCharacter(const char16_t* src,
-                          size_t src_len,
-                          size_t* char_index,
-                          int32_t* code_point) {
+bool ReadUnicodeCharacter(const char16_t* src, size_t src_len, size_t* char_index, int32_t* code_point) {
   if (CBU16_IS_SURROGATE(src[*char_index])) {
-    if (!CBU16_IS_SURROGATE_LEAD(src[*char_index]) || !src_len ||
-        *char_index >= src_len - 1 || !CBU16_IS_TRAIL(src[*char_index + 1])) {
+    if (!CBU16_IS_SURROGATE_LEAD(src[*char_index]) || !src_len || *char_index >= src_len - 1 ||
+        !CBU16_IS_TRAIL(src[*char_index + 1])) {
       // Invalid surrogate pair.
       return false;
     }
 
     // Valid surrogate pair.
-    *code_point = CBU16_GET_SUPPLEMENTARY(src[*char_index],
-                                          src[*char_index + 1]);
+    *code_point = CBU16_GET_SUPPLEMENTARY(src[*char_index], src[*char_index + 1]);
     (*char_index)++;
   } else {
     // Not a surrogate, just one 16-bit word.
@@ -69,10 +59,7 @@ bool ReadUnicodeCharacter(const char16_t* src,
 }
 
 #if defined(WCHAR_T_IS_32_BIT)
-bool ReadUnicodeCharacter(const wchar_t* src,
-                          size_t src_len,
-                          size_t* char_index,
-                          int32_t* code_point) {
+bool ReadUnicodeCharacter(const wchar_t* src, size_t src_len, size_t* char_index, int32_t* code_point) {
   // Conversion is easy since the source is 32-bit.
   *code_point = static_cast<int32_t>(src[*char_index]);
 
@@ -83,8 +70,7 @@ bool ReadUnicodeCharacter(const wchar_t* src,
 
 // WriteUnicodeCharacter -------------------------------------------------------
 
-size_t WriteUnicodeCharacter(int32_t code_point,
-                             std::string* output) {
+size_t WriteUnicodeCharacter(int32_t code_point, std::string* output) {
   if (code_point >= 0 && code_point <= 0x7f) {
     // Fast path the common case of one byte.
     output->push_back(static_cast<char>(code_point));
@@ -96,8 +82,7 @@ size_t WriteUnicodeCharacter(int32_t code_point,
   size_t original_char_offset = char_offset;
   output->resize(char_offset + CBU8_MAX_LENGTH);
 
-  CBU8_APPEND_UNSAFE(reinterpret_cast<uint8_t*>(output->data()), char_offset,
-                     code_point);
+  CBU8_APPEND_UNSAFE(reinterpret_cast<uint8_t*>(output->data()), char_offset, code_point);
 
   // CBU8_APPEND_UNSAFE will advance our pointer past the inserted character, so
   // it will represent the new length of the string.
@@ -105,8 +90,7 @@ size_t WriteUnicodeCharacter(int32_t code_point,
   return char_offset - original_char_offset;
 }
 
-size_t WriteUnicodeCharacter(int32_t code_point,
-                             std::u16string* output) {
+size_t WriteUnicodeCharacter(int32_t code_point, std::u16string* output) {
   if (CBU16_LENGTH(code_point) == 1) {
     // The code point is in the Basic Multilingual Plane (BMP).
     output->push_back(static_cast<char16_t>(code_point));
@@ -121,10 +105,8 @@ size_t WriteUnicodeCharacter(int32_t code_point,
 
 // Generalized Unicode converter -----------------------------------------------
 
-template<typename CHAR>
-void PrepareForUTF8Output(const CHAR* src,
-                          size_t src_len,
-                          std::string* output) {
+template <typename CHAR>
+void PrepareForUTF8Output(const CHAR* src, size_t src_len, std::string* output) {
   output->clear();
   if (src_len == 0)
     return;
@@ -140,10 +122,8 @@ void PrepareForUTF8Output(const CHAR* src,
 // Instantiate versions we know callers will need.
 template void PrepareForUTF8Output(const char16_t*, size_t, std::string*);
 
-template<typename STRING>
-void PrepareForUTF16Or32Output(const char* src,
-                               size_t src_len,
-                               STRING* output) {
+template <typename STRING>
+void PrepareForUTF16Or32Output(const char* src, size_t src_len, STRING* output) {
   output->clear();
   if (src_len == 0)
     return;
@@ -159,6 +139,5 @@ void PrepareForUTF16Or32Output(const char* src,
 
 // Instantiate versions we know callers will need.
 template void PrepareForUTF16Or32Output(const char*, size_t, std::u16string*);
-
 
 }  // namespace base

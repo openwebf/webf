@@ -27,9 +27,7 @@ class InterpolableValue {
   //
   // Callers must make sure that |this|, |to|, and |result| are all of the same
   // concrete subclass.
-  virtual void Interpolate(const InterpolableValue& to,
-                           const double progress,
-                           InterpolableValue& result) const = 0;
+  virtual void Interpolate(const InterpolableValue& to, const double progress, InterpolableValue& result) const = 0;
 
   virtual bool IsDouble() const { return false; }
   virtual bool IsNumber() const { return false; }
@@ -60,8 +58,7 @@ class InterpolableValue {
     Scale(scale);
     Add(other);
   }
-  virtual void AssertCanInterpolateWith(
-      const InterpolableValue& other) const = 0;
+  virtual void AssertCanInterpolateWith(const InterpolableValue& other) const = 0;
 
   // Clone this value, optionally zeroing out the components at the same time.
   // These are not virtual to allow for covariant return types; see
@@ -70,7 +67,7 @@ class InterpolableValue {
   std::shared_ptr<InterpolableValue> CloneAndZero() const { return RawCloneAndZero(); }
 
   // TODO(guopengfei)：
-  //virtual void Trace(Visitor*) const {}
+  // virtual void Trace(Visitor*) const {}
 
  private:
   // Helper methods to allow covariant Clone/CloneAndZero methods. Concrete
@@ -95,11 +92,9 @@ class InlinedInterpolableDouble final {
 
   void Scale(double scale) { value_ *= scale; }
   void Add(double other) { value_ += other; }
-  void ScaleAndAdd(double scale, double other) {
-    value_ = value_ * scale + other;
-  }
+  void ScaleAndAdd(double scale, double other) { value_ = value_ * scale + other; }
   // TODO(guopengfei)：
-  //void Trace(Visitor*) const {}
+  // void Trace(Visitor*) const {}
 
  private:
   double value_ = 0.;
@@ -109,8 +104,7 @@ class InterpolableNumber final : public InterpolableValue {
  public:
   InterpolableNumber() = default;
   explicit InterpolableNumber(double value,
-                              CSSPrimitiveValue::UnitType unit_type =
-                                  CSSPrimitiveValue::UnitType::kNumber);
+                              CSSPrimitiveValue::UnitType unit_type = CSSPrimitiveValue::UnitType::kNumber);
   explicit InterpolableNumber(const CSSMathExpressionNode& expression);
 
   // TODO(crbug.com/1521261): Remove this, once the bug is fixed.
@@ -118,9 +112,7 @@ class InterpolableNumber final : public InterpolableValue {
   double Value(const CSSLengthResolver& length_resolver) const;
 
   // InterpolableValue
-  void Interpolate(const InterpolableValue& to,
-                   const double progress,
-                   InterpolableValue& result) const final;
+  void Interpolate(const InterpolableValue& to, const double progress, InterpolableValue& result) const final;
   bool IsNumber() const final { return true; }
   bool Equals(const InterpolableValue& other) const final;
   void Scale(double scale) final;
@@ -131,7 +123,7 @@ class InterpolableNumber final : public InterpolableValue {
   std::shared_ptr<InterpolableNumber> Clone() const { return RawClone(); }
   std::shared_ptr<InterpolableNumber> CloneAndZero() const { return RawCloneAndZero(); }
   // TODO(guopengfei)：
-  //void Trace(Visitor* v) const override {
+  // void Trace(Visitor* v) const override {
   //  InterpolableValue::Trace(v);
   //  v->Trace(value_);
   //  v->Trace(expression_);
@@ -144,9 +136,7 @@ class InterpolableNumber final : public InterpolableValue {
     }
     return std::make_shared<InterpolableNumber>(*expression_);
   }
-  std::shared_ptr<InterpolableNumber> RawCloneAndZero() const final {
-    return std::make_shared<InterpolableNumber>(0);
-  }
+  std::shared_ptr<InterpolableNumber> RawCloneAndZero() const final { return std::make_shared<InterpolableNumber>(0); }
 
   bool IsDoubleValue() const { return type_ == Type::kDouble; }
   bool IsExpression() const { return type_ == Type::kExpression; }
@@ -162,30 +152,25 @@ class InterpolableNumber final : public InterpolableValue {
   std::shared_ptr<const CSSMathExpressionNode> expression_;
 };
 
-//static_assert(std::is_trivially_destructible_v<InterpolableNumber>,
+// static_assert(std::is_trivially_destructible_v<InterpolableNumber>,
 //              "Require trivial destruction for faster sweeping");
 
 class InterpolableList final : public InterpolableValue {
  public:
   explicit InterpolableList(uint32_t size) : values_(size) {
-    //static_assert(std::is_trivially_destructible_v<InterpolableList>,
+    // static_assert(std::is_trivially_destructible_v<InterpolableList>,
     //              "Require trivial destruction for faster sweeping");
   }
 
-  explicit InterpolableList(std::vector<std::shared_ptr<InterpolableValue>>&& values)
-      : values_(std::move(values)) {}
+  explicit InterpolableList(std::vector<std::shared_ptr<InterpolableValue>>&& values) : values_(std::move(values)) {}
 
   InterpolableList(const InterpolableList&) = delete;
   InterpolableList& operator=(const InterpolableList&) = delete;
   InterpolableList(InterpolableList&&) = default;
   InterpolableList& operator=(InterpolableList&&) = default;
 
-  const std::shared_ptr<InterpolableValue> Get(uint32_t position) const {
-    return values_[position];
-  }
-  std::shared_ptr<InterpolableValue>& GetMutable(uint32_t position) {
-    return values_[position];
-  }
+  const std::shared_ptr<InterpolableValue> Get(uint32_t position) const { return values_[position]; }
+  std::shared_ptr<InterpolableValue>& GetMutable(uint32_t position) { return values_[position]; }
   uint32_t length() const { return values_.size(); }
   void Set(uint32_t position, std::shared_ptr<InterpolableValue> value) {
     if (position >= values_.size()) {
@@ -198,9 +183,7 @@ class InterpolableList final : public InterpolableValue {
   std::shared_ptr<InterpolableList> CloneAndZero() const { return RawCloneAndZero(); }
 
   // InterpolableValue
-  void Interpolate(const InterpolableValue& to,
-                   const double progress,
-                   InterpolableValue& result) const final;
+  void Interpolate(const InterpolableValue& to, const double progress, InterpolableValue& result) const final;
   bool IsList() const final { return true; }
   bool Equals(const InterpolableValue& other) const final;
   void Scale(double scale) final;
@@ -209,7 +192,7 @@ class InterpolableList final : public InterpolableValue {
   void ScaleAndAdd(double scale, const InterpolableValue& other) final;
   void AssertCanInterpolateWith(const InterpolableValue& other) const final;
   // TODO(guopengfei)：
-  //void Trace(Visitor* v) const override {
+  // void Trace(Visitor* v) const override {
   //  InterpolableValue::Trace(v);
   //  v->Trace(values_);
   //}
@@ -229,15 +212,11 @@ class InterpolableList final : public InterpolableValue {
 
 template <>
 struct DowncastTraits<InterpolableNumber> {
-  static bool AllowFrom(const InterpolableValue& value) {
-    return value.IsNumber();
-  }
+  static bool AllowFrom(const InterpolableValue& value) { return value.IsNumber(); }
 };
 template <>
 struct DowncastTraits<InterpolableList> {
-  static bool AllowFrom(const InterpolableValue& value) {
-    return value.IsList();
-  }
+  static bool AllowFrom(const InterpolableValue& value) { return value.IsList(); }
 };
 
 }  // namespace webf

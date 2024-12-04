@@ -74,8 +74,7 @@ class LiveNodeListBase : public GarbageCollectedMixin {
   }
   void InvalidateCacheForAttribute(const QualifiedName*) const;
 
-  static bool ShouldInvalidateTypeOnAttributeChange(NodeListInvalidationType,
-                                                    const QualifiedName&);
+  static bool ShouldInvalidateTypeOnAttributeChange(NodeListInvalidationType, const QualifiedName&);
 
   void Trace(GCVisitor* visitor) const override { visitor->TraceMember(owner_node_); }
 
@@ -104,9 +103,8 @@ class LiveNodeListBase : public GarbageCollectedMixin {
   const unsigned collection_type_ : 5;
 };
 
-inline  bool LiveNodeListBase::ShouldInvalidateTypeOnAttributeChange(
-    NodeListInvalidationType type,
-    const QualifiedName& attr_name) {
+inline bool LiveNodeListBase::ShouldInvalidateTypeOnAttributeChange(NodeListInvalidationType type,
+                                                                    const QualifiedName& attr_name) {
   /* // TODO(guopengfei)：先注释
   switch (type) {
     case kInvalidateOnClassAttrChange:

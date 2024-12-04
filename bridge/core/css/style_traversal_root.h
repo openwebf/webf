@@ -7,8 +7,8 @@
 #ifndef WEBF_CORE_CSS_STYLE_TRAVERSAL_ROOT_H_
 #define WEBF_CORE_CSS_STYLE_TRAVERSAL_ROOT_H_
 
-#include "core/dom/container_node.h"
 #include "bindings/qjs/cppgc/member.h"
+#include "core/dom/container_node.h"
 
 namespace webf {
 
@@ -49,21 +49,19 @@ class StyleTraversalRoot {
     root_type_ = RootType::kSingleRoot;
   }
 
-  void Trace(GCVisitor* visitor) const {
-    visitor->TraceMember(root_node_);
-  }
+  void Trace(GCVisitor* visitor) const { visitor->TraceMember(root_node_); }
 
  protected:
   virtual ~StyleTraversalRoot() = default;
-/*
-#if DCHECK_IS_ON()
-  // Return the parent node for type of traversal for which the implementation
-  // is a root.
-  virtual ContainerNode* Parent(const Node&) const = 0;
+  /*
+  #if DCHECK_IS_ON()
+    // Return the parent node for type of traversal for which the implementation
+    // is a root.
+    virtual ContainerNode* Parent(const Node&) const = 0;
 
-  // Return true if the given node is marked dirty or child-dirty.
-  virtual bool IsChildDirty(const Node&) const = 0;
-#endif  // DCHECK_IS_ON()*/
+    // Return true if the given node is marked dirty or child-dirty.
+    virtual bool IsChildDirty(const Node&) const = 0;
+  #endif  // DCHECK_IS_ON()*/
 
   // Return true if the given node is dirty.
   virtual bool IsDirty(const Node&) const = 0;
@@ -73,16 +71,16 @@ class StyleTraversalRoot {
  private:
   friend class StyleTraversalRootTestImpl;
 
-//#if DCHECK_IS_ON()
-//  bool IsModifyingFlatTree() const;
-//#endif
+  //#if DCHECK_IS_ON()
+  //  bool IsModifyingFlatTree() const;
+  //#endif
 
   void AssertRootNodeInvariants() {
-/*#if DCHECK_IS_ON()
-    DCHECK(!root_node_ || root_node_->IsDocumentNode() ||
-           IsDirty(*root_node_) || IsChildDirty(*root_node_) ||
-           IsModifyingFlatTree());
-#endif*/
+    /*#if DCHECK_IS_ON()
+        DCHECK(!root_node_ || root_node_->IsDocumentNode() ||
+               IsDirty(*root_node_) || IsChildDirty(*root_node_) ||
+               IsModifyingFlatTree());
+    #endif*/
   }
 
   // The current root for dirty nodes.

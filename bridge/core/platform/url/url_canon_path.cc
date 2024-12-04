@@ -19,7 +19,6 @@
 
 namespace webf {
 
-
 namespace url {
 
 namespace {
@@ -107,10 +106,7 @@ enum DotDisposition {
 // at the end, |*consumed_len| = 2 for the "./" this function consumed. The
 // original dot length should be handled by the caller.
 template <typename CHAR>
-DotDisposition ClassifyAfterDot(const CHAR* spec,
-                                size_t after_dot,
-                                size_t end,
-                                size_t* consumed_len) {
+DotDisposition ClassifyAfterDot(const CHAR* spec, size_t after_dot, size_t end, size_t* consumed_len) {
   if (after_dot == end) {
     // Single dot at the end.
     *consumed_len = 0;
@@ -218,12 +214,10 @@ bool DoPartialPathInternal(const char* spec,
           // special case slashes. Since slashes are much more common than
           // dots, this actually increases performance measurably (though
           // slightly).
-          if (output->length() > path_begin_in_output &&
-              output->at(output->length() - 1) == '/') {
+          if (output->length() > path_begin_in_output && output->at(output->length() - 1) == '/') {
             // Slash followed by a dot, check to see if this is means relative
             size_t consumed_len;
-            switch (ClassifyAfterDot<char>(spec, i + dotlen, end,
-                                           &consumed_len)) {
+            switch (ClassifyAfterDot<char>(spec, i + dotlen, end, &consumed_len)) {
               case NOT_A_DIRECTORY:
                 // Copy the dot to the output, it means nothing special.
                 output->push_back('.');
@@ -288,24 +282,16 @@ bool DoPartialPathInternal(const char* spec,
 // Perform the same logic as in DoPartialPathInternal(), but updates the
 // publicly exposed CanonOutput structure similar to DoPath().  Returns
 // true if successful.
-bool DoPartialPath(const char* spec,
-                   const Component& path,
-                   CanonOutput* output,
-                   Component* out_path) {
+bool DoPartialPath(const char* spec, const Component& path, CanonOutput* output, Component* out_path) {
   out_path->begin = output->length();
-  bool success = DoPartialPathInternal(
-      spec, path, out_path->begin,
-      // TODO(crbug.com/40063064): Support Non-special URLs.
-      CanonMode::kSpecialURL, output);
+  bool success = DoPartialPathInternal(spec, path, out_path->begin,
+                                       // TODO(crbug.com/40063064): Support Non-special URLs.
+                                       CanonMode::kSpecialURL, output);
   out_path->len = output->length() - out_path->begin;
   return success;
 }
 
-bool DoPath(const char* spec,
-            const Component& path,
-            CanonMode canon_mode,
-            CanonOutput* output,
-            Component* out_path) {
+bool DoPath(const char* spec, const Component& path, CanonMode canon_mode, CanonOutput* output, Component* out_path) {
   // URL Standard:
   // - https://url.spec.whatwg.org/#path-start-state
   // - https://url.spec.whatwg.org/#path-state
@@ -321,8 +307,7 @@ bool DoPath(const char* spec,
       output->push_back('/');
     }
 
-    success = DoPartialPathInternal(spec, path, out_path->begin,
-                                                 canon_mode, output);
+    success = DoPartialPathInternal(spec, path, out_path->begin, canon_mode, output);
   } else if (canon_mode == CanonMode::kSpecialURL) {
     // No input, canonical path is a slash for special URLs, but it is empty for
     // non-special URLs.
@@ -350,18 +335,11 @@ bool CanonicalizePath(const char* spec,
   return DoPath(spec, path, canon_mode, output, out_path);
 }
 
-bool CanonicalizePath(const char* spec,
-                      const Component& path,
-                      CanonOutput* output,
-                      Component* out_path) {
-  return DoPath(spec, path, CanonMode::kSpecialURL, output,
-                                     out_path);
+bool CanonicalizePath(const char* spec, const Component& path, CanonOutput* output, Component* out_path) {
+  return DoPath(spec, path, CanonMode::kSpecialURL, output, out_path);
 }
 
-bool CanonicalizePartialPath(const char* spec,
-                             const Component& path,
-                             CanonOutput* output,
-                             Component* out_path) {
+bool CanonicalizePartialPath(const char* spec, const Component& path, CanonOutput* output, Component* out_path) {
   return DoPartialPath(spec, path, output, out_path);
 }
 
@@ -370,10 +348,9 @@ bool CanonicalizePartialPathInternal(const char* spec,
                                      size_t path_begin_in_output,
                                      CanonMode canon_mode,
                                      CanonOutput* output) {
-  return DoPartialPathInternal(
-      spec, path, path_begin_in_output, canon_mode, output);
+  return DoPartialPathInternal(spec, path, path_begin_in_output, canon_mode, output);
 }
 
 }  // namespace url
 
-} // webf
+}  // namespace webf

@@ -116,7 +116,6 @@ std::string CSSSelectorList::SelectorsText(const CSSSelector* first) {
   return result.ReleaseString();
 }
 
-void CSSSelectorList::Trace(GCVisitor* visitor) const {
-}
+void CSSSelectorList::Trace(GCVisitor* visitor) const {}
 
 }  // namespace webf

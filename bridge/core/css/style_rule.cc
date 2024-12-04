@@ -26,8 +26,8 @@
 #include "style_rule.h"
 #include "core/css/css_markup.h"
 #include "core/css/css_style_sheet.h"
-#include "core/css/parser/css_parser.h"
 #include "core/css/parser/container_query_parser.h"
+#include "core/css/parser/css_parser.h"
 #include "core/css/parser/css_tokenizer.h"
 #include "core/css/style_sheet_contents.h"
 #include "css_selector_list.h"
@@ -598,8 +598,7 @@ StyleRuleFontFace::StyleRuleFontFace(std::shared_ptr<CSSPropertyValueSet> proper
     : StyleRuleBase(kFontFace), properties_(properties) {}
 
 StyleRuleFontFace::StyleRuleFontFace(const StyleRuleFontFace& font_face_rule)
-    : StyleRuleBase(font_face_rule),
-      properties_(font_face_rule.properties_->MutableCopy()) {}
+    : StyleRuleBase(font_face_rule), properties_(font_face_rule.properties_->MutableCopy()) {}
 
 MutableCSSPropertyValueSet& StyleRuleFontFace::MutableProperties() {
   if (!properties_->IsMutable()) {
@@ -804,16 +803,13 @@ void StyleRuleContainer::TraceAfterDispatch(GCVisitor* visitor) const {
   StyleRuleCondition::TraceAfterDispatch(visitor);
 }
 
-StyleRuleStartingStyle::StyleRuleStartingStyle(
-    std::vector<std::shared_ptr<StyleRuleBase>> rules)
+StyleRuleStartingStyle::StyleRuleStartingStyle(std::vector<std::shared_ptr<StyleRuleBase>> rules)
     : StyleRuleGroup(kStartingStyle, std::move(rules)) {}
 
-
-StyleRuleFunction::StyleRuleFunction(
-    const std::string& name,
-    std::vector<StyleRuleFunction::Parameter> parameters,
-    std::shared_ptr<CSSVariableData> function_body,
-    StyleRuleFunction::Type return_type)
+StyleRuleFunction::StyleRuleFunction(const std::string& name,
+                                     std::vector<StyleRuleFunction::Parameter> parameters,
+                                     std::shared_ptr<CSSVariableData> function_body,
+                                     StyleRuleFunction::Type return_type)
     : StyleRuleBase(kFunction),
       name_(name),
       parameters_(std::move(parameters)),
@@ -825,16 +821,13 @@ void StyleRuleFunction::TraceAfterDispatch(GCVisitor* visitor) const {
 }
 
 StyleRuleMixin::StyleRuleMixin(const std::string& name, std::shared_ptr<StyleRule> fake_parent_rule)
-    : StyleRuleBase(RuleType::kMixin),
-      name_(std::move(name)),
-      fake_parent_rule_(std::move(fake_parent_rule)) {}
+    : StyleRuleBase(RuleType::kMixin), name_(std::move(name)), fake_parent_rule_(std::move(fake_parent_rule)) {}
 
 void StyleRuleMixin::TraceAfterDispatch(GCVisitor* visitor) const {
   StyleRuleBase::TraceAfterDispatch(visitor);
 }
 
-StyleRuleApplyMixin::StyleRuleApplyMixin(const std::string& name)
-    : StyleRuleBase(kApplyMixin), name_(name) {}
+StyleRuleApplyMixin::StyleRuleApplyMixin(const std::string& name) : StyleRuleBase(kApplyMixin), name_(name) {}
 
 void StyleRuleApplyMixin::TraceAfterDispatch(GCVisitor* visitor) const {
   StyleRuleBase::TraceAfterDispatch(visitor);

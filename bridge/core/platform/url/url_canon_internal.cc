@@ -4,7 +4,6 @@
 
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
-
 #include "url_canon_internal.h"
 
 #include <errno.h>
@@ -71,10 +70,7 @@ size_t FindInitialQuerySafeString(const char* source, size_t length) {
 }
 
 template <typename CHAR, typename UCHAR>
-void DoAppendStringOfType(const CHAR* source,
-                          size_t length,
-                          SharedCharTypes type,
-                          CanonOutput* output) {
+void DoAppendStringOfType(const CHAR* source, size_t length, SharedCharTypes type, CanonOutput* output) {
   size_t i = 0;
   // We only instantiate this for char, to avoid a Clang crash
   // (and because Append() does not support converting).
@@ -106,10 +102,7 @@ void DoAppendStringOfType(const CHAR* source,
 // This function assumes the input values are all contained in 8-bit,
 // although it allows any type. Returns true if input is valid, false if not.
 template <typename CHAR, typename UCHAR>
-void DoAppendInvalidNarrowString(const CHAR* spec,
-                                 size_t begin,
-                                 size_t end,
-                                 CanonOutput* output) {
+void DoAppendInvalidNarrowString(const CHAR* spec, size_t begin, size_t end, CanonOutput* output) {
   for (size_t i = begin; i < end; i++) {
     UCHAR uch = static_cast<UCHAR>(spec[i]);
     if (uch >= 0x80) {
@@ -266,18 +259,12 @@ const char kCharToHexLookup[8] = {
 
 const int32_t kUnicodeReplacementCharacter = 0xfffd;
 
-void AppendStringOfType(const char* source,
-                        size_t length,
-                        SharedCharTypes type,
-                        CanonOutput* output) {
+void AppendStringOfType(const char* source, size_t length, SharedCharTypes type, CanonOutput* output) {
   DoAppendStringOfType<char, unsigned char>(source, length, type, output);
 }
 
 // TODO(xiezuobing):
-bool ReadUTFCharLossy(const char* str,
-                      size_t* begin,
-                      size_t length,
-                      int32_t* code_point_out) {
+bool ReadUTFCharLossy(const char* str, size_t* begin, size_t length, int32_t* code_point_out) {
   if (!base::ReadUnicodeCharacter(str, length, begin, code_point_out)) {
     *code_point_out = kUnicodeReplacementCharacter;
     return false;
@@ -285,10 +272,7 @@ bool ReadUTFCharLossy(const char* str,
   return true;
 }
 
-void AppendInvalidNarrowString(const char* spec,
-                               size_t begin,
-                               size_t end,
-                               CanonOutput* output) {
+void AppendInvalidNarrowString(const char* spec, size_t begin, size_t end, CanonOutput* output) {
   DoAppendInvalidNarrowString<char, unsigned char>(spec, begin, end, output);
 }
 
@@ -300,29 +284,21 @@ void SetupOverrideComponents(const char* base,
   const URLComponentSource<char>& repl_source = repl.sources();
   const Parsed& repl_parsed = repl.components();
 
-  DoOverrideComponent(repl_source.scheme, repl_parsed.scheme, &source->scheme,
-                      &parsed->scheme);
-  DoOverrideComponent(repl_source.username, repl_parsed.username,
-                      &source->username, &parsed->username);
-  DoOverrideComponent(repl_source.password, repl_parsed.password,
-                      &source->password, &parsed->password);
+  DoOverrideComponent(repl_source.scheme, repl_parsed.scheme, &source->scheme, &parsed->scheme);
+  DoOverrideComponent(repl_source.username, repl_parsed.username, &source->username, &parsed->username);
+  DoOverrideComponent(repl_source.password, repl_parsed.password, &source->password, &parsed->password);
 
-  DoOverrideComponent(repl_source.host, repl_parsed.host, &source->host,
-                      &parsed->host);
+  DoOverrideComponent(repl_source.host, repl_parsed.host, &source->host, &parsed->host);
   // For backward compatibility, the following is probably required while the
   // flag is disabled by default.
   if (parsed->host.len == -1) {
     parsed->host.len = 0;
   }
 
-  DoOverrideComponent(repl_source.port, repl_parsed.port, &source->port,
-                      &parsed->port);
-  DoOverrideComponent(repl_source.path, repl_parsed.path, &source->path,
-                      &parsed->path);
-  DoOverrideComponent(repl_source.query, repl_parsed.query, &source->query,
-                      &parsed->query);
-  DoOverrideComponent(repl_source.ref, repl_parsed.ref, &source->ref,
-                      &parsed->ref);
+  DoOverrideComponent(repl_source.port, repl_parsed.port, &source->port, &parsed->port);
+  DoOverrideComponent(repl_source.path, repl_parsed.path, &source->path, &parsed->path);
+  DoOverrideComponent(repl_source.query, repl_parsed.query, &source->query, &parsed->query);
+  DoOverrideComponent(repl_source.ref, repl_parsed.ref, &source->ref, &parsed->ref);
 }
 
 #ifndef WIN32

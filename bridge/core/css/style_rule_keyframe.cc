@@ -12,9 +12,8 @@
 
 namespace webf {
 
-StyleRuleKeyframe::StyleRuleKeyframe(
-    std::unique_ptr<std::vector<KeyframeOffset>> keys,
-    std::shared_ptr<const CSSPropertyValueSet> properties)
+StyleRuleKeyframe::StyleRuleKeyframe(std::unique_ptr<std::vector<KeyframeOffset>> keys,
+                                     std::shared_ptr<const CSSPropertyValueSet> properties)
     : StyleRuleBase(kKeyframe), properties_(properties), keys_(*keys) {}
 
 std::string StyleRuleKeyframe::KeyText() const {
@@ -26,8 +25,7 @@ std::string StyleRuleKeyframe::KeyText() const {
       key_text.Append(", ");
     }
     if (keys_.at(i).name != TimelineOffset::NamedRange::kNone) {
-      key_text.Append(
-          TimelineOffset::TimelineRangeNameToString(keys_.at(i).name));
+      key_text.Append(TimelineOffset::TimelineRangeNameToString(keys_.at(i).name));
       key_text.Append(" ");
     }
     key_text.Append(keys_.at(i).percent * 100);
@@ -37,14 +35,12 @@ std::string StyleRuleKeyframe::KeyText() const {
   return key_text.ReleaseString();
 }
 
-bool StyleRuleKeyframe::SetKeyText(const ExecutingContext* execution_context,
-                                   const std::string& key_text) {
+bool StyleRuleKeyframe::SetKeyText(const ExecutingContext* execution_context, const std::string& key_text) {
   DCHECK(!key_text.empty());
 
   auto context = std::make_shared<CSSParserContext>(execution_context);
 
-  std::unique_ptr<std::vector<KeyframeOffset>> keys =
-      CSSParser::ParseKeyframeKeyList(context, key_text);
+  std::unique_ptr<std::vector<KeyframeOffset>> keys = CSSParser::ParseKeyframeKeyList(context, key_text);
   if (!keys || keys->empty()) {
     return false;
   }

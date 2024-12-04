@@ -5,8 +5,8 @@
 #ifndef WEBF_CORE_CSS_PART_NAMES_H_
 #define WEBF_CORE_CSS_PART_NAMES_H_
 
-#include <unordered_set>
 #include <core/dom/space_split_string.h>
+#include <unordered_set>
 
 namespace webf {
 
@@ -47,7 +47,6 @@ class PartNames {
   std::vector<std::shared_ptr<const NamesMap>> pending_maps_;
 };
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_PART_NAMES_H_

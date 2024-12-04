@@ -15,4 +15,4 @@ std::string CSSFunctionValue::CustomCSSText() const {
   return result;
 }
 
-}
+}  // namespace webf

@@ -17,7 +17,7 @@ std::string CSSQuadValue::CustomCSSText() const {
   std::string left = left_->CssText();
 
   if (serialization_type_ == TypeForSerialization::kSerializeAsRect) {
-     return "rect(" + top + ", " + right + ", " + bottom + ", " + left + ')';
+    return "rect(" + top + ", " + right + ", " + bottom + ", " + left + ')';
   }
 
   std::string result = top;

@@ -20,8 +20,7 @@ Rect ToEnclosingRect(const RectF& rect);
 // snapped to the integer grid. Unlike ToNearestRect() which only accepts
 // integer rect with or without floating point error, this function also accepts
 // non-integer rect. The default error is 0.001, which is used in cc/viz.
-Rect ToEnclosingRectIgnoringError(const RectF& rect,
-                                                  float error = 0.001f);
+Rect ToEnclosingRectIgnoringError(const RectF& rect, float error = 0.001f);
 
 // Returns the largest Rect that is enclosed by the given RectF if possible.
 // The returned rect is smaller than or equal to the input rect, but if
@@ -34,8 +33,7 @@ Rect ToEnclosedRect(const RectF& rect);
 // snapped to the integer grid. Unlike ToNearestRect() which only accepts
 // integer rect with or without floating point error, this function also accepts
 // non-integer rect.
-Rect ToEnclosedRectIgnoringError(const RectF& rect,
-                                                 float error);
+Rect ToEnclosedRectIgnoringError(const RectF& rect, float error);
 
 // Returns the Rect after snapping the corners of the RectF to an integer grid.
 // This should only be used when the RectF you provide is expected to be an
@@ -45,8 +43,7 @@ Rect ToNearestRect(const RectF& rect);
 
 // Returns true if the Rect produced after snapping the corners of the RectF
 // to an integer grid is withing |distance|.
-bool IsNearestRectWithinDistance(const gfx::RectF& rect,
-                                                 float distance);
+bool IsNearestRectWithinDistance(const gfx::RectF& rect, float distance);
 
 // Returns the Rect after rounding the corners of the RectF to an integer grid.
 gfx::Rect ToRoundedRect(const gfx::RectF& rect);

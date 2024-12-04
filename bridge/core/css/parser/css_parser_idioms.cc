@@ -7,10 +7,10 @@
  */
 
 #include "css_parser_idioms.h"
-#include "foundation/string_builder.h"
 #include "core/base/strings/string_number_conversions.h"
-#include "foundation/ascii_types.h"
 #include "css_tokenizer_input_stream.h"
+#include "foundation/ascii_types.h"
+#include "foundation/string_builder.h"
 
 namespace webf {
 
@@ -33,8 +33,7 @@ int32_t ConsumeEscape(CSSTokenizerInputStream& input) {
     unsigned consumed_hex_digits = 1;
     StringBuilder hex_chars;
     hex_chars.Append(cc);
-    while (consumed_hex_digits < 6 &&
-           IsASCIIHexDigit(input.PeekWithoutReplacement(0))) {
+    while (consumed_hex_digits < 6 && IsASCIIHexDigit(input.PeekWithoutReplacement(0))) {
       cc = input.NextInputChar();
       input.Advance();
       hex_chars.Append(cc);
@@ -45,8 +44,7 @@ int32_t ConsumeEscape(CSSTokenizerInputStream& input) {
     uint32_t code_point;
     ok = base::HexStringToUInt(hex_chars.ReleaseString(), &code_point);
     DCHECK(ok);
-    if (code_point == 0 || (0xD800 <= code_point && code_point <= 0xDFFF) ||
-        code_point > 0x10FFFF) {
+    if (code_point == 0 || (0xD800 <= code_point && code_point <= 0xDFFF) || code_point > 0x10FFFF) {
       return kReplacementCharacter;
     }
     return code_point;

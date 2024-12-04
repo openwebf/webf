@@ -35,9 +35,7 @@ class StyleInvalidator {
 
   void PushInvalidationSetsForContainerNode(ContainerNode&, SiblingData&);
   void PushInvalidationSet(const InvalidationSet&);
-  bool WholeSubtreeInvalid() const {
-    return invalidation_flags_.WholeSubtreeInvalid();
-  }
+  bool WholeSubtreeInvalid() const { return invalidation_flags_.WholeSubtreeInvalid(); }
 
   void Invalidate(Element&, SiblingData&);
   void InvalidateShadowRootChildren(Element&);
@@ -52,29 +50,17 @@ class StyleInvalidator {
   bool MatchesCurrentInvalidationSetsAsParts(Element&) const;
 
   bool HasInvalidationSets() const {
-    return !WholeSubtreeInvalid() &&
-           (invalidation_sets_.size() || pending_nth_sets_.size());
+    return !WholeSubtreeInvalid() && (invalidation_sets_.size() || pending_nth_sets_.size());
   }
 
-  void SetWholeSubtreeInvalid() {
-    invalidation_flags_.SetWholeSubtreeInvalid(true);
-  }
+  void SetWholeSubtreeInvalid() { invalidation_flags_.SetWholeSubtreeInvalid(true); }
 
-  bool TreeBoundaryCrossing() const {
-    return invalidation_flags_.TreeBoundaryCrossing();
-  }
-  bool InsertionPointCrossing() const {
-    return invalidation_flags_.InsertionPointCrossing();
-  }
-  bool InvalidatesSlotted() const {
-    return invalidation_flags_.InvalidatesSlotted();
-  }
-  bool InvalidatesParts() const {
-    return invalidation_flags_.InvalidatesParts();
-  }
+  bool TreeBoundaryCrossing() const { return invalidation_flags_.TreeBoundaryCrossing(); }
+  bool InsertionPointCrossing() const { return invalidation_flags_.InsertionPointCrossing(); }
+  bool InvalidatesSlotted() const { return invalidation_flags_.InvalidatesSlotted(); }
+  bool InvalidatesParts() const { return invalidation_flags_.InvalidatesParts(); }
 
-  void AddPendingNthSiblingInvalidationSet(
-      const NthSiblingInvalidationSet& nth_set) {
+  void AddPendingNthSiblingInvalidationSet(const NthSiblingInvalidationSet& nth_set) {
     pending_nth_sets_.push_back(&nth_set);
   }
   void PushNthSiblingInvalidationSets(SiblingData& sibling_data) {
@@ -98,9 +84,7 @@ class StyleInvalidator {
     WEBF_STACK_ALLOCATED();
 
    public:
-    SiblingData() : element_index_(0) {
-      invalidation_entries_.reserve(16);
-    }
+    SiblingData() : element_index_(0) { invalidation_entries_.reserve(16); }
 
     void PushInvalidationSet(const SiblingInvalidationSet&);
     bool MatchCurrentInvalidationSets(Element&, StyleInvalidator&);
@@ -111,17 +95,15 @@ class StyleInvalidator {
    private:
     struct Entry {
       WEBF_DISALLOW_NEW();
-      Entry(const SiblingInvalidationSet* invalidation_set,
-            unsigned invalidation_limit)
-          : invalidation_set_(invalidation_set),
-            invalidation_limit_(invalidation_limit) {}
+      Entry(const SiblingInvalidationSet* invalidation_set, unsigned invalidation_limit)
+          : invalidation_set_(invalidation_set), invalidation_limit_(invalidation_limit) {}
 
       const SiblingInvalidationSet* invalidation_set_;
       unsigned invalidation_limit_;
     };
 
     // TODO(guopengfei)：替换使用std::vector
-    //Vector<Entry, 16> invalidation_entries_;
+    // Vector<Entry, 16> invalidation_entries_;
     std::vector<Entry> invalidation_entries_;
     unsigned element_index_;
   };
@@ -138,7 +120,7 @@ class StyleInvalidator {
           invalidator_(invalidator) {}
     ~RecursionCheckpoint() {
       // TODO(guopengfei)：
-      //invalidator_->invalidation_sets_.Shrink(prev_invalidation_sets_size_);
+      // invalidator_->invalidation_sets_.Shrink(prev_invalidation_sets_size_);
       invalidator_->invalidation_sets_.clear();
       invalidator_->invalidation_flags_ = prev_invalidation_flags_;
     }

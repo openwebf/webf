@@ -8,8 +8,7 @@
 
 namespace webf {
 
-void CSSUnparsedDeclarationValue::TraceAfterDispatch(
-    GCVisitor* visitor) const {
+void CSSUnparsedDeclarationValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
 }
 

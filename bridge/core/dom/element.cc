@@ -11,13 +11,13 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_promise_resolver.h"
-#include "core/css/css_property_value_set.h"
-#include "core/css/parser/css_parser.h"
-#include "core/css/inline_css_style_declaration.h"
-#include "core/css/css_style_sheet.h"
-#include "core/css/style_scope_data.h"
 #include "child_list_mutation_scope.h"
 #include "comment.h"
+#include "core/css/css_property_value_set.h"
+#include "core/css/css_style_sheet.h"
+#include "core/css/inline_css_style_declaration.h"
+#include "core/css/parser/css_parser.h"
+#include "core/css/style_scope_data.h"
 #include "core/dom/document_fragment.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
@@ -44,11 +44,9 @@ Element::Element(const AtomicString& namespace_uri,
       tag_name_(local_name.ToStdString()) {
   auto buffer = GetExecutingContext()->uiCommandBuffer();
   if (namespace_uri == element_namespace_uris::khtml) {
-    buffer->AddCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString()), bindingObject(),
-                       nullptr);
+    buffer->AddCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString()), bindingObject(), nullptr);
   } else if (namespace_uri == element_namespace_uris::ksvg) {
-    buffer->AddCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString()), bindingObject(),
-                       nullptr);
+    buffer->AddCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString()), bindingObject(), nullptr);
   } else {
     buffer->AddCommand(UICommand::kCreateElementNS, std::move(local_name.ToNativeString()), bindingObject(),
                        namespace_uri.ToNativeString().release());
@@ -319,9 +317,7 @@ Element& Element::CloneWithoutChildren(Document* document) const {
   return clone;
 }
 
-void Element::NotifyInlineStyleMutation() {
-
-}
+void Element::NotifyInlineStyleMutation() {}
 
 std::shared_ptr<const MutableCSSPropertyValueSet> Element::EnsureMutableInlineStyle() {
   DCHECK(IsStyledElement());
@@ -343,20 +339,18 @@ void Element::ClearMutableInlineStyleIfEmpty() {
 
 std::shared_ptr<CSSPropertyValueSet> Element::CreatePresentationAttributeStyle() {
   assert(false);
-//  auto style = std::make_shared<MutableCSSPropertyValueSet>(
-//      IsSVGElement() ? kSVGAttributeMode : kHTMLStandardMode);
-//  AttributeCollection attributes = AttributesWithoutUpdate();
-//  for (const Attribute& attr : attributes) {
-//    CollectStyleForPresentationAttribute(attr.GetName(), attr.Value(), style);
-//  }
-//  CollectExtraStyleForPresentationAttribute(style);
-//  return style;
+  //  auto style = std::make_shared<MutableCSSPropertyValueSet>(
+  //      IsSVGElement() ? kSVGAttributeMode : kHTMLStandardMode);
+  //  AttributeCollection attributes = AttributesWithoutUpdate();
+  //  for (const Attribute& attr : attributes) {
+  //    CollectStyleForPresentationAttribute(attr.GetName(), attr.Value(), style);
+  //  }
+  //  CollectExtraStyleForPresentationAttribute(style);
+  //  return style;
   return nullptr;
 }
 
-void Element::DetachAllAttrNodesFromElement() {
-}
-
+void Element::DetachAllAttrNodesFromElement() {}
 
 void Element::CloneAttributesFrom(const Element& other) {
   if (GetElementRareData()) {
@@ -376,12 +370,9 @@ void Element::CloneAttributesFrom(const Element& other) {
   // can share it between both elements.
   // We can only do this if there are no presentation attributes and sharing the
   // data won't result in different case sensitivity of class or id.
-  auto* unique_element_data =
-      DynamicTo<UniqueElementData>(other.element_data_.get());
-  if (unique_element_data &&
-      !other.element_data_->PresentationAttributeStyle()) {
-    const_cast<Element&>(other).element_data_ =
-        unique_element_data->MakeShareableCopy();
+  auto* unique_element_data = DynamicTo<UniqueElementData>(other.element_data_.get());
+  if (unique_element_data && !other.element_data_->PresentationAttributeStyle()) {
+    const_cast<Element&>(other).element_data_ = unique_element_data->MakeShareableCopy();
   }
 
   if (!other.element_data_->IsUnique()) {
@@ -639,13 +630,10 @@ void Element::SynchronizeAttribute(const AtomicString& name) {
 void Element::InvalidateStyleAttribute(bool only_changed_independent_properties) {
   DCHECK(HasElementData());
   GetElementData()->SetStyleAttributeIsDirty(true);
-  SetNeedsStyleRecalc(only_changed_independent_properties
-                          ? kInlineIndependentStyleChange
-                          : kLocalStyleChange,
-                      StyleChangeReasonForTracing::Create(
-                          style_change_reason::kInlineCSSStyleMutated));
-//  GetDocument().GetStyleEngine().AttributeChangedForElement(
-//      html_names::kStyleAttr, *this);
+  SetNeedsStyleRecalc(only_changed_independent_properties ? kInlineIndependentStyleChange : kLocalStyleChange,
+                      StyleChangeReasonForTracing::Create(style_change_reason::kInlineCSSStyleMutated));
+  //  GetDocument().GetStyleEngine().AttributeChangedForElement(
+  //      html_names::kStyleAttr, *this);
 }
 
 void Element::AttributeChanged(const AttributeModificationParams& params) {
@@ -679,8 +667,7 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
 
   // Avoid redundant work if we're using shared attribute data with already
   // parsed inline style.
-  if (inline_style &&
-      !GetElementData()->IsUnique()) {
+  if (inline_style && !GetElementData()->IsUnique()) {
     return;
   }
 
@@ -691,14 +678,11 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
   }
 
   if (!inline_style) {
-    inline_style =
-        CSSParser::ParseInlineStyleDeclaration(new_style_string.ToStdString(), this);
+    inline_style = CSSParser::ParseInlineStyleDeclaration(new_style_string.ToStdString(), this);
   } else {
     DCHECK(inline_style->IsMutable());
     static_cast<MutableCSSPropertyValueSet*>(const_cast<CSSPropertyValueSet*>(inline_style.get()))
-        ->ParseDeclarationList(
-            new_style_string,
-            GetDocument().ElementSheet().Contents());
+        ->ParseDeclarationList(new_style_string, GetDocument().ElementSheet().Contents());
   }
 }
 
@@ -899,8 +883,7 @@ void Element::CreateUniqueElementData() {
     element_data_ = std::make_unique<UniqueElementData>();
   } else {
     DCHECK(!IsA<UniqueElementData>(element_data_.get()));
-    element_data_ =
-        To<ShareableElementData>(element_data_.get())->MakeUniqueCopy();
+    element_data_ = To<ShareableElementData>(element_data_.get())->MakeUniqueCopy();
   }
 }
 

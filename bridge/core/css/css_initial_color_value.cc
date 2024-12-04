@@ -18,4 +18,4 @@ std::string CSSInitialColorValue::CustomCSSText() const {
   return "";
 }
 
-}  // namespace blink
+}  // namespace webf

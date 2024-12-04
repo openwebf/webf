@@ -15,7 +15,6 @@
 
 namespace webf {
 
-
 namespace url {
 
 namespace {
@@ -205,11 +204,8 @@ using StackBuffer = RawCanonOutputT<char, kTempHostBufferLen>;
 // Scans a host name and fills in the output flags according to what we find.
 // |has_non_ascii| will be true if there are any non-7-bit characters, and
 // |has_escaped| will be true if there is a percent sign.
-template<typename CHAR, typename UCHAR>
-void ScanHostname(const CHAR* spec,
-                  const Component& host,
-                  bool* has_non_ascii,
-                  bool* has_escaped) {
+template <typename CHAR, typename UCHAR>
+void ScanHostname(const CHAR* spec, const Component& host, bool* has_non_ascii, bool* has_escaped) {
   int end = host.end();
   *has_non_ascii = false;
   *has_escaped = false;
@@ -243,10 +239,7 @@ void ScanHostname(const CHAR* spec,
 //
 // The return value indicates if the output is a potentially valid host name.
 template <typename INCHAR, typename OUTCHAR>
-bool DoSimpleHost(const INCHAR* host,
-                  size_t host_len,
-                  CanonOutputT<OUTCHAR>* output,
-                  bool* has_non_ascii) {
+bool DoSimpleHost(const INCHAR* host, size_t host_len, CanonOutputT<OUTCHAR>* output, bool* has_non_ascii) {
   *has_non_ascii = false;
 
   bool success = true;
@@ -255,8 +248,7 @@ bool DoSimpleHost(const INCHAR* host,
     if (source == '%') {
       // Unescape first, if possible.
       // Source will be used only if decode operation was successful.
-      if (!DecodeEscaped(host, &i, host_len,
-                         reinterpret_cast<unsigned char*>(&source))) {
+      if (!DecodeEscaped(host, &i, host_len, reinterpret_cast<unsigned char*>(&source))) {
         // Invalid escaped character. There is nothing that can make this
         // host valid. We append an escaped percent so the URL looks reasonable
         // and mark as failed.
@@ -294,9 +286,7 @@ bool DoSimpleHost(const INCHAR* host,
 }
 
 template <typename CHAR, typename UCHAR>
-bool DoHostSubstring(const CHAR* spec,
-                     const Component& host,
-                     CanonOutput* output) {
+bool DoHostSubstring(const CHAR* spec, const Component& host, CanonOutput* output) {
   DCHECK(host.is_valid());
 
   bool has_non_ascii, has_escaped;
@@ -306,14 +296,12 @@ bool DoHostSubstring(const CHAR* spec,
     return false;
   }
 
-  const bool success = DoSimpleHost(
-      &spec[host.begin], static_cast<size_t>(host.len), output, &has_non_ascii);
+  const bool success = DoSimpleHost(&spec[host.begin], static_cast<size_t>(host.len), output, &has_non_ascii);
   DCHECK(!has_non_ascii);
   return success;
 }
 
-bool DoOpaqueHost(const std::basic_string_view<char> host,
-                  CanonOutput& output) {
+bool DoOpaqueHost(const std::basic_string_view<char> host, CanonOutput& output) {
   // URL Standard: https://url.spec.whatwg.org/#concept-opaque-host-parser
 
   size_t host_len = host.size();
@@ -352,10 +340,7 @@ bool DoOpaqueHost(const std::basic_string_view<char> host,
 }
 
 template <typename CHAR, typename UCHAR, CanonMode canon_mode>
-void DoHost(const CHAR* spec,
-            const Component& host,
-            CanonOutput& output,
-            CanonHostInfo& host_info) {
+void DoHost(const CHAR* spec, const Component& host, CanonOutput& output, CanonHostInfo& host_info) {
   // URL Standard: https://url.spec.whatwg.org/#host-parsing
 
   // Keep track of output's initial length, so we can rewind later.
@@ -393,14 +378,10 @@ void DoHost(const CHAR* spec,
     RawCanonOutput<64> canon_ip;
 
     if constexpr (canon_mode == CanonMode::kSpecialURL) {
-      CanonicalizeIPAddress(output.data(),
-                            MakeRange(output_begin, output.length()), &canon_ip,
-                            &host_info);
+      CanonicalizeIPAddress(output.data(), MakeRange(output_begin, output.length()), &canon_ip, &host_info);
     } else {
       // Non-special URLs support only IPv6.
-      CanonicalizeIPv6Address(output.data(),
-                              MakeRange(output_begin, output.length()),
-                              canon_ip, host_info);
+      CanonicalizeIPv6Address(output.data(), MakeRange(output_begin, output.length()), canon_ip, host_info);
     }
 
     // If we got an IPv4/IPv6 address, copy the canonical form back to the
@@ -419,43 +400,27 @@ void DoHost(const CHAR* spec,
 
 }  // namespace
 
-bool CanonicalizeHost(const char* spec,
-                      const Component& host,
-                      CanonOutput* output,
-                      Component* out_host) {
+bool CanonicalizeHost(const char* spec, const Component& host, CanonOutput* output, Component* out_host) {
   DCHECK(output);
   DCHECK(out_host);
   return CanonicalizeSpecialHost(spec, host, *output, *out_host);
 }
 
-
-bool CanonicalizeSpecialHost(const char* spec,
-                             const Component& host,
-                             CanonOutput& output,
-                             Component& out_host) {
+bool CanonicalizeSpecialHost(const char* spec, const Component& host, CanonOutput& output, Component& out_host) {
   CanonHostInfo host_info;
-  DoHost<char, unsigned char, CanonMode::kSpecialURL>(spec, host, output,
-                                                      host_info);
+  DoHost<char, unsigned char, CanonMode::kSpecialURL>(spec, host, output, host_info);
   out_host = host_info.out_host;
   return (host_info.family != CanonHostInfo::BROKEN);
 }
 
-bool CanonicalizeNonSpecialHost(const char* spec,
-                                const Component& host,
-                                CanonOutput& output,
-                                Component& out_host) {
+bool CanonicalizeNonSpecialHost(const char* spec, const Component& host, CanonOutput& output, Component& out_host) {
   CanonHostInfo host_info;
-  DoHost<char, unsigned char, CanonMode::kNonSpecialURL>(spec, host, output,
-                                                         host_info);
+  DoHost<char, unsigned char, CanonMode::kNonSpecialURL>(spec, host, output, host_info);
   out_host = host_info.out_host;
   return (host_info.family != CanonHostInfo::BROKEN);
 }
 
-
-void CanonicalizeHostVerbose(const char* spec,
-                             const Component& host,
-                             CanonOutput* output,
-                             CanonHostInfo* host_info) {
+void CanonicalizeHostVerbose(const char* spec, const Component& host, CanonOutput* output, CanonHostInfo* host_info) {
   DCHECK(output);
   DCHECK(host_info);
   CanonicalizeSpecialHostVerbose(spec, host, *output, *host_info);
@@ -465,13 +430,10 @@ void CanonicalizeSpecialHostVerbose(const char* spec,
                                     const Component& host,
                                     CanonOutput& output,
                                     CanonHostInfo& host_info) {
-  DoHost<char, unsigned char, CanonMode::kSpecialURL>(spec, host, output,
-                                                      host_info);
+  DoHost<char, unsigned char, CanonMode::kSpecialURL>(spec, host, output, host_info);
 }
 
-bool CanonicalizeHostSubstring(const char* spec,
-                               const Component& host,
-                               CanonOutput* output) {
+bool CanonicalizeHostSubstring(const char* spec, const Component& host, CanonOutput* output) {
   return DoHostSubstring<char, unsigned char>(spec, host, output);
 }
 
@@ -479,10 +441,9 @@ void CanonicalizeNonSpecialHostVerbose(const char* spec,
                                        const Component& host,
                                        CanonOutput& output,
                                        CanonHostInfo& host_info) {
-  DoHost<char, unsigned char, CanonMode::kNonSpecialURL>(spec, host, output,
-                                                         host_info);
+  DoHost<char, unsigned char, CanonMode::kNonSpecialURL>(spec, host, output, host_info);
 }
 
 }  // namespace url
 
-} // namespace webf
+}  // namespace webf

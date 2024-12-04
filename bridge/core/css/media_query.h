@@ -37,8 +37,8 @@
 #include "core/layout/geometry/axis.h"
 
 #include <memory>
-#include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
+#include "bindings/qjs/cppgc/member.h"
 
 namespace webf {
 

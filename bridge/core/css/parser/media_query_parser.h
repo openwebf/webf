@@ -5,10 +5,10 @@
 #ifndef WEBF_CORE_CSS_PARSER_MEDIA_QUERY_PARSER_H_
 #define WEBF_CORE_CSS_PARSER_MEDIA_QUERY_PARSER_H_
 
-#include "foundation/macros.h"
 #include "core/css/media_list.h"
 #include "core/css/media_query_exp.h"
 #include "core/css/parser/css_parser_token_range.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -20,18 +20,17 @@ class MediaQueryParser {
   WEBF_STACK_ALLOCATED();
 
  public:
-  static std::shared_ptr<MediaQuerySet> ParseMediaQuerySet(const std::string&,
-                                           const ExecutingContext*);
+  static std::shared_ptr<MediaQuerySet> ParseMediaQuerySet(const std::string&, const ExecutingContext*);
   static std::shared_ptr<MediaQuerySet> ParseMediaQuerySet(CSSParserTokenRange,
-                                           const CSSParserTokenOffsets&,
-                                           const ExecutingContext*);
+                                                           const CSSParserTokenOffsets&,
+                                                           const ExecutingContext*);
   static std::shared_ptr<MediaQuerySet> ParseMediaCondition(CSSParserTokenRange,
-                                            const CSSParserTokenOffsets&,
-                                            const ExecutingContext*);
+                                                            const CSSParserTokenOffsets&,
+                                                            const ExecutingContext*);
   static std::shared_ptr<MediaQuerySet> ParseMediaQuerySetInMode(CSSParserTokenRange,
-                                                 const CSSParserTokenOffsets&,
-                                                 CSSParserMode,
-                                                 const ExecutingContext*);
+                                                                 const CSSParserTokenOffsets&,
+                                                                 CSSParserMode,
+                                                                 const ExecutingContext*);
 
   // Passed to ConsumeFeature to determine which features are allowed.
   class FeatureSet {
@@ -67,10 +66,7 @@ class MediaQueryParser {
     kLevel4,
   };
 
-  MediaQueryParser(ParserType,
-                   CSSParserMode,
-                   const ExecutingContext*,
-                   SyntaxLevel = SyntaxLevel::kAuto);
+  MediaQueryParser(ParserType, CSSParserMode, const ExecutingContext*, SyntaxLevel = SyntaxLevel::kAuto);
   MediaQueryParser(const MediaQueryParser&) = delete;
   MediaQueryParser& operator=(const MediaQueryParser&) = delete;
   virtual ~MediaQueryParser();
@@ -110,20 +106,19 @@ class MediaQueryParser {
   // Note that this function accepts CSSParserTokenRanges by *value*, unlike
   // Consume* functions, and that nullptr is returned if either |lhs|
   // or |rhs| aren't fully consumed.
-  std::shared_ptr<const MediaQueryExpNode> ParseNameValueComparison(
-      CSSParserTokenRange lhs,
-      MediaQueryOperator op,
-      CSSParserTokenRange rhs,
-      const CSSParserTokenOffsets& offsets,
-      NameAffinity,
-      const FeatureSet&);
+  std::shared_ptr<const MediaQueryExpNode> ParseNameValueComparison(CSSParserTokenRange lhs,
+                                                                    MediaQueryOperator op,
+                                                                    CSSParserTokenRange rhs,
+                                                                    const CSSParserTokenOffsets& offsets,
+                                                                    NameAffinity,
+                                                                    const FeatureSet&);
 
   // https://drafts.csswg.org/mediaqueries-4/#typedef-media-feature
   //
   // Currently, only <mf-boolean> and <mf-plain> productions are supported.
   std::shared_ptr<const MediaQueryExpNode> ConsumeFeature(CSSParserTokenRange&,
-                                          const CSSParserTokenOffsets& offsets,
-                                          const FeatureSet&);
+                                                          const CSSParserTokenOffsets& offsets,
+                                                          const FeatureSet&);
 
   enum class ConditionMode {
     // https://drafts.csswg.org/mediaqueries-4/#typedef-media-condition
@@ -133,14 +128,12 @@ class MediaQueryParser {
   };
 
   // https://drafts.csswg.org/mediaqueries-4/#typedef-media-condition
-  std::shared_ptr<const MediaQueryExpNode> ConsumeCondition(
-      CSSParserTokenRange&,
-      const CSSParserTokenOffsets&,
-      ConditionMode = ConditionMode::kNormal);
+  std::shared_ptr<const MediaQueryExpNode> ConsumeCondition(CSSParserTokenRange&,
+                                                            const CSSParserTokenOffsets&,
+                                                            ConditionMode = ConditionMode::kNormal);
 
   // https://drafts.csswg.org/mediaqueries-4/#typedef-media-in-parens
-  std::shared_ptr<const MediaQueryExpNode> ConsumeInParens(CSSParserTokenRange&,
-                                           const CSSParserTokenOffsets&);
+  std::shared_ptr<const MediaQueryExpNode> ConsumeInParens(CSSParserTokenRange&, const CSSParserTokenOffsets&);
 
   // https://drafts.csswg.org/mediaqueries-4/#typedef-general-enclosed
   std::shared_ptr<const MediaQueryExpNode> ConsumeGeneralEnclosed(CSSParserTokenRange&);
@@ -153,8 +146,7 @@ class MediaQueryParser {
   // Parsing a single condition is useful for the 'sizes' attribute.
   //
   // https://html.spec.whatwg.org/multipage/images.html#sizes-attribute
-  std::shared_ptr<MediaQuerySet> ConsumeSingleCondition(CSSParserTokenRange,
-                                        const CSSParserTokenOffsets&);
+  std::shared_ptr<MediaQuerySet> ConsumeSingleCondition(CSSParserTokenRange, const CSSParserTokenOffsets&);
 
   std::shared_ptr<MediaQuerySet> ParseImpl(CSSParserTokenRange, const CSSParserTokenOffsets&);
 
@@ -164,7 +156,6 @@ class MediaQueryParser {
   SyntaxLevel syntax_level_;
 };
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_PARSER_MEDIA_QUERY_PARSER_H_

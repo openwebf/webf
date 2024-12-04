@@ -7,14 +7,12 @@
 #ifndef WEBF_URL_CANON_STDSTRING_H
 #define WEBF_URL_CANON_STDSTRING_H
 
-
 #include <string>
 #include <string_view>
 
 #include "url_canon.h"
 
 namespace webf {
-
 
 namespace url {
 
@@ -71,9 +69,7 @@ class StringViewReplacements : public Replacements<CharT> {
   using ParentT = Replacements<CharT>;
   using SetterFun = void (ParentT::*)(const CharT*, const Component&);
 
-  void SetImpl(SetterFun fun, StringViewT str) {
-    (this->*fun)(str.data(), Component(0, static_cast<int>(str.size())));
-  }
+  void SetImpl(SetterFun fun, StringViewT str) { (this->*fun)(str.data(), Component(0, static_cast<int>(str.size()))); }
 
  public:
   void SetSchemeStr(const CharT* str) { SetImpl(&ParentT::SetScheme, str); }

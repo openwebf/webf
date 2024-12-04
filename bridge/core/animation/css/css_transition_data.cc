@@ -6,8 +6,8 @@
 
 #include "core/animation/css/css_transition_data.h"
 
-#include "core/animation/timing.h"
 #include <cassert>
+#include "core/animation/timing.h"
 
 namespace webf {
 
@@ -18,10 +18,8 @@ CSSTransitionData::CSSTransitionData() : CSSTimingData(InitialDuration()) {
 
 CSSTransitionData::CSSTransitionData(const CSSTransitionData& other) = default;
 
-bool CSSTransitionData::TransitionsMatchForStyleRecalc(
-    const CSSTransitionData& other) const {
-  return property_list_ == other.property_list_ &&
-         TimingMatchForStyleRecalc(other);
+bool CSSTransitionData::TransitionsMatchForStyleRecalc(const CSSTransitionData& other) const {
+  return property_list_ == other.property_list_ && TimingMatchForStyleRecalc(other);
 }
 
 Timing CSSTransitionData::ConvertToTiming(size_t index) const {
@@ -32,4 +30,4 @@ Timing CSSTransitionData::ConvertToTiming(size_t index) const {
   return timing;
 }
 
-}  // namespace blink
+}  // namespace webf

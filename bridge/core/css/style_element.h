@@ -45,7 +45,6 @@ class StyleElement {
   void Trace(GCVisitor*) const;
 
  protected:
-
   // Returns whether |this| and |node| are the same object. Helps us verify
   // parameter validity in certain member functions with an Element parameter
   // which should only be called by a subclass with |this|.

@@ -1,6 +1,6 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #include "event_dispatch_forbidden_scope.h"
 

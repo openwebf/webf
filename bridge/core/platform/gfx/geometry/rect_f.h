@@ -24,12 +24,10 @@ class RectF {
  public:
   constexpr RectF() = default;
   constexpr RectF(float width, float height) : size_(width, height) {}
-  constexpr RectF(float x, float y, float width, float height)
-      : origin_(x, y), size_(width, height) {}
+  constexpr RectF(float x, float y, float width, float height) : origin_(x, y), size_(width, height) {}
   constexpr explicit RectF(const SizeF& size) : size_(size) {}
   constexpr explicit RectF(const Size& size) : size_(size) {}
-  constexpr RectF(const PointF& origin, const SizeF& size)
-      : origin_(origin), size_(size) {}
+  constexpr RectF(const PointF& origin, const SizeF& size) : origin_(origin), size_(size) {}
 
   constexpr explicit RectF(const Rect& r)
       : RectF(static_cast<float>(r.x()),
@@ -62,16 +60,10 @@ class RectF {
   constexpr PointF bottom_left() const { return PointF(x(), bottom()); }
   constexpr PointF bottom_right() const { return PointF(right(), bottom()); }
 
-  constexpr PointF left_center() const {
-    return PointF(x(), y() + height() / 2);
-  }
+  constexpr PointF left_center() const { return PointF(x(), y() + height() / 2); }
   constexpr PointF top_center() const { return PointF(x() + width() / 2, y()); }
-  constexpr PointF right_center() const {
-    return PointF(right(), y() + height() / 2);
-  }
-  constexpr PointF bottom_center() const {
-    return PointF(x() + width() / 2, bottom());
-  }
+  constexpr PointF right_center() const { return PointF(right(), y() + height() / 2); }
+  constexpr PointF bottom_center() const { return PointF(x() + width() / 2, bottom()); }
 
   Vector2dF OffsetFromOrigin() const { return Vector2dF(x(), y()); }
 
@@ -116,18 +108,14 @@ class RectF {
   bool Contains(float point_x, float point_y) const;
 
   // Returns true if the specified point is contained by this rectangle.
-  bool Contains(const PointF& point) const {
-    return Contains(point.x(), point.y());
-  }
+  bool Contains(const PointF& point) const { return Contains(point.x(), point.y()); }
 
   // Similar to Contains(), but uses edge-inclusive geometry, i.e. also returns
   // true if the point is on the right or the bottom edge. If this rectangle
   // is empty, this method returns true only if the point is at the origin of
   // this rectangle.
   bool InclusiveContains(float point_x, float point_y) const;
-  bool InclusiveContains(const PointF& point) const {
-    return InclusiveContains(point.x(), point.y());
-  }
+  bool InclusiveContains(const PointF& point) const { return InclusiveContains(point.x(), point.y()); }
 
   // Returns true if this rectangle contains the specified rectangle.
   bool Contains(const RectF& rect) const;
@@ -204,9 +192,7 @@ class RectF {
   PointF ClosestPoint(const PointF& point) const;
 
   // Scales the rectangle by |scale|.
-  void Scale(float scale) {
-    Scale(scale, scale);
-  }
+  void Scale(float scale) { Scale(scale, scale); }
 
   void Scale(float x_scale, float y_scale) {
     set_origin(ScalePoint(origin(), x_scale, y_scale));
@@ -229,9 +215,7 @@ class RectF {
 
   std::string ToString() const;
 
-  bool ApproximatelyEqual(const RectF& rect,
-                          float tolerance_x,
-                          float tolerance_y) const;
+  bool ApproximatelyEqual(const RectF& rect, float tolerance_x, float tolerance_y) const;
 
  private:
   PointF origin_;
@@ -247,13 +231,11 @@ constexpr bool operator!=(const RectF& lhs, const RectF& rhs) {
 }
 
 inline RectF operator+(const RectF& lhs, const Vector2dF& rhs) {
-  return RectF(lhs.x() + rhs.x(), lhs.y() + rhs.y(),
-               lhs.width(), lhs.height());
+  return RectF(lhs.x() + rhs.x(), lhs.y() + rhs.y(), lhs.width(), lhs.height());
 }
 
 inline RectF operator-(const RectF& lhs, const Vector2dF& rhs) {
-  return RectF(lhs.x() - rhs.x(), lhs.y() - rhs.y(),
-               lhs.width(), lhs.height());
+  return RectF(lhs.x() - rhs.x(), lhs.y() - rhs.y(), lhs.width(), lhs.height());
 }
 
 inline RectF operator+(const Vector2dF& lhs, const RectF& rhs) {
@@ -266,8 +248,7 @@ RectF UnionRectsEvenIfEmpty(const RectF& a, const RectF& b);
 RectF SubtractRects(const RectF& a, const RectF& b);
 
 inline RectF ScaleRect(const RectF& r, float x_scale, float y_scale) {
-  return RectF(r.x() * x_scale, r.y() * y_scale,
-               r.width() * x_scale, r.height() * y_scale);
+  return RectF(r.x() * x_scale, r.y() * y_scale, r.width() * x_scale, r.height() * y_scale);
 }
 
 inline RectF ScaleRect(const RectF& r, const SizeF& size) {
@@ -299,9 +280,7 @@ RectF MaximumCoveredRect(const RectF& a, const RectF& b);
 
 // Returns the rect in |dest_rect| corresponding to |r] in |src_rect| when
 // |src_rect| is mapped to |dest_rect|.
-RectF MapRect(const RectF& r,
-                              const RectF& src_rect,
-                              const RectF& dest_rect);
+RectF MapRect(const RectF& r, const RectF& src_rect, const RectF& dest_rect);
 
 }  // namespace gfx
 

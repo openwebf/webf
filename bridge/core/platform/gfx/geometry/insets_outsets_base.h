@@ -21,10 +21,7 @@ class InsetsOutsetsBase {
  public:
   constexpr InsetsOutsetsBase() = default;
   constexpr explicit InsetsOutsetsBase(int all)
-      : top_(all),
-        left_(all),
-        bottom_(ClampBottomOrRight(all, all)),
-        right_(ClampBottomOrRight(all, all)) {}
+      : top_(all), left_(all), bottom_(ClampBottomOrRight(all, all)), right_(ClampBottomOrRight(all, all)) {}
 
   constexpr int top() const { return top_; }
   constexpr int left() const { return left_; }
@@ -93,9 +90,7 @@ class InsetsOutsetsBase {
   static constexpr T TLBR(int top, int left, int bottom, int right) {
     return T().set_top_bottom(top, bottom).set_left_right(left, right);
   }
-  static constexpr T VH(int vertical, int horizontal) {
-    return TLBR(vertical, horizontal, vertical, horizontal);
-  }
+  static constexpr T VH(int vertical, int horizontal) { return TLBR(vertical, horizontal, vertical, horizontal); }
 
   // Sets each side to the maximum of the side and the corresponding side of
   // |other|.
@@ -107,13 +102,10 @@ class InsetsOutsetsBase {
   }
 
   bool operator==(const InsetsOutsetsBase<T>& other) const {
-    return top_ == other.top_ && left_ == other.left_ &&
-           bottom_ == other.bottom_ && right_ == other.right_;
+    return top_ == other.top_ && left_ == other.left_ && bottom_ == other.bottom_ && right_ == other.right_;
   }
 
-  bool operator!=(const InsetsOutsetsBase<T>& other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const InsetsOutsetsBase<T>& other) const { return !(*this == other); }
 
   void operator+=(const T& other) {
     top_ = base::ClampAdd(top_, other.top_);
@@ -131,10 +123,8 @@ class InsetsOutsetsBase {
 
   T operator-() const {
     return T()
-        .set_left_right(-base::MakeClampedNum(left_),
-                        -base::MakeClampedNum(right_))
-        .set_top_bottom(-base::MakeClampedNum(top_),
-                        -base::MakeClampedNum(bottom_));
+        .set_left_right(-base::MakeClampedNum(left_), -base::MakeClampedNum(right_))
+        .set_top_bottom(-base::MakeClampedNum(top_), -base::MakeClampedNum(bottom_));
   }
 
   // Returns a string representation of the insets/outsets.
@@ -148,8 +138,7 @@ class InsetsOutsetsBase {
   // Clamp the bottom/right to avoid integer over/underflow in width() and
   // height(). This returns the clamped bottom/right given a |top_or_left| and
   // a |bottom_or_right|.
-  static constexpr int ClampBottomOrRight(int top_or_left,
-                                          int bottom_or_right) {
+  static constexpr int ClampBottomOrRight(int top_or_left, int bottom_or_right) {
     return base::ClampAdd(top_or_left, bottom_or_right) - top_or_left;
   }
 

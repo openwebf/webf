@@ -7,8 +7,7 @@
 namespace webf {
 namespace cssvalue {
 
-CSSRatioValue::CSSRatioValue(const CSSPrimitiveValue& first,
-                             const CSSPrimitiveValue& second)
+CSSRatioValue::CSSRatioValue(const CSSPrimitiveValue& first, const CSSPrimitiveValue& second)
     : CSSValue(kRatioClass), first_(&first), second_(&second) {}
 
 std::string CSSRatioValue::CustomCSSText() const {
@@ -23,7 +22,6 @@ bool CSSRatioValue::Equals(const CSSRatioValue& other) const {
   return first_ == other.first_ && second_ == other.second_;
 }
 
+}  // namespace cssvalue
 
-}
-
-}
+}  // namespace webf

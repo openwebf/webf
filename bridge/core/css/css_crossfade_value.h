@@ -35,13 +35,13 @@ namespace cssvalue {
 
 class CSSCrossfadeValue final : public CSSImageGeneratorValue {
  public:
-  CSSCrossfadeValue(
-      bool is_prefixed_variant,
-      std::vector<std::pair<std::shared_ptr<const CSSValue>, std::shared_ptr<const CSSPrimitiveValue>>> image_and_percentages);
+  CSSCrossfadeValue(bool is_prefixed_variant,
+                    std::vector<std::pair<std::shared_ptr<const CSSValue>, std::shared_ptr<const CSSPrimitiveValue>>>
+                        image_and_percentages);
   ~CSSCrossfadeValue();
 
-  const std::vector<std::pair<std::shared_ptr<const CSSValue>, std::shared_ptr<const CSSPrimitiveValue>>>& GetImagesAndPercentages()
-      const {
+  const std::vector<std::pair<std::shared_ptr<const CSSValue>, std::shared_ptr<const CSSPrimitiveValue>>>&
+  GetImagesAndPercentages() const {
     return image_and_percentages_;
   }
   bool IsPrefixedVariant() const { return is_prefixed_variant_; }
@@ -56,7 +56,8 @@ class CSSCrossfadeValue final : public CSSImageGeneratorValue {
   class ObserverProxy;
 
   bool is_prefixed_variant_;  // -webkit-cross-fade() instead of cross-fade()
-  std::vector<std::pair<std::shared_ptr<const CSSValue>, std::shared_ptr<const CSSPrimitiveValue>>> image_and_percentages_;
+  std::vector<std::pair<std::shared_ptr<const CSSValue>, std::shared_ptr<const CSSPrimitiveValue>>>
+      image_and_percentages_;
 };
 
 }  // namespace cssvalue

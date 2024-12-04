@@ -4,11 +4,11 @@
 
 #include "media_query_parser.h"
 #include "core/base/strings/string_util.h"
-#include "core/css/properties/css_parsing_utils.h"
-#include "core/css/parser/css_variable_parser.h"
 #include "core/css/parser/css_parser_token_range.h"
-#include "media_type_names.h"
+#include "core/css/parser/css_variable_parser.h"
+#include "core/css/properties/css_parsing_utils.h"
 #include "media_feature_names.h"
+#include "media_type_names.h"
 
 namespace webf {
 
@@ -30,20 +30,16 @@ class MediaQueryFeatureSet : public MediaQueryParser::FeatureSet {
         feature == media_feature_names_stdstring::kMinInlineSize ||
         feature == media_feature_names_stdstring::kMaxInlineSize ||
         feature == media_feature_names_stdstring::kMinBlockSize ||
-        feature == media_feature_names_stdstring::kMaxBlockSize ||
-        CSSVariableParser::IsValidVariableName(feature)) {
+        feature == media_feature_names_stdstring::kMaxBlockSize || CSSVariableParser::IsValidVariableName(feature)) {
       return false;
     }
     return true;
   }
-  bool IsAllowedWithoutValue(
-      const std::string& feature) const override {
+  bool IsAllowedWithoutValue(const std::string& feature) const override {
     // Media features that are prefixed by min/max cannot be used without a
     // value.
-    return feature == media_feature_names_stdstring::kColor ||
-           feature == media_feature_names_stdstring::kGrid ||
-           feature == media_feature_names_stdstring::kHeight ||
-           feature == media_feature_names_stdstring::kWidth ||
+    return feature == media_feature_names_stdstring::kColor || feature == media_feature_names_stdstring::kGrid ||
+           feature == media_feature_names_stdstring::kHeight || feature == media_feature_names_stdstring::kWidth ||
            feature == media_feature_names_stdstring::kInlineSize ||
            feature == media_feature_names_stdstring::kDeviceHeight ||
            feature == media_feature_names_stdstring::kDeviceWidth ||
@@ -57,9 +53,8 @@ class MediaQueryFeatureSet : public MediaQueryParser::FeatureSet {
 
 }  // namespace
 
-std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaQuerySet(
-    const std::string& query_string,
-    const ExecutingContext* execution_context) {
+std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaQuerySet(const std::string& query_string,
+                                                                    const ExecutingContext* execution_context) {
   CSSTokenizer tokenizer(query_string);
   auto [tokens, raw_offsets] = tokenizer.TokenizeToEOFWithOffsets();
   auto pair = tokenizer.TokenizeToEOFWithOffsets();
@@ -68,41 +63,30 @@ std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaQuerySet(
   return ParseMediaQuerySet(range, offsets, execution_context);
 }
 
-std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaQuerySet(
-    CSSParserTokenRange range,
-    const CSSParserTokenOffsets& offsets,
-    const ExecutingContext* execution_context) {
-  return MediaQueryParser(kMediaQuerySetParser, kHTMLStandardMode,
-                          execution_context)
-      .ParseImpl(range, offsets);
+std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaQuerySet(CSSParserTokenRange range,
+                                                                    const CSSParserTokenOffsets& offsets,
+                                                                    const ExecutingContext* execution_context) {
+  return MediaQueryParser(kMediaQuerySetParser, kHTMLStandardMode, execution_context).ParseImpl(range, offsets);
 }
 
-std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaQuerySetInMode(
-    CSSParserTokenRange range,
-    const CSSParserTokenOffsets& offsets,
-    CSSParserMode mode,
-    const ExecutingContext* execution_context) {
-  return MediaQueryParser(kMediaQuerySetParser, mode, execution_context)
-      .ParseImpl(range, offsets);
+std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaQuerySetInMode(CSSParserTokenRange range,
+                                                                          const CSSParserTokenOffsets& offsets,
+                                                                          CSSParserMode mode,
+                                                                          const ExecutingContext* execution_context) {
+  return MediaQueryParser(kMediaQuerySetParser, mode, execution_context).ParseImpl(range, offsets);
 }
 
-std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaCondition(
-    CSSParserTokenRange range,
-    const CSSParserTokenOffsets& offsets,
-    const ExecutingContext* execution_context) {
-  return MediaQueryParser(kMediaConditionParser, kHTMLStandardMode,
-                          execution_context)
-      .ParseImpl(range, offsets);
+std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaCondition(CSSParserTokenRange range,
+                                                                     const CSSParserTokenOffsets& offsets,
+                                                                     const ExecutingContext* execution_context) {
+  return MediaQueryParser(kMediaConditionParser, kHTMLStandardMode, execution_context).ParseImpl(range, offsets);
 }
 
 MediaQueryParser::MediaQueryParser(ParserType parser_type,
                                    CSSParserMode mode,
                                    const ExecutingContext* execution_context,
                                    SyntaxLevel syntax_level)
-    : parser_type_(parser_type),
-      mode_(mode),
-      execution_context_(execution_context),
-      syntax_level_(syntax_level) {}
+    : parser_type_(parser_type), mode_(mode), execution_context_(execution_context), syntax_level_(syntax_level) {}
 
 MediaQueryParser::~MediaQueryParser() = default;
 
@@ -110,10 +94,8 @@ namespace {
 
 bool IsRestrictorOrLogicalOperator(const CSSParserToken& token) {
   // FIXME: it would be more efficient to use lower-case always for tokenValue.
-  return EqualIgnoringASCIICase(token.Value(), "not") ||
-         EqualIgnoringASCIICase(token.Value(), "and") ||
-         EqualIgnoringASCIICase(token.Value(), "or") ||
-         EqualIgnoringASCIICase(token.Value(), "only") ||
+  return EqualIgnoringASCIICase(token.Value(), "not") || EqualIgnoringASCIICase(token.Value(), "and") ||
+         EqualIgnoringASCIICase(token.Value(), "or") || EqualIgnoringASCIICase(token.Value(), "only") ||
          EqualIgnoringASCIICase(token.Value(), "layer");
 }
 
@@ -136,8 +118,7 @@ CSSParserTokenRange ConsumeUntilComparisonOrColon(CSSParserTokenRange& range) {
   const CSSParserToken* first = range.begin();
   while (!range.AtEnd()) {
     const CSSParserToken& token = range.Peek();
-    if ((token.GetType() == kDelimiterToken &&
-         IsComparisonDelimiter(token.Delimiter())) ||
+    if ((token.GetType() == kDelimiterToken && IsComparisonDelimiter(token.Delimiter())) ||
         token.GetType() == kColonToken) {
       break;
     }
@@ -156,8 +137,7 @@ bool IsGtGe(MediaQueryOperator op) {
 
 }  // namespace
 
-MediaQuery::RestrictorType MediaQueryParser::ConsumeRestrictor(
-    CSSParserTokenRange& range) {
+MediaQuery::RestrictorType MediaQueryParser::ConsumeRestrictor(CSSParserTokenRange& range) {
   if (ConsumeIfIdent(range, "not")) {
     return MediaQuery::RestrictorType::kNot;
   }
@@ -177,8 +157,7 @@ std::string MediaQueryParser::ConsumeType(CSSParserTokenRange& range) {
   return std::string(range.ConsumeIncludingWhitespace().Value());
 }
 
-MediaQueryOperator MediaQueryParser::ConsumeComparison(
-    CSSParserTokenRange& range) {
+MediaQueryOperator MediaQueryParser::ConsumeComparison(CSSParserTokenRange& range) {
   const CSSParserToken& first = range.Peek();
   if (first.GetType() != kDelimiterToken) {
     return MediaQueryOperator::kNone;
@@ -208,8 +187,7 @@ MediaQueryOperator MediaQueryParser::ConsumeComparison(
   return MediaQueryOperator::kNone;
 }
 
-std::string MediaQueryParser::ConsumeAllowedName(CSSParserTokenRange& range,
-                                            const FeatureSet& feature_set) {
+std::string MediaQueryParser::ConsumeAllowedName(CSSParserTokenRange& range, const FeatureSet& feature_set) {
   if (range.Peek().GetType() != kIdentToken) {
     return "";
   }
@@ -224,8 +202,7 @@ std::string MediaQueryParser::ConsumeAllowedName(CSSParserTokenRange& range,
   return name;
 }
 
-std::string MediaQueryParser::ConsumeUnprefixedName(CSSParserTokenRange& range,
-                                               const FeatureSet& feature_set) {
+std::string MediaQueryParser::ConsumeUnprefixedName(CSSParserTokenRange& range, const FeatureSet& feature_set) {
   std::string name = ConsumeAllowedName(range, feature_set);
   if (name.empty()) {
     return name;
@@ -252,7 +229,8 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ParseNameValueCompari
     return nullptr;
   }
 
-  auto value = MediaQueryExpValue::Consume(feature_name, rhs, offsets, std::make_shared<CSSParserContext>(kHTMLStandardMode));
+  auto value =
+      MediaQueryExpValue::Consume(feature_name, rhs, offsets, std::make_shared<CSSParserContext>(kHTMLStandardMode));
 
   if (!value || !rhs.AtEnd()) {
     return nullptr;
@@ -269,10 +247,9 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ParseNameValueCompari
       MediaQueryExp::Create(feature_name, MediaQueryExpBounds(left, right)));
 }
 
-std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeFeature(
-    CSSParserTokenRange& range,
-    const CSSParserTokenOffsets& offsets,
-    const FeatureSet& feature_set) {
+std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeFeature(CSSParserTokenRange& range,
+                                                                          const CSSParserTokenOffsets& offsets,
+                                                                          const FeatureSet& feature_set) {
   // Because we don't know exactly where <mf-name> appears in the grammar, we
   // split |range| on top-level separators, and parse each segment
   // individually.
@@ -291,12 +268,10 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeFeature(
   // <mf-boolean> = <mf-name>
   if (range.AtEnd()) {
     std::string feature_name = ConsumeAllowedName(segment1, feature_set);
-    if (feature_name.empty() || !segment1.AtEnd() ||
-        !feature_set.IsAllowedWithoutValue(feature_name)) {
+    if (feature_name.empty() || !segment1.AtEnd() || !feature_set.IsAllowedWithoutValue(feature_name)) {
       return nullptr;
     }
-    return std::make_shared<MediaQueryFeatureExpNode>(
-        MediaQueryExp::Create(feature_name, MediaQueryExpBounds()));
+    return std::make_shared<MediaQueryFeatureExpNode>(MediaQueryExp::Create(feature_name, MediaQueryExpBounds()));
   }
 
   // <mf-plain> = <mf-name> : <mf-value>
@@ -339,15 +314,12 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeFeature(
   // try both.
   if (range.AtEnd()) {
     // Try: <mf-name> <mf-comparison> <mf-value>
-    if (auto node =
-            ParseNameValueComparison(segment1, op1, segment2, offsets,
-                                     NameAffinity::kLeft, feature_set)) {
+    if (auto node = ParseNameValueComparison(segment1, op1, segment2, offsets, NameAffinity::kLeft, feature_set)) {
       return node;
     }
 
     // Otherwise: <mf-value> <mf-comparison> <mf-name>
-    return ParseNameValueComparison(segment1, op1, segment2, offsets,
-                                    NameAffinity::kRight, feature_set);
+    return ParseNameValueComparison(segment1, op1, segment2, offsets, NameAffinity::kRight, feature_set);
   }
 
   // Otherwise, the feature must be on the form:
@@ -377,28 +349,27 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeFeature(
     return nullptr;
   }
 
-  auto left_value = MediaQueryExpValue::Consume(feature_name, segment1, offsets, std::make_shared<CSSParserContext>(kHTMLStandardMode));
+  auto left_value = MediaQueryExpValue::Consume(feature_name, segment1, offsets,
+                                                std::make_shared<CSSParserContext>(kHTMLStandardMode));
   if (!left_value || !segment1.AtEnd()) {
     return nullptr;
   }
 
   CSSParserTokenRange& segment3 = range;
-  auto right_value = MediaQueryExpValue::Consume(feature_name, segment3,
-                                                 offsets, std::make_shared<CSSParserContext>(kHTMLStandardMode));
+  auto right_value = MediaQueryExpValue::Consume(feature_name, segment3, offsets,
+                                                 std::make_shared<CSSParserContext>(kHTMLStandardMode));
   if (!right_value || !segment3.AtEnd()) {
     return nullptr;
   }
 
   return std::make_shared<MediaQueryFeatureExpNode>(MediaQueryExp::Create(
       feature_name,
-      MediaQueryExpBounds(MediaQueryExpComparison(*left_value, op1),
-                          MediaQueryExpComparison(*right_value, op2))));
+      MediaQueryExpBounds(MediaQueryExpComparison(*left_value, op1), MediaQueryExpComparison(*right_value, op2))));
 }
 
-std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeCondition(
-    CSSParserTokenRange& range,
-    const CSSParserTokenOffsets& offsets,
-    ConditionMode mode) {
+std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeCondition(CSSParserTokenRange& range,
+                                                                            const CSSParserTokenOffsets& offsets,
+                                                                            ConditionMode mode) {
   // <media-not>
   if (ConsumeIfIdent(range, "not")) {
     return MediaQueryExpNode::Not(ConsumeInParens(range, offsets));
@@ -413,8 +384,7 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeCondition(
     while (result && ConsumeIfIdent(range, "and")) {
       result = MediaQueryExpNode::And(result, ConsumeInParens(range, offsets));
     }
-  } else if (result && AtIdent(range.Peek(), "or") &&
-             mode == ConditionMode::kNormal) {
+  } else if (result && AtIdent(range.Peek(), "or") && mode == ConditionMode::kNormal) {
     while (result && ConsumeIfIdent(range, "or")) {
       result = MediaQueryExpNode::Or(result, ConsumeInParens(range, offsets));
     }
@@ -423,9 +393,8 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeCondition(
   return result;
 }
 
-std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeInParens(
-    CSSParserTokenRange& range,
-    const CSSParserTokenOffsets& offsets) {
+std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeInParens(CSSParserTokenRange& range,
+                                                                           const CSSParserTokenOffsets& offsets) {
   CSSParserTokenRange original_range = range;
 
   if (range.Peek().GetType() == kLeftParenthesisToken) {
@@ -443,8 +412,7 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeInParens(
     block = original_block;
 
     // ( <media-feature> )
-    std::shared_ptr<const MediaQueryExpNode> feature =
-        ConsumeFeature(block, offsets, MediaQueryFeatureSet());
+    std::shared_ptr<const MediaQueryExpNode> feature = ConsumeFeature(block, offsets, MediaQueryFeatureSet());
     if (feature && block.AtEnd()) {
       return MediaQueryExpNode::Nested(feature);
     }
@@ -455,10 +423,8 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeInParens(
   return ConsumeGeneralEnclosed(range);
 }
 
-std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeGeneralEnclosed(
-    CSSParserTokenRange& range) {
-  if (range.Peek().GetType() != kLeftParenthesisToken &&
-      range.Peek().GetType() != kFunctionToken) {
+std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeGeneralEnclosed(CSSParserTokenRange& range) {
+  if (range.Peek().GetType() != kLeftParenthesisToken && range.Peek().GetType() != kFunctionToken) {
     return nullptr;
   }
 
@@ -476,15 +442,13 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeGeneralEnclose
   }
 
   // TODO(crbug.com/962417): This is not well specified.
-  std::string general_enclosed =
-      range.MakeSubRange(first, range.begin()).Serialize();
+  std::string general_enclosed = range.MakeSubRange(first, range.begin()).Serialize();
   range.ConsumeWhitespace();
   return std::make_shared<MediaQueryUnknownExpNode>(general_enclosed);
 }
 
-std::shared_ptr<MediaQuerySet> MediaQueryParser::ConsumeSingleCondition(
-    CSSParserTokenRange range,
-    const CSSParserTokenOffsets& offsets) {
+std::shared_ptr<MediaQuerySet> MediaQueryParser::ConsumeSingleCondition(CSSParserTokenRange range,
+                                                                        const CSSParserTokenOffsets& offsets) {
   DCHECK_EQ(parser_type_, kMediaConditionParser);
   DCHECK(!range.AtEnd());
 
@@ -495,16 +459,15 @@ std::shared_ptr<MediaQuerySet> MediaQueryParser::ConsumeSingleCondition(
   if (!node || !range.AtEnd()) {
     queries.push_back(MediaQuery::CreateNotAll());
   } else {
-    queries.push_back(std::make_shared<MediaQuery>(
-        MediaQuery::RestrictorType::kNone, media_type_names_stdstring::kAll, node));
+    queries.push_back(
+        std::make_shared<MediaQuery>(MediaQuery::RestrictorType::kNone, media_type_names_stdstring::kAll, node));
   }
 
   return std::make_shared<MediaQuerySet>(std::move(queries));
 }
 
-std::shared_ptr<MediaQuery> MediaQueryParser::ConsumeQuery(
-    CSSParserTokenRange& range,
-    const CSSParserTokenOffsets& offsets) {
+std::shared_ptr<MediaQuery> MediaQueryParser::ConsumeQuery(CSSParserTokenRange& range,
+                                                           const CSSParserTokenOffsets& offsets) {
   DCHECK_EQ(parser_type_, kMediaQuerySetParser);
   CSSParserTokenRange original_range = range;
 
@@ -518,8 +481,7 @@ std::shared_ptr<MediaQuery> MediaQueryParser::ConsumeQuery(
     if (!ConsumeIfIdent(range, "and")) {
       return std::make_shared<MediaQuery>(restrictor, type, nullptr);
     }
-    if (auto node =
-            ConsumeCondition(range, offsets, ConditionMode::kWithoutOr)) {
+    if (auto node = ConsumeCondition(range, offsets, ConditionMode::kWithoutOr)) {
       return std::make_shared<MediaQuery>(restrictor, type, node);
     }
     return nullptr;
@@ -528,15 +490,13 @@ std::shared_ptr<MediaQuery> MediaQueryParser::ConsumeQuery(
 
   // Otherwise, <media-condition>
   if (auto node = ConsumeCondition(range, offsets)) {
-    return std::make_shared<MediaQuery>(MediaQuery::RestrictorType::kNone,
-                                            media_type_names_stdstring::kAll, node);
+    return std::make_shared<MediaQuery>(MediaQuery::RestrictorType::kNone, media_type_names_stdstring::kAll, node);
   }
   return nullptr;
 }
 
-std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseImpl(
-    CSSParserTokenRange range,
-    const CSSParserTokenOffsets& offsets) {
+std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseImpl(CSSParserTokenRange range,
+                                                           const CSSParserTokenOffsets& offsets) {
   range.ConsumeWhitespace();
 
   // Note that we currently expect an empty input to evaluate to an empty
@@ -562,4 +522,4 @@ std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseImpl(
   return std::make_shared<MediaQuerySet>(std::move(queries));
 }
 
-}
+}  // namespace webf

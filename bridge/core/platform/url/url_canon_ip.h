@@ -7,8 +7,8 @@
 #ifndef WEBF_URL_CANON_IP_H
 #define WEBF_URL_CANON_IP_H
 
-#include "url_parse.h"
 #include "url_canon.h"
+#include "url_parse.h"
 
 namespace webf {
 
@@ -50,16 +50,11 @@ CanonHostInfo::Family IPv4AddressToNumber(const char16_t* spec,
 // NOTE that |host| is expected to be surrounded by square brackets.
 // i.e. "[::1]" rather than "::1".
 
-bool IPv6AddressToNumber(const char* spec,
-                         const Component& host,
-                         unsigned char address[16]);
+bool IPv6AddressToNumber(const char* spec, const Component& host, unsigned char address[16]);
 
-bool IPv6AddressToNumber(const char16_t* spec,
-                         const Component& host,
-                         unsigned char address[16]);
+bool IPv6AddressToNumber(const char16_t* spec, const Component& host, unsigned char address[16]);
 
 }  // namespace url
-
 
 }  // namespace webf
 

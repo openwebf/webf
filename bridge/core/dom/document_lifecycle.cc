@@ -36,20 +36,16 @@ Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 namespace webf {
 
-static DocumentLifecycle::DeprecatedTransition* g_deprecated_transition_stack =
-    nullptr;
+static DocumentLifecycle::DeprecatedTransition* g_deprecated_transition_stack = nullptr;
 
-DocumentLifecycle::Scope::Scope(DocumentLifecycle& lifecycle,
-                                LifecycleState final_state)
+DocumentLifecycle::Scope::Scope(DocumentLifecycle& lifecycle, LifecycleState final_state)
     : lifecycle_(lifecycle), final_state_(final_state) {}
 
 DocumentLifecycle::Scope::~Scope() {
   lifecycle_.AdvanceTo(final_state_);
 }
 
-DocumentLifecycle::DeprecatedTransition::DeprecatedTransition(
-    LifecycleState from,
-    LifecycleState to)
+DocumentLifecycle::DeprecatedTransition::DeprecatedTransition(LifecycleState from, LifecycleState to)
     : previous_(g_deprecated_transition_stack), from_(from), to_(to) {
   g_deprecated_transition_stack = this;
 }
@@ -59,10 +55,7 @@ DocumentLifecycle::DeprecatedTransition::~DeprecatedTransition() {
 }
 
 DocumentLifecycle::DocumentLifecycle()
-    : state_(kUninitialized),
-      detach_count_(0),
-      disallow_transition_count_(0),
-      check_no_transition_(false) {}
+    : state_(kUninitialized), detach_count_(0), disallow_transition_count_(0), check_no_transition_(false) {}
 /*
 #if DCHECK_IS_ON()
 
@@ -226,27 +219,26 @@ WTF::String DocumentLifecycle::ToString() const {
 #endif
 */
 void DocumentLifecycle::AdvanceTo(LifecycleState next_state) {
-/*#if DCHECK_IS_ON()
-  DCHECK(CanAdvanceTo(next_state))
-      << "Cannot advance document lifecycle from " << StateAsDebugString(state_)
-      << " to " << StateAsDebugString(next_state) << ".";
-#endif*/
+  /*#if DCHECK_IS_ON()
+    DCHECK(CanAdvanceTo(next_state))
+        << "Cannot advance document lifecycle from " << StateAsDebugString(state_)
+        << " to " << StateAsDebugString(next_state) << ".";
+  #endif*/
   assert(state_ == next_state || !check_no_transition_);
   state_ = next_state;
 }
 
 void DocumentLifecycle::EnsureStateAtMost(LifecycleState state) {
-  assert(state == kVisualUpdatePending || state == kStyleClean ||
-         state == kLayoutClean);
+  assert(state == kVisualUpdatePending || state == kStyleClean || state == kLayoutClean);
   if (state_ <= state)
     return;
-/*#if DCHECK_IS_ON()
-  DCHECK(CanRewindTo(state))
-      << "Cannot rewind document lifecycle from " << StateAsDebugString(state_)
-      << " to " << StateAsDebugString(state) << ".";
-#endif*/
+  /*#if DCHECK_IS_ON()
+    DCHECK(CanRewindTo(state))
+        << "Cannot rewind document lifecycle from " << StateAsDebugString(state_)
+        << " to " << StateAsDebugString(state) << ".";
+  #endif*/
   assert(state_ == state || !check_no_transition_);
   state_ = state;
 }
 
-}  // namespace blink
+}  // namespace webf

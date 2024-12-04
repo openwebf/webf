@@ -9,9 +9,7 @@
 #include "url_canon.h"
 #include "url_canon_internal.h"
 
-
 namespace webf {
-
 
 namespace url {
 
@@ -36,11 +34,9 @@ bool DoCanonicalizeNonSpecialURL(const URLComponentSource<char>& source,
   DCHECK(!parsed.has_opaque_path);
 
   // Scheme: this will append the colon.
-  bool success = CanonicalizeScheme(source.scheme, parsed.scheme, &output,
-                                    &new_parsed.scheme);
+  bool success = CanonicalizeScheme(source.scheme, parsed.scheme, &output, &new_parsed.scheme);
   bool have_authority =
-      (parsed.username.is_valid() || parsed.password.is_valid() ||
-       parsed.host.is_valid() || parsed.port.is_valid());
+      (parsed.username.is_valid() || parsed.password.is_valid() || parsed.host.is_valid() || parsed.port.is_valid());
 
   // Non-special URL examples which should be carefully handled:
   //
@@ -65,9 +61,8 @@ bool DoCanonicalizeNonSpecialURL(const URLComponentSource<char>& source,
     // - https://url.spec.whatwg.org/#dom-url-password
     if (parsed.host.is_nonempty()) {
       // User info: the canonicalizer will handle the : and @.
-      success &= CanonicalizeUserInfo(
-          source.username, parsed.username, source.password, parsed.password,
-          &output, &new_parsed.username, &new_parsed.password);
+      success &= CanonicalizeUserInfo(source.username, parsed.username, source.password, parsed.password, &output,
+                                      &new_parsed.username, &new_parsed.password);
     } else {
       new_parsed.username.reset();
       new_parsed.password.reset();
@@ -75,8 +70,7 @@ bool DoCanonicalizeNonSpecialURL(const URLComponentSource<char>& source,
 
     // Host
     if (parsed.host.is_valid()) {
-      success &= CanonicalizeNonSpecialHost(source.host, parsed.host, output,
-                                            new_parsed.host);
+      success &= CanonicalizeNonSpecialHost(source.host, parsed.host, output, new_parsed.host);
     } else {
       new_parsed.host.reset();
       // URL is invalid if `have_authority` is true, but `parsed.host` is
@@ -90,8 +84,7 @@ bool DoCanonicalizeNonSpecialURL(const URLComponentSource<char>& source,
     // - https://url.spec.whatwg.org/#cannot-have-a-username-password-port
     // - https://url.spec.whatwg.org/#dom-url-port
     if (parsed.host.is_nonempty()) {
-      success &= CanonicalizePort(source.port, parsed.port, PORT_UNSPECIFIED,
-                                  &output, &new_parsed.port);
+      success &= CanonicalizePort(source.port, parsed.port, PORT_UNSPECIFIED, &output, &new_parsed.port);
     } else {
       new_parsed.port.reset();
     }
@@ -128,9 +121,7 @@ bool DoCanonicalizeNonSpecialURL(const URLComponentSource<char>& source,
       output.push_back('/');
       new_parsed.path.len = output.length() - new_parsed.path.begin;
     } else {
-      success &=
-          CanonicalizePath(source.path, parsed.path, CanonMode::kNonSpecialURL,
-                           &output, &new_parsed.path);
+      success &= CanonicalizePath(source.path, parsed.path, CanonMode::kNonSpecialURL, &output, &new_parsed.path);
       if (!parsed.host.is_valid() && new_parsed.path.is_valid() &&
           new_parsed.path.as_string_view_on(output.view().data()).size() >= 2 &&
           new_parsed.path.as_string_view_on(output.view().data()).substr(0, 2) == "//") {
@@ -167,8 +158,7 @@ bool DoCanonicalizeNonSpecialURL(const URLComponentSource<char>& source,
   }
 
   // Query
-  CanonicalizeQuery(source.query, parsed.query, &output,
-                    &new_parsed.query);
+  CanonicalizeQuery(source.query, parsed.query, &output, &new_parsed.query);
 
   // Ref: ignore failure for this, since the page can probably still be loaded.
   CanonicalizeRef(source.ref, parsed.ref, &output, &new_parsed.ref);
@@ -194,8 +184,7 @@ bool CanonicalizeNonSpecialURL(const char* spec,
   if (parsed.has_opaque_path) {
     return CanonicalizePathURL(spec, spec_len, parsed, &output, &new_parsed);
   }
-  return DoCanonicalizeNonSpecialURL(URLComponentSource(spec), parsed,
-                                     output, new_parsed);
+  return DoCanonicalizeNonSpecialURL(URLComponentSource(spec), parsed, output, new_parsed);
 }
 
 bool ReplaceNonSpecialURL(const char* base,
@@ -204,16 +193,14 @@ bool ReplaceNonSpecialURL(const char* base,
                           CanonOutput& output,
                           Parsed& new_parsed) {
   if (base_parsed.has_opaque_path) {
-    return ReplacePathURL(base, base_parsed, replacements, &output,
-                          &new_parsed);
+    return ReplacePathURL(base, base_parsed, replacements, &output, &new_parsed);
   }
 
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupOverrideComponents(base, replacements, &source, &parsed);
-  return DoCanonicalizeNonSpecialURL(source, parsed, output,
-                                     new_parsed);
+  return DoCanonicalizeNonSpecialURL(source, parsed, output, new_parsed);
 }
 
 }  // namespace url
-} // namespace webf
+}  // namespace webf

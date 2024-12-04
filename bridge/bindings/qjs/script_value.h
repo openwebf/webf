@@ -9,10 +9,10 @@
 #include <memory>
 
 #include "exception_state.h"
+#include "foundation/atomic_string.h"
 #include "foundation/macros.h"
 #include "foundation/native_string.h"
 #include "foundation/native_value.h"
-#include "foundation/atomic_string.h"
 #include "qjs_engine_patch.h"
 
 namespace webf {

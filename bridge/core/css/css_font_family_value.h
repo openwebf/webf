@@ -21,9 +21,7 @@ class CSSFontFamilyValue : public CSSValue {
 
   std::string CustomCSSText() const;
 
-  bool Equals(const CSSFontFamilyValue& other) const {
-    return string_ == other.string_;
-  }
+  bool Equals(const CSSFontFamilyValue& other) const { return string_ == other.string_; }
 
   void TraceAfterDispatch(GCVisitor*) const;
 
@@ -35,9 +33,7 @@ class CSSFontFamilyValue : public CSSValue {
 
 template <>
 struct DowncastTraits<CSSFontFamilyValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsFontFamilyValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsFontFamilyValue(); }
 };
 }  // namespace webf
 

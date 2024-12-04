@@ -11,12 +11,12 @@
 
 #include <optional>
 
-#include "foundation/macros.h"
-#include "core/css/css_anchor_query_enums.h"
-#include "css_property_names.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
-#include "core/style/inset_area.h"
+#include "core/css/css_anchor_query_enums.h"
 #include "core/geometry/layout_unit.h"
+#include "core/style/inset_area.h"
+#include "css_property_names.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -69,10 +69,9 @@ class AnchorEvaluator {
   // Evaluates an anchor() or anchor-size() query.
   // Returns |nullopt| if the query is invalid (e.g., no targets or wrong
   // axis.), in which case the fallback should be used.
-  virtual std::optional<LayoutUnit> Evaluate(
-      const AnchorQuery&,
-      const ScopedCSSName* position_anchor,
-      const std::optional<InsetAreaOffsets>&) = 0;
+  virtual std::optional<LayoutUnit> Evaluate(const AnchorQuery&,
+                                             const ScopedCSSName* position_anchor,
+                                             const std::optional<InsetAreaOffsets>&) = 0;
 
   virtual void Trace(GCVisitor*) const {}
 
@@ -112,7 +111,6 @@ class AnchorScope {
   }
 
  private:
-
   static Mode PropertyMode(CSSPropertyID property) {
     switch (property) {
       case CSSPropertyID::kTop:

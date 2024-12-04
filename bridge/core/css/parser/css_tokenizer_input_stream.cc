@@ -7,8 +7,8 @@
  */
 
 #include "css_tokenizer_input_stream.h"
-#include "css_parser_idioms.h"
 #include "core/platform/text/string_to_number.h"
+#include "css_parser_idioms.h"
 
 namespace webf {
 
@@ -25,8 +25,7 @@ double CSSTokenizerInputStream::GetDouble(unsigned start, unsigned end) const {
   bool is_result_ok = false;
   double result = 0.0;
   if (start < end) {
-    result = CharactersToDouble(string_.data() + offset_ + start,
-                                end - start, &is_result_ok);
+    result = CharactersToDouble(string_.data() + offset_ + start, end - start, &is_result_ok);
   }
   return is_result_ok ? result : 0.0;
 }

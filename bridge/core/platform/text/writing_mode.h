@@ -72,8 +72,7 @@ inline bool IsFlippedLinesWritingMode(WritingMode writing_mode) {
 // the 'vertical-rl' in the flow-relative directions.
 // https://drafts.csswg.org/css-writing-modes-3/#line-directions
 inline WritingMode ToLineWritingMode(WritingMode writing_mode) {
-  return !IsFlippedLinesWritingMode(writing_mode) ? writing_mode
-                                                  : WritingMode::kVerticalRl;
+  return !IsFlippedLinesWritingMode(writing_mode) ? writing_mode : WritingMode::kVerticalRl;
 }
 
 // Block progression increases in the opposite direction to normal; modes
@@ -89,7 +88,6 @@ inline bool IsParallelWritingMode(WritingMode a, WritingMode b) {
 }
 
 std::ostream& operator<<(std::ostream&, WritingMode);
-
 
 }  // namespace webf
 

@@ -11,15 +11,11 @@
 
 namespace webf {
 
-enum class CSSAnchorQueryType : uint8_t {
-  kAnchor = 1 << 0,
-  kAnchorSize = 1 << 1
-};
+enum class CSSAnchorQueryType : uint8_t { kAnchor = 1 << 0, kAnchorSize = 1 << 1 };
 
 using CSSAnchorQueryTypes = uint8_t;
 constexpr CSSAnchorQueryTypes kCSSAnchorQueryTypesNone = 0u;
-constexpr CSSAnchorQueryTypes kCSSAnchorQueryTypesAll =
-    ~kCSSAnchorQueryTypesNone;
+constexpr CSSAnchorQueryTypes kCSSAnchorQueryTypesAll = ~kCSSAnchorQueryTypesNone;
 
 enum class CSSAnchorValue {
   kInside,

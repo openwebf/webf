@@ -7,8 +7,7 @@
 
 namespace webf {
 
-CSSStringValue::CSSStringValue(const std::string& str)
-    : CSSValue(kStringClass), string_(str) {}
+CSSStringValue::CSSStringValue(const std::string& str) : CSSValue(kStringClass), string_(str) {}
 
 std::string CSSStringValue::CustomCSSText() const {
   return SerializeString(string_);
@@ -18,4 +17,4 @@ void CSSStringValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
 }
 
-}
+}  // namespace webf

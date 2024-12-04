@@ -24,17 +24,13 @@ Timing CSSTimingData::ConvertToTiming(size_t index) const {
   std::optional<double> duration = GetRepeated(duration_list_, index);
   assert(!duration.has_value() || !std::isnan(duration.value()));
   timing.iteration_duration =
-      duration.has_value()
-          ? std::make_optional(
-                ANIMATION_TIME_DELTA_FROM_SECONDS(duration.value()))
-          : std::nullopt;
+      duration.has_value() ? std::make_optional(ANIMATION_TIME_DELTA_FROM_SECONDS(duration.value())) : std::nullopt;
   timing.timing_function = GetRepeated(timing_function_list_, index);
   timing.AssertValid();
   return timing;
 }
 
-bool CSSTimingData::TimingMatchForStyleRecalc(
-    const CSSTimingData& other) const {
+bool CSSTimingData::TimingMatchForStyleRecalc(const CSSTimingData& other) const {
   if (delay_start_list_ != other.delay_start_list_)
     return false;
   if (delay_end_list_ != other.delay_end_list_)
@@ -45,8 +41,7 @@ bool CSSTimingData::TimingMatchForStyleRecalc(
     return false;
 
   for (uint32_t i = 0; i < timing_function_list_.size(); i++) {
-    if (!ValuesEquivalent(timing_function_list_.at(i),
-                          other.timing_function_list_.at(i))) {
+    if (!ValuesEquivalent(timing_function_list_.at(i), other.timing_function_list_.at(i))) {
       return false;
     }
   }

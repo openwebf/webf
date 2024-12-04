@@ -16,15 +16,14 @@ CSSAlternateValue::CSSAlternateValue(std::shared_ptr<const CSSFunctionValue>& fu
 
 std::string CSSAlternateValue::CustomCSSText() const {
   std::string builder;
-  builder+= getValueName(function_->FunctionType());
-  builder+='(';
-  builder+= aliases_->CssText();
+  builder += getValueName(function_->FunctionType());
+  builder += '(';
+  builder += aliases_->CssText();
   builder += ')';
   return builder;
 }
 
 bool CSSAlternateValue::Equals(const CSSAlternateValue& other) const {
-  return webf::ValuesEquivalent(function_, other.function_) &&
-         webf::ValuesEquivalent(aliases_, other.aliases_);
+  return webf::ValuesEquivalent(function_, other.function_) && webf::ValuesEquivalent(aliases_, other.aliases_);
 }
-}  // namespace webf
+}  // namespace webf::cssvalue

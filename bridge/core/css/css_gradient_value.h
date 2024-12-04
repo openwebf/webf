@@ -147,9 +147,9 @@ class CSSLinearGradientValue final : public CSSGradientValue {
 
   // Create the gradient for a given size.
   std::shared_ptr<Gradient> CreateGradient(const CSSToLengthConversionData&,
-                                         const gfx::SizeF&,
-                                         const Document&,
-                                         const ComputedStyle&) const;
+                                           const gfx::SizeF&,
+                                           const Document&,
+                                           const ComputedStyle&) const;
 
   bool Equals(const CSSLinearGradientValue&) const;
 
@@ -243,9 +243,9 @@ class CSSRadialGradientValue final : public CSSGradientValue {
 
   // Create the gradient for a given size.
   std::shared_ptr<Gradient> CreateGradient(const CSSToLengthConversionData&,
-                                         const gfx::SizeF&,
-                                         const Document&,
-                                         const ComputedStyle&) const;
+                                           const gfx::SizeF&,
+                                           const Document&,
+                                           const ComputedStyle&) const;
 
   bool Equals(const CSSRadialGradientValue&) const;
 
@@ -286,9 +286,9 @@ class CSSConicGradientValue final : public CSSGradientValue {
 
   // Create the gradient for a given size.
   std::shared_ptr<Gradient> CreateGradient(const CSSToLengthConversionData&,
-                                         const gfx::SizeF&,
-                                         const Document&,
-                                         const ComputedStyle&) const;
+                                           const gfx::SizeF&,
+                                           const Document&,
+                                           const ComputedStyle&) const;
 
   bool Equals(const CSSConicGradientValue&) const;
 
@@ -318,9 +318,9 @@ class CSSConstantGradientValue final : public CSSGradientValue {
 
   // Create the gradient for a given size.
   std::shared_ptr<Gradient> CreateGradient(const CSSToLengthConversionData&,
-                                         const gfx::SizeF&,
-                                         const Document&,
-                                         const ComputedStyle&) const;
+                                           const gfx::SizeF&,
+                                           const Document&,
+                                           const ComputedStyle&) const;
 
   bool Equals(const CSSConstantGradientValue&) const;
   void TraceAfterDispatch(GCVisitor*) const;

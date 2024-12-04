@@ -101,10 +101,8 @@ inline unsigned HashInts(unsigned key1, unsigned key2) {
   unsigned short_random2 = 95187966;           // A random 32-bit value.
   uint64_t long_random = 19248658165952623LL;  // A random, odd 64-bit value.
 
-  uint64_t product =
-      long_random * short_random1 * key1 + long_random * short_random2 * key2;
-  unsigned high_bits = static_cast<unsigned>(
-      product >> (8 * (sizeof(uint64_t) - sizeof(unsigned))));
+  uint64_t product = long_random * short_random1 * key1 + long_random * short_random2 * key2;
+  unsigned high_bits = static_cast<unsigned>(product >> (8 * (sizeof(uint64_t) - sizeof(unsigned))));
   return high_bits;
 }
 
@@ -123,8 +121,7 @@ unsigned HashFloat(T key) {
 template <typename T>
 bool FloatEqualForHash(T a, T b) {
   static_assert(std::is_floating_point_v<T>);
-  return webf::bit_cast<internal::IntHashBits<T>>(a) ==
-         webf::bit_cast<internal::IntHashBits<T>>(b);
+  return webf::bit_cast<internal::IntHashBits<T>>(a) == webf::bit_cast<internal::IntHashBits<T>>(b);
 }
 
 template <typename T>

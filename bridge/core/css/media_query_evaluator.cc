@@ -29,16 +29,16 @@
 
 #include "media_query_evaluator.h"
 #include <unordered_map>
-#include "core/css/media_query.h"
-#include "core/css/media_list.h"
-#include "core/css/media_query_set_owner.h"
-#include "core/css/media_query_exp.h"
-#include "core/css/media_values.h"
 #include "core/css/css_initial_value.h"
-#include "media_features.h"
-#include "media_feature_names.h"
-#include "core/platform/resolution_units.h"
+#include "core/css/media_list.h"
+#include "core/css/media_query.h"
+#include "core/css/media_query_exp.h"
+#include "core/css/media_query_set_owner.h"
+#include "core/css/media_values.h"
 #include "core/css/parser/css_variable_parser.h"
+#include "core/platform/resolution_units.h"
+#include "media_feature_names.h"
+#include "media_features.h"
 #include "media_type_names.h"
 
 namespace webf {
@@ -765,7 +765,6 @@ static bool OriginTrialTestMediaFeatureEval(const MediaQueryExpValue& value,
   return true;
 }
 
-
 static bool InvertedColorsMediaFeatureEval(const MediaQueryExpValue& value,
                                            MediaQueryOperator,
                                            const MediaValues& media_values) {
@@ -779,7 +778,6 @@ static bool InvertedColorsMediaFeatureEval(const MediaQueryExpValue& value,
 
   return (value.Id() == CSSValueID::kNone) != media_values.InvertedColors();
 }
-
 
 static MediaQueryOperator ReverseOperator(MediaQueryOperator op) {
   switch (op) {
@@ -876,43 +874,44 @@ KleeneValue MediaQueryEvaluator::EvalStyleFeature(const MediaQueryFeatureExpNode
     assert_m(false, "media_values has to be initialized for style() container queries");
     return KleeneValue::kFalse;
   }
-//
-//  const MediaQueryExpBounds& bounds = feature.Bounds();
-//
-//  // Style features do not support the range syntax.
-//  DCHECK(!bounds.IsRange());
-//  DCHECK(bounds.right.op == MediaQueryOperator::kNone);
-//
-//  Element* container = media_values_->ContainerElement();
-//  DCHECK(container);
-//
-//  std::string property_name(feature.Name());
-//  bool explicit_value = bounds.right.value.IsValid();
-//  const CSSValue& query_specified = explicit_value ? bounds.right.value.GetCSSValue() : *CSSInitialValue::Create();
-//
-//  if (query_specified.IsRevertValue() || query_specified.IsRevertLayerValue()) {
-//    return KleeneValue::kFalse;
-//  }
-//
-//  const CSSValue* query_value = StyleResolver::ComputeValue(container, CSSPropertyName(property_name), query_specified);
-//
-//  if (const auto* decl_value = DynamicTo<CSSUnparsedDeclarationValue>(query_value)) {
-//    CSSVariableData* query_computed = decl_value ? decl_value->VariableDataValue() : nullptr;
-//    CSSVariableData* computed = container->ComputedStyleRef().GetVariableData(property_name);
-//
-//    if (base::ValuesEquivalent(computed, query_computed)) {
-//      return KleeneValue::kTrue;
-//    }
-//    return KleeneValue::kFalse;
-//  }
-//
-//  const CSSValue* computed_value =
-//      CustomProperty(property_name, *media_values_->GetDocument())
-//          .CSSValueFromComputedStyle(container->ComputedStyleRef(), nullptr /* layout_object */,
-//                                     false /* allow_visited_style */, CSSValuePhase::kComputedValue);
-//  if (base::ValuesEquivalent(query_value, computed_value) == explicit_value) {
-//    return KleeneValue::kTrue;
-//  }
+  //
+  //  const MediaQueryExpBounds& bounds = feature.Bounds();
+  //
+  //  // Style features do not support the range syntax.
+  //  DCHECK(!bounds.IsRange());
+  //  DCHECK(bounds.right.op == MediaQueryOperator::kNone);
+  //
+  //  Element* container = media_values_->ContainerElement();
+  //  DCHECK(container);
+  //
+  //  std::string property_name(feature.Name());
+  //  bool explicit_value = bounds.right.value.IsValid();
+  //  const CSSValue& query_specified = explicit_value ? bounds.right.value.GetCSSValue() : *CSSInitialValue::Create();
+  //
+  //  if (query_specified.IsRevertValue() || query_specified.IsRevertLayerValue()) {
+  //    return KleeneValue::kFalse;
+  //  }
+  //
+  //  const CSSValue* query_value = StyleResolver::ComputeValue(container, CSSPropertyName(property_name),
+  //  query_specified);
+  //
+  //  if (const auto* decl_value = DynamicTo<CSSUnparsedDeclarationValue>(query_value)) {
+  //    CSSVariableData* query_computed = decl_value ? decl_value->VariableDataValue() : nullptr;
+  //    CSSVariableData* computed = container->ComputedStyleRef().GetVariableData(property_name);
+  //
+  //    if (base::ValuesEquivalent(computed, query_computed)) {
+  //      return KleeneValue::kTrue;
+  //    }
+  //    return KleeneValue::kFalse;
+  //  }
+  //
+  //  const CSSValue* computed_value =
+  //      CustomProperty(property_name, *media_values_->GetDocument())
+  //          .CSSValueFromComputedStyle(container->ComputedStyleRef(), nullptr /* layout_object */,
+  //                                     false /* allow_visited_style */, CSSValuePhase::kComputedValue);
+  //  if (base::ValuesEquivalent(query_value, computed_value) == explicit_value) {
+  //    return KleeneValue::kTrue;
+  //  }
   return KleeneValue::kFalse;
 }
 

@@ -65,8 +65,8 @@ class CSSDirectionAwareResolver {
   static LogicalMapping<2> LogicalMinSizeMapping();
   static LogicalMapping<2> LogicalOverflowMapping();
   static LogicalMapping<4> LogicalPaddingMapping();
-//  static LogicalMapping<4> LogicalScrollMarginMapping();
-//  static LogicalMapping<4> LogicalScrollPaddingMapping();
+  //  static LogicalMapping<4> LogicalScrollMarginMapping();
+  //  static LogicalMapping<4> LogicalScrollPaddingMapping();
   static LogicalMapping<2> LogicalSizeMapping();
   static LogicalMapping<4> LogicalVisitedBorderColorMapping();
 

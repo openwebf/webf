@@ -47,9 +47,7 @@ std::pair<ValueType, ValueType> GetNearestMultiples(ValueType a, ValueType b) {
 }
 
 template <class OperatorType, typename ValueType>
-std::optional<ValueType> PreCheckSteppedValueFunctionArguments(OperatorType op,
-                                                               ValueType a,
-                                                               ValueType b) {
+std::optional<ValueType> PreCheckSteppedValueFunctionArguments(OperatorType op, ValueType a, ValueType b) {
   // In round(A, B), if B is 0, the result is NaN.
   // In mod(A, B) or rem(A, B), if B is 0, the result is NaN.
   // If A and B are both infinite, the result is NaN.
@@ -73,12 +71,9 @@ std::optional<ValueType> PreCheckSteppedValueFunctionArguments(OperatorType op,
 }  // namespace
 
 template <class OperatorType, typename ValueType>
-ValueType EvaluateSteppedValueFunction(OperatorType op,
-                                       ValueType a,
-                                       ValueType b) {
+ValueType EvaluateSteppedValueFunction(OperatorType op, ValueType a, ValueType b) {
   // https://drafts.csswg.org/css-values/#round-infinities
-  std::optional<ValueType> pre_check =
-      PreCheckSteppedValueFunctionArguments(op, a, b);
+  std::optional<ValueType> pre_check = PreCheckSteppedValueFunctionArguments(op, a, b);
   if (pre_check.has_value()) {
     return pre_check.value();
   }
@@ -119,8 +114,7 @@ ValueType EvaluateSteppedValueFunction(OperatorType op,
         if (!a) {
           return a;
         } else {
-          return std::signbit(a) ? -0.0
-                                 : std::numeric_limits<ValueType>::infinity();
+          return std::signbit(a) ? -0.0 : std::numeric_limits<ValueType>::infinity();
         }
       } else {
         return upper;
@@ -131,8 +125,7 @@ ValueType EvaluateSteppedValueFunction(OperatorType op,
         if (!a) {
           return a;
         } else {
-          return std::signbit(a) ? -std::numeric_limits<ValueType>::infinity()
-                                 : +0.0;
+          return std::signbit(a) ? -std::numeric_limits<ValueType>::infinity() : +0.0;
         }
       } else {
         return lower;
@@ -194,6 +187,6 @@ ValueType EvaluateSteppedValueFunction(OperatorType op,
   }
 }
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // WEBF_PLATFORM_GEOMETRY_MATH_FUNCTIONS_H_

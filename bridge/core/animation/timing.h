@@ -34,18 +34,18 @@
 #define WEBF_CORE_ANIMATION_TIMING_H_
 
 #include <optional>
-#include "foundation/webf_malloc.h"
-#include "core/base/memory/values_equivalent.h"
 #include "cc/animation/keyframe_model.h"
+#include "core/animation/animation_time_delta.h"
+#include "core/base/memory/values_equivalent.h"
+#include "core/css/css_value.h"
+#include "core/geometry/length.h"
+#include "core/platform/animation/timing_function.h"
+#include "core/platform/math_extras.h"
+#include "foundation/webf_malloc.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_timeline_range.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_typedefs.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_union_cssnumericvalue_double.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_union_string_timelinerangeoffset.h"
-#include "core/animation/animation_time_delta.h"
-#include "core/css/css_value.h"
-#include "core/platform/animation/timing_function.h"
-#include "core/geometry/length.h"
-#include "core/platform/math_extras.h"
 
 namespace webf {
 
@@ -106,15 +106,12 @@ struct Timing {
     bool IsInfinite() const { return time_delay.is_inf(); }
 
     bool operator==(const Delay& other) const {
-      return time_delay == other.time_delay &&
-             relative_delay == other.relative_delay;
+      return time_delay == other.time_delay && relative_delay == other.relative_delay;
     }
 
     bool operator!=(const Delay& other) const { return !(*this == other); }
 
-    bool IsNonzeroTimeBasedDelay() const {
-      return !relative_delay && !time_delay.is_zero();
-    }
+    bool IsNonzeroTimeBasedDelay() const { return !relative_delay && !time_delay.is_zero(); }
 
     // Scaling only affects time based delays.
     void Scale(double scale_factor) { time_delay *= scale_factor; }
@@ -141,8 +138,7 @@ struct Timing {
     assert(std::isfinite(iteration_start));
     assert(iteration_start >= 0);
     assert(iteration_count >= 0);
-    assert(!iteration_duration ||
-           iteration_duration.value() >= AnimationTimeDelta());
+    assert(!iteration_duration || iteration_duration.value() >= AnimationTimeDelta());
     assert(timing_function);
   }
 
@@ -150,30 +146,21 @@ struct Timing {
   EffectTiming* ConvertToEffectTiming() const;
 
   bool operator==(const Timing& other) const {
-    return start_delay == other.start_delay && end_delay == other.end_delay &&
-           fill_mode == other.fill_mode &&
-           iteration_start == other.iteration_start &&
-           iteration_count == other.iteration_count &&
-           iteration_duration == other.iteration_duration &&
-           direction == other.direction &&
-           webf::ValuesEquivalent(timing_function.get(),
-                                  other.timing_function.get());
+    return start_delay == other.start_delay && end_delay == other.end_delay && fill_mode == other.fill_mode &&
+           iteration_start == other.iteration_start && iteration_count == other.iteration_count &&
+           iteration_duration == other.iteration_duration && direction == other.direction &&
+           webf::ValuesEquivalent(timing_function.get(), other.timing_function.get());
   }
 
   bool operator!=(const Timing& other) const { return !(*this == other); }
 
   // Explicit changes to animation timing through the web animations API,
   // override timing changes due to CSS style.
-  void SetTimingOverride(AnimationTimingOverride override) {
-    timing_overrides |= override;
-  }
-  bool HasTimingOverride(AnimationTimingOverride override) {
-    return timing_overrides & override;
-  }
+  void SetTimingOverride(AnimationTimingOverride override) { timing_overrides |= override; }
+  bool HasTimingOverride(AnimationTimingOverride override) { return timing_overrides & override; }
   bool HasTimingOverrides() { return timing_overrides != kOverrideNode; }
 
-  V8CSSNumberish* ToComputedValue(std::optional<AnimationTimeDelta>,
-                                  std::optional<AnimationTimeDelta>) const;
+  V8CSSNumberish* ToComputedValue(std::optional<AnimationTimeDelta>, std::optional<AnimationTimeDelta>) const;
 
   Delay start_delay;
   Delay end_delay;
@@ -184,8 +171,7 @@ struct Timing {
   std::optional<AnimationTimeDelta> iteration_duration = std::nullopt;
 
   PlaybackDirection direction = PlaybackDirection::NORMAL;
-  std::shared_ptr<TimingFunction> timing_function =
-      LinearTimingFunction::Shared();
+  std::shared_ptr<TimingFunction> timing_function = LinearTimingFunction::Shared();
   // Mask of timing attributes that are set by calls to
   // AnimationEffect.updateTiming. Once set, these attributes ignore changes
   // based on the CSS style.
@@ -200,10 +186,8 @@ struct Timing {
     bool is_in_effect = false;
     bool is_in_play = false;
     std::optional<AnimationTimeDelta> local_time;
-    AnimationTimeDelta time_to_forwards_effect_change =
-        AnimationTimeDelta::Max();
-    AnimationTimeDelta time_to_reverse_effect_change =
-        AnimationTimeDelta::Max();
+    AnimationTimeDelta time_to_forwards_effect_change = AnimationTimeDelta::Max();
+    AnimationTimeDelta time_to_reverse_effect_change = AnimationTimeDelta::Max();
     AnimationTimeDelta time_to_next_iteration = AnimationTimeDelta::Max();
   };
 
@@ -234,13 +218,12 @@ struct Timing {
 
   // TODO(crbug.com/1394434): Cleanup method signature by passing in
   // AnimationEffectOwner.
-  CalculatedTiming CalculateTimings(
-      std::optional<AnimationTimeDelta> local_time,
-      bool is_idle,
-      const NormalizedTiming& normalized_timing,
-      AnimationDirection animation_direction,
-      bool is_keyframe_effect,
-      std::optional<double> playback_rate) const;
+  CalculatedTiming CalculateTimings(std::optional<AnimationTimeDelta> local_time,
+                                    bool is_idle,
+                                    const NormalizedTiming& normalized_timing,
+                                    AnimationDirection animation_direction,
+                                    bool is_keyframe_effect,
+                                    std::optional<double> playback_rate) const;
   ComputedEffectTiming* getComputedTiming(const CalculatedTiming& calculated,
                                           const NormalizedTiming& normalized,
                                           bool is_keyframe_effect) const;

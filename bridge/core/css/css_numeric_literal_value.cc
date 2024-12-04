@@ -16,7 +16,7 @@ struct SameSizeAsCSSNumericLiteralValue : CSSPrimitiveValue {
   double num{};
 };
 static_assert(sizeof(CSSNumericLiteralValue) == sizeof(SameSizeAsCSSNumericLiteralValue),
-                "CSSNumericLiteralValue should stay small");
+              "CSSNumericLiteralValue should stay small");
 
 void CSSNumericLiteralValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSPrimitiveValue::TraceAfterDispatch(visitor);
@@ -29,8 +29,7 @@ CSSNumericLiteralValue::CSSNumericLiteralValue(double num, UnitType type)
 }
 
 // static
-std::shared_ptr<const CSSNumericLiteralValue> CSSNumericLiteralValue::Create(double value,
-                                                       UnitType type) {
+std::shared_ptr<const CSSNumericLiteralValue> CSSNumericLiteralValue::Create(double value, UnitType type) {
   // NOTE: This will also deal with NaN and infinities.
   // Writing value < 0 || value > ... is not equivalent.
   if (!(value >= 0 && value <= CSSValuePool::kMaximumCacheableIntegerValue)) {
@@ -52,17 +51,13 @@ std::shared_ptr<const CSSNumericLiteralValue> CSSNumericLiteralValue::Create(dou
     case CSSPrimitiveValue::UnitType::kPixels:
       result = pool.PixelCacheValue(int_value);
       if (!result) {
-        result = pool.SetPixelCacheValue(
-            int_value,
-            std::make_shared<CSSNumericLiteralValue>(value, type));
+        result = pool.SetPixelCacheValue(int_value, std::make_shared<CSSNumericLiteralValue>(value, type));
       }
       return result;
     case CSSPrimitiveValue::UnitType::kPercentage:
       result = pool.PercentCacheValue(int_value);
       if (!result) {
-        result = pool.SetPercentCacheValue(
-            int_value,
-            std::make_shared<CSSNumericLiteralValue>(value, type));
+        result = pool.SetPercentCacheValue(int_value, std::make_shared<CSSNumericLiteralValue>(value, type));
       }
       return result;
     case CSSPrimitiveValue::UnitType::kNumber:
@@ -70,8 +65,7 @@ std::shared_ptr<const CSSNumericLiteralValue> CSSNumericLiteralValue::Create(dou
       result = pool.NumberCacheValue(int_value);
       if (!result) {
         result = pool.SetNumberCacheValue(
-            int_value, std::make_shared<CSSNumericLiteralValue>(
-                           value, CSSPrimitiveValue::UnitType::kInteger));
+            int_value, std::make_shared<CSSNumericLiteralValue>(value, CSSPrimitiveValue::UnitType::kInteger));
       }
       return result;
     default:
@@ -116,21 +110,17 @@ double CSSNumericLiteralValue::ComputeDotsPerPixel() const {
 }
 
 double CSSNumericLiteralValue::ComputeInCanonicalUnit() const {
-  return DoubleValue() *
-         CSSPrimitiveValue::ConversionToCanonicalUnitsScaleFactor(GetType());
+  return DoubleValue() * CSSPrimitiveValue::ConversionToCanonicalUnitsScaleFactor(GetType());
 }
 
-double CSSNumericLiteralValue::ComputeInCanonicalUnit(
-    const CSSLengthResolver& length_resolver) const {
+double CSSNumericLiteralValue::ComputeInCanonicalUnit(const CSSLengthResolver& length_resolver) const {
   if (IsLength()) {
     return ComputeLengthPx(length_resolver);
   }
-  return DoubleValue() *
-         CSSPrimitiveValue::ConversionToCanonicalUnitsScaleFactor(GetType());
+  return DoubleValue() * CSSPrimitiveValue::ConversionToCanonicalUnitsScaleFactor(GetType());
 }
 
-double CSSNumericLiteralValue::ComputeLengthPx(
-    const CSSLengthResolver& length_resolver) const {
+double CSSNumericLiteralValue::ComputeLengthPx(const CSSLengthResolver& length_resolver) const {
   assert(IsLength());
   return length_resolver.ZoomedComputedPixels(num_, GetType());
 }
@@ -150,22 +140,19 @@ double CSSNumericLiteralValue::ComputePercentage() const {
   return ClampTo<double>(num_);
 }
 
-bool CSSNumericLiteralValue::AccumulateLengthArray(CSSLengthArray& length_array,
-                                                   double multiplier) const {
+bool CSSNumericLiteralValue::AccumulateLengthArray(CSSLengthArray& length_array, double multiplier) const {
   LengthUnitType length_type;
   bool conversion_success = UnitTypeToLengthUnitType(GetType(), length_type);
   assert(conversion_success);
   if (length_type >= CSSLengthArray::kSize) {
     return false;
   }
-  length_array.values[length_type] +=
-      num_ * ConversionToCanonicalUnitsScaleFactor(GetType()) * multiplier;
+  length_array.values[length_type] += num_ * ConversionToCanonicalUnitsScaleFactor(GetType()) * multiplier;
   length_array.type_flags.set(length_type);
   return true;
 }
 
-void CSSNumericLiteralValue::AccumulateLengthUnitTypes(
-    LengthTypeFlags& types) const {
+void CSSNumericLiteralValue::AccumulateLengthUnitTypes(LengthTypeFlags& types) const {
   if (!IsLength()) {
     return;
   }
@@ -220,7 +207,7 @@ std::string CSSNumericLiteralValue::CustomCSSText() const {
       // FIXME
       break;
     case UnitType::kInteger:
-      //text = String::Number(ComputeInteger());
+      // text = String::Number(ComputeInteger());
       text = std::to_string(ComputeInteger());
       break;
     case UnitType::kNumber:
@@ -295,8 +282,7 @@ std::string CSSNumericLiteralValue::CustomCSSText() const {
       constexpr int kMaxInteger = 999999;
       double value = DoubleValue();
       // If the value is small integer, go the fast path.
-      if (value < kMinInteger || value > kMaxInteger ||
-          std::trunc(value) != value) {
+      if (value < kMinInteger || value > kMaxInteger || std::trunc(value) != value) {
         if (!std::isfinite(value)) {
           text = FormatInfinityOrNaN(value, UnitTypeToString(GetType()));
         } else {
@@ -372,9 +358,8 @@ CSSPrimitiveValue::UnitType CSSNumericLiteralValue::CanonicalUnit() const {
   return CanonicalUnitTypeForCategory(UnitTypeToUnitCategory(GetType()));
 }
 
-std::shared_ptr<const CSSNumericLiteralValue> CSSNumericLiteralValue::CreateCanonicalUnitValue()
-    const {
+std::shared_ptr<const CSSNumericLiteralValue> CSSNumericLiteralValue::CreateCanonicalUnitValue() const {
   return Create(ComputeInCanonicalUnit(), CanonicalUnit());
 }
 
-}  // namespace blink
+}  // namespace webf

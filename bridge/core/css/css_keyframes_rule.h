@@ -1,38 +1,37 @@
 /*
-* Copyright (C) 2007, 2008, 2012 Apple Inc. All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions
-* are met:
-* 1. Redistributions of source code must retain the above copyright
-*    notice, this list of conditions and the following disclaimer.
-* 2. Redistributions in binary form must reproduce the above copyright
-*    notice, this list of conditions and the following disclaimer in the
-*    documentation and/or other materials provided with the distribution.
-*
-* THIS SOFTWARE IS PROVIDED BY APPLE COMPUTER, INC. ``AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-* PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE COMPUTER, INC. OR
-* CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-* EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-* PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-* PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-* OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (C) 2007, 2008, 2012 Apple Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY APPLE COMPUTER, INC. ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE COMPUTER, INC. OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef WEBF_CORE_CSS_CSS_KEYFRAMES_RULE_H_
 #define WEBF_CORE_CSS_CSS_KEYFRAMES_RULE_H_
 
-#include "core/css/css_rule.h"
-#include "core/css/style_rule.h"
-#include "core/css/css_rule_list.h"
 #include "core/css/css_keyframe_rule.h"
+#include "core/css/css_rule.h"
+#include "core/css/css_rule_list.h"
+#include "core/css/style_rule.h"
 
 namespace webf {
-
 
 class CascadeLayer;
 class CSSRuleList;
@@ -46,9 +45,7 @@ class StyleRuleKeyframes final : public StyleRuleBase {
   explicit StyleRuleKeyframes(const StyleRuleKeyframes&);
   ~StyleRuleKeyframes();
 
-  const std::vector<std::shared_ptr<StyleRuleKeyframe>>& Keyframes() const {
-    return keyframes_;
-  }
+  const std::vector<std::shared_ptr<StyleRuleKeyframe>>& Keyframes() const { return keyframes_; }
 
   void ParserAppendKeyframe(std::shared_ptr<StyleRuleKeyframe>);
   void WrapperAppendKeyframe(std::shared_ptr<StyleRuleKeyframe>);
@@ -62,9 +59,7 @@ class StyleRuleKeyframes final : public StyleRuleBase {
 
   int FindKeyframeIndex(std::shared_ptr<CSSParserContext> context, const std::string& key) const;
 
-  std::shared_ptr<StyleRuleKeyframes> Copy() const {
-    return std::make_shared<StyleRuleKeyframes>(*this);
-  }
+  std::shared_ptr<StyleRuleKeyframes> Copy() const { return std::make_shared<StyleRuleKeyframes>(*this); }
 
   void SetCascadeLayer(std::shared_ptr<const CascadeLayer> layer) { layer_ = layer; }
   const CascadeLayer* GetCascadeLayer() const { return layer_.get(); }
@@ -84,9 +79,7 @@ class StyleRuleKeyframes final : public StyleRuleBase {
 
 template <>
 struct DowncastTraits<StyleRuleKeyframes> {
-  static bool AllowFrom(const StyleRuleBase& rule) {
-    return rule.IsKeyframesRule();
-  }
+  static bool AllowFrom(const StyleRuleBase& rule) { return rule.IsKeyframesRule(); }
 };
 
 class CSSKeyframesRule final : public CSSRule {
@@ -133,12 +126,9 @@ class CSSKeyframesRule final : public CSSRule {
 
 template <>
 struct DowncastTraits<CSSKeyframesRule> {
-  static bool AllowFrom(const CSSRule& rule) {
-    return rule.GetType() == CSSRule::kKeyframesRule;
-  }
+  static bool AllowFrom(const CSSRule& rule) { return rule.GetType() == CSSRule::kKeyframesRule; }
 };
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_CSS_KEYFRAMES_RULE_H_

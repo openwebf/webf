@@ -25,16 +25,13 @@ class CSSRevertValue : public CSSValue {
  public:
   static std::shared_ptr<const CSSRevertValue> Create();
 
-  explicit CSSRevertValue(webf::PassKey<CSSValuePool>)
-      : CSSValue(kRevertClass) {}
+  explicit CSSRevertValue(webf::PassKey<CSSValuePool>) : CSSValue(kRevertClass) {}
 
   std::string CustomCSSText() const;
 
   bool Equals(const CSSRevertValue&) const { return true; }
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-    CSSValue::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const { CSSValue::TraceAfterDispatch(visitor); }
 };
 
 }  // namespace cssvalue
@@ -44,6 +41,6 @@ struct DowncastTraits<cssvalue::CSSRevertValue> {
   static bool AllowFrom(const CSSValue& value) { return value.IsRevertValue(); }
 };
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_CSS_REVERT_VALUE_H_

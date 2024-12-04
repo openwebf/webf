@@ -4,7 +4,6 @@
 
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
-
 #ifndef WEBF_BIT_FIELD_H
 #define WEBF_BIT_FIELD_H
 
@@ -45,22 +44,13 @@ template <class ValueType,
           class BitFieldType,
           BitFieldValueConstness is_const = BitFieldValueConstness::kNonConst>
 class BitFieldValue final {
-  static_assert(std::is_fundamental<ValueType>::value,
-                "Fields in a bit field must be of a primitive type.");
-  static_assert(std::is_fundamental<BitFieldType>::value,
-                "Bit fields must be of a primitive type.");
-  static_assert(std::is_unsigned<BitFieldType>::value,
-                "Bit field must be of an unsigned type");
-  static_assert(sizeof(ValueType) <= sizeof(BitFieldType),
-                "Value in bit field cannot be bigger than the bit field");
-  static_assert(
-      offset < 8 * sizeof(BitFieldType),
-      "Field offset in bit field must be smaller than the bit field size");
-  static_assert(
-      size < 8 * sizeof(BitFieldType),
-      "Field size in bit field must be smaller than the bit field size");
-  static_assert(offset + size <= 8 * sizeof(BitFieldType),
-                "Field in bit field cannot overflow the bit field");
+  static_assert(std::is_fundamental<ValueType>::value, "Fields in a bit field must be of a primitive type.");
+  static_assert(std::is_fundamental<BitFieldType>::value, "Bit fields must be of a primitive type.");
+  static_assert(std::is_unsigned<BitFieldType>::value, "Bit field must be of an unsigned type");
+  static_assert(sizeof(ValueType) <= sizeof(BitFieldType), "Value in bit field cannot be bigger than the bit field");
+  static_assert(offset < 8 * sizeof(BitFieldType), "Field offset in bit field must be smaller than the bit field size");
+  static_assert(size < 8 * sizeof(BitFieldType), "Field size in bit field must be smaller than the bit field size");
+  static_assert(offset + size <= 8 * sizeof(BitFieldType), "Field in bit field cannot overflow the bit field");
   static_assert(size > 0, "Bit field fields cannot have 0 size.");
 
  public:
@@ -68,13 +58,8 @@ class BitFieldValue final {
 
   template <class OtherValueType,
             int other_size,
-            BitFieldValueConstness other_is_const =
-                BitFieldValueConstness::kNonConst>
-  using DefineNextValue = BitFieldValue<OtherValueType,
-                                        offset + size,
-                                        other_size,
-                                        BitFieldType,
-                                        other_is_const>;
+            BitFieldValueConstness other_is_const = BitFieldValueConstness::kNonConst>
+  using DefineNextValue = BitFieldValue<OtherValueType, offset + size, other_size, BitFieldType, other_is_const>;
 
   // Create a bit field with the given value.
   static constexpr BitFieldType encode(ValueType value) {
@@ -88,23 +73,18 @@ class BitFieldValue final {
   }
 
   // Read the value from the bit field.
-  static constexpr ValueType decode(BitFieldType value) {
-    return static_cast<ValueType>((value & kMask) >> offset);
-  }
+  static constexpr ValueType decode(BitFieldType value) { return static_cast<ValueType>((value & kMask) >> offset); }
 
  private:
   static constexpr BitFieldValueConstness kIsConst = is_const;
 
-  static constexpr BitFieldType kValidationMask =
-      (BitFieldType{1} << size) - BitFieldType{1};
+  static constexpr BitFieldType kValidationMask = (BitFieldType{1} << size) - BitFieldType{1};
   static constexpr BitFieldType kMask = (kValidationMask) << offset;
   static_assert(kMask != 0, "Mask in which all bits are 0 is not allowed.");
   static_assert(~kMask != 0, "Mask in which all bits are 1 is not allowed.");
 
   // Confirm that the provided value fits into the bit field.
-  static constexpr bool is_valid(ValueType value) {
-    return (static_cast<BitFieldType>(value) & ~kValidationMask) == 0;
-  }
+  static constexpr bool is_valid(ValueType value) { return (static_cast<BitFieldType>(value) & ~kValidationMask) == 0; }
 
   friend class BitFieldBase<BitFieldType>;
 };
@@ -114,17 +94,12 @@ class BitFieldValue final {
 // BitField intended to be used by a single thread.
 template <class BitFieldType>
 class SingleThreadedBitField {
-  static_assert(std::is_fundamental<BitFieldType>::value,
-                "Bit fields must be of a primitive type.");
-  static_assert(std::is_unsigned<BitFieldType>::value,
-                "Bit field must be of an unsigned type");
+  static_assert(std::is_fundamental<BitFieldType>::value, "Bit fields must be of a primitive type.");
+  static_assert(std::is_unsigned<BitFieldType>::value, "Bit field must be of an unsigned type");
 
  public:
-  template <class Type,
-            int size,
-            BitFieldValueConstness is_const = BitFieldValueConstness::kNonConst>
-  using DefineFirstValue =
-      internal::BitFieldValue<Type, 0, size, BitFieldType, is_const>;
+  template <class Type, int size, BitFieldValueConstness is_const = BitFieldValueConstness::kNonConst>
+  using DefineFirstValue = internal::BitFieldValue<Type, 0, size, BitFieldType, is_const>;
 
   explicit SingleThreadedBitField() : SingleThreadedBitField(0) {}
   explicit SingleThreadedBitField(BitFieldType bits) : bits_(bits) {}
@@ -147,8 +122,7 @@ class SingleThreadedBitField {
 
 // BitField that can be written by a single thread but read by multiple threads.
 template <class BitFieldType>
-class ConcurrentlyReadBitField
-    : public SingleThreadedBitField<BitFieldType> {
+class ConcurrentlyReadBitField : public SingleThreadedBitField<BitFieldType> {
   using Base = SingleThreadedBitField<BitFieldType>;
   using Base::bits_;
 
@@ -163,8 +137,7 @@ class ConcurrentlyReadBitField
 
   template <typename Value>
   void set(typename Value::Type value) {
-    AsAtomicPtr(&bits_)->store(Value::update(bits_, value),
-                               std::memory_order_relaxed);
+    AsAtomicPtr(&bits_)->store(Value::update(bits_, value), std::memory_order_relaxed);
   }
 };
 

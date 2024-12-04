@@ -51,7 +51,7 @@ GestureEvent::GestureEvent(ExecutingContext* context,
       state_(AtomicString(
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_gesture_event->state)))),
       direction_(AtomicString(std::unique_ptr<AutoFreeNativeString>(
-                                  reinterpret_cast<AutoFreeNativeString*>(native_gesture_event->direction)))),
+          reinterpret_cast<AutoFreeNativeString*>(native_gesture_event->direction)))),
 #endif
       deltaX_(native_gesture_event->deltaX),
       deltaY_(native_gesture_event->deltaY),

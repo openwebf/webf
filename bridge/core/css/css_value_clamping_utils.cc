@@ -39,8 +39,7 @@ double CSSValueClampingUtils::ClampAngle(double value) {
   if (std::isnan(value)) {
     value = kApproxDoubleInfinityAngle;
   }
-  return ClampTo<double>(value, -kApproxDoubleInfinityAngle,
-                         kApproxDoubleInfinityAngle);
+  return ClampTo<double>(value, -kApproxDoubleInfinityAngle, kApproxDoubleInfinityAngle);
 }
 
 float CSSValueClampingUtils::ClampLength(float value) {
@@ -50,4 +49,4 @@ float CSSValueClampingUtils::ClampLength(float value) {
   return ClampTo<float>(value);
 }
 
-}
+}  // namespace webf

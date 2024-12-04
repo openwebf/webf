@@ -21,7 +21,7 @@ class ComputedCssStyleDeclaration : public CSSStyleDeclaration {
 
   explicit ComputedCssStyleDeclaration(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
-//  ScriptValue item(const AtomicString& key, ExceptionState& exception_state) override;
+  //  ScriptValue item(const AtomicString& key, ExceptionState& exception_state) override;
   unsigned length() const override;
 
   AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;

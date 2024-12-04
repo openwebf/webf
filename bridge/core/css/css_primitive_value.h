@@ -29,11 +29,11 @@
 #include <array>
 #include <bitset>
 
+#include "core/css/css_primitive_value_mapping.h"
 #include "core/css/css_value.h"
 #include "core/platform/geometry/length.h"
-#include "foundation/casting.h"
-#include "core/css/css_primitive_value_mapping.h"
 #include "core/platform/math_extras.h"
+#include "foundation/casting.h"
 #include "foundation/string_view.h"
 
 namespace webf {
@@ -47,10 +47,8 @@ class CSSLengthResolver;
 template <typename T>
 inline T RoundForImpreciseConversion(double value) {
   value += (value < 0) ? -0.01 : +0.01;
-  return ((value > std::numeric_limits<T>::max()) ||
-          (value < std::numeric_limits<T>::min()))
-             ? 0
-             : static_cast<T>(value);
+  return ((value > std::numeric_limits<T>::max()) || (value < std::numeric_limits<T>::min())) ? 0
+                                                                                              : static_cast<T>(value);
 }
 
 template <>
@@ -238,11 +236,9 @@ class CSSPrimitiveValue : public CSSValue {
     static_assert(kUnitTypeRootFontSize < kSize, "rem unit supported");
     static_assert(kUnitTypeRootFontXSize < kSize, "rex unit supported");
     static_assert(kUnitTypeZeroCharacterWidth < kSize, "ch unit supported");
-    static_assert(kUnitTypeRootFontZeroCharacterWidth < kSize,
-                  "rch unit supported");
+    static_assert(kUnitTypeRootFontZeroCharacterWidth < kSize, "rch unit supported");
     static_assert(kUnitTypeFontCapitalHeight < kSize, "cap unit supported");
-    static_assert(kUnitTypeRootFontCapitalHeight < kSize,
-                  "rcap unit supported");
+    static_assert(kUnitTypeRootFontCapitalHeight < kSize, "rcap unit supported");
     static_assert(kUnitTypeViewportWidth < kSize, "vw unit supported");
     static_assert(kUnitTypeViewportHeight < kSize, "vh unit supported");
     static_assert(kUnitTypeViewportInlineSize < kSize, "vi unit supported");
@@ -269,55 +265,35 @@ class CSSPrimitiveValue : public CSSValue {
   // dv*
   static bool HasDynamicViewportUnits(const LengthTypeFlags&);
 
-  enum UnitCategory {
-    kUNumber,
-    kUPercent,
-    kULength,
-    kUAngle,
-    kUTime,
-    kUFrequency,
-    kUResolution,
-    kUOther
-  };
+  enum UnitCategory { kUNumber, kUPercent, kULength, kUAngle, kUTime, kUFrequency, kUResolution, kUOther };
   static UnitCategory UnitTypeToUnitCategory(UnitType);
   static float ClampToCSSLengthRange(double);
 
-  enum class ValueRange {
-    kAll,
-    kNonNegative,
-    kInteger,
-    kNonNegativeInteger,
-    kPositiveInteger
-  };
+  enum class ValueRange { kAll, kNonNegative, kInteger, kNonNegativeInteger, kPositiveInteger };
 
   // TODO(xiezuobing): geometry/length.h
   static Length::ValueRange ConversionToLengthValueRange(ValueRange);
   static ValueRange ValueRangeForLengthValueRange(Length::ValueRange);
 
   static bool IsAngle(UnitType unit) {
-    return unit == UnitType::kDegrees || unit == UnitType::kRadians ||
-           unit == UnitType::kGradians || unit == UnitType::kTurns;
+    return unit == UnitType::kDegrees || unit == UnitType::kRadians || unit == UnitType::kGradians ||
+           unit == UnitType::kTurns;
   }
   [[nodiscard]] bool IsAngle() const;
   static bool IsViewportPercentageLength(UnitType type) {
-    return type >= UnitType::kViewportWidth &&
-           type <= UnitType::kDynamicViewportMax;
+    return type >= UnitType::kViewportWidth && type <= UnitType::kDynamicViewportMax;
   }
   static bool IsContainerPercentageLength(UnitType type) {
     return type >= UnitType::kContainerWidth && type <= UnitType::kContainerMax;
   }
   static bool IsLength(UnitType type) {
-    return (type >= UnitType::kEms && type <= UnitType::kUserUnits) ||
-           type == UnitType::kQuirkyEms;
+    return (type >= UnitType::kEms && type <= UnitType::kUserUnits) || type == UnitType::kQuirkyEms;
   }
   static inline bool IsRelativeUnit(UnitType type) {
-    return type == UnitType::kPercentage || type == UnitType::kEms ||
-           type == UnitType::kExs || type == UnitType::kRems ||
-           type == UnitType::kChs || type == UnitType::kIcs ||
-           type == UnitType::kLhs || type == UnitType::kRexs ||
-           type == UnitType::kRchs || type == UnitType::kRics ||
-           type == UnitType::kRlhs || type == UnitType::kCaps ||
-           type == UnitType::kRcaps || IsViewportPercentageLength(type) ||
+    return type == UnitType::kPercentage || type == UnitType::kEms || type == UnitType::kExs ||
+           type == UnitType::kRems || type == UnitType::kChs || type == UnitType::kIcs || type == UnitType::kLhs ||
+           type == UnitType::kRexs || type == UnitType::kRchs || type == UnitType::kRics || type == UnitType::kRlhs ||
+           type == UnitType::kCaps || type == UnitType::kRcaps || IsViewportPercentageLength(type) ||
            IsContainerPercentageLength(type);
   }
   [[nodiscard]] bool IsLength() const;
@@ -327,18 +303,13 @@ class CSSPrimitiveValue : public CSSValue {
   // Is this a percentage *or* a calc() with a percentage?
   [[nodiscard]] bool HasPercentage() const;
   [[nodiscard]] bool IsPx() const;
-  static bool IsTime(UnitType unit) {
-    return unit == UnitType::kSeconds || unit == UnitType::kMilliseconds;
-  }
+  static bool IsTime(UnitType unit) { return unit == UnitType::kSeconds || unit == UnitType::kMilliseconds; }
   [[nodiscard]] bool IsTime() const;
-  static bool IsFrequency(UnitType unit) {
-    return unit == UnitType::kHertz || unit == UnitType::kKilohertz;
-  }
+  static bool IsFrequency(UnitType unit) { return unit == UnitType::kHertz || unit == UnitType::kKilohertz; }
   bool IsCalculated() const { return IsMathFunctionValue(); }
   bool IsCalculatedPercentageWithLength() const;
   static bool IsResolution(UnitType type) {
-    return type >= UnitType::kDotsPerPixel &&
-           type <= UnitType::kDotsPerCentimeter;
+    return type >= UnitType::kDotsPerPixel && type <= UnitType::kDotsPerCentimeter;
   }
   bool IsResolution() const;
   static bool IsFlex(UnitType unit) { return unit == UnitType::kFlex; }
@@ -435,8 +406,7 @@ class CSSPrimitiveValue : public CSSValue {
   }
 
   template <typename T>
-  inline T ConvertTo(const CSSLengthResolver&)
-      const;  // Defined in CSSPrimitiveValueMappings.h
+  inline T ConvertTo(const CSSLengthResolver&) const;  // Defined in CSSPrimitiveValueMappings.h
 
   int ComputeInteger(const CSSLengthResolver&) const;
   double ComputeNumber(const CSSLengthResolver&) const;
@@ -465,7 +435,7 @@ class CSSPrimitiveValue : public CSSValue {
   explicit CSSPrimitiveValue(ClassType class_type) : CSSValue(class_type) {}
 
   // Code generated by css_primitive_value_unit_trie.cc.tmpl
-  static UnitType StringToUnitType(const unsigned char *, unsigned length);
+  static UnitType StringToUnitType(const unsigned char*, unsigned length);
 
   double ComputeLengthDouble(const CSSLengthResolver&) const;
 
@@ -481,9 +451,7 @@ using CSSLengthArray = CSSPrimitiveValue::CSSLengthArray;
 
 template <>
 struct DowncastTraits<CSSPrimitiveValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsPrimitiveValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsPrimitiveValue(); }
 };
 
 template <>
@@ -499,12 +467,10 @@ template <>
 int16_t CSSPrimitiveValue::ComputeLength(const CSSLengthResolver&) const;
 
 template <>
-float CSSPrimitiveValue::ComputeLength(
-    const CSSLengthResolver&) const;
+float CSSPrimitiveValue::ComputeLength(const CSSLengthResolver&) const;
 
 template <>
-double CSSPrimitiveValue::ComputeLength(
-    const CSSLengthResolver&) const;
+double CSSPrimitiveValue::ComputeLength(const CSSLengthResolver&) const;
 
 }  // namespace webf
 

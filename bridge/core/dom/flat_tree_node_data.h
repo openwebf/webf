@@ -7,8 +7,8 @@
 #ifndef WEBF_CORE_DOM_FLAT_TREE_NODE_DATA_H_
 #define WEBF_CORE_DOM_FLAT_TREE_NODE_DATA_H_
 
-#include "core/dom/node.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
+#include "core/dom/node.h"
 
 namespace webf {
 

@@ -36,12 +36,11 @@ class Shorthand : public CSSProperty {
   // robust against _any_ arbitrary tokens, especially those that may be
   // the start of useful values. However, they absolutely need to be
   // resistant against “!important”, at the very least.)
-  virtual bool ParseShorthand(
-      bool important,
-      CSSParserTokenStream&,
-      std::shared_ptr<const CSSParserContext> context,
-      const CSSParserLocalContext&,
-      std::vector<CSSPropertyValue>& properties) const {
+  virtual bool ParseShorthand(bool important,
+                              CSSParserTokenStream&,
+                              std::shared_ptr<const CSSParserContext> context,
+                              const CSSParserLocalContext&,
+                              std::vector<CSSPropertyValue>& properties) const {
     assert_m(false, "NOTREACHED_IN_MIGRATION");
     return false;
   }
@@ -53,9 +52,7 @@ class Shorthand : public CSSProperty {
 
 template <>
 struct DowncastTraits<Shorthand> {
-  static bool AllowFrom(const CSSProperty& property) {
-    return property.IsShorthand();
-  }
+  static bool AllowFrom(const CSSProperty& property) { return property.IsShorthand(); }
 };
 }  // namespace webf
 

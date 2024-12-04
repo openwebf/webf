@@ -9,10 +9,10 @@
 #ifndef WEBF_CSS_KEYFRAME_SHORTHAND_VALUE_H
 #define WEBF_CSS_KEYFRAME_SHORTHAND_VALUE_H
 
-#include "core/css/css_value.h"
-#include "css_property_names.h"
 #include "core/css/css_property_value_set.h"
+#include "core/css/css_value.h"
 #include "core/css/style_property_serializer.h"
+#include "css_property_names.h"
 
 namespace webf {
 
@@ -40,8 +40,7 @@ class CSSKeyframeShorthandValue : public CSSValue {
  public:
   // Assumes that all property/value pairs that are present in the input set are
   // longhands for the same shorthand property/value pair.
-  CSSKeyframeShorthandValue(CSSPropertyID shorthand,
-                            std::shared_ptr<ImmutableCSSPropertyValueSet>&);
+  CSSKeyframeShorthandValue(CSSPropertyID shorthand, std::shared_ptr<ImmutableCSSPropertyValueSet>&);
 
   std::string CustomCSSText() const;
 
@@ -63,11 +62,9 @@ class CSSKeyframeShorthandValue : public CSSValue {
 
 template <>
 struct DowncastTraits<CSSKeyframeShorthandValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsShorthandWrapperValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsShorthandWrapperValue(); }
 };
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // WEBF_CSS_KEYFRAME_SHORTHAND_VALUE_H

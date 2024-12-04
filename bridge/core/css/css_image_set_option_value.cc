@@ -11,19 +11,14 @@
 
 namespace webf {
 
-CSSImageSetOptionValue::CSSImageSetOptionValue(
-    std::shared_ptr<const CSSValue> image,
-    std::shared_ptr<const CSSPrimitiveValue> resolution,
-    std::shared_ptr<const CSSImageSetTypeValue> type)
-    : CSSValue(kImageSetOptionClass),
-      image_(image),
-      resolution_(resolution),
-      type_(type) {
+CSSImageSetOptionValue::CSSImageSetOptionValue(std::shared_ptr<const CSSValue> image,
+                                               std::shared_ptr<const CSSPrimitiveValue> resolution,
+                                               std::shared_ptr<const CSSImageSetTypeValue> type)
+    : CSSValue(kImageSetOptionClass), image_(image), resolution_(resolution), type_(type) {
   DCHECK(image);
 
   if (!resolution_) {
-    resolution_ =
-        CSSNumericLiteralValue::Create(1.0, CSSPrimitiveValue::UnitType::kX);
+    resolution_ = CSSNumericLiteralValue::Create(1.0, CSSPrimitiveValue::UnitType::kX);
   }
 }
 
@@ -34,8 +29,7 @@ double CSSImageSetOptionValue::ComputedResolution() const {
 }
 
 bool CSSImageSetOptionValue::IsSupported() const {
-  return (!type_ || type_->IsSupported()) &&
-         (resolution_->ComputeDotsPerPixel() > 0.0);
+  return (!type_ || type_->IsSupported()) && (resolution_->ComputeDotsPerPixel() > 0.0);
 }
 
 CSSValue& CSSImageSetOptionValue::GetImage() const {
@@ -65,8 +59,7 @@ std::string CSSImageSetOptionValue::CustomCSSText() const {
 }
 
 bool CSSImageSetOptionValue::Equals(const CSSImageSetOptionValue& other) const {
-  return ValuesEquivalent(image_, other.image_) &&
-         ValuesEquivalent(resolution_, other.resolution_) &&
+  return ValuesEquivalent(image_, other.image_) && ValuesEquivalent(resolution_, other.resolution_) &&
          ValuesEquivalent(type_, other.type_);
 }
 
@@ -74,4 +67,4 @@ void CSSImageSetOptionValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
 }
 
-}  // namespace blink
+}  // namespace webf

@@ -11,8 +11,7 @@
 
 namespace webf {
 
-void StyleTraversalRoot::Update(ContainerNode* common_ancestor,
-                                Node* dirty_node) {
+void StyleTraversalRoot::Update(ContainerNode* common_ancestor, Node* dirty_node) {
   assert(dirty_node);
   assert(dirty_node->isConnected());
   AssertRootNodeInvariants();
@@ -25,23 +24,21 @@ void StyleTraversalRoot::Update(ContainerNode* common_ancestor,
     // TODO(futhark): Disallow Document as the root. All traversals start at
     // the RootElement().
     Element* document_element = dirty_node->GetDocument().documentElement();
-    if (dirty_node->IsDocumentNode() ||
-        (root_node_ && dirty_node == document_element)) {
+    if (dirty_node->IsDocumentNode() || (root_node_ && dirty_node == document_element)) {
       root_type_ = RootType::kCommonRoot;
-        } else {
-          assert(!document_element ||
-                 (!root_node_ && root_type_ == RootType::kSingleRoot));
-        }
+    } else {
+      assert(!document_element || (!root_node_ && root_type_ == RootType::kSingleRoot));
+    }
     root_node_ = dirty_node;
     AssertRootNodeInvariants();
     return;
   }
 
   assert(root_node_);
-//#if DCHECK_IS_ON()
-//  DCHECK(Parent(*dirty_node));
-//  DCHECK(!IsDirty(*Parent(*dirty_node)));
-//#endif  // DCHECK_IS_ON()
+  //#if DCHECK_IS_ON()
+  //  DCHECK(Parent(*dirty_node));
+  //  DCHECK(!IsDirty(*Parent(*dirty_node)));
+  //#endif  // DCHECK_IS_ON()
   if (common_ancestor == root_node_ || IsDirty(*common_ancestor)) {
     // If our common ancestor candidate is dirty, we are a descendant of the
     // current root node.

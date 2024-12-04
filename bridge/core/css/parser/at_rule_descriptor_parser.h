@@ -31,7 +31,8 @@ class AtRuleDescriptorParser {
   static std::shared_ptr<const CSSValue> ParseFontFaceDescriptor(AtRuleDescriptorID,
                                                                  const CSSTokenizedValue&,
                                                                  std::shared_ptr<const CSSParserContext>);
-  static std::shared_ptr<const CSSValue> ParseFontFaceDeclaration(CSSParserTokenRange&, std::shared_ptr<const CSSParserContext>);
+  static std::shared_ptr<const CSSValue> ParseFontFaceDeclaration(CSSParserTokenRange&,
+                                                                  std::shared_ptr<const CSSParserContext>);
   static std::shared_ptr<const CSSValue> ParseAtPropertyDescriptor(AtRuleDescriptorID,
                                                                    const CSSTokenizedValue&,
                                                                    std::shared_ptr<const CSSParserContext>);

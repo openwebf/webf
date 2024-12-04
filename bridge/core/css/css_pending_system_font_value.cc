@@ -19,8 +19,7 @@ CSSPendingSystemFontValue::CSSPendingSystemFontValue(CSSValueID system_font_id)
 }
 
 // static
-std::shared_ptr<CSSPendingSystemFontValue> CSSPendingSystemFontValue::Create(
-    CSSValueID system_font_id) {
+std::shared_ptr<CSSPendingSystemFontValue> CSSPendingSystemFontValue::Create(CSSValueID system_font_id) {
   return std::make_shared<CSSPendingSystemFontValue>(system_font_id);
 }
 
@@ -28,8 +27,7 @@ const AtomicString& CSSPendingSystemFontValue::ResolveFontFamily() const {
   return g_empty_atom;
 }
 
-float CSSPendingSystemFontValue::ResolveFontSize(
-    const Document* document) const {
+float CSSPendingSystemFontValue::ResolveFontSize(const Document* document) const {
   return 14;
 }
 
@@ -37,8 +35,7 @@ std::string CSSPendingSystemFontValue::CustomCSSText() const {
   return "";
 }
 
-void CSSPendingSystemFontValue::TraceAfterDispatch(
-    GCVisitor* visitor) const {
+void CSSPendingSystemFontValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
 }
 

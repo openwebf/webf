@@ -14,8 +14,7 @@ template <typename T>
 class InsetsOutsetsFBase {
  public:
   constexpr InsetsOutsetsFBase() = default;
-  constexpr explicit InsetsOutsetsFBase(float all)
-      : top_(all), left_(all), bottom_(all), right_(all) {}
+  constexpr explicit InsetsOutsetsFBase(float all) : top_(all), left_(all), bottom_(all), right_(all) {}
 
   constexpr float top() const { return top_; }
   constexpr float left() const { return left_; }
@@ -61,10 +60,7 @@ class InsetsOutsetsFBase {
   // TLBR() is for Chomium UI code. We should not use it in blink code because
   // the order of parameters is different from the normal orders used in blink.
   // Blink code can use the above setters and VH().
-  static constexpr inline T TLBR(float top,
-                                 float left,
-                                 float bottom,
-                                 float right) {
+  static constexpr inline T TLBR(float top, float left, float bottom, float right) {
     return T().set_top(top).set_left(left).set_bottom(bottom).set_right(right);
   }
   static constexpr inline T VH(float vertical, float horizontal) {
@@ -89,13 +85,10 @@ class InsetsOutsetsFBase {
   void Scale(float scale) { Scale(scale, scale); }
 
   bool operator==(const InsetsOutsetsFBase<T>& other) const {
-    return top_ == other.top_ && left_ == other.left_ &&
-           bottom_ == other.bottom_ && right_ == other.right_;
+    return top_ == other.top_ && left_ == other.left_ && bottom_ == other.bottom_ && right_ == other.right_;
   }
 
-  bool operator!=(const InsetsOutsetsFBase<T>& other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const InsetsOutsetsFBase<T>& other) const { return !(*this == other); }
 
   void operator+=(const T& other) {
     top_ += other.top_;
@@ -111,10 +104,7 @@ class InsetsOutsetsFBase {
     right_ -= other.right_;
   }
 
-  T operator-() const {
-    return T().set_left(-left_).set_right(-right_).set_top(-top_).set_bottom(
-        -bottom_);
-  }
+  T operator-() const { return T().set_left(-left_).set_right(-right_).set_top(-top_).set_bottom(-bottom_); }
 
   // Returns a string representation of the insets/outsets.
   std::string ToString() const {

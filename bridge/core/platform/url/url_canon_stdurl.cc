@@ -12,13 +12,11 @@
 // Functions to canonicalize "standard" URLs, which are ones that have an
 // authority section including a host name.
 
-
 #include "url_canon.h"
 #include "url_canon_internal.h"
 #include "url_constants.h"
 
 namespace webf {
-
 
 namespace url {
 
@@ -32,21 +30,16 @@ bool DoCanonicalizeStandardURL(const URLComponentSource<char>& source,
   DCHECK(!parsed.has_opaque_path);
 
   // Scheme: this will append the colon.
-  bool success = CanonicalizeScheme(source.scheme, parsed.scheme,
-                                    output, &new_parsed->scheme);
+  bool success = CanonicalizeScheme(source.scheme, parsed.scheme, output, &new_parsed->scheme);
 
-  bool scheme_supports_user_info =
-      (scheme_type == SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION);
+  bool scheme_supports_user_info = (scheme_type == SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION);
   bool scheme_supports_ports =
-      (scheme_type == SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION ||
-       scheme_type == SCHEME_WITH_HOST_AND_PORT);
+      (scheme_type == SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION || scheme_type == SCHEME_WITH_HOST_AND_PORT);
 
   // Authority (username, password, host, port)
   bool have_authority;
-  if ((scheme_supports_user_info &&
-       (parsed.username.is_valid() || parsed.password.is_valid())) ||
-      parsed.host.is_nonempty() ||
-      (scheme_supports_ports && parsed.port.is_valid())) {
+  if ((scheme_supports_user_info && (parsed.username.is_valid() || parsed.password.is_valid())) ||
+      parsed.host.is_nonempty() || (scheme_supports_ports && parsed.port.is_valid())) {
     have_authority = true;
 
     // Only write the authority separators when we have a scheme.
@@ -57,16 +50,14 @@ bool DoCanonicalizeStandardURL(const URLComponentSource<char>& source,
 
     // User info: the canonicalizer will handle the : and @.
     if (scheme_supports_user_info) {
-      success &= CanonicalizeUserInfo(
-          source.username, parsed.username, source.password, parsed.password,
-          output, &new_parsed->username, &new_parsed->password);
+      success &= CanonicalizeUserInfo(source.username, parsed.username, source.password, parsed.password, output,
+                                      &new_parsed->username, &new_parsed->password);
     } else {
       new_parsed->username.reset();
       new_parsed->password.reset();
     }
 
-    success &= CanonicalizeHost(source.host, parsed.host,
-                                output, &new_parsed->host);
+    success &= CanonicalizeHost(source.host, parsed.host, output, &new_parsed->host);
 
     // Host must not be empty for standard URLs.
     if (parsed.host.is_empty())
@@ -74,10 +65,8 @@ bool DoCanonicalizeStandardURL(const URLComponentSource<char>& source,
 
     // Port: the port canonicalizer will handle the colon.
     if (scheme_supports_ports) {
-      int default_port = DefaultPortForScheme(
-          &output->data()[new_parsed->scheme.begin], new_parsed->scheme.len);
-      success &= CanonicalizePort(source.port, parsed.port, default_port,
-                                  output, &new_parsed->port);
+      int default_port = DefaultPortForScheme(&output->data()[new_parsed->scheme.begin], new_parsed->scheme.len);
+      success &= CanonicalizePort(source.port, parsed.port, default_port, output, &new_parsed->port);
     } else {
       new_parsed->port.reset();
     }
@@ -93,10 +82,8 @@ bool DoCanonicalizeStandardURL(const URLComponentSource<char>& source,
 
   // Path
   if (parsed.path.is_valid()) {
-    success &= CanonicalizePath(source.path, parsed.path,
-                                output, &new_parsed->path);
-  } else if (have_authority ||
-             parsed.query.is_valid() || parsed.ref.is_valid()) {
+    success &= CanonicalizePath(source.path, parsed.path, output, &new_parsed->path);
+  } else if (have_authority || parsed.query.is_valid() || parsed.ref.is_valid()) {
     // When we have an empty path, make up a path when we have an authority
     // or something following the path. The only time we allow an empty
     // output path is when there is nothing else.
@@ -108,8 +95,7 @@ bool DoCanonicalizeStandardURL(const URLComponentSource<char>& source,
   }
 
   // Query
-  CanonicalizeQuery(source.query, parsed.query,
-                    output, &new_parsed->query);
+  CanonicalizeQuery(source.query, parsed.query, output, &new_parsed->query);
 
   // Ref: ignore failure for this, since the page can probably still be loaded.
   CanonicalizeRef(source.ref, parsed.ref, output, &new_parsed->ref);
@@ -158,9 +144,7 @@ bool CanonicalizeStandardURL(const char* spec,
                              SchemeType scheme_type,
                              CanonOutput* output,
                              Parsed* new_parsed) {
-  return DoCanonicalizeStandardURL(URLComponentSource(spec), parsed,
-                                   scheme_type, output,
-                                   new_parsed);
+  return DoCanonicalizeStandardURL(URLComponentSource(spec), parsed, scheme_type, output, new_parsed);
 }
 
 // It might be nice in the future to optimize this so unchanged components don't
@@ -186,4 +170,4 @@ bool ReplaceStandardURL(const char* base,
 
 }  // namespace url
 
-} // namespace webf
+}  // namespace webf

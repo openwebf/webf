@@ -16,9 +16,7 @@
 #include "url_file.h"
 #include "url_parse_internal.h"
 
-
 namespace webf {
-
 
 namespace url {
 
@@ -83,21 +81,19 @@ bool DoCanonicalizeMailtoURL(const URLComponentSource<char>& source,
   }
 
   // Query -- always use the default UTF8 charset converter.
-  CanonicalizeQuery(source.query, parsed.query,
-                    output, &new_parsed->query);
+  CanonicalizeQuery(source.query, parsed.query, output, &new_parsed->query);
 
   return success;
 }
 
-} // namespace
+}  // namespace
 
 bool CanonicalizeMailtoURL(const char* spec,
                            int spec_len,
                            const Parsed& parsed,
                            CanonOutput* output,
                            Parsed* new_parsed) {
-  return DoCanonicalizeMailtoURL(
-      URLComponentSource<char>(spec), parsed, output, new_parsed);
+  return DoCanonicalizeMailtoURL(URLComponentSource<char>(spec), parsed, output, new_parsed);
 }
 
 bool ReplaceMailtoURL(const char* base,
@@ -108,10 +104,9 @@ bool ReplaceMailtoURL(const char* base,
   URLComponentSource<char> source(base);
   Parsed parsed(base_parsed);
   SetupOverrideComponents(base, replacements, &source, &parsed);
-  return DoCanonicalizeMailtoURL(
-      source, parsed, output, new_parsed);
+  return DoCanonicalizeMailtoURL(source, parsed, output, new_parsed);
 }
 
 }  // namespace url
 
-} // namespace webf
+}  // namespace webf

@@ -52,11 +52,9 @@ class CSSImageSetOptionValue : public CSSValue {
 
 template <>
 struct DowncastTraits<CSSImageSetOptionValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsImageSetOptionValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsImageSetOptionValue(); }
 };
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // CORE_CSS_CSS_IMAGE_SET_OPTION_VALUE_H_

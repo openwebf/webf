@@ -22,16 +22,16 @@
  */
 
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_CSS_STYLE_PROPERTY_SERIALIZER_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_CSS_STYLE_PROPERTY_SERIALIZER_H_
 
 #include <bitset>
-#include "foundation/string_builder.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_value_list.h"
+#include "foundation/string_builder.h"
 
 namespace webf {
 
@@ -51,46 +51,41 @@ class StylePropertySerializer {
  private:
   std::string GetCommonValue(const StylePropertyShorthand&) const;
   std::string BorderPropertyValue(const StylePropertyShorthand&,
-                             const StylePropertyShorthand&,
-                             const StylePropertyShorthand&) const;
+                                  const StylePropertyShorthand&,
+                                  const StylePropertyShorthand&) const;
   std::string BorderImagePropertyValue() const;
   std::string BorderRadiusValue() const;
   std::string GetLayeredShorthandValue(const StylePropertyShorthand&) const;
   std::string Get2Values(const StylePropertyShorthand&) const;
   std::string Get4Values(const StylePropertyShorthand&) const;
   std::string PageBreakPropertyValue(const StylePropertyShorthand&) const;
-  std::string GetShorthandValue(const StylePropertyShorthand&,
-                           std::string separator = " ") const;
+  std::string GetShorthandValue(const StylePropertyShorthand&, std::string separator = " ") const;
   std::string GetShorthandValueForColumnRule(const StylePropertyShorthand&) const;
   std::string GetShorthandValueForColumns(const StylePropertyShorthand&) const;
   // foo || bar || ... || baz
   // https://drafts.csswg.org/css-values-4/#component-combinators
-  std::string GetShorthandValueForDoubleBarCombinator(
-      const StylePropertyShorthand&) const;
+  std::string GetShorthandValueForDoubleBarCombinator(const StylePropertyShorthand&) const;
   std::string GetShorthandValueForGrid(const StylePropertyShorthand&) const;
   std::string GetShorthandValueForGridArea(const StylePropertyShorthand&) const;
   std::string GetShorthandValueForGridLine(const StylePropertyShorthand&) const;
-//  std::string GetShorthandValueForGridTemplate(const StylePropertyShorthand&) const;
+  //  std::string GetShorthandValueForGridTemplate(const StylePropertyShorthand&) const;
   std::string ContainerValue() const;
   std::string TimelineValue(const StylePropertyShorthand&) const;
-//  std::string AnimationRangeShorthandValue() const;
+  //  std::string AnimationRangeShorthandValue() const;
   std::string FontValue() const;
   std::string FontSynthesisValue() const;
   std::string FontVariantValue() const;
-  bool AppendFontLonghandValueIfNotNormal(const CSSProperty&,
-                                          StringBuilder& result) const;
+  bool AppendFontLonghandValueIfNotNormal(const CSSProperty&, StringBuilder& result) const;
   std::string OffsetValue() const;
   std::string TextDecorationValue() const;
-//  std::string WhiteSpaceValue() const;
+  //  std::string WhiteSpaceValue() const;
   std::string GetPropertyText(const CSSPropertyName&,
-                         const std::string& value,
-                         bool is_important,
-                         bool is_not_first_decl) const;
+                              const std::string& value,
+                              bool is_important,
+                              bool is_not_first_decl) const;
   bool IsPropertyShorthandAvailable(const StylePropertyShorthand&) const;
-  bool ShorthandHasOnlyInitialOrInheritedValue(
-      const StylePropertyShorthand&) const;
-  void AppendBackgroundPropertyAsText(std::string& result,
-                                      unsigned& num_decls) const;
+  bool ShorthandHasOnlyInitialOrInheritedValue(const StylePropertyShorthand&) const;
+  void AppendBackgroundPropertyAsText(std::string& result, unsigned& num_decls) const;
 
   // This function does checks common to all shorthands, and returns:
   // - The serialization if the shorthand serializes as a css-wide keyword.
@@ -105,11 +100,8 @@ class StylePropertySerializer {
     WEBF_STACK_ALLOCATED();
 
    public:
-    explicit PropertyValueForSerializer(
-        CSSPropertyValueSet::PropertyReference property)
-        : value_(property.Value()),
-          name_(property.Name()),
-          is_important_(property.IsImportant()) {}
+    explicit PropertyValueForSerializer(CSSPropertyValueSet::PropertyReference property)
+        : value_(property.Value()), name_(property.Name()), is_important_(property.IsImportant()) {}
 
     // TODO(sashab): Make this take a const CSSValue&.
     PropertyValueForSerializer(const CSSPropertyName& name,
@@ -128,8 +120,7 @@ class StylePropertySerializer {
     bool is_important_;
   };
 
-  std::string GetCustomPropertyText(const PropertyValueForSerializer&,
-                               bool is_not_first_decl) const;
+  std::string GetCustomPropertyText(const PropertyValueForSerializer&, bool is_not_first_decl) const;
 
   class CSSPropertyValueSetForSerializer final {
     WEBF_DISALLOW_NEW();
@@ -147,13 +138,9 @@ class StylePropertySerializer {
     void Trace(GCVisitor*) const;
 
    private:
-    bool HasExpandedAllProperty() const {
-      return HasAllProperty() && need_to_expand_all_;
-    }
+    bool HasExpandedAllProperty() const { return HasAllProperty() && need_to_expand_all_; }
     bool HasAllProperty() const { return all_index_ != -1; }
-    bool IsIndexInPropertySet(unsigned index) const {
-      return index < property_set_->PropertyCount();
-    }
+    bool IsIndexInPropertySet(unsigned index) const { return index < property_set_->PropertyCount(); }
     CSSPropertyID IndexToPropertyID(unsigned index) const {
       // Iterating over "all"-expanded longhands is done using indices greater
       // than, or equal to, the property set size. Map the index to the property
@@ -178,8 +165,7 @@ class StylePropertySerializer {
       // 4: ...
       //
       assert(index >= property_set_->PropertyCount());
-      return static_cast<CSSPropertyID>(index - property_set_->PropertyCount() +
-                                        kIntFirstCSSProperty);
+      return static_cast<CSSPropertyID>(index - property_set_->PropertyCount() + kIntFirstCSSProperty);
     }
     std::shared_ptr<const CSSPropertyValueSet> property_set_;
     int all_index_;
@@ -190,6 +176,6 @@ class StylePropertySerializer {
   const CSSPropertyValueSetForSerializer property_set_;
 };
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_CSS_STYLE_PROPERTY_SERIALIZER_H_

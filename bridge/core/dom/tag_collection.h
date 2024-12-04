@@ -33,9 +33,7 @@ namespace webf {
 // Collection that limits to a particular tag.
 class TagCollection : public HTMLCollection {
  public:
-  TagCollection(ContainerNode& root_node,
-                CollectionType,
-                const AtomicString& qualified_name);
+  TagCollection(ContainerNode& root_node, CollectionType, const AtomicString& qualified_name);
   ~TagCollection() override;
 
   bool ElementMatches(const Element&) const;
@@ -61,16 +59,12 @@ class TagCollectionNS : public HTMLCollection {
 
 template <>
 struct DowncastTraits<TagCollection> {
-  static bool AllowFrom(const LiveNodeListBase& collection) {
-    return collection.GetType() == kTagCollectionType;
-  }
+  static bool AllowFrom(const LiveNodeListBase& collection) { return collection.GetType() == kTagCollectionType; }
 };
 
 template <>
 struct DowncastTraits<TagCollectionNS> {
-  static bool AllowFrom(const LiveNodeListBase& collection) {
-    return collection.GetType() == kTagCollectionNSType;
-  }
+  static bool AllowFrom(const LiveNodeListBase& collection) { return collection.GetType() == kTagCollectionNSType; }
 };
 
 }  // namespace webf

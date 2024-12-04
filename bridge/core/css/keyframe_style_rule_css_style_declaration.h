@@ -11,18 +11,15 @@ namespace webf {
 
 class CSSKeyframeRule;
 
-class KeyframeStyleRuleCSSStyleDeclaration final
-    : public StyleRuleCSSStyleDeclaration {
+class KeyframeStyleRuleCSSStyleDeclaration final : public StyleRuleCSSStyleDeclaration {
  public:
-  KeyframeStyleRuleCSSStyleDeclaration(std::shared_ptr<MutableCSSPropertyValueSet>,
-                                       CSSKeyframeRule*);
+  KeyframeStyleRuleCSSStyleDeclaration(std::shared_ptr<MutableCSSPropertyValueSet>, CSSKeyframeRule*);
 
  private:
   void DidMutate(MutationType) override;
   bool IsKeyframeStyle() const final { return true; }
 };
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_KEYFRAME_STYLE_RULE_CSS_STYLE_DECLARATION_H_

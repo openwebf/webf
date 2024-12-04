@@ -7,10 +7,10 @@
 #ifndef WEBF_CORE_CSS_CSS_VALUE_ID_MAPPINGS_H_
 #define WEBF_CORE_CSS_CSS_VALUE_ID_MAPPINGS_H_
 
-#include "core/css/white_space.h"
-#include "css_value_keywords.h"
 #include "core/animation/timeline_offset.h"
+#include "core/css/white_space.h"
 #include "css_value_id_mappings_generated.h"
+#include "css_value_keywords.h"
 
 namespace webf {
 
@@ -49,8 +49,7 @@ inline ETextCombine CssValueIDToPlatformEnum(CSSValueID v) {
 
 template <>
 inline ETextAlign CssValueIDToPlatformEnum(CSSValueID v) {
-  if (v ==
-      CSSValueID::kWebkitAuto) {  // Legacy -webkit-auto. Eqiuvalent to start.
+  if (v == CSSValueID::kWebkitAuto) {  // Legacy -webkit-auto. Eqiuvalent to start.
     return ETextAlign::kStart;
   }
   if (v == CSSValueID::kInternalCenter) {
@@ -116,7 +115,6 @@ inline WhiteSpaceCollapse CssValueIDToPlatformEnum(CSSValueID v) {
       return WhiteSpaceCollapse::kCollapse;
   }
 }
-
 
 template <>
 inline CSSValueID PlatformEnumToCSSValueID(WhiteSpaceCollapse v) {

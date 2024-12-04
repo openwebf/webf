@@ -28,8 +28,8 @@
 #define WEBF_CSS_SELECTOR_H
 
 #include "bindings/qjs/cppgc/gc_visitor.h"
-#include "core/base/strings/string_util.h"
 #include "core/base/bit_field.h"
+#include "core/base/strings/string_util.h"
 #include "core/css/parser/css_nesting_type.h"
 #include "core/css/parser/css_parser_mode.h"
 #include "core/dom/qualified_name.h"
@@ -440,9 +440,7 @@ class CSSSelector {
   // would have an argument of en-US.
   // Note that :nth-* selectors don't store an argument and just store the
   // numbers.
-  const AtomicString& Argument() const {
-    return HasRareData() ? data_.rare_data_->argument_ : g_null_atom;
-  }
+  const AtomicString& Argument() const { return HasRareData() ? data_.rare_data_->argument_ : g_null_atom; }
   const CSSSelectorList* SelectorList() const {
     return HasRareData() ? data_.rare_data_->selector_list_.get() : nullptr;
   }
@@ -682,9 +680,9 @@ class CSSSelector {
       // See GetNestingType.
       CSSNestingType unparsed_nesting_type_;
     } bits_;
-    QualifiedName attribute_;                           // Used for attribute selector
-    AtomicString argument_;                             // Used for :contains, :lang, :dir, etc.
-    std::shared_ptr<CSSSelectorList> selector_list_;             // Used :is, :not, :-webkit-any, etc.
+    QualifiedName attribute_;                                // Used for attribute selector
+    AtomicString argument_;                                  // Used for :contains, :lang, :dir, etc.
+    std::shared_ptr<CSSSelectorList> selector_list_;         // Used :is, :not, :-webkit-any, etc.
     std::unique_ptr<std::vector<AtomicString>> ident_list_;  // Used for ::part(), :active-view-transition-type().
 
     void Trace(GCVisitor* visitor) const;
@@ -712,9 +710,7 @@ class CSSSelector {
   // from a normal |value_| to a |rare_data_|.
   union DataUnion {
     enum ConstructUninitializedTag { kConstructUninitialized };
-    explicit DataUnion(ConstructUninitializedTag) {
-      memset(this, 0, sizeof(DataUnion));
-    }
+    explicit DataUnion(ConstructUninitializedTag) { memset(this, 0, sizeof(DataUnion)); }
 
     enum ConstructEmptyValueTag { kConstructEmptyValue };
     explicit DataUnion(ConstructEmptyValueTag) : value_() {}

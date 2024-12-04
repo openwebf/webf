@@ -39,8 +39,7 @@ bool ValuesEquivalent(const T* a, const T* b, Predicate p = {}) {
 //   };
 template <typename T,
           typename Predicate = std::equal_to<>,
-          std::enable_if_t<
-              std::is_pointer_v<decltype(std::declval<T>().get())>>* = nullptr>
+          std::enable_if_t<std::is_pointer_v<decltype(std::declval<T>().get())>>* = nullptr>
 bool ValuesEquivalent(const T& x, const T& y, Predicate p = {}) {
   return ValuesEquivalent(x.get(), y.get(), std::move(p));
 }
@@ -59,11 +58,10 @@ bool ValuesEquivalent(const T& x, const T& y, Predicate p = {}) {
 //   }  // namespace blink
 template <typename T,
           typename Predicate = std::equal_to<>,
-          std::enable_if_t<
-              std::is_pointer_v<decltype(std::declval<T>().Get())>>* = nullptr>
+          std::enable_if_t<std::is_pointer_v<decltype(std::declval<T>().Get())>>* = nullptr>
 bool ValuesEquivalent(const T& x, const T& y, Predicate p = {}) {
   return ValuesEquivalent(x.Get(), y.Get(), std::move(p));
 }
 
-}
+}  // namespace webf
 #endif  // WEBF_VALUES_EQUIVALENT_H

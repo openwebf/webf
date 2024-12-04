@@ -12,8 +12,8 @@
 
 #include <algorithm>
 #include <atomic>
-#include <limits>
 #include <cassert>
+#include <limits>
 
 //#include "base/time/time.h"
 
@@ -43,8 +43,7 @@ int RandInt(int min, int max) {
   uint64_t range = static_cast<uint64_t>(max) - static_cast<uint64_t>(min) + 1;
   // |range| is at most UINT_MAX + 1, so the result of RandGenerator(range)
   // is at most UINT_MAX.  Hence it's safe to cast it from uint64_t to int64_t.
-  int result =
-      static_cast<int>(min + static_cast<int64_t>(webf::RandGenerator(range)));
+  int result = static_cast<int>(min + static_cast<int64_t>(webf::RandGenerator(range)));
   assert(result >= min);
   assert(result <= max);
   return result;
@@ -81,8 +80,7 @@ double BitsToOpenEndedUnitInterval(uint64_t bits) {
   // in the target type's mantissa, and raising it to an appropriate power to
   // produce output in the range [0, 1).  For IEEE 754 doubles, the mantissa
   // is expected to accommodate 53 bits (including the implied bit).
-  static_assert(std::numeric_limits<double>::radix == 2,
-                "otherwise use scalbn");
+  static_assert(std::numeric_limits<double>::radix == 2, "otherwise use scalbn");
   constexpr int kBits = std::numeric_limits<double>::digits;
   return ldexp(bits & ((UINT64_C(1) << kBits) - 1u), -kBits);
 }
@@ -103,8 +101,7 @@ uint64_t RandGenerator(uint64_t range) {
   // make the random generator non-uniform (consider e.g. if
   // MAX_UINT64 was 7 and |range| was 5, then a result of 1 would be twice
   // as likely as a result of 3 or 4).
-  uint64_t max_acceptable_value =
-      (std::numeric_limits<uint64_t>::max() / range) * range - 1;
+  uint64_t max_acceptable_value = (std::numeric_limits<uint64_t>::max() / range) * range - 1;
 
   uint64_t value;
   do {
@@ -179,15 +176,13 @@ bool MetricsSubSampler::ShouldSample(double probability) {
   return generator_.RandDouble() < probability;
 }
 
-MetricsSubSampler::ScopedAlwaysSampleForTesting::
-    ScopedAlwaysSampleForTesting() {
+MetricsSubSampler::ScopedAlwaysSampleForTesting::ScopedAlwaysSampleForTesting() {
   assert(!g_subsampling_always_sample.load(std::memory_order_relaxed));
   assert(!g_subsampling_never_sample.load(std::memory_order_relaxed));
   g_subsampling_always_sample.store(true, std::memory_order_relaxed);
 }
 
-MetricsSubSampler::ScopedAlwaysSampleForTesting::
-    ~ScopedAlwaysSampleForTesting() {
+MetricsSubSampler::ScopedAlwaysSampleForTesting::~ScopedAlwaysSampleForTesting() {
   assert(g_subsampling_always_sample.load(std::memory_order_relaxed));
   assert(!g_subsampling_never_sample.load(std::memory_order_relaxed));
   g_subsampling_always_sample.store(false, std::memory_order_relaxed);
@@ -205,4 +200,4 @@ MetricsSubSampler::ScopedNeverSampleForTesting::~ScopedNeverSampleForTesting() {
   g_subsampling_never_sample.store(false, std::memory_order_relaxed);
 }
 
-}  // namespace base
+}  // namespace webf

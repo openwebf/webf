@@ -17,12 +17,10 @@ namespace gfx {
 class SizeF {
  public:
   constexpr SizeF() : width_(0.f), height_(0.f) {}
-  constexpr SizeF(float width, float height)
-      : width_(clamp(width)), height_(clamp(height)) {}
+  constexpr SizeF(float width, float height) : width_(clamp(width)), height_(clamp(height)) {}
 
   constexpr explicit SizeF(const Size& size)
-      : SizeF(static_cast<float>(size.width()),
-              static_cast<float>(size.height())) {}
+      : SizeF(static_cast<float>(size.width()), static_cast<float>(size.height())) {}
 
   constexpr float width() const { return width_; }
   constexpr float height() const { return height_; }
@@ -30,12 +28,8 @@ class SizeF {
   void set_width(float width) { width_ = clamp(width); }
   void set_height(float height) { height_ = clamp(height); }
 
-  void operator+=(const SizeF& size) {
-    SetSize(width_ + size.width_, height_ + size.height_);
-  }
-  void operator-=(const SizeF& size) {
-    SetSize(width_ - size.width_, height_ - size.height_);
-  }
+  void operator+=(const SizeF& size) { SetSize(width_ + size.width_, height_ + size.height_); }
+  void operator-=(const SizeF& size) { SetSize(width_ - size.width_, height_ - size.height_); }
 
   float GetArea() const;
 
@@ -58,13 +52,9 @@ class SizeF {
   constexpr bool IsEmpty() const { return !width() || !height(); }
   constexpr bool IsZero() const { return !width() && !height(); }
 
-  void Scale(float scale) {
-    Scale(scale, scale);
-  }
+  void Scale(float scale) { Scale(scale, scale); }
 
-  void Scale(float x_scale, float y_scale) {
-    SetSize(width() * x_scale, height() * y_scale);
-  }
+  void Scale(float x_scale, float y_scale) { SetSize(width() * x_scale, height() * y_scale); }
 
   // Scales the size by the inverse of the given scale (by dividing).
   void InvScale(float inv_scale) { InvScale(inv_scale, inv_scale); }
@@ -86,10 +76,7 @@ class SizeF {
 
   static constexpr float clamp(float f) { return f > kTrivial ? f : 0.f; }
 
-  static float next(float f) {
-    return std::nextafter(std::max(kTrivial, f),
-                          std::numeric_limits<float>::max());
-  }
+  static float next(float f) { return std::nextafter(std::max(kTrivial, f), std::numeric_limits<float>::max()); }
 
   float width_;
   float height_;

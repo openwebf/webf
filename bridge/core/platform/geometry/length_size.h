@@ -33,12 +33,9 @@ class LengthSize {
  public:
   LengthSize() = default;
 
-  LengthSize(const Length& width, const Length& height)
-      : width_(width), height_(height) {}
+  LengthSize(const Length& width, const Length& height) : width_(width), height_(height) {}
 
-  bool operator==(const LengthSize& o) const {
-    return width_ == o.width_ && height_ == o.height_;
-  }
+  bool operator==(const LengthSize& o) const { return width_ == o.width_ && height_ == o.height_; }
   bool operator!=(const LengthSize& o) const { return !(*this == o); }
 
   void SetWidth(const Length& width) { width_ = width; }

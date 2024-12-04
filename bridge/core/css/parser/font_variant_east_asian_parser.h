@@ -15,9 +15,7 @@ class FontVariantEastAsianParser {
 
  public:
   FontVariantEastAsianParser()
-      : east_asian_form_value_(nullptr),
-        east_asian_width_value_(nullptr),
-        ruby_value_(nullptr) {}
+      : east_asian_form_value_(nullptr), east_asian_width_value_(nullptr), ruby_value_(nullptr) {}
 
   enum class ParseResult { kConsumedValue, kDisallowedValue, kUnknownValue };
 
@@ -80,6 +78,6 @@ class FontVariantEastAsianParser {
   std::shared_ptr<const CSSIdentifierValue> ruby_value_;
 };
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_CSS_PARSER_FONT_VARIANT_EAST_ASIAN_PARSER_H_

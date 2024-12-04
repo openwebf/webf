@@ -5,9 +5,9 @@
 #ifndef WEBF_CORE_STYLE_FONT_SIZE_STYLE_H_
 #define WEBF_CORE_STYLE_FONT_SIZE_STYLE_H_
 
-#include "foundation/macros.h"
 #include "core/platform/fonts/font.h"
 #include "core/platform/geometry/length.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -18,16 +18,11 @@ class FontSizeStyle {
   WEBF_STACK_ALLOCATED();
 
  public:
-  FontSizeStyle(const Font& font,
-                const Length& specified_line_height,
-                float effective_zoom)
-      : font_(font),
-        specified_line_height_(specified_line_height),
-        effective_zoom_(effective_zoom) {}
+  FontSizeStyle(const Font& font, const Length& specified_line_height, float effective_zoom)
+      : font_(font), specified_line_height_(specified_line_height), effective_zoom_(effective_zoom) {}
 
   bool operator==(const FontSizeStyle& o) const {
-    return (font_ == o.font_ &&
-            specified_line_height_ == o.specified_line_height_ &&
+    return (font_ == o.font_ && specified_line_height_ == o.specified_line_height_ &&
             effective_zoom_ == o.effective_zoom_);
   }
   bool operator!=(const FontSizeStyle& o) const { return !(*this == o); }
@@ -42,6 +37,6 @@ class FontSizeStyle {
   const float effective_zoom_;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_STYLE_FONT_SIZE_STYLE_H_

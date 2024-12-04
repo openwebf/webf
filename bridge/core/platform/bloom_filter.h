@@ -35,8 +35,8 @@
 #ifndef WEBF_PLATFORM_WTF_BLOOM_FILTER_H_
 #define WEBF_PLATFORM_WTF_BLOOM_FILTER_H_
 
-#include "foundation/macros.h"
 #include <cassert>
+#include "foundation/macros.h"
 
 namespace WTF {
 
@@ -64,8 +64,7 @@ class BloomFilter {
   // this->MayContain(hash) will be true after it.
   void Merge(const BloomFilter<keyBits>& other);
 
-  friend bool operator==(const BloomFilter<keyBits>& a,
-                         const BloomFilter<keyBits>& b) {
+  friend bool operator==(const BloomFilter<keyBits>& a, const BloomFilter<keyBits>& b) {
     return memcmp(a.bit_array_, b.bit_array_, a.kBitArrayMemorySize) == 0;
   }
 
@@ -77,8 +76,7 @@ class BloomFilter {
   static constexpr size_t kTableSize = 1 << keyBits;
   static constexpr size_t kBitsPerPosition = 8 * sizeof(BitArrayUnit);
   static constexpr size_t kBitArraySize = kTableSize / kBitsPerPosition;
-  static constexpr size_t kBitArrayMemorySize =
-      kBitArraySize * sizeof(BitArrayUnit);
+  static constexpr size_t kBitArrayMemorySize = kBitArraySize * sizeof(BitArrayUnit);
   static constexpr unsigned kKeyMask = (1 << keyBits) - 1;
 
   static size_t BitArrayIndex(unsigned key);
@@ -163,29 +161,23 @@ class CountingBloomFilter {
 
   // The filter may give false positives (claim it may contain a key it doesn't)
   // but never false negatives (claim it doesn't contain a key it does).
-  bool MayContain(unsigned hash) const {
-    return FirstSlot(hash) && SecondSlot(hash);
-  }
+  bool MayContain(unsigned hash) const { return FirstSlot(hash) && SecondSlot(hash); }
 
   // The filter must be cleared before reuse even if all keys are removed.
   // Otherwise overflowed keys will stick around.
   void Clear();
-/*
-#if DCHECK_IS_ON()
-  // Slow.
-  bool LikelyEmpty() const;
-  bool IsClear() const;
-#endif
-*/
+  /*
+  #if DCHECK_IS_ON()
+    // Slow.
+    bool LikelyEmpty() const;
+    bool IsClear() const;
+  #endif
+  */
  private:
   uint8_t& FirstSlot(unsigned hash) { return table_[hash & kKeyMask]; }
   uint8_t& SecondSlot(unsigned hash) { return table_[(hash >> 16) & kKeyMask]; }
-  const uint8_t& FirstSlot(unsigned hash) const {
-    return table_[hash & kKeyMask];
-  }
-  const uint8_t& SecondSlot(unsigned hash) const {
-    return table_[(hash >> 16) & kKeyMask];
-  }
+  const uint8_t& FirstSlot(unsigned hash) const { return table_[hash & kKeyMask]; }
+  const uint8_t& SecondSlot(unsigned hash) const { return table_[(hash >> 16) & kKeyMask]; }
 
   uint8_t table_[kTableSize];
 };

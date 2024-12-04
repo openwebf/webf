@@ -1,26 +1,26 @@
 /*
-*  Copyright (C) 2003, 2008, 2012 Apple Inc. All rights reserved.
-*
-*  This library is free software; you can redistribute it and/or
-*  modify it under the terms of the GNU Library General Public
-*  License as published by the Free Software Foundation; either
-*  version 2 of the License, or (at your option) any later version.
-*
-*  This library is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-*  Library General Public License for more details.
-*
-*  You should have received a copy of the GNU Library General Public License
-*  along with this library; see the file COPYING.LIB.  If not, write to
-*  the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-*  Boston, MA 02110-1301, USA.
-*
-*/
+ *  Copyright (C) 2003, 2008, 2012 Apple Inc. All rights reserved.
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Library General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Library General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Library General Public License
+ *  along with this library; see the file COPYING.LIB.  If not, write to
+ *  the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ *  Boston, MA 02110-1301, USA.
+ *
+ */
 
 #include "dtoa.h"
-#include "foundation/macros.h"
 #include <double-conversion/double-conversion.h>
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -44,9 +44,8 @@ const char* NumberToString(double d, NumberToStringBuffer buffer) {
   return builder.Finalize();
 }
 
-static inline const char* FormatStringTruncatingTrailingZerosIfNeeded(
-    NumberToStringBuffer buffer,
-    double_conversion::StringBuilder& builder) {
+static inline const char* FormatStringTruncatingTrailingZerosIfNeeded(NumberToStringBuffer buffer,
+                                                                      double_conversion::StringBuilder& builder) {
   int length = builder.position();
 
   // If there is an exponent, stripping trailing zeros would be incorrect.
@@ -85,9 +84,7 @@ static inline const char* FormatStringTruncatingTrailingZerosIfNeeded(
   return result;
 }
 
-const char* NumberToFixedPrecisionString(double d,
-                                         unsigned significant_figures,
-                                         NumberToStringBuffer buffer) {
+const char* NumberToFixedPrecisionString(double d, unsigned significant_figures, NumberToStringBuffer buffer) {
   // Mimic String::format("%.[precision]g", ...), but use dtoas rounding
   // facilities.
   // "g": Signed value printed in f or e format, whichever is more compact for
@@ -108,9 +105,7 @@ const char* NumberToFixedPrecisionString(double d,
   return FormatStringTruncatingTrailingZerosIfNeeded(buffer, builder);
 }
 
-const char* NumberToFixedWidthString(double d,
-                                     unsigned decimal_places,
-                                     NumberToStringBuffer buffer) {
+const char* NumberToFixedWidthString(double d, unsigned decimal_places, NumberToStringBuffer buffer) {
   // Mimic String::format("%.[precision]f", ...), but use dtoas rounding
   // facilities.
   // "f": Signed value having the form [ - ]dddd.dddd, where dddd is one or more
@@ -129,9 +124,8 @@ const char* NumberToFixedWidthString(double d,
 
 double ParseDouble(const char* string, size_t length, size_t& parsed_length) {
   int int_parsed_length = 0;
-  double d = GetDoubleConverter().StringToDouble(
-      reinterpret_cast<const char*>(string), base::saturated_cast<int>(length),
-      &int_parsed_length);
+  double d = GetDoubleConverter().StringToDouble(reinterpret_cast<const char*>(string),
+                                                 base::saturated_cast<int>(length), &int_parsed_length);
   parsed_length = int_parsed_length;
   return d;
 }
@@ -148,5 +142,4 @@ void InitializeDoubleConverter() {
 
 }  // namespace internal
 
-
-}
+}  // namespace webf

@@ -5,9 +5,9 @@
 #ifndef WEBF_CORE_CSS_CSSOM_UTILS_H_
 #define WEBF_CORE_CSS_CSSOM_UTILS_H_
 
-#include "foundation/macros.h"
 #include "core/css/css_value.h"
 #include "core/css/css_value_list.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -38,20 +38,20 @@ class CSSOMUtils {
   //
   // Unlike the CSS indices, these are 0-based indices.
   // Out-of-range or not-found indices return ".", per spec.
-//  static std::string NamedGridAreaTextForPosition(
-//      const NamedGridAreaMap& grid_area_map,
-//      wtf_size_t row,
-//      wtf_size_t column);
+  //  static std::string NamedGridAreaTextForPosition(
+  //      const NamedGridAreaMap& grid_area_map,
+  //      wtf_size_t row,
+  //      wtf_size_t column);
 
   // Returns a `CSSValueList` containing the computed value for the
   // `grid-template` shorthand, based on provided `grid-template-rows`,
   // `grid-template-columns`, and `grid-template-areas`.
-//  static std::shared_ptr<const CSSValueList> ComputedValueForGridTemplateShorthand(
-//      const CSSValue* template_row_values,
-//      const CSSValue* template_column_values,
-//      const CSSValue* template_area_values);
+  //  static std::shared_ptr<const CSSValueList> ComputedValueForGridTemplateShorthand(
+  //      const CSSValue* template_row_values,
+  //      const CSSValue* template_column_values,
+  //      const CSSValue* template_area_values);
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_CSSOM_UTILS_H_

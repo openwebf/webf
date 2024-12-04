@@ -8,10 +8,10 @@
 #define WEBF_CORE_ANIMATION_PROPERTY_HANDLE_H_
 
 #include "core/css/css_property_name.h"
-#include "css_property_instance.h"
 #include "core/css/properties/css_property.h"
 #include "core/dom/qualified_name.h"
 #include "core/platform/hash_traits.h"
+#include "css_property_instance.h"
 
 namespace webf {
 
@@ -20,10 +20,8 @@ class PropertyHandle {
   WEBF_DISALLOW_NEW();
 
  public:
-  explicit PropertyHandle(const CSSProperty& property,
-                          bool is_presentation_attribute = false)
-      : handle_type_(is_presentation_attribute ? kHandlePresentationAttribute
-                                               : kHandleCSSProperty),
+  explicit PropertyHandle(const CSSProperty& property, bool is_presentation_attribute = false)
+      : handle_type_(is_presentation_attribute ? kHandlePresentationAttribute : kHandleCSSProperty),
         css_property_(&property) {
     assert(CSSPropertyID::kVariable != property.PropertyID());
   }
@@ -36,44 +34,32 @@ class PropertyHandle {
 
   // TODO(crbug.com/980160): Eliminate call to GetCSSPropertyVariable().
   explicit PropertyHandle(const CSSPropertyName& property_name)
-      : handle_type_(property_name.IsCustomProperty() ? kHandleCSSCustomProperty
-                                                      : kHandleCSSProperty),
-        css_property_(property_name.IsCustomProperty()
-                          ? &GetCSSPropertyVariable()
-                          : &CSSProperty::Get(property_name.Id())),
-        property_name_(property_name.IsCustomProperty()
-                           ? property_name.ToString()
-                           : "") {}
+      : handle_type_(property_name.IsCustomProperty() ? kHandleCSSCustomProperty : kHandleCSSProperty),
+        css_property_(property_name.IsCustomProperty() ? &GetCSSPropertyVariable()
+                                                       : &CSSProperty::Get(property_name.Id())),
+        property_name_(property_name.IsCustomProperty() ? property_name.ToString() : "") {}
 
   explicit PropertyHandle(const QualifiedName& attribute_name)
       : handle_type_(kHandleSVGAttribute), svg_attribute_(&attribute_name) {}
 
   bool operator==(const PropertyHandle&) const;
-  bool operator!=(const PropertyHandle& other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const PropertyHandle& other) const { return !(*this == other); }
 
   unsigned GetHash() const;
 
-  bool IsCSSProperty() const {
-    return handle_type_ == kHandleCSSProperty || IsCSSCustomProperty();
-  }
+  bool IsCSSProperty() const { return handle_type_ == kHandleCSSProperty || IsCSSCustomProperty(); }
   const CSSProperty& GetCSSProperty() const {
     assert(IsCSSProperty());
     return *css_property_;
   }
 
-  bool IsCSSCustomProperty() const {
-    return handle_type_ == kHandleCSSCustomProperty;
-  }
+  bool IsCSSCustomProperty() const { return handle_type_ == kHandleCSSCustomProperty; }
   const std::string& CustomPropertyName() const {
     assert(IsCSSCustomProperty());
     return property_name_;
   }
 
-  bool IsPresentationAttribute() const {
-    return handle_type_ == kHandlePresentationAttribute;
-  }
+  bool IsPresentationAttribute() const { return handle_type_ == kHandlePresentationAttribute; }
   const CSSProperty& PresentationAttribute() const {
     assert(IsPresentationAttribute());
     return *css_property_;
@@ -105,20 +91,13 @@ class PropertyHandle {
     kHandleSVGAttribute,
   };
 
-  explicit PropertyHandle(HandleType handle_type)
-      : handle_type_(handle_type), svg_attribute_(nullptr) {}
+  explicit PropertyHandle(HandleType handle_type) : handle_type_(handle_type), svg_attribute_(nullptr) {}
 
-  static PropertyHandle EmptyValueForHashTraits() {
-    return PropertyHandle(kHandleEmptyValueForHashTraits);
-  }
+  static PropertyHandle EmptyValueForHashTraits() { return PropertyHandle(kHandleEmptyValueForHashTraits); }
 
-  static PropertyHandle DeletedValueForHashTraits() {
-    return PropertyHandle(kHandleDeletedValueForHashTraits);
-  }
+  static PropertyHandle DeletedValueForHashTraits() { return PropertyHandle(kHandleDeletedValueForHashTraits); }
 
-  bool IsDeletedValueForHashTraits() const {
-    return handle_type_ == kHandleDeletedValueForHashTraits;
-  }
+  bool IsDeletedValueForHashTraits() const { return handle_type_ == kHandleDeletedValueForHashTraits; }
 
   HandleType handle_type_;
   union {
@@ -135,25 +114,17 @@ class PropertyHandle {
 namespace webf {
 
 template <>
-struct HashTraits<webf::PropertyHandle>
-    : SimpleClassHashTraits<webf::PropertyHandle> {
-  static unsigned GetHash(const webf::PropertyHandle& handle) {
-    return handle.GetHash();
-  }
+struct HashTraits<webf::PropertyHandle> : SimpleClassHashTraits<webf::PropertyHandle> {
+  static unsigned GetHash(const webf::PropertyHandle& handle) { return handle.GetHash(); }
 
   static void ConstructDeletedValue(webf::PropertyHandle& slot) {
-    new (NotNullTag::kNotNull, &slot) webf::PropertyHandle(
-        webf::PropertyHandle::DeletedValueForHashTraits());
+    new (NotNullTag::kNotNull, &slot) webf::PropertyHandle(webf::PropertyHandle::DeletedValueForHashTraits());
   }
-  static bool IsDeletedValue(const webf::PropertyHandle& value) {
-    return value.IsDeletedValueForHashTraits();
-  }
+  static bool IsDeletedValue(const webf::PropertyHandle& value) { return value.IsDeletedValueForHashTraits(); }
 
-  static webf::PropertyHandle EmptyValue() {
-    return webf::PropertyHandle::EmptyValueForHashTraits();
-  }
+  static webf::PropertyHandle EmptyValue() { return webf::PropertyHandle::EmptyValueForHashTraits(); }
 };
 
-}  // namespace WTF
+}  // namespace webf
 
 #endif  // WEBF_CORE_ANIMATION_PROPERTY_HANDLE_H_

@@ -15,7 +15,10 @@ class HTMLLinkElement : public HTMLElement {
 
  public:
   explicit HTMLLinkElement(Document& document);
-  NativeValue HandleCallFromDartSide(const webf::AtomicString &method, int32_t argc, const webf::NativeValue *argv, Dart_Handle dart_object) override;
+  NativeValue HandleCallFromDartSide(const webf::AtomicString& method,
+                                     int32_t argc,
+                                     const webf::NativeValue* argv,
+                                     Dart_Handle dart_object) override;
 
   NativeValue parseAuthorStyleSheet(AtomicString& cssString, AtomicString& href);
 

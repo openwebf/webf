@@ -35,9 +35,7 @@ class IsMatch {
  public:
   IsMatch(const LiveNodeList& list) : list_(&list) {}
 
-  bool operator()(const Element& element) const {
-    return list_->ElementMatches(element);
-  }
+  bool operator()(const Element& element) const { return list_->ElementMatches(element); }
 
  private:
   const LiveNodeList* list_;
@@ -50,10 +48,7 @@ LiveNodeList::LiveNodeList(ContainerNode& owner_node,
                            NodeListInvalidationType invalidation_type,
                            NodeListSearchRoot search_root,
                            JSContext* ctx)
-    : LiveNodeListBase(owner_node,
-                       search_root,
-                       invalidation_type,
-                       collection_type), NodeList(ctx) {
+    : LiveNodeListBase(owner_node, search_root, invalidation_type, collection_type), NodeList(ctx) {
   // Keep this in the child class because |registerNodeList| requires wrapper
   // tracing and potentially calls virtual methods which is not allowed in a
   // base class constructor.
@@ -87,21 +82,18 @@ Element* LiveNodeList::TraverseToLast() const {
 Element* LiveNodeList::TraverseForwardToOffset(unsigned offset,
                                                Element& current_element,
                                                unsigned& current_offset) const {
-  return TraverseMatchingElementsForwardToOffset(
-      current_element, &RootNode(), offset, current_offset, IsMatch(*this));
+  return TraverseMatchingElementsForwardToOffset(current_element, &RootNode(), offset, current_offset, IsMatch(*this));
 }
 
-Element* LiveNodeList::TraverseBackwardToOffset(
-    unsigned offset,
-    Element& current_element,
-    unsigned& current_offset) const {
-  return TraverseMatchingElementsBackwardToOffset(
-      current_element, &RootNode(), offset, current_offset, IsMatch(*this));
+Element* LiveNodeList::TraverseBackwardToOffset(unsigned offset,
+                                                Element& current_element,
+                                                unsigned& current_offset) const {
+  return TraverseMatchingElementsBackwardToOffset(current_element, &RootNode(), offset, current_offset, IsMatch(*this));
 }
 
 void LiveNodeList::Trace(GCVisitor* visitor) const {
   // TODO(guopengfei)：先注释
-  //visitor->Trace(collection_items_cache_);
+  // visitor->Trace(collection_items_cache_);
   LiveNodeListBase::Trace(visitor);
   NodeList::Trace(visitor);
 }

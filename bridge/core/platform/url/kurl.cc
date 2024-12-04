@@ -857,10 +857,8 @@ void KURL::Init(const KURL& base, const std::string& relative) {
   url::RawCanonOutputT<char> output;
 
   if (!relative.empty()) {
-    is_valid_ = url::ResolveRelative(base_utf8.data(), base_utf8.size(),
-                                     base.parsed_, relative.data(),
-                                     ClampTo<int>(relative.size()),
-                                     &output, &parsed_);
+    is_valid_ = url::ResolveRelative(base_utf8.data(), base_utf8.size(), base.parsed_, relative.data(),
+                                     ClampTo<int>(relative.size()), &output, &parsed_);
   }
 
   // Constructing an Atomicstd::string will re-hash the raw output and check the

@@ -58,9 +58,7 @@ class LayoutTreeRebuildRoot;
 class StyleEngine final {
  public:
   explicit StyleEngine(Document& document);
-  ~StyleEngine() {
-    WEBF_LOG(VERBOSE) << 1;
-  }
+  ~StyleEngine() { WEBF_LOG(VERBOSE) << 1; }
   CSSStyleSheet* CreateSheet(Element&, const std::string& text);
   Document& GetDocument() const;
   void Trace(GCVisitor* visitor);
@@ -69,35 +67,29 @@ class StyleEngine final {
   bool InRebuildLayoutTree() const { return in_layout_tree_rebuild_; }
   bool InDOMRemoval() const { return in_dom_removal_; }
   bool InDetachLayoutTree() const { return in_detach_scope_; }
-  bool InContainerQueryStyleRecalc() const {
-   return in_container_query_style_recalc_;
-  }
-  bool InPositionTryStyleRecalc() const {
-   return in_position_try_style_recalc_;
-  }
+  bool InContainerQueryStyleRecalc() const { return in_container_query_style_recalc_; }
+  bool InPositionTryStyleRecalc() const { return in_position_try_style_recalc_; }
 
- class InApplyAnimationUpdateScope {
-   WEBF_STACK_ALLOCATED();
+  class InApplyAnimationUpdateScope {
+    WEBF_STACK_ALLOCATED();
 
-  public:
-   explicit InApplyAnimationUpdateScope(StyleEngine& engine)
-       : auto_reset_(&engine.in_apply_animation_update_, true) {}
+   public:
+    explicit InApplyAnimationUpdateScope(StyleEngine& engine) : auto_reset_(&engine.in_apply_animation_update_, true) {}
 
-  private:
-   AutoReset<bool> auto_reset_;
+   private:
+    AutoReset<bool> auto_reset_;
   };
 
- bool InApplyAnimationUpdate() const { return in_apply_animation_update_; }
+  bool InApplyAnimationUpdate() const { return in_apply_animation_update_; }
 
   class InEnsureComputedStyleScope {
-   WEBF_STACK_ALLOCATED();
+    WEBF_STACK_ALLOCATED();
 
-  public:
-   explicit InEnsureComputedStyleScope(StyleEngine& engine)
-       : auto_reset_(&engine.in_ensure_computed_style_, true) {}
+   public:
+    explicit InEnsureComputedStyleScope(StyleEngine& engine) : auto_reset_(&engine.in_ensure_computed_style_, true) {}
 
-  private:
-   AutoReset<bool> auto_reset_;
+   private:
+    AutoReset<bool> auto_reset_;
   };
 
   bool InEnsureComputedStyle() const { return in_ensure_computed_style_; }
@@ -111,8 +103,8 @@ class StyleEngine final {
   void ScheduleNthPseudoInvalidations(ContainerNode&);
 
   const RuleFeatureSet& GetRuleFeatureSet() const {
-   assert(global_rule_set_);
-   return global_rule_set_->GetRuleFeatureSet();
+    assert(global_rule_set_);
+    return global_rule_set_->GetRuleFeatureSet();
   }
 
  private:

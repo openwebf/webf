@@ -55,8 +55,7 @@ JSValue ExecutionContextData::constructorForIdSlowCase(const WrapperTypeInfo* ty
   JS_DefinePropertyValue(ctx, classObject, prototypeKey, prototypeObject, JS_PROP_C_W_E);
   JS_FreeAtom(ctx, prototypeKey);
 
-  JS_DefinePropertyValue(ctx, prototypeObject, JS_ATOM_constructor, JS_DupValue(ctx, classObject),
-                         JS_PROP_NORMAL);
+  JS_DefinePropertyValue(ctx, prototypeObject, JS_ATOM_constructor, JS_DupValue(ctx, classObject), JS_PROP_NORMAL);
   JS_DefinePropertyValue(ctx, prototypeObject, JS_ATOM_Symbol_toStringTag, JS_NewString(ctx, type->className),
                          JS_PROP_NORMAL);
 

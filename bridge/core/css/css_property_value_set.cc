@@ -61,7 +61,7 @@ static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet>
 }
 
 static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> property_set,
-                                 const AtomicString& custom_property_name) {
+                                      const AtomicString& custom_property_name) {
   // Custom properties are never shorthands.
   return "";
 }
@@ -397,8 +397,8 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCus
   if (value.empty()) {
     return RemoveProperty(custom_property_name) ? kChangedPropertySet : kUnchanged;
   }
-  return CSSParser::ParseValueForCustomProperty(this, custom_property_name.ToStdString(), value, important, context_style_sheet,
-                                                is_animation_tainted);
+  return CSSParser::ParseValueForCustomProperty(this, custom_property_name.ToStdString(), value, important,
+                                                context_style_sheet, is_animation_tainted);
 }
 
 MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::SetLonghandProperty(CSSPropertyValue property) {
@@ -453,13 +453,8 @@ bool MutableCSSPropertyValueSet::RemoveProperty(const T& property, std::string* 
   int found_property_index = FindPropertyIndex(property);
   return RemovePropertyAtIndex(found_property_index, return_text);
 }
-template bool MutableCSSPropertyValueSet::RemoveProperty(
-    const CSSPropertyID&,
-    std::string*);
-template bool MutableCSSPropertyValueSet::RemoveProperty(
-    const AtomicString&,
-    std::string*);
-
+template bool MutableCSSPropertyValueSet::RemoveProperty(const CSSPropertyID&, std::string*);
+template bool MutableCSSPropertyValueSet::RemoveProperty(const AtomicString&, std::string*);
 
 inline bool ContainsId(const CSSProperty* const set[], unsigned length, CSSPropertyID id) {
   for (unsigned i = 0; i < length; ++i) {

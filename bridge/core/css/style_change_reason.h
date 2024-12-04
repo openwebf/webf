@@ -92,29 +92,24 @@ class StyleChangeReasonForTracing {
   WEBF_DISALLOW_NEW();
 
  public:
-  static StyleChangeReasonForTracing Create(
-      StyleChangeReasonString reason_string) {
+  static StyleChangeReasonForTracing Create(StyleChangeReasonString reason_string) {
     return StyleChangeReasonForTracing(reason_string, g_null_atom);
   }
 
-  static StyleChangeReasonForTracing CreateWithExtraData(
-      StyleChangeReasonString reason_string,
-      const AtomicString& extra_data) {
+  static StyleChangeReasonForTracing CreateWithExtraData(StyleChangeReasonString reason_string,
+                                                         const AtomicString& extra_data) {
     return StyleChangeReasonForTracing(reason_string, extra_data);
   }
 
-  static StyleChangeReasonForTracing FromAttribute(
-      const QualifiedName& attribute_name) {
-    return StyleChangeReasonForTracing(style_change_reason::kAttribute,
-                                       attribute_name.LocalName());
+  static StyleChangeReasonForTracing FromAttribute(const QualifiedName& attribute_name) {
+    return StyleChangeReasonForTracing(style_change_reason::kAttribute, attribute_name.LocalName());
   }
 
   std::string ReasonString() const { return std::string(reason_); }
   const AtomicString& GetExtraData() const { return extra_data_; }
 
  private:
-  StyleChangeReasonForTracing(StyleChangeReasonString reason_string,
-                              const AtomicString& extra_data)
+  StyleChangeReasonForTracing(StyleChangeReasonString reason_string, const AtomicString& extra_data)
       : reason_(reason_string), extra_data_(extra_data) {}
 
   // disable comparisons

@@ -12,8 +12,7 @@ namespace webf {
 
 class CSSFunctionValue : public CSSValueList {
  public:
-  CSSFunctionValue(CSSValueID id)
-      : CSSValueList(kFunctionClass, kCommaSeparator), value_id_(id) {}
+  CSSFunctionValue(CSSValueID id) : CSSValueList(kFunctionClass, kCommaSeparator), value_id_(id) {}
 
   std::string CustomCSSText() const;
 
@@ -22,9 +21,7 @@ class CSSFunctionValue : public CSSValueList {
   }
   CSSValueID FunctionType() const { return value_id_; }
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-    CSSValueList::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const { CSSValueList::TraceAfterDispatch(visitor); }
 
  private:
   const CSSValueID value_id_;
@@ -32,9 +29,7 @@ class CSSFunctionValue : public CSSValueList {
 
 template <>
 struct DowncastTraits<CSSFunctionValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsFunctionValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsFunctionValue(); }
 };
 
 }  // namespace webf

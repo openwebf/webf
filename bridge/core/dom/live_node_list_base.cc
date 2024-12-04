@@ -31,20 +31,18 @@ ContainerNode& LiveNodeListBase::RootNode() const {
   return *owner_node_;
 }
 
-void LiveNodeListBase::InvalidateCacheForAttribute(
-    const QualifiedName* attr_name) const {
+void LiveNodeListBase::InvalidateCacheForAttribute(const QualifiedName* attr_name) const {
   if (IsLiveNodeListType(GetType()))
     To<LiveNodeList>(this)->InvalidateCacheForAttribute(attr_name);
   else
     To<HTMLCollection>(this)->InvalidateCacheForAttribute(attr_name);
 }
 
-void LiveNodeListBase::DidMoveToDocument(Document& old_document,
-                                         Document& new_document) {
+void LiveNodeListBase::DidMoveToDocument(Document& old_document, Document& new_document) {
   InvalidateCache(&old_document);
   // TODO(guopengfei)：
-  //old_document.UnregisterNodeList(this);
-  //new_document.RegisterNodeList(this);
+  // old_document.UnregisterNodeList(this);
+  // new_document.RegisterNodeList(this);
 }
 
 }  // namespace webf

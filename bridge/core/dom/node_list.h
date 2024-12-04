@@ -36,9 +36,9 @@
 #define BRIDGE_CORE_DOM_NODE_LIST_H_
 
 #include "bindings/qjs/script_wrappable.h"
+#include "core/dom/container_node.h"
 #include "core/html/collection_type.h"
 #include "core/html/html_collection.h"
-#include "core/dom/container_node.h"
 
 namespace webf {
 

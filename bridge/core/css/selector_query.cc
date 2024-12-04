@@ -1,43 +1,43 @@
 /*
-* Copyright (C) 2011, 2013 Apple Inc. All rights reserved.
-* Copyright (C) 2014 Samsung Electronics. All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions
-* are met:
-*
-* 1.  Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-* 2.  Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in the
-*     documentation and/or other materials provided with the distribution.
-*
-* THIS SOFTWARE IS PROVIDED BY APPLE AND ITS CONTRIBUTORS "AS IS" AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL APPLE OR ITS CONTRIBUTORS BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-* THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (C) 2011, 2013 Apple Inc. All rights reserved.
+ * Copyright (C) 2014 Samsung Electronics. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1.  Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ * 2.  Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY APPLE AND ITS CONTRIBUTORS "AS IS" AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL APPLE OR ITS CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "selector_query.h"
-#include "core/dom/element.h"
 #include "core/base/compiler_specific.h"
+#include "core/dom/element.h"
 
 namespace webf {
 //
 //#if DCHECK_IS_ON() || defined(RELEASE_QUERY_STATS)
 //
-//static SelectorQuery::QueryStats& CurrentQueryStats() {
+// static SelectorQuery::QueryStats& CurrentQueryStats() {
 //  thread_local static SelectorQuery::QueryStats stats;
 //  return stats;
 //}
 //
-//SelectorQuery::QueryStats SelectorQuery::LastQueryStats() {
+// SelectorQuery::QueryStats SelectorQuery::LastQueryStats() {
 //  return CurrentQueryStats();
 //}
 //
@@ -52,7 +52,7 @@ namespace webf {
 //
 //#endif
 //
-//struct SingleElementSelectorQueryTrait {
+// struct SingleElementSelectorQueryTrait {
 //  typedef Element* OutputType;
 //  static const bool kShouldOnlyMatchFirstElement = true;
 //  ALWAYS_INLINE static bool IsEmpty(const OutputType& output) {
@@ -65,7 +65,7 @@ namespace webf {
 //  }
 //};
 //
-//struct AllElementsSelectorQueryTrait {
+// struct AllElementsSelectorQueryTrait {
 //  typedef std::vector<Member<Element>> OutputType;
 //  static const bool kShouldOnlyMatchFirstElement = false;
 //  ALWAYS_INLINE static bool IsEmpty(const OutputType& output) {
@@ -77,7 +77,7 @@ namespace webf {
 //  }
 //};
 //
-//inline bool SelectorMatches(const CSSSelector& selector,
+// inline bool SelectorMatches(const CSSSelector& selector,
 //                            Element& element,
 //                            const ContainerNode& root_node,
 //                            const SelectorChecker& checker) {
@@ -87,14 +87,14 @@ namespace webf {
 //  return checker.Match(context);
 //}
 //
-//bool SelectorQuery::Matches(Element& target_element) const {
+// bool SelectorQuery::Matches(Element& target_element) const {
 //  QUERY_STATS_RESET();
 //  CheckPseudoHasCacheScope check_pseudo_has_cache_scope(
 //      &target_element.GetDocument(), /*within_selector_checking=*/false);
 //  return SelectorListMatches(target_element, target_element);
 //}
 //
-//Element* SelectorQuery::Closest(Element& target_element) const {
+// Element* SelectorQuery::Closest(Element& target_element) const {
 //  QUERY_STATS_RESET();
 //  CheckPseudoHasCacheScope check_pseudo_has_cache_scope(
 //      &target_element.GetDocument(), /*within_selector_checking=*/false);
@@ -111,7 +111,7 @@ namespace webf {
 //  return nullptr;
 //}
 //
-//StaticElementList* SelectorQuery::QueryAll(ContainerNode& root_node) const {
+// StaticElementList* SelectorQuery::QueryAll(ContainerNode& root_node) const {
 //  QUERY_STATS_RESET();
 //  CheckPseudoHasCacheScope check_pseudo_has_cache_scope(
 //      &root_node.GetDocument(), /*within_selector_checking=*/false);
@@ -121,7 +121,7 @@ namespace webf {
 //  return StaticElementList::Adopt(result);
 //}
 //
-//Element* SelectorQuery::QueryFirst(ContainerNode& root_node) const {
+// Element* SelectorQuery::QueryFirst(ContainerNode& root_node) const {
 //  QUERY_STATS_RESET();
 //  CheckPseudoHasCacheScope check_pseudo_has_cache_scope(
 //      &root_node.GetDocument(), /*within_selector_checking=*/false);
@@ -131,8 +131,8 @@ namespace webf {
 //  return matched_element;
 //}
 //
-//template <typename SelectorQueryTrait>
-//static void CollectElementsByClassName(
+// template <typename SelectorQueryTrait>
+// static void CollectElementsByClassName(
 //    ContainerNode& root_node,
 //    const AtomicString& class_name,
 //    const CSSSelector* selector,
@@ -153,7 +153,7 @@ namespace webf {
 //  }
 //}
 //
-//inline bool MatchesTagName(const QualifiedName& tag_name,
+// inline bool MatchesTagName(const QualifiedName& tag_name,
 //                           const Element& element) {
 //  if (tag_name == AnyQName()) {
 //    return true;
@@ -171,8 +171,8 @@ namespace webf {
 //  return false;
 //}
 //
-//template <typename SelectorQueryTrait>
-//static void CollectElementsByTagName(
+// template <typename SelectorQueryTrait>
+// static void CollectElementsByTagName(
 //    ContainerNode& root_node,
 //    const QualifiedName& tag_name,
 //    typename SelectorQueryTrait::OutputType& output) {
@@ -188,7 +188,7 @@ namespace webf {
 //  }
 //}
 //
-//static bool AttributeValueMatchesExact(const Attribute& attribute_item,
+// static bool AttributeValueMatchesExact(const Attribute& attribute_item,
 //                                       const AtomicString& selector_value,
 //                                       TextCaseSensitivity case_sensitivity) {
 //  const AtomicString& value = attribute_item.Value();
@@ -204,7 +204,7 @@ namespace webf {
 //// SynchronizeAttribute() is rather expensive to call. We can determine ahead of
 //// time if it's needed. The exact set needed for svg is rather large, so this
 //// errors on the side of caution.
-//static bool NeedsSynchronizeAttribute(const QualifiedName& qname,
+// static bool NeedsSynchronizeAttribute(const QualifiedName& qname,
 //                                      bool is_html_doc) {
 //  // Assume any known name needs synchronization.
 //  if (qname.IsDefinedName()) {
@@ -222,8 +222,8 @@ namespace webf {
 //  return lower_local_qname.IsDefinedName();
 //}
 //
-//template <typename SelectorQueryTrait>
-//static void CollectElementsByAttributeExact(
+// template <typename SelectorQueryTrait>
+// static void CollectElementsByAttributeExact(
 //    ContainerNode& root_node,
 //    const CSSSelector& selector,
 //    typename SelectorQueryTrait::OutputType& output) {
@@ -314,7 +314,7 @@ namespace webf {
 //  }
 //}
 //
-//inline bool AncestorHasClassName(ContainerNode& root_node,
+// inline bool AncestorHasClassName(ContainerNode& root_node,
 //                                 const AtomicString& class_name) {
 //  auto* root_node_element = DynamicTo<Element>(root_node);
 //  if (!root_node_element) {
@@ -330,8 +330,8 @@ namespace webf {
 //  return false;
 //}
 //
-//template <typename SelectorQueryTrait>
-//void SelectorQuery::FindTraverseRootsAndExecute(
+// template <typename SelectorQueryTrait>
+// void SelectorQuery::FindTraverseRootsAndExecute(
 //    ContainerNode& root_node,
 //    typename SelectorQueryTrait::OutputType& output) const {
 //  // We need to return the matches in document order. To use id lookup while
@@ -389,8 +389,8 @@ namespace webf {
 //  ExecuteForTraverseRoot<SelectorQueryTrait>(root_node, root_node, output);
 //}
 //
-//template <typename SelectorQueryTrait>
-//void SelectorQuery::ExecuteForTraverseRoot(
+// template <typename SelectorQueryTrait>
+// void SelectorQuery::ExecuteForTraverseRoot(
 //    ContainerNode& traverse_root,
 //    ContainerNode& root_node,
 //    typename SelectorQueryTrait::OutputType& output) const {
@@ -410,7 +410,7 @@ namespace webf {
 //  }
 //}
 //
-//bool SelectorQuery::SelectorListMatches(ContainerNode& root_node,
+// bool SelectorQuery::SelectorListMatches(ContainerNode& root_node,
 //                                        Element& element) const {
 //  SelectorChecker checker(SelectorChecker::kQueryingRules);
 //  for (auto* const selector : selectors_) {
@@ -421,8 +421,8 @@ namespace webf {
 //  return false;
 //}
 //
-//template <typename SelectorQueryTrait>
-//void SelectorQuery::ExecuteSlow(
+// template <typename SelectorQueryTrait>
+// void SelectorQuery::ExecuteSlow(
 //    ContainerNode& root_node,
 //    typename SelectorQueryTrait::OutputType& output) const {
 //  for (Element& element : ElementTraversal::DescendantsOf(root_node)) {
@@ -437,8 +437,8 @@ namespace webf {
 //  }
 //}
 //
-//template <typename SelectorQueryTrait>
-//void SelectorQuery::ExecuteWithId(
+// template <typename SelectorQueryTrait>
+// void SelectorQuery::ExecuteWithId(
 //    ContainerNode& root_node,
 //    typename SelectorQueryTrait::OutputType& output) const {
 //  DCHECK_EQ(selectors_.size(), 1u);
@@ -500,8 +500,8 @@ namespace webf {
 //  ExecuteForTraverseRoot<SelectorQueryTrait>(*start, root_node, output);
 //}
 //
-//template <typename SelectorQueryTrait>
-//void SelectorQuery::Execute(
+// template <typename SelectorQueryTrait>
+// void SelectorQuery::Execute(
 //    ContainerNode& root_node,
 //    typename SelectorQueryTrait::OutputType& output) const {
 //  if (selectors_.empty()) {
@@ -559,12 +559,12 @@ namespace webf {
 //  FindTraverseRootsAndExecute<SelectorQueryTrait>(root_node, output);
 //}
 //
-//std::unique_ptr<SelectorQuery> SelectorQuery::Adopt(
+// std::unique_ptr<SelectorQuery> SelectorQuery::Adopt(
 //    CSSSelectorList* selector_list) {
 //  return base::WrapUnique(new SelectorQuery(selector_list));
 //}
 //
-//SelectorQuery::SelectorQuery(CSSSelectorList* selector_list)
+// SelectorQuery::SelectorQuery(CSSSelectorList* selector_list)
 //    : selector_list_(selector_list),
 //      selector_id_is_rightmost_(true),
 //      selector_id_affected_by_sibling_combinator_(false),
@@ -606,7 +606,7 @@ namespace webf {
 //  }
 //}
 //
-//SelectorQuery* SelectorQueryCache::Add(const AtomicString& selectors,
+// SelectorQuery* SelectorQueryCache::Add(const AtomicString& selectors,
 //                                       const Document& document,
 //                                       ExceptionState& exception_state) {
 //  if (selectors.empty()) {
@@ -647,7 +647,7 @@ namespace webf {
 //      .stored_value->value.get();
 //}
 //
-//void SelectorQueryCache::Invalidate() {
+// void SelectorQueryCache::Invalidate() {
 //  entries_.clear();
 //}
 

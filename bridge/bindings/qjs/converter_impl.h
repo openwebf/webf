@@ -21,11 +21,11 @@
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
 #include "exception_message.h"
+#include "foundation/atomic_string.h"
 #include "idl_type.h"
 #include "js_event_handler.h"
 #include "js_event_listener.h"
 #include "native_string_utils.h"
-#include "foundation/atomic_string.h"
 #include "script_promise.h"
 
 namespace webf {

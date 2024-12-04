@@ -60,8 +60,7 @@ StyleAttributeMutationScope::StyleAttributeMutationScope(AbstractPropertySetCSSS
 
   mutation_recipients_ = MutationObserverInterestGroup::CreateForAttributesMutation(*current_decl_->ParentElement(),
                                                                                     html_names::kStyleAttr);
-  bool should_read_old_value =
-      (mutation_recipients_ && mutation_recipients_->IsOldValueRequested());
+  bool should_read_old_value = (mutation_recipients_ && mutation_recipients_->IsOldValueRequested());
 
   if (should_read_old_value) {
     old_value_ = current_decl_->ParentElement()->getAttribute(html_names::kStyleAttr, ASSERT_NO_EXCEPTION());
@@ -69,8 +68,8 @@ StyleAttributeMutationScope::StyleAttributeMutationScope(AbstractPropertySetCSSS
 
   if (mutation_recipients_) {
     AtomicString requested_old_value = mutation_recipients_->IsOldValueRequested() ? old_value_ : AtomicString::Empty();
-    mutation_ =
-        MutationRecord::CreateAttributes(current_decl_->ParentElement(), html_names::kStyleAttr, AtomicString::Empty(), requested_old_value);
+    mutation_ = MutationRecord::CreateAttributes(current_decl_->ParentElement(), html_names::kStyleAttr,
+                                                 AtomicString::Empty(), requested_old_value);
   }
 }
 

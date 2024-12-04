@@ -52,9 +52,9 @@ MessageEvent::MessageEvent(ExecutingContext* context,
 #else
       data_(ScriptValue(ctx(), *(static_cast<NativeValue*>(native_message_event->data)))),
       origin_(AtomicString(std::unique_ptr<AutoFreeNativeString>(
-                               reinterpret_cast<AutoFreeNativeString*>(native_message_event->origin)))),
+          reinterpret_cast<AutoFreeNativeString*>(native_message_event->origin)))),
       lastEventId_(AtomicString(std::unique_ptr<AutoFreeNativeString>(
-                                    reinterpret_cast<AutoFreeNativeString*>(native_message_event->lastEventId)))),
+          reinterpret_cast<AutoFreeNativeString*>(native_message_event->lastEventId)))),
       source_(AtomicString(
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_message_event->source))))
 #endif

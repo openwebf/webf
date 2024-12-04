@@ -123,8 +123,8 @@ class CSSMathFunctionValue : public CSSPrimitiveValue {
   //
   // See also TryTacticTransform.
   const std::shared_ptr<const CSSMathFunctionValue> TransformAnchors(LogicalAxis,
-                                               const TryTacticTransform&,
-                                               const WritingDirectionMode&) const;
+                                                                     const TryTacticTransform&,
+                                                                     const WritingDirectionMode&) const;
 
   void TraceAfterDispatch(GCVisitor* visitor) const;
 

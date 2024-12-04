@@ -21,13 +21,13 @@
  *
  */
 
- // Copyright (C) 2022-present The WebF authors. All rights reserved.
+// Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #ifndef WEBF_CORE_CSS_RESOLVER_MEDIA_QUERY_RESULT_H_
 #define WEBF_CORE_CSS_RESOLVER_MEDIA_QUERY_RESULT_H_
 
-#include "foundation/macros.h"
 #include "core/css/media_list.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -53,13 +53,10 @@ struct MediaQueryResultFlags {
 
  public:
   bool operator==(const MediaQueryResultFlags& o) const {
-    return (unit_flags == o.unit_flags) &&
-           (is_viewport_dependent == o.is_viewport_dependent) &&
+    return (unit_flags == o.unit_flags) && (is_viewport_dependent == o.is_viewport_dependent) &&
            (is_device_dependent == o.is_device_dependent);
   }
-  bool operator!=(const MediaQueryResultFlags& o) const {
-    return !(*this == o);
-  }
+  bool operator!=(const MediaQueryResultFlags& o) const { return !(*this == o); }
 
   void Add(const MediaQueryResultFlags& o) {
     unit_flags |= o.unit_flags;

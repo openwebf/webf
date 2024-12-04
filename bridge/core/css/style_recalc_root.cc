@@ -14,7 +14,7 @@
 
 namespace webf {
 //
-//Element& StyleRecalcRoot::RootElement() const {
+// Element& StyleRecalcRoot::RootElement() const {
 //  Node* root_node = GetRootNode();
 //  assert(root_node);
 //  if (root_node->IsDocumentNode()) {
@@ -32,23 +32,23 @@ namespace webf {
 //}
 ///*
 //#if DCHECK_IS_ON()
-//ContainerNode* StyleRecalcRoot::Parent(const Node& node) const {
+// ContainerNode* StyleRecalcRoot::Parent(const Node& node) const {
 //  return node.GetStyleRecalcParent();
 //}
 //
-//bool StyleRecalcRoot::IsChildDirty(const Node& node) const {
+// bool StyleRecalcRoot::IsChildDirty(const Node& node) const {
 //  return node.ChildNeedsStyleRecalc();
 //}
 //#endif  // DCHECK_IS_ON()
 // */
 //
-//bool StyleRecalcRoot::IsDirty(const Node& node) const {
+// bool StyleRecalcRoot::IsDirty(const Node& node) const {
 //  return node.IsDirtyForStyleRecalc();
 //}
 //
-//namespace {
+// namespace {
 //
-//std::optional<Member<Element>> FirstFlatTreeAncestorForChildDirty(
+// std::optional<Member<Element>> FirstFlatTreeAncestorForChildDirty(
 //    ContainerNode& parent) {
 //  if (!parent.IsElementNode()) {
 //    // The flat tree does not contain shadow roots or the document node. The
@@ -78,7 +78,7 @@ namespace webf {
 //  return std::nullopt;
 //}
 //
-//bool IsFlatTreeConnected(const Node& root) {
+// bool IsFlatTreeConnected(const Node& root) {
 //  if (!root.isConnected()) {
 //    return false;
 //  }
@@ -91,7 +91,7 @@ namespace webf {
 //
 //}  // namespace
 //
-//void StyleRecalcRoot::SubtreeModified(ContainerNode& parent) {
+// void StyleRecalcRoot::SubtreeModified(ContainerNode& parent) {
 //  if (!GetRootNode()) {
 //    return;
 //  }
@@ -132,7 +132,7 @@ namespace webf {
 //  Clear();
 //}
 //
-//void StyleRecalcRoot::FlatTreePositionChanged(const Node& node) {
+// void StyleRecalcRoot::FlatTreePositionChanged(const Node& node) {
 //  if (!GetRootNode()) {
 //    return;
 //  }
@@ -143,4 +143,4 @@ namespace webf {
 //  SubtreeModified(*node.parentElement());
 //}
 
-}  // namespace blink
+}  // namespace webf

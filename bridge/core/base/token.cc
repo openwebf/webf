@@ -9,17 +9,17 @@
 #pragma allow_unsafe_buffers
 #endif
 
-#include <inttypes.h>
-#include <optional>
-#include <string_view>
-#include <cassert>
-#include <string>
-#include <sstream>
-#include <iomanip>
-#include <cstdint>
-#include <charconv>
-#include <limits>
 #include "core/base/token.h"
+#include <inttypes.h>
+#include <cassert>
+#include <charconv>
+#include <cstdint>
+#include <iomanip>
+#include <limits>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <string_view>
 #include "core/base/hash/hash.h"
 
 namespace webf {
@@ -38,11 +38,9 @@ Token Token::CreateRandom() {
 }*/
 
 std::string Token::ToString() const {
-  //return StringPrintf("%016" PRIX64 "%016" PRIX64, words_[0], words_[1]);
+  // return StringPrintf("%016" PRIX64 "%016" PRIX64, words_[0], words_[1]);
   std::ostringstream oss;
-  oss << std::uppercase << std::hex << std::setfill('0')
-      << std::setw(16) << words_[0]
-      << std::setw(16) << words_[1];
+  oss << std::uppercase << std::hex << std::setfill('0') << std::setw(16) << words_[0] << std::setw(16) << words_[1];
   return oss.str();
 }
 
@@ -98,7 +96,7 @@ bool HexStringToUInt64(std::string_view input, uint64_t* output) {
 
   // Check for negative sign
   if (!input.empty() && input[0] == '-') {
-    return false; // uint64_t cannot be negative
+    return false;  // uint64_t cannot be negative
   }
 
   // Remove leading '+' if present
@@ -113,4 +111,4 @@ bool HexStringToUInt64(std::string_view input, uint64_t* output) {
   return ec == std::errc();
 }
 
-}  // namespace base
+}  // namespace webf

@@ -1,32 +1,32 @@
 /*
-* Copyright (C) 2013 Google Inc. All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are
-* met:
-*
-*     * Redistributions of source code must retain the above copyright
-* notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above
-* copyright notice, this list of conditions and the following disclaimer
-* in the documentation and/or other materials provided with the
-* distribution.
-*     * Neither the name of Google Inc. nor the names of its
-* contributors may be used to endorse or promote products derived from
-* this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-* A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-* OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (C) 2013 Google Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "css_to_length_conversion_data.h"
 
@@ -34,105 +34,105 @@ namespace webf {
 
 float CSSToLengthConversionData::FontSizes::Ex(float zoom) const {
   DCHECK(font_);
-//  const SimpleFontData* font_data = font_->PrimaryFont();
-//  if (!font_data || !font_data->GetFontMetrics().HasXHeight()) {
-//    return em_ / 2.0f;
-//  }
-//  // Font-metrics-based units are pre-zoomed with a factor of `font_zoom_`,
-//  // we need to unzoom using that factor before applying the target zoom.
-//  return font_data->GetFontMetrics().XHeight() / font_zoom_ * zoom;
+  //  const SimpleFontData* font_data = font_->PrimaryFont();
+  //  if (!font_data || !font_data->GetFontMetrics().HasXHeight()) {
+  //    return em_ / 2.0f;
+  //  }
+  //  // Font-metrics-based units are pre-zoomed with a factor of `font_zoom_`,
+  //  // we need to unzoom using that factor before applying the target zoom.
+  //  return font_data->GetFontMetrics().XHeight() / font_zoom_ * zoom;
   return 0;
 }
 
 float CSSToLengthConversionData::FontSizes::Rex(float zoom) const {
   DCHECK(root_font_);
-//  const SimpleFontData* font_data = root_font_->PrimaryFont();
-//  if (!font_data || !font_data->GetFontMetrics().HasXHeight()) {
-//    return rem_ / 2.0f;
-//  }
-//  // Font-metrics-based units are pre-zoomed with a factor of `root_font_zoom_`,
-//  // we need to unzoom using that factor before applying the target zoom.
-//  return font_data->GetFontMetrics().XHeight() / root_font_zoom_ * zoom;
+  //  const SimpleFontData* font_data = root_font_->PrimaryFont();
+  //  if (!font_data || !font_data->GetFontMetrics().HasXHeight()) {
+  //    return rem_ / 2.0f;
+  //  }
+  //  // Font-metrics-based units are pre-zoomed with a factor of `root_font_zoom_`,
+  //  // we need to unzoom using that factor before applying the target zoom.
+  //  return font_data->GetFontMetrics().XHeight() / root_font_zoom_ * zoom;
   return 0;
 }
 
 float CSSToLengthConversionData::FontSizes::Ch(float zoom) const {
   DCHECK(font_);
-//  const SimpleFontData* font_data = font_->PrimaryFont();
-//  if (!font_data) {
-//    return 0;
-//  }
-//  // Font-metrics-based units are pre-zoomed with a factor of `font_zoom_`,
-//  // we need to unzoom using that factor before applying the target zoom.
-//  return font_data->GetFontMetrics().ZeroWidth() / font_zoom_ * zoom;
+  //  const SimpleFontData* font_data = font_->PrimaryFont();
+  //  if (!font_data) {
+  //    return 0;
+  //  }
+  //  // Font-metrics-based units are pre-zoomed with a factor of `font_zoom_`,
+  //  // we need to unzoom using that factor before applying the target zoom.
+  //  return font_data->GetFontMetrics().ZeroWidth() / font_zoom_ * zoom;
   return 0;
 }
 
 float CSSToLengthConversionData::FontSizes::Rch(float zoom) const {
   DCHECK(root_font_);
-//  const SimpleFontData* font_data = root_font_->PrimaryFont();
-//  if (!font_data) {
-//    return 0;
-//  }
-//  // Font-metrics-based units are pre-zoomed with a factor of `root_font_zoom_`,
-//  // we need to unzoom using that factor before applying the target zoom.
-//  return font_data->GetFontMetrics().ZeroWidth() / root_font_zoom_ * zoom;
+  //  const SimpleFontData* font_data = root_font_->PrimaryFont();
+  //  if (!font_data) {
+  //    return 0;
+  //  }
+  //  // Font-metrics-based units are pre-zoomed with a factor of `root_font_zoom_`,
+  //  // we need to unzoom using that factor before applying the target zoom.
+  //  return font_data->GetFontMetrics().ZeroWidth() / root_font_zoom_ * zoom;
   return 0;
 }
 
 float CSSToLengthConversionData::FontSizes::Ic(float zoom) const {
   DCHECK(font_);
-//  const SimpleFontData* font_data = font_->PrimaryFont();
-//  std::optional<float> full_width;
-//  if (font_data) {
-//    full_width = font_data->IdeographicInlineSize();
-//  }
-//  if (!full_width.has_value()) {
-//    return Em(zoom);
-//  }
-//  // Font-metrics-based units are pre-zoomed with a factor of `font_zoom_`,
-//  // we need to unzoom using that factor before applying the target zoom.
-//  return full_width.value() / font_zoom_ * zoom;
+  //  const SimpleFontData* font_data = font_->PrimaryFont();
+  //  std::optional<float> full_width;
+  //  if (font_data) {
+  //    full_width = font_data->IdeographicInlineSize();
+  //  }
+  //  if (!full_width.has_value()) {
+  //    return Em(zoom);
+  //  }
+  //  // Font-metrics-based units are pre-zoomed with a factor of `font_zoom_`,
+  //  // we need to unzoom using that factor before applying the target zoom.
+  //  return full_width.value() / font_zoom_ * zoom;
   return 0;
 }
 
 float CSSToLengthConversionData::FontSizes::Ric(float zoom) const {
   DCHECK(root_font_);
-//  const SimpleFontData* font_data = root_font_->PrimaryFont();
-//  std::optional<float> full_width;
-//  if (font_data) {
-//    full_width = font_data->IdeographicInlineSize();
-//  }
-//  if (!full_width.has_value()) {
-//    return Rem(zoom);
-//  }
-//  // Font-metrics-based units are pre-zoomed with a factor of `font_zoom_`,
-//  // we need to unzoom using that factor before applying the target zoom.
-//  return full_width.value() / root_font_zoom_ * zoom;
+  //  const SimpleFontData* font_data = root_font_->PrimaryFont();
+  //  std::optional<float> full_width;
+  //  if (font_data) {
+  //    full_width = font_data->IdeographicInlineSize();
+  //  }
+  //  if (!full_width.has_value()) {
+  //    return Rem(zoom);
+  //  }
+  //  // Font-metrics-based units are pre-zoomed with a factor of `font_zoom_`,
+  //  // we need to unzoom using that factor before applying the target zoom.
+  //  return full_width.value() / root_font_zoom_ * zoom;
   return 0;
 }
 
 float CSSToLengthConversionData::FontSizes::Cap(float zoom) const {
   CHECK(font_);
-//  const SimpleFontData* font_data = font_->PrimaryFont();
-//  if (!font_data) {
-//    return 0.0f;
-//  }
-//  // Font-metrics-based units are pre-zoomed with a factor of `font_zoom_`,
-//  // we need to unzoom using that factor before applying the target zoom.
-//  return font_data->GetFontMetrics().CapHeight() / font_zoom_ * zoom;
+  //  const SimpleFontData* font_data = font_->PrimaryFont();
+  //  if (!font_data) {
+  //    return 0.0f;
+  //  }
+  //  // Font-metrics-based units are pre-zoomed with a factor of `font_zoom_`,
+  //  // we need to unzoom using that factor before applying the target zoom.
+  //  return font_data->GetFontMetrics().CapHeight() / font_zoom_ * zoom;
   return 0;
 }
 
 float CSSToLengthConversionData::FontSizes::Rcap(float zoom) const {
   CHECK(root_font_);
-//  const SimpleFontData* font_data = root_font_->PrimaryFont();
-//  if (!font_data) {
-//    return 0.0f;
-//  }
-//  // Font-metrics-based units are pre-zoomed with a factor of `root_font_zoom_`,
-//  // we need to unzoom using that factor before applying the target zoom.
-//  return font_data->GetFontMetrics().CapHeight() / root_font_zoom_ * zoom;
+  //  const SimpleFontData* font_data = root_font_->PrimaryFont();
+  //  if (!font_data) {
+  //    return 0.0f;
+  //  }
+  //  // Font-metrics-based units are pre-zoomed with a factor of `root_font_zoom_`,
+  //  // we need to unzoom using that factor before applying the target zoom.
+  //  return font_data->GetFontMetrics().CapHeight() / root_font_zoom_ * zoom;
   return 0;
 }
 
@@ -143,8 +143,8 @@ float CSSToLengthConversionData::LineHeightSize::Lh(float zoom) const {
   // Like font-metrics-based units, lh is also based on pre-zoomed font metrics.
   // We therefore need to unzoom using the font zoom before applying the target
   // zoom.
-//  return ComputedStyle::ComputedLineHeight(line_height_, *font_) / font_zoom_ *
-//         zoom;
+  //  return ComputedStyle::ComputedLineHeight(line_height_, *font_) / font_zoom_ *
+  //         zoom;
   return 0;
 }
 
@@ -160,8 +160,7 @@ float CSSToLengthConversionData::LineHeightSize::Rlh(float zoom) const {
   return 0;
 }
 
-CSSToLengthConversionData::ContainerSizes
-CSSToLengthConversionData::ContainerSizes::PreCachedCopy() const {
+CSSToLengthConversionData::ContainerSizes CSSToLengthConversionData::ContainerSizes::PreCachedCopy() const {
   ContainerSizes copy = *this;
   copy.Width();
   copy.Height();
@@ -176,8 +175,7 @@ void CSSToLengthConversionData::ContainerSizes::Trace(GCVisitor* visitor) const 
   visitor->TraceMember(context_element_);
 }
 
-bool CSSToLengthConversionData::ContainerSizes::SizesEqual(
-    const ContainerSizes& other) const {
+bool CSSToLengthConversionData::ContainerSizes::SizesEqual(const ContainerSizes& other) const {
   return (Width() == other.Width()) && (Height() == other.Height());
 }
 
@@ -185,31 +183,26 @@ std::optional<double> CSSToLengthConversionData::ContainerSizes::Width() const {
   return cached_width_;
 }
 
-std::optional<double> CSSToLengthConversionData::ContainerSizes::Height()
-    const {
+std::optional<double> CSSToLengthConversionData::ContainerSizes::Height() const {
   return cached_height_;
 }
 
-std::optional<double> CSSToLengthConversionData::ContainerSizes::Width(
-    const ScopedCSSName& container_name) const {
+std::optional<double> CSSToLengthConversionData::ContainerSizes::Width(const ScopedCSSName& container_name) const {
   return 0;
 }
 
-std::optional<double> CSSToLengthConversionData::ContainerSizes::Height(
-    const ScopedCSSName& container_name) const {
+std::optional<double> CSSToLengthConversionData::ContainerSizes::Height(const ScopedCSSName& container_name) const {
   return 0;
 }
 
-CSSToLengthConversionData::CSSToLengthConversionData(
-    WritingMode writing_mode,
-    const FontSizes& font_sizes,
-    const LineHeightSize& line_height_size,
-    const ViewportSize& viewport_size,
-    const ContainerSizes& container_sizes,
-    float zoom,
-    Flags& flags)
-    : CSSLengthResolver(
-          ClampTo<float>(zoom, std::numeric_limits<float>::denorm_min())),
+CSSToLengthConversionData::CSSToLengthConversionData(WritingMode writing_mode,
+                                                     const FontSizes& font_sizes,
+                                                     const LineHeightSize& line_height_size,
+                                                     const ViewportSize& viewport_size,
+                                                     const ContainerSizes& container_sizes,
+                                                     float zoom,
+                                                     Flags& flags)
+    : CSSLengthResolver(ClampTo<float>(zoom, std::numeric_limits<float>::denorm_min())),
       writing_mode_(writing_mode),
       font_sizes_(font_sizes),
       line_height_size_(line_height_size),
@@ -370,17 +363,14 @@ double CSSToLengthConversionData::ContainerHeight() const {
   return container_sizes_.Height().value_or(SmallViewportHeight());
 }
 
-double CSSToLengthConversionData::ContainerWidth(
-    const ScopedCSSName& container_name) const {
+double CSSToLengthConversionData::ContainerWidth(const ScopedCSSName& container_name) const {
   SetFlag(Flag::kContainerRelative);
   return container_sizes_.Width(container_name).value_or(SmallViewportWidth());
 }
 
-double CSSToLengthConversionData::ContainerHeight(
-    const ScopedCSSName& container_name) const {
+double CSSToLengthConversionData::ContainerHeight(const ScopedCSSName& container_name) const {
   SetFlag(Flag::kContainerRelative);
-  return container_sizes_.Height(container_name)
-      .value_or(SmallViewportHeight());
+  return container_sizes_.Height(container_name).value_or(SmallViewportHeight());
 }
 
 WritingMode CSSToLengthConversionData::GetWritingMode() const {
@@ -395,5 +385,4 @@ void CSSToLengthConversionData::ReferenceTreeScope() const {
   SetFlag(Flag::kTreeScopedReference);
 }
 
-
-}
+}  // namespace webf

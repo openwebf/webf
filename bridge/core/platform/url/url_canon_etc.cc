@@ -46,8 +46,7 @@ const CHAR* DoRemoveURLWhitespace(const CHAR* input,
     // write, even if we need to run it three times. (If this turns out to still
     // be a bottleneck, we could write our own vector code, but given that
     // memchr is so fast, it's unlikely to be relevant.)
-    found_whitespace = memchr(input, '\n', input_len) != nullptr ||
-                       memchr(input, '\r', input_len) != nullptr ||
+    found_whitespace = memchr(input, '\n', input_len) != nullptr || memchr(input, '\r', input_len) != nullptr ||
                        memchr(input, '\t', input_len) != nullptr;
   } else {
     for (int i = 0; i < input_len; i++) {
@@ -70,8 +69,7 @@ const CHAR* DoRemoveURLWhitespace(const CHAR* input,
   // TODO(mkwst): Ideally, this would use something like `base::StartsWith`, but
   // that turns out to be difficult to do correctly given this function's
   // character type templating.
-  if (input_len > 5 && input[0] == 'd' && input[1] == 'a' && input[2] == 't' &&
-      input[3] == 'a' && input[4] == ':') {
+  if (input_len > 5 && input[0] == 'd' && input[1] == 'a' && input[2] == 't' && input[3] == 'a' && input[4] == ':') {
     *output_len = input_len;
     return input;
   }
@@ -117,10 +115,7 @@ inline bool IsSchemeFirstChar(unsigned char c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
-bool DoScheme(const char* spec,
-              const Component& scheme,
-              CanonOutput* output,
-              Component* out_scheme) {
+bool DoScheme(const char* spec, const Component& scheme, CanonOutput* output, Component* out_scheme) {
   if (scheme.is_empty()) {
     // Scheme is unspecified or empty, convert to empty by appending a colon.
     *out_scheme = Component(output->length(), 0);
@@ -199,9 +194,7 @@ bool DoUserInfo(const char* username_spec,
   out_username->begin = output->length();
   if (username.is_nonempty()) {
     // This will escape characters not valid for the username.
-    AppendStringOfType(&username_spec[username.begin],
-                       static_cast<size_t>(username.len), CHAR_USERINFO,
-                       output);
+    AppendStringOfType(&username_spec[username.begin], static_cast<size_t>(username.len), CHAR_USERINFO, output);
   }
   out_username->len = output->length() - out_username->begin;
 
@@ -210,9 +203,7 @@ bool DoUserInfo(const char* username_spec,
   if (password.is_nonempty()) {
     output->push_back(':');
     out_password->begin = output->length();
-    AppendStringOfType(&password_spec[password.begin],
-                       static_cast<size_t>(password.len), CHAR_USERINFO,
-                       output);
+    AppendStringOfType(&password_spec[password.begin], static_cast<size_t>(password.len), CHAR_USERINFO, output);
     out_password->len = output->length() - out_password->begin;
   } else {
     *out_password = Component();
@@ -244,8 +235,7 @@ bool DoPort(const char* spec,
     // what the error was, and mark the URL as invalid by returning false.
     output->push_back(':');
     out_port->begin = output->length();
-    AppendInvalidNarrowString(spec, static_cast<size_t>(port.begin),
-                              static_cast<size_t>(port.end()), output);
+    AppendInvalidNarrowString(spec, static_cast<size_t>(port.begin), static_cast<size_t>(port.end()), output);
     out_port->len = output->length() - out_port->begin;
     return false;
   }
@@ -302,10 +292,7 @@ const bool kShouldEscapeCharInFragment[0x80] = {
 };
 // clang-format on
 
-void DoCanonicalizeRef(const char* spec,
-                       const Component& ref,
-                       CanonOutput* output,
-                       Component* out_ref) {
+void DoCanonicalizeRef(const char* spec, const Component& ref, CanonOutput* output, Component* out_ref) {
   if (!ref.is_valid()) {
     // Common case of no ref.
     *out_ref = Component();
@@ -341,8 +328,7 @@ const char* RemoveURLWhitespace(const char* input,
                                 CanonOutputT<char>* buffer,
                                 int* output_len,
                                 bool* potentially_dangling_markup) {
-  return DoRemoveURLWhitespace(input, input_len, buffer, output_len,
-                               potentially_dangling_markup);
+  return DoRemoveURLWhitespace(input, input_len, buffer, output_len, potentially_dangling_markup);
 }
 
 const char16_t* RemoveURLWhitespace(const char16_t* input,
@@ -350,18 +336,14 @@ const char16_t* RemoveURLWhitespace(const char16_t* input,
                                     CanonOutputT<char16_t>* buffer,
                                     int* output_len,
                                     bool* potentially_dangling_markup) {
-  return DoRemoveURLWhitespace(input, input_len, buffer, output_len,
-                               potentially_dangling_markup);
+  return DoRemoveURLWhitespace(input, input_len, buffer, output_len, potentially_dangling_markup);
 }
 
 char CanonicalSchemeChar(char ch) {
   return kSchemeCanonical[ch];
 }
 
-bool CanonicalizeScheme(const char* spec,
-                        const Component& scheme,
-                        CanonOutput* output,
-                        Component* out_scheme) {
+bool CanonicalizeScheme(const char* spec, const Component& scheme, CanonOutput* output, Component* out_scheme) {
   return DoScheme(spec, scheme, output, out_scheme);
 }
 
@@ -372,9 +354,7 @@ bool CanonicalizeUserInfo(const char* username_source,
                           CanonOutput* output,
                           Component* out_username,
                           Component* out_password) {
-  return DoUserInfo(username_source, username,
-                                         password_source, password, output,
-                                         out_username, out_password);
+  return DoUserInfo(username_source, username, password_source, password, output, out_username, out_password);
 }
 
 bool CanonicalizePort(const char* spec,
@@ -382,17 +362,13 @@ bool CanonicalizePort(const char* spec,
                       int default_port_for_scheme,
                       CanonOutput* output,
                       Component* out_port) {
-  return DoPort(spec, port, default_port_for_scheme,
-                                     output, out_port);
+  return DoPort(spec, port, default_port_for_scheme, output, out_port);
 }
 
-void CanonicalizeRef(const char* spec,
-                     const Component& ref,
-                     CanonOutput* output,
-                     Component* out_ref) {
+void CanonicalizeRef(const char* spec, const Component& ref, CanonOutput* output, Component* out_ref) {
   DoCanonicalizeRef(spec, ref, output, out_ref);
 }
 
 }  // namespace url
 
-} // namespace webf
+}  // namespace webf

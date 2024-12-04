@@ -6,7 +6,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-
 #ifndef WEBF_CSS_PARSER_TOKEN_RANGE_H
 #define WEBF_CSS_PARSER_TOKEN_RANGE_H
 
@@ -35,8 +34,7 @@ class CSSParserTokenRange {
       : first_(tokens.data()), last_(tokens.data() + tokens.size()) {}
 
   // This should be called on a range with tokens returned by that range.
-  CSSParserTokenRange MakeSubRange(const CSSParserToken* first,
-                                   const CSSParserToken* last) const;
+  CSSParserTokenRange MakeSubRange(const CSSParserToken* first, const CSSParserToken* last) const;
 
   bool AtEnd() const { return first_ == last_; }
   const CSSParserToken* end() const { return last_; }
@@ -49,9 +47,7 @@ class CSSParserTokenRange {
     return *(first_ + offset);
   }
 
-  tcb::span<const CSSParserToken> RemainingSpan() const {
-    return {first_, last_};
-  }
+  tcb::span<const CSSParserToken> RemainingSpan() const { return {first_, last_}; }
 
   const CSSParserToken& Consume() {
     if (first_ == last_) {
@@ -84,8 +80,7 @@ class CSSParserTokenRange {
   static void InitStaticEOFToken();
 
  private:
-  CSSParserTokenRange(const CSSParserToken* first, const CSSParserToken* last)
-      : first_(first), last_(last) {}
+  CSSParserTokenRange(const CSSParserToken* first, const CSSParserToken* last) : first_(first), last_(last) {}
 
   const CSSParserToken* first_;
   const CSSParserToken* last_;
@@ -99,15 +94,11 @@ class CSSParserTokenRange {
 class CSSParserTokenOffsets {
  public:
   template <uint32_t InlineBuffer>
-  CSSParserTokenOffsets(const std::vector<CSSParserToken>& vector,
-                        std::vector<size_t> offsets,
-                        std::string_view string)
+  CSSParserTokenOffsets(const std::vector<CSSParserToken>& vector, std::vector<size_t> offsets, std::string_view string)
       : first_(&vector.front()), offsets_(std::move(offsets)), string_(string) {
     assert(vector.size() + 1 == offsets_.size());
   }
-  CSSParserTokenOffsets(tcb::span<const CSSParserToken> tokens,
-                        std::vector<size_t> offsets,
-                        std::string_view string)
+  CSSParserTokenOffsets(tcb::span<const CSSParserToken> tokens, std::vector<size_t> offsets, std::string_view string)
       : first_(tokens.data()), offsets_(std::move(offsets)), string_(string) {
     assert(tokens.size() + 1 == offsets_.size());
   }
@@ -119,8 +110,7 @@ class CSSParserTokenOffsets {
     return offsets_[token_index];
   }
 
-  std::string_view StringForTokens(const CSSParserToken* begin,
-                             const CSSParserToken* end) const {
+  std::string_view StringForTokens(const CSSParserToken* begin, const CSSParserToken* end) const {
     uint32_t begin_offset = OffsetFor(begin);
     uint32_t end_offset = OffsetFor(end);
     return std::string_view(string_.data() + begin_offset, end_offset - begin_offset);

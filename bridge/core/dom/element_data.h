@@ -68,7 +68,6 @@ class ElementData {
   using StyleAttributeIsDirty = PresentationAttributeStyleIsDirty::DefineNextValue<bool, 1>;
   using SvgAttributesAreDirty = StyleAttributeIsDirty::DefineNextValue<bool, 1>;
 
-
   explicit ElementData(unsigned array_size);
   ElementData(const ElementData&, bool is_unique);
 

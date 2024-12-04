@@ -4,7 +4,6 @@
 
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
-
 #ifndef WEBF_URL_UTIL_H
 #define WEBF_URL_UTIL_H
 
@@ -13,10 +12,9 @@
 #include <string_view>
 #include <vector>
 
-#include "url_parse.h"
 #include "url_canon.h"
 #include "url_constants.h"
-
+#include "url_parse.h"
 
 namespace webf {
 
@@ -26,13 +24,13 @@ namespace url {
 
 // Used for tests that need to reset schemes. Note that this can only be used
 // in conjunction with ScopedSchemeRegistryForTests.
- void ClearSchemesForTests();
+void ClearSchemesForTests();
 
 class ScopedSchemeRegistryInternal;
 
 // Stores the SchemeRegistry upon creation, allowing tests to modify a copy of
 // it, and restores the original SchemeRegistry when deleted.
-class  ScopedSchemeRegistryForTests {
+class ScopedSchemeRegistryForTests {
  public:
   ScopedSchemeRegistryForTests();
   ~ScopedSchemeRegistryForTests();
@@ -51,10 +49,10 @@ class  ScopedSchemeRegistryForTests {
 // same-origin to another URL with the same non-standard scheme.
 //
 // Not thread-safe.
- void EnableNonStandardSchemesForAndroidWebView();
+void EnableNonStandardSchemesForAndroidWebView();
 
 // Whether or not SchemeHostPort and Origin allow non-standard schemes.
- bool AllowNonStandardSchemesForAndroidWebView();
+bool AllowNonStandardSchemesForAndroidWebView();
 
 // The following Add*Scheme method are not threadsafe and can not be called
 // concurrently with any other url_util function. They will assert if the lists
@@ -63,7 +61,6 @@ class  ScopedSchemeRegistryForTests {
 // Adds an application-defined scheme to the internal list of "standard-format"
 // URL schemes. A standard-format scheme adheres to what RFC 3986 calls "generic
 // URI syntax" (https://tools.ietf.org/html/rfc3986#section-3).
-
 
 void AddStandardScheme(const char* new_scheme, SchemeType scheme_type);
 
@@ -82,43 +79,43 @@ void AddReferrerScheme(const char* new_scheme, SchemeType scheme_type);
 
 // Adds an application-defined scheme to the list of schemes that do not trigger
 // mixed content warnings.
- void AddSecureScheme(const char* new_scheme);
- const std::vector<std::string>& GetSecureSchemes();
+void AddSecureScheme(const char* new_scheme);
+const std::vector<std::string>& GetSecureSchemes();
 
 // Adds an application-defined scheme to the list of schemes that normal pages
 // cannot link to or access (i.e., with the same security rules as those applied
 // to "file" URLs).
- void AddLocalScheme(const char* new_scheme);
- const std::vector<std::string>& GetLocalSchemes();
+void AddLocalScheme(const char* new_scheme);
+const std::vector<std::string>& GetLocalSchemes();
 
 // Adds an application-defined scheme to the list of schemes that cause pages
 // loaded with them to not have access to pages loaded with any other URL
 // scheme.
- void AddNoAccessScheme(const char* new_scheme);
- const std::vector<std::string>& GetNoAccessSchemes();
+void AddNoAccessScheme(const char* new_scheme);
+const std::vector<std::string>& GetNoAccessSchemes();
 
 // Adds an application-defined scheme to the list of schemes that can be sent
 // CORS requests.
- void AddCorsEnabledScheme(const char* new_scheme);
- const std::vector<std::string>& GetCorsEnabledSchemes();
+void AddCorsEnabledScheme(const char* new_scheme);
+const std::vector<std::string>& GetCorsEnabledSchemes();
 
 // Adds an application-defined scheme to the list of web schemes that can be
 // used by web to store data (e.g. cookies, local storage, ...). This is
 // to differentiate them from schemes that can store data but are not used on
 // web (e.g. application's internal schemes) or schemes that are used on web but
 // cannot store data.
- void AddWebStorageScheme(const char* new_scheme);
- const std::vector<std::string>& GetWebStorageSchemes();
+void AddWebStorageScheme(const char* new_scheme);
+const std::vector<std::string>& GetWebStorageSchemes();
 
 // Adds an application-defined scheme to the list of schemes that can bypass the
 // Content-Security-Policy (CSP) checks.
- void AddCSPBypassingScheme(const char* new_scheme);
- const std::vector<std::string>& GetCSPBypassingSchemes();
+void AddCSPBypassingScheme(const char* new_scheme);
+const std::vector<std::string>& GetCSPBypassingSchemes();
 
 // Adds an application-defined scheme to the list of schemes that are strictly
 // empty documents, allowing them to commit synchronously.
- void AddEmptyDocumentScheme(const char* new_scheme);
- const std::vector<std::string>& GetEmptyDocumentSchemes();
+void AddEmptyDocumentScheme(const char* new_scheme);
+const std::vector<std::string>& GetEmptyDocumentSchemes();
 
 // Adds a scheme with a predefined default handler.
 //
@@ -142,7 +139,7 @@ std::vector<std::pair<std::string, std::string>> GetPredefinedHandlerSchemes();
 // We could have had Add*Scheme use a lock instead, but that would add
 // some platform-specific dependencies we don't otherwise have now, and is
 // overkill considering the normal usage is so simple.
- void LockSchemeRegistries();
+void LockSchemeRegistries();
 
 // Locates the scheme in the given string and places it into |found_scheme|,
 // which may be NULL to indicate the caller does not care about the range.
@@ -151,16 +148,10 @@ std::vector<std::pair<std::string, std::string>> GetPredefinedHandlerSchemes();
 // input (if any). The |compare| scheme must be a valid canonical scheme or
 // the result of the comparison is undefined.
 
-bool FindAndCompareScheme(const char* str,
-                          int str_len,
-                          const char* compare,
-                          Component* found_scheme);
+bool FindAndCompareScheme(const char* str, int str_len, const char* compare, Component* found_scheme);
 
-inline bool FindAndCompareScheme(const std::string& str,
-                                 const char* compare,
-                                 Component* found_scheme) {
-  return FindAndCompareScheme(str.data(), static_cast<int>(str.size()),
-                              compare, found_scheme);
+inline bool FindAndCompareScheme(const std::string& str, const char* compare, Component* found_scheme) {
+  return FindAndCompareScheme(str.data(), static_cast<int>(str.size()), compare, found_scheme);
 }
 
 // Returns true if the given scheme identified by |scheme| within |spec| is in
@@ -179,9 +170,7 @@ bool IsReferrerScheme(const char* spec, const Component& scheme);
 // identified by |scheme| within |spec| if the scheme is in the list of known
 // standard-format schemes (see AddStandardScheme).
 
-bool GetStandardSchemeType(const char* spec,
-                           const Component& scheme,
-                           SchemeType* type);
+bool GetStandardSchemeType(const char* spec, const Component& scheme, SchemeType* type);
 
 // Hosts  ----------------------------------------------------------------------
 
@@ -194,12 +183,11 @@ bool GetStandardSchemeType(const char* spec,
 // input domain should match host canonicalization rules. i.e. it should be
 // lowercase except for escape chars.
 
-bool DomainIs(std::string_view canonical_host,
-              std::string_view canonical_domain);
+bool DomainIs(std::string_view canonical_host, std::string_view canonical_domain);
 
 // Returns true if the hostname is an IP address. Note: this function isn't very
 // cheap, as it must re-parse the host to verify.
- bool HostIsIPAddress(std::string_view host);
+bool HostIsIPAddress(std::string_view host);
 
 // URL library wrappers --------------------------------------------------------
 
@@ -214,11 +202,7 @@ bool DomainIs(std::string_view canonical_host,
 // output and parsed structures will still be filled and will be consistent,
 // but they will not represent a loadable URL.
 
-bool Canonicalize(const char* spec,
-                  int spec_len,
-                  bool trim_path_end,
-                  CanonOutput* output,
-                  Parsed* output_parsed);
+bool Canonicalize(const char* spec, int spec_len, bool trim_path_end, CanonOutput* output, Parsed* output_parsed);
 
 // Resolves a potentially relative URL relative to the given parsed base URL.
 // The base MUST be valid. The resulting canonical URL and parsed information

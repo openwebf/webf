@@ -10,8 +10,7 @@ namespace webf {
 
 namespace cssvalue {
 
-void CSSPendingSubstitutionValue::TraceAfterDispatch(
-    GCVisitor* visitor) const {
+void CSSPendingSubstitutionValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
 }
 

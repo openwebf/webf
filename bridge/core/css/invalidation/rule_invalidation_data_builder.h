@@ -11,15 +11,13 @@
 
 namespace webf {
 
-class RuleInvalidationDataBuilder
-    : public RuleInvalidationDataVisitor<
-          RuleInvalidationDataVisitorType::kBuilder> {
-public:
+class RuleInvalidationDataBuilder : public RuleInvalidationDataVisitor<RuleInvalidationDataVisitorType::kBuilder> {
+ public:
   explicit RuleInvalidationDataBuilder(RuleInvalidationData&);
 
   void Merge(const RuleInvalidationData& other);
 
-protected:
+ protected:
   // Adds an InvalidationSet to this RuleFeatureSet, combining with any
   // data that may already be there. (That data may come from a previous
   // call to EnsureInvalidationSet(), or from another MergeInvalidationSet().)

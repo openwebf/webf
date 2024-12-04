@@ -99,7 +99,6 @@ bool ConsumeIfDelimiter(T& range_or_stream, char c) {
   return true;
 }
 
-
 // https://drafts.csswg.org/css-syntax/#typedef-any-value
 //
 // Consumes component values until it reaches a token that is not allowed

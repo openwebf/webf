@@ -39,6 +39,7 @@ typedef struct {
 
 class FontDescription {
   USING_FAST_MALLOC(FontDescription);
+
  public:
   enum HashCategory { kHashEmptyValue = 0, kHashDeletedValue, kHashRegularValue };
 
@@ -58,9 +59,7 @@ class FontDescription {
 
   FontDescription& operator=(const FontDescription&);
   bool operator==(const FontDescription&) const;
-  bool operator!=(const FontDescription& other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const FontDescription& other) const { return !(*this == other); }
 
  private:
   FontFamily family_list_;  // The list of font families to be used.

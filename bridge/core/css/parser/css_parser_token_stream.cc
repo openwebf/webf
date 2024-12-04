@@ -67,7 +67,6 @@ void CSSParserTokenStream::UncheckedConsumeComponentValue() {
   } while (!PeekInternal().IsEOF() && nesting_level);
 }
 
-
 void CSSParserTokenStream::UncheckedSkipToEndOfBlock() {
   assert(HasLookAhead());
 

@@ -9,8 +9,8 @@
 #include <iosfwd>
 #include <string>
 
-#include "core/base/numerics/safe_math.h"
 #include "core/base/build_config.h"
+#include "core/base/numerics/safe_math.h"
 
 namespace gfx {
 
@@ -18,8 +18,7 @@ namespace gfx {
 class Size {
  public:
   constexpr Size() : width_(0), height_(0) {}
-  constexpr Size(int width, int height)
-      : width_(std::max(0, width)), height_(std::max(0, height)) {}
+  constexpr Size(int width, int height) : width_(std::max(0, width)), height_(std::max(0, height)) {}
 
   void operator+=(const Size& size);
 
@@ -36,9 +35,7 @@ class Size {
   // Returns a checked numeric representation of the area.
   base::CheckedNumeric<int> GetCheckedArea() const;
 
-  uint64_t Area64() const {
-    return static_cast<uint64_t>(width_) * static_cast<uint64_t>(height_);
-  }
+  uint64_t Area64() const { return static_cast<uint64_t>(width_) * static_cast<uint64_t>(height_); }
 
   void SetSize(int width, int height) {
     set_width(width);
@@ -89,17 +86,11 @@ inline Size operator-(Size lhs, const Size& rhs) {
 void PrintTo(const Size& size, ::std::ostream* os);
 
 // Helper methods to scale a gfx::Size to a new gfx::Size.
-Size ScaleToCeiledSize(const Size& size,
-                                       float x_scale,
-                                       float y_scale);
+Size ScaleToCeiledSize(const Size& size, float x_scale, float y_scale);
 Size ScaleToCeiledSize(const Size& size, float scale);
-Size ScaleToFlooredSize(const Size& size,
-                                        float x_scale,
-                                        float y_scale);
+Size ScaleToFlooredSize(const Size& size, float x_scale, float y_scale);
 Size ScaleToFlooredSize(const Size& size, float scale);
-Size ScaleToRoundedSize(const Size& size,
-                                        float x_scale,
-                                        float y_scale);
+Size ScaleToRoundedSize(const Size& size, float x_scale, float y_scale);
 Size ScaleToRoundedSize(const Size& size, float scale);
 
 inline Size TransposeSize(const Size& s) {

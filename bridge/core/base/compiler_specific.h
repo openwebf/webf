@@ -139,8 +139,7 @@
 // (This is undocumented but matches what the system C headers do.)
 // For member functions, the implicit this parameter counts as index 1.
 #if (defined(COMPILER_GCC) || defined(__clang__)) && HAS_ATTRIBUTE(format)
-#define PRINTF_FORMAT(format_param, dots_param) \
-  __attribute__((format(printf, format_param, dots_param)))
+#define PRINTF_FORMAT(format_param, dots_param) __attribute__((format(printf, format_param, dots_param)))
 #else
 #define PRINTF_FORMAT(format_param, dots_param)
 #endif
@@ -173,8 +172,7 @@
 // If any bits are uninitialized, crash with an MSan report.
 // Use this to sanitize data which MSan won't be able to track, e.g. before
 // passing data to another process via shared memory.
-#define MSAN_CHECK_MEM_IS_INITIALIZED(p, size) \
-  __msan_check_mem_is_initialized(p, size)
+#define MSAN_CHECK_MEM_IS_INITIALIZED(p, size) __msan_check_mem_is_initialized(p, size)
 #else  // MEMORY_SANITIZER
 #define MSAN_UNPOISON(p, size)
 #define MSAN_CHECK_MEM_IS_INITIALIZED(p, size)
@@ -264,8 +262,8 @@
 
 #if !defined(CPU_ARM_NEON)
 #if defined(__arm__)
-#if !defined(__ARMEB__) && !defined(__ARM_EABI__) && !defined(__EABI__) && \
-    !defined(__VFP_FP__) && !defined(_WIN32_WCE) && !defined(ANDROID)
+#if !defined(__ARMEB__) && !defined(__ARM_EABI__) && !defined(__EABI__) && !defined(__VFP_FP__) && \
+    !defined(_WIN32_WCE) && !defined(ANDROID)
 #error Chromium does not support middle endian architecture
 #endif
 #if defined(__ARM_NEON__)
@@ -456,10 +454,8 @@ inline constexpr bool AnalyzerAssumeTrue(bool arg) {
 // Clang only supports preserve_most on X86-64 and AArch64 for now.
 // See https://clang.llvm.org/docs/AttributeReference.html#preserve-most for
 // more details.
-#if (defined(ARCH_CPU_ARM64) || defined(ARCH_CPU_X86_64)) && \
-    !(BUILDFLAG(IS_WIN) && defined(ARCH_CPU_ARM64)) &&       \
-    !defined(COMPONENT_BUILD) && defined(__clang__) &&       \
-    __clang_major__ >= 17 && HAS_ATTRIBUTE(preserve_most)
+#if (defined(ARCH_CPU_ARM64) || defined(ARCH_CPU_X86_64)) && !(BUILDFLAG(IS_WIN) && defined(ARCH_CPU_ARM64)) && \
+    !defined(COMPONENT_BUILD) && defined(__clang__) && __clang_major__ >= 17 && HAS_ATTRIBUTE(preserve_most)
 #define PRESERVE_MOST __attribute__((preserve_most))
 #else
 #define PRESERVE_MOST

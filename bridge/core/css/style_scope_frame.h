@@ -5,9 +5,9 @@
 #ifndef WEBF_CORE_CSS_STYLE_SCOPE_FRAME_H_
 #define WEBF_CORE_CSS_STYLE_SCOPE_FRAME_H_
 
-#include "foundation/macros.h"
-#include "core/css/match_flags.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
+#include "core/css/match_flags.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -42,7 +42,7 @@ struct StyleScopeActivation {
   unsigned proximity = 0;
 };
 
-struct StyleScopeActivations{
+struct StyleScopeActivations {
  public:
   void Trace(GCVisitor*) const;
 
@@ -79,8 +79,7 @@ class StyleScopeFrame {
  public:
   explicit StyleScopeFrame(Element& element) : element_(element) {}
 
-  explicit StyleScopeFrame(Element& element, StyleScopeFrame* parent)
-      : element_(element), parent_(parent) {}
+  explicit StyleScopeFrame(Element& element, StyleScopeFrame* parent) : element_(element), parent_(parent) {}
 
   StyleScopeFrame* GetParentFrameOrNull(Element& parent_element);
   StyleScopeFrame& GetParentFrameOrThis(Element& parent_element);
@@ -107,12 +106,10 @@ class StyleScopeFrame {
 
   Element& element_;
   StyleScopeFrame* parent_ = nullptr;
-  std::unordered_map<std::shared_ptr<const StyleScope>, std::shared_ptr<const StyleScopeActivations>>
-      data_;
+  std::unordered_map<std::shared_ptr<const StyleScope>, std::shared_ptr<const StyleScopeActivations>> data_;
   std::shared_ptr<ScopeSet> seen_implicit_scopes_ = nullptr;
 };
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_STYLE_SCOPE_FRAME_H_

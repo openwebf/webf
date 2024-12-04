@@ -32,7 +32,6 @@
 #include "core/css/css_at_rule_id.h"
 #include "core/css/style_rule.h"
 
-
 namespace webf {
 
 enum class CSSPropertyID;
@@ -46,17 +45,11 @@ class CSSParserObserver {
   virtual void ObserveSelector(unsigned start_offset, unsigned end_offset) = 0;
   virtual void StartRuleBody(unsigned offset) = 0;
   virtual void EndRuleBody(unsigned offset) = 0;
-  virtual void ObserveProperty(unsigned start_offset,
-                               unsigned end_offset,
-                               bool is_important,
-                               bool is_parsed) = 0;
+  virtual void ObserveProperty(unsigned start_offset, unsigned end_offset, bool is_important, bool is_parsed) = 0;
   virtual void ObserveComment(unsigned start_offset, unsigned end_offset) = 0;
-  virtual void ObserveErroneousAtRule(
-      unsigned start_offset,
-      CSSAtRuleID id,
-      const std::vector<CSSPropertyID>& invalid_properties = {}) = 0;
-
-
+  virtual void ObserveErroneousAtRule(unsigned start_offset,
+                                      CSSAtRuleID id,
+                                      const std::vector<CSSPropertyID>& invalid_properties = {}) = 0;
 };
 
 }  // namespace webf

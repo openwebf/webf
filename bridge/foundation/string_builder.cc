@@ -1,7 +1,7 @@
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #include "string_builder.h"
 
@@ -19,8 +19,7 @@ void StringBuilder::CreateBuffer8(size_t added_size) {
   // strings or single characters. This is a no-op if m_length == 0 since
   // initialBufferSize() is the same as the inline capacity of the vector.
   // This allows doing append(string); append('\0') without extra mallocs.
-  string_.reserve(length_ +
-                                  std::max(added_size, InitialBufferSize()));
+  string_.reserve(length_ + std::max(added_size, InitialBufferSize()));
   length_ = 0;
 }
 
@@ -32,4 +31,4 @@ void StringBuilder::Reserve(unsigned int new_size) {
   string_.reserve(new_size);
 }
 
-}
+}  // namespace webf

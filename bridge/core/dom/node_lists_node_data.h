@@ -63,9 +63,7 @@ class NodeListsNodeData final {
 
     struct Hash {
       size_t operator()(const NamedNodeListKey& entry) const {
-        size_t hash1 = entry.second == CSSSelector::UniversalSelectorAtom()
-                           ? g_star_atom.Hash()
-                           : entry.second.Hash();
+        size_t hash1 = entry.second == CSSSelector::UniversalSelectorAtom() ? g_star_atom.Hash() : entry.second.Hash();
         size_t hash2 = std::hash<CollectionType>()(entry.first);
         return hash1 ^ (hash2 << 1);  // Combine the two hash values
       }

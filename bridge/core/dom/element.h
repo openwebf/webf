@@ -10,14 +10,14 @@
 #include "container_node.h"
 #include "core/css/inline_css_style_declaration.h"
 #include "core/dom/element_rare_data_vector.h"
+#include "core/platform/gfx/geometry/vector2d_f.h"
 #include "element_data.h"
+#include "foundation/atomic_string.h"
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
 #include "parent_node.h"
 #include "plugin_api/element.h"
 #include "qjs_scroll_to_options.h"
-#include "foundation/atomic_string.h"
-#include "core/platform/gfx/geometry/vector2d_f.h"
 
 namespace webf {
 
@@ -199,7 +199,7 @@ class Element : public ContainerNode {
 
   // NOTE: This shadows Node::GetComputedStyle().
   const ComputedStyle* GetComputedStyle() const {
-    //return computed_style_.Get();
+    // return computed_style_.Get();
     return nullptr;
   }
   // const ComputedStyle& ComputedStyleRef() const {
@@ -211,7 +211,7 @@ class Element : public ContainerNode {
   StyleScopeData* GetStyleScopeData() const;
 
   void SetComputedStyle(const ComputedStyle* computed_style) {
-    //computed_style_ = computed_style;
+    // computed_style_ = computed_style;
   }
 
   AtomicString LocalNameForSelectorMatching() const;
@@ -232,7 +232,7 @@ class Element : public ContainerNode {
   DOMTokenList* GetPart() const;
   // IDL method.
   // Returns the list of part names, creating it if it doesn't exist.
-  //DOMTokenList& part();
+  // DOMTokenList& part();
 
   // Ignores namespace.
   bool HasAttributeIgnoringNamespace(const AtomicString& local_name) const;
@@ -242,7 +242,7 @@ class Element : public ContainerNode {
 
   bool ChildStyleRecalcBlockedByDisplayLock() const;
 
-  //void SetNeedsCompositingUpdate();
+  // void SetNeedsCompositingUpdate();
 
   // add for invalidation end
  protected:
@@ -313,7 +313,7 @@ inline Element* Node::parentElement() const {
 }
 
 inline bool Element::hasAttributes() const {
-  //return !Attributes().IsEmpty();
+  // return !Attributes().IsEmpty();
 
   return !EnsureElementAttributes().hasAttributes();
 }
@@ -354,7 +354,6 @@ inline ElementRareDataVector* Element::GetElementRareData() const {
 inline ElementRareDataVector& Element::EnsureElementRareData() {
   return static_cast<ElementRareDataVector&>(EnsureRareData());
 }
-
 
 }  // namespace webf
 

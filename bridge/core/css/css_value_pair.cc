@@ -9,4 +9,4 @@ namespace webf {
 void CSSValuePair::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
 }
-}
+}  // namespace webf

@@ -26,27 +26,25 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-
 #ifndef WEBF_CSS_PROPERTY_PARSER_H
 #define WEBF_CSS_PROPERTY_PARSER_H
 
-#include "css_property_names.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_mode.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_tokenizer.h"
 #include "core/css/style_rule.h"
+#include "css_property_names.h"
 #include "foundation/string_view.h"
 
 namespace webf {
-
 
 class CSSPropertyValue;
 class CSSParserTokenStream;
 class CSSValue;
 class ExecutingContext;
-//class
+// class
 
 // Inputs: PropertyID, isImportant bool, CSSParserTokenRange.
 // Outputs: Vector of CSSProperties
@@ -71,8 +69,8 @@ class CSSPropertyParser {
 
   // Parses a non-shorthand CSS property
   static std::shared_ptr<const CSSValue> ParseSingleValue(CSSPropertyID,
-                                          CSSParserTokenStream&,
-                                          std::shared_ptr<const CSSParserContext>);
+                                                          CSSParserTokenStream&,
+                                                          std::shared_ptr<const CSSParserContext>);
 
   // Tries to parse an entire value consisting solely of a CSS-wide
   // keyword (and potentially !important). Returns nullptr on failure,
@@ -84,16 +82,13 @@ class CSSPropertyParser {
                                                                bool& important);
 
  private:
-  CSSPropertyParser(CSSParserTokenStream&,
-                    std::shared_ptr<const CSSParserContext>,
-                    std::vector<CSSPropertyValue>*);
+  CSSPropertyParser(CSSParserTokenStream&, std::shared_ptr<const CSSParserContext>, std::vector<CSSPropertyValue>*);
 
   // TODO(timloh): Rename once the CSSParserValue-based parseValue is removed
   bool ParseValueStart(CSSPropertyID unresolved_property,
                        bool allow_important_annotation,
                        StyleRule::RuleType rule_type);
-  bool ParseCSSWideKeyword(CSSPropertyID unresolved_property,
-                           bool allow_important_annotation);
+  bool ParseCSSWideKeyword(CSSPropertyID unresolved_property, bool allow_important_annotation);
   bool ParseFontFaceDescriptor(CSSPropertyID);
 
  private:
@@ -105,8 +100,8 @@ class CSSPropertyParser {
 };
 
 CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext*,
-                        const std::string_view&,
-                        CSSParserMode mode = kHTMLStandardMode);
+                                      const std::string_view&,
+                                      CSSParserMode mode = kHTMLStandardMode);
 CSSValueID CssValueKeywordID(const std::string_view&);
 
 }  // namespace webf

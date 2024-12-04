@@ -4,10 +4,8 @@
 
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
-
 #ifndef WEBF_URL_CANON_INTERNAL_H
 #define WEBF_URL_CANON_INTERNAL_H
-
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -18,7 +16,6 @@
 #include "url_canon.h"
 
 namespace webf {
-
 
 namespace url {
 
@@ -79,10 +76,7 @@ inline bool IsComponentChar(unsigned char c) {
 
 // Appends the given string to the output, escaping characters that do not
 // match the given |type| in SharedCharTypes.
-void AppendStringOfType(const char* source,
-                        size_t length,
-                        SharedCharTypes type,
-                        CanonOutput* output);
+void AppendStringOfType(const char* source, size_t length, SharedCharTypes type, CanonOutput* output);
 
 // This lookup table allows fast conversion between ASCII hex letters and their
 // corresponding numerical value. The 8-bit range is divided up into 8
@@ -106,8 +100,7 @@ template <typename CHAR>
 inline size_t IsDot(const CHAR* spec, size_t offset, size_t end) {
   if (spec[offset] == '.') {
     return 1;
-  } else if (spec[offset] == '%' && offset + 3 <= end &&
-             spec[offset + 1] == '2' &&
+  } else if (spec[offset] == '%' && offset + 3 <= end && spec[offset + 1] == '2' &&
              (spec[offset + 2] == 'e' || spec[offset + 2] == 'E')) {
     // Found "%2e"
     return 3;
@@ -149,10 +142,7 @@ extern const int32_t kUnicodeReplacementCharacter;
 // can be incremented in a loop and will be ready for the next character.
 // (for a single-byte ASCII character, it will not be changed).
 
-bool ReadUTFCharLossy(const char* str,
-                      size_t* begin,
-                      size_t length,
-                      int32_t* code_point_out);
+bool ReadUTFCharLossy(const char* str, size_t* begin, size_t length, int32_t* code_point_out);
 
 // Generic To-UTF-8 converter. This will call the given append method for each
 // character that should be appended, with the given output method. Wrappers
@@ -173,16 +163,13 @@ inline void DoAppendUTF8(int32_t char_value, Output* output) {
   } else if (char_value <= 0xffff) {
     // 1110xxxx 10xxxxxx 10xxxxxx
     Appender(static_cast<unsigned char>(0xe0 | (char_value >> 12)), output);
-    Appender(static_cast<unsigned char>(0x80 | ((char_value >> 6) & 0x3f)),
-             output);
+    Appender(static_cast<unsigned char>(0x80 | ((char_value >> 6) & 0x3f)), output);
     Appender(static_cast<unsigned char>(0x80 | (char_value & 0x3f)), output);
   } else {
     // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
     Appender(static_cast<unsigned char>(0xf0 | (char_value >> 18)), output);
-    Appender(static_cast<unsigned char>(0x80 | ((char_value >> 12) & 0x3f)),
-             output);
-    Appender(static_cast<unsigned char>(0x80 | ((char_value >> 6) & 0x3f)),
-             output);
+    Appender(static_cast<unsigned char>(0x80 | ((char_value >> 12) & 0x3f)), output);
+    Appender(static_cast<unsigned char>(0x80 | ((char_value >> 6) & 0x3f)), output);
     Appender(static_cast<unsigned char>(0x80 | (char_value & 0x3f)), output);
   }
 }
@@ -205,16 +192,12 @@ inline void AppendUTF8Value(int32_t char_value, CanonOutput* output) {
 // characters (even when they are ASCII). This does NO checking of the
 // validity of the Unicode characters; the caller should ensure that the value
 // it is appending is valid to append.
-inline void AppendUTF8EscapedValue(int32_t char_value,
-                                   CanonOutput* output) {
+inline void AppendUTF8EscapedValue(int32_t char_value, CanonOutput* output) {
   DoAppendUTF8<CanonOutput, AppendEscapedChar>(char_value, output);
 }
 
 // Handles UTF-8 input. See the wide version above for usage.
-inline bool AppendUTF8EscapedChar(const char* str,
-                                  size_t* begin,
-                                  size_t length,
-                                  CanonOutput* output) {
+inline bool AppendUTF8EscapedChar(const char* str, size_t* begin, size_t length, CanonOutput* output) {
   // ReadUTFCharLossy will handle invalid characters for us and give us the
   // kUnicodeReplacementCharacter, so we don't have to do special checking
   // after failure, just pass through the failure to the caller.
@@ -247,12 +230,8 @@ inline bool Is8BitChar(char16_t c) {
 }
 
 template <typename CHAR>
-inline bool DecodeEscaped(const CHAR* spec,
-                          size_t* begin,
-                          size_t end,
-                          unsigned char* unescaped_value) {
-  if (*begin + 3 > end || !Is8BitChar(spec[*begin + 1]) ||
-      !Is8BitChar(spec[*begin + 2])) {
+inline bool DecodeEscaped(const CHAR* spec, size_t* begin, size_t end, unsigned char* unescaped_value) {
+  if (*begin + 3 > end || !Is8BitChar(spec[*begin + 1]) || !Is8BitChar(spec[*begin + 2])) {
     // Invalid escape sequence because there's not enough room, or the
     // digits are not ASCII.
     return false;
@@ -266,8 +245,7 @@ inline bool DecodeEscaped(const CHAR* spec,
   }
 
   // Valid escape sequence.
-  *unescaped_value = static_cast<unsigned char>((HexCharToValue(first) << 4) +
-                                                HexCharToValue(second));
+  *unescaped_value = static_cast<unsigned char>((HexCharToValue(first) << 4) + HexCharToValue(second));
   *begin += 2;
   return true;
 }
@@ -279,13 +257,9 @@ inline bool DecodeEscaped(const CHAR* spec,
 // This is used in error cases to append invalid output so that it looks
 // approximately correct. Non-error cases should not call this function since
 // the escaping rules are not guaranteed!
-void AppendInvalidNarrowString(const char* spec,
-                               size_t begin,
-                               size_t end,
-                               CanonOutput* output);
+void AppendInvalidNarrowString(const char* spec, size_t begin, size_t end, CanonOutput* output);
 
 // Misc canonicalization helpers ----------------------------------------------
-
 
 // Applies the replacements to the given component source. The component source
 // should be pre-initialized to the "old" base. That is, all pointers will
@@ -300,7 +274,6 @@ void SetupOverrideComponents(const char* base,
                              const Replacements<char>& repl,
                              URLComponentSource<char>* source,
                              Parsed* parsed);
-
 
 // Implemented in url_canon_path.cc, these are required by the relative URL
 // resolver as well, so we declare them here.
@@ -339,9 +312,7 @@ inline int _itow_s(int value, char16_t (&buffer)[N], int radix) {
 }
 
 // _strtoui64 and strtoull behave the same
-inline unsigned long long _strtoui64(const char* nptr,
-                                     char** endptr,
-                                     int base) {
+inline unsigned long long _strtoui64(const char* nptr, char** endptr, int base) {
   return strtoull(nptr, endptr, base);
 }
 

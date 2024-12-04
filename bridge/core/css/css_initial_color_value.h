@@ -26,16 +26,13 @@ class CSSInitialColorValue : public CSSValue {
  public:
   static std::shared_ptr<const CSSInitialColorValue> Create();
 
-  explicit CSSInitialColorValue(webf::PassKey<CSSValuePool>)
-      : CSSValue(kInitialColorValueClass) {}
+  explicit CSSInitialColorValue(webf::PassKey<CSSValuePool>) : CSSValue(kInitialColorValueClass) {}
 
   std::string CustomCSSText() const;
 
   bool Equals(const CSSInitialColorValue&) const { return true; }
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-    CSSValue::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const { CSSValue::TraceAfterDispatch(visitor); }
 
  private:
   friend class CSSValuePool;
@@ -43,9 +40,7 @@ class CSSInitialColorValue : public CSSValue {
 
 template <>
 struct DowncastTraits<CSSInitialColorValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsInitialColorValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsInitialColorValue(); }
 };
 
 }  // namespace webf

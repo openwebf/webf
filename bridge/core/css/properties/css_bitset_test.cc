@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "core/css/properties/css_bitset.h"
 #include <bitset>
 #include "gtest/gtest.h"
-#include "core/css/properties/css_bitset.h"
 
 namespace webf {
 
@@ -22,8 +22,7 @@ std::bitset<kBits> ToStdBitsetUsingHas(const CSSBitsetBase<kBits>& bitset) {
 }
 
 template <size_t kBits>
-std::bitset<kBits> ToStdBitsetUsingIterator(
-    const CSSBitsetBase<kBits>& bitset) {
+std::bitset<kBits> ToStdBitsetUsingIterator(const CSSBitsetBase<kBits>& bitset) {
   std::bitset<kBits> ret;
   for (CSSPropertyID id : bitset) {
     size_t bit = static_cast<size_t>(id);
@@ -314,4 +313,4 @@ TEST(CSSBitsetTest, InitializerList) {
   }
 }
 
-}
+}  // namespace webf

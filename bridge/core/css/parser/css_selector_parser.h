@@ -11,12 +11,12 @@
 
 #include <span>
 #include "core/base/containers/span.h"
-#include "foundation/macros.h"
-#include "css_parser_token.h"
-#include "css_nesting_type.h"
-#include "css_parser_token_range.h"
 #include "core/css/css_selector.h"
 #include "core/dom/node.h"
+#include "css_nesting_type.h"
+#include "css_parser_token.h"
+#include "css_parser_token_range.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -30,37 +30,33 @@ class CSSSelectorList;
 
 class CSSSelectorParser {
   WEBF_STACK_ALLOCATED();
- public:
-  static tcb::span<CSSSelector> ParseSelector(
-      CSSParserTokenStream&,
-      std::shared_ptr<const CSSParserContext>,
-      CSSNestingType,
-      std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-      bool is_within_scope,
-      bool semicolon_aborts_nested_selector,
-      std::shared_ptr<StyleSheetContents>,
-      std::vector<CSSSelector>&);
 
-  static tcb::span<CSSSelector> ConsumeSelector(
-      CSSParserTokenStream&,
-      std::shared_ptr<const CSSParserContext>,
-      CSSNestingType,
-      std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-      bool is_within_scope,
-      bool semicolon_aborts_nested_selector,
-      std::shared_ptr<StyleSheetContents>,
-      std::shared_ptr<CSSParserObserver>,
-      std::vector<CSSSelector>&);
+ public:
+  static tcb::span<CSSSelector> ParseSelector(CSSParserTokenStream&,
+                                              std::shared_ptr<const CSSParserContext>,
+                                              CSSNestingType,
+                                              std::shared_ptr<const StyleRule> parent_rule_for_nesting,
+                                              bool is_within_scope,
+                                              bool semicolon_aborts_nested_selector,
+                                              std::shared_ptr<StyleSheetContents>,
+                                              std::vector<CSSSelector>&);
+
+  static tcb::span<CSSSelector> ConsumeSelector(CSSParserTokenStream&,
+                                                std::shared_ptr<const CSSParserContext>,
+                                                CSSNestingType,
+                                                std::shared_ptr<const StyleRule> parent_rule_for_nesting,
+                                                bool is_within_scope,
+                                                bool semicolon_aborts_nested_selector,
+                                                std::shared_ptr<StyleSheetContents>,
+                                                std::shared_ptr<CSSParserObserver>,
+                                                std::vector<CSSSelector>&);
 
   static bool ConsumeANPlusB(CSSParserTokenStream&, std::pair<int, int>&);
   std::shared_ptr<const CSSSelectorList> ConsumeNthChildOfSelectors(CSSParserTokenStream&);
 
-  static bool SupportsComplexSelector(CSSParserTokenStream&,
-                                      std::shared_ptr<const CSSParserContext>);
+  static bool SupportsComplexSelector(CSSParserTokenStream&, std::shared_ptr<const CSSParserContext>);
 
-  static CSSSelector::PseudoType ParsePseudoType(const AtomicString& name,
-                                                 bool has_arguments,
-                                                 const Document*);
+  static CSSSelector::PseudoType ParsePseudoType(const AtomicString& name, bool has_arguments, const Document*);
 
   static PseudoId ParsePseudoElement(const std::string& selector_string, const Node* parent, AtomicString& argument);
 
@@ -101,35 +97,28 @@ class CSSSelectorParser {
   //
   // CSSNestingType::kScope is similar, but will prepend relative selectors with
   // :scope instead of &.
+  tcb::span<CSSSelector> ConsumeComplexSelectorList(CSSParserTokenStream& stream, CSSNestingType);
   tcb::span<CSSSelector> ConsumeComplexSelectorList(CSSParserTokenStream& stream,
-                                                     CSSNestingType);
-  tcb::span<CSSSelector> ConsumeComplexSelectorList(
-      CSSParserTokenStream& stream,
-      std::shared_ptr<CSSParserObserver> observer,
-      CSSNestingType);
+                                                    std::shared_ptr<CSSParserObserver> observer,
+                                                    CSSNestingType);
   std::shared_ptr<CSSSelectorList> ConsumeCompoundSelectorList(CSSParserTokenStream&);
   // Consumes a complex selector list if inside_compound_pseudo_ is false,
   // otherwise consumes a compound selector list.
   std::shared_ptr<CSSSelectorList> ConsumeNestedSelectorList(CSSParserTokenStream&);
   std::shared_ptr<CSSSelectorList> ConsumeForgivingNestedSelectorList(CSSParserTokenStream&);
   // https://drafts.csswg.org/selectors/#typedef-forgiving-selector-list
-  std::optional<tcb::span<CSSSelector>> ConsumeForgivingComplexSelectorList(
-      CSSParserTokenStream&,
-      CSSNestingType);
+  std::optional<tcb::span<CSSSelector>> ConsumeForgivingComplexSelectorList(CSSParserTokenStream&, CSSNestingType);
   std::shared_ptr<CSSSelectorList> ConsumeForgivingCompoundSelectorList(CSSParserTokenStream&);
   // https://drafts.csswg.org/selectors/#typedef-relative-selector-list
   std::shared_ptr<CSSSelectorList> ConsumeForgivingRelativeSelectorList(CSSParserTokenStream&);
   std::shared_ptr<CSSSelectorList> ConsumeRelativeSelectorList(CSSParserTokenStream&);
   void AddPlaceholderSelectorIfNeeded(CSSParserTokenStream& argument);
 
-  tcb::span<CSSSelector> ConsumeNestedRelativeSelector(
-      CSSParserTokenStream& stream,
-      CSSNestingType);
+  tcb::span<CSSSelector> ConsumeNestedRelativeSelector(CSSParserTokenStream& stream, CSSNestingType);
   tcb::span<CSSSelector> ConsumeRelativeSelector(CSSParserTokenStream&);
-  tcb::span<CSSSelector> ConsumeComplexSelector(
-      CSSParserTokenStream& stream,
-      CSSNestingType,
-      bool first_in_complex_selector_list);
+  tcb::span<CSSSelector> ConsumeComplexSelector(CSSParserTokenStream& stream,
+                                                CSSNestingType,
+                                                bool first_in_complex_selector_list);
 
   // ConsumePartialComplexSelector() method provides the common logic of
   // consuming a complex selector and consuming a relative selector.
@@ -145,15 +134,12 @@ class CSSSelectorParser {
   // selectors of the complex selector.
   //
   // Returns false if parse error.
-  bool ConsumePartialComplexSelector(
-      CSSParserTokenStream&,
-      CSSSelector::RelationType& /* current combinator */,
-      unsigned /* previous compound flags */,
-      CSSNestingType);
+  bool ConsumePartialComplexSelector(CSSParserTokenStream&,
+                                     CSSSelector::RelationType& /* current combinator */,
+                                     unsigned /* previous compound flags */,
+                                     CSSNestingType);
 
-  bool ConsumeName(CSSParserTokenStream&,
-                   AtomicString& name,
-                   AtomicString& namespace_prefix);
+  bool ConsumeName(CSSParserTokenStream&, AtomicString& name, AtomicString& namespace_prefix);
 
   // These will return true iff the selector is valid;
   // otherwise, the vector will be pushed onto output_.
@@ -169,8 +155,7 @@ class CSSSelectorParser {
   AtomicString DetermineNamespace(const AtomicString& prefix);
 
   // Returns an empty range on error.
-  tcb::span<CSSSelector> ConsumeCompoundSelector(CSSParserTokenStream&,
-                                                  CSSNestingType);
+  tcb::span<CSSSelector> ConsumeCompoundSelector(CSSParserTokenStream&, CSSNestingType);
 
   bool PeekIsCombinator(CSSParserTokenStream& stream);
   CSSSelector::RelationType ConsumeCombinator(CSSParserTokenStream&);
@@ -181,8 +166,7 @@ class CSSSelectorParser {
                                    bool has_element_name,
                                    const AtomicString& element_name,
                                    size_t start_index_of_compound_selector);
-  void SplitCompoundAtImplicitShadowCrossingCombinator(
-      tcb::span<CSSSelector> compound_selector);
+  void SplitCompoundAtImplicitShadowCrossingCombinator(tcb::span<CSSSelector> compound_selector);
 
   void SetInSupportsParsing() { in_supports_parsing_ = true; }
 
@@ -207,8 +191,7 @@ class CSSSelectorParser {
   // selectors permitted to follow that pseudo-element may be restricted.
   // If this is the case, then restricting_pseudo_element_ will be set to the
   // PseudoType of the pseudo-element causing the restriction.
-  CSSSelector::PseudoType restricting_pseudo_element_ =
-      CSSSelector::kPseudoUnknown;
+  CSSSelector::PseudoType restricting_pseudo_element_ = CSSSelector::kPseudoUnknown;
   // If we're _resisting_ the default namespace, it means that we are inside
   // a nested selector (:is(), :where(), etc) where we should _consider_
   // ignoring the default namespace (depending on circumstance). See the
@@ -247,12 +230,9 @@ class CSSSelectorParser {
       parser_->disallow_pseudo_elements_ = true;
     }
     DisallowPseudoElementsScope(const DisallowPseudoElementsScope&) = delete;
-    DisallowPseudoElementsScope& operator=(const DisallowPseudoElementsScope&) =
-        delete;
+    DisallowPseudoElementsScope& operator=(const DisallowPseudoElementsScope&) = delete;
 
-    ~DisallowPseudoElementsScope() {
-      parser_->disallow_pseudo_elements_ = was_disallowed_;
-    }
+    ~DisallowPseudoElementsScope() { parser_->disallow_pseudo_elements_ = was_disallowed_; }
 
    private:
     CSSSelectorParser* parser_;
@@ -272,8 +252,7 @@ class CSSSelectorParser {
     WEBF_STACK_ALLOCATED();
 
    public:
-    explicit ResetVectorAfterScope(std::vector<CSSSelector>& vector)
-        : vector_(vector), initial_size_(vector.size()) {}
+    explicit ResetVectorAfterScope(std::vector<CSSSelector>& vector) : vector_(vector), initial_size_(vector.size()) {}
 
     ~ResetVectorAfterScope() {
       DCHECK_GE(vector_.size(), initial_size_);
@@ -313,12 +292,10 @@ class CSSSelectorParser {
 //
 // This function only deals with semicolons, not other things that would
 // abort selector parsing (such as EOF).
-static inline bool AbortsNestedSelectorParsing(
-    CSSParserTokenType token_type,
-    bool semicolon_aborts_nested_selector,
-    CSSNestingType nesting_type) {
-  return semicolon_aborts_nested_selector && token_type == kSemicolonToken &&
-         nesting_type != CSSNestingType::kNone;
+static inline bool AbortsNestedSelectorParsing(CSSParserTokenType token_type,
+                                               bool semicolon_aborts_nested_selector,
+                                               CSSNestingType nesting_type) {
+  return semicolon_aborts_nested_selector && token_type == kSemicolonToken && nesting_type != CSSNestingType::kNone;
 }
 
 }  // namespace webf

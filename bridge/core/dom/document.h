@@ -11,9 +11,9 @@
 #include "core/platform/url/kurl.h"
 #include "event_type_names.h"
 #include "foundation/macros.h"
+#include "plugin_api/document.h"
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
-#include "plugin_api/document.h"
 
 namespace webf {
 
@@ -85,7 +85,7 @@ class Document : public ContainerNode, public TreeScope {
 
   CSSStyleSheet& ElementSheet();
 
-      AtomicString readyState();
+  AtomicString readyState();
   DEFINE_DOCUMENT_ATTRIBUTE_EVENT_LISTENER(readystatechange, kreadystatechange);
 
   bool hidden();

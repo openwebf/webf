@@ -111,4 +111,4 @@ void CSSImageSetValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValueList::TraceAfterDispatch(visitor);
 }
 
-}  // namespace blink
+}  // namespace webf

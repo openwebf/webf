@@ -28,7 +28,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
- /*
+/*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
@@ -93,12 +93,9 @@ bool InvalidationSet::operator==(const InvalidationSet& other) const {
   if (GetType() == InvalidationType::kInvalidateSiblings) {
     const auto& this_sibling = To<SiblingInvalidationSet>(*this);
     const auto& other_sibling = To<SiblingInvalidationSet>(other);
-    if ((this_sibling.MaxDirectAdjacentSelectors() !=
-         other_sibling.MaxDirectAdjacentSelectors()) ||
-        !webf::ValuesEquivalent(this_sibling.Descendants(),
-                                other_sibling.Descendants()) ||
-        !webf::ValuesEquivalent(this_sibling.SiblingDescendants(),
-                                other_sibling.SiblingDescendants())) {
+    if ((this_sibling.MaxDirectAdjacentSelectors() != other_sibling.MaxDirectAdjacentSelectors()) ||
+        !webf::ValuesEquivalent(this_sibling.Descendants(), other_sibling.Descendants()) ||
+        !webf::ValuesEquivalent(this_sibling.SiblingDescendants(), other_sibling.SiblingDescendants())) {
       return false;
     }
   }
@@ -110,79 +107,73 @@ bool InvalidationSet::operator==(const InvalidationSet& other) const {
     return false;
   }
 
-  return BackingEqual(backing_flags_, classes_, other.backing_flags_,
-                      other.classes_) &&
+  return BackingEqual(backing_flags_, classes_, other.backing_flags_, other.classes_) &&
          BackingEqual(backing_flags_, ids_, other.backing_flags_, other.ids_) &&
-         BackingEqual(backing_flags_, tag_names_, other.backing_flags_,
-                      other.tag_names_) &&
-         BackingEqual(backing_flags_, attributes_, other.backing_flags_,
-                      other.attributes_);
+         BackingEqual(backing_flags_, tag_names_, other.backing_flags_, other.tag_names_) &&
+         BackingEqual(backing_flags_, attributes_, other.backing_flags_, other.attributes_);
 }
 
 InvalidationSet::InvalidationSet(InvalidationType type)
-    : type_(static_cast<unsigned>(type)),
-      invalidates_self_(false),
-      invalidates_nth_(false),
-      is_alive_(true) {}
+    : type_(static_cast<unsigned>(type)), invalidates_self_(false), invalidates_nth_(false), is_alive_(true) {}
 
 bool InvalidationSet::InvalidatesElement(Element& element) const {
   if (invalidation_flags_.WholeSubtreeInvalid()) {
-  /*
-    TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
-        element, kInvalidationSetInvalidatesSubtree, *this, g_empty_atom);
+    /*
+      TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
+          element, kInvalidationSetInvalidatesSubtree, *this, g_empty_atom);
 
-   */
+     */
     return true;
   }
 
   if (HasTagNames() && HasTagName(element.LocalNameForSelectorMatching())) {
-  /*
-    TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
-        element, kInvalidationSetMatchedTagName, *this,
-        element.LocalNameForSelectorMatching());
+    /*
+      TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
+          element, kInvalidationSetMatchedTagName, *this,
+          element.LocalNameForSelectorMatching());
 
-   */
+     */
     return true;
   }
 
   if (element.HasID() && HasIds() && HasId(element.IdForStyleResolution())) {
-  /*
-    TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
-        element, kInvalidationSetMatchedId, *this,
-        element.IdForStyleResolution());
+    /*
+      TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
+          element, kInvalidationSetMatchedId, *this,
+          element.IdForStyleResolution());
 
-   */
+     */
     return true;
   }
 
   if (element.HasClass() && HasClasses()) {
     if (const AtomicString* class_name = FindAnyClass(element)) {
-    /*
-      TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
-          element, kInvalidationSetMatchedClass, *this, *class_name);
+      /*
+        TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
+            element, kInvalidationSetMatchedClass, *this, *class_name);
 
-     */
+       */
       return true;
     }
   }
 
   if (element.hasAttributes() && HasAttributes()) {
     if (const AtomicString* attribute = FindAnyAttribute(element)) {
-    /*
-      TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
-          element, kInvalidationSetMatchedAttribute, *this, *attribute);
+      /*
+        TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
+            element, kInvalidationSetMatchedAttribute, *this, *attribute);
 
-     */
+       */
       return true;
     }
   }
 
   if (element.HasPart() && invalidation_flags_.InvalidatesParts()) {
-  /*
-    TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
-        element, kInvalidationSetMatchedPart, *this, g_empty_atom);
+    /*
+      TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
+          element, kInvalidationSetMatchedPart, *this, g_empty_atom);
 
-   */
+     */
     return true;
   }
 
@@ -191,12 +182,12 @@ bool InvalidationSet::InvalidatesElement(Element& element) const {
 
 bool InvalidationSet::InvalidatesTagName(Element& element) const {
   if (HasTagNames() && HasTagName(element.LocalNameForSelectorMatching())) {
-  /*
-    TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
-        element, kInvalidationSetMatchedTagName, *this,
-        element.LocalNameForSelectorMatching());
+    /*
+      TRACE_STYLE_INVALIDATOR_INVALIDATION_SELECTORPART_IF_ENABLED(
+          element, kInvalidationSetMatchedTagName, *this,
+          element.LocalNameForSelectorMatching());
 
-   */
+     */
     return true;
   }
 
@@ -223,14 +214,11 @@ void InvalidationSet::Combine(const InvalidationSet& other) {
 
   if (auto* invalidation_set = DynamicTo<SiblingInvalidationSet>(this)) {
     SiblingInvalidationSet& siblings = *invalidation_set;
-    const SiblingInvalidationSet& other_siblings =
-        To<SiblingInvalidationSet>(other);
+    const SiblingInvalidationSet& other_siblings = To<SiblingInvalidationSet>(other);
 
-    siblings.UpdateMaxDirectAdjacentSelectors(
-        other_siblings.MaxDirectAdjacentSelectors());
+    siblings.UpdateMaxDirectAdjacentSelectors(other_siblings.MaxDirectAdjacentSelectors());
     if (other_siblings.SiblingDescendants()) {
-      siblings.EnsureSiblingDescendants().Combine(
-          *other_siblings.SiblingDescendants());
+      siblings.EnsureSiblingDescendants().Combine(*other_siblings.SiblingDescendants());
     }
     if (other_siblings.Descendants()) {
       siblings.EnsureDescendants().Combine(*other_siblings.Descendants());
@@ -312,8 +300,7 @@ void InvalidationSet::ClearAllBackings() {
 }
 
 bool InvalidationSet::HasEmptyBackings() const {
-  return classes_.IsEmpty(backing_flags_) && ids_.IsEmpty(backing_flags_) &&
-         tag_names_.IsEmpty(backing_flags_) &&
+  return classes_.IsEmpty(backing_flags_) && ids_.IsEmpty(backing_flags_) && tag_names_.IsEmpty(backing_flags_) &&
          attributes_.IsEmpty(backing_flags_);
 }
 
@@ -332,7 +319,7 @@ const AtomicString* InvalidationSet::FindAnyClass(Element& element) const {
     for (uint32_t i = 0; i < size; ++i) {
       auto item = set->find(class_names[i]);
       if (item != set->end()) {
-        return &(*item); // Return the address of the element
+        return &(*item);  // Return the address of the element
       }
     }
   }
@@ -345,8 +332,7 @@ const AtomicString* InvalidationSet::FindAnyAttribute(Element& element) const {
       return string;
     }
   }
-  if (const std::unordered_set<AtomicString, AtomicString::KeyHasher>* set =
-          attributes_.GetHashSet(backing_flags_)) {
+  if (const std::unordered_set<AtomicString, AtomicString::KeyHasher>* set = attributes_.GetHashSet(backing_flags_)) {
     for (const auto& attribute : *set) {
       if (element.HasAttributeIgnoringNamespace(attribute)) {
         return &attribute;
@@ -362,8 +348,7 @@ void InvalidationSet::AddClass(const AtomicString& class_name) {
   }
   assert(!class_name.IsEmpty());
   InvalidationSetToSelectorMap::RecordInvalidationSetEntry(
-      this, InvalidationSetToSelectorMap::SelectorFeatureType::kClass,
-      class_name);
+      this, InvalidationSetToSelectorMap::SelectorFeatureType::kClass, class_name);
   classes_.Add(backing_flags_, class_name);
 }
 
@@ -372,8 +357,8 @@ void InvalidationSet::AddId(const AtomicString& id) {
     return;
   }
   assert(!id.IsEmpty());
-  InvalidationSetToSelectorMap::RecordInvalidationSetEntry(
-      this, InvalidationSetToSelectorMap::SelectorFeatureType::kId, id);
+  InvalidationSetToSelectorMap::RecordInvalidationSetEntry(this, InvalidationSetToSelectorMap::SelectorFeatureType::kId,
+                                                           id);
   ids_.Add(backing_flags_, id);
 }
 
@@ -383,8 +368,7 @@ void InvalidationSet::AddTagName(const AtomicString& tag_name) {
   }
   assert(!tag_name.IsEmpty());
   InvalidationSetToSelectorMap::RecordInvalidationSetEntry(
-      this, InvalidationSetToSelectorMap::SelectorFeatureType::kTagName,
-      tag_name);
+      this, InvalidationSetToSelectorMap::SelectorFeatureType::kTagName, tag_name);
   tag_names_.Add(backing_flags_, tag_name);
 }
 
@@ -394,8 +378,7 @@ void InvalidationSet::AddAttribute(const AtomicString& attribute) {
   }
   assert(!attribute.IsEmpty());
   InvalidationSetToSelectorMap::RecordInvalidationSetEntry(
-      this, InvalidationSetToSelectorMap::SelectorFeatureType::kAttribute,
-      attribute);
+      this, InvalidationSetToSelectorMap::SelectorFeatureType::kAttribute, attribute);
   attributes_.Add(backing_flags_, attribute);
 }
 
@@ -405,8 +388,7 @@ void InvalidationSet::SetWholeSubtreeInvalid() {
   }
 
   InvalidationSetToSelectorMap::RecordInvalidationSetEntry(
-      this, InvalidationSetToSelectorMap::SelectorFeatureType::kWholeSubtree,
-      g_empty_atom);
+      this, InvalidationSetToSelectorMap::SelectorFeatureType::kWholeSubtree, g_empty_atom);
   invalidation_flags_.SetWholeSubtreeInvalid(true);
   invalidation_flags_.SetInvalidateCustomPseudo(false);
   invalidation_flags_.SetTreeBoundaryCrossing(false);
@@ -434,13 +416,13 @@ std::shared_ptr<DescendantInvalidationSet> CreatePartInvalidationSet() {
 }  // namespace
 
 std::shared_ptr<InvalidationSet> InvalidationSet::SelfInvalidationSet() {
-  //DEFINE_STATIC_REF(InvalidationSet, singleton_, CreateSelfInvalidationSet());
+  // DEFINE_STATIC_REF(InvalidationSet, singleton_, CreateSelfInvalidationSet());
   thread_local std::shared_ptr<InvalidationSet> singleton_ = CreateSelfInvalidationSet();
   return singleton_;
 }
 
 std::shared_ptr<InvalidationSet> InvalidationSet::PartInvalidationSet() {
-  //DEFINE_STATIC_REF(InvalidationSet, singleton_, CreatePartInvalidationSet());
+  // DEFINE_STATIC_REF(InvalidationSet, singleton_, CreatePartInvalidationSet());
   thread_local std::shared_ptr<InvalidationSet> singleton_ = CreatePartInvalidationSet();
   return singleton_;
 }
@@ -495,7 +477,7 @@ std::string InvalidationSet::ToString() const {
     for (const auto& str : range) {
       names.push_back(str.ToStringView().Characters8ToStdString());
     }
-    //std::sort(names.begin(), names.end(), WTF::CodeUnitCompareLessThan);
+    // std::sort(names.begin(), names.end(), WTF::CodeUnitCompareLessThan);
     std::sort(names.begin(), names.end());
 
     for (const auto& name : names) {
@@ -569,15 +551,13 @@ std::string InvalidationSet::ToString() const {
   return main;
 }
 
-SiblingInvalidationSet::SiblingInvalidationSet(
-    const std::shared_ptr<DescendantInvalidationSet>& descendants)
+SiblingInvalidationSet::SiblingInvalidationSet(const std::shared_ptr<DescendantInvalidationSet>& descendants)
     : InvalidationSet(InvalidationType::kInvalidateSiblings),
       max_direct_adjacent_selectors_(1),
       descendant_invalidation_set_(std::move(descendants)) {}
 
 SiblingInvalidationSet::SiblingInvalidationSet()
-    : InvalidationSet(InvalidationType::kInvalidateNthSiblings),
-      max_direct_adjacent_selectors_(kDirectAdjacentMax) {}
+    : InvalidationSet(InvalidationType::kInvalidateNthSiblings), max_direct_adjacent_selectors_(kDirectAdjacentMax) {}
 
 DescendantInvalidationSet& SiblingInvalidationSet::EnsureSiblingDescendants() {
   if (!sibling_descendant_invalidation_set_) {
@@ -597,4 +577,4 @@ std::ostream& operator<<(std::ostream& ostream, const InvalidationSet& set) {
   return ostream << set.ToString();
 }
 
-}  // namespace blink
+}  // namespace webf

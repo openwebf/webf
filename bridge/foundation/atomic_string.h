@@ -9,8 +9,8 @@
 #include <memory>
 #include <string>
 #include "core/base/hash/hash.h"
-#include "string_impl.h"
 #include "native_value.h"
+#include "string_impl.h"
 
 namespace webf {
 
@@ -22,9 +22,7 @@ class AtomicString {
   static AtomicString Empty() { return AtomicString(""); }
 
   explicit AtomicString(const char* chars)
-      : AtomicString(chars,
-                     chars ? strlen(reinterpret_cast<const char*>(chars)) : 0) {
-  }
+      : AtomicString(chars, chars ? strlen(reinterpret_cast<const char*>(chars)) : 0) {}
 
   AtomicString(std::string_view string_view);
   AtomicString(const char* chars, size_t length);
@@ -34,7 +32,7 @@ class AtomicString {
 
   AtomicString(JSContext* ctx, JSValue qjs_value);
   AtomicString(JSContext* ctx, JSAtom qjs_atom);
-  AtomicString(const std::string& s): AtomicString(s.c_str(), s.length()) {};
+  AtomicString(const std::string& s) : AtomicString(s.c_str(), s.length()){};
   AtomicString(const std::unique_ptr<AutoFreeNativeString>& native_string);
   ~AtomicString() = default;
 
@@ -55,7 +53,7 @@ class AtomicString {
 
   explicit operator bool() const { return !IsNull(); }
   bool IsNull() const { return string_ == nullptr; }
-  bool empty() const { return  !string_ || !string_->length(); }
+  bool empty() const { return !string_ || !string_->length(); }
 
   char16_t operator[](size_t i) const { return string_->operator[](i); }
 
@@ -71,42 +69,22 @@ class AtomicString {
   std::shared_ptr<StringImpl> Impl() const { return string_; }
 
   // Find characters.
-  size_t find(char16_t c, size_t start = 0) const {
-    return string_->Find(c, start);
-  }
-  size_t find(unsigned char c, size_t start = 0) const {
-    return string_->Find(c, start);
-  }
-  size_t find(char c, size_t start = 0) const {
-    return find(static_cast<unsigned char>(c), start);
-  }
-  size_t Find(CharacterMatchFunctionPtr match_function,
-              size_t start = 0) const {
+  size_t find(char16_t c, size_t start = 0) const { return string_->Find(c, start); }
+  size_t find(unsigned char c, size_t start = 0) const { return string_->Find(c, start); }
+  size_t find(char c, size_t start = 0) const { return find(static_cast<unsigned char>(c), start); }
+  size_t Find(CharacterMatchFunctionPtr match_function, size_t start = 0) const {
     return string_->Find(match_function, start);
   }
 
   // Find substrings.
-  size_t Find(
-      const AtomicString& value,
-      size_t start = 0) const {
-    return string_->Find(value, start);
-  }
+  size_t Find(const AtomicString& value, size_t start = 0) const { return string_->Find(value, start); }
 
   bool Contains(char c) const { return find(c) != kNotFound; }
-  bool Contains(
-      const AtomicString& value) const {
-    return Find(value, 0) != kNotFound;
-  }
+  bool Contains(const AtomicString& value) const { return Find(value, 0) != kNotFound; }
 
-  bool StartsWith(
-      const AtomicString& prefix) const {
-    return string_->StartsWith(prefix);
-  }
+  bool StartsWith(const AtomicString& prefix) const { return string_->StartsWith(prefix); }
 
-  bool EndsWith(
-    const AtomicString& suffix) const {
-    return string_.EndsWith(suffix);
-  }
+  bool EndsWith(const AtomicString& suffix) const { return string_.EndsWith(suffix); }
   bool EndsWith(char16_t character) const { return string_.EndsWith(character); }
 
   inline bool ContainsOnlyLatin1OrEmpty() const {
@@ -124,7 +102,8 @@ class AtomicString {
   }
 
   unsigned Hash() const {
-    if (string_ == nullptr) return 0;
+    if (string_ == nullptr)
+      return 0;
     return string_->GetHash();
   }
 
@@ -133,8 +112,7 @@ class AtomicString {
   };
 
  private:
-  ALWAYS_INLINE static std::shared_ptr<StringImpl> Add(
-      std::shared_ptr<StringImpl>&& r) {
+  ALWAYS_INLINE static std::shared_ptr<StringImpl> Add(std::shared_ptr<StringImpl>&& r) {
     if (!r)
       return std::move(r);
     return AddSlowCase(std::move(r));

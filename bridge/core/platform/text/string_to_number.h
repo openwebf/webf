@@ -9,8 +9,8 @@
 #ifndef WEBF_STRING_TO_NUMBER_H
 #define WEBF_STRING_TO_NUMBER_H
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include "core/platform/text/number_parsing_options.h"
 
 namespace webf {
@@ -39,12 +39,10 @@ namespace webf {
 // This will instantiate the functor for both LChar (8-bit) and UChar (16-bit)
 // automatically.
 template <typename StringType, typename Functor>
-decltype(auto) VisitCharacters(const StringType& string,
-                               const Functor& functor) {
+decltype(auto) VisitCharacters(const StringType& string, const Functor& functor) {
   return string.Is8Bit() ? functor(string.Characters8(), string.length())
                          : functor(string.Characters16(), string.length());
 }
-
 
 class StringView;
 
@@ -59,61 +57,25 @@ enum class NumberParsingResult {
 };
 
 // string -> unsigned.
-unsigned HexCharactersToUInt(const char*,
-                                        size_t,
-                                        NumberParsingOptions,
-                                        bool* ok);
-unsigned HexCharactersToUInt(const char16_t*,
-                                        size_t,
-                                        NumberParsingOptions,
-                                        bool* ok);
-uint64_t HexCharactersToUInt64(const char16_t*,
-                                          size_t,
-                                          NumberParsingOptions,
-                                          bool* ok);
-uint64_t HexCharactersToUInt64(const char*,
-                                          size_t,
-                                          NumberParsingOptions,
-                                          bool* ok);
-unsigned CharactersToUInt(const char*,
-                                     size_t,
-                                     NumberParsingOptions,
-                                     bool* ok);
-unsigned CharactersToUInt(const char16_t*,
-                                     size_t,
-                                     NumberParsingOptions,
-                                     bool* ok);
+unsigned HexCharactersToUInt(const char*, size_t, NumberParsingOptions, bool* ok);
+unsigned HexCharactersToUInt(const char16_t*, size_t, NumberParsingOptions, bool* ok);
+uint64_t HexCharactersToUInt64(const char16_t*, size_t, NumberParsingOptions, bool* ok);
+uint64_t HexCharactersToUInt64(const char*, size_t, NumberParsingOptions, bool* ok);
+unsigned CharactersToUInt(const char*, size_t, NumberParsingOptions, bool* ok);
+unsigned CharactersToUInt(const char16_t*, size_t, NumberParsingOptions, bool* ok);
 
 // NumberParsingResult versions of CharactersToUInt. They can detect
 // overflow. |NumberParsingResult*| should not be nullptr;
-unsigned CharactersToUInt(const char*,
-                                     size_t,
-                                     NumberParsingOptions,
-                                     NumberParsingResult*);
-unsigned CharactersToUInt(const char16_t*,
-                                     size_t,
-                                     NumberParsingOptions,
-                                     NumberParsingResult*);
+unsigned CharactersToUInt(const char*, size_t, NumberParsingOptions, NumberParsingResult*);
+unsigned CharactersToUInt(const char16_t*, size_t, NumberParsingOptions, NumberParsingResult*);
 
 // string -> int64_t.
-int64_t CharactersToInt64(const char*,
-                                     size_t,
-                                     NumberParsingOptions,
-                                     bool* ok);
-int64_t CharactersToInt64(const char16_t*,
-                                     size_t,
-                                     NumberParsingOptions,
-                                     bool* ok);
+int64_t CharactersToInt64(const char*, size_t, NumberParsingOptions, bool* ok);
+int64_t CharactersToInt64(const char16_t*, size_t, NumberParsingOptions, bool* ok);
 
 // string -> uint64_t.
-uint64_t CharactersToUInt64(const char*,
-                                       size_t,
-                                       NumberParsingOptions,
-                                       bool* ok);
-uint64_t CharactersToUInt64(const char16_t*,
-                                       size_t,
-                                       NumberParsingOptions,
-                                       bool* ok);
+uint64_t CharactersToUInt64(const char*, size_t, NumberParsingOptions, bool* ok);
+uint64_t CharactersToUInt64(const char16_t*, size_t, NumberParsingOptions, bool* ok);
 
 // FIXME: Like the strict functions above, these give false for "ok" when there
 // is trailing garbage.  Like the non-strict functions above, these return the
@@ -143,12 +105,8 @@ double CharactersToDouble(const char*, size_t, bool* ok);
 // double number. It will be 0 if the input string isn't a number. It will be
 // smaller than |length| if the input string contains trailing
 // whiespace/garbage.
-double CharactersToDouble(const char*,
-                                     size_t length,
-                                     size_t& parsed_length);
-double CharactersToDouble(const char16_t*,
-                                     size_t length,
-                                     size_t& parsed_length);
+double CharactersToDouble(const char*, size_t length, size_t& parsed_length);
+double CharactersToDouble(const char16_t*, size_t length, size_t& parsed_length);
 
 // string -> float.
 //
@@ -174,13 +132,8 @@ float CharactersToFloat(const char16_t*, size_t, bool* ok);
 // flaot number. It will be 0 if the input string isn't a number. It will be
 // smaller than |length| if the input string contains trailing
 // whiespace/garbage.
-float CharactersToFloat(const char*,
-                                   size_t length,
-                                   size_t& parsed_length);
-float CharactersToFloat(const char16_t*,
-                                   size_t length,
-                                   size_t& parsed_length);
-
+float CharactersToFloat(const char*, size_t length, size_t& parsed_length);
+float CharactersToFloat(const char16_t*, size_t length, size_t& parsed_length);
 
 }  // namespace webf
 

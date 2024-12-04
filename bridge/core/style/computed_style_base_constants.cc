@@ -6,8 +6,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-
-
 #include "computed_style_base_constants.h"
 
 namespace webf {}  // namespace webf

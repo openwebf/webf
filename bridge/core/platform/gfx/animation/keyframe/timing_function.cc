@@ -7,12 +7,12 @@
 #include "timing_function.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <memory>
-#include <cassert>
 
-#include "foundation/ptr_util.h"
 #include "foundation/macros.h"
+#include "foundation/ptr_util.h"
 
 namespace gfx {
 
@@ -20,39 +20,31 @@ TimingFunction::TimingFunction() = default;
 
 TimingFunction::~TimingFunction() = default;
 
-std::unique_ptr<CubicBezierTimingFunction>
-CubicBezierTimingFunction::CreatePreset(EaseType ease_type) {
+std::unique_ptr<CubicBezierTimingFunction> CubicBezierTimingFunction::CreatePreset(EaseType ease_type) {
   // These numbers come from
   // http://www.w3.org/TR/css3-transitions/#transition-timing-function_tag.
   switch (ease_type) {
     case EaseType::EASE:
-      return base::WrapUnique(
-          new CubicBezierTimingFunction(ease_type, 0.25, 0.1, 0.25, 1.0));
+      return base::WrapUnique(new CubicBezierTimingFunction(ease_type, 0.25, 0.1, 0.25, 1.0));
     case EaseType::EASE_IN:
-      return base::WrapUnique(
-          new CubicBezierTimingFunction(ease_type, 0.42, 0.0, 1.0, 1.0));
+      return base::WrapUnique(new CubicBezierTimingFunction(ease_type, 0.42, 0.0, 1.0, 1.0));
     case EaseType::EASE_OUT:
-      return base::WrapUnique(
-          new CubicBezierTimingFunction(ease_type, 0.0, 0.0, 0.58, 1.0));
+      return base::WrapUnique(new CubicBezierTimingFunction(ease_type, 0.0, 0.0, 0.58, 1.0));
     case EaseType::EASE_IN_OUT:
-      return base::WrapUnique(
-          new CubicBezierTimingFunction(ease_type, 0.42, 0.0, 0.58, 1));
+      return base::WrapUnique(new CubicBezierTimingFunction(ease_type, 0.42, 0.0, 0.58, 1));
     default:
       assert_m(false, "CubicBezierTimingFunction::CreatePreset NOTREACHED_IN_MIGRATION");
       return nullptr;
   }
 }
-std::unique_ptr<CubicBezierTimingFunction>
-CubicBezierTimingFunction::Create(double x1, double y1, double x2, double y2) {
-  return base::WrapUnique(
-      new CubicBezierTimingFunction(EaseType::CUSTOM, x1, y1, x2, y2));
+std::unique_ptr<CubicBezierTimingFunction> CubicBezierTimingFunction::Create(double x1,
+                                                                             double y1,
+                                                                             double x2,
+                                                                             double y2) {
+  return base::WrapUnique(new CubicBezierTimingFunction(EaseType::CUSTOM, x1, y1, x2, y2));
 }
 
-CubicBezierTimingFunction::CubicBezierTimingFunction(EaseType ease_type,
-                                                     double x1,
-                                                     double y1,
-                                                     double x2,
-                                                     double y2)
+CubicBezierTimingFunction::CubicBezierTimingFunction(EaseType ease_type, double x1, double y1, double x2, double y2)
     : bezier_(x1, y1, x2, y2), ease_type_(ease_type) {}
 
 CubicBezierTimingFunction::~CubicBezierTimingFunction() = default;
@@ -61,9 +53,7 @@ TimingFunction::Type CubicBezierTimingFunction::GetType() const {
   return Type::CUBIC_BEZIER;
 }
 
-double CubicBezierTimingFunction::GetValue(
-    double x,
-    TimingFunction::LimitDirection) const {
+double CubicBezierTimingFunction::GetValue(double x, TimingFunction::LimitDirection) const {
   return bezier_.Solve(x);
 }
 
@@ -75,9 +65,7 @@ std::unique_ptr<TimingFunction> CubicBezierTimingFunction::Clone() const {
   return base::WrapUnique(new CubicBezierTimingFunction(*this));
 }
 
-std::unique_ptr<StepsTimingFunction> StepsTimingFunction::Create(
-    int steps,
-    StepPosition step_position) {
+std::unique_ptr<StepsTimingFunction> StepsTimingFunction::Create(int steps, StepPosition step_position) {
   return base::WrapUnique(new StepsTimingFunction(steps, step_position));
 }
 
@@ -102,8 +90,7 @@ double StepsTimingFunction::GetValue(double t, LimitDirection direction) const {
   const double steps = static_cast<double>(steps_);
   double current_step = std::floor((steps * t) + GetStepsStartOffset());
   // Adjust step if using a left limit at a discontinuous step boundary.
-  if (direction == LimitDirection::LEFT &&
-      steps * t - std::floor(steps * t) == 0) {
+  if (direction == LimitDirection::LEFT && steps * t - std::floor(steps * t) == 0) {
     current_step -= 1;
   }
   // Jumps may differ from steps based on the number of end-point
@@ -157,9 +144,7 @@ float StepsTimingFunction::GetStepsStartOffset() const {
 
 LinearTimingFunction::LinearTimingFunction() = default;
 
-LinearTimingFunction::LinearTimingFunction(
-    std::vector<LinearEasingPoint> points)
-    : points_(std::move(points)) {}
+LinearTimingFunction::LinearTimingFunction(std::vector<LinearEasingPoint> points) : points_(std::move(points)) {}
 
 LinearTimingFunction::~LinearTimingFunction() = default;
 
@@ -171,8 +156,7 @@ std::unique_ptr<LinearTimingFunction> LinearTimingFunction::Create() {
   return base::WrapUnique(new LinearTimingFunction());
 }
 
-std::unique_ptr<LinearTimingFunction> LinearTimingFunction::Create(
-    std::vector<LinearEasingPoint> points) {
+std::unique_ptr<LinearTimingFunction> LinearTimingFunction::Create(std::vector<LinearEasingPoint> points) {
   assert(points.size() >= 2);
   return base::WrapUnique(new LinearTimingFunction(std::move(points)));
 }
@@ -189,8 +173,7 @@ double LinearTimingFunction::Velocity(double x) const {
   return 0;
 }
 
-double LinearTimingFunction::GetValue(double input_progress,
-                                      LimitDirection limit_direction) const {
+double LinearTimingFunction::GetValue(double input_progress, LimitDirection limit_direction) const {
   if (IsTrivial()) {
     return input_progress;
   }
@@ -199,9 +182,7 @@ double LinearTimingFunction::GetValue(double input_progress,
   // 2. Let pointAIndex be index of the last item in points with an input
   // less than or equal to inputProgress, or 0 if there is no match.
   auto it = std::upper_bound(points_.cbegin(), points_.cend(), input_progress,
-                             [](double progress, const auto& point) {
-                               return 100 * progress < point.input;
-                             });
+                             [](double progress, const auto& point) { return 100 * progress < point.input; });
   it = it == points_.cend() ? std::prev(it) : it;
   auto point_a = it == points_.cbegin() ? it : std::prev(it);
   // 3. If pointAIndex is equal to points size minus 1, decrement pointAIndex
@@ -220,14 +201,12 @@ double LinearTimingFunction::GetValue(double input_progress,
   const double point_input_range = (point_b->input - point_a->input) / 100;
   // 9. Let progressBetweenPoints be progressFromPointA divided by
   // pointInputRange.
-  const double progress_between_points =
-      progress_from_point_a / point_input_range;
+  const double progress_between_points = progress_from_point_a / point_input_range;
   // 10. Let pointOutputRange be pointB’s output minus pointA’s output.
   const double point_output_range = point_b->output - point_a->output;
   // 11. Let outputFromLastPoint be progressBetweenPoints multiplied by
   // pointOutputRange.
-  const double output_from_last_point =
-      progress_between_points * point_output_range;
+  const double output_from_last_point = progress_between_points * point_output_range;
   // 12. Return pointA’s output plus outputFromLastPoint.
   return point_a->output + output_from_last_point;
 }

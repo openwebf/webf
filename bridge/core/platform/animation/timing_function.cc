@@ -5,9 +5,9 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "core/platform/animation/timing_function.h"
-#include <string>
-#include <cstdint>
 #include <algorithm>
+#include <cstdint>
+#include <string>
 #include "core/platform/gfx/animation/keyframe/timing_function.h"
 
 namespace webf {
@@ -32,9 +32,7 @@ std::string LinearTimingFunction::ToString() const {
   return builder;
 }
 
-double LinearTimingFunction::Evaluate(
-    double fraction,
-    TimingFunction::LimitDirection limit_direction) const {
+double LinearTimingFunction::Evaluate(double fraction, TimingFunction::LimitDirection limit_direction) const {
   return linear_->GetValue(fraction, limit_direction);
 }
 
@@ -54,22 +52,15 @@ void LinearTimingFunction::Range(double* min_value, double* max_value) const {
   // ^ - max_it.
   // for min_comp we want the first of points in case of input equality.
   // (e.g. begin of range).
-  const auto min_comp = [](double value, const auto& point) {
-    return value <= point.input;
-  };
+  const auto min_comp = [](double value, const auto& point) { return value <= point.input; };
   // for max_comp we want the last of points in case of input equality.
   // (e.g. end of range).
-  const auto max_comp = [](double value, const auto& point) {
-    return value < point.input;
-  };
-  auto min_it = std::upper_bound(Points().cbegin(), Points().cend(),
-                                 100 * *min_value, min_comp);
+  const auto max_comp = [](double value, const auto& point) { return value < point.input; };
+  auto min_it = std::upper_bound(Points().cbegin(), Points().cend(), 100 * *min_value, min_comp);
   min_it = min_it == Points().cend() ? std::prev(min_it) : min_it;
-  auto max_it = std::upper_bound(Points().cbegin(), Points().cend(),
-                                 100 * *max_value, max_comp);
-  const auto [min, max] = std::minmax_element(
-      min_it, max_it,
-      [](const auto& a, const auto& b) { return a.output < b.output; });
+  auto max_it = std::upper_bound(Points().cbegin(), Points().cend(), 100 * *max_value, max_comp);
+  const auto [min, max] =
+      std::minmax_element(min_it, max_it, [](const auto& a, const auto& b) { return a.output < b.output; });
   double min_val = Evaluate(*min_value);
   double max_val = Evaluate(*max_value);
   *min_value = std::min({min_val, max_val, min->output});
@@ -112,41 +103,33 @@ std::string CubicBezierTimingFunction::ToString() const {
     case CubicBezierTimingFunction::EaseType::EASE_IN_OUT:
       return "ease-in-out";
     case CubicBezierTimingFunction::EaseType::CUSTOM:
-      return "cubic-bezier(" + std::to_string(X1()) + ", " +
-             std::to_string(Y1()) + ", " +
-             std::to_string(X2()) + ", " +
+      return "cubic-bezier(" + std::to_string(X1()) + ", " + std::to_string(Y1()) + ", " + std::to_string(X2()) + ", " +
              std::to_string(Y2()) + ")";
     default:
-    assert_m(false, "CubicBezierTimingFunction::ToString NOTREACHED_IN_MIGRATION");
+      assert_m(false, "CubicBezierTimingFunction::ToString NOTREACHED_IN_MIGRATION");
       return "";
   }
 }
 
-double CubicBezierTimingFunction::Evaluate(
-    double fraction,
-    TimingFunction::LimitDirection limit_direction) const {
+double CubicBezierTimingFunction::Evaluate(double fraction, TimingFunction::LimitDirection limit_direction) const {
   return bezier_->bezier().Solve(fraction);
 }
 
-void CubicBezierTimingFunction::Range(double* min_value,
-                                      double* max_value) const {
+void CubicBezierTimingFunction::Range(double* min_value, double* max_value) const {
   const double solution1 = bezier_->bezier().range_min();
   const double solution2 = bezier_->bezier().range_max();
 
   // Since our input values can be out of the range 0->1 so we must also
   // consider the minimum and maximum points.
-  double solution_min = bezier_->bezier().SolveWithEpsilon(
-      *min_value, std::numeric_limits<double>::epsilon());
-  double solution_max = bezier_->bezier().SolveWithEpsilon(
-      *max_value, std::numeric_limits<double>::epsilon());
+  double solution_min = bezier_->bezier().SolveWithEpsilon(*min_value, std::numeric_limits<double>::epsilon());
+  double solution_max = bezier_->bezier().SolveWithEpsilon(*max_value, std::numeric_limits<double>::epsilon());
   *min_value = std::min(std::min(solution_min, solution_max), 0.0);
   *max_value = std::max(std::max(solution_min, solution_max), 1.0);
   *min_value = std::min(std::min(*min_value, solution1), solution2);
   *max_value = std::max(std::max(*max_value, solution1), solution2);
 }
 
-std::unique_ptr<gfx::TimingFunction> CubicBezierTimingFunction::CloneToCC()
-    const {
+std::unique_ptr<gfx::TimingFunction> CubicBezierTimingFunction::CloneToCC() const {
   return bezier_->Clone();
 }
 
@@ -194,8 +177,7 @@ void StepsTimingFunction::Range(double* min_value, double* max_value) const {
   *max_value = 1;
 }
 
-double StepsTimingFunction::Evaluate(double fraction,
-                                     LimitDirection limit_direction) const {
+double StepsTimingFunction::Evaluate(double fraction, LimitDirection limit_direction) const {
   return steps_->GetValue(fraction, limit_direction);
 }
 
@@ -203,36 +185,27 @@ std::unique_ptr<gfx::TimingFunction> StepsTimingFunction::CloneToCC() const {
   return steps_->Clone();
 }
 
-std::shared_ptr<TimingFunction> CreateCompositorTimingFunctionFromCC(
-    const gfx::TimingFunction* timing_function) {
+std::shared_ptr<TimingFunction> CreateCompositorTimingFunctionFromCC(const gfx::TimingFunction* timing_function) {
   if (!timing_function)
     return LinearTimingFunction::Shared();
 
   switch (timing_function->GetType()) {
     case gfx::TimingFunction::Type::CUBIC_BEZIER: {
-      auto* cubic_timing_function =
-          static_cast<const gfx::CubicBezierTimingFunction*>(timing_function);
-      if (cubic_timing_function->ease_type() !=
-          gfx::CubicBezierTimingFunction::EaseType::CUSTOM)
-        return CubicBezierTimingFunction::Preset(
-            cubic_timing_function->ease_type());
+      auto* cubic_timing_function = static_cast<const gfx::CubicBezierTimingFunction*>(timing_function);
+      if (cubic_timing_function->ease_type() != gfx::CubicBezierTimingFunction::EaseType::CUSTOM)
+        return CubicBezierTimingFunction::Preset(cubic_timing_function->ease_type());
 
       const auto& bezier = cubic_timing_function->bezier();
-      return CubicBezierTimingFunction::Create(bezier.GetX1(), bezier.GetY1(),
-                                               bezier.GetX2(), bezier.GetY2());
+      return CubicBezierTimingFunction::Create(bezier.GetX1(), bezier.GetY1(), bezier.GetX2(), bezier.GetY2());
     }
 
     case gfx::TimingFunction::Type::STEPS: {
-      auto* steps_timing_function =
-          static_cast<const gfx::StepsTimingFunction*>(timing_function);
-      return StepsTimingFunction::Create(
-          steps_timing_function->steps(),
-          steps_timing_function->step_position());
+      auto* steps_timing_function = static_cast<const gfx::StepsTimingFunction*>(timing_function);
+      return StepsTimingFunction::Create(steps_timing_function->steps(), steps_timing_function->step_position());
     }
 
     case gfx::TimingFunction::Type::LINEAR: {
-      auto* linear_timing_function =
-          static_cast<const gfx::LinearTimingFunction*>(timing_function);
+      auto* linear_timing_function = static_cast<const gfx::LinearTimingFunction*>(timing_function);
       if (linear_timing_function->IsTrivial()) {
         return LinearTimingFunction::Shared();
       }
@@ -253,16 +226,14 @@ bool operator==(const LinearTimingFunction& lhs, const TimingFunction& rhs) {
   return false;
 }
 
-bool operator==(const CubicBezierTimingFunction& lhs,
-                const TimingFunction& rhs) {
+bool operator==(const CubicBezierTimingFunction& lhs, const TimingFunction& rhs) {
   if (rhs.GetType() != TimingFunction::Type::CUBIC_BEZIER)
     return false;
 
   const auto& ctf = To<CubicBezierTimingFunction>(rhs);
   if ((lhs.GetEaseType() == CubicBezierTimingFunction::EaseType::CUSTOM) &&
       (ctf.GetEaseType() == CubicBezierTimingFunction::EaseType::CUSTOM))
-    return (lhs.X1() == ctf.X1()) && (lhs.Y1() == ctf.Y1()) &&
-           (lhs.X2() == ctf.X2()) && (lhs.Y2() == ctf.Y2());
+    return (lhs.X1() == ctf.X1()) && (lhs.Y1() == ctf.Y1()) && (lhs.X2() == ctf.X2()) && (lhs.Y2() == ctf.Y2());
 
   return lhs.GetEaseType() == ctf.GetEaseType();
 }
@@ -272,8 +243,7 @@ bool operator==(const StepsTimingFunction& lhs, const TimingFunction& rhs) {
     return false;
 
   const auto& stf = To<StepsTimingFunction>(rhs);
-  return (lhs.NumberOfSteps() == stf.NumberOfSteps()) &&
-         (lhs.GetStepPosition() == stf.GetStepPosition());
+  return (lhs.NumberOfSteps() == stf.NumberOfSteps()) && (lhs.GetStepPosition() == stf.GetStepPosition());
 }
 
 // The generic operator== *must* come after the
@@ -303,4 +273,4 @@ bool operator!=(const TimingFunction& lhs, const TimingFunction& rhs) {
   return !(lhs == rhs);
 }
 
-}  // namespace blink
+}  // namespace webf

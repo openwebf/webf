@@ -420,8 +420,7 @@ std::string Color::SerializeLegacyColorAsCSSColor() const {
   constexpr float kEpsilon = 1e-07;
   auto [r, g, b] = std::make_tuple(param0_, param1_, param2_);
 
-  if (color_space_ == Color::ColorSpace::kHWB ||
-      color_space_ == Color::ColorSpace::kHSL) {
+  if (color_space_ == Color::ColorSpace::kHWB || color_space_ == Color::ColorSpace::kHSL) {
     // hsl and hwb colors need to be serialized in srgb.
     if (color_space_ == Color::ColorSpace::kHSL) {
       std::tie(r, g, b) = HSLToSRGB(param0_, param1_, param2_);
@@ -432,8 +431,7 @@ std::string Color::SerializeLegacyColorAsCSSColor() const {
     // Channels that have a value of exactly 0.5 can get incorrectly rounded
     // down to 127 when being converted to an integer. Add a small epsilon to
     // avoid this. See crbug.com/1425856.
-    std::tie(r, g, b) =
-        SRGBToSRGBLegacy(r + kEpsilon, g + kEpsilon, b + kEpsilon);
+    std::tie(r, g, b) = SRGBToSRGBLegacy(r + kEpsilon, g + kEpsilon, b + kEpsilon);
   }
 
   result.Append(round(ClampTo(r, 0.0, 255.0)), 6);
@@ -458,8 +456,7 @@ std::string Color::SerializeLegacyColorAsCSSColor() const {
       result.Append(ColorParamToString(two_decimal_rounded_alpha, 2));
     } else {
       // Otherwise, round to 3 decimals.
-      float three_decimal_rounded_alpha =
-          round(int_alpha * 1000.0 / 255.0) / 1000.0;
+      float three_decimal_rounded_alpha = round(int_alpha * 1000.0 / 255.0) / 1000.0;
       result.Append(ColorParamToString(three_decimal_rounded_alpha, 3));
     }
   }

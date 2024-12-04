@@ -123,7 +123,8 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
   // This property is defined in WidgetElement.prototype, should return false to let it handled in the prototype
   // methods.
   JSValue prototypeObject = GetExecutingContext()->contextData()->prototypeForType(GetWrapperTypeInfo());
-  if (JS_HasProperty(ctx(), prototypeObject, GetExecutingContext()->stringCache()->GetJSAtomFromString(ctx(), key.Impl()))) {
+  if (JS_HasProperty(ctx(), prototypeObject,
+                     GetExecutingContext()->stringCache()->GetJSAtomFromString(ctx(), key.Impl()))) {
     return false;
   }
 

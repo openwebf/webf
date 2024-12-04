@@ -35,10 +35,10 @@
 #include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_value_pair.h"
 #include "core/platform/geometry/SKScalar.h"
-#include "core/platform/graphics/gradient.h"
-#include "css_value_keywords.h"
 #include "core/platform/gfx/geometry/point_f.h"
 #include "core/platform/gfx/geometry/rect_f.h"
+#include "core/platform/graphics/gradient.h"
+#include "css_value_keywords.h"
 
 namespace webf::cssvalue {
 
@@ -837,9 +837,9 @@ gfx::SizeF RadiusToCorner(const gfx::PointF& point,
 }  // anonymous namespace
 
 std::shared_ptr<Gradient> CSSRadialGradientValue::CreateGradient(const CSSToLengthConversionData& conversion_data,
-                                                               const gfx::SizeF& size,
-                                                               const Document& document,
-                                                               const ComputedStyle& style) const {
+                                                                 const gfx::SizeF& size,
+                                                                 const Document& document,
+                                                                 const ComputedStyle& style) const {
   DCHECK(!size.IsEmpty());
 
   gfx::PointF first_point = ComputeEndPoint(first_x_, first_y_, conversion_data, size);
@@ -903,13 +903,13 @@ std::shared_ptr<Gradient> CSSRadialGradientValue::CreateGradient(const CSSToLeng
   bool is_degenerate = !second_radius.width() || !second_radius.height();
   GradientDesc desc(first_point, second_point, first_radius, is_degenerate ? 0 : second_radius.width(),
                     repeating_ ? kSpreadMethodRepeat : kSpreadMethodPad);
-//  AddStops(desc, conversion_data, document, style);
+  //  AddStops(desc, conversion_data, document, style);
 
   std::shared_ptr<Gradient> gradient =
       Gradient::CreateRadial(desc.p0, desc.r0, desc.p1, desc.r1, is_degenerate ? 1 : second_radius.AspectRatio(),
                              desc.spread_method, Gradient::ColorInterpolation::kPremultiplied);
 
-//  gradient->SetColorInterpolationSpace(color_interpolation_space_, hue_interpolation_method_);
+  //  gradient->SetColorInterpolationSpace(color_interpolation_space_, hue_interpolation_method_);
   gradient->AddColorStops(desc.stops);
 
   return gradient;
@@ -931,8 +931,7 @@ bool CSSRadialGradientValue::Equals(const CSSRadialGradientValue& other) const {
   if (gradient_type_ == kCSSDeprecatedRadialGradient) {
     return other.gradient_type_ == gradient_type_ && ValuesEquivalent(first_x_, other.first_x_) &&
            ValuesEquivalent(first_y_, other.first_y_) && ValuesEquivalent(second_x_, other.second_x_) &&
-           ValuesEquivalent(second_y_, other.second_y_) &&
-           ValuesEquivalent(first_radius_, other.first_radius_) &&
+           ValuesEquivalent(second_y_, other.second_y_) && ValuesEquivalent(first_radius_, other.first_radius_) &&
            ValuesEquivalent(second_radius_, other.second_radius_) && stops_ == other.stops_;
   }
 
@@ -958,7 +957,8 @@ bool CSSRadialGradientValue::Equals(const CSSRadialGradientValue& other) const {
       return false;
     }
     // There's a size keyword.
-    if (!EqualIdentifiersWithDefault(sizing_behavior_.get(), other.sizing_behavior_.get(), CSSValueID::kFarthestCorner)) {
+    if (!EqualIdentifiersWithDefault(sizing_behavior_.get(), other.sizing_behavior_.get(),
+                                     CSSValueID::kFarthestCorner)) {
       return false;
     }
     // Here the shape is 'ellipse' unless explicitly set to 'circle'.
@@ -1006,9 +1006,9 @@ std::string CSSConicGradientValue::CustomCSSText() const {
 }
 
 std::shared_ptr<Gradient> CSSConicGradientValue::CreateGradient(const CSSToLengthConversionData& conversion_data,
-                                                              const gfx::SizeF& size,
-                                                              const Document& document,
-                                                              const ComputedStyle& style) const {
+                                                                const gfx::SizeF& size,
+                                                                const Document& document,
+                                                                const ComputedStyle& style) const {
   DCHECK(!size.IsEmpty());
 
   const float angle = from_angle_ ? from_angle_->ComputeDegrees(conversion_data) : 0;
@@ -1017,21 +1017,21 @@ std::shared_ptr<Gradient> CSSConicGradientValue::CreateGradient(const CSSToLengt
                              y_ ? PositionFromValue(y_, conversion_data, size, false) : size.height() / 2);
 
   GradientDesc desc(position, position, repeating_ ? kSpreadMethodRepeat : kSpreadMethodPad);
-//  AddStops(desc, conversion_data, document, style);
+  //  AddStops(desc, conversion_data, document, style);
 
   std::shared_ptr<Gradient> gradient =
       Gradient::CreateConic(position, angle, desc.start_angle, desc.end_angle, desc.spread_method,
                             Gradient::ColorInterpolation::kPremultiplied);
 
-//  gradient->SetColorInterpolationSpace(color_interpolation_space_, hue_interpolation_method_);
+  //  gradient->SetColorInterpolationSpace(color_interpolation_space_, hue_interpolation_method_);
   gradient->AddColorStops(desc.stops);
 
   return gradient;
 }
 
 bool CSSConicGradientValue::Equals(const CSSConicGradientValue& other) const {
-  return CSSGradientValue::Equals(other) && ValuesEquivalent(x_, other.x_) &&
-         ValuesEquivalent(y_, other.y_) && ValuesEquivalent(from_angle_, other.from_angle_);
+  return CSSGradientValue::Equals(other) && ValuesEquivalent(x_, other.x_) && ValuesEquivalent(y_, other.y_) &&
+         ValuesEquivalent(from_angle_, other.from_angle_);
 }
 
 bool CSSConicGradientValue::IsUsingCurrentColor() const {
@@ -1057,21 +1057,21 @@ void CSSConstantGradientValue::TraceAfterDispatch(GCVisitor* visitor) const {
 }
 
 std::shared_ptr<Gradient> CSSConstantGradientValue::CreateGradient(const CSSToLengthConversionData& conversion_data,
-                                                                 const gfx::SizeF& size,
-                                                                 const Document& document,
-                                                                 const ComputedStyle& style) const {
+                                                                   const gfx::SizeF& size,
+                                                                   const Document& document,
+                                                                   const ComputedStyle& style) const {
   DCHECK(!size.IsEmpty());
 
   GradientDesc desc({0.0f, 0.0f}, {1.0f, 1.0f}, kSpreadMethodPad);
-//  const Color color = ResolveStopColor(*color_, document, style);
-//  desc.stops.emplace_back(0.0f, color);
-//  desc.stops.emplace_back(1.0f, color);
+  //  const Color color = ResolveStopColor(*color_, document, style);
+  //  desc.stops.emplace_back(0.0f, color);
+  //  desc.stops.emplace_back(1.0f, color);
 
   std::shared_ptr<Gradient> gradient =
       Gradient::CreateLinear(desc.p0, desc.p1, desc.spread_method, Gradient::ColorInterpolation::kPremultiplied);
 
-//  gradient->SetColorInterpolationSpace(color_interpolation_space_, hue_interpolation_method_);
-//  gradient->AddColorStops(desc.stops);
+  //  gradient->SetColorInterpolationSpace(color_interpolation_space_, hue_interpolation_method_);
+  //  gradient->AddColorStops(desc.stops);
 
   return gradient;
 }

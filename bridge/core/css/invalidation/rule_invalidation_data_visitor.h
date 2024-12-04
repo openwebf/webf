@@ -37,34 +37,25 @@ class RuleInvalidationDataVisitor {
   // Creates invalidation sets for the given CSS selector. This is done as part
   // of creating the RuleSet for the style sheet, i.e., before matching or
   // mutation begins.
-  SelectorPreMatch CollectFeaturesFromSelector(const CSSSelector& selector,
-                                               const StyleScope* style_scope);
+  SelectorPreMatch CollectFeaturesFromSelector(const CSSSelector& selector, const StyleScope* style_scope);
 
  protected:
-  static constexpr bool is_builder() {
-    return VisitorType == RuleInvalidationDataVisitorType::kBuilder;
-  }
+  static constexpr bool is_builder() { return VisitorType == RuleInvalidationDataVisitorType::kBuilder; }
 
   // To protect the data in the Tracer scenario, we hold it as const.
   // Declare type names that are mutable in Builder and const in Tracer.
   using RuleInvalidationDataType =
-      std::conditional<is_builder(),
-                       RuleInvalidationData,
-                       const RuleInvalidationData>::type;
-  using InvalidationSetType = std::
-      conditional<is_builder(), InvalidationSet, const InvalidationSet>::type;
+      std::conditional<is_builder(), RuleInvalidationData, const RuleInvalidationData>::type;
+  using InvalidationSetType = std::conditional<is_builder(), InvalidationSet, const InvalidationSet>::type;
   using SiblingInvalidationSetType =
+      std::conditional<is_builder(), SiblingInvalidationSet, const SiblingInvalidationSet>::type;
+  using InvalidationSetMapType = std::conditional<is_builder(),
+                                                  RuleInvalidationData::InvalidationSetMap,
+                                                  const RuleInvalidationData::InvalidationSetMap>::type;
+  using PseudoTypeInvalidationSetMapType =
       std::conditional<is_builder(),
-                       SiblingInvalidationSet,
-                       const SiblingInvalidationSet>::type;
-  using InvalidationSetMapType =
-      std::conditional<is_builder(),
-                       RuleInvalidationData::InvalidationSetMap,
-                       const RuleInvalidationData::InvalidationSetMap>::type;
-  using PseudoTypeInvalidationSetMapType = std::conditional<
-      is_builder(),
-      RuleInvalidationData::PseudoTypeInvalidationSetMap,
-      const RuleInvalidationData::PseudoTypeInvalidationSetMap>::type;
+                       RuleInvalidationData::PseudoTypeInvalidationSetMap,
+                       const RuleInvalidationData::PseudoTypeInvalidationSetMap>::type;
 
   explicit RuleInvalidationDataVisitor(RuleInvalidationDataType&);
 
@@ -74,10 +65,9 @@ class RuleInvalidationDataVisitor {
     bool uses_window_inactive_selector = false;
     unsigned max_direct_adjacent_selectors = 0;
   };
-  SelectorPreMatch CollectMetadataFromSelector(
-      const CSSSelector&,
-      unsigned max_direct_adjacent_selectors,
-      FeatureMetadata&);
+  SelectorPreMatch CollectMetadataFromSelector(const CSSSelector&,
+                                               unsigned max_direct_adjacent_selectors,
+                                               FeatureMetadata&);
 
   void UpdateInvalidationSets(const CSSSelector&, const StyleScope*);
 
@@ -103,8 +93,7 @@ class RuleInvalidationDataVisitor {
       classes.push_back(class_name);
     }
     void NarrowToAttribute(const AtomicString& attribute) {
-      if (Size() == 1 &&
-          (!ids.empty() || !classes.empty() || !attributes.empty())) {
+      if (Size() == 1 && (!ids.empty() || !classes.empty() || !attributes.empty())) {
         return;
       }
       ClearFeatures();
@@ -133,8 +122,7 @@ class RuleInvalidationDataVisitor {
       emitted_tag_names.clear();
     }
     unsigned Size() const {
-      return classes.size() + attributes.size() + ids.size() +
-             tag_names.size() + emitted_tag_names.size();
+      return classes.size() + attributes.size() + ids.size() + tag_names.size() + emitted_tag_names.size();
     }
 
     std::vector<AtomicString> classes;
@@ -193,11 +181,8 @@ class RuleInvalidationDataVisitor {
     WEBF_STACK_ALLOCATED();
 
    public:
-    explicit AutoRestoreMaxDirectAdjacentSelectors(
-        InvalidationSetFeatures* features)
-        : features_(features),
-          original_value_(features ? features->max_direct_adjacent_selectors
-                                   : 0) {}
+    explicit AutoRestoreMaxDirectAdjacentSelectors(InvalidationSetFeatures* features)
+        : features_(features), original_value_(features ? features->max_direct_adjacent_selectors : 0) {}
     ~AutoRestoreMaxDirectAdjacentSelectors() {
       if (features_) {
         features_->max_direct_adjacent_selectors = original_value_;
@@ -237,10 +222,8 @@ class RuleInvalidationDataVisitor {
     WEBF_STACK_ALLOCATED();
 
    public:
-    explicit AutoRestoreDescendantFeaturesDepth(
-        InvalidationSetFeatures* features)
-        : features_(features),
-          original_value_(features ? features->descendant_features_depth : 0) {}
+    explicit AutoRestoreDescendantFeaturesDepth(InvalidationSetFeatures* features)
+        : features_(features), original_value_(features ? features->descendant_features_depth : 0) {}
     ~AutoRestoreDescendantFeaturesDepth() {
       if (features_) {
         features_->descendant_features_depth = original_value_;
@@ -263,11 +246,8 @@ class RuleInvalidationDataVisitor {
 
    public:
     explicit AutoRestoreWholeSubtreeInvalid(InvalidationSetFeatures& features)
-        : features_(features),
-          original_value_(features.invalidation_flags.WholeSubtreeInvalid()) {}
-    ~AutoRestoreWholeSubtreeInvalid() {
-      features_.invalidation_flags.SetWholeSubtreeInvalid(original_value_);
-    }
+        : features_(features), original_value_(features.invalidation_flags.WholeSubtreeInvalid()) {}
+    ~AutoRestoreWholeSubtreeInvalid() { features_.invalidation_flags.SetWholeSubtreeInvalid(original_value_); }
 
    private:
     InvalidationSetFeatures& features_;
@@ -280,13 +260,9 @@ class RuleInvalidationDataVisitor {
     WEBF_STACK_ALLOCATED();
 
    public:
-    explicit AutoRestoreTreeBoundaryCrossingFlag(
-        InvalidationSetFeatures& features)
-        : features_(features),
-          original_value_(features.invalidation_flags.TreeBoundaryCrossing()) {}
-    ~AutoRestoreTreeBoundaryCrossingFlag() {
-      features_.invalidation_flags.SetTreeBoundaryCrossing(original_value_);
-    }
+    explicit AutoRestoreTreeBoundaryCrossingFlag(InvalidationSetFeatures& features)
+        : features_(features), original_value_(features.invalidation_flags.TreeBoundaryCrossing()) {}
+    ~AutoRestoreTreeBoundaryCrossingFlag() { features_.invalidation_flags.SetTreeBoundaryCrossing(original_value_); }
 
    private:
     InvalidationSetFeatures& features_;
@@ -299,11 +275,8 @@ class RuleInvalidationDataVisitor {
     WEBF_STACK_ALLOCATED();
 
    public:
-    explicit AutoRestoreInsertionPointCrossingFlag(
-        InvalidationSetFeatures& features)
-        : features_(features),
-          original_value_(
-              features.invalidation_flags.InsertionPointCrossing()) {}
+    explicit AutoRestoreInsertionPointCrossingFlag(InvalidationSetFeatures& features)
+        : features_(features), original_value_(features.invalidation_flags.InsertionPointCrossing()) {}
     ~AutoRestoreInsertionPointCrossingFlag() {
       features_.invalidation_flags.SetInsertionPointCrossing(original_value_);
     }
@@ -330,74 +303,55 @@ class RuleInvalidationDataVisitor {
   // CSSSelector equal to '.a .b', and PseudoType equal to kPseudoIs.
   // For top-level complex selectors, the PseudoType is kPseudoUnknown.
   enum PositionType { kSubject, kAncestor };
-  enum FeatureInvalidationType {
-    kNormalInvalidation,
-    kRequiresSubtreeInvalidation
-  };
-  FeatureInvalidationType UpdateInvalidationSetsForComplex(
-      const CSSSelector&,
-      bool in_nth_child,
-      const StyleScope*,
-      InvalidationSetFeatures&,
-      PositionType,
-      CSSSelector::PseudoType);
+  enum FeatureInvalidationType { kNormalInvalidation, kRequiresSubtreeInvalidation };
+  FeatureInvalidationType UpdateInvalidationSetsForComplex(const CSSSelector&,
+                                                           bool in_nth_child,
+                                                           const StyleScope*,
+                                                           InvalidationSetFeatures&,
+                                                           PositionType,
+                                                           CSSSelector::PseudoType);
 
-  void UpdateFeaturesFromCombinator(
-      CSSSelector::RelationType,
-      const CSSSelector* last_compound_selector_in_adjacent_chain,
-      InvalidationSetFeatures& last_compound_in_adjacent_chain_features,
-      InvalidationSetFeatures*& sibling_features,
-      InvalidationSetFeatures& descendant_features,
-      bool for_logical_combination_in_has,
-      bool in_nth_child);
-  void UpdateFeaturesFromStyleScope(
-      const StyleScope&,
-      InvalidationSetFeatures& descendant_features);
-  void ExtractInvalidationSetFeaturesFromSimpleSelector(
-      const CSSSelector&,
-      InvalidationSetFeatures&);
-  const CSSSelector* ExtractInvalidationSetFeaturesFromCompound(
-      const CSSSelector&,
-      InvalidationSetFeatures&,
-      PositionType,
-      bool for_logical_combination_in_has,
-      bool in_nth_child);
+  void UpdateFeaturesFromCombinator(CSSSelector::RelationType,
+                                    const CSSSelector* last_compound_selector_in_adjacent_chain,
+                                    InvalidationSetFeatures& last_compound_in_adjacent_chain_features,
+                                    InvalidationSetFeatures*& sibling_features,
+                                    InvalidationSetFeatures& descendant_features,
+                                    bool for_logical_combination_in_has,
+                                    bool in_nth_child);
+  void UpdateFeaturesFromStyleScope(const StyleScope&, InvalidationSetFeatures& descendant_features);
+  void ExtractInvalidationSetFeaturesFromSimpleSelector(const CSSSelector&, InvalidationSetFeatures&);
+  const CSSSelector* ExtractInvalidationSetFeaturesFromCompound(const CSSSelector&,
+                                                                InvalidationSetFeatures&,
+                                                                PositionType,
+                                                                bool for_logical_combination_in_has,
+                                                                bool in_nth_child);
   void ExtractInvalidationSetFeaturesFromSelectorList(const CSSSelector&,
                                                       bool in_nth_child,
                                                       InvalidationSetFeatures&,
                                                       PositionType);
 
-  void AddFeaturesToInvalidationSets(
-      const CSSSelector&,
-      bool in_nth_child,
-      InvalidationSetFeatures* sibling_features,
-      InvalidationSetFeatures& descendant_features);
-  const CSSSelector* AddFeaturesToInvalidationSetsForCompoundSelector(
-      const CSSSelector&,
-      bool in_nth_child,
-      InvalidationSetFeatures* sibling_features,
-      InvalidationSetFeatures& descendant_features);
-  void AddFeaturesToInvalidationSetsForSimpleSelector(
-      const CSSSelector& simple_selector,
-      const CSSSelector& compound,
-      bool in_nth_child,
-      InvalidationSetFeatures* sibling_features,
-      InvalidationSetFeatures& descendant_features);
-  void AddFeaturesToInvalidationSetsForSelectorList(
-      const CSSSelector&,
-      bool in_nth_child,
-      InvalidationSetFeatures* sibling_features,
-      InvalidationSetFeatures& descendant_features);
-  void AddFeaturesToInvalidationSetsForStyleScope(
-      const StyleScope&,
-      InvalidationSetFeatures& descendant_features);
-  void AddFeaturesToUniversalSiblingInvalidationSet(
-      const InvalidationSetFeatures& sibling_features,
-      const InvalidationSetFeatures& descendant_features);
-  void AddValuesInComplexSelectorInsideIsWhereNot(
-      const CSSSelector* selector_first);
-  bool AddValueOfSimpleSelectorInHasArgument(
-      const CSSSelector& has_pseudo_class);
+  void AddFeaturesToInvalidationSets(const CSSSelector&,
+                                     bool in_nth_child,
+                                     InvalidationSetFeatures* sibling_features,
+                                     InvalidationSetFeatures& descendant_features);
+  const CSSSelector* AddFeaturesToInvalidationSetsForCompoundSelector(const CSSSelector&,
+                                                                      bool in_nth_child,
+                                                                      InvalidationSetFeatures* sibling_features,
+                                                                      InvalidationSetFeatures& descendant_features);
+  void AddFeaturesToInvalidationSetsForSimpleSelector(const CSSSelector& simple_selector,
+                                                      const CSSSelector& compound,
+                                                      bool in_nth_child,
+                                                      InvalidationSetFeatures* sibling_features,
+                                                      InvalidationSetFeatures& descendant_features);
+  void AddFeaturesToInvalidationSetsForSelectorList(const CSSSelector&,
+                                                    bool in_nth_child,
+                                                    InvalidationSetFeatures* sibling_features,
+                                                    InvalidationSetFeatures& descendant_features);
+  void AddFeaturesToInvalidationSetsForStyleScope(const StyleScope&, InvalidationSetFeatures& descendant_features);
+  void AddFeaturesToUniversalSiblingInvalidationSet(const InvalidationSetFeatures& sibling_features,
+                                                    const InvalidationSetFeatures& descendant_features);
+  void AddValuesInComplexSelectorInsideIsWhereNot(const CSSSelector* selector_first);
+  bool AddValueOfSimpleSelectorInHasArgument(const CSSSelector& has_pseudo_class);
 
   void CollectValuesInHasArgument(const CSSSelector& has_pseudo_class);
 
@@ -422,12 +376,11 @@ class RuleInvalidationDataVisitor {
   // Example 4) '.a:has(:is(.b ~ .c .d)) {}'
   //   - For class 'b' change, invalidate descendant '.a' of sibling '.c'
   //     ('.b ~ .c .a {}'), and invalidate sibling '.a' ('.b ~ .a {}').
-  void AddFeaturesToInvalidationSetsForHasPseudoClass(
-      const CSSSelector& has_pseudo_class,
-      const CSSSelector* compound_containing_has,
-      InvalidationSetFeatures* sibling_features,
-      InvalidationSetFeatures& descendant_features,
-      bool in_nth_child);
+  void AddFeaturesToInvalidationSetsForHasPseudoClass(const CSSSelector& has_pseudo_class,
+                                                      const CSSSelector* compound_containing_has,
+                                                      InvalidationSetFeatures* sibling_features,
+                                                      InvalidationSetFeatures& descendant_features,
+                                                      bool in_nth_child);
 
   // There are two methods to add features for logical combinations in :has().
   // - kForAllNonRightmostCompounds:
@@ -484,13 +437,12 @@ class RuleInvalidationDataVisitor {
   // in AddFeaturesToInvalidationSetsForHasPseudoClass()).
   // For the rest compounds, after the rightmost compound is skipped, the value
   // is changed to the combinator at the left of the compound.
-  void AddFeaturesToInvalidationSetsForLogicalCombinationInHas(
-      const CSSSelector& logical_combination,
-      const CSSSelector* compound_containing_has,
-      InvalidationSetFeatures* sibling_features,
-      InvalidationSetFeatures& descendant_features,
-      CSSSelector::RelationType previous_combinator,
-      AddFeaturesMethodForLogicalCombinationInHas);
+  void AddFeaturesToInvalidationSetsForLogicalCombinationInHas(const CSSSelector& logical_combination,
+                                                               const CSSSelector* compound_containing_has,
+                                                               InvalidationSetFeatures* sibling_features,
+                                                               InvalidationSetFeatures& descendant_features,
+                                                               CSSSelector::RelationType previous_combinator,
+                                                               AddFeaturesMethodForLogicalCombinationInHas);
 
   void UpdateFeaturesFromCombinatorForLogicalCombinationInHas(
       CSSSelector::RelationType combinator,
@@ -516,24 +468,21 @@ class RuleInvalidationDataVisitor {
   // (which is typically an ancestor; see the class comment)
   // and mark the invalidation sets of any simple selectors within it
   // for Nth-child invalidation.
-  void MarkInvalidationSetsWithinNthChild(const CSSSelector& selector,
-                                          bool in_nth_child);
+  void MarkInvalidationSetsWithinNthChild(const CSSSelector& selector, bool in_nth_child);
 
   InvalidationSetType* InvalidationSetForSimpleSelector(const CSSSelector&,
                                                         InvalidationType,
                                                         PositionType,
                                                         bool in_nth_child);
 
-  InvalidationSetType* EnsureClassInvalidationSet(
-      const AtomicString& class_name,
-      InvalidationType,
-      PositionType,
-      bool in_nth_child);
-  InvalidationSetType* EnsureAttributeInvalidationSet(
-      const AtomicString& attribute_name,
-      InvalidationType,
-      PositionType,
-      bool in_nth_child);
+  InvalidationSetType* EnsureClassInvalidationSet(const AtomicString& class_name,
+                                                  InvalidationType,
+                                                  PositionType,
+                                                  bool in_nth_child);
+  InvalidationSetType* EnsureAttributeInvalidationSet(const AtomicString& attribute_name,
+                                                      InvalidationType,
+                                                      PositionType,
+                                                      bool in_nth_child);
   InvalidationSetType* EnsureIdInvalidationSet(const AtomicString& id,
                                                InvalidationType,
                                                PositionType,
@@ -556,23 +505,18 @@ class RuleInvalidationDataVisitor {
   SiblingInvalidationSetType* EnsureUniversalSiblingInvalidationSet();
   SiblingInvalidationSetType* EnsureNthInvalidationSet();
 
-  void AddFeaturesToInvalidationSet(InvalidationSetType*,
-                                    const InvalidationSetFeatures&);
+  void AddFeaturesToInvalidationSet(InvalidationSetType*, const InvalidationSetFeatures&);
   static void SetWholeSubtreeInvalid(InvalidationSetType* invalidation_set);
   static void SetInvalidatesSelf(InvalidationSetType* invalidation_set);
   static void SetInvalidatesNth(InvalidationSetType* invalidation_set);
-  static void UpdateMaxDirectAdjacentSelectors(
-      SiblingInvalidationSetType* invalidation_set,
-      unsigned value);
+  static void UpdateMaxDirectAdjacentSelectors(SiblingInvalidationSetType* invalidation_set, unsigned value);
 
   // Inserts the given value as a key for self-invalidation.
   // Return true if the insertion was successful. (It may fail because
   // there is no Bloom filter yet.)
-  bool InsertIntoSelfInvalidationBloomFilter(const AtomicString& value,
-                                             int salt);
+  bool InsertIntoSelfInvalidationBloomFilter(const AtomicString& value, int salt);
 
-  static InvalidationSetType* EnsureSiblingDescendantInvalidationSet(
-      SiblingInvalidationSetType* invalidation_set);
+  static InvalidationSetType* EnsureSiblingDescendantInvalidationSet(SiblingInvalidationSetType* invalidation_set);
 
   // Make sure that the pointer in `invalidation_set` has a single
   // reference that can be modified safely. (This is done through
@@ -590,11 +534,10 @@ class RuleInvalidationDataVisitor {
   // to the DescendantInvalidationSet embedded within that set.
   // In other words, you must ignore the value of invalidation_set
   // after this function, since it is not what you requested.
-  static InvalidationSet& EnsureMutableInvalidationSet(
-      InvalidationType type,
-      PositionType position,
-      bool in_nth_child,
-      std::shared_ptr<InvalidationSet>& invalidation_set);
+  static InvalidationSet& EnsureMutableInvalidationSet(InvalidationType type,
+                                                       PositionType position,
+                                                       bool in_nth_child,
+                                                       std::shared_ptr<InvalidationSet>& invalidation_set);
 
   struct AddFeaturesToInvalidationSetsForLogicalCombinationInHasContext;
 

@@ -15,7 +15,6 @@ class Element;
 class LocalFrame;
 enum class CSSValueID;
 
-
 class MediaValues : public CSSLengthResolver {
  public:
   MediaValues() : CSSLengthResolver(1.0f /* zoom */) {}
@@ -25,9 +24,7 @@ class MediaValues : public CSSLengthResolver {
   static MediaValues* CreateDynamicIfFrameExists(ExecutingContext*);
 
   template <typename T>
-  bool ComputeLength(double value,
-                     CSSPrimitiveValue::UnitType type,
-                     T& result) const {
+  bool ComputeLength(double value, CSSPrimitiveValue::UnitType type, T& result) const {
     double temp_result;
     if (!ComputeLengthImpl(value, type, temp_result)) {
       return false;
@@ -91,11 +88,9 @@ class MediaValues : public CSSLengthResolver {
   static int CalculateHorizontalViewportSegments(ExecutingContext*);
   static int CalculateVerticalViewportSegments(ExecutingContext*);
 
-  bool ComputeLengthImpl(double value,
-                         CSSPrimitiveValue::UnitType,
-                         double& result) const;
+  bool ComputeLengthImpl(double value, CSSPrimitiveValue::UnitType, double& result) const;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_MEDIA_VALUES_H_

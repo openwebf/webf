@@ -23,10 +23,7 @@ template <typename T, typename = void>
 struct is_iterator : std::false_type {};
 
 template <typename T>
-struct is_iterator<
-    T,
-    std::void_t<typename std::iterator_traits<T>::iterator_category>>
-    : std::true_type {};
+struct is_iterator<T, std::void_t<typename std::iterator_traits<T>::iterator_category>> : std::true_type {};
 
 // Helper to express preferences in an overload set. If more than one overload
 // are available for a given set of parameters the overload with the higher
@@ -39,6 +36,6 @@ struct priority_tag<0> {};
 
 }  // namespace internal
 
-}  // namespace base
+}  // namespace webf
 
 #endif  // BASE_TEMPLATE_UTIL_H_

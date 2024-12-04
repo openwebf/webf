@@ -43,5 +43,4 @@ unsigned int CSSPropertyName::GetHash() const {
   return value_;
 }
 
-
 }  // namespace webf

@@ -28,8 +28,8 @@
  */
 
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_PLATFORM_GEOMETRY_LENGTH_POINT_H_
 #define WEBF_CORE_PLATFORM_GEOMETRY_LENGTH_POINT_H_
@@ -46,12 +46,8 @@ struct LengthPoint {
 
   LengthPoint(const Length& x, const Length& y) : x_(x), y_(y) {}
 
-  bool operator==(const LengthPoint& o) const {
-    return x_ == o.x_ && y_ == o.y_;
-  }
-  bool operator!=(const LengthPoint& o) const {
-    return x_ != o.x_ || y_ != o.y_;
-  }
+  bool operator==(const LengthPoint& o) const { return x_ == o.x_ && y_ == o.y_; }
+  bool operator!=(const LengthPoint& o) const { return x_ != o.x_ || y_ != o.y_; }
 
   void SetX(const Length& x) { x_ = x; }
   const Length& X() const { return x_; }

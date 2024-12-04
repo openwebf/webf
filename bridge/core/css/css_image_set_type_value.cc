@@ -7,8 +7,7 @@
 
 namespace webf {
 
-CSSImageSetTypeValue::CSSImageSetTypeValue(const std::string& type)
-    : CSSValue(kImageSetTypeClass), type_(type) {}
+CSSImageSetTypeValue::CSSImageSetTypeValue(const std::string& type) : CSSValue(kImageSetTypeClass), type_(type) {}
 
 CSSImageSetTypeValue::~CSSImageSetTypeValue() = default;
 
@@ -34,4 +33,4 @@ void CSSImageSetTypeValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
 }
 
-}  // namespace blink
+}  // namespace webf

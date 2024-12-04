@@ -9,11 +9,11 @@
 
 #include <optional>
 
-#include "core/base/memory/values_equivalent.h"
-#include "third_party/abseil-cpp/absl/types/variant.h"
 #include "core/animation/timeline_inset.h"
+#include "core/base/memory/values_equivalent.h"
 #include "core/style/computed_style_constants.h"
 #include "core/style/scoped_css_name.h"
+#include "third_party/abseil-cpp/absl/types/variant.h"
 //#include "third_party/blink/renderer/platform/heap/persistent.h"
 
 namespace webf {
@@ -27,15 +27,10 @@ class StyleTimeline {
     // https://drafts.csswg.org/scroll-animations-1/#valdef-scroll-block
     static TimelineAxis DefaultAxis() { return TimelineAxis::kBlock; }
     // https://drafts.csswg.org/scroll-animations-1/#valdef-scroll-nearest
-    static TimelineScroller DefaultScroller() {
-      return TimelineScroller::kNearest;
-    }
+    static TimelineScroller DefaultScroller() { return TimelineScroller::kNearest; }
 
-    ScrollData(TimelineAxis axis, TimelineScroller scroller)
-        : axis_(axis), scroller_(scroller) {}
-    bool operator==(const ScrollData& other) const {
-      return axis_ == other.axis_ && scroller_ == other.scroller_;
-    }
+    ScrollData(TimelineAxis axis, TimelineScroller scroller) : axis_(axis), scroller_(scroller) {}
+    bool operator==(const ScrollData& other) const { return axis_ == other.axis_ && scroller_ == other.scroller_; }
     bool operator!=(const ScrollData& other) const { return !(*this == other); }
 
     TimelineAxis GetAxis() const { return axis_; }
@@ -54,20 +49,15 @@ class StyleTimeline {
    public:
     static TimelineAxis DefaultAxis() { return TimelineAxis::kBlock; }
 
-    ViewData(TimelineAxis axis, TimelineInset inset)
-        : axis_(axis), inset_(inset) {}
+    ViewData(TimelineAxis axis, TimelineInset inset) : axis_(axis), inset_(inset) {}
 
-    bool operator==(const ViewData& other) const {
-      return axis_ == other.axis_ && inset_ == other.inset_;
-    }
+    bool operator==(const ViewData& other) const { return axis_ == other.axis_ && inset_ == other.inset_; }
     bool operator!=(const ViewData& other) const { return !(*this == other); }
 
     TimelineAxis GetAxis() const { return axis_; }
     TimelineInset GetInset() const { return inset_; }
     bool HasDefaultAxis() const { return axis_ == DefaultAxis(); }
-    bool HasDefaultInset() const {
-      return inset_.GetStart().IsAuto() && inset_.GetEnd().IsAuto();
-    }
+    bool HasDefaultInset() const { return inset_.GetStart().IsAuto() && inset_.GetEnd().IsAuto(); }
 
    private:
     TimelineAxis axis_;
@@ -86,28 +76,20 @@ class StyleTimeline {
     }
     return data_ == other.data_;
   }
-  bool operator!=(const StyleTimeline& other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const StyleTimeline& other) const { return !(*this == other); }
 
   bool IsKeyword() const { return absl::holds_alternative<CSSValueID>(data_); }
-  bool IsName() const {
-    return absl::holds_alternative<Persistent<const ScopedCSSName>>(data_);
-  }
+  bool IsName() const { return absl::holds_alternative<Persistent<const ScopedCSSName>>(data_); }
   bool IsScroll() const { return absl::holds_alternative<ScrollData>(data_); }
   bool IsView() const { return absl::holds_alternative<ViewData>(data_); }
 
   const CSSValueID& GetKeyword() const { return absl::get<CSSValueID>(data_); }
-  const ScopedCSSName& GetName() const {
-    return *absl::get<Persistent<const ScopedCSSName>>(data_);
-  }
+  const ScopedCSSName& GetName() const { return *absl::get<Persistent<const ScopedCSSName>>(data_); }
   const ScrollData& GetScroll() const { return absl::get<ScrollData>(data_); }
   const ViewData& GetView() const { return absl::get<ViewData>(data_); }
 
  private:
-  absl::
-      variant<CSSValueID, Persistent<const ScopedCSSName>, ScrollData, ViewData>
-          data_;
+  absl::variant<CSSValueID, Persistent<const ScopedCSSName>, ScrollData, ViewData> data_;
 };
 
 }  // namespace webf

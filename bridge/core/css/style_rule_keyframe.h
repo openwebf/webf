@@ -8,9 +8,8 @@
 
 #ifndef WEBF_STYLE_RULE_KEYFRAME_H
 #define WEBF_STYLE_RULE_KEYFRAME_H
-#include "style_rule.h"
 #include "core/animation/timeline_offset.h"
-
+#include "style_rule.h"
 
 namespace webf {
 
@@ -18,16 +17,11 @@ class MutableCSSPropertyValueSet;
 class CSSPropertyValueSet;
 class ExecutingContext;
 
-
 struct KeyframeOffset {
-  explicit KeyframeOffset(
-      TimelineOffset::NamedRange name = TimelineOffset::NamedRange::kNone,
-      double percent = 0)
+  explicit KeyframeOffset(TimelineOffset::NamedRange name = TimelineOffset::NamedRange::kNone, double percent = 0)
       : name(name), percent(percent) {}
 
-  bool operator==(const KeyframeOffset& b) const {
-    return percent == b.percent && name == b.name;
-  }
+  bool operator==(const KeyframeOffset& b) const { return percent == b.percent && name == b.name; }
 
   bool operator!=(const KeyframeOffset& b) const { return !(*this == b); }
 
@@ -37,8 +31,7 @@ struct KeyframeOffset {
 
 class StyleRuleKeyframe final : public StyleRuleBase {
  public:
-  StyleRuleKeyframe(std::unique_ptr<std::vector<KeyframeOffset>>,
-                    std::shared_ptr<const CSSPropertyValueSet>);
+  StyleRuleKeyframe(std::unique_ptr<std::vector<KeyframeOffset>>, std::shared_ptr<const CSSPropertyValueSet>);
 
   // Exposed to JavaScript.
   std::string KeyText() const;

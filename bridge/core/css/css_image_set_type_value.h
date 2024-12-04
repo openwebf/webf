@@ -33,11 +33,9 @@ class CSSImageSetTypeValue : public CSSValue {
 
 template <>
 struct DowncastTraits<CSSImageSetTypeValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsImageSetTypeValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsImageSetTypeValue(); }
 };
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // CORE_CSS_CSS_IMAGE_SET_TYPE_VALUE_H_

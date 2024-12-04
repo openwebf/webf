@@ -65,17 +65,13 @@ bool IsPreMultiplied(CSSSyntaxType type) {
 
 // Trim from the start (left trim)
 static inline std::string ltrim(std::string s) {
-  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-            return !std::isspace(ch);
-          }));
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
   return s;
 }
 
 // Trim from the end (right trim)
 static inline std::string rtrim(std::string s) {
-  s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-            return !std::isspace(ch);
-          }).base(), s.end());
+  s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
   return s;
 }
 
@@ -84,8 +80,7 @@ static inline std::string trim(std::string s) {
   return ltrim(rtrim(s));
 }
 
-CSSSyntaxStringParser::CSSSyntaxStringParser(const std::string& string)
-    : string_(trim(string)), input_(string_) {}
+CSSSyntaxStringParser::CSSSyntaxStringParser(const std::string& string) : string_(trim(string)), input_(string_) {}
 
 std::optional<CSSSyntaxDefinition> CSSSyntaxStringParser::Parse() {
   if (string_.empty()) {
@@ -116,8 +111,7 @@ std::optional<CSSSyntaxDefinition> CSSSyntaxStringParser::Parse() {
   return CSSSyntaxDefinition(std::move(components), string_);
 }
 
-bool CSSSyntaxStringParser::ConsumeSyntaxComponent(
-    std::vector<CSSSyntaxComponent>& components) {
+bool CSSSyntaxStringParser::ConsumeSyntaxComponent(std::vector<CSSSyntaxComponent>& components) {
   input_.AdvanceUntilNonWhitespace();
 
   CSSSyntaxType type = CSSSyntaxType::kTokenStream;
@@ -144,8 +138,7 @@ bool CSSSyntaxStringParser::ConsumeSyntaxComponent(
 
   DCHECK_NE(type, CSSSyntaxType::kTokenStream);
 
-  CSSSyntaxRepeat repeat =
-      IsPreMultiplied(type) ? CSSSyntaxRepeat::kNone : ConsumeRepeatIfPresent();
+  CSSSyntaxRepeat repeat = IsPreMultiplied(type) ? CSSSyntaxRepeat::kNone : ConsumeRepeatIfPresent();
   components.emplace_back(type, ident, repeat);
   return true;
 }
@@ -184,9 +177,7 @@ bool CSSSyntaxStringParser::ConsumeDataTypeName(CSSSyntaxType& type) {
 
 bool CSSSyntaxStringParser::ConsumeIdent(std::string& ident) {
   ident = ConsumeName(input_);
-  return !css_parsing_utils::IsCSSWideKeyword(ident) &&
-         !css_parsing_utils::IsDefaultKeyword(ident);
+  return !css_parsing_utils::IsCSSWideKeyword(ident) && !css_parsing_utils::IsDefaultKeyword(ident);
 }
 
-
-}
+}  // namespace webf

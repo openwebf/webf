@@ -24,7 +24,7 @@ class InvalidationSetToSelectorMap {
   class IndexedSelector {
    public:
     IndexedSelector(StyleRule* style_rule, unsigned selector_index);
-    //void Trace(GCVisitor*) const;
+    // void Trace(GCVisitor*) const;
     std::shared_ptr<StyleRule> GetStyleRule() const;
     unsigned GetSelectorIndex() const;
     std::string GetSelectorText() const;
@@ -40,14 +40,7 @@ class InvalidationSetToSelectorMap {
   };
   using IndexedSelectorList = std::unordered_set<std::shared_ptr<IndexedSelector>>;
 
-  enum class SelectorFeatureType {
-    kUnknown,
-    kClass,
-    kId,
-    kTagName,
-    kAttribute,
-    kWholeSubtree
-  };
+  enum class SelectorFeatureType { kUnknown, kClass, kId, kTagName, kAttribute, kWholeSubtree };
 
   // Instantiates a new mapping if a diagnostic tracing session with the
   // appropriate configuration has started, or deletes an existing mapping if
@@ -66,14 +59,12 @@ class InvalidationSetToSelectorMap {
   };
 
   // Call for each feature recorded to an invalidation set.
-  static void RecordInvalidationSetEntry(
-      const InvalidationSet* invalidation_set,
-      SelectorFeatureType type,
-      const AtomicString& value);
+  static void RecordInvalidationSetEntry(const InvalidationSet* invalidation_set,
+                                         SelectorFeatureType type,
+                                         const AtomicString& value);
 
   // Call at the start and end of an invalidation set combine operation.
-  static void BeginInvalidationSetCombine(const InvalidationSet* target,
-                                          const InvalidationSet* source);
+  static void BeginInvalidationSetCombine(const InvalidationSet* target, const InvalidationSet* source);
   static void EndInvalidationSetCombine();
 
   // Helper object for a Begin/EndInvalidationSetCombine pair.
@@ -86,10 +77,9 @@ class InvalidationSetToSelectorMap {
   // Given an invalidation set and a selector feature representing an entry in
   // that invalidation set, returns a list of selectors that contributed to that
   // entry existing in that invalidation set.
-  static const IndexedSelectorList* Lookup(
-      const InvalidationSet* invalidation_set,
-      SelectorFeatureType type,
-      const AtomicString& value);
+  static const IndexedSelectorList* Lookup(const InvalidationSet* invalidation_set,
+                                           SelectorFeatureType type,
+                                           const AtomicString& value);
 
   InvalidationSetToSelectorMap();
   void Trace(GCVisitor*) const;
@@ -108,15 +98,14 @@ class InvalidationSetToSelectorMap {
     std::size_t operator()(const std::pair<SelectorFeatureType, AtomicString>& p) const noexcept {
       std::size_t h1 = std::hash<SelectorFeatureType>{}(p.first);
       std::size_t h2 = AtomicString::KeyHasher{}(p.second);
-      return h1 ^ (h2 << 1); // 或者使用其他合适的哈希组合方式
+      return h1 ^ (h2 << 1);  // 或者使用其他合适的哈希组合方式
     }
   };
 
   using InvalidationSetEntry = std::pair<SelectorFeatureType, AtomicString>;
   using InvalidationSetEntryMap =
       std::unordered_map<InvalidationSetEntry, std::shared_ptr<IndexedSelectorList>, KeyHasher>;
-  using InvalidationSetMap =
-      std::unordered_map<const InvalidationSet*, std::shared_ptr<InvalidationSetEntryMap>>;
+  using InvalidationSetMap = std::unordered_map<const InvalidationSet*, std::shared_ptr<InvalidationSetEntryMap>>;
 
   std::shared_ptr<InvalidationSetMap> invalidation_set_map_;
   std::shared_ptr<IndexedSelector> current_selector_;
@@ -124,9 +113,9 @@ class InvalidationSetToSelectorMap {
 };
 
 // static
-std::shared_ptr<InvalidationSetToSelectorMap>&
-InvalidationSetToSelectorMap::GetInstanceReference() {
-  thread_local static std::shared_ptr<InvalidationSetToSelectorMap> instance = std::make_shared<InvalidationSetToSelectorMap>();
+std::shared_ptr<InvalidationSetToSelectorMap>& InvalidationSetToSelectorMap::GetInstanceReference() {
+  thread_local static std::shared_ptr<InvalidationSetToSelectorMap> instance =
+      std::make_shared<InvalidationSetToSelectorMap>();
   return instance;
 }
 

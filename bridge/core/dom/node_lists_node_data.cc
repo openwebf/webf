@@ -48,11 +48,11 @@ void NodeListsNodeData::InvalidateCaches(const QualifiedName* attr_name) {
 
 void NodeListsNodeData::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(child_node_list_);
-  //visitor->Trace(atomic_name_caches_);
+  // visitor->Trace(atomic_name_caches_);
 
   for (const auto& entry : tag_collection_ns_caches_) {
-    //const webf::QualifiedName& key = entry.first;
-    //const webf::Member<webf::TagCollectionNS>& value = entry.second;
+    // const webf::QualifiedName& key = entry.first;
+    // const webf::Member<webf::TagCollectionNS>& value = entry.second;
     visitor->TraceMember(entry.second);
   }
 }

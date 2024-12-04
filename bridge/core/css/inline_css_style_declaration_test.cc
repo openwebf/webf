@@ -24,11 +24,11 @@ TEST(CSSStyleDeclaration, setStyleData) {
   EXPECT_EQ(errorCalled, false);
 }
 //
-//TEST(CSSStyleDeclaration, enumerateStyles) {
+// TEST(CSSStyleDeclaration, enumerateStyles) {
 //  bool static errorCalled = false;
 //  bool static logCalled = false;
-//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-//  auto env = TEST_init([](double contextId, const char* errmsg) {
+//  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true;
+//  }; auto env = TEST_init([](double contextId, const char* errmsg) {
 //    WEBF_LOG(VERBOSE) << errmsg;
 //    errorCalled = true;
 //  });

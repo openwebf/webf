@@ -18,6 +18,6 @@ struct CSSTokenizedValue {
   std::string_view text;
 };
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_PARSER_CSS_TOKENIZED_VALUE_H_

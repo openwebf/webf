@@ -22,13 +22,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-
 #include "style_sheet.h"
-
 
 namespace webf {
 
 StyleSheet::~StyleSheet() = default;
-StyleSheet::StyleSheet(JSContext* ctx): ScriptWrappable(ctx) {}
+StyleSheet::StyleSheet(JSContext* ctx) : ScriptWrappable(ctx) {}
 
 }  // namespace webf

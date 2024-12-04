@@ -4,8 +4,8 @@
  */
 
 #include "character_data.h"
-#include "foundation/atomic_string.h"
 #include "core/dom/document.h"
+#include "foundation/atomic_string.h"
 #include "mutation_observer_interest_group.h"
 #include "qjs_character_data.h"
 

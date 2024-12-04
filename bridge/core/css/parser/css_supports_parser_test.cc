@@ -18,13 +18,9 @@ using Result = CSSSupportsParser::Result;
 
 class CSSSupportsParserTest : public testing::Test {
  public:
-  std::shared_ptr<CSSParserContext> MakeContext() {
-    return std::make_shared<CSSParserContext>(kHTMLStandardMode);
-  }
+  std::shared_ptr<CSSParserContext> MakeContext() { return std::make_shared<CSSParserContext>(kHTMLStandardMode); }
 
-  std::vector<CSSParserToken> Tokenize(const std::string& string) {
-    return CSSTokenizer(string).TokenizeToEOF();
-  }
+  std::vector<CSSParserToken> Tokenize(const std::string& string) { return CSSTokenizer(string).TokenizeToEOF(); }
 
   Result StaticConsumeSupportsCondition(std::string string) {
     CSSParserImpl impl(MakeContext());
@@ -34,9 +30,7 @@ class CSSSupportsParserTest : public testing::Test {
     return stream.AtEnd() ? result : Result::kParseFailure;
   }
 
-  Result AtSupports(std::string string) {
-    return StaticConsumeSupportsCondition(string);
-  }
+  Result AtSupports(std::string string) { return StaticConsumeSupportsCondition(string); }
 
   Result WindowCSSSupports(std::string string) {
     std::string wrapped_condition = "(" + string + ")";
@@ -104,13 +98,11 @@ class CSSSupportsParserTest : public testing::Test {
   }
 };
 
-
 TEST_F(CSSSupportsParserTest, ResultNot) {
   EXPECT_EQ(Result::kSupported, !Result::kUnsupported);
   EXPECT_EQ(Result::kUnsupported, !Result::kSupported);
   EXPECT_EQ(Result::kParseFailure, !Result::kParseFailure);
 }
-
 
 TEST_F(CSSSupportsParserTest, ResultAnd) {
   EXPECT_EQ(Result::kSupported, Result::kSupported & Result::kSupported);
@@ -132,44 +124,26 @@ TEST_F(CSSSupportsParserTest, ResultOr) {
   EXPECT_EQ(Result::kParseFailure, Result::kParseFailure | Result::kSupported);
 }
 
-
 TEST_F(CSSSupportsParserTest, ConsumeSupportsCondition) {
   // not <supports-in-parens>
   EXPECT_EQ(Result::kSupported, ConsumeSupportsCondition("not (asdf:red)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsCondition("(not (color:red))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsCondition("(not (color:red))"));
   EXPECT_EQ(Result::kParseFailure, ConsumeSupportsCondition("nay (color:red)"));
 
   // <supports-in-parens> [ and <supports-in-parens> ]*
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsCondition("(color:red) and (color:green)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsCondition("(color:red) and (asdf:green)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsCondition("(asdf:red) and (asdf:green)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsCondition(
-                "(color:red) and (color:green) and (asdf:color)"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsCondition(
-                "(color:red) and (color:green) and (not (asdf:color))"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsCondition("(color:red) and (color:green)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsCondition("(color:red) and (asdf:green)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsCondition("(asdf:red) and (asdf:green)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsCondition("(color:red) and (color:green) and (asdf:color)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsCondition("(color:red) and (color:green) and (not (asdf:color))"));
 
   // <supports-in-parens> [ or <supports-in-parens> ]*
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsCondition("(color:red) or (color:asdf)"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsCondition("(color:asdf) or (color:green)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsCondition("(asdf:red) or (asdf:green)"));
-  EXPECT_EQ(
-      Result::kSupported,
-      ConsumeSupportsCondition("(color:red) or (color:green) or (asdf:color)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsCondition(
-                "(color:asdf1) or (color:asdf2) or (asdf:asdf2)"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsCondition(
-                "(color:asdf) or (color:ghjk) or (not (asdf:color))"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsCondition("(color:red) or (color:asdf)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsCondition("(color:asdf) or (color:green)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsCondition("(asdf:red) or (asdf:green)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsCondition("(color:red) or (color:green) or (asdf:color)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsCondition("(color:asdf1) or (color:asdf2) or (asdf:asdf2)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsCondition("(color:asdf) or (color:ghjk) or (not (asdf:color))"));
 
   // <supports-feature>
   EXPECT_EQ(Result::kSupported, ConsumeSupportsCondition("(color:red)"));
@@ -180,23 +154,16 @@ TEST_F(CSSSupportsParserTest, ConsumeSupportsCondition) {
   EXPECT_EQ(Result::kUnsupported, ConsumeSupportsCondition("asdf()"));
 }
 
-
 TEST_F(CSSSupportsParserTest, ConsumeSupportsInParens) {
   // ( <supports-condition> )
   EXPECT_EQ(Result::kSupported, ConsumeSupportsInParens("(not (asdf:red))"));
   EXPECT_EQ(Result::kUnsupported, ConsumeSupportsInParens("(not (color:red))"));
-  EXPECT_EQ(Result::kParseFailure,
-            ConsumeSupportsInParens("(not (color:red)])"));
+  EXPECT_EQ(Result::kParseFailure, ConsumeSupportsInParens("(not (color:red)])"));
 
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsInParens("(not ( (color:gjhk) or (color:red) ))"));
-  EXPECT_EQ(
-      Result::kUnsupported,
-      ConsumeSupportsInParens("(not ( ((color:gjhk)) or (color:blue) ))"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsInParens("(( (color:gjhk) or (color:red) ))"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsInParens("(( ((color:gjhk)) or (color:blue) ))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsInParens("(not ( (color:gjhk) or (color:red) ))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsInParens("(not ( ((color:gjhk)) or (color:blue) ))"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsInParens("(( (color:gjhk) or (color:red) ))"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsInParens("(( ((color:gjhk)) or (color:blue) ))"));
 
   // <supports-feature>
   EXPECT_EQ(Result::kSupported, ConsumeSupportsInParens("(color:red)"));
@@ -207,14 +174,10 @@ TEST_F(CSSSupportsParserTest, ConsumeSupportsInParens) {
   EXPECT_EQ(Result::kUnsupported, ConsumeSupportsInParens("asdf(1)"));
   EXPECT_EQ(Result::kUnsupported, ConsumeSupportsInParens("asdf()"));
 
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsInParens("(color:red)and (color:green)"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsInParens("(color:red)or (color:green)"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsInParens("selector(div)or (color:green)"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsInParens("selector(div)and (color:green)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsInParens("(color:red)and (color:green)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsInParens("(color:red)or (color:green)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsInParens("selector(div)or (color:green)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsInParens("selector(div)and (color:green)"));
 
   // Invalid <supports-selector-fn> formerly handled by
   // ConsumeSupportsSelectorFn()
@@ -237,13 +200,11 @@ TEST_F(CSSSupportsParserTest, ConsumeSupportsInParens) {
   EXPECT_EQ(Result::kParseFailure, ConsumeSupportsInParens("asdf"));
 }
 
-
 TEST_F(CSSSupportsParserTest, ConsumeSupportsSelectorFn) {
   EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(*)"));
   EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(*:hover)"));
   EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(:hover)"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsSelectorFn("selector(::before)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(::before)"));
   EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(div)"));
   EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(div"));
   EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(.a)"));
@@ -254,95 +215,52 @@ TEST_F(CSSSupportsParserTest, ConsumeSupportsSelectorFn) {
   EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(a ~ div)"));
   EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(a + div)"));
   EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(*|a)"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsSelectorFn("selector(a + div#test)"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsSelectorFn("selector(a + div#test::before)"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsSelectorFn("selector(a.cls:hover)"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsSelectorFn("selector(a.cls::before)"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsSelectorFn("selector(div::-webkit-clear-button)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(a + div#test)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(a + div#test::before)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(a.cls:hover)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(a.cls::before)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(div::-webkit-clear-button)"));
   EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(:is(.a))"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsSelectorFn("selector(:where(.a))"));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsSelectorFn("selector(:has(.a))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(div.~cls)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(div. ~cls)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(div .~ cls)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(div$ cls)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(div $cls)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(div $ cls)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(unknown|a)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(a::asdf)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(a:asdf)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(a, body)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(*:asdf)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(*::asdf)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(:where(.a))"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsSelectorFn("selector(:has(.a))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(div.~cls)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(div. ~cls)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(div .~ cls)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(div$ cls)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(div $cls)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(div $ cls)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(unknown|a)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(a::asdf)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(a:asdf)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(a, body)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(*:asdf)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(*::asdf)"));
   EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:asdf)"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(::asdf)"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(::asdf)"));
   EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:is())"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:where())"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:not())"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:is(:foo))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:is(:has(:foo)))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:where(:foo))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:where(:has(:foo)))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:has(:foo))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:has(:is(:foo)))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:has(.a, :is(:foo)))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:has(.a, .b, :is(:foo)))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:is(.a, :foo))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:where(.a, :foo))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:has(.a, :foo))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:has(.a, .b, :foo))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:has(:has(.a)))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:has(:is(:has(.a))))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:has(:is(:has(.a), .b)))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:has(.a, :has(.b)))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:has(.a, .b, :has(.c)))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:host(:is(:foo)))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(:host(:has(.a)))"));
-  EXPECT_EQ(Result::kUnsupported,
-            ConsumeSupportsSelectorFn("selector(::part(foo):has(.a)))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:where())"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:not())"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:is(:foo))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:is(:has(:foo)))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:where(:foo))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:where(:has(:foo)))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:has(:foo))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:has(:is(:foo)))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:has(.a, :is(:foo)))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:has(.a, .b, :is(:foo)))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:is(.a, :foo))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:where(.a, :foo))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:has(.a, :foo))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:has(.a, .b, :foo))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:has(:has(.a)))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:has(:is(:has(.a))))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:has(:is(:has(.a), .b)))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:has(.a, :has(.b)))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:has(.a, .b, :has(.c)))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:host(:is(:foo)))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(:host(:has(.a)))"));
+  EXPECT_EQ(Result::kUnsupported, ConsumeSupportsSelectorFn("selector(::part(foo):has(.a)))"));
 }
-
 
 TEST_F(CSSSupportsParserTest, ConsumeSupportsDecl) {
   EXPECT_EQ(Result::kSupported, ConsumeSupportsDecl("(color:red)"));
@@ -353,8 +271,7 @@ TEST_F(CSSSupportsParserTest, ConsumeSupportsDecl) {
   EXPECT_EQ(Result::kSupported, ConsumeSupportsDecl("(--x:red)"));
   EXPECT_EQ(Result::kSupported, ConsumeSupportsDecl("(--x:\tred) "));
   EXPECT_EQ(Result::kSupported, ConsumeSupportsDecl("(--x:\tred) \t "));
-  EXPECT_EQ(Result::kSupported,
-            ConsumeSupportsDecl("(color:green !important)"));
+  EXPECT_EQ(Result::kSupported, ConsumeSupportsDecl("(color:green !important)"));
   // For some reason EOF is allowed in place of ')' (everywhere in Blink).
   // Seems to be the case in Firefox too.
   EXPECT_EQ(Result::kSupported, ConsumeSupportsDecl("(color:red"));
@@ -399,21 +316,15 @@ TEST_F(CSSSupportsParserTest, AtSupportsCondition) {
   EXPECT_EQ(Result::kSupported, AtSupports("(--x:red)"));
   EXPECT_EQ(Result::kSupported, AtSupports("(--x:red) and (color:green)"));
   EXPECT_EQ(Result::kSupported, AtSupports("(--x:red) or (color:asdf)"));
-  EXPECT_EQ(Result::kSupported,
-            AtSupports("not ((color:gjhk) or (color:asdf))"));
-  EXPECT_EQ(Result::kSupported,
-            AtSupports("(display: none) and ( (display: none) )"));
+  EXPECT_EQ(Result::kSupported, AtSupports("not ((color:gjhk) or (color:asdf))"));
+  EXPECT_EQ(Result::kSupported, AtSupports("(display: none) and ( (display: none) )"));
 
   EXPECT_EQ(Result::kUnsupported, AtSupports("(color:ghjk) or (color:asdf)"));
   EXPECT_EQ(Result::kUnsupported, AtSupports("(color:ghjk) or asdf(1)"));
   EXPECT_EQ(Result::kParseFailure, AtSupports("color:red"));
-  EXPECT_EQ(
-      Result::kParseFailure,
-      AtSupports("(display: none) and (display: block) or (display: inline)"));
-  EXPECT_EQ(Result::kParseFailure,
-            AtSupports("not (display: deadbeef) and (display: block)"));
-  EXPECT_EQ(Result::kParseFailure,
-            AtSupports("(margin: 0) and (display: inline) or (width:1em)"));
+  EXPECT_EQ(Result::kParseFailure, AtSupports("(display: none) and (display: block) or (display: inline)"));
+  EXPECT_EQ(Result::kParseFailure, AtSupports("not (display: deadbeef) and (display: block)"));
+  EXPECT_EQ(Result::kParseFailure, AtSupports("(margin: 0) and (display: inline) or (width:1em)"));
 
   // "and("/"or(" are function tokens, hence not allowed here.
   EXPECT_EQ(Result::kParseFailure, AtSupports("(left:0) and(top:0)"));
@@ -423,20 +334,15 @@ TEST_F(CSSSupportsParserTest, AtSupportsCondition) {
 TEST_F(CSSSupportsParserTest, WindowCSSSupportsCondition) {
   EXPECT_EQ(Result::kSupported, WindowCSSSupports("(--x:red)"));
   EXPECT_EQ(Result::kSupported, WindowCSSSupports("( --x:red )"));
-  EXPECT_EQ(Result::kSupported,
-            WindowCSSSupports("(--x:red) and (color:green)"));
+  EXPECT_EQ(Result::kSupported, WindowCSSSupports("(--x:red) and (color:green)"));
   EXPECT_EQ(Result::kSupported, WindowCSSSupports("(--x:red) or (color:asdf)"));
-  EXPECT_EQ(Result::kSupported,
-            WindowCSSSupports("not ((color:gjhk) or (color:asdf))"));
+  EXPECT_EQ(Result::kSupported, WindowCSSSupports("not ((color:gjhk) or (color:asdf))"));
 
-  EXPECT_EQ(Result::kUnsupported,
-            WindowCSSSupports("(color:ghjk) or (color:asdf)"));
+  EXPECT_EQ(Result::kUnsupported, WindowCSSSupports("(color:ghjk) or (color:asdf)"));
   EXPECT_EQ(Result::kUnsupported, WindowCSSSupports("(color:ghjk) or asdf(1)"));
   EXPECT_EQ(Result::kSupported, WindowCSSSupports("color:red"));
 }
 
-
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_PARSER_CSS_SUPPORTS_PARSER_TEST_H_

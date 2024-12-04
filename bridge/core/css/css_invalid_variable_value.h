@@ -9,8 +9,8 @@
 
 #include "core/css/css_value.h"
 
-//namespace WTF {
-//class String;
+// namespace WTF {
+// class String;
 //}  // namespace WTF
 
 namespace webf {
@@ -31,13 +31,10 @@ class CSSInvalidVariableValue : public CSSValue {
 
   bool Equals(const CSSInvalidVariableValue&) const { return true; }
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-    CSSValue::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const { CSSValue::TraceAfterDispatch(visitor); }
 
  protected:
-  explicit CSSInvalidVariableValue(ClassType class_type)
-      : CSSValue(class_type) {}
+  explicit CSSInvalidVariableValue(ClassType class_type) : CSSValue(class_type) {}
 
  private:
   friend class CSSValuePool;
@@ -45,9 +42,7 @@ class CSSInvalidVariableValue : public CSSValue {
 
 template <>
 struct DowncastTraits<CSSInvalidVariableValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsInvalidVariableValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsInvalidVariableValue(); }
 };
 
 }  // namespace webf

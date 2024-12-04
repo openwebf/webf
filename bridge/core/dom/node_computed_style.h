@@ -22,7 +22,7 @@
  *
  */
 
- // Copyright (C) 2022-present The WebF authors. All rights reserved.
+// Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #ifndef WEBF_CORE_DOM_NODE_COMPUTED_STYLE_H_
 #define WEBF_CORE_DOM_NODE_COMPUTED_STYLE_H_
@@ -36,15 +36,15 @@ namespace webf {
 class ComputedStyle;
 
 inline const ComputedStyle* Node::GetComputedStyle() const {
-/* // TODO(guopengfei)：
-  if (const auto* element = DynamicTo<Element>(this)) {
-    return element->GetComputedStyle();
-  }
-  // Text nodes and Document.
-  if (LayoutObject* layout_object = GetLayoutObject())
-    return layout_object->Style();
+  /* // TODO(guopengfei)：
+    if (const auto* element = DynamicTo<Element>(this)) {
+      return element->GetComputedStyle();
+    }
+    // Text nodes and Document.
+    if (LayoutObject* layout_object = GetLayoutObject())
+      return layout_object->Style();
 
- */
+   */
   return nullptr;
 }
 

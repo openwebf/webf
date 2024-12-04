@@ -260,8 +260,8 @@ bool DoCanonicalize(const char* spec,
   // & Unix don't generally do this, so there is no compatibility reason for
   // doing so.
   if (DoesBeginUNCPath(spec, 0, spec_len, false) || DoesBeginWindowsDriveSpec(spec, 0, spec_len)) {
-    return CanonicalizeFileURL(spec, spec_len, ParseFileURL(std::basic_string_view(spec, spec_len)),
-                               output, output_parsed);
+    return CanonicalizeFileURL(spec, spec_len, ParseFileURL(std::basic_string_view(spec, spec_len)), output,
+                               output_parsed);
   }
 #endif
 
@@ -501,7 +501,7 @@ void DoAddSchemeWithHandler(const char* new_scheme, const char* handler, std::ve
   assert(strlen(new_scheme) > 0);
   assert(strlen(handler) > 0);
   assert(base::ToLowerASCII(new_scheme) == new_scheme);
-//  assert(ranges::find(*schemes, new_scheme, &SchemeWithHandler::scheme) == std::ranges::end(*schemes));
+  //  assert(ranges::find(*schemes, new_scheme, &SchemeWithHandler::scheme) == std::ranges::end(*schemes));
 
   //  assert(!base::Contains(*schemes, new_scheme, &SchemeWithHandler::scheme));
   schemes->push_back({new_scheme, handler});
@@ -513,7 +513,7 @@ void DoAddScheme(const char* new_scheme, std::vector<std::string>* schemes) {
   assert(strlen(new_scheme) > 0);
 
   assert(base::ToLowerASCII(new_scheme) == new_scheme);
-//  assert(ranges::find(*schemes, new_scheme) == std::ranges::end(*schemes));
+  //  assert(ranges::find(*schemes, new_scheme) == std::ranges::end(*schemes));
   //  assert(!base::Contains(*schemes, new_scheme));
   schemes->push_back(new_scheme);
 }
@@ -523,7 +523,7 @@ void DoAddSchemeWithType(const char* new_scheme, SchemeType type, std::vector<Sc
   assert(schemes);
   assert(strlen(new_scheme) > 0);
   assert(base::ToLowerASCII(new_scheme) == new_scheme);
-//  assert(ranges::find(*schemes, new_scheme, &SchemeWithType::scheme) == std::ranges::end(*schemes));
+  //  assert(ranges::find(*schemes, new_scheme, &SchemeWithType::scheme) == std::ranges::end(*schemes));
   //  assert(!base::Contains(*schemes, new_scheme, &SchemeWithType::scheme));
   schemes->push_back({new_scheme, type});
 }
@@ -735,7 +735,6 @@ bool ResolveRelative(const char* base_spec,
                      Parsed* output_parsed) {
   return DoResolveRelative(base_spec, base_spec_len, base_parsed, relative, relative_length, output, output_parsed);
 }
-
 
 bool ReplaceComponents(const char* spec,
                        int spec_len,

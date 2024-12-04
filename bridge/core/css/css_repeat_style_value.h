@@ -17,7 +17,7 @@ namespace webf {
 // https://drafts.csswg.org/css-backgrounds-3/#typedef-repeat-style
 // <repeat-style> = repeat-x | repeat-y | [repeat | space | round |
 // no-repeat]{1,2}
-class  CSSRepeatStyleValue : public CSSValue {
+class CSSRepeatStyleValue : public CSSValue {
  public:
   explicit CSSRepeatStyleValue(std::shared_ptr<const CSSIdentifierValue> id);
   CSSRepeatStyleValue(std::shared_ptr<const CSSIdentifierValue> x, std::shared_ptr<const CSSIdentifierValue> y);
@@ -48,9 +48,7 @@ class  CSSRepeatStyleValue : public CSSValue {
 
 template <>
 struct DowncastTraits<CSSRepeatStyleValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsRepeatStyleValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsRepeatStyleValue(); }
 };
 
 }  // namespace webf

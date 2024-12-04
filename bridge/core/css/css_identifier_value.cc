@@ -15,8 +15,7 @@ namespace webf {
 std::shared_ptr<const CSSIdentifierValue> CSSIdentifierValue::Create(CSSValueID value_id) {
   std::shared_ptr<const CSSIdentifierValue> css_value = CssValuePool().IdentifierCacheValue(value_id);
   if (!css_value) {
-    css_value = CssValuePool().SetIdentifierCacheValue(
-        value_id, std::make_shared<CSSIdentifierValue>(value_id));
+    css_value = CssValuePool().SetIdentifierCacheValue(value_id, std::make_shared<CSSIdentifierValue>(value_id));
   }
   return css_value;
 }
@@ -25,17 +24,14 @@ std::string CSSIdentifierValue::CustomCSSText() const {
   return getValueName(value_id_);
 }
 
-CSSIdentifierValue::CSSIdentifierValue(CSSValueID value_id)
-    : CSSValue(kIdentifierClass), value_id_(value_id) {
-}
+CSSIdentifierValue::CSSIdentifierValue(CSSValueID value_id) : CSSValue(kIdentifierClass), value_id_(value_id) {}
 
 CSSIdentifierValue::CSSIdentifierValue(CSSValueID value_id, bool was_quirky)
     : CSSValue(kIdentifierClass), value_id_(value_id) {
   assert(value_id != CSSValueID::kInvalid);
 }
 
-CSSIdentifierValue::CSSIdentifierValue(const Length& length)
-    : CSSValue(kIdentifierClass) {
+CSSIdentifierValue::CSSIdentifierValue(const Length& length) : CSSValue(kIdentifierClass) {
   switch (length.GetType()) {
     case Length::kAuto:
       value_id_ = CSSValueID::kAuto;

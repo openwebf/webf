@@ -32,13 +32,11 @@ class Rect {
   constexpr Rect() = default;
   constexpr Rect(int width, int height) : size_(width, height) {}
   constexpr Rect(int x, int y, int width, int height)
-      : origin_(x, y),
-        size_(ClampWidthOrHeight(x, width), ClampWidthOrHeight(y, height)) {}
+      : origin_(x, y), size_(ClampWidthOrHeight(x, width), ClampWidthOrHeight(y, height)) {}
   constexpr explicit Rect(const Size& size) : size_(size) {}
   constexpr Rect(const Point& origin, const Size& size)
       : origin_(origin),
-        size_(ClampWidthOrHeight(origin.x(), size.width()),
-              ClampWidthOrHeight(origin.y(), size.height())) {}
+        size_(ClampWidthOrHeight(origin.x(), size.width()), ClampWidthOrHeight(origin.y(), size.height())) {}
 
   constexpr int x() const { return origin_.x(); }
   // Sets the X position while preserving the width.
@@ -58,9 +56,7 @@ class Rect {
   void set_width(int width) { size_.set_width(ClampWidthOrHeight(x(), width)); }
 
   constexpr int height() const { return size_.height(); }
-  void set_height(int height) {
-    size_.set_height(ClampWidthOrHeight(y(), height));
-  }
+  void set_height(int height) { size_.set_height(ClampWidthOrHeight(y(), height)); }
 
   constexpr const Point& origin() const { return origin_; }
   void set_origin(const Point& origin) {
@@ -85,12 +81,8 @@ class Rect {
 
   constexpr Point left_center() const { return Point(x(), y() + height() / 2); }
   constexpr Point top_center() const { return Point(x() + width() / 2, y()); }
-  constexpr Point right_center() const {
-    return Point(right(), y() + height() / 2);
-  }
-  constexpr Point bottom_center() const {
-    return Point(x() + width() / 2, bottom());
-  }
+  constexpr Point right_center() const { return Point(right(), y() + height() / 2); }
+  constexpr Point bottom_center() const { return Point(x() + width() / 2, bottom()); }
 
   Vector2d OffsetFromOrigin() const { return Vector2d(x(), y()); }
 
@@ -134,9 +126,7 @@ class Rect {
   void Outset(const Outsets& outsets) { Inset(outsets.ToInsets()); }
 
   // Move the rectangle by a horizontal and vertical distance.
-  void Offset(int horizontal, int vertical) {
-    Offset(Vector2d(horizontal, vertical));
-  }
+  void Offset(int horizontal, int vertical) { Offset(Vector2d(horizontal, vertical)); }
   void Offset(const Vector2d& distance);
   void operator+=(const Vector2d& offset) { Offset(offset); }
   void operator-=(const Vector2d& offset) { Offset(-offset); }
@@ -160,9 +150,7 @@ class Rect {
   bool Contains(int point_x, int point_y) const;
 
   // Returns true if the specified point is contained by this rectangle.
-  bool Contains(const Point& point) const {
-    return Contains(point.x(), point.y());
-  }
+  bool Contains(const Point& point) const { return Contains(point.x(), point.y()); }
 
   // Returns true if this rectangle contains the specified rectangle.
   bool Contains(const Rect& rect) const;
@@ -284,9 +272,7 @@ Rect BoundingRect(const Point& p1, const Point& p2);
 
 // Scales the rect and returns the enclosing rect. The components are clamped
 // if they would overflow.
-inline Rect ScaleToEnclosingRect(const Rect& rect,
-                                 float x_scale,
-                                 float y_scale) {
+inline Rect ScaleToEnclosingRect(const Rect& rect, float x_scale, float y_scale) {
   if (x_scale == 1.f && y_scale == 1.f)
     return rect;
   int x = base::ClampFloor(rect.x() * x_scale);
@@ -302,9 +288,7 @@ inline Rect ScaleToEnclosingRect(const Rect& rect, float scale) {
   return ScaleToEnclosingRect(rect, scale, scale);
 }
 
-inline Rect ScaleToEnclosedRect(const Rect& rect,
-                                float x_scale,
-                                float y_scale) {
+inline Rect ScaleToEnclosedRect(const Rect& rect, float x_scale, float y_scale) {
   if (x_scale == 1.f && y_scale == 1.f)
     return rect;
   int x = base::ClampCeil(rect.x() * x_scale);
@@ -346,9 +330,7 @@ inline Rect ScaleToRoundedRect(const Rect& rect, float scale) {
 // the distance between the edge and the nearest integer grid is smaller than
 // `error`, the edge is snapped to the integer grid.  The default error is 0.001
 // , which is used by cc/viz. Use this when scaling the window/layer size.
-Rect ScaleToEnclosingRectIgnoringError(const Rect& rect,
-                                                       float scale,
-                                                       float error = 0.001f);
+Rect ScaleToEnclosingRectIgnoringError(const Rect& rect, float scale, float error = 0.001f);
 
 // Return a maximum rectangle that is covered by the a or b.
 Rect MaximumCoveredRect(const Rect& a, const Rect& b);

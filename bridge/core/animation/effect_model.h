@@ -54,8 +54,7 @@ class EffectModel : public GarbageCollected<EffectModel> {
     kCompositeAdd,
     kCompositeAccumulate,
   };
-  static std::optional<CompositeOperation> StringToCompositeOperation(
-      const std::string&);
+  static std::optional<CompositeOperation> StringToCompositeOperation(const std::string&);
   static std::string CompositeOperationToString(std::optional<CompositeOperation>);
 
   EffectModel() = default;

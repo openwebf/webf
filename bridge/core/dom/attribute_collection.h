@@ -42,8 +42,8 @@
 #ifndef WEBF_CORE_DOM_ATTRIBUTE_COLLECTION_H_
 #define WEBF_CORE_DOM_ATTRIBUTE_COLLECTION_H_
 
-#include "core/dom/attribute.h"
 #include "bindings/qjs/heap_vector.h"
+#include "core/dom/attribute.h"
 
 namespace webf {
 
@@ -76,9 +76,9 @@ class AttributeCollectionGeneric {
 
   // Find() returns nullptr if the specified name is not found.
   iterator Find(const QualifiedName&) const;
-  //iterator Find(const AtomicString& name) const;
+  // iterator Find(const AtomicString& name) const;
   uint32_t FindIndex(const QualifiedName&) const;
-  //uint32_t FindIndex(const AtomicString& name) const;
+  // uint32_t FindIndex(const AtomicString& name) const;
 
   // FindHinted() and FindIndexHinted() have subtle semantics.
   //
@@ -123,7 +123,7 @@ class AttributeCollectionGeneric {
   //      corresponding to the him can  be reallocated to a different string
   //      making the |hint| semantically invalid. However, because the
   //      |collection| is not mutated, |hint| will not match anything.
-  //iterator FindHinted(const StringView& name,
+  // iterator FindHinted(const StringView& name,
   //                    WTF::AtomicStringTable::WeakResult hint) const;
   uint32_t FindIndexHinted(const StringView& name, WeakResult hint) const;
 
@@ -139,8 +139,7 @@ class AttributeArray {
  public:
   using ValueType = const Attribute;
 
-  AttributeArray(const Attribute* array, unsigned size)
-      : array_(array), size_(size) {}
+  AttributeArray(const Attribute* array, unsigned size) : array_(array), size_(size) {}
 
   const Attribute* data() const { return array_; }
   unsigned size() const { return size_; }
@@ -150,33 +149,26 @@ class AttributeArray {
   unsigned size_;
 };
 
-class AttributeCollection
-    : public AttributeCollectionGeneric<const AttributeArray> {
+class AttributeCollection : public AttributeCollectionGeneric<const AttributeArray> {
  public:
-  AttributeCollection()
-      : AttributeCollectionGeneric<const AttributeArray>(
-            AttributeArray(nullptr, 0)) {}
+  AttributeCollection() : AttributeCollectionGeneric<const AttributeArray>(AttributeArray(nullptr, 0)) {}
 
   AttributeCollection(const Attribute* array, unsigned size)
-      : AttributeCollectionGeneric<const AttributeArray>(
-            AttributeArray(array, size)) {}
+      : AttributeCollectionGeneric<const AttributeArray>(AttributeArray(array, size)) {}
 };
 
 using AttributeVector = HeapVector<Attribute>;
-class MutableAttributeCollection
-    : public AttributeCollectionGeneric<AttributeVector, AttributeVector&> {
+class MutableAttributeCollection : public AttributeCollectionGeneric<AttributeVector, AttributeVector&> {
  public:
   explicit MutableAttributeCollection(AttributeVector& attributes)
-      : AttributeCollectionGeneric<AttributeVector, AttributeVector&>(
-            attributes) {}
+      : AttributeCollectionGeneric<AttributeVector, AttributeVector&>(attributes) {}
 
   // These functions do no error/duplicate checking.
   void Append(const QualifiedName&, const AtomicString& value);
   void Remove(unsigned index);
 };
 
-inline void MutableAttributeCollection::Append(const QualifiedName& name,
-                                               const AtomicString& value) {
+inline void MutableAttributeCollection::Append(const QualifiedName& name, const AtomicString& value) {
   attributes_.push_back(Attribute(name, value));
 }
 
@@ -185,9 +177,7 @@ inline void MutableAttributeCollection::Remove(unsigned index) {
 }
 
 template <typename Container, typename ContainerMemberType>
-inline uint32_t
-AttributeCollectionGeneric<Container, ContainerMemberType>::FindIndex(
-    const QualifiedName& name) const {
+inline uint32_t AttributeCollectionGeneric<Container, ContainerMemberType>::FindIndex(const QualifiedName& name) const {
   iterator end = this->end();
   uint32_t index = 0;
   for (iterator it = begin(); it != end; ++it, ++index) {
@@ -198,10 +188,8 @@ AttributeCollectionGeneric<Container, ContainerMemberType>::FindIndex(
 }
 
 template <typename Container, typename ContainerMemberType>
-inline typename AttributeCollectionGeneric<Container,
-                                           ContainerMemberType>::iterator
-AttributeCollectionGeneric<Container, ContainerMemberType>::Find(
-    const QualifiedName& name) const {
+inline typename AttributeCollectionGeneric<Container, ContainerMemberType>::iterator
+AttributeCollectionGeneric<Container, ContainerMemberType>::Find(const QualifiedName& name) const {
   iterator end = this->end();
   for (iterator it = begin(); it != end; ++it) {
     if (it->GetName().Matches(name))
@@ -212,8 +200,7 @@ AttributeCollectionGeneric<Container, ContainerMemberType>::Find(
 
 template <typename Container, typename ContainerMemberType>
 typename AttributeCollectionGeneric<Container, ContainerMemberType>::iterator
-AttributeCollectionGeneric<Container, ContainerMemberType>::FindWithPrefix(
-    const StringView& name) const {
+AttributeCollectionGeneric<Container, ContainerMemberType>::FindWithPrefix(const StringView& name) const {
   // Check all attributes with prefixes. This is a case sensitive check.
   // Attributes with empty prefixes are expected to be handled outside this
   // function.

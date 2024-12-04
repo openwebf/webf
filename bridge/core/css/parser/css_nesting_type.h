@@ -6,7 +6,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-
 #ifndef WEBF_CSS_NESTING_TYPE_H
 #define WEBF_CSS_NESTING_TYPE_H
 

@@ -3,11 +3,11 @@
  */
 
 #include "dart_isolate_context.h"
-#include "core/core_initializer.h"
-#include "foundation/atomic_string_table.h"
 #include <unordered_set>
+#include "core/core_initializer.h"
 #include "defined_properties_initializer.h"
 #include "event_factory.h"
+#include "foundation/atomic_string_table.h"
 #include "html_element_factory.h"
 #include "logging.h"
 #include "multiple_threading/looper.h"

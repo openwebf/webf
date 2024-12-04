@@ -673,7 +673,8 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeRelativeSelector(CSSParserToken
   selector.SetMatch(CSSSelector::kPseudoClass);
   // TODO(xiezuobing): 需要传入ExecutingContext
   ExecutingContext* context;
-  selector.UpdatePseudoType(AtomicString("-internal-relative-anchor"), *context_, false /*has_arguments*/, context_->Mode());
+  selector.UpdatePseudoType(AtomicString("-internal-relative-anchor"), *context_, false /*has_arguments*/,
+                            context_->Mode());
   assert(selector.GetPseudoType() == CSSSelector::kPseudoRelativeAnchor);
   output_.push_back(selector);
 
@@ -1194,9 +1195,7 @@ static bool SelectorListRequiresScopeActivation(const CSSSelectorList& list) {
 
 }  // namespace
 
-bool CSSSelectorParser::ConsumeName(CSSParserTokenStream& stream,
-                                    AtomicString& name,
-                                    AtomicString& namespace_prefix) {
+bool CSSSelectorParser::ConsumeName(CSSParserTokenStream& stream, AtomicString& name, AtomicString& namespace_prefix) {
   name = g_null_atom;
   namespace_prefix = g_null_atom;
 
@@ -1287,10 +1286,9 @@ bool CSSSelectorParser::ConsumeAttribute(CSSParserTokenStream& stream) {
     return false;
   }
 
-  QualifiedName qualified_name =
-      namespace_prefix.IsNull()
-          ? QualifiedName(attribute_name)
-          : QualifiedName(namespace_prefix, attribute_name, namespace_uri);
+  QualifiedName qualified_name = namespace_prefix.IsNull()
+                                     ? QualifiedName(attribute_name)
+                                     : QualifiedName(namespace_prefix, attribute_name, namespace_uri);
 
   if (stream.AtEnd()) {
     CSSSelector selector(CSSSelector::kAttributeSet, qualified_name, CSSSelector::AttributeMatchType::kCaseSensitive);
@@ -1529,8 +1527,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream) {
     case CSSSelector::kPseudoViewTransitionImagePair:
     case CSSSelector::kPseudoViewTransitionOld:
     case CSSSelector::kPseudoViewTransitionNew: {
-      std::unique_ptr<std::vector<AtomicString>> name_and_classes =
-          std::make_unique<std::vector<AtomicString>>();
+      std::unique_ptr<std::vector<AtomicString>> name_and_classes = std::make_unique<std::vector<AtomicString>>();
 
       if (name_and_classes->empty()) {
         const CSSParserToken& ident = stream.Peek();
@@ -1812,8 +1809,7 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeCompoundSelector(CSSParserToken
     if (namespace_uri == DefaultNamespace()) {
       namespace_prefix = g_null_atom;
     }
-    output_.push_back(CSSSelector(
-        QualifiedName(namespace_prefix, element_name, namespace_uri)));
+    output_.push_back(CSSSelector(QualifiedName(namespace_prefix, element_name, namespace_uri)));
     return reset_vector.CommitAddedElements();
   }
 
@@ -1967,15 +1963,11 @@ void CSSSelectorParser::PrependTypeSelectorIfNeeded(const AtomicString& namespac
   if (is_host_pseudo && !has_q_name && namespace_prefix.IsNull()) {
     return;
   }
-  if (tag != AnyQName() || is_host_pseudo ||
-      NeedsImplicitShadowCombinatorForMatching(compound_selector)) {
-    const bool is_implicit =
-        determined_prefix == g_null_atom &&
-        determined_element_name == CSSSelector::UniversalSelectorAtom() &&
-        !is_host_pseudo;
+  if (tag != AnyQName() || is_host_pseudo || NeedsImplicitShadowCombinatorForMatching(compound_selector)) {
+    const bool is_implicit = determined_prefix == g_null_atom &&
+                             determined_element_name == CSSSelector::UniversalSelectorAtom() && !is_host_pseudo;
 
-    output_.insert(output_.begin() + start_index_of_compound_selector,
-                   CSSSelector(tag, is_implicit));
+    output_.insert(output_.begin() + start_index_of_compound_selector, CSSSelector(tag, is_implicit));
   }
 }
 

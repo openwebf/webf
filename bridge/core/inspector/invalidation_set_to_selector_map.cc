@@ -9,12 +9,10 @@
 
 namespace webf {
 
-InvalidationSetToSelectorMap::IndexedSelector::IndexedSelector(
-    StyleRule* style_rule,
-    unsigned selector_index)
+InvalidationSetToSelectorMap::IndexedSelector::IndexedSelector(StyleRule* style_rule, unsigned selector_index)
     : style_rule_(style_rule), selector_index_(selector_index) {}
 
-//void InvalidationSetToSelectorMap::IndexedSelector::Trace(
+// void InvalidationSetToSelectorMap::IndexedSelector::Trace(
 //    Visitor* visitor) const {
 //  visitor->Trace(style_rule_);
 //}
@@ -23,8 +21,7 @@ std::shared_ptr<StyleRule> InvalidationSetToSelectorMap::IndexedSelector::GetSty
   return style_rule_;
 }
 
-unsigned InvalidationSetToSelectorMap::IndexedSelector::GetSelectorIndex()
-    const {
+unsigned InvalidationSetToSelectorMap::IndexedSelector::GetSelectorIndex() const {
   return selector_index_;
 }
 
@@ -35,12 +32,12 @@ std::string InvalidationSetToSelectorMap::IndexedSelector::GetSelectorText() con
 // static
 void InvalidationSetToSelectorMap::StartOrStopTrackingIfNeeded() {
   // TODO(guopengfei)：先注释
-  //DEFINE_STATIC_LOCAL(
+  // DEFINE_STATIC_LOCAL(
   //    const unsigned char*, is_tracing_enabled,
   //    (TRACE_EVENT_API_GET_CATEGORY_GROUP_ENABLED(TRACE_DISABLED_BY_DEFAULT(
   //        "devtools.timeline.invalidationTracking"))));
 
-  const unsigned char* is_tracing_enabled= nullptr;
+  const unsigned char* is_tracing_enabled = nullptr;
   std::shared_ptr<InvalidationSetToSelectorMap>& instance = GetInstanceReference();
   if (*is_tracing_enabled && instance == nullptr) {
     instance = std::make_shared<InvalidationSetToSelectorMap>();
@@ -50,16 +47,14 @@ void InvalidationSetToSelectorMap::StartOrStopTrackingIfNeeded() {
 }
 
 // static
-void InvalidationSetToSelectorMap::BeginSelector(StyleRule* style_rule,
-                                                 unsigned selector_index) {
+void InvalidationSetToSelectorMap::BeginSelector(StyleRule* style_rule, unsigned selector_index) {
   InvalidationSetToSelectorMap* instance = GetInstanceReference().get();
   if (instance == nullptr) {
     return;
   }
 
   assert(instance->current_selector_ == nullptr);
-  instance->current_selector_ =
-      std::make_shared<IndexedSelector>(style_rule, selector_index);
+  instance->current_selector_ = std::make_shared<IndexedSelector>(style_rule, selector_index);
 }
 
 // static
@@ -73,9 +68,7 @@ void InvalidationSetToSelectorMap::EndSelector() {
   instance->current_selector_.reset();
 }
 
-InvalidationSetToSelectorMap::SelectorScope::SelectorScope(
-    StyleRule* style_rule,
-    unsigned selector_index) {
+InvalidationSetToSelectorMap::SelectorScope::SelectorScope(StyleRule* style_rule, unsigned selector_index) {
   InvalidationSetToSelectorMap::BeginSelector(style_rule, selector_index);
 }
 InvalidationSetToSelectorMap::SelectorScope::~SelectorScope() {
@@ -84,10 +77,9 @@ InvalidationSetToSelectorMap::SelectorScope::~SelectorScope() {
 
 // static
 // static
-void InvalidationSetToSelectorMap::RecordInvalidationSetEntry(
-    const InvalidationSet* invalidation_set,
-    SelectorFeatureType type,
-    const AtomicString& value) {
+void InvalidationSetToSelectorMap::RecordInvalidationSetEntry(const InvalidationSet* invalidation_set,
+                                                              SelectorFeatureType type,
+                                                              const AtomicString& value) {
   InvalidationSetToSelectorMap* instance = GetInstanceReference().get();
   if (instance == nullptr) {
     return;
@@ -100,7 +92,8 @@ void InvalidationSetToSelectorMap::RecordInvalidationSetEntry(
   }
 
   assert(instance->current_selector_ != nullptr);
-  auto result = instance->invalidation_set_map_->insert({invalidation_set, std::make_shared<InvalidationSetEntryMap>()});
+  auto result =
+      instance->invalidation_set_map_->insert({invalidation_set, std::make_shared<InvalidationSetEntryMap>()});
   InvalidationSetEntryMap* entry_map = result.first->second.get();
 
   auto insert_result = entry_map->insert({InvalidationSetEntry(type, value), std::make_shared<IndexedSelectorList>()});
@@ -110,9 +103,8 @@ void InvalidationSetToSelectorMap::RecordInvalidationSetEntry(
 }
 
 // static
-void InvalidationSetToSelectorMap::BeginInvalidationSetCombine(
-    const InvalidationSet* target,
-    const InvalidationSet* source) {
+void InvalidationSetToSelectorMap::BeginInvalidationSetCombine(const InvalidationSet* target,
+                                                               const InvalidationSet* source) {
   InvalidationSetToSelectorMap* instance = GetInstanceReference().get();
   if (instance == nullptr) {
     return;
@@ -126,11 +118,13 @@ void InvalidationSetToSelectorMap::BeginInvalidationSetCombine(
   // tracking started so that invalidation sets for them can be included.
   auto source_entry_it = instance->invalidation_set_map_->find(source);
   if (source_entry_it != instance->invalidation_set_map_->end()) {
-    auto target_entry_map_it = instance->invalidation_set_map_->insert({target, std::make_shared<InvalidationSetEntryMap>()});
+    auto target_entry_map_it =
+        instance->invalidation_set_map_->insert({target, std::make_shared<InvalidationSetEntryMap>()});
     InvalidationSetEntryMap* target_entry_map = target_entry_map_it.first->second.get();
 
     for (const auto& source_selector_list_it : *(source_entry_it->second)) {
-      auto target_selector_list_it = target_entry_map->insert({source_selector_list_it.first, std::make_shared<IndexedSelectorList>()});
+      auto target_selector_list_it =
+          target_entry_map->insert({source_selector_list_it.first, std::make_shared<IndexedSelectorList>()});
       IndexedSelectorList* target_selector_list = target_selector_list_it.first->second.get();
 
       for (const auto& source_selector : *(source_selector_list_it.second)) {
@@ -151,9 +145,7 @@ void InvalidationSetToSelectorMap::EndInvalidationSetCombine() {
   instance->combine_recursion_depth_--;
 }
 
-InvalidationSetToSelectorMap::CombineScope::CombineScope(
-    const InvalidationSet* target,
-    const InvalidationSet* source) {
+InvalidationSetToSelectorMap::CombineScope::CombineScope(const InvalidationSet* target, const InvalidationSet* source) {
   InvalidationSetToSelectorMap::BeginInvalidationSetCombine(target, source);
 }
 
@@ -162,10 +154,10 @@ InvalidationSetToSelectorMap::CombineScope::~CombineScope() {
 }
 
 // static
-const InvalidationSetToSelectorMap::IndexedSelectorList*
-InvalidationSetToSelectorMap::Lookup(const InvalidationSet* invalidation_set,
-                                     SelectorFeatureType type,
-                                     const AtomicString& value) {
+const InvalidationSetToSelectorMap::IndexedSelectorList* InvalidationSetToSelectorMap::Lookup(
+    const InvalidationSet* invalidation_set,
+    SelectorFeatureType type,
+    const AtomicString& value) {
   const InvalidationSetToSelectorMap* instance = GetInstanceReference().get();
   if (instance == nullptr) {
     return nullptr;
@@ -187,8 +179,8 @@ InvalidationSetToSelectorMap::InvalidationSetToSelectorMap() {
 }
 
 void InvalidationSetToSelectorMap::Trace(GCVisitor* visitor) const {
-  //visitor->Trace(invalidation_set_map_);
-  //visitor->Trace(current_selector_);
+  // visitor->Trace(invalidation_set_map_);
+  // visitor->Trace(current_selector_);
 }
 
 }  // namespace webf

@@ -36,7 +36,7 @@ namespace WTF {
 // Returns a string that contains the type name of |T| as a substring.
 template <typename T>
 inline const char* GetStringWithTypeName() {
-  //return PRETTY_FUNCTION;
+  // return PRETTY_FUNCTION;
   return "";
 }
 
@@ -111,8 +111,7 @@ template <typename T>
 struct IsTraceable : cppgc::internal::IsTraceable<T> {};
 
 template <typename T>
-struct IsGarbageCollectedType
-    : cppgc::internal::IsGarbageCollectedOrMixinType<T> {};
+struct IsGarbageCollectedType : cppgc::internal::IsGarbageCollectedOrMixinType<T> {};
 
 template <typename T>
 struct IsWeak : cppgc::internal::IsWeak<T> {};
@@ -124,18 +123,13 @@ template <typename T>
 struct IsWeakMemberType : std::bool_constant<cppgc::IsWeakMemberTypeV<T>> {};
 
 template <typename T>
-struct IsMemberOrWeakMemberType
-    : std::bool_constant<cppgc::IsMemberTypeV<T> ||
-                         cppgc::IsWeakMemberTypeV<T>> {};
+struct IsMemberOrWeakMemberType : std::bool_constant<cppgc::IsMemberTypeV<T> || cppgc::IsWeakMemberTypeV<T>> {};
 
 template <typename T>
-struct IsAnyMemberType
-    : std::bool_constant<IsMemberOrWeakMemberType<T>::value ||
-                         cppgc::IsUntracedMemberTypeV<T>> {};
+struct IsAnyMemberType : std::bool_constant<IsMemberOrWeakMemberType<T>::value || cppgc::IsUntracedMemberTypeV<T>> {};
 
 template <typename T, typename U>
-struct IsTraceable<std::pair<T, U>>
-    : std::bool_constant<IsTraceable<T>::value || IsTraceable<U>::value> {};
+struct IsTraceable<std::pair<T, U>> : std::bool_constant<IsTraceable<T>::value || IsTraceable<U>::value> {};
 
 enum WeakHandlingFlag {
   kNoWeakHandling,
@@ -158,8 +152,7 @@ template <WeakHandlingFlag weakness, typename T, typename Traits>
 struct TraceInCollectionTrait;
 
 template <typename T>
-inline constexpr WeakHandlingFlag kWeakHandlingTrait =
-    IsWeak<T>::value ? kWeakHandling : kNoWeakHandling;
+inline constexpr WeakHandlingFlag kWeakHandlingTrait = IsWeak<T>::value ? kWeakHandling : kNoWeakHandling;
 
 // This is used to check that DISALLOW_NEW objects are not
 // stored in off-heap Vectors, HashTables etc.
@@ -189,10 +182,8 @@ class IsGarbageCollectedType<void> {
 };
 
 template <typename T,
-          bool = std::is_function<typename std::remove_const<
-                     typename std::remove_pointer<T>::type>::type>::value ||
-                 std::is_void<typename std::remove_const<
-                     typename std::remove_pointer<T>::type>::type>::value>
+          bool = std::is_function<typename std::remove_const<typename std::remove_pointer<T>::type>::type>::value ||
+                 std::is_void<typename std::remove_const<typename std::remove_pointer<T>::type>::type>::value>
 class IsPointerToGarbageCollectedType {
  public:
   static const bool value = false;
@@ -208,9 +199,7 @@ template <typename T, typename = void>
 struct IsStackAllocatedType : std::false_type {};
 
 template <typename T>
-struct IsStackAllocatedType<T,
-                            std::void_t<typename T::IsStackAllocatedTypeMarker>>
-    : std::true_type {};
+struct IsStackAllocatedType<T, std::void_t<typename T::IsStackAllocatedTypeMarker>> : std::true_type {};
 
 template <typename T>
 struct IsPointerToGced {
@@ -220,8 +209,7 @@ struct IsPointerToGced {
     char padding[8];
   };
 
-  template <typename X,
-            typename = std::enable_if_t<WTF::IsGarbageCollectedType<X>::value>>
+  template <typename X, typename = std::enable_if_t<WTF::IsGarbageCollectedType<X>::value>>
   static YesType SubclassCheck(X**);
   static NoType SubclassCheck(...);
   static T* t_;

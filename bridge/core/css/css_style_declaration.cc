@@ -3,8 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "bindings/qjs/converter_impl.h"
 #include "css_style_declaration.h"
+#include "bindings/qjs/converter_impl.h"
 #include "core/css/css_value.h"
 #include "core/css/parser/css_property_parser.h"
 #include "foundation/string_builder.h"
@@ -187,8 +187,7 @@ bool CSSStyleDeclaration::AnonymousNamedSetter(const webf::AtomicString& name, c
   // IDL [LegacyNullToEmptyString] DOMString only after we've confirmed that
   // the property name is a valid CSS attribute name (see bug 1310062).
   auto&& string_value = value.ToLegacyDOMString(ctx());
-  SetPropertyInternal(unresolved_property, AtomicString::Empty(), string_value, false,
-                      exception_state);
+  SetPropertyInternal(unresolved_property, AtomicString::Empty(), string_value, false, exception_state);
   if (exception_state.HasException()) {
     return true;
   }
@@ -196,28 +195,28 @@ bool CSSStyleDeclaration::AnonymousNamedSetter(const webf::AtomicString& name, c
 }
 
 void CSSStyleDeclaration::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) {
-//  typedef std::vector<std::string> PreAllocatedPropertyVector;
-//  thread_local static PreAllocatedPropertyVector property_names;
-//  property_names.reserve(kNumCSSProperties - 1);
-//
-//  const ExecutingContext* execution_context = GetExecutingContext();
-//
-//  if (property_names.empty()) {
-//    for (CSSPropertyID property_id : CSSPropertyIDList()) {
-//      const CSSProperty& property_class = CSSProperty::Get(ResolveCSSPropertyID(property_id));
-//      if (property_class.IsWebExposed(execution_context)) {
-//        property_names.emplace_back(property_class.GetJSPropertyName());
-//      }
-//    }
-//    for (CSSPropertyID property_id : kCSSPropertyAliasList) {
-//      const CSSUnresolvedProperty& property_class = *GetPropertyInternal(property_id);
-//      if (property_class.IsWebExposed(execution_context)) {
-//        property_names.emplace_back(property_class.GetJSPropertyName());
-//      }
-//    }
-//    std::sort(property_names.begin(), property_names.end(), CodeUnitCompareLessThan);
-//  }
-//  names = property_names;
+  //  typedef std::vector<std::string> PreAllocatedPropertyVector;
+  //  thread_local static PreAllocatedPropertyVector property_names;
+  //  property_names.reserve(kNumCSSProperties - 1);
+  //
+  //  const ExecutingContext* execution_context = GetExecutingContext();
+  //
+  //  if (property_names.empty()) {
+  //    for (CSSPropertyID property_id : CSSPropertyIDList()) {
+  //      const CSSProperty& property_class = CSSProperty::Get(ResolveCSSPropertyID(property_id));
+  //      if (property_class.IsWebExposed(execution_context)) {
+  //        property_names.emplace_back(property_class.GetJSPropertyName());
+  //      }
+  //    }
+  //    for (CSSPropertyID property_id : kCSSPropertyAliasList) {
+  //      const CSSUnresolvedProperty& property_class = *GetPropertyInternal(property_id);
+  //      if (property_class.IsWebExposed(execution_context)) {
+  //        property_names.emplace_back(property_class.GetJSPropertyName());
+  //      }
+  //    }
+  //    std::sort(property_names.begin(), property_names.end(), CodeUnitCompareLessThan);
+  //  }
+  //  names = property_names;
 }
 
 bool CSSStyleDeclaration::NamedPropertyQuery(const AtomicString& name, ExceptionState&) {

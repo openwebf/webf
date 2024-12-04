@@ -19,4 +19,4 @@ std::string CSSColor::SerializeAsCSSComponentValue(Color color) {
   return color.SerializeAsCSSColor();
 }
 
-}  // namespace webf
+}  // namespace webf::cssvalue

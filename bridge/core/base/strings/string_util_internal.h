@@ -21,14 +21,12 @@ namespace internal {
 // ASCII-specific tolower.  The standard library's tolower is locale sensitive,
 // so we don't want to use it here.
 template <typename CharT>
-requires(std::integral<CharT>)
-    constexpr CharT ToLowerASCII(CharT c) {
+requires(std::integral<CharT>) constexpr CharT ToLowerASCII(CharT c) {
   return (c >= 'A' && c <= 'Z') ? (c + ('a' - 'A')) : c;
 }
 
 template <typename T>
-requires(std::integral<typename T::value_type>)
-    constexpr int CompareCaseInsensitiveASCIIT(T a, T b) {
+requires(std::integral<typename T::value_type>) constexpr int CompareCaseInsensitiveASCIIT(T a, T b) {
   // Find the first characters that aren't equal and compare them.  If the end
   // of one of the strings is found before a nonequal character, the lengths
   // of the strings are compared. Compare using the unsigned type so the sort
@@ -56,15 +54,12 @@ requires(std::integral<typename T::value_type>)
 }
 
 template <typename CharT, typename CharU>
-inline bool EqualsCaseInsensitiveASCIIT(std::basic_string_view<CharT> a,
-                                        std::basic_string_view<CharU> b) {
-  return std::ranges::equal(a, b, [](auto lhs, auto rhs) {
-    return ToLowerASCII(lhs) == ToLowerASCII(rhs);
-  });
+inline bool EqualsCaseInsensitiveASCIIT(std::basic_string_view<CharT> a, std::basic_string_view<CharU> b) {
+  return std::ranges::equal(a, b, [](auto lhs, auto rhs) { return ToLowerASCII(lhs) == ToLowerASCII(rhs); });
 }
 
-} // namespace internal
+}  // namespace internal
 
-}  // namespace webf
+}  // namespace base
 
 #endif  // WEBF_STRING_UTIL_INTERNAL_H

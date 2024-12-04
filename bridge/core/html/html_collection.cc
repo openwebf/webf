@@ -102,8 +102,7 @@ static NodeListSearchRoot SearchRootFromCollectionType(const ContainerNode& owne
   return NodeListSearchRoot::kOwnerNode;
 }
 
-static NodeListInvalidationType InvalidationTypeExcludingIdAndNameAttributes(
-    CollectionType type) {
+static NodeListInvalidationType InvalidationTypeExcludingIdAndNameAttributes(CollectionType type) {
   switch (type) {
     case kTagCollectionType:
     case kTagCollectionNSType:
@@ -154,9 +153,9 @@ HTMLCollection::HTMLCollection(ContainerNode& owner_node,
                                CollectionType type,
                                ItemAfterOverrideType item_after_override_type)
     : LiveNodeListBase(owner_node,
-      SearchRootFromCollectionType(owner_node, type),
-      InvalidationTypeExcludingIdAndNameAttributes(type),
-      type),
+                       SearchRootFromCollectionType(owner_node, type),
+                       InvalidationTypeExcludingIdAndNameAttributes(type),
+                       type),
       overrides_item_after_(item_after_override_type == kOverridesItemAfter),
       should_only_include_direct_children_(ShouldTypeOnlyIncludeDirectChildren(type)),
       ScriptWrappable(owner_node.ctx()) {

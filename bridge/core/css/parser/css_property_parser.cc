@@ -10,8 +10,8 @@
 #include "core/css/css_pending_substitution_value.h"
 #include "core/css/css_unparsed_declaration_value.h"
 #include "core/css/hash_tools.h"
-#include "core/css/parser/css_parser_impl.h"
 #include "core/css/parser/at_rule_descriptor_parser.h"
+#include "core/css/parser/css_parser_impl.h"
 #include "core/css/parser/css_tokenized_value.h"
 #include "core/css/parser/css_variable_parser.h"
 #include "core/css/properties/css_bitset.h"
@@ -56,10 +56,9 @@ CSSPropertyParser::CSSPropertyParser(CSSParserTokenStream& stream,
   stream_.ConsumeWhitespace();
 }
 
-std::shared_ptr<const CSSValue> CSSPropertyParser::ConsumeCSSWideKeyword(
-    CSSParserTokenStream& stream,
-    bool allow_important_annotation,
-    bool& important) {
+std::shared_ptr<const CSSValue> CSSPropertyParser::ConsumeCSSWideKeyword(CSSParserTokenStream& stream,
+                                                                         bool allow_important_annotation,
+                                                                         bool& important) {
   CSSParserTokenStream::State savepoint = stream.Save();
 
   auto value = css_parsing_utils::ConsumeCSSWideKeyword(stream);
@@ -70,8 +69,7 @@ std::shared_ptr<const CSSValue> CSSPropertyParser::ConsumeCSSWideKeyword(
     return nullptr;
   }
 
-  important = css_parsing_utils::MaybeConsumeImportant(
-      stream, allow_important_annotation);
+  important = css_parsing_utils::MaybeConsumeImportant(stream, allow_important_annotation);
   if (!stream.AtEnd()) {
     stream.Restore(savepoint);
     return nullptr;
@@ -80,12 +78,9 @@ std::shared_ptr<const CSSValue> CSSPropertyParser::ConsumeCSSWideKeyword(
   return value;
 }
 
-
-bool CSSPropertyParser::ParseCSSWideKeyword(CSSPropertyID unresolved_property,
-                                            bool allow_important_annotation) {
+bool CSSPropertyParser::ParseCSSWideKeyword(CSSPropertyID unresolved_property, bool allow_important_annotation) {
   bool important;
-  auto value =
-      ConsumeCSSWideKeyword(stream_, allow_important_annotation, important);
+  auto value = ConsumeCSSWideKeyword(stream_, allow_important_annotation, important);
   if (!value) {
     return false;
   }
@@ -99,12 +94,10 @@ bool CSSPropertyParser::ParseCSSWideKeyword(CSSPropertyID unresolved_property,
     AddProperty(property, CSSPropertyID::kInvalid, value, important,
                 css_parsing_utils::IsImplicitProperty::kNotImplicit, *parsed_properties_);
   } else {
-    css_parsing_utils::AddExpandedPropertyForValue(property, value, important,
-                                                   *parsed_properties_);
+    css_parsing_utils::AddExpandedPropertyForValue(property, value, important, *parsed_properties_);
   }
   return true;
 }
-
 
 bool CSSPropertyParser::ParseValueStart(webf::CSSPropertyID unresolved_property,
                                         bool allow_important_annotation,
@@ -333,7 +326,9 @@ static CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* execution_c
   return ExposedProperty(property_id, execution_context, mode);
 }
 
-CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* context, const std::string_view& string, CSSParserMode mode) {
+CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* context,
+                                      const std::string_view& string,
+                                      CSSParserMode mode) {
   return UnresolvedCSSPropertyID(context, string.data(), string.length(), mode);
 }
 

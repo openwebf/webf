@@ -5,9 +5,9 @@
 #include "core/css/parser/css_property_parser.h"
 #include "core/css/css_grid_integer_repeat_value.h"
 #include "core/css/css_image_set_value.h"
+#include "core/css/css_repeat_style_value.h"
 #include "core/css/css_value_list.h"
 #include "core/css/parser/css_parser.h"
-#include "core/css/css_repeat_style_value.h"
 #include "css_value_keywords.h"
 #include "gtest/gtest.h"
 
@@ -216,8 +216,9 @@ TEST(CSSPropertyParserTest, GridTrackLimit16) {
 //}
 
 TEST(CSSPropertyParserTest, ColorFunction) {
-  std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
-      CSSPropertyID::kBackgroundColor, "rgba(255, 255, 255, 1)", StrictCSSParserContext(SecureContextMode::kSecureContext));
+  std::shared_ptr<const CSSValue> value =
+      CSSParser::ParseSingleValue(CSSPropertyID::kBackgroundColor, "rgba(255, 255, 255, 1)",
+                                  StrictCSSParserContext(SecureContextMode::kSecureContext));
   ASSERT_TRUE(value);
   cssvalue::CSSColor css_color = To<cssvalue::CSSColor>(*value);
   WEBF_LOG(VERBOSE) << css_color.CustomCSSText();
@@ -500,7 +501,9 @@ TEST(CSSPropertyParserTest, UALightDarkColorSerialization) {
 
 namespace {
 
-bool ParseCSSValue(CSSPropertyID property_id, const std::string& value, std::shared_ptr<const CSSParserContext> context) {
+bool ParseCSSValue(CSSPropertyID property_id,
+                   const std::string& value,
+                   std::shared_ptr<const CSSParserContext> context) {
   CSSTokenizer tokenizer(value);
   CSSParserTokenStream stream(tokenizer);
   std::vector<CSSPropertyValue> parsed_properties;
@@ -623,7 +626,7 @@ void TestRepeatStyleViaShorthandParsing(const std::string& testValue,
   auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
   CSSParser::ParseValue(style.get(), propID, testValue, false /* important */);
   ASSERT_NE(style, nullptr);
-  WEBF_LOG(VERBOSE) << "style text"  << style->AsText();
+  WEBF_LOG(VERBOSE) << "style text" << style->AsText();
   EXPECT_TRUE(style->AsText().find(expectedCssText) != std::string::npos);
 }
 

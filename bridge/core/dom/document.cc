@@ -5,6 +5,7 @@
 #include "document.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_message.h"
+#include "core/css/css_style_sheet.h"
 #include "core/css/style_engine.h"
 #include "core/dom/comment.h"
 #include "core/dom/document_fragment.h"
@@ -27,7 +28,6 @@
 #include "foundation/native_value_converter.h"
 #include "html_element_factory.h"
 #include "svg_element_factory.h"
-#include "core/css/css_style_sheet.h"
 
 namespace webf {
 
@@ -47,9 +47,8 @@ Document::Document(ExecutingContext* context)
 Element* Document::createElement(const AtomicString& name, ExceptionState& exception_state) {
   const AtomicString& local_name = name.LowerASCII();
   if (!IsValidName(local_name)) {
-    exception_state.ThrowException(
-        ctx(), ErrorType::InternalError,
-        "The tag name provided ('" + local_name.ToStdString() + "') is not a valid name.");
+    exception_state.ThrowException(ctx(), ErrorType::InternalError,
+                                   "The tag name provided ('" + local_name.ToStdString() + "') is not a valid name.");
     return nullptr;
   }
 
@@ -165,7 +164,7 @@ bool Document::ChildTypeAllowed(NodeType type) const {
   return false;
 }
 
-//Element* Document::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
+// Element* Document::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
 //  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
 //  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments,
 //                                           FlushUICommandReason::kDependentsAll, exception_state);
@@ -371,7 +370,6 @@ KURL Document::CompleteURLWithOverride(const std::string& url,
   return result;
 }
 
-
 // [spec] https://html.spec.whatwg.org/C/#fallback-base-url
 KURL Document::FallbackBaseURL() const {
   // TODO(https://github.com/whatwg/html/issues/9025): Don't let a sandboxed
@@ -387,7 +385,6 @@ KURL Document::FallbackBaseURL() const {
   // [spec] 3. Return document's URL.
   return BlankURL();
 }
-
 
 template <typename CharType>
 static inline bool IsValidNameASCII(const CharType* characters, unsigned length) {
@@ -540,17 +537,13 @@ bool Document::InStyleRecalc() const {
   return false;
 }
 
-void Document::RegisterNodeList(const LiveNodeListBase* list) {
-}
+void Document::RegisterNodeList(const LiveNodeListBase* list) {}
 
-void Document::UnregisterNodeList(const LiveNodeListBase* list) {
-}
+void Document::UnregisterNodeList(const LiveNodeListBase* list) {}
 
-void Document::RegisterNodeListWithIdNameCache(const LiveNodeListBase* list) {
-}
+void Document::RegisterNodeListWithIdNameCache(const LiveNodeListBase* list) {}
 
-void Document::UnregisterNodeListWithIdNameCache(const LiveNodeListBase* list) {
-}
+void Document::UnregisterNodeListWithIdNameCache(const LiveNodeListBase* list) {}
 
 bool Document::ShouldInvalidateNodeListCaches(const QualifiedName* attr_name) const {
   return false;

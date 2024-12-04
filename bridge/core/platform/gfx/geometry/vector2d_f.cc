@@ -20,7 +20,7 @@ std::string Vector2dF::ToString() const {
   return buffer;
 }
 // TODO(guopengfei)：先注释Trace相关
-//void Vector2dF::WriteIntoTrace(perfetto::TracedValue ctx) const {
+// void Vector2dF::WriteIntoTrace(perfetto::TracedValue ctx) const {
 //  perfetto::TracedDictionary dict = std::move(ctx).WriteDictionary();
 //  dict.Add("x", x_);
 //  dict.Add("y", y_);
@@ -59,13 +59,11 @@ void Vector2dF::InvScale(float inv_x_scale, float inv_y_scale) {
 }
 
 double CrossProduct(const Vector2dF& lhs, const Vector2dF& rhs) {
-  return static_cast<double>(lhs.x()) * rhs.y() -
-      static_cast<double>(lhs.y()) * rhs.x();
+  return static_cast<double>(lhs.x()) * rhs.y() - static_cast<double>(lhs.y()) * rhs.x();
 }
 
 double DotProduct(const Vector2dF& lhs, const Vector2dF& rhs) {
-  return static_cast<double>(lhs.x()) * rhs.x() +
-      static_cast<double>(lhs.y()) * rhs.y();
+  return static_cast<double>(lhs.x()) * rhs.x() + static_cast<double>(lhs.y()) * rhs.y();
 }
 
 Vector2dF ScaleVector2d(const Vector2dF& v, float x_scale, float y_scale) {
@@ -77,16 +75,16 @@ Vector2dF ScaleVector2d(const Vector2dF& v, float x_scale, float y_scale) {
 float Vector2dF::SlopeAngleRadians() const {
   // TODO(guopengfei)：先忽略IS_APPLE平台差异
   return atan2f(y_, x_);
-/*
-#if BUILDFLAG(IS_APPLE)
-  // atan2f(...) returns less accurate results on Mac.
-  // 3.1415925 vs. 3.14159274 for atan2f(0, -50) as an example.
-  return static_cast<float>(
-      atan2(static_cast<double>(y_), static_cast<double>(x_)));
-#else
-  return atan2f(y_, x_);
-#endif
- */
+  /*
+  #if BUILDFLAG(IS_APPLE)
+    // atan2f(...) returns less accurate results on Mac.
+    // 3.1415925 vs. 3.14159274 for atan2f(0, -50) as an example.
+    return static_cast<float>(
+        atan2(static_cast<double>(y_), static_cast<double>(x_)));
+  #else
+    return atan2f(y_, x_);
+  #endif
+   */
 }
 
 }  // namespace gfx

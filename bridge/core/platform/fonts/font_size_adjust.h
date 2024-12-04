@@ -20,25 +20,17 @@ class FontSizeAdjust {
 
   FontSizeAdjust() = default;
   explicit FontSizeAdjust(float value) : value_(value) {}
-  explicit FontSizeAdjust(float value, ValueType type)
-      : value_(value), type_(type) {}
-  explicit FontSizeAdjust(float value, Metric metric)
-      : value_(value), metric_(metric) {}
-  explicit FontSizeAdjust(float value, Metric metric, ValueType type)
-      : value_(value), metric_(metric), type_(type) {}
+  explicit FontSizeAdjust(float value, ValueType type) : value_(value), type_(type) {}
+  explicit FontSizeAdjust(float value, Metric metric) : value_(value), metric_(metric) {}
+  explicit FontSizeAdjust(float value, Metric metric, ValueType type) : value_(value), metric_(metric), type_(type) {}
 
   static constexpr float kFontSizeAdjustNone = -1;
 
-  explicit operator bool() const {
-    return value_ != kFontSizeAdjustNone || type_ == ValueType::kFromFont;
-  }
+  explicit operator bool() const { return value_ != kFontSizeAdjustNone || type_ == ValueType::kFromFont; }
   bool operator==(const FontSizeAdjust& other) const {
-    return value_ == other.Value() && metric_ == other.GetMetric() &&
-           IsFromFont() == other.IsFromFont();
+    return value_ == other.Value() && metric_ == other.GetMetric() && IsFromFont() == other.IsFromFont();
   }
-  bool operator!=(const FontSizeAdjust& other) const {
-    return !operator==(other);
-  }
+  bool operator!=(const FontSizeAdjust& other) const { return !operator==(other); }
 
   bool IsFromFont() const { return type_ == ValueType::kFromFont; }
   float Value() const { return value_; }

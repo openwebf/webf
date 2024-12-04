@@ -93,32 +93,20 @@ static void TestBezierFiniteRange(CubicBezier& function) {
 // Tests that solving the bezier works with huge value infinity evaluation
 TEST(CubicBezierTest, ClampInfinityEvaluation) {
   auto test_cases = {
-      CubicBezier(0.5, std::numeric_limits<double>::max(), 0.5,
-                  std::numeric_limits<double>::max()),
-      CubicBezier(0.5, std::numeric_limits<double>::lowest(), 0.5,
-                  std::numeric_limits<double>::max()),
-      CubicBezier(0.5, std::numeric_limits<double>::max(), 0.5,
-                  std::numeric_limits<double>::lowest()),
-      CubicBezier(0.5, std::numeric_limits<double>::lowest(), 0.5,
-                  std::numeric_limits<double>::lowest()),
+      CubicBezier(0.5, std::numeric_limits<double>::max(), 0.5, std::numeric_limits<double>::max()),
+      CubicBezier(0.5, std::numeric_limits<double>::lowest(), 0.5, std::numeric_limits<double>::max()),
+      CubicBezier(0.5, std::numeric_limits<double>::max(), 0.5, std::numeric_limits<double>::lowest()),
+      CubicBezier(0.5, std::numeric_limits<double>::lowest(), 0.5, std::numeric_limits<double>::lowest()),
 
-      CubicBezier(0, std::numeric_limits<double>::max(), 0,
-                  std::numeric_limits<double>::max()),
-      CubicBezier(0, std::numeric_limits<double>::lowest(), 0,
-                  std::numeric_limits<double>::max()),
-      CubicBezier(0, std::numeric_limits<double>::max(), 0,
-                  std::numeric_limits<double>::lowest()),
-      CubicBezier(0, std::numeric_limits<double>::lowest(), 0,
-                  std::numeric_limits<double>::lowest()),
+      CubicBezier(0, std::numeric_limits<double>::max(), 0, std::numeric_limits<double>::max()),
+      CubicBezier(0, std::numeric_limits<double>::lowest(), 0, std::numeric_limits<double>::max()),
+      CubicBezier(0, std::numeric_limits<double>::max(), 0, std::numeric_limits<double>::lowest()),
+      CubicBezier(0, std::numeric_limits<double>::lowest(), 0, std::numeric_limits<double>::lowest()),
 
-      CubicBezier(1, std::numeric_limits<double>::max(), 1,
-                  std::numeric_limits<double>::max()),
-      CubicBezier(1, std::numeric_limits<double>::lowest(), 1,
-                  std::numeric_limits<double>::max()),
-      CubicBezier(1, std::numeric_limits<double>::max(), 1,
-                  std::numeric_limits<double>::lowest()),
-      CubicBezier(1, std::numeric_limits<double>::lowest(), 1,
-                  std::numeric_limits<double>::lowest()),
+      CubicBezier(1, std::numeric_limits<double>::max(), 1, std::numeric_limits<double>::max()),
+      CubicBezier(1, std::numeric_limits<double>::lowest(), 1, std::numeric_limits<double>::max()),
+      CubicBezier(1, std::numeric_limits<double>::max(), 1, std::numeric_limits<double>::lowest()),
+      CubicBezier(1, std::numeric_limits<double>::lowest(), 1, std::numeric_limits<double>::lowest()),
 
       CubicBezier(0, 0, 0, std::numeric_limits<double>::max()),
       CubicBezier(0, std::numeric_limits<double>::lowest(), 0, 0),
@@ -136,8 +124,7 @@ TEST(CubicBezierTest, Range) {
   double epsilon = 0.00015;
 
   // Derivative is a constant.
-  std::unique_ptr<CubicBezier> function =
-      std::make_unique<CubicBezier>(0.25, (1.0 / 3.0), 0.75, (2.0 / 3.0));
+  std::unique_ptr<CubicBezier> function = std::make_unique<CubicBezier>(0.25, (1.0 / 3.0), 0.75, (2.0 / 3.0));
   EXPECT_EQ(0, function->range_min());
   EXPECT_EQ(1, function->range_max());
 

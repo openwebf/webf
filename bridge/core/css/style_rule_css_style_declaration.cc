@@ -26,13 +26,14 @@
 #include "style_rule_css_style_declaration.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/css/css_style_sheet.h"
-#include "core/css/style_sheet_contents.h"
 #include "core/css/style_rule.h"
+#include "core/css/style_sheet_contents.h"
 
 namespace webf {
 
-StyleRuleCSSStyleDeclaration::StyleRuleCSSStyleDeclaration(std::shared_ptr<const MutableCSSPropertyValueSet> property_set_arg,
-                                                           CSSRule* parent_rule)
+StyleRuleCSSStyleDeclaration::StyleRuleCSSStyleDeclaration(
+    std::shared_ptr<const MutableCSSPropertyValueSet> property_set_arg,
+    CSSRule* parent_rule)
     : PropertySetCSSStyleDeclaration(
           const_cast<Document*>(CSSStyleSheet::SingleOwnerDocument(parent_rule->parentStyleSheet()))
               ? const_cast<Document*>(CSSStyleSheet::SingleOwnerDocument(parent_rule->parentStyleSheet()))
@@ -57,7 +58,7 @@ void StyleRuleCSSStyleDeclaration::DidMutate(MutationType type) {
     std::shared_ptr<StyleSheetContents> parent_contents = parent_rule_->parentStyleSheet()->Contents();
     if (parent_rule_->GetType() == CSSRule::kStyleRule) {
       assert(false);
-//      parent_contents->NotifyRuleChanged(static_cast<CSSStyleRule*>(parent_rule_.Get())->GetStyleRule());
+      //      parent_contents->NotifyRuleChanged(static_cast<CSSStyleRule*>(parent_rule_.Get())->GetStyleRule());
     } else {
       parent_contents->NotifyDiffUnrepresentable();
     }

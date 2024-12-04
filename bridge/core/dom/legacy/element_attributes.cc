@@ -50,9 +50,9 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
   bool numberIndex = IsNumberIndex(name.ToStringView());
 
   if (numberIndex) {
-    exception_state.ThrowException(ctx(), ErrorType::TypeError,
-                                   "Failed to execute 'kSetAttribute' on 'Element': '" + name.ToStdString() +
-                                       "' is not a valid attribute name.");
+    exception_state.ThrowException(
+        ctx(), ErrorType::TypeError,
+        "Failed to execute 'kSetAttribute' on 'Element': '" + name.ToStdString() + "' is not a valid attribute name.");
     return false;
   }
 

@@ -142,24 +142,26 @@ std::shared_ptr<Gradient> Gradient::CreateLinear(const gfx::PointF& p0,
 }
 
 std::shared_ptr<Gradient> Gradient::CreateRadial(const gfx::PointF& p0,
-                                               float r0,
-                                               const gfx::PointF& p1,
-                                               float r1,
-                                               float aspect_ratio,
-                                               GradientSpreadMethod spread_method,
-                                               ColorInterpolation interpolation,
-                                               DegenerateHandling degenerate_handling) {
-  return std::make_shared<RadialGradient>(p0, r0, p1, r1, aspect_ratio, spread_method, interpolation, degenerate_handling);
+                                                 float r0,
+                                                 const gfx::PointF& p1,
+                                                 float r1,
+                                                 float aspect_ratio,
+                                                 GradientSpreadMethod spread_method,
+                                                 ColorInterpolation interpolation,
+                                                 DegenerateHandling degenerate_handling) {
+  return std::make_shared<RadialGradient>(p0, r0, p1, r1, aspect_ratio, spread_method, interpolation,
+                                          degenerate_handling);
 }
 
 std::shared_ptr<Gradient> Gradient::CreateConic(const gfx::PointF& position,
-                                              float rotation,
-                                              float start_angle,
-                                              float end_angle,
-                                              GradientSpreadMethod spread_method,
-                                              ColorInterpolation interpolation,
-                                              DegenerateHandling degenerate_handling) {
-  return std::make_shared<ConicGradient>(position, rotation, start_angle, end_angle, spread_method, interpolation, degenerate_handling);
+                                                float rotation,
+                                                float start_angle,
+                                                float end_angle,
+                                                GradientSpreadMethod spread_method,
+                                                ColorInterpolation interpolation,
+                                                DegenerateHandling degenerate_handling) {
+  return std::make_shared<ConicGradient>(position, rotation, start_angle, end_angle, spread_method, interpolation,
+                                         degenerate_handling);
 }
 
 }  // namespace webf

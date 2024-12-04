@@ -14,7 +14,6 @@
 
 namespace webf {
 
-
 // TODO(https://crbug.com/980160): Remove this class when the static Variable
 // instance (as returned by GetCSSPropertyVariable()) has been removed.
 class Variable : public Longhand {
@@ -39,8 +38,7 @@ class Variable : public Longhand {
  protected:
   explicit constexpr Variable(CSSProperty::Flags flags)
       : Longhand(CSSPropertyID::kVariable,
-                 kProperty | kValidForFirstLetter | kValidForFirstLine |
-                     kValidForMarker | kValidForHighlightLegacy |
+                 kProperty | kValidForFirstLetter | kValidForFirstLine | kValidForMarker | kValidForHighlightLegacy |
                      kValidForHighlight | flags,
                  '\0') {}
 };

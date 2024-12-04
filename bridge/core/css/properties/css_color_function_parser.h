@@ -40,9 +40,7 @@ class ColorFunctionParser {
   bool ConsumeColorSpaceAndOriginColor(CSSParserTokenRange& args,
                                        CSSValueID function_id,
                                        std::shared_ptr<const CSSParserContext> context);
-  bool ConsumeChannel(CSSParserTokenRange& args,
-                      std::shared_ptr<const CSSParserContext> context,
-                      int index);
+  bool ConsumeChannel(CSSParserTokenRange& args, std::shared_ptr<const CSSParserContext> context, int index);
   bool ConsumeAlpha(CSSParserTokenRange& args, std::shared_ptr<const CSSParserContext> context);
   bool MakePerColorSpaceAdjustments();
 
@@ -66,7 +64,6 @@ class ColorFunctionParser {
   Color origin_color_;
   CSSColorChannelMap color_channel_map_;
 };
-
 
 }  // namespace webf
 

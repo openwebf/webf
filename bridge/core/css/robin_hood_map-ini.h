@@ -12,8 +12,7 @@
 namespace webf {
 
 template <class Key, class Value>
-typename RobinHoodMap<Key, Value>::Bucket*
-RobinHoodMap<Key, Value>::InsertInternal(
+typename RobinHoodMap<Key, Value>::Bucket* RobinHoodMap<Key, Value>::InsertInternal(
     RobinHoodMap<Key, Value>::Bucket to_insert) {
   Bucket* bucket = FindBucket(to_insert.key);
   Bucket* ret = nullptr;
@@ -54,8 +53,7 @@ RobinHoodMap<Key, Value>::InsertInternal(
 }
 
 template <class Key, class Value>
-typename RobinHoodMap<Key, Value>::Bucket* RobinHoodMap<Key, Value>::Insert(
-    const Key& key) {
+typename RobinHoodMap<Key, Value>::Bucket* RobinHoodMap<Key, Value>::Insert(const Key& key) {
   Bucket* bucket = InsertInternal({key, {}});
   if (bucket != nullptr) {
     // Normal, happy path.
@@ -68,8 +66,7 @@ typename RobinHoodMap<Key, Value>::Bucket* RobinHoodMap<Key, Value>::Insert(
 template <class Key, class Value>
 RobinHoodMap<Key, Value> RobinHoodMap<Key, Value>::Grow() {
   double new_size = num_buckets_ * kGrowthFactor;
-  CHECK_LE(new_size + kPossibleBucketsPerKey,
-           std::numeric_limits<unsigned>::max())
+  CHECK_LE(new_size + kPossibleBucketsPerKey, std::numeric_limits<unsigned>::max())
       << "This should never happen with 24-bit hashes";
 
   RobinHoodMap new_ht(new_size);
@@ -86,8 +83,7 @@ RobinHoodMap<Key, Value> RobinHoodMap<Key, Value>::Grow() {
 }
 
 template <class Key, class Value>
-typename RobinHoodMap<Key, Value>::Bucket*
-RobinHoodMap<Key, Value>::InsertWithRehashing(const Key& key) {
+typename RobinHoodMap<Key, Value>::Bucket* RobinHoodMap<Key, Value>::InsertWithRehashing(const Key& key) {
   // There was no room for the element in the regular hash table.
   // It's still there, just in a special bucket that Find() won't see,
   // so we don't need to re-insert it; but we do need to rehash.
@@ -137,7 +133,6 @@ RobinHoodMap<Key, Value>::InsertWithRehashing(const Key& key) {
   return nullptr;
 }
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_ROBIN_HOOD_MAP_INI_H_

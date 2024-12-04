@@ -143,7 +143,7 @@ bool HexStringToString(std::string_view input, std::string* output);
 // considered a failure. When decoding fails due to encountering invalid input
 // characters, |output| will have been filled with the decoded bytes up until
 // the failure.
-//bool HexStringToSpan(std::string_view input, tcb::span<> output);
+// bool HexStringToSpan(std::string_view input, tcb::span<> output);
 
 }  // namespace base
 

@@ -123,9 +123,7 @@ double DotProduct(const Vector2dF& lhs, const Vector2dF& rhs);
 
 // Return a vector that is |v| scaled by the given scale factors along each
 // axis.
-Vector2dF ScaleVector2d(const Vector2dF& v,
-                                        float x_scale,
-                                        float y_scale);
+Vector2dF ScaleVector2d(const Vector2dF& v, float x_scale, float y_scale);
 
 // Return a vector that is |v| scaled by the given scale factor.
 inline Vector2dF ScaleVector2d(const Vector2dF& v, float scale) {

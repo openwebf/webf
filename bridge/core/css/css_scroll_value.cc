@@ -15,29 +15,28 @@ CSSScrollValue::CSSScrollValue(std::shared_ptr<const CSSValue> scroller, std::sh
 
 std::string CSSScrollValue::CustomCSSText() const {
   std::string result;
-  result+="scroll(";
+  result += "scroll(";
   if (scroller_) {
-    result+=(scroller_->CssText());
+    result += (scroller_->CssText());
   }
   if (axis_) {
     if (scroller_) {
-      result+=(' ');
+      result += (' ');
     }
-    result+=(axis_->CssText());
+    result += (axis_->CssText());
   }
-  result+=(")");
+  result += (")");
   return result;
 }
 
 bool CSSScrollValue::Equals(const CSSScrollValue& other) const {
-  return webf::ValuesEquivalent(scroller_, other.scroller_) &&
-         webf::ValuesEquivalent(axis_, other.axis_);
+  return webf::ValuesEquivalent(scroller_, other.scroller_) && webf::ValuesEquivalent(axis_, other.axis_);
 }
 
 void CSSScrollValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
-//  visitor->Trace(scroller_);
-//  visitor->Trace(axis_);
+  //  visitor->Trace(scroller_);
+  //  visitor->Trace(axis_);
 }
 
 }  // namespace cssvalue

@@ -6,8 +6,8 @@
 #define WEBF_CORE_CSS_CSS_RAY_VALUE_H_
 
 #include <memory>
-#include "core/css/css_value.h"
 #include "core/css/css_primitive_value.h"
+#include "core/css/css_value.h"
 
 namespace webf {
 

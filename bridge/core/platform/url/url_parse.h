@@ -7,9 +7,9 @@
 #ifndef WEBF_URL_PARSE_H
 #define WEBF_URL_PARSE_H
 
+#include <cassert>
 #include <iosfwd>
 #include <string_view>
-#include <cassert>
 #include "foundation/macros.h"
 
 namespace webf {
@@ -34,9 +34,7 @@ struct Component {
   // Normal constructor: takes an offset and a length.
   Component(int b, int l) : begin(b), len(l) {}
 
-  int end() const {
-    return begin + len;
-  }
+  int end() const { return begin + len; }
 
   // Returns true if this component is valid, meaning the length is given.
   // Valid components may be empty to record the fact that they exist.
@@ -52,9 +50,7 @@ struct Component {
     len = -1;
   }
 
-  bool operator==(const Component& other) const {
-    return begin == other.begin && len == other.len;
-  }
+  bool operator==(const Component& other) const { return begin == other.begin && len == other.len; }
 
   // Returns a string_view using `source` as a backend.
   template <typename CharT>
@@ -97,7 +93,7 @@ inline Component MakeRange(int begin, int end) {
 //    else
 //      ParsePathURL(url, url_len, &parsed);
 //
-struct  Parsed {
+struct Parsed {
   // Identifies different components.
   enum ComponentType {
     SCHEME,
@@ -238,9 +234,7 @@ struct  Parsed {
   // parse a filesystem URL, the resulting Parsed will have a nested
   // inner_parsed_ to hold the parsed inner URL's component information.
   // For all other url types [including the inner URL], it will be NULL.
-  Parsed* inner_parsed() const {
-    return inner_parsed_;
-  }
+  Parsed* inner_parsed() const { return inner_parsed_; }
 
   void set_inner_parsed(const Parsed& inner_parsed) {
     if (!inner_parsed_)
@@ -282,8 +276,8 @@ std::ostream& operator<<(std::ostream& os, const Parsed& parsed);
 // StandardURL is for when the scheme is known, such as "https:", "ftp:".
 // This is defined as "special" in URL Standard.
 // See https://url.spec.whatwg.org/#is-special
- Parsed ParseStandardURL(std::string_view url);
- Parsed ParseStandardURL(std::u16string_view url);
+Parsed ParseStandardURL(std::string_view url);
+Parsed ParseStandardURL(std::u16string_view url);
 // TODO(crbug.com/325408566): Remove once all third-party libraries use the
 // overloads above.
 
@@ -291,8 +285,8 @@ void ParseStandardURL(const char* url, int url_len, Parsed* parsed);
 
 // Non-special URL is for when the scheme is not special, such as "about:",
 // "javascript:". See https://url.spec.whatwg.org/#is-not-special
- Parsed ParseNonSpecialURL(std::string_view url);
- Parsed ParseNonSpecialURL(std::u16string_view url);
+Parsed ParseNonSpecialURL(std::string_view url);
+Parsed ParseNonSpecialURL(std::u16string_view url);
 
 // PathURL is for when the scheme is known not to have an authority (host)
 // section but that aren't file URLs either. The scheme is parsed, and
@@ -309,20 +303,17 @@ Parsed ParsePathURL(std::u16string_view url, bool trim_path_end);
 // TODO(crbug.com/325408566): Remove once all third-party libraries use the
 // overloads above.
 
-void ParsePathURL(const char* url,
-                  int url_len,
-                  bool trim_path_end,
-                  Parsed* parsed);
+void ParsePathURL(const char* url, int url_len, bool trim_path_end, Parsed* parsed);
 
 // FileURL is for file URLs. There are some special rules for interpreting
 // these.
- Parsed ParseFileURL(std::string_view url);
+Parsed ParseFileURL(std::string_view url);
 
 // Filesystem URLs are structured differently than other URLs.
- Parsed ParseFileSystemURL(std::string_view url);
+Parsed ParseFileSystemURL(std::string_view url);
 
 // MailtoURL is for mailto: urls. They are made up scheme,path,query
- Parsed ParseMailtoURL(std::string_view url);
+Parsed ParseMailtoURL(std::string_view url);
 
 // Helper functions -----------------------------------------------------------
 
@@ -396,7 +387,7 @@ void ParseAuthority(const char16_t* spec,
 // The return value will be a positive integer between 0 and 64K, or one of
 // the two special values below.
 enum SpecialPort { PORT_UNSPECIFIED = -1, PORT_INVALID = -2 };
- int ParsePort(const char* url, const Component& port);
+int ParsePort(const char* url, const Component& port);
 
 int ParsePort(const char16_t* url, const Component& port);
 
@@ -411,9 +402,7 @@ int ParsePort(const char16_t* url, const Component& port);
 //
 // The 8-bit version requires UTF-8 encoding.
 
-void ExtractFileName(const char* url,
-                     const Component& path,
-                     Component* file_name);
+void ExtractFileName(const char* url, const Component& path, Component* file_name);
 
 // Extract the first key/value from the range defined by |*query|. Updates
 // |*query| to start at the end of the extracted key/value pair. This is
@@ -431,19 +420,11 @@ void ExtractFileName(const char* url,
 // If no key/value are found |*key| and |*value| will be unchanged and it will
 // return false.
 
+bool ExtractQueryKeyValue(std::string_view url, Component* query, Component* key, Component* value);
 
-bool ExtractQueryKeyValue(std::string_view url,
-                          Component* query,
-                          Component* key,
-                          Component* value);
-
-bool ExtractQueryKeyValue(std::u16string_view url,
-                          Component* query,
-                          Component* key,
-                          Component* value);
+bool ExtractQueryKeyValue(std::u16string_view url, Component* query, Component* key, Component* value);
 
 }  // namespace url
-
 
 }  // namespace webf
 

@@ -22,8 +22,8 @@
 */
 
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_GEOMETRY_LENGTH_FUNCTIONS_H_
 #define WEBF_CORE_GEOMETRY_LENGTH_FUNCTIONS_H_
@@ -34,7 +34,7 @@
 namespace gfx {
 class PointF;
 class SizeF;
-}
+}  // namespace gfx
 
 namespace webf {
 
@@ -44,26 +44,19 @@ class LengthSize;
 struct LengthPoint;
 
 int IntValueForLength(const Length&, int maximum_value);
-float FloatValueForLength(const Length&,
-                                          float maximum_value,
-                                          const Length::EvaluationInput& = {});
-LayoutUnit MinimumValueForLengthInternal(const Length&,
-                              LayoutUnit maximum_value,
-                              const Length::EvaluationInput&);
+float FloatValueForLength(const Length&, float maximum_value, const Length::EvaluationInput& = {});
+LayoutUnit MinimumValueForLengthInternal(const Length&, LayoutUnit maximum_value, const Length::EvaluationInput&);
 
-inline LayoutUnit MinimumValueForLength(
-    const Length& length,
-    LayoutUnit maximum_value,
-    const Length::EvaluationInput& input = {}) {
+inline LayoutUnit MinimumValueForLength(const Length& length,
+                                        LayoutUnit maximum_value,
+                                        const Length::EvaluationInput& input = {}) {
   if (LIKELY(length.IsFixed()))
     return LayoutUnit(length.Value());
 
   return MinimumValueForLengthInternal(length, maximum_value, input);
 }
 
-LayoutUnit ValueForLength(const Length&,
-               LayoutUnit maximum_value,
-               const Length::EvaluationInput& input = {});
+LayoutUnit ValueForLength(const Length&, LayoutUnit maximum_value, const Length::EvaluationInput& input = {});
 
 }  // namespace webf
 

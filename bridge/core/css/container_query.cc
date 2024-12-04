@@ -7,12 +7,10 @@
 
 namespace webf {
 
-ContainerQuery::ContainerQuery(ContainerSelector selector,
-                               std::shared_ptr<const MediaQueryExpNode> query)
+ContainerQuery::ContainerQuery(ContainerSelector selector, std::shared_ptr<const MediaQueryExpNode> query)
     : selector_(std::move(selector)), query_(query) {}
 
-ContainerQuery::ContainerQuery(const ContainerQuery& other)
-    : selector_(other.selector_), query_(other.query_) {}
+ContainerQuery::ContainerQuery(const ContainerQuery& other) : selector_(other.selector_), query_(other.query_) {}
 
 std::string ContainerQuery::ToString() const {
   StringBuilder result;
@@ -25,11 +23,10 @@ std::string ContainerQuery::ToString() const {
   return result.ReleaseString();
 }
 
-std::shared_ptr<ContainerQuery> ContainerQuery::CopyWithParent(
-    std::shared_ptr<const ContainerQuery> parent) const {
+std::shared_ptr<ContainerQuery> ContainerQuery::CopyWithParent(std::shared_ptr<const ContainerQuery> parent) const {
   auto copy = std::make_shared<ContainerQuery>(*this);
   copy->parent_ = std::move(parent);
   return copy;
 }
 
-}
+}  // namespace webf

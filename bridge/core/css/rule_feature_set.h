@@ -31,8 +31,8 @@
 #include "core/css/resolver/media_query_result.h"
 //#include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
 //#include "third_party/blink/renderer/platform/wtf/bloom_filter.h"
-#include "core/platform/bloom_filter.h"
 #include <bindings/qjs/heap_vector.h>
+#include "core/platform/bloom_filter.h"
 // #include "third_party/blink/renderer/platform/wtf/forward.h"
 //#include "third_party/blink/renderer/platform/wtf/hash_set.h"
 
@@ -113,7 +113,7 @@ class StyleScope;
 class RuleFeatureSet {
   WEBF_DISALLOW_NEW();
 
-public:
+ public:
   RuleFeatureSet() = default;
   RuleFeatureSet(const RuleFeatureSet&) = delete;
   RuleFeatureSet& operator=(const RuleFeatureSet&) = delete;
@@ -130,29 +130,21 @@ public:
   // Creates invalidation sets for the given CSS selector. This is done as part
   // of creating the RuleSet for the style sheet, i.e., before matching or
   // mutation begins.
-  SelectorPreMatch CollectFeaturesFromSelector(const CSSSelector&,
-                                               const StyleScope*);
+  SelectorPreMatch CollectFeaturesFromSelector(const CSSSelector&, const StyleScope*);
 
   // Member functions for accessing non-invalidation-set related features.
   bool UsesFirstLineRules() const { return metadata_.uses_first_line_rules; }
-  bool UsesWindowInactiveSelector() const {
-    return metadata_.uses_window_inactive_selector;
-  }
+  bool UsesWindowInactiveSelector() const { return metadata_.uses_window_inactive_selector; }
   // Returns true if we have :nth-child(... of S) selectors where S contains a
   // :has() selector.
   bool UsesHasInsideNth() const { return metadata_.uses_has_inside_nth; }
-  unsigned MaxDirectAdjacentSelectors() const {
-    return metadata_.max_direct_adjacent_selectors;
-  }
+  unsigned MaxDirectAdjacentSelectors() const { return metadata_.max_direct_adjacent_selectors; }
   bool HasSelectorForId(const AtomicString& id_value) const {
     return id_invalidation_sets_.find(id_value) != id_invalidation_sets_.end();
   }
-  MediaQueryResultFlags& MutableMediaQueryResultFlags() {
-    return media_query_result_flags_;
-  }
+  MediaQueryResultFlags& MutableMediaQueryResultFlags() { return media_query_result_flags_; }
   bool HasMediaQueryResults() const {
-    return media_query_result_flags_.is_viewport_dependent ||
-           media_query_result_flags_.is_device_dependent;
+    return media_query_result_flags_.is_viewport_dependent || media_query_result_flags_.is_device_dependent;
   }
   bool HasViewportDependentMediaQueries() const;
   bool HasDynamicViewportDependentMediaQueries() const;
@@ -166,72 +158,50 @@ public:
 
   // Note that class invalidations will sometimes return self-invalidation
   // even when it is not necessary; see comment on class_invalidation_sets_.
-  void CollectInvalidationSetsForClass(InvalidationLists&,
-                                       Element&,
-                                       const AtomicString& class_name) const;
+  void CollectInvalidationSetsForClass(InvalidationLists&, Element&, const AtomicString& class_name) const;
 
-  void CollectInvalidationSetsForId(InvalidationLists&,
-                                    Element&,
-                                    const AtomicString& id) const;
-  void CollectInvalidationSetsForAttribute(
-      InvalidationLists&,
-      Element&,
-      const QualifiedName& attribute_name) const;
-  void CollectInvalidationSetsForPseudoClass(InvalidationLists&,
+  void CollectInvalidationSetsForId(InvalidationLists&, Element&, const AtomicString& id) const;
+  void CollectInvalidationSetsForAttribute(InvalidationLists&, Element&, const QualifiedName& attribute_name) const;
+  void CollectInvalidationSetsForPseudoClass(InvalidationLists&, Element&, CSSSelector::PseudoType) const;
+
+  void CollectSiblingInvalidationSetForClass(InvalidationLists&,
                                              Element&,
-                                             CSSSelector::PseudoType) const;
-
-  void CollectSiblingInvalidationSetForClass(
-      InvalidationLists&,
-      Element&,
-      const AtomicString& class_name,
-      unsigned min_direct_adjacent) const;
+                                             const AtomicString& class_name,
+                                             unsigned min_direct_adjacent) const;
   void CollectSiblingInvalidationSetForId(InvalidationLists&,
                                           Element&,
                                           const AtomicString& id,
                                           unsigned min_direct_adjacent) const;
-  void CollectSiblingInvalidationSetForAttribute(
-      InvalidationLists&,
-      Element&,
-      const QualifiedName& attribute_name,
-      unsigned min_direct_adjacent) const;
+  void CollectSiblingInvalidationSetForAttribute(InvalidationLists&,
+                                                 Element&,
+                                                 const QualifiedName& attribute_name,
+                                                 unsigned min_direct_adjacent) const;
 
   // TODO: Document.
-//  void CollectUniversalSiblingInvalidationSet(
-//      InvalidationLists&,
-//      unsigned min_direct_adjacent) const;
-//  void CollectNthInvalidationSet(InvalidationLists&) const;
-//  void CollectPartInvalidationSet(InvalidationLists&) const;
+  //  void CollectUniversalSiblingInvalidationSet(
+  //      InvalidationLists&,
+  //      unsigned min_direct_adjacent) const;
+  //  void CollectNthInvalidationSet(InvalidationLists&) const;
+  //  void CollectPartInvalidationSet(InvalidationLists&) const;
 
   // Quick tests for whether we need to consider :has() invalidation.
-//  bool NeedsHasInvalidationForClass(const AtomicString& class_name) const;
-//  bool NeedsHasInvalidationForAttribute(
-//      const QualifiedName& attribute_name) const;
-//  bool NeedsHasInvalidationForId(const AtomicString& id) const;
-//  bool NeedsHasInvalidationForTagName(const AtomicString& tag_name) const;
-//  bool NeedsHasInvalidationForInsertedOrRemovedElement(Element&) const;
-//  bool NeedsHasInvalidationForPseudoClass(
-//      CSSSelector::PseudoType pseudo_type) const;
+  //  bool NeedsHasInvalidationForClass(const AtomicString& class_name) const;
+  //  bool NeedsHasInvalidationForAttribute(
+  //      const QualifiedName& attribute_name) const;
+  //  bool NeedsHasInvalidationForId(const AtomicString& id) const;
+  //  bool NeedsHasInvalidationForTagName(const AtomicString& tag_name) const;
+  //  bool NeedsHasInvalidationForInsertedOrRemovedElement(Element&) const;
+  //  bool NeedsHasInvalidationForPseudoClass(
+  //      CSSSelector::PseudoType pseudo_type) const;
 
-  inline bool NeedsHasInvalidationForClassChange() const {
-    return !classes_in_has_argument_.empty();
-  }
-  inline bool NeedsHasInvalidationForAttributeChange() const {
-    return !attributes_in_has_argument_.empty();
-  }
-  inline bool NeedsHasInvalidationForIdChange() const {
-    return !ids_in_has_argument_.empty();
-  }
-  inline bool NeedsHasInvalidationForPseudoStateChange() const {
-    return !pseudos_in_has_argument_.empty();
-  }
+  inline bool NeedsHasInvalidationForClassChange() const { return !classes_in_has_argument_.empty(); }
+  inline bool NeedsHasInvalidationForAttributeChange() const { return !attributes_in_has_argument_.empty(); }
+  inline bool NeedsHasInvalidationForIdChange() const { return !ids_in_has_argument_.empty(); }
+  inline bool NeedsHasInvalidationForPseudoStateChange() const { return !pseudos_in_has_argument_.empty(); }
   inline bool NeedsHasInvalidationForInsertionOrRemoval() const {
-    return not_pseudo_in_has_argument_ || universal_in_has_argument_ ||
-           !tag_names_in_has_argument_.empty() ||
-           NeedsHasInvalidationForClassChange() ||
-           NeedsHasInvalidationForAttributeChange() ||
-           NeedsHasInvalidationForIdChange() ||
-           NeedsHasInvalidationForPseudoStateChange();
+    return not_pseudo_in_has_argument_ || universal_in_has_argument_ || !tag_names_in_has_argument_.empty() ||
+           NeedsHasInvalidationForClassChange() || NeedsHasInvalidationForAttributeChange() ||
+           NeedsHasInvalidationForIdChange() || NeedsHasInvalidationForPseudoStateChange();
   }
 
   bool HasIdsInSelectors() const { return id_invalidation_sets_.size() > 0; }
@@ -275,8 +245,7 @@ public:
   // Inserts the given value as a key for self-invalidation.
   // Return true if the insertion was successful. (It may fail because
   // there is no Bloom filter yet.)
-  bool InsertIntoSelfInvalidationBloomFilter(const AtomicString& value,
-                                             int salt);
+  bool InsertIntoSelfInvalidationBloomFilter(const AtomicString& value, int salt);
   const int kClassSalt = 13;
   const int kIdSalt = 29;
 
@@ -286,16 +255,14 @@ public:
   // hold the DescendantInvalidationSet.
   using InvalidationSetMap =
       std::unordered_map<AtomicString, std::shared_ptr<InvalidationSet>, AtomicString::KeyHasher>;
-  using PseudoTypeInvalidationSetMap =
-      std::unordered_map<CSSSelector::PseudoType,
-              std::shared_ptr<InvalidationSet>>;
+  using PseudoTypeInvalidationSetMap = std::unordered_map<CSSSelector::PseudoType, std::shared_ptr<InvalidationSet>>;
   using ValuesInHasArgument = std::unordered_set<AtomicString, AtomicString::KeyHasher>;
   using PseudosInHasArgument = std::unordered_set<CSSSelector::PseudoType>;
 
   struct FeatureMetadata {
     WEBF_DISALLOW_NEW();
 
-  public:
+   public:
     void Merge(const FeatureMetadata& other);
     void Clear();
     bool operator==(const FeatureMetadata&) const;
@@ -324,24 +291,19 @@ public:
     bool uses_has_inside_nth = false;
   };
 
-  SelectorPreMatch CollectMetadataFromSelector(
-      const CSSSelector&,
-      unsigned max_direct_adjacent_selectors,
-      FeatureMetadata&);
+  SelectorPreMatch CollectMetadataFromSelector(const CSSSelector&,
+                                               unsigned max_direct_adjacent_selectors,
+                                               FeatureMetadata&);
 
   InvalidationSet& EnsureClassInvalidationSet(const AtomicString& class_name,
                                               InvalidationType,
                                               PositionType,
                                               bool in_nth_child);
-  InvalidationSet& EnsureAttributeInvalidationSet(
-      const AtomicString& attribute_name,
-      InvalidationType,
-      PositionType,
-      bool in_nth_child);
-  InvalidationSet& EnsureIdInvalidationSet(const AtomicString& id,
-                                           InvalidationType,
-                                           PositionType,
-                                           bool in_nth_child);
+  InvalidationSet& EnsureAttributeInvalidationSet(const AtomicString& attribute_name,
+                                                  InvalidationType,
+                                                  PositionType,
+                                                  bool in_nth_child);
+  InvalidationSet& EnsureIdInvalidationSet(const AtomicString& id, InvalidationType, PositionType, bool in_nth_child);
   InvalidationSet& EnsurePseudoInvalidationSet(CSSSelector::PseudoType,
                                                InvalidationType,
                                                PositionType,
@@ -373,8 +335,7 @@ public:
       classes.push_back(class_name);
     }
     void NarrowToAttribute(const AtomicString& attribute) {
-      if (Size() == 1 &&
-          (!ids.empty() || !classes.empty() || !attributes.empty())) {
+      if (Size() == 1 && (!ids.empty() || !classes.empty() || !attributes.empty())) {
         return;
       }
       ClearFeatures();
@@ -403,8 +364,7 @@ public:
       emitted_tag_names.clear();
     }
     unsigned Size() const {
-      return classes.size() + attributes.size() + ids.size() +
-             tag_names.size() + emitted_tag_names.size();
+      return classes.size() + attributes.size() + ids.size() + tag_names.size() + emitted_tag_names.size();
     }
 
     HeapVector<AtomicString> classes;
@@ -463,11 +423,8 @@ public:
     WEBF_STACK_ALLOCATED();
 
    public:
-    explicit AutoRestoreMaxDirectAdjacentSelectors(
-        InvalidationSetFeatures* features)
-        : features_(features),
-          original_value_(features ? features->max_direct_adjacent_selectors
-                                   : 0) {}
+    explicit AutoRestoreMaxDirectAdjacentSelectors(InvalidationSetFeatures* features)
+        : features_(features), original_value_(features ? features->max_direct_adjacent_selectors : 0) {}
     ~AutoRestoreMaxDirectAdjacentSelectors() {
       if (features_) {
         features_->max_direct_adjacent_selectors = original_value_;
@@ -507,10 +464,8 @@ public:
     WEBF_STACK_ALLOCATED();
 
    public:
-    explicit AutoRestoreDescendantFeaturesDepth(
-        InvalidationSetFeatures* features)
-        : features_(features),
-          original_value_(features ? features->descendant_features_depth : 0) {}
+    explicit AutoRestoreDescendantFeaturesDepth(InvalidationSetFeatures* features)
+        : features_(features), original_value_(features ? features->descendant_features_depth : 0) {}
     ~AutoRestoreDescendantFeaturesDepth() {
       if (features_) {
         features_->descendant_features_depth = original_value_;
@@ -533,11 +488,8 @@ public:
 
    public:
     explicit AutoRestoreWholeSubtreeInvalid(InvalidationSetFeatures& features)
-        : features_(features),
-          original_value_(features.invalidation_flags.WholeSubtreeInvalid()) {}
-    ~AutoRestoreWholeSubtreeInvalid() {
-      features_.invalidation_flags.SetWholeSubtreeInvalid(original_value_);
-    }
+        : features_(features), original_value_(features.invalidation_flags.WholeSubtreeInvalid()) {}
+    ~AutoRestoreWholeSubtreeInvalid() { features_.invalidation_flags.SetWholeSubtreeInvalid(original_value_); }
 
    private:
     InvalidationSetFeatures& features_;
@@ -550,13 +502,9 @@ public:
     WEBF_STACK_ALLOCATED();
 
    public:
-    explicit AutoRestoreTreeBoundaryCrossingFlag(
-        InvalidationSetFeatures& features)
-        : features_(features),
-          original_value_(features.invalidation_flags.TreeBoundaryCrossing()) {}
-    ~AutoRestoreTreeBoundaryCrossingFlag() {
-      features_.invalidation_flags.SetTreeBoundaryCrossing(original_value_);
-    }
+    explicit AutoRestoreTreeBoundaryCrossingFlag(InvalidationSetFeatures& features)
+        : features_(features), original_value_(features.invalidation_flags.TreeBoundaryCrossing()) {}
+    ~AutoRestoreTreeBoundaryCrossingFlag() { features_.invalidation_flags.SetTreeBoundaryCrossing(original_value_); }
 
    private:
     InvalidationSetFeatures& features_;
@@ -569,11 +517,8 @@ public:
     WEBF_STACK_ALLOCATED();
 
    public:
-    explicit AutoRestoreInsertionPointCrossingFlag(
-        InvalidationSetFeatures& features)
-        : features_(features),
-          original_value_(
-              features.invalidation_flags.InsertionPointCrossing()) {}
+    explicit AutoRestoreInsertionPointCrossingFlag(InvalidationSetFeatures& features)
+        : features_(features), original_value_(features.invalidation_flags.InsertionPointCrossing()) {}
     ~AutoRestoreInsertionPointCrossingFlag() {
       features_.invalidation_flags.SetInsertionPointCrossing(original_value_);
     }
@@ -583,13 +528,9 @@ public:
     bool original_value_;
   };
 
-  static void ExtractInvalidationSetFeature(const CSSSelector&,
-                                            InvalidationSetFeatures&);
+  static void ExtractInvalidationSetFeature(const CSSSelector&, InvalidationSetFeatures&);
 
-  enum FeatureInvalidationType {
-    kNormalInvalidation,
-    kRequiresSubtreeInvalidation
-  };
+  enum FeatureInvalidationType { kNormalInvalidation, kRequiresSubtreeInvalidation };
 
   // Extracts features for the given complex selector, and adds those features
   // the appropriate invalidation sets.
@@ -607,72 +548,55 @@ public:
   // selector. For example, for :is(.a .b), this function is called with
   // CSSSelector equal to '.a .b', and PseudoType equal to kPseudoIs.
   // For top-level complex selectors, the PseudoType is kPseudoUnknown.
-  FeatureInvalidationType UpdateInvalidationSetsForComplex(
-      const CSSSelector&,
-      bool in_nth_child,
-      const StyleScope*,
-      InvalidationSetFeatures&,
-      PositionType,
-      CSSSelector::PseudoType);
+  FeatureInvalidationType UpdateInvalidationSetsForComplex(const CSSSelector&,
+                                                           bool in_nth_child,
+                                                           const StyleScope*,
+                                                           InvalidationSetFeatures&,
+                                                           PositionType,
+                                                           CSSSelector::PseudoType);
 
-  void ExtractInvalidationSetFeaturesFromSimpleSelector(
-      const CSSSelector&,
-      InvalidationSetFeatures&);
-  const CSSSelector* ExtractInvalidationSetFeaturesFromCompound(
-      const CSSSelector&,
-      InvalidationSetFeatures&,
-      PositionType,
-      bool for_logical_combination_in_has,
-      bool in_nth_child);
+  void ExtractInvalidationSetFeaturesFromSimpleSelector(const CSSSelector&, InvalidationSetFeatures&);
+  const CSSSelector* ExtractInvalidationSetFeaturesFromCompound(const CSSSelector&,
+                                                                InvalidationSetFeatures&,
+                                                                PositionType,
+                                                                bool for_logical_combination_in_has,
+                                                                bool in_nth_child);
   void ExtractInvalidationSetFeaturesFromSelectorList(const CSSSelector&,
                                                       bool in_nth_child,
                                                       InvalidationSetFeatures&,
                                                       PositionType);
-  void UpdateFeaturesFromCombinator(
-      CSSSelector::RelationType,
-      const CSSSelector* last_compound_selector_in_adjacent_chain,
-      InvalidationSetFeatures& last_compound_in_adjacent_chain_features,
-      InvalidationSetFeatures*& sibling_features,
-      InvalidationSetFeatures& descendant_features,
-      bool for_logical_combination_in_has,
-      bool in_nth_child);
-  void UpdateFeaturesFromStyleScope(
-      const StyleScope&,
-      InvalidationSetFeatures& descendant_features);
+  void UpdateFeaturesFromCombinator(CSSSelector::RelationType,
+                                    const CSSSelector* last_compound_selector_in_adjacent_chain,
+                                    InvalidationSetFeatures& last_compound_in_adjacent_chain_features,
+                                    InvalidationSetFeatures*& sibling_features,
+                                    InvalidationSetFeatures& descendant_features,
+                                    bool for_logical_combination_in_has,
+                                    bool in_nth_child);
+  void UpdateFeaturesFromStyleScope(const StyleScope&, InvalidationSetFeatures& descendant_features);
 
-  void AddFeaturesToInvalidationSet(InvalidationSet&,
-                                    const InvalidationSetFeatures&);
-  void AddFeaturesToInvalidationSets(
-      const CSSSelector&,
-      bool in_nth_child,
-      InvalidationSetFeatures* sibling_features,
-      InvalidationSetFeatures& descendant_features);
-  const CSSSelector* AddFeaturesToInvalidationSetsForCompoundSelector(
-      const CSSSelector&,
-      bool in_nth_child,
-      InvalidationSetFeatures* sibling_features,
-      InvalidationSetFeatures& descendant_features);
-  void AddFeaturesToInvalidationSetsForSimpleSelector(
-      const CSSSelector& simple_selector,
-      const CSSSelector& compound,
-      bool in_nth_child,
-      InvalidationSetFeatures* sibling_features,
-      InvalidationSetFeatures& descendant_features);
-  void AddFeaturesToInvalidationSetsForSelectorList(
-      const CSSSelector&,
-      bool in_nth_child,
-      InvalidationSetFeatures* sibling_features,
-      InvalidationSetFeatures& descendant_features);
-  void AddFeaturesToInvalidationSetsForStyleScope(
-      const StyleScope&,
-      InvalidationSetFeatures& descendant_features);
-  void AddFeaturesToUniversalSiblingInvalidationSet(
-      const InvalidationSetFeatures& sibling_features,
-      const InvalidationSetFeatures& descendant_features);
-  void AddValuesInComplexSelectorInsideIsWhereNot(
-      const CSSSelector* selector_first);
-  bool AddValueOfSimpleSelectorInHasArgument(
-      const CSSSelector& has_pseudo_class);
+  void AddFeaturesToInvalidationSet(InvalidationSet&, const InvalidationSetFeatures&);
+  void AddFeaturesToInvalidationSets(const CSSSelector&,
+                                     bool in_nth_child,
+                                     InvalidationSetFeatures* sibling_features,
+                                     InvalidationSetFeatures& descendant_features);
+  const CSSSelector* AddFeaturesToInvalidationSetsForCompoundSelector(const CSSSelector&,
+                                                                      bool in_nth_child,
+                                                                      InvalidationSetFeatures* sibling_features,
+                                                                      InvalidationSetFeatures& descendant_features);
+  void AddFeaturesToInvalidationSetsForSimpleSelector(const CSSSelector& simple_selector,
+                                                      const CSSSelector& compound,
+                                                      bool in_nth_child,
+                                                      InvalidationSetFeatures* sibling_features,
+                                                      InvalidationSetFeatures& descendant_features);
+  void AddFeaturesToInvalidationSetsForSelectorList(const CSSSelector&,
+                                                    bool in_nth_child,
+                                                    InvalidationSetFeatures* sibling_features,
+                                                    InvalidationSetFeatures& descendant_features);
+  void AddFeaturesToInvalidationSetsForStyleScope(const StyleScope&, InvalidationSetFeatures& descendant_features);
+  void AddFeaturesToUniversalSiblingInvalidationSet(const InvalidationSetFeatures& sibling_features,
+                                                    const InvalidationSetFeatures& descendant_features);
+  void AddValuesInComplexSelectorInsideIsWhereNot(const CSSSelector* selector_first);
+  bool AddValueOfSimpleSelectorInHasArgument(const CSSSelector& has_pseudo_class);
 
   void CollectValuesInHasArgument(const CSSSelector& has_pseudo_class);
 
@@ -697,12 +621,11 @@ public:
   // Example 4) '.a:has(:is(.b ~ .c .d)) {}'
   //   - For class 'b' change, invalidate descendant '.a' of sibling '.c'
   //     ('.b ~ .c .a {}'), and invalidate sibling '.a' ('.b ~ .a {}').
-  void AddFeaturesToInvalidationSetsForHasPseudoClass(
-      const CSSSelector& has_pseudo_class,
-      const CSSSelector* compound_containing_has,
-      InvalidationSetFeatures* sibling_features,
-      InvalidationSetFeatures& descendant_features,
-      bool in_nth_child);
+  void AddFeaturesToInvalidationSetsForHasPseudoClass(const CSSSelector& has_pseudo_class,
+                                                      const CSSSelector* compound_containing_has,
+                                                      InvalidationSetFeatures* sibling_features,
+                                                      InvalidationSetFeatures& descendant_features,
+                                                      bool in_nth_child);
 
   // There are two methods to add features for logical combinations in :has().
   // - kForAllNonRightmostCompounds:
@@ -759,13 +682,12 @@ public:
   // in AddFeaturesToInvalidationSetsForHasPseudoClass()).
   // For the rest compounds, after the rightmost compound is skipped, the value
   // is changed to the combinator at the left of the compound.
-  void AddFeaturesToInvalidationSetsForLogicalCombinationInHas(
-      const CSSSelector& logical_combination,
-      const CSSSelector* compound_containing_has,
-      InvalidationSetFeatures* sibling_features,
-      InvalidationSetFeatures& descendant_features,
-      CSSSelector::RelationType previous_combinator,
-      AddFeaturesMethodForLogicalCombinationInHas);
+  void AddFeaturesToInvalidationSetsForLogicalCombinationInHas(const CSSSelector& logical_combination,
+                                                               const CSSSelector* compound_containing_has,
+                                                               InvalidationSetFeatures* sibling_features,
+                                                               InvalidationSetFeatures& descendant_features,
+                                                               CSSSelector::RelationType previous_combinator,
+                                                               AddFeaturesMethodForLogicalCombinationInHas);
 
   void UpdateFeaturesFromCombinatorForLogicalCombinationInHas(
       CSSSelector::RelationType combinator,
@@ -792,8 +714,7 @@ public:
   // (which is typically an ancestor; see the class comment)
   // and mark the invalidation sets of any simple selectors within it
   // for Nth-child invalidation.
-  void MarkInvalidationSetsWithinNthChild(const CSSSelector& selector,
-                                          bool in_nth_child);
+  void MarkInvalidationSetsWithinNthChild(const CSSSelector& selector, bool in_nth_child);
 
   // Make sure that the pointer in “invalidation_set” has a single
   // reference that can be modified safely. (This is done through
@@ -811,11 +732,10 @@ public:
   // to the DescendantInvalidationSet embedded within that set.
   // In other words, you must ignore the value of invalidation_set
   // after this function, since it is not what you requested.
-  static InvalidationSet& EnsureMutableInvalidationSet(
-      InvalidationType type,
-      PositionType position,
-      bool in_nth_child,
-      std::shared_ptr<InvalidationSet>& invalidation_set);
+  static InvalidationSet& EnsureMutableInvalidationSet(InvalidationType type,
+                                                       PositionType position,
+                                                       bool in_nth_child,
+                                                       std::shared_ptr<InvalidationSet>& invalidation_set);
 
   static InvalidationSet& EnsureInvalidationSet(InvalidationSetMap&,
                                                 const AtomicString& key,
@@ -835,9 +755,7 @@ public:
   // Copy-on-write is used to get correct merging in face of shared
   // InvalidationSets between keys; see comments on
   // EnsureMutableInvalidationSet() for more details.
-  void MergeInvalidationSet(InvalidationSetMap&,
-                            const AtomicString& key,
-                            std::shared_ptr<InvalidationSet>);
+  void MergeInvalidationSet(InvalidationSetMap&, const AtomicString& key, std::shared_ptr<InvalidationSet>);
   void MergeInvalidationSet(PseudoTypeInvalidationSetMap&,
                             CSSSelector::PseudoType key,
                             std::shared_ptr<InvalidationSet>);
@@ -894,11 +812,11 @@ public:
   bool not_pseudo_in_has_argument_{false};
   PseudosInHasArgument pseudos_in_has_argument_;
 
-  //friend class RuleFeatureSetTest;
+  // friend class RuleFeatureSetTest;
   friend struct AddFeaturesToInvalidationSetsForLogicalCombinationInHasContext;
 };
 
- std::ostream& operator<<(std::ostream&, const RuleFeatureSet&);
+std::ostream& operator<<(std::ostream&, const RuleFeatureSet&);
 
 }  // namespace webf
 

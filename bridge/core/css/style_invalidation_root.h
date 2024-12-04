@@ -17,12 +17,12 @@ class StyleInvalidationRoot : public StyleTraversalRoot {
   void SubtreeModified(ContainerNode& parent) final;
 
  private:
-/*
- #if DCHECK_IS_ON()
-  ContainerNode* Parent(const Node& node) const final;
-  bool IsChildDirty(const Node& node) const final;
-#endif  // DCHECK_IS_ON()
-*/
+  /*
+   #if DCHECK_IS_ON()
+    ContainerNode* Parent(const Node& node) const final;
+    bool IsChildDirty(const Node& node) const final;
+  #endif  // DCHECK_IS_ON()
+  */
   bool IsDirty(const Node& node) const final;
 };
 

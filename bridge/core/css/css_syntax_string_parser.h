@@ -5,9 +5,9 @@
 #ifndef WEBF_CORE_CSS_CSS_SYNTAX_STRING_PARSER_H_
 #define WEBF_CORE_CSS_CSS_SYNTAX_STRING_PARSER_H_
 
-#include "foundation/macros.h"
-#include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/css_syntax_definition.h"
+#include "core/css/parser/css_parser_token_stream.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -52,6 +52,6 @@ class CSSSyntaxStringParser {
   CSSTokenizerInputStream input_;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_CSS_SYNTAX_STRING_PARSER_H_

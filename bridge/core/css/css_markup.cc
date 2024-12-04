@@ -80,13 +80,11 @@ void SerializeIdentifier(const std::string_view& identifier, StringBuilder& appe
     if (c == 0) {
       append_to.Append(0xfffd);
     } else if (c <= 0x1f || c == 0x7f ||
-               (0x30 <= c && c <= 0x39 &&
-                (is_first || (is_second && is_first_char_hyphen)))) {
+               (0x30 <= c && c <= 0x39 && (is_first || (is_second && is_first_char_hyphen)))) {
       SerializeCharacterAsCodePoint(c, append_to);
     } else if (c == 0x2d && is_first && index == identifier.length()) {
       SerializeCharacter(c, append_to);
-    } else if (0x80 <= c || c == 0x2d || c == 0x5f ||
-               (0x30 <= c && c <= 0x39) || (0x41 <= c && c <= 0x5a) ||
+    } else if (0x80 <= c || c == 0x2d || c == 0x5f || (0x30 <= c && c <= 0x39) || (0x41 <= c && c <= 0x5a) ||
                (0x61 <= c && c <= 0x7a)) {
       append_to.Append(c);
     } else {
@@ -136,8 +134,7 @@ std::string SerializeURI(const std::string& string) {
 std::string SerializeFontFamily(const std::string& string) {
   // Some <font-family> values are serialized without quotes.
   // See https://github.com/w3c/csswg-drafts/issues/5846
-  return (css_parsing_utils::IsCSSWideKeyword(string) ||
-          css_parsing_utils::IsDefaultKeyword(string) ||
+  return (css_parsing_utils::IsCSSWideKeyword(string) || css_parsing_utils::IsDefaultKeyword(string) ||
           FontFamily::InferredTypeFor(string) == FontFamily::Type::kGenericFamily ||
           !IsCSSTokenizerIdentifier(StringView(string)))
              ? SerializeString(string)

@@ -14,8 +14,6 @@ namespace webf {
 // https://www.w3.org/TR/css-color-5/#relative-colors
 using CSSColorChannelMap = std::unordered_map<CSSValueID, double>;
 
-
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_CSS_COLOR_CHANNEL_MAP_H_

@@ -10,7 +10,6 @@
 #ifndef WEBF_GFX_GEOMETRY_VECTOR2D_H_
 #define WEBF_GFX_GEOMETRY_VECTOR2D_H_
 
-
 #include <stdint.h>
 
 #include <iosfwd>
@@ -38,9 +37,7 @@ class Vector2d {
   // Subtract the components of the |other| vector from the current vector.
   void Subtract(const Vector2d& other);
 
-  constexpr bool operator==(const Vector2d& other) const {
-    return x_ == other.x_ && y_ == other.y_;
-  }
+  constexpr bool operator==(const Vector2d& other) const { return x_ == other.x_ && y_ == other.y_; }
   void operator+=(const Vector2d& other) { Add(other); }
   void operator-=(const Vector2d& other) { Subtract(other); }
 
@@ -68,9 +65,7 @@ class Vector2d {
 
   std::string ToString() const;
 
-  operator Vector2dF() const {
-    return Vector2dF(static_cast<float>(x()), static_cast<float>(y()));
-  }
+  operator Vector2dF() const { return Vector2dF(static_cast<float>(x()), static_cast<float>(y())); }
 
  private:
   int x_;

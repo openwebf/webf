@@ -7,10 +7,10 @@
 #include "core/css/css_font_face_src_value.h"
 #include "core/css/css_unparsed_declaration_value.h"
 #include "core/css/css_value_list.h"
+#include "core/css/css_value_pair.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_tokenized_value.h"
 #include "core/css/parser/css_tokenizer.h"
-#include "core/css/css_value_pair.h"
 #include "core/css/parser/css_variable_parser.h"
 #include "core/css/properties/css_parsing_utils.h"
 
@@ -450,11 +450,10 @@ std::shared_ptr<const CSSValue> ConsumeBasePalette(CSSParserTokenRange& range,
 }
 
 std::shared_ptr<const CSSValue> ConsumeColorOverride(CSSParserTokenRange& range,
-                               std::shared_ptr<const CSSParserContext> context) {
+                                                     std::shared_ptr<const CSSParserContext> context) {
   std::shared_ptr<CSSValueList> list = CSSValueList::CreateCommaSeparated();
   do {
-    auto color_index =
-        css_parsing_utils::ConsumeInteger(range, context, 0);
+    auto color_index = css_parsing_utils::ConsumeInteger(range, context, 0);
     if (!color_index) {
       return nullptr;
     }
@@ -464,12 +463,10 @@ std::shared_ptr<const CSSValue> ConsumeColorOverride(CSSParserTokenRange& range,
       return nullptr;
     }
     auto color_identifier = DynamicTo<CSSIdentifierValue>(color.get());
-    if (color_identifier &&
-        color_identifier->GetValueID() == CSSValueID::kCurrentcolor) {
+    if (color_identifier && color_identifier->GetValueID() == CSSValueID::kCurrentcolor) {
       return nullptr;
     }
-    list->Append(std::make_shared<CSSValuePair>(
-        color_index, color, CSSValuePair::kKeepIdenticalValues));
+    list->Append(std::make_shared<CSSValuePair>(color_index, color, CSSValuePair::kKeepIdenticalValues));
   } while (css_parsing_utils::ConsumeCommaIncludingWhitespace(range));
   if (!range.AtEnd() || !list->length()) {
     return nullptr;

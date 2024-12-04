@@ -1,35 +1,35 @@
 /*
-* Copyright (C) 2012 Google Inc. All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are
-* met:
-*
-*     * Redistributions of source code must retain the above copyright
-* notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above
-* copyright notice, this list of conditions and the following disclaimer
-* in the documentation and/or other materials provided with the
-* distribution.
-*     * Neither the name of Google Inc. nor the names of its
-* contributors may be used to endorse or promote products derived from
-* this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-* A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-* OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (C) 2012 Google Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
-#include <float.h>
 #include "decimal.h"
+#include <float.h>
 #include "core/base/strings/string_number_conversions.h"
 #include "foundation/dtoa.h"
 #include "foundation/string_builder.h"
@@ -42,8 +42,7 @@ constexpr int kExponentMax = 1023;
 constexpr int kExponentMin = -1023;
 constexpr int kPrecision = 18;
 
-constexpr uint64_t kMaxCoefficient =
-    UINT64_C(0xDE0B6B3A763FFFF);  // 999999999999999999 == 18 9's
+constexpr uint64_t kMaxCoefficient = UINT64_C(0xDE0B6B3A763FFFF);  // 999999999999999999 == 18 9's
 
 // This class handles Decimal special values.
 class SpecialValueHandler {
@@ -77,8 +76,7 @@ class SpecialValueHandler {
   Result result_ = kResultIsUnknown;
 };
 
-SpecialValueHandler::SpecialValueHandler(const Decimal& lhs, const Decimal& rhs)
-    : lhs_(lhs), rhs_(rhs) {}
+SpecialValueHandler::SpecialValueHandler(const Decimal& lhs, const Decimal& rhs) : lhs_(lhs), rhs_(rhs) {}
 
 SpecialValueHandler::HandleResult SpecialValueHandler::Handle() {
   if (lhs_.IsFinite() && rhs_.IsFinite())
@@ -118,20 +116,12 @@ class UInt128 {
   uint64_t High() const { return high_; }
   uint64_t Low() const { return low_; }
 
-  static UInt128 Multiply(uint64_t u, uint64_t v) {
-    return UInt128(u * v, MultiplyHigh(u, v));
-  }
+  static UInt128 Multiply(uint64_t u, uint64_t v) { return UInt128(u * v, MultiplyHigh(u, v)); }
 
  private:
-  static uint32_t HighUInt32(uint64_t x) {
-    return static_cast<uint32_t>(x >> 32);
-  }
-  static uint32_t LowUInt32(uint64_t x) {
-    return static_cast<uint32_t>(x & ((static_cast<uint64_t>(1) << 32) - 1));
-  }
-  static uint64_t MakeUInt64(uint32_t low, uint32_t high) {
-    return low | (static_cast<uint64_t>(high) << 32);
-  }
+  static uint32_t HighUInt32(uint64_t x) { return static_cast<uint32_t>(x >> 32); }
+  static uint32_t LowUInt32(uint64_t x) { return static_cast<uint32_t>(x & ((static_cast<uint64_t>(1) << 32) - 1)); }
+  static uint64_t MakeUInt64(uint32_t low, uint32_t high) { return low | (static_cast<uint64_t>(high) << 32); }
 
   static uint64_t MultiplyHigh(uint64_t, uint64_t);
 
@@ -172,8 +162,7 @@ uint64_t UInt128::MultiplyHigh(uint64_t u, uint64_t v) {
   const uint64_t v_low = LowUInt32(v);
   const uint64_t v_high = HighUInt32(v);
   const uint64_t partial_product = u_high * v_low + HighUInt32(u_low * v_low);
-  return u_high * v_high + HighUInt32(partial_product) +
-         HighUInt32(u_low * v_high + LowUInt32(partial_product));
+  return u_high * v_high + HighUInt32(partial_product) + HighUInt32(u_low * v_high + LowUInt32(partial_product));
 }
 
 static int CountDigits(uint64_t x) {
@@ -246,18 +235,16 @@ Decimal::EncodedData::EncodedData(Sign sign, int exponent, uint64_t coefficient)
 }
 
 bool Decimal::EncodedData::operator==(const EncodedData& another) const {
-  return sign_ == another.sign_ && format_class_ == another.format_class_ &&
-         exponent_ == another.exponent_ && coefficient_ == another.coefficient_;
+  return sign_ == another.sign_ && format_class_ == another.format_class_ && exponent_ == another.exponent_ &&
+         coefficient_ == another.coefficient_;
 }
 
 Decimal::Decimal(int32_t i32)
     : data_(i32 < 0 ? kNegative : kPositive,
             0,
-            i32 < 0 ? static_cast<uint64_t>(-static_cast<int64_t>(i32))
-                    : static_cast<uint64_t>(i32)) {}
+            i32 < 0 ? static_cast<uint64_t>(-static_cast<int64_t>(i32)) : static_cast<uint64_t>(i32)) {}
 
-Decimal::Decimal(Sign sign, int exponent, uint64_t coefficient)
-    : data_(sign, exponent, coefficient) {}
+Decimal::Decimal(Sign sign, int exponent, uint64_t coefficient) : data_(sign, exponent, coefficient) {}
 
 Decimal::Decimal(const EncodedData& data) : data_(data) {}
 
@@ -319,18 +306,15 @@ Decimal Decimal::operator+(const Decimal& rhs) const {
 
   const AlignedOperands aligned_operands = AlignOperands(lhs, rhs);
 
-  const uint64_t result =
-      lhs_sign == rhs_sign
-          ? aligned_operands.lhs_coefficient + aligned_operands.rhs_coefficient
-          : aligned_operands.lhs_coefficient - aligned_operands.rhs_coefficient;
+  const uint64_t result = lhs_sign == rhs_sign ? aligned_operands.lhs_coefficient + aligned_operands.rhs_coefficient
+                                               : aligned_operands.lhs_coefficient - aligned_operands.rhs_coefficient;
 
   if (lhs_sign == kNegative && rhs_sign == kPositive && !result)
     return Decimal(kPositive, aligned_operands.exponent, 0);
 
   return static_cast<int64_t>(result) >= 0
              ? Decimal(lhs_sign, aligned_operands.exponent, result)
-             : Decimal(InvertSign(lhs_sign), aligned_operands.exponent,
-                       -static_cast<int64_t>(result));
+             : Decimal(InvertSign(lhs_sign), aligned_operands.exponent, -static_cast<int64_t>(result));
 }
 
 Decimal Decimal::operator-(const Decimal& rhs) const {
@@ -358,18 +342,15 @@ Decimal Decimal::operator-(const Decimal& rhs) const {
 
   const AlignedOperands aligned_operands = AlignOperands(lhs, rhs);
 
-  const uint64_t result =
-      lhs_sign == rhs_sign
-          ? aligned_operands.lhs_coefficient - aligned_operands.rhs_coefficient
-          : aligned_operands.lhs_coefficient + aligned_operands.rhs_coefficient;
+  const uint64_t result = lhs_sign == rhs_sign ? aligned_operands.lhs_coefficient - aligned_operands.rhs_coefficient
+                                               : aligned_operands.lhs_coefficient + aligned_operands.rhs_coefficient;
 
   if (lhs_sign == kNegative && rhs_sign == kNegative && !result)
     return Decimal(kPositive, aligned_operands.exponent, 0);
 
   return static_cast<int64_t>(result) >= 0
              ? Decimal(lhs_sign, aligned_operands.exponent, result)
-             : Decimal(InvertSign(lhs_sign), aligned_operands.exponent,
-                       -static_cast<int64_t>(result));
+             : Decimal(InvertSign(lhs_sign), aligned_operands.exponent, -static_cast<int64_t>(result));
 }
 
 Decimal Decimal::operator*(const Decimal& rhs) const {
@@ -521,8 +502,7 @@ Decimal Decimal::Abs() const {
   return result;
 }
 
-Decimal::AlignedOperands Decimal::AlignOperands(const Decimal& lhs,
-                                                const Decimal& rhs) {
+Decimal::AlignedOperands Decimal::AlignOperands(const Decimal& lhs, const Decimal& rhs) {
   DCHECK(lhs.IsFinite());
   DCHECK(rhs.IsFinite());
 
@@ -587,8 +567,7 @@ Decimal Decimal::Ceil() const {
     return IsPositive() ? Decimal(1) : Zero(kPositive);
 
   result = ScaleDown(result, number_of_drop_digits);
-  if (IsPositive() &&
-      !IsMultiplePowersOfTen(data_.Coefficient(), number_of_drop_digits))
+  if (IsPositive() && !IsMultiplePowersOfTen(data_.Coefficient(), number_of_drop_digits))
     ++result;
   return Decimal(GetSign(), 0, result);
 }
@@ -627,8 +606,7 @@ Decimal Decimal::Floor() const {
     return IsPositive() ? Zero(kPositive) : Decimal(-1);
 
   result = ScaleDown(result, number_of_drop_digits);
-  if (IsNegative() &&
-      !IsMultiplePowersOfTen(data_.Coefficient(), number_of_drop_digits))
+  if (IsNegative() && !IsMultiplePowersOfTen(data_.Coefficient(), number_of_drop_digits))
     ++result;
   return Decimal(GetSign(), 0, result);
 }
@@ -740,8 +718,7 @@ Decimal Decimal::FromString(const std::string& str) {
           exponent += ch - '0';
           if (exponent > kExponentMax + kPrecision) {
             if (accumulator)
-              return exponent_sign == kNegative ? Zero(kPositive)
-                                                : Infinity(sign);
+              return exponent_sign == kNegative ? Zero(kPositive) : Infinity(sign);
             return Zero(sign);
           }
           state = kStateEDigit;
@@ -819,10 +796,9 @@ Decimal Decimal::FromString(const std::string& str) {
   if (state == kStateZero)
     return Zero(sign);
 
-  if (state == kStateDigit || state == kStateEDigit ||
-      state == kStateDotDigit) {
-    int result_exponent = exponent * (exponent_sign == kNegative ? -1 : 1) -
-                          number_of_digits_after_dot + number_of_extra_digits;
+  if (state == kStateDigit || state == kStateEDigit || state == kStateDotDigit) {
+    int result_exponent =
+        exponent * (exponent_sign == kNegative ? -1 : 1) - number_of_digits_after_dot + number_of_extra_digits;
     if (result_exponent < kExponentMin)
       return Zero(kPositive);
 
@@ -850,11 +826,7 @@ Decimal Decimal::Nan() {
 
 Decimal Decimal::Remainder(const Decimal& rhs) const {
   const Decimal quotient = *this / rhs;
-  return quotient.IsSpecial()
-             ? quotient
-             : *this - (quotient.IsNegative() ? quotient.Ceil()
-                                              : quotient.Floor()) *
-                           rhs;
+  return quotient.IsSpecial() ? quotient : *this - (quotient.IsNegative() ? quotient.Ceil() : quotient.Floor()) * rhs;
 }
 
 Decimal Decimal::Round() const {
@@ -885,8 +857,7 @@ double Decimal::ToDouble() const {
   }
 
   if (IsInfinity())
-    return IsNegative() ? -std::numeric_limits<double>::infinity()
-                        : std::numeric_limits<double>::infinity();
+    return IsNegative() ? -std::numeric_limits<double>::infinity() : std::numeric_limits<double>::infinity();
 
   return std::numeric_limits<double>::quiet_NaN();
 }
@@ -981,11 +952,10 @@ Decimal Decimal::Zero(Sign sign) {
 
 std::ostream& operator<<(std::ostream& ostream, const Decimal& decimal) {
   Decimal::EncodedData data = decimal.Value();
-  return ostream << "encode(" << base::NumberToString(data.Coefficient()).c_str()
-                 << ", " << base::NumberToString(data.Exponent()).c_str() << ", "
-                 << (data.GetSign() == Decimal::kNegative ? "Negative"
-                                                          : "Positive")
+  return ostream << "encode(" << base::NumberToString(data.Coefficient()).c_str() << ", "
+                 << base::NumberToString(data.Exponent()).c_str() << ", "
+                 << (data.GetSign() == Decimal::kNegative ? "Negative" : "Positive")
                  << ")=" << decimal.ToString().c_str();
 }
 
-}
+}  // namespace webf

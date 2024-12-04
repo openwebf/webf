@@ -11,8 +11,8 @@
 
 #include <errno.h>
 #include <stdlib.h>
-#include <string>
 #include <concepts>
+#include <string>
 #include <string_view>
 #include <type_traits>
 
@@ -32,8 +32,7 @@ template <typename STR, typename INT>
 static STR IntToStringT(INT value) {
   // log10(2) ~= 0.3 bytes needed per bit or per byte log10(2**8) ~= 2.4.
   // So round up to allocate 3 output characters per byte, plus 1 for '-'.
-  const size_t kOutputBufSize =
-      3 * sizeof(INT) + std::numeric_limits<INT>::is_signed;
+  const size_t kOutputBufSize = 3 * sizeof(INT) + std::numeric_limits<INT>::is_signed;
 
   // Create the string in a temporary buffer, write it back to front, and
   // then return the substr of what we ended up using.
@@ -42,8 +41,7 @@ static STR IntToStringT(INT value) {
 
   // The ValueOrDie call below can never fail, because UnsignedAbs is valid
   // for all valid inputs.
-  std::make_unsigned_t<INT> res =
-      CheckedNumeric<INT>(value).UnsignedAbs().ValueOrDie();
+  std::make_unsigned_t<INT> res = CheckedNumeric<INT>(value).UnsignedAbs().ValueOrDie();
 
   CHR* end = outbuf + kOutputBufSize;
   CHR* i = end;
@@ -106,8 +104,7 @@ class StringToNumberParser {
 
       // Note: no performance difference was found when using template
       // specialization to remove this check in bases other than 16
-      if (kBase == 16 && end - begin > 2 && *begin == '0' &&
-          (*(begin + 1) == 'x' || *(begin + 1) == 'X')) {
+      if (kBase == 16 && end - begin > 2 && *begin == '0' && (*(begin + 1) == 'x' || *(begin + 1) == 'X')) {
         begin += 2;
       }
 
@@ -136,8 +133,7 @@ class StringToNumberParser {
    public:
     static Result CheckBounds(Number value, uint8_t new_digit) {
       if (value > static_cast<Number>(kMax / kBase) ||
-          (value == static_cast<Number>(kMax / kBase) &&
-           new_digit > kMax % kBase)) {
+          (value == static_cast<Number>(kMax / kBase) && new_digit > kMax % kBase)) {
         return {kMax, false};
       }
       return {value, true};
@@ -148,8 +144,7 @@ class StringToNumberParser {
   class Negative : public Base<Negative> {
    public:
     static Result CheckBounds(Number value, uint8_t new_digit) {
-      if (value < kMin / kBase ||
-          (value == kMin / kBase && new_digit > 0 - kMin % kBase)) {
+      if (value < kMin / kBase || (value == kMin / kBase && new_digit > 0 - kMin % kBase)) {
         return {kMin, false};
       }
       return {value, true};
@@ -205,11 +200,9 @@ bool HexStringToIntImpl(T input, VALUE& output) {
   return result.valid;
 }
 
-static const double_conversion::DoubleToStringConverter*
-GetDoubleToStringConverter() {
+static const double_conversion::DoubleToStringConverter* GetDoubleToStringConverter() {
   static double_conversion::DoubleToStringConverter converter(
-      double_conversion::DoubleToStringConverter::EMIT_POSITIVE_EXPONENT_SIGN,
-      nullptr, nullptr, 'e', -6, 12, 0, 0);
+      double_conversion::DoubleToStringConverter::EMIT_POSITIVE_EXPONENT_SIGN, nullptr, nullptr, 'e', -6, 12, 0, 0);
   return &converter;
 }
 
@@ -242,8 +235,7 @@ bool StringToDoubleImpl(STRING input, const CHAR* data, double& output) {
       0.0, 0, nullptr, nullptr);
 
   int processed_characters_count;
-  output = converter.StringToDouble(data, checked_cast<int>(input.size()),
-                                    &processed_characters_count);
+  output = converter.StringToDouble(data, checked_cast<int>(input.size()), &processed_characters_count);
 
   // Cases to return false:
   //  - If the input string is empty, there was nothing to parse.
@@ -257,8 +249,7 @@ bool StringToDoubleImpl(STRING input, const CHAR* data, double& output) {
   //    behavior of the double_conversion library's whitespace-skipping
   //    algorithm.
   return !input.empty() && output != HUGE_VAL && output != -HUGE_VAL &&
-         static_cast<size_t>(processed_characters_count) == input.size() &&
-         !IsWhitespace(input[0]);
+         static_cast<size_t>(processed_characters_count) == input.size() && !IsWhitespace(input[0]);
 }
 
 template <typename Char, typename OutIter>

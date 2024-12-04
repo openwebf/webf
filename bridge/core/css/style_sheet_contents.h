@@ -70,7 +70,6 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
   Document* SingleOwnerDocument() const;
   bool HasSingleOwnerDocument() const { return has_single_owner_document_; }
 
-
   const std::string& DefaultNamespace() const { return default_namespace_; }
   const AtomicString& NamespaceURIFromPrefix(const AtomicString& prefix) const;
 
@@ -161,8 +160,8 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
   bool HasOneClient() { return ClientSize() == 1; }
   size_t ClientSize() const { return loading_clients_.size() + completed_clients_.size(); }
 
-//  void ClientLoadCompleted(CSSStyleSheet*);
-//  void ClientLoadStarted(CSSStyleSheet*);
+  //  void ClientLoadCompleted(CSSStyleSheet*);
+  //  void ClientLoadStarted(CSSStyleSheet*);
 
   bool IsMutable() const { return is_mutable_; }
   void StartMutation();
@@ -181,13 +180,13 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
 
   bool DidLoadErrorOccur() const { return did_load_error_occur_; }
 
-//  RuleSet& GetRuleSet() {
-//    DCHECK(rule_set_);
-//    return *rule_set_.Get();
-//  }
-//  bool HasRuleSet() { return rule_set_.Get(); }
-//  RuleSet& EnsureRuleSet(const MediaQueryEvaluator&);
-//  void ClearRuleSet();
+  //  RuleSet& GetRuleSet() {
+  //    DCHECK(rule_set_);
+  //    return *rule_set_.Get();
+  //  }
+  //  bool HasRuleSet() { return rule_set_.Get(); }
+  //  RuleSet& EnsureRuleSet(const MediaQueryEvaluator&);
+  //  void ClearRuleSet();
 
   void Trace(GCVisitor*) const;
 

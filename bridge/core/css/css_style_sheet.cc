@@ -504,13 +504,13 @@ void CSSStyleSheet::SetLoadCompleted(bool completed) {
     return;
   }
 
-//  load_completed_ = completed;
-//
-//  if (completed) {
-//    contents_->ClientLoadCompleted(this);
-//  } else {
-//    contents_->ClientLoadStarted(this);
-//  }
+  //  load_completed_ = completed;
+  //
+  //  if (completed) {
+  //    contents_->ClientLoadCompleted(this);
+  //  } else {
+  //    contents_->ClientLoadStarted(this);
+  //  }
 }
 
 void CSSStyleSheet::SetText(const AtomicString& text, CSSImportRules import_rules) {
@@ -533,11 +533,11 @@ void CSSStyleSheet::SetAlternateFromConstructor(bool alternate_from_constructor)
 
 bool CSSStyleSheet::IsAlternate() const {
   assert(false);
-//  if (owner_node_) {
-//    auto* owner_element = DynamicTo<Element>(owner_node_.Get());
-//    return owner_element && owner_element->FastGetAttribute(html_names::kRelAttr).Contains("alternate");
-//  }
-//  return alternate_from_constructor_;
+  //  if (owner_node_) {
+  //    auto* owner_element = DynamicTo<Element>(owner_node_.Get());
+  //    return owner_element && owner_element->FastGetAttribute(html_names::kRelAttr).Contains("alternate");
+  //  }
+  //  return alternate_from_constructor_;
   return false;
 }
 
@@ -546,23 +546,23 @@ bool CSSStyleSheet::CanBeActivated(const AtomicString& current_preferrable_name)
     return false;
   }
 
-//  if (owner_node_ && owner_node_->IsInShadowTree()) {
-//    if (IsA<HTMLStyleElement>(owner_node_.Get()) || IsA<SVGStyleElement>(owner_node_.Get())) {
-//      return true;
-//    }
-//  }
+  //  if (owner_node_ && owner_node_->IsInShadowTree()) {
+  //    if (IsA<HTMLStyleElement>(owner_node_.Get()) || IsA<SVGStyleElement>(owner_node_.Get())) {
+  //      return true;
+  //    }
+  //  }
 
-//  auto* html_link_element = DynamicTo<HTMLLinkElement>(owner_node_.Get());
-//  if (!owner_node_ || !html_link_element ||
-//      !html_link_element->IsEnabledViaScript()) {
-//    if (!title_.empty() && title_ != current_preferrable_name) {
-//      return false;
-//    }
-//  }
+  //  auto* html_link_element = DynamicTo<HTMLLinkElement>(owner_node_.Get());
+  //  if (!owner_node_ || !html_link_element ||
+  //      !html_link_element->IsEnabledViaScript()) {
+  //    if (!title_.empty() && title_ != current_preferrable_name) {
+  //      return false;
+  //    }
+  //  }
 
-//  if (IsAlternate() && title_.empty()) {
-//    return false;
-//  }
+  //  if (IsAlternate() && title_.empty()) {
+  //    return false;
+  //  }
 
   return true;
 }
@@ -572,7 +572,7 @@ void CSSStyleSheet::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(owner_rule_);
   visitor->TraceMember(media_cssom_wrapper_);
 
-  for(auto&& wrapper : child_rule_cssom_wrappers_) {
+  for (auto&& wrapper : child_rule_cssom_wrappers_) {
     visitor->TraceMember(wrapper);
   }
   visitor->TraceMember(rule_list_cssom_wrapper_);

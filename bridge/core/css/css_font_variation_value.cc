@@ -12,8 +12,7 @@ namespace webf {
 
 namespace cssvalue {
 
-CSSFontVariationValue::CSSFontVariationValue(const std::string& tag,
-                                             float value)
+CSSFontVariationValue::CSSFontVariationValue(const std::string& tag, float value)
     : CSSValue(kFontVariationClass), tag_(tag), value_(value) {}
 
 std::string CSSFontVariationValue::CustomCSSText() const {

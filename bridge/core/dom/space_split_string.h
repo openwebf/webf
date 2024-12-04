@@ -46,21 +46,13 @@ class SpaceSplitString {
   const AtomicString& operator[](size_t i) const { return (*data_)[i]; }
 
   // Provide begin and end functions
-  std::vector<AtomicString>::iterator begin() {
-    return data_->vector_.begin();
-  }
+  std::vector<AtomicString>::iterator begin() { return data_->vector_.begin(); }
 
-  std::vector<AtomicString>::iterator end() {
-    return data_->vector_.end();
-  }
+  std::vector<AtomicString>::iterator end() { return data_->vector_.end(); }
 
-  [[nodiscard]] std::vector<AtomicString>::const_iterator begin() const {
-    return data_->vector_.begin();
-  }
+  [[nodiscard]] std::vector<AtomicString>::const_iterator begin() const { return data_->vector_.begin(); }
 
-  [[nodiscard]] std::vector<AtomicString>::const_iterator end() const {
-    return data_->vector_.end();
-  }
+  [[nodiscard]] std::vector<AtomicString>::const_iterator end() const { return data_->vector_.end(); }
 
  private:
   class Data {
@@ -87,7 +79,8 @@ class SpaceSplitString {
     inline void CreateVector(const AtomicString&, const CharacterType*, unsigned);
 
     AtomicString key_string_;
-  public:
+
+   public:
     std::vector<AtomicString> vector_;
   };
 

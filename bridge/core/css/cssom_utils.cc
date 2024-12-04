@@ -3,17 +3,16 @@
 // found in the LICENSE file.
 
 #include "cssom_utils.h"
-#include "core/css/css_identifier_value.h"
 #include "core/css/css_custom_ident_value.h"
+#include "core/css/css_identifier_value.h"
 
 namespace webf {
 
 // static
 bool CSSOMUtils::IncludeDependentGridLineEndValue(const std::shared_ptr<const CSSValue>& line_start,
                                                   const std::shared_ptr<const CSSValue>& line_end) {
-  const bool line_end_is_initial_value =
-      IsA<CSSIdentifierValue>(line_end.get()) &&
-      To<CSSIdentifierValue>(line_end.get())->GetValueID() == CSSValueID::kAuto;
+  const bool line_end_is_initial_value = IsA<CSSIdentifierValue>(line_end.get()) &&
+                                         To<CSSIdentifierValue>(line_end.get())->GetValueID() == CSSValueID::kAuto;
 
   // "When grid-column-start is omitted, if grid-row-start is a <custom-ident>,
   // all four longhands are set to that value. Otherwise, it is set to auto.
@@ -32,27 +31,23 @@ bool CSSOMUtils::IncludeDependentGridLineEndValue(const std::shared_ptr<const CS
   // dropped, as well as initial values if they match the equivalent
   // `line_start` value.
   return IsA<CSSValueList>(line_end.get()) ||
-         ((*line_end != *line_start) &&
-          (IsA<CSSCustomIdentValue>(line_start.get()) || !line_end_is_initial_value));
+         ((*line_end != *line_start) && (IsA<CSSCustomIdentValue>(line_start.get()) || !line_end_is_initial_value));
 }
 
 // static
 bool CSSOMUtils::IsAutoValue(const std::shared_ptr<const CSSValue>& value) {
-  return IsA<CSSIdentifierValue>(value.get()) &&
-         To<CSSIdentifierValue>(value.get())->GetValueID() == CSSValueID::kAuto;
+  return IsA<CSSIdentifierValue>(value.get()) && To<CSSIdentifierValue>(value.get())->GetValueID() == CSSValueID::kAuto;
 }
 
 // static
 bool CSSOMUtils::IsNoneValue(const std::shared_ptr<const CSSValue>& value) {
-  return IsA<CSSIdentifierValue>(value.get()) &&
-         To<CSSIdentifierValue>(value.get())->GetValueID() == CSSValueID::kNone;
+  return IsA<CSSIdentifierValue>(value.get()) && To<CSSIdentifierValue>(value.get())->GetValueID() == CSSValueID::kNone;
 }
 
 // static
 bool CSSOMUtils::IsAutoValueList(const std::shared_ptr<const CSSValue>& value) {
   const CSSValueList* value_list = DynamicTo<CSSValueList>(value.get());
-  return value_list && value_list->length() == 1 &&
-         IsAutoValue(value_list->Item(0));
+  return value_list && value_list->length() == 1 && IsAutoValue(value_list->Item(0));
 }
 
 // static
@@ -61,4 +56,4 @@ bool CSSOMUtils::IsEmptyValueList(const std::shared_ptr<const CSSValue>& value) 
   return value_list && value_list->length() == 0;
 }
 
-}
+}  // namespace webf

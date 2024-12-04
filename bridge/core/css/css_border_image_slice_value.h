@@ -1,68 +1,66 @@
 /*
-* Copyright (C) 2011 Apple Inc. All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions
-* are met:
-* 1. Redistributions of source code must retain the above copyright
-*    notice, this list of conditions and the following disclaimer.
-* 2. Redistributions in binary form must reproduce the above copyright
-*    notice, this list of conditions and the following disclaimer in the
-*    documentation and/or other materials provided with the distribution.
-*
-* THIS SOFTWARE IS PROVIDED BY APPLE COMPUTER, INC. ``AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-* PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE COMPUTER, INC. OR
-* CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-* EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-* PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-* PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-* OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (C) 2011 Apple Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY APPLE COMPUTER, INC. ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE COMPUTER, INC. OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef CORE_CSS_CSS_BORDER_IMAGE_SLICE_VALUE_H_
 #define CORE_CSS_CSS_BORDER_IMAGE_SLICE_VALUE_H_
 
-#include "core/css/css_value.h"
 #include "core/css/css_quad_value.h"
+#include "core/css/css_value.h"
 
 namespace webf {
 namespace cssvalue {
 
 class CSSBorderImageSliceValue : public CSSValue {
-public:
- CSSBorderImageSliceValue(std::shared_ptr<const CSSQuadValue> slices, bool fill);
+ public:
+  CSSBorderImageSliceValue(std::shared_ptr<const CSSQuadValue> slices, bool fill);
 
- std::string CustomCSSText() const;
+  std::string CustomCSSText() const;
 
- // TODO(sashab): Change this to a quad of CSSPrimitiveValues, or add separate
- // methods for topSlice(), leftSlice(), etc.
- const CSSQuadValue& Slices() const { return *slices_; }
- bool Fill() const { return fill_; }
+  // TODO(sashab): Change this to a quad of CSSPrimitiveValues, or add separate
+  // methods for topSlice(), leftSlice(), etc.
+  const CSSQuadValue& Slices() const { return *slices_; }
+  bool Fill() const { return fill_; }
 
- bool Equals(const CSSBorderImageSliceValue&) const;
+  bool Equals(const CSSBorderImageSliceValue&) const;
 
- void TraceAfterDispatch(GCVisitor*) const;
+  void TraceAfterDispatch(GCVisitor*) const;
 
-private:
- // These four values are used to make "cuts" in the border image. They can be
- // numbers or percentages.
- std::shared_ptr<const CSSQuadValue> slices_;
- bool fill_;
+ private:
+  // These four values are used to make "cuts" in the border image. They can be
+  // numbers or percentages.
+  std::shared_ptr<const CSSQuadValue> slices_;
+  bool fill_;
 };
 
 }  // namespace cssvalue
 
 template <>
 struct DowncastTraits<cssvalue::CSSBorderImageSliceValue> {
- static bool AllowFrom(const CSSValue& value) {
-   return value.IsBorderImageSliceValue();
- }
+  static bool AllowFrom(const CSSValue& value) { return value.IsBorderImageSliceValue(); }
 };
 
-}  // namespace blink
+}  // namespace webf
 
 #endif  // CORE_CSS_CSS_BORDER_IMAGE_SLICE_VALUE_H_

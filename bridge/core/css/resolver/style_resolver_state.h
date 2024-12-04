@@ -24,10 +24,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-
 #ifndef WEBF_STYLE_RESOLVER_STATE_H
 #define WEBF_STYLE_RESOLVER_STATE_H
-
 
 //#include "core/animation/css/css_animation_update.h"
 #include "core/css/css_property_name.h"
@@ -39,12 +37,11 @@
 //#include "core/css/resolver/font_builder.h"
 //#include "core/css/style_recalc_context.h"
 //#include "core/css/style_request.h"
-#include "core/style/computed_style_base_constants.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
+#include "core/style/computed_style_base_constants.h"
 
 namespace webf {
-
 
 class AnchorEvaluator;
 class ComputedStyle;
@@ -60,17 +57,15 @@ class StyleResolverState {
   enum class ElementType { kElement, kPseudoElement };
 
  public:
-//  StyleResolverState(Document&,
-//                     Element&,
-//                     const StyleRecalcContext* = nullptr,
-//                     const StyleRequest& = StyleRequest());
+  //  StyleResolverState(Document&,
+  //                     Element&,
+  //                     const StyleRecalcContext* = nullptr,
+  //                     const StyleRequest& = StyleRequest());
   StyleResolverState(const StyleResolverState&) = delete;
   StyleResolverState& operator=(const StyleResolverState&) = delete;
   ~StyleResolverState();
 
-  bool IsForPseudoElement() const {
-    return element_type_ == ElementType::kPseudoElement;
-  }
+  bool IsForPseudoElement() const { return element_type_ == ElementType::kPseudoElement; }
   bool IsInheritedForUnset(const CSSProperty& property) const;
 
   // In FontFaceSet and CanvasRenderingContext2D, we don't have an element to
@@ -84,71 +79,71 @@ class StyleResolverState {
   // PseudoElement present.
   Element* GetStyledElement() const { return styled_element_; }
   // These are all just pass-through methods to ElementResolveContext.
-//  Element& GetElement() const { return element_context_.GetElement(); }
-//  const Element* ParentElement() const {
-//    return element_context_.ParentElement();
-//  }
-//  const ComputedStyle* RootElementStyle() const {
-//    return element_context_.RootElementStyle();
-//  }
-//  EInsideLink ElementLinkState() const {
-//    return element_context_.ElementLinkState();
-//  }
+  //  Element& GetElement() const { return element_context_.GetElement(); }
+  //  const Element* ParentElement() const {
+  //    return element_context_.ParentElement();
+  //  }
+  //  const ComputedStyle* RootElementStyle() const {
+  //    return element_context_.RootElementStyle();
+  //  }
+  //  EInsideLink ElementLinkState() const {
+  //    return element_context_.ElementLinkState();
+  //  }
 
   // See inside_link_.
   EInsideLink InsideLink() const;
 
-//  const ElementResolveContext& ElementContext() const {
-//    return element_context_;
-//  }
+  //  const ElementResolveContext& ElementContext() const {
+  //    return element_context_;
+  //  }
 
   void SetStyle(const ComputedStyle& style) {
     // FIXME: Improve RAII of StyleResolverState to remove this function.
-//    style_builder_.emplace(style);
+    //    style_builder_.emplace(style);
     UpdateLengthConversionData();
   }
 
   // Initialize the style builder. source_for_noninherited holds initial values
   // to use for non-inherited properties. inherit_parent is simply the style to
   // inherit from (either implicitly or explicitly).
-//  void CreateNewStyle(
-//      const ComputedStyle& source_for_noninherited,
-//      const ComputedStyle& inherit_parent,
-//      ComputedStyleBuilderBase::IsAtShadowBoundary is_at_shadow_boundary =
-//          ComputedStyleBuilderBase::kNotAtShadowBoundary) {
-//    // FIXME: Improve RAII of StyleResolverState to remove this function.
-//    style_builder_.emplace(source_for_noninherited, inherit_parent,
-//                           is_at_shadow_boundary);
-//    UpdateLengthConversionData();
-//  }
-//  ComputedStyleBuilder& StyleBuilder() { return *style_builder_; }
-//  const ComputedStyleBuilder& StyleBuilder() const { return *style_builder_; }
+  //  void CreateNewStyle(
+  //      const ComputedStyle& source_for_noninherited,
+  //      const ComputedStyle& inherit_parent,
+  //      ComputedStyleBuilderBase::IsAtShadowBoundary is_at_shadow_boundary =
+  //          ComputedStyleBuilderBase::kNotAtShadowBoundary) {
+  //    // FIXME: Improve RAII of StyleResolverState to remove this function.
+  //    style_builder_.emplace(source_for_noninherited, inherit_parent,
+  //                           is_at_shadow_boundary);
+  //    UpdateLengthConversionData();
+  //  }
+  //  ComputedStyleBuilder& StyleBuilder() { return *style_builder_; }
+  //  const ComputedStyleBuilder& StyleBuilder() const { return *style_builder_; }
   const ComputedStyle* TakeStyle();
 
-//  const CSSToLengthConversionData& CssToLengthConversionData() const {
-//    return css_to_length_conversion_data_;
-//  }
-//  CSSToLengthConversionData FontSizeConversionData();
-//  CSSToLengthConversionData UnzoomedLengthConversionData();
-//
-//  CSSToLengthConversionData::Flags TakeLengthConversionFlags() {
-//    CSSToLengthConversionData::Flags flags = length_conversion_flags_;
-//    length_conversion_flags_ = 0;
-//    return flags;
-//  }
+  //  const CSSToLengthConversionData& CssToLengthConversionData() const {
+  //    return css_to_length_conversion_data_;
+  //  }
+  //  CSSToLengthConversionData FontSizeConversionData();
+  //  CSSToLengthConversionData UnzoomedLengthConversionData();
+  //
+  //  CSSToLengthConversionData::Flags TakeLengthConversionFlags() {
+  //    CSSToLengthConversionData::Flags flags = length_conversion_flags_;
+  //    length_conversion_flags_ = 0;
+  //    return flags;
+  //  }
 
-//  void SetConversionFontSizes(
-//      const CSSToLengthConversionData::FontSizes& font_sizes) {
-//    css_to_length_conversion_data_.SetFontSizes(font_sizes);
-//  }
+  //  void SetConversionFontSizes(
+  //      const CSSToLengthConversionData::FontSizes& font_sizes) {
+  //    css_to_length_conversion_data_.SetFontSizes(font_sizes);
+  //  }
   void SetConversionZoom(float zoom) {
-//    css_to_length_conversion_data_.SetZoom(zoom);
+    //    css_to_length_conversion_data_.SetZoom(zoom);
   }
 
-//  CSSAnimationUpdate& AnimationUpdate() { return animation_update_; }
-//  const CSSAnimationUpdate& AnimationUpdate() const {
-//    return animation_update_;
-//  }
+  //  CSSAnimationUpdate& AnimationUpdate() { return animation_update_; }
+  //  const CSSAnimationUpdate& AnimationUpdate() const {
+  //    return animation_update_;
+  //  }
 
   Element* GetAnimatingElement() const;
 
@@ -160,28 +155,26 @@ class StyleResolverState {
   const ComputedStyle* ParentStyle() const { return parent_style_; }
 
   void SetLayoutParentStyle(const ComputedStyle*);
-  const ComputedStyle* LayoutParentStyle() const {
-    return layout_parent_style_;
-  }
+  const ComputedStyle* LayoutParentStyle() const { return layout_parent_style_; }
 
   void SetOldStyle(const ComputedStyle* old_style) { old_style_ = old_style; }
   const ComputedStyle* OldStyle() const { return old_style_; }
 
-//  ElementStyleResources& GetElementStyleResources() {
-//    return element_style_resources_;
-//  }
+  //  ElementStyleResources& GetElementStyleResources() {
+  //    return element_style_resources_;
+  //  }
 
   void LoadPendingResources();
 
   // FIXME: Once styleImage can be made to not take a StyleResolverState
   // this convenience function should be removed. As-is, without this, call
   // sites are extremely verbose.
-//  StyleImage* GetStyleImage(CSSPropertyID property_id, const CSSValue& value) {
-//    return element_style_resources_.GetStyleImage(property_id, value);
-//  }
-//
-//  FontBuilder& GetFontBuilder() { return font_builder_; }
-//  const FontBuilder& GetFontBuilder() const { return font_builder_; }
+  //  StyleImage* GetStyleImage(CSSPropertyID property_id, const CSSValue& value) {
+  //    return element_style_resources_.GetStyleImage(property_id, value);
+  //  }
+  //
+  //  FontBuilder& GetFontBuilder() { return font_builder_; }
+  //  const FontBuilder& GetFontBuilder() const { return font_builder_; }
   // FIXME: These exist as a primitive way to track mutations to font-related
   // properties on a ComputedStyle. As designed, these are very error-prone, as
   // some callers set these directly on the ComputedStyle w/o telling us.
@@ -192,10 +185,10 @@ class StyleResolverState {
   void SetZoom(float);
   void SetEffectiveZoom(float);
   void SetWritingMode(WritingMode);
-//  void SetTextSizeAdjust(TextSizeAdjust);
-//  void SetTextOrientation(ETextOrientation);
-//  void SetPositionAnchor(ScopedCSSName*);
-//  void SetInsetAreaOffsets(const std::optional<InsetAreaOffsets>&);
+  //  void SetTextSizeAdjust(TextSizeAdjust);
+  //  void SetTextOrientation(ETextOrientation);
+  //  void SetPositionAnchor(ScopedCSSName*);
+  //  void SetInsetAreaOffsets(const std::optional<InsetAreaOffsets>&);
 
   CSSParserMode GetParserMode() const;
 
@@ -204,13 +197,9 @@ class StyleResolverState {
   // reference to the passed value.
   const CSSValue& ResolveLightDarkPair(const CSSValue&);
 
-  const ComputedStyle* OriginatingElementStyle() const {
-    return originating_element_style_;
-  }
+  const ComputedStyle* OriginatingElementStyle() const { return originating_element_style_; }
   bool IsForHighlight() const { return is_for_highlight_; }
-  bool UsesHighlightPseudoInheritance() const {
-    return uses_highlight_pseudo_inheritance_;
-  }
+  bool UsesHighlightPseudoInheritance() const { return uses_highlight_pseudo_inheritance_; }
   bool IsOutsideFlatTree() const { return is_outside_flat_tree_; }
 
   bool CanTriggerAnimations() const { return can_trigger_animations_; }
@@ -228,18 +217,12 @@ class StyleResolverState {
 
   // Mark the state to say that animations can be affected by at least one of
   // the style variations produced by evaluating @container rules differently.
-  void SetConditionallyAffectsAnimations() {
-    conditionally_affects_animations_ = true;
-  }
+  void SetConditionallyAffectsAnimations() { conditionally_affects_animations_ = true; }
 
-  bool AffectsCompositorSnapshots() const {
-    return affects_compositor_snapshots_;
-  }
+  bool AffectsCompositorSnapshots() const { return affects_compositor_snapshots_; }
   void SetAffectsCompositorSnapshots() { affects_compositor_snapshots_ = true; }
 
-  bool RejectedLegacyOverlapping() const {
-    return rejected_legacy_overlapping_;
-  }
+  bool RejectedLegacyOverlapping() const { return rejected_legacy_overlapping_; }
   void SetRejectedLegacyOverlapping() { rejected_legacy_overlapping_ = true; }
 
   // Update the Font object on the ComputedStyle and the CSSLengthResolver to
@@ -251,29 +234,29 @@ class StyleResolverState {
 
   void UpdateLengthConversionData();
 
-//  float TextAutosizingMultiplier() const {
-//    const ComputedStyle* old_style = GetElement().GetComputedStyle();
-//    if (element_type_ != ElementType::kPseudoElement && old_style) {
-//      return old_style->TextAutosizingMultiplier();
-//    } else {
-//      return 1.0f;
-//    }
-//  }
+  //  float TextAutosizingMultiplier() const {
+  //    const ComputedStyle* old_style = GetElement().GetComputedStyle();
+  //    if (element_type_ != ElementType::kPseudoElement && old_style) {
+  //      return old_style->TextAutosizingMultiplier();
+  //    } else {
+  //      return 1.0f;
+  //    }
+  //  }
 
   void SetHasTreeScopedReference() { has_tree_scoped_reference_ = true; }
   bool HasTreeScopedReference() const { return has_tree_scoped_reference_; }
 
  private:
-//  CSSToLengthConversionData UnzoomedLengthConversionData(const FontSizeStyle&);
-//
-//  ElementResolveContext element_context_;
+  //  CSSToLengthConversionData UnzoomedLengthConversionData(const FontSizeStyle&);
+  //
+  //  ElementResolveContext element_context_;
   Document* document_;
 
   // The primary output for each element's style resolve.
-//  std::optional<ComputedStyleBuilder> style_builder_;
-//
-//  CSSToLengthConversionData::Flags length_conversion_flags_ = 0;
-//  CSSToLengthConversionData css_to_length_conversion_data_;
+  //  std::optional<ComputedStyleBuilder> style_builder_;
+  //
+  //  CSSToLengthConversionData::Flags length_conversion_flags_ = 0;
+  //  CSSToLengthConversionData css_to_length_conversion_data_;
 
   // parent_style_ is not always just ElementResolveContext::ParentStyle(),
   // so we keep it separate.
@@ -286,10 +269,10 @@ class StyleResolverState {
   // started.
   const ComputedStyle* old_style_;
 
-//  CSSAnimationUpdate animation_update_;
-//  StyleRequest::RequestType pseudo_request_type_;
-//
-//  FontBuilder font_builder_;
+  //  CSSAnimationUpdate animation_update_;
+  //  StyleRequest::RequestType pseudo_request_type_;
+  //
+  //  FontBuilder font_builder_;
 
   // May be different than GetElement() if the element being styled is a pseudo
   // element or an instantiation via an SVG <use> element. In those cases,
@@ -297,7 +280,7 @@ class StyleResolverState {
   // from respectively.
   Element* styled_element_;
 
-//  ElementStyleResources element_style_resources_;
+  //  ElementStyleResources element_style_resources_;
   ElementType element_type_;
   Element* container_unit_context_;
 
@@ -351,7 +334,6 @@ class StyleResolverState {
   // True if the resolved ComputedStyle depends on tree-scoped references.
   bool has_tree_scoped_reference_ = false;
 };
-
 
 }  // namespace webf
 

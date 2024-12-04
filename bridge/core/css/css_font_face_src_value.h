@@ -81,7 +81,7 @@ class CSSFontFaceSrcValue : public CSSValue {
 
  private:
   std::shared_ptr<const cssvalue::CSSURIValue> src_value_;  // Non-null if remote (src()).
-  std::string local_resource_;                        // Non-null if local (local()).
+  std::string local_resource_;                              // Non-null if local (local()).
   std::string format_;
 };
 

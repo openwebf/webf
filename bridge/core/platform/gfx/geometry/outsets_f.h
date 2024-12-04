@@ -17,11 +17,7 @@ class OutsetsF : public InsetsOutsetsFBase<OutsetsF> {
 
   // Conversion from OutsetsF to InsetsF negates all components.
   InsetsF ToInsets() const {
-    return InsetsF()
-        .set_left(-left())
-        .set_right(-right())
-        .set_top(-top())
-        .set_bottom(-bottom());
+    return InsetsF().set_left(-left()).set_right(-right()).set_top(-top()).set_bottom(-bottom());
   }
 };
 

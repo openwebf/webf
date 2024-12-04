@@ -19,10 +19,9 @@ namespace {
 
 using UnitType = CSSPrimitiveValue::UnitType;
 
-CSSMathExpressionNode* NumberNode(double number,
-                                  UnitType unit_type = UnitType::kNumber) {
+CSSMathExpressionNode* NumberNode(double number, UnitType unit_type = UnitType::kNumber) {
   // TODO(guopengfei)：
-  //return CSSMathExpressionNumericLiteral::Create(
+  // return CSSMathExpressionNumericLiteral::Create(
   //    CSSNumericLiteralValue::Create(number, unit_type));
   return nullptr;
 }
@@ -33,23 +32,20 @@ InterpolableNumber::InterpolableNumber(double value, UnitType unit_type) {
   SetDouble(value, unit_type);
 }
 
-InterpolableNumber::InterpolableNumber(
-    const CSSMathExpressionNode& expression) {
+InterpolableNumber::InterpolableNumber(const CSSMathExpressionNode& expression) {
   SetExpression(expression);
 }
 
-double InterpolableNumber::Value(
-    const CSSLengthResolver& length_resolver) const {
+double InterpolableNumber::Value(const CSSLengthResolver& length_resolver) const {
   if (IsDoubleValue()) {
     return value_.Value();
   }
   return expression_->ComputeNumber(length_resolver);
 }
 
-void InterpolableNumber::SetExpression(
-    const CSSMathExpressionNode& expression) {
+void InterpolableNumber::SetExpression(const CSSMathExpressionNode& expression) {
   type_ = Type::kExpression;
-  expression_ = std::shared_ptr<const CSSMathExpressionNode> (&expression);
+  expression_ = std::shared_ptr<const CSSMathExpressionNode>(&expression);
 }
 
 void InterpolableNumber::SetDouble(double value, UnitType unit_type) {
@@ -70,8 +66,7 @@ bool InterpolableNumber::Equals(const InterpolableValue& other) const {
   if (IsDoubleValue() && other_number.IsDoubleValue()) {
     return value_.Value() == To<InterpolableNumber>(other).value_.Value();
   }
-  return AsExpression().CustomCSSText() ==
-         other_number.AsExpression().CustomCSSText();
+  return AsExpression().CustomCSSText() == other_number.AsExpression().CustomCSSText();
 }
 
 bool InterpolableList::Equals(const InterpolableValue& other) const {
@@ -85,8 +80,7 @@ bool InterpolableList::Equals(const InterpolableValue& other) const {
   return true;
 }
 
-double InlinedInterpolableDouble::Interpolate(double to,
-                                              const double progress) const {
+double InlinedInterpolableDouble::Interpolate(double to, const double progress) const {
   if (progress == 0 || value_ == to) {
     return value_;
   } else if (progress == 1) {
@@ -96,8 +90,7 @@ double InlinedInterpolableDouble::Interpolate(double to,
   }
 }
 
-void InterpolableNumber::AssertCanInterpolateWith(
-    const InterpolableValue& other) const {
+void InterpolableNumber::AssertCanInterpolateWith(const InterpolableValue& other) const {
   assert(other.IsNumber());
 }
 
@@ -107,8 +100,7 @@ void InterpolableNumber::Interpolate(const InterpolableValue& to,
   const auto& to_number = To<InterpolableNumber>(to);
   auto& result_number = To<InterpolableNumber>(result);
   if (IsDoubleValue() && to_number.IsDoubleValue()) {
-    result_number.SetDouble(value_.Interpolate(to_number.Value(), progress),
-                            unit_type_);
+    result_number.SetDouble(value_.Interpolate(to_number.Value(), progress), unit_type_);
     return;
   }
   /*   // TODO(guopengfei)：CSSMathExpressionOperation未迁移
@@ -128,8 +120,7 @@ void InterpolableNumber::Interpolate(const InterpolableValue& to,
    */
 }
 
-void InterpolableList::AssertCanInterpolateWith(
-    const InterpolableValue& other) const {
+void InterpolableList::AssertCanInterpolateWith(const InterpolableValue& other) const {
   assert(other.IsList());
   assert(To<InterpolableList>(other).length() == length());
 }
@@ -143,16 +134,14 @@ void InterpolableList::Interpolate(const InterpolableValue& to,
   for (uint32_t i = 0; i < length(); i++) {
     assert(values_[i]);
     assert(to_list.values_[i]);
-    if (values_[i]->IsStyleColor() || to_list.values_[i]->IsStyleColor() ||
-        result_list.values_[i]->IsStyleColor()) {
+    if (values_[i]->IsStyleColor() || to_list.values_[i]->IsStyleColor() || result_list.values_[i]->IsStyleColor()) {
       // TODO(guopengfei)：未迁移
-      //CSSColorInterpolationType::EnsureInterpolableStyleColor(result_list, i);
-      //InterpolableStyleColor::Interpolate(*values_[i], *(to_list.values_[i]),
+      // CSSColorInterpolationType::EnsureInterpolableStyleColor(result_list, i);
+      // InterpolableStyleColor::Interpolate(*values_[i], *(to_list.values_[i]),
       //                                    progress, *(result_list.values_[i]));
       continue;
     }
-    values_[i]->Interpolate(*(to_list.values_[i]), progress,
-                            *(result_list.values_[i]));
+    values_[i]->Interpolate(*(to_list.values_[i]), progress, *(result_list.values_[i]));
   }
 }
 
@@ -177,13 +166,13 @@ void InterpolableNumber::Scale(double scale) {
 
 void InterpolableNumber::Scale(const InterpolableNumber& other) {
   if (IsDoubleValue()) {
-  /* // TODO(guopengfei)：未迁移
-    SetExpression(*CSSMathExpressionOperation::
-                      CreateArithmeticOperationAndSimplifyCalcSize(
-                          &other.AsExpression(), NumberNode(value_.Value()),
-                          CSSMathOperator::kMultiply));
+    /* // TODO(guopengfei)：未迁移
+      SetExpression(*CSSMathExpressionOperation::
+                        CreateArithmeticOperationAndSimplifyCalcSize(
+                            &other.AsExpression(), NumberNode(value_.Value()),
+                            CSSMathOperator::kMultiply));
 
-   */
+     */
     return;
   }
   /* // TODO(guopengfei)：未迁移
@@ -221,12 +210,11 @@ void InterpolableList::Add(const InterpolableValue& other) {
     values_[i]->Add(*other_list.values_[i]);
 }
 
-void InterpolableList::ScaleAndAdd(double scale,
-                                   const InterpolableValue& other) {
+void InterpolableList::ScaleAndAdd(double scale, const InterpolableValue& other) {
   const auto& other_list = To<InterpolableList>(other);
   assert(other_list.length() == length());
   for (uint32_t i = 0; i < length(); i++)
     values_[i]->ScaleAndAdd(scale, *other_list.values_[i]);
 }
 
-}  // namespace blink
+}  // namespace webf

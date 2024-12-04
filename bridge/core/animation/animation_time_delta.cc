@@ -13,28 +13,22 @@ namespace webf {
 //#if !BUILDFLAG(BLINK_ANIMATION_USE_TIME_DELTA)
 
 // Comparison operators on AnimationTimeDelta.
-bool operator==(const AnimationTimeDelta& lhs,
-                            const AnimationTimeDelta& rhs) {
+bool operator==(const AnimationTimeDelta& lhs, const AnimationTimeDelta& rhs) {
   return lhs.InSecondsF() == rhs.InSecondsF();
 }
-bool operator!=(const AnimationTimeDelta& lhs,
-                            const AnimationTimeDelta& rhs) {
+bool operator!=(const AnimationTimeDelta& lhs, const AnimationTimeDelta& rhs) {
   return lhs.InSecondsF() != rhs.InSecondsF();
 }
-bool operator>(const AnimationTimeDelta& lhs,
-                           const AnimationTimeDelta& rhs) {
+bool operator>(const AnimationTimeDelta& lhs, const AnimationTimeDelta& rhs) {
   return lhs.InSecondsF() > rhs.InSecondsF();
 }
-bool operator<(const AnimationTimeDelta& lhs,
-                           const AnimationTimeDelta& rhs) {
+bool operator<(const AnimationTimeDelta& lhs, const AnimationTimeDelta& rhs) {
   return !(lhs >= rhs);
 }
-bool operator>=(const AnimationTimeDelta& lhs,
-                            const AnimationTimeDelta& rhs) {
+bool operator>=(const AnimationTimeDelta& lhs, const AnimationTimeDelta& rhs) {
   return lhs.InSecondsF() >= rhs.InSecondsF();
 }
-bool operator<=(const AnimationTimeDelta& lhs,
-                            const AnimationTimeDelta& rhs) {
+bool operator<=(const AnimationTimeDelta& lhs, const AnimationTimeDelta& rhs) {
   return lhs.InSecondsF() <= rhs.InSecondsF();
 }
 

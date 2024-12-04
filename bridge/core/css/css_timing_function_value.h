@@ -24,9 +24,9 @@
  */
 
 /*
-* Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
-*/
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_CSS_CSS_TIMING_FUNCTION_VALUE_H
 #define WEBF_CORE_CSS_CSS_TIMING_FUNCTION_VALUE_H
@@ -35,8 +35,8 @@
 
 #include "core/css/css_value.h"
 #include "core/platform/animation/timing_function.h"
-#include "foundation/casting.h"
 #include "core/platform/gfx/animation/keyframe/timing_function.h"
+#include "foundation/casting.h"
 
 namespace webf {
 namespace cssvalue {
@@ -49,8 +49,7 @@ struct CSSLinearStop {
 
 class CSSLinearTimingFunctionValue : public CSSValue {
  public:
-  explicit CSSLinearTimingFunctionValue(
-      const std::vector<gfx::LinearEasingPoint>& points)
+  explicit CSSLinearTimingFunctionValue(const std::vector<gfx::LinearEasingPoint>& points)
       : CSSValue(kLinearTimingFunctionClass), points_(points) {}
 
   std::string CustomCSSText() const;
@@ -58,9 +57,7 @@ class CSSLinearTimingFunctionValue : public CSSValue {
 
   bool Equals(const CSSLinearTimingFunctionValue&) const;
 
-  void TraceAfterDispatch(webf::GCVisitor* visitor) const {
-    CSSValue::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(webf::GCVisitor* visitor) const { CSSValue::TraceAfterDispatch(visitor); }
 
  private:
   std::vector<gfx::LinearEasingPoint> points_;
@@ -69,11 +66,7 @@ class CSSLinearTimingFunctionValue : public CSSValue {
 class CSSCubicBezierTimingFunctionValue : public CSSValue {
  public:
   CSSCubicBezierTimingFunctionValue(double x1, double y1, double x2, double y2)
-      : CSSValue(kCubicBezierTimingFunctionClass),
-        x1_(x1),
-        y1_(y1),
-        x2_(x2),
-        y2_(y2) {}
+      : CSSValue(kCubicBezierTimingFunctionClass), x1_(x1), y1_(y1), x2_(x2), y2_(y2) {}
 
   std::string CustomCSSText() const;
 
@@ -84,9 +77,7 @@ class CSSCubicBezierTimingFunctionValue : public CSSValue {
 
   bool Equals(const CSSCubicBezierTimingFunctionValue&) const;
 
-  void TraceAfterDispatch(webf::GCVisitor* visitor) const {
-    CSSValue::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(webf::GCVisitor* visitor) const { CSSValue::TraceAfterDispatch(visitor); }
 
  private:
   double x1_;
@@ -97,24 +88,17 @@ class CSSCubicBezierTimingFunctionValue : public CSSValue {
 
 class CSSStepsTimingFunctionValue : public CSSValue {
  public:
-  CSSStepsTimingFunctionValue(int steps,
-                              StepsTimingFunction::StepPosition step_position)
-      : CSSValue(kStepsTimingFunctionClass),
-        steps_(steps),
-        step_position_(step_position) {}
+  CSSStepsTimingFunctionValue(int steps, StepsTimingFunction::StepPosition step_position)
+      : CSSValue(kStepsTimingFunctionClass), steps_(steps), step_position_(step_position) {}
 
   int NumberOfSteps() const { return steps_; }
-  StepsTimingFunction::StepPosition GetStepPosition() const {
-    return step_position_;
-  }
+  StepsTimingFunction::StepPosition GetStepPosition() const { return step_position_; }
 
   std::string CustomCSSText() const;
 
   bool Equals(const CSSStepsTimingFunctionValue&) const;
 
-  void TraceAfterDispatch(GCVisitor* visitor) const {
-    CSSValue::TraceAfterDispatch(visitor);
-  }
+  void TraceAfterDispatch(GCVisitor* visitor) const { CSSValue::TraceAfterDispatch(visitor); }
 
  private:
   int steps_;
@@ -125,23 +109,17 @@ class CSSStepsTimingFunctionValue : public CSSValue {
 
 template <>
 struct DowncastTraits<cssvalue::CSSLinearTimingFunctionValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsLinearTimingFunctionValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsLinearTimingFunctionValue(); }
 };
 
 template <>
 struct DowncastTraits<cssvalue::CSSCubicBezierTimingFunctionValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsCubicBezierTimingFunctionValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsCubicBezierTimingFunctionValue(); }
 };
 
 template <>
 struct DowncastTraits<cssvalue::CSSStepsTimingFunctionValue> {
-  static bool AllowFrom(const CSSValue& value) {
-    return value.IsStepsTimingFunctionValue();
-  }
+  static bool AllowFrom(const CSSValue& value) { return value.IsStepsTimingFunctionValue(); }
 };
 
 }  // namespace webf

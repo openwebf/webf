@@ -62,16 +62,13 @@ class CSSSupportsParser {
   Result ConsumeSupportsFeature(const CSSParserToken&, CSSParserTokenStream&);
 
   // <supports-selector-fn> = selector( <complex-selector> )
-  Result ConsumeSupportsSelectorFn(const CSSParserToken&,
-                                   CSSParserTokenStream&);
+  Result ConsumeSupportsSelectorFn(const CSSParserToken&, CSSParserTokenStream&);
 
   // <supports-font-tech-fn> = font-tech( <font-tech> )
-  Result ConsumeFontTechFn(const CSSParserToken& first_token,
-                           CSSParserTokenStream& stream);
+  Result ConsumeFontTechFn(const CSSParserToken& first_token, CSSParserTokenStream& stream);
 
   // <supports-font-format-fn> = font-format( <font-format> )
-  Result ConsumeFontFormatFn(const CSSParserToken& first_token,
-                             CSSParserTokenStream& stream);
+  Result ConsumeFontFormatFn(const CSSParserToken& first_token, CSSParserTokenStream& stream);
 
   // <supports-decl> = ( <declaration> )
   Result ConsumeSupportsDecl(const CSSParserToken&, CSSParserTokenStream&);
@@ -85,10 +82,8 @@ class CSSSupportsParser {
 
   // Parsing helpers.
   static bool IsSupportsInParens(const CSSParserToken&);
-  static bool IsEnclosedSupportsCondition(const CSSParserToken&,
-                                          const CSSParserToken&);
-  static bool IsSupportsSelectorFn(const CSSParserToken&,
-                                   const CSSParserToken&);
+  static bool IsEnclosedSupportsCondition(const CSSParserToken&, const CSSParserToken&);
+  static bool IsSupportsSelectorFn(const CSSParserToken&, const CSSParserToken&);
   static bool IsFontTechFn(const CSSParserToken&, const CSSParserToken&);
   static bool IsFontFormatFn(const CSSParserToken&, const CSSParserToken&);
   static bool IsSupportsDecl(const CSSParserToken&, const CSSParserToken&);
@@ -110,8 +105,7 @@ inline CSSSupportsParser::Result operator!(CSSSupportsParser::Result result) {
   return result;
 }
 
-inline CSSSupportsParser::Result operator&(CSSSupportsParser::Result a,
-                                           CSSSupportsParser::Result b) {
+inline CSSSupportsParser::Result operator&(CSSSupportsParser::Result a, CSSSupportsParser::Result b) {
   using Result = CSSSupportsParser::Result;
   if (a == Result::kParseFailure || b == Result::kParseFailure) {
     return Result::kParseFailure;
@@ -122,8 +116,7 @@ inline CSSSupportsParser::Result operator&(CSSSupportsParser::Result a,
   return Result::kSupported;
 }
 
-inline CSSSupportsParser::Result operator|(CSSSupportsParser::Result a,
-                                           CSSSupportsParser::Result b) {
+inline CSSSupportsParser::Result operator|(CSSSupportsParser::Result a, CSSSupportsParser::Result b) {
   using Result = CSSSupportsParser::Result;
   if (a == Result::kParseFailure || b == Result::kParseFailure) {
     return Result::kParseFailure;
@@ -134,7 +127,6 @@ inline CSSSupportsParser::Result operator|(CSSSupportsParser::Result a,
   return Result::kUnsupported;
 }
 
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_PARSER_CSS_SUPPORTS_PARSER_H_

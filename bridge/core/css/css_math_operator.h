@@ -9,7 +9,6 @@
 
 namespace webf {
 
-
 class CSSParserToken;
 
 enum class CSSMathOperator {
@@ -42,6 +41,6 @@ std::string ToRoundingStrategyString(CSSMathOperator);
 
 bool IsComparison(CSSMathOperator);
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_CSS_MATH_OPERATOR_H_

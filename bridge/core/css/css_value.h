@@ -22,7 +22,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-
 #ifndef WEBF_CSS_VALUE_H
 #define WEBF_CSS_VALUE_H
 
@@ -41,13 +40,9 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
 
   std::string CssText() const;
 
-  [[nodiscard]] bool IsNumericLiteralValue() const {
-    return class_type_ == kNumericLiteralClass;
-  }
+  [[nodiscard]] bool IsNumericLiteralValue() const { return class_type_ == kNumericLiteralClass; }
   bool IsMathFunctionValue() const { return class_type_ == kMathFunctionClass; }
-  bool IsPrimitiveValue() const {
-    return IsNumericLiteralValue() || IsMathFunctionValue();
-  }
+  bool IsPrimitiveValue() const { return IsNumericLiteralValue() || IsMathFunctionValue(); }
   bool IsIdentifierValue() const { return class_type_ == kIdentifierClass; }
   bool IsValuePair() const { return class_type_ == kValuePairClass; }
   bool IsValueList() const { return class_type_ >= kValueListClass; }
@@ -55,62 +50,33 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
   bool IsBaseValueList() const { return class_type_ == kValueListClass; }
 
   bool IsBasicShapeValue() const {
-    return class_type_ >= kBasicShapeCircleClass &&
-           class_type_ <= kBasicShapeXYWHClass;
+    return class_type_ >= kBasicShapeCircleClass && class_type_ <= kBasicShapeXYWHClass;
   }
-  bool IsBasicShapeCircleValue() const {
-    return class_type_ == kBasicShapeCircleClass;
-  }
-  bool IsBasicShapeEllipseValue() const {
-    return class_type_ == kBasicShapeEllipseClass;
-  }
-  bool IsBasicShapePolygonValue() const {
-    return class_type_ == kBasicShapePolygonClass;
-  }
-  bool IsBasicShapeInsetValue() const {
-    return class_type_ == kBasicShapeInsetClass;
-  }
-  bool IsBasicShapeRectValue() const {
-    return class_type_ == kBasicShapeRectClass;
-  }
-  bool IsBasicShapeXYWHValue() const {
-    return class_type_ == kBasicShapeXYWHClass;
-  }
+  bool IsBasicShapeCircleValue() const { return class_type_ == kBasicShapeCircleClass; }
+  bool IsBasicShapeEllipseValue() const { return class_type_ == kBasicShapeEllipseClass; }
+  bool IsBasicShapePolygonValue() const { return class_type_ == kBasicShapePolygonClass; }
+  bool IsBasicShapeInsetValue() const { return class_type_ == kBasicShapeInsetClass; }
+  bool IsBasicShapeRectValue() const { return class_type_ == kBasicShapeRectClass; }
+  bool IsBasicShapeXYWHValue() const { return class_type_ == kBasicShapeXYWHClass; }
 
-  bool IsBorderImageSliceValue() const {
-    return class_type_ == kBorderImageSliceClass;
-  }
+  bool IsBorderImageSliceValue() const { return class_type_ == kBorderImageSliceClass; }
   bool IsColorValue() const { return class_type_ == kColorClass; }
   bool IsColorMixValue() const { return class_type_ == kColorMixClass; }
   bool IsCounterValue() const { return class_type_ == kCounterClass; }
   bool IsCursorImageValue() const { return class_type_ == kCursorImageClass; }
   bool IsCrossfadeValue() const { return class_type_ == kCrossfadeClass; }
-  bool IsDynamicRangeLimitMixValue() const {
-    return class_type_ == kDynamicRangeLimitMixClass;
-  }
+  bool IsDynamicRangeLimitMixValue() const { return class_type_ == kDynamicRangeLimitMixClass; }
   bool IsPaintValue() const { return class_type_ == kPaintClass; }
   bool IsFontFeatureValue() const { return class_type_ == kFontFeatureClass; }
   bool IsFontFamilyValue() const { return class_type_ == kFontFamilyClass; }
   bool IsFontFaceSrcValue() const { return class_type_ == kFontFaceSrcClass; }
-  bool IsFontStyleRangeValue() const {
-    return class_type_ == kFontStyleRangeClass;
-  }
-  bool IsFontVariationValue() const {
-    return class_type_ == kFontVariationClass;
-  }
+  bool IsFontStyleRangeValue() const { return class_type_ == kFontStyleRangeClass; }
+  bool IsFontVariationValue() const { return class_type_ == kFontVariationClass; }
   bool IsFunctionValue() const { return class_type_ == kFunctionClass; }
   bool IsCustomIdentValue() const { return class_type_ == kCustomIdentClass; }
-  bool IsImageGeneratorValue() const {
-    return class_type_ >= kCrossfadeClass &&
-           class_type_ <= kConstantGradientClass;
-  }
-  bool IsGradientValue() const {
-    return class_type_ >= kLinearGradientClass &&
-           class_type_ <= kConstantGradientClass;
-  }
-  bool IsImageSetOptionValue() const {
-    return class_type_ == kImageSetOptionClass;
-  }
+  bool IsImageGeneratorValue() const { return class_type_ >= kCrossfadeClass && class_type_ <= kConstantGradientClass; }
+  bool IsGradientValue() const { return class_type_ >= kLinearGradientClass && class_type_ <= kConstantGradientClass; }
+  bool IsImageSetOptionValue() const { return class_type_ == kImageSetOptionClass; }
   bool IsImageSetTypeValue() const { return class_type_ == kImageSetTypeClass; }
   bool IsImageSetValue() const { return class_type_ == kImageSetClass; }
   bool IsImageValue() const { return class_type_ == kImageClass; }
@@ -119,88 +85,43 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
   bool IsUnsetValue() const { return class_type_ == kUnsetClass; }
   bool IsRevertValue() const { return class_type_ == kRevertClass; }
   bool IsRevertLayerValue() const { return class_type_ == kRevertLayerClass; }
-  bool IsCSSWideKeyword() const {
-    return class_type_ >= kInheritedClass && class_type_ <= kRevertLayerClass;
-  }
-  bool IsLayoutFunctionValue() const {
-    return class_type_ == kLayoutFunctionClass;
-  }
-  bool IsLinearGradientValue() const {
-    return class_type_ == kLinearGradientClass;
-  }
+  bool IsCSSWideKeyword() const { return class_type_ >= kInheritedClass && class_type_ <= kRevertLayerClass; }
+  bool IsLayoutFunctionValue() const { return class_type_ == kLayoutFunctionClass; }
+  bool IsLinearGradientValue() const { return class_type_ == kLinearGradientClass; }
   bool IsPaletteMixValue() const { return class_type_ == kPaletteMixClass; }
   bool IsPathValue() const { return class_type_ == kPathClass; }
   bool IsQuadValue() const { return class_type_ == kQuadClass; }
   bool IsRayValue() const { return class_type_ == kRayClass; }
-  bool IsRadialGradientValue() const {
-    return class_type_ == kRadialGradientClass;
-  }
-  bool IsConicGradientValue() const {
-    return class_type_ == kConicGradientClass;
-  }
-  bool IsConstantGradientValue() const {
-    return class_type_ == kConstantGradientClass;
-  }
+  bool IsRadialGradientValue() const { return class_type_ == kRadialGradientClass; }
+  bool IsConicGradientValue() const { return class_type_ == kConicGradientClass; }
+  bool IsConstantGradientValue() const { return class_type_ == kConstantGradientClass; }
   bool IsReflectValue() const { return class_type_ == kReflectClass; }
   bool IsShadowValue() const { return class_type_ == kShadowClass; }
   bool IsStringValue() const { return class_type_ == kStringClass; }
   bool IsURIValue() const { return class_type_ == kURIClass; }
-  bool IsLinearTimingFunctionValue() const {
-    return class_type_ == kLinearTimingFunctionClass;
-  }
-  bool IsCubicBezierTimingFunctionValue() const {
-    return class_type_ == kCubicBezierTimingFunctionClass;
-  }
-  bool IsStepsTimingFunctionValue() const {
-    return class_type_ == kStepsTimingFunctionClass;
-  }
-  bool IsGridTemplateAreasValue() const {
-    return class_type_ == kGridTemplateAreasClass;
-  }
-  bool IsContentDistributionValue() const {
-    return class_type_ == kCSSContentDistributionClass;
-  }
+  bool IsLinearTimingFunctionValue() const { return class_type_ == kLinearTimingFunctionClass; }
+  bool IsCubicBezierTimingFunctionValue() const { return class_type_ == kCubicBezierTimingFunctionClass; }
+  bool IsStepsTimingFunctionValue() const { return class_type_ == kStepsTimingFunctionClass; }
+  bool IsGridTemplateAreasValue() const { return class_type_ == kGridTemplateAreasClass; }
+  bool IsContentDistributionValue() const { return class_type_ == kCSSContentDistributionClass; }
   bool IsUnicodeRangeValue() const { return class_type_ == kUnicodeRangeClass; }
-  bool IsGridLineNamesValue() const {
-    return class_type_ == kGridLineNamesClass;
-  }
-  bool IsUnparsedDeclaration() const {
-    return class_type_ == kUnparsedDeclarationClass;
-  }
-  bool IsGridAutoRepeatValue() const {
-    return class_type_ == kGridAutoRepeatClass;
-  }
-  bool IsGridIntegerRepeatValue() const {
-    return class_type_ == kGridIntegerRepeatClass;
-  }
-  bool IsPendingSubstitutionValue() const {
-    return class_type_ == kPendingSubstitutionValueClass;
-  }
-  bool IsPendingSystemFontValue() const {
-    return class_type_ == kPendingSystemFontValueClass;
-  }
+  bool IsGridLineNamesValue() const { return class_type_ == kGridLineNamesClass; }
+  bool IsUnparsedDeclaration() const { return class_type_ == kUnparsedDeclarationClass; }
+  bool IsGridAutoRepeatValue() const { return class_type_ == kGridAutoRepeatClass; }
+  bool IsGridIntegerRepeatValue() const { return class_type_ == kGridIntegerRepeatClass; }
+  bool IsPendingSubstitutionValue() const { return class_type_ == kPendingSubstitutionValueClass; }
+  bool IsPendingSystemFontValue() const { return class_type_ == kPendingSystemFontValueClass; }
   bool IsInvalidVariableValue() const {
-    return class_type_ == kInvalidVariableValueClass ||
-           class_type_ == kCyclicVariableValueClass;
+    return class_type_ == kInvalidVariableValueClass || class_type_ == kCyclicVariableValueClass;
   }
-  bool IsCyclicVariableValue() const {
-    return class_type_ == kCyclicVariableValueClass;
-  }
+  bool IsCyclicVariableValue() const { return class_type_ == kCyclicVariableValueClass; }
   bool IsFlipRevertValue() const { return class_type_ == kFlipRevertClass; }
   bool IsAlternateValue() const { return class_type_ == kAlternateClass; }
   bool IsAxisValue() const { return class_type_ == kAxisClass; }
-  bool IsShorthandWrapperValue() const {
-    return class_type_ == kKeyframeShorthandClass;
-  }
-  bool IsInitialColorValue() const {
-    return class_type_ == kInitialColorValueClass;
-  }
-  bool IsLightDarkValuePair() const {
-    return class_type_ == kLightDarkValuePairClass;
-  }
-  bool IsAppearanceAutoBaseSelectValuePair() const {
-    return class_type_ == kAppearanceAutoBaseSelectValuePairClass;
-  }
+  bool IsShorthandWrapperValue() const { return class_type_ == kKeyframeShorthandClass; }
+  bool IsInitialColorValue() const { return class_type_ == kInitialColorValueClass; }
+  bool IsLightDarkValuePair() const { return class_type_ == kLightDarkValuePairClass; }
+  bool IsAppearanceAutoBaseSelectValuePair() const { return class_type_ == kAppearanceAutoBaseSelectValuePairClass; }
 
   bool IsScrollValue() const { return class_type_ == kScrollClass; }
   bool IsViewValue() const { return class_type_ == kViewClass; }
@@ -233,81 +154,81 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
 
  protected:
   enum ClassType {
-    kNumericLiteralClass, // done
-    kMathFunctionClass, // done
-    kIdentifierClass, // done
-    kColorClass, // done
-    kColorMixClass, // skip
-    kCounterClass, // skip
-    kQuadClass,  // future
-    kCustomIdentClass, // done
-    kStringClass, // done
-    kURIClass, // future
-    kValuePairClass, // done
-    kLightDarkValuePairClass, // done
-    kAppearanceAutoBaseSelectValuePairClass, // done
-    kScrollClass, // future
-    kViewClass, // done
-    kRatioClass, // done
+    kNumericLiteralClass,                     // done
+    kMathFunctionClass,                       // done
+    kIdentifierClass,                         // done
+    kColorClass,                              // done
+    kColorMixClass,                           // skip
+    kCounterClass,                            // skip
+    kQuadClass,                               // future
+    kCustomIdentClass,                        // done
+    kStringClass,                             // done
+    kURIClass,                                // future
+    kValuePairClass,                          // done
+    kLightDarkValuePairClass,                 // done
+    kAppearanceAutoBaseSelectValuePairClass,  // done
+    kScrollClass,                             // future
+    kViewClass,                               // done
+    kRatioClass,                              // done
 
     // Basic shape classes.
     // TODO(sashab): Represent these as a single subclass, BasicShapeClass.
-    kBasicShapeCircleClass, // future
-    kBasicShapeEllipseClass, // future
-    kBasicShapePolygonClass,// future
-    kBasicShapeInsetClass,// future
-    kBasicShapeRectClass,// future
-    kBasicShapeXYWHClass,// future
+    kBasicShapeCircleClass,   // future
+    kBasicShapeEllipseClass,  // future
+    kBasicShapePolygonClass,  // future
+    kBasicShapeInsetClass,    // future
+    kBasicShapeRectClass,     // future
+    kBasicShapeXYWHClass,     // future
 
     // Image classes.
-    kImageClass, // future
-    kCursorImageClass, // skip
+    kImageClass,        // future
+    kCursorImageClass,  // skip
 
     // Image generator classes.
-    kCrossfadeClass, // skip
-    kPaintClass, // skip
-    kLinearGradientClass, // future
-    kRadialGradientClass,  // future
-    kConicGradientClass, // future
-    kConstantGradientClass, // future
+    kCrossfadeClass,         // skip
+    kPaintClass,             // skip
+    kLinearGradientClass,    // future
+    kRadialGradientClass,    // future
+    kConicGradientClass,     // future
+    kConstantGradientClass,  // future
 
     // Timing function classes.
-    kLinearTimingFunctionClass, // future
+    kLinearTimingFunctionClass,       // future
     kCubicBezierTimingFunctionClass,  // future
-    kStepsTimingFunctionClass, // future
+    kStepsTimingFunctionClass,        // future
 
     // Other class types.
-    kBorderImageSliceClass, // skip
-    kDynamicRangeLimitMixClass, // skip
-    kFontFeatureClass, // skip
-    kFontFaceSrcClass,  // future
-    kFontFamilyClass, // future
-    kFontStyleRangeClass, // future
-    kFontVariationClass, // future
-    kAlternateClass, // future
+    kBorderImageSliceClass,      // skip
+    kDynamicRangeLimitMixClass,  // skip
+    kFontFeatureClass,           // skip
+    kFontFaceSrcClass,           // future
+    kFontFamilyClass,            // future
+    kFontStyleRangeClass,        // future
+    kFontVariationClass,         // future
+    kAlternateClass,             // future
 
-    kInheritedClass, // done
-    kInitialClass, // done
-    kUnsetClass, // done
-    kRevertClass, // done
-    kRevertLayerClass, // skip
+    kInheritedClass,    // done
+    kInitialClass,      // done
+    kUnsetClass,        // done
+    kRevertClass,       // done
+    kRevertLayerClass,  // skip
 
-    kReflectClass, // skip
+    kReflectClass,  // skip
     kShadowClass,
     kUnicodeRangeClass,
     kGridTemplateAreasClass,
-    kPaletteMixClass, // skip
-    kPathClass, // future
-    kRayClass, // skip
-    kUnparsedDeclarationClass, // future
-    kPendingSubstitutionValueClass, // future
-    kPendingSystemFontValueClass, // future
+    kPaletteMixClass,                // skip
+    kPathClass,                      // future
+    kRayClass,                       // skip
+    kUnparsedDeclarationClass,       // future
+    kPendingSubstitutionValueClass,  // future
+    kPendingSystemFontValueClass,    // future
     kInvalidVariableValueClass,
     kCyclicVariableValueClass,
     kFlipRevertClass,
-    kLayoutFunctionClass, // skip
+    kLayoutFunctionClass,  // skip
 
-    kCSSContentDistributionClass, // skip
+    kCSSContentDistributionClass,  // skip
 
     kKeyframeShorthandClass,
     kInitialColorValueClass,
@@ -333,9 +254,7 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
   std::shared_ptr<const CSSValue> PopulateWithTreeScope(const TreeScope*) const;
 
   explicit CSSValue(ClassType class_type)
-      : allows_negative_percentage_reference_(false),
-        needs_tree_scope_population_(false),
-        class_type_(class_type) {}
+      : allows_negative_percentage_reference_(false), needs_tree_scope_population_(false), class_type_(class_type) {}
 
   // NOTE: This class is non-virtual for memory and performance reasons.
   // Don't go making it virtual again unless you know exactly what you're doing!
@@ -370,9 +289,8 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
 };
 
 template <typename CSSValueType>
-inline bool CompareCSSValueVector(
-    const std::vector<std::shared_ptr<CSSValueType>>& first_vector,
-    const std::vector<std::shared_ptr<CSSValueType>>& second_vector) {
+inline bool CompareCSSValueVector(const std::vector<std::shared_ptr<CSSValueType>>& first_vector,
+                                  const std::vector<std::shared_ptr<CSSValueType>>& second_vector) {
   uint32_t size = first_vector.size();
   if (size != second_vector.size()) {
     return false;
@@ -385,7 +303,6 @@ inline bool CompareCSSValueVector(
   }
   return true;
 }
-
 
 }  // namespace webf
 

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "gtest/gtest.h"
 #include "core/css/properties/css_parsing_utils.h"
+#include "gtest/gtest.h"
 
 namespace webf {
 
@@ -33,8 +33,7 @@ double ConsumeAngleValue(std::string target) {
 double ConsumeAngleValue(std::string target, double min, double max) {
   auto tokens = CSSTokenizer(target).TokenizeToEOF();
   CSSParserTokenRange range(tokens);
-  return ConsumeAngle(range, MakeContext(), min, max)
-      ->ComputeDegrees();
+  return ConsumeAngle(range, MakeContext(), min, max)->ComputeDegrees();
 }
 
 TEST(CSSParsingUtilsTest, ConsumeAngles) {
@@ -187,15 +186,13 @@ TEST(CSSParsingUtilsTest, DashedIdent) {
     std::string css_text;
     bool is_dashed_indent;
   } expectations[] = {
-      {"--grogu", true}, {"--1234", true}, {"--\U0001F37A", true},
-      {"--", true},      {"-", false},     {"blue", false},
-      {"body", false},   {"0", false},     {"#FFAA00", false},
+      {"--grogu", true}, {"--1234", true}, {"--\U0001F37A", true}, {"--", true},       {"-", false},
+      {"blue", false},   {"body", false},  {"0", false},           {"#FFAA00", false},
   };
   for (auto& expectation : expectations) {
     auto tokens = CSSTokenizer(expectation.css_text).TokenizeToEOF();
     CSSParserTokenRange range(tokens);
-    EXPECT_EQ(css_parsing_utils::IsDashedIdent(range.Peek()),
-              expectation.is_dashed_indent);
+    EXPECT_EQ(css_parsing_utils::IsDashedIdent(range.Peek()), expectation.is_dashed_indent);
   }
 }
 
@@ -216,26 +213,18 @@ TEST(CSSParsingUtilsTest, ConsumeAbsoluteColor) {
     std::shared_ptr<const CSSIdentifierValue> consume_absolute_color_expectation;
   } expectations[]{
       {"Canvas", CSSIdentifierValue::Create(CSSValueID::kCanvas), nullptr},
-      {"HighlightText", CSSIdentifierValue::Create(CSSValueID::kHighlighttext),
-       nullptr},
+      {"HighlightText", CSSIdentifierValue::Create(CSSValueID::kHighlighttext), nullptr},
       {"GrayText", CSSIdentifierValue::Create(CSSValueID::kGraytext), nullptr},
-      {"blue", CSSIdentifierValue::Create(CSSValueID::kBlue),
-       CSSIdentifierValue::Create(CSSValueID::kBlue)},
+      {"blue", CSSIdentifierValue::Create(CSSValueID::kBlue), CSSIdentifierValue::Create(CSSValueID::kBlue)},
       // Deprecated system colors are not allowed either.
-      {"ActiveBorder", CSSIdentifierValue::Create(CSSValueID::kActiveborder),
-       nullptr},
-      {"WindowText", CSSIdentifierValue::Create(CSSValueID::kWindowtext),
-       nullptr},
-      {"currentcolor", CSSIdentifierValue::Create(CSSValueID::kCurrentcolor),
-       nullptr},
+      {"ActiveBorder", CSSIdentifierValue::Create(CSSValueID::kActiveborder), nullptr},
+      {"WindowText", CSSIdentifierValue::Create(CSSValueID::kWindowtext), nullptr},
+      {"currentcolor", CSSIdentifierValue::Create(CSSValueID::kCurrentcolor), nullptr},
   };
   for (auto& expectation : expectations) {
-    EXPECT_EQ(ConsumeColorForTest(
-                  expectation.css_text,
-                  css_parsing_utils::ConsumeColor<CSSParserTokenRange>),
+    EXPECT_EQ(ConsumeColorForTest(expectation.css_text, css_parsing_utils::ConsumeColor<CSSParserTokenRange>),
               expectation.consume_color_expectation);
-    EXPECT_EQ(ConsumeColorForTest(expectation.css_text,
-                                  css_parsing_utils::ConsumeAbsoluteColor),
+    EXPECT_EQ(ConsumeColorForTest(expectation.css_text, css_parsing_utils::ConsumeAbsoluteColor),
               expectation.consume_absolute_color_expectation);
   }
 }
@@ -259,4 +248,4 @@ TEST(CSSParsingUtilsTest, ConsumeColorRangePreservation) {
 
 }  // namespace
 
-}
+}  // namespace webf

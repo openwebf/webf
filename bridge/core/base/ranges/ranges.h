@@ -31,15 +31,13 @@ constexpr T* begin(T (&array)[N], priority_tag<2>) {
 
 // Generic container overload.
 template <typename Range>
-constexpr auto begin(Range&& range, priority_tag<1>)
-    -> decltype(std::forward<Range>(range).begin()) {
+constexpr auto begin(Range&& range, priority_tag<1>) -> decltype(std::forward<Range>(range).begin()) {
   return std::forward<Range>(range).begin();
 }
 
 // Overload for free begin() function.
 template <typename Range>
-constexpr auto begin(Range&& range, priority_tag<0>)
-    -> decltype(begin(std::forward<Range>(range))) {
+constexpr auto begin(Range&& range, priority_tag<0>) -> decltype(begin(std::forward<Range>(range))) {
   return begin(std::forward<Range>(range));
 }
 
@@ -51,15 +49,13 @@ constexpr T* end(T (&array)[N], priority_tag<2>) {
 
 // Generic container overload.
 template <typename Range>
-constexpr auto end(Range&& range, priority_tag<1>)
-    -> decltype(std::forward<Range>(range).end()) {
+constexpr auto end(Range&& range, priority_tag<1>) -> decltype(std::forward<Range>(range).end()) {
   return std::forward<Range>(range).end();
 }
 
 // Overload for free end() function.
 template <typename Range>
-constexpr auto end(Range&& range, priority_tag<0>)
-    -> decltype(end(std::forward<Range>(range))) {
+constexpr auto end(Range&& range, priority_tag<0>) -> decltype(end(std::forward<Range>(range))) {
   return end(std::forward<Range>(range));
 }
 
@@ -89,10 +85,8 @@ using less_equal = std::less_equal<>;
 // Reference: https://wg21.link/range.access.begin
 template <typename Range>
 constexpr auto begin(Range&& range) noexcept
-    -> decltype(internal::begin(std::forward<Range>(range),
-                                internal::priority_tag<2>())) {
-  return internal::begin(std::forward<Range>(range),
-                         internal::priority_tag<2>());
+    -> decltype(internal::begin(std::forward<Range>(range), internal::priority_tag<2>())) {
+  return internal::begin(std::forward<Range>(range), internal::priority_tag<2>());
 }
 
 // Simplified implementation of C++20's std::ranges::end.
@@ -105,8 +99,7 @@ constexpr auto begin(Range&& range) noexcept
 // Reference: - https://wg21.link/range.access.end
 template <typename Range>
 constexpr auto end(Range&& range) noexcept
-    -> decltype(internal::end(std::forward<Range>(range),
-                              internal::priority_tag<2>())) {
+    -> decltype(internal::end(std::forward<Range>(range), internal::priority_tag<2>())) {
   return internal::end(std::forward<Range>(range), internal::priority_tag<2>());
 }
 
@@ -119,8 +112,8 @@ using iterator_t = decltype(ranges::begin(std::declval<Range&>()));
 // Implementation of C++20's std::ranges::range_value_t.
 //
 // Reference: https://wg21.link/ranges.syn#:~:text=range_value_t
-//template <typename Range>
-//using range_value_t = std::iter_value_t<iterator_t<Range>>;
+// template <typename Range>
+// using range_value_t = std::iter_value_t<iterator_t<Range>>;
 
 }  // namespace ranges
 

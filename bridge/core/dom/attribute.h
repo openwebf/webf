@@ -93,14 +93,12 @@ static_assert(sizeof(Attribute) == sizeof(QualifiedName) + sizeof(AtomicString),
 inline bool Attribute::Matches(const QualifiedName& qualified_name) const {
   if (qualified_name.LocalName() != LocalName())
     return false;
-  return qualified_name.Prefix() == g_star_atom ||
-         qualified_name.NamespaceURI() == NamespaceURI();
+  return qualified_name.Prefix() == g_star_atom || qualified_name.NamespaceURI() == NamespaceURI();
 }
 
 inline bool Attribute::MatchesCaseInsensitive(const QualifiedName& qualified_name) const {
   return qualified_name.LocalNameUpper() == name_.LocalNameUpper() &&
-         (qualified_name.Prefix() == g_star_atom ||
-          qualified_name.NamespaceURI() == NamespaceURI());
+         (qualified_name.Prefix() == g_star_atom || qualified_name.NamespaceURI() == NamespaceURI());
 }
 
 }  // namespace webf

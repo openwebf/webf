@@ -42,25 +42,21 @@ struct CascadeLayerKeyEqual {
 //    will be used in place of the layers of all RuleSets it is
 //    subsuming), into one grouping so give them a canonical numbering.
 //    For clarity, we use the typedef CanonicalLayerMap there.
-using LayerMap = std::unordered_map<
-    std::shared_ptr<const CascadeLayer>,
-    std::shared_ptr<CascadeLayer>,
-    CascadeLayerKeyHasher,CascadeLayerKeyEqual>;
+using LayerMap = std::unordered_map<std::shared_ptr<const CascadeLayer>,
+                                    std::shared_ptr<CascadeLayer>,
+                                    CascadeLayerKeyHasher,
+                                    CascadeLayerKeyEqual>;
 
 // A CascadeLayer object represents a node in the ordered tree of cascade layers
 // in the sorted layer ordering.
 // https://www.w3.org/TR/css-cascade-5/#layer-ordering
 class CascadeLayer final {
  public:
-
-  explicit CascadeLayer(const std::string& name = "")
-      : name_(name) {}
+  explicit CascadeLayer(const std::string& name = "") : name_(name) {}
   ~CascadeLayer() = default;
 
   const std::string& GetName() const { return name_; }
-  const std::vector<std::shared_ptr<CascadeLayer>>& GetDirectSubLayers() const {
-    return direct_sub_layers_;
-  }
+  const std::vector<std::shared_ptr<CascadeLayer>>& GetDirectSubLayers() const { return direct_sub_layers_; }
 
   // Getting or setting the order of a layer is only valid for canonical cascade
   // layers i.e. the unique layer representation for a particular tree scope.
@@ -94,7 +90,6 @@ class CascadeLayer final {
   std::string name_;
   std::vector<std::shared_ptr<CascadeLayer>> direct_sub_layers_;
 };
-
 
 }  // namespace webf
 

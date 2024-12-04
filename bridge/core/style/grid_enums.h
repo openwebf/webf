@@ -9,12 +9,7 @@
 
 namespace webf {
 
-enum GridPositionSide {
-  kColumnStartSide,
-  kColumnEndSide,
-  kRowStartSide,
-  kRowEndSide
-};
+enum GridPositionSide { kColumnStartSide, kColumnEndSide, kRowStartSide, kRowEndSide };
 
 enum GridTrackSizingDirection { kForColumns, kForRows };
 

@@ -1,27 +1,26 @@
 /*
-* (C) 1999-2003 Lars Knoll (knoll@kde.org)
-* Copyright (C) 2004, 2005, 2006, 2008 Apple Inc. All rights reserved.
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Library General Public
-* License as published by the Free Software Foundation; either
-* version 2 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Library General Public License for more details.
-*
-* You should have received a copy of the GNU Library General Public License
-* along with this library; see the file COPYING.LIB.  If not, write to
-* the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-* Boston, MA 02110-1301, USA.
-*/
+ * (C) 1999-2003 Lars Knoll (knoll@kde.org)
+ * Copyright (C) 2004, 2005, 2006, 2008 Apple Inc. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public License
+ * along with this library; see the file COPYING.LIB.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301, USA.
+ */
 
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-
 
 #include "css_url_data.h"
 
@@ -31,18 +30,13 @@
 
 namespace webf {
 
-CSSUrlData::CSSUrlData(std::string unresolved_url,
-                       const KURL& resolved_url
-                       )
+CSSUrlData::CSSUrlData(std::string unresolved_url, const KURL& resolved_url)
     : relative_url_(std::move(unresolved_url)),
       absolute_url_(resolved_url.GetString()),
       is_local_(!unresolved_url.empty() && unresolved_url[0] == '#'),
       potentially_dangling_markup_(resolved_url.PotentiallyDanglingMarkup()) {}
 
-CSSUrlData::CSSUrlData(const std::string& resolved_url)
-    : CSSUrlData(resolved_url,
-                 KURL(resolved_url)
-                 ) {}
+CSSUrlData::CSSUrlData(const std::string& resolved_url) : CSSUrlData(resolved_url, KURL(resolved_url)) {}
 
 KURL CSSUrlData::ResolveUrl(const Document& document) const {
   if (!potentially_dangling_markup_) {
@@ -84,8 +78,8 @@ CSSUrlData CSSUrlData::MakeAbsolute() const {
     return *this;
   }
   return CSSUrlData(absolute_url_, KURL(absolute_url_)
-//                    Referrer(), GetOriginClean(), is_ad_related_
-                    );
+                    //                    Referrer(), GetOriginClean(), is_ad_related_
+  );
 }
 
 CSSUrlData CSSUrlData::MakeResolved(const KURL& base_url) const {
@@ -95,23 +89,22 @@ CSSUrlData CSSUrlData::MakeResolved(const KURL& base_url) const {
   const KURL resolved_url = KURL(base_url, relative_url_);
   if (is_local_) {
     return CSSUrlData(relative_url_, resolved_url
-//                      Referrer(), GetOriginClean(), is_ad_related_
-                      );
+                      //                      Referrer(), GetOriginClean(), is_ad_related_
+    );
   }
   return CSSUrlData(std::string(resolved_url.GetString()), resolved_url
-//                    Referrer(), GetOriginClean(),  is_ad_related_
-                    );
+                    //                    Referrer(), GetOriginClean(),  is_ad_related_
+  );
 }
 
 CSSUrlData CSSUrlData::MakeWithoutReferrer() const {
   return CSSUrlData(relative_url_, KURL(absolute_url_)
-//                    Referrer(), GetOriginClean(), is_ad_related_
-                    );
+                    //                    Referrer(), GetOriginClean(), is_ad_related_
+  );
 }
 
 bool CSSUrlData::IsLocal(const Document& document) const {
-  return is_local_ ||
-         EqualIgnoringFragmentIdentifier(KURL(absolute_url_), document.Url());
+  return is_local_ || EqualIgnoringFragmentIdentifier(KURL(absolute_url_), document.Url());
 }
 
 std::string CSSUrlData::CssText() const {

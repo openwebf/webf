@@ -33,6 +33,6 @@ enum class MatchFlag {
 
 using MatchFlags = uint8_t;
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_MATCH_FLAGS_H_

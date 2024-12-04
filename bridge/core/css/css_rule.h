@@ -27,8 +27,8 @@
 #ifndef WEBF_CSS_RULE_H
 #define WEBF_CSS_RULE_H
 
-#include "bindings/qjs/script_wrappable.h"
 #include "bindings/qjs/cppgc/member.h"
+#include "bindings/qjs/script_wrappable.h"
 
 namespace webf {
 
@@ -107,9 +107,7 @@ class CSSRule : public ScriptWrappable {
     return ParentAsCSSStyleSheet();
   }
 
-  CSSRule* parentRule() const {
-    return parent_is_rule_ ? ParentAsCSSRule() : nullptr;
-  }
+  CSSRule* parentRule() const { return parent_is_rule_ ? ParentAsCSSRule() : nullptr; }
 
   // The CSSOM spec states that "setting the cssText attribute must do nothing."
   void setCSSText(const std::string&) {}
@@ -149,13 +147,12 @@ class CSSRule : public ScriptWrappable {
   // via the getters above (ParentAsCSSRule and ParentAsCSSStyleSheet).
   Member<ScriptWrappable> parent_;
 
-  friend StyleRuleBase* ParseRuleForInsert(
-      const ExecutingContext* execution_context,
-      const AtomicString& rule_string,
-      unsigned index,
-      size_t num_child_rules,
-      CSSRule& parent_rule,
-      ExceptionState& exception_state);
+  friend StyleRuleBase* ParseRuleForInsert(const ExecutingContext* execution_context,
+                                           const AtomicString& rule_string,
+                                           unsigned index,
+                                           size_t num_child_rules,
+                                           CSSRule& parent_rule,
+                                           ExceptionState& exception_state);
 };
 
 }  // namespace webf

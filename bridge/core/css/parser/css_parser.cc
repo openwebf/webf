@@ -7,16 +7,16 @@
  */
 
 #include "css_parser.h"
+#include "core/base/memory/shared_ptr.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_fast_path.h"
-#include "core/base/memory/shared_ptr.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_property_parser.h"
 #include "core/css/parser/css_selector_parser.h"
-#include "core/css/properties/css_parsing_utils.h"
-#include "core/css/parser/css_tokenizer.h"
 #include "core/css/parser/css_supports_parser.h"
+#include "core/css/parser/css_tokenizer.h"
 #include "core/css/parser/css_variable_parser.h"
+#include "core/css/properties/css_parsing_utils.h"
 #include "core/css/style_sheet_contents.h"
 #include "css_parser_impl.h"
 
@@ -30,8 +30,7 @@ bool CSSParser::ParseDeclarationList(std::shared_ptr<CSSParserContext> context,
 
 void CSSParser::ParseDeclarationListForInspector(std::shared_ptr<CSSParserContext> context,
                                                  const std::string& declaration,
-                                                 CSSParserObserver& observer) {
-}
+                                                 CSSParserObserver& observer) {}
 
 tcb::span<CSSSelector> CSSParser::ParseSelector(std::shared_ptr<const CSSParserContext> context,
                                                 CSSNestingType nesting_type,
@@ -208,14 +207,14 @@ std::shared_ptr<const ImmutableCSSPropertyValueSet> CSSParser::ParseInlineStyleD
 }
 
 std::unique_ptr<std::vector<KeyframeOffset>> CSSParser::ParseKeyframeKeyList(std::shared_ptr<CSSParserContext> context,
-                                                                        const std::string& key_list) {
+                                                                             const std::string& key_list) {
   return CSSParserImpl::ParseKeyframeKeyList(context, key_list);
 }
 
-std::shared_ptr<StyleRuleKeyframe> CSSParser::ParseKeyframeRule(std::shared_ptr<CSSParserContext> context, const std::string& rule) {
-  auto keyframe =
-      CSSParserImpl::ParseRule(rule, context, CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr, nullptr,
-                               CSSParserImpl::kKeyframeRules);
+std::shared_ptr<StyleRuleKeyframe> CSSParser::ParseKeyframeRule(std::shared_ptr<CSSParserContext> context,
+                                                                const std::string& rule) {
+  auto keyframe = CSSParserImpl::ParseRule(rule, context, CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
+                                           nullptr, CSSParserImpl::kKeyframeRules);
   return std::reinterpret_pointer_cast<StyleRuleKeyframe>(keyframe);
 }
 
@@ -232,8 +231,7 @@ bool CSSParser::ParseSupportsCondition(const std::string& condition, const Execu
   // Create parser context using document so it can check for origin trial
   // enabled property/value.
   std::string str;
-  std::shared_ptr<CSSParserContext> context =
-      std::make_shared<CSSParserContext>(*execution_context->document(), str);
+  std::shared_ptr<CSSParserContext> context = std::make_shared<CSSParserContext>(*execution_context->document(), str);
   // Override the parser mode interpreted from the document as the spec
   // https://quirks.spec.whatwg.org/#css requires quirky values and colors
   // must not be supported in CSS.supports() method.
@@ -285,8 +283,8 @@ bool CSSParser::ParseColor(Color& color, const std::string& string, bool strict)
 }
 
 const std::shared_ptr<const CSSValue>* CSSParser::ParseFontFaceDescriptor(CSSPropertyID property_id,
-                                                                   const std::string& property_value,
-                                                                   std::shared_ptr<CSSParserContext> context) {
+                                                                          const std::string& property_value,
+                                                                          std::shared_ptr<CSSParserContext> context) {
   auto style = std::make_shared<MutableCSSPropertyValueSet>(kCSSFontFaceRuleMode);
   CSSParser::ParseValue(style.get(), property_id, property_value, true, context);
   const std::shared_ptr<const CSSValue>* value = style->GetPropertyCSSValue(property_id);
@@ -295,8 +293,8 @@ const std::shared_ptr<const CSSValue>* CSSParser::ParseFontFaceDescriptor(CSSPro
 }
 
 std::shared_ptr<const CSSPrimitiveValue> CSSParser::ParseLengthPercentage(const std::string& string,
-                                                    std::shared_ptr<CSSParserContext> context,
-                                                    CSSPrimitiveValue::ValueRange value_range) {
+                                                                          std::shared_ptr<CSSParserContext> context,
+                                                                          CSSPrimitiveValue::ValueRange value_range) {
   if (string.empty() || !context) {
     return nullptr;
   }
@@ -310,7 +308,8 @@ std::shared_ptr<const CSSPrimitiveValue> CSSParser::ParseLengthPercentage(const 
   return range.AtEnd() ? parsed_value : nullptr;
 }
 
-std::shared_ptr<MutableCSSPropertyValueSet> CSSParser::ParseFont(const std::string& string, const ExecutingContext* execution_context) {
+std::shared_ptr<MutableCSSPropertyValueSet> CSSParser::ParseFont(const std::string& string,
+                                                                 const ExecutingContext* execution_context) {
   auto set = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
   ParseValue(set.get(), CSSPropertyID::kFont, string, true /* important */, execution_context);
   if (set->IsEmpty()) {

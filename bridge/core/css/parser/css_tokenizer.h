@@ -9,9 +9,9 @@
 #ifndef WEBF_CSS_TOKENIZER_H
 #define WEBF_CSS_TOKENIZER_H
 
-#include "foundation/macros.h"
-#include "css_tokenizer_input_stream.h"
 #include "css_parser_token.h"
+#include "css_tokenizer_input_stream.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -80,8 +80,7 @@ class CSSTokenizer {
       static_assert(kLeftParenthesisToken == (kRightParenthesisToken - 1));
       static_assert(kLeftBracketToken == (kRightBracketToken - 1));
       static_assert(kLeftBraceToken == (kRightBraceToken - 1));
-      block_stack_.push_back(
-          static_cast<CSSParserTokenType>(next.GetType() - 1));
+      block_stack_.push_back(static_cast<CSSParserTokenType>(next.GetType() - 1));
     }
     input_.Restore(offset);
     // Produce the post-restore lookahead token.
@@ -117,9 +116,7 @@ class CSSTokenizer {
   bool NextCharsAreIdentifier();
 
   CSSParserToken BlockStart(CSSParserTokenType);
-  CSSParserToken BlockStart(CSSParserTokenType block_type,
-                            CSSParserTokenType,
-                            std::string_view);
+  CSSParserToken BlockStart(CSSParserTokenType block_type, CSSParserTokenType, std::string_view);
   CSSParserToken BlockEnd(CSSParserTokenType, CSSParserTokenType start_type);
 
   CSSParserToken WhiteSpace(char);

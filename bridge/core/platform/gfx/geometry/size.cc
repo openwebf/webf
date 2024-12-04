@@ -30,8 +30,7 @@ base::CheckedNumeric<int> Size::GetCheckedArea() const {
 }
 
 void Size::Enlarge(int grow_width, int grow_height) {
-  SetSize(base::ClampAdd(width(), grow_width),
-          base::ClampAdd(height(), grow_height));
+  SetSize(base::ClampAdd(width(), grow_width), base::ClampAdd(height(), grow_height));
 }
 
 void Size::SetToMin(const Size& other) {

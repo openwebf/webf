@@ -307,9 +307,8 @@ std::shared_ptr<const CSSSelectorList> CSSParserImpl::ParsePageSelector(
   }
 
   std::vector<CSSSelector> selectors;
-  if(type_selector.has_value()) {
-    selectors.push_back(
-        CSSSelector(QualifiedName(g_null_atom, AtomicString(type_selector.value()), g_star_atom)));
+  if (type_selector.has_value()) {
+    selectors.push_back(CSSSelector(QualifiedName(g_null_atom, AtomicString(type_selector.value()), g_star_atom)));
   }
   if (!pseudo.empty()) {
     CSSSelector selector;
@@ -1863,8 +1862,7 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeLayerRule(
     }
 
     if (observer_) {
-      observer_->StartRuleHeader(StyleRule::kLayerStatement,
-                                 prelude_offset_start);
+      observer_->StartRuleHeader(StyleRule::kLayerStatement, prelude_offset_start);
       observer_->EndRuleHeader(prelude_offset_end);
       observer_->StartRuleBody(prelude_offset_end);
       observer_->EndRuleBody(prelude_offset_end);
@@ -1898,17 +1896,15 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeLayerRule(
 
   std::vector<std::shared_ptr<StyleRuleBase>> rules;
   rules.reserve(4);
-  ConsumeRuleListOrNestedDeclarationList(
-      stream,
-      /* is_nested_group_rule */ nesting_type == CSSNestingType::kNesting,
-      nesting_type, parent_rule_for_nesting, &rules);
+  ConsumeRuleListOrNestedDeclarationList(stream,
+                                         /* is_nested_group_rule */ nesting_type == CSSNestingType::kNesting,
+                                         nesting_type, parent_rule_for_nesting, &rules);
 
   if (observer_) {
     observer_->EndRuleBody(stream.Offset());
   }
 
-  return std::make_shared<StyleRuleLayerBlock>(std::move(name),
-                                                   std::move(rules));
+  return std::make_shared<StyleRuleLayerBlock>(std::move(name), std::move(rules));
 }
 
 }  // namespace webf

@@ -39,7 +39,7 @@
 
 namespace webf {
 //
-//static bool MatchesTagName(const Element& element, const QualifiedName& tag_q_name) {
+// static bool MatchesTagName(const Element& element, const QualifiedName& tag_q_name) {
 //  if (tag_q_name == AnyQName()) {
 //    return true;
 //  }
@@ -60,7 +60,7 @@ namespace webf {
 //  return namespace_uri == g_star_atom || namespace_uri == element.namespaceURI();
 //}
 //
-//static Element* ParentElement(const SelectorChecker::SelectorCheckingContext& context) {
+// static Element* ParentElement(const SelectorChecker::SelectorCheckingContext& context) {
 //  // - If context.scope is a shadow root, we should walk up to its shadow host.
 //  // - If context.scope is some element in some shadow tree and querySelector
 //  //   initialized the context, e.g. shadowRoot.querySelector(':host *'),
@@ -91,7 +91,7 @@ namespace webf {
 ////  return nullptr;
 ////}
 //
-//static inline bool NextSelectorExceedsScope(const SelectorChecker::SelectorCheckingContext& context) {
+// static inline bool NextSelectorExceedsScope(const SelectorChecker::SelectorCheckingContext& context) {
 //  if (context.scope && context.scope->IsInShadowTree()) {
 //    return context.element == context.scope->OwnerShadowHost();
 //  }
@@ -99,44 +99,44 @@ namespace webf {
 //  return false;
 //}
 //
-//static bool ShouldMatchHoverOrActive(const SelectorChecker::SelectorCheckingContext& context) {
+// static bool ShouldMatchHoverOrActive(const SelectorChecker::SelectorCheckingContext& context) {
 //  return true;
 //}
 //
-//static bool Impacts(const SelectorChecker::SelectorCheckingContext& context, SelectorChecker::Impact impact) {
+// static bool Impacts(const SelectorChecker::SelectorCheckingContext& context, SelectorChecker::Impact impact) {
 //  return static_cast<int>(context.impact) & static_cast<int>(impact);
 //}
 //
-//static bool ImpactsSubject(const SelectorChecker::SelectorCheckingContext& context) {
+// static bool ImpactsSubject(const SelectorChecker::SelectorCheckingContext& context) {
 //  return Impacts(context, SelectorChecker::Impact::kSubject);
 //}
 //
-//static bool ImpactsNonSubject(const SelectorChecker::SelectorCheckingContext& context) {
+// static bool ImpactsNonSubject(const SelectorChecker::SelectorCheckingContext& context) {
 //  return Impacts(context, SelectorChecker::Impact::kNonSubject);
 //}
 //
-//static bool IsFirstChild(const Element& element) {
+// static bool IsFirstChild(const Element& element) {
 //  return !ElementTraversal::PreviousSibling(element);
 //}
 //
-//static bool IsLastChild(const Element& element) {
+// static bool IsLastChild(const Element& element) {
 //  return !ElementTraversal::NextSibling(element);
 //}
 //
-//static bool IsFirstOfType(const Element& element, const QualifiedName& type) {
+// static bool IsFirstOfType(const Element& element, const QualifiedName& type) {
 //  return !ElementTraversal::PreviousSibling(element, HasTagName(type.LocalName()));
 //}
 //
-//static bool IsLastOfType(const Element& element, const QualifiedName& type) {
+// static bool IsLastOfType(const Element& element, const QualifiedName& type) {
 //  return !ElementTraversal::NextSibling(element, HasTagName(type.LocalName()));
 //}
 //
-//static void DisallowMatchVisited(SelectorChecker::SelectorCheckingContext& context) {
+// static void DisallowMatchVisited(SelectorChecker::SelectorCheckingContext& context) {
 //  context.had_match_visited |= context.match_visited;
 //  context.match_visited = false;
 //}
 //
-//bool SelectorChecker::Match(const SelectorCheckingContext& context, MatchResult& result) const {
+// bool SelectorChecker::Match(const SelectorCheckingContext& context, MatchResult& result) const {
 //  DCHECK(context.selector);
 //  DCHECK(!context.had_match_visited);
 //#if DCHECK_IS_ON()
@@ -160,7 +160,7 @@ namespace webf {
 //// * SelectorFailsAllSiblings - the selector fails for e and any sibling of e
 //// * SelectorFailsCompletely  - the selector fails for e and any sibling or
 ////   ancestor of e
-//SelectorChecker::MatchStatus SelectorChecker::MatchSelector(const SelectorCheckingContext& context,
+// SelectorChecker::MatchStatus SelectorChecker::MatchSelector(const SelectorCheckingContext& context,
 //                                                            MatchResult& result) const {
 //  SubResult sub_result(result);
 //  bool is_covered_by_bucketing = context.selector->IsCoveredByBucketing() &&
@@ -210,7 +210,7 @@ namespace webf {
 //  }
 //}
 //
-//static inline SelectorChecker::SelectorCheckingContext PrepareNextContextForRelation(
+// static inline SelectorChecker::SelectorCheckingContext PrepareNextContextForRelation(
 //    const SelectorChecker::SelectorCheckingContext& context) {
 //  SelectorChecker::SelectorCheckingContext next_context(context);
 //  DCHECK(context.selector->NextSimpleSelector());
@@ -218,7 +218,7 @@ namespace webf {
 //  return next_context;
 //}
 //
-//SelectorChecker::MatchStatus SelectorChecker::MatchForSubSelector(const SelectorCheckingContext& context,
+// SelectorChecker::MatchStatus SelectorChecker::MatchForSubSelector(const SelectorCheckingContext& context,
 //                                                                  MatchResult& result) const {
 //  SelectorCheckingContext next_context = PrepareNextContextForRelation(context);
 //
@@ -269,7 +269,7 @@ namespace webf {
 //  return MatchSelector(next_context, result);
 //}
 //
-//SelectorChecker::MatchStatus SelectorChecker::MatchForScopeActivation(const SelectorCheckingContext& context,
+// SelectorChecker::MatchStatus SelectorChecker::MatchForScopeActivation(const SelectorCheckingContext& context,
 //                                                                      MatchResult& result) const {
 //  SelectorCheckingContext next_context = PrepareNextContextForRelation(context);
 //  next_context.is_sub_selector = true;
@@ -304,7 +304,7 @@ namespace webf {
 //  return MatchSelector(next_context, result);
 //}
 //
-//SelectorChecker::MatchStatus SelectorChecker::MatchForRelation(const SelectorCheckingContext& context,
+// SelectorChecker::MatchStatus SelectorChecker::MatchForRelation(const SelectorCheckingContext& context,
 //                                                               MatchResult& result) const {
 //  SelectorCheckingContext next_context = PrepareNextContextForRelation(context);
 //
@@ -460,7 +460,7 @@ namespace webf {
 //  return kSelectorFailsCompletely;
 //}
 //
-//static bool AttributeValueMatches(const Attribute& attribute_item,
+// static bool AttributeValueMatches(const Attribute& attribute_item,
 //                                  CSSSelector::MatchType match,
 //                                  const std::string& selector_value,
 //                                  TextCaseSensitivity case_sensitivity) {
@@ -533,7 +533,7 @@ namespace webf {
 //  }
 //}
 //
-//static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, const CSSSelector& selector) {
+// static bool AnyAttributeMatches(Element& element, CSSSelector::MatchType match, const CSSSelector& selector) {
 //  const QualifiedName& selector_attr = selector.Attribute();
 //  // Should not be possible from the CSS grammar.
 //  DCHECK_NE(selector_attr.LocalName(), CSSSelector::UniversalSelector());
@@ -606,7 +606,7 @@ namespace webf {
 //  return false;
 //}
 //
-//ALWAYS_INLINE bool SelectorChecker::CheckOne(const SelectorCheckingContext& context, MatchResult& result) const {
+// ALWAYS_INLINE bool SelectorChecker::CheckOne(const SelectorCheckingContext& context, MatchResult& result) const {
 //  DCHECK(context.element);
 //  Element& element = *context.element;
 //  DCHECK(context.selector);
@@ -631,8 +631,8 @@ namespace webf {
 //  // [3] https://drafts.csswg.org/selectors-4/#data-model
 //  if (context.scope && context.scope->OwnerShadowHost() == element &&
 //      (!selector.IsHostPseudoClass() && !selector.SelectorListOrParent() &&
-//       selector.GetPseudoType() != CSSSelector::kPseudoTrue && selector.GetPseudoType() != CSSSelector::kPseudoScope &&
-//       !context.treat_shadow_host_as_normal_scope && selector.Match() != CSSSelector::kPseudoElement)) {
+//       selector.GetPseudoType() != CSSSelector::kPseudoTrue && selector.GetPseudoType() != CSSSelector::kPseudoScope
+//       && !context.treat_shadow_host_as_normal_scope && selector.Match() != CSSSelector::kPseudoElement)) {
 //    return false;
 //  }
 //
@@ -665,11 +665,11 @@ namespace webf {
 //  }
 //}
 //
-//bool SelectorChecker::CheckPseudoNot(const SelectorCheckingContext& context, MatchResult& result) const {
+// bool SelectorChecker::CheckPseudoNot(const SelectorCheckingContext& context, MatchResult& result) const {
 //  return !MatchesAnyInList(context, context.selector->SelectorList()->First(), result);
 //}
 //
-//bool SelectorChecker::MatchesAnyInList(const SelectorCheckingContext& context,
+// bool SelectorChecker::MatchesAnyInList(const SelectorCheckingContext& context,
 //                                       const CSSSelector* selector_list,
 //                                       MatchResult& result) const {
 //  SelectorCheckingContext sub_context(context);
@@ -686,17 +686,17 @@ namespace webf {
 //  return false;
 //}
 //
-//namespace {
+// namespace {
 //
-//Element* TraverseToParent(Element* element) {
+// Element* TraverseToParent(Element* element) {
 //  return element->parentElement();
 //}
 //
-//Element* TraverseToPreviousSibling(Element* element) {
+// Element* TraverseToPreviousSibling(Element* element) {
 //  return ElementTraversal::PreviousSibling(*element);
 //}
 //
-//inline bool CacheMatchedElementsAndReturnMatchedResultForIndirectRelation(
+// inline bool CacheMatchedElementsAndReturnMatchedResultForIndirectRelation(
 //    Element* has_anchor_element,
 //    HeapVector<Member<Element>>& has_argument_leftmost_compound_matches,
 //    CheckPseudoHasCacheScope::Context& cache_scope_context,
@@ -732,7 +732,7 @@ namespace webf {
 //  return false;
 //}
 //
-//inline bool CacheMatchedElementsAndReturnMatchedResultForDirectRelation(
+// inline bool CacheMatchedElementsAndReturnMatchedResultForDirectRelation(
 //    Element* has_anchor_element,
 //    HeapVector<Member<Element>>& has_argument_leftmost_compound_matches,
 //    CheckPseudoHasCacheScope::Context& cache_scope_context,
@@ -760,7 +760,7 @@ namespace webf {
 //  return false;
 //}
 //
-//inline bool CacheMatchedElementsAndReturnMatchedResult(
+// inline bool CacheMatchedElementsAndReturnMatchedResult(
 //    CSSSelector::RelationType leftmost_relation,
 //    Element* has_anchor_element,
 //    HeapVector<Member<Element>>& has_argument_leftmost_compound_matches,
@@ -784,12 +784,12 @@ namespace webf {
 //  }
 //}
 //
-//inline bool ContextForSubjectHasInMatchesArgument(
+// inline bool ContextForSubjectHasInMatchesArgument(
 //    const SelectorChecker::SelectorCheckingContext& has_checking_context) {
 //  return has_checking_context.element == has_checking_context.scope && has_checking_context.in_rightmost_compound;
 //}
 //
-//uint8_t SetHasAnchorElementAsCheckedAndGetOldResult(
+// uint8_t SetHasAnchorElementAsCheckedAndGetOldResult(
 //    const SelectorChecker::SelectorCheckingContext& has_checking_context,
 //    CheckPseudoHasCacheScope::Context& cache_scope_context) {
 //  DCHECK_EQ(has_checking_context.selector->GetPseudoType(), CSSSelector::kPseudoHas);
@@ -819,7 +819,7 @@ namespace webf {
 //  return previous_result;
 //}
 //
-//void SetAffectedByHasFlagsForElementAtDepth(CheckPseudoHasArgumentContext& argument_context,
+// void SetAffectedByHasFlagsForElementAtDepth(CheckPseudoHasArgumentContext& argument_context,
 //                                            Element* element,
 //                                            int depth) {
 //  if (depth > 0) {
@@ -829,7 +829,7 @@ namespace webf {
 //  }
 //}
 //
-//void SetAffectedByHasFlagsForHasAnchorElement(CheckPseudoHasArgumentContext& argument_context,
+// void SetAffectedByHasFlagsForHasAnchorElement(CheckPseudoHasArgumentContext& argument_context,
 //                                              Element* has_anchor_element) {
 //  switch (argument_context.LeftmostRelation()) {
 //    case CSSSelector::kRelativeChild:
@@ -846,7 +846,7 @@ namespace webf {
 //  }
 //}
 //
-//void SetAffectedByHasFlagsForHasAnchorSiblings(CheckPseudoHasArgumentContext& argument_context,
+// void SetAffectedByHasFlagsForHasAnchorSiblings(CheckPseudoHasArgumentContext& argument_context,
 //                                               Element* has_anchor_element) {
 //  if (argument_context.AdjacentDistanceLimit() == 0) {
 //    return;
@@ -859,7 +859,7 @@ namespace webf {
 //  }
 //}
 //
-//void SetAffectedByHasForArgumentMatchedElement(CheckPseudoHasArgumentContext& argument_context,
+// void SetAffectedByHasForArgumentMatchedElement(CheckPseudoHasArgumentContext& argument_context,
 //                                               Element* has_anchor_element,
 //                                               Element* argument_matched_element,
 //                                               int argument_matched_depth) {
@@ -945,7 +945,7 @@ namespace webf {
 //  }
 //}
 //
-//bool SkipCheckingHasArgument(CheckPseudoHasArgumentContext& context,
+// bool SkipCheckingHasArgument(CheckPseudoHasArgumentContext& context,
 //                             CheckPseudoHasArgumentTraversalIterator& iterator) {
 //  // Siblings of the :has() anchor element cannot be a subject of :has()
 //  // argument if the argument selector has child or descendant combinator.
@@ -966,7 +966,7 @@ namespace webf {
 //  return false;
 //}
 //
-//void AddElementIdentifierHashesInTraversalScopeAndSetAffectedByHasFlags(
+// void AddElementIdentifierHashesInTraversalScopeAndSetAffectedByHasFlags(
 //    CheckPseudoHasFastRejectFilter& fast_reject_filter,
 //    Element& has_anchor_element,
 //    CheckPseudoHasArgumentContext& argument_context,
@@ -980,7 +980,7 @@ namespace webf {
 //  }
 //}
 //
-//void SetAllElementsInTraversalScopeAsChecked(Element* has_anchor_element,
+// void SetAllElementsInTraversalScopeAsChecked(Element* has_anchor_element,
 //                                             CheckPseudoHasArgumentContext& argument_context,
 //                                             CheckPseudoHasCacheScope::Context& cache_scope_context) {
 //  // Find last element and last depth of the argument traversal iterator.
@@ -1001,13 +1001,14 @@ namespace webf {
 //  cache_scope_context.SetAllTraversedElementsAsChecked(last_element, last_depth);
 //}
 //
-//enum EarlyBreakOnHasArgumentChecking {
+// enum EarlyBreakOnHasArgumentChecking {
 //  kBreakEarlyAndReturnAsMatched,
 //  kBreakEarlyAndMoveToNextArgument,
 //  kNoEarlyBreak,
 //};
 //
-//EarlyBreakOnHasArgumentChecking CheckEarlyBreakForHasArgument(const SelectorChecker::SelectorCheckingContext& context,
+// EarlyBreakOnHasArgumentChecking CheckEarlyBreakForHasArgument(const SelectorChecker::SelectorCheckingContext&
+// context,
 //                                                              Element* has_anchor_element,
 //                                                              CheckPseudoHasArgumentContext& argument_context,
 //                                                              CheckPseudoHasCacheScope::Context& cache_scope_context,
@@ -1059,7 +1060,8 @@ namespace webf {
 //
 //    fast_reject_filter.AllocateBloomFilter();
 //    AddElementIdentifierHashesInTraversalScopeAndSetAffectedByHasFlags(fast_reject_filter, *has_anchor_element,
-//                                                                       argument_context, update_affected_by_has_flags);
+//                                                                       argument_context,
+//                                                                       update_affected_by_has_flags);
 //  }
 //
 //  // affected-by-has flags were already set while adding element identifier
@@ -1074,14 +1076,14 @@ namespace webf {
 //  return kNoEarlyBreak;
 //}
 //
-//bool MatchesExternalSVGUseTarget(Element& element) {
+// bool MatchesExternalSVGUseTarget(Element& element) {
 //  const auto* svg_element = DynamicTo<SVGElement>(element);
 //  return svg_element && svg_element->IsResourceTarget();
 //}
 //
 //}  // namespace
 //
-//bool SelectorChecker::CheckPseudoHas(const SelectorCheckingContext& context, MatchResult& result) const {
+// bool SelectorChecker::CheckPseudoHas(const SelectorCheckingContext& context, MatchResult& result) const {
 //  if (context.element->GetDocument().InPseudoHasChecking()) {
 //    // :has() within :has() would normally be rejected parse-time, but we can
 //    // end up in this situation nevertheless, due to nesting. We just return
@@ -1175,7 +1177,8 @@ namespace webf {
 //    }
 //
 //    if (cache_scope_context.CacheAllowed() && last_argument_checked_element) {
-//      cache_scope_context.SetAllTraversedElementsAsChecked(last_argument_checked_element, last_argument_checked_depth);
+//      cache_scope_context.SetAllTraversedElementsAsChecked(last_argument_checked_element,
+//      last_argument_checked_depth);
 //    }
 //
 //    if (!selector_matched) {
@@ -1191,7 +1194,7 @@ namespace webf {
 //  return false;
 //}
 //
-//bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, MatchResult& result) const {
+// bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, MatchResult& result) const {
 //  Element& element = *context.element;
 //  const CSSSelector& selector = *context.selector;
 //  bool force_pseudo_state = false;
@@ -1828,12 +1831,12 @@ namespace webf {
 //  return false;
 //}
 //
-//static bool MatchesUAShadowElement(Element& element, const AtomicString& id) {
+// static bool MatchesUAShadowElement(Element& element, const AtomicString& id) {
 //  ShadowRoot* root = element.ContainingShadowRoot();
 //  return root && root->IsUserAgent() && element.ShadowPseudoId() == id;
 //}
 //
-//bool SelectorChecker::CheckPseudoAutofill(CSSSelector::PseudoType pseudo_type, Element& element) const {
+// bool SelectorChecker::CheckPseudoAutofill(CSSSelector::PseudoType pseudo_type, Element& element) const {
 //  HTMLFormControlElement* form_control_element = DynamicTo<HTMLFormControlElement>(&element);
 //  if (auto* button = DynamicTo<HTMLButtonElement>(&element)) {
 //    if (auto* selectlist = button->OwnerSelectList()) {
@@ -1858,7 +1861,7 @@ namespace webf {
 //  return false;
 //}
 //
-//bool SelectorChecker::CheckPseudoElement(const SelectorCheckingContext& context, MatchResult& result) const {
+// bool SelectorChecker::CheckPseudoElement(const SelectorCheckingContext& context, MatchResult& result) const {
 //  const CSSSelector& selector = *context.selector;
 //  Element& element = *context.element;
 //
@@ -2013,7 +2016,7 @@ namespace webf {
 //  }
 //}
 //
-//bool SelectorChecker::CheckPseudoHost(const SelectorCheckingContext& context, MatchResult& result) const {
+// bool SelectorChecker::CheckPseudoHost(const SelectorCheckingContext& context, MatchResult& result) const {
 //  const CSSSelector& selector = *context.selector;
 //  Element& element = *context.element;
 //
@@ -2067,7 +2070,7 @@ namespace webf {
 //  return false;
 //}
 //
-//bool SelectorChecker::CheckPseudoScope(const SelectorCheckingContext& context, MatchResult& result) const {
+// bool SelectorChecker::CheckPseudoScope(const SelectorCheckingContext& context, MatchResult& result) const {
 //  Element& element = *context.element;
 //  if (!context.scope) {
 //    return false;
@@ -2078,7 +2081,7 @@ namespace webf {
 //  return element == element.GetDocument().documentElement();
 //}
 //
-//bool SelectorChecker::CheckScrollbarPseudoClass(const SelectorCheckingContext& context, MatchResult& result) const {
+// bool SelectorChecker::CheckScrollbarPseudoClass(const SelectorCheckingContext& context, MatchResult& result) const {
 //  const CSSSelector& selector = *context.selector;
 //
 //  if (selector.GetPseudoType() == CSSSelector::kPseudoNot) {
@@ -2158,12 +2161,12 @@ namespace webf {
 //  }
 //}
 //
-//bool SelectorChecker::MatchesSelectorFragmentAnchorPseudoClass(const Element& element) {
+// bool SelectorChecker::MatchesSelectorFragmentAnchorPseudoClass(const Element& element) {
 //  return element == element.GetDocument().CssTarget() && element.GetDocument().View()->GetFragmentAnchor() &&
 //         element.GetDocument().View()->GetFragmentAnchor()->IsSelectorFragmentAnchor();
 //}
 //
-//bool SelectorChecker::MatchesFocusPseudoClass(const Element& element) {
+// bool SelectorChecker::MatchesFocusPseudoClass(const Element& element) {
 //  bool force_pseudo_state = false;
 //  probe::ForcePseudoState(const_cast<Element*>(&element), CSSSelector::kPseudoFocus, &force_pseudo_state);
 //  if (force_pseudo_state) {
@@ -2172,7 +2175,7 @@ namespace webf {
 //  return element.IsFocused() && IsFrameFocused(element);
 //}
 //
-//bool SelectorChecker::MatchesFocusVisiblePseudoClass(const Element& element) {
+// bool SelectorChecker::MatchesFocusVisiblePseudoClass(const Element& element) {
 //  bool force_pseudo_state = false;
 //  probe::ForcePseudoState(const_cast<Element*>(&element), CSSSelector::kPseudoFocusVisible, &force_pseudo_state);
 //  if (force_pseudo_state) {
@@ -2199,14 +2202,14 @@ namespace webf {
 //  return (always_show_focus || is_text_input || !last_focus_from_mouse || had_keyboard_event);
 //}
 //
-//namespace {
+// namespace {
 //
 //// CalculateActivations will not produce any activations unless there is
 //// an outer activation (i.e. an activation of the outer StyleScope). If there
 //// is no outer StyleScope, we use this DefaultActivations as the outer
 //// activation. The scope provided to DefaultActivations is typically
 //// a ShadowTree.
-//StyleScopeActivations& DefaultActivations(const ContainerNode* scope) {
+// StyleScopeActivations& DefaultActivations(const ContainerNode* scope) {
 //  auto* activations = MakeGarbageCollected<StyleScopeActivations>();
 //  activations->vector =
 //      HeapVector<StyleScopeActivation>(1, StyleScopeActivation{scope, std::numeric_limits<unsigned>::max()});
@@ -2226,7 +2229,7 @@ namespace webf {
 ////
 //// [1] https://drafts.csswg.org/selectors-4/#the-scope-pseudo
 //// [2] https://drafts.csswg.org/selectors-4/#scoped-selector
-//const Element* ActivationCeiling(const StyleScopeActivation& activation) {
+// const Element* ActivationCeiling(const StyleScopeActivation& activation) {
 //  if (!activation.root) {
 //    return nullptr;
 //  }
@@ -2239,7 +2242,7 @@ namespace webf {
 //
 //// True if this StyleScope has an implicit root at the specified element.
 //// This is used to find the roots for prelude-less @scope rules.
-//bool HasImplicitRoot(const StyleScope& style_scope, Element& element) {
+// bool HasImplicitRoot(const StyleScope& style_scope, Element& element) {
 //  if (const StyleScopeData* style_scope_data = element.GetStyleScopeData()) {
 //    return style_scope_data->TriggersScope(style_scope);
 //  }
@@ -2248,7 +2251,7 @@ namespace webf {
 //
 //}  // namespace
 //
-//const StyleScopeActivations& SelectorChecker::EnsureActivations(const SelectorCheckingContext& context,
+// const StyleScopeActivations& SelectorChecker::EnsureActivations(const SelectorCheckingContext& context,
 //                                                                const StyleScope& style_scope) const {
 //  DCHECK(context.style_scope_frame);
 //
@@ -2283,7 +2286,8 @@ namespace webf {
 //  // we'd need to double up the cache.
 //  StyleScopeFrame* style_scope_frame = match_visited ? nullptr : context.style_scope_frame;
 //  const StyleScopeActivations* activations = CalculateActivations(context.style_scope_frame->element_, style_scope,
-//                                                                  *outer_activations, style_scope_frame, match_visited);
+//                                                                  *outer_activations, style_scope_frame,
+//                                                                  match_visited);
 //  DCHECK(activations);
 //  return *activations;
 //}
@@ -2293,7 +2297,7 @@ namespace webf {
 //// This function will traverse the whole ancestor chain in the worst case,
 //// however, if a StyleScopeFrame is provided, it will reuse cached results
 //// found on that StyleScopeFrame.
-//const StyleScopeActivations* SelectorChecker::CalculateActivations(Element& element,
+// const StyleScopeActivations* SelectorChecker::CalculateActivations(Element& element,
 //                                                                   const StyleScope& style_scope,
 //                                                                   const StyleScopeActivations& outer_activations,
 //                                                                   StyleScopeFrame* style_scope_frame,
@@ -2323,7 +2327,8 @@ namespace webf {
 //        // When calculating the activations on the parent element, we pass
 //        // the parent StyleScopeFrame (if we have it) to be able to use the
 //        // cached results, and avoid traversing the ancestor chain.
-//        StyleScopeFrame* parent_frame = style_scope_frame ? style_scope_frame->GetParentFrameOrNull(*parent) : nullptr;
+//        StyleScopeFrame* parent_frame = style_scope_frame ? style_scope_frame->GetParentFrameOrNull(*parent) :
+//        nullptr;
 //        // Disable :visited matching when encountering the first link.
 //        // This matches the behavior for regular child/descendant combinators.
 //        bool parent_match_visited = match_visited && !element.IsLink();
@@ -2369,7 +2374,7 @@ namespace webf {
 //  return activations;
 //}
 //
-//bool SelectorChecker::MatchesWithScope(Element& element,
+// bool SelectorChecker::MatchesWithScope(Element& element,
 //                                       const CSSSelector& selector_list,
 //                                       const ContainerNode* scope,
 //                                       bool match_visited,
@@ -2396,7 +2401,7 @@ namespace webf {
 //  return false;
 //}
 //
-//bool SelectorChecker::ElementIsScopingLimit(const StyleScope& style_scope,
+// bool SelectorChecker::ElementIsScopingLimit(const StyleScope& style_scope,
 //                                            const StyleScopeActivation& activation,
 //                                            Element& element,
 //                                            bool match_visited,

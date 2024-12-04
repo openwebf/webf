@@ -10,10 +10,10 @@
 #include "bindings/qjs/exception_state.h"
 
 namespace webf {
-std::optional<EffectModel::CompositeOperation>
-EffectModel::StringToCompositeOperation(const std::string& composite_string) {
-  assert(composite_string == "replace" || composite_string == "add" ||
-         composite_string == "accumulate" || composite_string == "auto");
+std::optional<EffectModel::CompositeOperation> EffectModel::StringToCompositeOperation(
+    const std::string& composite_string) {
+  assert(composite_string == "replace" || composite_string == "add" || composite_string == "accumulate" ||
+         composite_string == "auto");
   if (composite_string == "auto")
     return std::nullopt;
   if (composite_string == "add")
@@ -23,8 +23,7 @@ EffectModel::StringToCompositeOperation(const std::string& composite_string) {
   return kCompositeReplace;
 }
 
-std::string EffectModel::CompositeOperationToString(
-    std::optional<CompositeOperation> composite) {
+std::string EffectModel::CompositeOperationToString(std::optional<CompositeOperation> composite) {
   if (!composite)
     return "auto";
   switch (composite.value()) {

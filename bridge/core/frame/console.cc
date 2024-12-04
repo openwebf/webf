@@ -16,8 +16,7 @@ void Console::__webf_print__(ExecutingContext* context,
   std::stringstream stream;
   std::string buffer = log.ToStdString();
   stream << buffer;
-  printLog(context, stream, level != g_empty_atom ? level.ToStdString() : "info",
-           nullptr);
+  printLog(context, stream, level != g_empty_atom ? level.ToStdString() : "info", nullptr);
 }
 
 void Console::__webf_print__(ExecutingContext* context, const AtomicString& log, ExceptionState& exception_state) {

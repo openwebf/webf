@@ -9,11 +9,11 @@
 
 #include <optional>
 
-#include "foundation/macros.h"
 #include "core/css/anchor_query.h"
 #include "core/css/css_anchor_query_enums.h"
-#include "core/style/computed_style_constants.h"
 #include "core/platform/geometry/layout_unit.h"
+#include "core/style/computed_style_constants.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
@@ -71,10 +71,7 @@ class InsetArea {
             InsetAreaRegion span1_end,
             InsetAreaRegion span2_start,
             InsetAreaRegion span2_end)
-      : span1_start_(span1_start),
-        span1_end_(span1_end),
-        span2_start_(span2_start),
-        span2_end_(span2_end) {}
+      : span1_start_(span1_start), span1_end_(span1_end), span2_start_(span2_start), span2_end_(span2_end) {}
 
   InsetAreaRegion FirstStart() const { return span1_start_; }
   InsetAreaRegion FirstEnd() const { return span1_end_; }
@@ -82,9 +79,8 @@ class InsetArea {
   InsetAreaRegion SecondEnd() const { return span2_end_; }
 
   bool operator==(const InsetArea& other) const {
-    return span1_start_ == other.span1_start_ &&
-           span1_end_ == other.span1_end_ &&
-           span2_start_ == other.span2_start_ && span2_end_ == other.span2_end_;
+    return span1_start_ == other.span1_start_ && span1_end_ == other.span1_end_ && span2_start_ == other.span2_start_ &&
+           span2_end_ == other.span2_end_;
   }
   bool operator!=(const InsetArea& other) const { return !(*this == other); }
   bool IsNone() const { return span1_start_ == InsetAreaRegion::kNone; }
@@ -93,9 +89,8 @@ class InsetArea {
   // first span is always a top/center/bottom span, and the second is a
   // left/center/right span. If the inset-area is not valid, all regions will be
   // InsetAreaRegion::kNone.
-  InsetArea ToPhysical(
-      const WritingDirectionMode& container_writing_direction,
-      const WritingDirectionMode& self_writing_direction) const;
+  InsetArea ToPhysical(const WritingDirectionMode& container_writing_direction,
+                       const WritingDirectionMode& self_writing_direction) const;
 
   // Return anchor() functions to override auto inset values according to the
   // resolved inset-area. May only be called on InsetAreas returned from
@@ -137,8 +132,7 @@ struct InsetAreaOffsets {
   std::optional<LayoutUnit> right;
 
   bool operator==(const InsetAreaOffsets& other) const {
-    return top == other.top && bottom == other.bottom && left == other.left &&
-           right == other.right;
+    return top == other.top && bottom == other.bottom && left == other.left && right == other.right;
   }
 };
 

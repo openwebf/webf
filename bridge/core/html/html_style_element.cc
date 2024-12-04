@@ -4,21 +4,22 @@
  */
 
 #include "html_style_element.h"
-#include "html_names.h"
-#include "core/dom/node.h"
 #include "core/css/style_element.h"
+#include "core/dom/node.h"
 #include "defined_properties.h"
+#include "html_names.h"
 
 namespace webf {
 
-HTMLStyleElement::HTMLStyleElement(Document& document):
-      HTMLElement(html_names::kstyle, &document),
-      StyleElement(&document, false) {}
+HTMLStyleElement::HTMLStyleElement(Document& document)
+    : HTMLElement(html_names::kstyle, &document), StyleElement(&document, false) {}
 
 HTMLStyleElement::~HTMLStyleElement() = default;
 
-NativeValue HTMLStyleElement::HandleCallFromDartSide(const webf::AtomicString& method, int32_t argc, const webf::NativeValue* argv, Dart_Handle dart_object) {
-
+NativeValue HTMLStyleElement::HandleCallFromDartSide(const webf::AtomicString& method,
+                                                     int32_t argc,
+                                                     const webf::NativeValue* argv,
+                                                     Dart_Handle dart_object) {
   return Native_NewNull();
 }
 
@@ -45,13 +46,13 @@ void HTMLStyleElement::ChildrenChanged(const webf::ContainerNode::ChildrenChange
 }
 
 void HTMLStyleElement::FinishParsingChildren() {
-  StyleElement::ProcessingResult result =
-      StyleElement::FinishParsingChildren(*this);
+  StyleElement::ProcessingResult result = StyleElement::FinishParsingChildren(*this);
   HTMLElement::FinishParsingChildren();
 }
 
-NativeValue HTMLStyleElement::HandleParseAuthorStyleSheet(int32_t argc, const webf::NativeValue* argv, Dart_Handle dart_object) {
-
+NativeValue HTMLStyleElement::HandleParseAuthorStyleSheet(int32_t argc,
+                                                          const webf::NativeValue* argv,
+                                                          Dart_Handle dart_object) {
   return Native_NewNull();
 }
 

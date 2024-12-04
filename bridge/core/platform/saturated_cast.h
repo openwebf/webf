@@ -9,7 +9,6 @@
 #include <limits>
 #include <type_traits>
 
-
 namespace webf {
 
 // 基础类型定义
@@ -38,9 +37,7 @@ constexpr Dst saturated_cast_impl(Src value) {
 }
 
 // 饱和转换函数
-template <typename Dst,
-          template <typename> class SaturationHandler = SaturationDefaultLimits,
-          typename Src>
+template <typename Dst, template <typename> class SaturationHandler = SaturationDefaultLimits, typename Src>
 constexpr Dst saturated_cast(Src value) {
   using SrcType = typename UnderlyingType<Src>::type;
   return saturated_cast_impl<Dst, SrcType>(static_cast<SrcType>(value));

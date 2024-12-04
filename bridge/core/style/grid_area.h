@@ -35,8 +35,8 @@
 
 #include <algorithm>
 #include <unordered_map>
-#include "core/style/grid_enums.h"
 #include "core/platform/math_extras.h"
+#include "core/style/grid_enums.h"
 
 namespace webf {
 
@@ -56,24 +56,19 @@ struct GridSpan {
     return GridSpan(start_line, end_line, kUntranslatedDefinite);
   }
 
-  static GridSpan TranslatedDefiniteGridSpan(uint32_t start_line,
-                                             uint32_t end_line) {
+  static GridSpan TranslatedDefiniteGridSpan(uint32_t start_line, uint32_t end_line) {
     return GridSpan(start_line, end_line, kTranslatedDefinite);
   }
 
-  static GridSpan IndefiniteGridSpan(uint32_t span_size = 1) {
-    return GridSpan(uint32_t{0}, span_size, kIndefinite);
-  }
+  static GridSpan IndefiniteGridSpan(uint32_t span_size = 1) { return GridSpan(uint32_t{0}, span_size, kIndefinite); }
 
   bool operator==(const GridSpan& o) const {
-    return type_ == o.type_ && start_line_ == o.start_line_ &&
-           end_line_ == o.end_line_;
+    return type_ == o.type_ && start_line_ == o.start_line_ && end_line_ == o.end_line_;
   }
 
   bool operator<(const GridSpan& o) const {
     assert(IsTranslatedDefinite());
-    return start_line_ < o.start_line_ ||
-           (start_line_ == o.start_line_ && end_line_ < o.end_line_);
+    return start_line_ < o.start_line_ || (start_line_ == o.start_line_ && end_line_ < o.end_line_);
   }
 
   bool operator<=(const GridSpan& o) const {
@@ -85,8 +80,7 @@ struct GridSpan {
     assert(IsTranslatedDefinite());
     assert(start_line_ >= 0);
     assert(start_line_ < end_line_);
-    return line >= static_cast<uint32_t>(start_line_) &&
-           line <= static_cast<uint32_t>(end_line_);
+    return line >= static_cast<uint32_t>(start_line_) && line <= static_cast<uint32_t>(end_line_);
   }
 
   bool Intersects(GridSpan span) const {
@@ -140,9 +134,7 @@ struct GridSpan {
 
     uint32_t operator*() const { return value; }
     uint32_t operator++() { return value++; }
-    bool operator!=(GridSpanIterator other) const {
-      return value != other.value;
-    }
+    bool operator!=(GridSpanIterator other) const { return value != other.value; }
 
     uint32_t value;
   };
@@ -163,8 +155,7 @@ struct GridSpan {
 
   void Translate(uint32_t offset) {
     assert(type_ != kIndefinite);
-    *this =
-        GridSpan(start_line_ + offset, end_line_ + offset, kTranslatedDefinite);
+    *this = GridSpan(start_line_ + offset, end_line_ + offset, kTranslatedDefinite);
   }
 
   void SetStart(int start_line) {
@@ -179,8 +170,7 @@ struct GridSpan {
 
   void Intersect(int start_line, int end_line) {
     assert(type_ != kIndefinite);
-    *this = GridSpan(std::max(start_line_, start_line),
-                     std::min(end_line_, end_line), kTranslatedDefinite);
+    *this = GridSpan(std::max(start_line_, start_line), std::min(end_line_, end_line), kTranslatedDefinite);
   }
 
  private:
@@ -189,8 +179,7 @@ struct GridSpan {
   template <typename T>
   GridSpan(T start_line, T end_line, GridSpanType type) : type_(type) {
     const int grid_max_tracks = kGridMaxTracks;
-    start_line_ =
-        ClampTo<int>(start_line, -grid_max_tracks, grid_max_tracks - 1);
+    start_line_ = ClampTo<int>(start_line, -grid_max_tracks, grid_max_tracks - 1);
     end_line_ = ClampTo<int>(end_line, start_line_ + 1, grid_max_tracks);
 
 #if DCHECK_IS_ON()
@@ -212,9 +201,7 @@ struct GridArea {
 
  public:
   // HashMap requires a default constuctor.
-  GridArea()
-      : columns(GridSpan::IndefiniteGridSpan()),
-        rows(GridSpan::IndefiniteGridSpan()) {}
+  GridArea() : columns(GridSpan::IndefiniteGridSpan()), rows(GridSpan::IndefiniteGridSpan()) {}
 
   GridArea(const GridSpan& r, const GridSpan& c) : columns(c), rows(r) {}
 
@@ -230,23 +217,15 @@ struct GridArea {
     }
   }
 
-  uint32_t StartLine(GridTrackSizingDirection track_direction) const {
-    return Span(track_direction).StartLine();
-  }
+  uint32_t StartLine(GridTrackSizingDirection track_direction) const { return Span(track_direction).StartLine(); }
 
-  uint32_t EndLine(GridTrackSizingDirection track_direction) const {
-    return Span(track_direction).EndLine();
-  }
+  uint32_t EndLine(GridTrackSizingDirection track_direction) const { return Span(track_direction).EndLine(); }
 
-  uint32_t SpanSize(GridTrackSizingDirection track_direction) const {
-    return Span(track_direction).IntegerSpan();
-  }
+  uint32_t SpanSize(GridTrackSizingDirection track_direction) const { return Span(track_direction).IntegerSpan(); }
 
   void Transpose() { std::swap(columns, rows); }
 
-  bool operator==(const GridArea& o) const {
-    return columns == o.columns && rows == o.rows;
-  }
+  bool operator==(const GridArea& o) const { return columns == o.columns && rows == o.rows; }
 
   bool operator!=(const GridArea& o) const { return !(*this == o); }
 

@@ -7,16 +7,16 @@
 #include "core/platform/region_capture_crop_id.h"
 
 #include <inttypes.h>
+#include <algorithm>
 #include <cassert>
+#include <cstdarg>
+#include <cstdio>
+#include <format>
+#include <numeric>
+#include <stdexcept>
 #include <string>
 #include <string_view>
-#include <cstdio>
-#include <algorithm>
 #include <vector>
-#include <numeric>
-#include <cstdarg>
-#include <stdexcept>
-#include <format>
 
 namespace webf {
 
@@ -52,9 +52,7 @@ Token GUIDToToken(const webf::Uuid& guid) {
 inline std::string StrCat(std::initializer_list<std::string_view> pieces) {
   // Calculate the total size needed
   size_t total_size = std::accumulate(pieces.begin(), pieces.end(), size_t(0),
-                                      [](size_t sum, std::string_view piece) {
-                                        return sum + piece.size();
-                                      });
+                                      [](size_t sum, std::string_view piece) { return sum + piece.size(); });
 
   // Create a string with the required size
   std::string result;
@@ -69,23 +67,22 @@ inline std::string StrCat(std::initializer_list<std::string_view> pieces) {
 }
 
 Uuid TokenToGUID(const Token& token) {
-/*
-  const std::string hex_str = base::StringPrintf("%016" PRIx64 "%016" PRIx64,
-                                                 token.high(), token.low());
-  const std::string_view hex_string_piece(hex_str);
-  const std::string lowercase = base::StrCat(
-      {hex_string_piece.substr(0, 8), "-", hex_string_piece.substr(8, 4), "-",
-       hex_string_piece.substr(12, 4), "-", hex_string_piece.substr(16, 4), "-",
-       hex_string_piece.substr(20, 12)});
+  /*
+    const std::string hex_str = base::StringPrintf("%016" PRIx64 "%016" PRIx64,
+                                                   token.high(), token.low());
+    const std::string_view hex_string_piece(hex_str);
+    const std::string lowercase = base::StrCat(
+        {hex_string_piece.substr(0, 8), "-", hex_string_piece.substr(8, 4), "-",
+         hex_string_piece.substr(12, 4), "-", hex_string_piece.substr(16, 4), "-",
+         hex_string_piece.substr(20, 12)});
 
-  return Uuid::ParseLowercase(lowercase);
- */
+    return Uuid::ParseLowercase(lowercase);
+   */
   const std::string hex_str = std::format("{:016X}{:016X}", token.high(), token.low());
   const std::string_view hex_string_piece(hex_str);
-  const std::string lowercase = StrCat(
-      {hex_string_piece.substr(0, 8), "-", hex_string_piece.substr(8, 4), "-",
-       hex_string_piece.substr(12, 4), "-", hex_string_piece.substr(16, 4), "-",
-       hex_string_piece.substr(20, 12)});
+  const std::string lowercase =
+      StrCat({hex_string_piece.substr(0, 8), "-", hex_string_piece.substr(8, 4), "-", hex_string_piece.substr(12, 4),
+              "-", hex_string_piece.substr(16, 4), "-", hex_string_piece.substr(20, 12)});
 
   return Uuid::ParseLowercase(lowercase);
 }

@@ -99,8 +99,7 @@ class CSSParserImpl {
   // streaming tokenizer as soon as possible.
   //
   // [1] https://github.com/w3c/csswg-drafts/issues/9317
-  static CSSTokenizedValue ConsumeRestrictedPropertyValue(
-      CSSParserTokenStream&);
+  static CSSTokenizedValue ConsumeRestrictedPropertyValue(CSSParserTokenStream&);
 
   // NOTE: This function can currently only be used to parse a
   // declaration list with no nested rules, not a full style rule
@@ -125,14 +124,12 @@ class CSSParserImpl {
                                                                   std::shared_ptr<StyleSheetContents>,
                                                                   std::shared_ptr<const CSSParserContext> context);
 
-  static std::unique_ptr<std::vector<KeyframeOffset>> ParseKeyframeKeyList(
-      std::shared_ptr<const CSSParserContext>,
-      const std::string&);
+  static std::unique_ptr<std::vector<KeyframeOffset>> ParseKeyframeKeyList(std::shared_ptr<const CSSParserContext>,
+                                                                           const std::string&);
 
-  static std::shared_ptr<CSSPropertyValueSet> ParseDeclarationListForLazyStyle(
-      const std::string&,
-      size_t offset,
-      std::shared_ptr<const CSSParserContext>);
+  static std::shared_ptr<CSSPropertyValueSet> ParseDeclarationListForLazyStyle(const std::string&,
+                                                                               size_t offset,
+                                                                               std::shared_ptr<const CSSParserContext>);
 
   std::shared_ptr<StyleRuleBase> ConsumeAtRule(CSSParserTokenStream&,
                                                AllowedRulesType,
@@ -144,8 +141,8 @@ class CSSParserImpl {
                                                        CSSNestingType,
                                                        std::shared_ptr<const StyleRule> parent_rule_for_nesting);
   std::shared_ptr<StyleRuleBase> ConsumeLayerRule(CSSParserTokenStream&,
-                                  CSSNestingType,
-                                  std::shared_ptr<const StyleRule> parent_rule_for_nesting);
+                                                  CSSNestingType,
+                                                  std::shared_ptr<const StyleRule> parent_rule_for_nesting);
   std::shared_ptr<StyleRuleBase> ConsumeQualifiedRule(CSSParserTokenStream&,
                                                       AllowedRulesType,
                                                       CSSNestingType,
@@ -158,21 +155,18 @@ class CSSParserImpl {
                                               std::shared_ptr<const StyleRule> parent_rule_for_nesting,
                                               bool semicolon_aborts_nested_selector);
 
-  std::shared_ptr<StyleRuleImport> ConsumeImportRule(const std::string& prelude_uri,
-                                     CSSParserTokenStream&);
+  std::shared_ptr<StyleRuleImport> ConsumeImportRule(const std::string& prelude_uri, CSSParserTokenStream&);
   std::shared_ptr<StyleRuleMedia> ConsumeMediaRule(CSSParserTokenStream& stream,
-                                   CSSNestingType,
-                                   std::shared_ptr<const StyleRule> parent_rule_for_nesting);
-  std::shared_ptr<StyleRuleKeyframes> ConsumeKeyframesRule(bool webkit_prefixed,
-                                           CSSParserTokenStream&);
+                                                   CSSNestingType,
+                                                   std::shared_ptr<const StyleRule> parent_rule_for_nesting);
+  std::shared_ptr<StyleRuleKeyframes> ConsumeKeyframesRule(bool webkit_prefixed, CSSParserTokenStream&);
   std::shared_ptr<StyleRuleFontFace> ConsumeFontFaceRule(CSSParserTokenStream&);
   // Finds a previously parsed MediaQuerySet for the given `prelude_string`
   // and returns it. If no MediaQuerySet is found, parses one using `prelude`,
   // and returns the result after caching it.
-  std::shared_ptr<const MediaQuerySet> CachedMediaQuerySet(
-      std::string prelude_string,
-      CSSParserTokenRange prelude,
-      const CSSParserTokenOffsets& offsets);
+  std::shared_ptr<const MediaQuerySet> CachedMediaQuerySet(std::string prelude_string,
+                                                           CSSParserTokenRange prelude,
+                                                           const CSSParserTokenOffsets& offsets);
 
   // Create an implicit & {} rule to wrap properties in, and insert every
   // property from parsed_properties_ in it. Used when there are properties
@@ -185,8 +179,8 @@ class CSSParserImpl {
   //
   // The rule will carry the specified `signal`.
   std::shared_ptr<StyleRule> CreateImplicitNestedRule(CSSNestingType,
-                                      std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-                                      CSSSelector::Signal signal);
+                                                      std::shared_ptr<const StyleRule> parent_rule_for_nesting,
+                                                      CSSSelector::Signal signal);
 
   static std::shared_ptr<StyleRuleCharset> ConsumeCharsetRule(CSSParserTokenStream&);
   void ConsumeErroneousAtRule(CSSParserTokenStream& stream, CSSAtRuleID id);
@@ -205,12 +199,11 @@ class CSSParserImpl {
                                                std::shared_ptr<const CSSParserContext>,
                                                CSSParserObserver&);
 
-  void ConsumeRuleListOrNestedDeclarationList(
-      CSSParserTokenStream&,
-      bool is_nested_group_rule,
-      CSSNestingType,
-      std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-      std::vector<std::shared_ptr<StyleRuleBase>>* child_rules);
+  void ConsumeRuleListOrNestedDeclarationList(CSSParserTokenStream&,
+                                              bool is_nested_group_rule,
+                                              CSSNestingType,
+                                              std::shared_ptr<const StyleRule> parent_rule_for_nesting,
+                                              std::vector<std::shared_ptr<StyleRuleBase>>* child_rules);
 
   void ConsumeDeclarationList(CSSParserTokenStream&,
                               StyleRule::RuleType,
@@ -236,13 +229,10 @@ class CSSParserImpl {
   std::shared_ptr<StyleRule> ConsumeStyleRuleContents(tcb::span<CSSSelector> selector_vector,
                                                       CSSParserTokenStream& stream);
 
-  static std::shared_ptr<const ImmutableCSSPropertyValueSet> ParseInlineStyleDeclaration(
-      const std::string&,
-      Element*);
-  static std::shared_ptr<const ImmutableCSSPropertyValueSet> ParseInlineStyleDeclaration(
-      const std::string&,
-      CSSParserMode,
-      const Document*);
+  static std::shared_ptr<const ImmutableCSSPropertyValueSet> ParseInlineStyleDeclaration(const std::string&, Element*);
+  static std::shared_ptr<const ImmutableCSSPropertyValueSet> ParseInlineStyleDeclaration(const std::string&,
+                                                                                         CSSParserMode,
+                                                                                         const Document*);
   // Creates an invisible rule containing the declarations
   // in parsed_properties_ within the range [start_index,end_index).
   //

@@ -85,22 +85,22 @@ float CalculationExpressionSizingKeywordNode::Evaluate(float max_value, const Le
 
   assert(max_value == 1.0f || max_value == -1.0f || max_value == 0.0f || max_value == 100.0f);
   return 0.0f;
-//  if (!input.intrinsic_evaluator) {
-    // TODO(https://crbug.com/313072): I'd like to be able to CHECK() this
-    // instead.  However, we hit this code in three cases:
-    //  * the code in ContentMinimumInlineSize, which passes max_value of 0
-    //  * the (questionable) code in EvaluateValueIfNaNorInfinity(), which
-    //    passes max_value of 1 or -1
-    //  * the DCHECK()s in
-    //    CSSLengthInterpolationType::ApplyStandardPropertyValue pass a max
-    //    value of 100
-    // So we have to return something.  Return 0 for now, though this may
-    // not be ideal.
-//    CHECK(max_value == 1.0f || max_value == -1.0f || max_value == 0.0f || max_value == 100.0f);
-//    return 0.0f;
-//  }
-//  CHECK(input.intrinsic_evaluator);
-//  return (*input.intrinsic_evaluator)(Length(intrinsic_type));
+  //  if (!input.intrinsic_evaluator) {
+  // TODO(https://crbug.com/313072): I'd like to be able to CHECK() this
+  // instead.  However, we hit this code in three cases:
+  //  * the code in ContentMinimumInlineSize, which passes max_value of 0
+  //  * the (questionable) code in EvaluateValueIfNaNorInfinity(), which
+  //    passes max_value of 1 or -1
+  //  * the DCHECK()s in
+  //    CSSLengthInterpolationType::ApplyStandardPropertyValue pass a max
+  //    value of 100
+  // So we have to return something.  Return 0 for now, though this may
+  // not be ideal.
+  //    CHECK(max_value == 1.0f || max_value == -1.0f || max_value == 0.0f || max_value == 100.0f);
+  //    return 0.0f;
+  //  }
+  //  CHECK(input.intrinsic_evaluator);
+  //  return (*input.intrinsic_evaluator)(Length(intrinsic_type));
 }
 
 // ------ CalculationExpressionPixelsAndPercentNode ------
@@ -433,13 +433,13 @@ float CalculationExpressionOperationNode::Evaluate(float max_value, const Length
       DCHECK_EQ(children_.size(), 2u);
       Length::EvaluationInput calculation_input(input);
       calculation_input.size_keyword_basis = children_[0]->Evaluate(max_value, input);
-//      if (max_value == kIndefiniteSize.ToFloat()) {
-//        // "When evaluating the calc-size calculation, if percentages are not
-//        // definite in the given context, the resolve to 0px. Otherwise, they
-//        // resolve as normal."
-//        //   -- https://drafts.csswg.org/css-values-5/#resolving-calc-size
-//        max_value = 0.0f;
-//      }
+      //      if (max_value == kIndefiniteSize.ToFloat()) {
+      //        // "When evaluating the calc-size calculation, if percentages are not
+      //        // definite in the given context, the resolve to 0px. Otherwise, they
+      //        // resolve as normal."
+      //        //   -- https://drafts.csswg.org/css-values-5/#resolving-calc-size
+      //        max_value = 0.0f;
+      //      }
       return children_[1]->Evaluate(max_value, calculation_input);
     }
     case CalculationOperator::kProgress:
@@ -466,8 +466,9 @@ bool CalculationExpressionOperationNode::Equals(const CalculationExpressionNode&
   if (operator_ != other_operation.GetOperator())
     return false;
   using ValueType = Children::value_type;
-  return std::equal(children_.begin(), children_.end(), other_operation.GetChildren().begin(), other_operation.GetChildren().end(),
-                             [](const ValueType& a, const ValueType& b) { return *a == *b; });
+  return std::equal(children_.begin(), children_.end(), other_operation.GetChildren().begin(),
+                    other_operation.GetChildren().end(),
+                    [](const ValueType& a, const ValueType& b) { return *a == *b; });
 }
 
 std::shared_ptr<const CalculationExpressionNode> CalculationExpressionOperationNode::Zoom(double factor) const {

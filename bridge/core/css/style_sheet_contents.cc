@@ -86,8 +86,7 @@ ParseSheetResult StyleSheetContents::ParseString(const std::string& sheet_text,
                                                  bool allow_import_rules,
                                                  CSSDeferPropertyParsing defer_property_parsing) {
   std::shared_ptr<CSSParserContext> context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-  return CSSParser::ParseSheet(context, shared_from_this(), sheet_text, defer_property_parsing,
-                               allow_import_rules);
+  return CSSParser::ParseSheet(context, shared_from_this(), sheet_text, defer_property_parsing, allow_import_rules);
 }
 
 bool StyleSheetContents::IsCacheableForResource() const {
@@ -213,14 +212,14 @@ void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
     return;
   }
 
-//  if (auto* namespace_rule = DynamicTo<StyleRuleNamespace>(rule)) {
-//    // Parser enforces that @namespace rules come before all rules other than
-//    // import/charset rules and empty layer statements
-//    DCHECK(child_rules_.empty());
-//    ParserAddNamespace(namespace_rule->Prefix(), namespace_rule->Uri());
-//    namespace_rules_.push_back(namespace_rule);
-//    return;
-//  }
+  //  if (auto* namespace_rule = DynamicTo<StyleRuleNamespace>(rule)) {
+  //    // Parser enforces that @namespace rules come before all rules other than
+  //    // import/charset rules and empty layer statements
+  //    DCHECK(child_rules_.empty());
+  //    ParserAddNamespace(namespace_rule->Prefix(), namespace_rule->Uri());
+  //    namespace_rules_.push_back(namespace_rule);
+  //    return;
+  //  }
 
   child_rules_.push_back(rule);
 }
@@ -331,13 +330,13 @@ void StyleSheetContents::Trace(webf::GCVisitor* gc_visitor) const {
   }
 }
 
-const AtomicString& StyleSheetContents::NamespaceURIFromPrefix(
-    const AtomicString& prefix) const {
+const AtomicString& StyleSheetContents::NamespaceURIFromPrefix(const AtomicString& prefix) const {
   auto it = namespaces_.find(prefix);
   return it != namespaces_.end() ? it->second : g_null_atom;
 }
 
-void StyleSheetContents::ParserAddNamespace(const std::optional<std::string>& prefix, const std::optional<std::string>& uri) {
+void StyleSheetContents::ParserAddNamespace(const std::optional<std::string>& prefix,
+                                            const std::optional<std::string>& uri) {
   DCHECK(uri.has_value());
   if (!prefix.has_value()) {
     default_namespace_ = uri.value();
@@ -345,7 +344,6 @@ void StyleSheetContents::ParserAddNamespace(const std::optional<std::string>& pr
   }
   namespaces_.insert(std::make_pair(prefix.value(), uri.value()));
 }
-
 
 void StyleSheetContents::NotifyRemoveFontFaceRule(const webf::StyleRuleFontFace*) {}
 

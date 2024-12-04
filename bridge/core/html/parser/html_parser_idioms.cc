@@ -1,26 +1,26 @@
 /*
-* Copyright (C) 2010 Apple Inc. All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions
-* are met:
-* 1.  Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-* 2.  Redistributions in binary form must reproduce the above copyright
-*     notice, this list of conditions and the following disclaimer in the
-*     documentation and/or other materials provided with the distribution.
-*
-* THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS'' AND
-* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS BE LIABLE FOR
-* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright (C) 2010 Apple Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1.  Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ * 2.  Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "html_parser_idioms.h"
 #include "core/base/strings/string_number_conversions.h"
@@ -57,8 +57,7 @@ std::string StripLeadingAndTrailingHTMLSpaces(const std::optional<std::string>& 
   if (!(num_leading_spaces | num_trailing_spaces))
     return string.value();
 
-  return string->substr(num_leading_spaces, length - (num_leading_spaces +
-                                                        num_trailing_spaces));
+  return string->substr(num_leading_spaces, length - (num_leading_spaces + num_trailing_spaces));
 }
 
 template <typename CharType, bool characterPredicate(CharType)>
@@ -89,8 +88,7 @@ std::vector<std::string> SplitOnASCIIWhitespace(const std::string& input) {
   while (cursor < string_end) {
     const CharacterType* token_start = cursor;
     SkipUntil<CharacterType, IsHTMLSpace>(cursor, string_end);
-    output.push_back(input.substr((unsigned)(token_start - string_start),
-                                     (unsigned)(cursor - token_start)));
+    output.push_back(input.substr((unsigned)(token_start - string_start), (unsigned)(cursor - token_start)));
     SkipWhile<CharacterType, IsHTMLSpace>(cursor, string_end);
   }
   return output;
@@ -112,14 +110,12 @@ std::string SerializeForNumberType(double number) {
   return NumberToString(number, buffer);
 }
 
-Decimal ParseToDecimalForNumberType(const std::string& string,
-                                    const Decimal& fallback_value) {
+Decimal ParseToDecimalForNumberType(const std::string& string, const Decimal& fallback_value) {
   // http://www.whatwg.org/specs/web-apps/current-work/#floating-point-numbers
   // and parseToDoubleForNumberType String::toDouble() accepts leading + and
   // whitespace characters, which are not valid here.
   const char first_character = string[0];
-  if (first_character != '-' && first_character != '.' &&
-      !IsASCIIDigit(first_character))
+  if (first_character != '-' && first_character != '.' && !IsASCIIDigit(first_character))
     return fallback_value;
 
   const Decimal value = Decimal::FromString(string);
@@ -128,8 +124,7 @@ Decimal ParseToDecimalForNumberType(const std::string& string,
 
   // Numbers are considered finite IEEE 754 Double-precision floating point
   // values.
-  const Decimal double_max =
-      Decimal::FromDouble(std::numeric_limits<double>::max());
+  const Decimal double_max = Decimal::FromDouble(std::numeric_limits<double>::max());
   if (value < -double_max || value > double_max)
     return fallback_value;
 
@@ -137,9 +132,7 @@ Decimal ParseToDecimalForNumberType(const std::string& string,
   return value.IsZero() ? Decimal(0) : value;
 }
 
-static double CheckDoubleValue(double value,
-                               bool valid,
-                               double fallback_value) {
+static double CheckDoubleValue(double value, bool valid, double fallback_value) {
   if (!valid)
     return fallback_value;
 
@@ -150,8 +143,7 @@ static double CheckDoubleValue(double value,
 
   // Numbers are considered finite IEEE 754 Double-precision floating point
   // values.
-  if (-std::numeric_limits<double>::max() > value ||
-      value > std::numeric_limits<double>::max())
+  if (-std::numeric_limits<double>::max() > value || value > std::numeric_limits<double>::max())
     return fallback_value;
 
   // The following expression converts -0 to +0.
@@ -163,8 +155,7 @@ double ParseToDoubleForNumberType(const std::string& string, double fallback_val
   // String::toDouble() accepts leading + and whitespace characters, which are
   // not valid here.
   char first_character = string[0];
-  if (first_character != '-' && first_character != '.' &&
-      !IsASCIIDigit(first_character))
+  if (first_character != '-' && first_character != '.' && !IsASCIIDigit(first_character))
     return fallback_value;
   if (string.ends_with('.'))
     return fallback_value;
@@ -175,10 +166,7 @@ double ParseToDoubleForNumberType(const std::string& string, double fallback_val
 }
 
 template <typename CharacterType>
-static bool ParseHTMLIntegerInternal(const CharacterType* position,
-                                     const CharacterType* end,
-                                     int& value) {
-}
+static bool ParseHTMLIntegerInternal(const CharacterType* position, const CharacterType* end, int& value) {}
 
 template <typename CharacterType>
 static bool IsSpaceOrDelimiter(CharacterType c) {
@@ -199,4 +187,4 @@ enum class MetaAttribute {
   kPragma,
 };
 
-}
+}  // namespace webf

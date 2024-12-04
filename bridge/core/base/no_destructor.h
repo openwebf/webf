@@ -86,15 +86,13 @@ namespace webf {
 template <typename T>
 class NoDestructor {
  public:
-  static_assert(!(std::is_trivially_constructible_v<T> &&
-                  std::is_trivially_destructible_v<T>),
+  static_assert(!(std::is_trivially_constructible_v<T> && std::is_trivially_destructible_v<T>),
                 "T is trivially constructible and destructible; please use a "
                 "constinit object of type T directly instead");
 
-  static_assert(
-      !std::is_trivially_destructible_v<T>,
-      "T is trivially destructible; please use a function-local static "
-      "of type T directly instead");
+  static_assert(!std::is_trivially_destructible_v<T>,
+                "T is trivially destructible; please use a function-local static "
+                "of type T directly instead");
 
   // Not constexpr; just write static constexpr T x = ...; if the value should
   // be a constexpr.
@@ -141,7 +139,6 @@ class NoDestructor {
   T* storage_ptr_ = reinterpret_cast<T*>(storage_);
 #endif  // defined(LEAK_SANITIZER)
 };
-
 
 }  // namespace webf
 

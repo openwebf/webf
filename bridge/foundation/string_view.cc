@@ -44,7 +44,6 @@ StringView::StringView(const SharedNativeString* string)
 StringView::StringView(void* bytes, unsigned length, bool is_wide_char)
     : bytes_(bytes), length_(length), is_8bit_(!is_wide_char) {}
 
-
 StringView::StringView(const char* view, unsigned length) : bytes_(view), length_(length), is_8bit_(true){};
 StringView::StringView(const unsigned char* view, unsigned length) : bytes_(view), length_(length), is_8bit_(true){};
 StringView::StringView(const char16_t* view, unsigned length) : bytes_(view), length_(length), is_8bit_(false){};
@@ -67,16 +66,14 @@ std::string StringView::Characters8ToStdString() const {
 }
 
 namespace {
-inline bool EqualIgnoringASCIICase(const char* a,
-                                   const char* b,
-                                   size_t length) {
+inline bool EqualIgnoringASCIICase(const char* a, const char* b, size_t length) {
   for (size_t i = 0; i < length; ++i) {
     if (ToASCIILower(a[i]) != ToASCIILower(b[i]))
       return false;
   }
   return true;
 }
-}
+}  // namespace
 
 bool EqualIgnoringASCIICase(const std::string_view& a, const std::string_view& b) {
   if (a.length() != b.length())

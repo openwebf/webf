@@ -61,8 +61,7 @@ static inline __m128i LoadAndCollapseHighBytes(const uint8_t* ptr) {
   return _mm_loadu_si128(reinterpret_cast<const __m128i*>(ptr));
 }
 
-ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin,
-                                                        const uint8_t* end) {
+ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin, const uint8_t* end) {
   // If the previous block ended with quote status (see below),
   // the lowest byte of this will be all-ones.
   __m128i prev_quoted = _mm_setzero_si128();
@@ -132,8 +131,7 @@ ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin,
     quoted ^= _mm_slli_si128(quoted, 2);
     quoted ^= _mm_slli_si128(quoted, 4);
     quoted ^= _mm_slli_si128(quoted, 8);
-    const __m128i mixed_quote =
-        _mm_cmpeq_epi8(quoted, _mm_set1_epi8('\'' ^ '"'));
+    const __m128i mixed_quote = _mm_cmpeq_epi8(quoted, _mm_set1_epi8('\'' ^ '"'));
 
     // Now we have a mask of bytes that are inside quotes
     // (which happens to include the first quote, though
@@ -151,8 +149,7 @@ ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin,
     // Look for start of comments; successive / and * characters.
     // We don't support them, as they are fairly rare and we'd need to
     // do similar masking as with strings.
-    const __m128i comment_start = _mm_cmpeq_epi8(x, _mm_set1_epi8('/')) &
-                                  _mm_cmpeq_epi8(next_x, _mm_set1_epi8('*'));
+    const __m128i comment_start = _mm_cmpeq_epi8(x, _mm_set1_epi8('/')) & _mm_cmpeq_epi8(next_x, _mm_set1_epi8('*'));
 
     // Parentheses within values are fairly common, e.g. due to var(),
     // calc() and similar. We need to keep track of how many of them we have
@@ -191,8 +188,7 @@ ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin,
     // extra comparison.
     const __m128i opening_paren = _mm_cmpeq_epi8(x, _mm_set1_epi8('('));
     const __m128i closing_paren = _mm_cmpeq_epi8(x, _mm_set1_epi8(')'));
-    __m128i parens =
-        _mm_sub_epi8(_mm_add_epi8(prev_parens, closing_paren), opening_paren);
+    __m128i parens = _mm_sub_epi8(_mm_add_epi8(prev_parens, closing_paren), opening_paren);
     parens = _mm_add_epi8(parens, _mm_slli_si128(parens, 1));
     parens = _mm_add_epi8(parens, _mm_slli_si128(parens, 2));
     parens = _mm_add_epi8(parens, _mm_slli_si128(parens, 4));
@@ -208,8 +204,7 @@ ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin,
     //
     // [ and { happen to be 0x20 apart in ASCII, so we can do with one
     // less comparison.
-    const __m128i opening_block =
-        _mm_cmpeq_epi8(x | _mm_set1_epi8(0x20), _mm_set1_epi8('{'));
+    const __m128i opening_block = _mm_cmpeq_epi8(x | _mm_set1_epi8(0x20), _mm_set1_epi8('{'));
 
     // Right braces mean (successful) EOF.
     const __m128i eq_rightbrace = _mm_cmpeq_epi8(x, _mm_set1_epi8('}'));
@@ -217,16 +212,14 @@ ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin,
     // We generally combine all of the end-parsing situations together
     // and figure out afterwards what the first one was, to determine
     // the return value.
-    const __m128i must_end = eq_backslash | mixed_quote | opening_block |
-                             comment_start | eq_rightbrace | parens;
+    const __m128i must_end = eq_backslash | mixed_quote | opening_block | comment_start | eq_rightbrace | parens;
     if (_mm_movemask_epi8(must_end) != 0) {
       unsigned idx = __builtin_ctz(_mm_movemask_epi8(must_end));
       ptr += idx;
       if (*ptr == '}') {
         // Check that we have balanced parens at the end point
         // (the paren counter is zero).
-        uint16_t mask =
-            _mm_movemask_epi8(_mm_cmpeq_epi8(parens, _mm_setzero_si128()));
+        uint16_t mask = _mm_movemask_epi8(_mm_cmpeq_epi8(parens, _mm_setzero_si128()));
         if (((mask >> idx) & 1) == 0) {
           return 0;
         } else {
@@ -260,8 +253,7 @@ static inline uint8x16_t LoadAndCollapseHighBytes(const uint8_t* ptr) {
 // For A64, we _do_ have access to the PMULL instruction (the NEON
 // equivalent of PCLMULQDQ), but it's supposedly slow, so we use
 // the same XOR-shift cascade.
-inline static size_t FindLengthOfDeclarationList(const uint8_t* begin,
-                                                        const uint8_t* end) {
+inline static size_t FindLengthOfDeclarationList(const uint8_t* begin, const uint8_t* end) {
   // Since NEON doesn't have a natural way of moving the last element
   // to the first slot (shift right by 15 _bytes_), but _does_ have
   // fairly cheap broadcasting (unlike SSE2 without SSSE3), we use
@@ -291,8 +283,7 @@ inline static size_t FindLengthOfDeclarationList(const uint8_t* begin,
     quoted ^= vshlq_n_u64(vreinterpretq_u64_u8(quoted), 8);
     quoted ^= vshlq_n_u64(vreinterpretq_u64_u8(quoted), 16);
     quoted ^= vshlq_n_u64(vreinterpretq_u64_u8(quoted), 32);
-    quoted ^=
-        vcombine_u64(vdup_n_u64(0), vdup_lane_u8(vget_low_u64(quoted), 7));
+    quoted ^= vcombine_u64(vdup_n_u64(0), vdup_lane_u8(vget_low_u64(quoted), 7));
     quoted ^= prev_quoted;
     const uint8x16_t mixed_quote = quoted == ('\'' ^ '"');
 
@@ -302,14 +293,10 @@ inline static size_t FindLengthOfDeclarationList(const uint8_t* begin,
     const uint8x16_t opening_paren = x == '(';
     const uint8x16_t closing_paren = x == ')';
     uint8x16_t parens = closing_paren - opening_paren;
-    parens +=
-        vreinterpretq_u8_u64(vshlq_n_u64(vreinterpretq_u64_u8(parens), 8));
-    parens +=
-        vreinterpretq_u8_u64(vshlq_n_u64(vreinterpretq_u64_u8(parens), 16));
-    parens +=
-        vreinterpretq_u8_u64(vshlq_n_u64(vreinterpretq_u64_u8(parens), 32));
-    parens += vreinterpretq_u8_u64(
-        vcombine_u64(vdup_n_u64(0), vdup_lane_u8(vget_low_u64(parens), 7)));
+    parens += vreinterpretq_u8_u64(vshlq_n_u64(vreinterpretq_u64_u8(parens), 8));
+    parens += vreinterpretq_u8_u64(vshlq_n_u64(vreinterpretq_u64_u8(parens), 16));
+    parens += vreinterpretq_u8_u64(vshlq_n_u64(vreinterpretq_u64_u8(parens), 32));
+    parens += vreinterpretq_u8_u64(vcombine_u64(vdup_n_u64(0), vdup_lane_u8(vget_low_u64(parens), 7)));
     parens += prev_parens;
 
     // The VSHRN trick below doesn't guarantee the use of the top bit
@@ -323,12 +310,10 @@ inline static size_t FindLengthOfDeclarationList(const uint8_t* begin,
 
     const uint8x16_t opening_block = (x | vdupq_n_u8(0x20)) == '{';
     const uint8x16_t eq_rightbrace = x == '}';
-    uint8x16_t must_end = eq_backslash | mixed_quote | opening_block |
-                          comment_start | eq_rightbrace | parens_overflow;
+    uint8x16_t must_end = eq_backslash | mixed_quote | opening_block | comment_start | eq_rightbrace | parens_overflow;
 
     // https://community.arm.com/arm-community-blogs/b/infrastructure-solutions-blog/posts/porting-x86-vector-bitmask-optimizations-to-arm-neon
-    uint64_t must_end_narrowed =
-        vget_lane_u64(vreinterpret_u64_u8(vshrn_n_u16(must_end, 4)), 0);
+    uint64_t must_end_narrowed = vget_lane_u64(vreinterpret_u64_u8(vshrn_n_u16(must_end, 4)), 0);
     if (must_end_narrowed != 0) {
       unsigned idx = __builtin_ctzll(must_end_narrowed) >> 2;
       ptr += idx;
@@ -359,8 +344,7 @@ inline static size_t FindLengthOfDeclarationList(const uint8_t* begin,
 
 // If we have neither SSE2 nor NEON, we simply return 0 immediately.
 // We will then never use lazy parsing.
-ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin,
-                                                        const uint8_t* end) {
+ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin, const uint8_t* end) {
   return 0;
 }
 
@@ -371,6 +355,6 @@ inline ALWAYS_INLINE size_t FindLengthOfDeclarationList(std::string_view str) {
                                      reinterpret_cast<const uint8_t*>(str.data() + str.length()));
 }
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_CSS_PARSER_FIND_LENGTH_OF_DECLARATION_LIST_INL_H_
