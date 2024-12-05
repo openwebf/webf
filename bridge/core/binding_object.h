@@ -112,9 +112,9 @@ class BindingObject : public ScriptWrappable {
                                   uint32_t reason,
                                   ExceptionState& exception_state) const;
   ScriptPromise InvokeBindingMethodAsync(const AtomicString& method,
-                                  int32_t argc,
-                                  const NativeValue* args,
-                                  ExceptionState& exception_state) const;
+                                         int32_t argc,
+                                         const NativeValue* args,
+                                         ExceptionState& exception_state) const;
   NativeValue GetBindingProperty(const AtomicString& prop, uint32_t reason, ExceptionState& exception_state) const;
   NativeValue SetBindingProperty(const AtomicString& prop, NativeValue value, ExceptionState& exception_state) const;
 
@@ -152,9 +152,9 @@ class BindingObject : public ScriptWrappable {
                                          const NativeValue* args,
                                          ExceptionState& exception_state) const;
   ScriptPromise InvokeBindingMethodAsyncInternal(NativeValue method,
-                                         int32_t argc,
-                                         const NativeValue* args,
-                                         ExceptionState& exception_state) const;
+                                                 int32_t argc,
+                                                 const NativeValue* args,
+                                                 ExceptionState& exception_state) const;
 
   // NativeBindingObject may allocated at Dart side. Binding this with Dart allocated NativeBindingObject.
   explicit BindingObject(JSContext* ctx, NativeBindingObject* native_binding_object);

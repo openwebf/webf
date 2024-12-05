@@ -34,6 +34,7 @@ class WidgetElement : public HTMLElement {
   bool IsWidgetElement() const override;
 
   void Trace(GCVisitor* visitor) const override;
+
  private:
   ScriptValue CreateSyncMethodFunc(const AtomicString& method_name);
   ScriptValue CreateAsyncMethodFunc(const AtomicString& method_name);

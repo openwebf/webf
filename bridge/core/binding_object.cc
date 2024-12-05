@@ -172,9 +172,9 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
 }
 
 ScriptPromise BindingObject::InvokeBindingMethodAsync(const webf::AtomicString& method,
-                                                    int32_t argc,
-                                                    const webf::NativeValue* args,
-                                                    webf::ExceptionState& exception_state) const {
+                                                      int32_t argc,
+                                                      const webf::NativeValue* args,
+                                                      webf::ExceptionState& exception_state) const {
   NativeValue method_on_stack = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), method);
   return InvokeBindingMethodAsyncInternal(method_on_stack, argc, args, exception_state);
 }
@@ -201,17 +201,17 @@ static void handleAsyncInvokeCallback(ScriptPromiseResolver* resolver,
 }
 
 ScriptPromise BindingObject::InvokeBindingMethodAsync(BindingMethodCallOperations binding_method_call_operation,
-                                       int32_t argc,
-                                       const NativeValue* args,
-                                       ExceptionState& exception_state) const {
+                                                      int32_t argc,
+                                                      const NativeValue* args,
+                                                      ExceptionState& exception_state) const {
   NativeValue method_on_stack = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
   return InvokeBindingMethodAsyncInternal(method_on_stack, argc, args, exception_state);
 }
 
 ScriptPromise BindingObject::InvokeBindingMethodAsyncInternal(NativeValue method,
-                                                      int32_t argc,
-                                                      const webf::NativeValue* argv,
-                                                      webf::ExceptionState& exception_state) const {
+                                                              int32_t argc,
+                                                              const webf::NativeValue* argv,
+                                                              webf::ExceptionState& exception_state) const {
   auto* context = GetExecutingContext();
 
   NativeValue* dart_method_name = (NativeValue*)dart_malloc(sizeof(NativeValue));
