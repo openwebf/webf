@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+
 import 'dart:collection';
 import 'dart:ffi';
 import 'dart:io';
@@ -10,6 +11,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';

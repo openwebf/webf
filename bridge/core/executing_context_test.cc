@@ -277,7 +277,7 @@ TEST(Context, disposeContext) {
   auto mockedDartMethods = TEST_getMockDartMethods(nullptr);
   void* dart_context = initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size(), true);
   double contextId = 0;
-  auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPageSync(0.0, dart_context));
+  auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPageSync(0.0, dart_context, nullptr, 0));
   static bool disposed = false;
   page->disposeCallback = [](webf::WebFPage* bridge) { disposed = true; };
   disposePageSync(false, dart_context, page);

@@ -368,11 +368,6 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
                              FlushUICommandReason::kDependentsOnElement, exception_state);
 }
 
-NativeValue BindingObject::GetAllBindingPropertyNames(ExceptionState& exception_state) const {
-  return InvokeBindingMethod(BindingMethodCallOperations::kGetAllPropertyNames, 0, nullptr,
-                             FlushUICommandReason::kDependentsOnElement, exception_state);
-}
-
 void BindingObject::CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& deps,
                                              size_t argc,
                                              const webf::NativeValue* args) const {

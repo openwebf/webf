@@ -10,6 +10,7 @@ import 'dart:ui';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/geometry.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/src/css/values/path.dart';
 
 // ignore: non_constant_identifier_names

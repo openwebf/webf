@@ -66,7 +66,6 @@ struct NativeBindingObject : public DartReadable {
 enum BindingMethodCallOperations {
   kGetProperty,
   kSetProperty,
-  kGetAllPropertyNames
 };
 
 enum CreateBindingObjectType {
@@ -119,8 +118,6 @@ class BindingObject : public ScriptWrappable {
 
   ScriptPromise GetBindingPropertyAsync(const AtomicString& prop, ExceptionState& exception_state);
   void SetBindingPropertyAsync(const AtomicString& prop, NativeValue value);
-
-  NativeValue GetAllBindingPropertyNames(ExceptionState& exception_state) const;
 
   void CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& deps, size_t argc, const NativeValue* args) const;
 

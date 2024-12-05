@@ -18,6 +18,7 @@
 namespace webf {
 
 class WebFPage;
+class WidgetElementShape;
 class DartContext;
 
 using JSBridgeDisposeCallback = void (*)(WebFPage* bridge);
@@ -36,6 +37,8 @@ class WebFPage final {
            bool is_dedicated,
            size_t sync_buffer_size,
            double context_id,
+           NativeWidgetElementShape* naive_widget_element_shape,
+           int32_t shape_len,
            const JSExceptionHandler& handler);
   ~WebFPage();
 

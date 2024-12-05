@@ -24,21 +24,23 @@ class WidgetElement : public HTMLElement {
 
   static bool IsValidName(const AtomicString& name);
 
-  ScriptValue getPropertyValue(const AtomicString& name, ExceptionState& exception_state);
-  ScriptPromise getPropertyValueAsync(const AtomicString& name, ExceptionState& exception_state);
+  bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state);
+  void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&);
 
-  void setPropertyValue(const AtomicString& name, const ScriptValue& value, ExceptionState& exception_state);
-  void setPropertyValueAsync(const AtomicString& name, const ScriptValue& value, ExceptionState& exception_state);
+  ScriptValue item(const AtomicString& key, ExceptionState& exception_state);
+  bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);
+  bool DeleteItem(const AtomicString& key, ExceptionState& exception_state);
 
-  ScriptValue callMethod(const AtomicString& name, std::vector<ScriptValue>& args, ExceptionState& exception_state);
-  ScriptPromise callAsyncMethod(const AtomicString& name, std::vector<ScriptValue>& args, ExceptionState& exception_state);
-
-//  bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);
   bool IsWidgetElement() const override;
 
   void Trace(GCVisitor* visitor) const override;
-
  private:
+  ScriptValue CreateSyncMethodFunc(const AtomicString& method_name);
+  ScriptValue CreateAsyncMethodFunc(const AtomicString& method_name);
+  const WidgetElementShape* SaveWidgetElementsShapeData(const NativeValue* argv);
+  std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> cached_methods_;
+  std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> async_cached_methods_;
+  std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> unimplemented_properties_;
 };
 
 template <>

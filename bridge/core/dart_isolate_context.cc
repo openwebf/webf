@@ -4,6 +4,7 @@
 
 #include "dart_isolate_context.h"
 #include <unordered_set>
+#include "core/html/custom/widget_element_shape.h"
 #include "defined_properties_initializer.h"
 #include "event_factory.h"
 #include "html_element_factory.h"
@@ -51,13 +52,6 @@ static void ClearUpWires(JSRuntime* runtime) {
     wire->disposed = true;
   }
   alive_wires.clear();
-}
-
-const std::unique_ptr<DartContextData>& DartIsolateContext::EnsureData() const {
-  if (data_ == nullptr) {
-    data_ = std::make_unique<DartContextData>();
-  }
-  return data_;
 }
 
 thread_local JSRuntime* runtime_{nullptr};
@@ -120,7 +114,6 @@ DartIsolateContext::~DartIsolateContext() {}
 void DartIsolateContext::Dispose(multi_threading::Callback callback) {
   dispatcher_->Dispose([this, &callback]() {
     is_valid_ = false;
-    data_.reset();
     pages_in_ui_thread_.clear();
     running_dart_isolates--;
     FinalizeJSRuntime();
@@ -132,11 +125,14 @@ void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
                                                      DartIsolateContext* dart_isolate_context,
                                                      double page_context_id,
                                                      int32_t sync_buffer_size,
+                                                     NativeWidgetElementShape* native_widget_element_shapes,
+                                                     int32_t shape_len,
                                                      Dart_Handle dart_handle,
                                                      AllocateNewPageCallback result_callback) {
   dart_isolate_context->profiler()->StartTrackInitialize();
   DartIsolateContext::InitializeJSRuntime();
-  auto* page = new WebFPage(dart_isolate_context, true, sync_buffer_size, page_context_id, nullptr);
+  auto* page = new WebFPage(dart_isolate_context, true, sync_buffer_size, page_context_id, native_widget_element_shapes,
+                            shape_len, nullptr);
 
   dart_isolate_context->profiler()->FinishTrackInitialize();
 
@@ -164,6 +160,8 @@ void DartIsolateContext::DisposePageInJSThread(DartIsolateContext* dart_isolate_
 
 void* DartIsolateContext::AddNewPage(double thread_identity,
                                      int32_t sync_buffer_size,
+                                     void* native_widget_element_shapes,
+                                     int32_t shape_len,
                                      Dart_Handle dart_handle,
                                      AllocateNewPageCallback result_callback) {
   bool is_in_flutter_ui_thread = thread_identity < 0;
@@ -184,23 +182,30 @@ void* DartIsolateContext::AddNewPage(double thread_identity,
   }
 
   dispatcher_->PostToJs(true, thread_group_id, InitializeNewPageInJSThread, page_group, this, thread_identity,
-                        sync_buffer_size, dart_handle, result_callback);
+                        sync_buffer_size, static_cast<NativeWidgetElementShape*>(native_widget_element_shapes),
+                        shape_len, dart_handle, result_callback);
   return nullptr;
 }
 
 std::unique_ptr<WebFPage> DartIsolateContext::InitializeNewPageSync(DartIsolateContext* dart_isolate_context,
                                                                     size_t sync_buffer_size,
-                                                                    double page_context_id) {
+                                                                    double page_context_id,
+                                                                    void* native_widget_element_shapes,
+                                                                    int32_t shape_len) {
   dart_isolate_context->profiler()->StartTrackInitialize();
   DartIsolateContext::InitializeJSRuntime();
-  auto page = std::make_unique<WebFPage>(dart_isolate_context, false, sync_buffer_size, page_context_id, nullptr);
+  auto page = std::make_unique<WebFPage>(dart_isolate_context, false, sync_buffer_size, page_context_id,
+                                         reinterpret_cast<NativeWidgetElementShape*>(native_widget_element_shapes),
+                                         shape_len, nullptr);
   dart_isolate_context->profiler()->FinishTrackInitialize();
 
   return page;
 }
 
-void* DartIsolateContext::AddNewPageSync(double thread_identity) {
-  auto page = InitializeNewPageSync(this, 0, thread_identity);
+void* DartIsolateContext::AddNewPageSync(double thread_identity,
+                                         void* native_widget_element_shapes,
+                                         int32_t shape_len) {
+  auto page = InitializeNewPageSync(this, 0, thread_identity, native_widget_element_shapes, shape_len);
 
   void* p = page.get();
   pages_in_ui_thread_.emplace(std::move(page));

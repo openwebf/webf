@@ -3,7 +3,7 @@
  */
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 
 const Map<String, dynamic> _defaultStyle = {
   DISPLAY: INLINE,
