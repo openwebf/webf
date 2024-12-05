@@ -74,7 +74,7 @@ class _InactiveRenderObjects {
   }
 
   void finalizeInactiveRenderObjects() {
-    for(RenderObject object in _renderObjects) {
+    for (RenderObject object in _renderObjects) {
       assert(!object.attached);
       object.dispose();
     }
@@ -104,6 +104,7 @@ class Document extends ContainerNode {
   void markElementStyleDirty(Element element) {
     _styleDirtyElements.add(element.pointer!.address);
   }
+
   void clearElementStyleDirty(Element element) {
     _styleDirtyElements.remove(element.pointer!.address);
   }
@@ -219,34 +220,50 @@ class Document extends ContainerNode {
     }
   }
 
+  static final StaticDefinedBindingPropertyMap _documentProperties = {
+    'cookie': StaticDefinedBindingProperty<Document>(
+        getter: (document) => document.cookie.cookie(),
+        setter: (document, value) => document.cookie.setCookieString(value)),
+    'compatMode': StaticDefinedBindingProperty<Document>(getter: (document) => document.compatMode),
+    'domain': StaticDefinedBindingProperty<Document>(
+        getter: (document) => document.domain, setter: (document, value) => document.domain = value),
+    'readyState': StaticDefinedBindingProperty<Document>(getter: (document) => document.readyState),
+    'visibilityState': StaticDefinedBindingProperty<Document>(getter: (document) => document.visibilityState),
+    'hidden': StaticDefinedBindingProperty<Document>(getter: (document) => document.hidden),
+    'title': StaticDefinedBindingProperty<Document>(
+        getter: (document) => document._title ?? '',
+        setter: (document, value) {
+          document._title = value ?? '';
+          document.controller.onTitleChanged?.call(document.title);
+        })
+  };
+
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['cookie'] =
-        BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookieString(value));
-    properties['compatMode'] = BindingObjectProperty(getter: () => compatMode);
-    properties['domain'] = BindingObjectProperty(getter: () => domain, setter: (value) => domain = value);
-    properties['readyState'] = BindingObjectProperty(getter: () => readyState);
-    properties['visibilityState'] = BindingObjectProperty(getter: () => visibilityState);
-    properties['hidden'] = BindingObjectProperty(getter: () => hidden);
-    properties['title'] = BindingObjectProperty(
-      getter: () => _title ?? '',
-      setter: (value) {
-        _title = value ?? '';
-        ownerDocument.controller.onTitleChanged?.call(title);
-      },
-    );
-  }
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _documentProperties];
+
+  static final StaticDefinedSyncBindingObjectMethodMap _syncDocumentMethods = {
+    'querySelectorAll':
+        StaticDefinedSyncBindingObjectMethod<Document>(call: (document, args) => document.querySelectorAll(args)),
+    'querySelector':
+        StaticDefinedSyncBindingObjectMethod<Document>(call: (document, args) => document.querySelector(args)),
+    'getElementById':
+        StaticDefinedSyncBindingObjectMethod<Document>(call: (document, args) => document.getElementById(args)),
+    'getElementsByClassName':
+        StaticDefinedSyncBindingObjectMethod<Document>(call: (document, args) => document.getElementsByClassName(args)),
+    'getElementsByTagName':
+        StaticDefinedSyncBindingObjectMethod<Document>(call: (document, args) => document.getElementsByTagName(args)),
+    'getElementsByName':
+        StaticDefinedSyncBindingObjectMethod<Document>(call: (document, args) => document.getElementsByName(args)),
+    'elementFromPoint': StaticDefinedSyncBindingObjectMethod<Document>(
+        call: (document, args) => document.elementFromPoint(castToType<double>(args[0]), castToType<double>(args[1]))),
+  };
+
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _syncDocumentMethods];
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    methods['querySelectorAll'] = BindingObjectMethodSync(call: (args) => querySelectorAll(args));
-    methods['querySelector'] = BindingObjectMethodSync(call: (args) => querySelector(args));
-    methods['getElementById'] = BindingObjectMethodSync(call: (args) => getElementById(args));
-    methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
-    methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
-    methods['getElementsByName'] = BindingObjectMethodSync(call: (args) => getElementsByName(args));
-    methods['elementFromPoint'] = BindingObjectMethodSync(
-        call: (args) => elementFromPoint(castToType<double>(args[0]), castToType<double>(args[1])));
+    super.initializeMethods(methods);
     if (kDebugMode || kProfileMode) {
       methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
     }

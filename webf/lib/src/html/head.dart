@@ -33,7 +33,7 @@ const String _REL_STYLESHEET = 'stylesheet';
 const String DNS_PREFETCH = 'dns-prefetch';
 
 // https://www.w3.org/TR/2011/WD-html5-author-20110809/the-link-element.html#the-link-element
-class LinkElement extends Element {
+class LinkElement extends Element with StaticDefinedAttributesElement {
   LinkElement([BindingContext? context]) : super(context);
 
   @override
@@ -49,25 +49,38 @@ class LinkElement extends Element {
   Uri? _resolvedHyperlink;
   final Map<String, bool> _stylesheetLoaded = {};
 
-  @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
+  static final StaticDefinedElementAttributesMap _linkElementAttributeProperties = {
+    'disabled': StaticDefinedElementAttribute<LinkElement>(
+        setter: (element, value) => element.disabled = attributeToProperty<bool>(value)),
+    'rel': StaticDefinedElementAttribute<LinkElement>(
+        setter: (element, value) => element.rel = attributeToProperty<String>(value)),
+    'href': StaticDefinedElementAttribute<LinkElement>(
+        setter: (element, value) => element.href = attributeToProperty<String>(value)),
+    'type': StaticDefinedElementAttribute<LinkElement>(
+        setter: (element, value) => element.type = attributeToProperty<String>(value)),
+  };
 
-    attributes['disabled'] = ElementAttributeProperty(setter: (value) => disabled = attributeToProperty<bool>(value));
-    attributes['rel'] = ElementAttributeProperty(setter: (value) => rel = attributeToProperty<String>(value));
-    attributes['href'] = ElementAttributeProperty(setter: (value) => href = attributeToProperty<String>(value));
-    attributes['type'] = ElementAttributeProperty(setter: (value) => type = attributeToProperty<String>(value));
-  }
+  @override
+  List<StaticDefinedElementAttributesMap> get staticAttributeProperties =>
+      [...super.staticAttributeProperties, _linkElementAttributeProperties];
+
+  static final StaticDefinedBindingPropertyMap _linkElementProperties = {
+    'disabled': StaticDefinedBindingProperty<LinkElement>(
+        getter: (element) => element.disabled, setter: (element, value) => element.disabled = castToType<bool>(value)),
+    'rel': StaticDefinedBindingProperty<LinkElement>(
+        getter: (element) => element.rel, setter: (element, value) => element.rel = castToType<String>(value)),
+    'href': StaticDefinedBindingProperty<LinkElement>(
+        getter: (element) => element.href, setter: (element, value) => element.href = castToType<String>(value)),
+    'type': StaticDefinedBindingProperty<LinkElement>(
+        getter: (element) => element.type, setter: (element, value) => element.type = castToType<String>(value)),
+  };
+
+  @override
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _linkElementProperties];
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
-
-    properties['disabled'] =
-        BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = castToType<bool>(value));
-    properties['rel'] = BindingObjectProperty(getter: () => rel, setter: (value) => rel = castToType<String>(value));
-    properties['href'] = BindingObjectProperty(getter: () => href, setter: (value) => href = castToType<String>(value));
-    properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
   }
 
   bool get disabled => getAttribute('disabled') != null;
@@ -100,6 +113,7 @@ class LinkElement extends Element {
   set type(String value) {
     internalSetAttribute('type', value);
   }
+
   Future<void> _resolveHyperlink() async {
     String? href = getAttribute('href');
     String? rel = getAttribute('rel');
@@ -139,7 +153,6 @@ class LinkElement extends Element {
         rel == _REL_STYLESHEET &&
         isConnected &&
         !_stylesheetLoaded.containsKey(_resolvedHyperlink.toString())) {
-
       // Increase the pending count for preloading resources.
       if (ownerDocument.controller.preloadStatus != PreloadingStatus.none) {
         ownerDocument.controller.unfinishedPreloadResources++;
@@ -198,7 +211,6 @@ class LinkElement extends Element {
           ownerDocument.controller.unfinishedPreloadResources--;
           ownerDocument.controller.checkPreloadCompleted();
         }
-
       }
       SchedulerBinding.instance.scheduleFrame();
     }
@@ -265,16 +277,13 @@ mixin StyleElementMixin on Element {
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
-    properties['type'] = BindingObjectProperty(
-        getter: () => type,
-        setter: (value) => type = castToType<String>(value));
+    properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
   }
 
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
-    attributes['type'] = ElementAttributeProperty(
-        setter: (value) => type = attributeToProperty<String>(value));
+    attributes['type'] = ElementAttributeProperty(setter: (value) => type = attributeToProperty<String>(value));
   }
 
   void _recalculateStyle() {

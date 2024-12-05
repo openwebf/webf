@@ -29,14 +29,6 @@ class CharacterData extends Node {
   }
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-  }
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-  }
-
-  @override
   Node? get firstChild => null;
 
   @override
