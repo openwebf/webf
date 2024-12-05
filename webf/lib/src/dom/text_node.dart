@@ -5,7 +5,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/src/svg/rendering/text.dart';
 
 const String WHITE_SPACE_CHAR = ' ';

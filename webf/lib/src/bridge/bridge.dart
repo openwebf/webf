@@ -5,6 +5,7 @@
 
 import 'dart:async';
 import 'dart:ffi';
+import 'package:webf/dom.dart';
 import 'package:webf/launcher.dart';
 
 import 'dynamic_library.dart';

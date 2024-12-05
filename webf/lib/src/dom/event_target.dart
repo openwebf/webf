@@ -5,7 +5,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:webf/html.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 
 typedef EventHandler = Future<void> Function(Event event);
 

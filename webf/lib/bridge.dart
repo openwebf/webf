@@ -3,8 +3,10 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-export 'src/bridge/bridge.dart';
+export 'src/bridge/binding_object.dart';
 export 'src/bridge/binding_bridge.dart';
+export 'src/bridge/widget_element_shape.dart';
+export 'src/bridge/bridge.dart';
 export 'src/bridge/dynamic_library.dart';
 export 'src/bridge/to_native.dart';
 export 'src/bridge/from_native.dart';

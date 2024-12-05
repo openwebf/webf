@@ -14,6 +14,8 @@
 #include "core/events/promise_rejection_event.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
+#include "foundation/native_value_converter.h"
+#include "html/custom/widget_element_shape.h"
 #include "polyfill.h"
 #include "qjs_window.h"
 #include "script_forbidden_scope.h"
@@ -31,6 +33,8 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
                                    bool is_dedicated,
                                    size_t sync_buffer_size,
                                    double context_id,
+                                   NativeWidgetElementShape* native_widget_element_shape,
+                                   int32_t shape_len,
                                    JSExceptionHandler handler,
                                    void* owner)
     : dart_isolate_context_(dart_isolate_context),
@@ -104,6 +108,12 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   for (auto& p : plugin_string_code) {
     EvaluateJavaScript(p.second.c_str(), p.second.size(), p.first.c_str(), 0);
   }
+
+  dart_isolate_context->profiler()->FinishTrackSteps();
+
+  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InitializeWidgetShape");
+
+  SetWidgetElementShape(native_widget_element_shape, shape_len);
 
   dart_isolate_context->profiler()->FinishTrackSteps();
 
@@ -487,6 +497,26 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
   context->window()->dispatchEvent(event, exception_state);
   if (exception_state.HasException()) {
     context->ReportError(reason);
+  }
+}
+
+const WidgetElementShape* ExecutingContext::GetWidgetElementShape(const AtomicString& key) {
+  if (widget_element_shapes_.count(key) > 0) {
+    return widget_element_shapes_[key].get();
+  }
+  return nullptr;
+}
+
+bool ExecutingContext::HasWidgetElementShape(const AtomicString& key) const {
+  return widget_element_shapes_.count(key) > 0;
+}
+
+void ExecutingContext::SetWidgetElementShape(NativeWidgetElementShape* native_widget_element_shape, size_t len) {
+   if (len == 0 || native_widget_element_shape == nullptr || native_widget_element_shape->name == nullptr) return;
+
+  for (size_t i = 0; i < len; i++) {
+    const auto key = AtomicString(ctx(), native_widget_element_shape[i].name);
+    widget_element_shapes_[key] = std::make_unique<WidgetElementShape>(ctx(), &native_widget_element_shape[i]);
   }
 }
 

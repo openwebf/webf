@@ -50,11 +50,16 @@ WEBF_EXPORT_C
 void allocateNewPage(double thread_identity,
                      int32_t sync_buffer_size,
                      void* dart_isolate_context,
+                     void* native_widget_element_shapes,
+                     int32_t shape_len,
                      Dart_Handle dart_handle,
                      AllocateNewPageCallback result_callback);
 
 WEBF_EXPORT_C
-void* allocateNewPageSync(double thread_identity, void* dart_isolate_context);
+void* allocateNewPageSync(double thread_identity,
+                          void* dart_isolate_context,
+                          void* native_widget_element_shapes,
+                          int32_t shape_len);
 
 WEBF_EXPORT_C
 int64_t newPageIdSync();

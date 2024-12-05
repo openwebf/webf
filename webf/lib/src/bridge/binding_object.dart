@@ -123,7 +123,10 @@ abstract class DynamicBindingObject extends BindingObject {
   }
 
   final Map<String, BindingObjectProperty> _properties = {};
+  Map<String, BindingObjectProperty> get properties => _properties;
+
   final Map<String, BindingObjectMethod> _methods = {};
+  Map<String, BindingObjectMethod>  get methods => _methods;
 
   @mustCallSuper
   void initializeProperties(Map<String, BindingObjectProperty> properties);
@@ -338,4 +341,3 @@ Future<void> asyncInvokeBindingMethodFromNativeImpl(WebFViewController view, Poi
 
   malloc.free(asyncCallContext);
 }
-

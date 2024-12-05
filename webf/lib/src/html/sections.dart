@@ -4,7 +4,7 @@
  */
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element#content_sectioning
 

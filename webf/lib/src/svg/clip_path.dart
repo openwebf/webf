@@ -4,7 +4,7 @@
 
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/src/svg/rendering/rect.dart';
 import 'package:webf/svg.dart';
 

@@ -311,7 +311,6 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/api/character_data.cc
     core/api/script_value_ref.cc
     core/dart_isolate_context.cc
-    core/dart_context_data.cc
     core/executing_context_data.cc
     core/fileapi/blob.cc
     core/fileapi/blob_part.cc
@@ -372,6 +371,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/child_list_mutation_scope.cc
     core/dom/container_node.cc
     core/html/custom/widget_element.cc
+    core/html/custom/widget_element_shape.cc
     core/events/error_event.cc
     core/events/message_event.cc
     core/events/animation_event.cc
