@@ -504,7 +504,8 @@ bool ExecutingContext::HasWidgetElementShape(const AtomicString& key) const {
 }
 
 void ExecutingContext::SetWidgetElementShape(NativeWidgetElementShape* native_widget_element_shape, size_t len) {
-   if (len == 0 || native_widget_element_shape == nullptr || native_widget_element_shape->name == nullptr) return;
+  if (len == 0 || native_widget_element_shape == nullptr || native_widget_element_shape->name == nullptr)
+    return;
 
   for (size_t i = 0; i < len; i++) {
     const auto key = AtomicString(ctx(), native_widget_element_shape[i].name);

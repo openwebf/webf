@@ -14,7 +14,6 @@ WidgetElementShape::WidgetElementShape(JSContext* ctx, NativeWidgetElementShape*
   InitializeAsyncMethods(ctx, native_widget_element_shape->async_methods);
 }
 
-
 void WidgetElementShape::InitializeProperties(JSContext* ctx, NativeValue* properties) {
   size_t length = properties->uint32;
   auto* head = static_cast<NativeValue*>(properties->u.ptr);
@@ -39,7 +38,5 @@ void WidgetElementShape::InitializeAsyncMethods(JSContext* ctx, NativeValue* asy
     built_in_async_methods_.emplace(NativeValueConverter<NativeTypeString>::FromNativeValue(ctx, head[i]));
   }
 }
-
-
 
 }  // namespace webf

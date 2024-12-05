@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef WIDGET_ELEMENT_SHAPE_H
@@ -20,10 +20,10 @@ struct NativeWidgetElementShape {
 };
 
 class WidgetElementShape {
-public:
+ public:
   WidgetElementShape(JSContext* ctx, NativeWidgetElementShape* native_widget_element_shape);
 
-private:
+ private:
   void InitializeProperties(JSContext* ctx, NativeValue* properties);
   void InitializeMethods(JSContext* ctx, NativeValue* methods);
   void InitializeAsyncMethods(JSContext* ctx, NativeValue* async_methods);
@@ -32,6 +32,6 @@ private:
   std::unordered_set<AtomicString, AtomicString::KeyHasher> built_in_async_methods_;
 };
 
-}
+}  // namespace webf
 
-#endif //WIDGET_ELEMENT_SHAPE_H
+#endif  // WIDGET_ELEMENT_SHAPE_H

@@ -5,9 +5,9 @@
 
 #include "widget_element.h"
 #include "binding_call_methods.h"
+#include "bindings/qjs/script_promise_resolver.h"
 #include "built_in_string.h"
 #include "core/dom/document.h"
-#include "bindings/qjs/script_promise_resolver.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {
@@ -77,7 +77,8 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
   //
   // if (shape != nullptr) {
   //   if (shape->built_in_properties_.find(property_key) != shape->built_in_properties_.end()) {
-  //     return ScriptValue(ctx(), GetBindingProperty(key, FlushUICommandReason::kDependentsOnElement, exception_state));
+  //     return ScriptValue(ctx(), GetBindingProperty(key, FlushUICommandReason::kDependentsOnElement,
+  //     exception_state));
   //   }
   //
   //   if (shape->built_in_methods_.find(property_key) != shape->built_in_methods_.end()) {
@@ -105,7 +106,8 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 }
 
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {
-  // if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(tagName().ToStdString(ctx()))) {
+  // if
+  // (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(tagName().ToStdString(ctx()))) {
   //   GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsOnElement);
   // }
   //
@@ -129,7 +131,6 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
   return true;
 }
 
-
 bool WidgetElement::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
   return true;
 }
@@ -141,6 +142,5 @@ bool WidgetElement::IsWidgetElement() const {
 void WidgetElement::Trace(GCVisitor* visitor) const {
   HTMLElement::Trace(visitor);
 }
-
 
 }  // namespace webf
