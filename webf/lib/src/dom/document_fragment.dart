@@ -18,11 +18,4 @@ class DocumentFragment extends ContainerNode {
   @override
   RenderBox? get renderer => null;
 
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-  }
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-  }
 }

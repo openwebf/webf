@@ -100,7 +100,9 @@ abstract class BindingObject<T> extends Iterable<T> {
   Iterator<T> get iterator => Iterable<T>.empty().iterator;
 
   @mustCallSuper
-  void dispose();
+  void dispose() {
+    _unbind(_ownerView);
+  }
 }
 
 abstract class StaticBindingObject extends BindingObject {
@@ -116,26 +118,68 @@ abstract class StaticBindingObject extends BindingObject {
   }
 }
 
-abstract class DynamicBindingObject extends BindingObject {
+
+typedef _StaticDefinedBindingPropertyGetter<T extends BindingObject> = dynamic Function(T);
+// ignore: avoid_annotating_with_dynamic
+typedef _StaticDefinedBindingPropertySetter<T extends BindingObject> = void Function(T, dynamic value);
+
+class StaticDefinedBindingProperty<T extends BindingObject> {
+  StaticDefinedBindingProperty({required this.getter, this.setter});
+
+  final _StaticDefinedBindingPropertyGetter<T> getter;
+  final _StaticDefinedBindingPropertySetter<T>? setter;
+}
+
+typedef _StaticDefinedSyncBindingMethodCallback<T extends BindingObject> = dynamic Function(T, List args);
+typedef _StaticDefinedAsyncBindingMethodCallback<T extends BindingObject> = Future<dynamic> Function(T, List args);
+
+class StaticDefinedSyncBindingObjectMethod<T extends BindingObject> {
+  StaticDefinedSyncBindingObjectMethod({
+    required this.call
+  });
+
+  final _StaticDefinedSyncBindingMethodCallback<T> call;
+}
+
+class StaticDefinedAsyncBindingObjectMethod<T extends BindingObject> {
+  StaticDefinedAsyncBindingObjectMethod({
+    required this.call
+  });
+
+  final _StaticDefinedAsyncBindingMethodCallback<T> call;
+}
+
+typedef StaticDefinedBindingPropertyMap = Map<String, StaticDefinedBindingProperty>;
+// typedef StaticDefinedBindingAttributeMap = Map<String, >
+typedef StaticDefinedSyncBindingObjectMethodMap = Map<String, StaticDefinedSyncBindingObjectMethod>;
+typedef StaticDefinedAsyncBindingObjectMethodMap = Map<String, StaticDefinedAsyncBindingObjectMethod>;
+
+mixin StaticDefinedBindingObject<T> on BindingObject<T>{
+  List<StaticDefinedBindingPropertyMap> get properties => [];
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [];
+  List<StaticDefinedAsyncBindingObjectMethodMap> get asyncMethods => [];
+}
+
+abstract class DynamicBindingObject<T> extends BindingObject<T> {
   DynamicBindingObject([BindingContext? context]): super(context) {
-    initializeProperties(_properties);
-    initializeMethods(_methods);
+    initializeProperties(_dynamicProperties);
+    initializeMethods(_dynamicMethods);
   }
 
-  final Map<String, BindingObjectProperty> _properties = {};
-  Map<String, BindingObjectProperty> get properties => _properties;
+  final Map<String, BindingObjectProperty> _dynamicProperties = {};
+  Map<String, BindingObjectProperty> get dynamicProperties => _dynamicProperties;
 
-  final Map<String, BindingObjectMethod> _methods = {};
-  Map<String, BindingObjectMethod>  get methods => _methods;
-
-  @mustCallSuper
-  void initializeProperties(Map<String, BindingObjectProperty> properties);
+  final Map<String, BindingObjectMethod> _dynamicMethods = {};
+  Map<String, BindingObjectMethod> get dynamicMethods => _dynamicMethods;
 
   @mustCallSuper
-  void initializeMethods(Map<String, BindingObjectMethod> methods);
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
+
+  @mustCallSuper
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {}
 
   dynamic _invokeBindingMethod(String method, List<dynamic> args) {
-    BindingObjectMethod? fn = _methods[method];
+    BindingObjectMethod? fn = _dynamicMethods[method];
     if (fn == null) {
       return;
     }
@@ -154,16 +198,16 @@ abstract class DynamicBindingObject extends BindingObject {
 
   @override
   void dispose() async {
-    _unbind(_ownerView);
-    _properties.clear();
-    _methods.clear();
+    super.dispose();
+    _dynamicProperties.clear();
+    _dynamicMethods.clear();
   }
 }
 
 dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp }) {
   assert(args.length == 1);
 
-  BindingObjectProperty? property = (bindingObject as DynamicBindingObject)._properties[args[0]];
+  BindingObjectProperty? property = (bindingObject as DynamicBindingObject)._dynamicProperties[args[0]];
 
   Stopwatch? stopwatch;
   if (enableWebFCommandLog && property != null) {
@@ -201,7 +245,7 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, { Bin
 
   String key = args[0];
   dynamic value = args[1];
-  BindingObjectProperty? property = (bindingObject as DynamicBindingObject)._properties[key];
+  BindingObjectProperty? property = (bindingObject as DynamicBindingObject)._dynamicProperties[key];
   if (property != null && property.setter != null) {
     property.setter!(value);
 
@@ -228,8 +272,8 @@ dynamic getPropertyNamesBindingCall(BindingObject bindingObject, List<dynamic> a
     WebFProfiler.instance.startTrackBindingSteps(profileOp, 'getPropertyNamesBindingCall');
   }
 
-  List<String> properties = (bindingObject as DynamicBindingObject)._properties.keys.toList();
-  List<String> methods = bindingObject._methods.keys.toList();
+  List<String> properties = (bindingObject as DynamicBindingObject)._dynamicProperties.keys.toList();
+  List<String> methods = bindingObject._dynamicMethods.keys.toList();
   properties.addAll(methods);
 
   if (enableWebFCommandLog) {

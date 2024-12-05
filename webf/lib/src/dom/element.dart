@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -15,6 +16,7 @@ import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/bridge/binding_object.dart';
 import 'package:webf/src/svg/rendering/container.dart';
 import 'package:webf/svg.dart';
 import 'package:webf/widget.dart';
@@ -103,6 +105,24 @@ class ElementAttributeProperty {
   final ElementAttributeGetter? getter;
   final ElementAttributeSetter? setter;
   final ElementAttributeDeleter? deleter;
+}
+
+typedef StaticDefinedElementAttributeGetter<T extends Element> = String? Function(T);
+typedef StaticDefinedElementAttributeSetter<T extends Element> = void Function(T, String value);
+typedef StaticDefinedElementAttributeDeleter<T extends Element> = void Function(T);
+
+class StaticDefinedElementAttribute<T extends Element> {
+  StaticDefinedElementAttribute({this.getter, this.setter, this.deleter});
+
+  final StaticDefinedElementAttributeGetter<T>? getter;
+  final StaticDefinedElementAttributeSetter<T>? setter;
+  final StaticDefinedElementAttributeDeleter<T>? deleter;
+}
+
+typedef StaticDefinedElementAttributesMap = Map<String, StaticDefinedElementAttribute>;
+
+mixin StaticDefinedAttributesElement on Element {
+  List<StaticDefinedElementAttributesMap> get staticAttributeProperties => [];
 }
 
 abstract class Element extends ContainerNode with ElementBase, ElementEventMixin, ElementOverflowMixin {
@@ -287,50 +307,66 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   // https://www.w3.org/TR/cssom-view-1/#extensions-to-the-htmlelement-interface
   // https://www.w3.org/TR/cssom-view-1/#extension-to-the-element-interface
+  static final StaticDefinedBindingPropertyMap _elementProperties = {
+    'offsetTop': StaticDefinedBindingProperty<Element>(getter: (element) => element.offsetTop),
+    'offsetLeft': StaticDefinedBindingProperty<Element>(getter: (element) => element.offsetLeft),
+    'offsetWidth': StaticDefinedBindingProperty<Element>(getter: (element) => element.offsetWidth),
+    'offsetHeight': StaticDefinedBindingProperty<Element>(getter: (element) => element.offsetHeight),
+    'scrollTop': StaticDefinedBindingProperty<Element>(
+        getter: (element) => element.scrollTop,
+        setter: (element, value) => element.scrollTop = castToType<double>(value)),
+    'scrollLeft': StaticDefinedBindingProperty<Element>(
+        getter: (element) => element.scrollLeft,
+        setter: (element, value) => element.scrollLeft = castToType<double>(value)),
+    'scrollWidth': StaticDefinedBindingProperty<Element>(
+      getter: (element) => element.scrollWidth,
+    ),
+    'scrollHeight': StaticDefinedBindingProperty<Element>(getter: (element) => element.scrollHeight),
+    'clientTop': StaticDefinedBindingProperty<Element>(getter: (element) => element.clientTop),
+    'clientLeft': StaticDefinedBindingProperty<Element>(getter: (element) => element.clientLeft),
+    'clientWidth': StaticDefinedBindingProperty<Element>(getter: (element) => element.clientWidth),
+    'clientHeight': StaticDefinedBindingProperty<Element>(getter: (element) => element.clientHeight),
+    'id': StaticDefinedBindingProperty<Element>(
+        getter: (element) => element.id, setter: (element, value) => element.id = castToType<String>(value)),
+    'classList': StaticDefinedBindingProperty<Element>(getter: (element) => element.classList),
+    'className': StaticDefinedBindingProperty<Element>(
+        getter: (element) => element.className,
+        setter: (element, value) => element.className = castToType<String>(value)),
+    'dir': StaticDefinedBindingProperty<Element>(getter: (element) => element.dir),
+  };
+
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['offsetTop'] = BindingObjectProperty(getter: () => offsetTop);
-    properties['offsetLeft'] = BindingObjectProperty(getter: () => offsetLeft);
-    properties['offsetWidth'] = BindingObjectProperty(getter: () => offsetWidth);
-    properties['offsetHeight'] = BindingObjectProperty(getter: () => offsetHeight);
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _elementProperties];
 
-    properties['scrollTop'] =
-        BindingObjectProperty(getter: () => scrollTop, setter: (value) => scrollTop = castToType<double>(value));
-    properties['scrollLeft'] =
-        BindingObjectProperty(getter: () => scrollLeft, setter: (value) => scrollLeft = castToType<double>(value));
-    properties['scrollWidth'] = BindingObjectProperty(getter: () => scrollWidth);
-    properties['scrollHeight'] = BindingObjectProperty(getter: () => scrollHeight);
+  static final StaticDefinedSyncBindingObjectMethodMap _elementSyncMethods = {
+    'getBoundingClientRect':
+        StaticDefinedSyncBindingObjectMethod<Element>(call: (element, _) => element.getBoundingClientRect()),
+    'getClientRects': StaticDefinedSyncBindingObjectMethod<Element>(call: (element, _) => element.getClientRects()),
+    'scroll': StaticDefinedSyncBindingObjectMethod<Element>(
+        call: (element, args) => element.scroll(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'scrollBy': StaticDefinedSyncBindingObjectMethod<Element>(
+        call: (element, args) => element.scrollBy(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'scrollTo': StaticDefinedSyncBindingObjectMethod<Element>(
+        call: (element, args) => element.scrollTo(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'click': StaticDefinedSyncBindingObjectMethod<Element>(call: (element, _) => element.click()),
+    'getElementsByClassName':
+        StaticDefinedSyncBindingObjectMethod<Element>(call: (element, args) => element.getElementsByClassName(args)),
+    'getElementsByTagName':
+        StaticDefinedSyncBindingObjectMethod<Element>(call: (element, args) => element.getElementsByTagName(args)),
+    'querySelectorAll':
+        StaticDefinedSyncBindingObjectMethod<Element>(call: (element, args) => element.querySelectorAll(args)),
+    'querySelector':
+        StaticDefinedSyncBindingObjectMethod<Element>(call: (element, args) => element.querySelector(args)),
+    'matches': StaticDefinedSyncBindingObjectMethod<Element>(call: (element, args) => element.matches(args)),
+    'closest': StaticDefinedSyncBindingObjectMethod<Element>(call: (element, args) => element.closest(args)),
+  };
 
-    properties['clientTop'] = BindingObjectProperty(getter: () => clientTop);
-    properties['clientLeft'] = BindingObjectProperty(getter: () => clientLeft);
-    properties['clientWidth'] = BindingObjectProperty(getter: () => clientWidth);
-    properties['clientHeight'] = BindingObjectProperty(getter: () => clientHeight);
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _elementSyncMethods];
 
-    properties['id'] = BindingObjectProperty(getter: () => id, setter: (value) => id = castToType<String>(value));
-    properties['className'] =
-        BindingObjectProperty(getter: () => className, setter: (value) => className = castToType<String>(value));
-    properties['classList'] = BindingObjectProperty(getter: () => classList);
-    properties['dir'] = BindingObjectProperty(getter: () => dir, setter: (value) => {});
-  }
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    methods['getBoundingClientRect'] = BindingObjectMethodSync(call: (_) => getBoundingClientRect());
-    methods['getClientRects'] = BindingObjectMethodSync(call: (_) => getClientRects());
-    methods['scroll'] =
-        BindingObjectMethodSync(call: (args) => scroll(castToType<double>(args[0]), castToType<double>(args[1])));
-    methods['scrollBy'] =
-        BindingObjectMethodSync(call: (args) => scrollBy(castToType<double>(args[0]), castToType<double>(args[1])));
-    methods['scrollTo'] =
-        BindingObjectMethodSync(call: (args) => scrollTo(castToType<double>(args[0]), castToType<double>(args[1])));
-    methods['click'] = BindingObjectMethodSync(call: (_) => click());
-    methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
-    methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
-    methods['querySelectorAll'] = BindingObjectMethodSync(call: (args) => querySelectorAll(args));
-    methods['querySelector'] = BindingObjectMethodSync(call: (args) => querySelector(args));
-    methods['matches'] = BindingObjectMethodSync(call: (args) => matches(args));
-    methods['closest'] = BindingObjectMethodSync(call: (args) => closest(args));
-
     if (kDebugMode || kProfileMode) {
       methods['__test_global_to_local__'] = BindingObjectMethodSync(call: (args) => testGlobalToLocal(args[0], args[1]));
     }
@@ -364,7 +400,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     return QuerySelector.closest(this, args.first);
   }
 
-  void updateRenderBoxModel({ bool forceUpdate = false }) {
+  void updateRenderBoxModel({bool forceUpdate = false}) {
     RenderBoxModel nextRenderBoxModel;
     if (isWidgetElement) {
       nextRenderBoxModel = _createRenderWidget(previousRenderWidget: _renderWidget, forceUpdate: forceUpdate);
@@ -448,7 +484,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     throw UnimplementedError();
   }
 
-  RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget, bool forceUpdate = false }) {
+  RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget, bool forceUpdate = false}) {
     RenderWidget nextReplaced;
 
     if (previousRenderWidget == null || forceUpdate) {
@@ -880,8 +916,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     bool shouldMutateBeforeElement =
         previousPseudoElement == null || ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
 
-    previousPseudoElement ??=
-        PseudoElement(kind, this, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
+    previousPseudoElement ??= PseudoElement(
+        kind, this, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
     previousPseudoElement.style
         .merge(kind == PseudoKind.kPseudoBefore ? style.pseudoBeforeStyle! : style.pseudoAfterStyle!);
 
@@ -909,7 +945,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       if (previousPseudoElement.firstChild != null) {
         (previousPseudoElement.firstChild as TextNode).data = pseudoValue.value;
       } else {
-        final textNode = ownerDocument.createTextNode(pseudoValue.value, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
+        final textNode = ownerDocument.createTextNode(
+            pseudoValue.value, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
         previousPseudoElement.appendChild(textNode);
       }
     }
@@ -1144,7 +1181,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     final box = renderBoxModel;
     if (isRendererAttachedToSegmentTree) {
       // Only append child renderer when which is not attached.
-      if (!child.isRendererAttachedToSegmentTree && box != null && renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
+      if (!child.isRendererAttachedToSegmentTree &&
+          box != null &&
+          renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         RenderBox? after;
         if (box is RenderLayoutBox) {
           RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
@@ -1366,6 +1405,17 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @mustCallSuper
   String? getAttribute(String qualifiedName) {
+    if (this is StaticDefinedAttributesElement) {
+      StaticDefinedElementAttributesMap? attributesMap =
+          (this as StaticDefinedAttributesElement).staticAttributeProperties.firstWhereOrNull((map) {
+        return map.containsKey(qualifiedName);
+      });
+
+      if (attributesMap != null && attributesMap[qualifiedName]!.getter != null) {
+        return attributesMap[qualifiedName]?.getter!(this);
+      }
+    }
+
     ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
 
     if (propertyHandler != null && propertyHandler.getter != null) {
@@ -1377,6 +1427,17 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @mustCallSuper
   void setAttribute(String qualifiedName, String value) {
+    if (this is StaticDefinedAttributesElement) {
+      StaticDefinedElementAttributesMap? attributesMap =
+          (this as StaticDefinedAttributesElement).staticAttributeProperties.firstWhereOrNull((map) {
+        return map.containsKey(qualifiedName);
+      });
+
+      if (attributesMap != null && attributesMap[qualifiedName]!.setter != null) {
+        return attributesMap[qualifiedName]?.setter!(this, value);
+      }
+    }
+
     ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
     if (propertyHandler != null && propertyHandler.setter != null) {
       propertyHandler.setter!(value);
@@ -1396,6 +1457,17 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @mustCallSuper
   void removeAttribute(String qualifiedName) {
+    if (this is StaticDefinedAttributesElement) {
+      StaticDefinedElementAttributesMap? attributesMap =
+      (this as StaticDefinedAttributesElement).staticAttributeProperties.firstWhereOrNull((map) {
+        return map.containsKey(qualifiedName);
+      });
+
+      if (attributesMap != null && attributesMap[qualifiedName]!.deleter != null) {
+        return attributesMap[qualifiedName]?.deleter!(this);
+      }
+    }
+
     ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
 
     if (propertyHandler != null && propertyHandler.deleter != null) {
@@ -1461,7 +1533,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
         // Original parent renderBox.
         RenderBox parentRenderBox = parentNode!.renderer!;
-        _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: previousSiblingRenderBox);
+        _renderBoxModel.attachToContainingBlock(containingBlockRenderBox,
+            parent: parentRenderBox, after: previousSiblingRenderBox);
       }
     }
 
@@ -1486,7 +1559,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     dynamic oldValue;
 
-    switch(name) {
+    switch (name) {
       case DISPLAY:
       case OVERFLOW_X:
       case OVERFLOW_Y:
@@ -1642,6 +1715,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   bool _scheduledRunTransitions = false;
+
   void scheduleRunTransitionAnimations(String propertyName, String? prevValue, String currentValue) {
     if (_scheduledRunTransitions) return;
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
@@ -1783,7 +1857,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // about the size of an element and its position relative to the viewport.
   // https://drafts.csswg.org/cssom-view/#dom-element-getboundingclientrect
   BoundingClientRect get boundingClientRect {
-    BoundingClientRect boundingClientRect = BoundingClientRect.zero(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
+    BoundingClientRect boundingClientRect =
+        BoundingClientRect.zero(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
     if (isRendererAttached) {
       flushLayout();
       RenderBoxModel sizedBox = renderBoxModel!;

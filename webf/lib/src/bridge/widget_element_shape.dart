@@ -28,11 +28,11 @@ Pointer<WidgetElementShape> createWidgetElementShape(Map<String, ElementCreator>
   creators.forEach((tagName, creator) {
     WidgetElement widgetElement = creator(null) as WidgetElement;
 
-    List<String> properties = widgetElement.properties.keys.toList(growable: false);
+    List<String> properties = widgetElement.dynamicProperties.keys.toList(growable: false);
     List<String> syncMethods = [];
     List<String> asyncMethods = [];
 
-    widgetElement.methods.forEach((key, method) {
+    widgetElement.dynamicMethods.forEach((key, method) {
       if (method is BindingObjectMethodSync) {
         syncMethods.add(key);
       } else if (method is AsyncBindingObjectMethod) {

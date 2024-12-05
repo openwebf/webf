@@ -27,27 +27,40 @@ class Window extends EventTarget {
   @override
   EventTarget? get parentEventTarget => null;
 
+  static final StaticDefinedSyncBindingObjectMethodMap _syncWindowMethods = {
+    'scroll': StaticDefinedSyncBindingObjectMethod<Window>(
+        call: (window, args) => window.scrollTo(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'scrollTo': StaticDefinedSyncBindingObjectMethod<Window>(
+        call: (window, args) => window.scrollTo(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'scrollBy': StaticDefinedSyncBindingObjectMethod<Window>(
+        call: (window, args) => window.scrollBy(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'open':
+        StaticDefinedSyncBindingObjectMethod<Window>(call: (window, args) => window.open(castToType<String>(args[0]))),
+    'getComputedStyle': StaticDefinedSyncBindingObjectMethod<Window>(
+        call: (window, args) => window.getComputedStyle(args[0] as Element)),
+  };
+
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    methods['scroll'] = methods['scrollTo'] =
-        BindingObjectMethodSync(call: (args) => scrollTo(castToType<double>(args[0]), castToType<double>(args[1])));
-    methods['scrollBy'] = BindingObjectMethodSync(call: (args) => scrollBy(castToType<double>(args[0]), castToType<double>(args[1])));
-    methods['open'] = BindingObjectMethodSync(call: (args) => open(castToType<String>(args[0])));
-    methods['getComputedStyle'] = BindingObjectMethodSync(call: (args) => getComputedStyle(args[0] as Element));
-  }
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _syncWindowMethods];
+
+  static final StaticDefinedBindingPropertyMap _syncWindowProperties = {
+    'innerWidth': StaticDefinedBindingProperty<Window>(getter: (window) => window.innerWidth),
+    'innerHeight': StaticDefinedBindingProperty<Window>(getter: (window) => window.innerHeight),
+    'scrollX': StaticDefinedBindingProperty<Window>(getter: (window) => window.scrollX),
+    'scrollY': StaticDefinedBindingProperty<Window>(getter: (window) => window.scrollY),
+    'pageXOffset': StaticDefinedBindingProperty<Window>(getter: (window) => window.scrollX),
+    'pageYOffset': StaticDefinedBindingProperty<Window>(getter: (window) => window.scrollY),
+    'screen': StaticDefinedBindingProperty<Window>(getter: (window) => window.screen),
+    'colorScheme': StaticDefinedBindingProperty<Window>(getter: (window) => window.colorScheme),
+    'devicePixelRatio': StaticDefinedBindingProperty<Window>(getter: (window) => window.devicePixelRatio),
+  };
+
+  @override
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _syncWindowProperties];
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     // https://www.w3.org/TR/cssom-view-1/#extensions-to-the-window-interface
-    properties['innerWidth'] = BindingObjectProperty(getter: () => innerWidth);
-    properties['innerHeight'] = BindingObjectProperty(getter: () => innerHeight);
-    properties['scrollX'] = BindingObjectProperty(getter: () => scrollX);
-    properties['scrollY'] = BindingObjectProperty(getter: () => scrollY);
-    properties['pageXOffset'] = BindingObjectProperty(getter: () => scrollX);
-    properties['pageYOffset'] = BindingObjectProperty(getter: () => scrollY);
-    properties['screen'] = BindingObjectProperty(getter: () => screen);
-    properties['colorScheme'] = BindingObjectProperty(getter: () => colorScheme);
-    properties['devicePixelRatio'] = BindingObjectProperty(getter: () => devicePixelRatio);
   }
 
   void open(String url) {
@@ -56,7 +69,8 @@ class Window extends EventTarget {
   }
 
   ComputedCSSStyleDeclaration getComputedStyle(Element element) {
-    return ComputedCSSStyleDeclaration(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), element, element.tagName);
+    return ComputedCSSStyleDeclaration(
+        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), element, element.tagName);
   }
 
   double get scrollX => document.documentElement!.scrollLeft;
@@ -93,7 +107,8 @@ class Window extends EventTarget {
     });
   }
 
-  String get colorScheme => document.controller.ownerFlutterView.platformDispatcher.platformBrightness == Brightness.light ? 'light' : 'dark';
+  String get colorScheme =>
+      document.controller.ownerFlutterView.platformDispatcher.platformBrightness == Brightness.light ? 'light' : 'dark';
 
   double get devicePixelRatio => document.controller.ownerFlutterView.devicePixelRatio;
 
@@ -131,7 +146,8 @@ class Window extends EventTarget {
     switch (eventType) {
       case EVENT_SCROLL:
         // Fired at the Document or element when the viewport or element is scrolled, respectively.
-        document.documentElement?.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
+        document.documentElement
+            ?.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
         break;
     }
   }

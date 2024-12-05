@@ -8,7 +8,7 @@ import 'package:webf/webf.dart';
 const String ANCHOR = 'A';
 const String _TARGET_SELF = 'self';
 
-class HTMLAnchorElement extends Element {
+class HTMLAnchorElement extends Element with StaticDefinedAttributesElement {
   HTMLAnchorElement([BindingContext? context]) : super(context) {
     addEventListener(EVENT_CLICK, _handleClick);
   }
@@ -44,52 +44,71 @@ class HTMLAnchorElement extends Element {
     return WebFNavigationType.navigate;
   }
 
+  static final StaticDefinedBindingPropertyMap _anchorElementProperties = {
+    'href': StaticDefinedBindingProperty<HTMLAnchorElement>(
+        getter: (element) => element.href, setter: (element, value) => element.href = castToType<String>(value)),
+    'target': StaticDefinedBindingProperty<HTMLAnchorElement>(
+        getter: (element) => element.target, setter: (element, value) => element.target = castToType<String>(value)),
+    'rel': StaticDefinedBindingProperty<HTMLAnchorElement>(
+        getter: (element) => element.rel, setter: (element, value) => element.rel = castToType<String>(value)),
+    'type': StaticDefinedBindingProperty<HTMLAnchorElement>(
+        getter: (element) => element.type, setter: (element, value) => element.type = castToType<String>(value)),
+    'protocol': StaticDefinedBindingProperty<HTMLAnchorElement>(
+        getter: (element) => element.protocol,
+        setter: (element, value) => element.protocol = castToType<String>(value)),
+    'host': StaticDefinedBindingProperty<HTMLAnchorElement>(
+        getter: (element) => element.host, setter: (element, value) => element.host = castToType<String>(value)),
+    'hostname': StaticDefinedBindingProperty<HTMLAnchorElement>(
+        getter: (element) => element.hostname,
+        setter: (element, value) => element.hostname = castToType<String>(value)),
+    'port': StaticDefinedBindingProperty<HTMLAnchorElement>(
+        getter: (element) => element.port, setter: (element, value) => element.port = castToType<String>(value)),
+    'pathname': StaticDefinedBindingProperty<HTMLAnchorElement>(
+        getter: (element) => element.pathname,
+        setter: (element, value) => element.pathname = castToType<String>(value)),
+    'search': StaticDefinedBindingProperty<HTMLAnchorElement>(
+        getter: (element) => element.search, setter: (element, value) => element.search = castToType<String>(value)),
+    'hash': StaticDefinedBindingProperty<HTMLAnchorElement>(
+        getter: (element) => element.hash, setter: (element, value) => element.hash = castToType<String>(value)),
+  };
+
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
-    properties['href'] = BindingObjectProperty(getter: () => href, setter: (value) => href = castToType<String>(value));
-    properties['target'] =
-        BindingObjectProperty(getter: () => target, setter: (value) => target = castToType<String>(value));
-    properties['rel'] = BindingObjectProperty(getter: () => rel, setter: (value) => rel = castToType<String>(value));
-    properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
-    properties['protocol'] =
-        BindingObjectProperty(getter: () => protocol, setter: (value) => protocol = castToType<String>(value));
-    properties['host'] = BindingObjectProperty(getter: () => host, setter: (value) => host = castToType<String>(value));
-    properties['hostname'] =
-        BindingObjectProperty(getter: () => hostname, setter: (value) => hostname = castToType<String>(value));
-    properties['port'] = BindingObjectProperty(getter: () => port, setter: (value) => port = castToType<String>(value));
-    properties['pathname'] =
-        BindingObjectProperty(getter: () => pathname, setter: (value) => pathname = castToType<String>(value));
-    properties['search'] =
-        BindingObjectProperty(getter: () => search, setter: (value) => search = castToType<String>(value));
-    properties['hash'] = BindingObjectProperty(getter: () => hash, setter: (value) => hash = castToType<String>(value));
-  }
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _anchorElementProperties];
+
+  static final StaticDefinedElementAttributesMap _anchorStaticAttributeProperties = {
+    'href': StaticDefinedElementAttribute<HTMLAnchorElement>(
+        getter: (element) => element.href,
+        setter: (element, value) => element.href = attributeToProperty<String>(value)),
+    'protocol': StaticDefinedElementAttribute<HTMLAnchorElement>(
+        getter: (element) => element.protocol,
+        setter: (element, value) => element.protocol = attributeToProperty<String>(value)),
+    'host': StaticDefinedElementAttribute<HTMLAnchorElement>(
+        getter: (element) => element.host,
+        setter: (element, value) => element.host = attributeToProperty<String>(value)),
+    'hostname': StaticDefinedElementAttribute<HTMLAnchorElement>(
+        getter: (element) => element.hostname,
+        setter: (element, value) => element.hostname = attributeToProperty<String>(value)),
+    'port': StaticDefinedElementAttribute<HTMLAnchorElement>(
+        getter: (element) => element.port,
+        setter: (element, value) => element.port = attributeToProperty<String>(value)),
+    'pathname': StaticDefinedElementAttribute<HTMLAnchorElement>(
+        getter: (element) => element.pathname,
+        setter: (element, value) => element.pathname = attributeToProperty<String>(value)),
+    'search': StaticDefinedElementAttribute<HTMLAnchorElement>(
+        getter: (element) => element.search,
+        setter: (element, value) => element.search = attributeToProperty<String>(value)),
+    'hash': StaticDefinedElementAttribute<HTMLAnchorElement>(
+        getter: (element) => element.hash,
+        setter: (element, value) => element.hash = attributeToProperty<String>(value)),
+  };
+
+  @override
+  List<StaticDefinedElementAttributesMap> get staticAttributeProperties =>
+      [...super.staticAttributeProperties, _anchorStaticAttributeProperties];
 
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
-    attributes['href'] =
-        ElementAttributeProperty(setter: (value) => href = attributeToProperty<String>(value), getter: () => href);
-    attributes['protocol'] = ElementAttributeProperty(
-        getter: () => protocol, setter: (value) => protocol = attributeToProperty<String>(value));
-    attributes['host'] =
-        ElementAttributeProperty(getter: () => host, setter: (value) => host = attributeToProperty<String>(value));
-    attributes['hostname'] = ElementAttributeProperty(
-        getter: () => hostname, setter: (value) => hostname = attributeToProperty<String>(value));
-    attributes['port'] =
-        ElementAttributeProperty(getter: () => port, setter: (value) => port = attributeToProperty<String>(value));
-    attributes['pathname'] = ElementAttributeProperty(
-        getter: () => pathname, setter: (value) => pathname = attributeToProperty<String>(value));
-    attributes['port'] =
-        ElementAttributeProperty(getter: () => port, setter: (value) => port = attributeToProperty<String>(value));
-    attributes['pathname'] = ElementAttributeProperty(
-        getter: () => pathname, setter: (value) => pathname = attributeToProperty<String>(value));
-    attributes['search'] =
-        ElementAttributeProperty(getter: () => search, setter: (value) => search = attributeToProperty<String>(value));
-    attributes['hash'] = ElementAttributeProperty(
-      getter: () => hash,
-      setter: (value) => hash = attributeToProperty<String>(value)
-    );
   }
 
   // Reference: https://www.w3.org/TR/2011/WD-html5-author-20110809/the-a-element.html
@@ -117,21 +136,25 @@ class HTMLAnchorElement extends Element {
   }
 
   String get target => _DOMString(getAttribute('target'));
+
   set target(String value) {
     internalSetAttribute('target', value);
   }
 
   String get rel => _DOMString(getAttribute('rel'));
+
   set rel(String value) {
     internalSetAttribute('rel', value);
   }
 
   String get type => _DOMString(getAttribute('type'));
+
   set type(String value) {
     internalSetAttribute('type', value);
   }
 
   String get protocol => _DOMString(_resolvedHyperlink?.scheme) + ':';
+
   set protocol(String value) {
     if (_resolvedHyperlink == null) return;
 

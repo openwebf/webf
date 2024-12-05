@@ -24,22 +24,35 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   @override
   get pointer => _pointer;
 
+  static final StaticDefinedSyncBindingObjectMethodMap _computedStyleSyncMethods = {
+    'getPropertyValue': StaticDefinedSyncBindingObjectMethod<ComputedCSSStyleDeclaration>(
+        call: (style, args) => style.getPropertyValue(args[0])),
+    'setProperty': StaticDefinedSyncBindingObjectMethod<ComputedCSSStyleDeclaration>(
+        call: (style, args) => style.setProperty(args[0], args[1])),
+    'removeProperty': StaticDefinedSyncBindingObjectMethod<ComputedCSSStyleDeclaration>(
+        call: (style, args) => style.removeProperty(args[0])),
+    'checkCSSProperty': StaticDefinedSyncBindingObjectMethod<ComputedCSSStyleDeclaration>(
+        call: (style, args) => style.checkCSSProperty(args[0])),
+    'getFullCSSPropertyList': StaticDefinedSyncBindingObjectMethod<ComputedCSSStyleDeclaration>(
+        call: (style, args) => style.getFullCSSPropertyList()),
+  };
+
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _computedStyleSyncMethods];
+
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
     super.initializeMethods(methods);
-    methods['getPropertyValue'] = BindingObjectMethodSync(call: (args) => getPropertyValue(args[0]));
-    methods['setProperty'] = BindingObjectMethodSync(call: (args) => setProperty(args[0], args[1]));
-    methods['removeProperty'] = BindingObjectMethodSync(call: (args) => removeProperty(args[0]));
-    methods['checkCSSProperty'] = BindingObjectMethodSync(call: (args) => checkCSSProperty(args[0]));
-    methods['getFullCSSPropertyList'] = BindingObjectMethodSync(call: (args) => getFullCSSPropertyList());
   }
 
+  static final StaticDefinedBindingPropertyMap _computedStyleProperties = {
+    'cssText': StaticDefinedBindingProperty<ComputedCSSStyleDeclaration>(
+        getter: (style) => style.cssText, setter: (style, value) => style.cssText = value),
+    'length': StaticDefinedBindingProperty<ComputedCSSStyleDeclaration>(getter: (style) => style.length)
+  };
+
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
-    properties['cssText'] = BindingObjectProperty(getter: () => cssText, setter: (value) => cssText = value);
-    properties['length'] = BindingObjectProperty(getter: () => length);
-  }
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _computedStyleProperties];
 
   @override
   String get cssText {
@@ -80,7 +93,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   }
 
   @override
-  void setProperty(String propertyName, String? value, { bool? isImportant, String? baseHref }) {
+  void setProperty(String propertyName, String? value, {bool? isImportant, String? baseHref}) {
     throw UnimplementedError('No Modification Allowed');
   }
 
@@ -131,9 +144,9 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         final value = _valueForPropertyInStyle(CSSPropertyID.BorderTop);
         final ids = [CSSPropertyID.BorderRight, CSSPropertyID.BorderBottom, CSSPropertyID.BorderLeft];
         for (CSSPropertyID propertyID in ids) {
-           if (_valueForPropertyInStyle(propertyID) != value) {
-             return '';
-           }
+          if (_valueForPropertyInStyle(propertyID) != value) {
+            return '';
+          }
         }
         return value;
       case CSSPropertyID.BorderTopColor:
@@ -161,42 +174,55 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BorderLeftWidth:
         return '${style.effectiveBorderLeftWidth.computedValue.cssText()}px';
       case CSSPropertyID.BorderTop:
-        final properties = [CSSPropertyID.BorderTopWidth,
-                            CSSPropertyID.BorderTopStyle,
-                            CSSPropertyID.BorderTopColor];
+        final properties = [CSSPropertyID.BorderTopWidth, CSSPropertyID.BorderTopStyle, CSSPropertyID.BorderTopColor];
         return properties.map((e) => _valueForPropertyInStyle(e)).join(' ');
       case CSSPropertyID.BorderLeft:
-        final properties = [CSSPropertyID.BorderLeftWidth,
-                            CSSPropertyID.BorderLeftStyle,
-                            CSSPropertyID.BorderLeftColor];
+        final properties = [
+          CSSPropertyID.BorderLeftWidth,
+          CSSPropertyID.BorderLeftStyle,
+          CSSPropertyID.BorderLeftColor
+        ];
         return properties.map((e) => _valueForPropertyInStyle(e)).join(' ');
       case CSSPropertyID.BorderRight:
-        final properties = [CSSPropertyID.BorderRightWidth,
-                            CSSPropertyID.BorderRightStyle,
-                            CSSPropertyID.BorderRightColor];
+        final properties = [
+          CSSPropertyID.BorderRightWidth,
+          CSSPropertyID.BorderRightStyle,
+          CSSPropertyID.BorderRightColor
+        ];
         return properties.map((e) => _valueForPropertyInStyle(e)).join(' ');
       case CSSPropertyID.BorderBottom:
-        final properties = [CSSPropertyID.BorderBottomWidth,
-                            CSSPropertyID.BorderBottomStyle,
-                            CSSPropertyID.BorderBottomColor];
+        final properties = [
+          CSSPropertyID.BorderBottomWidth,
+          CSSPropertyID.BorderBottomStyle,
+          CSSPropertyID.BorderBottomColor
+        ];
         return properties.map((e) => _valueForPropertyInStyle(e)).join(' ');
       case CSSPropertyID.BorderColor:
-        return _getCSSPropertyValuesForSidesShorthand([CSSPropertyID.BorderTopColor,
-                                                      CSSPropertyID.BorderRightColor,
-                                                      CSSPropertyID.BorderBottomColor,
-                                                      CSSPropertyID.BorderLeftColor])?.join(' ') ?? '';
+        return _getCSSPropertyValuesForSidesShorthand([
+              CSSPropertyID.BorderTopColor,
+              CSSPropertyID.BorderRightColor,
+              CSSPropertyID.BorderBottomColor,
+              CSSPropertyID.BorderLeftColor
+            ])?.join(' ') ??
+            '';
       case CSSPropertyID.BorderStyle:
-        return _getCSSPropertyValuesForSidesShorthand([CSSPropertyID.BorderTopStyle,
-                                                      CSSPropertyID.BorderRightStyle,
-                                                      CSSPropertyID.BorderBottomStyle,
-                                                      CSSPropertyID.BorderLeftStyle])?.join(' ') ?? '';
+        return _getCSSPropertyValuesForSidesShorthand([
+              CSSPropertyID.BorderTopStyle,
+              CSSPropertyID.BorderRightStyle,
+              CSSPropertyID.BorderBottomStyle,
+              CSSPropertyID.BorderLeftStyle
+            ])?.join(' ') ??
+            '';
       case CSSPropertyID.BorderWidth:
-        return _getCSSPropertyValuesForSidesShorthand([CSSPropertyID.BorderTopWidth,
-                                                      CSSPropertyID.BorderRightWidth,
-                                                      CSSPropertyID.BorderBottomWidth,
-                                                      CSSPropertyID.BorderLeftWidth])?.join(' ') ?? '';
+        return _getCSSPropertyValuesForSidesShorthand([
+              CSSPropertyID.BorderTopWidth,
+              CSSPropertyID.BorderRightWidth,
+              CSSPropertyID.BorderBottomWidth,
+              CSSPropertyID.BorderLeftWidth
+            ])?.join(' ') ??
+            '';
       case CSSPropertyID.BorderTopLeftRadius:
-         return style.borderTopLeftRadius.cssText();
+        return style.borderTopLeftRadius.cssText();
       case CSSPropertyID.BorderTopRightRadius:
         return style.borderTopRightRadius.cssText();
       case CSSPropertyID.BorderBottomLeftRadius:
@@ -233,7 +259,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.LineHeight:
         return style.lineHeight.cssText();
       case CSSPropertyID.FontVariant:
-          break;
+        break;
       case CSSPropertyID.Top:
         return style.top.cssText();
       case CSSPropertyID.Bottom:
@@ -501,12 +527,16 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
 
   String _borderRadiusShorthandValue(RenderStyle style) {
     final showHorizontalBottomLeft = style.borderTopRightRadius.x != style.borderBottomLeftRadius.x;
-    final showHorizontalBottomRight = showHorizontalBottomLeft || (style.borderBottomRightRadius.x != style.borderTopLeftRadius.x);
-    final showHorizontalTopRight = showHorizontalBottomRight || (style.borderTopRightRadius.x != style.borderTopLeftRadius.x);
+    final showHorizontalBottomRight =
+        showHorizontalBottomLeft || (style.borderBottomRightRadius.x != style.borderTopLeftRadius.x);
+    final showHorizontalTopRight =
+        showHorizontalBottomRight || (style.borderTopRightRadius.x != style.borderTopLeftRadius.x);
 
     final showVerticalBottomLeft = style.borderTopRightRadius.y != style.borderBottomLeftRadius.y;
-    final showVerticalBottomRight = showVerticalBottomLeft || (style.borderBottomRightRadius.y != style.borderTopLeftRadius.y);
-    final showVerticalTopRight = showVerticalBottomRight || (style.borderTopRightRadius.y != style.borderTopLeftRadius.y);
+    final showVerticalBottomRight =
+        showVerticalBottomLeft || (style.borderBottomRightRadius.y != style.borderTopLeftRadius.y);
+    final showVerticalTopRight =
+        showVerticalBottomRight || (style.borderTopRightRadius.y != style.borderTopLeftRadius.y);
 
     final topLeftRadius = style.borderTopLeftRadius;
     final topRightRadius = style.borderTopRightRadius;
@@ -543,22 +573,26 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
 
   // top -> right -> bottom -> left
   List<String>? _getCSSPropertyValuesForSidesShorthand(List<CSSPropertyID> propertyIDs) {
-     assert(propertyIDs.length == 4, 'The sides dose not include top | right | bottom | left');
-     final top = _valueForPropertyInStyle(propertyIDs[0]);
-     final right = _valueForPropertyInStyle(propertyIDs[1]);
-     final bottom = _valueForPropertyInStyle(propertyIDs[2]);
-     final left = _valueForPropertyInStyle(propertyIDs[3]);
-     return _compressSlidesValue<String>([top, right, bottom, left]);
+    assert(propertyIDs.length == 4, 'The sides dose not include top | right | bottom | left');
+    final top = _valueForPropertyInStyle(propertyIDs[0]);
+    final right = _valueForPropertyInStyle(propertyIDs[1]);
+    final bottom = _valueForPropertyInStyle(propertyIDs[2]);
+    final left = _valueForPropertyInStyle(propertyIDs[3]);
+    return _compressSlidesValue<String>([top, right, bottom, left]);
   }
 
   String _getBackgroundShorthandValue() {
-    List<CSSPropertyID> beforeSlashSeparator = [CSSPropertyID.BackgroundImage,
-                                                CSSPropertyID.BackgroundRepeat,
-                                                CSSPropertyID.BackgroundAttachment,
-                                                CSSPropertyID.BackgroundPosition];
-    List<CSSPropertyID> afterSlashSeparator = [CSSPropertyID.BackgroundSize,
-                                              CSSPropertyID.BackgroundOrigin,
-                                              CSSPropertyID.BackgroundClip];
+    List<CSSPropertyID> beforeSlashSeparator = [
+      CSSPropertyID.BackgroundImage,
+      CSSPropertyID.BackgroundRepeat,
+      CSSPropertyID.BackgroundAttachment,
+      CSSPropertyID.BackgroundPosition
+    ];
+    List<CSSPropertyID> afterSlashSeparator = [
+      CSSPropertyID.BackgroundSize,
+      CSSPropertyID.BackgroundOrigin,
+      CSSPropertyID.BackgroundClip
+    ];
     final backgroundColor = _valueForPropertyInStyle(CSSPropertyID.BackgroundColor);
     final beforeValue = beforeSlashSeparator.map((e) => _valueForPropertyInStyle(e)).join(' ');
     final afterValue = afterSlashSeparator.map((e) => _valueForPropertyInStyle(e)).join(' ');
@@ -600,7 +634,7 @@ List<T>? _compressSlidesValue<T>(List<T> values) {
 
 extension CSSEdgeInsetsText on EdgeInsets {
   String cssText() {
-    return _compressSlidesValue<double>([top,right,bottom,left])?.map((e) => '${e}px').join(' ') ?? '0px';
+    return _compressSlidesValue<double>([top, right, bottom, left])?.map((e) => '${e}px').join(' ') ?? '0px';
   }
 }
 
@@ -625,7 +659,6 @@ extension CSSFontWeightText on FontWeight {
     }[index]!;
   }
 }
-
 
 extension DoubleText on double {
   String cssText() {
