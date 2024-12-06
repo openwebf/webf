@@ -664,12 +664,27 @@ list(APPEND BRIDGE_LINK_LIBS modb)
 list(APPEND BRIDGE_SOURCE
   # Core sources
   webf_bridge.cc
-  core/api/api.cc
   core/executing_context.cc
   core/script_forbidden_scope.cc
   core/script_state.cc
   core/page.cc
   core/dart_methods.cc
+  core/api/exception_state.cc
+  core/api/event_target.cc
+  core/api/node.cc
+  core/api/executing_context.cc
+  core/api/container_node.cc
+  core/api/document.cc
+  core/api/element.cc
+  core/api/html_element.cc
+  core/api/html_image_element.cc
+  core/api/html_canvas_element.cc
+  core/api/document_fragment.cc
+  core/api/window.cc
+  core/api/text.cc
+  core/api/comment.cc
+  core/api/character_data.cc
+  core/api/script_value_ref.cc
   core/dart_isolate_context.cc
   core/dart_context_data.cc
   core/executing_context_data.cc
@@ -739,9 +754,11 @@ list(APPEND BRIDGE_SOURCE
 #  core/events/ui_event.cc
 #  core/events/focus_event.cc
 #  core/events/gesture_event.cc
+#  core/events/hashchange_event.cc
 #  core/events/input_event.cc
 #  core/events/touch_event.cc
 #  core/events/mouse_event.cc
+#  core/events/hybrid_router_change_event.cc
 #  core/events/pop_state_event.cc
 #  core/events/pointer_event.cc
 #  core/events/transition_event.cc
@@ -769,12 +786,18 @@ list(APPEND BRIDGE_SOURCE
 #  core/html/canvas/canvas_rendering_context_2d.cc
 #  core/html/canvas/canvas_gradient.cc
 #  core/html/canvas/canvas_pattern.cc
+#  core/html/canvas/path_2d.cc
 #  core/geometry/dom_matrix.cc
-#  core/geometry/dom_matrix_readonly.cc
+#  core/geometry/dom_matrix_read_only.cc
+#  core/geometry/dom_point.cc
+#  core/geometry/dom_point_read_only.cc
 #  core/html/forms/html_button_element.cc
 #  core/html/forms/html_input_element.cc
 #  core/html/forms/html_form_element.cc
 #  core/html/forms/html_textarea_element.cc
+
+#  core/native/native_loader.cc
+#  core/native/script_value_ref.cc
 
   # SVG files
 #  core/svg/svg_element.cc
@@ -782,7 +805,7 @@ list(APPEND BRIDGE_SOURCE
 #  core/svg/svg_geometry_element.cc
 #  core/svg/svg_text_content_element.cc
 #  core/svg/svg_text_positioning_element.cc
-#
+
 #  core/svg/svg_svg_element.cc
 #  core/svg/svg_path_element.cc
 #  core/svg/svg_rect_element.cc
