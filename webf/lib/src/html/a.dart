@@ -8,7 +8,7 @@ import 'package:webf/webf.dart';
 const String ANCHOR = 'A';
 const String _TARGET_SELF = 'self';
 
-class HTMLAnchorElement extends Element with StaticDefinedAttributesElement {
+class HTMLAnchorElement extends Element {
   HTMLAnchorElement([BindingContext? context]) : super(context) {
     addEventListener(EVENT_CLICK, _handleClick);
   }
@@ -83,40 +83,31 @@ class HTMLAnchorElement extends Element with StaticDefinedAttributesElement {
   @override
   List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _anchorElementProperties];
 
-  static final StaticDefinedElementAttributesMap _anchorStaticAttributeProperties = {
-    'href': StaticDefinedElementAttribute(
-        getter: (element) => castToType<HTMLAnchorElement>(element).href,
-        setter: (element, value) => castToType<HTMLAnchorElement>(element).href = attributeToProperty<String>(value)),
-    'protocol': StaticDefinedElementAttribute(
-        getter: (element) => castToType<HTMLAnchorElement>(element).protocol,
-        setter: (element, value) => castToType<HTMLAnchorElement>(element).protocol = attributeToProperty<String>(value)),
-    'host': StaticDefinedElementAttribute(
-        getter: (element) => castToType<HTMLAnchorElement>(element).host,
-        setter: (element, value) => castToType<HTMLAnchorElement>(element).host = attributeToProperty<String>(value)),
-    'hostname': StaticDefinedElementAttribute(
-        getter: (element) => castToType<HTMLAnchorElement>(element).hostname,
-        setter: (element, value) => castToType<HTMLAnchorElement>(element).hostname = attributeToProperty<String>(value)),
-    'port': StaticDefinedElementAttribute(
-        getter: (element) => castToType<HTMLAnchorElement>(element).port,
-        setter: (element, value) => castToType<HTMLAnchorElement>(element).port = attributeToProperty<String>(value)),
-    'pathname': StaticDefinedElementAttribute(
-        getter: (element) => castToType<HTMLAnchorElement>(element).pathname,
-        setter: (element, value) => castToType<HTMLAnchorElement>(element).pathname = attributeToProperty<String>(value)),
-    'search': StaticDefinedElementAttribute(
-        getter: (element) => castToType<HTMLAnchorElement>(element).search,
-        setter: (element, value) => castToType<HTMLAnchorElement>(element).search = attributeToProperty<String>(value)),
-    'hash': StaticDefinedElementAttribute(
-        getter: (element) => castToType<HTMLAnchorElement>(element).hash,
-        setter: (element, value) => castToType<HTMLAnchorElement>(element).hash = attributeToProperty<String>(value)),
-  };
-
-  @override
-  List<StaticDefinedElementAttributesMap> get staticAttributeProperties =>
-      [...super.staticAttributeProperties, _anchorStaticAttributeProperties];
-
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
+    attributes['href'] =
+        ElementAttributeProperty(setter: (value) => href = attributeToProperty<String>(value), getter: () => href);
+    attributes['protocol'] = ElementAttributeProperty(
+        getter: () => protocol, setter: (value) => protocol = attributeToProperty<String>(value));
+    attributes['host'] =
+        ElementAttributeProperty(getter: () => host, setter: (value) => host = attributeToProperty<String>(value));
+    attributes['hostname'] = ElementAttributeProperty(
+        getter: () => hostname, setter: (value) => hostname = attributeToProperty<String>(value));
+    attributes['port'] =
+        ElementAttributeProperty(getter: () => port, setter: (value) => port = attributeToProperty<String>(value));
+    attributes['pathname'] = ElementAttributeProperty(
+        getter: () => pathname, setter: (value) => pathname = attributeToProperty<String>(value));
+    attributes['port'] =
+        ElementAttributeProperty(getter: () => port, setter: (value) => port = attributeToProperty<String>(value));
+    attributes['pathname'] = ElementAttributeProperty(
+        getter: () => pathname, setter: (value) => pathname = attributeToProperty<String>(value));
+    attributes['search'] =
+        ElementAttributeProperty(getter: () => search, setter: (value) => search = attributeToProperty<String>(value));
+    attributes['hash'] = ElementAttributeProperty(
+        getter: () => hash,
+        setter: (value) => hash = attributeToProperty<String>(value)
+    );
   }
 
   // Reference: https://www.w3.org/TR/2011/WD-html5-author-20110809/the-a-element.html

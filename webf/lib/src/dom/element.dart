@@ -107,24 +107,6 @@ class ElementAttributeProperty {
   final ElementAttributeDeleter? deleter;
 }
 
-typedef StaticDefinedElementAttributeGetter = String? Function(Element);
-typedef StaticDefinedElementAttributeSetter = void Function(Element, String value);
-typedef StaticDefinedElementAttributeDeleter = void Function(Element);
-
-class StaticDefinedElementAttribute {
-  StaticDefinedElementAttribute({this.getter, this.setter, this.deleter});
-
-  final StaticDefinedElementAttributeGetter? getter;
-  final StaticDefinedElementAttributeSetter? setter;
-  final StaticDefinedElementAttributeDeleter? deleter;
-}
-
-typedef StaticDefinedElementAttributesMap = Map<String, StaticDefinedElementAttribute>;
-
-mixin StaticDefinedAttributesElement on Element {
-  List<StaticDefinedElementAttributesMap> get staticAttributeProperties => [];
-}
-
 abstract class Element extends ContainerNode with ElementBase, ElementEventMixin, ElementOverflowMixin {
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = UNKNOWN;
@@ -1419,17 +1401,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @mustCallSuper
   String? getAttribute(String qualifiedName) {
-    if (this is StaticDefinedAttributesElement) {
-      StaticDefinedElementAttributesMap? attributesMap =
-          (this as StaticDefinedAttributesElement).staticAttributeProperties.firstWhereOrNull((map) {
-        return map.containsKey(qualifiedName);
-      });
-
-      if (attributesMap != null && attributesMap[qualifiedName]!.getter != null) {
-        return attributesMap[qualifiedName]?.getter!(this);
-      }
-    }
-
     ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
 
     if (propertyHandler != null && propertyHandler.getter != null) {
@@ -1441,17 +1412,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @mustCallSuper
   void setAttribute(String qualifiedName, String value) {
-    if (this is StaticDefinedAttributesElement) {
-      StaticDefinedElementAttributesMap? attributesMap =
-          (this as StaticDefinedAttributesElement).staticAttributeProperties.firstWhereOrNull((map) {
-        return map.containsKey(qualifiedName);
-      });
-
-      if (attributesMap != null && attributesMap[qualifiedName]!.setter != null) {
-        return attributesMap[qualifiedName]?.setter!(this, value);
-      }
-    }
-
     ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
     if (propertyHandler != null && propertyHandler.setter != null) {
       propertyHandler.setter!(value);
@@ -1471,17 +1431,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @mustCallSuper
   void removeAttribute(String qualifiedName) {
-    if (this is StaticDefinedAttributesElement) {
-      StaticDefinedElementAttributesMap? attributesMap =
-          (this as StaticDefinedAttributesElement).staticAttributeProperties.firstWhereOrNull((map) {
-        return map.containsKey(qualifiedName);
-      });
-
-      if (attributesMap != null && attributesMap[qualifiedName]!.deleter != null) {
-        return attributesMap[qualifiedName]?.deleter!(this);
-      }
-    }
-
     ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
 
     if (propertyHandler != null && propertyHandler.deleter != null) {

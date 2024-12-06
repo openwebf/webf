@@ -47,25 +47,19 @@ class BindingObjectProperty {
   final BindingPropertySetter? setter;
 }
 
-abstract class BindingObjectMethod {
-}
+abstract class BindingObjectMethod {}
 
 class BindingObjectMethodSync extends BindingObjectMethod {
-  BindingObjectMethodSync({
-    required this.call
-  });
+  BindingObjectMethodSync({required this.call});
 
   final BindingMethodCallback call;
 }
 
 class AsyncBindingObjectMethod extends BindingObjectMethod {
-  AsyncBindingObjectMethod({
-    required this.call
-  });
+  AsyncBindingObjectMethod({required this.call});
 
   final AsyncBindingMethodCallback call;
 }
-
 
 abstract class BindingObject<T> extends Iterable<T> {
   static BindingObjectOperation? bind;
@@ -106,7 +100,7 @@ abstract class BindingObject<T> extends Iterable<T> {
 }
 
 abstract class StaticBindingObject extends BindingObject {
-  StaticBindingObject(BindingContext context): super(context) {
+  StaticBindingObject(BindingContext context) : super(context) {
     context.pointer.ref.extra = buildExtraNativeData();
   }
 
@@ -117,7 +111,6 @@ abstract class StaticBindingObject extends BindingObject {
     malloc.free(pointer!.ref.extra);
   }
 }
-
 
 typedef _StaticDefinedBindingPropertyGetter = dynamic Function(BindingObject);
 // ignore: avoid_annotating_with_dynamic
@@ -131,45 +124,65 @@ class StaticDefinedBindingProperty {
 }
 
 typedef _StaticDefinedSyncBindingMethodCallback = dynamic Function(BindingObject, List args);
-typedef _StaticDefinedAsyncBindingMethodCallback= Future<dynamic> Function(BindingObject, List args);
+typedef _StaticDefinedAsyncBindingMethodCallback = Future<dynamic> Function(BindingObject, List args);
 
 class StaticDefinedSyncBindingObjectMethod {
-  StaticDefinedSyncBindingObjectMethod({
-    required this.call
-  });
+  StaticDefinedSyncBindingObjectMethod({required this.call});
 
   final _StaticDefinedSyncBindingMethodCallback call;
 }
 
 class StaticDefinedAsyncBindingObjectMethod {
-  StaticDefinedAsyncBindingObjectMethod({
-    required this.call
-  });
+  StaticDefinedAsyncBindingObjectMethod({required this.call});
 
   final _StaticDefinedAsyncBindingMethodCallback call;
 }
 
 typedef StaticDefinedBindingPropertyMap = Map<String, StaticDefinedBindingProperty>;
-// typedef StaticDefinedBindingAttributeMap = Map<String, >
 typedef StaticDefinedSyncBindingObjectMethodMap = Map<String, StaticDefinedSyncBindingObjectMethod>;
 typedef StaticDefinedAsyncBindingObjectMethodMap = Map<String, StaticDefinedAsyncBindingObjectMethod>;
 
-mixin StaticDefinedBindingObject<T> on BindingObject<T>{
+mixin StaticDefinedBindingObject<T> on BindingObject<T> {
   List<StaticDefinedBindingPropertyMap> get properties => [];
+
+  StaticDefinedBindingProperty? getStaticDefinedProperty(String key) {
+    StaticDefinedBindingPropertyMap? targetPropertyMap = properties.firstWhereOrNull((map) {
+      return map.containsKey(key);
+    });
+    return targetPropertyMap?[key];
+  }
+
   List<StaticDefinedSyncBindingObjectMethodMap> get methods => [];
+
+  StaticDefinedSyncBindingObjectMethod? getStaticDefinedSyncMethod(String method) {
+    StaticDefinedSyncBindingObjectMethodMap? targetMap = methods.firstWhereOrNull((map) {
+      return map.containsKey(method);
+    });
+    return targetMap?[method];
+  }
+
   List<StaticDefinedAsyncBindingObjectMethodMap> get asyncMethods => [];
+
+  StaticDefinedAsyncBindingObjectMethod? getStaticDefinedAsyncMethod(String method) {
+    StaticDefinedAsyncBindingObjectMethodMap? targetMap = asyncMethods.firstWhereOrNull((map) {
+      return map.containsKey(method);
+    });
+    return targetMap?[method];
+  }
 }
 
 abstract class DynamicBindingObject<T> extends BindingObject<T> {
-  DynamicBindingObject([BindingContext? context]): super(context) {
+  DynamicBindingObject([BindingContext? context]) : super(context) {
     initializeProperties(_dynamicProperties);
     initializeMethods(_dynamicMethods);
   }
 
   final Map<String, BindingObjectProperty> _dynamicProperties = {};
+
   Map<String, BindingObjectProperty> get dynamicProperties => _dynamicProperties;
 
   final Map<String, BindingObjectMethod> _dynamicMethods = {};
+
   Map<String, BindingObjectMethod> get dynamicMethods => _dynamicMethods;
 
   @mustCallSuper
@@ -204,7 +217,23 @@ abstract class DynamicBindingObject<T> extends BindingObject<T> {
   }
 }
 
-dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp }) {
+dynamic _getBindingObjectProperty(BindingObject bindingObject, String key) {
+  if (bindingObject is StaticDefinedBindingObject) {
+    StaticDefinedBindingProperty? property = bindingObject.getStaticDefinedProperty(key);
+    if (property != null) {
+      return property.getter(bindingObject);
+    }
+  }
+
+  BindingObjectProperty? property = (bindingObject as DynamicBindingObject)._dynamicProperties[key];
+  if (property != null) {
+    return property.getter();
+  }
+
+  return null;
+}
+
+dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args, {BindingOpItem? profileOp}) {
   assert(args.length == 1);
 
   Stopwatch? stopwatch;
@@ -215,26 +244,11 @@ dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args, { Bin
     WebFProfiler.instance.startTrackBindingSteps(profileOp, 'getterBindingCall');
   }
 
-  if (bindingObject is StaticDefinedBindingObject) {
-    StaticDefinedBindingObject staticDefinedBindingObject = bindingObject;
-    StaticDefinedBindingPropertyMap? targetPropertyMap =
-      staticDefinedBindingObject.properties.firstWhereOrNull((map) { return map.containsKey(key); });
-    if (targetPropertyMap != null) {
-      if (enableWebFCommandLog) {
-        stopwatch = Stopwatch()..start();
-      }
-      result = targetPropertyMap[key]!.getter(bindingObject);
-    }
-  } else {
-    BindingObjectProperty? property = (bindingObject as DynamicBindingObject)._dynamicProperties[args[0]];
-    if (property != null) {
-      if (enableWebFCommandLog) {
-        stopwatch = Stopwatch()..start();
-      }
-
-      result = property.getter();
-    }
+  if (enableWebFCommandLog) {
+    stopwatch = Stopwatch()..start();
   }
+
+  result = _getBindingObjectProperty(bindingObject, key);
 
   if (enableWebFCommandLog && stopwatch != null) {
     print('$bindingObject getBindingProperty key: $key result: $result time: ${stopwatch.elapsedMicroseconds}us');
@@ -247,7 +261,28 @@ dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args, { Bin
   return result;
 }
 
-dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp }) {
+dynamic _setBindingObjectProperty(BindingObject bindingObject, String key, value) {
+  dynamic originalValue;
+
+  if (bindingObject is StaticDefinedBindingObject) {
+    StaticDefinedBindingProperty? property = bindingObject.getStaticDefinedProperty(key);
+    if (property != null && property.setter != null) {
+      originalValue = property.getter(bindingObject);
+      property.setter!(bindingObject, value);
+      return originalValue;
+    }
+  }
+
+  BindingObjectProperty? property = (bindingObject as DynamicBindingObject)._dynamicProperties[key];
+  if (property != null && property.setter != null) {
+    originalValue = property.getter();
+    property.setter!(value);
+  }
+
+  return originalValue;
+}
+
+dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, {BindingOpItem? profileOp}) {
   assert(args.length == 2);
   if (enableWebFCommandLog) {
     print('$bindingObject setBindingProperty key: ${args[0]} value: ${args[1]}');
@@ -259,23 +294,8 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, { Bin
 
   String key = args[0];
   dynamic value = args[1];
-  dynamic originalValue;
 
-  if (bindingObject is StaticDefinedBindingObject) {
-    StaticDefinedBindingObject staticDefinedBindingObject = bindingObject;
-    StaticDefinedBindingPropertyMap? targetPropertyMap =
-      staticDefinedBindingObject.properties.firstWhereOrNull((map) { return map.containsKey(key); });
-    if (targetPropertyMap != null && targetPropertyMap[key]!.setter != null) {
-      targetPropertyMap[key]!.setter!(bindingObject, value);
-    }
-  } else {
-    BindingObjectProperty? property = (bindingObject as DynamicBindingObject)._dynamicProperties[key];
-    if (property != null && property.setter != null) {
-      originalValue = property.getter();
-      property.setter!(value);
-    }
-  }
-
+  dynamic originalValue = _setBindingObjectProperty(bindingObject, key, value);
   if (bindingObject is WidgetElement) {
     bool shouldElementRebuild = bindingObject.shouldElementRebuild(key, originalValue, value);
     if (shouldElementRebuild) {
@@ -289,6 +309,22 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, { Bin
   }
 
   return true;
+}
+
+dynamic _callBindingObjectMethods(BindingObject bindingObject, String method, List<dynamic> args) {
+  if (bindingObject is StaticDefinedBindingObject) {
+    StaticDefinedSyncBindingObjectMethod? syncMethod = bindingObject.getStaticDefinedSyncMethod(method);
+    StaticDefinedAsyncBindingObjectMethod? asyncMethod = syncMethod != null ? bindingObject.getStaticDefinedAsyncMethod(method) : null;
+    if (syncMethod != null) {
+      return syncMethod.call(bindingObject, args);
+    }
+
+    if (asyncMethod != null) {
+      return asyncMethod.call(bindingObject, args);
+    }
+  }
+
+  return (bindingObject as DynamicBindingObject)._invokeBindingMethod(method, args);
 }
 
 Future<void> _invokeBindingMethodFromNativeImpl(double contextId, int profileId, Pointer<NativeBindingObject> nativeBindingObject,
@@ -337,14 +373,16 @@ Future<void> _invokeBindingMethodFromNativeImpl(double contextId, int profileId,
       if (enableWebFCommandLog) {
         stopwatch = Stopwatch()..start();
       }
-      result = (bindingObject as DynamicBindingObject)._invokeBindingMethod(method, values);
+
+      result = _callBindingObjectMethods(bindingObject, method, values);
 
       if (result is Future) {
         result = await result;
       }
 
       if (enableWebFCommandLog) {
-        print('$bindingObject invokeBindingMethod method: $method args: $values result: $result time: ${stopwatch!.elapsedMicroseconds}us');
+        print(
+            '$bindingObject invokeBindingMethod method: $method args: $values result: $result time: ${stopwatch!.elapsedMicroseconds}us');
       }
     }
   } catch (e, stack) {
@@ -367,14 +405,19 @@ Future<void> _invokeBindingMethodFromNativeImpl(double contextId, int profileId,
 }
 
 // This function receive calling from binding side.
-void invokeBindingMethodFromNativeSync(double contextId, int profileId, Pointer<NativeBindingObject> nativeBindingObject,
-    Pointer<NativeValue> returnValue, Pointer<NativeValue> nativeMethod, int argc, Pointer<NativeValue> argv) {
+void invokeBindingMethodFromNativeSync(
+    double contextId,
+    int profileId,
+    Pointer<NativeBindingObject> nativeBindingObject,
+    Pointer<NativeValue> returnValue,
+    Pointer<NativeValue> nativeMethod,
+    int argc,
+    Pointer<NativeValue> argv) {
   _invokeBindingMethodFromNativeImpl(contextId, profileId, nativeBindingObject, returnValue, nativeMethod, argc, argv);
 }
 
-Future<void> asyncInvokeBindingMethodFromNativeImpl(WebFViewController view, Pointer<BindingObjectAsyncCallContext> asyncCallContext,
-    Pointer<NativeBindingObject> nativeBindingObject) async {
-
+Future<void> asyncInvokeBindingMethodFromNativeImpl(WebFViewController view,
+    Pointer<BindingObjectAsyncCallContext> asyncCallContext, Pointer<NativeBindingObject> nativeBindingObject) async {
   Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
   DartBindingObjectAsyncCallCallback f = asyncCallContext.ref.callback.asFunction(isLeaf: true);
 
