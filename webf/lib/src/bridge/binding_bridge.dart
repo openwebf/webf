@@ -21,7 +21,6 @@ import 'package:webf/src/html/canvas/canvas_path_2d.dart';
 enum BindingMethodCallOperations {
   GetProperty,
   SetProperty,
-  GetAllPropertyNames
 }
 
 typedef NativeAsyncAnonymousFunctionCallback = Void Function(
@@ -34,7 +33,6 @@ typedef BindingCallFunc = dynamic Function(BindingObject bindingObject, List<dyn
 List<BindingCallFunc> bindingCallMethodDispatchTable = [
   getterBindingCall,
   setterBindingCall,
-  getPropertyNamesBindingCall
 ];
 
 // Dispatch the event to the binding side.

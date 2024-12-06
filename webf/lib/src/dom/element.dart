@@ -107,16 +107,16 @@ class ElementAttributeProperty {
   final ElementAttributeDeleter? deleter;
 }
 
-typedef StaticDefinedElementAttributeGetter<T extends Element> = String? Function(T);
-typedef StaticDefinedElementAttributeSetter<T extends Element> = void Function(T, String value);
-typedef StaticDefinedElementAttributeDeleter<T extends Element> = void Function(T);
+typedef StaticDefinedElementAttributeGetter = String? Function(Element);
+typedef StaticDefinedElementAttributeSetter = void Function(Element, String value);
+typedef StaticDefinedElementAttributeDeleter = void Function(Element);
 
-class StaticDefinedElementAttribute<T extends Element> {
+class StaticDefinedElementAttribute {
   StaticDefinedElementAttribute({this.getter, this.setter, this.deleter});
 
-  final StaticDefinedElementAttributeGetter<T>? getter;
-  final StaticDefinedElementAttributeSetter<T>? setter;
-  final StaticDefinedElementAttributeDeleter<T>? deleter;
+  final StaticDefinedElementAttributeGetter? getter;
+  final StaticDefinedElementAttributeSetter? setter;
+  final StaticDefinedElementAttributeDeleter? deleter;
 }
 
 typedef StaticDefinedElementAttributesMap = Map<String, StaticDefinedElementAttribute>;
@@ -312,31 +312,32 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   // https://www.w3.org/TR/cssom-view-1/#extensions-to-the-htmlelement-interface
   // https://www.w3.org/TR/cssom-view-1/#extension-to-the-element-interface
   static final StaticDefinedBindingPropertyMap _elementProperties = {
-    'offsetTop': StaticDefinedBindingProperty<Element>(getter: (element) => element.offsetTop),
-    'offsetLeft': StaticDefinedBindingProperty<Element>(getter: (element) => element.offsetLeft),
-    'offsetWidth': StaticDefinedBindingProperty<Element>(getter: (element) => element.offsetWidth),
-    'offsetHeight': StaticDefinedBindingProperty<Element>(getter: (element) => element.offsetHeight),
-    'scrollTop': StaticDefinedBindingProperty<Element>(
-        getter: (element) => element.scrollTop,
-        setter: (element, value) => element.scrollTop = castToType<double>(value)),
-    'scrollLeft': StaticDefinedBindingProperty<Element>(
-        getter: (element) => element.scrollLeft,
-        setter: (element, value) => element.scrollLeft = castToType<double>(value)),
-    'scrollWidth': StaticDefinedBindingProperty<Element>(
-      getter: (element) => element.scrollWidth,
+    'offsetTop': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).offsetTop),
+    'offsetLeft': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).offsetLeft),
+    'offsetWidth': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).offsetWidth),
+    'offsetHeight': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).offsetHeight),
+    'scrollTop': StaticDefinedBindingProperty(
+        getter: (element) => castToType<Element>(element).scrollTop,
+        setter: (element, value) => castToType<Element>(element).scrollTop = castToType<double>(value)),
+    'scrollLeft': StaticDefinedBindingProperty(
+        getter: (element) => castToType<Element>(element).scrollLeft,
+        setter: (element, value) => castToType<Element>(element).scrollLeft = castToType<double>(value)),
+    'scrollWidth': StaticDefinedBindingProperty(
+      getter: (element) => castToType<Element>(element).scrollWidth,
     ),
-    'scrollHeight': StaticDefinedBindingProperty<Element>(getter: (element) => element.scrollHeight),
-    'clientTop': StaticDefinedBindingProperty<Element>(getter: (element) => element.clientTop),
-    'clientLeft': StaticDefinedBindingProperty<Element>(getter: (element) => element.clientLeft),
-    'clientWidth': StaticDefinedBindingProperty<Element>(getter: (element) => element.clientWidth),
-    'clientHeight': StaticDefinedBindingProperty<Element>(getter: (element) => element.clientHeight),
-    'id': StaticDefinedBindingProperty<Element>(
-        getter: (element) => element.id, setter: (element, value) => element.id = castToType<String>(value)),
-    'classList': StaticDefinedBindingProperty<Element>(getter: (element) => element.classList),
-    'className': StaticDefinedBindingProperty<Element>(
-        getter: (element) => element.className,
-        setter: (element, value) => element.className = castToType<String>(value)),
-    'dir': StaticDefinedBindingProperty<Element>(getter: (element) => element.dir),
+    'scrollHeight': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).scrollHeight),
+    'clientTop': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).clientTop),
+    'clientLeft': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).clientLeft),
+    'clientWidth': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).clientWidth),
+    'clientHeight': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).clientHeight),
+    'id': StaticDefinedBindingProperty(
+        getter: (element) => castToType<Element>(element).id,
+        setter: (element, value) => castToType<Element>(element).id = castToType<String>(value)),
+    'classList': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).classList),
+    'className': StaticDefinedBindingProperty(
+        getter: (element) => castToType<Element>(element).className,
+        setter: (element, value) => castToType<Element>(element).className = castToType<String>(value)),
+    'dir': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).dir),
   };
 
   @override
@@ -347,26 +348,31 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   }
 
   static final StaticDefinedSyncBindingObjectMethodMap _elementSyncMethods = {
-    'getBoundingClientRect':
-        StaticDefinedSyncBindingObjectMethod<Element>(call: (element, _) => element.getBoundingClientRect()),
-    'getClientRects': StaticDefinedSyncBindingObjectMethod<Element>(call: (element, _) => element.getClientRects()),
-    'scroll': StaticDefinedSyncBindingObjectMethod<Element>(
-        call: (element, args) => element.scroll(castToType<double>(args[0]), castToType<double>(args[1]))),
-    'scrollBy': StaticDefinedSyncBindingObjectMethod<Element>(
-        call: (element, args) => element.scrollBy(castToType<double>(args[0]), castToType<double>(args[1]))),
-    'scrollTo': StaticDefinedSyncBindingObjectMethod<Element>(
-        call: (element, args) => element.scrollTo(castToType<double>(args[0]), castToType<double>(args[1]))),
-    'click': StaticDefinedSyncBindingObjectMethod<Element>(call: (element, _) => element.click()),
-    'getElementsByClassName':
-        StaticDefinedSyncBindingObjectMethod<Element>(call: (element, args) => element.getElementsByClassName(args)),
-    'getElementsByTagName':
-        StaticDefinedSyncBindingObjectMethod<Element>(call: (element, args) => element.getElementsByTagName(args)),
-    'querySelectorAll':
-        StaticDefinedSyncBindingObjectMethod<Element>(call: (element, args) => element.querySelectorAll(args)),
+    'getBoundingClientRect': StaticDefinedSyncBindingObjectMethod(
+        call: (element, _) => castToType<Element>(element).getBoundingClientRect()),
+    'getClientRects': StaticDefinedSyncBindingObjectMethod(call: (element, _) => castToType<Element>(element).getClientRects()),
+    'scroll': StaticDefinedSyncBindingObjectMethod(
+        call: (element, args) =>
+            castToType<Element>(element).scroll(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'scrollBy': StaticDefinedSyncBindingObjectMethod(
+        call: (element, args) =>
+            castToType<Element>(element).scrollBy(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'scrollTo': StaticDefinedSyncBindingObjectMethod(
+        call: (element, args) =>
+            castToType<Element>(element).scrollTo(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'click': StaticDefinedSyncBindingObjectMethod(call: (element, _) => castToType<Element>(element).click()),
+    'getElementsByClassName': StaticDefinedSyncBindingObjectMethod(
+        call: (element, args) => castToType<Element>(element).getElementsByClassName(args)),
+    'getElementsByTagName': StaticDefinedSyncBindingObjectMethod(
+        call: (element, args) => castToType<Element>(element).getElementsByTagName(args)),
+    'querySelectorAll': StaticDefinedSyncBindingObjectMethod(
+        call: (element, args) => castToType<Element>(element).querySelectorAll(args)),
     'querySelector':
-        StaticDefinedSyncBindingObjectMethod<Element>(call: (element, args) => element.querySelector(args)),
-    'matches': StaticDefinedSyncBindingObjectMethod<Element>(call: (element, args) => element.matches(args)),
-    'closest': StaticDefinedSyncBindingObjectMethod<Element>(call: (element, args) => element.closest(args)),
+        StaticDefinedSyncBindingObjectMethod(call: (element, args) => castToType<Element>(element).querySelector(args)),
+    'matches':
+        StaticDefinedSyncBindingObjectMethod(call: (element, args) => castToType<Element>(element).matches(args)),
+    'closest':
+        StaticDefinedSyncBindingObjectMethod(call: (element, args) => castToType<Element>(element).closest(args)),
   };
 
   @override
@@ -1467,7 +1473,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   void removeAttribute(String qualifiedName) {
     if (this is StaticDefinedAttributesElement) {
       StaticDefinedElementAttributesMap? attributesMap =
-      (this as StaticDefinedAttributesElement).staticAttributeProperties.firstWhereOrNull((map) {
+          (this as StaticDefinedAttributesElement).staticAttributeProperties.firstWhereOrNull((map) {
         return map.containsKey(qualifiedName);
       });
 

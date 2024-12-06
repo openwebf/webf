@@ -28,31 +28,31 @@ class Window extends EventTarget {
   EventTarget? get parentEventTarget => null;
 
   static final StaticDefinedSyncBindingObjectMethodMap _syncWindowMethods = {
-    'scroll': StaticDefinedSyncBindingObjectMethod<Window>(
-        call: (window, args) => window.scrollTo(castToType<double>(args[0]), castToType<double>(args[1]))),
-    'scrollTo': StaticDefinedSyncBindingObjectMethod<Window>(
-        call: (window, args) => window.scrollTo(castToType<double>(args[0]), castToType<double>(args[1]))),
-    'scrollBy': StaticDefinedSyncBindingObjectMethod<Window>(
-        call: (window, args) => window.scrollBy(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'scroll': StaticDefinedSyncBindingObjectMethod(
+        call: (window, args) => castToType<Window>(window).scrollTo(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'scrollTo': StaticDefinedSyncBindingObjectMethod(
+        call: (window, args) => castToType<Window>(window).scrollTo(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'scrollBy': StaticDefinedSyncBindingObjectMethod(
+        call: (window, args) => castToType<Window>(window).scrollBy(castToType<double>(args[0]), castToType<double>(args[1]))),
     'open':
-        StaticDefinedSyncBindingObjectMethod<Window>(call: (window, args) => window.open(castToType<String>(args[0]))),
-    'getComputedStyle': StaticDefinedSyncBindingObjectMethod<Window>(
-        call: (window, args) => window.getComputedStyle(args[0] as Element)),
+        StaticDefinedSyncBindingObjectMethod(call: (window, args) => castToType<Window>(window).open(castToType<String>(args[0]))),
+    'getComputedStyle': StaticDefinedSyncBindingObjectMethod(
+        call: (window, args) => castToType<Window>(window).getComputedStyle(args[0] as Element)),
   };
 
   @override
   List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _syncWindowMethods];
 
   static final StaticDefinedBindingPropertyMap _syncWindowProperties = {
-    'innerWidth': StaticDefinedBindingProperty<Window>(getter: (window) => window.innerWidth),
-    'innerHeight': StaticDefinedBindingProperty<Window>(getter: (window) => window.innerHeight),
-    'scrollX': StaticDefinedBindingProperty<Window>(getter: (window) => window.scrollX),
-    'scrollY': StaticDefinedBindingProperty<Window>(getter: (window) => window.scrollY),
-    'pageXOffset': StaticDefinedBindingProperty<Window>(getter: (window) => window.scrollX),
-    'pageYOffset': StaticDefinedBindingProperty<Window>(getter: (window) => window.scrollY),
-    'screen': StaticDefinedBindingProperty<Window>(getter: (window) => window.screen),
-    'colorScheme': StaticDefinedBindingProperty<Window>(getter: (window) => window.colorScheme),
-    'devicePixelRatio': StaticDefinedBindingProperty<Window>(getter: (window) => window.devicePixelRatio),
+    'innerWidth': StaticDefinedBindingProperty(getter: (window) => castToType<Window>(window).innerWidth),
+    'innerHeight': StaticDefinedBindingProperty(getter: (window) => castToType<Window>(window).innerHeight),
+    'scrollX': StaticDefinedBindingProperty(getter: (window) => castToType<Window>(window).scrollX),
+    'scrollY': StaticDefinedBindingProperty(getter: (window) => castToType<Window>(window).scrollY),
+    'pageXOffset': StaticDefinedBindingProperty(getter: (window) => castToType<Window>(window).scrollX),
+    'pageYOffset': StaticDefinedBindingProperty(getter: (window) => castToType<Window>(window).scrollY),
+    'screen': StaticDefinedBindingProperty(getter: (window) => castToType<Window>(window).screen),
+    'colorScheme': StaticDefinedBindingProperty(getter: (window) => castToType<Window>(window).colorScheme),
+    'devicePixelRatio': StaticDefinedBindingProperty(getter: (window) => castToType<Window>(window).devicePixelRatio),
   };
 
   @override

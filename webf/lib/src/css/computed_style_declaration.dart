@@ -25,16 +25,16 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   get pointer => _pointer;
 
   static final StaticDefinedSyncBindingObjectMethodMap _computedStyleSyncMethods = {
-    'getPropertyValue': StaticDefinedSyncBindingObjectMethod<ComputedCSSStyleDeclaration>(
-        call: (style, args) => style.getPropertyValue(args[0])),
-    'setProperty': StaticDefinedSyncBindingObjectMethod<ComputedCSSStyleDeclaration>(
-        call: (style, args) => style.setProperty(args[0], args[1])),
-    'removeProperty': StaticDefinedSyncBindingObjectMethod<ComputedCSSStyleDeclaration>(
-        call: (style, args) => style.removeProperty(args[0])),
-    'checkCSSProperty': StaticDefinedSyncBindingObjectMethod<ComputedCSSStyleDeclaration>(
-        call: (style, args) => style.checkCSSProperty(args[0])),
-    'getFullCSSPropertyList': StaticDefinedSyncBindingObjectMethod<ComputedCSSStyleDeclaration>(
-        call: (style, args) => style.getFullCSSPropertyList()),
+    'getPropertyValue': StaticDefinedSyncBindingObjectMethod(
+        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style).getPropertyValue(args[0])),
+    'setProperty': StaticDefinedSyncBindingObjectMethod(
+        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style).setProperty(args[0], args[1])),
+    'removeProperty': StaticDefinedSyncBindingObjectMethod(
+        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style).removeProperty(args[0])),
+    'checkCSSProperty': StaticDefinedSyncBindingObjectMethod(
+        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style).checkCSSProperty(args[0])),
+    'getFullCSSPropertyList': StaticDefinedSyncBindingObjectMethod(
+        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style).getFullCSSPropertyList()),
   };
 
   @override
@@ -46,9 +46,10 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   }
 
   static final StaticDefinedBindingPropertyMap _computedStyleProperties = {
-    'cssText': StaticDefinedBindingProperty<ComputedCSSStyleDeclaration>(
-        getter: (style) => style.cssText, setter: (style, value) => style.cssText = value),
-    'length': StaticDefinedBindingProperty<ComputedCSSStyleDeclaration>(getter: (style) => style.length)
+    'cssText': StaticDefinedBindingProperty(
+        getter: (style) => castToType<ComputedCSSStyleDeclaration>(style).cssText,
+        setter: (style, value) => castToType<ComputedCSSStyleDeclaration>(style).cssText = value),
+    'length': StaticDefinedBindingProperty(getter: (style) => castToType<ComputedCSSStyleDeclaration>(style).length)
   };
 
   @override
@@ -199,27 +200,27 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return properties.map((e) => _valueForPropertyInStyle(e)).join(' ');
       case CSSPropertyID.BorderColor:
         return _getCSSPropertyValuesForSidesShorthand([
-              CSSPropertyID.BorderTopColor,
-              CSSPropertyID.BorderRightColor,
-              CSSPropertyID.BorderBottomColor,
-              CSSPropertyID.BorderLeftColor
-            ])?.join(' ') ??
+          CSSPropertyID.BorderTopColor,
+          CSSPropertyID.BorderRightColor,
+          CSSPropertyID.BorderBottomColor,
+          CSSPropertyID.BorderLeftColor
+        ])?.join(' ') ??
             '';
       case CSSPropertyID.BorderStyle:
         return _getCSSPropertyValuesForSidesShorthand([
-              CSSPropertyID.BorderTopStyle,
-              CSSPropertyID.BorderRightStyle,
-              CSSPropertyID.BorderBottomStyle,
-              CSSPropertyID.BorderLeftStyle
-            ])?.join(' ') ??
+          CSSPropertyID.BorderTopStyle,
+          CSSPropertyID.BorderRightStyle,
+          CSSPropertyID.BorderBottomStyle,
+          CSSPropertyID.BorderLeftStyle
+        ])?.join(' ') ??
             '';
       case CSSPropertyID.BorderWidth:
         return _getCSSPropertyValuesForSidesShorthand([
-              CSSPropertyID.BorderTopWidth,
-              CSSPropertyID.BorderRightWidth,
-              CSSPropertyID.BorderBottomWidth,
-              CSSPropertyID.BorderLeftWidth
-            ])?.join(' ') ??
+          CSSPropertyID.BorderTopWidth,
+          CSSPropertyID.BorderRightWidth,
+          CSSPropertyID.BorderBottomWidth,
+          CSSPropertyID.BorderLeftWidth
+        ])?.join(' ') ??
             '';
       case CSSPropertyID.BorderTopLeftRadius:
         return style.borderTopLeftRadius.cssText();
@@ -451,7 +452,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Clip:
       case CSSPropertyID.Speak:
         break;
-      /* Individual properties not part of the spec */
+    /* Individual properties not part of the spec */
       case CSSPropertyID.BackgroundRepeatX:
       case CSSPropertyID.BackgroundRepeatY:
       case CSSPropertyID.TextLineThrough:
@@ -471,13 +472,13 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.TextUnderlineWidth:
         break;
 
-      /* Unimplemented @font-face properties */
+    /* Unimplemented @font-face properties */
       case CSSPropertyID.FontStretch:
       case CSSPropertyID.Src:
       case CSSPropertyID.UnicodeRange:
         break;
 
-      /* Other unimplemented properties */
+    /* Other unimplemented properties */
       case CSSPropertyID.Page: // for @page
       case CSSPropertyID.Quotes: // FIXME: needs implementation
       case CSSPropertyID.Size: // for @page
