@@ -8,6 +8,7 @@
 #include <vector>
 #include "built_in_string.h"
 #include "foundation/native_string.h"
+#include "native_string_utils.h"
 
 namespace webf {
 
@@ -92,28 +93,38 @@ class AtomicStringTwoByteResource : public v8::String::ExternalStringResource {
 };
 
 AtomicString::AtomicString(v8::Isolate* isolate, const std::string& string)
-    : kind_(GetStringKind(string, string.size())) {
+    : kind_(GetStringKind(string, string.size())), isolate_(isolate) {
   auto* external_string_resource = new AtomicStringOneByteResource(string);
   string_ = v8::String::NewExternalOneByte(isolate, external_string_resource).ToLocalChecked();
 }
 
-AtomicString::AtomicString(v8::Isolate* isolate, const char* str, size_t length) : kind_(GetStringKind(str, length)) {
+AtomicString::AtomicString(v8::Isolate* isolate, const char* str, size_t length)
+    : kind_(GetStringKind(str, length)), isolate_(isolate) {
   auto* external_string_resource = new AtomicStringOneByteResource(std::string(str, length));
   string_ = v8::String::NewExternalOneByte(isolate, external_string_resource).ToLocalChecked();
 }
 
-AtomicString::AtomicString(v8::Isolate* isolate, std::unique_ptr<AutoFreeNativeString>&& native_string) {
-  auto* external_resource = new AtomicStringTwoByteResource(std::move(native_string));
+AtomicString::AtomicString(v8::Isolate* isolate, std::unique_ptr<AutoFreeNativeString>&& native_string)
+    : isolate_(isolate)  {
   kind_ = GetStringKind(native_string.get());
+  auto* external_resource = new AtomicStringTwoByteResource(std::move(native_string));
   string_ = v8::String::NewExternalTwoByte(isolate, external_resource).ToLocalChecked();
 }
 
-AtomicString::AtomicString(v8::Isolate* isolate, const uint16_t* str, size_t length) {
+AtomicString::AtomicString(v8::Isolate* isolate, const uint16_t* str, size_t length) : isolate_(isolate) {
   auto native_string = std::unique_ptr<AutoFreeNativeString>(
       reinterpret_cast<AutoFreeNativeString*>(new SharedNativeString(str, length)));
   kind_ = GetStringKind(native_string.get());
   auto* external_resource = new AtomicStringTwoByteResource(std::move(native_string));
   string_ = v8::String::NewExternalTwoByte(isolate, external_resource).ToLocalChecked();
+}
+
+AtomicString::AtomicString(v8::Local<v8::Context> context, v8::Local<v8::Value> v8_value) {
+  auto&& raw_native_string = jsValueToNativeString(context, v8_value);
+  auto native_string = std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(raw_native_string.release()));
+  kind_ = GetStringKind(native_string.get());
+  auto* external_resource = new AtomicStringTwoByteResource(std::move(native_string));
+  string_ = v8::String::NewExternalTwoByte(context->GetIsolate(), external_resource).ToLocalChecked();
 }
 
 bool AtomicString::IsEmpty() const {
@@ -158,7 +169,7 @@ std::string AtomicString::ToStdString(v8::Isolate* isolate) const {
   size_t length = string_->Utf8Length(isolate);
   result.reserve(length);
 
-  string_->WriteUtf8(isolate, result.data(), length);
+  string_->WriteUtf8(isolate, result.data());
   return result;
 }
 
@@ -177,8 +188,8 @@ std::unique_ptr<SharedNativeString> AtomicString::ToNativeString(v8::Isolate* is
   std::vector<uint16_t> buffer;
   buffer.reserve(length);
 
-  string_->Write(isolate, buffer.data(), length);
-  return SharedNativeString::FromTemporaryString(buffer.data(), buffer.size());
+  string_->Write(isolate, buffer.data());
+  return SharedNativeString::FromTemporaryString(buffer.data(), length);
 }
 
 StringView AtomicString::ToStringView() const {
@@ -290,8 +301,9 @@ AtomicString AtomicString::RemoveCharacters(v8::Isolate* isolate, CharacterMatch
 AtomicString::AtomicString(const webf::AtomicString& value) {
   string_ = v8::Local<v8::String>(value.string_);
 }
-AtomicString& AtomicString::operator=(const webf::AtomicString& other) {
-  string_ = v8::Local<v8::String>(other.string_);
+AtomicString& AtomicString::operator=(const webf::AtomicString& other) noexcept {
+  string_ = other.string_;
+  return *this;
 }
 
 AtomicString::AtomicString(webf::AtomicString&& value) noexcept {
@@ -299,6 +311,7 @@ AtomicString::AtomicString(webf::AtomicString&& value) noexcept {
 }
 AtomicString& AtomicString::operator=(webf::AtomicString&& value) noexcept {
   string_ = v8::Local<v8::String>(value.string_);
+  return *this;
 }
 
 }  // namespace webf

@@ -6,7 +6,7 @@
 #ifndef BRIDGE_DEFINED_PROPERTIES_INTIALIZER_H_
 #define BRIDGE_DEFINED_PROPERTIES_INTIALIZER_H_
 
-#include "bindings/qjs/atomic_string.h"
+#include "bindings/v8/atomic_string.h"
 
 namespace webf {
 

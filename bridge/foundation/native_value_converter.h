@@ -5,8 +5,12 @@
 #ifndef BRIDGE_FOUNDATION_NATIVE_VALUE_CONVERTER_H_
 #define BRIDGE_FOUNDATION_NATIVE_VALUE_CONVERTER_H_
 
+#if WEBF_QUICKJS_JS_ENGINE
 #include "bindings/qjs/script_wrappable.h"
-#include "core/binding_object.h"
+#elif WEBF_V8_JS_ENGINE
+#endif
+
+//#include "core/binding_object.h"
 #include "native_type.h"
 #include "native_value.h"
 
@@ -24,36 +28,36 @@ struct NativeValueConverterBase {
   using ImplType = typename T::ImplType;
 };
 
-template <>
-struct NativeValueConverter<NativeTypeNull> : public NativeValueConverterBase<NativeTypeNull> {
-  static NativeValue ToNativeValue() { return Native_NewNull(); }
-
-  static ImplType FromNativeValue(JSContext* ctx) { return ScriptValue::Empty(ctx); }
-};
-
-template <>
-struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<NativeTypeString> {
-  static NativeValue ToNativeValue(JSContext* ctx, const ImplType& value) {
-    return Native_NewString(value.ToNativeString(ctx).release());
-  }
-  static NativeValue ToNativeValue(const std::string& value) { return Native_NewCString(value); }
-
-  static ImplType FromNativeValue(JSContext* ctx, NativeValue&& value) {
-    if (value.tag == NativeTag::TAG_NULL) {
-      return AtomicString::Empty();
-    }
-    assert(value.tag == NativeTag::TAG_STRING);
-    return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
-  }
-
-  static ImplType FromNativeValue(JSContext* ctx, NativeValue& value) {
-    if (value.tag == NativeTag::TAG_NULL) {
-      return AtomicString::Empty();
-    }
-    assert(value.tag == NativeTag::TAG_STRING);
-    return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
-  }
-};
+//template <>
+//struct NativeValueConverter<NativeTypeNull> : public NativeValueConverterBase<NativeTypeNull> {
+//  static NativeValue ToNativeValue() { return Native_NewNull(); }
+//
+//  static ImplType FromNativeValue(JSContext* ctx) { return ScriptValue::Empty(ctx); }
+//};
+//
+//template <>
+//struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<NativeTypeString> {
+//  static NativeValue ToNativeValue(JSContext* ctx, const ImplType& value) {
+//    return Native_NewString(value.ToNativeString(ctx).release());
+//  }
+//  static NativeValue ToNativeValue(const std::string& value) { return Native_NewCString(value); }
+//
+//  static ImplType FromNativeValue(JSContext* ctx, NativeValue&& value) {
+//    if (value.tag == NativeTag::TAG_NULL) {
+//      return AtomicString::Empty();
+//    }
+//    assert(value.tag == NativeTag::TAG_STRING);
+//    return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
+//  }
+//
+//  static ImplType FromNativeValue(JSContext* ctx, NativeValue& value) {
+//    if (value.tag == NativeTag::TAG_NULL) {
+//      return AtomicString::Empty();
+//    }
+//    assert(value.tag == NativeTag::TAG_STRING);
+//    return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
+//  }
+//};
 
 template <>
 struct NativeValueConverter<NativeTypeBool> : public NativeValueConverterBase<NativeTypeBool> {
