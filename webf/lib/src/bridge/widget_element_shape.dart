@@ -5,7 +5,6 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/bridge.dart';
@@ -28,9 +27,18 @@ Pointer<WidgetElementShape> createWidgetElementShape(Map<String, ElementCreator>
   creators.forEach((tagName, creator) {
     WidgetElement widgetElement = creator(null) as WidgetElement;
 
-    List<String> properties = widgetElement.dynamicProperties.keys.toList(growable: false);
+    List<String> properties = [];
+    if (!Element.isElementStaticProperties(widgetElement.properties.last)) {
+      properties.addAll(widgetElement.properties.last.keys);
+    }
+    properties.addAll(widgetElement.dynamicProperties.keys.toList(growable: false));
+
     List<String> syncMethods = [];
     List<String> asyncMethods = [];
+
+    if (!Element.isElementStaticSyncMethods(widgetElement.methods.last)) {
+      syncMethods.addAll(widgetElement.methods.last.keys);
+    }
 
     widgetElement.dynamicMethods.forEach((key, method) {
       if (method is BindingObjectMethodSync) {
