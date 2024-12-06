@@ -45,7 +45,7 @@ enum FillStyleType { string, canvasGradient }
 
 typedef CanvasAction = void Function(Canvas, Size);
 
-class CanvasRenderingContext2D extends DynamicBindingObject {
+class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBindingObject {
   CanvasRenderingContext2D(BindingContext context, this.canvas)
       : _pointer = context.pointer,
         super(context);
@@ -58,64 +58,76 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   @override
   get contextId => canvas.contextId;
 
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    methods['arc'] = BindingObjectMethodSync(
-        call: (args) => arc(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble(),
-            castToType<num>(args[4]).toDouble(),
-            anticlockwise: (args.length > 5 && args[5] == 1) ? true : false));
-    methods['arcTo'] = BindingObjectMethodSync(
-        call: (args) => arcTo(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble(),
-            castToType<num>(args[4]).toDouble()));
-    methods['fillRect'] = BindingObjectMethodSync(
-        call: (args) => fillRect(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble()));
-    methods['clearRect'] = BindingObjectMethodSync(
-        call: (args) => clearRect(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble()));
-    methods['strokeRect'] = BindingObjectMethodSync(
-        call: (args) => strokeRect(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble()));
-    methods['fillText'] = BindingObjectMethodSync(call: (args) {
+  static final StaticDefinedSyncBindingObjectMethodMap _context2dSyncMethods = {
+    'arc': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.arc(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble(),
+          castToType<num>(args[4]).toDouble(),
+          anticlockwise: (args.length > 5 && args[5] == 1) ? true : false);
+    }),
+    'arcTo': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.arcTo(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble(),
+          castToType<num>(args[4]).toDouble());
+    }),
+    'fillRect': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.fillRect(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble());
+    }),
+    'clearRect': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.clearRect(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble());
+    }),
+    'strokeRect':
+        StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+            call: (context, args) {
+      return context.strokeRect(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble());
+    }),
+    'fillText': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
       if (args.length > 3) {
         double maxWidth = castToType<num>(args[3]).toDouble();
         if (!maxWidth.isNaN) {
-          return fillText(
+          return context.fillText(
               castToType<String>(args[0]),
               castToType<num>(args[1]).toDouble(),
               castToType<num>(args[2]).toDouble(),
               maxWidth: maxWidth);
         }
-        return fillText(
+        return context.fillText(
             castToType<String>(args[0]),
             castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble());
       } else {
-        return fillText(
+        return context.fillText(
             castToType<String>(args[0]),
             castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble());
       }
-    });
-    methods['ellipse'] = BindingObjectMethodSync(
-      call: (args) => ellipse(
+    }),
+    'ellipse': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.ellipse(
           castToType<num>(args[0]).toDouble(),
           castToType<num>(args[1]).toDouble(),
           castToType<num>(args[2]).toDouble(),
@@ -123,54 +135,68 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
           castToType<num>(args[4]).toDouble(),
           castToType<num>(args[5]).toDouble(),
           castToType<num>(args[6]).toDouble(),
-          anticlockwise: (args.length > 7 && args[7] == 1) ? true : false));
-    methods['strokeText'] = BindingObjectMethodSync(call: (args) {
+          anticlockwise: (args.length > 7 && args[7] == 1) ? true : false);
+    }),
+    'strokeText':
+        StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+            call: (context, args) {
       if (args.length > 3) {
         double maxWidth = castToType<num>(args[3]).toDouble();
         if (!maxWidth.isNaN) {
-          return strokeText(
+          return context.strokeText(
               castToType<String>(args[0]),
               castToType<num>(args[1]).toDouble(),
               castToType<num>(args[2]).toDouble(),
               maxWidth: maxWidth);
         }
-        return strokeText(
+        return context.strokeText(
             castToType<String>(args[0]),
             castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble());
       } else {
-        return strokeText(
+        return context.strokeText(
             castToType<String>(args[0]),
             castToType<num>(args[1]).toDouble(),
             castToType<num>(args[2]).toDouble());
       }
-    });
-    methods['save'] = BindingObjectMethodSync(call: (_) => save());
-    methods['restore'] = BindingObjectMethodSync(call: (_) => restore());
-    methods['beginPath'] = BindingObjectMethodSync(call: (_) => beginPath());
-    methods['bezierCurveTo'] = BindingObjectMethodSync(
-        call: (args) => bezierCurveTo(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble(),
-            castToType<num>(args[4]).toDouble(),
-            castToType<num>(args[5]).toDouble()));
-    methods['clip'] = BindingObjectMethodSync(call: (args) {
+    }),
+    'save': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, _) => context.save()),
+    'restore': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, _) => context.restore()),
+    'beginPath': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, _) => context.beginPath()),
+    'bezierCurveTo':
+        StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+            call: (context, args) {
+      return context.bezierCurveTo(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble(),
+          castToType<num>(args[4]).toDouble(),
+          castToType<num>(args[5]).toDouble());
+    }),
+    'clip': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
       if (args.isNotEmpty && args[0] is Path2D) {
         PathFillType fillType = (args.length == 2 && args[1] == EVENODD)
             ? PathFillType.evenOdd
             : PathFillType.nonZero;
-        return clip(fillType, path: args[0]);
+        return context.clip(fillType, path: args[0]);
       } else {
         PathFillType fillType = (args.length == 1 && args[0] == EVENODD)
             ? PathFillType.evenOdd
             : PathFillType.nonZero;
-        return clip(fillType);
+        return context.clip(fillType);
       }
-    });
-    methods['closePath'] = BindingObjectMethodSync(call: (_) => closePath());
-    methods['drawImage'] = BindingObjectMethodSync(call: (args) {
+    }),
+    'closePath': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.closePath();
+    }),
+    'drawImage': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
       BindingObject imageElement = args[0];
       if (imageElement is ImageElement) {
         double sx = 0.0,
@@ -201,169 +227,194 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
           dHeight = castToType<num>(args[8]).toDouble();
         }
 
-        return drawImage(args.length, imageElement, sx, sy, sWidth,
+        return context.drawImage(args.length, imageElement, sx, sy, sWidth,
             sHeight, dx, dy, dWidth, dHeight);
       }
-    });
-    methods['fill'] = BindingObjectMethodSync(call: (args) {
+    }),
+    'fill': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
       if (args.isEmpty) {
-        return fill(PathFillType.nonZero);
+        return context.fill(PathFillType.nonZero);
       } else if (args.length == 1) {
         if (args[0] is Path2D) {
-          return fill(PathFillType.nonZero, path: args[0]);
+          return context.fill(PathFillType.nonZero, path: args[0]);
         } else {
-          PathFillType fillType = args[0] == EVENODD
-              ? PathFillType.evenOdd
-              : PathFillType.nonZero;
-          return fill(fillType);
+          PathFillType fillType =
+              args[0] == EVENODD ? PathFillType.evenOdd : PathFillType.nonZero;
+          return context.fill(fillType);
         }
       } else if (args.length == 2) {
         assert(args[0] is Path2D);
-        PathFillType fillType = (args[1] == EVENODD)
-            ? PathFillType.evenOdd
-            : PathFillType.nonZero;
-        return fill(fillType, path: args[0]);
+        PathFillType fillType =
+            (args[1] == EVENODD) ? PathFillType.evenOdd : PathFillType.nonZero;
+        return context.fill(fillType, path: args[0]);
       }
-    });
-    methods['lineTo'] = BindingObjectMethodSync(
-        call: (args) => lineTo(castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble()));
-    methods['moveTo'] = BindingObjectMethodSync(
-        call: (args) => moveTo(castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble()));
-    methods['quadraticCurveTo'] = BindingObjectMethodSync(
-        call: (args) => quadraticCurveTo(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble()));
-    methods['rect'] = BindingObjectMethodSync(
-        call: (args) => rect(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble()));
-    methods['rotate'] = BindingObjectMethodSync(
-        call: (args) => rotate(castToType<num>(args[0]).toDouble()));
-    methods['roundRect'] = BindingObjectMethodSync(
-        call: (args) => roundRect(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble(),
-            List<double>.from(args[4])));
-    methods['resetTransform'] =
-        BindingObjectMethodSync(call: (_) => resetTransform());
-    methods['scale'] = BindingObjectMethodSync(
-        call: (args) => scale(castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble()));
-    methods['stroke'] = BindingObjectMethodSync(call: (args) {
+    }),
+    'lineTo': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.lineTo(castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble());
+    }),
+    'moveTo': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.moveTo(castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble());
+    }),
+    'quadraticCurveTo':
+        StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+            call: (context, args) {
+      return context.quadraticCurveTo(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble());
+    }),
+    'rect': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.rect(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble());
+    }),
+    'rotate': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.rotate(castToType<num>(args[0]).toDouble());
+    }),
+    'roundRect': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.roundRect(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble(),
+          List<double>.from(args[4]));
+    }),
+    'resetTransform':
+        StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+            call: (context, args) {
+      return context.resetTransform();
+    }),
+    'scale': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.scale(castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble());
+    }),
+    'stroke': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
       Path2D? path;
       if (args.length == 1 && args[0] is Path2D) {
         path = args[0];
       }
-      stroke(path: path);
-    });
-    methods['setTransform'] = BindingObjectMethodSync(
-        call: (args) => setTransform(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble(),
-            castToType<num>(args[4]).toDouble(),
-            castToType<num>(args[5]).toDouble()));
-    methods['transform'] = BindingObjectMethodSync(
-        call: (args) => transform(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble(),
-            castToType<num>(args[4]).toDouble(),
-            castToType<num>(args[5]).toDouble()));
-    methods['translate'] = BindingObjectMethodSync(
-        call: (args) => translate(castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble()));
-    methods['reset'] = BindingObjectMethodSync(call: (_) => reset());
-    methods['createLinearGradient'] = BindingObjectMethodSync(
-        call: (args) => createLinearGradient(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble()));
-    methods['createRadialGradient'] = BindingObjectMethodSync(
-        call: (args) => createRadialGradient(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble(),
-            castToType<num>(args[3]).toDouble(),
-            castToType<num>(args[4]).toDouble(),
-            castToType<num>(args[5]).toDouble()));
-    methods['createPattern'] = BindingObjectMethodSync(
-        call: (args) => createPattern(
-            CanvasImageSource(args[0]), castToType<String>(args[1])));
-  }
+      context.stroke(path: path);
+    }),
+    'setTransform':
+        StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+            call: (context, args) {
+      return context.setTransform(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble(),
+          castToType<num>(args[4]).toDouble(),
+          castToType<num>(args[5]).toDouble());
+    }),
+    'transform': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.transform(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble(),
+          castToType<num>(args[4]).toDouble(),
+          castToType<num>(args[5]).toDouble());
+    }),
+    'reset': StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+        call: (context, args) {
+      return context.reset();
+    }),
+    'createLinearGradient':
+        StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+            call: (context, args) {
+      return context.createLinearGradient(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble());
+    }),
+    'createRadialGradient':
+        StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+            call: (context, args) {
+      return context.createRadialGradient(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble(),
+          castToType<num>(args[4]).toDouble(),
+          castToType<num>(args[5]).toDouble());
+    }),
+    'createPattern':
+        StaticDefinedSyncBindingObjectMethod<CanvasRenderingContext2D>(
+            call: (context, args) {
+      return context.createPattern(
+          CanvasImageSource(args[0]), castToType<String>(args[1]));
+    })
+  };
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['fillStyle'] = BindingObjectProperty(getter: () {
-      if (fillStyle is CanvasGradient) {
-        return fillStyle;
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _context2dSyncMethods];
+
+  static final StaticDefinedBindingPropertyMap _context2dProperties = {
+    'fillStyle': StaticDefinedBindingProperty<CanvasRenderingContext2D>(getter: (context) {
+      if (context.fillStyle is CanvasGradient) {
+        return context.fillStyle;
       }
-      return CSSColor.convertToHex(fillStyle as Color);
-    }, setter: (value) {
+      return CSSColor.convertToHex(context.fillStyle as Color);
+    }, setter: (context, value) {
       if (value is String) {
         Color? color = CSSColor.parseColor(castToType<String>(value),
-            renderStyle: canvas.renderStyle);
-        if (color != null) fillStyle = color;
+            renderStyle: context.canvas.renderStyle);
+        if (color != null) context.fillStyle = color;
       } else if (value is CanvasGradient || value is CanvasPattern) {
-        fillStyle = value;
+        context.fillStyle = value;
       }
-    });
-    properties['direction'] = BindingObjectProperty(
-        getter: () => _textDirectionInString,
-        setter: (value) =>
-            direction = parseDirection(castToType<String>(value)));
-    properties['font'] = BindingObjectProperty(
-        getter: () => font,
-        setter: (value) => font = castToType<String>(value));
-    properties['strokeStyle'] = BindingObjectProperty(getter: () {
-      if (strokeStyle is CanvasGradient) {
-        return strokeStyle;
+    }),
+    'direction': StaticDefinedBindingProperty<CanvasRenderingContext2D>(getter: (context) => context._textDirectionInString,
+        setter: (context, value) => context.direction = parseDirection(castToType<String>(value))),
+    'font': StaticDefinedBindingProperty<CanvasRenderingContext2D>(getter: (context) => context.font,
+        setter: (context, value) => context.font = castToType<String>(value)),
+    'strokeStyle': StaticDefinedBindingProperty<CanvasRenderingContext2D>(getter: (context) {
+      if (context.strokeStyle is CanvasGradient) {
+        return context.strokeStyle;
       }
-      return CSSColor.convertToHex(strokeStyle as Color);
-    }, setter: (value) {
+      return CSSColor.convertToHex(context.strokeStyle as Color);
+    }, setter: (context, value) {
       if (value is String) {
         Color? color = CSSColor.parseColor(castToType<String>(value),
-            renderStyle: canvas.renderStyle);
-        if (color != null) strokeStyle = color;
+            renderStyle: context.canvas.renderStyle);
+        if (color != null) context.strokeStyle = color;
       } else if (value is CanvasGradient) {
-        strokeStyle = value;
+        context.strokeStyle = value;
       }
-    });
-    properties['lineCap'] = BindingObjectProperty(
-        getter: () => lineCap,
-        setter: (value) => lineCap = parseLineCap(castToType<String>(value)));
-    properties['lineDashOffset'] = BindingObjectProperty(
-        getter: () => lineDashOffset,
-        setter: (value) => lineDashOffset = castToType<num>(value).toDouble());
-    properties['lineJoin'] = BindingObjectProperty(
-        getter: () => lineJoin,
-        setter: (value) => lineJoin = parseLineJoin(castToType<String>(value)));
-    properties['lineWidth'] = BindingObjectProperty(
-        getter: () => lineWidth,
-        setter: (value) => lineWidth = castToType<num>(value).toDouble());
-    properties['miterLimit'] = BindingObjectProperty(
-        getter: () => miterLimit,
-        setter: (value) => miterLimit = castToType<num>(value).toDouble());
-    properties['textAlign'] = BindingObjectProperty(
-        getter: () => textAlign.toString(),
-        setter: (value) =>
-            textAlign = parseTextAlign(castToType<String>(value)));
-    properties['textBaseline'] = BindingObjectProperty(
-        getter: () => textBaseline.toString(),
-        setter: (value) =>
-            textBaseline = parseTextBaseline(castToType<String>(value)));
-  }
+    }),
+    'lineCap': StaticDefinedBindingProperty<CanvasRenderingContext2D>(getter: (context) => context.lineCap,
+        setter: (context, value) => context.lineCap = parseLineCap(castToType<String>(value))),
+    'lineDashOffset': StaticDefinedBindingProperty<CanvasRenderingContext2D>(getter: (context) => context.lineDashOffset,
+        setter: (context, value) => context.lineDashOffset = castToType<num>(value).toDouble()),
+    'lineJoin': StaticDefinedBindingProperty<CanvasRenderingContext2D>(getter: (context) => context.lineJoin,
+        setter: (context, value) => context.lineJoin = parseLineJoin(castToType<String>(value))),
+    'lineWidth': StaticDefinedBindingProperty<CanvasRenderingContext2D>(getter: (context) => context.lineWidth,
+        setter: (context, value) => context.lineWidth = castToType<num>(value).toDouble()),
+    'miterLimit': StaticDefinedBindingProperty<CanvasRenderingContext2D>(getter: (context) => context.miterLimit,
+        setter: (context, value) => context.miterLimit = castToType<num>(value).toDouble()),
+    'textAlign': StaticDefinedBindingProperty<CanvasRenderingContext2D>(getter: (context) => context.textAlign.toString(),
+        setter: (context, value) => context.textAlign = parseTextAlign(castToType<String>(value))),
+    'textBaseline': StaticDefinedBindingProperty<CanvasRenderingContext2D>(getter: (context) => context.textBaseline.toString(),
+        setter: (context, value) => context.textBaseline = parseTextBaseline(castToType<String>(value)))
+  };
+
+  @override
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _context2dProperties];
 
   @override
   Future<void> dispose() async {

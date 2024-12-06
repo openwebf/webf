@@ -18,7 +18,7 @@ final double _2pi = 2 * math.pi;
 final double _pi = math.pi;
 final double _piOver2 = math.pi / 2;
 
-class Path2D extends DynamicBindingObject {
+class Path2D extends DynamicBindingObject{
   Path _path = Path();
 
   get path {

@@ -161,9 +161,6 @@ class CanvasGradient extends DynamicBindingObject {
     methods['addColorStop'] =
         BindingObjectMethodSync(call: (args) => addColorStop(castToType<num>(args[0]), castToType<String>(args[1])));
   }
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 }
 
 // ignore: one_member_abstracts
