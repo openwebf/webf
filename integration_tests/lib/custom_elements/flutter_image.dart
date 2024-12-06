@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:webf/dom.dart' as dom;
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/widget.dart';
 
 class ImageWidgetElement extends WidgetElement {

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:webf/widget.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 
 class SampleElement extends WidgetElement {
   SampleElement(BindingContext? context) : super(context);
