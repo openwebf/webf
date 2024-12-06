@@ -55,10 +55,10 @@ template <typename T>
 struct NativeTypePointer final : public NativeTypeBaseHelper<T*> {};
 
 // Sync function
-//struct NativeTypeFunction final : public NativeTypeBaseHelper<std::shared_ptr<QJSFunction>> {};
+// struct NativeTypeFunction final : public NativeTypeBaseHelper<std::shared_ptr<QJSFunction>> {};
 
 // Async function
-//struct NativeTypeAsyncFunction final : public NativeTypeBaseHelper<std::shared_ptr<QJSFunction>> {};
+// struct NativeTypeAsyncFunction final : public NativeTypeBaseHelper<std::shared_ptr<QJSFunction>> {};
 
 }  // namespace webf
 

@@ -17,28 +17,28 @@
 namespace webf {
 
 // Convert to string and return a full copy of NativeString from JSValue.
-    std::unique_ptr<SharedNativeString> jsValueToNativeString(v8::Local<v8::Context> ctx, v8::Local<v8::Value> value);
+std::unique_ptr<SharedNativeString> jsValueToNativeString(v8::Local<v8::Context> ctx, v8::Local<v8::Value> value);
 
 // Encode utf-8 to utf-16, and return a full copy of NativeString.
-    std::unique_ptr<SharedNativeString> stringToNativeString(const std::string& string);
+std::unique_ptr<SharedNativeString> stringToNativeString(const std::string& string);
 
-    std::string nativeStringToStdString(const SharedNativeString* native_string);
+std::string nativeStringToStdString(const SharedNativeString* native_string);
 
-    template <typename T>
-    std::string toUTF8(const std::basic_string<T, std::char_traits<T>, std::allocator<T>>& source) {
-        std::string result;
+template <typename T>
+std::string toUTF8(const std::basic_string<T, std::char_traits<T>, std::allocator<T>>& source) {
+  std::string result;
 
-        std::wstring_convert<std::codecvt_utf8_utf16<T>, T> convertor;
-        result = convertor.to_bytes(source);
+  std::wstring_convert<std::codecvt_utf8_utf16<T>, T> convertor;
+  result = convertor.to_bytes(source);
 
-        return result;
-    }
+  return result;
+}
 
-    template <typename T>
-    void fromUTF8(const std::string& source, std::basic_string<T, std::char_traits<T>, std::allocator<T>>& result) {
-        std::wstring_convert<std::codecvt_utf8_utf16<T>, T> convertor;
-        result = convertor.from_bytes(source);
-    }
+template <typename T>
+void fromUTF8(const std::string& source, std::basic_string<T, std::char_traits<T>, std::allocator<T>>& result) {
+  std::wstring_convert<std::codecvt_utf8_utf16<T>, T> convertor;
+  result = convertor.from_bytes(source);
+}
 
 }  // namespace webf
 

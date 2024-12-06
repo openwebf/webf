@@ -105,7 +105,7 @@ AtomicString::AtomicString(v8::Isolate* isolate, const char* str, size_t length)
 }
 
 AtomicString::AtomicString(v8::Isolate* isolate, std::unique_ptr<AutoFreeNativeString>&& native_string)
-    : isolate_(isolate)  {
+    : isolate_(isolate) {
   kind_ = GetStringKind(native_string.get());
   auto* external_resource = new AtomicStringTwoByteResource(std::move(native_string));
   string_ = v8::String::NewExternalTwoByte(isolate, external_resource).ToLocalChecked();
@@ -121,7 +121,8 @@ AtomicString::AtomicString(v8::Isolate* isolate, const uint16_t* str, size_t len
 
 AtomicString::AtomicString(v8::Local<v8::Context> context, v8::Local<v8::Value> v8_value) {
   auto&& raw_native_string = jsValueToNativeString(context, v8_value);
-  auto native_string = std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(raw_native_string.release()));
+  auto native_string =
+      std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(raw_native_string.release()));
   kind_ = GetStringKind(native_string.get());
   auto* external_resource = new AtomicStringTwoByteResource(std::move(native_string));
   string_ = v8::String::NewExternalTwoByte(context->GetIsolate(), external_resource).ToLocalChecked();

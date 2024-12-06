@@ -94,7 +94,7 @@ void TEST_setTimeout(int32_t new_timer_id,
                      int32_t timeout) {
 #if WEBF_QUICKJS_JS_ENGINE
 
-auto* context = timer->context();
+  auto* context = timer->context();
   JSRuntime* rt = context->dartIsolateContext()->runtime();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   JSOSTimer* th = static_cast<JSOSTimer*>(js_mallocz(context->ctx(), sizeof(*th)));
@@ -118,7 +118,7 @@ void TEST_setInterval(int32_t new_timer_id,
                       int32_t timeout) {
 #if WEBF_QUICKJS_JS_ENGINE
 
-auto* context = timer->context();
+  auto* context = timer->context();
   JSRuntime* rt = context->dartIsolateContext()->runtime();
   JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(rt));
   JSOSTimer* th = static_cast<JSOSTimer*>(js_mallocz(context->ctx(), sizeof(*th)));
@@ -132,12 +132,11 @@ auto* context = timer->context();
 
   ts->os_timers[new_timer_id] = th;
 #endif
-
 }
 
-//int32_t callbackId = 0;
+// int32_t callbackId = 0;
 //
-//void TEST_requestAnimationFrame(int32_t new_id,
+// void TEST_requestAnimationFrame(int32_t new_id,
 //                                webf::FrameCallback* frameCallback,
 //                                double contextId,
 //                                AsyncRAFCallback handler) {
@@ -153,14 +152,14 @@ auto* context = timer->context();
 //  ts->os_frameCallbacks[new_id] = th;
 //}
 //
-//void TEST_cancelAnimationFrame(double contextId, int32_t id) {
+// void TEST_cancelAnimationFrame(double contextId, int32_t id) {
 //  auto* page = test_context_map[contextId]->page();
 //  auto* context = page->executingContext();
 //  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartIsolateContext()->runtime()));
 //  ts->os_frameCallbacks.erase(id);
 //}
 //
-//void TEST_clearTimeout(double contextId, int32_t timerId) {
+// void TEST_clearTimeout(double contextId, int32_t timerId) {
 //  auto* page = test_context_map[contextId]->page();
 //  auto* context = page->executingContext();
 //  JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(context->dartIsolateContext()->runtime()));
@@ -216,11 +215,11 @@ double contextId = -1;
 
 WebFTestEnv::WebFTestEnv(DartIsolateContext* owner_isolate_context, webf::WebFPage* page)
     : page_(page), isolate_context_(owner_isolate_context) {
-//  owner_isolate_context->profiler()->StartTrackInitialize();
+  //  owner_isolate_context->profiler()->StartTrackInitialize();
 }
 
 WebFTestEnv::~WebFTestEnv() {
-//  isolate_context_->profiler()->FinishTrackInitialize();
+  //  isolate_context_->profiler()->FinishTrackInitialize();
   delete isolate_context_;
 }
 
@@ -344,19 +343,16 @@ void TEST_simulatePointer(MousePointer*, int32_t length, int32_t pointer) {}
 void TEST_simulateInputText(SharedNativeString* nativeString) {}
 
 std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
-  std::vector<uint64_t> mockMethods{reinterpret_cast<uint64_t>(TEST_invokeModule),
-                                    reinterpret_cast<uint64_t>(TEST_requestBatchUpdate),
-                                    reinterpret_cast<uint64_t>(TEST_reloadApp),
-                                    reinterpret_cast<uint64_t>(TEST_setTimeout),
-                                    reinterpret_cast<uint64_t>(TEST_setInterval),
-//                                    reinterpret_cast<uint64_t>(TEST_clearTimeout),
-//                                    reinterpret_cast<uint64_t>(TEST_requestAnimationFrame),
-//                                    reinterpret_cast<uint64_t>(TEST_cancelAnimationFrame),
-                                    reinterpret_cast<uint64_t>(TEST_toBlob),
-                                    reinterpret_cast<uint64_t>(TEST_flushUICommand),
-                                    reinterpret_cast<uint64_t>(TEST_CreateBindingObject),
-                                    reinterpret_cast<uint64_t>(TEST_LoadNativeLibrary),
-                                    reinterpret_cast<uint64_t>(TEST_GetWidgetElementShape)};
+  std::vector<uint64_t> mockMethods{
+      reinterpret_cast<uint64_t>(TEST_invokeModule), reinterpret_cast<uint64_t>(TEST_requestBatchUpdate),
+      reinterpret_cast<uint64_t>(TEST_reloadApp), reinterpret_cast<uint64_t>(TEST_setTimeout),
+      reinterpret_cast<uint64_t>(TEST_setInterval),
+      //                                    reinterpret_cast<uint64_t>(TEST_clearTimeout),
+      //                                    reinterpret_cast<uint64_t>(TEST_requestAnimationFrame),
+      //                                    reinterpret_cast<uint64_t>(TEST_cancelAnimationFrame),
+      reinterpret_cast<uint64_t>(TEST_toBlob), reinterpret_cast<uint64_t>(TEST_flushUICommand),
+      reinterpret_cast<uint64_t>(TEST_CreateBindingObject), reinterpret_cast<uint64_t>(TEST_LoadNativeLibrary),
+      reinterpret_cast<uint64_t>(TEST_GetWidgetElementShape)};
 
   WEBF_LOG(VERBOSE) << " ON JS ERROR" << onJSError;
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(onJSError));

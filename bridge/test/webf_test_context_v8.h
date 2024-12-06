@@ -18,27 +18,27 @@ namespace webf {
 //        list_head link;
 //    };
 
-    class WebFTestContext final {
-    public:
-        explicit WebFTestContext() = delete;
-        explicit WebFTestContext(ExecutingContext* context);
-        ~WebFTestContext();
+class WebFTestContext final {
+ public:
+  explicit WebFTestContext() = delete;
+  explicit WebFTestContext(ExecutingContext* context);
+  ~WebFTestContext();
 
-        /// Evaluate JavaScript source code with build-in test frameworks, use in test only.
-        bool parseTestHTML(const uint16_t* code, size_t codeLength);
-        void invokeExecuteTest(Dart_PersistentHandle persistent_handle, ExecuteResultCallback executeCallback);
-        void registerTestEnvDartMethods(uint64_t* methodBytes, int32_t length);
+  /// Evaluate JavaScript source code with build-in test frameworks, use in test only.
+  bool parseTestHTML(const uint16_t* code, size_t codeLength);
+  void invokeExecuteTest(Dart_PersistentHandle persistent_handle, ExecuteResultCallback executeCallback);
+  void registerTestEnvDartMethods(uint64_t* methodBytes, int32_t length);
 
-        WebFPage* page() const { return page_; }
+  WebFPage* page() const { return page_; }
 
-//        std::shared_ptr<QJSFunction> execute_test_callback_{nullptr};
-//        JSValue execute_test_proxy_object_{JS_NULL};
+  //        std::shared_ptr<QJSFunction> execute_test_callback_{nullptr};
+  //        JSValue execute_test_proxy_object_{JS_NULL};
 
-    private:
-        /// the pointer of JSContext, ownership belongs to JSContext
-        ExecutingContext* context_{nullptr};
-        WebFPage* page_;
-    };
+ private:
+  /// the pointer of JSContext, ownership belongs to JSContext
+  ExecutingContext* context_{nullptr};
+  WebFPage* page_;
+};
 
 }  // namespace webf
 

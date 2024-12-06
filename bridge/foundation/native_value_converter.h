@@ -28,15 +28,15 @@ struct NativeValueConverterBase {
   using ImplType = typename T::ImplType;
 };
 
-//template <>
-//struct NativeValueConverter<NativeTypeNull> : public NativeValueConverterBase<NativeTypeNull> {
+// template <>
+// struct NativeValueConverter<NativeTypeNull> : public NativeValueConverterBase<NativeTypeNull> {
 //  static NativeValue ToNativeValue() { return Native_NewNull(); }
 //
 //  static ImplType FromNativeValue(JSContext* ctx) { return ScriptValue::Empty(ctx); }
 //};
 //
-//template <>
-//struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<NativeTypeString> {
+// template <>
+// struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<NativeTypeString> {
 //  static NativeValue ToNativeValue(JSContext* ctx, const ImplType& value) {
 //    return Native_NewString(value.ToNativeString(ctx).release());
 //  }
