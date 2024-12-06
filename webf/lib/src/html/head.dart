@@ -33,7 +33,7 @@ const String _REL_STYLESHEET = 'stylesheet';
 const String DNS_PREFETCH = 'dns-prefetch';
 
 // https://www.w3.org/TR/2011/WD-html5-author-20110809/the-link-element.html#the-link-element
-class LinkElement extends Element with StaticDefinedAttributesElement {
+class LinkElement extends Element {
   LinkElement([BindingContext? context]) : super(context);
 
   @override
@@ -49,20 +49,15 @@ class LinkElement extends Element with StaticDefinedAttributesElement {
   Uri? _resolvedHyperlink;
   final Map<String, bool> _stylesheetLoaded = {};
 
-  static final StaticDefinedElementAttributesMap _linkElementAttributeProperties = {
-    'disabled': StaticDefinedElementAttribute(
-        setter: (element, value) => castToType<LinkElement>(element).disabled = attributeToProperty<bool>(value)),
-    'rel': StaticDefinedElementAttribute(
-        setter: (element, value) => castToType<LinkElement>(element).rel = attributeToProperty<String>(value)),
-    'href': StaticDefinedElementAttribute(
-        setter: (element, value) => castToType<LinkElement>(element).href = attributeToProperty<String>(value)),
-    'type': StaticDefinedElementAttribute(
-        setter: (element, value) => castToType<LinkElement>(element).type = attributeToProperty<String>(value)),
-  };
-
   @override
-  List<StaticDefinedElementAttributesMap> get staticAttributeProperties =>
-      [...super.staticAttributeProperties, _linkElementAttributeProperties];
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
+
+    attributes['disabled'] = ElementAttributeProperty(setter: (value) => disabled = attributeToProperty<bool>(value));
+    attributes['rel'] = ElementAttributeProperty(setter: (value) => rel = attributeToProperty<String>(value));
+    attributes['href'] = ElementAttributeProperty(setter: (value) => href = attributeToProperty<String>(value));
+    attributes['type'] = ElementAttributeProperty(setter: (value) => type = attributeToProperty<String>(value));
+  }
 
   static final StaticDefinedBindingPropertyMap _linkElementProperties = {
     'disabled': StaticDefinedBindingProperty(
