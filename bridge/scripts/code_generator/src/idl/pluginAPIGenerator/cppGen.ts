@@ -1,12 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import {IDLBlob} from '../IDLBlob';
-import {getTemplateKind, TemplateKind} from '../generateHeader';
+import {getTemplateKind, TemplateKind} from '../IDLAPIGenerator/quickjs/generateHeader';
 import _ from 'lodash';
 import {ClassObject, FunctionArguments, FunctionArgumentType} from '../declaration';
 import {GenerateOptions, generateSupportedOptions} from '../generator';
 import {ParameterType} from '../analyzer';
-import {getPointerType, isPointerType} from '../generateSource';
+import {getPointerType, isPointerType} from '../IDLAPIGenerator/quickjs/generateSource';
 
 function readHeaderTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../../../templates/idl_templates/plugin_api_templates/' + name + '.h.tpl'), {encoding: 'utf-8'});

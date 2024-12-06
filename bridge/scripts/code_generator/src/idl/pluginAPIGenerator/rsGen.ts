@@ -1,11 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import _ from 'lodash';
-import {getTemplateKind, TemplateKind} from '../generateHeader';
+import {getTemplateKind, TemplateKind} from '../IDLAPIGenerator/quickjs/generateHeader';
 import {GenerateOptions, generateSupportedOptions} from '../generator';
 import {IDLBlob} from '../IDLBlob';
 import {ClassObject, FunctionArguments, FunctionArgumentType} from '../declaration';
-import {getPointerType, isPointerType} from '../generateSource';
+import {getPointerType, isPointerType} from '../IDLAPIGenerator/quickjs/generateSource';
 import {ParameterType} from '../analyzer';
 import {isAnyType, isStringType} from './cppGen';
 
