@@ -305,6 +305,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     });
   }
 
+  static bool isElementStaticProperties(StaticDefinedBindingPropertyMap map) {
+    return map == _elementProperties;
+  }
+
   // https://www.w3.org/TR/cssom-view-1/#extensions-to-the-htmlelement-interface
   // https://www.w3.org/TR/cssom-view-1/#extension-to-the-element-interface
   static final StaticDefinedBindingPropertyMap _elementProperties = {
@@ -337,6 +341,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @override
   List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _elementProperties];
+
+  static bool isElementStaticSyncMethods(StaticDefinedSyncBindingObjectMethodMap map) {
+    return map == _elementSyncMethods;
+  }
 
   static final StaticDefinedSyncBindingObjectMethodMap _elementSyncMethods = {
     'getBoundingClientRect':
