@@ -50,14 +50,14 @@ class LinkElement extends Element with StaticDefinedAttributesElement {
   final Map<String, bool> _stylesheetLoaded = {};
 
   static final StaticDefinedElementAttributesMap _linkElementAttributeProperties = {
-    'disabled': StaticDefinedElementAttribute<LinkElement>(
-        setter: (element, value) => element.disabled = attributeToProperty<bool>(value)),
-    'rel': StaticDefinedElementAttribute<LinkElement>(
-        setter: (element, value) => element.rel = attributeToProperty<String>(value)),
-    'href': StaticDefinedElementAttribute<LinkElement>(
-        setter: (element, value) => element.href = attributeToProperty<String>(value)),
-    'type': StaticDefinedElementAttribute<LinkElement>(
-        setter: (element, value) => element.type = attributeToProperty<String>(value)),
+    'disabled': StaticDefinedElementAttribute(
+        setter: (element, value) => castToType<LinkElement>(element).disabled = attributeToProperty<bool>(value)),
+    'rel': StaticDefinedElementAttribute(
+        setter: (element, value) => castToType<LinkElement>(element).rel = attributeToProperty<String>(value)),
+    'href': StaticDefinedElementAttribute(
+        setter: (element, value) => castToType<LinkElement>(element).href = attributeToProperty<String>(value)),
+    'type': StaticDefinedElementAttribute(
+        setter: (element, value) => castToType<LinkElement>(element).type = attributeToProperty<String>(value)),
   };
 
   @override
@@ -65,14 +65,18 @@ class LinkElement extends Element with StaticDefinedAttributesElement {
       [...super.staticAttributeProperties, _linkElementAttributeProperties];
 
   static final StaticDefinedBindingPropertyMap _linkElementProperties = {
-    'disabled': StaticDefinedBindingProperty<LinkElement>(
-        getter: (element) => element.disabled, setter: (element, value) => element.disabled = castToType<bool>(value)),
-    'rel': StaticDefinedBindingProperty<LinkElement>(
-        getter: (element) => element.rel, setter: (element, value) => element.rel = castToType<String>(value)),
-    'href': StaticDefinedBindingProperty<LinkElement>(
-        getter: (element) => element.href, setter: (element, value) => element.href = castToType<String>(value)),
-    'type': StaticDefinedBindingProperty<LinkElement>(
-        getter: (element) => element.type, setter: (element, value) => element.type = castToType<String>(value)),
+    'disabled': StaticDefinedBindingProperty(
+        getter: (element) => castToType<LinkElement>(element).disabled,
+        setter: (element, value) => castToType<LinkElement>(element).disabled = castToType<bool>(value)),
+    'rel': StaticDefinedBindingProperty(
+        getter: (element) => castToType<LinkElement>(element).rel,
+        setter: (element, value) => castToType<LinkElement>(element).rel = castToType<String>(value)),
+    'href': StaticDefinedBindingProperty(
+        getter: (element) => castToType<LinkElement>(element).href,
+        setter: (element, value) => castToType<LinkElement>(element).href = castToType<String>(value)),
+    'type': StaticDefinedBindingProperty(
+        getter: (element) => castToType<LinkElement>(element).type,
+        setter: (element, value) => castToType<LinkElement>(element).type = castToType<String>(value)),
   };
 
   @override

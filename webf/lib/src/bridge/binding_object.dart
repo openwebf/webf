@@ -119,34 +119,34 @@ abstract class StaticBindingObject extends BindingObject {
 }
 
 
-typedef _StaticDefinedBindingPropertyGetter<T extends BindingObject> = dynamic Function(T);
+typedef _StaticDefinedBindingPropertyGetter = dynamic Function(BindingObject);
 // ignore: avoid_annotating_with_dynamic
-typedef _StaticDefinedBindingPropertySetter<T extends BindingObject> = void Function(T, dynamic value);
+typedef _StaticDefinedBindingPropertySetter = void Function(BindingObject, dynamic value);
 
-class StaticDefinedBindingProperty<T extends BindingObject> {
+class StaticDefinedBindingProperty {
   StaticDefinedBindingProperty({required this.getter, this.setter});
 
-  final _StaticDefinedBindingPropertyGetter<T> getter;
-  final _StaticDefinedBindingPropertySetter<T>? setter;
+  final _StaticDefinedBindingPropertyGetter getter;
+  final _StaticDefinedBindingPropertySetter? setter;
 }
 
-typedef _StaticDefinedSyncBindingMethodCallback<T extends BindingObject> = dynamic Function(T, List args);
-typedef _StaticDefinedAsyncBindingMethodCallback<T extends BindingObject> = Future<dynamic> Function(T, List args);
+typedef _StaticDefinedSyncBindingMethodCallback = dynamic Function(BindingObject, List args);
+typedef _StaticDefinedAsyncBindingMethodCallback= Future<dynamic> Function(BindingObject, List args);
 
-class StaticDefinedSyncBindingObjectMethod<T extends BindingObject> {
+class StaticDefinedSyncBindingObjectMethod {
   StaticDefinedSyncBindingObjectMethod({
     required this.call
   });
 
-  final _StaticDefinedSyncBindingMethodCallback<T> call;
+  final _StaticDefinedSyncBindingMethodCallback call;
 }
 
-class StaticDefinedAsyncBindingObjectMethod<T extends BindingObject> {
+class StaticDefinedAsyncBindingObjectMethod {
   StaticDefinedAsyncBindingObjectMethod({
     required this.call
   });
 
-  final _StaticDefinedAsyncBindingMethodCallback<T> call;
+  final _StaticDefinedAsyncBindingMethodCallback call;
 }
 
 typedef StaticDefinedBindingPropertyMap = Map<String, StaticDefinedBindingProperty>;
@@ -207,23 +207,37 @@ abstract class DynamicBindingObject<T> extends BindingObject<T> {
 dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp }) {
   assert(args.length == 1);
 
-  BindingObjectProperty? property = (bindingObject as DynamicBindingObject)._dynamicProperties[args[0]];
-
   Stopwatch? stopwatch;
-  if (enableWebFCommandLog && property != null) {
-    stopwatch = Stopwatch()..start();
-  }
+  dynamic result = null;
+  String key = args[0];
 
   if (enableWebFProfileTracking && profileOp != null) {
     WebFProfiler.instance.startTrackBindingSteps(profileOp, 'getterBindingCall');
   }
 
-  dynamic result = null;
-  if (property != null) {
-    result = property.getter();
-    if (enableWebFCommandLog) {
-      print('$bindingObject getBindingProperty key: ${args[0]} result: ${property.getter()} time: ${stopwatch!.elapsedMicroseconds}us');
+  if (bindingObject is StaticDefinedBindingObject) {
+    StaticDefinedBindingObject staticDefinedBindingObject = bindingObject;
+    StaticDefinedBindingPropertyMap? targetPropertyMap =
+      staticDefinedBindingObject.properties.firstWhereOrNull((map) { return map.containsKey(key); });
+    if (targetPropertyMap != null) {
+      if (enableWebFCommandLog) {
+        stopwatch = Stopwatch()..start();
+      }
+      result = targetPropertyMap[key]!.getter(bindingObject);
     }
+  } else {
+    BindingObjectProperty? property = (bindingObject as DynamicBindingObject)._dynamicProperties[args[0]];
+    if (property != null) {
+      if (enableWebFCommandLog) {
+        stopwatch = Stopwatch()..start();
+      }
+
+      result = property.getter();
+    }
+  }
+
+  if (enableWebFCommandLog && stopwatch != null) {
+    print('$bindingObject getBindingProperty key: $key result: $result time: ${stopwatch.elapsedMicroseconds}us');
   }
 
   if (enableWebFProfileTracking && profileOp != null) {
@@ -245,17 +259,29 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, { Bin
 
   String key = args[0];
   dynamic value = args[1];
-  BindingObjectProperty? property = (bindingObject as DynamicBindingObject)._dynamicProperties[key];
-  if (property != null && property.setter != null) {
-    property.setter!(value);
+  dynamic originalValue;
 
-    if (bindingObject is WidgetElement) {
-      bool shouldElementRebuild = bindingObject.shouldElementRebuild(key, property.getter(), value);
-      if (shouldElementRebuild) {
-        bindingObject.setState(() {});
-      }
-      bindingObject.propertyDidUpdate(key, value);
+  if (bindingObject is StaticDefinedBindingObject) {
+    StaticDefinedBindingObject staticDefinedBindingObject = bindingObject;
+    StaticDefinedBindingPropertyMap? targetPropertyMap =
+      staticDefinedBindingObject.properties.firstWhereOrNull((map) { return map.containsKey(key); });
+    if (targetPropertyMap != null && targetPropertyMap[key]!.setter != null) {
+      targetPropertyMap[key]!.setter!(bindingObject, value);
     }
+  } else {
+    BindingObjectProperty? property = (bindingObject as DynamicBindingObject)._dynamicProperties[key];
+    if (property != null && property.setter != null) {
+      originalValue = property.getter();
+      property.setter!(value);
+    }
+  }
+
+  if (bindingObject is WidgetElement) {
+    bool shouldElementRebuild = bindingObject.shouldElementRebuild(key, originalValue, value);
+    if (shouldElementRebuild) {
+      bindingObject.setState(() {});
+    }
+    bindingObject.propertyDidUpdate(key, value);
   }
 
   if (enableWebFProfileTracking && profileOp != null) {
@@ -263,28 +289,6 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, { Bin
   }
 
   return true;
-}
-
-dynamic getPropertyNamesBindingCall(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp }) {
-  assert(bindingObject is DynamicBindingObject);
-
-  if (enableWebFProfileTracking && profileOp != null) {
-    WebFProfiler.instance.startTrackBindingSteps(profileOp, 'getPropertyNamesBindingCall');
-  }
-
-  List<String> properties = (bindingObject as DynamicBindingObject)._dynamicProperties.keys.toList();
-  List<String> methods = bindingObject._dynamicMethods.keys.toList();
-  properties.addAll(methods);
-
-  if (enableWebFCommandLog) {
-    print('$bindingObject getPropertyNamesBindingCall value: $properties');
-  }
-
-  if (enableWebFProfileTracking && profileOp != null) {
-    WebFProfiler.instance.finishTrackBindingSteps(profileOp);
-  }
-
-  return properties;
 }
 
 Future<void> _invokeBindingMethodFromNativeImpl(double contextId, int profileId, Pointer<NativeBindingObject> nativeBindingObject,

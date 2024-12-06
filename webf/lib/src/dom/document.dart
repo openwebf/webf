@@ -221,20 +221,22 @@ class Document extends ContainerNode {
   }
 
   static final StaticDefinedBindingPropertyMap _documentProperties = {
-    'cookie': StaticDefinedBindingProperty<Document>(
-        getter: (document) => document.cookie.cookie(),
-        setter: (document, value) => document.cookie.setCookieString(value)),
-    'compatMode': StaticDefinedBindingProperty<Document>(getter: (document) => document.compatMode),
-    'domain': StaticDefinedBindingProperty<Document>(
-        getter: (document) => document.domain, setter: (document, value) => document.domain = value),
-    'readyState': StaticDefinedBindingProperty<Document>(getter: (document) => document.readyState),
-    'visibilityState': StaticDefinedBindingProperty<Document>(getter: (document) => document.visibilityState),
-    'hidden': StaticDefinedBindingProperty<Document>(getter: (document) => document.hidden),
-    'title': StaticDefinedBindingProperty<Document>(
-        getter: (document) => document._title ?? '',
+    'cookie': StaticDefinedBindingProperty(
+        getter: (document) => castToType<Document>(document).cookie.cookie(),
+        setter: (document, value) => castToType<Document>(document).cookie.setCookieString(value)),
+    'compatMode': StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).compatMode),
+    'domain': StaticDefinedBindingProperty(
+        getter: (document) => castToType<Document>(document).domain,
+        setter: (document, value) => castToType<Document>(document).domain = value),
+    'readyState': StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).readyState),
+    'visibilityState':
+        StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).visibilityState),
+    'hidden': StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).hidden),
+    'title': StaticDefinedBindingProperty(
+        getter: (document) => castToType<Document>(document)._title ?? '',
         setter: (document, value) {
-          document._title = value ?? '';
-          document.controller.onTitleChanged?.call(document.title);
+          castToType<Document>(document)._title = value ?? '';
+          castToType<Document>(document).controller.onTitleChanged?.call(castToType<Document>(document).title);
         })
   };
 
@@ -242,20 +244,21 @@ class Document extends ContainerNode {
   List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _documentProperties];
 
   static final StaticDefinedSyncBindingObjectMethodMap _syncDocumentMethods = {
-    'querySelectorAll':
-        StaticDefinedSyncBindingObjectMethod<Document>(call: (document, args) => document.querySelectorAll(args)),
-    'querySelector':
-        StaticDefinedSyncBindingObjectMethod<Document>(call: (document, args) => document.querySelector(args)),
-    'getElementById':
-        StaticDefinedSyncBindingObjectMethod<Document>(call: (document, args) => document.getElementById(args)),
-    'getElementsByClassName':
-        StaticDefinedSyncBindingObjectMethod<Document>(call: (document, args) => document.getElementsByClassName(args)),
-    'getElementsByTagName':
-        StaticDefinedSyncBindingObjectMethod<Document>(call: (document, args) => document.getElementsByTagName(args)),
-    'getElementsByName':
-        StaticDefinedSyncBindingObjectMethod<Document>(call: (document, args) => document.getElementsByName(args)),
-    'elementFromPoint': StaticDefinedSyncBindingObjectMethod<Document>(
-        call: (document, args) => document.elementFromPoint(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'querySelectorAll': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).querySelectorAll(args)),
+    'querySelector': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).querySelector(args)),
+    'getElementById': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).getElementById(args)),
+    'getElementsByClassName': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).getElementsByClassName(args)),
+    'getElementsByTagName': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).getElementsByTagName(args)),
+    'getElementsByName': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).getElementsByName(args)),
+    'elementFromPoint': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) =>
+            castToType<Document>(document).elementFromPoint(castToType<double>(args[0]), castToType<double>(args[1]))),
   };
 
   @override

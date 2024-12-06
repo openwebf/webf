@@ -73,10 +73,12 @@ class CanvasElement extends Element {
   }
 
   static final StaticDefinedBindingPropertyMap _canvasProperties = {
-    'width': StaticDefinedBindingProperty<CanvasElement>(
-        getter: (canvas) => canvas.width, setter: (canvas, value) => canvas.width = castToType<int>(value)),
-    'height': StaticDefinedBindingProperty<CanvasElement>(
-        getter: (canvas) => canvas.height, setter: (canvas, value) => canvas.height = castToType<int>(value)),
+    'width': StaticDefinedBindingProperty(
+        getter: (canvas) => castToType<CanvasElement>(canvas).width,
+        setter: (canvas, value) => castToType<CanvasElement>(canvas).width = castToType<int>(value)),
+    'height': StaticDefinedBindingProperty(
+        getter: (canvas) => castToType<CanvasElement>(canvas).height,
+        setter: (canvas, value) => castToType<CanvasElement>(canvas).height = castToType<int>(value)),
   };
 
   @override

@@ -48,18 +48,18 @@ class DOMPointReadOnly extends DynamicBindingObject with StaticDefinedBindingObj
   }
 
   static final StaticDefinedBindingPropertyMap _domPointReadonlyProperties = {
-    'x': StaticDefinedBindingProperty<DOMPointReadOnly>(
-        getter: (point) => point._data[0],
-        setter: (point, value) => point._data[0] = castToType<num>(value).toDouble()),
-    'y': StaticDefinedBindingProperty<DOMPointReadOnly>(
-        getter: (point) => point._data[1],
-        setter: (point, value) => point._data[1] = castToType<num>(value).toDouble()),
-    'z': StaticDefinedBindingProperty<DOMPointReadOnly>(
-        getter: (point) => point._data[2],
-        setter: (point, value) => point._data[2] = castToType<num>(value).toDouble()),
-    'w': StaticDefinedBindingProperty<DOMPointReadOnly>(
-        getter: (point) => point._data[3],
-        setter: (point, value) => point._data[3] = castToType<num>(value).toDouble()),
+    'x': StaticDefinedBindingProperty(
+        getter: (point) => castToType<DOMPointReadOnly>(point)._data[0],
+        setter: (point, value) => castToType<DOMPointReadOnly>(point)._data[0] = castToType<num>(value).toDouble()),
+    'y': StaticDefinedBindingProperty(
+        getter: (point) => castToType<DOMPointReadOnly>(point)._data[1],
+        setter: (point, value) => castToType<DOMPointReadOnly>(point)._data[1] = castToType<num>(value).toDouble()),
+    'z': StaticDefinedBindingProperty(
+        getter: (point) => castToType<DOMPointReadOnly>(point)._data[2],
+        setter: (point, value) => castToType<DOMPointReadOnly>(point)._data[2] = castToType<num>(value).toDouble()),
+    'w': StaticDefinedBindingProperty(
+        getter: (point) => castToType<DOMPointReadOnly>(point)._data[3],
+        setter: (point, value) => castToType<DOMPointReadOnly>(point)._data[3] = castToType<num>(value).toDouble()),
   };
 
   @override
