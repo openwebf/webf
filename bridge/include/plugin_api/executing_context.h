@@ -30,6 +30,7 @@ using PublicWebFInvokeModuleWithParamsAndCallback = NativeValue (*)(ExecutingCon
                                                                     NativeValue*,
                                                                     WebFNativeFunctionContext*,
                                                                     SharedExceptionState*);
+using PublicWebFLocationReload = void (*)(ExecutingContext*, SharedExceptionState*);
 using PublicContextSetTimeout = int32_t (*)(ExecutingContext*,
                                             WebFNativeFunctionContext*,
                                             int32_t,
@@ -63,6 +64,7 @@ struct ExecutingContextWebFMethods {
                                                            NativeValue* params,
                                                            WebFNativeFunctionContext* callback_context,
                                                            SharedExceptionState* shared_exception_state);
+  static void WebFLocationReload(ExecutingContext* context, SharedExceptionState* shared_exception_state);
   static int32_t SetTimeout(ExecutingContext* context,
                             WebFNativeFunctionContext* callback_context,
                             int32_t timeout,
@@ -85,6 +87,7 @@ struct ExecutingContextWebFMethods {
   PublicWebFInvokeModuleWithParams context_webf_invoke_module_with_params{WebFInvokeModuleWithParams};
   PublicWebFInvokeModuleWithParamsAndCallback context_webf_invoke_module_with_params_and_callback{
       WebFInvokeModuleWithParamsAndCallback};
+  PublicWebFLocationReload context_webf_location_reload{WebFLocationReload};
   PublicContextSetTimeout context_set_timeout{SetTimeout};
   PublicContextSetInterval context_set_interval{SetInterval};
   PublicContextClearTimeout context_clear_timeout{ClearTimeout};
