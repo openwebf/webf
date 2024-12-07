@@ -484,7 +484,8 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
     } else {
       call = generateDartImplCallCode(blob, declaration, declaration.returnTypeMode?.layoutDependent ?? false, declaration.args.slice(0, minimalRequiredArgc));
     }
-  } else if (declaration.returnTypeMode?.supportAsync && declaration.returnType.value != FunctionArgumentType.void) {
+  } else if (declaration.returnTypeMode?.supportAsync && !declaration.returnTypeMode?.supportAsyncManual && declaration.returnType.value != FunctionArgumentType.void) {
+    // TODO 判断逻辑可以优化
     call = generateReturnPromiseCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc))
   } else if (declaration.returnTypeMode?.supportAsync && !declaration.returnTypeMode?.supportAsyncManual ) {
     call = generateReturnPromiseCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc))

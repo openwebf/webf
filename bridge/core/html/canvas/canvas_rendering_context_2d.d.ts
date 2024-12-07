@@ -3,10 +3,10 @@ import {HTMLCanvasElement} from "./html_canvas_element";
 import {Path2D} from "./path_2d";
 
 interface CanvasRenderingContext2D extends CanvasRenderingContext {
-    fillStyle: string | CanvasGradient | null;
+    fillStyle: SupportAsync<string | CanvasGradient | null>;
     direction: SupportAsync<DartImpl<string>>;
     font: SupportAsync<DartImpl<string>>;
-    strokeStyle: string | CanvasGradient | null;
+    strokeStyle: SupportAsync<string | CanvasGradient | null>;
     lineCap: SupportAsync<DartImpl<string>>;
     lineDashOffset: SupportAsync<DartImpl<double>>;
     lineJoin: SupportAsync<DartImpl<string>>;
@@ -36,7 +36,7 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     restore(): SupportAsync<DartImpl<void>>;
     resetTransform(): SupportAsync<DartImpl<void>>;
     rotate(angle: number): SupportAsync<DartImpl<void>>;
-    roundRect(x: number, y: number, w: number, h: number, radii: number | number[]): void;
+    roundRect(x: number, y: number, w: number, h: number, radii: number | number[]): SupportAsyncManual<void>;
     quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): SupportAsync<DartImpl<void>>;
     stroke(path?: Path2D): SupportAsync<DartImpl<void>>;
     strokeRect(x: number, y: number, w: number, h: number): SupportAsync<DartImpl<void>>;
@@ -46,9 +46,9 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     setTransform(a: number, b: number, c: number, d: number, e: number, f: number): SupportAsync<DartImpl<void>>;
     transform(a: number, b: number, c: number, d: number, e: number, f: number): SupportAsync<DartImpl<void>>;
     translate(x: number, y: number): SupportAsync<DartImpl<void>>;
-    createLinearGradient(x0: number, y0: number, x1: number, y1: number): CanvasGradient;
-    createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): CanvasGradient;
-    createPattern(image: HTMLImageElement | HTMLCanvasElement, repetition: string): CanvasPattern;
+    createLinearGradient(x0: number, y0: number, x1: number, y1: number): SupportAsync<CanvasGradient>;
+    createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): SupportAsync<CanvasGradient>;
+    createPattern(image: HTMLImageElement | HTMLCanvasElement, repetition: string): SupportAsyncManual<CanvasPattern>;
     reset(): SupportAsync<DartImpl<void>>;
     new(): void;
 }

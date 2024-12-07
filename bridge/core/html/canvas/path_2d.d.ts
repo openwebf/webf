@@ -10,7 +10,7 @@ interface Path2D {
   arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): SupportAsync<DartImpl<void>>;
   ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise?: boolean): SupportAsync<DartImpl<void>>;
   rect(x: number, y: number, w: number, h: number): SupportAsync<DartImpl<void>>;
-  roundRect(x: number, y: number, w: number, h: number, radii: number | number[]): void;
-  addPath(path: Path2D, matrix?: DOMMatrix): void;
+  roundRect(x: number, y: number, w: number, h: number, radii: number | number[]): SupportAsyncManual<void>;
+  addPath(path: Path2D, matrix?: DOMMatrix): SupportAsyncManual<void>;
   new(init?: Path2D | string): Path2D;
 }
