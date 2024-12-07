@@ -73,15 +73,20 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
 
     return return_value;
   } else if (auto* callback = DynamicTo<WebFNativeFunction>(callback_value.get())) {
+    context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
+    context->dartIsolateContext()->profiler()->StartTrackSteps("handleInvokeModuleTransientCallback");
     if (errmsg != nullptr) {
       NativeValue error_object = Native_NewCString(errmsg);
       callback->Invoke(context, 1, &error_object);
     } else {
-      NativeValue* params = new NativeValue[2];
+      auto params = new NativeValue[2];
       params[0] = Native_NewNull();
       params[1] = *extra_data;
       callback->Invoke(context, 2, params);
     }
+    context->dartIsolateContext()->profiler()->FinishTrackSteps();
+    context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
+    return nullptr;
   }
 }
 

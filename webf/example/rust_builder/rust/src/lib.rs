@@ -1,7 +1,7 @@
 use std::ffi::{c_void, CString};
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{element, initialize_webf_api, navigator, AddEventListenerOptions, EventMethods, EventTargetMethods, NativeValue, RustValue};
+use webf_sys::{async_storage, element, initialize_webf_api, navigator, AddEventListenerOptions, EventMethods, EventTargetMethods, NativeValue, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
@@ -25,6 +25,56 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   println!("App Name: {}", app_name);
   println!("App Version: {}", app_version);
   println!("Hardware Concurrency: {}", hardware_concurrency);
+
+  let local_storage = context.local_storage();
+
+  let result = local_storage.set_item("test", "test2", &exception_state);
+
+  match result {
+    Ok(_) => {
+      println!("Local Storage Set Item Success");
+    },
+    Err(err) => {
+      println!("Local Storage Set Item Failed: {:?}", err);
+    }
+  }
+
+  println!("Local Storage value for \"a\": {:?}", local_storage.get_item("a", &exception_state));
+  println!("Local Storage Keys: {:?}", local_storage.get_all_keys(&exception_state));
+  println!("Local Storage Length: {:?}", local_storage.length(&exception_state));
+  println!("Local Storage value for \"test\": {:?}", local_storage.get_item("test", &exception_state));
+
+  local_storage.clear(&exception_state);
+
+  let async_storage_1 = context.async_storage();
+
+  let async_storage_set_item_callback = Box::new(|value: Result<Option<String>, String>| {
+    match value {
+      Ok(value) => {
+        println!("Async Storage Set Item Success: {:?}", value);
+      },
+      Err(err) => {
+        println!("Async Storage Set Item Failed: {:?}", err);
+      }
+    }
+  });
+
+  async_storage_1.set_item("a", "b", async_storage_set_item_callback, &exception_state);
+
+  let async_storage_2 = context.async_storage();
+
+  let async_storage_get_item_callback = Box::new(|value: Result<Option<String>, String>| {
+    match value {
+      Ok(value) => {
+        println!("Async Storage Get Item Success: {:?}", value);
+      },
+      Err(err) => {
+        println!("Async Storage Get Item Failed: {:?}", err);
+      }
+    }
+  });
+
+  async_storage_2.get_item("a", async_storage_get_item_callback, &exception_state);
 
   let timer_callback = Box::new(move || {
     println!("Timer Callback");

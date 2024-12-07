@@ -6,6 +6,12 @@ use windows::Win32::System::Com::{CoTaskMemAlloc, CoTaskMemFree};
 use crate::memory_utils::safe_free_cpp_ptr;
 
 #[repr(C)]
+pub struct SharedNativeString {
+  pub string_: *mut u16,
+  pub length_: u32,
+}
+
+#[repr(C)]
 pub enum NativeTag {
   TagString = 0,
   TagInt = 1,
@@ -36,12 +42,6 @@ pub struct NativeValue {
   pub tag: i32,
 }
 
-#[repr(C)]
-pub struct SharedNativeString {
-  pub string_: *mut u16,
-  pub length_: u32,
-}
-
 impl NativeValue {
   pub fn new() -> Self {
     let size = mem::size_of::<NativeValue>();
@@ -68,16 +68,36 @@ impl NativeValue {
     let ptr = unsafe { libc::malloc(size) };
 
     let ptr = ptr as *mut u16;
+    let mut length = 0;
 
     for (i, c) in val.encode_utf16().enumerate() {
+      length = i + 1;
       unsafe {
         ptr.add(i).write(c);
       }
     }
 
+    let mut shared_string = SharedNativeString {
+      string_: ptr,
+      length_: length as u32,
+    };
+
+    let shared_string_size = mem::size_of::<SharedNativeString>();
+
+    #[cfg(target_os = "windows")]
+    let shared_string_ptr = unsafe { CoTaskMemAlloc(shared_string_size) };
+
+    #[cfg(not(target_os = "windows"))]
+    let shared_string_ptr = unsafe { libc::malloc(shared_string_size) };
+
+    let shared_string_ptr = shared_string_ptr as *mut SharedNativeString;
+    unsafe {
+      shared_string_ptr.write(shared_string);
+    }
+
     let mut value = Self::new();
     value.tag = NativeTag::TagString as i32;
-    value.u.ptr = ptr as *mut c_void;
+    value.u.ptr = shared_string_ptr as *mut c_void;
     value.uint32 = len as u32;
     value
   }
@@ -99,12 +119,22 @@ impl NativeValue {
     value
   }
 
+  pub fn is_null(&self) -> bool {
+    self.tag == NativeTag::TagNull as i32
+  }
+
   pub fn new_float64(val: f64) -> Self {
     let mut value = Self::new();
     value.tag = NativeTag::TagFloat64 as i32;
     value.u.float64 = val;
     value.uint32 = 0;
     value
+  }
+
+  pub fn to_float64(&self) -> f64 {
+    unsafe {
+      self.u.float64
+    }
   }
 
   pub fn new_bool(val: bool) -> Self {
@@ -115,12 +145,24 @@ impl NativeValue {
     value
   }
 
+  pub fn to_bool(&self) -> bool {
+    unsafe {
+      self.u.int64 != 0
+    }
+  }
+
   pub fn new_int64(val: i64) -> Self {
     let mut value = Self::new();
     value.tag = NativeTag::TagInt as i32;
     value.u.int64 = val;
     value.uint32 = 0;
     value
+  }
+
+  pub fn to_int64(&self) -> i64 {
+    unsafe {
+      self.u.int64
+    }
   }
 
   pub fn new_list(values: Vec<NativeValue>) -> Self {

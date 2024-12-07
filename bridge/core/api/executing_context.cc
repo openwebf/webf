@@ -7,6 +7,7 @@
 #include "core/api/exception_state.h"
 #include "core/dom/document.h"
 #include "core/executing_context.h"
+#include "core/frame/legacy/location.h"
 #include "core/frame/module_manager.h"
 #include "core/frame/window.h"
 #include "core/frame/window_or_worker_global_scope.h"
@@ -63,7 +64,7 @@ NativeValue ExecutingContextWebFMethods::WebFInvokeModuleWithParams(ExecutingCon
   const NativeValue* result = ModuleManager::__webf_invoke_module__(context, module_name_atomic, method_atomic, *params,
                                                                     nullptr, shared_exception_state->exception_state);
 
-  if (shared_exception_state->exception_state.HasException()) {
+  if (shared_exception_state->exception_state.HasException() || result == nullptr) {
     return Native_NewNull();
   }
 
@@ -92,6 +93,11 @@ NativeValue ExecutingContextWebFMethods::WebFInvokeModuleWithParamsAndCallback(
 
   NativeValue return_result = *result;
   return return_result;
+}
+
+void ExecutingContextWebFMethods::WebFLocationReload(ExecutingContext* context,
+                                                     SharedExceptionState* shared_exception_state) {
+  Location::__webf_location_reload__(context, shared_exception_state->exception_state);
 }
 
 int32_t ExecutingContextWebFMethods::SetTimeout(ExecutingContext* context,
