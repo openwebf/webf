@@ -138,8 +138,7 @@ Screen* Window::screen() {
   return screen_;
 }
 
-ScriptPromise Window::screen_async() {
-  ExceptionState exceptionState;
+ScriptPromise Window::screen_async(ExceptionState& exceptionState) {
   return GetBindingPropertyAsync(binding_call_methods::kscreen, exceptionState);
 }
 
@@ -206,9 +205,25 @@ void Window::scrollBy(const std::shared_ptr<ScrollToOptions>& options, Exception
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
   };
-  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args,
-                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
-                      exception_state);
+  InvokeBindingMethodAsync(binding_call_methods::kscrollBy, 2, args, exception_state);
+}
+void Window::scrollBy_async(ExceptionState& exception_state) {
+  return scrollBy_async(0, 0, exception_state);
+}
+
+void Window::scrollBy_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscrollBy, 2, args, exception_state);
+}
+void Window::scrollBy_async(double x, double y, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscrollBy, 2, args, exception_state);
 }
 
 void Window::scrollTo(ExceptionState& exception_state) {

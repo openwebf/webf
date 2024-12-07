@@ -11,13 +11,13 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   // base64 utility methods
   btoa(string: string): string;
   atob(string: string): string;
-  open(url?: string): Window | null;
-  scroll(x: number, y: number): void;
-  scroll(options?: ScrollToOptions): void;
+  open(url?: string): SupportAsync<Window | null>;
+  scroll(x: number, y: number): SupportAsyncManual<void>;
+  scroll(options?: ScrollToOptions): SupportAsyncManual<void>;
   scrollTo(options?: ScrollToOptions): SupportAsyncManual<void>;
   scrollTo(x: number, y: number):  SupportAsyncManual<void>;
-  scrollBy(options?: ScrollToOptions): void;
-  scrollBy(x: number, y: number): void;
+  scrollBy(options?: ScrollToOptions): SupportAsyncManual<void>;
+  scrollBy(x: number, y: number): SupportAsyncManual<void>;
 
   postMessage(message: any, targetOrigin: string): void;
   postMessage(message: any): void;
@@ -25,7 +25,7 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   requestAnimationFrame(callback: Function): double;
   cancelAnimationFrame(request_id: double): void;
 
-  getComputedStyle(element: Element, pseudoElt?: string): ComputedCssStyleDeclaration;
+  getComputedStyle(element: Element, pseudoElt?: string): SupportAsync<ComputedCssStyleDeclaration>;
 
   readonly window: Window;
   readonly parent: Window;
