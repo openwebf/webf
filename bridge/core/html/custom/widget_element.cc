@@ -9,6 +9,7 @@
 #include "built_in_string.h"
 #include "core/dom/document.h"
 #include "foundation/native_value_converter.h"
+#include "widget_element_shape.h"
 
 namespace webf {
 
@@ -29,7 +30,12 @@ bool WidgetElement::IsValidName(const AtomicString& name) {
 }
 
 bool WidgetElement::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
-  return GetExecutingContext()->HasWidgetElementShape(key);
+  if (IsPrototypeProperty(key)) {
+    return true;
+  }
+
+  const WidgetElementShape* shape = GetExecutingContext()->GetWidgetElementShape(key);
+  return shape != nullptr && shape->HasPropertyOrMethod(key);
 }
 
 void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) {
@@ -48,83 +54,61 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     return unimplemented_properties_[key];
   }
 
-  std::string shape_key = tagName().ToStdString(ctx());
-  std::string property_key = key.ToStdString(ctx());
-  bool have_shape = true;
+  // If the property is defined in the prototype for DOM built-in properties and methods,
+  // return undefined to let QuickJS look for this property value on its prototype.
+  if (IsPrototypeProperty(key)) {
+    return ScriptValue::Undefined(ctx());
+  }
 
-  // if (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(shape_key)) {
-  //   GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsOnElement);
-  //   have_shape = false;
-  // }
-  //
-  // if (key == built_in_string::kSymbol_toStringTag) {
-  //   return ScriptValue(ctx(), tagName().ToNativeString(ctx()).release());
-  // }
-  //
-  // const WidgetElementShape* shape = nullptr;
-  //
-  // if (have_shape) {
-  //   shape = GetExecutingContext()->dartIsolateContext()->EnsureData()->GetWidgetElementShape(shape_key);
-  // } else {
-  //   NativeValue raw_shapes[3];
-  //   bool is_success = GetExecutingContext()->dartMethodPtr()->getWidgetElementShape(
-  //       GetExecutingContext()->isDedicated(), contextId(), bindingObject(),
-  //       reinterpret_cast<NativeValue*>(&raw_shapes));
-  //   if (is_success) {
-  //     shape = SaveWidgetElementsShapeData(raw_shapes);
-  //   }
-  // }
-  //
-  // if (shape != nullptr) {
-  //   if (shape->built_in_properties_.find(property_key) != shape->built_in_properties_.end()) {
-  //     return ScriptValue(ctx(), GetBindingProperty(key, FlushUICommandReason::kDependentsOnElement,
-  //     exception_state));
-  //   }
-  //
-  //   if (shape->built_in_methods_.find(property_key) != shape->built_in_methods_.end()) {
-  //     if (cached_methods_.count(key) > 0) {
-  //       return cached_methods_[key];
-  //     }
-  //
-  //     auto func = CreateSyncMethodFunc(key);
-  //     cached_methods_[key] = func;
-  //     return func;
-  //   }
-  //
-  //   if (shape->built_in_async_methods_.find(property_key) != shape->built_in_async_methods_.end()) {
-  //     if (async_cached_methods_.count(key) > 0) {
-  //       return async_cached_methods_[key];
-  //     }
-  //
-  //     auto func = CreateAsyncMethodFunc(key);
-  //     async_cached_methods_[key] = CreateAsyncMethodFunc(key);
-  //     return func;
-  //   }
-  // }
+  const WidgetElementShape* shape = GetExecutingContext()->GetWidgetElementShape(key);
+
+  if (shape == nullptr || !shape->HasPropertyOrMethod(key)) {
+    return ScriptValue::Undefined(ctx());
+  }
+
+  if (shape->HasProperty(key)) {
+    return ScriptValue(ctx(), GetBindingProperty(key, FlushUICommandReason::kDependentsOnElement, exception_state));
+  }
+
+  if (shape->HasMethod(key)) {
+    if (cached_methods_.count(key) > 0) {
+      return cached_methods_[key];
+    }
+
+    auto func = CreateSyncMethodFunc(key);
+    cached_methods_[key] = func;
+
+    return func;
+  }
+
+  if (shape->HasAsyncMethod(key)) {
+    if (async_cached_methods_.count(key) > 0) {
+      return async_cached_methods_[key];
+    }
+
+    auto func = CreateAsyncMethodFunc(key);
+    async_cached_methods_[key] = CreateAsyncMethodFunc(key);
+    return func;
+  }
 
   return ScriptValue::Undefined(ctx());
 }
 
 bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {
-  // if
-  // (!GetExecutingContext()->dartIsolateContext()->EnsureData()->HasWidgetElementShape(tagName().ToStdString(ctx()))) {
-  //   GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsOnElement);
-  // }
-  //
-  // auto shape =
-  //     GetExecutingContext()->dartIsolateContext()->EnsureData()->GetWidgetElementShape(tagName().ToStdString(ctx()));
-  // // This property is defined in the Dart side
-  // if (shape != nullptr && shape->built_in_properties_.count(key.ToStdString(ctx())) > 0) {
-  //   NativeValue result = SetBindingProperty(key, value.ToNative(ctx(), exception_state), exception_state);
-  //   return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
-  // }
-  //
-  // // This property is defined in WidgetElement.prototype, should return false to let it handled in the prototype
-  // // methods.
-  // JSValue prototypeObject = GetExecutingContext()->contextData()->prototypeForType(GetWrapperTypeInfo());
-  // if (JS_HasProperty(ctx(), prototypeObject, key.Impl())) {
-  //   return false;
-  // }
+  if (IsPrototypeProperty(key)) {
+    return false;
+  }
+
+  const WidgetElementShape* shape = GetExecutingContext()->GetWidgetElementShape(key);
+
+  if (shape == nullptr || !shape->HasPropertyOrMethod(key)) {
+    return false;
+  }
+
+  if (shape->HasProperty(key)) {
+    NativeValue result = SetBindingProperty(key, value.ToNative(ctx(), exception_state), exception_state);
+    return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+  }
 
   // Nothing at all
   unimplemented_properties_[key] = value;
@@ -142,5 +126,87 @@ bool WidgetElement::IsWidgetElement() const {
 void WidgetElement::Trace(GCVisitor* visitor) const {
   HTMLElement::Trace(visitor);
 }
+
+struct FunctionData {
+  std::string method_name;
+};
+
+ScriptValue SyncDynamicFunction(JSContext* ctx,
+                                const ScriptValue& this_val,
+                                uint32_t argc,
+                                const ScriptValue* argv,
+                                void* private_data) {
+  auto* data = reinterpret_cast<FunctionData*>(private_data);
+  auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
+  AtomicString method_name = AtomicString(ctx, data->method_name);
+
+  ExceptionState exception_state;
+
+  NativeValue arguments[argc];
+
+  for (int i = 0; i < argc; i++) {
+    arguments[i] = argv[i].ToNative(ctx, exception_state, false);
+  }
+
+  if (exception_state.HasException()) {
+    event_target->GetExecutingContext()->HandleException(exception_state);
+    return ScriptValue::Empty(ctx);
+  }
+
+  NativeValue result = event_target->InvokeBindingMethod(method_name, argc, arguments,
+                                                         FlushUICommandReason::kDependentsOnElement, exception_state);
+
+  if (exception_state.HasException()) {
+    event_target->GetExecutingContext()->HandleException(exception_state);
+    return ScriptValue::Empty(ctx);
+  }
+
+  return ScriptValue(ctx, result);
+}
+
+ScriptValue AsyncDynamicFunction(JSContext* ctx,
+                                const ScriptValue& this_val,
+                                uint32_t argc,
+                                const ScriptValue* argv,
+                                void* private_data) {
+  auto* data = reinterpret_cast<FunctionData*>(private_data);
+  auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
+  AtomicString method_name = AtomicString(ctx, data->method_name);
+
+  ExceptionState exception_state;
+
+  NativeValue arguments[argc];
+
+  for (int i = 0; i < argc; i++) {
+    arguments[i] = argv[i].ToNative(ctx, exception_state, false);
+  }
+
+  if (exception_state.HasException()) {
+    event_target->GetExecutingContext()->HandleException(exception_state);
+    return ScriptValue::Empty(ctx);
+  }
+
+  ScriptPromise promise = event_target->InvokeBindingMethodAsync(method_name, argc, arguments, exception_state);
+
+  if (exception_state.HasException()) {
+    event_target->GetExecutingContext()->HandleException(exception_state);
+    return ScriptValue::Empty(ctx);
+  }
+
+  return promise.ToValue();
+}
+
+ScriptValue WidgetElement::CreateSyncMethodFunc(const AtomicString& method_name) {
+  auto* data = new FunctionData();
+  data->method_name = method_name.ToStdString(ctx());
+  return ScriptValue(ctx(), QJSFunction::Create(ctx(), SyncDynamicFunction, 1, data)->ToQuickJSUnsafe());
+}
+
+ScriptValue WidgetElement::CreateAsyncMethodFunc(const AtomicString& method_name) {
+  auto* data = new FunctionData();
+  data->method_name = method_name.ToStdString(ctx());
+  return ScriptValue(ctx(), QJSFunction::Create(ctx(), AsyncDynamicFunction, 1, data)->ToQuickJSUnsafe());
+}
+
 
 }  // namespace webf
