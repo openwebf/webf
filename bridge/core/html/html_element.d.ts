@@ -4,10 +4,10 @@ import {GlobalEventHandlers} from "../dom/global_event_handlers";
 export interface HTMLElement extends Element, GlobalEventHandlers {
   // CSSOM View Module
   // https://drafts.csswg.org/cssom-view/#extensions-to-the-htmlelement-interface
-  readonly offsetTop: DartImpl<DependentsOnLayout<double>>;
-  readonly offsetLeft: DartImpl<DependentsOnLayout<double>>;
-  readonly offsetWidth: DartImpl<DependentsOnLayout<double>>;
-  readonly offsetHeight: DartImpl<DependentsOnLayout<double>>;
+  readonly offsetTop: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
+  readonly offsetLeft: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
+  readonly offsetWidth: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
+  readonly offsetHeight: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
 
   click(): DartImpl<DependentsOnLayout<void>>;
 
