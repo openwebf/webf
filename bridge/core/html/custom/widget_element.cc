@@ -165,10 +165,10 @@ ScriptValue SyncDynamicFunction(JSContext* ctx,
 }
 
 ScriptValue AsyncDynamicFunction(JSContext* ctx,
-                                const ScriptValue& this_val,
-                                uint32_t argc,
-                                const ScriptValue* argv,
-                                void* private_data) {
+                                 const ScriptValue& this_val,
+                                 uint32_t argc,
+                                 const ScriptValue* argv,
+                                 void* private_data) {
   auto* data = reinterpret_cast<FunctionData*>(private_data);
   auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
   AtomicString method_name = AtomicString(ctx, data->method_name);
@@ -207,6 +207,5 @@ ScriptValue WidgetElement::CreateAsyncMethodFunc(const AtomicString& method_name
   data->method_name = method_name.ToStdString(ctx());
   return ScriptValue(ctx(), QJSFunction::Create(ctx(), AsyncDynamicFunction, 1, data)->ToQuickJSUnsafe());
 }
-
 
 }  // namespace webf
