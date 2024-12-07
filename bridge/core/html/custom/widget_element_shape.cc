@@ -47,7 +47,6 @@ void WidgetElementShape::GetAllPropertyNames(std::vector<AtomicString>& names) c
   }
 }
 
-
 void WidgetElementShape::InitializeProperties(JSContext* ctx, NativeValue* properties) {
   size_t length = properties->uint32;
   auto* head = static_cast<NativeValue*>(properties->u.ptr);
