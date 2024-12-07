@@ -67,16 +67,25 @@ class Element : public ContainerNode {
   void removeAttribute(const AtomicString&, ExceptionState& exception_state);
   BoundingClientRect* getBoundingClientRect(ExceptionState& exception_state);
   std::vector<BoundingClientRect*> getClientRects(ExceptionState& exception_state);
-  void click(ExceptionState& exception_state);
+//  void click(ExceptionState& exception_state);
   void scroll(ExceptionState& exception_state);
   void scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
   void scroll(double x, double y, ExceptionState& exception_state);
+  void scroll_async(ExceptionState& exception_state);
+  void scroll_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
+  void scroll_async(double x, double y, ExceptionState& exception_state);
   void scrollTo(ExceptionState& exception_state);
   void scrollTo(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
   void scrollTo(double x, double y, ExceptionState& exception_state);
+  void scrollTo_async(ExceptionState& exception_state);
+  void scrollTo_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
+  void scrollTo_async(double x, double y, ExceptionState& exception_state);
   void scrollBy(ExceptionState& exception_state);
   void scrollBy(double x, double y, ExceptionState& exception_state);
   void scrollBy(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
+  void scrollBy_async(ExceptionState& exception_state);
+  void scrollBy_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
+  void scrollBy_async(double x, double y, ExceptionState& exception_state);
 
   ScriptPromise toBlob(double device_pixel_ratio, ExceptionState& exception_state);
   ScriptPromise toBlob(ExceptionState& exception_state);
@@ -112,10 +121,14 @@ class Element : public ContainerNode {
   std::string nodeName() const override;
 
   AtomicString className() const;
+  ScriptPromise className_async(ExceptionState& exception_state);
   void setClassName(const AtomicString& value, ExceptionState& exception_state);
+  void setClassName_async(const AtomicString& value, ExceptionState& exception_state);
 
   AtomicString id() const;
+  ScriptPromise id_async(ExceptionState& exception_state);
   void setId(const AtomicString& value, ExceptionState& exception_state);
+  void setId_async(const AtomicString& value, ExceptionState& exception_state);
 
   std::vector<Element*> getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state);
   std::vector<Element*> getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state);
@@ -129,6 +142,7 @@ class Element : public ContainerNode {
   InlineCssStyleDeclaration* style();
   InlineCssStyleDeclaration& EnsureCSSStyleDeclaration();
   DOMTokenList* classList();
+  ScriptPromise classList_async(ExceptionState& exception_state);
   DOMStringMap* dataset();
 
   Element& CloneWithChildren(CloneChildrenFlag flag, Document* = nullptr) const;

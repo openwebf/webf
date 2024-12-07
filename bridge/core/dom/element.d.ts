@@ -7,9 +7,9 @@ import {ParentNode} from "./parent_node";
 import {ChildNode} from "./child_node";
 
 interface Element extends Node, ParentNode, ChildNode {
-  id: string;
-  className: string;
-  readonly classList: DOMTokenList;
+  id: SupportAsync<string>;
+  className: SupportAsync<string>;
+  readonly classList: SupportAsync<DOMTokenList>;
   readonly dataset: DOMStringMap;
   name: DartImpl<string>;
   readonly attributes: ElementAttributes;
@@ -65,12 +65,12 @@ interface Element extends Node, ParentNode, ChildNode {
 
   closest(selectors: string): SupportAsync<Element | null>;
 
-  scroll(options?: ScrollToOptions): void;
-  scroll(x: number, y: number): void;
-  scrollBy(options?: ScrollToOptions): void;
-  scrollBy(x: number, y: number): void;
-  scrollTo(options?: ScrollToOptions): void;
-  scrollTo(x: number, y: number): void;
+  scroll(options?: ScrollToOptions): SupportAsyncManual<void>;
+  scroll(x: number, y: number): SupportAsyncManual<void>;
+  scrollBy(options?: ScrollToOptions): SupportAsyncManual<void>;
+  scrollBy(x: number, y: number): SupportAsyncManual<void>;
+  scrollTo(options?: ScrollToOptions): SupportAsyncManual<void>;
+  scrollTo(x: number, y: number): SupportAsyncManual<void>;
 
   // Export the target element's rendering content to PNG.
   // WebF special API.

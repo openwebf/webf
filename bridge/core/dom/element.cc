@@ -109,10 +109,10 @@ std::vector<BoundingClientRect*> Element::getClientRects(ExceptionState& excepti
   return vecRects;
 }
 
-void Element::click(ExceptionState& exception_state) {
-  InvokeBindingMethod(binding_call_methods::kclick, 0, nullptr, FlushUICommandReason::kDependentsOnElement,
-                      exception_state);
-}
+//void Element::click(ExceptionState& exception_state) {
+//  InvokeBindingMethod(binding_call_methods::kclick, 0, nullptr, FlushUICommandReason::kDependentsOnElement,
+//                      exception_state);
+//}
 
 void Element::scroll(ExceptionState& exception_state) {
   return scroll(0, 0, exception_state);
@@ -136,6 +136,25 @@ void Element::scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionS
   InvokeBindingMethod(binding_call_methods::kscroll, 2, args,
                       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
                       exception_state);
+}
+void Element::scroll_async(ExceptionState& exception_state) {
+  return scroll_async(0, 0, exception_state);
+}
+
+void Element::scroll_async(double x, double y, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscroll, 2, args, exception_state);
+}
+
+void Element::scroll_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscroll, 2, args, exception_state);
 }
 
 void Element::scrollBy(ExceptionState& exception_state) {
@@ -161,6 +180,24 @@ void Element::scrollBy(const std::shared_ptr<ScrollToOptions>& options, Exceptio
                       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
                       exception_state);
 }
+void Element::scrollBy_async(ExceptionState& exception_state) {
+  return scrollBy_async(0, 0, exception_state);
+}
+
+void Element::scrollBy_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscrollBy, 2, args, exception_state);
+}
+void Element::scrollBy_async(double x, double y, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscrollBy, 2, args, exception_state);
+}
 
 void Element::scrollTo(ExceptionState& exception_state) {
   return scroll(exception_state);
@@ -172,6 +209,18 @@ void Element::scrollTo(double x, double y, ExceptionState& exception_state) {
 
 void Element::scrollTo(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
   return scroll(options, exception_state);
+}
+
+void Element::scrollTo_async(ExceptionState& exception_state) {
+  return scroll_async(exception_state);
+}
+
+void Element::scrollTo_async(double x, double y, ExceptionState& exception_state) {
+  return scroll_async(x, y, exception_state);
+}
+
+void Element::scrollTo_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
+  return scroll_async(options, exception_state);
 }
 
 bool Element::HasTagName(const AtomicString& name) const {
@@ -189,17 +238,29 @@ std::string Element::nodeName() const {
 AtomicString Element::className() const {
   return getAttribute(binding_call_methods::kclass, ASSERT_NO_EXCEPTION());
 }
+ScriptPromise Element::className_async(ExceptionState& exception_state) {
+  //TODO
+}
 
 void Element::setClassName(const AtomicString& value, ExceptionState& exception_state) {
   setAttribute(html_names::kClassAttr, value, exception_state);
+}
+void Element::setClassName_async(const AtomicString& value, ExceptionState& exception_state) {
+  //TODO
 }
 
 AtomicString Element::id() const {
   return getAttribute(binding_call_methods::kid, ASSERT_NO_EXCEPTION());
 }
+ScriptPromise Element::id_async(ExceptionState& exception_state) {
+  //TODO
+}
 
 void Element::setId(const AtomicString& value, ExceptionState& exception_state) {
   setAttribute(html_names::kIdAttr, value, exception_state);
+}
+void Element::setId_async(const AtomicString& value, ExceptionState& exception_state) {
+  //TODO
 }
 
 std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
@@ -285,6 +346,11 @@ DOMTokenList* Element::classList() {
   }
   return element_data.GetClassList();
 }
+ScriptPromise Element::classList_async(ExceptionState& exception_state) {
+  //TODO
+  return ScriptPromise(ctx(), JS_NULL);
+}
+
 
 DOMStringMap* Element::dataset() {
   ElementData& element_data = EnsureElementData();
