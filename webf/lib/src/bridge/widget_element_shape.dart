@@ -50,14 +50,14 @@ Pointer<WidgetElementShape> createWidgetElementShape(Map<String, ElementCreator>
 
     Pointer<WidgetElementShape> shape = nativeShapes + shapeIndex;
 
-    shape.ref.name = widgetElement.tagName.toNativeUtf8();
+    shape.ref.name = tagName.toNativeUtf8();
     shape.ref.properties = malloc.allocate(sizeOf<NativeValue>());
     shape.ref.methods = malloc.allocate(sizeOf<NativeValue>());
     shape.ref.asyncMethods = malloc.allocate(sizeOf<NativeValue>());
 
     toNativeValue(shape.ref.properties, properties);
-    toNativeValue(shape.ref.methods, properties);
-    toNativeValue(shape.ref.asyncMethods, properties);
+    toNativeValue(shape.ref.methods, syncMethods);
+    toNativeValue(shape.ref.asyncMethods, asyncMethods);
 
     shapeIndex++;
   });

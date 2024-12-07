@@ -39,14 +39,36 @@ bool WidgetElement::NamedPropertyQuery(const AtomicString& key, ExceptionState& 
 }
 
 void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState& exception_state) {
-  // NativeValue result = GetAllBindingPropertyNames(exception_state);
-  // assert(result.tag == NativeTag::TAG_LIST);
-  // std::vector<AtomicString> property_names =
-  //     NativeValueConverter<NativeTypeArray<NativeTypeString>>::FromNativeValue(ctx(), result);
-  // names.reserve(property_names.size());
-  // for (auto& property_name : property_names) {
-  //   names.emplace_back(property_name);
-  // }
+  const WidgetElementShape* shape = GetExecutingContext()->GetWidgetElementShape(tagName());
+  shape->GetAllPropertyNames(names);
+}
+
+static bool IsAsyncKey(const AtomicString& key, char* normal_string) {
+  if (!key.Is8Bit()) {
+    return false;
+  }
+
+  StringView string_view = key.ToStringView();
+  const char* string = string_view.Characters8();
+
+  const char* suffix = "_async";
+  size_t str_len = string_view.length();
+  size_t suffix_len = std::strlen(suffix);
+
+  if (str_len < suffix_len) {
+    return false;  // String is shorter than the suffix
+  }
+
+  // Compare the suffix part of the string
+  bool is_match = std::strcmp(string + (str_len - suffix_len), suffix) == 0;
+
+  if (is_match) {
+    size_t new_len = str_len - suffix_len;
+    std::strncpy(normal_string, string, new_len);
+    normal_string[new_len] = '\0';
+  }
+
+  return is_match;
 }
 
 ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& exception_state) {
@@ -60,13 +82,21 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     return ScriptValue::Undefined(ctx());
   }
 
-  const WidgetElementShape* shape = GetExecutingContext()->GetWidgetElementShape(key);
+  const WidgetElementShape* shape = GetExecutingContext()->GetWidgetElementShape(tagName());
 
-  if (shape == nullptr || !shape->HasPropertyOrMethod(key)) {
+  char async_key_string[key.length()];
+  bool is_async = IsAsyncKey(key, async_key_string);
+  AtomicString async_key = AtomicString(ctx(), async_key_string);
+
+  if (shape == nullptr || !(shape->HasPropertyOrMethod(key) || shape->HasPropertyOrMethod(async_key))) {
     return ScriptValue::Undefined(ctx());
   }
 
-  if (shape->HasProperty(key)) {
+  if (shape->HasProperty(key) || shape->HasProperty(async_key)) {
+    if (is_async) {
+      return GetBindingPropertyAsync(async_key, exception_state).ToValue();
+    }
+
     return ScriptValue(ctx(), GetBindingProperty(key, FlushUICommandReason::kDependentsOnElement, exception_state));
   }
 
@@ -77,6 +107,17 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 
     auto func = CreateSyncMethodFunc(key);
     cached_methods_[key] = func;
+
+    return func;
+  }
+
+  if (shape->HasMethod(async_key)) {
+    if (async_cached_methods_.count(async_key) > 0) {
+      return async_cached_methods_[async_key];
+    }
+
+    auto func = CreateAsyncMethodFunc(async_key);
+    async_cached_methods_[key] = func;
 
     return func;
   }
@@ -106,6 +147,15 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
   }
 
   if (shape->HasProperty(key)) {
+    char sync_key_string[key.length()];
+    bool is_async = IsAsyncKey(key, sync_key_string);
+
+    if (is_async) {
+      AtomicString sync_key = AtomicString(ctx(), sync_key_string);
+      SetBindingPropertyAsync(sync_key, value.ToNative(ctx(), exception_state));
+      return true;
+    }
+
     NativeValue result = SetBindingProperty(key, value.ToNative(ctx(), exception_state), exception_state);
     return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
   }
@@ -125,6 +175,18 @@ bool WidgetElement::IsWidgetElement() const {
 
 void WidgetElement::Trace(GCVisitor* visitor) const {
   HTMLElement::Trace(visitor);
+
+  for (auto& entry : unimplemented_properties_) {
+    entry.second.Trace(visitor);
+  }
+
+  for (auto& entry : cached_methods_) {
+    entry.second.Trace(visitor);
+  }
+
+  for (auto& entry : async_cached_methods_) {
+    entry.second.Trace(visitor);
+  }
 }
 
 struct FunctionData {
@@ -139,7 +201,6 @@ ScriptValue SyncDynamicFunction(JSContext* ctx,
   auto* data = reinterpret_cast<FunctionData*>(private_data);
   auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
   AtomicString method_name = AtomicString(ctx, data->method_name);
-
   ExceptionState exception_state;
 
   NativeValue arguments[argc];
@@ -153,15 +214,21 @@ ScriptValue SyncDynamicFunction(JSContext* ctx,
     return ScriptValue::Empty(ctx);
   }
 
-  NativeValue result = event_target->InvokeBindingMethod(method_name, argc, arguments,
-                                                         FlushUICommandReason::kDependentsOnElement, exception_state);
+  char sync_method_string[method_name.length()];
+  if (IsAsyncKey(method_name, sync_method_string)) {
+    AtomicString sync_method = AtomicString(ctx, sync_method_string);
+    ScriptPromise promise = event_target->InvokeBindingMethodAsync(sync_method, argc, arguments, exception_state);
+    return promise.ToValue();
+  } else {
+    NativeValue result = event_target->InvokeBindingMethod(method_name, argc, arguments,
+                                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+    if (exception_state.HasException()) {
+      event_target->GetExecutingContext()->HandleException(exception_state);
+      return ScriptValue::Empty(ctx);
+    }
 
-  if (exception_state.HasException()) {
-    event_target->GetExecutingContext()->HandleException(exception_state);
-    return ScriptValue::Empty(ctx);
+    return ScriptValue(ctx, result);
   }
-
-  return ScriptValue(ctx, result);
 }
 
 ScriptValue AsyncDynamicFunction(JSContext* ctx,
