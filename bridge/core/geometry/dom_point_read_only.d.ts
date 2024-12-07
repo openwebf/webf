@@ -7,7 +7,7 @@ interface DOMPointReadOnly {
     y: number;
     z: number;
     w: number;
-    matrixTransform(matrix: DOMMatrix): DOMPoint;
+    matrixTransform(matrix: DOMMatrix): SupportAsync<DOMPoint>;
     fromPoint(point: DOMPoint): StaticMethod<DOMPoint>;
     new(x?: number | DOMPointInit, y?: number, z?: number, w?: number): DOMPointReadOnly;
 }
