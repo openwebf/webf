@@ -242,7 +242,6 @@ function getParameterType(type: ts.TypeNode, unionTypeCollector: UnionTypeCollec
         if (mode) {
           mode.supportAsync = true
           if (identifier === 'SupportAsyncManual') {
-            console.log("SupportAsyncManual....1")
             mode.supportAsyncManual = true
           }
         }
