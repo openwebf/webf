@@ -14,6 +14,22 @@ WidgetElementShape::WidgetElementShape(JSContext* ctx, NativeWidgetElementShape*
   InitializeAsyncMethods(ctx, native_widget_element_shape->async_methods);
 }
 
+bool WidgetElementShape::HasPropertyOrMethod(const AtomicString& name) const {
+  return built_in_properties_.count(name) > 0 || built_in_methods_.count(name) > 0 || built_in_async_methods_.count(name) > 0;
+}
+
+bool WidgetElementShape::HasProperty(const AtomicString& name) const {
+  return built_in_properties_.count(name) > 0;
+}
+
+bool WidgetElementShape::HasMethod(const AtomicString& name) const {
+  return built_in_methods_.count(name) > 0;
+}
+
+bool WidgetElementShape::HasAsyncMethod(const AtomicString& name) const {
+  return built_in_async_methods_.count(name) > 0;
+}
+
 void WidgetElementShape::InitializeProperties(JSContext* ctx, NativeValue* properties) {
   size_t length = properties->uint32;
   auto* head = static_cast<NativeValue*>(properties->u.ptr);

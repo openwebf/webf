@@ -38,7 +38,6 @@ class WidgetElement : public HTMLElement {
  private:
   ScriptValue CreateSyncMethodFunc(const AtomicString& method_name);
   ScriptValue CreateAsyncMethodFunc(const AtomicString& method_name);
-  const WidgetElementShape* SaveWidgetElementsShapeData(const NativeValue* argv);
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> cached_methods_;
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> async_cached_methods_;
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> unimplemented_properties_;

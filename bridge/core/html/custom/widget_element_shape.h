@@ -23,6 +23,11 @@ class WidgetElementShape {
  public:
   WidgetElementShape(JSContext* ctx, NativeWidgetElementShape* native_widget_element_shape);
 
+  bool HasPropertyOrMethod(const AtomicString& name) const;
+  bool HasProperty(const AtomicString& name) const;
+  bool HasMethod(const AtomicString& name) const;
+  bool HasAsyncMethod(const AtomicString& name) const;
+
  private:
   void InitializeProperties(JSContext* ctx, NativeValue* properties);
   void InitializeMethods(JSContext* ctx, NativeValue* methods);
