@@ -173,8 +173,13 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
       return getParameterBaseType(argument);
     } else if (identifier === 'LegacyNullToEmptyString') {
       return FunctionArgumentType.legacy_dom_string;
-    } else if (identifier === 'SupportAsync') {
-      if (mode) mode.supportAsync = true;
+    } else if (identifier.indexOf('SupportAsync') >= 0) {
+      if (mode) {
+        mode.supportAsync = true;
+        if (identifier === "SupportAsyncManual"){
+          mode.supportAsyncManual = true;
+        }
+      }
       let argument = typeReference.typeArguments![0] as unknown as ts.TypeNode;
       if (argument.kind == ts.SyntaxKind.TypeReference) {
         let typeReference: ts.TypeReference = argument as unknown as ts.TypeReference;
@@ -231,10 +236,16 @@ function getParameterType(type: ts.TypeNode, unionTypeCollector: UnionTypeCollec
     let typeReference: ts.TypeReference = type as unknown as ts.TypeReference;
     // @ts-ignore
     let identifier = (typeReference.typeName as ts.Identifier).text;
-    if (identifier === 'SupportAsync') {
+    if (identifier.indexOf('SupportAsync') >= 0) {
       let argument = typeReference.typeArguments![0] as unknown as ts.TypeNode;
       if (argument.kind == ts.SyntaxKind.UnionType) {
-        if (mode) mode.supportAsync = true
+        if (mode) {
+          mode.supportAsync = true
+          if (identifier === 'SupportAsyncManual') {
+            console.log("SupportAsyncManual....1")
+            mode.supportAsyncManual = true
+          }
+        }
         let node = argument as unknown as ts.UnionType;
         let types = node.types;
         let result = {
@@ -339,6 +350,7 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
                   // set prop supportAsync = false
                   let syncMode = Object.assign({}, mode);
                   syncMode.supportAsync = false;
+                  mode.supportAsyncManual = false;
                   prop.typeMode = syncMode
                   asyncProp.name = asyncProp.name + '_async';
                   definedPropertyCollector.properties.add(asyncProp.name);
@@ -386,6 +398,7 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
               let asyncFunc = Object.assign({}, f);
               let mode = Object.assign({}, f.returnTypeMode);
               mode.supportAsync = false;
+              mode.supportAsyncManual = false;
               f.returnTypeMode = mode
               asyncFunc.name = getPropName(m.name) + '_async';
               asyncFunc.args = [];

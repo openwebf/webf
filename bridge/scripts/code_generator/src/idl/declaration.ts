@@ -35,6 +35,7 @@ export class ParameterMode {
   layoutDependent?: boolean;
   static?: boolean;
   supportAsync?: boolean;
+  supportAsyncManual?: boolean;
   supportAsyncArrayValue?: boolean;
   staticMethod?: boolean;
 }

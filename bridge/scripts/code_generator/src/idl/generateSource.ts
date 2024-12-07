@@ -392,7 +392,7 @@ function generateReturnPromiseCallCode(blob: IDLBlob, declare: FunctionDeclarati
   let returnValueAssignment = '';
 
   if (declare.returnType.value != FunctionArgumentType.void) {
-    returnValueAssignment = 'auto scriptPromise = ';
+    returnValueAssignment = 'return_value = ';
   }
 
   return `
@@ -418,9 +418,11 @@ function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, a
     } else {
       call = generateDartImplCallCode(blob, declare, declare.returnTypeMode?.layoutDependent ?? false, declare.args.slice(0, argsIndex + 1));
     }
+  } else if(declare.returnTypeMode?.supportAsync && !declare.returnTypeMode?.supportAsyncManual) {
+    call = generateReturnPromiseCallCode(blob, declare, declare.args.slice(0, argsIndex + 1));
   } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
-${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...previousArguments, `args_${argument.name}`, 'exception_state'].join(',')});`;
+  ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...previousArguments, `args_${argument.name}`, 'exception_state'].join(',')});`;
   } else {
     call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declare.name)}(context, ${[...previousArguments, `args_${argument.name}`].join(',')}, exception_state);`;
   }
@@ -483,6 +485,8 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
       call = generateDartImplCallCode(blob, declaration, declaration.returnTypeMode?.layoutDependent ?? false, declaration.args.slice(0, minimalRequiredArgc));
     }
   } else if (declaration.returnTypeMode?.supportAsync && declaration.returnType.value != FunctionArgumentType.void) {
+    call = generateReturnPromiseCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc))
+  } else if (declaration.returnTypeMode?.supportAsync && !declaration.returnTypeMode?.supportAsyncManual ) {
     call = generateReturnPromiseCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc))
   } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);

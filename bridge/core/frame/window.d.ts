@@ -14,8 +14,8 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   open(url?: string): Window | null;
   scroll(x: number, y: number): void;
   scroll(options?: ScrollToOptions): void;
-  scrollTo(options?: ScrollToOptions): SupportAsync<void>;
-  scrollTo(x: number, y: number): SupportAsync<void>;
+  scrollTo(options?: ScrollToOptions): SupportAsyncManual<void>;
+  scrollTo(x: number, y: number):  SupportAsyncManual<void>;
   scrollBy(options?: ScrollToOptions): void;
   scrollBy(x: number, y: number): void;
 
