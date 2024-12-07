@@ -43,7 +43,7 @@ interface DOMMatrixReadOnly {
     // toFloat64Array(): number[];
     // TODO
     // toJSON(): DartImpl<JSON>;
-    toString(): string;
+    toString(): SupportAsync<string>;
     transformPoint(point: DOMPoint): SupportAsync<DOMPoint>;
     translate(tx?:number, ty?:number, tz?:number): SupportAsync<DOMMatrix>;
     // fromFloat32Array(): StaticMethod<DOMMatrix>;
