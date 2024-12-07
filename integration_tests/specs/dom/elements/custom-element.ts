@@ -452,6 +452,14 @@ describe('custom html element', () => {
     await snapshot();
   });
 
+  it('dart implements getAllBindingPropertyNames works', async () => {
+    let sampleElement = document.createElement('sample-element');
+    let attributes = Object.keys(sampleElement);
+    expect(attributes).toEqual([
+      'fake', 'ping', 'fn', 'asyncFnNotComplete', 'asyncFnFailed', 'asyncFn'
+    ])
+  });
+
   it('support custom properties in dart directly', async () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');
@@ -459,9 +467,9 @@ describe('custom html element', () => {
     document.body.appendChild(sampleElement);
 
     // @ts-ignore
-    expect(sampleElement.getPropertyValue('ping')).toBe('pong');
+    expect(sampleElement.ping).toBe('pong');
     // @ts-ignore
-    expect(await sampleElement.getPropertyValueAsync('ping')).toBe('pong');
+    expect(await sampleElement.ping_async).toBe('pong');
   });
 
   it('support call js function but defined in dart directly', async () => {
@@ -472,10 +480,10 @@ describe('custom html element', () => {
 
     let arrs = [1, 2, 4, 8, 16];
 
-     // @ts-ignore
-    expect(sampleElement.callMethod('fn', 1, 2, 4, 8, 16)).toEqual([2, 4, 8, 16, 32]);
     // @ts-ignore
-    expect(await sampleElement.callAsyncMethod('fn', ...arrs)).toEqual([2, 4, 8, 16, 32]);
+    expect(sampleElement.fn(1, 2, 4, 8, 16)).toEqual([2, 4, 8, 16, 32]);
+    // @ts-ignore
+    expect(await sampleElement.fn(...arrs)).toEqual([2, 4, 8, 16, 32]);
   });
 
   it('return promise when dart return future async function', async () => {
@@ -484,20 +492,20 @@ describe('custom html element', () => {
     sampleElement.appendChild(text);
     document.body.appendChild(sampleElement);
     // @ts-ignore
-    let p = sampleElement.callAsyncMethod('asyncFn', 1);
+    let p = sampleElement.asyncFn(1);
     expect(p instanceof Promise);
     let result = await p;
     expect(result).toBe(1);
     // @ts-ignore
-    let p2 = sampleElement.callAsyncMethod('asyncFn', 'abc');
+    let p2 = sampleElement.asyncFn('abc');
     expect(await p2).toBe('abc');
 
     // @ts-ignore
-    let p3 = sampleElement.callAsyncMethod('asyncFn', [1, 2, 3, 4]);
+    let p3 = sampleElement.asyncFn([1, 2, 3, 4]);
     expect(await p3).toEqual([1, 2, 3, 4]);
 
     // @ts-ignore
-    let p4 = sampleElement.callAsyncMethod('asyncFn', [{ name: 1 }]);
+    let p4 = sampleElement.asyncFn([{ name: 1 }]);
     expect(await p4).toEqual([{ name: 1 }]);
   });
 
@@ -507,7 +515,7 @@ describe('custom html element', () => {
     sampleElement.appendChild(text);
     document.body.appendChild(sampleElement);
     // @ts-ignore
-    let p = sampleElement.callAsyncMethod('asyncFnNotComplete');
+    let p = sampleElement.asyncFnNotComplete();
     expect(p instanceof Promise);
 
     p.then(() => {
@@ -525,7 +533,7 @@ describe('custom html element', () => {
     sampleElement.appendChild(text);
     document.body.appendChild(sampleElement);
     // @ts-ignore
-    let p = sampleElement.callAsyncMethod('asyncFnFailed');
+    let p = sampleElement.asyncFnFailed();
     expect(p instanceof Promise);
     try {
       let result = await p;
