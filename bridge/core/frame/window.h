@@ -28,6 +28,7 @@ class Window : public EventTargetWithInlineData {
   Window* open(const AtomicString& url, ExceptionState& exception_state);
 
   Screen* screen();
+  ScriptPromise screen_async();
 
   [[nodiscard]] const Window* window() const { return this; }
   [[nodiscard]] const Window* self() const { return this; }

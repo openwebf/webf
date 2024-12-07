@@ -138,6 +138,11 @@ Screen* Window::screen() {
   return screen_;
 }
 
+ScriptPromise Window::screen_async() {
+  ExceptionState exceptionState;
+  return GetBindingPropertyAsync(binding_call_methods::kscreen, exceptionState);
+}
+
 void Window::scroll(ExceptionState& exception_state) {
   return scroll(0, 0, exception_state);
 }

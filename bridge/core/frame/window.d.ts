@@ -30,7 +30,7 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   readonly window: Window;
   readonly parent: Window;
   readonly self: Window;
-  readonly screen: Screen;
+  readonly screen: SupportAsync<Screen>;
 
   readonly scrollX: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
   readonly scrollY: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
