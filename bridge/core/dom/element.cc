@@ -109,7 +109,7 @@ std::vector<BoundingClientRect*> Element::getClientRects(ExceptionState& excepti
   return vecRects;
 }
 
-//void Element::click(ExceptionState& exception_state) {
+// void Element::click(ExceptionState& exception_state) {
 //  InvokeBindingMethod(binding_call_methods::kclick, 0, nullptr, FlushUICommandReason::kDependentsOnElement,
 //                      exception_state);
 //}
@@ -239,28 +239,28 @@ AtomicString Element::className() const {
   return getAttribute(binding_call_methods::kclass, ASSERT_NO_EXCEPTION());
 }
 ScriptPromise Element::className_async(ExceptionState& exception_state) {
-  //TODO
+  // TODO
 }
 
 void Element::setClassName(const AtomicString& value, ExceptionState& exception_state) {
   setAttribute(html_names::kClassAttr, value, exception_state);
 }
 void Element::setClassName_async(const AtomicString& value, ExceptionState& exception_state) {
-  //TODO
+  // TODO
 }
 
 AtomicString Element::id() const {
   return getAttribute(binding_call_methods::kid, ASSERT_NO_EXCEPTION());
 }
 ScriptPromise Element::id_async(ExceptionState& exception_state) {
-  //TODO
+  // TODO
 }
 
 void Element::setId(const AtomicString& value, ExceptionState& exception_state) {
   setAttribute(html_names::kIdAttr, value, exception_state);
 }
 void Element::setId_async(const AtomicString& value, ExceptionState& exception_state) {
-  //TODO
+  // TODO
 }
 
 std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
@@ -347,10 +347,9 @@ DOMTokenList* Element::classList() {
   return element_data.GetClassList();
 }
 ScriptPromise Element::classList_async(ExceptionState& exception_state) {
-  //TODO
+  // TODO
   return ScriptPromise(ctx(), JS_NULL);
 }
-
 
 DOMStringMap* Element::dataset() {
   ElementData& element_data = EnsureElementData();

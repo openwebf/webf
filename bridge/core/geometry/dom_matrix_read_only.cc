@@ -144,7 +144,7 @@ ScriptPromise DOMMatrixReadOnly::m13_async(ExceptionState& exception_state) {
   return GetBindingPropertyAsync(defined_properties::km13, exception_state);
 }
 void DOMMatrixReadOnly::setM13_async(double v, ExceptionState& exception_state) {
-  setMatrixPropertyAsync(defined_properties::km13, v,exception_state);
+  setMatrixPropertyAsync(defined_properties::km13, v, exception_state);
 }
 
 double DOMMatrixReadOnly::m14() const {
@@ -157,7 +157,7 @@ ScriptPromise DOMMatrixReadOnly::m14_async(ExceptionState& exception_state) {
   return GetBindingPropertyAsync(defined_properties::km14, exception_state);
 }
 void DOMMatrixReadOnly::setM14_async(double v, ExceptionState& exception_state) {
-  setMatrixPropertyAsync(defined_properties::km14, v,exception_state);
+  setMatrixPropertyAsync(defined_properties::km14, v, exception_state);
 }
 
 double DOMMatrixReadOnly::m21() const {

@@ -173,7 +173,7 @@ void CanvasRenderingContext2D::setStrokeStyle(const std::shared_ptr<QJSUnionDomS
 
 void CanvasRenderingContext2D::setStrokeStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
                                                     ExceptionState& exception_state) {
-  //TODO
+  // TODO
 }
 
 void CanvasRenderingContext2D::roundRect(double x,

@@ -55,7 +55,6 @@ ScriptPromise ComputedCssStyleDeclaration::length_async(ExceptionState& exceptio
   return GetBindingPropertyAsync(binding_call_methods::klength, exception_state);
 }
 
-
 AtomicString ComputedCssStyleDeclaration::getPropertyValue(const AtomicString& key, ExceptionState& exception_state) {
   return item(key, exception_state).ToLegacyDOMString(ctx());
 }
@@ -115,10 +114,8 @@ ScriptPromise ComputedCssStyleDeclaration::cssText_async(ExceptionState& excepti
   return ScriptPromise(ctx(), JS_NULL);
 }
 
-
 void ComputedCssStyleDeclaration::setCssText(const webf::AtomicString& value, webf::ExceptionState& exception_state) {}
 
-void ComputedCssStyleDeclaration::setCssText_async(const AtomicString& value, ExceptionState& exception_state) { }
-
+void ComputedCssStyleDeclaration::setCssText_async(const AtomicString& value, ExceptionState& exception_state) {}
 
 }  // namespace webf
