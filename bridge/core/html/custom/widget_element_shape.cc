@@ -15,7 +15,8 @@ WidgetElementShape::WidgetElementShape(JSContext* ctx, NativeWidgetElementShape*
 }
 
 bool WidgetElementShape::HasPropertyOrMethod(const AtomicString& name) const {
-  return built_in_properties_.count(name) > 0 || built_in_methods_.count(name) > 0 || built_in_async_methods_.count(name) > 0;
+  return built_in_properties_.count(name) > 0 || built_in_methods_.count(name) > 0 ||
+         built_in_async_methods_.count(name) > 0;
 }
 
 bool WidgetElementShape::HasProperty(const AtomicString& name) const {
