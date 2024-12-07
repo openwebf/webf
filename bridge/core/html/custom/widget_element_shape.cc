@@ -31,6 +31,23 @@ bool WidgetElementShape::HasAsyncMethod(const AtomicString& name) const {
   return built_in_async_methods_.count(name) > 0;
 }
 
+void WidgetElementShape::GetAllPropertyNames(std::vector<AtomicString>& names) const {
+  names.reserve(built_in_properties_.size() + built_in_methods_.size() + built_in_async_methods_.size());
+
+  for (auto&& property : built_in_properties_) {
+    names.emplace_back(property);
+  }
+
+  for (auto&& property : built_in_methods_) {
+    names.emplace_back(property);
+  }
+
+  for (auto&& property : built_in_async_methods_) {
+    names.emplace_back(property);
+  }
+}
+
+
 void WidgetElementShape::InitializeProperties(JSContext* ctx, NativeValue* properties) {
   size_t length = properties->uint32;
   auto* head = static_cast<NativeValue*>(properties->u.ptr);

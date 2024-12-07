@@ -28,6 +28,8 @@ class WidgetElementShape {
   bool HasMethod(const AtomicString& name) const;
   bool HasAsyncMethod(const AtomicString& name) const;
 
+  void GetAllPropertyNames(std::vector<AtomicString>& names) const;
+
  private:
   void InitializeProperties(JSContext* ctx, NativeValue* properties);
   void InitializeMethods(JSContext* ctx, NativeValue* methods);

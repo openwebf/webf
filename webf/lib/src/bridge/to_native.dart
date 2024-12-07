@@ -605,8 +605,6 @@ Future<void> allocateNewPage(bool sync, double newContextId, int syncBufferSize)
   Map<String, ElementCreator> widgetElementCreators = getAllWidgetElements();
   Pointer<WidgetElementShape> shapes = createWidgetElementShape(widgetElementCreators);
 
-  print(widgetElementCreators);
-
   if (!sync) {
     Completer<void> completer = Completer();
     _AllocateNewPageContext context = _AllocateNewPageContext(completer, newContextId);
