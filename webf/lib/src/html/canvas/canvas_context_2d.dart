@@ -274,6 +274,10 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
           castToType<num>(args[4]).toDouble(),
           castToType<num>(args[5]).toDouble());
     }),
+    'translate': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
+      return castToType<CanvasRenderingContext2D>(context).translate(castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble());
+    }),
     'reset': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
       return castToType<CanvasRenderingContext2D>(context).reset();
     }),
