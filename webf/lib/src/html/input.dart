@@ -166,18 +166,83 @@ mixin BaseInputElement on WidgetElement {
     }
 
     switch (type) {
+      case 'text':
+        if (inputMode != null) {
+          switch (inputMode) {
+            case 'numeric':
+              return TextInputType.number;
+            case 'tel':
+              return TextInputType.phone;
+            case 'decimal':
+              return TextInputType.numberWithOptions(decimal: true);
+            case 'email':
+              return TextInputType.emailAddress;
+            case 'url':
+              return TextInputType.url;
+            case 'text':
+            case 'search':
+              return TextInputType.text;
+            case 'none':
+              return TextInputType.none;
+          }
+        }
+        return TextInputType.text;
       case 'number':
-      case 'tel':
+        String? step = getAttribute('step');
+        if (step == 'any' || step != null && step.contains('.')) {
+          return TextInputType.numberWithOptions(decimal: true);
+        }
         return TextInputType.number;
+      case 'tel':
+        return TextInputType.phone;
       case 'url':
         return TextInputType.url;
       case 'email':
         return TextInputType.emailAddress;
+      case 'search':
+        return TextInputType.text;
     }
     return TextInputType.text;
   }
 
+  TextInputAction getTextInputAction() {
+    if (enterKeyHint != null) {
+      switch (enterKeyHint) {
+        case 'next':
+          return TextInputAction.next;
+        case 'done':
+          return TextInputAction.done;
+        case 'search':
+          return TextInputAction.search;
+        case 'go':
+          return TextInputAction.go;
+        case 'previous':
+          return TextInputAction.previous;
+        case 'send':
+          return TextInputAction.send;
+        default:
+          return TextInputAction.unspecified;
+      }
+    }
+    switch (type) {
+      case 'search':
+        return TextInputAction.search;
+      case 'email':
+      case 'password':
+      case 'tel':
+      case 'url':
+      case 'number':
+        return TextInputAction.done;
+      case 'text':
+        return TextInputAction.newline;
+      default:
+        return TextInputAction.unspecified;
+    }
+  }
+
   String get type => getAttribute('type') ?? 'text';
+  String? get inputMode => getAttribute('inputmode');
+  String? get enterKeyHint => getAttribute('enterkeyhint');
   void set type(value) {
     internalSetAttribute('type', value?.toString() ?? '');
     resetInputDefaultStyle();
@@ -378,7 +443,7 @@ mixin BaseInputElement on WidgetElement {
         focusNode: _focusNode,
         obscureText: isPassWord,
         cursorColor: renderStyle.caretColor ?? renderStyle.color.value,
-        textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
+        textInputAction: getTextInputAction(),
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         cursorHeight: renderStyle.fontSize.computedValue,
@@ -401,7 +466,7 @@ mixin BaseInputElement on WidgetElement {
         obscureText: isPassWord,
         cursorColor: renderStyle.caretColor ?? renderStyle.color.value,
         cursorRadius: Radius.circular(4),
-        textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
+        textInputAction: getTextInputAction(),
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         onSubmitted: (String value) {
