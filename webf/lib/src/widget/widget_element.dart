@@ -58,9 +58,6 @@ abstract class WidgetElement extends dom.Element {
 
   Widget build(BuildContext context, List<Widget> children);
 
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {}
-
   // The render object is inserted by Flutter framework when element is WidgetElement.
   @override
   dom.RenderObjectManagerType get renderObjectManagerType => dom.RenderObjectManagerType.FLUTTER_ELEMENT;
