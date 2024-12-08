@@ -139,7 +139,7 @@ void CanvasRenderingContext2D::setFillStyle(const std::shared_ptr<QJSUnionDomStr
   }
   SetBindingProperty(binding_call_methods::kfillStyle, value, exception_state);
 
-  //  fill_style_ = style;
+    fill_style_ = style;
 }
 
 void CanvasRenderingContext2D::setFillStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
