@@ -84,9 +84,9 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 
   const WidgetElementShape* shape = GetExecutingContext()->GetWidgetElementShape(tagName());
 
-  char async_key_string[key.length()];
-  bool is_async = IsAsyncKey(key, async_key_string);
-  AtomicString async_key = AtomicString(ctx(), async_key_string);
+  std::vector<char> async_key_string(key.length());
+  bool is_async = IsAsyncKey(key, async_key_string.data());
+  AtomicString async_key = AtomicString(ctx(), async_key_string.data());
 
   if (shape == nullptr || !(shape->HasPropertyOrMethod(key) || shape->HasPropertyOrMethod(async_key))) {
     return ScriptValue::Undefined(ctx());
@@ -149,11 +149,11 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
   }
 
   if (shape->HasProperty(key)) {
-    char sync_key_string[key.length()];
-    bool is_async = IsAsyncKey(key, sync_key_string);
+    std::vector<char> sync_key_string(key.length());
+    bool is_async = IsAsyncKey(key, sync_key_string.data());
 
     if (is_async) {
-      AtomicString sync_key = AtomicString(ctx(), sync_key_string);
+      AtomicString sync_key = AtomicString(ctx(), sync_key_string.data());
       SetBindingPropertyAsync(sync_key, value.ToNative(ctx(), exception_state));
       return true;
     }
@@ -203,7 +203,7 @@ ScriptValue SyncDynamicFunction(JSContext* ctx,
   AtomicString method_name = AtomicString(ctx, data->method_name);
   ExceptionState exception_state;
 
-  NativeValue arguments[argc];
+  std::vector<NativeValue> arguments(argc);
 
   for (int i = 0; i < argc; i++) {
     arguments[i] = argv[i].ToNative(ctx, exception_state, false);
@@ -214,13 +214,14 @@ ScriptValue SyncDynamicFunction(JSContext* ctx,
     return ScriptValue::Empty(ctx);
   }
 
-  char sync_method_string[method_name.length()];
-  if (IsAsyncKey(method_name, sync_method_string)) {
-    AtomicString sync_method = AtomicString(ctx, sync_method_string);
-    ScriptPromise promise = event_target->InvokeBindingMethodAsync(sync_method, argc, arguments, exception_state);
+  std::vector<char> sync_method_string(method_name.length());
+  if (IsAsyncKey(method_name, sync_method_string.data())) {
+    AtomicString sync_method = AtomicString(ctx, sync_method_string.data());
+    ScriptPromise promise =
+        event_target->InvokeBindingMethodAsync(sync_method, argc, arguments.data(), exception_state);
     return promise.ToValue();
   } else {
-    NativeValue result = event_target->InvokeBindingMethod(method_name, argc, arguments,
+    NativeValue result = event_target->InvokeBindingMethod(method_name, argc, arguments.data(),
                                                            FlushUICommandReason::kDependentsOnElement, exception_state);
     if (exception_state.HasException()) {
       event_target->GetExecutingContext()->HandleException(exception_state);
@@ -242,7 +243,7 @@ ScriptValue AsyncDynamicFunction(JSContext* ctx,
 
   ExceptionState exception_state;
 
-  NativeValue arguments[argc];
+  std::vector<NativeValue> arguments(argc);
 
   for (int i = 0; i < argc; i++) {
     arguments[i] = argv[i].ToNative(ctx, exception_state, false);
@@ -253,7 +254,7 @@ ScriptValue AsyncDynamicFunction(JSContext* ctx,
     return ScriptValue::Empty(ctx);
   }
 
-  ScriptPromise promise = event_target->InvokeBindingMethodAsync(method_name, argc, arguments, exception_state);
+  ScriptPromise promise = event_target->InvokeBindingMethodAsync(method_name, argc, arguments.data(), exception_state);
 
   if (exception_state.HasException()) {
     event_target->GetExecutingContext()->HandleException(exception_state);
