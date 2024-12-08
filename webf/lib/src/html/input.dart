@@ -138,6 +138,8 @@ mixin BaseInputElement on WidgetElement {
     properties['autofocus'] = BindingObjectProperty(getter: () => autofocus, setter: (value) => autofocus = value);
     properties['defaultValue'] =
         BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
+    properties['selectionStart'] = BindingObjectProperty(getter: () => selectionStart, setter: (value) => selectionStart = value);
+    properties['selectionEnd'] = BindingObjectProperty(getter: () => selectionEnd, setter: (value) => selectionEnd = value);
   }
 
   @override
@@ -147,6 +149,15 @@ mixin BaseInputElement on WidgetElement {
     attributes['value'] = ElementAttributeProperty(getter: () => value, setter: (value) => this.value = value);
     attributes['disabled'] =
         ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => disabled = value);
+  }
+
+
+  void _updateSelection() {
+    int? start = selectionStart;
+    int? end = selectionEnd;
+    if (start != null && end != null) {
+      controller.selection = TextSelection(baseOffset: start, extentOffset: end);
+    }
   }
 
   TextInputType? getKeyboardType() {
@@ -290,6 +301,30 @@ mixin BaseInputElement on WidgetElement {
 
   final double _defaultPadding = 0;
 
+  int? get selectionStart {
+    String? start = getAttribute('selection-start');
+    return start != null ? int.parse(start) : null;
+  }
+
+  set selectionStart(int? value) {
+    if (value != null) {
+      internalSetAttribute('selection-start', value.toString());
+      _updateSelection();
+    }
+  }
+
+  int? get selectionEnd {
+    String? end = getAttribute('selection-end');
+    return end != null ? int.parse(end) : null;
+  }
+
+  set selectionEnd(int? value) {
+    if (value != null) {
+      internalSetAttribute('selection-end', value.toString());
+      _updateSelection();
+    }
+  }
+
   Widget _createInputWidget(BuildContext context) {
     FlutterFormElementContext? formContext = context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
     onChanged(String newValue) {
@@ -299,6 +334,8 @@ mixin BaseInputElement on WidgetElement {
       });
       hasDirtyValue = true;
     }
+
+    _updateSelection();
 
     InputDecoration decoration = InputDecoration(
         label: label != null ? Text(label!) : null,
