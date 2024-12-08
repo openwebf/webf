@@ -3,7 +3,6 @@
  */
 
 import 'dart:async';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -140,6 +139,26 @@ mixin BaseInputElement on WidgetElement {
         BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
     properties['selectionStart'] = BindingObjectProperty(getter: () => selectionStart, setter: (value) => selectionStart = value);
     properties['selectionEnd'] = BindingObjectProperty(getter: () => selectionEnd, setter: (value) => selectionEnd = value);
+    properties['maxLength'] = BindingObjectProperty(
+      getter: () => maxLength,
+      setter: (value) {
+        if (value == null) {
+          maxLength = null;
+          return;
+        }
+
+        if (value is num) {
+          maxLength = value.toInt();
+          return;
+        }
+
+        if (value is String) {
+          maxLength = int.tryParse(value);
+          return;
+        }
+
+        maxLength = null;
+      });
   }
 
   @override
@@ -321,6 +340,10 @@ mixin BaseInputElement on WidgetElement {
     String? value = getAttribute('maxlength');
     if (value != null) return int.parse(value);
     return null;
+  }
+
+  set maxLength(int? value) {
+    internalSetAttribute('maxlength', value?.toString() ?? '');
   }
 
   List<TextInputFormatter>? getInputFormatters() {
