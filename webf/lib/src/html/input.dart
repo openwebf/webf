@@ -409,6 +409,7 @@ mixin BaseInputElement on WidgetElement {
         isCollapsed: true,
         contentPadding: EdgeInsets.fromLTRB(0, _defaultPadding, 0, _defaultPadding),
         hintText: placeholder,
+        counterText: '', // Hide counter to align with web
         suffix: isSearch && value.isNotEmpty && _isFocus
             ? SizedBox(
                 width: 14,
