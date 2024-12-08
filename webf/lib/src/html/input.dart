@@ -242,7 +242,7 @@ mixin BaseInputElement on WidgetElement {
   bool get _isFocus => _focusNode?.hasFocus ?? false;
 
   int? get maxLength {
-    String? value = getAttribute('maxLength');
+    String? value = getAttribute('maxlength');
     if (value != null) return int.parse(value);
     return null;
   }
