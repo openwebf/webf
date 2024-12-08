@@ -358,6 +358,7 @@ mixin BaseInputElement on WidgetElement {
         fontSize: fontSize,
         fontWeight: renderStyle.fontWeight,
         fontFamily: renderStyle.fontFamily?.join(' '),
+        height: 1.0,
       );
 
   StrutStyle get _textStruct => StrutStyle(
