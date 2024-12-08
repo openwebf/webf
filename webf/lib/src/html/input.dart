@@ -445,6 +445,10 @@ mixin BaseInputElement on WidgetElement {
     FlutterFormElementContext? formContext = context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
     onChanged(String newValue) {
       setState(() {
+
+        _selectionStart = null;
+        _selectionEnd = null;
+
         InputEvent inputEvent = InputEvent(inputType: '', data: newValue);
         dispatchEvent(inputEvent);
       });
