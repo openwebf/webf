@@ -137,8 +137,42 @@ mixin BaseInputElement on WidgetElement {
     properties['autofocus'] = BindingObjectProperty(getter: () => autofocus, setter: (value) => autofocus = value);
     properties['defaultValue'] =
         BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
-    properties['selectionStart'] = BindingObjectProperty(getter: () => selectionStart, setter: (value) => selectionStart = value);
-    properties['selectionEnd'] = BindingObjectProperty(getter: () => selectionEnd, setter: (value) => selectionEnd = value);
+    properties['selectionStart'] = BindingObjectProperty(getter: () => selectionStart, setter: (value) {
+      if (value == null) {
+        selectionStart = null;
+        return;
+      }
+
+      if (value is num) {
+        selectionStart = value.toInt();
+        return;
+      }
+
+      if (value is String) {
+        selectionStart = int.tryParse(value);
+        return;
+      }
+
+      selectionStart = null;
+    });
+    properties['selectionEnd'] = BindingObjectProperty(getter: () => selectionEnd, setter: (value) {
+      if (value == null) {
+        selectionEnd = null;
+        return;
+      }
+
+      if (value is num) {
+        selectionEnd = value.toInt();
+        return;
+      }
+
+      if (value is String) {
+        selectionEnd = int.tryParse(value);
+        return;
+      }
+
+      selectionEnd = null;
+    });
     properties['maxLength'] = BindingObjectProperty(
       getter: () => maxLength,
       setter: (value) {
@@ -390,27 +424,20 @@ mixin BaseInputElement on WidgetElement {
 
   final double _defaultPadding = 0;
 
-  int? get selectionStart {
-    String? start = getAttribute('selection-start');
-    return start != null ? int.parse(start) : null;
-  }
+  int? _selectionStart;
+  int? _selectionEnd;
+  int? get selectionStart => _selectionStart;
+  int? get selectionEnd => _selectionEnd;
 
   set selectionStart(int? value) {
     if (value != null) {
-      internalSetAttribute('selection-start', value.toString());
-      _updateSelection();
+      _selectionStart = value;
     }
-  }
-
-  int? get selectionEnd {
-    String? end = getAttribute('selection-end');
-    return end != null ? int.parse(end) : null;
   }
 
   set selectionEnd(int? value) {
     if (value != null) {
-      internalSetAttribute('selection-end', value.toString());
-      _updateSelection();
+      _selectionEnd = value;
     }
   }
 
