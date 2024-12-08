@@ -40,19 +40,19 @@ KeyboardEvent::KeyboardEvent(ExecutingContext* context,
       // ctrl_key_(initializer->hasCtrlKey() && initializer->ctrlKey()),
       // is_composing_(initializer->hasComposed() && initializer->isComposing()),
       key_(initializer->hasKey() ? initializer->key() : AtomicString::Empty())
-      // key_code_(initializer->hasKeyCode() ? initializer->keyCode() : 0.0),
-      // location_(initializer->hasLocation() ? initializer->location() : 0.0),
-      // meta_key_(initializer->hasMetaKey() && initializer->metaKey()),
-      // repeat_(initializer->hasRepeat() && initializer->repeat()),
-      // shift_key_(initializer->hasShiftKey() && initializer->shiftKey())
-      {}
+// key_code_(initializer->hasKeyCode() ? initializer->keyCode() : 0.0),
+// location_(initializer->hasLocation() ? initializer->location() : 0.0),
+// meta_key_(initializer->hasMetaKey() && initializer->metaKey()),
+// repeat_(initializer->hasRepeat() && initializer->repeat()),
+// shift_key_(initializer->hasShiftKey() && initializer->shiftKey())
+{}
 
 KeyboardEvent::KeyboardEvent(ExecutingContext* context,
                              const AtomicString& type,
                              NativeKeyboardEvent* native_keyboard_event)
     : UIEvent(context, type, &native_keyboard_event->native_event),
-      // alt_key_(native_keyboard_event->altKey),
-      // char_code_(native_keyboard_event->charCode),
+// alt_key_(native_keyboard_event->altKey),
+// char_code_(native_keyboard_event->charCode),
 #if ANDROID_32_BIT
       code_(AtomicString(
           ctx(),
@@ -68,13 +68,13 @@ KeyboardEvent::KeyboardEvent(ExecutingContext* context,
           ctx(),
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_keyboard_event->key))))
 #endif
-      // ctrl_key_(native_keyboard_event->ctrlKey),
-      // is_composing_(native_keyboard_event->isComposing),
-      // key_code_(native_keyboard_event->keyCode),
-      // location_(native_keyboard_event->location),
-      // meta_key_(native_keyboard_event->metaKey),
-      // repeat_(native_keyboard_event->repeat),
-      // shift_key_(native_keyboard_event->shiftKey)
+// ctrl_key_(native_keyboard_event->ctrlKey),
+// is_composing_(native_keyboard_event->isComposing),
+// key_code_(native_keyboard_event->keyCode),
+// location_(native_keyboard_event->location),
+// meta_key_(native_keyboard_event->metaKey),
+// repeat_(native_keyboard_event->repeat),
+// shift_key_(native_keyboard_event->shiftKey)
 {
 }
 
