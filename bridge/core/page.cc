@@ -10,6 +10,7 @@
 #include "core/dart_methods.h"
 #include "core/dom/document.h"
 #include "core/frame/window.h"
+#include "core/html/custom/widget_element_shape.h"
 #include "core/html/html_html_element.h"
 #include "core/html/parser/html_parser.h"
 #include "event_factory.h"
