@@ -394,6 +394,8 @@ mixin BaseInputElement on WidgetElement {
       scheduleMicrotask(() {
         dispatchEvent(FocusEvent(EVENT_FOCUS, relatedTarget: this));
       });
+
+      HardwareKeyboard.instance.addHandler(_handleKey);
     } else {
       if (ownerDocument.focusedElement == this) {
         ownerDocument.focusedElement = null;
@@ -406,7 +408,25 @@ mixin BaseInputElement on WidgetElement {
       scheduleMicrotask(() {
         dispatchEvent(FocusEvent(EVENT_BLUR, relatedTarget: this));
       });
+
+      HardwareKeyboard.instance.removeHandler(_handleKey);
     }
+  }
+
+  bool _handleKey(KeyEvent event) {
+    if (event is KeyUpEvent) {
+      dispatchEvent(KeyboardEvent(EVENT_KEY_UP,
+          code: event.physicalKey.debugName ?? '',
+          key: event.logicalKey.keyLabel,
+      ));
+      return true;
+    } else if (event is KeyDownEvent) {
+      dispatchEvent(KeyboardEvent(EVENT_KEY_DOWN,
+        code: event.physicalKey.debugName ?? '',
+        key: event.logicalKey.keyLabel,
+      ));
+    }
+    return false;
   }
 
   @override
