@@ -143,6 +143,8 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
   const WidgetElementShape* shape = GetExecutingContext()->GetWidgetElementShape(key);
 
   if (shape == nullptr || !shape->HasPropertyOrMethod(key)) {
+    // Nothing at all
+    unimplemented_properties_[key] = value;
     return false;
   }
 
@@ -160,8 +162,6 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
     return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
   }
 
-  // Nothing at all
-  unimplemented_properties_[key] = value;
   return true;
 }
 
