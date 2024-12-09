@@ -104,7 +104,7 @@ mixin CSSPositionMixin on RenderStyle {
   }
 
   void _markNeedsSort() {
-    if (isParentDataAreRenderLayoutParentData()) {
+    if (isSelfParentDataAreRenderLayoutParentData()) {
       if (isParentRenderLayoutBox()) {
         markParentNeedsSort();
       }
@@ -117,7 +117,7 @@ mixin CSSPositionMixin on RenderStyle {
     // Should mark positioned element's containing block needs layout directly
     // cause RelayoutBoundary of positioned element will prevent the needsLayout flag
     // to bubble up in the RenderObject tree.
-    if (isParentDataAreRenderLayoutParentData()) {
+    if (isSelfParentDataAreRenderLayoutParentData()) {
       RenderStyle renderStyle = this;
       if (force || renderStyle.position != DEFAULT_POSITION_TYPE) {
         markParentNeedsLayout();
@@ -129,7 +129,7 @@ mixin CSSPositionMixin on RenderStyle {
     // Should mark positioned element's containing block needs layout directly
     // cause RepaintBoundary of positioned element will prevent the needsLayout flag
     // to bubble up in the RenderObject tree.
-    if (isParentDataAreRenderLayoutParentData()) {
+    if (isSelfParentDataAreRenderLayoutParentData()) {
       RenderStyle renderStyle = this;
       RenderStyle? parentRenderStyle = renderStyle.parent;
       // The z-index CSS property sets the z-order of a positioned element and its descendants or flex items.

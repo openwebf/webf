@@ -769,6 +769,11 @@ class RenderBoxModel extends RenderBox
     _needsRecalculateStyle = true;
   }
 
+  @override
+  String toStringShort() {
+    return super.toStringShort() + ' ${renderStyle.target}';
+  }
+
   bool get isSizeTight {
     bool isDefinedSize = (renderStyle.width.value != null &&
         renderStyle.height.value != null &&

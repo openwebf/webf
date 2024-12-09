@@ -432,9 +432,9 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   @pragma('vm:prefer-inline')
-  bool isParentDataAreRenderLayoutParentData() {
+  bool isSelfParentDataAreRenderLayoutParentData() {
     return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject?.parent is RenderLayoutParentData);
+        RenderObjectGetType.self, (renderObject, _) => renderObject?.parentData is RenderLayoutParentData);
   }
 
   @pragma('vm:prefer-inline')
@@ -966,7 +966,7 @@ abstract class RenderStyle extends DiagnosticableTree {
       case RenderObjectGetType.self:
         return matcher(renderBoxModel, renderBoxModel.renderStyle);
       case RenderObjectGetType.parent:
-        return matcher(renderBoxModel.parent, renderBoxModel.renderStyle);
+        return matcher(renderBoxModel.parent, renderBoxModel.parent is RenderBoxModel ? (renderBoxModel.parent as RenderBoxModel).renderStyle : null);
       case RenderObjectGetType.firstChild:
         if (renderBoxModel is RenderLayoutBox) {
           RenderObject? firstChild = renderBoxModel.firstChild;
@@ -1060,6 +1060,7 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   // Following properties used for exposing APIs
   // for class that extends [AbstractRenderStyle].
+  @pragma('vm:prefer-inline')
   RenderBoxModel? get domRenderBoxModel {
     return _domRenderObjects;
   }

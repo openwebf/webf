@@ -245,7 +245,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Width:
         if (style.width.isAuto) {
           if (style.isBoxModelHaveSize()) {
-            final boxWidth = style.getSelfRenderBoxValue((renderBox, _) => renderBox.boxSize?.width);
+            double? boxWidth = style.getSelfRenderBoxValue((renderBox, _) => renderBox.boxSize?.width);
             if (boxWidth != null && boxWidth > 0) {
               return '${boxWidth.cssText()}px';
             }
@@ -255,7 +255,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Height:
         if (style.height.isAuto) {
           if (style.isBoxModelHaveSize()) {
-            final boxHeight = style.getSelfRenderBoxValue((renderBox, _) => renderBox.boxSize?.height);
+            double? boxHeight = style.getSelfRenderBoxValue((renderBox, _) => renderBox.boxSize?.height);
             if (boxHeight != null && boxHeight > 0) {
               return '${boxHeight.cssText()}px';
             }

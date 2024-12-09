@@ -184,11 +184,13 @@ mixin CSSMarginMixin on RenderStyle {
     double marginTop = _collapsedMarginTopWithFirstChild;
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle? parentRenderStyle = getParentRenderStyle();
+    RenderStyle? parentRenderStyle =
+        isParentScrollingContentBox() ? getParentRenderStyle()!.getParentRenderStyle() : getParentRenderStyle();
+
     if (parentRenderStyle == null) return 0.0;
 
-    bool isParentOverflowVisible = parentRenderStyle?.effectiveOverflowY == CSSOverflowType.visible;
-    bool isParentOverflowClip = parentRenderStyle?.effectiveOverflowY == CSSOverflowType.clip;
+    bool isParentOverflowVisible = parentRenderStyle.effectiveOverflowY == CSSOverflowType.visible;
+    bool isParentOverflowClip = parentRenderStyle.effectiveOverflowY == CSSOverflowType.clip;
 
     // Margin top of first child with parent which is in flow layout collapse with parent
     // which makes the margin top of itself 0.

@@ -20,7 +20,7 @@ Comment* Comment::Create(Document& document, const AtomicString& data) {
 
 Comment::Comment(TreeScope& tree_scope, const AtomicString& data, ConstructionType type)
     : CharacterData(tree_scope, data, type) {
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCreateComment, nullptr, bindingObject(), nullptr);
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kCreateComment, nullptr, nullptr, nullptr);
 }
 
 Node::NodeType Comment::nodeType() const {
