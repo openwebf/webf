@@ -7,8 +7,8 @@
 
 #include "canvas_gradient.h"
 #include "canvas_pattern.h"
-#include "path_2d.h"
 #include "canvas_rendering_context.h"
+#include "path_2d.h"
 #include "qjs_union_dom_stringcanvas_gradient.h"
 #include "qjs_unionhtml_image_elementhtml_canvas_element.h"
 #include "qjs_unionpath_2_d_dom_string.h"
@@ -48,7 +48,9 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
 
   void fill(ExceptionState& exception_state);
   void fill(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern, ExceptionState& exception_state);
-  void fill(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern, const AtomicString& fillRule, ExceptionState& exception_state);
+  void fill(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern,
+            const AtomicString& fillRule,
+            ExceptionState& exception_state);
 
   std::shared_ptr<QJSUnionDomStringCanvasGradient> strokeStyle();
   void setStrokeStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);

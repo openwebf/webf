@@ -42,7 +42,6 @@ void HTMLImageElement::setSrc(const AtomicString& value, ExceptionState& excepti
   }
 }
 
-
 ScriptPromise HTMLImageElement::src_async(webf::ExceptionState& exception_state) {
   return GetBindingPropertyAsync(binding_call_methods::ksrc, exception_state);
 }

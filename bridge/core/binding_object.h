@@ -9,8 +9,8 @@
 #include <include/dart_api_dl.h>
 #include <cinttypes>
 #include <unordered_set>
-#include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/atomic_string.h"
+#include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/dart_methods.h"
 #include "foundation/native_type.h"
@@ -71,7 +71,7 @@ enum BindingMethodCallOperations {
   kAsyncAnonymousFunction,
 };
 
-enum CreateBindingObjectType { 
+enum CreateBindingObjectType {
   kCreateDOMMatrix = 0,
   kCreatePath2D = 1,
   kCreateDOMPoint = 2,
@@ -83,7 +83,9 @@ struct BindingObjectPromiseContext : public DartReadable {
   std::shared_ptr<ScriptPromiseResolver> promise_resolver;
 };
 
-using BindingObjectAsyncCallback = void (*)(ScriptPromiseResolver* resolver, NativeValue* success_result, const char* error_msg);
+using BindingObjectAsyncCallback = void (*)(ScriptPromiseResolver* resolver,
+                                            NativeValue* success_result,
+                                            const char* error_msg);
 
 struct BindingObjectAsyncCallContext : public DartReadable {
   NativeValue* method_name;

@@ -5,8 +5,8 @@
 #ifndef BRIDGE_CORE_SCRIPT_STATE_H_
 #define BRIDGE_CORE_SCRIPT_STATE_H_
 
-#include <atomic>
 #include <quickjs/quickjs.h>
+#include <atomic>
 #include <cassert>
 
 namespace webf {

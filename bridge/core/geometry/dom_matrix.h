@@ -17,20 +17,16 @@ class DOMMatrix : public DOMMatrixReadOnly {
   static DOMMatrix* Create(ExecutingContext* context,
                            const std::shared_ptr<QJSUnionSequenceDoubleDOMMatrixInit>& init,
                            ExceptionState& exception_state);
-  static DOMMatrix* Create(ExecutingContext* context,
-                           ExceptionState& exception_state);
+  static DOMMatrix* Create(ExecutingContext* context, ExceptionState& exception_state);
 
   DOMMatrix() = delete;
-  explicit DOMMatrix(ExecutingContext* context,
-                     ExceptionState& exception_state);
+  explicit DOMMatrix(ExecutingContext* context, ExceptionState& exception_state);
   explicit DOMMatrix(ExecutingContext* context,
                      const std::shared_ptr<QJSUnionSequenceDoubleDOMMatrixInit>& init,
                      ExceptionState& exception_state);
-  explicit DOMMatrix(ExecutingContext* context,
-                     NativeBindingObject* native_binding_object);
+  explicit DOMMatrix(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
-  [[nodiscard]]
-  bool IsDOMMatrix() const override { return true; }
+  [[nodiscard]] bool IsDOMMatrix() const override { return true; }
 
  private:
 };

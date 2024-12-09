@@ -495,7 +495,9 @@ void ExecutingContext::FlushUICommand(const webf::BindingObject* self,
   }
 }
 
-bool ExecutingContext::SyncUICommandBuffer(const BindingObject* self, uint32_t reason, std::vector<NativeBindingObject*>& deps) {
+bool ExecutingContext::SyncUICommandBuffer(const BindingObject* self,
+                                           uint32_t reason,
+                                           std::vector<NativeBindingObject*>& deps) {
   if (!uiCommandBuffer()->empty()) {
     if (is_dedicated_) {
       bool should_swap_ui_commands = false;

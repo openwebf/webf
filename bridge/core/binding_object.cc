@@ -186,7 +186,7 @@ static void handleAsyncInvokeCallback(ScriptPromiseResolver* resolver,
     JSValue exception_value = ExceptionState::CurrentException(context->ctx());
     resolver->Reject(exception_value);
     JS_FreeValue(context->ctx(), exception_value);
-    dart_free((void*) error_msg);
+    dart_free((void*)error_msg);
   } else {
     assert(false);
   }
