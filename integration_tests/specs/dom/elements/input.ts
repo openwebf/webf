@@ -402,6 +402,36 @@ describe('Tags input', () => {
     });
   });
 
+  xit('event keyup', (done) => {
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    input.addEventListener('keyup', function handler(event) {
+      expect(event.code).toEqual('Digit 1');
+      expect(event.key).toEqual('1');
+      done();
+    });
+    requestAnimationFrame(() => {
+      simulateInputText('1');
+    });
+  });
+
+  xit('event keydown', (done) => {
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    input.addEventListener('keydown', function handler(event) {
+      expect(event.code).toEqual('Digit 1');
+      expect(event.key).toEqual('1');
+      done();
+    });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        simulateInputText('1');
+      });
+    });
+  });
+
   xit('support inputmode=text', (done) => {
     const VALUE = 'Hello';
     const input = <input inputmode="text" />;
@@ -420,7 +450,7 @@ describe('Tags input', () => {
   });
 
   xit('support inputmode=tel', (done) => {
-    const VALUE = '123456789';
+    const VALUE = '123456789#1';
     const input = <input inputmode="tel" />;
     input.addEventListener('input', function handler(event: InputEvent) {
       input.removeEventListener('input', handler);
@@ -521,8 +551,117 @@ describe('Tags input', () => {
     });
   });
 
-  xit('support maxlength', (done) => {
+  xit('support type=number', (done) => {
+    const VALUE = '123456789';
+    const input = <input type="number" />;
+    input.addEventListener('input', function handler(event: InputEvent) {
+      input.removeEventListener('input', handler);
+      expect(input.value).toEqual(VALUE);
+      done();
+    });
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        simulateInputText(VALUE);
+      });
+    });
+  });
+
+  xit('support type=number with step', (done) => {
+    const VALUE = '123456789.123';
+    const input = <input type="number" step="0.1" />;
+    input.addEventListener('input', function handler(event: InputEvent) {
+      input.removeEventListener('input', handler);
+      expect(input.value).toEqual(VALUE);
+      done();
+    });
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        simulateInputText(VALUE);
+      });
+    });
+  });
+
+  xit('support type=url', (done) => {
+    const VALUE = 'example.com';
+    const input = <input type="url" />;
+    input.addEventListener('input', function handler(event: InputEvent) {
+      input.removeEventListener('input', handler);
+      expect(input.value).toEqual(VALUE);
+      done();
+    });
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        simulateInputText(VALUE);
+      });
+    });
+  });
+
+  xit('support type=email', (done) => {
+    const VALUE = 'example@example.com';
+    const input = <input type="email" />;
+    input.addEventListener('input', function handler(event: InputEvent) {
+      input.removeEventListener('input', handler);
+      expect(input.value).toEqual(VALUE);
+      done();
+    });
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        simulateInputText(VALUE);
+      });
+    });
+  });
+
+  xit('support type=tel', (done) => {
+    const VALUE = '123456789#1';
+    const input = <input type="tel" />;
+    input.addEventListener('input', function handler(event: InputEvent) {
+      input.removeEventListener('input', handler);
+      expect(input.value).toEqual(VALUE);
+      done();
+    });
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        simulateInputText(VALUE);
+      });
+    });
+  });
+
+  xit('support maxlength attribute', (done) => {
     const input = <input maxlength="3" />;
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      simulateInputText('1');
+      requestAnimationFrame(() => {
+        expect(input.value).toEqual('1');
+
+        simulateInputText('123');
+        requestAnimationFrame(() => {
+          expect(input.value).toEqual('123');
+
+          simulateInputText('1234');
+          requestAnimationFrame(() => {
+            expect(input.value).toEqual('123');
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  xit('support maxLength property', (done) => {
+    const input = document.createElement('input');
+    input.maxLength = 3;
     document.body.appendChild(input);
     input.focus();
     requestAnimationFrame(() => {
@@ -612,6 +751,77 @@ describe('Tags input', () => {
       }))
       await snapshot();
       done();
+    });
+  });
+
+  it('should set and get selectionStart and selectionEnd correctly', (done) => {
+    const input = document.createElement('input');
+    input.value = 'Hello World';
+    document.body.appendChild(input);
+
+    // Focus the input to make it active
+    input.focus();
+
+    // Directly set selectionStart and selectionEnd
+    input.selectionStart = 2;
+    input.selectionEnd = 5;
+
+    // Verify selectionStart and selectionEnd
+    expect(input.selectionStart).toBe(2);
+    expect(input.selectionEnd).toBe(5);
+
+    done();
+  });
+
+  xit('should prevent input when disabled', (done) => {
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+
+    input.value = 'initial';
+    input.focus();
+
+    requestAnimationFrame(() => {
+      simulateInputText('123');
+
+      requestAnimationFrame(() => {
+        expect(input.value).toBe('123');
+
+        input.disabled = true;
+
+        requestAnimationFrame(() => {
+          simulateInputText('456');
+
+          requestAnimationFrame(() => {
+            expect(input.value).toBe('123');
+
+            input.disabled = false;
+            requestAnimationFrame(() => {
+              simulateInputText('789');
+
+              requestAnimationFrame(() => {
+                expect(input.value).toBe('789');
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+
+  xit('should prevent input when disabled attribute is set', (done) => {
+    const input = <input disabled />;
+    document.body.appendChild(input);
+
+    input.focus();
+
+    requestAnimationFrame(() => {
+      simulateInputText('123');
+
+      requestAnimationFrame(() => {
+        expect(input.value).toBe('');
+        done();
+      });
     });
   });
 });
