@@ -287,7 +287,8 @@ static JSValue triggerGlobalError(JSContext* ctx, JSValueConst this_val, int arg
 static JSValue changeDarkMode(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
 
-  if (argc == 0) return JS_ThrowTypeError(ctx, "parameter required");
+  if (argc == 0)
+    return JS_ThrowTypeError(ctx, "parameter required");
 
   bool isDarkMode = JS_ToBool(ctx, argv[0]);
 

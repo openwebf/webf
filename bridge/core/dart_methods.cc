@@ -302,16 +302,15 @@ void DartMethodPointer::simulateChangeDarkMode(bool is_dedicated, double context
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, [&](bool cancel) -> void {
-         if (cancel)
-           return;
-         simulate_change_dart_mode_(context_id, is_dark_mode ? 1 : 0);
-       });
+    if (cancel)
+      return;
+    simulate_change_dart_mode_(context_id, is_dark_mode ? 1 : 0);
+  });
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::environment callSync END";
 #endif
 }
-
 
 void DartMethodPointer::simulatePointer(bool is_dedicated,
                                         void* ptr,
