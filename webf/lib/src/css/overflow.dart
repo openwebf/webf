@@ -425,7 +425,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void _ensureRenderObjectHasLayout() {
-    if (renderStyle.getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.needsLayout)?.needsLayout == true) {
+    if (renderStyle.getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.needsLayout) == true) {
       RendererBinding.instance.rootPipelineOwner.flushLayout();
     }
   }
