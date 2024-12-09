@@ -828,7 +828,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         // If afterRenderObject is null, which means insert child at the head of parent.
         RenderBox? afterRenderObject = Node.findMostClosedSiblings(previousSibling ?? this.previousSibling);
 
-        RenderBoxModel.attachRenderBox(parentElement!.domRenderer!, domRenderer!, after: afterRenderObject);
+        RenderBoxModel.attachRenderBox(parent!.domRenderer!, domRenderer!, after: afterRenderObject);
         if (renderStyle.position != CSSPositionType.static) {
           _updateRenderBoxModelWithPosition(CSSPositionType.static);
         }
@@ -1549,7 +1549,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (!isRendererAttached) {
       return offset;
     }
-    Offset relative = renderStyle.getOffset(ancestorRenderBox: offsetParent?.domRenderer);
+    Offset relative = renderStyle.getOffset(ancestorRenderBox: offsetParent?.attachedRenderer);
     offset += relative.dx;
     return offset;
   }
@@ -1572,7 +1572,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     if (!isRendererAttached) {
       return offset;
     }
-    Offset relative = renderStyle.getOffset(ancestorRenderBox: offsetParent?.domRenderer);
+    Offset relative = renderStyle.getOffset(ancestorRenderBox: offsetParent?.attachedRenderer);
     offset += relative.dy;
     return offset;
   }

@@ -763,7 +763,11 @@ abstract class RenderStyle extends DiagnosticableTree {
   @pragma('vm:prefer-inline')
   void flushLayout() {
     everyRenderBox((_, renderObject) {
-      renderObject.performLayout();
+      if (renderObject.attached) {
+        renderObject.owner!.flushLayout();
+      } else if (renderObject.parent != null) {
+        renderObject.performLayout();
+      }
       return true;
     });
   }
@@ -935,8 +939,7 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   dynamic getRenderBoxValueByType(RenderObjectGetType getType, RenderBoxModelGetter getter) {
     if (target.managedByFlutterWidget) {
-      RenderBoxModel? widgetRenderBoxModel =
-          widgetRenderObjectIterator.isNotEmpty ? widgetRenderObjectIterator.first : null;
+      RenderBoxModel? widgetRenderBoxModel = widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached);
 
       if (widgetRenderBoxModel == null) return null;
 
@@ -1011,7 +1014,7 @@ abstract class RenderStyle extends DiagnosticableTree {
     if (!hasMatch) {
       return false;
     }
-    if (target.managedByFlutterWidget && domRenderBoxModel != null) {
+    if (!target.managedByFlutterWidget && domRenderBoxModel != null) {
       bool domMatch = callback(null, domRenderBoxModel!);
       if (!domMatch) return false;
     }
