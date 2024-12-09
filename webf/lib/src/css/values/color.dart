@@ -234,6 +234,7 @@ class CSSColor {
   static bool isColor(String color) {
     return color == CURRENT_COLOR ||
         color == TRANSPARENT ||
+        color == INHERIT ||
         color.startsWith('#') ||
         color.startsWith(RGB) ||
         color.startsWith(HSL) ||

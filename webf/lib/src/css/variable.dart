@@ -86,7 +86,8 @@ mixin CSSVariableMixin on RenderStyle {
         variableString = group[1];
       }
 
-      if (target.style.contains(propertyName) && CSSVariable.isCSSVariableValue(target.style.getPropertyValue(propertyName))) {
+      String propertyValue = target.style.getPropertyValue(propertyName);
+      if (target.style.contains(propertyName) && CSSVariable.isCSSVariableValue(propertyValue)) {
         scheduleMicrotask(() {
           String propertyValue = variableString ?? value;
           if (CSSColor.isColor(propertyValue)) {
