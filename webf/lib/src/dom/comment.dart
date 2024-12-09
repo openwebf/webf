@@ -6,7 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 
 class Comment extends CharacterData {
-  Comment([context]) : super(NodeType.COMMENT_NODE, context);
+  Comment() : super(NodeType.COMMENT_NODE, null);
 
   @override
   String get nodeName => '#comment';

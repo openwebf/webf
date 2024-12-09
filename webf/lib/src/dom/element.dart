@@ -1702,6 +1702,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   RenderStyle? computedStyle(String? pseudoElementSpecifier) {
     recalculateStyle();
+
+    if (!renderStyle.hasRenderBox()) {
+      return null;
+    }
+
     return renderStyle;
   }
 }

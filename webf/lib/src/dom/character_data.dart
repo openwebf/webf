@@ -44,8 +44,8 @@ class CharacterData extends Node {
   Node? get lastChild => null;
 
   @override
-  bool get isRendererAttached => throw UnimplementedError();
+  bool get isRendererAttached => false;
 
   @override
-  bool get isRendererAttachedToSegmentTree => throw UnimplementedError();
+  bool get isRendererAttachedToSegmentTree => false;
 }
