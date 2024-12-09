@@ -22,6 +22,9 @@ class CharacterData extends Node {
   RenderBox? get domRenderer => throw UnimplementedError();
 
   @override
+  RenderBox? get attachedRenderer => throw UnimplementedError();
+
+  @override
   flutter.Widget toWidget() {
     return const flutter.SizedBox.shrink();
   }

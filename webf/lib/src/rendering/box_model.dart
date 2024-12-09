@@ -58,8 +58,6 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
       }
 
       stackOffsets.add(parentRenderer.obtainLayoutTransform(childRenderer, excludeScrollOffset));
-    } else if (parentRenderer is RenderSliverRepaintProxy) {
-      parentRenderer.applyLayoutTransform(childRenderer, transform, excludeScrollOffset);
     } else if (parentRenderer is RenderBox) {
       assert(childRenderer.parent == parentRenderer);
       if (childRenderer.parentData is BoxParentData) {

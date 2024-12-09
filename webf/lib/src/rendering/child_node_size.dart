@@ -19,8 +19,8 @@ class RenderChildSize extends RenderProxyBox {
     List<RenderBox> renderBoxes = [];
 
     for (var node in childNodes) {
-      if (node.renderer != null) {
-        renderBoxes.add(node.renderer!);
+      if (node.attachedRenderer != null) {
+        renderBoxes.add(node.attachedRenderer!);
       }
     }
 

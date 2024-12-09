@@ -28,6 +28,9 @@ class DocumentFragment extends ContainerNode {
   RenderBox? get domRenderer => null;
 
   @override
+  RenderBox? get attachedRenderer => null;
+
+  @override
   bool get isRendererAttached => false;
 
   @override

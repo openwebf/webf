@@ -2,12 +2,14 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'package:collection/collection.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/src/css/computed_style_declaration.dart';
 
 const String WHITE_SPACE_CHAR = ' ';
 const String NEW_LINE_CHAR = '\n';
@@ -71,8 +73,8 @@ class TextNode extends CharacterData {
         // To replace data of node node with offset offset, count count, and data data, run step 12 from the spec:
         // 12. If node’s parent is non-null, then run the children changed steps for node’s parent.
         // https://dom.spec.whatwg.org/#concept-cd-replace
-        parentNode
-            ?.childrenChanged(ChildrenChange.forInsertion(this, previousSibling, nextSibling, ChildrenChangeSource.API));
+        parentNode?.childrenChanged(
+            ChildrenChange.forInsertion(this, previousSibling, nextSibling, ChildrenChangeSource.API));
       }
     }
   }
@@ -83,6 +85,17 @@ class TextNode extends CharacterData {
   @override
   RenderBox? get domRenderer {
     assert(!managedByFlutterWidget);
+    return _domRenderTextBox;
+  }
+
+  @override
+  RenderBox? get attachedRenderer {
+    if (managedByFlutterWidget) {
+      return _attachedFlutterWidgetElements
+          .firstWhereOrNull((flutterElement) => flutterElement.renderObject.attached)
+          ?.renderObject;
+    }
+
     return _domRenderTextBox;
   }
 

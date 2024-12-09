@@ -191,7 +191,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   @override
   String get nodeName => tagName;
 
+  @override
   RenderBoxModel? get domRenderer => renderStyle.domRenderBoxModel;
+
+  @override
+  RenderBoxModel? get attachedRenderer => renderStyle.attachedRenderBoxModel;
 
   HTMLCollection? _collection;
 
@@ -1555,7 +1559,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     }
 
     Offset offset = Offset(x, y);
-    Offset result = renderBoxModel!.globalToLocal(offset);
+    Offset result = renderStyle.domRenderBoxModel!.globalToLocal(offset);
     return {'x': result.dx, 'y': result.dy};
   }
 

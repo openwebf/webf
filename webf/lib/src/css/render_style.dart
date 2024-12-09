@@ -6,6 +6,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
@@ -1062,6 +1063,14 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   RenderBoxModel? getWidgetPairedRenderBoxModel(flutter.Element targetRenderObjectElement) {
     return _widgetRenderObjects[targetRenderObjectElement];
+  }
+
+  RenderBoxModel? get attachedRenderBoxModel {
+    if (target.managedByFlutterWidget) {
+      return _widgetRenderObjects.values.firstWhereOrNull((renderBox) => renderBox.attached);
+    }
+
+    return _domRenderObjects;
   }
 
   Size get viewportSize => target.ownerDocument.viewport?.viewportSize ?? Size.zero;

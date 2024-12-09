@@ -166,6 +166,9 @@ class Document extends ContainerNode {
   @override
   RenderBox? get domRenderer => viewport;
 
+  @override
+  RenderBox? get attachedRenderer => viewport;
+
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L770
   bool parsing = false;
 

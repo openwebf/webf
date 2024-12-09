@@ -110,7 +110,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
               nextSibling.renderStyle.display == CSSDisplay.flex)) {
         // If nextSibling is block,should trimRight slef.
         CSSDisplay? display = nextSibling.renderStyle.display;
-        if (display == CSSDisplay.block || display == CSSDisplay.sliver || display == CSSDisplay.flex) {
+        if (display == CSSDisplay.block || display == CSSDisplay.flex) {
           collapsedData = _trimRightWhitespace(collapsedData);
         }
       }
