@@ -426,7 +426,7 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   @pragma('vm:prefer-inline')
-  bool isScrollingContentBox() {
+  bool isSelfScrollingContentBox() {
     return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self,
         (renderObject, _) => renderObject is RenderBoxModel && renderObject.isScrollingContentBox);
   }

@@ -422,11 +422,11 @@ class ImageElement extends Element {
   void _reattachRenderObject() {
     if (_isSVGMode) {
       if (_svgRenderObject != null) {
-        addChild(_svgRenderObject!);
+        addChildForDOMMode(_svgRenderObject!);
       }
     } else {
       if (_renderImage != null) {
-        addChild(_renderImage!);
+        addChildForDOMMode(_renderImage!);
       }
     }
   }
@@ -435,7 +435,7 @@ class ImageElement extends Element {
     if (svg != null) {
       final oldSVG = _svgRenderObject;
       _svgRenderObject = svg;
-      addChild(svg);
+      addChildForDOMMode(svg);
       ownerDocument.inactiveRenderObjects.add(oldSVG);
       if (_renderImage != null) {
         _renderImage!.image = null;
@@ -445,7 +445,7 @@ class ImageElement extends Element {
     } else if (image != null) {
       if (_renderImage == null) {
         _renderImage = _createRenderImageBox();
-        addChild(_renderImage!);
+        addChildForDOMMode(_renderImage!);
       }
       if (_svgRenderObject != null) {
         // dispose svg render object

@@ -767,18 +767,19 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: previousSibling);
   }
 
-  void addChild(RenderBox child) {
-    assert(false);
-    // if (renderBoxModel != null && (renderBoxModel is RenderLayoutBox)) {
-    //   RenderLayoutBox? scrollingContentBox = _renderLayoutBox!.renderScrollingContent;
-    //   if (scrollingContentBox != null) {
-    //     scrollingContentBox.add(child);
-    //   } else {
-    //     _renderLayoutBox!.add(child);
-    //   }
-    // } else if (_renderReplaced != null) {
-    //   _renderReplaced!.child = child;
-    // }
+  void addChildForDOMMode(RenderBox child) {
+    if (!managedByFlutterWidget) {
+      if (renderStyle.isSelfRenderLayoutBox()) {
+        if (renderStyle.isSelfScrollingContentBox()) {
+          RenderLayoutBox scrollingContentBox = (renderStyle.domRenderBoxModel as RenderLayoutBox)!.renderScrollingContent!;
+          scrollingContentBox.add(child);
+        } else {
+          (renderStyle.domRenderBoxModel as RenderLayoutBox).add(child);
+        }
+      } else {
+        (renderStyle.domRenderBoxModel as RenderReplaced).child = child;
+      }
+    }
   }
 
   @override

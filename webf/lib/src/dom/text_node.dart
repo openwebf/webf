@@ -133,7 +133,7 @@ class TextNode extends CharacterData {
         RenderStyle parentElementRenderStyle = _parentElement.renderStyle;
 
         if (parentElementRenderStyle.isSelfRenderLayoutBox()) {
-          parentElementRenderStyle = parentElementRenderStyle.isScrollingContentBox()
+          parentElementRenderStyle = parentElementRenderStyle.isSelfScrollingContentBox()
               ? parentElementRenderStyle.getScrollContentRenderStyle()!
               : parentElementRenderStyle;
         }

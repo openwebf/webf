@@ -119,7 +119,7 @@ mixin CSSMarginMixin on RenderStyle {
   double get _collapsedMarginTopWithFirstChild {
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle? renderStyle = isScrollingContentBox() ? getParentRenderStyle() : getSelfRenderStyle();
+    RenderStyle? renderStyle = isSelfScrollingContentBox() ? getParentRenderStyle() : getSelfRenderStyle();
     if (renderStyle == null) return 0.0;
 
     double paddingTop = renderStyle.paddingTop.computedValue;
@@ -276,7 +276,7 @@ mixin CSSMarginMixin on RenderStyle {
   double get _collapsedMarginBottomWithLastChild {
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle? renderStyle = isScrollingContentBox() ? getParentRenderStyle() : getSelfRenderStyle();
+    RenderStyle? renderStyle = isSelfScrollingContentBox() ? getParentRenderStyle() : getSelfRenderStyle();
     if (renderStyle == null) return 0.0;
     double paddingBottom = renderStyle.paddingBottom.computedValue;
     double borderBottom = renderStyle.effectiveBorderBottomWidth.computedValue;

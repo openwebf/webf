@@ -94,7 +94,7 @@ class CanvasElement extends Element {
       preferredSize: size,
     );
 
-    addChild(renderCustomPaint!);
+    addChildForDOMMode(renderCustomPaint!);
     style.addStyleChangeListener(_styleChangedListener);
   }
 
