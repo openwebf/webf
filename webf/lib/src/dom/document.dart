@@ -499,8 +499,8 @@ class Document extends ContainerNode {
     return documentFragment;
   }
 
-  Comment createComment(BindingContext context) {
-    Comment comment = Comment(context);
+  Comment createComment() {
+    Comment comment = Comment();
     return comment;
   }
 

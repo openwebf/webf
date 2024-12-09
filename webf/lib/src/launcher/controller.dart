@@ -492,7 +492,7 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void createComment(Pointer<NativeBindingObject> nativePtr) {
-    document.createComment(BindingContext(document.controller.view, _contextId, nativePtr));
+    document.createComment();
   }
 
   void createDocumentFragment(Pointer<NativeBindingObject> nativePtr) {
