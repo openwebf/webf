@@ -124,33 +124,17 @@ abstract class WebRenderLayoutWidgetElement extends flutter.MultiChildRenderObje
 
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
-    // if (enableWebFProfileTracking) {
-    //   WebFProfiler.instance.startTrackUICommand();
-    // }
     super.mount(parent, newSlot);
-    // widget.webFElement.ensureChildAttached(this);
-    //
-    // Element element = widget.webFElement;
-    // element.applyStyle(element.style);
-    //
-    // if (element.renderStyle.domRenderBoxModel != null) {
-    //   if (element.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
-    //     // Flush pending style before child attached.
-    //     element.style.flushPendingProperties();
-    //   }
-    // }
-    // if (enableWebFProfileTracking) {
-    //   WebFProfiler.instance.finishTrackUICommand();
-    // }
+    webFElement.didAttachRenderer();
   }
 
   @override
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     Element element = webFElement;
-    // @TODO return back when widget adapter 2.0 complete.
-    // element.renderStyle.unmountWidgetRenderObject(this);
+    element.willDetachRenderer();
     super.unmount();
+    element.didDetachRenderer();
   }
 }
 

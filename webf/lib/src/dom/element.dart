@@ -404,22 +404,25 @@ abstract class Element extends ContainerNode
     super.didAttachRenderer();
     // The node attach may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
     renderStyle.markAdjacentRenderParagraphNeedsLayout();
-    // Ensure that the child is attached.
-    ensureChildAttached();
 
-    // Reconfigure scrollable contents.
-    bool needUpdateOverflowRenderBox = false;
-    if (renderStyle.overflowX != CSSOverflowType.visible) {
-      needUpdateOverflowRenderBox = true;
-      updateRenderBoxModelWithOverflowX(handleScroll);
+    // Ensure that the child is attached in DOM mode.
+    if (!managedByFlutterWidget) {
+      ensureChildAttached();
+      // Reconfigure scrollable contents.
+      bool needUpdateOverflowRenderBox = false;
+      if (renderStyle.overflowX != CSSOverflowType.visible) {
+        needUpdateOverflowRenderBox = true;
+        updateRenderBoxModelWithOverflowX(handleScroll);
+      }
+      if (renderStyle.overflowY != CSSOverflowType.visible) {
+        needUpdateOverflowRenderBox = true;
+        updateRenderBoxModelWithOverflowY(handleScroll);
+      }
+      if (needUpdateOverflowRenderBox) {
+        updateOverflowRenderBox();
+      }
     }
-    if (renderStyle.overflowY != CSSOverflowType.visible) {
-      needUpdateOverflowRenderBox = true;
-      updateRenderBoxModelWithOverflowY(handleScroll);
-    }
-    if (needUpdateOverflowRenderBox) {
-      updateOverflowRenderBox();
-    }
+
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
@@ -446,13 +449,13 @@ abstract class Element extends ContainerNode
         _removeFixedChild(renderStyle.domRenderBoxModel!, ownerDocument);
       }
       // Remove renderBox.
-      renderStyle.domRenderBoxModel!.detachFromContainingBlock();
+      renderStyle.attachedRenderBoxModel?.detachFromContainingBlock();
 
       // Clear pointer listener
-      clearEventResponder(renderStyle.domRenderBoxModel!);
+      clearEventResponder(renderStyle.attachedRenderBoxModel);
 
       // Remove scrollable
-      renderStyle.domRenderBoxModel!.disposeScrollable();
+      renderStyle.attachedRenderBoxModel?.disposeScrollable();
       renderStyle.disposeScrollable();
     }
   }
@@ -868,7 +871,9 @@ abstract class Element extends ContainerNode
 
     // Dispose all renderObject when deep, only works when managed by DOM elements.
     for (Node child in [...childNodes]) {
-      child.unmountRenderObject(keepFixedAlive: keepFixedAlive);
+      if (!child.managedByFlutterWidget) {
+        child.unmountRenderObject(keepFixedAlive: keepFixedAlive);
+      }
     }
 
     didDetachRenderer();

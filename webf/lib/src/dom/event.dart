@@ -74,8 +74,8 @@ const String EVENT_STATE_CANCEL = 'cancel';
 mixin ElementEventMixin on ElementBase {
   AppearEventType _prevAppearState = AppearEventType.none;
 
-  void clearEventResponder(RenderEventListenerMixin renderBox) {
-    renderBox.getEventTarget = null;
+  void clearEventResponder(RenderEventListenerMixin? renderBox) {
+    renderBox?.getEventTarget = null;
   }
 
   bool hasIntersectionObserverEvent() {
