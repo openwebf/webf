@@ -80,7 +80,8 @@ class ElementAttributeProperty {
   final ElementAttributeDeleter? deleter;
 }
 
-abstract class Element extends ContainerNode with ElementBase, ElementEventMixin, ElementOverflowMixin, ElementAdapterMixin {
+abstract class Element extends ContainerNode
+    with ElementBase, ElementEventMixin, ElementOverflowMixin, ElementAdapterMixin {
   // Default to unknown, assign by [createElement], used by inspector.
   String tagName = UNKNOWN;
 
@@ -302,7 +303,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     methods['closest'] = BindingObjectMethodSync(call: (args) => closest(args));
 
     if (kDebugMode || kProfileMode) {
-      methods['__test_global_to_local__'] = BindingObjectMethodSync(call: (args) => testGlobalToLocal(args[0], args[1]));
+      methods['__test_global_to_local__'] =
+          BindingObjectMethodSync(call: (args) => testGlobalToLocal(args[0], args[1]));
     }
   }
 
@@ -448,7 +450,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
       // Clear pointer listener
       clearEventResponder(renderStyle.domRenderBoxModel!);
-
 
       // Remove scrollable
       renderStyle.domRenderBoxModel!.disposeScrollable();
@@ -768,18 +769,18 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: previousSibling);
   }
 
-  void addChildForDOMMode(RenderBox child) {
-    if (!managedByFlutterWidget) {
-      if (renderStyle.isSelfRenderLayoutBox()) {
-        if (renderStyle.isSelfScrollingContentBox()) {
-          RenderLayoutBox scrollingContentBox = (renderStyle.domRenderBoxModel as RenderLayoutBox)!.renderScrollingContent!;
-          scrollingContentBox.add(child);
-        } else {
-          (renderStyle.domRenderBoxModel as RenderLayoutBox).add(child);
-        }
+  void addChild(RenderBox child) {
+    if (renderStyle.isSelfRenderLayoutBox()) {
+      RenderLayoutBox _renderLayoutBox = renderStyle.domRenderBoxModel as RenderLayoutBox;
+      RenderLayoutBox? scrollingContentBox = _renderLayoutBox.renderScrollingContent;
+      if (scrollingContentBox != null) {
+        scrollingContentBox.add(child);
       } else {
-        (renderStyle.domRenderBoxModel as RenderReplaced).child = child;
+        _renderLayoutBox.add(child);
       }
+    } else if (renderStyle.isSelfRenderReplaced()) {
+      RenderReplaced _renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced;
+      _renderReplaced.child = child;
     }
   }
 
@@ -1521,8 +1522,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
       if (renderStyle.isBoxModelHaveSize()) {
         Offset offset = renderStyle.getOffset(
-            ancestorRenderBox: ownerDocument.documentElement!.domRenderer as RenderBoxModel,
-            excludeScrollOffset: true);
+            ancestorRenderBox: ownerDocument.documentElement!.domRenderer as RenderBoxModel, excludeScrollOffset: true);
         Size size = renderStyle.boxSize()!;
         boundingClientRect = BoundingClientRect(
             context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),
@@ -1555,7 +1555,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   dynamic testGlobalToLocal(double x, double y) {
     if (!isRendererAttached) {
-      return { 'x': 0, 'y': 0 };
+      return {'x': 0, 'y': 0};
     }
 
     Offset offset = Offset(x, y);
@@ -1635,7 +1635,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         // Return a blob with zero length.
         captured = Uint8List(0);
       } else {
-        Image image = await renderStyle.toImage(devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
+        Image image =
+            await renderStyle.toImage(devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
         ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
         captured = byteData!.buffer.asUint8List();
       }
