@@ -769,7 +769,7 @@ abstract class Element extends ContainerNode
     _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: previousSibling);
   }
 
-  void addChild(RenderBox child) {
+  void addChildForDOMMode(RenderBox child) {
     if (renderStyle.isSelfRenderLayoutBox()) {
       RenderLayoutBox _renderLayoutBox = renderStyle.domRenderBoxModel as RenderLayoutBox;
       RenderLayoutBox? scrollingContentBox = _renderLayoutBox.renderScrollingContent;
