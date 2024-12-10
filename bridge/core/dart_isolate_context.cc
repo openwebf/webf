@@ -46,6 +46,7 @@ void DeleteDartWire(DartWireContext* wire) {
   delete wire;
 }
 
+#if WEBF_QUICKJS_JS_ENGINE
 static void ClearUpWires(JSRuntime* runtime) {
   for (auto& wire : alive_wires) {
     JS_FreeValueRT(runtime, wire->jsObject.QJSValue());
@@ -53,6 +54,7 @@ static void ClearUpWires(JSRuntime* runtime) {
   }
   alive_wires.clear();
 }
+#endif
 
 const std::unique_ptr<DartContextData>& DartIsolateContext::EnsureData() const {
   if (data_ == nullptr) {
@@ -112,18 +114,27 @@ void DartIsolateContext::InitializeJSRuntime() {
 }
 
 void DartIsolateContext::FinalizeJSRuntime() {
-  if (running_dart_isolates > 0 || runtime_ == nullptr) {
+  if (running_dart_isolates > 0) {
     return;
   }
+#if WEBF_QUICKJS_JS_ENGINE
+  if (runtime_ == nullptr) {
+      return;
+  }
+#elif WEBF_V8_JS_ENGINE
+  if (isolate_ == nullptr) {
+      return;
+  }
+#endif
 
   // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
   names_installer::Dispose();
   HTMLElementFactory::Dispose();
   SVGElementFactory::Dispose();
   EventFactory::Dispose();
-  ClearUpWires(runtime_);
 
 #if WEBF_QUICKJS_JS_ENGINE
+  ClearUpWires(runtime_);
   JS_TurnOnGC(runtime_);
   JS_FreeRuntime(runtime_);
   runtime_ = nullptr;
@@ -137,7 +148,7 @@ void DartIsolateContext::FinalizeJSRuntime() {
 DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length, bool profile_enabled)
     : is_valid_(true),
       running_thread_(std::this_thread::get_id()),
-      profiler_(std::make_unique<WebFProfiler>(profile_enabled)),
+      // TODO v8 suppport profiler_(std::make_unique<WebFProfiler>(profile_enabled)),
       dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
   is_valid_ = true;
   running_dart_isolates++;
@@ -173,11 +184,11 @@ void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
                                                      int32_t sync_buffer_size,
                                                      Dart_Handle dart_handle,
                                                      AllocateNewPageCallback result_callback) {
-  dart_isolate_context->profiler()->StartTrackInitialize();
+  // dart_isolate_context->profiler()->StartTrackInitialize();
   DartIsolateContext::InitializeJSRuntime();
   auto* page = new WebFPage(dart_isolate_context, true, sync_buffer_size, page_context_id, nullptr);
 
-  dart_isolate_context->profiler()->FinishTrackInitialize();
+  // dart_isolate_context->profiler()->FinishTrackInitialize();
 
   dart_isolate_context->dispatcher_->PostToDart(true, HandleNewPageResult, page_group, dart_handle, result_callback,
                                                 page);
@@ -230,10 +241,10 @@ void* DartIsolateContext::AddNewPage(double thread_identity,
 std::unique_ptr<WebFPage> DartIsolateContext::InitializeNewPageSync(DartIsolateContext* dart_isolate_context,
                                                                     size_t sync_buffer_size,
                                                                     double page_context_id) {
-  dart_isolate_context->profiler()->StartTrackInitialize();
+  // dart_isolate_context->profiler()->StartTrackInitialize();
   DartIsolateContext::InitializeJSRuntime();
   auto page = std::make_unique<WebFPage>(dart_isolate_context, false, sync_buffer_size, page_context_id, nullptr);
-  dart_isolate_context->profiler()->FinishTrackInitialize();
+  // dart_isolate_context->profiler()->FinishTrackInitialize();
 
   return page;
 }

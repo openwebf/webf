@@ -7,7 +7,7 @@
 #include <algorithm>
 #include "colors.h"
 
-#include "core/page.h"
+//#include "core/page.h"
 
 #if defined(IS_ANDROID)
 #include <android/log.h>
@@ -96,6 +96,7 @@ void pipeMessageToInspector(JSGlobalContextRef ctx, const std::string message, c
 #endif
 
 void printLog(ExecutingContext* context, std::stringstream& stream, std::string level, void* ctx) {
+/*TODO support page
   MessageLevel _log_level = MessageLevel::Info;
   switch (level[0]) {
     case 'l':
@@ -128,6 +129,7 @@ void printLog(ExecutingContext* context, std::stringstream& stream, std::string 
 
   context->dartMethodPtr()->onJSLog(context->isDedicated(), context->contextId(), static_cast<int>(_log_level),
                                     stream.str().c_str());
+*/
 }
 
 }  // namespace webf

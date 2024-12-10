@@ -4,9 +4,11 @@
 
 #include "include/webf_bridge.h"
 #include "core/dart_isolate_context.h"
+/* TODO support V8
 #include "core/html/parser/html_parser.h"
 #include "core/page.h"
 #include "foundation/native_type.h"
+*/
 #include "include/dart_api.h"
 #include "multiple_threading/dispatcher.h"
 #include "multiple_threading/task.h"
@@ -138,12 +140,14 @@ void evaluateScripts(void* page_,
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] evaluateScriptsWrapper call" << std::endl;
 #endif
+/* TODO support V8
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(
       page->isDedicated(), static_cast<int32_t>(page->contextId()), webf::WebFPage::EvaluateScriptsInternal, page_,
       code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, start_line, profile_id, persistent_handle,
       result_callback);
+*/
 }
 
 void dumpQuickjsByteCode(void* page_,
@@ -158,12 +162,13 @@ void dumpQuickjsByteCode(void* page_,
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] dumpQuickjsByteCode call" << std::endl;
 #endif
-
+/* TODO support V8
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->dartIsolateContext()->dispatcher()->PostToJs(
       page->isDedicated(), static_cast<int32_t>(page->contextId()), webf::WebFPage::DumpQuickJsByteCodeInternal, page,
       profile_id, code, code_len, parsed_bytecodes, bytecode_len, url, persistent_handle, result_callback);
+*/
 }
 
 void evaluateQuickjsByteCode(void* page_,
@@ -175,11 +180,13 @@ void evaluateQuickjsByteCode(void* page_,
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] evaluateQuickjsByteCodeWrapper call" << std::endl;
 #endif
+/* TODO support V8
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), static_cast<int32_t>(page->contextId()),
                                                      webf::WebFPage::EvaluateQuickjsByteCodeInternal, page_, bytes,
                                                      byteLen, profile_id, persistent_handle, result_callback);
+*/
 }
 
 void parseHTML(void* page_,
@@ -191,19 +198,25 @@ void parseHTML(void* page_,
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] parseHTMLWrapper call" << std::endl;
 #endif
+/* TODO support V8
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(
       page->isDedicated(), static_cast<int32_t>(page->contextId()), webf::WebFPage::ParseHTMLInternal, page_, code,
       length, profile_id, persistent_handle, result_callback);
+*/
 }
 
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName) {
+/* TODO support V8
   webf::ExecutingContext::plugin_byte_code[pluginName] = webf::NativeByteCode{bytes, length};
+*/
 }
 
 void registerPluginCode(const char* code, int32_t length, const char* pluginName) {
+/* TODO support V8
   webf::ExecutingContext::plugin_string_code[pluginName] = std::string(code, length);
+*/
 }
 
 static WebFInfo* webfInfo{nullptr};
@@ -221,12 +234,17 @@ WebFInfo* getWebFInfo() {
 }
 
 void* parseSVGResult(const char* code, int32_t length) {
+/* TODO support V8
   auto* result = webf::HTMLParser::parseSVGResult(code, length);
   return result;
+*/
+    return nullptr;
 }
 
 void freeSVGResult(void* svgTree) {
+/* TODO support V8
   webf::HTMLParser::freeSVGResult(reinterpret_cast<GumboOutput*>(svgTree));
+*/
 }
 
 void invokeModuleEvent(void* page_,
@@ -236,6 +254,7 @@ void invokeModuleEvent(void* page_,
                        NativeValue* extra,
                        Dart_Handle dart_handle,
                        InvokeModuleEventCallback result_callback) {
+/* TODO support V8
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   auto dart_isolate_context = page->executingContext()->dartIsolateContext();
@@ -244,20 +263,25 @@ void invokeModuleEvent(void* page_,
   dart_isolate_context->dispatcher()->PostToJs(is_dedicated, static_cast<int32_t>(context_id),
                                                webf::WebFPage::InvokeModuleEventInternal, page_, module, eventType,
                                                event, extra, persistent_handle, result_callback);
+*/
 }
 
 void collectNativeProfileData(void* ptr, const char** data, uint32_t* len) {
+/* TODO support V8
   auto* dart_isolate_context = static_cast<webf::DartIsolateContext*>(ptr);
   std::string result = dart_isolate_context->profiler()->ToJSON();
 
   *data = static_cast<const char*>(webf::dart_malloc(sizeof(char) * result.size() + 1));
   memcpy((void*)*data, result.c_str(), sizeof(char) * result.size() + 1);
   *len = static_cast<uint32_t>(result.size());
+*/
 }
 
 void clearNativeProfileData(void* ptr) {
+/* TODO support V8
   auto* dart_isolate_context = static_cast<webf::DartIsolateContext*>(ptr);
   dart_isolate_context->profiler()->clear();
+*/
 }
 
 void dispatchUITask(void* page_, void* context, void* callback) {
@@ -266,23 +290,34 @@ void dispatchUITask(void* page_, void* context, void* callback) {
 }
 
 void* getUICommandItems(void* page_) {
+/* TODO support V8
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   return page->executingContext()->uiCommandBuffer()->data();
+*/
+    return nullptr;
 }
 
 uint32_t getUICommandKindFlag(void* page_) {
+/* TODO support V8
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   return page->executingContext()->uiCommandBuffer()->kindFlag();
+*/
+    return 0;
 }
 
 int64_t getUICommandItemSize(void* page_) {
+/* TODO support V8
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   return page->executingContext()->uiCommandBuffer()->size();
+*/
+    return 0;
 }
 
 void clearUICommandItems(void* page_) {
+/* TODO support V8
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   page->executingContext()->uiCommandBuffer()->clear();
+*/
 }
 
 // Callbacks when dart context object was finalized by Dart GC.

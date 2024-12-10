@@ -6,7 +6,11 @@
 #define WEBF_CORE_RUST_API_EXCEPTION_STATE_H_
 
 #include <cinttypes>
+#if WEBF_QUICKJS_JS_ENGINE
 #include "bindings/qjs/exception_state.h"
+#elif WEBF_V8_JS_ENGINE
+
+#endif
 #include "webf_value.h"
 
 namespace webf {

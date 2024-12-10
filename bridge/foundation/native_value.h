@@ -9,10 +9,12 @@
 #if WEBF_QUICKJS_JS_ENGINE
 #include <quickjs/list.h>
 #include <quickjs/quickjs.h>
+#include "bindings/qjs/native_string_utils.h"
+#elif WEBF_V8_JS_ENGINE
+#include "bindings/v8/native_string_utils.h"
 #endif
 #include <cinttypes>
 #include <string>
-#include "bindings/qjs/native_string_utils.h"
 #include "foundation/dart_readable.h"
 
 namespace webf {

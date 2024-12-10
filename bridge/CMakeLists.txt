@@ -82,7 +82,7 @@ if (DEFINED PLATFORM)
 endif()
 
 list(APPEND BRIDGE_SOURCE
-#  foundation/logging.cc
+  foundation/logging.cc
   foundation/native_string.cc
 #  foundation/ui_task_queue.cc
 #  foundation/shared_ui_command.cc
@@ -639,6 +639,17 @@ elseif (${WEBF_JS_ENGINE} MATCHES "v8")
     # Binding files
     bindings/v8/atomic_string.cc
     bindings/v8/native_string_utils.cc
+    bindings/v8/script_value.cc
+    bindings/v8/heap/custom_spaces.cc
+    bindings/v8/heap/garbage_collected.h
+    bindings/v8/heap/member.h
+    bindings/v8/heap/persistent.h
+    bindings/v8/heap/self_keep_alive.h
+    bindings/v8/heap/thread_state.cc
+    bindings/v8/heap/thread_state_storage.cc
+    bindings/v8/scoped_persistent.h
+    bindings/v8/v8_per_context_data.cc
+    bindings/v8/v8_script_state.cc
 
     out/built_in_string.cc
   )

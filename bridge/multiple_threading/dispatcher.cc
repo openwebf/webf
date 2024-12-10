@@ -5,7 +5,9 @@
 #include "dispatcher.h"
 
 #include "core/dart_isolate_context.h"
+/* TODO V8 support page
 #include "core/page.h"
+ */
 #include "foundation/logging.h"
 
 using namespace webf;
@@ -61,12 +63,14 @@ void Dispatcher::Dispose(webf::multi_threading::Callback callback) {
   WEBF_LOG(VERBOSE) << "[Dispatcher]: BEGIN EXE OPAQUE FINALIZER ";
 #endif
 
+   /* TODO V8 support page
   for (auto&& thread : js_threads_) {
     auto* page_group = static_cast<PageGroup*>(thread.second->opaque());
     for (auto& page : (*page_group->pages())) {
       page->executingContext()->SetContextInValid();
     }
   }
+  */
 
   std::set<DartWork*> pending_tasks = pending_dart_tasks_;
 
