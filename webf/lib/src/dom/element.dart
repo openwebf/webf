@@ -445,14 +445,15 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       }
       // Remove renderBox.
       renderStyle.domRenderBoxModel!.detachFromContainingBlock();
+
+      // Clear pointer listener
+      clearEventResponder(renderStyle.domRenderBoxModel!);
+
+
+      // Remove scrollable
+      renderStyle.domRenderBoxModel!.disposeScrollable();
+      renderStyle.disposeScrollable();
     }
-
-    // Clear pointer listener
-    clearEventResponder(renderStyle.domRenderBoxModel!);
-
-    // Remove scrollable
-    renderStyle.domRenderBoxModel!.disposeScrollable();
-    renderStyle.disposeScrollable();
   }
 
   BoundingClientRect getBoundingClientRect() => boundingClientRect;
@@ -865,11 +866,9 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     willDetachRenderer();
 
     // Dispose all renderObject when deep, only works when managed by DOM elements.
-    // if (deep) {
-    //   for (Node child in [...childNodes]) {
-    //     child.unmountRenderObject(deep: deep, keepFixedAlive: keepFixedAlive);
-    //   }
-    // }
+    for (Node child in [...childNodes]) {
+      child.unmountRenderObject(keepFixedAlive: keepFixedAlive);
+    }
 
     didDetachRenderer();
     if (dispose) {
