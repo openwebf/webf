@@ -72,9 +72,9 @@ class DartIsolateContext {
   FORCE_INLINE void SetDispatcher(std::unique_ptr<multi_threading::Dispatcher>&& dispatcher) {
     dispatcher_ = std::move(dispatcher);
   }
-/* TODO support V8
-  FORCE_INLINE WebFProfiler* profiler() const { return profiler_.get(); };
-*/
+  /* TODO support V8
+    FORCE_INLINE WebFProfiler* profiler() const { return profiler_.get(); };
+  */
 
   const std::unique_ptr<DartContextData>& EnsureData() const;
 
@@ -119,9 +119,9 @@ class DartIsolateContext {
                                                int thread_group_id,
                                                Dart_Handle persistent_handle,
                                                DisposePageCallback result_callback);
-/* TODO support V8
-  std::unique_ptr<WebFProfiler> profiler_;
-*/
+  /* TODO support V8
+    std::unique_ptr<WebFProfiler> profiler_;
+  */
   int is_valid_{false};
   std::thread::id running_thread_;
   mutable std::unique_ptr<DartContextData> data_;

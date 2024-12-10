@@ -6,9 +6,9 @@
 #ifndef WEBF_PLATFORM_HEAP_CUSTOM_SPACES_H_
 #define WEBF_PLATFORM_HEAP_CUSTOM_SPACES_H_
 
+#include <v8/cppgc/custom-space.h>
 #include <memory>
 #include <vector>
-#include <v8/cppgc/custom-space.h>
 
 namespace webf {
 
@@ -18,39 +18,35 @@ namespace webf {
 // indices of all custom spaces form a sequence starting at 0. See
 // `cppgc::CustomSpace` for details.
 
-    class CompactableHeapVectorBackingSpace
-    : public cppgc::CustomSpace<CompactableHeapVectorBackingSpace> {
-    public:
-    static constexpr cppgc::CustomSpaceIndex kSpaceIndex = 0;
-    static constexpr bool kSupportsCompaction = true;
+class CompactableHeapVectorBackingSpace : public cppgc::CustomSpace<CompactableHeapVectorBackingSpace> {
+ public:
+  static constexpr cppgc::CustomSpaceIndex kSpaceIndex = 0;
+  static constexpr bool kSupportsCompaction = true;
 };
 
-class CompactableHeapHashTableBackingSpace
-: public cppgc::CustomSpace<CompactableHeapHashTableBackingSpace> {
-public:
-static constexpr cppgc::CustomSpaceIndex kSpaceIndex = 1;
-static constexpr bool kSupportsCompaction = true;
+class CompactableHeapHashTableBackingSpace : public cppgc::CustomSpace<CompactableHeapHashTableBackingSpace> {
+ public:
+  static constexpr cppgc::CustomSpaceIndex kSpaceIndex = 1;
+  static constexpr bool kSupportsCompaction = true;
 };
 
 class NodeSpace : public cppgc::CustomSpace<NodeSpace> {
-public:
-static constexpr cppgc::CustomSpaceIndex kSpaceIndex = 2;
+ public:
+  static constexpr cppgc::CustomSpaceIndex kSpaceIndex = 2;
 };
 
 class CSSValueSpace : public cppgc::CustomSpace<CSSValueSpace> {
-public:
-static constexpr cppgc::CustomSpaceIndex kSpaceIndex = 3;
+ public:
+  static constexpr cppgc::CustomSpaceIndex kSpaceIndex = 3;
 };
 
-class LayoutObjectSpace
-: public cppgc::CustomSpace<LayoutObjectSpace> {
-public:
-static constexpr cppgc::CustomSpaceIndex kSpaceIndex = 4;
+class LayoutObjectSpace : public cppgc::CustomSpace<LayoutObjectSpace> {
+ public:
+  static constexpr cppgc::CustomSpaceIndex kSpaceIndex = 4;
 };
 
 struct CustomSpaces final {
-static std::vector<std::unique_ptr<cppgc::CustomSpaceBase>>
-CreateCustomSpaces();
+  static std::vector<std::unique_ptr<cppgc::CustomSpaceBase>> CreateCustomSpaces();
 };
 
 }  // namespace webf

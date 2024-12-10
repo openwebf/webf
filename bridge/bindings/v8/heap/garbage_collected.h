@@ -6,48 +6,44 @@
 #ifndef WEBF_GARBAGE_COLLECTED_H
 #define WEBF_GARBAGE_COLLECTED_H
 
-#include <type_traits>
-#include "thread_state_storage.h"
-#include <v8/v8.h>
-#include <v8/v8-cppgc.h>
 #include <v8/cppgc/allocation.h>
 #include <v8/cppgc/type-traits.h>
+#include <v8/v8-cppgc.h>
+#include <v8/v8.h>
+#include <type_traits>
+#include "thread_state_storage.h"
 
 namespace webf {
 
-    template <typename T>
-    using GarbageCollected = cppgc::GarbageCollected<T>;
+template <typename T>
+using GarbageCollected = cppgc::GarbageCollected<T>;
 
-    using GarbageCollectedMixin = cppgc::GarbageCollectedMixin;
+using GarbageCollectedMixin = cppgc::GarbageCollectedMixin;
 
-    using LivenessBroker = cppgc::LivenessBroker;
+using LivenessBroker = cppgc::LivenessBroker;
 
-    using Visitor = cppgc::Visitor;
+using Visitor = cppgc::Visitor;
 
 // Default MakeGarbageCollected: Constructs an instance of T, which is a garbage
 // collected type.
-    template <typename T, typename... Args>
-    T* MakeGarbageCollected(Args&&... args) {
-        return cppgc::MakeGarbageCollected<T>(
-                ThreadStateStorageFor<ThreadingTrait<T>::kAffinity>::GetState()
-                        ->allocation_handle(),
-                std::forward<Args>(args)...);
-    }
+template <typename T, typename... Args>
+T* MakeGarbageCollected(Args&&... args) {
+  return cppgc::MakeGarbageCollected<T>(
+      ThreadStateStorageFor<ThreadingTrait<T>::kAffinity>::GetState()->allocation_handle(),
+      std::forward<Args>(args)...);
+}
 
-    using AdditionalBytes = cppgc::AdditionalBytes;
+using AdditionalBytes = cppgc::AdditionalBytes;
 
 // Constructs an instance of T, which is a garbage collected type. This special
 // version takes size which enables constructing inline objects.
-    template <typename T, typename... Args>
-    T* MakeGarbageCollected(AdditionalBytes additional_bytes, Args&&... args) {
-        return cppgc::MakeGarbageCollected<T>(
-                ThreadStateStorageFor<ThreadingTrait<T>::kAffinity>::GetState()
-                        ->allocation_handle(),
-                std::forward<AdditionalBytes>(additional_bytes),
-                std::forward<Args>(args)...);
-    }
+template <typename T, typename... Args>
+T* MakeGarbageCollected(AdditionalBytes additional_bytes, Args&&... args) {
+  return cppgc::MakeGarbageCollected<T>(
+      ThreadStateStorageFor<ThreadingTrait<T>::kAffinity>::GetState()->allocation_handle(),
+      std::forward<AdditionalBytes>(additional_bytes), std::forward<Args>(args)...);
+}
 
-}  // namespace blink
-
+}  // namespace webf
 
 #endif  // WEBF_GARBAGE_COLLECTED_H

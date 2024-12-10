@@ -37,36 +37,31 @@ namespace webf {
 //
 // The responsibility to call Clear() in a timely fashion resides with the
 // implementation of the object.
-    template <typename Self>
-    class SelfKeepAlive final {
-        WEBF_DISALLOW_NEW();
+template <typename Self>
+class SelfKeepAlive final {
+  WEBF_DISALLOW_NEW();
 
-    public:
-        explicit SelfKeepAlive(
-                const PersistentLocation& loc = PersistentLocation())
-                : keep_alive_(loc) {}
-        explicit SelfKeepAlive(
-                Self* self,
-                const PersistentLocation& loc = PersistentLocation())
-                : keep_alive_(self, loc) {}
+ public:
+  explicit SelfKeepAlive(const PersistentLocation& loc = PersistentLocation()) : keep_alive_(loc) {}
+  explicit SelfKeepAlive(Self* self, const PersistentLocation& loc = PersistentLocation()) : keep_alive_(self, loc) {}
 
-        SelfKeepAlive& operator=(Self* self) {
-            DCHECK(!keep_alive_ || keep_alive_.Get() == self);
-            keep_alive_ = self;
-            return *this;
-        }
+  SelfKeepAlive& operator=(Self* self) {
+    DCHECK(!keep_alive_ || keep_alive_.Get() == self);
+    keep_alive_ = self;
+    return *this;
+  }
 
-        void Clear() { keep_alive_.Clear(); }
+  void Clear() { keep_alive_.Clear(); }
 
-        explicit operator bool() const { return keep_alive_; }
+  explicit operator bool() const { return keep_alive_; }
 
-    private:
-        /*TODO support GC_PLUGIN_IGNORE
-        GC_PLUGIN_IGNORE("Allowed to temporarily introduce non reclaimable memory.")
-         */
-        Persistent<Self> keep_alive_;
-    };
+ private:
+  /*TODO support GC_PLUGIN_IGNORE
+  GC_PLUGIN_IGNORE("Allowed to temporarily introduce non reclaimable memory.")
+   */
+  Persistent<Self> keep_alive_;
+};
 
 }  // namespace webf
 
-#endif //WEBF_SELF_KEEP_ALIVE_H
+#endif  // WEBF_SELF_KEEP_ALIVE_H

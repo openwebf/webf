@@ -96,40 +96,40 @@ void pipeMessageToInspector(JSGlobalContextRef ctx, const std::string message, c
 #endif
 
 void printLog(ExecutingContext* context, std::stringstream& stream, std::string level, void* ctx) {
-/*TODO support page
-  MessageLevel _log_level = MessageLevel::Info;
-  switch (level[0]) {
-    case 'l':
-      WEBF_LOG(VERBOSE) << stream.str();
-      _log_level = MessageLevel::Log;
-      break;
-    case 'i':
-      WEBF_LOG(INFO) << stream.str();
-      _log_level = MessageLevel::Info;
-      break;
-    case 'd':
-      WEBF_LOG(DEBUG) << stream.str();
-      _log_level = MessageLevel::Debug;
-      break;
-    case 'w':
-      WEBF_LOG(WARN) << stream.str();
-      _log_level = MessageLevel::Warning;
-      break;
-    case 'e':
-      WEBF_LOG(ERROR) << stream.str();
-      _log_level = MessageLevel::Error;
-      break;
-    default:
-      WEBF_LOG(VERBOSE) << stream.str();
-  }
+  /*TODO support page
+    MessageLevel _log_level = MessageLevel::Info;
+    switch (level[0]) {
+      case 'l':
+        WEBF_LOG(VERBOSE) << stream.str();
+        _log_level = MessageLevel::Log;
+        break;
+      case 'i':
+        WEBF_LOG(INFO) << stream.str();
+        _log_level = MessageLevel::Info;
+        break;
+      case 'd':
+        WEBF_LOG(DEBUG) << stream.str();
+        _log_level = MessageLevel::Debug;
+        break;
+      case 'w':
+        WEBF_LOG(WARN) << stream.str();
+        _log_level = MessageLevel::Warning;
+        break;
+      case 'e':
+        WEBF_LOG(ERROR) << stream.str();
+        _log_level = MessageLevel::Error;
+        break;
+      default:
+        WEBF_LOG(VERBOSE) << stream.str();
+    }
 
-  if (webf::WebFPage::consoleMessageHandler != nullptr) {
-    webf::WebFPage::consoleMessageHandler(ctx, stream.str(), static_cast<int>(_log_level));
-  }
+    if (webf::WebFPage::consoleMessageHandler != nullptr) {
+      webf::WebFPage::consoleMessageHandler(ctx, stream.str(), static_cast<int>(_log_level));
+    }
 
-  context->dartMethodPtr()->onJSLog(context->isDedicated(), context->contextId(), static_cast<int>(_log_level),
-                                    stream.str().c_str());
-*/
+    context->dartMethodPtr()->onJSLog(context->isDedicated(), context->contextId(), static_cast<int>(_log_level),
+                                      stream.str().c_str());
+  */
 }
 
 }  // namespace webf

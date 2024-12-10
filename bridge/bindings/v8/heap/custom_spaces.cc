@@ -8,32 +8,29 @@
 namespace webf {
 
 // static
-    constexpr cppgc::CustomSpaceIndex
-            CompactableHeapVectorBackingSpace::kSpaceIndex;
+constexpr cppgc::CustomSpaceIndex CompactableHeapVectorBackingSpace::kSpaceIndex;
 
 // static
-    constexpr cppgc::CustomSpaceIndex
-            CompactableHeapHashTableBackingSpace::kSpaceIndex;
+constexpr cppgc::CustomSpaceIndex CompactableHeapHashTableBackingSpace::kSpaceIndex;
 
 // static
-    constexpr cppgc::CustomSpaceIndex NodeSpace::kSpaceIndex;
+constexpr cppgc::CustomSpaceIndex NodeSpace::kSpaceIndex;
 
 // static
-    constexpr cppgc::CustomSpaceIndex CSSValueSpace::kSpaceIndex;
+constexpr cppgc::CustomSpaceIndex CSSValueSpace::kSpaceIndex;
 
 // static
-    constexpr cppgc::CustomSpaceIndex LayoutObjectSpace::kSpaceIndex;
+constexpr cppgc::CustomSpaceIndex LayoutObjectSpace::kSpaceIndex;
 
 // static
-    std::vector<std::unique_ptr<cppgc::CustomSpaceBase>>
-    CustomSpaces::CreateCustomSpaces() {
-        std::vector<std::unique_ptr<cppgc::CustomSpaceBase>> spaces;
-        spaces.emplace_back(std::make_unique<CompactableHeapVectorBackingSpace>());
-        spaces.emplace_back(std::make_unique<CompactableHeapHashTableBackingSpace>());
-        spaces.emplace_back(std::make_unique<NodeSpace>());
-        spaces.emplace_back(std::make_unique<CSSValueSpace>());
-        spaces.emplace_back(std::make_unique<LayoutObjectSpace>());
-        return spaces;
-    }
+std::vector<std::unique_ptr<cppgc::CustomSpaceBase>> CustomSpaces::CreateCustomSpaces() {
+  std::vector<std::unique_ptr<cppgc::CustomSpaceBase>> spaces;
+  spaces.emplace_back(std::make_unique<CompactableHeapVectorBackingSpace>());
+  spaces.emplace_back(std::make_unique<CompactableHeapHashTableBackingSpace>());
+  spaces.emplace_back(std::make_unique<NodeSpace>());
+  spaces.emplace_back(std::make_unique<CSSValueSpace>());
+  spaces.emplace_back(std::make_unique<LayoutObjectSpace>());
+  return spaces;
+}
 
-}  // namespace blink
+}  // namespace webf

@@ -12,60 +12,57 @@
 
 namespace webf {
 
-    template <typename T>
-    using Member = cppgc::Member<T>;
+template <typename T>
+using Member = cppgc::Member<T>;
 
-    template <typename T>
-    using WeakMember = cppgc::WeakMember<T>;
+template <typename T>
+using WeakMember = cppgc::WeakMember<T>;
 
-    template <typename T>
-    using UntracedMember = cppgc::UntracedMember<T>;
+template <typename T>
+using UntracedMember = cppgc::UntracedMember<T>;
 
-    namespace subtle {
-        template <typename T>
-        using UncompressedMember = cppgc::subtle::UncompressedMember<T>;
-    }
+namespace subtle {
+template <typename T>
+using UncompressedMember = cppgc::subtle::UncompressedMember<T>;
+}
 
-    template <typename T>
-    inline bool IsHashTableDeletedValue(const Member<T>& m) {
-        return m == cppgc::kSentinelPointer;
-    }
+template <typename T>
+inline bool IsHashTableDeletedValue(const Member<T>& m) {
+  return m == cppgc::kSentinelPointer;
+}
 
-    constexpr auto kMemberDeletedValue = cppgc::kSentinelPointer;
+constexpr auto kMemberDeletedValue = cppgc::kSentinelPointer;
 
-    template <typename T>
-    struct ThreadingTrait<webf::Member<T>> {
-        WEBF_STATIC_ONLY(ThreadingTrait);
-        static constexpr ThreadAffinity kAffinity = ThreadingTrait<T>::kAffinity;
-    };
+template <typename T>
+struct ThreadingTrait<webf::Member<T>> {
+  WEBF_STATIC_ONLY(ThreadingTrait);
+  static constexpr ThreadAffinity kAffinity = ThreadingTrait<T>::kAffinity;
+};
 
-    template <typename T>
-    struct ThreadingTrait<webf::WeakMember<T>> {
-        WEBF_STATIC_ONLY(ThreadingTrait);
-        static constexpr ThreadAffinity kAffinity = ThreadingTrait<T>::kAffinity;
-    };
+template <typename T>
+struct ThreadingTrait<webf::WeakMember<T>> {
+  WEBF_STATIC_ONLY(ThreadingTrait);
+  static constexpr ThreadAffinity kAffinity = ThreadingTrait<T>::kAffinity;
+};
 
-    template <typename T>
-    struct ThreadingTrait<webf::UntracedMember<T>> {
-        WEBF_STATIC_ONLY(ThreadingTrait);
-        static constexpr ThreadAffinity kAffinity = ThreadingTrait<T>::kAffinity;
-    };
+template <typename T>
+struct ThreadingTrait<webf::UntracedMember<T>> {
+  WEBF_STATIC_ONLY(ThreadingTrait);
+  static constexpr ThreadAffinity kAffinity = ThreadingTrait<T>::kAffinity;
+};
 
-    template <typename T>
-    inline void swap(Member<T>& a, Member<T>& b) {
-        a.Swap(b);
-    }
+template <typename T>
+inline void swap(Member<T>& a, Member<T>& b) {
+  a.Swap(b);
+}
 
-    static constexpr bool kWebfMemberGCHasDebugChecks =
-            !std::is_same<cppgc::internal::DefaultMemberCheckingPolicy,
-                    cppgc::internal::DisabledCheckingPolicy>::value;
+static constexpr bool kWebfMemberGCHasDebugChecks =
+    !std::is_same<cppgc::internal::DefaultMemberCheckingPolicy, cppgc::internal::DisabledCheckingPolicy>::value;
 
 // We should never bloat the Member<> wrapper.
 // NOTE: The Member<void*> works as we never use this Member in a trace method.
-    static_assert(kWebfMemberGCHasDebugChecks ||
-                  sizeof(Member<void*>) <= sizeof(void*),
-                  "Member<> should stay small!");
+static_assert(kWebfMemberGCHasDebugChecks || sizeof(Member<void*>) <= sizeof(void*), "Member<> should stay small!");
 
 }  // namespace webf
 
-#endif //WEBF_MEMBER_H
+#endif  // WEBF_MEMBER_H

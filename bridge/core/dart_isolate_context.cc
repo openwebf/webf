@@ -119,11 +119,11 @@ void DartIsolateContext::FinalizeJSRuntime() {
   }
 #if WEBF_QUICKJS_JS_ENGINE
   if (runtime_ == nullptr) {
-      return;
+    return;
   }
 #elif WEBF_V8_JS_ENGINE
   if (isolate_ == nullptr) {
-      return;
+    return;
   }
 #endif
 

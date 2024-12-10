@@ -10,41 +10,34 @@
 namespace webf {
 
 // static
-    ThreadStateStorage ThreadStateStorage::main_thread_state_storage_;
+ThreadStateStorage ThreadStateStorage::main_thread_state_storage_;
 
 // static
-    void ThreadStateStorage::AttachMainThread(
-            ThreadState& thread_state,
-            cppgc::AllocationHandle& allocation_handle,
-            cppgc::HeapHandle& heap_handle) {
-        g_thread_specific_ = new (&main_thread_state_storage_)
-                ThreadStateStorage(thread_state, allocation_handle, heap_handle);
-    }
+void ThreadStateStorage::AttachMainThread(ThreadState& thread_state,
+                                          cppgc::AllocationHandle& allocation_handle,
+                                          cppgc::HeapHandle& heap_handle) {
+  g_thread_specific_ =
+      new (&main_thread_state_storage_) ThreadStateStorage(thread_state, allocation_handle, heap_handle);
+}
 
 // static
-    void ThreadStateStorage::AttachNonMainThread(
-            ThreadState& thread_state,
-            cppgc::AllocationHandle& allocation_handle,
-            cppgc::HeapHandle& heap_handle) {
-        g_thread_specific_ =
-                new ThreadStateStorage(thread_state, allocation_handle, heap_handle);
-    }
+void ThreadStateStorage::AttachNonMainThread(ThreadState& thread_state,
+                                             cppgc::AllocationHandle& allocation_handle,
+                                             cppgc::HeapHandle& heap_handle) {
+  g_thread_specific_ = new ThreadStateStorage(thread_state, allocation_handle, heap_handle);
+}
 
 // static
-    void ThreadStateStorage::DetachNonMainThread(
-            ThreadStateStorage& thread_state_storage) {
-        WEBF_CHECK(MainThreadStateStorage() != &thread_state_storage);
-        WEBF_CHECK(g_thread_specific_ == &thread_state_storage);
-        delete &thread_state_storage;
-        g_thread_specific_ = nullptr;
-    }
+void ThreadStateStorage::DetachNonMainThread(ThreadStateStorage& thread_state_storage) {
+  WEBF_CHECK(MainThreadStateStorage() != &thread_state_storage);
+  WEBF_CHECK(g_thread_specific_ == &thread_state_storage);
+  delete &thread_state_storage;
+  g_thread_specific_ = nullptr;
+}
 
-    ThreadStateStorage::ThreadStateStorage(
-            ThreadState& thread_state,
-            cppgc::AllocationHandle& allocation_handle,
-            cppgc::HeapHandle& heap_handle)
-            : allocation_handle_(&allocation_handle),
-              heap_handle_(&heap_handle),
-              thread_state_(&thread_state) {}
+ThreadStateStorage::ThreadStateStorage(ThreadState& thread_state,
+                                       cppgc::AllocationHandle& allocation_handle,
+                                       cppgc::HeapHandle& heap_handle)
+    : allocation_handle_(&allocation_handle), heap_handle_(&heap_handle), thread_state_(&thread_state) {}
 
 }  // namespace webf

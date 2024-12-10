@@ -17,59 +17,51 @@ namespace webf {
 // review.
 template <typename T>
 class ScopedPersistent {
+ public:
+  ScopedPersistent() = default;
+  ScopedPersistent(v8::Isolate* isolate, v8::Local<T> handle) : handle_(isolate, handle) {}
+  ScopedPersistent(const ScopedPersistent&) = delete;
+  ScopedPersistent& operator=(const ScopedPersistent&) = delete;
 
-    public:
-        ScopedPersistent() = default;
-        ScopedPersistent(v8::Isolate* isolate, v8::Local<T> handle)
-                : handle_(isolate, handle) {}
-        ScopedPersistent(const ScopedPersistent&) = delete;
-        ScopedPersistent& operator=(const ScopedPersistent&) = delete;
+  ~ScopedPersistent() { Clear(); }
 
-        ~ScopedPersistent() { Clear(); }
+  FORCE_INLINE v8::Local<T> NewLocal(v8::Isolate* isolate) const { return v8::Local<T>::New(isolate, handle_); }
 
-        FORCE_INLINE v8::Local<T> NewLocal(v8::Isolate* isolate) const {
-            return v8::Local<T>::New(isolate, handle_);
-        }
+  // If you don't need to get weak callback, use setPhantom instead.
+  // setPhantom is faster than setWeak.
+  template <typename P>
+  void SetWeak(P* parameters,
+               void (*callback)(const v8::WeakCallbackInfo<P>&),
+               v8::WeakCallbackType type = v8::WeakCallbackType::kParameter) {
+    handle_.SetWeak(parameters, callback, type);
+  }
 
-        // If you don't need to get weak callback, use setPhantom instead.
-        // setPhantom is faster than setWeak.
-        template <typename P>
-        void SetWeak(P* parameters,
-                     void (*callback)(const v8::WeakCallbackInfo<P>&),
-                     v8::WeakCallbackType type = v8::WeakCallbackType::kParameter) {
-            handle_.SetWeak(parameters, callback, type);
-        }
+  // Turns this handle into a weak phantom handle without
+  // finalization callback.
+  void SetPhantom() { handle_.SetWeak(); }
 
-        // Turns this handle into a weak phantom handle without
-        // finalization callback.
-        void SetPhantom() { handle_.SetWeak(); }
+  void ClearWeak() { handle_.template ClearWeak<void>(); }
 
-        void ClearWeak() { handle_.template ClearWeak<void>(); }
+  bool IsEmpty() const { return handle_.IsEmpty(); }
+  bool IsWeak() const { return handle_.IsWeak(); }
 
-        bool IsEmpty() const { return handle_.IsEmpty(); }
-        bool IsWeak() const { return handle_.IsWeak(); }
+  void Set(v8::Isolate* isolate, v8::Local<T> handle) { handle_.Reset(isolate, handle); }
 
-        void Set(v8::Isolate* isolate, v8::Local<T> handle) {
-            handle_.Reset(isolate, handle);
-        }
+  // Note: This is clear in the std::unique_ptr sense, not the v8::Local sense.
+  void Clear() { handle_.Reset(); }
 
-        // Note: This is clear in the std::unique_ptr sense, not the v8::Local sense.
-        void Clear() { handle_.Reset(); }
+  bool operator==(const ScopedPersistent<T>& other) { return handle_ == other.handle_; }
 
-        bool operator==(const ScopedPersistent<T>& other) {
-            return handle_ == other.handle_;
-        }
+  template <class S>
+  bool operator==(const v8::Local<S> other) const {
+    return handle_ == other;
+  }
 
-        template <class S>
-        bool operator==(const v8::Local<S> other) const {
-            return handle_ == other;
-        }
+  FORCE_INLINE v8::Persistent<T>& Get() { return handle_; }
 
-        FORCE_INLINE v8::Persistent<T>& Get() { return handle_; }
-
-    private:
-        v8::Persistent<T> handle_;
-    };
+ private:
+  v8::Persistent<T> handle_;
+};
 
 }  // namespace webf
 

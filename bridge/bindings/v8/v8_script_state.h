@@ -7,11 +7,11 @@
 #define WEBF_PLATFORM_BINDINGS_SCRIPT_STATE_H_
 
 #include <v8/v8.h>
+#include "foundation/logging.h"
+#include "foundation/macros.h"
 #include "heap/garbage_collected.h"
 #include "heap/member.h"
 #include "heap/self_keep_alive.h"
-#include "foundation/macros.h"
-#include "foundation/logging.h"
 #include "scoped_persistent.h"
 
 namespace webf {
@@ -72,16 +72,15 @@ class V8PerContextData;
 class V8ScriptState : public GarbageCollected<V8ScriptState> {
  public:
   class Scope final {
-   WEBF_STACK_ALLOCATED();
+    WEBF_STACK_ALLOCATED();
 
    public:
     // You need to make sure that scriptState->context() is not empty before
     // creating a Scope.
     explicit Scope(V8ScriptState* script_state)
-            : handle_scope_(script_state->GetIsolate()),
-              context_(script_state->GetContext()) {
-        WEBF_CHECK(script_state->ContextIsValid());
-        context_->Enter();
+        : handle_scope_(script_state->GetIsolate()), context_(script_state->GetContext()) {
+      WEBF_CHECK(script_state->ContextIsValid());
+      context_->Enter();
     }
 
     ~Scope() { context_->Exit(); }
@@ -91,209 +90,183 @@ class V8ScriptState : public GarbageCollected<V8ScriptState> {
     v8::Local<v8::Context> context_;
   };
 
-    // Use EscapableScope if you have to return a v8::Local to an outer scope.
-    // See v8::EscapableHandleScope.
+  // Use EscapableScope if you have to return a v8::Local to an outer scope.
+  // See v8::EscapableHandleScope.
   class EscapableScope final {
-        WEBF_STACK_ALLOCATED();
+    WEBF_STACK_ALLOCATED();
 
    public:
-        // You need to make sure that scriptState->context() is not empty before
-        // creating a Scope.
+    // You need to make sure that scriptState->context() is not empty before
+    // creating a Scope.
     explicit EscapableScope(V8ScriptState* script_state)
-                : handle_scope_(script_state->GetIsolate()),
-                  context_(script_state->GetContext()) {
-            WEBF_CHECK(script_state->ContextIsValid());
-            context_->Enter();
-        }
-
-        ~EscapableScope() { context_->Exit(); }
-
-        v8::Local<v8::Value> Escape(v8::Local<v8::Value> value) {
-            return handle_scope_.Escape(value);
-        }
-
-    private:
-        v8::EscapableHandleScope handle_scope_;
-        v8::Local<v8::Context> context_;
-    };
-
-    static V8ScriptState* Create(v8::Local<v8::Context>,
-                               ExecutionContext*);
-
-    V8ScriptState(const V8ScriptState&) = delete;
-    V8ScriptState& operator=(const V8ScriptState&) = delete;
-    virtual ~V8ScriptState();
-
-    virtual void Trace(Visitor*) const;
-
-    static V8ScriptState* ForCurrentRealm(v8::Isolate* isolate) {
-        WEBF_CHECK(isolate->InContext());
-        return From(isolate, isolate->GetCurrentContext());
+        : handle_scope_(script_state->GetIsolate()), context_(script_state->GetContext()) {
+      WEBF_CHECK(script_state->ContextIsValid());
+      context_->Enter();
     }
 
-    static V8ScriptState* ForCurrentRealm(
-            const v8::FunctionCallbackInfo<v8::Value>& info) {
-        return ForCurrentRealm(info.GetIsolate());
+    ~EscapableScope() { context_->Exit(); }
+
+    v8::Local<v8::Value> Escape(v8::Local<v8::Value> value) { return handle_scope_.Escape(value); }
+
+   private:
+    v8::EscapableHandleScope handle_scope_;
+    v8::Local<v8::Context> context_;
+  };
+
+  static V8ScriptState* Create(v8::Local<v8::Context>, ExecutionContext*);
+
+  V8ScriptState(const V8ScriptState&) = delete;
+  V8ScriptState& operator=(const V8ScriptState&) = delete;
+  virtual ~V8ScriptState();
+
+  virtual void Trace(Visitor*) const;
+
+  static V8ScriptState* ForCurrentRealm(v8::Isolate* isolate) {
+    WEBF_CHECK(isolate->InContext());
+    return From(isolate, isolate->GetCurrentContext());
+  }
+
+  static V8ScriptState* ForCurrentRealm(const v8::FunctionCallbackInfo<v8::Value>& info) {
+    return ForCurrentRealm(info.GetIsolate());
+  }
+
+  static V8ScriptState* ForCurrentRealm(const v8::PropertyCallbackInfo<v8::Value>& info) {
+    return ForCurrentRealm(info.GetIsolate());
+  }
+
+  static V8ScriptState* ForRelevantRealm(v8::Isolate* isolate, v8::Local<v8::Object> object) {
+    WEBF_CHECK(!object.IsEmpty());
+    V8ScriptState* script_state = static_cast<V8ScriptState*>(
+        object->GetAlignedPointerFromEmbedderDataInCreationContext(kV8ContextPerContextDataIndex));
+    // ScriptState::ForRelevantRealm() must be called only for objects having a
+    // creation context while the context must have a valid embedder data in
+    // the embedder field.
+    WEBF_CHECK(script_state);
+    return script_state;
+  }
+
+  static V8ScriptState* From(v8::Isolate* isolate, v8::Local<v8::Context> context) {
+    WEBF_CHECK(!context.IsEmpty());
+    V8ScriptState* script_state =
+        static_cast<V8ScriptState*>(context->GetAlignedPointerFromEmbedderData(kV8ContextPerContextDataIndex));
+    // ScriptState::From() must not be called for a context that does not have
+    // valid embedder data in the embedder field.
+    WEBF_CHECK(script_state);
+    WEBF_CHECK(script_state->context_ == context);
+    return script_state;
+  }
+
+  // For use when it is not absolutely certain that the v8::Context is
+  // associated with a ScriptState. This is necessary in unit tests when a
+  // v8::Context is created directly on the v8 API without going through the
+  // usual blink codepaths.
+  // This is also called in some situations where DissociateContext() has
+  // already been called and therefore the ScriptState pointer on the
+  // v8::Context has already been nulled.
+  static V8ScriptState* MaybeFrom(v8::Isolate* isolate, v8::Local<v8::Context> context) {
+    WEBF_CHECK(!context.IsEmpty());
+    if (context->GetNumberOfEmbedderDataFields() <= kV8ContextPerContextDataIndex) {
+      return nullptr;
     }
+    V8ScriptState* script_state =
+        static_cast<V8ScriptState*>(context->GetAlignedPointerFromEmbedderData(kV8ContextPerContextDataIndex));
+    WEBF_CHECK(!script_state || script_state->context_ == context);
+    return script_state;
+  }
 
-    static V8ScriptState* ForCurrentRealm(
-            const v8::PropertyCallbackInfo<v8::Value>& info) {
-        return ForCurrentRealm(info.GetIsolate());
-    }
+  v8::Isolate* GetIsolate() const { return isolate_; }
+  /*TODO support V8ContextToken
+  const V8ContextToken& GetToken() const { return token_; }
+  */
+  // This can return an empty handle if the v8::Context is gone.
+  v8::Local<v8::Context> GetContext() const { return context_.NewLocal(isolate_); }
+  bool ContextIsValid() const { return !context_.IsEmpty() && per_context_data_; }
+  void DetachGlobalObject();
 
-    static V8ScriptState* ForRelevantRealm(v8::Isolate* isolate,
-                                         v8::Local<v8::Object> object) {
-        WEBF_CHECK(!object.IsEmpty());
-        V8ScriptState* script_state = static_cast<V8ScriptState*>(
-                object->GetAlignedPointerFromEmbedderDataInCreationContext(kV8ContextPerContextDataIndex));
-        // ScriptState::ForRelevantRealm() must be called only for objects having a
-        // creation context while the context must have a valid embedder data in
-        // the embedder field.
-        WEBF_CHECK(script_state);
-        return script_state;
-    }
+  V8PerContextData* PerContextData() const { return per_context_data_.Get(); }
+  void DisposePerContextData();
 
-    static V8ScriptState* From(v8::Isolate* isolate,
-                             v8::Local<v8::Context> context) {
-        WEBF_CHECK(!context.IsEmpty());
-        V8ScriptState* script_state =
-                static_cast<V8ScriptState*>(context->GetAlignedPointerFromEmbedderData(kV8ContextPerContextDataIndex));
-        // ScriptState::From() must not be called for a context that does not have
-        // valid embedder data in the embedder field.
-        WEBF_CHECK(script_state);
-        WEBF_CHECK(script_state->context_ == context);
-        return script_state;
-    }
+  // This method is expected to be called only from
+  // WorkerOrWorkletScriptController to run operations that should have been
+  // invoked by a weak callback if a V8 GC were run, in a worker thread
+  // termination.
+  void DissociateContext();
 
-    // For use when it is not absolutely certain that the v8::Context is
-    // associated with a ScriptState. This is necessary in unit tests when a
-    // v8::Context is created directly on the v8 API without going through the
-    // usual blink codepaths.
-    // This is also called in some situations where DissociateContext() has
-    // already been called and therefore the ScriptState pointer on the
-    // v8::Context has already been nulled.
-    static V8ScriptState* MaybeFrom(v8::Isolate* isolate,
-                                  v8::Local<v8::Context> context) {
-        WEBF_CHECK(!context.IsEmpty());
-        if (context->GetNumberOfEmbedderDataFields() <=
-            kV8ContextPerContextDataIndex) {
-            return nullptr;
-        }
-        V8ScriptState* script_state =
-                static_cast<V8ScriptState*>(context->GetAlignedPointerFromEmbedderData(kV8ContextPerContextDataIndex));
-        WEBF_CHECK(!script_state || script_state->context_ == context);
-        return script_state;
-    }
+  void RecordScriptCompilation(std::string file, bool used_code_cache) {
+    last_compiled_script_file_name_ = file;
+    last_compiled_script_used_code_cache_ = used_code_cache;
+  }
+  std::string last_compiled_script_file_name() const { return last_compiled_script_file_name_; }
+  bool last_compiled_script_used_code_cache() const { return last_compiled_script_used_code_cache_; }
 
-    v8::Isolate* GetIsolate() const { return isolate_; }
-    /*TODO support V8ContextToken
-    const V8ContextToken& GetToken() const { return token_; }
-    */
-    // This can return an empty handle if the v8::Context is gone.
-    v8::Local<v8::Context> GetContext() const {
-        return context_.NewLocal(isolate_);
-    }
-    bool ContextIsValid() const {
-        return !context_.IsEmpty() && per_context_data_;
-    }
-    void DetachGlobalObject();
+ protected:
+  V8ScriptState(v8::Local<v8::Context>, ExecutionContext*);
 
-    V8PerContextData* PerContextData() const { return per_context_data_.Get(); }
-    void DisposePerContextData();
+ private:
+  static void OnV8ContextCollectedCallback(const v8::WeakCallbackInfo<V8ScriptState>&);
 
-    // This method is expected to be called only from
-    // WorkerOrWorkletScriptController to run operations that should have been
-    // invoked by a weak callback if a V8 GC were run, in a worker thread
-    // termination.
-    void DissociateContext();
+  v8::Isolate* isolate_;
+  // This persistent handle is weak.
+  ScopedPersistent<v8::Context> context_;
 
-    void RecordScriptCompilation(std::string file, bool used_code_cache) {
-        last_compiled_script_file_name_ = file;
-        last_compiled_script_used_code_cache_ = used_code_cache;
-    }
-    std::string last_compiled_script_file_name() const {
-        return last_compiled_script_file_name_;
-    }
-    bool last_compiled_script_used_code_cache() const {
-        return last_compiled_script_used_code_cache_;
-    }
+  Member<V8PerContextData> per_context_data_;
 
-    protected:
-    V8ScriptState(v8::Local<v8::Context>, ExecutionContext*);
+  // v8::Context has an internal field to this ScriptState* as a raw pointer,
+  // which is out of scope of Blink GC, but it must be a strong reference.  We
+  // use |reference_from_v8_context_| to represent this strong reference.  The
+  // lifetime of |reference_from_v8_context_| and the internal field must match
+  // exactly.
+  SelfKeepAlive<V8ScriptState> reference_from_v8_context_{this};
 
-    private:
-    static void OnV8ContextCollectedCallback(
-            const v8::WeakCallbackInfo<V8ScriptState>&);
+  // Serves as a unique ID for this context, which can be used to name the
+  // context in browser/renderer communications.
+  /*TODO support V8ContextToken
+  V8ContextToken token_;
+  */
 
-    v8::Isolate* isolate_;
-    // This persistent handle is weak.
-    ScopedPersistent<v8::Context> context_;
+  using CreateCallback = V8ScriptState* (*)(v8::Local<v8::Context>, ExecutionContext*);
+  static CreateCallback s_create_callback_;
+  static void SetCreateCallback(CreateCallback);
+  friend class ScriptStateImpl;
 
-    Member<V8PerContextData> per_context_data_;
+  static constexpr int kV8ContextPerContextDataIndex = 1;
 
-    // v8::Context has an internal field to this ScriptState* as a raw pointer,
-    // which is out of scope of Blink GC, but it must be a strong reference.  We
-    // use |reference_from_v8_context_| to represent this strong reference.  The
-    // lifetime of |reference_from_v8_context_| and the internal field must match
-    // exactly.
-    SelfKeepAlive<V8ScriptState> reference_from_v8_context_{this};
-
-    // Serves as a unique ID for this context, which can be used to name the
-    // context in browser/renderer communications.
-    /*TODO support V8ContextToken
-    V8ContextToken token_;
-    */
-
-    using CreateCallback = V8ScriptState* (*)(v8::Local<v8::Context>,
-                                            ExecutionContext*);
-    static CreateCallback s_create_callback_;
-    static void SetCreateCallback(CreateCallback);
-    friend class ScriptStateImpl;
-
-    static constexpr int kV8ContextPerContextDataIndex = 1;
-
-    // For accessing information about the last script compilation via
-    // internals.idl.
-    std::string last_compiled_script_file_name_;
-    bool last_compiled_script_used_code_cache_ = false;
+  // For accessing information about the last script compilation via
+  // internals.idl.
+  std::string last_compiled_script_file_name_;
+  bool last_compiled_script_used_code_cache_ = false;
 };
 
 // ScriptStateProtectingContext keeps the context associated with the
 // ScriptState alive.  You need to call Clear() once you no longer need the
 // context. Otherwise, the context will leak.
-class ScriptStateProtectingContext final
-        : public GarbageCollected<ScriptStateProtectingContext> {
-public:
-    explicit ScriptStateProtectingContext(V8ScriptState* script_state)
-            : script_state_(script_state) {
-        if (script_state_) {
-            context_.Set(script_state_->GetIsolate(), script_state_->GetContext());
-            context_.Get().AnnotateStrongRetainer(
-                    "blink::ScriptStateProtectingContext::context_");
-        }
+class ScriptStateProtectingContext final : public GarbageCollected<ScriptStateProtectingContext> {
+ public:
+  explicit ScriptStateProtectingContext(V8ScriptState* script_state) : script_state_(script_state) {
+    if (script_state_) {
+      context_.Set(script_state_->GetIsolate(), script_state_->GetContext());
+      context_.Get().AnnotateStrongRetainer("blink::ScriptStateProtectingContext::context_");
     }
-    ScriptStateProtectingContext(const ScriptStateProtectingContext&) = delete;
-    ScriptStateProtectingContext& operator=(const ScriptStateProtectingContext&) =
-    delete;
+  }
+  ScriptStateProtectingContext(const ScriptStateProtectingContext&) = delete;
+  ScriptStateProtectingContext& operator=(const ScriptStateProtectingContext&) = delete;
 
-    void Trace(Visitor* visitor) const { visitor->Trace(script_state_); }
+  void Trace(Visitor* visitor) const { visitor->Trace(script_state_); }
 
-    V8ScriptState* Get() const { return script_state_.Get(); }
-    void Reset() {
-        script_state_ = nullptr;
-        context_.Clear();
-    }
+  V8ScriptState* Get() const { return script_state_.Get(); }
+  void Reset() {
+    script_state_ = nullptr;
+    context_.Clear();
+  }
 
-    // ScriptState like interface
-    bool ContextIsValid() const { return script_state_->ContextIsValid(); }
-    v8::Isolate* GetIsolate() const { return script_state_->GetIsolate(); }
-    v8::Local<v8::Context> GetContext() const {
-        return script_state_->GetContext();
-    }
+  // ScriptState like interface
+  bool ContextIsValid() const { return script_state_->ContextIsValid(); }
+  v8::Isolate* GetIsolate() const { return script_state_->GetIsolate(); }
+  v8::Local<v8::Context> GetContext() const { return script_state_->GetContext(); }
 
-private:
-    Member<V8ScriptState> script_state_;
-    ScopedPersistent<v8::Context> context_;
+ private:
+  Member<V8ScriptState> script_state_;
+  ScopedPersistent<v8::Context> context_;
 };
 
 }  // namespace webf
