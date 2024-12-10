@@ -64,7 +64,16 @@ class BRElement extends Element {
 
   @override
   RenderBox createRenderer([WebRenderLayoutWidgetElement? flutterWidgetElement]) {
-    return RenderLineBreak(renderStyle);
+    RenderLineBreak lineBreak = RenderLineBreak(renderStyle);
+
+    if (managedByFlutterWidget) {
+      assert(flutterWidgetElement != null);
+      renderStyle.addOrUpdateWidgetRenderObjects(flutterWidgetElement!, lineBreak);
+    } else {
+      renderStyle.setDomRenderObject(lineBreak);
+    }
+
+    return lineBreak;
   }
 }
 
