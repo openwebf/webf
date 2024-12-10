@@ -650,6 +650,8 @@ mixin BaseCheckBoxElement on WidgetElement {
     return Transform.scale(
       child: Checkbox(
         value: checked,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
         onChanged: disabled
             ? null
             : (bool? newValue) {
