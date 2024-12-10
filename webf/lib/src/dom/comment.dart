@@ -4,9 +4,10 @@
  */
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 
 class Comment extends CharacterData {
-  Comment() : super(NodeType.COMMENT_NODE, null);
+  Comment([BindingContext? context]) : super(NodeType.COMMENT_NODE, context);
 
   @override
   String get nodeName => '#comment';
