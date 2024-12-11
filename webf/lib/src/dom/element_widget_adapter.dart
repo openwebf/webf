@@ -126,6 +126,13 @@ abstract class WebRenderLayoutWidgetElement extends flutter.MultiChildRenderObje
   void mount(flutter.Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
     webFElement.didAttachRenderer();
+
+    webFElement.applyStyle(webFElement.style);
+
+    if (webFElement.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
+      // Flush pending style before child attached.
+      webFElement.style.flushPendingProperties();
+    }
   }
 
   @override
