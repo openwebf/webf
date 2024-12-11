@@ -18,6 +18,8 @@
 #include "core/dom/document.h"
 #include "core/dom/document_fragment.h"
 #include "core/dom/comment.h"
+#include "core/geometry/dom_matrix.h"
+#include "core/geometry/dom_point.h"
 #include "core/input/touch_list.h"
 #include "core/dom/static_node_list.h"
 #include "core/html/html_all_collection.h"
@@ -36,6 +38,7 @@ void QJS<%= className %>::Install(ExecutingContext* context) {
   <% if(classPropsInstallList.length > 0) { %> InstallPrototypeProperties(context); <% } %>
   <% if(classMethodsInstallList.length > 0) { %> InstallPrototypeMethods(context); <% } %>
   <% if(constructorInstallList.length > 0) { %> InstallConstructor(context); <% } %>
+  <% if (staticMethodsInstallList.length > 0) { %> InstallStaticMethods(context); <% } %>
 }
 
 <% } %>
@@ -70,6 +73,17 @@ void QJS<%= className %>::InstallPrototypeMethods(ExecutingContext* context) {
   };
 
   MemberInstaller::InstallAttributes(context, prototype, attributesConfig);
+}
+<% } %>
+
+<% if(staticMethodsInstallList.length > 0) { %>
+void QJS<%= className %>::InstallStaticMethods(ExecutingContext* context) {
+  const WrapperTypeInfo* wrapperTypeInfo = GetWrapperTypeInfo();
+  JSValue constructor = context->contextData()->constructorForType(wrapperTypeInfo);
+  std::initializer_list<MemberInstaller::FunctionConfig> functionConfig {
+       <%= staticMethodsInstallList.join(',\n') %>
+  };
+  MemberInstaller::InstallFunctions(context, constructor, functionConfig);
 }
 <% } %>
 

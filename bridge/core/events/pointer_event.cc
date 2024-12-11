@@ -98,4 +98,9 @@ bool PointerEvent::IsPointerEvent() const {
   return true;
 }
 
+const PointerEventPublicMethods* PointerEvent::pointerEventPublicMethods() {
+  static PointerEventPublicMethods pointer_event_public_methods;
+  return &pointer_event_public_methods;
+}
+
 }  // namespace webf

@@ -105,13 +105,13 @@ static void handlePersistentCallbackWrapper(void* ptr, double contextId, char* e
 }
 
 int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
-                                          const std::shared_ptr<QJSFunction>& handler,
+                                          const std::shared_ptr<Function>& handler,
                                           ExceptionState& exception) {
   return setTimeout(context, handler, 0.0, exception);
 }
 
 int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
-                                          const std::shared_ptr<QJSFunction>& handler,
+                                          const std::shared_ptr<Function>& handler,
                                           int32_t timeout,
                                           ExceptionState& exception) {
   if (handler == nullptr) {
@@ -133,13 +133,13 @@ int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
 }
 
 int WindowOrWorkerGlobalScope::setInterval(ExecutingContext* context,
-                                           std::shared_ptr<QJSFunction> handler,
+                                           std::shared_ptr<Function> handler,
                                            ExceptionState& exception) {
   return setInterval(context, handler, 0.0, exception);
 }
 
 int WindowOrWorkerGlobalScope::setInterval(ExecutingContext* context,
-                                           const std::shared_ptr<QJSFunction>& handler,
+                                           const std::shared_ptr<Function>& handler,
                                            int32_t timeout,
                                            ExceptionState& exception) {
   if (handler == nullptr) {

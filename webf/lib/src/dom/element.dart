@@ -330,6 +330,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     methods['querySelector'] = BindingObjectMethodSync(call: (args) => querySelector(args));
     methods['matches'] = BindingObjectMethodSync(call: (args) => matches(args));
     methods['closest'] = BindingObjectMethodSync(call: (args) => closest(args));
+
+    if (kDebugMode || kProfileMode) {
+      methods['__test_global_to_local__'] = BindingObjectMethodSync(call: (args) => testGlobalToLocal(args[0], args[1]));
+    }
   }
 
   dynamic getElementsByClassName(List<dynamic> args) {
@@ -648,6 +652,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     // Cancel running animation.
     renderStyle.cancelRunningAnimation();
+
+    ownerView.window.unwatchViewportSizeChangeForElement(this);
 
     RenderBoxModel? renderBoxModel = this.renderBoxModel;
     if (renderBoxModel != null) {
@@ -1817,6 +1823,16 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     Offset relative = _getOffset(renderBoxModel!, ancestor: offsetParent);
     offset += relative.dx;
     return offset;
+  }
+
+  dynamic testGlobalToLocal(double x, double y) {
+    if (!isRendererAttached) {
+      return { 'x': 0, 'y': 0 };
+    }
+
+    Offset offset = Offset(x, y);
+    Offset result = renderBoxModel!.globalToLocal(offset);
+    return {'x': result.dx, 'y': result.dy};
   }
 
   // The HTMLElement.offsetTop read-only property returns the distance of the outer border

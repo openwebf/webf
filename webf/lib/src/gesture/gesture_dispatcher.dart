@@ -66,12 +66,57 @@ class TouchPoint {
       this.id, this.state, this.pos, this.screenPos, this.radiusX, this.radiusY, this.rotationAngle, this.force);
 }
 
+class DoubleClickDetector {
+  TapUpDetails? _lastClickDetails;
+  Stopwatch? _stopwatch;
+
+  bool isDoubleClick(TapUpDetails currentDetails) {
+    if (_lastClickDetails == null || _stopwatch == null) {
+      _startNewClickSequence(currentDetails);
+      return false;
+    }
+
+    if (_isValidDoubleClick(currentDetails)) {
+      _reset();
+      return true;
+    }
+
+    _startNewClickSequence(currentDetails);
+    return false;
+  }
+
+  bool _isValidDoubleClick(TapUpDetails currentDetails) {
+    return _isWithinTimeThreshold() &&
+        _isWithinDistanceThreshold(currentDetails);
+  }
+
+  bool _isWithinTimeThreshold() {
+    return _stopwatch!.elapsedMilliseconds >= kDoubleTapMinTime.inMilliseconds &&
+        _stopwatch!.elapsedMilliseconds <= kDoubleTapTimeout.inMilliseconds;
+  }
+
+  bool _isWithinDistanceThreshold(TapUpDetails currentDetails) {
+    final Offset offset = _lastClickDetails!.globalPosition - currentDetails.globalPosition;
+    return offset.distance < kDoubleTapSlop;
+  }
+
+  void _startNewClickSequence(TapUpDetails details) {
+    _lastClickDetails = details;
+    _stopwatch = Stopwatch()..start();
+  }
+
+  void _reset() {
+    _lastClickDetails = null;
+    _stopwatch?.stop();
+    _stopwatch = null;
+  }
+}
+
+
 class GestureDispatcher {
   GestureDispatcher() {
     // Tap Recognizer
     _gestureRecognizers[EVENT_CLICK] = TapGestureRecognizer()..onTapUp = _onClick;
-    // DoubleTap Recognizer
-    _gestureRecognizers[EVENT_DOUBLE_CLICK] = DoubleTapGestureRecognizer()..onDoubleTapDown = _onDoubleClick;
     // Swipe Recognizer
     _gestureRecognizers[EVENT_SWIPE] = SwipeGestureRecognizer()..onSwipe = _onSwipe;
     // Pan Recognizer
@@ -264,12 +309,13 @@ class GestureDispatcher {
     _eventPath = target.eventPath;
   }
 
-  void _onDoubleClick(TapDownDetails details) {
-    _handleMouseEvent(EVENT_DOUBLE_CLICK, localPosition: details.localPosition, globalPosition: details.globalPosition);
-  }
+  final DoubleClickDetector _doubleClickDetector = DoubleClickDetector();
 
   void _onClick(TapUpDetails details) {
     _handleMouseEvent(EVENT_CLICK, localPosition: details.localPosition, globalPosition: details.globalPosition);
+    if (_doubleClickDetector.isDoubleClick(details)) {
+      _handleMouseEvent(EVENT_DOUBLE_CLICK, localPosition: details.localPosition, globalPosition: details.globalPosition);
+    }
   }
 
   void _onLongPress() {

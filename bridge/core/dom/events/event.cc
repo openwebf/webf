@@ -365,4 +365,8 @@ void Event::Trace(GCVisitor* visitor) const {
   }
 }
 
+const EventPublicMethods* Event::eventPublicMethods() {
+  return &event_public_methods;
+}
+
 }  // namespace webf

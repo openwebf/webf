@@ -99,4 +99,9 @@ double GestureEvent::rotation() const {
   return rotation_;
 }
 
+const GestureEventPublicMethods* GestureEvent::gestureEventPublicMethods() {
+  static GestureEventPublicMethods gesture_event_public_methods;
+  return &gesture_event_public_methods;
+}
+
 }  // namespace webf

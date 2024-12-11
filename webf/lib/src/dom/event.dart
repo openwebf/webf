@@ -36,6 +36,9 @@ const String EVENT_TRANSITION_START = 'transitionstart';
 const String EVENT_TRANSITION_END = 'transitionend';
 const String EVENT_FOCUS = 'focus';
 const String EVENT_BLUR = 'blur';
+const String EVENT_KEY_UP = 'keyup';
+const String EVENT_KEY_DOWN = 'keydown';
+const String EVENT_KEY_PRESS = 'keypress';
 const String EVENT_LOAD = 'load';
 const String EVENT_PRELOADED = 'preloaded';
 const String EVENT_PRERENDERED = 'prerendered';
@@ -378,6 +381,36 @@ class FocusEvent extends UIEvent {
     bytes.setAll(rawEvent.ref.length, methods);
     rawEvent.ref.length = currentStructSize;
 
+    return rawEvent;
+  }
+}
+
+/// reference: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
+class KeyboardEvent extends UIEvent {
+  final String key;
+  final String code;
+
+  KeyboardEvent(
+    String type, {
+    this.key = '',
+    this.code = '',
+    super.bubbles = true,
+    super.cancelable = true,
+    super.composed = true,
+  }) : super(type);
+
+  @override
+  Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
+    List<int> methods = [
+      stringToNativeString(key).address,
+      stringToNativeString(code).address,
+    ];
+
+    Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
+    bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
     return rawEvent;
   }
 }

@@ -48,4 +48,9 @@ bool IntersectionChangeEvent::IsIntersectionchangeEvent() const {
   return true;
 }
 
+const IntersectionChangeEventPublicMethods* IntersectionChangeEvent::intersectionChangeEventPublicMethods() {
+  static IntersectionChangeEventPublicMethods intersection_change_event_public_methods;
+  return &intersection_change_event_public_methods;
+}
+
 }  // namespace webf

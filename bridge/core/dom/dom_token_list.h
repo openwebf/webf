@@ -23,7 +23,7 @@ class DOMTokenList : public ScriptWrappable {
   explicit DOMTokenList(Element* element, const AtomicString& attr);
   DOMTokenList() = delete;
 
-  unsigned length() const { return token_set_.size(); }
+  size_t length() const { return token_set_.size(); }
   const AtomicString item(unsigned index, ExceptionState& exception_state) const;
   bool contains(const AtomicString&, ExceptionState&) const;
   void add(const std::vector<AtomicString>&, ExceptionState&);

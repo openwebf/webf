@@ -43,7 +43,7 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
     assert(renderer.parent != null);
   }
   renderers.add(ancestor);
-  Offset offset = Offset.zero;
+  List<Offset> stackOffsets = [];
   final Matrix4 transform = Matrix4.identity();
 
   for (int index = renderers.length - 1; index > 0; index -= 1) {
@@ -51,18 +51,26 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
     RenderObject childRenderer = renderers[index - 1];
     // Apply the layout transform for renderBoxModel and fallback to paint transform for other renderObject type.
     if (parentRenderer is RenderBoxModel) {
-      offset += parentRenderer.obtainLayoutTransform(childRenderer, excludeScrollOffset);
+      // If the next renderBox has a fixed position,
+      // the outside scroll offset won't affect the actual results because of its fixed positioning.
+      if (childRenderer is RenderBoxModel && childRenderer.renderStyle.position == CSSPositionType.fixed) {
+        stackOffsets.clear();
+      }
+
+      stackOffsets.add(parentRenderer.obtainLayoutTransform(childRenderer, excludeScrollOffset));
     } else if (parentRenderer is RenderSliverRepaintProxy) {
       parentRenderer.applyLayoutTransform(childRenderer, transform, excludeScrollOffset);
     } else if (parentRenderer is RenderBox) {
       assert(childRenderer.parent == parentRenderer);
       if (childRenderer.parentData is BoxParentData) {
-        offset += (childRenderer.parentData as BoxParentData).offset;
+        stackOffsets.add((childRenderer.parentData as BoxParentData).offset);
       }
     }
   }
 
-  return offset;
+  if (stackOffsets.isEmpty) return Offset.zero;
+
+  return stackOffsets.reduce((prev, next) => prev + next);
 }
 
 /// Modified from Flutter rendering/box.dart.

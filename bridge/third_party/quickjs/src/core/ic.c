@@ -43,8 +43,6 @@ InlineCache *init_ic(JSContext *ctx) {
     goto fail;
   memset(ic->hash, 0, sizeof(ic->hash[0]) * ic->capacity);
   ic->cache = NULL;
-  ic->updated = FALSE;
-  ic->updated_offset = 0;
   return ic;
 fail:
   return NULL;
@@ -137,11 +135,11 @@ int free_ic(InlineCache *ic) {
 }
 
 #if _MSC_VER
-uint32_t add_ic_slot(InlineCache *ic, JSAtom atom, JSObject *object,
+void add_ic_slot(InlineCacheUpdate *icu, JSAtom atom, JSObject *object,
                      uint32_t prop_offset, JSObject* prototype)
 #else
-force_inline uint32_t add_ic_slot(InlineCache *ic, JSAtom atom, JSObject *object,
-                                  uint32_t prop_offset, JSObject* prototype)
+force_inline void add_ic_slot(InlineCacheUpdate *icu, JSAtom atom, JSObject *object,
+                              uint32_t prop_offset, JSObject* prototype)
 #endif
 {
   int32_t i;
@@ -150,12 +148,19 @@ force_inline uint32_t add_ic_slot(InlineCache *ic, JSAtom atom, JSObject *object
   InlineCacheRingSlot *cr;
   InlineCacheRingItem *ci;
   JSRuntime* rt;
+  InlineCache *ic;
   JSShape *sh;
-  JSObject *proto;
+
+  if (!icu)
+    return;
+  ic = icu->ic;
+
+  if (!ic)
+    return;
+
   cr = NULL;
   rt = ic->ctx->rt;
   sh = NULL;
-  proto = NULL;
   h = get_index_hash(atom, ic->hash_bits);
   for (ch = ic->hash[h]; ch != NULL; ch = ch->next)
     if (ch->atom == atom) {
@@ -197,7 +202,7 @@ force_inline uint32_t add_ic_slot(InlineCache *ic, JSAtom atom, JSObject *object
                           ic_watchpoint_free_handler);
   }
 end:
-  return ch->index;
+  icu->offset = ch->index;
 }
 
 #if _MSC_VER

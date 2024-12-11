@@ -15,3 +15,4 @@ export 'src/module/history.dart';
 export 'src/module/hybrid_history.dart';
 export 'src/module/navigation.dart';
 export 'src/module/navigator.dart';
+export 'src/module/dom_matrix.dart';

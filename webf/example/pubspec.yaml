@@ -11,6 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  example_app:
+    path: rust_builder
   webf: ^0.10.0
 
 # When depending on this package from a real application,
@@ -24,6 +26,8 @@ dependency_overrides:
 
 # The following section is specific to Flutter.
 flutter:
+  uses-material-design: true
+
   fonts:
     - family: AlibabaPuHuiTi
       fonts:

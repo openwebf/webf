@@ -64,6 +64,14 @@ class CSSLengthValue {
         renderStyle!.addRootFontRelativeProperty(propertyName!);
       }
     }
+
+    if (isViewportSizeRelatedLength()) {
+      renderStyle?.addViewportSizeRelativeProperty();
+    }
+  }
+
+  bool isViewportSizeRelatedLength() {
+    return type == CSSLengthType.VH || type == CSSLengthType.VW;
   }
 
   String cssText() {

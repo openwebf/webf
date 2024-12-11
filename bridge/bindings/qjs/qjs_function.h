@@ -5,6 +5,8 @@
 #ifndef BRIDGE_QJS_FUNCTION_H
 #define BRIDGE_QJS_FUNCTION_H
 
+#include "foundation/casting.h"
+#include "foundation/function.h"
 #include "script_value.h"
 
 namespace webf {
@@ -17,7 +19,7 @@ using QJSFunctionCallback = ScriptValue (*)(JSContext* ctx,
 
 // https://webidl.spec.whatwg.org/#dfn-callback-interface
 // QJSFunction memory are auto managed by std::shared_ptr.
-class QJSFunction {
+class QJSFunction : public Function {
  public:
   static std::shared_ptr<QJSFunction> Create(JSContext* ctx, JSValue function) {
     return std::make_shared<QJSFunction>(ctx, function);
@@ -46,6 +48,8 @@ class QJSFunction {
 
   bool IsFunction(JSContext* ctx);
 
+  bool IsQJSFunction() const override { return true; }
+
   JSValue ToQuickJS() { return JS_DupValue(ctx_, function_); };
   JSValue ToQuickJSUnsafe() { return function_; }
 
@@ -64,6 +68,11 @@ class QJSFunction {
   JSRuntime* runtime_{nullptr};
   JSValue function_{JS_NULL};
   JSValue this_val_{JS_NULL};
+};
+
+template <>
+struct DowncastTraits<QJSFunction> {
+  static bool AllowFrom(const Function& function) { return function.IsQJSFunction(); }
 };
 
 }  // namespace webf

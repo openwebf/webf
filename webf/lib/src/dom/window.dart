@@ -77,6 +77,22 @@ class Window extends EventTarget {
       ..scrollBy(x, y, withAnimation);
   }
 
+  final Set<Element> _watchedViewportElements = {};
+
+  void watchViewportSizeChangeForElement(Element element) {
+    _watchedViewportElements.add(element);
+  }
+
+  void unwatchViewportSizeChangeForElement(Element element) {
+    _watchedViewportElements.remove(element);
+  }
+
+  void resizeViewportRelatedElements() {
+    _watchedViewportElements.forEach((element) {
+      element.renderer?.markNeedsLayout();
+    });
+  }
+
   String get colorScheme => document.controller.ownerFlutterView.platformDispatcher.platformBrightness == Brightness.light ? 'light' : 'dark';
 
   double get devicePixelRatio => document.controller.ownerFlutterView.devicePixelRatio;
@@ -118,6 +134,12 @@ class Window extends EventTarget {
         document.documentElement?.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
         break;
     }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _watchedViewportElements.clear();
   }
 
   @override

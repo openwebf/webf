@@ -2,11 +2,12 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#include "event_target.h"
+#include "plugin_api/event_target.h"
 #include <cstdint>
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
 #include "event_factory.h"
+#include "event_target.h"
 #include "include/dart_api.h"
 #include "native_value_converter.h"
 #include "qjs_add_event_listener_options.h"
@@ -102,6 +103,13 @@ bool EventTarget::addEventListener(const AtomicString& event_type,
   return AddEventListenerInternal(event_type, event_listener, options);
 }
 
+bool EventTarget::addEventListener(const webf::AtomicString& event_type,
+                                   const std::shared_ptr<EventListener>& event_listener,
+                                   const std::shared_ptr<AddEventListenerOptions>& options,
+                                   ExceptionState& exception_state) {
+  return AddEventListenerInternal(event_type, event_listener, options);
+}
+
 bool EventTarget::removeEventListener(const AtomicString& event_type,
                                       const std::shared_ptr<EventListener>& event_listener,
                                       ExceptionState& exception_state) {
@@ -151,6 +159,8 @@ bool EventTarget::dispatchEvent(Event* event, ExceptionState& exception_state) {
 
   if (!GetExecutingContext())
     return false;
+
+  MemberMutationScope scope{GetExecutingContext()};
 
   event->SetTrusted(false);
 
@@ -246,6 +256,11 @@ EventListenerVector* EventTarget::GetEventListeners(const AtomicString& event_ty
 
 bool EventTarget::IsEventTarget() const {
   return true;
+}
+
+const EventTargetPublicMethods* EventTarget::eventTargetPublicMethods() {
+  static EventTargetPublicMethods event_target_public_methods;
+  return &event_target_public_methods;
 }
 
 void EventTarget::Trace(GCVisitor* visitor) const {

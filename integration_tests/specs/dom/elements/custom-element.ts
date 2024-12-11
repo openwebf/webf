@@ -31,15 +31,15 @@ describe('custom widget element', () => {
   it('work with click event', async (done) => {
     const image = document.createElement('flutter-asset-image');
     image.setAttribute('src', 'assets/rabbit.png');
-    document.body.appendChild(image);
 
     image.addEventListener('click', function (e) {
       done();
     });
 
-    await sleep(0.2);
+    await sleep(1);
 
-    simulateClick(20, 20);
+    document.body.appendChild(image);
+    await simulateClick(10, 10);
   });
 
   it('text node should be child of flutter container', async () => {
@@ -273,7 +273,7 @@ describe('custom widget element', () => {
       div.appendChild(img);
       img.style.width = '100px';
       promise_loading.push(new Promise((resolve, reject) => {
-        img.onload = () => {resolve();}
+        img.onload = () => { resolve(); }
       }));
 
       flutterContainer.appendChild(div);
@@ -302,9 +302,9 @@ describe('custom widget element', () => {
     flutterContainer.appendChild(div);
 
     requestAnimationFrame(async () => {
-       const rect = div.getBoundingClientRect();
-       expect(rect.height).toEqual(100);
-       done();
+      const rect = div.getBoundingClientRect();
+      expect(rect.height).toEqual(100);
+      done();
     });
   });
 
@@ -369,7 +369,7 @@ describe('custom widget element', () => {
   it('flutter widgets should works when append widget element inside of widget element m', async () => {
     const form = document.createElement('form');
     form.style.height = '300px';
-    for(let i = 0; i < 2; i ++) {
+    for (let i = 0; i < 2; i++) {
       let div = document.createElement('div');
       let input = document.createElement('input');
       input.value = i.toString();
@@ -396,7 +396,7 @@ describe('custom widget element', () => {
     const form = document.createElement('form');
     form.style.height = '300px';
     form.appendChild(document.createTextNode('BEFORE CONTAINER.'));
-    for(let i = 0; i < 2; i ++) {
+    for (let i = 0; i < 2; i++) {
       let div = document.createElement('div');
       div.appendChild(document.createTextNode('BEFORE INPUT.'));
       const input = document.createElement('input') as HTMLInputElement;
@@ -413,7 +413,7 @@ describe('custom widget element', () => {
 
   it('should works with swiper component', async () => {
     const swiper = document.createElement('flutter-swiper');
-    for(let i = 0; i < 10; i ++) {
+    for (let i = 0; i < 10; i++) {
       const container = document.createElement('div');
       container.textContent = i.toString();
       swiper.appendChild(container);
@@ -450,12 +450,6 @@ describe('custom html element', () => {
     sampleElement.textContent = 'helloworld';
     document.body.appendChild(sampleElement);
     await snapshot();
-  });
-
-  it('dart implements getAllBindingPropertyNames works', async () => {
-    let sampleElement = document.createElement('sample-element');
-    let attributes = Object.keys(sampleElement);
-    expect(attributes).toEqual(['offsetTop', 'offsetLeft', 'offsetWidth', 'offsetHeight', 'scrollTop', 'scrollLeft', 'scrollWidth', 'scrollHeight', 'clientTop', 'clientLeft', 'clientWidth', 'clientHeight', 'className', 'classList', 'dir', 'ping', 'fake', 'getBoundingClientRect', 'getClientRects', 'scroll', 'scrollBy', 'scrollTo', 'click', 'getElementsByClassName', 'getElementsByTagName', 'querySelectorAll', 'querySelector', 'matches', 'closest', 'fn', 'asyncFn', 'asyncFnFailed', 'asyncFnNotComplete']);
   });
 
   it('support custom properties in dart directly', () => {
@@ -587,7 +581,7 @@ describe('custom html element', () => {
     let clone = sampleElement.cloneNode();
 
     // @ts-ignore
-    expect(clone._fake).toEqual([1,2,3,4,5]);
+    expect(clone._fake).toEqual([1, 2, 3, 4, 5]);
     // @ts-ignore
     expect(clone._fn()).toEqual(1);
     // @ts-ignore

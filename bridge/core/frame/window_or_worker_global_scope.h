@@ -8,23 +8,22 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/qjs_function.h"
 #include "core/executing_context.h"
+#include "foundation/function.h"
 
 namespace webf {
 
 class WindowOrWorkerGlobalScope {
  public:
   static int setTimeout(ExecutingContext* context,
-                        const std::shared_ptr<QJSFunction>& handler,
+                        const std::shared_ptr<Function>& handler,
                         int32_t timeout,
                         ExceptionState& exception);
-  static int setTimeout(ExecutingContext* context,
-                        const std::shared_ptr<QJSFunction>& handler,
-                        ExceptionState& exception);
+  static int setTimeout(ExecutingContext* context, const std::shared_ptr<Function>& handler, ExceptionState& exception);
   static int setInterval(ExecutingContext* context,
-                         const std::shared_ptr<QJSFunction>& handler,
+                         const std::shared_ptr<Function>& handler,
                          int32_t timeout,
                          ExceptionState& exception);
-  static int setInterval(ExecutingContext* context, std::shared_ptr<QJSFunction> handler, ExceptionState& exception);
+  static int setInterval(ExecutingContext* context, std::shared_ptr<Function> handler, ExceptionState& exception);
   static void clearTimeout(ExecutingContext* context, int32_t timerId, ExceptionState& exception);
   static void clearInterval(ExecutingContext* context, int32_t timerId, ExceptionState& exception);
   static void __gc__(ExecutingContext* context, ExceptionState& exception);

@@ -189,7 +189,7 @@ struct Converter<IDLInt64> : public ConverterBase<IDLInt64> {
     JS_ToInt64(ctx, &v, value);
     return v;
   }
-  static JSValue ToValue(JSContext* ctx, uint32_t v) { return JS_NewInt64(ctx, v); }
+  static JSValue ToValue(JSContext* ctx, int64_t v) { return JS_NewInt64(ctx, v); }
 };
 
 template <>
@@ -219,7 +219,7 @@ struct Converter<IDLDOMString> : public ConverterBase<IDLDOMString> {
     return JS_NewUnicodeString(ctx, str->string(), str->length());
   }
   static JSValue ToValue(JSContext* ctx, uint16_t* bytes, size_t length) {
-    return JS_NewUnicodeString(ctx, bytes, length);
+    return JS_NewUnicodeString(ctx, bytes, static_cast<uint32_t>(length));
   }
   static JSValue ToValue(JSContext* ctx, const std::string& str) { return JS_NewString(ctx, str.c_str()); }
 };
