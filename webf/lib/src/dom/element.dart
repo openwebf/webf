@@ -16,7 +16,6 @@ import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/bridge/native_types.dart';
-import 'package:webf/src/svg/rendering/container.dart';
 import 'package:webf/widget.dart';
 import 'element_widget_adapter.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
@@ -920,8 +919,8 @@ abstract class Element extends ContainerNode
       child.renderStyle.parent = renderStyle;
     }
 
-    if (managedByFlutterWidget) {
-      child.managedByFlutterWidget = managedByFlutterWidget;
+    if (managedByFlutterWidget || this is WidgetElement) {
+      child.managedByFlutterWidget = true;
     } else {
       // final box = renderBoxModel;
       if (isRendererAttachedToSegmentTree) {
@@ -972,8 +971,8 @@ abstract class Element extends ContainerNode
       child.renderStyle.parent = renderStyle;
     }
 
-    if (managedByFlutterWidget) {
-      child.managedByFlutterWidget = managedByFlutterWidget;
+    if (managedByFlutterWidget || this is WidgetElement) {
+      child.managedByFlutterWidget = true;
     }
 
     if (!managedByFlutterWidget && isRendererAttachedToSegmentTree) {
@@ -1004,8 +1003,8 @@ abstract class Element extends ContainerNode
       oldNode.renderStyle.parent = null;
     }
 
-    if (managedByFlutterWidget) {
-      newNode.managedByFlutterWidget = managedByFlutterWidget;
+    if (managedByFlutterWidget || this is WidgetElement) {
+      newNode.managedByFlutterWidget = true;
     }
 
     if (enableWebFProfileTracking) {
