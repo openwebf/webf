@@ -60,11 +60,11 @@ void NativeBindingObject::HandleCallFromDartSide(DartIsolateContext* dart_isolat
 
   dart_isolate_context->profiler()->StartTrackEvaluation(profile_id);
 
-    auto context = binding_object->binding_target_->ctx();
-    AtomicString method = native_method != nullptr
-                          ? AtomicString(context, std::unique_ptr<AutoFreeNativeString>(
-                    reinterpret_cast<AutoFreeNativeString *>(native_method->u.ptr)))
-                          : AtomicString(context, "");
+  auto context = binding_object->binding_target_->ctx();
+  AtomicString method = native_method != nullptr
+                            ? AtomicString(context, std::unique_ptr<AutoFreeNativeString>(
+                                                        reinterpret_cast<AutoFreeNativeString*>(native_method->u.ptr)))
+                            : AtomicString(context, "");
   NativeValue result = binding_object->binding_target_->HandleCallFromDartSide(method, argc, argv, dart_object);
 
   auto* return_value = new NativeValue();

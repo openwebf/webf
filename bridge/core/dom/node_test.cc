@@ -75,12 +75,12 @@ Promise.resolve().then(() => {
 }
 
 TEST(Node, IntersectionObserver) {
-bool static errorCalled = false;
-bool static logCalled = false;
-webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
-auto env = TEST_init([](double contextId, const char* errmsg) { errorCalled = true; });
-auto context = env->page()->executingContext();
-const char* code = R"(
+  bool static errorCalled = false;
+  bool static logCalled = false;
+  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) { logCalled = true; };
+  auto env = TEST_init([](double contextId, const char* errmsg) { errorCalled = true; });
+  auto context = env->page()->executingContext();
+  const char* code = R"(
     // Create the observed element
     const div = document.createElement('div');
 
@@ -107,12 +107,12 @@ const char* code = R"(
     // Start observing the target element
     observer.observe(div);
   )";
-env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
 
-TEST_runLoop(context);
+  TEST_runLoop(context);
 
-EXPECT_EQ(errorCalled, false);
-EXPECT_EQ(logCalled, true);
+  EXPECT_EQ(errorCalled, false);
+  EXPECT_EQ(logCalled, true);
 }
 
 TEST(Node, nodeName) {

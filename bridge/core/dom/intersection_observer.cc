@@ -9,14 +9,14 @@
 #include <algorithm>
 #include <limits>
 
-#include "core/dom/element.h"
 #include <native_value_converter.h>
 #include "bindings/qjs/converter_impl.h"
+#include "core/dom/element.h"
 #include "core/dom/intersection_observer_entry.h"
 #include "core/dom/node.h"
 #include "core/executing_context.h"
-#include "qjs_intersection_observer_init.h"
 #include "foundation/logging.h"
+#include "qjs_intersection_observer_init.h"
 
 namespace webf {
 
@@ -73,7 +73,8 @@ void IntersectionObserver::observe(Element* target, ExceptionState& exception_st
   }
 
 #if ENABLE_LOG
-  WEBF_LOG(DEBUG) << "[IntersectionObserver]: observe target=" << target << "，tagName=" << target->nodeName() << std::endl;
+  WEBF_LOG(DEBUG) << "[IntersectionObserver]: observe target=" << target << "，tagName=" << target->nodeName()
+                  << std::endl;
 #endif
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kAddIntersectionObserver, nullptr, bindingObject(),
                                                        target->bindingObject());

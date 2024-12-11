@@ -38,8 +38,8 @@ AtomicString Window::btoa(const AtomicString& source, ExceptionState& exception_
 
   std::string source_string = source.ToStdString(ctx());
 
-  const size_t output_size = modp_b64_encode(reinterpret_cast<char*>(buffer.data()),
-                                             source_string.c_str(), source.length());
+  const size_t output_size =
+      modp_b64_encode(reinterpret_cast<char*>(buffer.data()), source_string.c_str(), source.length());
   const char* encode_str = buffer.data();
   const size_t encode_str_len = strlen(encode_str);
 
@@ -58,8 +58,8 @@ bool Base64DecodeRaw(JSContext* ctx, const AtomicString& in, std::vector<uint8_t
 
   std::string in_string = in.ToStdString(ctx);
 
-  const size_t output_size = modp_b64_decode(reinterpret_cast<char*>(out.data()),
-                                             in_string.c_str(), in.length(), policy);
+  const size_t output_size =
+      modp_b64_decode(reinterpret_cast<char*>(out.data()), in_string.c_str(), in.length(), policy);
   if (output_size == MODP_B64_ERROR)
     return false;
   out.resize(output_size);

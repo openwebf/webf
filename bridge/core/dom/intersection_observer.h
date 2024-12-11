@@ -28,7 +28,6 @@ class IntersectionObserver final : public BindingObject {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-
   // The IntersectionObserver can be configured to notify based on changes to
   // how much of the target element's area intersects with the root, or based on
   // changes to how much of the root element's area intersects with the
@@ -45,7 +44,7 @@ class IntersectionObserver final : public BindingObject {
   //                         ////////////////////
   //                         ////////////////////
   //                         ////////////////////
-  //enum ThresholdInterpretation { kFractionOfTarget, kFractionOfRoot };
+  // enum ThresholdInterpretation { kFractionOfTarget, kFractionOfRoot };
 
   //  This value can be used to detect transitions between non-intersecting or
   //  edge-adjacent (i.e., zero area) state, and intersecting by any non-zero
@@ -58,7 +57,7 @@ class IntersectionObserver final : public BindingObject {
   // invoked synchronously either at the end of a lifecycle update or in the
   // middle of the lifecycle post layout. Javascript observers will PostTask to
   // invoke their callbacks.
-  //enum DeliveryBehavior { kDeliverDuringPostLayoutSteps, kDeliverDuringPostLifecycleSteps, kPostTaskToDeliver };
+  // enum DeliveryBehavior { kDeliverDuringPostLayoutSteps, kDeliverDuringPostLifecycleSteps, kPostTaskToDeliver };
 
   // Used to specify whether the margins apply to the root element or the source
   // element. The effect of the root element margins is that intermediate
@@ -70,7 +69,7 @@ class IntersectionObserver final : public BindingObject {
   //
   // Note that the percentage margin is resolved against the root rect, even
   // when the margin is applied to the target.
-  //enum MarginTarget { kApplyMarginToRoot, kApplyMarginToTarget };
+  // enum MarginTarget { kApplyMarginToRoot, kApplyMarginToTarget };
 
   static IntersectionObserver* Create(ExecutingContext* context,
                                       const std::shared_ptr<QJSFunction>& function,
@@ -113,9 +112,9 @@ class IntersectionObserver final : public BindingObject {
   // };
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
-                                   int32_t argc,
-                                   const NativeValue* argv,
-                                   Dart_Handle dart_object) override;
+                                     int32_t argc,
+                                     const NativeValue* argv,
+                                     Dart_Handle dart_object) override;
 
   // API methods.
   void observe(Element*, ExceptionState&);
@@ -127,9 +126,9 @@ class IntersectionObserver final : public BindingObject {
   // API attributes.
   [[nodiscard]] Node* root() const { return root_; }
   // TODO(pengfei12.guo): not supported
-  //AtomicString rootMargin() const;
+  // AtomicString rootMargin() const;
   // TODO(pengfei12.guo): not supported
-  //AtomicString scrollMargin() const;
+  // AtomicString scrollMargin() const;
 
   [[nodiscard]] const std::vector<double>& thresholds() const { return thresholds_; }
   // TODO(pengfei12.guo): not supported
@@ -185,11 +184,9 @@ class IntersectionObserver final : public BindingObject {
   // deleted; true otherwise.
   bool RootIsValid() const;
 
-
   void Trace(GCVisitor*) const override;
 
  private:
-
   // We use UntracedMember<> here to do custom weak processing.
   Node* root_;
   std::vector<double> thresholds_;

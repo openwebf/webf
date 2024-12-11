@@ -53,10 +53,13 @@
 #include "qjs_html_template_element.h"
 #include "qjs_html_textarea_element.h"
 #include "qjs_html_unknown_element.h"
+#include "qjs_hybrid_router_change_event.h"
 #include "qjs_image.h"
 #include "qjs_inline_css_style_declaration.h"
 #include "qjs_input_event.h"
 #include "qjs_intersection_change_event.h"
+#include "qjs_intersection_observer.h"
+#include "qjs_intersection_observer_entry.h"
 #include "qjs_keyboard_event.h"
 #include "qjs_location.h"
 #include "qjs_message_event.h"
@@ -92,15 +95,12 @@
 #include "qjs_text.h"
 #include "qjs_touch.h"
 #include "qjs_touch_event.h"
-#include "qjs_hybrid_router_change_event.h"
 #include "qjs_touch_list.h"
 #include "qjs_transition_event.h"
 #include "qjs_ui_event.h"
 #include "qjs_widget_element.h"
 #include "qjs_window.h"
 #include "qjs_window_or_worker_global_scope.h"
-#include "qjs_intersection_observer.h"
-#include "qjs_intersection_observer_entry.h"
 
 namespace webf {
 
@@ -202,7 +202,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSSVGStyleElement::Install(context);
   QJSSVGLineElement::Install(context);
 
-  //IntersectionObserver
+  // IntersectionObserver
   QJSIntersectionObserver::Install(context);
   QJSIntersectionObserverEntry::Install(context);
 
