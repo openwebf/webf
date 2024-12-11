@@ -189,14 +189,11 @@ class TextNode extends CharacterData {
 
   // Detach renderObject of current node from parent
   @override
-  void unmountRenderObject({bool keepFixedAlive = false, flutter.Element? flutterWidgetElement}) {
-    /// If a node is managed by flutter framework, the ownership of this render object will transferred to Flutter framework.
-    /// So we do nothing here.
-    if (managedByFlutterWidget) {
-      return;
+  void unmountRenderObjectInDOMMode({bool keepFixedAlive = false}) {
+    if (!managedByFlutterWidget) {
+      _detachRenderTextBox();
+      _domRenderTextBox = null;
     }
-    _detachRenderTextBox();
-    _domRenderTextBox = null;
   }
 
   @override
@@ -213,7 +210,7 @@ class TextNode extends CharacterData {
 
   @override
   Future<void> dispose() async {
-    unmountRenderObject();
+    unmountRenderObjectInDOMMode();
     _attachedFlutterWidgetElements.clear();
     super.dispose();
   }

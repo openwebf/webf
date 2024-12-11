@@ -321,7 +321,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   void attachTo(Element parent, {Node? previousSibling}) {}
 
   /// Unmount referenced render object.
-  void unmountRenderObject({bool keepFixedAlive = false, flutter.Element? flutterWidgetElement}) {}
+  void unmountRenderObjectInDOMMode({bool keepFixedAlive = false}) {}
 
   /// Release any resources held by this node.
   @override

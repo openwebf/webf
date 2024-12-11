@@ -305,17 +305,7 @@ class WebFWidgetElementElement extends StatefulElement {
 
   @override
   void mount(Element? parent, Object? newSlot) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
     super.mount(parent, newSlot);
-    // Make sure RenderWidget had been created.
-    // if (!widget.widgetElement.renderStyle.hasRenderBox()) {
-    //   widget.widgetElement.createRenderer(this);
-    // }
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
   }
 }
 
@@ -377,13 +367,7 @@ class WidgetElementAdapter<T extends RenderObject> extends SingleChildRenderObje
     // WidgetElement can be remounted to the DOM tree and trigger widget adapter updates.
     // We need to check if the widgetElement is actually disconnected before unmounting the renderWidget.
     if (!widgetElement.isConnected) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.startTrackUICommand();
-      }
-      widgetElement.unmountRenderObject();
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackUICommand();
-      }
+      widgetElement.unmountRenderObjectInDOMMode();
     }
   }
 

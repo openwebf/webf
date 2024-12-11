@@ -22,11 +22,7 @@ import 'svg.dart';
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
 
 enum RenderObjectUpdateReason {
-  addRenderObject,
-  upgradeToRepaintBoundary,
-  replaceRenderObject,
-  removeRenderObject,
-  upgradeToStickyLayout
+  updateChildNodes
 }
 
 typedef SomeRenderBoxModelHandlerCallback = bool Function(RenderBoxModel renderBoxModel);

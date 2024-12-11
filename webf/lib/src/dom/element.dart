@@ -860,7 +860,9 @@ abstract class Element extends ContainerNode
 
   /// Unmount [renderBoxModel].
   @override
-  void unmountRenderObject({bool keepFixedAlive = false, bool dispose = true, flutter.Element? flutterWidgetElement}) {
+  void unmountRenderObjectInDOMMode({bool keepFixedAlive = false, flutter.Element? flutterWidgetElement}) {
+    assert(!managedByFlutterWidget);
+
     // Ignore the fixed element to unmount render object.
     // It's useful for sliver manager to unmount child render object, but excluding fixed elements.
     if (keepFixedAlive && renderStyle.position == CSSPositionType.fixed) {
@@ -872,17 +874,15 @@ abstract class Element extends ContainerNode
     // Dispose all renderObject when deep, only works when managed by DOM elements.
     for (Node child in [...childNodes]) {
       if (!child.managedByFlutterWidget) {
-        child.unmountRenderObject(keepFixedAlive: keepFixedAlive);
+        child.unmountRenderObjectInDOMMode(keepFixedAlive: keepFixedAlive);
       }
     }
 
     didDetachRenderer();
-    if (dispose) {
-      assert(!managedByFlutterWidget);
-      // RenderObjects could be owned by Flutter Widget Frameworks.
-      if (!isRenderObjectOwnedByFlutterFramework(this)) {
-        ownerDocument.inactiveRenderObjects.add(renderStyle.domRenderBoxModel);
-      }
+
+    // Only normal HTMLElements in DOM mode needs to manual dispose RenderObjects.
+    if (this is! WidgetElement) {
+      ownerDocument.inactiveRenderObjects.add(renderStyle.domRenderBoxModel);
     }
 
     renderStyle.removeRenderObject(flutterWidgetElement);
@@ -903,6 +903,12 @@ abstract class Element extends ContainerNode
   }
 
   @override
+  void childrenChanged(ChildrenChange change) {
+    super.childrenChanged(change);
+    renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.updateChildNodes);
+  }
+
+  @override
   @mustCallSuper
   Node appendChild(Node child) {
     if (enableWebFProfileTracking) {
@@ -916,7 +922,6 @@ abstract class Element extends ContainerNode
 
     if (managedByFlutterWidget) {
       child.managedByFlutterWidget = managedByFlutterWidget;
-      renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.replaceRenderObject);
     } else {
       // final box = renderBoxModel;
       if (isRendererAttachedToSegmentTree) {
@@ -967,7 +972,9 @@ abstract class Element extends ContainerNode
       child.renderStyle.parent = renderStyle;
     }
 
-    child.managedByFlutterWidget = managedByFlutterWidget;
+    if (managedByFlutterWidget) {
+      child.managedByFlutterWidget = managedByFlutterWidget;
+    }
 
     if (!managedByFlutterWidget && isRendererAttachedToSegmentTree) {
       // Only append child renderer when which is not attached.
@@ -996,6 +1003,11 @@ abstract class Element extends ContainerNode
     if (oldNode is Element) {
       oldNode.renderStyle.parent = null;
     }
+
+    if (managedByFlutterWidget) {
+      newNode.managedByFlutterWidget = managedByFlutterWidget;
+    }
+
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
     }
@@ -1158,7 +1170,7 @@ abstract class Element extends ContainerNode
 
     // Destroy renderer of element when display is changed to none.
     if (presentDisplay == CSSDisplay.none) {
-      unmountRenderObject();
+      unmountRenderObjectInDOMMode();
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackUICommandStep();
       }
