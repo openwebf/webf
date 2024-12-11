@@ -115,7 +115,8 @@ ScriptPromise ComputedCssStyleDeclaration::cssText_async(ExceptionState& excepti
 
 void ComputedCssStyleDeclaration::setCssText(const webf::AtomicString& value, webf::ExceptionState& exception_state) {}
 
-ScriptPromise ComputedCssStyleDeclaration::setCssText_async(const AtomicString& value, ExceptionState& exception_state) {
+ScriptPromise ComputedCssStyleDeclaration::setCssText_async(const AtomicString& value,
+                                                            ExceptionState& exception_state) {
   return ScriptPromise(ctx(), JS_NULL);
 }
 
