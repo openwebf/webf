@@ -336,7 +336,7 @@ abstract class Element extends ContainerNode
     return QuerySelector.closest(this, args.first);
   }
 
-  RenderBoxModel? updateOrCreateRenderBoxModel({WebRenderLayoutWidgetElement? flutterWidgetElement}) {
+  RenderBoxModel? updateOrCreateRenderBoxModel({flutter.RenderObjectElement? flutterWidgetElement}) {
     RenderBoxModel? previousRenderBoxModel = renderStyle.domRenderBoxModel;
     RenderBoxModel nextRenderBoxModel = renderStyle.updateOrCreateRenderBoxModel();
 

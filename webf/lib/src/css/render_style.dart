@@ -14,6 +14,7 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/widget.dart';
 import 'package:webf/src/css/css_animation.dart';
 import 'package:webf/src/svg/rendering/shape.dart';
 
@@ -373,16 +374,20 @@ abstract class RenderStyle extends DiagnosticableTree {
   double getHeightByAspectRatio();
 
   RenderBoxModel? _domRenderObjects;
-  final Map<WebRenderLayoutWidgetElement, RenderBoxModel> _widgetRenderObjects = {};
+  final Map<flutter.RenderObjectElement, RenderBoxModel> _widgetRenderObjects = {};
 
-  Map<WebRenderLayoutWidgetElement, RenderBoxModel> get widgetRenderObjects => _widgetRenderObjects;
+  Map<flutter.RenderObjectElement, RenderBoxModel> get widgetRenderObjects => _widgetRenderObjects;
 
   Iterable<RenderBoxModel> get widgetRenderObjectIterator => _widgetRenderObjects.values;
 
   // For some style changes, we needs to upgrade
   void requestWidgetToRebuild(RenderObjectUpdateReason reason) {
     _widgetRenderObjects.keys.forEach((element) {
-      element.requestForBuild();
+      if (element is WebRenderLayoutWidgetElement) {
+        element.requestForBuild();
+      } else if (element is RenderWidgetElement) {
+        element.requestForBuild();
+      }
     });
   }
 
@@ -1045,7 +1050,7 @@ abstract class RenderStyle extends DiagnosticableTree {
     });
   }
 
-  void addOrUpdateWidgetRenderObjects(WebRenderLayoutWidgetElement ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
+  void addOrUpdateWidgetRenderObjects(flutter.RenderObjectElement ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
     assert(!_widgetRenderObjects.containsKey(ownerRenderObjectElement));
     _widgetRenderObjects[ownerRenderObjectElement] = targetRenderBoxModel;
   }

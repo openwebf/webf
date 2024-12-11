@@ -31,7 +31,7 @@ abstract class WidgetElement extends dom.Element {
     _state = newState;
   }
 
-  WidgetElementAdapter? attachedAdapter;
+  SharedRenderWidgetAdapter? attachedAdapter;
 
   bool isRouterLinkElement = false;
 
@@ -45,7 +45,8 @@ abstract class WidgetElement extends dom.Element {
 
   @override
   Widget toWidget() {
-    return _widget = _WidgetElementAdapter(this);
+    _widget = _WidgetElementAdapter(this);
+    return WebFRenderWidgetAdaptor(this, child: _widget, key: ObjectKey(this));
   }
 
   @override
@@ -100,25 +101,27 @@ abstract class WidgetElement extends dom.Element {
   @mustCallSuper
   @override
   void willAttachRenderer([dom.WebRenderLayoutWidgetElement? flutterWidgetElement]) {
+    assert(!managedByFlutterWidget);
     super.willAttachRenderer();
     if (renderStyle.display != CSSDisplay.none) {
       RenderObject hostedRenderObject = flutterWidgetElement != null
           ? renderStyle.getWidgetPairedRenderBoxModel(flutterWidgetElement)!
           : renderStyle.domRenderBoxModel!;
-      attachedAdapter = WidgetElementAdapter(child: widget, container: hostedRenderObject, widgetElement: this);
+      attachedAdapter = SharedRenderWidgetAdapter(child: widget, container: hostedRenderObject, widgetElement: this);
     }
   }
 
   @mustCallSuper
   @override
   void didAttachRenderer([Element? flutterWidgetElement]) {
+    assert(!managedByFlutterWidget);
     // Children of WidgetElement should insert render object by Flutter Framework.
     attachWidget(widget);
   }
 
   // Reconfigure renderObjects when already rendered pages reattached to flutter tree
   void reactiveRenderer() {
-    if (renderStyle.display != CSSDisplay.none) {
+    if (renderStyle.display != CSSDisplay.none && !managedByFlutterWidget) {
       // Generate a new adapter for this RenderWidget
       willAttachRenderer();
 
@@ -220,28 +223,10 @@ abstract class WidgetElement extends dom.Element {
     return child;
   }
 
-  static dom.Node? _getAncestorWidgetNode(WidgetElement element) {
-    dom.Node? parent = element.parentNode;
-
-    while (parent != null) {
-      if (parent.managedByFlutterWidget) {
-        return parent;
-      }
-
-      parent = parent.parentNode;
-    }
-
-    return null;
-  }
-
   void attachWidget(Widget widget) {
     if (attachedAdapter == null) return;
 
-    dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
-    if (ancestorWidgetNode != null) {
-      assert(false);
-      // (ancestorWidgetNode as dom.Element).flutterWidgetState!.addWidgetChild(attachedAdapter!);
-    } else if (ownerDocument.controller.mode == WebFLoadingMode.standard ||
+    if (ownerDocument.controller.mode == WebFLoadingMode.standard ||
         ownerDocument.controller.isPreLoadingOrPreRenderingComplete) {
       ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
     } else {
@@ -251,13 +236,7 @@ abstract class WidgetElement extends dom.Element {
 
   void detachWidget() {
     if (attachedAdapter != null) {
-      dom.Node? ancestorWidgetNode = _getAncestorWidgetNode(this);
-      if (ancestorWidgetNode != null) {
-        assert(false);
-        // (ancestorWidgetNode as dom.Element).flutterWidgetState!.removeWidgetChild(attachedAdapter!);
-      } else {
-        ownerDocument.controller.onCustomElementDetached!(attachedAdapter!);
-      }
+      ownerDocument.controller.onCustomElementDetached!(attachedAdapter!);
       attachedAdapter = null;
     }
   }
@@ -304,6 +283,9 @@ class WebFWidgetElementElement extends StatefulElement {
   _WidgetElementAdapter get widget => super.widget as _WidgetElementAdapter;
 
   @override
+  _WebFWidgetElementState get state => super.state as _WebFWidgetElementState;
+
+  @override
   void mount(Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
   }
@@ -337,8 +319,8 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
   }
 }
 
-class WidgetElementAdapter<T extends RenderObject> extends SingleChildRenderObjectWidget {
-  WidgetElementAdapter({
+class SharedRenderWidgetAdapter<T extends RenderObject> extends SingleChildRenderObjectWidget {
+  SharedRenderWidgetAdapter({
     Widget? child,
     required this.container,
     required this.widgetElement,
@@ -354,7 +336,7 @@ class WidgetElementAdapter<T extends RenderObject> extends SingleChildRenderObje
   final String? debugShortDescription;
 
   @override
-  WebFRenderObjectToWidgetElement<T> createElement() => WebFRenderObjectToWidgetElement<T>(this);
+  _SharedRenderWidgetElement<T> createElement() => _SharedRenderWidgetElement<T>(this);
 
   @override
   RenderObject createRenderObject(BuildContext context) => container;
@@ -383,12 +365,12 @@ class WidgetElementAdapter<T extends RenderObject> extends SingleChildRenderObje
   }
 }
 
-/// Creates an element that is hosted by a [RenderObject].
-class WebFRenderObjectToWidgetElement<T extends RenderObject> extends SingleChildRenderObjectElement {
-  WebFRenderObjectToWidgetElement(WidgetElementAdapter<T> widget) : super(widget);
+/// Sharing the RenderWidget renderObject beween Flutter element and WebF DOM Elements.
+class _SharedRenderWidgetElement<T extends RenderObject> extends SingleChildRenderObjectElement {
+  _SharedRenderWidgetElement(SharedRenderWidgetAdapter<T> widget) : super(widget);
 
   @override
-  WidgetElementAdapter get widget => super.widget as WidgetElementAdapter<T>;
+  SharedRenderWidgetAdapter get widget => super.widget as SharedRenderWidgetAdapter<T>;
 
   @override
   RenderObjectWithChildMixin<RenderObject> get renderObject =>
@@ -404,8 +386,46 @@ class WebFRenderObjectToWidgetElement<T extends RenderObject> extends SingleChil
   void moveRenderObjectChild(RenderObject child, Object? oldSlot, Object? newSlot) {
     assert(false);
   }
+
   @override
   void removeRenderObjectChild(RenderObject child, Object? slot) {
     renderObject.child = null;
+  }
+}
+
+class WebFRenderWidgetAdaptor extends SingleChildRenderObjectWidget {
+  WebFRenderWidgetAdaptor(this.widgetElement, {Widget? child, Key? key}) : super(child: child, key: key);
+
+  final WidgetElement widgetElement;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) {
+    RenderObject? renderWidget =
+        widgetElement.updateOrCreateRenderBoxModel(flutterWidgetElement: (context as RenderObjectElement));
+    return renderWidget!;
+  }
+
+  @override
+  String toStringShort() => '<${widgetElement.tagName.toLowerCase()} />';
+
+  @override
+  SingleChildRenderObjectElement createElement() {
+    return RenderWidgetElement(this);
+  }
+}
+
+class RenderWidgetElement extends SingleChildRenderObjectElement {
+  RenderWidgetElement(super.widget);
+
+  @override
+  WebFRenderWidgetAdaptor get widget => super.widget as WebFRenderWidgetAdaptor;
+
+  // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
+  void requestForBuild() {
+    visitChildElements((element) {
+      if (element is WebFWidgetElementElement) {
+        element.state.requestUpdateState();
+      }
+    });
   }
 }
