@@ -110,12 +110,13 @@ AtomicString ComputedCssStyleDeclaration::cssText() const {
 }
 
 ScriptPromise ComputedCssStyleDeclaration::cssText_async(ExceptionState& exception_state) {
-  // TODO
   return ScriptPromise(ctx(), JS_NULL);
 }
 
 void ComputedCssStyleDeclaration::setCssText(const webf::AtomicString& value, webf::ExceptionState& exception_state) {}
 
-void ComputedCssStyleDeclaration::setCssText_async(const AtomicString& value, ExceptionState& exception_state) {}
+ScriptPromise ComputedCssStyleDeclaration::setCssText_async(const AtomicString& value, ExceptionState& exception_state) {
+  return ScriptPromise(ctx(), JS_NULL);
+}
 
 }  // namespace webf

@@ -238,29 +238,17 @@ std::string Element::nodeName() const {
 AtomicString Element::className() const {
   return getAttribute(binding_call_methods::kclass, ASSERT_NO_EXCEPTION());
 }
-ScriptPromise Element::className_async(ExceptionState& exception_state) {
-  // TODO
-}
 
 void Element::setClassName(const AtomicString& value, ExceptionState& exception_state) {
   setAttribute(html_names::kClassAttr, value, exception_state);
-}
-void Element::setClassName_async(const AtomicString& value, ExceptionState& exception_state) {
-  // TODO
 }
 
 AtomicString Element::id() const {
   return getAttribute(binding_call_methods::kid, ASSERT_NO_EXCEPTION());
 }
-ScriptPromise Element::id_async(ExceptionState& exception_state) {
-  // TODO
-}
 
 void Element::setId(const AtomicString& value, ExceptionState& exception_state) {
   setAttribute(html_names::kIdAttr, value, exception_state);
-}
-void Element::setId_async(const AtomicString& value, ExceptionState& exception_state) {
-  // TODO
 }
 
 std::vector<Element*> Element::getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state) {
@@ -345,10 +333,6 @@ DOMTokenList* Element::classList() {
     element_data.SetClassList(class_list);
   }
   return element_data.GetClassList();
-}
-ScriptPromise Element::classList_async(ExceptionState& exception_state) {
-  // TODO
-  return ScriptPromise(ctx(), JS_NULL);
 }
 
 DOMStringMap* Element::dataset() {

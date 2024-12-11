@@ -41,7 +41,7 @@ class ComputedCssStyleDeclaration : public CSSStyleDeclaration {
   AtomicString cssText() const override;
   ScriptPromise cssText_async(ExceptionState& exception_state);
   void setCssText(const AtomicString& value, ExceptionState& exception_state) override;
-  void setCssText_async(const AtomicString& value, ExceptionState& exception_state);
+  ScriptPromise setCssText_async(const AtomicString& value, ExceptionState& exception_state);
 
  private:
 };

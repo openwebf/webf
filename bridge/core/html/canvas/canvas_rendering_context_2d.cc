@@ -141,7 +141,7 @@ void CanvasRenderingContext2D::setFillStyle(const std::shared_ptr<QJSUnionDomStr
   fill_style_ = style;
 }
 
-void CanvasRenderingContext2D::setFillStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
+ScriptPromise CanvasRenderingContext2D::setFillStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
                                                   ExceptionState& exception_state) {
   NativeValue value = Native_NewNull();
 
@@ -151,7 +151,7 @@ void CanvasRenderingContext2D::setFillStyle_async(const std::shared_ptr<QJSUnion
     value = NativeValueConverter<NativeTypePointer<CanvasGradient>>::ToNativeValue(style->GetAsCanvasGradient());
   }
 
-  SetBindingPropertyAsync(binding_call_methods::kfillStyle, value, exception_state);
+  return SetBindingPropertyAsync(binding_call_methods::kfillStyle, value, exception_state);
 }
 
 std::shared_ptr<QJSUnionDomStringCanvasGradient> CanvasRenderingContext2D::strokeStyle() {
@@ -177,7 +177,7 @@ void CanvasRenderingContext2D::setStrokeStyle(const std::shared_ptr<QJSUnionDomS
   stroke_style_ = style;
 }
 
-void CanvasRenderingContext2D::setStrokeStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
+ScriptPromise CanvasRenderingContext2D::setStrokeStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
                                                     ExceptionState& exception_state) {
   NativeValue value = Native_NewNull();
 
@@ -187,7 +187,7 @@ void CanvasRenderingContext2D::setStrokeStyle_async(const std::shared_ptr<QJSUni
     value = NativeValueConverter<NativeTypePointer<CanvasGradient>>::ToNativeValue(style->GetAsCanvasGradient());
   }
 
-  SetBindingPropertyAsync(binding_call_methods::kstrokeStyle, value, exception_state);
+  return SetBindingPropertyAsync(binding_call_methods::kstrokeStyle, value, exception_state);
 }
 
 void CanvasRenderingContext2D::roundRect(double x,

@@ -250,6 +250,14 @@ static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst
   auto result = Converter<IDLPromise>::ToValue(ctx, promise);
   return result;
 }
+  <% } else if (prop.typeMode && prop.typeMode.supportAsync)  { %>
+  ScriptPromise promise = <%= blob.filename %>->set<%= prop.name[0].toUpperCase() + prop.name.slice(1) %>(v, exception_state);
+  if (exception_state.HasException()) {
+    return exception_state.ToQuickJS();
+  }
+  auto result = Converter<IDLPromise>::ToValue(ctx, promise);
+  return result;
+}
   <% } else { %>
   <% if (prop.typeMode && prop.typeMode.dartImpl && !prop.typeMode.supportAsync) { %>
   <%= blob.filename %>->SetBindingProperty(binding_call_methods::k<%= prop.name %>, NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::ToNativeValue(<% if (isDOMStringType(prop.type)) { %>ctx, <% } %>v),exception_state);

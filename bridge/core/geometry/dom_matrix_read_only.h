@@ -36,112 +36,112 @@ class DOMMatrixReadOnly : public BindingObject {
   double m11() const;
   void setM11(double v, ExceptionState& exception_state);
   ScriptPromise m11_async(ExceptionState& exception_state);
-  void setM11_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM11_async(double v, ExceptionState& exception_state);
 
   double m12() const;
   void setM12(double v, ExceptionState& exception_state);
   ScriptPromise m12_async(ExceptionState& exception_state);
-  void setM12_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM12_async(double v, ExceptionState& exception_state);
 
   double m13() const;
   void setM13(double v, ExceptionState& exception_state);
   ScriptPromise m13_async(ExceptionState& exception_state);
-  void setM13_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM13_async(double v, ExceptionState& exception_state);
 
   double m14() const;
   void setM14(double v, ExceptionState& exception_state);
   ScriptPromise m14_async(ExceptionState& exception_state);
-  void setM14_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM14_async(double v, ExceptionState& exception_state);
 
   double m21() const;
   void setM21(double v, ExceptionState& exception_state);
   ScriptPromise m21_async(ExceptionState& exception_state);
-  void setM21_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM21_async(double v, ExceptionState& exception_state);
 
   double m22() const;
   void setM22(double v, ExceptionState& exception_state);
   ScriptPromise m22_async(ExceptionState& exception_state);
-  void setM22_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM22_async(double v, ExceptionState& exception_state);
 
   double m23() const;
   void setM23(double v, ExceptionState& exception_state);
   ScriptPromise m23_async(ExceptionState& exception_state);
-  void setM23_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM23_async(double v, ExceptionState& exception_state);
 
   [[nodiscard]] double m24() const;
   void setM24(double v, ExceptionState& exception_state);
   ScriptPromise m24_async(ExceptionState& exception_state);
-  void setM24_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM24_async(double v, ExceptionState& exception_state);
 
   double m31() const;
   void setM31(double v, ExceptionState& exception_state);
   ScriptPromise m31_async(ExceptionState& exception_state);
-  void setM31_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM31_async(double v, ExceptionState& exception_state);
 
   double m32() const;
   void setM32(double v, ExceptionState& exception_state);
   ScriptPromise m32_async(ExceptionState& exception_state);
-  void setM32_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM32_async(double v, ExceptionState& exception_state);
 
   double m33() const;
   void setM33(double v, ExceptionState& exception_state);
   ScriptPromise m33_async(ExceptionState& exception_state);
-  void setM33_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM33_async(double v, ExceptionState& exception_state);
 
   double m34() const;
   void setM34(double v, ExceptionState& exception_state);
   ScriptPromise m34_async(ExceptionState& exception_state);
-  void setM34_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM34_async(double v, ExceptionState& exception_state);
 
   double m41() const;
   void setM41(double v, ExceptionState& exception_state);
   ScriptPromise m41_async(ExceptionState& exception_state);
-  void setM41_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM41_async(double v, ExceptionState& exception_state);
 
   double m42() const;
   void setM42(double v, ExceptionState& exception_state);
   ScriptPromise m42_async(ExceptionState& exception_state);
-  void setM42_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM42_async(double v, ExceptionState& exception_state);
 
   double m43() const;
   void setM43(double v, ExceptionState& exception_state);
   ScriptPromise m43_async(ExceptionState& exception_state);
-  void setM43_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM43_async(double v, ExceptionState& exception_state);
 
   double m44() const;
   void setM44(double v, ExceptionState& exception_state);
   ScriptPromise m44_async(ExceptionState& exception_state);
-  void setM44_async(double v, ExceptionState& exception_state);
+  ScriptPromise setM44_async(double v, ExceptionState& exception_state);
 
   double a() const { return m11(); }
   void setA(double v, ExceptionState& exception_state) { setM11(v, exception_state); }
   ScriptPromise a_async(ExceptionState& exception_state) { return m11_async(exception_state); }
-  void setA_async(double v, ExceptionState& exception_state) { setM11_async(v, exception_state); }
+  ScriptPromise setA_async(double v, ExceptionState& exception_state) { return setM11_async(v, exception_state); }
 
   double b() const { return m12(); }
   void setB(double v, ExceptionState& exception_state) { setM12(v, exception_state); }
   ScriptPromise b_async(ExceptionState& exception_state) { return m12_async(exception_state); }
-  void setB_async(double v, ExceptionState& exception_state) { setM12_async(v, exception_state); }
+  ScriptPromise setB_async(double v, ExceptionState& exception_state) { return setM12_async(v, exception_state); }
 
   double c() const { return m21(); }
   void setC(double v, ExceptionState& exception_state) { setM21(v, exception_state); }
   ScriptPromise c_async(ExceptionState& exception_state) { return m21_async(exception_state); }
-  void setC_async(double v, ExceptionState& exception_state) { setM21_async(v, exception_state); }
+  ScriptPromise setC_async(double v, ExceptionState& exception_state) { return setM21_async(v, exception_state); }
 
   double d() const { return m22(); }
   void setD(double v, ExceptionState& exception_state) { setM22(v, exception_state); }
   ScriptPromise d_async(ExceptionState& exception_state) { return m22_async(exception_state); }
-  void setD_async(double v, ExceptionState& exception_state) { setM22_async(v, exception_state); }
+  ScriptPromise setD_async(double v, ExceptionState& exception_state) { return setM22_async(v, exception_state); }
 
   double e() const { return m41(); }
   void setE(double v, ExceptionState& exception_state) { setM41(v, exception_state); }
   ScriptPromise e_async(ExceptionState& exception_state) { return m41_async(exception_state); }
-  void setE_async(double v, ExceptionState& exception_state) { setM41_async(v, exception_state); }
+  ScriptPromise setE_async(double v, ExceptionState& exception_state) { return setM41_async(v, exception_state); }
 
   double f() const { return m42(); }
   void setF(double v, ExceptionState& exception_state) { setM42(v, exception_state); }
   ScriptPromise f_async(ExceptionState& exception_state) { return m42_async(exception_state); }
-  void setF_async(double v, ExceptionState& exception_state) { setM42_async(v, exception_state); }
+  ScriptPromise setF_async(double v, ExceptionState& exception_state) { return setM42_async(v, exception_state); }
 
   DOMMatrix* flipX(ExceptionState& exception_state) const;
   DOMMatrix* flipY(ExceptionState& exception_state) const;
@@ -199,7 +199,7 @@ class DOMMatrixReadOnly : public BindingObject {
  private:
   [[nodiscard]] double getMatrixProperty(const AtomicString& prop) const;
   void setMatrixProperty(const AtomicString& prop, double v, ExceptionState& exception_state);
-  void setMatrixPropertyAsync(const AtomicString& prop, double v, ExceptionState& exception_state);
+  ScriptPromise setMatrixPropertyAsync(const AtomicString& prop, double v, ExceptionState& exception_state);
 };
 
 }  // namespace webf

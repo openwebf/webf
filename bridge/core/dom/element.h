@@ -121,14 +121,10 @@ class Element : public ContainerNode {
   std::string nodeName() const override;
 
   AtomicString className() const;
-  ScriptPromise className_async(ExceptionState& exception_state);
   void setClassName(const AtomicString& value, ExceptionState& exception_state);
-  void setClassName_async(const AtomicString& value, ExceptionState& exception_state);
 
   AtomicString id() const;
-  ScriptPromise id_async(ExceptionState& exception_state);
   void setId(const AtomicString& value, ExceptionState& exception_state);
-  void setId_async(const AtomicString& value, ExceptionState& exception_state);
 
   std::vector<Element*> getElementsByClassName(const AtomicString& class_name, ExceptionState& exception_state);
   std::vector<Element*> getElementsByTagName(const AtomicString& tag_name, ExceptionState& exception_state);
@@ -142,7 +138,6 @@ class Element : public ContainerNode {
   InlineCssStyleDeclaration* style();
   InlineCssStyleDeclaration& EnsureCSSStyleDeclaration();
   DOMTokenList* classList();
-  ScriptPromise classList_async(ExceptionState& exception_state);
   DOMStringMap* dataset();
 
   Element& CloneWithChildren(CloneChildrenFlag flag, Document* = nullptr) const;

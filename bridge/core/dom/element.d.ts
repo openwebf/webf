@@ -7,9 +7,9 @@ import {ParentNode} from "./parent_node";
 import {ChildNode} from "./child_node";
 
 interface Element extends Node, ParentNode, ChildNode {
-  id: SupportAsync<string>;
-  className: SupportAsync<string>;
-  readonly classList: SupportAsync<DOMTokenList>;
+  id: string;
+  className: string;
+  readonly classList: DOMTokenList;
   readonly dataset: DOMStringMap;
   name: DartImpl<string>;
   readonly attributes: ElementAttributes;

@@ -46,13 +46,14 @@ ScriptPromise HTMLImageElement::src_async(webf::ExceptionState& exception_state)
   return GetBindingPropertyAsync(binding_call_methods::ksrc, exception_state);
 }
 
-void HTMLImageElement::setSrc_async(const AtomicString& value, ExceptionState& exception_state) {
-  SetBindingPropertyAsync(defined_properties::ksrc,
+ScriptPromise HTMLImageElement::setSrc_async(const AtomicString& value, ExceptionState& exception_state) {
+  ScriptPromise promise = SetBindingPropertyAsync(defined_properties::ksrc,
                           NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value));
   if (!value.IsEmpty() && !keep_alive) {
     KeepAlive();
     keep_alive = true;
   }
+  return promise;
 }
 
 DispatchEventResult HTMLImageElement::FireEventListeners(Event& event, ExceptionState& exception_state) {

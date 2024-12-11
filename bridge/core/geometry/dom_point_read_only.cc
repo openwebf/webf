@@ -150,10 +150,11 @@ void DOMPointReadOnly::setPointProperty(const AtomicString& prop, double v, Exce
   }
 }
 
-void DOMPointReadOnly::setPointPropertyAsync(const AtomicString& prop, double v, ExceptionState& exception_state) {
+ScriptPromise DOMPointReadOnly::setPointPropertyAsync(const AtomicString& prop, double v, ExceptionState& exception_state) {
   if (DynamicTo<DOMPoint>(this)) {
-    SetBindingPropertyAsync(prop, NativeValueConverter<NativeTypeDouble>::ToNativeValue(v), exception_state);
+    return SetBindingPropertyAsync(prop, NativeValueConverter<NativeTypeDouble>::ToNativeValue(v), exception_state);
   }
+  return ScriptPromise(ctx(), JS_NULL);
 }
 
 double DOMPointReadOnly::x() const {
@@ -165,10 +166,9 @@ void DOMPointReadOnly::setX(double v, ExceptionState& exception_state) {
 ScriptPromise DOMPointReadOnly::x_async(ExceptionState& exception_state) {
   return GetBindingPropertyAsync(defined_properties::kx, exception_state);
 }
-void DOMPointReadOnly::setX_async(double v, ExceptionState& exception_state) {
-  setPointPropertyAsync(defined_properties::kx, v, exception_state);
+ScriptPromise DOMPointReadOnly::setX_async(double v, ExceptionState& exception_state) {
+  return setPointPropertyAsync(defined_properties::kx, v, exception_state);
 }
-
 double DOMPointReadOnly::y() {
   return getPointProperty(defined_properties::ky);
 }
@@ -178,10 +178,9 @@ void DOMPointReadOnly::setY(double v, ExceptionState& exception_state) {
 ScriptPromise DOMPointReadOnly::y_async(ExceptionState& exception_state) {
   return GetBindingPropertyAsync(defined_properties::ky, exception_state);
 }
-void DOMPointReadOnly::setY_async(double v, ExceptionState& exception_state) {
-  setPointPropertyAsync(defined_properties::ky, v, exception_state);
+ScriptPromise DOMPointReadOnly::setY_async(double v, ExceptionState& exception_state) {
+  return setPointPropertyAsync(defined_properties::ky, v, exception_state);
 }
-
 double DOMPointReadOnly::z() const {
   return getPointProperty(defined_properties::kz);
 }
@@ -191,21 +190,20 @@ void DOMPointReadOnly::setZ(double v, ExceptionState& exception_state) {
 ScriptPromise DOMPointReadOnly::z_async(ExceptionState& exception_state) {
   return GetBindingPropertyAsync(defined_properties::kz, exception_state);
 }
-void DOMPointReadOnly::setZ_async(double v, ExceptionState& exception_state) {
-  setPointPropertyAsync(defined_properties::kz, v, exception_state);
+ScriptPromise DOMPointReadOnly::setZ_async(double v, ExceptionState& exception_state) {
+  return setPointPropertyAsync(defined_properties::kz, v, exception_state);
 }
-
 double DOMPointReadOnly::w() const {
   return getPointProperty(defined_properties::kw);
 }
 void DOMPointReadOnly::setW(double v, ExceptionState& exception_state) {
-  setPointProperty(defined_properties::kw, v, exception_state);
+  return setPointProperty(defined_properties::kw, v, exception_state);
 }
 ScriptPromise DOMPointReadOnly::w_async(ExceptionState& exception_state) {
   return GetBindingPropertyAsync(defined_properties::kw, exception_state);
 }
-void DOMPointReadOnly::setW_async(double v, ExceptionState& exception_state) {
-  setPointPropertyAsync(defined_properties::kw, v, exception_state);
+ScriptPromise DOMPointReadOnly::setW_async(double v, ExceptionState& exception_state) {
+  return setPointPropertyAsync(defined_properties::kw, v, exception_state);
 }
 
 DOMPoint* DOMPointReadOnly::matrixTransform(DOMMatrix* matrix, ExceptionState& exception_state) const {
