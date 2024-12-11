@@ -12,6 +12,8 @@ interface HTMLTextareaElement extends HTMLElement {
   disabled: DartImpl<boolean>;
   minLength: DartImpl<double>;
   maxLength: DartImpl<double>;
+  selectionStart: DartImpl<double>;
+  selectionEnd: DartImpl<double>;
   name: DartImpl<string>;
   placeholder: DartImpl<string>;
   readonly: DartImpl<boolean>;

@@ -14,6 +14,8 @@ interface HTMLInputElement extends HTMLElement {
   max: DartImpl<string>;
   minLength: DartImpl<double>;
   maxLength: DartImpl<double>;
+  selectionStart: DartImpl<double>;
+  selectionEnd: DartImpl<double>;
   size: DartImpl<double>;
   multiple: DartImpl<boolean>;
   name: DartImpl<string>;

@@ -3,7 +3,6 @@
  */
 
 import 'dart:async';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -36,11 +35,42 @@ const Map<String, dynamic> _checkboxDefaultStyle = {
 };
 
 class FlutterInputElement extends WidgetElement
-    with BaseCheckBoxElement, BaseButtonElement, BaseInputElement, BaseTimeElement {
+    with
+        BaseRadioElement,
+        BaseCheckBoxElement,
+        BaseButtonElement,
+        BaseInputElement,
+        BaseTimeElement {
   BindingContext? buildContext;
 
   FlutterInputElement(BindingContext? context) : super(context) {
     buildContext = context;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    switch (type) {
+      case 'radio':
+        initRadioState();
+        break;
+      default:
+        initBaseInputState();
+        break;
+    }
+  }
+
+  @override
+  Future<void> dispose() async {
+    super.dispose();
+    switch (type) {
+      case 'radio':
+        disposeRadio();
+        break;
+      default:
+        disposeBaseInput();
+        break;
+    }
   }
 
   @override
@@ -49,6 +79,7 @@ class FlutterInputElement extends WidgetElement
       case 'text':
       case 'time':
         return _inputDefaultStyle;
+      case 'radio':
       case 'checkbox':
         return _checkboxDefaultStyle;
     }
@@ -79,6 +110,8 @@ class FlutterInputElement extends WidgetElement
   @override
   Widget build(BuildContext context, List<Widget> children) {
     switch (type) {
+      case 'radio':
+        return createRadio(context);
       case 'checkbox':
         return createCheckBox(context);
       case 'button':
@@ -118,8 +151,7 @@ mixin BaseInputElement on WidgetElement {
     hasDirtyValue = true;
   }
 
-  @override
-  void initState() {
+  void initBaseInputState() {
     _focusNode ??= FocusNode();
     _focusNode!.addListener(handleFocusChange);
   }
@@ -138,6 +170,62 @@ mixin BaseInputElement on WidgetElement {
     properties['autofocus'] = BindingObjectProperty(getter: () => autofocus, setter: (value) => autofocus = value);
     properties['defaultValue'] =
         BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
+    properties['selectionStart'] = BindingObjectProperty(getter: () => selectionStart, setter: (value) {
+      if (value == null) {
+        selectionStart = null;
+        return;
+      }
+
+      if (value is num) {
+        selectionStart = value.toInt();
+        return;
+      }
+
+      if (value is String) {
+        selectionStart = int.tryParse(value);
+        return;
+      }
+
+      selectionStart = null;
+    });
+    properties['selectionEnd'] = BindingObjectProperty(getter: () => selectionEnd, setter: (value) {
+      if (value == null) {
+        selectionEnd = null;
+        return;
+      }
+
+      if (value is num) {
+        selectionEnd = value.toInt();
+        return;
+      }
+
+      if (value is String) {
+        selectionEnd = int.tryParse(value);
+        return;
+      }
+
+      selectionEnd = null;
+    });
+    properties['maxLength'] = BindingObjectProperty(
+      getter: () => maxLength,
+      setter: (value) {
+        if (value == null) {
+          maxLength = null;
+          return;
+        }
+
+        if (value is num) {
+          maxLength = value.toInt();
+          return;
+        }
+
+        if (value is String) {
+          maxLength = int.tryParse(value);
+          return;
+        }
+
+        maxLength = null;
+      });
   }
 
   @override
@@ -149,24 +237,98 @@ mixin BaseInputElement on WidgetElement {
         ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => disabled = value);
   }
 
+
+  void _updateSelection() {
+    int? start = selectionStart;
+    int? end = selectionEnd;
+    if (start != null && end != null) {
+      controller.selection = TextSelection(baseOffset: start, extentOffset: end);
+    }
+  }
+
   TextInputType? getKeyboardType() {
     if (this is FlutterTextAreaElement) {
       return TextInputType.multiline;
     }
 
     switch (type) {
+      case 'text':
+        if (inputMode != null) {
+          switch (inputMode) {
+            case 'numeric':
+              return TextInputType.number;
+            case 'tel':
+              return TextInputType.phone;
+            case 'decimal':
+              return TextInputType.numberWithOptions(decimal: true);
+            case 'email':
+              return TextInputType.emailAddress;
+            case 'url':
+              return TextInputType.url;
+            case 'text':
+            case 'search':
+              return TextInputType.text;
+            case 'none':
+              return TextInputType.none;
+          }
+        }
+        return TextInputType.text;
       case 'number':
-      case 'tel':
+        String? step = getAttribute('step');
+        if (step == 'any' || step != null && step.contains('.')) {
+          return TextInputType.numberWithOptions(decimal: true);
+        }
         return TextInputType.number;
+      case 'tel':
+        return TextInputType.phone;
       case 'url':
         return TextInputType.url;
       case 'email':
         return TextInputType.emailAddress;
+      case 'search':
+        return TextInputType.text;
     }
     return TextInputType.text;
   }
 
+  TextInputAction getTextInputAction() {
+    if (enterKeyHint != null) {
+      switch (enterKeyHint) {
+        case 'next':
+          return TextInputAction.next;
+        case 'done':
+          return TextInputAction.done;
+        case 'search':
+          return TextInputAction.search;
+        case 'go':
+          return TextInputAction.go;
+        case 'previous':
+          return TextInputAction.previous;
+        case 'send':
+          return TextInputAction.send;
+        default:
+          return TextInputAction.unspecified;
+      }
+    }
+    switch (type) {
+      case 'search':
+        return TextInputAction.search;
+      case 'email':
+      case 'password':
+      case 'tel':
+      case 'url':
+      case 'number':
+        return TextInputAction.done;
+      case 'text':
+        return TextInputAction.newline;
+      default:
+        return TextInputAction.unspecified;
+    }
+  }
+
   String get type => getAttribute('type') ?? 'text';
+  String? get inputMode => getAttribute('inputmode');
+  String? get enterKeyHint => getAttribute('enterkeyhint');
   void set type(value) {
     internalSetAttribute('type', value?.toString() ?? '');
     resetInputDefaultStyle();
@@ -174,6 +336,7 @@ mixin BaseInputElement on WidgetElement {
 
   void resetInputDefaultStyle() {
     switch (type) {
+      case 'radio':
       case 'checkbox':
         {
           _checkboxDefaultStyle.forEach((key, value) {
@@ -216,7 +379,7 @@ mixin BaseInputElement on WidgetElement {
   bool get disabled => _disabled;
   set disabled(value) {
     if (value is String) {
-      _disabled = value == 'true';
+      _disabled = true;
       return;
     }
     _disabled = value == true;
@@ -242,9 +405,13 @@ mixin BaseInputElement on WidgetElement {
   bool get _isFocus => _focusNode?.hasFocus ?? false;
 
   int? get maxLength {
-    String? value = getAttribute('maxLength');
+    String? value = getAttribute('maxlength');
     if (value != null) return int.parse(value);
     return null;
+  }
+
+  set maxLength(int? value) {
+    internalSetAttribute('maxlength', value?.toString() ?? '');
   }
 
   List<TextInputFormatter>? getInputFormatters() {
@@ -282,6 +449,7 @@ mixin BaseInputElement on WidgetElement {
         fontSize: fontSize,
         fontWeight: renderStyle.fontWeight,
         fontFamily: renderStyle.fontFamily?.join(' '),
+        height: 1.0,
       );
 
   StrutStyle get _textStruct => StrutStyle(
@@ -290,15 +458,38 @@ mixin BaseInputElement on WidgetElement {
 
   final double _defaultPadding = 0;
 
+  int? _selectionStart;
+  int? _selectionEnd;
+  int? get selectionStart => _selectionStart;
+  int? get selectionEnd => _selectionEnd;
+
+  set selectionStart(int? value) {
+    if (value != null) {
+      _selectionStart = value;
+    }
+  }
+
+  set selectionEnd(int? value) {
+    if (value != null) {
+      _selectionEnd = value;
+    }
+  }
+
   Widget _createInputWidget(BuildContext context) {
     FlutterFormElementContext? formContext = context.dependOnInheritedWidgetOfExactType<FlutterFormElementContext>();
     onChanged(String newValue) {
       setState(() {
+
+        _selectionStart = null;
+        _selectionEnd = null;
+
         InputEvent inputEvent = InputEvent(inputType: '', data: newValue);
         dispatchEvent(inputEvent);
       });
       hasDirtyValue = true;
     }
+
+    _updateSelection();
 
     InputDecoration decoration = InputDecoration(
         label: label != null ? Text(label!) : null,
@@ -307,6 +498,7 @@ mixin BaseInputElement on WidgetElement {
         isCollapsed: true,
         contentPadding: EdgeInsets.fromLTRB(0, _defaultPadding, 0, _defaultPadding),
         hintText: placeholder,
+        counterText: '', // Hide counter to align with web
         suffix: isSearch && value.isNotEmpty && _isFocus
             ? SizedBox(
                 width: 14,
@@ -341,7 +533,7 @@ mixin BaseInputElement on WidgetElement {
         focusNode: _focusNode,
         obscureText: isPassWord,
         cursorColor: renderStyle.caretColor ?? renderStyle.color.value,
-        textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
+        textInputAction: getTextInputAction(),
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         cursorHeight: renderStyle.fontSize.computedValue,
@@ -364,7 +556,7 @@ mixin BaseInputElement on WidgetElement {
         obscureText: isPassWord,
         cursorColor: renderStyle.caretColor ?? renderStyle.color.value,
         cursorRadius: Radius.circular(4),
-        textInputAction: isSearch ? TextInputAction.search : TextInputAction.newline,
+        textInputAction: getTextInputAction(),
         keyboardType: getKeyboardType(),
         inputFormatters: getInputFormatters(),
         onSubmitted: (String value) {
@@ -394,6 +586,8 @@ mixin BaseInputElement on WidgetElement {
       scheduleMicrotask(() {
         dispatchEvent(FocusEvent(EVENT_FOCUS, relatedTarget: this));
       });
+
+      HardwareKeyboard.instance.addHandler(_handleKey);
     } else {
       if (ownerDocument.focusedElement == this) {
         ownerDocument.focusedElement = null;
@@ -406,12 +600,28 @@ mixin BaseInputElement on WidgetElement {
       scheduleMicrotask(() {
         dispatchEvent(FocusEvent(EVENT_BLUR, relatedTarget: this));
       });
+
+      HardwareKeyboard.instance.removeHandler(_handleKey);
     }
   }
 
-  @override
-  Future<void> dispose() async {
-    super.dispose();
+  bool _handleKey(KeyEvent event) {
+    if (event is KeyUpEvent) {
+      dispatchEvent(KeyboardEvent(EVENT_KEY_UP,
+          code: event.physicalKey.debugName ?? '',
+          key: event.logicalKey.keyLabel,
+      ));
+      return true;
+    } else if (event is KeyDownEvent) {
+      dispatchEvent(KeyboardEvent(EVENT_KEY_DOWN,
+        code: event.physicalKey.debugName ?? '',
+        key: event.logicalKey.keyLabel,
+      ));
+    }
+    return false;
+  }
+
+  Future<void> disposeBaseInput() async {
     _focusNode?.dispose();
   }
 
@@ -435,6 +645,106 @@ mixin BaseInputElement on WidgetElement {
         return SizedBox(width: 0, height: 0);
     }
     return _wrapInputHeight(_createInputWidget(context));
+  }
+}
+
+/// create a radio widget when input type='radio'
+
+mixin BaseRadioElement on WidgetElement {
+  static final Map<String, String> _groupValues = <String, String>{};
+
+  static final StreamController<Map<String, String>> _streamController =
+      StreamController<Map<String, String>>.broadcast();
+
+  //  static final   Stream<Map<String, String>> stream = _streamController.stream.asBroadcastStream(onLis);
+
+  late StreamSubscription<Map<String, String>> _subscription;
+
+  void initRadioState() {
+    _subscription = _streamController.stream.listen((message) {
+      setState(() {
+        for (var entry in message.entries) {
+          if (entry.key == name) {
+            groupValue = entry.value;
+          }
+        }
+      });
+    });
+  }
+
+  void disposeRadio() {
+    _subscription.cancel();
+    _groupValues.remove(name);
+    if (_groupValues.isEmpty) {
+      _streamController.close();
+    }
+  }
+
+  String get groupValue => _groupValues[name] ?? name;
+  set groupValue(String? gv) {
+    internalSetAttribute('groupValue', gv ?? name);
+    _groupValues[name] = gv ?? name;
+  }
+
+  bool get disabled => getAttribute('disabled') != null;
+
+  String get value => getAttribute('value') ?? '';
+
+  String _name = '';
+  String get name => _name;
+  set name(String? n) {
+    if (_groupValues[_name] != null) {
+      _groupValues.remove(_name);
+    }
+    _name = n?.toString() ?? '';
+    _groupValues[_name] = _name;
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+
+    properties['name'] = BindingObjectProperty(
+        getter: () => name, setter: (value) => name = value);
+  }
+
+  @override
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
+
+    attributes['name'] = ElementAttributeProperty(
+        getter: () => name, setter: (value) => name = value);
+  }
+
+  double getRadioSize() {
+    //TODO support zoom
+    //width and height
+    if (renderStyle.width.value != null && renderStyle.height.value != null) {
+      return renderStyle.width.computedValue / 18.0;
+    }
+    return 1.0;
+  }
+
+  Widget createRadio(BuildContext context) {
+    String singleRadioValue = '$name-$value';
+    return Transform.scale(
+      child: Radio<String>(
+          value: singleRadioValue,
+          onChanged: disabled
+              ? null
+              : (String? newValue) {
+                  setState(() {
+                    if (newValue != null) {
+                      Map<String, String> map = <String, String>{};
+                      map[name] = newValue;
+                      _streamController.sink.add(map);
+                    }
+                    dispatchEvent(Event('change'));
+                  });
+                },
+          groupValue: groupValue),
+      scale: getRadioSize(),
+    );
   }
 }
 
@@ -472,6 +782,8 @@ mixin BaseCheckBoxElement on WidgetElement {
     return Transform.scale(
       child: Checkbox(
         value: checked,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
         onChanged: disabled
             ? null
             : (bool? newValue) {
