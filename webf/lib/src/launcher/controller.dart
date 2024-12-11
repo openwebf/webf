@@ -17,8 +17,9 @@ import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart'
-    show RouteInformation, WidgetsBinding, WidgetsBindingObserver, AnimationController, BuildContext, View;
+    show AnimationController, BuildContext, ModalRoute, RouteInformation, RouteObserver, View, Widget, WidgetsBinding, WidgetsBindingObserver;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
@@ -190,7 +191,7 @@ class WebFViewController implements WidgetsBindingObserver {
       debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
       debugPaintSizeEnabled = true;
     }
-    BindingBridge.setup();
+
     _contextId = await initBridge(this, runningThread);
 
     _setupObserver();
@@ -213,6 +214,7 @@ class WebFViewController implements WidgetsBindingObserver {
       callback();
     });
     _pendingAnimationTimesLines.clear();
+    _isAnimationTimelineStopped = false;
   }
 
   bool _isFrameBindingAttached = false;
@@ -222,6 +224,25 @@ class WebFViewController implements WidgetsBindingObserver {
     _isFrameBindingAttached = true;
     flushUICommand(this, window.pointer!);
     SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
+  }
+
+  final Map<String, Widget> _hybridRouterViews = {};
+
+  void setHybridRouterView(String path, Widget root) {
+    assert(!_hybridRouterViews.containsKey(path));
+    _hybridRouterViews[path] = root;
+  }
+  Widget? getHybridRouterView(String path) {
+    return _hybridRouterViews[path];
+  }
+  void removeHybridRouterView(String path) {
+    _hybridRouterViews.remove(path);
+  }
+
+  RenderViewportBox? _activeRouterRoot;
+  RenderViewportBox? get activeRouterRoot => _activeRouterRoot;
+  set activeRouterRoot(RenderViewportBox? root) {
+    _activeRouterRoot = root;
   }
 
   final Map<int, BindingObject> _nativeObjects = {};
@@ -496,6 +517,9 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void cloneNode(Pointer<NativeBindingObject> selfPtr, Pointer<NativeBindingObject> newPtr) {
+    assert(hasBindingObject(selfPtr));
+    assert(hasBindingObject(newPtr));
+
     EventTarget? originalTarget = getBindingObject<EventTarget>(selfPtr);
     EventTarget? newTarget = getBindingObject<EventTarget>(newPtr);
 
@@ -653,18 +677,6 @@ class WebFViewController implements WidgetsBindingObserver {
     }
   }
 
-  void recalculateStyle(int address) {
-    if (!hasBindingObject(Pointer.fromAddress(address))) return;
-    Node? target = getBindingObject<Node>(Pointer.fromAddress(address));
-    if (target == null) return;
-
-    if (target is Element) {
-      target.tryRecalculateStyle();
-    } else {
-      debugPrint('Only element has style, try recalculateStyle from Node(#${Pointer.fromAddress(address)}).');
-    }
-  }
-
   // Hooks for DevTools.
   VoidCallback? debugDOMTreeChanged;
 
@@ -684,9 +696,24 @@ class WebFViewController implements WidgetsBindingObserver {
       WebFNavigationActionPolicy policy = await _delegate.dispatchDecisionHandler(action);
       if (policy == WebFNavigationActionPolicy.cancel) return;
 
+      String targetPath = action.target;
+
+      if (!Uri.parse(targetPath).isAbsolute) {
+        String base = rootController.url;
+        targetPath = rootController.uriParser!.resolve(Uri.parse(base), Uri.parse(targetPath)).toString();
+      }
+
+      if (action.target.trim().startsWith('#')) {
+        String oldUrl = rootController.url;
+        HistoryModule historyModule = rootController.module.moduleManager.getModule('History')!;
+        historyModule.pushState(null, url: targetPath);
+        window.dispatchEvent(HashChangeEvent(newUrl: targetPath, oldUrl: oldUrl));
+        return;
+      }
+
       switch (action.navigationType) {
         case WebFNavigationType.navigate:
-          await rootController.load(rootController.getPreloadBundleFromUrl(action.target) ?? WebFBundle.fromUrl(action.target));
+          await rootController.load(rootController.getPreloadBundleFromUrl(targetPath) ?? WebFBundle.fromUrl(targetPath));
           break;
         case WebFNavigationType.reload:
           await rootController.reload();
@@ -774,9 +801,10 @@ class WebFViewController implements WidgetsBindingObserver {
       }
       // Show keyboard
       if (shouldScrollByToCenter) {
-        window.scrollBy(0, scrollOffset, true);
+        window.scrollBy(0, scrollOffset, false);
       }
     }
+    window.resizeViewportRelatedElements();
     viewport?.bottomInset = bottomInsets;
   }
 
@@ -808,6 +836,26 @@ class WebFViewController implements WidgetsBindingObserver {
   Future<ui.AppExitResponse> didRequestAppExit() async {
     return ui.AppExitResponse.exit;
   }
+
+  @override
+  void handleCancelBackGesture() {
+  }
+
+  @override
+  void handleCommitBackGesture() {
+  }
+
+  @override
+  bool handleStartBackGesture(backEvent) {
+    return true;
+  }
+
+  @override
+  void handleUpdateBackGestureProgress(backEvent) {
+  }
+
+  @override
+  void didChangeViewFocus(event) {}
 }
 
 // An controller designed to control kraken's functional modules.
@@ -840,6 +888,8 @@ class WebFController {
 
   UriParser? uriParser;
   WebFLoadingMode mode = WebFLoadingMode.standard;
+
+  bool get isPreLoadingOrPreRenderingComplete => preloadStatus == PreloadingStatus.done || preRenderingStatus == PreRenderingStatus.done;
 
   static WebFController? getControllerOfJSContextId(double? contextId) {
     if (!_controllerMap.containsKey(contextId)) {
@@ -893,6 +943,8 @@ class WebFController {
   final List<Cookie>? initialCookies;
 
   final ui.FlutterView ownerFlutterView;
+
+  List<BuildContext> buildContextStack = [];
   bool resizeToAvoidBottomInsets;
 
   String? _name;
@@ -926,6 +978,11 @@ class WebFController {
       _preloadBundleIndex![bundle.url] = bundle;
     });
   }
+
+  /// Register the RouteObserver to observer page navigation.
+  /// This is useful if you wants to pause webf timers and callbacks when webf widget are hidden by page route.
+  /// https://api.flutter.dev/flutter/widgets/RouteObserver-class.html
+  final RouteObserver<ModalRoute<void>>? routeObserver;
 
   // The kraken view entrypoint bundle.
   WebFBundle? _entrypoint;
@@ -963,6 +1020,7 @@ class WebFController {
     this.uriParser,
     this.preloadedBundles,
     this.initialCookies,
+    this.routeObserver,
     this.externalController = true,
     this.resizeToAvoidBottomInsets = true,
   })  : _name = name,
@@ -977,6 +1035,8 @@ class WebFController {
 
     _methodChannel = methodChannel;
     WebFMethodChannel.setJSMethodCallCallback(this);
+
+    PaintingBinding.instance.systemFonts.addListener(_watchFontLoading);
 
     _view = WebFViewController(
       background: background,
@@ -1039,6 +1099,7 @@ class WebFController {
   final Map<String, String> sessionStorage = {};
 
   HistoryModule get history => _module.moduleManager.getModule('History')!;
+  HistoryModule get hybridHistory => _module.moduleManager.getModule('HybridHistory')!;
 
   static Uri fallbackBundleUri([double? id]) {
     // The fallback origin uri, like `vm://bundle/0`
@@ -1047,6 +1108,14 @@ class WebFController {
 
   void setNavigationDelegate(WebFNavigationDelegate delegate) {
     _view.navigationDelegate = delegate;
+  }
+
+  bool isFontsLoading = false;
+  void _watchFontLoading() {
+    isFontsLoading = true;
+    SchedulerBinding.instance.scheduleFrameCallback((_) {
+      isFontsLoading = false;
+    });
   }
 
   Future<void> unload() async {
@@ -1440,7 +1509,6 @@ class WebFController {
     module.resumeTimer();
     module.resumeAnimationFrame();
     view.resumeAnimationTimeline();
-    view.document.reactiveWidgetElements();
     SchedulerBinding.instance.scheduleFrame();
 
     if (enableWebFProfileTracking) {
@@ -1453,6 +1521,7 @@ class WebFController {
   bool get disposed => _disposed;
   Future<void> dispose() async {
     _module.dispose();
+    PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
     await _view.dispose();
     _controllerMap[_view.contextId] = null;
     _controllerMap.remove(_view.contextId);

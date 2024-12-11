@@ -2,18 +2,18 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/rendering.dart';
+import 'package:flutter/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 
 // SVG container to accept children
 class RenderSVGContainer extends RenderBoxModel
     with
-        ContainerRenderObjectMixin<RenderBox,
-            ContainerBoxParentData<RenderBox>> {
-  final SVGElement? element;
+        ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>,
+        RenderBoxContainerDefaultsMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
+  RenderSVGContainer({required super.renderStyle});
 
-  RenderSVGContainer({required super.renderStyle, this.element});
+  SVGElement get element => renderStyle.target as SVGElement;
 
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {

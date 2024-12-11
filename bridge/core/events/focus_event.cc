@@ -69,4 +69,9 @@ bool FocusEvent::IsFocusEvent() const {
   return true;
 }
 
+const FocusEventPublicMethods* FocusEvent::focusEventPublicMethods() {
+  static FocusEventPublicMethods focus_event_public_methods;
+  return &focus_event_public_methods;
+}
+
 }  // namespace webf

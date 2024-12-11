@@ -5,7 +5,7 @@ on: [workflow_dispatch, pull_request]
 env:
   nodeVersion: "16"
   cmakeVersion: "3.22.x"
-  flutter310: "3.13.5"
+  flutter: "3.24.0"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -35,7 +35,7 @@ jobs:
         cmake-version: ${{ env.cmakeVersion }}
     - run: npm i
     - run: npm run build:bridge:macos
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: macos_bridge_binary
         path: bridge/build/macos/
@@ -67,13 +67,13 @@ jobs:
         submodules: recursive
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ env.flutter310 }}
+        flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
     - run: cd webf && flutter test
 
   integration_test:
-    runs-on: 'macos-14'
+    runs-on: self-hosted
     needs: [ setup, build_bridge ]
     strategy:
       fail-fast: false
@@ -88,10 +88,10 @@ jobs:
         node-version: ${{ env.nodeVersion }}
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ env.flutter310 }}
+        flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: macos_bridge_binary
         path: bridge/build/macos/
@@ -100,7 +100,7 @@ jobs:
       run: cd integration_tests && CI=true SPEC_SCOPE="${{ matrix.value }}" npm run integration
       id: test
       continue-on-error: true
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       if: steps.test.outcome != 'success'
       with:
         name: integration_${{ matrix.value }}_snapshots
@@ -118,17 +118,17 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: macos_bridge_binary
         path: bridge/build/macos/
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ env.flutter310 }}
+        flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
     - name: Run MultiplePageTest Test
-      run: cd integration_tests && npm run multiple_page_test
+      run: cd integration_tests && LOAD_MODE=prerendering node scripts/preload_prerendering_page_integration.js
       id: test
       continue-on-error: true
     - name: Check on failures
@@ -145,13 +145,13 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: macos_bridge_binary
         path: bridge/build/macos/
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ env.flutter310 }}
+        flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
     - name: Run MultiplePageTest Test
@@ -171,13 +171,13 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: macos_bridge_binary
         path: bridge/build/macos/
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ env.flutter310 }}
+        flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
     - name: Run MultiplePageTest Test
@@ -198,13 +198,13 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: macos_bridge_binary
         path: bridge/build/macos/
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ env.flutter310 }}
+        flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
     - name: Run MemoryLeak Test

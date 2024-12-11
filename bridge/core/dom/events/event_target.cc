@@ -2,11 +2,12 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#include "event_target.h"
+#include "plugin_api/event_target.h"
 #include <cstdint>
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
 #include "event_factory.h"
+#include "event_target.h"
 #include "include/dart_api.h"
 #include "native_value_converter.h"
 #include "qjs_add_event_listener_options.h"
@@ -78,6 +79,8 @@ bool EventTarget::addEventListener(const AtomicString& event_type,
                                    const std::shared_ptr<EventListener>& event_listener,
                                    const std::shared_ptr<QJSUnionAddEventListenerOptionsBoolean>& options,
                                    ExceptionState& exception_state) {
+  if (event_listener == nullptr)
+    return false;
   std::shared_ptr<AddEventListenerOptions> event_listener_options;
   if (options == nullptr) {
     event_listener_options = AddEventListenerOptions::Create();
@@ -97,6 +100,13 @@ bool EventTarget::addEventListener(const AtomicString& event_type,
                                    const std::shared_ptr<EventListener>& event_listener,
                                    ExceptionState& exception_state) {
   std::shared_ptr<AddEventListenerOptions> options = AddEventListenerOptions::Create();
+  return AddEventListenerInternal(event_type, event_listener, options);
+}
+
+bool EventTarget::addEventListener(const webf::AtomicString& event_type,
+                                   const std::shared_ptr<EventListener>& event_listener,
+                                   const std::shared_ptr<AddEventListenerOptions>& options,
+                                   ExceptionState& exception_state) {
   return AddEventListenerInternal(event_type, event_listener, options);
 }
 
@@ -149,6 +159,8 @@ bool EventTarget::dispatchEvent(Event* event, ExceptionState& exception_state) {
 
   if (!GetExecutingContext())
     return false;
+
+  MemberMutationScope scope{GetExecutingContext()};
 
   event->SetTrusted(false);
 
@@ -244,6 +256,11 @@ EventListenerVector* EventTarget::GetEventListeners(const AtomicString& event_ty
 
 bool EventTarget::IsEventTarget() const {
   return true;
+}
+
+const EventTargetPublicMethods* EventTarget::eventTargetPublicMethods() {
+  static EventTargetPublicMethods event_target_public_methods;
+  return &event_target_public_methods;
 }
 
 void EventTarget::Trace(GCVisitor* visitor) const {
@@ -387,12 +404,25 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
 
   auto* wire = new DartWireContext();
   wire->jsObject = event->ToValue();
+  wire->is_dedicated = GetExecutingContext()->isDedicated();
+  wire->context_id = GetExecutingContext()->contextId();
+  wire->dispatcher = GetDispatcher();
+  wire->disposed = false;
 
   auto dart_object_finalize_callback = [](void* isolate_callback_data, void* peer) {
     auto* wire = (DartWireContext*)(peer);
-    if (IsDartWireAlive(wire)) {
-      DeleteDartWire(wire);
-    }
+
+    if (wire->disposed)
+      return;
+
+    wire->dispatcher->PostToJs(
+        wire->is_dedicated, wire->context_id,
+        [](DartWireContext* wire) -> void {
+          if (IsDartWireAlive(wire)) {
+            DeleteDartWire(wire);
+          }
+        },
+        wire);
   };
 
   WatchDartWire(wire);

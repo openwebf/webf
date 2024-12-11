@@ -7,8 +7,9 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
-import 'core/aspect_ratio.dart';
+import 'aspect_ratio.dart';
 
 const DEFAULT_VIEW_BOX_TOP = 0.0;
 const DEFAULT_VIEW_BOX_LEFT = 0.0;
@@ -18,13 +19,6 @@ const DEFAULT_VIEW_BOX = Rect.fromLTWH(DEFAULT_VIEW_BOX_LEFT,
     DEFAULT_VIEW_BOX_TOP, DEFAULT_VIEW_BOX_WIDTH, DEFAULT_VIEW_BOX_HEIGHT);
 
 class SVGSVGElement extends SVGGraphicsElement {
-  late final RenderSVGRoot _renderer;
-  @override
-  get renderBoxModel => _renderer;
-
-  @override
-  bool get isReplacedElement => false;
-
   @override
   bool get isRepaintBoundary => true;
 
@@ -48,9 +42,34 @@ class SVGSVGElement extends SVGGraphicsElement {
       SVGPresentationAttributeConfig('height', property: true),
     ]);
 
-  SVGSVGElement(super.context) {
-    _renderer = RenderSVGRoot(renderStyle: renderStyle, element: this);
+  SVGSVGElement(super.context) {}
+
+  @override
+  RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
+    RenderSVGRoot root = RenderSVGRoot(renderStyle: renderStyle)..viewBox = viewBox..ratio = ratio;
+
+    if (previous is RenderSVGRoot) {
+      List<RenderBox> children = previous.getChildren();
+      previous.removeAll();
+      root.addAll(children);
+    }
+
+    return root;
   }
+
+  @override
+  void willAttachRenderer() {
+    super.willAttachRenderer();
+    style.addStyleChangeListener(_stylePropertyChanged);
+  }
+
+  void _stylePropertyChanged(String property, String? original, String present,
+      {String? baseHref}) {
+    if (property == COLOR) {
+      renderBoxModel?.markNeedsPaint();
+    }
+  }
+
 
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
@@ -61,9 +80,9 @@ class SVGSVGElement extends SVGGraphicsElement {
               '${_viewBox?.left ?? 0} ${_viewBox?.top ?? 0} ${_viewBox?.width ?? 0} ${_viewBox?.height ?? 0}',
           setter: (val) {
             final nextViewBox = parseViewBox(val);
-            if (nextViewBox != _renderer.viewBox) {
-              _viewBox = nextViewBox;
-              _renderer.viewBox = nextViewBox;
+            _viewBox = nextViewBox;
+            if (nextViewBox != (renderBoxModel as RenderSVGRoot?)?.viewBox) {
+              (renderBoxModel as RenderSVGRoot?)?.viewBox = nextViewBox;
             }
           }),
       'preserveAspectRatio': ElementAttributeProperty(setter: (val) {

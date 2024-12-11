@@ -20,7 +20,8 @@ enum UICommandKind : uint32_t {
   kEvent = 1 << 4,
   kAttributeUpdate = 1 << 5,
   kDisposeBindingObject = 1 << 6,
-  kOperation = 1 << 7
+  kOperation = 1 << 7,
+  kUknownCommand = 1 << 8
 };
 
 enum class UICommand {
@@ -83,6 +84,7 @@ class UICommandBuffer {
 
  private:
   void addCommand(const UICommandItem& item, bool request_ui_update = true);
+  void addCommands(const UICommandItem* items, int64_t item_size, bool request_ui_update = true);
   void updateFlags(UICommand command);
 
   ExecutingContext* context_{nullptr};

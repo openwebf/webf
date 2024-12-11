@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'package:webf/bridge.dart' as bridge;
+import 'package:webf/src/module/dom_point.dart';
 import 'package:webf/webf.dart';
 import 'local_storage.dart';
 import 'session_storage.dart';
@@ -39,10 +40,13 @@ void _defineModuleCreator() {
   _defineModule((ModuleManager? moduleManager) => NavigationModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => NavigatorModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => HistoryModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => HybridHistoryModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => LocationModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => LocalStorageModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => SessionStorageModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => WebSocketModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => DOMMatrixModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => DOMPointModule(moduleManager));
 }
 
 final Map<String, ModuleCreator> _creatorMap = {};

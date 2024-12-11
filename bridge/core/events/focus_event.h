@@ -9,6 +9,7 @@
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
+#include "plugin_api/focus_event.h"
 #include "qjs_focus_event_init.h"
 #include "ui_event.h"
 
@@ -57,8 +58,15 @@ class FocusEvent : public UIEvent {
 
   bool IsFocusEvent() const override;
 
+  const FocusEventPublicMethods* focusEventPublicMethods();
+
  private:
   Member<EventTarget> related_target_;
+};
+
+template <>
+struct DowncastTraits<FocusEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsFocusEvent(); }
 };
 
 }  // namespace webf

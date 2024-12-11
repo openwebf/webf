@@ -797,7 +797,9 @@ describe('flexbox flex-shrink', () => {
     await snapshot();
   });
 
-  it('should work with image with no size set', async () => {
+  it('should work with image with no size set', async (done) => {
+    let image;
+    let image2;
     const container = createElement(
       'div',
       {
@@ -808,13 +810,13 @@ describe('flexbox flex-shrink', () => {
         },
       },
       [
-        (createElement('img', {
+        image = (createElement('img', {
           src: 'assets/100x100-green.png',
           style: {
             "marginLeft": "20px"
           },
         })),
-        (createElement('img', {
+        image2 = (createElement('img', {
           src: 'assets/100x100-blue-and-orange.png',
           style: {
             "width": "100px",
@@ -825,7 +827,11 @@ describe('flexbox flex-shrink', () => {
     );
 
     document.body.appendChild(container);
-    await snapshot(0.2);
+
+    onDoubleImageLoad(image, image2, async () => {
+      await snapshot(0.2);
+      done();
+    });
   });
 
   it('should work with flex item with overflow hidden', async () => {

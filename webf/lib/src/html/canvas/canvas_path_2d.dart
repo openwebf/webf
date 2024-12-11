@@ -8,13 +8,16 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:vector_math/vector_math_64.dart';
+import 'package:webf/foundation.dart';
+import 'package:webf/geometry.dart';
+import 'package:webf/src/css/values/path.dart';
 
 // ignore: non_constant_identifier_names
 final double _2pi = 2 * math.pi;
 final double _pi = math.pi;
 final double _piOver2 = math.pi / 2;
 
-class Path2D {
+class Path2D extends DynamicBindingObject {
   Path _path = Path();
 
   get path {
@@ -22,6 +25,89 @@ class Path2D {
   }
 
   final List<double> _points = [];
+
+  Path2D({BindingContext? context, List<dynamic>? path2DInit}) : super(context) {
+    if (path2DInit != null && path2DInit.isNotEmpty) {
+      switch (path2DInit[0].runtimeType) {
+        case Path2D:
+          addPath(path2DInit[0] as Path2D);
+          break;
+        case String:
+          addSVGPath(path2DInit[0] as String);
+          break;
+      }
+    }
+  }
+
+  @override
+  void initializeMethods(Map<String, BindingObjectMethod> methods) {
+     methods['moveTo'] = BindingObjectMethodSync(
+        call: (args) => moveTo(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble()));
+    methods['closePath'] = BindingObjectMethodSync(call: (_) => closePath());
+    methods['lineTo'] = BindingObjectMethodSync(
+        call: (args) => lineTo(castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble()));
+    methods['bezierCurveTo'] = BindingObjectMethodSync(
+        call: (args) => bezierCurveTo(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble(),
+            castToType<num>(args[4]).toDouble(),
+            castToType<num>(args[5]).toDouble()));
+    methods['arc'] = BindingObjectMethodSync(
+        call: (args) => arc(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble(),
+            castToType<num>(args[4]).toDouble(),
+            anticlockwise: (args.length > 5 && args[5] == 1) ? true : false));
+    methods['arcTo'] = BindingObjectMethodSync(
+        call: (args) => arcTo(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble(),
+            castToType<num>(args[4]).toDouble()));
+    methods['ellipse'] = BindingObjectMethodSync(
+      call: (args) => ellipse(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble(),
+          castToType<num>(args[4]).toDouble(),
+          castToType<num>(args[5]).toDouble(),
+          castToType<num>(args[6]).toDouble(),
+          anticlockwise: (args.length > 7 && args[7] == 1) ? true : false));
+    methods['rect'] = BindingObjectMethodSync(
+        call: (args) => rect(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble()));
+    methods['roundRect'] = BindingObjectMethodSync(
+        call: (args) => roundRect(
+            castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(),
+            castToType<num>(args[2]).toDouble(),
+            castToType<num>(args[3]).toDouble(),
+            List<double>.from(args[4])));
+    methods['addPath'] = BindingObjectMethodSync(call: (args) {
+      if (args.length > 1 && args[1] is DOMMatrix) {
+        addPath(args[0], matrix4: (args[1] as DOMMatrix).matrix.storage);
+      } else if (args.isNotEmpty && args[0] is Path2D) {
+        addPath(args[0]);
+      }
+    });
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    // TODO: implement initializeProperties
+  }
 
   void _setPoint(x, y) {
     _points.add(x);
@@ -117,6 +203,16 @@ class Path2D {
     _syncCurrentPoint();
   }
 
+  void addSVGPath(String pathStr, {Float64List? matrix4}) {
+    CSSPath cssPath = CSSPath.parseValue(pathStr);
+    if (cssPath != CSSPath.None) {
+      final path = Path();
+      cssPath.applyTo(path);
+      _path.addPath(path, Offset.zero, matrix4: matrix4);
+      _syncCurrentPoint();
+    }
+  }
+
   /// Adds a cubic bezier segment that curves from the current point
   /// to the given point (x3,y3), using the control _points (x1,y1) and
   /// (x2,y2).
@@ -144,6 +240,75 @@ class Path2D {
     _setPoint(rect.right, rect.top);
     _setPoint(rect.right, rect.bottom);
     _setPoint(rect.left, rect.bottom);
+  }
+
+  // radii values is same with css border-radius
+  void roundRect(double x, double y, double width, double height, List<double> radii) {
+    if(radii.isEmpty ) {
+      return;
+    }
+
+    RRect rRect = RRect.zero;
+    Rect rect = Rect.fromLTWH(x, y, width, height);
+
+    if (radii.length == 1) {
+      rRect = RRect.fromRectAndRadius(rect, Radius.circular(radii[0]));
+      _path.addRRect(rRect);
+    } else {
+      double topLeft = 0;
+      double topRight = 0;
+      double bottomRight = 0;
+      double bottomLeft = 0;
+
+      if (radii.length == 2) {
+        topLeft = radii[0];
+        topRight = radii[1];
+        bottomRight = radii[0];
+        bottomLeft = radii[1];
+      } else if (radii.length == 3) {
+        topLeft = radii[0];
+        topRight = radii[1];
+        bottomRight = radii[2];
+        bottomLeft = radii[1];
+      } else if (radii.length >= 4) {
+        topLeft = radii[0];
+        topRight = radii[1];
+        bottomRight = radii[2];
+        bottomLeft = radii[3];
+      }
+
+      // swap when width or height is negative
+      // swap left <-> right
+      if (width < 0) {
+        double tmp = topLeft;
+        topLeft = topRight;
+        topRight = tmp;
+
+        tmp = bottomLeft;
+        bottomLeft = bottomRight;
+        bottomRight = tmp;
+      }
+
+      // swap top <-> bottom
+      if (height < 0) {
+        double tmp = topLeft;
+        topLeft = bottomLeft;
+        bottomLeft = tmp;
+
+        tmp = topRight;
+        topRight = bottomRight;
+        bottomRight = tmp;
+      }
+
+      RRect rRect = RRect.fromRectAndCorners(
+        rect,
+        topLeft:Radius.circular(topLeft),
+        topRight:Radius.circular(topRight),
+        bottomRight:Radius.circular(bottomRight),
+        bottomLeft:Radius.circular(bottomLeft)
+      );
+      _path.addRRect(rRect);
+    }
   }
 
   /// degenerateEllipse() handles a degenerated ellipse using several lines.

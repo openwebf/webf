@@ -55,11 +55,13 @@ class Dispatcher {
       return;
     }
 
+#if FLUTTER_BACKEND
     auto task = std::make_shared<ConcreteTask<Func, Args...>>(std::forward<Func>(func), std::forward<Args>(args)...);
     DartWork work = [task](bool cancel) { (*task)(); };
 
     const DartWork* work_ptr = new DartWork(work);
     NotifyDart(work_ptr, false);
+#endif
   }
 
   template <typename Func, typename... Args>

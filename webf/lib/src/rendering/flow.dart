@@ -12,8 +12,8 @@ import 'package:webf/rendering.dart';
 
 // Position and size of each run (line box) in flow layout.
 // https://www.w3.org/TR/css-inline-3/#line-boxes
-class _RunMetrics {
-  _RunMetrics(
+class RunMetrics {
+  RunMetrics(
     this.mainAxisExtent,
     this.crossAxisExtent,
     this.baselineExtent,
@@ -57,7 +57,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   // Line boxes of flow layout.
   // https://www.w3.org/TR/css-inline-3/#line-boxes
-  List<_RunMetrics> _lineBoxMetrics = <_RunMetrics>[];
+  List<RunMetrics> _lineBoxMetrics = <RunMetrics>[];
 
   @override
   void dispose() {
@@ -69,9 +69,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! RenderLayoutParentData) {
-      child.parentData = RenderLayoutParentData();
-    }
+    child.parentData = RenderLayoutParentData();
     if (child is RenderBoxModel) {
       child.parentData = CSSPositionedLayout.getPositionParentData(child, child.parentData as RenderLayoutParentData);
     }
@@ -294,7 +292,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._computeRunMetrics');
     }
 
-    List<_RunMetrics> _runMetrics = _computeRunMetrics(children);
+    List<RunMetrics> _runMetrics = _computeRunMetrics(children);
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackLayoutStep();
@@ -335,10 +333,10 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   // Layout children in normal flow order to calculate metrics of lines according to its constraints
   // and alignment properties.
-  List<_RunMetrics> _computeRunMetrics(
+  List<RunMetrics> _computeRunMetrics(
     List<RenderBox> children,
   ) {
-    List<_RunMetrics> _runMetrics = <_RunMetrics>[];
+    List<RunMetrics> _runMetrics = <RunMetrics>[];
     double mainAxisLimit = renderStyle.contentMaxConstraintsWidth;
 
     double runMainAxisExtent = 0.0;
@@ -426,7 +424,7 @@ class RenderFlowLayout extends RenderLayoutBox {
               (whiteSpace != WhiteSpace.nowrap && (runMainAxisExtent + childMainAxisExtent > mainAxisLimit)) ||
               // Previous is linebreak.
               preChild is RenderLineBreak)) {
-        _runMetrics.add(_RunMetrics(
+        _runMetrics.add(RunMetrics(
           runMainAxisExtent,
           runCrossAxisExtent,
           maxSizeAboveBaseline,
@@ -503,7 +501,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     });
 
     if (runChildren.isNotEmpty) {
-      _runMetrics.add(_RunMetrics(
+      _runMetrics.add(RunMetrics(
         runMainAxisExtent,
         runCrossAxisExtent,
         maxSizeAboveBaseline,
@@ -519,10 +517,10 @@ class RenderFlowLayout extends RenderLayoutBox {
   // Find the size in the cross axis of lines.
   // @TODO: add cache to avoid recalculate in one layout stage.
   double _getRunsCrossSize(
-    List<_RunMetrics> _runMetrics,
+    List<RunMetrics> _runMetrics,
   ) {
     double crossSize = 0;
-    for (_RunMetrics run in _runMetrics) {
+    for (RunMetrics run in _runMetrics) {
       crossSize += run.crossAxisExtent;
     }
     return crossSize;
@@ -531,10 +529,10 @@ class RenderFlowLayout extends RenderLayoutBox {
   // Find the max size in the main axis of lines.
   // @TODO: add cache to avoid recalculate in one layout stage.
   double _getRunsMaxMainSize(
-    List<_RunMetrics> _runMetrics,
+    List<RunMetrics> _runMetrics,
   ) {
     // Find the max size of lines.
-    _RunMetrics maxMainSizeMetrics = _runMetrics.reduce((_RunMetrics curr, _RunMetrics next) {
+    RunMetrics maxMainSizeMetrics = _runMetrics.reduce((RunMetrics curr, RunMetrics next) {
       return curr.mainAxisExtent > next.mainAxisExtent ? curr : next;
     });
     return maxMainSizeMetrics.mainAxisExtent;
@@ -542,7 +540,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   // Set flex container size according to children size.
   void _setContainerSize(
-    List<_RunMetrics> _runMetrics,
+    List<RunMetrics> _runMetrics,
   ) {
     if (_runMetrics.isEmpty) {
       _setContainerSizeWithNoChild();
@@ -585,7 +583,7 @@ class RenderFlowLayout extends RenderLayoutBox {
   //   </div>
   // </div>
   void _adjustChildrenSize(
-    List<_RunMetrics> _runMetrics,
+    List<RunMetrics> _runMetrics,
   ) {
     if (_runMetrics.isEmpty) return;
 
@@ -594,7 +592,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     bool isInlineBlock = renderStyle.effectiveDisplay == CSSDisplay.inlineBlock;
     if (isInlineBlock) {
       for (int i = 0; i < _runMetrics.length; ++i) {
-        final _RunMetrics metrics = _runMetrics[i];
+        final RunMetrics metrics = _runMetrics[i];
         final Map<int?, RenderBox> runChildren = metrics.runChildren;
         final List<RenderBox> runChildrenList = runChildren.values.toList();
 
@@ -636,7 +634,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   // Set children offset based on alignment properties.
   void _setChildrenOffset(
-    List<_RunMetrics> _runMetrics,
+    List<RunMetrics> _runMetrics,
   ) {
     if (_runMetrics.isEmpty) return;
 
@@ -648,7 +646,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     // Set offset of children in each line.
     for (int i = 0; i < _runMetrics.length; ++i) {
-      final _RunMetrics metrics = _runMetrics[i];
+      final RunMetrics metrics = _runMetrics[i];
       final double runMainAxisExtent = metrics.mainAxisExtent;
       final double runCrossAxisExtent = metrics.crossAxisExtent;
       final double runBaselineExtent = metrics.baselineExtent;
@@ -832,7 +830,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     // Use baseline of last line in flow layout and layout is inline-level
     // otherwise use baseline of first line.
     bool isLastLineBaseline = isParentFlowLayout && isDisplayInline;
-    _RunMetrics lineMetrics = isLastLineBaseline ? _lineBoxMetrics[_lineBoxMetrics.length - 1] : _lineBoxMetrics[0];
+    RunMetrics lineMetrics = isLastLineBaseline ? _lineBoxMetrics[_lineBoxMetrics.length - 1] : _lineBoxMetrics[0];
     // Use the max baseline of the children as the baseline in flow layout.
     lineMetrics.runChildren.forEach((int? hashCode, RenderBox child) {
       double? childMarginTop = child is RenderBoxModel ? _getChildMarginTop(child) : 0;
@@ -873,7 +871,7 @@ class RenderFlowLayout extends RenderLayoutBox {
   }
 
   // Record the main size of all lines.
-  void _recordRunsMainSize(_RunMetrics runMetrics, List<double> runMainSize) {
+  void _recordRunsMainSize(RunMetrics runMetrics, List<double> runMainSize) {
     Map<int?, RenderBox> runChildren = runMetrics.runChildren;
     double runMainExtent = 0;
     void iterateRunChildren(int? hashCode, RenderBox runChild) {
@@ -898,7 +896,7 @@ class RenderFlowLayout extends RenderLayoutBox {
   // Get auto min size in the main axis which equals the main axis size of its contents.
   // https://www.w3.org/TR/css-sizing-3/#automatic-minimum-size
   double _getMainAxisAutoSize(
-    List<_RunMetrics> runMetrics,
+    List<RunMetrics> runMetrics,
   ) {
     double autoMinSize = 0;
 
@@ -906,7 +904,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     List<double> runMainSize = [];
 
     // Calculate the max main size of all runs.
-    for (_RunMetrics runMetrics in runMetrics) {
+    for (RunMetrics runMetrics in runMetrics) {
       _recordRunsMainSize(runMetrics, runMainSize);
     }
 
@@ -920,7 +918,7 @@ class RenderFlowLayout extends RenderLayoutBox {
   }
 
   // Record the cross size of all lines.
-  void _recordRunsCrossSize(_RunMetrics runMetrics, List<double> runCrossSize) {
+  void _recordRunsCrossSize(RunMetrics runMetrics, List<double> runCrossSize) {
     Map<int?, RenderBox> runChildren = runMetrics.runChildren;
     double runCrossExtent = 0;
     List<double> runChildrenCrossSize = [];
@@ -945,14 +943,14 @@ class RenderFlowLayout extends RenderLayoutBox {
   // Get auto min size in the cross axis which equals the cross axis size of its contents.
   // https://www.w3.org/TR/css-sizing-3/#automatic-minimum-size
   double _getCrossAxisAutoSize(
-    List<_RunMetrics> runMetrics,
+    List<RunMetrics> runMetrics,
   ) {
     double autoMinSize = 0;
     // Cross size of each run.
     List<double> runCrossSize = [];
 
     // Calculate the max cross size of all runs.
-    for (_RunMetrics runMetrics in runMetrics) {
+    for (RunMetrics runMetrics in runMetrics) {
       _recordRunsCrossSize(runMetrics, runCrossSize);
     }
 
@@ -966,7 +964,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   // Set the size of scrollable overflow area for flow layout.
   // https://drafts.csswg.org/css-overflow-3/#scrollable
-  void _setMaxScrollableSize(List<_RunMetrics> runMetrics) {
+  void _setMaxScrollableSize(List<RunMetrics> runMetrics) {
     // Scrollable main size collection of each line.
     List<double> scrollableMainSizeOfLines = [];
     // Scrollable cross size collection of each line.
@@ -974,7 +972,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     // Total cross size of previous lines.
     double preLinesCrossSize = 0;
 
-    for (_RunMetrics runMetric in runMetrics) {
+    for (RunMetrics runMetric in runMetrics) {
       Map<int?, RenderBox> runChildren = runMetric.runChildren;
 
       List<RenderBox> runChildrenList = [];

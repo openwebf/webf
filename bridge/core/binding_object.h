@@ -46,12 +46,12 @@ struct NativeBindingObject : public DartReadable {
   NativeBindingObject() = delete;
   explicit NativeBindingObject(BindingObject* target);
 
-  static void HandleCallFromDartSide(DartIsolateContext* dart_isolate_context,
-                                     NativeBindingObject* binding_object,
+  static void HandleCallFromDartSide(const DartIsolateContext* dart_isolate_context,
+                                     const NativeBindingObject* binding_object,
                                      int64_t profile_id,
-                                     NativeValue* method,
+                                     const NativeValue* method,
                                      int32_t argc,
-                                     NativeValue* argv,
+                                     const NativeValue* argv,
                                      Dart_PersistentHandle dart_object,
                                      DartInvokeResultCallback result_callback);
 
@@ -70,7 +70,11 @@ enum BindingMethodCallOperations {
   kAsyncAnonymousFunction,
 };
 
-enum CreateBindingObjectType { kCreateDOMMatrix = 0 };
+enum CreateBindingObjectType {
+  kCreateDOMMatrix = 0,
+  kCreatePath2D = 1,
+  kCreateDOMPoint = 2,
+};
 
 struct BindingObjectPromiseContext : public DartReadable {
   ExecutingContext* context;

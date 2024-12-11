@@ -1,9 +1,10 @@
 /*auto generated*/
 describe('image-items', () => {
-  it('flake-001', async () => {
+  it('flake-001', async (done) => {
     let p;
     let referenceOverlappedRed;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -47,7 +48,7 @@ describe('image-items', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/200x200-green.png',
           style: {
             'box-sizing': 'border-box',
@@ -61,6 +62,9 @@ describe('image-items', () => {
     BODY.appendChild(referenceOverlappedRed);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    img.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 });

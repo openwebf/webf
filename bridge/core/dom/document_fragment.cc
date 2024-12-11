@@ -53,4 +53,9 @@ bool DocumentFragment::ChildTypeAllowed(NodeType type) const {
   }
 }
 
+const DocumentFragmentPublicMethods* DocumentFragment::documentFragmentPublicMethods() {
+  static DocumentFragmentPublicMethods document_public_methods;
+  return &document_public_methods;
+}
+
 }  // namespace webf

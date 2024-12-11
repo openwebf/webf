@@ -9,6 +9,7 @@
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
+#include "plugin_api/gesture_event.h"
 #include "qjs_gesture_event_init.h"
 
 namespace webf {
@@ -48,6 +49,8 @@ class GestureEvent : public Event {
 
   bool IsGestureEvent() const override;
 
+  const GestureEventPublicMethods* gestureEventPublicMethods();
+
  private:
   AtomicString state_;
   AtomicString direction_;
@@ -57,6 +60,11 @@ class GestureEvent : public Event {
   double velocityY_;
   double scale_;
   double rotation_;
+};
+
+template <>
+struct DowncastTraits<GestureEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsGestureEvent(); }
 };
 
 }  // namespace webf

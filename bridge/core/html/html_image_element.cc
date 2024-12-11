@@ -35,17 +35,28 @@ AtomicString HTMLImageElement::src() const {
 void HTMLImageElement::setSrc(const AtomicString& value, ExceptionState& exception_state) {
   SetBindingProperty(binding_call_methods::ksrc, NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value),
                      exception_state);
-  if (!value.IsEmpty()) {
+  if (!value.IsEmpty() && !keep_alive) {
     KeepAlive();
+    keep_alive = true;
   }
 }
 
 DispatchEventResult HTMLImageElement::FireEventListeners(Event& event, ExceptionState& exception_state) {
-  if (event.type() == event_type_names::kload || event.type() == event_type_names::kerror) {
+  if (keep_alive && (event.type() == event_type_names::kload || event.type() == event_type_names::kerror)) {
     ReleaseAlive();
   }
 
   return HTMLElement::FireEventListeners(event, exception_state);
+}
+
+DispatchEventResult HTMLImageElement::FireEventListeners(webf::Event& event,
+                                                         bool isCapture,
+                                                         webf::ExceptionState& exception_state) {
+  if (keep_alive && (event.type() == event_type_names::kload || event.type() == event_type_names::kerror)) {
+    ReleaseAlive();
+  }
+
+  return HTMLElement::FireEventListeners(event, isCapture, exception_state);
 }
 
 }  // namespace webf

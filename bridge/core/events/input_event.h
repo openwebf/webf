@@ -8,6 +8,7 @@
 
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/source_location.h"
+#include "plugin_api/input_event.h"
 #include "qjs_input_event_init.h"
 #include "ui_event.h"
 
@@ -42,9 +43,16 @@ class InputEvent : public UIEvent {
 
   bool IsInputEvent() const override;
 
+  const InputEventPublicMethods* inputEventPublicMethods();
+
  private:
   AtomicString input_type_;
   AtomicString data_;
+};
+
+template <>
+struct DowncastTraits<InputEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsInputEvent(); }
 };
 
 }  // namespace webf

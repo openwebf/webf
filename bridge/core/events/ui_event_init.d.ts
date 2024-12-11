@@ -9,5 +9,4 @@ export interface UIEventInit extends EventInit {
     view?: Window | null;
     /** @deprecated */
     which?: number;
-    new(type: string, init?: UIEventInit): UIEvent;
 }

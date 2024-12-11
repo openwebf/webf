@@ -1,10 +1,11 @@
 /*
  * Copyright (C) 2022-present The Kraken authors. All rights reserved.
  */
-const { spawn, spawnSync } = require('child_process');
+const {spawn, spawnSync} = require('child_process');
 const path = require('path');
 const os = require('os');
-const { startWsServer } = require('./ws_server');
+const {startWsServer} = require('./ws_server');
+const {getRandomPort} = require('get-port-please');
 
 function getRunningPlatform() {
   if (os.platform() == 'darwin') return 'macos';
@@ -13,11 +14,11 @@ function getRunningPlatform() {
 }
 
 // Dart null safety error didn't report in dist binaries. Should run integration test with flutter run directly.
-function startIntegrationTest() {
+function startIntegrationTest(websocketPort) {
   const shouldSkipBuild = /skip\-build/.test(process.argv);
   if (!shouldSkipBuild) {
     console.log('Building integration tests macOS application from "lib/main.dart"...');
-    spawnSync('flutter', ['build', getRunningPlatform(), '--profile'], {
+    spawnSync('flutter', ['build', getRunningPlatform(), '--debug'], {
       stdio: 'inherit'
     });
   }
@@ -27,9 +28,9 @@ function startIntegrationTest() {
   if (platform === 'linux') {
     testExecutable = path.join(__dirname, '../build/linux/x64/debug/bundle/app');
   } else if (platform === 'darwin') {
-    testExecutable = path.join(__dirname, '../build/macos/Build/Products/Profile/tests.app/Contents/MacOS/tests');
+    testExecutable = path.join(__dirname, '../build/macos/Build/Products/Debug/tests.app/Contents/MacOS/tests');
   } else if (platform == 'win32') {
-    testExecutable = path.join(__dirname, '../build/windows/runner/Profile/app.exe');
+    testExecutable = path.join(__dirname, '../build/windows/runner/Debug/app.exe');
   } else {
     throw new Error('Unsupported platform:' + platform);
   }
@@ -38,6 +39,7 @@ function startIntegrationTest() {
     env: {
       ...process.env,
       WEBF_ENABLE_TEST: 'true',
+      WEBF_WEBSOCKET_SERVER_PORT: websocketPort,
       'enable-software-rendering': true,
       'skia-deterministic-rendering': true,
       WEBF_TEST_DIR: path.join(__dirname, '../')
@@ -72,5 +74,11 @@ function startIntegrationTest() {
   });
 }
 
-startIntegrationTest();
-startWsServer(8399);
+async function main() {
+  const port = await getRandomPort();
+
+  startIntegrationTest(port);
+  startWsServer(port);
+}
+
+main();

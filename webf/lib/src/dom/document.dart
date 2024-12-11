@@ -62,7 +62,7 @@ class _InactiveRenderObjects {
       _scheduleFrameToFinalizeRenderObjects();
     }
 
-    assert(!renderObject.debugDisposed!);
+    assert(!renderObject.debugDisposed!, '$renderObject already disposed');
 
     if (!_isScheduled) {
       _renderObjects.add(renderObject);
@@ -72,7 +72,8 @@ class _InactiveRenderObjects {
   }
 
   void finalizeInactiveRenderObjects() {
-    for (RenderObject object in _renderObjects) {
+    for(RenderObject object in _renderObjects) {
+      assert(!object.attached);
       object.dispose();
     }
     _renderObjects.clear();
@@ -474,27 +475,27 @@ class Document extends ContainerNode {
     return super.replaceChild(newNode, oldNode);
   }
 
-  Element createElement(String type, [BindingContext? context]) {
+  Element createElement(String type, BindingContext context) {
     Element element = element_registry.createElement(type, context);
     return element;
   }
 
-  Element createElementNS(String uri, String type, [BindingContext? context]) {
+  Element createElementNS(String uri, String type, BindingContext context) {
     Element element = element_registry.createElementNS(uri, type, context);
     return element;
   }
 
-  TextNode createTextNode(String data, [BindingContext? context]) {
+  TextNode createTextNode(String data, BindingContext context) {
     TextNode textNode = TextNode(data, context);
     return textNode;
   }
 
-  DocumentFragment createDocumentFragment([BindingContext? context]) {
+  DocumentFragment createDocumentFragment(BindingContext context) {
     DocumentFragment documentFragment = DocumentFragment(context);
     return documentFragment;
   }
 
-  Comment createComment([BindingContext? context]) {
+  Comment createComment(BindingContext context) {
     Comment comment = Comment(context);
     return comment;
   }

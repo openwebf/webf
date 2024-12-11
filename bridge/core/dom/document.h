@@ -8,6 +8,7 @@
 #include "bindings/qjs/cppgc/local_handle.h"
 #include "container_node.h"
 #include "event_type_names.h"
+#include "plugin_api/document.h"
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
 
@@ -126,6 +127,7 @@ class Document : public ContainerNode, public TreeScope {
   std::shared_ptr<EventListener> GetWindowAttributeEventListener(const AtomicString& event_type);
 
   void Trace(GCVisitor* visitor) const override;
+  const DocumentPublicMethods* documentPublicMethods();
 
  private:
   int node_count_{0};
@@ -136,6 +138,9 @@ class Document : public ContainerNode, public TreeScope {
 template <>
 struct DowncastTraits<Document> {
   static bool AllowFrom(const Node& node) { return node.IsDocumentNode(); }
+  static bool AllowFrom(const EventTarget& event_target) {
+    return event_target.IsNode() && To<Node>(event_target).IsDocumentNode();
+  }
 };
 
 }  // namespace webf

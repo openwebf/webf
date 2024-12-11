@@ -214,4 +214,62 @@ describe('DOM EventTarget', () => {
     await sleep(0.1);
   });
 
+  it('support event listener object', async done => {
+    let div = createElementWithStyle('div', {});
+
+    function F() {
+
+    }
+    F.prototype.handleEvent = function(e) {
+      expect(this instanceof F).toBe(true);
+      expect(e.target).toBe(div);
+      done();
+    }
+
+    div.addEventListener('click', new F());
+    div.click();
+
+  });
+
+  it('should work with scroll with fixed elements', async (done) => {
+    const style = document.createElement('style');
+    style.innerHTML = `.container {
+        margin: 64px 0 32px;
+        text-align: center;
+        padding-top: 1000px;
+        padding-bottom: 300px;
+        background: linear-gradient(to right, #ff7e5f, #feb47b);
+      }`;
+    document.head.appendChild(style);
+
+    const container = createElement('div', {
+      className: 'container',
+    }, [
+      createElement('div', {
+        style: {
+          position: 'fixed',
+          top: '300px',
+          left: 0,
+        }
+      }, [
+        createElement('div', {
+          id: 'box'
+        }, [
+          createText('click me')
+        ])
+      ])
+    ]);
+
+    BODY.append(container);
+
+    window.scrollTo(0, 200);
+
+    const clickBox = document.querySelector('#box');
+    clickBox?.addEventListener('click', () => {
+      done();
+    });
+
+    await simulateClick(10, 300);
+  });
+
 });

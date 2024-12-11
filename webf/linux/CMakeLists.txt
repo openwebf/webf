@@ -8,37 +8,36 @@ set(PLUGIN_NAME "webf_plugin")
 
 add_library(${PLUGIN_NAME} SHARED
     "webf_plugin.cc"
-    )
+)
 
-add_library(webf SHARED IMPORTED)
-set_target_properties(webf PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/libwebf.so")
-add_library(quickjs SHARED IMPORTED)
-set_target_properties(quickjs PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/libquickjs.so")
-
+# Apply a standard set of build settings that are configured in the
+# application-level CMakeLists.txt. This can be removed for plugins that want
+# full control over build settings.
 apply_standard_settings(${PLUGIN_NAME})
+
+# Symbols are hidden by default to reduce the chance of accidental conflicts
+# between plugins. This should not be removed; any symbols that should be
+# exported should be explicitly exported with the FLUTTER_PLUGIN_EXPORT macro.
 set_target_properties(${PLUGIN_NAME} PROPERTIES
-    CXX_VISIBILITY_PRESET hidden)
+  CXX_VISIBILITY_PRESET hidden)
 target_compile_definitions(${PLUGIN_NAME} PRIVATE FLUTTER_PLUGIN_IMPL)
+
+# Source include directories and library dependencies. Add any plugin-specific
+# dependencies here.
 target_include_directories(${PLUGIN_NAME} INTERFACE
-    "${CMAKE_CURRENT_SOURCE_DIR}/include")
+  "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(${PLUGIN_NAME} PRIVATE flutter)
 target_link_libraries(${PLUGIN_NAME} PRIVATE PkgConfig::GTK)
 
-execute_process(
-    COMMAND bash "-c" "readlink -f ${CMAKE_CURRENT_SOURCE_DIR}/libwebf.so"
-    OUTPUT_VARIABLE WEBF_LIB_PATH
-)
-string(REGEX REPLACE "\n$" "" WEBF_LIB_PATH "${WEBF_LIB_PATH}")
 
-execute_process(
-    COMMAND bash "-c" "readlink -f ${CMAKE_CURRENT_SOURCE_DIR}/libquickjs.so"
-    OUTPUT_VARIABLE QUICKJS_LIB_PATH
-)
-string(REGEX REPLACE "\n$" "" QUICKJS_LIB_PATH "${QUICKJS_LIB_PATH}")
+# Invoke the build for native code shared with the other target platforms.
+# This can be changed to accommodate different builds.
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../src" "${CMAKE_CURRENT_BINARY_DIR}/shared")
+
 
 # List of absolute paths to libraries that should be bundled with the plugin
 set(webf_bundled_libraries
-    ${QUICKJS_LIB_PATH}
-    ${WEBF_LIB_PATH}
+    $<TARGET_FILE:webf>
+    $<TARGET_FILE:quickjs>
     PARENT_SCOPE
   )

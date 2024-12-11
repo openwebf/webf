@@ -23,7 +23,9 @@
 #include "qjs_document.h"
 #include "qjs_document_fragment.h"
 #include "qjs_dom_matrix.h"
-#include "qjs_dom_matrix_readonly.h"
+#include "qjs_dom_matrix_read_only.h"
+#include "qjs_dom_point.h"
+#include "qjs_dom_point_read_only.h"
 #include "qjs_dom_string_map.h"
 #include "qjs_dom_token_list.h"
 #include "qjs_element.h"
@@ -33,6 +35,7 @@
 #include "qjs_event_target.h"
 #include "qjs_focus_event.h"
 #include "qjs_gesture_event.h"
+#include "qjs_hashchange_event.h"
 #include "qjs_html_all_collection.h"
 #include "qjs_html_anchor_element.h"
 #include "qjs_html_body_element.h"
@@ -52,6 +55,7 @@
 #include "qjs_html_template_element.h"
 #include "qjs_html_textarea_element.h"
 #include "qjs_html_unknown_element.h"
+#include "qjs_hybrid_router_change_event.h"
 #include "qjs_image.h"
 #include "qjs_inline_css_style_declaration.h"
 #include "qjs_input_event.h"
@@ -64,8 +68,10 @@
 #include "qjs_mutation_observer.h"
 #include "qjs_mutation_observer_registration.h"
 #include "qjs_mutation_record.h"
+#include "qjs_native_loader.h"
 #include "qjs_node.h"
 #include "qjs_node_list.h"
+#include "qjs_path_2d.h"
 #include "qjs_performance.h"
 #include "qjs_performance_entry.h"
 #include "qjs_performance_mark.h"
@@ -116,8 +122,10 @@ void InstallBindings(ExecutingContext* context) {
   QJSMessageEvent::Install(context);
   QJSAnimationEvent::Install(context);
   QJSCloseEvent::Install(context);
+  QJSHybridRouterChangeEvent::Install(context);
   QJSFocusEvent::Install(context);
   QJSGestureEvent::Install(context);
+  QJSHashchangeEvent::Install(context);
   QJSInputEvent::Install(context);
   QJSCustomEvent::Install(context);
   QJSMouseEvent::Install(context);
@@ -158,8 +166,11 @@ void InstallBindings(ExecutingContext* context) {
   QJSCanvasRenderingContext2D::Install(context);
   QJSCanvasPattern::Install(context);
   QJSCanvasGradient::Install(context);
-  QJSDOMMatrixReadonly::Install(context);
+  QJSPath2D::Install(context);
+  QJSDOMMatrixReadOnly::Install(context);
   QJSDOMMatrix::Install(context);
+  QJSDOMPointReadOnly::Install(context);
+  QJSDOMPoint::Install(context);
   QJSCSSStyleDeclaration::Install(context);
   QJSInlineCssStyleDeclaration::Install(context);
   QJSComputedCssStyleDeclaration::Install(context);
@@ -195,6 +206,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSSVGEllipseElement::Install(context);
   QJSSVGStyleElement::Install(context);
   QJSSVGLineElement::Install(context);
+  QJSNativeLoader::Install(context);
 
   // Legacy bindings, not standard.
   QJSElementAttributes::Install(context);

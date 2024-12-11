@@ -461,3 +461,23 @@ describe('Response', function() {
     });
   });
 });
+
+describe('AbortController', () => {
+  it('should abort request with abortController', (done) => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
+    fetch(`http://localhost:${location.port}/unresponse`, {
+      signal
+    }).then(response => response.text()).then(() => {
+      done.fail();
+    }).catch(err => {
+      expect(err.message.trim()).toBe('HttpException: Request has been aborted');
+      done();
+    });
+
+    setTimeout(() => {
+      abortController.abort();
+    }, 200);
+  });
+});

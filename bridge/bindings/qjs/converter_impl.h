@@ -189,7 +189,7 @@ struct Converter<IDLInt64> : public ConverterBase<IDLInt64> {
     JS_ToInt64(ctx, &v, value);
     return v;
   }
-  static JSValue ToValue(JSContext* ctx, uint32_t v) { return JS_NewInt64(ctx, v); }
+  static JSValue ToValue(JSContext* ctx, int64_t v) { return JS_NewInt64(ctx, v); }
 };
 
 template <>
@@ -219,7 +219,7 @@ struct Converter<IDLDOMString> : public ConverterBase<IDLDOMString> {
     return JS_NewUnicodeString(ctx, str->string(), str->length());
   }
   static JSValue ToValue(JSContext* ctx, uint16_t* bytes, size_t length) {
-    return JS_NewUnicodeString(ctx, bytes, length);
+    return JS_NewUnicodeString(ctx, bytes, static_cast<uint32_t>(length));
   }
   static JSValue ToValue(JSContext* ctx, const std::string& str) { return JS_NewString(ctx, str.c_str()); }
 };
@@ -413,6 +413,17 @@ template <>
 struct Converter<JSEventListener> : public ConverterBase<JSEventListener> {
   static ImplType FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
     assert(!JS_IsException(value));
+    if (JS_IsObject(value) && !JS_IsFunction(ctx, value)) {
+      JSValue handleEventMethod = JS_GetPropertyStr(ctx, value, "handleEvent");
+
+      if (JS_IsFunction(ctx, handleEventMethod)) {
+        auto result = JSEventListener::CreateOrNull(QJSFunction::Create(ctx, handleEventMethod, value));
+        JS_FreeValue(ctx, handleEventMethod);
+        return result;
+      }
+
+      return JSEventListener::CreateOrNull(nullptr);
+    }
     return JSEventListener::CreateOrNull(QJSFunction::Create(ctx, value));
   }
 };
@@ -463,8 +474,8 @@ struct Converter<IDLNullable<JSEventListener>> : public ConverterBase<JSEventLis
       return nullptr;
     }
 
-    if (!JS_IsFunction(ctx, value)) {
-      exception_state.ThrowException(ctx, ErrorType::TypeError, "EventListener not a function");
+    if (!JS_IsFunction(ctx, value) && !JS_IsObject(value)) {
+      return nullptr;
     }
 
     assert(!JS_IsException(value));

@@ -205,8 +205,9 @@ describe('containing-block', () => {
 
     await snapshot();
   });
-  it('007-ref', async () => {
+  it('007-ref', async (done) => {
     let p;
+    let img;
     p = createElement(
       'p',
       {
@@ -216,7 +217,7 @@ describe('containing-block', () => {
       [
         createText(`Test passes if there is a filled blue square in the upper-right corner of the
 		page.`),
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '96',
           height: '96',
@@ -230,8 +231,10 @@ describe('containing-block', () => {
       ]
     );
     document.body.appendChild(p);
-
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
   it('007', async () => {
     let p;
@@ -279,9 +282,10 @@ describe('containing-block', () => {
 
     await snapshot();
   });
-  it('008-ref', async () => {
+  it('008-ref', async (done) => {
     let p;
     let div;
+    let img;
     p = createElement(
       'p',
       {
@@ -314,7 +318,7 @@ describe('containing-block', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/blue15x15.png',
           width: '96',
           height: '96',
@@ -329,7 +333,11 @@ describe('containing-block', () => {
     document.body.appendChild(p);
     document.body.appendChild(div);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
+
   });
   it('008', async () => {
     let p;
@@ -407,8 +415,9 @@ describe('containing-block', () => {
 
     await snapshot();
   });
-  it('009-ref', async () => {
+  it('009-ref', async (done) => {
     let div;
+    let img;
     div = createElement(
       'div',
       {
@@ -421,7 +430,7 @@ describe('containing-block', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/blue96x96.png',
           width: '96',
           height: '96',
@@ -432,7 +441,11 @@ describe('containing-block', () => {
     );
     document.body.appendChild(div);
 
-    await snapshot(0.1);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
+
   });
   it('009', async () => {
     let p;
@@ -919,8 +932,9 @@ describe('containing-block', () => {
     await snapshot();
   });
 
-  it('019-ref', async () => {
+  it('019-ref', async (done) => {
     let div;
+    let img;
     div = createElement(
       'div',
       {
@@ -934,7 +948,7 @@ describe('containing-block', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/blue96x96.png',
           width: '96',
           height: '96',
@@ -944,8 +958,11 @@ describe('containing-block', () => {
       ]
     );
     document.body.appendChild(div);
+    onImageLoad(img, async () => {
+      await snapshot(0.1);
+      done();
+    });
 
-    await snapshot(0.1);
   });
   it('019', async () => {
     let p;

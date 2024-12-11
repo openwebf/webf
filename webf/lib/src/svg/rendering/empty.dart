@@ -7,7 +7,7 @@ import 'container.dart';
 
 // don't render anything
 class RenderSVGEmpty extends RenderSVGContainer {
-  RenderSVGEmpty({required super.renderStyle, super.element});
+  RenderSVGEmpty({required super.renderStyle});
 
   @override
   void performLayout() {

@@ -197,4 +197,53 @@ describe('display', () => {
 
     positioned.click();
   });
+
+  it('should works when reattach display none to dom tree in middle tree', async () => {
+    let one, two, three;
+    let container = createElement('div', {}, [
+      one = createElement('div', {
+        style: {
+          display: 'block'
+        }
+      }, [
+        createText('One')
+      ]),
+      createElement('div', {
+        style: {
+          display: 'none'
+        }
+      }),
+      createElement('div', {
+        style: {
+          display: 'none'
+        }
+      }),
+      createElement('div', {
+        style: {
+          display: 'none'
+        }
+      }),
+      two = createElement('div', {
+        style: {
+          display: 'none'
+        },
+      }, [
+        createText('Two')
+      ]),
+      three = createElement('div', {
+        style: {
+          style: 'block'
+        }
+      }, [
+        createText('Three')
+      ])
+    ]);
+    BODY.append(container);
+
+    await snapshot();
+
+    two.style.display = 'block';
+
+    await snapshot();
+  });
 });

@@ -47,7 +47,7 @@ bool QJSFunction::IsFunction(JSContext* ctx) {
   return JS_IsFunction(ctx, function_);
 }
 
-ScriptValue QJSFunction::Invoke(JSContext* ctx, const ScriptValue& this_val, int32_t argc, ScriptValue* arguments) {
+ScriptValue QJSFunction::Invoke(JSContext* ctx, const ScriptValue& this_val, int argc, ScriptValue* arguments) {
   // 'm_function' might be destroyed when calling itself (if it frees the handler), so must take extra care.
   JS_DupValue(ctx, function_);
 
@@ -60,7 +60,7 @@ ScriptValue QJSFunction::Invoke(JSContext* ctx, const ScriptValue& this_val, int
   ExecutingContext* context = ExecutingContext::From(ctx);
   context->dartIsolateContext()->profiler()->StartTrackSteps("JS_Call");
 
-  JSValue returnValue = JS_Call(ctx, function_, this_val.QJSValue(), argc, argv);
+  JSValue returnValue = JS_Call(ctx, function_, JS_IsNull(this_val_) ? this_val.QJSValue() : this_val_, argc, argv);
 
   context->dartIsolateContext()->profiler()->FinishTrackSteps();
 
@@ -76,6 +76,7 @@ ScriptValue QJSFunction::Invoke(JSContext* ctx, const ScriptValue& this_val, int
 
 void QJSFunction::Trace(GCVisitor* visitor) const {
   visitor->TraceValue(function_);
+  visitor->TraceValue(this_val_);
 }
 
 }  // namespace webf

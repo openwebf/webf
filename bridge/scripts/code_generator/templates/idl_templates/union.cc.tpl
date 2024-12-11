@@ -10,6 +10,8 @@
 #include "bindings/qjs/converter_impl.h"
 #include "core/html/html_image_element.h"
 #include "core/html/canvas/html_canvas_element.h"
+#include "core/html/canvas/path_2d.h"
+#include "qjs_dom_point_init.h"
 
 namespace webf {
 
@@ -42,7 +44,7 @@ std::shared_ptr<<%= generateUnionTypeClassName(unionType) %>> <%= generateUnionT
 <% }) %>
 
 <%= generateUnionTypeClassName(unionType) %> ::~<%= generateUnionTypeClassName(unionType) %> () {
-  Clear();
+
 }
 
 JSValue <%= generateUnionTypeClassName(unionType) %>::ToQuickJSValue(JSContext* ctx, ExceptionState& exception_state) const {

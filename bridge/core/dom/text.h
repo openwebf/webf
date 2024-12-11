@@ -7,6 +7,7 @@
 #define BRIDGE_CORE_DOM_TEXT_H_
 
 #include "character_data.h"
+#include "plugin_api/text.h"
 
 namespace webf {
 
@@ -26,6 +27,7 @@ class Text : public CharacterData {
   }
 
   NodeType nodeType() const override;
+  const TextNodePublicMethods* textNodePublicMethods();
 
  private:
   std::string nodeName() const override;
@@ -36,6 +38,9 @@ template <>
 struct DowncastTraits<Text> {
   static bool AllowFrom(const Node& node) { return node.IsTextNode(); };
   static bool AllowFrom(const CharacterData& character_data) { return character_data.IsTextNode(); }
+  static bool AllowFrom(const EventTarget& event_target) {
+    return event_target.IsNode() && To<Node>(event_target).IsTextNode();
+  }
 };
 
 }  // namespace webf

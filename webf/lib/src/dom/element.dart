@@ -16,6 +16,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/bridge/native_types.dart';
 import 'package:webf/src/svg/rendering/container.dart';
+import 'package:webf/svg.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 
@@ -54,21 +55,25 @@ enum BoxSizeType {
 mixin ElementBase on Node {
   RenderLayoutBox? _renderLayoutBox;
   RenderReplaced? _renderReplaced;
+  RenderBoxModel? _renderSVG;
   RenderWidget? _renderWidget;
 
-  RenderBoxModel? get renderBoxModel => _renderLayoutBox ?? _renderReplaced ?? _renderWidget;
+  RenderBoxModel? get renderBoxModel => _renderLayoutBox ?? _renderReplaced ?? _renderWidget ?? _renderSVG;
 
   set renderBoxModel(RenderBoxModel? value) {
     if (value == null) {
       _renderReplaced = null;
       _renderLayoutBox = null;
       _renderWidget = null;
+      _renderSVG = null;
     } else if (value is RenderReplaced) {
       _renderReplaced = value;
     } else if (value is RenderLayoutBox) {
       _renderLayoutBox = value;
     } else if (value is RenderWidget) {
       _renderWidget = value;
+    } else if (value is RenderSVGShape || value is RenderSVGContainer || value is RenderSVGText) {
+      _renderSVG = value;
     } else {
       if (!kReleaseMode) throw FlutterError('Unknown RenderBoxModel value.');
     }
@@ -120,6 +125,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
   bool get isReplacedElement => false;
 
   bool get isWidgetElement => false;
+
+  bool get isSVGElement => false;
 
   // Holding reference if this element are managed by Flutter framework.
   WebFHTMLElementStatefulWidget? flutterWidget_;
@@ -199,8 +206,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     _forceToRepaintBoundary = value;
     updateRenderBoxModel();
   }
-
-  bool _needRecalculateStyle = false;
 
   final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
 
@@ -325,6 +330,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     methods['querySelector'] = BindingObjectMethodSync(call: (args) => querySelector(args));
     methods['matches'] = BindingObjectMethodSync(call: (args) => matches(args));
     methods['closest'] = BindingObjectMethodSync(call: (args) => closest(args));
+
+    if (kDebugMode || kProfileMode) {
+      methods['__test_global_to_local__'] = BindingObjectMethodSync(call: (args) => testGlobalToLocal(args[0], args[1]));
+    }
   }
 
   dynamic getElementsByClassName(List<dynamic> args) {
@@ -362,12 +371,14 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     } else if (isReplacedElement) {
       nextRenderBoxModel =
           _createRenderReplaced(isRepaintBoundary: isRepaintBoundary, previousReplaced: _renderReplaced);
+    } else if (isSVGElement) {
+      nextRenderBoxModel = createRenderSVG(isRepaintBoundary: isRepaintBoundary, previous: _renderSVG);
     } else {
       nextRenderBoxModel =
           _createRenderLayout(isRepaintBoundary: isRepaintBoundary, previousRenderLayoutBox: _renderLayoutBox);
     }
 
-    RenderBox? previousRenderBoxModel = renderBoxModel;
+    RenderBoxModel? previousRenderBoxModel = renderBoxModel;
     if (nextRenderBoxModel != previousRenderBoxModel) {
       RenderObject? parentRenderObject;
       RenderBox? after;
@@ -384,7 +395,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
           RenderBoxModel.attachRenderBox(parentRenderObject, nextRenderBoxModel, after: after);
         }
 
-        previousRenderBoxModel.dispose();
+        SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+          if (!previousRenderBoxModel.disposed && !managedByFlutterWidget) {
+            previousRenderBoxModel.dispose();
+          }
+        });
       }
       renderBoxModel = nextRenderBoxModel;
       assert(renderBoxModel!.renderStyle.renderBoxModel == renderBoxModel);
@@ -427,6 +442,10 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       }
     }
     return nextReplaced;
+  }
+
+  RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
+    throw UnimplementedError();
   }
 
   RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget, bool forceUpdate = false }) {
@@ -626,9 +645,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @override
   void willDetachRenderer() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this.willDetachRenderer');
-    }
     super.willDetachRenderer();
 
     // Cancel running transition.
@@ -636,6 +652,8 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
     // Cancel running animation.
     renderStyle.cancelRunningAnimation();
+
+    ownerView.window.unwatchViewportSizeChangeForElement(this);
 
     RenderBoxModel? renderBoxModel = this.renderBoxModel;
     if (renderBoxModel != null) {
@@ -655,9 +673,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       // Remove scrollable
       renderBoxModel.disposeScrollable();
       disposeScrollable();
-    }
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 
@@ -894,7 +909,7 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
       if (previousPseudoElement.firstChild != null) {
         (previousPseudoElement.firstChild as TextNode).data = pseudoValue.value;
       } else {
-        final textNode = ownerDocument.createTextNode(pseudoValue.value);
+        final textNode = ownerDocument.createTextNode(pseudoValue.value, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
         previousPseudoElement.appendChild(textNode);
       }
     }
@@ -1320,18 +1335,30 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         containingBlockRenderBox = parentNode!.renderer;
         break;
       case CSSPositionType.absolute:
+        Element viewportElement = ownerDocument.documentElement!;
+
+        if (ownerView.activeRouterRoot != null) {
+          viewportElement = (ownerView.activeRouterRoot!.firstChild as RenderBoxModel).renderStyle.target;
+        }
+
         // If the element has 'position: absolute', the containing block is established by the nearest ancestor with
         // a 'position' of 'absolute', 'relative' or 'fixed', in the following way:
         //  1. In the case that the ancestor is an inline element, the containing block is the bounding box around
         //    the padding boxes of the first and the last inline boxes generated for that element.
         //    In CSS 2.1, if the inline element is split across multiple lines, the containing block is undefined.
         //  2. Otherwise, the containing block is formed by the padding edge of the ancestor.
-        containingBlockRenderBox = _findContainingBlock(this, ownerDocument.documentElement!)?._renderLayoutBox;
+        containingBlockRenderBox = _findContainingBlock(this, viewportElement)?._renderLayoutBox;
         break;
       case CSSPositionType.fixed:
+        Element viewportElement = ownerDocument.documentElement!;
+
+        if (ownerView.activeRouterRoot != null) {
+          viewportElement = (ownerView.activeRouterRoot!.firstChild as RenderBoxModel).renderStyle.target;
+        }
+
         // If the element has 'position: fixed', the containing block is established by the viewport
         // in the case of continuous media or the page area in the case of paged media.
-        containingBlockRenderBox = ownerDocument.documentElement!._renderLayoutBox;
+        containingBlockRenderBox = viewportElement.renderer;
         break;
     }
     return containingBlockRenderBox;
@@ -1350,13 +1377,11 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
 
   @mustCallSuper
   void setAttribute(String qualifiedName, String value) {
-    internalSetAttribute(qualifiedName, value);
     ElementAttributeProperty? propertyHandler = _attributeProperties[qualifiedName];
     if (propertyHandler != null && propertyHandler.setter != null) {
       propertyHandler.setter!(value);
     }
-    final isNeedRecalculate = _checkRecalculateStyle([qualifiedName]);
-    _needRecalculateStyle = _needRecalculateStyle || isNeedRecalculate;
+    internalSetAttribute(qualifiedName, value);
   }
 
   void internalSetAttribute(String qualifiedName, String value) {
@@ -1422,11 +1447,21 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
         RenderBoxModel _renderBoxModel = renderBoxModel!;
         // Find the renderBox of its containing block.
         RenderBox? containingBlockRenderBox = getContainingBlockRenderBox();
+        Node? previousSiblingNode = previousSibling;
         // Find the previous siblings to insert before renderBoxModel is detached.
-        RenderBox? preSibling = previousSibling?.renderer;
+        RenderBox? previousSiblingRenderBox = previousSiblingNode?.renderer;
+
+        // Search for elements whose style is not display: none.
+        while (previousSiblingRenderBox == null &&
+            previousSiblingNode is Element &&
+            previousSiblingNode.renderStyle.display == CSSDisplay.none) {
+          previousSiblingNode = previousSiblingNode.previousSibling;
+          previousSiblingRenderBox = previousSiblingNode?.renderer;
+        }
+
         // Original parent renderBox.
         RenderBox parentRenderBox = parentNode!.renderer!;
-        _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: preSibling);
+        _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: previousSiblingRenderBox);
       }
     }
 
@@ -1702,11 +1737,6 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     // But it's necessary for SVG.
   }
 
-  void tryRecalculateStyle({bool rebuildNested = false}) {
-    recalculateStyle(forceRecalculate: _needRecalculateStyle);
-    _needRecalculateStyle = false;
-  }
-
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
     if (renderBoxModel != null || forceRecalculate || renderStyle.display == CSSDisplay.none) {
       if (enableWebFProfileTracking) {
@@ -1793,6 +1823,16 @@ abstract class Element extends ContainerNode with ElementBase, ElementEventMixin
     Offset relative = _getOffset(renderBoxModel!, ancestor: offsetParent);
     offset += relative.dx;
     return offset;
+  }
+
+  dynamic testGlobalToLocal(double x, double y) {
+    if (!isRendererAttached) {
+      return { 'x': 0, 'y': 0 };
+    }
+
+    Offset offset = Offset(x, y);
+    Offset result = renderBoxModel!.globalToLocal(offset);
+    return {'x': result.dx, 'y': result.dy};
   }
 
   // The HTMLElement.offsetTop read-only property returns the distance of the outer border

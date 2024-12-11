@@ -146,7 +146,7 @@ abstract class WebFBundle {
     }
   }
 
-  Future<void> obtainData(double contextId);
+  Future<void> obtainData([double contextId]);
 
   // Dispose the memory obtained by bundle.
   @mustCallSuper
@@ -211,8 +211,8 @@ abstract class WebFBundle {
   bool get isCSS => contentType.mimeType == _cssContentType.mimeType;
   bool get isJavascript =>
       contentType.mimeType == javascriptContentType.mimeType ||
-      contentType.mimeType == _javascriptApplicationContentType.mimeType ||
-      contentType.mimeType == _xJavascriptContentType.mimeType;
+          contentType.mimeType == _javascriptApplicationContentType.mimeType ||
+          contentType.mimeType == _xJavascriptContentType.mimeType;
   bool get isBytecode => contentType.mimeType == webfBc1ContentType || _isSupportedBytecode(contentType.mimeType, _uri);
 }
 
@@ -236,7 +236,7 @@ class DataBundle extends WebFBundle {
   }
 
   @override
-  Future<void> obtainData(double contextId) async {}
+  Future<void> obtainData([double contextId = 0]) async {}
 }
 
 // The bundle that source from http or https.
@@ -250,7 +250,7 @@ class NetworkBundle extends WebFBundle {
   Map<String, String>? additionalHttpHeaders = {};
 
   @override
-  Future<void> obtainData(double contextId) async {
+  Future<void> obtainData([double contextId = 0]) async {
     if (data != null) return;
 
     NetworkOpItem? currentProfileOp;
@@ -294,7 +294,7 @@ class NetworkBundle extends WebFBundle {
     hitCache = response is HttpClientStreamResponse || response is HttpClientCachedResponse;
     Uint8List bytes = await consolidateHttpClientResponseBytes(response);
 
-    if (!enableWebFProfileTracking) {
+    if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackNetworkStep(currentProfileOp!);
     }
 
@@ -333,7 +333,7 @@ class AssetsBundle extends WebFBundle {
   AssetsBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
 
   @override
-  Future<void> obtainData(double contextId) async {
+  Future<void> obtainData([double contextId = 0]) async {
     if (data != null) return;
 
     final Uri? _resolvedUri = resolvedUri;
@@ -365,7 +365,7 @@ class FileBundle extends WebFBundle {
   FileBundle(String url, { ContentType? contentType }) : super(url, contentType: contentType);
 
   @override
-  Future<void> obtainData(double contextId) async {
+  Future<void> obtainData([double contextId = 0]) async {
     if (data != null) return;
 
     Uri uri = _uri!;

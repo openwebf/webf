@@ -254,8 +254,20 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     return result;
   }
 
+
+  // For position fixed render box, should reduce the outer scroll offsets.
+  void applyPositionFixedPaintTransform(RenderBoxModel child, Matrix4 transform) {
+    Offset totalScrollOffset = child.getTotalScrollOffset();
+    transform.translate(totalScrollOffset.dx, totalScrollOffset.dy);
+  }
+
   void applyOverflowPaintTransform(RenderBox child, Matrix4 transform) {
     final Offset paintOffset = Offset(_paintOffsetX, _paintOffsetY);
+
+    if (child is RenderBoxModel && child.renderStyle.position == CSSPositionType.fixed) {
+      applyPositionFixedPaintTransform(child, transform);
+    }
+
     transform.translate(paintOffset.dx, paintOffset.dy);
   }
 

@@ -26,6 +26,10 @@
 #ifndef QUICKJS_FUNCTION_H
 #define QUICKJS_FUNCTION_H
 
+#if _MSC_VER
+#include <malloc.h>
+#endif
+
 #include "quickjs/cutils.h"
 #include "quickjs/quickjs.h"
 #include "types.h"

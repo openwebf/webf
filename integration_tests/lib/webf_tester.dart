@@ -12,11 +12,13 @@ import 'main.dart';
 
 class WebFTester extends StatefulWidget {
   final String preCode;
+  final int mockServerPort;
   final void Function()? onWillFinish;
 
   const WebFTester({
     Key? key,
     required this.preCode,
+    required this.mockServerPort,
     this.onWillFinish,
   }) : super(key: key);
 
@@ -64,10 +66,11 @@ class _WebFTesterState extends State<WebFTester> {
       viewportWidth: width,
       viewportHeight: height,
       bundle: WebFBundle.fromUrl(
-          'http://localhost:$MOCK_SERVER_PORT/public/core.build.js?search=1234#hash=hashValue'),
+          'http://localhost:${widget.mockServerPort}/public/core.build.js?search=1234#hash=hashValue'),
       disableViewportWidthAssertion: true,
       disableViewportHeightAssertion: true,
       javaScriptChannel: javaScriptChannel,
+      runningThread: FlutterUIThread(),
       onControllerCreated: onControllerCreated,
       onLoad: onLoad,
       gestureListener: GestureListener(

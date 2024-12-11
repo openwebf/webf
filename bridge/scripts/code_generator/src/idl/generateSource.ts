@@ -148,14 +148,18 @@ export function isTypeHaveNull(type: ParameterType): boolean {
   return type.value.some(t => t.value === FunctionArgumentType.null);
 }
 
-export function isTypeHaveString(types: ParameterType[]): boolean {
-  return types.some(t => {
-    if (t.isArray) return isTypeHaveString(t.value as ParameterType[]);
-    if (!Array.isArray(t.value)) {
-      return t.value === FunctionArgumentType.dom_string;
-    }
-    return t.value.some(t => t.value === FunctionArgumentType.dom_string);
-  });
+export function isTypeHaveString(types: ParameterType[] | ParameterType): boolean {
+  if (Array.isArray(types)) {
+    return types.some(t => {
+      if (t.isArray) return isTypeHaveString(t.value as ParameterType);
+      if (!Array.isArray(t.value)) {
+        return t.value === FunctionArgumentType.dom_string;
+      }
+      return t.value.some(t => t.value === FunctionArgumentType.dom_string);
+    });
+  }
+
+  return types.value === FunctionArgumentType.dom_string;
 }
 
 export function isPointerType(type: ParameterType): boolean {
@@ -312,7 +316,7 @@ function generateNativeValueTypeConverter(type: ParameterType): string {
 function generateRequiredInitBody(argument: FunctionArguments, argsIndex: number) {
   let type = generateIDLTypeConverter(argument.type, !argument.required);
 
-  let hasArgumentCheck = type.indexOf('Element') >= 0 || type.indexOf('Node') >= 0 || type === 'EventTarget' || type.indexOf('DOMMatrix') >= 0;
+  let hasArgumentCheck = type.indexOf('Element') >= 0 || type.indexOf('Node') >= 0 || type === 'EventTarget' || type.indexOf('DOMMatrix') >= 0 || type.indexOf('Path2D') >= 0;
 
   let body = '';
   if (argument.isDotDotDot) {
@@ -355,7 +359,7 @@ ${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverte
   `.trim();
 }
 
-function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, argument: FunctionArguments, argsIndex: number, previousArguments: string[], options: GenFunctionBodyOptions) {
+function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, argument: FunctionArguments, argsIndex: number, argsLength: number, previousArguments: string[], options: GenFunctionBodyOptions) {
   let call = '';
   let returnValueAssignment = '';
   if (declare.returnType.value != FunctionArgumentType.void) {
@@ -379,7 +383,9 @@ if (UNLIKELY(exception_state.HasException())) {
 if (argc <= ${argsIndex + 1}) {
   ${call}
   break;
-}`;
+}
+${(argsIndex) + 1 == argsLength ? call : ''}
+`;
 }
 
 function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaration, options: GenFunctionBodyOptions = {
@@ -408,7 +414,7 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
   let totalArguments: string[] = requiredArguments.slice();
 
   for (let i = minimalRequiredArgc; i < declaration.args.length; i++) {
-    optionalArgumentsInit.push(generateOptionalInitBody(blob, declaration, declaration.args[i], i, totalArguments, options));
+    optionalArgumentsInit.push(generateOptionalInitBody(blob, declaration, declaration.args[i], i, declaration.args.length, totalArguments, options));
     totalArguments.push(`args_${declaration.args[i].name}`);
   }
 
@@ -530,16 +536,16 @@ function generateFunctionBody(blob: IDLBlob, declare: FunctionDeclaration, optio
   ExceptionState exception_state;
   ExecutingContext* context = ExecutingContext::From(ctx);
   if (!context->IsContextValid()) return JS_NULL;
-  
+
   context->dartIsolateContext()->profiler()->StartTrackSteps("${getClassName(blob)}::${declare.name}");
-  
+
   MemberMutationScope scope{context};
   ${returnValueInit}
 
   do {  // Dummy loop for use of 'break'.
 ${addIndent(callBody, 4)}
   } while (false);
-  
+
    context->dartIsolateContext()->profiler()->FinishTrackSteps();
 
   if (UNLIKELY(exception_state.HasException())) {
@@ -583,11 +589,16 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
           }
         }
 
+        function addObjectStaticMethods(method: FunctionDeclaration, i: number) {
+          options.staticMethodsInstallList.push(`{"${method.name}", ${method.name}, ${method.args.length}}`);
+        }
+
         object.props.forEach(addObjectProps);
 
-        let overloadMethods = {};
+        let overloadMethods: {[key: string]: FunctionDeclaration[] } = {};
         let filtedMethods: FunctionDeclaration[] = [];
         object.methods.forEach(addObjectMethods);
+        object.staticMethods.forEach(addObjectStaticMethods);
 
         if (object.construct) {
           options.constructorInstallList.push(`{defined_properties::k${className}.Impl(), nullptr, nullptr, constructor}`)

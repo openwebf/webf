@@ -1,5 +1,5 @@
 describe('object-fit', () => {
-  it('should work with fill of image when width is larger than height', async () => {
+  it('should work with fill of image when width is larger than height', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -16,10 +16,13 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('should work with fill of image when width is smaller than height', async () => {
+  it('should work with fill of image when width is smaller than height', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -36,10 +39,13 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('should work with cover of image aspect ratio smaller than size aspect ratio when width is larger than height', async () => {
+  it('should work with cover of image aspect ratio smaller than size aspect ratio when width is larger than height', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -56,10 +62,13 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('should work with cover of image aspect ratio larger than size aspect ratio  when width is larger than height', async () => {
+  it('should work with cover of image aspect ratio larger than size aspect ratio  when width is larger than height', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -76,10 +85,13 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('should work with cover of image aspect ratio smaller than size aspect ratio when width is smaller than height', async () => {
+  it('should work with cover of image aspect ratio smaller than size aspect ratio when width is smaller than height', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -96,10 +108,13 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('should work with cover of image aspect ratio larger than size aspect ratio  when width is smaller than height', async () => {
+  it('should work with cover of image aspect ratio larger than size aspect ratio  when width is smaller than height', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -116,10 +131,13 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('should work with contain of image aspect ratio smaller than size aspect ratio when width is larger than height', async () => {
+  it('should work with contain of image aspect ratio smaller than size aspect ratio when width is larger than height', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -136,10 +154,13 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('should work with contain of image aspect ratio larger than size aspect ratio  when width is larger than height', async () => {
+  it('should work with contain of image aspect ratio larger than size aspect ratio  when width is larger than height', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -156,10 +177,13 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('should work with contain of image aspect ratio smaller than size aspect ratio when width is smaller than height', async () => {
+  it('should work with contain of image aspect ratio smaller than size aspect ratio when width is smaller than height', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -176,10 +200,13 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('should work with contain of image aspect ratio larger than size aspect ratio  when width is smaller than height', async () => {
+  it('should work with contain of image aspect ratio larger than size aspect ratio  when width is smaller than height', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -196,11 +223,14 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
 
-  it('should work with none', async () => {
+  it('should work with none', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -217,10 +247,13 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    onImageLoad(image, async () => {
+      await snapshot(0.2);
+      done();
+    });
   });
 
-  it('should work with scale-down when it behaves as none', async () => {
+  it('should work with scale-down when it behaves as none', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -237,10 +270,13 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
-  it('should work with scale-down when it behaves as contain', async () => {
+  it('should work with scale-down when it behaves as contain', async (done) => {
     let image;
     image = createElement(
       'img',
@@ -257,11 +293,14 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    await snapshot(0.1);
+    image.addEventListener('load', async () => {
+      await snapshot(0.1);
+      done();
+    });
   });
 
   describe('with scaling is scale', () => {
-    it('should work with fill of image when width is larger than height', async () => {
+    it('should work with fill of image when width is larger than height', async (done) => {
       let image;
       image = createElement(
         'img',
@@ -279,10 +318,13 @@ describe('object-fit', () => {
       );
       BODY.appendChild(image);
 
-      await snapshot(0.1);
+      image.addEventListener('load', async () => {
+        await snapshot(0.1);
+        done();
+      });
     });
 
-    it('should work with fill of image when width is smaller than height', async () => {
+    it('should work with fill of image when width is smaller than height', async (done) => {
       let image;
       image = createElement(
         'img',
@@ -300,10 +342,13 @@ describe('object-fit', () => {
       );
       BODY.appendChild(image);
 
-      await snapshot(0.1);
+      image.addEventListener('load', async () => {
+        await snapshot(0.1);
+        done();
+      });
     });
 
-    it('should work with cover of image aspect ratio smaller than size aspect ratio when width is larger than height', async () => {
+    it('should work with cover of image aspect ratio smaller than size aspect ratio when width is larger than height', async (done) => {
       let image;
       image = createElement(
         'img',
@@ -321,10 +366,13 @@ describe('object-fit', () => {
       );
       BODY.appendChild(image);
 
-      await snapshot(0.1);
+      image.addEventListener('load', async () => {
+        await snapshot(0.1);
+        done();
+      });
     });
 
-    it('should work with cover of image aspect ratio larger than size aspect ratio  when width is larger than height', async () => {
+    it('should work with cover of image aspect ratio larger than size aspect ratio  when width is larger than height', async (done) => {
       let image;
       image = createElement(
         'img',
@@ -342,10 +390,13 @@ describe('object-fit', () => {
       );
       BODY.appendChild(image);
 
-      await snapshot(0.1);
+      image.addEventListener('load', async () => {
+        await snapshot(0.1);
+        done();
+      });
     });
 
-    it('should work with cover of image aspect ratio smaller than size aspect ratio when width is smaller than height', async () => {
+    it('should work with cover of image aspect ratio smaller than size aspect ratio when width is smaller than height', async (done) => {
       let image;
       image = createElement(
         'img',
@@ -363,10 +414,13 @@ describe('object-fit', () => {
       );
       BODY.appendChild(image);
 
-      await snapshot(0.1);
+      image.addEventListener('load', async () => {
+        await snapshot(0.1);
+        done();
+      });
     });
 
-    it('should work with cover of image aspect ratio larger than size aspect ratio  when width is smaller than height', async () => {
+    it('should work with cover of image aspect ratio larger than size aspect ratio  when width is smaller than height', async (done) => {
       let image;
       image = createElement(
         'img',
@@ -384,10 +438,13 @@ describe('object-fit', () => {
       );
       BODY.appendChild(image);
 
-      await snapshot(0.1);
+      image.addEventListener('load', async () => {
+        await snapshot(0.1);
+        done();
+      });
     });
 
-    it('should work with contain of image aspect ratio smaller than size aspect ratio when width is larger than height', async () => {
+    it('should work with contain of image aspect ratio smaller than size aspect ratio when width is larger than height', async (done) => {
       let image;
       image = createElement(
         'img',
@@ -405,10 +462,13 @@ describe('object-fit', () => {
       );
       BODY.appendChild(image);
 
-      await snapshot(0.1);
+      image.addEventListener('load', async () => {
+        await snapshot(0.1);
+        done();
+      });
     });
 
-    it('should work with contain of image aspect ratio larger than size aspect ratio  when width is larger than height', async () => {
+    it('should work with contain of image aspect ratio larger than size aspect ratio  when width is larger than height', async (done) => {
       let image;
       image = createElement(
         'img',
@@ -426,10 +486,13 @@ describe('object-fit', () => {
       );
       BODY.appendChild(image);
 
-      await snapshot(0.1);
+      image.addEventListener('load', async () => {
+        await snapshot(0.1);
+        done();
+      });
     });
 
-    it('should work with contain of image aspect ratio smaller than size aspect ratio when width is smaller than height', async () => {
+    it('should work with contain of image aspect ratio smaller than size aspect ratio when width is smaller than height', async (done) => {
       let image;
       image = createElement(
         'img',
@@ -447,10 +510,13 @@ describe('object-fit', () => {
       );
       BODY.appendChild(image);
 
-      await snapshot(0.1);
+      image.addEventListener('load', async () => {
+        await snapshot(0.1);
+        done();
+      });
     });
 
-    it('should work with contain of image aspect ratio larger than size aspect ratio  when width is smaller than height', async () => {
+    it('should work with contain of image aspect ratio larger than size aspect ratio  when width is smaller than height', async (done) => {
       let image;
       image = createElement(
         'img',
@@ -468,11 +534,14 @@ describe('object-fit', () => {
       );
       BODY.appendChild(image);
 
-      await snapshot(0.1);
+      image.addEventListener('load', async () => {
+        await snapshot(0.1);
+        done();
+      });
     });
 
 
-    it('should work with none', async () => {
+    it('should work with none', async (done) => {
       let image;
       image = createElement(
         'img',
@@ -490,10 +559,13 @@ describe('object-fit', () => {
       );
       BODY.appendChild(image);
 
-      await snapshot(0.1);
+      image.addEventListener('load', async () => {
+        await snapshot(0.1);
+        done();
+      });
     });
 
-    it('should work with scale-down when it behaves as none', async () => {
+    it('should work with scale-down when it behaves as none', async (done) => {
       let image;
       image = createElement(
         'img',
@@ -511,10 +583,13 @@ describe('object-fit', () => {
       );
       BODY.appendChild(image);
 
-      await snapshot(0.1);
+      image.addEventListener('load', async () => {
+        await snapshot(0.1);
+        done();
+      });
     });
 
-    it('should work with scale-down when it behaves as contain', async () => {
+    it('should work with scale-down when it behaves as contain', async (done) => {
       let image;
       image = createElement(
         'img',
@@ -532,7 +607,10 @@ describe('object-fit', () => {
       );
       BODY.appendChild(image);
 
-      await snapshot(0.1);
+      image.addEventListener('load', async () => {
+        await snapshot(0.1);
+        done();
+      });
     });
   });
 
@@ -553,7 +631,7 @@ describe('object-fit', () => {
     );
     BODY.appendChild(image);
 
-    requestAnimationFrame(async () => {
+    onImageLoad(image, async () => {
       image.style.objectFit = '';
       await snapshot(0.1);
       done();

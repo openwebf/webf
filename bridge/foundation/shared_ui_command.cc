@@ -24,11 +24,20 @@ void SharedUICommand::AddCommand(UICommand type,
                                  bool request_ui_update) {
   if (!context_->isDedicated()) {
     active_buffer->addCommand(type, std::move(args_01), native_binding_object, nativePtr2, request_ui_update);
+    if (type == UICommand::kFinishRecordingCommand && active_buffer->size() > 0) {
+      context_->dartMethodPtr()->requestBatchUpdate(false, context_->contextId());
+    }
+
     return;
   }
 
   if (type == UICommand::kFinishRecordingCommand || ui_command_sync_strategy_->ShouldSync()) {
+    bool should_request_batch_update = reserve_buffer_->size() + waiting_buffer_->size() > 1;
+
     SyncToActive();
+    if (should_request_batch_update) {
+      context_->dartMethodPtr()->requestBatchUpdate(true, context_->contextId());
+    }
   }
 
   ui_command_sync_strategy_->RecordUICommand(type, args_01, native_binding_object, nativePtr2, request_ui_update);
@@ -44,6 +53,10 @@ void* SharedUICommand::data() {
 }
 
 uint32_t SharedUICommand::kindFlag() {
+  // simply spin wait for the swapBuffers to finish.
+  while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {
+  }
+
   return active_buffer->kindFlag();
 }
 
@@ -54,6 +67,9 @@ int64_t SharedUICommand::size() {
 
 // third called by dart to clear commands.
 void SharedUICommand::clear() {
+  // simply spin wait for the swapBuffers to finish.
+  while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {
+  }
   active_buffer->clear();
 }
 
@@ -70,11 +86,17 @@ void SharedUICommand::SyncToReserve() {
   if (waiting_buffer_->empty())
     return;
 
+  size_t waiting_size = waiting_buffer_->size();
+  size_t origin_reserve_size = reserve_buffer_->size();
+
   if (reserve_buffer_->empty()) {
-    swap(waiting_buffer_, reserve_buffer_);
+    swap(reserve_buffer_, waiting_buffer_);
   } else {
     appendCommand(reserve_buffer_, waiting_buffer_);
   }
+
+  assert(waiting_buffer_->empty());
+  assert(reserve_buffer_->size() == waiting_size + origin_reserve_size);
 }
 
 void SharedUICommand::ConfigureSyncCommandBufferSize(size_t size) {
@@ -84,33 +106,32 @@ void SharedUICommand::ConfigureSyncCommandBufferSize(size_t size) {
 void SharedUICommand::SyncToActive() {
   SyncToReserve();
 
+  assert(waiting_buffer_->empty());
+
   if (reserve_buffer_->empty())
     return;
 
   ui_command_sync_strategy_->Reset();
-  context_->dartMethodPtr()->requestBatchUpdate(context_->isDedicated(), context_->contextId());
 
-  if (active_buffer->empty()) {
-    swap(reserve_buffer_, active_buffer);
-  } else {
-    appendCommand(reserve_buffer_, active_buffer);
-  }
+  size_t reserve_size = reserve_buffer_->size();
+  size_t origin_active_size = active_buffer->size();
+  appendCommand(active_buffer, reserve_buffer_);
+  assert(reserve_buffer_->empty());
+  assert(active_buffer->size() == reserve_size + origin_active_size);
 }
 
-void SharedUICommand::swap(std::unique_ptr<UICommandBuffer>& original, std::unique_ptr<UICommandBuffer>& target) {
+void SharedUICommand::swap(std::unique_ptr<UICommandBuffer>& target, std::unique_ptr<UICommandBuffer>& original) {
   is_blocking_writing_.store(true, std::memory_order::memory_order_release);
   std::swap(target, original);
   is_blocking_writing_.store(false, std::memory_order::memory_order_release);
 }
 
-void SharedUICommand::appendCommand(std::unique_ptr<UICommandBuffer>& original,
-                                    std::unique_ptr<UICommandBuffer>& target) {
+void SharedUICommand::appendCommand(std::unique_ptr<UICommandBuffer>& target,
+                                    std::unique_ptr<UICommandBuffer>& original) {
   is_blocking_writing_.store(true, std::memory_order::memory_order_release);
 
-  for (int i = 0; i < original->size(); i++) {
-    UICommandItem* command_item = original->data();
-    target->addCommand(command_item[i]);
-  }
+  UICommandItem* command_item = original->data();
+  target->addCommands(command_item, original->size());
 
   original->clear();
 

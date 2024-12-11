@@ -3,8 +3,13 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "exception_state.h"
+#include "plugin_api/exception_state.h"
 
 namespace webf {
+
+ExceptionStatePublicMethods* ExceptionState::publicMethodPointer() {
+  return new ExceptionStatePublicMethods();
+}
 
 void ExceptionState::ThrowException(JSContext* ctx, ErrorType type, const std::string& message) {
   switch (type) {

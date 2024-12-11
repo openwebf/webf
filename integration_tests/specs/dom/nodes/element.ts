@@ -77,10 +77,96 @@ describe('DOM Element API', () => {
 
   });
 
+  it('should work with scroll with fixed elements', async () => {
+    const style = document.createElement('style');
+    style.innerHTML = `.container {
+        margin: 64px 0 32px;
+        text-align: center;
+        padding-top: 1000px;
+        padding-bottom: 300px;
+        background: linear-gradient(to right, #ff7e5f, #feb47b);
+      }`;
+    document.head.appendChild(style);
+
+    const container = createElement('div', {
+      className: 'container',
+    }, [
+      createElement('div', {
+        style: {
+          position: 'fixed',
+          top: '300px',
+          left: 0,
+        }
+      }, [
+        createElement('div', {
+          id: 'box'
+        }, [
+          createText('click me')
+        ])
+      ])
+    ]);
+
+    BODY.append(container);
+
+    const clickBox = document.querySelector('#box');
+
+    const rect1 = clickBox?.getBoundingClientRect();
+
+    window.scrollTo(0, 200);
+    
+    const rect2 = clickBox?.getBoundingClientRect();
+    
+    expect(JSON.stringify(rect1)).toEqual(JSON.stringify(rect2));
+  });
+
+  it('should works with globalToLocal transform with position fixed layout', async () => {
+    const style = document.createElement('style');
+    style.innerHTML = `.container {
+        margin: 64px 0 32px;
+        text-align: center;
+        padding-top: 1000px;
+        padding-bottom: 300px;
+        background: linear-gradient(to right, #ff7e5f, #feb47b);
+      }`;
+    document.head.appendChild(style);
+
+    const container = createElement('div', {
+      className: 'container',
+    }, [
+      createElement('div', {
+        style: {
+          position: 'fixed',
+          top: '300px',
+          left: 0,
+        }
+      }, [
+        createElement('div', {
+          id: 'box'
+        }, [
+          createText('click me')
+        ])
+      ])
+    ]);
+
+    BODY.append(container);
+
+    const clickBox = document.querySelector('#box');
+    const rect = clickBox?.getBoundingClientRect();
+    
+    // @ts-ignore
+    const offset1 = clickBox?.___testGlobalToLocal__(rect.x, rect.y + 10);
+
+    window.scrollTo(0, 200);
+
+    // @ts-ignore
+    const offset2 = clickBox?.___testGlobalToLocal__(rect?.x, rect.y + 10);
+    expect(JSON.stringify(offset1)).toEqual(JSON.stringify(offset2));
+  });
+
   it('should works when getting multiple zero rects', () => {
     const div = document.createElement('div');
-    expect(JSON.parse(JSON.stringify(div.getBoundingClientRect()))).toEqual({bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0, x: 0, y: 0});
-    expect(JSON.parse(JSON.stringify(div.getBoundingClientRect()))).toEqual({bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0, x: 0, y: 0});
+    expect(JSON.parse(JSON.stringify(div.getBoundingClientRect()))).toEqual({ bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0, x: 0, y: 0 });
+    expect(JSON.parse(JSON.stringify(div.getBoundingClientRect()))).toEqual({ bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0, x: 0, y: 0 });
   });
 
   it('children should only contain elements', () => {
@@ -120,7 +206,7 @@ describe('DOM Element API', () => {
 
     el.appendChild(document.createTextNode('text'));
     el.appendChild(document.createComment('comment'));
-    for (let i = 0; i < 20; i ++) {
+    for (let i = 0; i < 20; i++) {
       el.appendChild(document.createElement('span'));
     }
 
@@ -132,7 +218,7 @@ describe('DOM Element API', () => {
     const el = document.createElement('div');
     document.body.appendChild(el);
 
-    for (let i = 0; i < 20; i ++) {
+    for (let i = 0; i < 20; i++) {
       el.appendChild(document.createElement('span'));
     }
     el.appendChild(document.createTextNode('text'));
@@ -174,16 +260,16 @@ describe('DOM Element API', () => {
     el.appendChild(document.createElement('span'));
     var target = el.lastElementChild?.parentElement;
     expect(target.tagName).toEqual('DIV');
-  
+
     let childDiv = document.createDocumentFragment().appendChild(document.createElement('div'));
     expect(childDiv.parentElement).toEqual(null);
-  
+
     expect(document.documentElement.parentElement).toEqual(null);
   });
 });
 
 describe('children', () => {
-  test(function() {
+  test(function () {
     var container = document.createElement('div');
     container.innerHTML = '<img id=foo><img id=foo><img name="bar">';
     var list = container.children;
