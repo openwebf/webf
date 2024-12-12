@@ -82,7 +82,7 @@ abstract class WidgetElement extends dom.Element {
 
   @mustCallSuper
   @override
-  void didDetachRenderer() {
+  void didDetachRenderer([RenderObjectElement? flutterWidgetElement]) {
     super.didDetachRenderer();
     detachWidget();
   }
@@ -100,15 +100,16 @@ abstract class WidgetElement extends dom.Element {
   /// place the equivalence altitude to the [willAttachRenderer] and [didAttachRenderer].
   @mustCallSuper
   @override
-  void willAttachRenderer([dom.WebRenderLayoutWidgetElement? flutterWidgetElement]) {
+  RenderObject willAttachRenderer([RenderObjectElement? flutterWidgetElement]) {
     assert(!managedByFlutterWidget);
-    super.willAttachRenderer();
-    if (renderStyle.display != CSSDisplay.none) {
+    RenderObject renderObject = super.willAttachRenderer();
+    if (renderStyle.display != CSSDisplay.none && !managedByFlutterWidget) {
       RenderObject hostedRenderObject = flutterWidgetElement != null
           ? renderStyle.getWidgetPairedRenderBoxModel(flutterWidgetElement)!
           : renderStyle.domRenderBoxModel!;
       attachedAdapter = SharedRenderWidgetAdapter(child: widget, container: hostedRenderObject, widgetElement: this);
     }
+    return renderObject;
   }
 
   @mustCallSuper
@@ -235,7 +236,7 @@ abstract class WidgetElement extends dom.Element {
   }
 
   void detachWidget() {
-    if (attachedAdapter != null) {
+    if (attachedAdapter != null && !managedByFlutterWidget) {
       ownerDocument.controller.onCustomElementDetached!(attachedAdapter!);
       attachedAdapter = null;
     }
@@ -400,9 +401,7 @@ class WebFRenderWidgetAdaptor extends SingleChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    RenderObject? renderWidget =
-        widgetElement.updateOrCreateRenderBoxModel(flutterWidgetElement: (context as RenderObjectElement));
-    return renderWidget!;
+    return widgetElement.renderStyle.getWidgetPairedRenderBoxModel(context as RenderObjectElement)!;
   }
 
   @override
@@ -428,4 +427,17 @@ class RenderWidgetElement extends SingleChildRenderObjectElement {
       }
     });
   }
+
+  @override
+  void mount(Element? parent, Object? newSlot) {
+    widget.widgetElement.willAttachRenderer(this);
+    super.mount(parent, newSlot);
+    widget.widgetElement.didAttachRenderer(this);
+  }
+
+  @override
+  void unmount() {
+    super.unmount();
+  }
+
 }

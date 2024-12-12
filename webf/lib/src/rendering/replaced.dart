@@ -88,7 +88,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
   @override
   void performResize() {
     double width = 0, height = 0;
-    final Size attempingSize = constraints.biggest;
+    final Size attempingSize = contentConstraints!.biggest;
     if (attempingSize.width.isFinite) {
       width = attempingSize.width;
     }
@@ -96,7 +96,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       height = attempingSize.height;
     }
 
-    size = constraints.constrain(Size(width, height));
+    size = contentConstraints!.constrain(Size(width, height));
     assert(size.isFinite);
   }
 

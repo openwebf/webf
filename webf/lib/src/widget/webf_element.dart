@@ -24,7 +24,7 @@ class WebFHTMLElement extends WebFRenderLayoutWidgetAdaptor {
   }
 
   @override
-  WebRenderLayoutWidgetElement createElement() {
+  WebRenderLayoutRenderObjectElement createElement() {
     return SelfOwnedWebRenderLayoutWidgetElement(this);
   }
 
@@ -34,7 +34,7 @@ class WebFHTMLElement extends WebFRenderLayoutWidgetAdaptor {
   }
 }
 
-class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutWidgetElement {
+class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectElement {
   SelfOwnedWebRenderLayoutWidgetElement(super.widget);
 
   dom.Element? _webFElement;

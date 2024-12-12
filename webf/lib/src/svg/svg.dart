@@ -58,9 +58,10 @@ class SVGSVGElement extends SVGGraphicsElement {
   }
 
   @override
-  void willAttachRenderer([flutter.Element? flutterWidgetElement]) {
-    super.willAttachRenderer();
+  RenderObject willAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
+    RenderObject renderObject = super.willAttachRenderer(flutterWidgetElement);
     style.addStyleChangeListener(_stylePropertyChanged);
+    return renderObject;
   }
 
   void _stylePropertyChanged(String property, String? original, String present,

@@ -1189,7 +1189,7 @@ class RenderBoxModel extends RenderBox
   // Base layout methods to compute content constraints before content box layout.
   // Call this method before content box layout.
   void beforeLayout() {
-    BoxConstraints contentConstraints = constraints;
+    BoxConstraints contentConstraints = parent is RenderBoxModel ? constraints : getConstraints();
 
     // Deflate border constraints.
     contentConstraints = renderStyle.deflateBorderConstraints(contentConstraints);

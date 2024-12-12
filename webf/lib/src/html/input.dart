@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:webf/css.dart';
@@ -379,7 +380,7 @@ mixin BaseInputElement on WidgetElement {
   }
 
   @override
-  void didDetachRenderer() {
+  void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     super.didDetachRenderer();
     _focusNode?.removeListener(handleFocusChange);
     _focusNode?.unfocus();

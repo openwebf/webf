@@ -87,7 +87,7 @@ class CanvasElement extends Element {
   }
 
   @override
-  void willAttachRenderer([flutter.Element? flutterWidgetElement]) {
+  RenderObject willAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     super.willAttachRenderer();
     renderCustomPaint = RenderCanvasPaint(
       painter: painter,
@@ -96,11 +96,12 @@ class CanvasElement extends Element {
 
     addChildForDOMMode(renderCustomPaint!);
     style.addStyleChangeListener(_styleChangedListener);
+    return renderCustomPaint!;
   }
 
   @override
-  void didDetachRenderer() {
-    super.didDetachRenderer();
+  void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
+    super.didDetachRenderer(flutterWidgetElement);
     style.removeStyleChangeListener(_styleChangedListener);
     painter.dispose();
     renderCustomPaint = null;

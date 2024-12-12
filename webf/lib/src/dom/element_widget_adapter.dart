@@ -80,7 +80,55 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
   bool get wantKeepAlive => true;
 }
 
-class RenderLayoutWidgetChangeReason {}
+class WebFReplacedElementWidget extends flutter.SingleChildRenderObjectWidget {
+  final Element webFElement;
+
+  WebFReplacedElementWidget({required this.webFElement, flutter.Key? key, flutter.Widget? child})
+      : super(key: key, child: child);
+
+  @override
+  RenderObject createRenderObject(flutter.BuildContext context) {
+    return webFElement.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement)!;
+  }
+
+  @override
+  flutter.SingleChildRenderObjectElement createElement() {
+    return WebFRenderReplacedRenderObjectElement(this);
+  }
+}
+
+class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObjectElement {
+  WebFRenderReplacedRenderObjectElement(super.widget);
+
+  @override
+  WebFReplacedElementWidget get widget => super.widget as WebFReplacedElementWidget;
+
+  @override
+  void mount(flutter.Element? parent, Object? newSlot) {
+    Element webFElement = widget.webFElement;
+    webFElement.willAttachRenderer(this);
+
+    super.mount(parent, newSlot);
+
+    webFElement.didAttachRenderer(this);
+
+    webFElement.applyStyle(webFElement.style);
+
+    if (webFElement.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
+      // Flush pending style before child attached.
+      webFElement.style.flushPendingProperties();
+    }
+  }
+
+  @override
+  void unmount() {
+    // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
+    Element element = widget.webFElement;
+    element.willDetachRenderer();
+    super.unmount();
+    element.didDetachRenderer();
+  }
+}
 
 class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget {
   WebFRenderLayoutWidgetAdaptor({this.webFElement, flutter.Key? key, required List<flutter.Widget> children})
@@ -89,17 +137,14 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
   final Element? webFElement;
 
   @override
-  WebRenderLayoutWidgetElement createElement() {
-    WebRenderLayoutWidgetElement element = ExternalWebRenderLayoutWidgetElement(webFElement!, this);
+  WebRenderLayoutRenderObjectElement createElement() {
+    WebRenderLayoutRenderObjectElement element = _ExternalWebRenderLayoutWidgetElement(webFElement!, this);
     return element;
   }
 
   @override
   flutter.RenderObject createRenderObject(flutter.BuildContext context) {
-    RenderBoxModel? renderObject = (context as WebRenderLayoutWidgetElement)
-        .webFElement
-        .updateOrCreateRenderBoxModel(flutterWidgetElement: context);
-    return renderObject!;
+    return webFElement!.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement)!;
   }
 
   @override
@@ -108,8 +153,8 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
   }
 }
 
-abstract class WebRenderLayoutWidgetElement extends flutter.MultiChildRenderObjectElement {
-  WebRenderLayoutWidgetElement(WebFRenderLayoutWidgetAdaptor widget) : super(widget);
+abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRenderObjectElement {
+  WebRenderLayoutRenderObjectElement(WebFRenderLayoutWidgetAdaptor widget) : super(widget);
 
   @override
   WebFRenderLayoutWidgetAdaptor get widget => super.widget as WebFRenderLayoutWidgetAdaptor;
@@ -124,6 +169,7 @@ abstract class WebRenderLayoutWidgetElement extends flutter.MultiChildRenderObje
 
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
+    webFElement.willAttachRenderer(this);
     super.mount(parent, newSlot);
     webFElement.didAttachRenderer();
 
@@ -145,10 +191,10 @@ abstract class WebRenderLayoutWidgetElement extends flutter.MultiChildRenderObje
   }
 }
 
-class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutWidgetElement {
+class _ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectElement {
   final Element _webfElement;
 
-  ExternalWebRenderLayoutWidgetElement(this._webfElement, WebFRenderLayoutWidgetAdaptor widget) : super(widget);
+  _ExternalWebRenderLayoutWidgetElement(this._webfElement, WebFRenderLayoutWidgetAdaptor widget) : super(widget);
 
   @override
   Element get webFElement => _webfElement;

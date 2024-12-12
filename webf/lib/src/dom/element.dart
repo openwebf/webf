@@ -209,7 +209,7 @@ abstract class Element extends ContainerNode
   HTMLCollection get children => ensureCachedCollection();
 
   @override
-  RenderBox createRenderer([WebRenderLayoutWidgetElement? flutterWidgetElement]) {
+  RenderBox createRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     return updateOrCreateRenderBoxModel(flutterWidgetElement: flutterWidgetElement)!;
   }
 
@@ -381,26 +381,22 @@ abstract class Element extends ContainerNode
   }
 
   @override
-  void willAttachRenderer([WebRenderLayoutWidgetElement? flutterWidgetElement]) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this.willAttachRenderer');
+  RenderObject willAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
+    if (renderStyle.display == CSSDisplay.none) {
+      return RenderConstrainedBox(additionalConstraints: BoxConstraints.tight(Size.zero));
     }
-    super.willAttachRenderer();
+
     // Init render box model.
-    if (renderStyle.display != CSSDisplay.none) {
-      createRenderer(flutterWidgetElement);
-    }
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-    }
+    return createRenderer(flutterWidgetElement);
   }
 
   @override
-  void didAttachRenderer() {
+  void didAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.didAttachRenderer');
     }
-    super.didAttachRenderer();
+    super.didAttachRenderer(flutterWidgetElement);
+
     // The node attach may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
     renderStyle.markAdjacentRenderParagraphNeedsLayout();
 
@@ -428,7 +424,7 @@ abstract class Element extends ContainerNode
   }
 
   @override
-  void willDetachRenderer() {
+  void willDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     super.willDetachRenderer();
 
     // Cancel running transition.
@@ -816,7 +812,9 @@ abstract class Element extends ContainerNode
   // Attach renderObject of current node to parent
   @override
   void attachTo(Node parent, {Node? previousSibling}) {
-    assert(!managedByFlutterWidget);
+    if (managedByFlutterWidget) {
+      return;
+    }
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.attachTo');
@@ -889,8 +887,7 @@ abstract class Element extends ContainerNode
 
   @override
   void ensureChildAttached() {
-    assert(!managedByFlutterWidget);
-    if (isRendererAttachedToSegmentTree) {
+    if (isRendererAttachedToSegmentTree && !managedByFlutterWidget) {
       if (!renderStyle.hasRenderBox()) return;
       for (Node child in childNodes) {
         if (!child.isRendererAttachedToSegmentTree) {

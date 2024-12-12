@@ -383,7 +383,7 @@ abstract class RenderStyle extends DiagnosticableTree {
   // For some style changes, we needs to upgrade
   void requestWidgetToRebuild(RenderObjectUpdateReason reason) {
     _widgetRenderObjects.keys.forEach((element) {
-      if (element is WebRenderLayoutWidgetElement) {
+      if (element is WebRenderLayoutRenderObjectElement) {
         element.requestForBuild();
       } else if (element is RenderWidgetElement) {
         element.requestForBuild();
@@ -588,19 +588,27 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   bool isSelfContainsRenderPositionPlaceHolder() {
-    assert(!target.managedByFlutterWidget, 'Currently not supported in widget mode');
+    if (target.managedByFlutterWidget) {
+      return false;
+    }
+
     return _domRenderObjects?.renderPositionPlaceholder != null;
   }
 
   @pragma('vm:prefer-inline')
   bool isPositionHolderParentIsRenderFlexLayout() {
-    assert(!target.managedByFlutterWidget, 'Currently not supported in widget mode');
+    if (target.managedByFlutterWidget) {
+      return false;
+    }
+
     return _domRenderObjects?.renderPositionPlaceholder?.parent is RenderFlexLayout;
   }
 
   @pragma('vm:prefer-inline')
   bool isPositionHolderParentIsRenderLayoutBox() {
-    assert(!target.managedByFlutterWidget, 'Currently not supported in widget mode');
+    if (target.managedByFlutterWidget) {
+      return false;
+    }
     return _domRenderObjects?.renderPositionPlaceholder?.parent is RenderLayoutBox;
   }
 

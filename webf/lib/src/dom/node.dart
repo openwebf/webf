@@ -336,20 +336,21 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   @override
-  RenderBox createRenderer([WebRenderLayoutWidgetElement? flutterWidgetElement]) =>
+  RenderBox createRenderer([WebRenderLayoutRenderObjectElement? flutterWidgetElement]) =>
       throw FlutterError('[createRenderer] is not implemented.');
 
   @override
-  void willAttachRenderer() {}
+  RenderObject willAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) =>
+      throw FlutterError('[willAttachRenderer] is not implemented.');
 
   @override
-  void didAttachRenderer() {}
+  void didAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {}
 
   @override
-  void willDetachRenderer() {}
+  void willDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {}
 
   @override
-  void didDetachRenderer() {}
+  void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {}
 
   Node? appendChild(Node child) {
     return null;

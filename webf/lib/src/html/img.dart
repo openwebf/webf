@@ -66,8 +66,7 @@ class ImageElement extends Element {
     // @TODO: Implement the srcset.
     if (src.isEmpty) return true;
     if (_currentRequest != null && _currentRequest!.available) return true;
-    if (_currentRequest != null &&
-        _currentRequest!.state == _ImageRequestState.broken) return true;
+    if (_currentRequest != null && _currentRequest!.state == _ImageRequestState.broken) return true;
     return true;
   }
 
@@ -84,9 +83,11 @@ class ImageElement extends Element {
   bool get _shouldScaling => true;
 
   ImageStreamCompleterHandle? _completerHandle;
+
   // only the last task works
   Future<void>? _updateImageDataTaskFuture;
   int _updateImageDataTaskId = 0;
+
   // When there has a delay task, should complete it to continue.
   Completer<bool?>? _updateImageDataLazyCompleter;
 
@@ -104,24 +105,22 @@ class ImageElement extends Element {
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   @override
+  flutter.Widget toWidget() {
+    return WebFReplacedElementWidget(webFElement: this, key: flutter.ObjectKey(this), child: WebFImage(this));
+  }
+
+  @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
-    properties['src'] = BindingObjectProperty(
-        getter: () => src, setter: (value) => src = castToType<String>(value));
-    properties['loading'] = BindingObjectProperty(
-        getter: () => loading,
-        setter: (value) => loading = castToType<String>(value));
-    properties['width'] = BindingObjectProperty(
-        getter: () => width, setter: (value) => width = value);
-    properties['height'] = BindingObjectProperty(
-        getter: () => height, setter: (value) => height = value);
-    properties['scaling'] = BindingObjectProperty(
-        getter: () => scaling,
-        setter: (value) => scaling = castToType<String>(value));
-    properties['naturalWidth'] =
-        BindingObjectProperty(getter: () => naturalWidth);
-    properties['naturalHeight'] =
-        BindingObjectProperty(getter: () => naturalHeight);
+    properties['src'] = BindingObjectProperty(getter: () => src, setter: (value) => src = castToType<String>(value));
+    properties['loading'] =
+        BindingObjectProperty(getter: () => loading, setter: (value) => loading = castToType<String>(value));
+    properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => width = value);
+    properties['height'] = BindingObjectProperty(getter: () => height, setter: (value) => height = value);
+    properties['scaling'] =
+        BindingObjectProperty(getter: () => scaling, setter: (value) => scaling = castToType<String>(value));
+    properties['naturalWidth'] = BindingObjectProperty(getter: () => naturalWidth);
+    properties['naturalHeight'] = BindingObjectProperty(getter: () => naturalHeight);
     properties['complete'] = BindingObjectProperty(getter: () => complete);
   }
 
@@ -129,20 +128,16 @@ class ImageElement extends Element {
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
 
-    attributes['src'] = ElementAttributeProperty(
-        setter: (value) => src = attributeToProperty<String>(value));
-    attributes['loading'] = ElementAttributeProperty(
-        setter: (value) => loading = attributeToProperty<String>(value));
+    attributes['src'] = ElementAttributeProperty(setter: (value) => src = attributeToProperty<String>(value));
+    attributes['loading'] = ElementAttributeProperty(setter: (value) => loading = attributeToProperty<String>(value));
     attributes['width'] = ElementAttributeProperty(setter: (value) {
-      CSSLengthValue input = CSSLength.parseLength(
-          attributeToProperty<String>(value), renderStyle);
+      CSSLengthValue input = CSSLength.parseLength(attributeToProperty<String>(value), renderStyle);
       if (input.value != null) {
         width = input.value!.toInt();
       }
     });
     attributes['height'] = ElementAttributeProperty(setter: (value) {
-      CSSLengthValue input = CSSLength.parseLength(
-          attributeToProperty<String>(value), renderStyle);
+      CSSLengthValue input = CSSLength.parseLength(attributeToProperty<String>(value), renderStyle);
       if (input.value != null) {
         height = input.value!.toInt();
       }
@@ -151,27 +146,31 @@ class ImageElement extends Element {
   }
 
   @override
-  void willAttachRenderer([flutter.Element? flutterWidgetElement]) {
-    super.willAttachRenderer();
+  RenderObject willAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
+    RenderObject renderObject = super.willAttachRenderer(flutterWidgetElement);
     style.addStyleChangeListener(_stylePropertyChanged);
-    RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
-    if (_didWatchAnimationImage && renderReplaced?.hasIntersectionObserver() == false) {
-      renderReplaced!.addIntersectionChangeListener(_handleIntersectionChange);
+    RenderReplaced? renderReplaced = renderObject as RenderReplaced;
+    if (_didWatchAnimationImage && renderReplaced.hasIntersectionObserver() == false) {
+      renderReplaced.addIntersectionChangeListener(_handleIntersectionChange);
+    }
+
+    return renderObject;
+  }
+
+  @override
+  void didAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
+    super.didAttachRenderer();
+    if (!managedByFlutterWidget) {
+      _reattachRenderObject();
     }
   }
 
   @override
-  void didAttachRenderer([flutter.Element? flutterWidgetElement]) {
-    super.didAttachRenderer();
-    _reattachRenderObject();
-  }
-
-  @override
-  void didDetachRenderer() async {
+  void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) async {
     super.didDetachRenderer();
     style.removeStyleChangeListener(_stylePropertyChanged);
 
-    if (renderStyle.hasRenderBox()) {
+    if (renderStyle.hasRenderBox() && !managedByFlutterWidget) {
       // unlink render object and self render object
       final replaced = renderStyle.domRenderBoxModel as RenderReplaced;
       replaced.child = null;
@@ -228,25 +227,28 @@ class ImageElement extends Element {
   // Drop the current [RenderImage] off to render replaced.
   void _dropChild() {
     if (renderStyle.hasRenderBox()) {
-      RenderReplaced renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced;
-      renderReplaced.child = null;
-      if (_renderImage != null) {
-        _renderImage!.image = null;
+      if (managedByFlutterWidget) {
+      } else {
+        RenderReplaced renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced;
+        renderReplaced.child = null;
+        if (_renderImage != null) {
+          _renderImage!.image = null;
 
-        ownerDocument.inactiveRenderObjects.add(_renderImage);
-        _renderImage = null;
-      }
-      if (_svgRenderObject != null) {
-        ownerDocument.inactiveRenderObjects.add(_svgRenderObject!);
-        _svgRenderObject = null;
+          ownerDocument.inactiveRenderObjects.add(_renderImage);
+          _renderImage = null;
+        }
+        if (_svgRenderObject != null) {
+          ownerDocument.inactiveRenderObjects.add(_svgRenderObject!);
+          _svgRenderObject = null;
+        }
       }
     }
   }
 
   ImageStreamListener? _imageStreamListener;
 
-  ImageStreamListener get _listener => _imageStreamListener ??=
-      ImageStreamListener(_handleImageFrame, onError: _onImageError);
+  ImageStreamListener get _listener =>
+      _imageStreamListener ??= ImageStreamListener(_handleImageFrame, onError: _onImageError);
 
   void _listenToStream() {
     if (_isListeningStream) return;
@@ -256,6 +258,7 @@ class ImageElement extends Element {
   }
 
   bool _didWatchAnimationImage = false;
+
   void _watchAnimatedImageWhenVisible() {
     RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
     if (_isListeningStream && !_didWatchAnimationImage) {
@@ -329,15 +332,13 @@ class ImageElement extends Element {
 
   int get width {
     // Width calc priority: style > attr > intrinsic.
-    final double borderBoxWidth =
-        _styleWidth ?? _attrWidth ?? renderStyle.getWidthByAspectRatio();
+    final double borderBoxWidth = _styleWidth ?? _attrWidth ?? renderStyle.getWidthByAspectRatio();
     return borderBoxWidth.isFinite ? borderBoxWidth.round() : 0;
   }
 
   int get height {
     // Height calc priority: style > attr > intrinsic.
-    final double borderBoxHeight =
-        _styleHeight ?? _attrHeight ?? renderStyle.getHeightByAspectRatio();
+    final double borderBoxHeight = _styleHeight ?? _attrHeight ?? renderStyle.getHeightByAspectRatio();
     return borderBoxHeight.isFinite ? borderBoxHeight.round() : 0;
   }
 
@@ -514,9 +515,15 @@ class ImageElement extends Element {
       _currentRequest?.state = _ImageRequestState.completelyAvailable;
     }
 
-    _updateRenderObject(image: imageInfo.image);
-    _renderImage!.width = naturalWidth.toDouble();
-    _renderImage!.height = naturalHeight.toDouble();
+    if (!managedByFlutterWidget) {
+      _updateRenderObject(image: imageInfo.image);
+      _renderImage!.width = naturalWidth.toDouble();
+      _renderImage!.height = naturalHeight.toDouble();
+    } else {
+      // if (renderStyle.hasRenderBox()) {
+      //   assert(false);
+      // }
+    }
 
     // Fire the load event at first frame come.
     if (!_loaded) {
@@ -592,8 +599,7 @@ class ImageElement extends Element {
   }
 
   void _loadSVGImage() {
-    final builder =
-        SVGRenderBoxBuilder(obtainImage(this, _resolvedUri!), target: this);
+    final builder = SVGRenderBoxBuilder(obtainImage(this, _resolvedUri!), target: this);
 
     builder.decode().then((renderObject) {
       final size = builder.getIntrinsicSize();
@@ -617,9 +623,7 @@ class ImageElement extends Element {
   // The image will be encoded into a small size for better rasterization performance.
   void _loadNormalImage() {
     var provider = _currentImageProvider;
-    if (provider == null ||
-        (provider.boxFit != renderStyle.objectFit ||
-            provider.url != _resolvedUri)) {
+    if (provider == null || (provider.boxFit != renderStyle.objectFit || provider.url != _resolvedUri)) {
       // Image should be resized based on different ratio according to object-fit value.
       BoxFit objectFit = renderStyle.objectFit;
 
@@ -636,14 +640,12 @@ class ImageElement extends Element {
 
     FlutterView ownerFlutterView = ownerDocument.controller.ownerFlutterView;
     // Try to make sure that this image can be encoded into a smaller size.
-    int? cachedWidth =
-        renderStyle.width.value != null && width > 0 && width.isFinite
-            ? (width * ownerFlutterView.devicePixelRatio).toInt()
-            : null;
-    int? cachedHeight =
-        renderStyle.height.value != null && height > 0 && height.isFinite
-            ? (height * ownerFlutterView.devicePixelRatio).toInt()
-            : null;
+    int? cachedWidth = renderStyle.width.value != null && width > 0 && width.isFinite
+        ? (width * ownerFlutterView.devicePixelRatio).toInt()
+        : null;
+    int? cachedHeight = renderStyle.height.value != null && height > 0 && height.isFinite
+        ? (height * ownerFlutterView.devicePixelRatio).toInt()
+        : null;
 
     if (cachedWidth != null && cachedHeight != null) {
       // If a image with the same URL has a fixed size, attempt to remove the previous unsized imageProvider from imageCache.
@@ -651,14 +653,12 @@ class ImageElement extends Element {
         url: _resolvedUri!,
         configuration: ImageConfiguration.empty,
       );
-      PaintingBinding.instance.imageCache
-          .evict(previousUnSizedKey, includeLive: true);
+      PaintingBinding.instance.imageCache.evict(previousUnSizedKey, includeLive: true);
     }
 
     ImageConfiguration imageConfiguration = _currentImageConfig =
         _shouldScaling && cachedWidth != null && cachedHeight != null
-            ? ImageConfiguration(
-                size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
+            ? ImageConfiguration(size: Size(cachedWidth.toDouble(), cachedHeight.toDouble()))
             : ImageConfiguration.empty;
     final stream = provider.resolve(imageConfiguration);
     _updateSourceStream(stream);
@@ -713,16 +713,14 @@ class ImageElement extends Element {
   Uri? _resolveResourceUri(String src) {
     String base = ownerDocument.controller.url;
     try {
-      return ownerDocument.controller.uriParser!
-          .resolve(Uri.parse(base), Uri.parse(src));
+      return ownerDocument.controller.uriParser!.resolve(Uri.parse(base), Uri.parse(src));
     } catch (_) {
       // Ignoring the failure of resolving, but to remove the resolved hyperlink.
       return null;
     }
   }
 
-  void _stylePropertyChanged(String property, String? original, String present,
-      {String? baseHref}) {
+  void _stylePropertyChanged(String property, String? original, String present, {String? baseHref}) {
     if (property == WIDTH || property == HEIGHT) {
       // Resize image
       if (_shouldScaling && _resolvedUri != null) {
@@ -735,6 +733,33 @@ class ImageElement extends Element {
     } else if (property == OBJECT_POSITION && _renderImage != null) {
       _renderImage!.alignment = renderStyle.objectPosition;
     }
+  }
+}
+
+class WebFImage extends flutter.StatefulWidget {
+  final ImageElement imageElement;
+
+  WebFImage(this.imageElement);
+
+  @override
+  flutter.State<flutter.StatefulWidget> createState() {
+    return _ImageState(imageElement);
+  }
+}
+
+class _ImageState extends flutter.State<WebFImage> {
+  final ImageElement imageElement;
+
+  _ImageState(this.imageElement);
+
+  @override
+  flutter.Widget build(flutter.BuildContext context) {
+    flutter.RawImage rawImage = flutter.RawImage(
+        image: imageElement._cachedImageInfo?.image,
+        width: imageElement.naturalWidth.toDouble(),
+        height: imageElement.naturalHeight.toDouble());
+
+    return rawImage;
   }
 }
 
@@ -776,8 +801,7 @@ class ImageRequest {
   /// When an image request's state is either partially available or completely available,
   /// the image request is said to be available.
   bool get available =>
-      state == _ImageRequestState.completelyAvailable ||
-      state == _ImageRequestState.partiallyAvailable;
+      state == _ImageRequestState.completelyAvailable || state == _ImageRequestState.partiallyAvailable;
 
   Future<ImageLoadResponse> obtainImage(WebFController controller) async {
     final WebFBundle bundle =
