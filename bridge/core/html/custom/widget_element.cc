@@ -267,13 +267,25 @@ ScriptValue AsyncDynamicFunction(JSContext* ctx,
 ScriptValue WidgetElement::CreateSyncMethodFunc(const AtomicString& method_name) {
   auto* data = new FunctionData();
   data->method_name = method_name.ToStdString(ctx());
-  return ScriptValue(ctx(), QJSFunction::Create(ctx(), SyncDynamicFunction, 1, data)->ToQuickJSUnsafe());
+  return ScriptValue(ctx(),
+                     QJSFunction::Create(ctx(), SyncDynamicFunction, 1, data, HandleJSCallbackGCMark, HandleJSFinalizer)
+                         ->ToQuickJSUnsafe());
 }
 
 ScriptValue WidgetElement::CreateAsyncMethodFunc(const AtomicString& method_name) {
   auto* data = new FunctionData();
   data->method_name = method_name.ToStdString(ctx());
-  return ScriptValue(ctx(), QJSFunction::Create(ctx(), AsyncDynamicFunction, 1, data)->ToQuickJSUnsafe());
+  return ScriptValue(
+      ctx(), QJSFunction::Create(ctx(), AsyncDynamicFunction, 1, data, HandleJSCallbackGCMark, HandleJSFinalizer)
+                 ->ToQuickJSUnsafe());
+}
+
+void WidgetElement::HandleJSCallbackGCMark(JSRuntime* rt, JSValue val, JS_MarkFunc* mark_func) {}
+
+void WidgetElement::HandleJSFinalizer(JSRuntime* rt, JSValue val) {
+  auto* callback_context = static_cast<QJSFunctionCallbackContext*>(JS_GetOpaque(val, JSValueGetClassId(val)));
+  delete static_cast<FunctionData*>(callback_context->private_data);
+  delete callback_context;
 }
 
 }  // namespace webf
