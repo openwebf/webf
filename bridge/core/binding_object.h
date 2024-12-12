@@ -74,6 +74,7 @@ enum CreateBindingObjectType {
   kCreateDOMMatrix = 0,
   kCreatePath2D = 1,
   kCreateDOMPoint = 2,
+  kCreateIntersectionObserver = 3,
 };
 
 struct BindingObjectPromiseContext : public DartReadable {

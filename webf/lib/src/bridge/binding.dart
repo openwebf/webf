@@ -16,6 +16,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/geometry/dom_point.dart';
 import 'package:webf/src/html/canvas/canvas_path_2d.dart';
+import 'package:webf/src/dom/intersection_observer.dart';
 
 // We have some integrated built-in behavior starting with string prefix reuse the callNativeMethod implements.
 enum BindingMethodCallOperations {
@@ -162,6 +163,7 @@ enum CreateBindingObjectType {
   createDOMMatrix,
   createPath2D,
   createDOMPoint,
+  createIntersectionObserver
 }
 
 abstract class BindingBridge {
@@ -191,6 +193,10 @@ abstract class BindingBridge {
         DOMPoint domPoint = DOMPoint(BindingContext(controller.view, contextId, pointer), arguments);
         controller.view.setBindingObject(pointer, domPoint);
         return;
+      }
+      case CreateBindingObjectType.createIntersectionObserver: {
+        IntersectionObserver intersectionObserver = IntersectionObserver(BindingContext(controller.view, contextId, pointer), arguments);
+        controller.view.setBindingObject(pointer, intersectionObserver);
       }
     }
   }
