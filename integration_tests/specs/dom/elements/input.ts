@@ -825,3 +825,93 @@ describe('Tags input', () => {
     });
   });
 });
+
+describe('Input type radio', () => {
+  it('basic radio button', async () => {
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.value = 'option1';
+    document.body.appendChild(radio);
+    await snapshot();
+  });
+
+  it('checked radio button', async () => {
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.checked = true;
+    document.body.appendChild(radio);
+    await snapshot();
+  });
+
+
+  it('radio button with name group', async () => {
+    const radio1 = document.createElement('input');
+    const radio2 = document.createElement('input');
+    radio1.type = 'radio';
+    radio2.type = 'radio';
+    radio1.name = 'group1';
+    radio2.name = 'group1';
+    radio1.checked = true;
+
+    document.body.appendChild(radio1);
+    document.body.appendChild(radio2);
+    await snapshot();
+  });
+
+  it('should uncheck other radios in same group when one is checked', (done) => {
+    const radio1 = document.createElement('input');
+    const radio2 = document.createElement('input');
+    radio1.type = 'radio';
+    radio2.type = 'radio';
+    radio1.name = 'group2';
+    radio2.name = 'group2';
+
+    document.body.appendChild(radio1);
+    document.body.appendChild(radio2);
+
+    radio1.checked = true;
+    expect(radio2.checked).toBe(false);
+
+    radio2.checked = true;
+    expect(radio1.checked).toBe(false);
+    done();
+  });
+
+  it('disabled radio button', async () => {
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.disabled = true;
+    document.body.appendChild(radio);
+    await snapshot();
+  });
+
+  it('radio button click event', (done) => {
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    document.body.appendChild(radio);
+
+    radio.addEventListener('click', function handler() {
+      expect(radio.checked).toBe(true);
+      done();
+    });
+
+    requestAnimationFrame(() => {
+      simulateClick(10, 10);
+    });
+  });
+
+  it('radio button change event', (done) => {
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    document.body.appendChild(radio);
+
+    radio.addEventListener('change', function handler() {
+      expect(radio.checked).toBe(true);
+      done();
+    });
+
+    requestAnimationFrame(() => {
+      radio.checked = true;
+    });
+  });
+})
