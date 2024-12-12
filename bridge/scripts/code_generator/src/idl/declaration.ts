@@ -34,6 +34,7 @@ export class ParameterMode {
   dartImpl?: boolean;
   layoutDependent?: boolean;
   static?: boolean;
+  staticMethod?: boolean;
 }
 
 export class PropsDeclaration {
@@ -62,15 +63,17 @@ export enum ClassObjectKind {
 }
 
 export class ClassObject {
-  static globalClassMap = new Map<string, ClassObject>();
+  static globalClassMap: {[key: string]: ClassObject} = Object.create(null);
+  static globalClassRelationMap: {[key: string]: string[]} = Object.create(null);
   name: string;
   parent: string;
   mixinParent: string[];
   props: PropsDeclaration[] = [];
   indexedProp?: IndexedPropertyDeclaration;
   methods: FunctionDeclaration[] = [];
+  staticMethods: FunctionDeclaration[] = [];
   construct?: FunctionDeclaration;
-  kind: ClassObjectKind = ClassObjectKind.interface
+  kind: ClassObjectKind = ClassObjectKind.interface;
 }
 
 export class FunctionObject {

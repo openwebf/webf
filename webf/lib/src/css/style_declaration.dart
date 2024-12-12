@@ -47,7 +47,9 @@ List<String> _propertyOrders = [
   TRANSITION_TIMING_FUNCTION,
   TRANSITION_DELAY,
   OVERFLOW_X,
-  OVERFLOW_Y
+  OVERFLOW_Y,
+  WIDTH,
+  HEIGHT
 ];
 
 RegExp _kebabCaseReg = RegExp(r'[A-Z]');

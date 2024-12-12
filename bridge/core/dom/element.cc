@@ -20,6 +20,7 @@
 #include "foundation/native_value_converter.h"
 #include "html_element_type_helper.h"
 #include "mutation_observer_interest_group.h"
+#include "plugin_api/element.h"
 #include "qjs_element.h"
 #include "text.h"
 
@@ -343,6 +344,11 @@ void Element::Trace(GCVisitor* visitor) const {
   ContainerNode::Trace(visitor);
 }
 
+const ElementPublicMethods* Element::elementPublicMethods() {
+  static ElementPublicMethods element_public_methods;
+  return &element_public_methods;
+}
+
 // https://dom.spec.whatwg.org/#concept-element-qualified-name
 const AtomicString Element::getUppercasedQualifiedName() const {
   auto name = getQualifiedName();
@@ -456,6 +462,19 @@ ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& excepti
   auto resolver = ScriptPromiseResolver::Create(GetExecutingContext());
   new ElementSnapshotReader(GetExecutingContext(), this, resolver, device_pixel_ratio);
   return resolver->Promise();
+}
+
+ScriptValue Element::___testGlobalToLocal__(double x, double y, webf::ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+  };
+
+  NativeValue result = InvokeBindingMethod(
+      binding_call_methods::k__test_global_to_local__, 2, args,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
+
+  return ScriptValue(ctx(), result);
 }
 
 void Element::DidAddAttribute(const AtomicString& name, const AtomicString& value) {}

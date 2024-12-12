@@ -270,6 +270,11 @@ void Window::Trace(GCVisitor* visitor) const {
   EventTargetWithInlineData::Trace(visitor);
 }
 
+const WindowPublicMethods* Window::windowPublicMethods() {
+  static WindowPublicMethods window_public_methods;
+  return &window_public_methods;
+}
+
 JSValue Window::ToQuickJS() const {
   return JS_GetGlobalObject(ctx());
 }

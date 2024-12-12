@@ -42,6 +42,11 @@ void WidgetElement::NamedPropertyEnumerator(std::vector<AtomicString>& names, Ex
   }
 }
 
+// <custome-element id="custom-element" />
+
+// const element = document.getElementById('custom-element');
+// element.dartFn(123, 23, 4);
+
 ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& exception_state) {
   if (unimplemented_properties_.count(key) > 0) {
     return unimplemented_properties_[key];

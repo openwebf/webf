@@ -75,8 +75,11 @@ double _length(v) {
   return sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 }
 
-List<double> _normalize(List<double> v) {
+List<double> normalize(List<double> v) {
   var len = _length(v);
+  if (len == 0) {
+    return v;
+  }
   return [v[0] / len, v[1] / len, v[2] / len];
 }
 
@@ -88,7 +91,7 @@ List<double> _cross(v1, v2) {
   return [v1[1] * v2[2] - v1[2] * v2[1], v1[2] * v2[0] - v1[0] * v2[2], v1[0] * v2[1] - v1[1] * v2[0]];
 }
 
-double _dot(v1, v2) {
+double dot(v1, v2) {
   double result = 0;
   for (var i = 0; i < v1.length; i++) {
     result += v1[i] * v2[i];
@@ -99,7 +102,7 @@ double _dot(v1, v2) {
 final double _1deg = 180 / pi;
 final double _1rad = pi / 180;
 
-double? _rad2deg(rad) {
+double? rad2deg(rad) {
   // angleInDegree = angleInRadians * (180 / Math.PI)
   return rad * _1deg;
 }
@@ -227,7 +230,7 @@ class CSSMatrix {
   // Perform a spherical linear interpolation between the two
   // passed quaternions with 0 <= t <= 1.
   static List<double> lerpQuaternion(quaternionA, quaternionB, t) {
-    var product = _dot(quaternionA, quaternionB);
+    var product = dot(quaternionA, quaternionB);
 
     // Clamp product to -1.0 <= product <= 1.0
     product = max<double>(min<double>(product, 1.0), -1.0);
@@ -311,33 +314,33 @@ class CSSMatrix {
     List<List<double>> row = [];
     row.add(matrix[0].sublist(0, 3));
 
-    // Compute X scale factor and _normalize first row.
+    // Compute X scale factor and normalize first row.
     List<double> scale = List.filled(3, 0);
     scale[0] = _length(row[0]);
-    row[0] = _normalize(row[0]);
+    row[0] = normalize(row[0]);
 
     // Compute XY shear factor and make 2nd row orthogonal to 1st.
     // skew factors XY,XZ,YZ represented as a 3 component vector
     List<double> skew = List.filled(3, 0);
     row.add(matrix[1].sublist(0, 3));
-    skew[0] = _dot(row[0], row[1]);
+    skew[0] = dot(row[0], row[1]);
     row[1] = _combine(row[1], row[0], 1.0, -skew[0]);
 
-    // Now, compute Y scale and _normalize 2nd row.
+    // Now, compute Y scale and normalize 2nd row.
     scale[1] = _length(row[1]);
-    row[1] = _normalize(row[1]);
+    row[1] = normalize(row[1]);
     skew[0] /= scale[1];
 
     // Compute XZ and YZ shears, orthogonalize 3rd row
     row.add(matrix[2].sublist(0, 3));
-    skew[1] = _dot(row[0], row[2]);
+    skew[1] = dot(row[0], row[2]);
     row[2] = _combine(row[2], row[0], 1.0, -skew[1]);
-    skew[2] = _dot(row[1], row[2]);
+    skew[2] = dot(row[1], row[2]);
     row[2] = _combine(row[2], row[1], 1.0, -skew[2]);
 
-    // Next, get Z scale and _normalize 3rd row.
+    // Next, get Z scale and normalize 3rd row.
     scale[2] = _length(row[2]);
-    row[2] = _normalize(row[2]);
+    row[2] = normalize(row[2]);
     skew[1] /= scale[2];
     skew[2] /= scale[2];
 
@@ -345,7 +348,7 @@ class CSSMatrix {
     // Check for a coordinate system flip.  If the _determinant
     // is -1, then negate the matrix and the scaling factors.
     var pdum3 = _cross(row[1], row[2]);
-    if (_dot(row[0], pdum3) < 0) {
+    if (dot(row[0], pdum3) < 0) {
       for (var i = 0; i < 3; i++) {
         scale[i] *= -1;
         row[i][0] *= -1;
@@ -579,7 +582,7 @@ class CSSMatrix {
     double m22 = row1y;
 
     // Convert into degrees because our rotation functions expect it.
-    angle = _rad2deg(angle)!;
+    angle = rad2deg(angle)!;
 
     return [translate, scale, angle, m11, m12, m21, m22];
   }

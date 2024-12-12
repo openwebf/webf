@@ -1,0 +1,53 @@
+import {DOMMatrixInit} from "./dom_matrix_init";
+import {DOMMatrix} from "./dom_matrix";
+import {DOMPoint} from "./dom_point";
+
+interface DOMMatrixReadOnly {
+    readonly is2D: DartImpl<boolean>;
+    readonly isIdentity: DartImpl<boolean>;
+    m11: number;
+    m12: number;
+    m13: number;
+    m14: number;
+    m21: number;
+    m22: number;
+    m23: number;
+    m24: number;
+    m31: number;
+    m32: number;
+    m33: number;
+    m34: number;
+    m41: number;
+    m42: number;
+    m43: number;
+    m44: number;
+    a: number;
+    b: number;
+    c: number;
+    d: number;
+    e: number;
+    f: number;
+    flipX(): DOMMatrix;
+    flipY(): DOMMatrix;
+    inverse(): DOMMatrix;
+    multiply(matrix: DOMMatrix): DOMMatrix;
+    rotateAxisAngle(x?:number, y?:number, z?:number, angle?:number): DOMMatrix;
+    rotate(x?:number, y?:number, z?:number): DOMMatrix;
+    rotateFromVector(x?:number, y?:number): DOMMatrix;
+    scale(sx?: number, sy?: number, sz?: number, ox?: number, oy?: number, oz?: number): DOMMatrix;
+    scale3d(scale?: number, ox?: number, oy?: number, oz?: number): DOMMatrix;
+    scaleNonUniform(sx?: number, sy?: number): DOMMatrix;
+    skewX(sx?: number): DOMMatrix;
+    skewY(sy?: number): DOMMatrix;
+    // toFloat32Array(): number[];
+    // toFloat64Array(): number[];
+    // TODO
+    // toJSON(): DartImpl<JSON>;
+    toString(): string;
+    transformPoint(point: DOMPoint): DOMPoint;
+    translate(tx?:number, ty?:number, tz?:number): DOMMatrix;
+    // fromFloat32Array(): StaticMethod<DOMMatrix>;
+    // fromFloat64Array(): StaticMethod<DOMMatrix>;
+    fromMatrix(matrix: DOMMatrix): StaticMethod<DOMMatrix>;
+    new(init?: number[] | DOMMatrixInit): DOMMatrixReadOnly;
+}

@@ -31,15 +31,21 @@
 //
 // This file tests some commonly used argument matchers.
 
+#include <array>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#include "gmock/gmock.h"
+#include "test/gmock-matchers_test.h"
+#include "gtest/gtest.h"
+
 // Silence warning C4244: 'initializing': conversion from 'int' to 'short',
 // possible loss of data and C4100, unreferenced local parameter
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4244)
-#pragma warning(disable : 4100)
-#endif
-
-#include "test/gmock-matchers_test.h"
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4244 4100)
 
 namespace testing {
 namespace gmock_matchers_test {
@@ -202,7 +208,7 @@ TEST(IsTrueTest, IsTrueIsFalse) {
   EXPECT_THAT(nonnull_unique, Not(IsFalse()));
 }
 
-#if GTEST_HAS_TYPED_TEST
+#ifdef GTEST_HAS_TYPED_TEST
 // Tests ContainerEq with different container types, and
 // different element types.
 
@@ -668,6 +674,8 @@ TEST_P(MatcherTupleTestP, ExplainsMatchFailure) {
                    // explanation.
 }
 
+#if GTEST_HAS_TYPED_TEST
+
 // Sample optional type implementation with minimal requirements for use with
 // Optional matcher.
 template <typename T>
@@ -685,37 +693,75 @@ class SampleOptional {
   bool has_value_;
 };
 
-TEST(OptionalTest, DescribesSelf) {
-  const Matcher<SampleOptional<int>> m = Optional(Eq(1));
+// Sample optional type implementation with alternative minimal requirements for
+// use with Optional matcher. In particular, while it doesn't have a bool
+// conversion operator, it does have a has_value() method.
+template <typename T>
+class SampleOptionalWithoutBoolConversion {
+ public:
+  using value_type = T;
+  explicit SampleOptionalWithoutBoolConversion(T value)
+      : value_(std::move(value)), has_value_(true) {}
+  SampleOptionalWithoutBoolConversion() : value_(), has_value_(false) {}
+  bool has_value() const { return has_value_; }
+  const T& operator*() const { return value_; }
+
+ private:
+  T value_;
+  bool has_value_;
+};
+
+template <typename T>
+class OptionalTest : public testing::Test {};
+
+using OptionalTestTypes =
+    testing::Types<SampleOptional<int>,
+                   SampleOptionalWithoutBoolConversion<int>>;
+
+TYPED_TEST_SUITE(OptionalTest, OptionalTestTypes);
+
+TYPED_TEST(OptionalTest, DescribesSelf) {
+  const Matcher<TypeParam> m = Optional(Eq(1));
   EXPECT_EQ("value is equal to 1", Describe(m));
 }
 
-TEST(OptionalTest, ExplainsSelf) {
-  const Matcher<SampleOptional<int>> m = Optional(Eq(1));
-  EXPECT_EQ("whose value 1 matches", Explain(m, SampleOptional<int>(1)));
-  EXPECT_EQ("whose value 2 doesn't match", Explain(m, SampleOptional<int>(2)));
+TYPED_TEST(OptionalTest, ExplainsSelf) {
+  const Matcher<TypeParam> m = Optional(Eq(1));
+  EXPECT_EQ("whose value 1 matches", Explain(m, TypeParam(1)));
+  EXPECT_EQ("whose value 2 doesn't match", Explain(m, TypeParam(2)));
 }
 
-TEST(OptionalTest, MatchesNonEmptyOptional) {
-  const Matcher<SampleOptional<int>> m1 = Optional(1);
-  const Matcher<SampleOptional<int>> m2 = Optional(Eq(2));
-  const Matcher<SampleOptional<int>> m3 = Optional(Lt(3));
-  SampleOptional<int> opt(1);
+TYPED_TEST(OptionalTest, MatchesNonEmptyOptional) {
+  const Matcher<TypeParam> m1 = Optional(1);
+  const Matcher<TypeParam> m2 = Optional(Eq(2));
+  const Matcher<TypeParam> m3 = Optional(Lt(3));
+  TypeParam opt(1);
   EXPECT_TRUE(m1.Matches(opt));
   EXPECT_FALSE(m2.Matches(opt));
   EXPECT_TRUE(m3.Matches(opt));
 }
 
-TEST(OptionalTest, DoesNotMatchNullopt) {
-  const Matcher<SampleOptional<int>> m = Optional(1);
-  SampleOptional<int> empty;
+TYPED_TEST(OptionalTest, DoesNotMatchNullopt) {
+  const Matcher<TypeParam> m = Optional(1);
+  TypeParam empty;
   EXPECT_FALSE(m.Matches(empty));
 }
 
-TEST(OptionalTest, WorksWithMoveOnly) {
-  Matcher<SampleOptional<std::unique_ptr<int>>> m = Optional(Eq(nullptr));
-  EXPECT_TRUE(m.Matches(SampleOptional<std::unique_ptr<int>>(nullptr)));
+template <typename T>
+class MoveOnlyOptionalTest : public testing::Test {};
+
+using MoveOnlyOptionalTestTypes =
+    testing::Types<SampleOptional<std::unique_ptr<int>>,
+                   SampleOptionalWithoutBoolConversion<std::unique_ptr<int>>>;
+
+TYPED_TEST_SUITE(MoveOnlyOptionalTest, MoveOnlyOptionalTestTypes);
+
+TYPED_TEST(MoveOnlyOptionalTest, WorksWithMoveOnly) {
+  Matcher<TypeParam> m = Optional(Eq(nullptr));
+  EXPECT_TRUE(m.Matches(TypeParam(nullptr)));
 }
+
+#endif  // GTEST_HAS_TYPED_TEST
 
 class SampleVariantIntString {
  public:
@@ -863,7 +909,7 @@ TEST(ArgsTest, AcceptsOneTemplateArg) {
 }
 
 TEST(ArgsTest, AcceptsTwoTemplateArgs) {
-  const std::tuple<short, int, long> t(4, 5, 6L);  // NOLINT
+  const std::tuple<short, int, long> t(short{4}, 5, 6L);  // NOLINT
 
   EXPECT_THAT(t, (Args<0, 1>(Lt())));
   EXPECT_THAT(t, (Args<1, 2>(Lt())));
@@ -871,13 +917,13 @@ TEST(ArgsTest, AcceptsTwoTemplateArgs) {
 }
 
 TEST(ArgsTest, AcceptsRepeatedTemplateArgs) {
-  const std::tuple<short, int, long> t(4, 5, 6L);  // NOLINT
+  const std::tuple<short, int, long> t(short{4}, 5, 6L);  // NOLINT
   EXPECT_THAT(t, (Args<0, 0>(Eq())));
   EXPECT_THAT(t, Not(Args<1, 1>(Ne())));
 }
 
 TEST(ArgsTest, AcceptsDecreasingTemplateArgs) {
-  const std::tuple<short, int, long> t(4, 5, 6L);  // NOLINT
+  const std::tuple<short, int, long> t(short{4}, 5, 6L);  // NOLINT
   EXPECT_THAT(t, (Args<2, 0>(Gt())));
   EXPECT_THAT(t, Not(Args<2, 1>(Lt())));
 }
@@ -892,7 +938,7 @@ TEST(ArgsTest, AcceptsMoreTemplateArgsThanArityOfOriginalTuple) {
 }
 
 TEST(ArgsTest, CanBeNested) {
-  const std::tuple<short, int, long, int> t(4, 5, 6L, 6);  // NOLINT
+  const std::tuple<short, int, long, int> t(short{4}, 5, 6L, 6);  // NOLINT
   EXPECT_THAT(t, (Args<1, 2, 3>(Args<1, 2>(Eq()))));
   EXPECT_THAT(t, (Args<0, 1, 3>(Args<0, 2>(Lt()))));
 }
@@ -1561,7 +1607,7 @@ TEST(AnyOfArrayTest, Matchers) {
 }
 
 TEST_P(AnyOfArrayTestP, ExplainsMatchResultCorrectly) {
-  // AnyOfArray and AllOfArry use the same underlying template-template,
+  // AnyOfArray and AllOfArray use the same underlying template-template,
   // thus it is sufficient to test one here.
   const std::vector<int> v0{};
   const std::vector<int> v1{1};
@@ -1570,10 +1616,10 @@ TEST_P(AnyOfArrayTestP, ExplainsMatchResultCorrectly) {
   const Matcher<int> m1 = AnyOfArray(v1);
   const Matcher<int> m2 = AnyOfArray(v2);
   EXPECT_EQ("", Explain(m0, 0));
-  EXPECT_EQ("", Explain(m1, 1));
-  EXPECT_EQ("", Explain(m1, 2));
-  EXPECT_EQ("", Explain(m2, 3));
-  EXPECT_EQ("", Explain(m2, 4));
+  EXPECT_EQ("which matches (is equal to 1)", Explain(m1, 1));
+  EXPECT_EQ("isn't equal to 1", Explain(m1, 2));
+  EXPECT_EQ("which matches (is equal to 3)", Explain(m2, 3));
+  EXPECT_EQ("isn't equal to 2, and isn't equal to 3", Explain(m2, 4));
   EXPECT_EQ("()", Describe(m0));
   EXPECT_EQ("(is equal to 1)", Describe(m1));
   EXPECT_EQ("(is equal to 2) or (is equal to 3)", Describe(m2));
@@ -1613,6 +1659,20 @@ TEST(MatcherPMacroTest, WorksOnMoveOnlyType) {
   std::unique_ptr<int> p(new int(3));
   EXPECT_THAT(p, UniquePointee(3));
   EXPECT_THAT(p, Not(UniquePointee(2)));
+}
+
+MATCHER(EnsureNoUnusedButMarkedUnusedWarning, "") { return (arg % 2) == 0; }
+
+TEST(MockMethodMockFunctionTest, EnsureNoUnusedButMarkedUnusedWarning) {
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wused-but-marked-unused"
+#endif
+  // https://github.com/google/googletest/issues/4055
+  EXPECT_THAT(0, EnsureNoUnusedButMarkedUnusedWarning());
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 }
 
 #if GTEST_HAS_EXCEPTIONS
@@ -1778,8 +1838,8 @@ TEST(ThrowsPredicateCompilesTest, ExceptionMatcherAcceptsBroadType) {
   {
     Matcher<uint64_t> inner = Eq(10);
     Matcher<std::function<void()>> matcher = Throws<uint32_t>(inner);
-    EXPECT_TRUE(matcher.Matches([]() { throw(uint32_t) 10; }));
-    EXPECT_FALSE(matcher.Matches([]() { throw(uint32_t) 11; }));
+    EXPECT_TRUE(matcher.Matches([]() { throw (uint32_t)10; }));
+    EXPECT_FALSE(matcher.Matches([]() { throw (uint32_t)11; }));
   }
 }
 
@@ -1800,6 +1860,4 @@ TEST(ThrowsPredicateCompilesTest, MessageMatcherAcceptsNonMatcher) {
 }  // namespace gmock_matchers_test
 }  // namespace testing
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_POP_()  // 4244 4100

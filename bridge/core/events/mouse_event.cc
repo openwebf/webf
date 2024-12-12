@@ -125,6 +125,11 @@ bool MouseEvent::IsMouseEvent() const {
   return true;
 }
 
+const MouseEventPublicMethods* MouseEvent::mouseEventPublicMethods() {
+  static MouseEventPublicMethods mouse_event_public_methods;
+  return &mouse_event_public_methods;
+}
+
 void MouseEvent::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(related_target_);
   UIEvent::Trace(visitor);

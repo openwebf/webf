@@ -73,7 +73,7 @@ void MemberInstaller::InstallFunctions(ExecutingContext* context,
                                        std::initializer_list<FunctionConfig> config) {
   JSContext* ctx = context->ctx();
   for (auto& c : config) {
-    JSValue function = JS_NewCFunction(ctx, c.function, c.name, c.length);
+    JSValue function = JS_NewCFunction(ctx, c.function, c.name, (int)c.length);
     JS_DefinePropertyValueStr(ctx, root, c.name, function, c.flag);
   }
 }

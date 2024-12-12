@@ -15,7 +15,7 @@
 #include "qjs_engine_patch.h"
 #include "qjs_event_target.h"
 
-#if WIN32
+#if defined(_WIN32)
 #include <Windows.h>
 #endif
 
@@ -54,7 +54,7 @@ static JSValue FromNativeValue(ExecutingContext* context,
     }
     case NativeTag::TAG_UINT8_BYTES: {
       auto free_func = [](JSRuntime* rt, void* opaque, void* ptr) {
-#if WIN32
+#if defined(_WIN32)
         return CoTaskMemFree(ptr);
 #else
         return free(ptr);

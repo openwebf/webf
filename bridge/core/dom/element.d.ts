@@ -76,5 +76,7 @@ interface Element extends Node, ParentNode, ChildNode {
   // WebF special API.
   toBlob(devicePixelRatioValue?: double): Promise<ArrayBuffer>;
 
+  __testGlobalToLocal__(x: number, y: number): any;
+
   new(): void;
 }

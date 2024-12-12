@@ -35,8 +35,9 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
                                    void* owner)
     : dart_isolate_context_(dart_isolate_context),
       context_id_(context_id),
-      handler_(std::move(handler)),
+      dart_error_report_handler_(std::move(handler)),
       owner_(owner),
+      public_method_ptr_(std::make_unique<ExecutingContextWebFMethods>()),
       is_dedicated_(is_dedicated),
       unique_id_(context_unique_id++),
       is_context_valid_(true) {
@@ -86,6 +87,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
 
   // Install performance
   InstallPerformance();
+  InstallNativeLoader();
 
   dart_isolate_context->profiler()->FinishTrackSteps();
   dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::initWebFPolyFill");
@@ -111,6 +113,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
 ExecutingContext::~ExecutingContext() {
   is_context_valid_ = false;
   valid_contexts[context_id_] = false;
+  executing_context_status_->disposed = true;
 
   // Check if current context have unhandled exceptions.
   JSValue exception = JS_GetException(script_state_.ctx());
@@ -278,6 +281,18 @@ bool ExecutingContext::HandleException(ExceptionState& exception_state) {
   return true;
 }
 
+bool ExecutingContext ::HandleException(webf::ExceptionState& exception_state,
+                                        char** rust_error_msg,
+                                        uint32_t* rust_errmsg_len) {
+  if (exception_state.HasException()) {
+    JSValue error = JS_GetException(ctx());
+    ReportError(error, rust_error_msg, rust_errmsg_len);
+    JS_FreeValue(ctx(), error);
+    return false;
+  }
+  return true;
+}
+
 JSValue ExecutingContext::Global() {
   return global_object_;
 }
@@ -287,37 +302,50 @@ JSContext* ExecutingContext::ctx() {
   return script_state_.ctx();
 }
 
-void ExecutingContext::ReportError(JSValueConst error) {
+void ExecutingContext::ReportError(JSValue error) {
+  ReportError(error, nullptr, nullptr);
+}
+
+void ExecutingContext::ReportError(JSValueConst error, char** rust_errmsg, uint32_t* rust_errmsg_length) {
   JSContext* ctx = script_state_.ctx();
   if (!JS_IsError(ctx, error))
     return;
 
-  JSValue messageValue = JS_GetPropertyStr(ctx, error, "message");
-  JSValue errorTypeValue = JS_GetPropertyStr(ctx, error, "name");
-  const char* title = JS_ToCString(ctx, messageValue);
-  const char* type = JS_ToCString(ctx, errorTypeValue);
+  JSValue message_value = JS_GetPropertyStr(ctx, error, "message");
+  JSValue error_type_value = JS_GetPropertyStr(ctx, error, "name");
+  const char* title = JS_ToCString(ctx, message_value);
+  const char* type = JS_ToCString(ctx, error_type_value);
   const char* stack = nullptr;
-  JSValue stackValue = JS_GetPropertyStr(ctx, error, "stack");
-  if (!JS_IsUndefined(stackValue)) {
-    stack = JS_ToCString(ctx, stackValue);
+  JSValue stack_value = JS_GetPropertyStr(ctx, error, "stack");
+  if (!JS_IsUndefined(stack_value)) {
+    stack = JS_ToCString(ctx, stack_value);
   }
 
-  uint32_t messageLength = strlen(type) + strlen(title);
+  uint32_t message_length = strlen(type) + strlen(title);
+  char* message;
   if (stack != nullptr) {
-    messageLength += 4 + strlen(stack);
-    char* message = (char*)dart_malloc(messageLength * sizeof(char));
-    snprintf(message, messageLength, "%s: %s\n%s", type, title, stack);
-    handler_(this, message);
+    message_length += 4 + strlen(stack);
+    message = (char*)dart_malloc(message_length * sizeof(char));
+    snprintf(message, message_length, "%s: %s\n%s", type, title, stack);
   } else {
-    messageLength += 3;
-    char* message = (char*)dart_malloc(messageLength * sizeof(char));
-    snprintf(message, messageLength, "%s: %s", type, title);
-    handler_(this, message);
+    message_length += 3;
+    message = (char*)dart_malloc(message_length * sizeof(char));
+    snprintf(message, message_length, "%s: %s", type, title);
   }
 
-  JS_FreeValue(ctx, errorTypeValue);
-  JS_FreeValue(ctx, messageValue);
-  JS_FreeValue(ctx, stackValue);
+  // Report errmsg to rust side
+  if (rust_errmsg != nullptr && rust_errmsg_length != nullptr) {
+    *rust_errmsg = (char*)malloc(sizeof(char) * message_length);
+    *rust_errmsg_length = message_length;
+    memcpy(*rust_errmsg, message, sizeof(char) * message_length);
+  } else {
+    // Report errmsg to dart side
+    dart_error_report_handler_(this, message);
+  }
+
+  JS_FreeValue(ctx, error_type_value);
+  JS_FreeValue(ctx, message_value);
+  JS_FreeValue(ctx, stack_value);
   JS_FreeCString(ctx, title);
   JS_FreeCString(ctx, stack);
   JS_FreeCString(ctx, type);
@@ -460,6 +488,14 @@ void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason
 void ExecutingContext::FlushUICommand(const webf::BindingObject* self,
                                       uint32_t reason,
                                       std::vector<NativeBindingObject*>& deps) {
+  if (SyncUICommandBuffer(self, reason, deps)) {
+    dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject());
+  }
+}
+
+bool ExecutingContext::SyncUICommandBuffer(const BindingObject* self,
+                                           uint32_t reason,
+                                           std::vector<NativeBindingObject*>& deps) {
   if (!uiCommandBuffer()->empty()) {
     if (is_dedicated_) {
       bool should_swap_ui_commands = false;
@@ -487,9 +523,10 @@ void ExecutingContext::FlushUICommand(const webf::BindingObject* self,
         ui_command_buffer_.SyncToActive();
       }
     }
-
-    dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject());
+    return true;
   }
+
+  return false;
 }
 
 void ExecutingContext::TurnOnJavaScriptGC() {
@@ -594,6 +631,12 @@ void ExecutingContext::InstallPerformance() {
   MemberMutationScope scope{this};
   performance_ = MakeGarbageCollected<Performance>(this);
   DefineGlobalProperty("performance", performance_->ToQuickJS());
+}
+
+void ExecutingContext::InstallNativeLoader() {
+  MemberMutationScope scope{this};
+  native_loader_ = MakeGarbageCollected<NativeLoader>(this);
+  DefineGlobalProperty("nativeLoader", native_loader_->ToQuickJS());
 }
 
 void ExecutingContext::InstallGlobal() {

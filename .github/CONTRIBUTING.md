@@ -6,10 +6,22 @@
 * [Flutter](https://flutter.dev/docs/get-started/install) version in the `webf/pubspec.yaml`
 * [CMake](https://cmake.org/) v3.10.0 or later
 * [Xcode](https://developer.apple.com/xcode/) (10.12) or later (Running on macOS or iOS)
-* [Android NDK](https://developer.android.com/studio/projects/install-ndk) version `22.1.7171670` (Running on Android)]
-* [Visual Studio 2019 or above](https://visualstudio.microsoft.com/) (Running on Windows)
+* [Android NDK](https://developer.android.com/studio/projects/install-ndk) version `22.1.7171670` (Running on Android)
+* [Visual Studio 2019 or later](https://visualstudio.microsoft.com/) (Running on Windows)
+* [Rust](https://www.rust-lang.org/) (For building Rust example apps.)
 
 ## Get the code:
+
+**Additional configuration for Windows users**
+
+```
+git config --global core.symlinks true
+git config --global core.autocrlf false
+```
+
+-----
+
+Running the following commands to get the code:
 
 ```
 git clone git@github.com:openwebf/webf.git
@@ -22,41 +34,33 @@ git submodule update --init --recursive
 $ npm install
 ```
 
-## Building bridge
+## Prepare
 
-> Debug is the default build type, if you want to have a release build, please add `:release` after your command.
+**Windows, Linux, Android**
+
+The current C/C++ code build process has been integrated into Flutter's compilation and build pipeline for Windows, Linux, and Android.
+
+Run the following script to generate C/C++ binding code using the code generator:
+
+```shell
+npm run generate_binding_code
+```
+
+---
+
+**iOS and macOS**
+
+> The default build type is Debug. To create a release build, add `:release` to your command.
 >
-> Exp: Execute `npm run build:bridge:macos:release` to build a release bridge for the macOS platform.
-
-**Windows**
+> Example: Execute `npm run build:bridge:macos:release` to build a release bridge for macOS.
 
 ```shell
-$ npm run build:bridge:windows:release
+$ npm run build:bridge:ios:release    # iOS
+$ npm run build:bridge:macos:release  # macOS
 ```
 
-**macOS**
+---
 
-```shell
-$ npm run build:bridge:macos:release
-```
-
-**linux**
-
-```shell
-$ npm run build:bridge:linux:release
-```
-
-**iOS**
-
-```shell
-$ npm run build:bridge:ios:release
-```
-
-**Android**
-
-```shell
-$ npm run build:bridge:android:release
-```
 
 ### Run Example
 
@@ -93,9 +97,8 @@ npm run integration -- --skip-build
 Change the `it` into `fit` to running this test spec only.
 
 ```typescript
-fit('document.all', () => { 
+fit('document.all', () => {
   expect(document.all).not.toBeUndefined();
   expect(document.all.length).toBeGreaterThan(0);
 });
 ```
-

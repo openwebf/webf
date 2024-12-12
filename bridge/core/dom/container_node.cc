@@ -573,4 +573,9 @@ void ContainerNode::Trace(GCVisitor* visitor) const {
   Node::Trace(visitor);
 }
 
+const ContainerNodePublicMethods* ContainerNode::containerNodePublicMethods() {
+  static ContainerNodePublicMethods container_node_public_methods;
+  return &container_node_public_methods;
+}
+
 }  // namespace webf

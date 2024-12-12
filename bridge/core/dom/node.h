@@ -14,6 +14,7 @@
 #include "mutation_observer.h"
 #include "mutation_observer_registration.h"
 #include "node_data.h"
+#include "plugin_api/node.h"
 #include "qjs_union_dom_stringnode.h"
 #include "tree_scope.h"
 
@@ -259,6 +260,7 @@ class Node : public EventTarget {
   const MutationObserverRegistrationSet* TransientMutationObserverRegistry();
 
   void Trace(GCVisitor*) const override;
+  const NodePublicMethods* nodePublicMethods();
 
  private:
   enum NodeFlags : uint32_t {

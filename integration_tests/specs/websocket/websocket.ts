@@ -1,6 +1,6 @@
 describe('WebSocket', () => {
   it('closed before create connection', (done) => {
-    let ws = new WebSocket('ws://127.0.0.1:8399');
+    let ws = new WebSocket(`ws://127.0.0.1:${window['WEBSOCKET_PORT']}`);
     ws.onopen = () => {
       throw new Error('should not connected');
     };
@@ -14,7 +14,7 @@ describe('WebSocket', () => {
   });
 
   it('send and receive', (done) => {
-    let ws = new WebSocket('ws://127.0.0.1:8399');
+    let ws = new WebSocket(`ws://127.0.0.1:${window['WEBSOCKET_PORT']}`);
     ws.onopen = () => {
       ws.send('helloworld');
     };
@@ -44,7 +44,7 @@ describe('WebSocket', () => {
   });
 
   it('trigger on onerror when server shutdown', (done) => {
-    let ws = new WebSocket('ws://127.0.0.1:8400');
+    let ws = new WebSocket(`ws://127.0.0.1:${window['WEBSOCKET_PORT'] + 1}`);
     ws.onclose = () => {
       done();
     };

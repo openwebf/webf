@@ -8,12 +8,15 @@ const fs = require('fs');
 const { IDLBlob } = require('../dist/idl/IDLBlob');
 const { JSONBlob } = require('../dist/json/JSONBlob');
 const { JSONTemplate } = require('../dist/json/JSONTemplate');
-const { analyzer } = require('../dist/idl/analyzer');
+const { analyzer, buildClassRelationship } = require('../dist/idl/analyzer');
 const { generatorSource } = require('../dist/idl/generator')
 const { generateUnionTypes, generateUnionTypeFileName } = require('../dist/idl/generateUnionTypes')
 const { generateJSONTemplate } = require('../dist/json/generator');
 const { generateNamesInstaller } = require("../dist/json/generator");
+const { generatePluginAPI } = require("../dist/idl/pluginAPIGenerator/cppGen");
+const { generateRustSource } = require("../dist/idl/pluginAPIGenerator/rsGen");
 const { union } = require("lodash");
+const { ClassObject } = require('../dist/idl/declaration');
 
 program
   .version(packageJSON.version)
@@ -54,6 +57,8 @@ function genCodeFromTypeDefine() {
     let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
     return new IDLBlob(path.join(source, file), dist, filename, implement);
   });
+
+  ClassObject.globalClassMap = Object.create(null);
 
   // Analyze all files first.
   for (let i = 0; i < blobs.length; i ++) {
@@ -170,5 +175,116 @@ let definedPropertyCollector = new DefinedPropertyCollector();
 let unionTypeCollector = new UnionTypeCollector();
 let names_needs_install = new Set();
 
+const pluginApiList = [
+  'dom/events/add_event_listener_options.d.ts',
+  'dom/events/event_listener_options.d.ts',
+  'dom/scroll_options.d.ts',
+  'dom/scroll_to_options.d.ts',
+  'dom/events/event_init.d.ts',
+  'events/animation_event_init.d.ts',
+  'events/close_event_init.d.ts',
+  'events/focus_event_init.d.ts',
+  'events/gesture_event_init.d.ts',
+  'events/hashchange_event_init.d.ts',
+  'events/input_event_init.d.ts',
+  'events/intersection_change_event_init.d.ts',
+  'events/keyboard_event_init.d.ts',
+  'events/mouse_event_init.d.ts',
+  'events/pointer_event_init.d.ts',
+  'events/transition_event_init.d.ts',
+  'input/touch_init.d.ts',
+  'events/ui_event_init.d.ts',
+  'dom/events/event.d.ts',
+  'dom/events/custom_event.d.ts',
+  'events/animation_event.d.ts',
+  'events/close_event.d.ts',
+  'events/focus_event.d.ts',
+  'events/gesture_event.d.ts',
+  'events/hashchange_event.d.ts',
+  'events/input_event.d.ts',
+  'events/intersection_change_event.d.ts',
+  'events/mouse_event.d.ts',
+  'events/pointer_event.d.ts',
+  'events/transition_event.d.ts',
+  'events/ui_event.d.ts',
+];
+
 genCodeFromTypeDefine();
 genCodeFromJSONData();
+genPluginAPICodeFromTypeDefine();
+genRustCodeFromTypeDefine();
+
+function genPluginAPICodeFromTypeDefine() {
+  // Generate code from type defines.
+  // let typeFiles = glob.sync("**/*.d.ts", {
+  //   cwd: source,
+  // });
+
+  let blobs = pluginApiList.map(file => {
+    let filename = 'plugin_api_' + file.split('/').slice(-1)[0].replace('.d.ts', '');
+    let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
+    return new IDLBlob(path.join(source, file), dist, filename, implement);
+  });
+
+  ClassObject.globalClassMap = Object.create(null);
+
+  // Analyze all files first.
+  for (let i = 0; i < blobs.length; i ++) {
+    let b = blobs[i];
+    analyzer(b, definedPropertyCollector, unionTypeCollector);
+  }
+
+  buildClassRelationship();
+
+  for (let i = 0; i < blobs.length; i ++) {
+    let b = blobs[i];
+    let result = generatePluginAPI(b);
+
+    if (!fs.existsSync(b.dist)) {
+      fs.mkdirSync(b.dist, {recursive: true});
+    }
+
+    let headerFilePath = path.join(b.dist, '../include/plugin_api', b.filename.replace('plugin_api_', ''));
+    let genFilePath = path.join(b.dist, b.filename);
+
+    wirteFileIfChanged(headerFilePath + '.h', result.header);
+
+    if (result.source) {
+      wirteFileIfChanged(genFilePath + '.cc', result.source);
+    }
+  }
+
+}
+
+function genRustCodeFromTypeDefine() {
+  // Generate code from type defines.
+  let blobs = pluginApiList.map(file => {
+    let filename = file.split('/').slice(-1)[0].replace('.d.ts', '');
+    let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
+    return new IDLBlob(path.join(source, file), dist, filename, implement);
+  });
+
+  ClassObject.globalClassMap = Object.create(null);
+
+  // Analyze all files first.
+  for (let i = 0; i < blobs.length; i ++) {
+    let b = blobs[i];
+    analyzer(b, definedPropertyCollector, unionTypeCollector);
+  }
+
+  buildClassRelationship();
+
+  for (let i = 0; i < blobs.length; i ++) {
+    let b = blobs[i];
+    let result = generateRustSource(b);
+
+    if (!fs.existsSync(b.dist)) {
+      fs.mkdirSync(b.dist, {recursive: true});
+    }
+
+    let genFilePath = path.join(b.dist, '../rusty_webf_sys/src', b.filename);
+
+    wirteFileIfChanged(genFilePath + '.rs', result);
+  }
+
+}

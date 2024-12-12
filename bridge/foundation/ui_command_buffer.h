@@ -22,6 +22,7 @@ enum UICommandKind : uint32_t {
   kDisposeBindingObject = 1 << 6,
   kOperation = 1 << 7,
   kIntersectionObserver = 1 << 8
+  kUknownCommand = 1 << 9
 };
 
 enum class UICommand {

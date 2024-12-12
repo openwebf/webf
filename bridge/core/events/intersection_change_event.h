@@ -9,6 +9,7 @@
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
+#include "plugin_api/intersection_change_event.h"
 #include "qjs_intersection_change_event_init.h"
 
 namespace webf {
@@ -47,8 +48,15 @@ class IntersectionChangeEvent : public Event {
 
   bool IsIntersectionchangeEvent() const override;
 
+  const IntersectionChangeEventPublicMethods* intersectionChangeEventPublicMethods();
+
  private:
   double intersection_ratio_;
+};
+
+template <>
+struct DowncastTraits<IntersectionChangeEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsIntersectionchangeEvent(); }
 };
 
 }  // namespace webf

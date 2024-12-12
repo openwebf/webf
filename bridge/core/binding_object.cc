@@ -19,7 +19,7 @@ namespace webf {
 static void ReturnEventResultToDart(Dart_Handle persistent_handle,
                                     NativeValue* result,
                                     DartInvokeResultCallback result_callback) {
-  Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
+  const Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
   result_callback(handle, result);
   Dart_DeletePersistentHandle_DL(persistent_handle);
 }
@@ -39,20 +39,20 @@ static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
   auto is_dedicated = binding_object->binding_target_->GetExecutingContext()->isDedicated();
   auto context_id = binding_object->binding_target_->contextId();
 
-  dart_isolate->dispatcher()->PostToJs(is_dedicated, context_id, NativeBindingObject::HandleCallFromDartSide,
-                                       dart_isolate, binding_object, profile_id, method, argc, argv, persistent_handle,
-                                       result_callback);
+  dart_isolate->dispatcher()->PostToJs(is_dedicated, static_cast<int32_t>(context_id),
+                                       NativeBindingObject::HandleCallFromDartSide, dart_isolate, binding_object,
+                                       profile_id, method, argc, argv, persistent_handle, result_callback);
 }
 
 NativeBindingObject::NativeBindingObject(BindingObject* target)
     : binding_target_(target), invoke_binding_methods_from_dart(HandleCallFromDartSideWrapper) {}
 
-void NativeBindingObject::HandleCallFromDartSide(DartIsolateContext* dart_isolate_context,
-                                                 NativeBindingObject* binding_object,
+void NativeBindingObject::HandleCallFromDartSide(const DartIsolateContext* dart_isolate_context,
+                                                 const NativeBindingObject* binding_object,
                                                  int64_t profile_id,
-                                                 NativeValue* native_method,
+                                                 const NativeValue* native_method,
                                                  int32_t argc,
-                                                 NativeValue* argv,
+                                                 const NativeValue* argv,
                                                  Dart_PersistentHandle dart_object,
                                                  DartInvokeResultCallback result_callback) {
   if (binding_object->disposed_)

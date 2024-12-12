@@ -13,6 +13,7 @@
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
 #include "parent_node.h"
+#include "plugin_api/element.h"
 #include "qjs_scroll_to_options.h"
 
 namespace webf {
@@ -80,6 +81,8 @@ class Element : public ContainerNode {
   ScriptPromise toBlob(double device_pixel_ratio, ExceptionState& exception_state);
   ScriptPromise toBlob(ExceptionState& exception_state);
 
+  ScriptValue ___testGlobalToLocal__(double x, double y, ExceptionState& exception_state);
+
   void DidAddAttribute(const AtomicString&, const AtomicString&);
   void WillModifyAttribute(const AtomicString&, const AtomicString& old_value, const AtomicString& new_value);
   void DidModifyAttribute(const AtomicString&,
@@ -143,6 +146,7 @@ class Element : public ContainerNode {
   virtual bool IsWidgetElement() const;
 
   void Trace(GCVisitor* visitor) const override;
+  const ElementPublicMethods* elementPublicMethods();
 
  protected:
   void SetAttributeInternal(const AtomicString&,

@@ -137,7 +137,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
       return success;
     };
   <% } %>
- <% } %>
+<% } %>
 
 <% _.forEach(filtedMethods, function(method, index) { %>
 
@@ -150,8 +150,11 @@ static JSValue <%= overloadMethod.name %>_overload_<%= index %>(JSContext* ctx, 
     static JSValue <%= method.name %>(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
       <%= generateOverLoadSwitchBody(overloadMethods[method.name]) %>
     }
+  <% } else if (method.returnTypeMode && method.returnTypeMode.staticMethod) { %>
+  static JSValue <%= method.name %>(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+    <%= generateFunctionBody(blob, method, {isInstanceMethod: false}) %>
+  }
   <% } else { %>
-
   static JSValue <%= method.name %>(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
     <%= generateFunctionBody(blob, method, {isInstanceMethod: true}) %>
   }
@@ -198,6 +201,10 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   return result;
   <% } else if (prop.typeMode && prop.typeMode.static) { %>
   auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= className %>::<%= prop.name %>);
+  context->dartIsolateContext()->profiler()->FinishTrackSteps();
+  return result;
+  <% } else if (prop.typeMode && prop.typeMode.staticMethod) { %>
+  auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= className %>::<%= prop.name %>());
   context->dartIsolateContext()->profiler()->FinishTrackSteps();
   return result;
   <% } else { %>

@@ -227,6 +227,7 @@ describe('TouchEvent', () => {
       // @ts-ignore
       expect(touchList.item(0).target).toBe(div);
 
+      await simulatePointUp(12, 12);
       done();
     });
     requestAnimationFrame(async () => {

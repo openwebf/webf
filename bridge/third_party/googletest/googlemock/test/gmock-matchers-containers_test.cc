@@ -31,15 +31,25 @@
 //
 // This file tests some commonly used argument matchers.
 
+#include <algorithm>
+#include <array>
+#include <deque>
+#include <forward_list>
+#include <iterator>
+#include <list>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <tuple>
+#include <vector>
+
+#include "gmock/gmock.h"
+#include "test/gmock-matchers_test.h"
+#include "gtest/gtest.h"
+
 // Silence warning C4244: 'initializing': conversion from 'int' to 'short',
 // possible loss of data and C4100, unreferenced local parameter
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4244)
-#pragma warning(disable : 4100)
-#endif
-
-#include "test/gmock-matchers_test.h"
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4244 4100)
 
 namespace testing {
 namespace gmock_matchers_test {
@@ -1182,8 +1192,8 @@ TEST(SizeIsTest, WorksWithMinimalistCustomType) {
 
 TEST(SizeIsTest, CanDescribeSelf) {
   Matcher<vector<int>> m = SizeIs(2);
-  EXPECT_EQ("size is equal to 2", Describe(m));
-  EXPECT_EQ("size isn't equal to 2", DescribeNegation(m));
+  EXPECT_EQ("has a size that is equal to 2", Describe(m));
+  EXPECT_EQ("has a size that isn't equal to 2", DescribeNegation(m));
 }
 
 TEST(SizeIsTest, ExplainsResult) {
@@ -1194,13 +1204,16 @@ TEST(SizeIsTest, ExplainsResult) {
   vector<int> container;
   EXPECT_EQ("whose size 0 doesn't match", Explain(m1, container));
   EXPECT_EQ("whose size 0 matches", Explain(m2, container));
-  EXPECT_EQ("whose size 0 matches", Explain(m3, container));
+  EXPECT_EQ("whose size 0 matches, which matches (is equal to 0)",
+            Explain(m3, container));
   EXPECT_EQ("whose size 0 doesn't match", Explain(m4, container));
   container.push_back(0);
   container.push_back(0);
   EXPECT_EQ("whose size 2 matches", Explain(m1, container));
   EXPECT_EQ("whose size 2 doesn't match", Explain(m2, container));
-  EXPECT_EQ("whose size 2 doesn't match", Explain(m3, container));
+  EXPECT_EQ(
+      "whose size 2 doesn't match, isn't equal to 0, and isn't equal to 3",
+      Explain(m3, container));
   EXPECT_EQ("whose size 2 matches", Explain(m4, container));
 }
 
@@ -1465,8 +1478,10 @@ TEST_P(BeginEndDistanceIsTestP, ExplainsResult) {
             Explain(m1, container));
   EXPECT_EQ("whose distance between begin() and end() 0 matches",
             Explain(m2, container));
-  EXPECT_EQ("whose distance between begin() and end() 0 matches",
-            Explain(m3, container));
+  EXPECT_EQ(
+      "whose distance between begin() and end() 0 matches, which matches (is "
+      "equal to 0)",
+      Explain(m3, container));
   EXPECT_EQ(
       "whose distance between begin() and end() 0 doesn't match, which is 1 "
       "less than 1",
@@ -1477,8 +1492,10 @@ TEST_P(BeginEndDistanceIsTestP, ExplainsResult) {
             Explain(m1, container));
   EXPECT_EQ("whose distance between begin() and end() 2 doesn't match",
             Explain(m2, container));
-  EXPECT_EQ("whose distance between begin() and end() 2 doesn't match",
-            Explain(m3, container));
+  EXPECT_EQ(
+      "whose distance between begin() and end() 2 doesn't match, isn't equal "
+      "to 0, and isn't equal to 3",
+      Explain(m3, container));
   EXPECT_EQ(
       "whose distance between begin() and end() 2 matches, which is 1 more "
       "than 1",
@@ -1826,8 +1843,8 @@ TEST(UnorderedElementsAreArrayTest, SucceedsWhenExpected) {
 }
 
 TEST(UnorderedElementsAreArrayTest, VectorBool) {
-  const bool a[] = {0, 1, 0, 1, 1};
-  const bool b[] = {1, 0, 1, 1, 0};
+  const bool a[] = {false, true, false, true, true};
+  const bool b[] = {true, false, true, true, false};
   std::vector<bool> expected(std::begin(a), std::end(a));
   std::vector<bool> actual(std::begin(b), std::end(b));
   StringMatchResultListener listener;
@@ -2004,7 +2021,14 @@ TEST_F(UnorderedElementsAreTest, FailMessageCountWrong) {
   StringMatchResultListener listener;
   EXPECT_FALSE(ExplainMatchResult(UnorderedElementsAre(1, 2, 3), v, &listener))
       << listener.str();
-  EXPECT_THAT(listener.str(), Eq("which has 1 element"));
+  EXPECT_THAT(listener.str(),
+              Eq("which has 1 element\n"
+                 "where the following matchers don't match any elements:\n"
+                 "matcher #0: is equal to 1,\n"
+                 "matcher #1: is equal to 2,\n"
+                 "matcher #2: is equal to 3\n"
+                 "and where the following elements don't match any matchers:\n"
+                 "element #0: 4"));
 }
 
 TEST_F(UnorderedElementsAreTest, FailMessageCountWrongZero) {
@@ -2012,7 +2036,11 @@ TEST_F(UnorderedElementsAreTest, FailMessageCountWrongZero) {
   StringMatchResultListener listener;
   EXPECT_FALSE(ExplainMatchResult(UnorderedElementsAre(1, 2, 3), v, &listener))
       << listener.str();
-  EXPECT_THAT(listener.str(), Eq(""));
+  EXPECT_THAT(listener.str(),
+              Eq("where the following matchers don't match any elements:\n"
+                 "matcher #0: is equal to 1,\n"
+                 "matcher #1: is equal to 2,\n"
+                 "matcher #2: is equal to 3"));
 }
 
 TEST_F(UnorderedElementsAreTest, FailMessageUnmatchedMatchers) {
@@ -2428,7 +2456,7 @@ TEST(UnorderedPointwiseTest, RejectsWrongSize) {
   const double lhs[2] = {1, 2};
   const int rhs[1] = {0};
   EXPECT_THAT(lhs, Not(UnorderedPointwise(Gt(), rhs)));
-  EXPECT_EQ("which has 2 elements",
+  EXPECT_EQ("which has 2 elements\n",
             Explain(UnorderedPointwise(Gt(), rhs), lhs));
 
   const int rhs2[3] = {0, 1, 2};
@@ -2778,7 +2806,7 @@ TEST(ElementsAreTest, WorksWithNativeArrayPassedByReference) {
 
 class NativeArrayPassedAsPointerAndSize {
  public:
-  NativeArrayPassedAsPointerAndSize() {}
+  NativeArrayPassedAsPointerAndSize() = default;
 
   MOCK_METHOD(void, Helper, (int* array, int size));
 
@@ -3124,6 +3152,4 @@ TEST(ContainsTest, WorksForTwoDimensionalNativeArray) {
 }  // namespace gmock_matchers_test
 }  // namespace testing
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_POP_()  // 4244 4100

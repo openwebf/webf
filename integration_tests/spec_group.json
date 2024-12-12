@@ -30,7 +30,13 @@
   {
     "name": "DOM",
     "specs": [
-      "specs/dom/**/*.{js,jsx,ts,tsx,html}"
+      "specs/dom/events/**/*.ts",
+      "specs/dom/geometry/**/*.{js,jsx,ts,tsx,html}",
+      "specs/dom/global_attributes/**/*.{js,jsx,ts,tsx,html}",
+      "specs/dom/lists/**/*.{js,jsx,ts,tsx,html}",
+      "specs/dom/nodes/**/*.{js,jsx,ts,tsx,html}",
+      "specs/dom/elements/**/*.{js,jsx,ts,tsx,html}",
+      "specs/dom/*.{js,jsx,ts,tsx,html}"
     ]
   },
   {

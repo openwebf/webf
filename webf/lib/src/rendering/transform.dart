@@ -79,7 +79,8 @@ mixin RenderTransformMixin on RenderBoxModelBase {
   void debugTransformProperties(DiagnosticPropertiesBuilder properties) {
     Offset transformOffset = renderStyle.transformOffset;
     Alignment transformAlignment = renderStyle.transformAlignment;
-    properties.add(DiagnosticsProperty('transformOrigin', transformOffset));
+    properties.add(DiagnosticsProperty('transformMatrix', renderStyle.effectiveTransformMatrix));
+    properties.add(DiagnosticsProperty('transformOffset', transformOffset));
     properties.add(DiagnosticsProperty('transformAlignment', transformAlignment));
   }
 }

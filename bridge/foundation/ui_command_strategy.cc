@@ -30,7 +30,7 @@ bool WaitingStatus::IsFullActive() {
 }
 
 void WaitingStatus::SetActiveAtIndex(uint64_t index) {
-  size_t storage_index = floor(index / 64);
+  double storage_index = floor(index / 64);
 
   if (storage_index < storage.size()) {
     storage[storage_index] = set_nth_bit_to_zero(storage[storage_index], index % 64);
