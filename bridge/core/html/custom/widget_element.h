@@ -38,6 +38,10 @@ class WidgetElement : public HTMLElement {
  private:
   ScriptValue CreateSyncMethodFunc(const AtomicString& method_name);
   ScriptValue CreateAsyncMethodFunc(const AtomicString& method_name);
+
+  static void HandleJSCallbackGCMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func);
+  static void HandleJSFinalizer(JSRuntime* rt, JSValue val);
+
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> cached_methods_;
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> async_cached_methods_;
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> unimplemented_properties_;
