@@ -688,7 +688,7 @@ const WrapperTypeInfo& ${className}::wrapper_type_info_ = V8${className}::wrappe
       }
       case TemplateKind.globalFunction: {
         object = object as FunctionObject;
-        options.globalFunctionInstallList.push(` {"${object.declare.name}", ${object.declare.name}, ${object.declare.args.length}}`);
+        options.globalFunctionInstallList.push(` {"${object.declare.name}", ${object.declare.name}}`);
         return _.template(readTemplate('global_function'))({
           className,
           blob: blob,

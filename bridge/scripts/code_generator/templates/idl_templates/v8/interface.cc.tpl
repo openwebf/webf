@@ -143,19 +143,19 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
 
   <% if (overloadMethods[method.name] && overloadMethods[method.name].length > 1) { %>
     <% _.forEach(overloadMethods[method.name], function(overloadMethod, index) { %>
-static JSValue <%= overloadMethod.name %>_overload_<%= index %>(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+static void <%= overloadMethod.name %>_overload_<%= index %>(const v8::FunctionCallbackInfo <v8::Value> &args) {
         <%= generateFunctionBody(blob, overloadMethod, {isInstanceMethod: true}) %>
       }
     <% }); %>
-    static JSValue <%= method.name %>(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+    static void <%= method.name %>(const v8::FunctionCallbackInfo <v8::Value> &args) {
       <%= generateOverLoadSwitchBody(overloadMethods[method.name]) %>
     }
   <% } else if (method.returnTypeMode && method.returnTypeMode.staticMethod) { %>
-  static JSValue <%= method.name %>(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+  static void <%= method.name %>(const v8::FunctionCallbackInfo <v8::Value> &args) {
     <%= generateFunctionBody(blob, method, {isInstanceMethod: false}) %>
   }
   <% } else { %>
-  static JSValue <%= method.name %>(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+  static void <%= method.name %>(const v8::FunctionCallbackInfo <v8::Value> &args) {
     <%= generateFunctionBody(blob, method, {isInstanceMethod: true}) %>
   }
   <% } %>

@@ -38,7 +38,9 @@ WebFPage::WebFPage(DartIsolateContext* dart_isolate_context,
       [](ExecutingContext* context, const char* message) {
         WEBF_LOG(ERROR) << message << std::endl;
         if (context->IsContextValid()) {
+          /*TODO support dartMethodPtr
           context->dartMethodPtr()->onJSError(context->isDedicated(), context->contextId(), message);
+          */
         }
       },
       this);
@@ -132,6 +134,7 @@ void WebFPage::evaluateScript(const char* script, size_t length, const char* url
   context_->EvaluateJavaScript(script, length, url, startLine);
 }
 
+#if WEBF_QUICKJS_JS_ENGINE
 uint8_t* WebFPage::dumpByteCode(const char* script, size_t length, const char* url, uint64_t* byteLength) {
   if (!context_->IsContextValid())
     return nullptr;
@@ -143,6 +146,7 @@ bool WebFPage::evaluateByteCode(uint8_t* bytes, size_t byteLength) {
     return false;
   return context_->EvaluateByteCode(bytes, byteLength);
 }
+#endif
 
 std::thread::id WebFPage::currentThread() const {
   return ownerThreadId;
@@ -192,6 +196,7 @@ void WebFPage::EvaluateScriptsInternal(void* page_,
                                                        persistent_handle, result_callback, is_success);
 }
 
+#if WEBF_QUICKJS_JS_ENGINE
 static void ReturnEvaluateQuickjsByteCodeResultToDart(Dart_PersistentHandle persistent_handle,
                                                       EvaluateQuickjsByteCodeCallback result_callback,
                                                       bool is_success) {
@@ -209,15 +214,16 @@ void WebFPage::EvaluateQuickjsByteCodeInternal(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
 
-  // TODO page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
+  page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
 
   bool is_success = page->evaluateByteCode(bytes, byteLen);
 
-  // TODO page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
+  page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
 
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateQuickjsByteCodeResultToDart,
                                                        persistent_handle, result_callback, is_success);
 }
+#endif
 
 static void ReturnParseHTMLToDart(Dart_PersistentHandle persistent_handle, ParseHTMLCallback result_callback) {
   Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
@@ -281,6 +287,7 @@ static void ReturnDumpByteCodeResultToDart(Dart_Handle persistent_handle, DumpQu
   Dart_DeletePersistentHandle_DL(persistent_handle);
 }
 
+#if WEBF_QUICKJS_JS_ENGINE
 void WebFPage::DumpQuickJsByteCodeInternal(void* page_,
                                            int64_t profile_id,
                                            const char* code,
@@ -293,16 +300,17 @@ void WebFPage::DumpQuickJsByteCodeInternal(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   auto dart_isolate_context = page->executingContext()->dartIsolateContext();
 
-  // TODO dart_isolate_context->profiler()->StartTrackEvaluation(profile_id);
+  dart_isolate_context->profiler()->StartTrackEvaluation(profile_id);
 
   assert(std::this_thread::get_id() == page->currentThread());
   uint8_t* bytes = page->dumpByteCode(code, code_len, url, bytecode_len);
   *parsed_bytecodes = bytes;
 
-  // TODO dart_isolate_context->profiler()->FinishTrackEvaluation(profile_id);
+  dart_isolate_context->profiler()->FinishTrackEvaluation(profile_id);
 
   dart_isolate_context->dispatcher()->PostToDart(page->isDedicated(), ReturnDumpByteCodeResultToDart, persistent_handle,
                                                  result_callback);
 }
+#endif
 
 }  // namespace webf

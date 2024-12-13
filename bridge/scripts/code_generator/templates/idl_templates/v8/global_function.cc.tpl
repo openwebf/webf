@@ -1,3 +1,3 @@
-static JSValue ${object.declare.name}(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+static void ${object.declare.name}(const v8::FunctionCallbackInfo <v8::Value> &args) {
   <%= generateFunctionBody(blob, object.declare) %>
 }

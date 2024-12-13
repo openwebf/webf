@@ -4,6 +4,7 @@
 */
 
 #include "<%= blob.filename %>.h"
+#include <v8/v8-function-callback.h>
 //#include "foundation/native_value_converter.h"
 #include "binding_call_methods.h"
 #include "bindings/v8/member_installer.h"
@@ -48,7 +49,7 @@ void V8<%= className %>::InstallGlobalFunctions(ExecutingContext* context) {
   std::initializer_list<MemberInstaller::FunctionConfig> functionConfig {
     <%= globalFunctionInstallList.join(',\n') %>
   };
-  MemberInstaller::InstallFunctions(context, context->Global(), functionConfig);
+  MemberInstaller::InstallFunctions(context, functionConfig);
 }
 <% } %>
 

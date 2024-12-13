@@ -56,12 +56,14 @@ class WebFPage final {
                                       Dart_Handle dart_handle,
                                       EvaluateScriptsCallback result_callback);
 
+#if WEBF_QUICKJS_JS_ENGINE
   static void EvaluateQuickjsByteCodeInternal(void* page_,
                                               uint8_t* bytes,
                                               int32_t byteLen,
                                               int64_t profile_id,
                                               Dart_PersistentHandle persistent_handle,
                                               EvaluateQuickjsByteCodeCallback result_callback);
+#endif
   static void ParseHTMLInternal(void* page_,
                                 char* code,
                                 int32_t length,
@@ -76,7 +78,7 @@ class WebFPage final {
                                         void* extra,
                                         Dart_Handle dart_handle,
                                         InvokeModuleEventCallback result_callback);
-
+#if WEBF_QUICKJS_JS_ENGINE
   static void DumpQuickJsByteCodeInternal(void* page_,
                                           int64_t profile_id,
                                           const char* code,
@@ -86,6 +88,7 @@ class WebFPage final {
                                           const char* url,
                                           Dart_PersistentHandle persistent_handle,
                                           DumpQuickjsByteCodeCallback result_callback);
+#endif
 
   // evaluate JavaScript source codes in standard mode.
   bool evaluateScript(const char* script,
@@ -96,9 +99,10 @@ class WebFPage final {
                       int startLine);
   bool parseHTML(const char* code, size_t length);
   void evaluateScript(const char* script, size_t length, const char* url, int startLine);
+#if WEBF_QUICKJS_JS_ENGINE
   uint8_t* dumpByteCode(const char* script, size_t length, const char* url, uint64_t* byteLength);
   bool evaluateByteCode(uint8_t* bytes, size_t byteLength);
-
+#endif
   std::thread::id currentThread() const;
 
   [[nodiscard]] ExecutingContext* executingContext() const { return context_; }
