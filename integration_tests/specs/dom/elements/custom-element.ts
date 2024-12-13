@@ -456,7 +456,7 @@ describe('custom html element', () => {
     let sampleElement = document.createElement('sample-element');
     let attributes = Object.keys(sampleElement);
     expect(attributes).toEqual([
-      'fake', 'ping', 'fn', 'asyncFnNotComplete', 'asyncFnFailed', 'asyncFn'
+      'fake', 'ping', 'fn', '__test_global_to_local__', 'asyncFnNotComplete', 'asyncFnFailed', 'asyncFn'
     ])
   });
 

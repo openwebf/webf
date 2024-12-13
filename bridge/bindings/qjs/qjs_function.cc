@@ -23,7 +23,7 @@ static JSValue CreateJSFunctionWithFinalizerCallback(JSRuntime* runtime,
   def.gc_mark = mark_fn;
   def.finalizer = finalized_fn;
 
-  JSClassID class_id;
+  JSClassID class_id = 0;
   JS_NewClassID(&class_id);
 
   JS_NewClass(runtime, class_id, &def);
