@@ -12,6 +12,7 @@
 #include "bindings/qjs/script_value.h"
 #else
 #include "bindings/v8/atomic_string.h"
+#include "bindings/v8/script_value.h"
 #endif
 #include "foundation/native_string.h"
 

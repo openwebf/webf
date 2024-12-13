@@ -14,8 +14,8 @@
 
 #include <set>
 #include "dart_context_data.h"
-#include "dart_methods.h"
 /* TODO support V8
+#include "dart_methods.h"
 #include "foundation/profiler.h"
 */
 #include "multiple_threading/dispatcher.h"
@@ -67,7 +67,9 @@ class DartIsolateContext {
   v8::Isolate* isolate();
 #endif
   FORCE_INLINE bool valid() { return is_valid_; }
+  /* TODO support
   FORCE_INLINE DartMethodPointer* dartMethodPtr() const { return dart_method_ptr_.get(); }
+  */
   FORCE_INLINE const std::unique_ptr<multi_threading::Dispatcher>& dispatcher() const { return dispatcher_; }
   FORCE_INLINE void SetDispatcher(std::unique_ptr<multi_threading::Dispatcher>&& dispatcher) {
     dispatcher_ = std::move(dispatcher);
@@ -128,7 +130,7 @@ class DartIsolateContext {
   std::unordered_set<std::unique_ptr<WebFPage>> pages_in_ui_thread_;
   std::unique_ptr<multi_threading::Dispatcher> dispatcher_ = nullptr;
   // Dart methods ptr should keep alive when ExecutingContext is disposing.
-  const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = nullptr;
+  // TODO const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = nullptr;
 };
 
 }  // namespace webf

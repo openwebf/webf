@@ -7,9 +7,15 @@
 
 #if WEBF_V8_JS_ENGINE
 #include <v8/v8.h>
+#include "bindings/v8/binding_initializer.h"
+#include "bindings/v8/script_value.h"
 #elif WEBF_QUICKJS_JS_ENGINE
 #include <quickjs/list.h>
 #include <quickjs/quickjs.h>
+#include "bindings/qjs/binding_initializer.h"
+#include "bindings/qjs/rejected_promises.h"
+#include "bindings/qjs/script_value.h"
+#include "native/native_loader.h"
 #endif
 
 #include <atomic>
@@ -23,20 +29,19 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include "bindings/qjs/binding_initializer.h"
-#include "bindings/qjs/rejected_promises.h"
-#include "bindings/qjs/script_value.h"
 #include "foundation/macros.h"
 #include "foundation/ui_command_buffer.h"
-#include "native/native_loader.h"
 #include "plugin_api/executing_context.h"
 
 #include "dart_isolate_context.h"
 #include "dart_methods.h"
+/*TODO support ExecutionContextData / frame
 #include "executing_context_data.h"
 #include "frame/dom_timer_coordinator.h"
 #include "frame/module_context_coordinator.h"
 #include "frame/module_listener_container.h"
+*/
+
 #include "script_state.h"
 
 #include "shared_ui_command.h"
@@ -52,7 +57,7 @@ class ExecutingContext;
 class Document;
 class Window;
 class Performance;
-class MemberMutationScope;
+// TODO class MemberMutationScope;
 class ErrorEvent;
 class DartContext;
 class MutationObserver;
@@ -97,11 +102,11 @@ class ExecutingContext {
   bool HandleException(ScriptValue* exc);
   bool HandleException(ExceptionState& exception_state);
   bool HandleException(ExceptionState& exception_state, char** rust_error_msg, uint32_t* rust_errmsg_len);
-  void ReportError(JSValueConst error);
-  void ReportError(JSValueConst error, char** rust_errmsg, uint32_t* rust_errmsg_length);
   void DrainMicrotasks();
   void EnqueueMicrotask(MicrotaskCallback callback, void* data = nullptr);
+/*TODO support ExecutionContextData
   ExecutionContextData* contextData();
+*/
   uint8_t* DumpByteCode(const char* code, uint32_t codeLength, const char* sourceURL, uint64_t* bytecodeLength);
 
 #if WEBF_QUICKJS_JS_ENGINE
@@ -110,6 +115,7 @@ class ExecutingContext {
   JSContext* ctx();
   bool HandleException(JSValue* exc);
   void ReportError(JSValueConst error);
+  void ReportError(JSValueConst error, char** rust_errmsg, uint32_t* rust_errmsg_length);
   void DefineGlobalProperty(const char* prop, JSValueConst value);
   static void DispatchGlobalUnhandledRejectionEvent(ExecutingContext* context,
                                                     JSValueConst promise,
@@ -124,7 +130,7 @@ class ExecutingContext {
 #elif WEBF_V8_JS_ENGINE
   static ExecutingContext* From(v8::Isolate* isolate);
   v8::Local<v8::Value> Global();
-  v8::Isolate ctx();
+  v8::Isolate* ctx();
   bool HandleException(v8::Local<v8::Value> exc);
   void ReportError(v8::Local<v8::Value> error);
   void DefineGlobalProperty(const char* prop, v8::Local<v8::Value> value);
@@ -137,6 +143,7 @@ class ExecutingContext {
   void RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable);
   void InActiveScriptWrappers(ScriptWrappable* script_wrappable);
 
+  /*TODO support frame
   // Gets the DOMTimerCoordinator which maintains the "active timer
   // list" of tasks created by setTimeout and setInterval. The
   // DOMTimerCoordinator is owned by the ExecutionContext and should
@@ -148,7 +155,9 @@ class ExecutingContext {
 
   // Gets the ModuleCallbacks which from the 4th parameter of `webf.invokeModule` function.
   ModuleContextCoordinator* ModuleContexts();
+  */
 
+  /* TODO support
   // Get current script state.
   ScriptState* GetScriptState() { return &script_state_; }
 
@@ -156,21 +165,28 @@ class ExecutingContext {
   bool HasMutationScope() const { return active_mutation_scope != nullptr; }
   MemberMutationScope* mutationScope() const { return active_mutation_scope; }
   void ClearMutationScope();
-
   FORCE_INLINE Document* document() const { return document_; };
   FORCE_INLINE Window* window() const { return window_; }
+  */
   FORCE_INLINE DartIsolateContext* dartIsolateContext() const { return dart_isolate_context_; };
+  /* TODO support
   FORCE_INLINE Performance* performance() const { return performance_; }
+  */
   FORCE_INLINE SharedUICommand* uiCommandBuffer() { return &ui_command_buffer_; };
+  /* TODO support
   FORCE_INLINE DartMethodPointer* dartMethodPtr() const {
     assert(dart_isolate_context_->valid());
     return dart_isolate_context_->dartMethodPtr();
   }
+  */
   FORCE_INLINE WebFValueStatus* status() const { return executing_context_status_; }
+  /* TODO support
   FORCE_INLINE ExecutingContextWebFMethods* publicMethodPtr() const { return public_method_ptr_.get(); }
+  */
   FORCE_INLINE bool isDedicated() { return is_dedicated_; }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
 
+  /*TODO support
   // Force dart side to execute the pending ui commands.
   void FlushUICommand(const BindingObject* self, uint32_t reason);
   void FlushUICommand(const BindingObject* self, uint32_t reason, std::vector<NativeBindingObject*>& deps);
@@ -189,7 +205,7 @@ class ExecutingContext {
   static std::unordered_map<std::string, NativeByteCode> plugin_byte_code;
   // Raw string codes which registered by webf plugins.
   static std::unordered_map<std::string, std::string> plugin_string_code;
-
+ */
  private:
   std::chrono::time_point<std::chrono::system_clock> time_origin_;
   int32_t unique_id_;
@@ -199,11 +215,13 @@ class ExecutingContext {
   void InstallNativeLoader();
 
   void DrainPendingPromiseJobs();
-  static void promiseRejectTracker(JSContext* ctx,
+#if WEBF_QUICKJS_JS_ENGINE
+static void promiseRejectTracker(JSContext* ctx,
                                    JSValueConst promise,
                                    JSValueConst reason,
                                    JS_BOOL is_handled,
                                    void* opaque);
+#endif
   // Warning: Don't change the orders of members in ExecutingContext if you really know what are you doing.
   // From C++ standard, https://isocpp.org/wiki/faq/dtors#order-dtors-for-members
   // Members first initialized and destructed at the last.
@@ -217,7 +235,9 @@ class ExecutingContext {
   // ----------------------------------------------------------------------
   // All members above ScriptState will be freed after ScriptState freed
   // ----------------------------------------------------------------------
+  /*TODO
   ScriptState script_state_{dart_isolate_context_};
+  */
   // ----------------------------------------------------------------------
   // All members below will be free before ScriptState freed.
   // ----------------------------------------------------------------------
@@ -230,6 +250,7 @@ class ExecutingContext {
 #elif WEBF_V8_JS_ENGINE
   v8::Local<v8::Value> global_object_;
 #endif
+/* TODO support
   Document* document_{nullptr};
   Window* window_{nullptr};
   NativeLoader* native_loader_{nullptr};
@@ -238,15 +259,20 @@ class ExecutingContext {
   ModuleListenerContainer module_listener_container_;
   ModuleContextCoordinator module_contexts_;
   ExecutionContextData context_data_{this};
+*/
   bool in_dispatch_error_event_{false};
+#if WEBF_QUICKJS_JS_ENGINE
   RejectedPromises rejected_promises_;
-  MemberMutationScope* active_mutation_scope{nullptr};
+#endif
+  // TODO MemberMutationScope* active_mutation_scope{nullptr};
   std::unordered_set<ScriptWrappable*> active_wrappers_;
   WebFValueStatus* executing_context_status_{new WebFValueStatus()};
   bool is_dedicated_;
 
+  /*TODO
   // Rust methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<ExecutingContextWebFMethods> public_method_ptr_ = nullptr;
+  */
 };
 
 }  // namespace webf

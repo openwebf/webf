@@ -17,6 +17,7 @@ SharedUICommand::SharedUICommand(ExecutingContext* context)
       ui_command_sync_strategy_(std::make_unique<UICommandSyncStrategy>(this)),
       is_blocking_writing_(false) {}
 
+/* TODO support
 void SharedUICommand::AddCommand(UICommand type,
                                  std::unique_ptr<SharedNativeString>&& args_01,
                                  NativeBindingObject* native_binding_object,
@@ -42,6 +43,7 @@ void SharedUICommand::AddCommand(UICommand type,
 
   ui_command_sync_strategy_->RecordUICommand(type, args_01, native_binding_object, nativePtr2, request_ui_update);
 }
+*/
 
 // first called by dart to being read commands.
 void* SharedUICommand::data() {

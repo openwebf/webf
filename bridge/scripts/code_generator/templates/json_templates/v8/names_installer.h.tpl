@@ -10,7 +10,7 @@
 namespace webf {
 namespace <%= name %> {
 
-void Init(JSContext* ctx);
+void Init(v8::Isolate* ctx);
 void Dispose();
 
 }

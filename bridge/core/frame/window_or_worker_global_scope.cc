@@ -3,10 +3,19 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "window_or_worker_global_scope.h"
-#include "core/frame/dom_timer.h"
+//TODO #include "core/frame/dom_timer.h"
+
+#if WEBF_QUICKJS_JS_ENGINE
+
+#include "bindings/qjs/exception_state.h"
+#include "bindings/qjs/qjs_function.h"
+
+#elif WEBF_V8_JS_ENGINE
+#endif
 
 namespace webf {
 
+/*TODO support
 static void handleTimerCallback(DOMTimer* timer, char* errmsg) {
   auto* context = timer->context();
 
@@ -109,11 +118,13 @@ int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
                                           ExceptionState& exception) {
   return setTimeout(context, handler, 0.0, exception);
 }
+*/
 
 int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
                                           const std::shared_ptr<Function>& handler,
                                           int32_t timeout,
                                           ExceptionState& exception) {
+  /*TODO support
   if (handler == nullptr) {
     exception.ThrowException(context->ctx(), ErrorType::InternalError, "Timeout callback is null");
     return -1;
@@ -130,8 +141,11 @@ int WindowOrWorkerGlobalScope::setTimeout(ExecutingContext* context,
   context->Timers()->installNewTimer(context, timer_id, timer);
 
   return timer_id;
+  */
+  return 0;
 }
 
+/*TODO support
 int WindowOrWorkerGlobalScope::setInterval(ExecutingContext* context,
                                            std::shared_ptr<Function> handler,
                                            ExceptionState& exception) {
@@ -187,5 +201,5 @@ ScriptValue WindowOrWorkerGlobalScope::__memory_usage__(ExecutingContext* contex
 
   return ScriptValue::CreateJsonObject(context->ctx(), buff, strlen(buff));
 }
-
+*/
 }  // namespace webf

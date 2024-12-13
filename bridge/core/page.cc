@@ -5,16 +5,21 @@
 #include <atomic>
 #include <unordered_map>
 
+#if WEBF_QUICKJS_JS_ENGINE
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/binding_initializer.h"
+#elif WEBF_V8_JS_ENGINE
+#include "bindings/v8/atomic_string.h"
+#include "bindings/v8/binding_initializer.h"
+#endif
 #include "core/dart_methods.h"
-#include "core/dom/document.h"
-#include "core/frame/window.h"
-#include "core/html/html_html_element.h"
-#include "core/html/parser/html_parser.h"
-#include "event_factory.h"
+//#include "core/dom/document.h"
+//#include "core/frame/window.h"
+//#include "core/html/html_html_element.h"
+//#include "core/html/parser/html_parser.h"
+//#include "event_factory.h"
 #include "foundation/logging.h"
-#include "foundation/native_value_converter.h"
+//#include "foundation/native_value_converter.h"
 #include "page.h"
 #include "polyfill.h"
 
@@ -42,7 +47,7 @@ WebFPage::WebFPage(DartIsolateContext* dart_isolate_context,
 bool WebFPage::parseHTML(const char* code, size_t length) {
   if (!context_->IsContextValid())
     return false;
-
+/*TODO
   {
     MemberMutationScope scope{context_};
 
@@ -57,7 +62,7 @@ bool WebFPage::parseHTML(const char* code, size_t length) {
   }
 
   context_->uiCommandBuffer()->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
-
+*/
   return true;
 }
 
@@ -65,6 +70,8 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
                                          const char* eventType,
                                          void* ptr,
                                          NativeValue* extra) {
+  return nullptr;
+/*TODO
   if (!context_->IsContextValid())
     return nullptr;
 
@@ -105,6 +112,7 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
 
   memcpy(return_value, &tmp, sizeof(NativeValue));
   return return_value;
+*/
 }
 
 bool WebFPage::evaluateScript(const char* script,
@@ -174,11 +182,11 @@ void WebFPage::EvaluateScriptsInternal(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
 
-  page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
+  // TODO page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
 
   bool is_success = page->evaluateScript(code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine);
 
-  page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
+  // TODO page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
 
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateScriptsInternal,
                                                        persistent_handle, result_callback, is_success);
@@ -201,11 +209,11 @@ void WebFPage::EvaluateQuickjsByteCodeInternal(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
 
-  page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
+  // TODO page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
 
   bool is_success = page->evaluateByteCode(bytes, byteLen);
 
-  page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
+  // TODO page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
 
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateQuickjsByteCodeResultToDart,
                                                        persistent_handle, result_callback, is_success);
@@ -226,12 +234,12 @@ void WebFPage::ParseHTMLInternal(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   assert(std::this_thread::get_id() == page->currentThread());
 
-  page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
+  // TODO page->dartIsolateContext()->profiler()->StartTrackEvaluation(profile_id);
 
   page->parseHTML(code, length);
   dart_free(code);
 
-  page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
+  // TODO page->dartIsolateContext()->profiler()->FinishTrackEvaluation(profile_id);
 
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnParseHTMLToDart, dart_handle,
                                                        result_callback);
@@ -256,12 +264,12 @@ void WebFPage::InvokeModuleEventInternal(void* page_,
   auto dart_isolate_context = page->executingContext()->dartIsolateContext();
   assert(std::this_thread::get_id() == page->currentThread());
 
-  page->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
+  // TODO page->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
 
   auto* result = page->invokeModuleEvent(reinterpret_cast<webf::SharedNativeString*>(module_name), eventType, event,
                                          reinterpret_cast<webf::NativeValue*>(extra));
 
-  page->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
+  // TODO page->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
 
   dart_isolate_context->dispatcher()->PostToDart(page->isDedicated(), ReturnInvokeEventResultToDart, persistent_handle,
                                                  result_callback, result);
@@ -285,13 +293,13 @@ void WebFPage::DumpQuickJsByteCodeInternal(void* page_,
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   auto dart_isolate_context = page->executingContext()->dartIsolateContext();
 
-  dart_isolate_context->profiler()->StartTrackEvaluation(profile_id);
+  // TODO dart_isolate_context->profiler()->StartTrackEvaluation(profile_id);
 
   assert(std::this_thread::get_id() == page->currentThread());
   uint8_t* bytes = page->dumpByteCode(code, code_len, url, bytecode_len);
   *parsed_bytecodes = bytes;
 
-  dart_isolate_context->profiler()->FinishTrackEvaluation(profile_id);
+  // TODO dart_isolate_context->profiler()->FinishTrackEvaluation(profile_id);
 
   dart_isolate_context->dispatcher()->PostToDart(page->isDedicated(), ReturnDumpByteCodeResultToDart, persistent_handle,
                                                  result_callback);

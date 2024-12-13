@@ -6,9 +6,9 @@
 #ifndef BRIDGE_<%= blob.filename.toUpperCase() %>_H
 #define BRIDGE_<%= blob.filename.toUpperCase() %>_H
 
-#include <quickjs/quickjs.h>
-#include "bindings/qjs/wrapper_type_info.h"
-#include "bindings/qjs/generated_code_helper.h"
+#include <v8/v8.h>
+//#include "bindings/v8/wrapper_type_info.h"
+#include "bindings/v8/generated_code_helper.h"
 
 <%= content %>
 

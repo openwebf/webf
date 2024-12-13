@@ -1,11 +1,15 @@
 import {IDLBlob} from './IDLBlob';
 import {generateQuickJSCppHeader} from "./IDLAPIGenerator/quickjs/generateHeader";
+import {generateV8CppHeader} from "./IDLAPIGenerator/v8/generateHeader";
 import {
   generateCoreTypeValue,
   generateQuickJSCppSource,
   generateUnionTypeSource, getPointerType, isPointerType,
   isTypeHaveNull
 } from "./IDLAPIGenerator/quickjs/generateSource";
+import {
+  generateV8CppSource
+} from "./IDLAPIGenerator/v8/generateSource";
 import {ParameterType} from "./analyzer";
 import {FunctionArgumentType} from "./declaration";
 import _ from "lodash";
@@ -50,8 +54,16 @@ export type GenerateOptions = {
 export function generatorSource(blob: IDLBlob) {
   let options = generateSupportedOptions();
 
-  let source = generateQuickJSCppSource(blob, options);
-  let header = generateQuickJSCppHeader(blob, options);
+  let source = '';
+  let header = '';
+  if (blob.platformPrefix == 'qjs') {
+    source = generateQuickJSCppSource(blob, options);
+    header = generateQuickJSCppHeader(blob, options);
+  } else {
+    source = generateV8CppSource(blob, options);
+    header = generateV8CppHeader(blob, options);
+  }
+
   return {
     header,
     source

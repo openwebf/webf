@@ -5,7 +5,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
 <% } %>
 
 <% if (object.indexedProp) { %>
-  bool QJS<%= className %>::PropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSAtom key) {
+  bool V8<%= className %>::PropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSAtom key) {
     auto* self = toScriptWrappable<<%= className %>>(obj);
     ExceptionState exception_state;
     ExecutingContext* context = ExecutingContext::From(ctx);

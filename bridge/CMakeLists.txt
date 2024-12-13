@@ -85,21 +85,21 @@ list(APPEND BRIDGE_SOURCE
   foundation/logging.cc
   foundation/native_string.cc
 #  foundation/ui_task_queue.cc
-#  foundation/shared_ui_command.cc
+  foundation/shared_ui_command.cc
 #  foundation/inspector_task_queue.cc
 #  foundation/task_queue.cc
   foundation/string_view.cc
-#  foundation/native_value.cc
+  foundation/native_value.cc
 #  foundation/native_type.cc
 #  foundation/stop_watch.cc
 #  foundation/profiler.cc
-#  foundation/dart_readable.cc
+  foundation/dart_readable.cc
   foundation/rust_readable.cc
-#  foundation/ui_command_buffer.cc
-#  foundation/ui_command_strategy.cc
+  foundation/ui_command_buffer.cc
+  foundation/ui_command_strategy.cc
 #  polyfill/dist/polyfill.cc
-#  multiple_threading/dispatcher.cc
-#  multiple_threading/looper.cc
+  multiple_threading/dispatcher.cc
+  multiple_threading/looper.cc
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
   )
 
@@ -650,8 +650,16 @@ elseif (${WEBF_JS_ENGINE} MATCHES "v8")
     bindings/v8/scoped_persistent.h
     bindings/v8/v8_per_context_data.cc
     bindings/v8/v8_script_state.cc
+    bindings/v8/binding_initializer.cc
+    bindings/v8/generated_code_helper.h
+    bindings/v8/member_installer.cc
+  )
 
+  # Gen sources.
+  list(APPEND BRIDGE_SOURCE
+    out/names_installer.cc
     out/built_in_string.cc
+    out/v8_window_or_worker_global_scope.cc
   )
 
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -671,11 +679,11 @@ endif()
 
 list(APPEND BRIDGE_SOURCE
   # Core sources
-#  webf_bridge.cc
-#  core/executing_context.cc
+  webf_bridge.cc
+  core/executing_context.cc
 #  core/script_forbidden_scope.cc
 #  core/script_state.cc
-#  core/page.cc
+  core/page.cc
 #  core/dart_methods.cc
 #  core/api/exception_state.cc
 #  core/api/event_target.cc
@@ -693,8 +701,8 @@ list(APPEND BRIDGE_SOURCE
 #  core/api/comment.cc
 #  core/api/character_data.cc
 #  core/api/script_value_ref.cc
-#  core/dart_isolate_context.cc
-#  core/dart_context_data.cc
+  core/dart_isolate_context.cc
+  core/dart_context_data.cc
 #  core/executing_context_data.cc
 #  core/fileapi/blob.cc
 #  core/fileapi/blob_part.cc
@@ -702,7 +710,7 @@ list(APPEND BRIDGE_SOURCE
 #  core/frame/console.cc
 #  core/frame/dom_timer.cc
 #  core/frame/dom_timer_coordinator.cc
-#  core/frame/window_or_worker_global_scope.cc
+  core/frame/window_or_worker_global_scope.cc
 #  core/frame/module_listener.cc
 #  core/frame/module_listener_container.cc
 #  core/frame/module_manager.cc

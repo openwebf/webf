@@ -1,7 +1,7 @@
 #include "core/<%= blob.implement %>.h"
 
 <% if(parentClassName) { %>
-#include "qjs_<%= _.snakeCase(parentClassName) %>.h"
+#include "v8_<%= _.snakeCase(parentClassName) %>.h"
 <% } %>
 
 namespace webf {
@@ -33,7 +33,7 @@ Native<%= parentClassName %> native_event;
 #endif
 <% } %>
 
-class QJS<%= className %> : public QJSInterfaceBridge<QJS<%= className %>, <%= className%>> {
+class V8<%= className %> : public V8InterfaceBridge<V8<%= className %>, <%= className%>> {
  public:
   static void Install(ExecutingContext* context);
   static WrapperTypeInfo* GetWrapperTypeInfo() {

@@ -1,6 +1,7 @@
 // @ts-ignore
 declare const setTimeout: (callback: Function, timeout?: double) => int64;
 
+/*TODO suppport
 // @ts-ignore
 declare const setInterval: (callback: Function, timeout?: double) => int64;
 
@@ -15,5 +16,5 @@ declare const clearInterval: (handle: double) => void;
 declare const __gc__: () => void;
 
 declare const __memory_usage__: () => any;
-
+*/
 

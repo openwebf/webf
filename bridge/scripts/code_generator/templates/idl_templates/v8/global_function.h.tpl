@@ -4,7 +4,7 @@ namespace webf {
 
 class ExecutingContext;
 
-class QJS<%= className %> final {
+class V8<%= className %> final {
  public:
   static void Install(ExecutingContext* context);
  private:

@@ -4,19 +4,24 @@
  */
 #include "executing_context.h"
 
-#include <utility>
-#include "bindings/qjs/converter_impl.h"
-#include "built_in_string.h"
+//#include <utility>
+//#include "bindings/qjs/converter_impl.h"
+//#include "built_in_string.h"
 //#include "core/dom/document.h"
 //#include "core/dom/mutation_observer.h"
 //#include "core/events/error_event.h"
 //#include "core/events/promise_rejection_event.h"
-#include "event_type_names.h"
+//#include "event_type_names.h"
 #include "foundation/logging.h"
-#include "polyfill.h"
-#include "qjs_window.h"
-#include "script_forbidden_scope.h"
-#include "timing/performance.h"
+//#include "polyfill.h"
+//#include "qjs_window.h"
+//#include "script_forbidden_scope.h"
+//#include "timing/performance.h"
+#if WEBF_QUICKJS_JS_ENGINE
+
+#elif WEBF_V8_JS_ENGINE
+
+#endif
 
 namespace webf {
 
@@ -36,7 +41,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
       context_id_(context_id),
       dart_error_report_handler_(std::move(handler)),
       owner_(owner),
-      public_method_ptr_(std::make_unique<ExecutingContextWebFMethods>()),
+      // TODO public_method_ptr_(std::make_unique<ExecutingContextWebFMethods>()),
       is_dedicated_(is_dedicated),
       unique_id_(context_unique_id++),
       is_context_valid_(true) {
@@ -69,11 +74,14 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
 #elif WEBF_V8_JS_ENGINE
 #endif
 
+  /*TODO support
   dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallBindings");
+  */
 
   // Register all built-in native bindings.
   InstallBindings(this);
 
+  /* TODO support
   dart_isolate_context->profiler()->FinishTrackSteps();
   dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallDocument");
 
@@ -112,6 +120,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   dart_isolate_context->profiler()->FinishTrackSteps();
 
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+  */
 }
 
 ExecutingContext::~ExecutingContext() {
@@ -119,6 +128,7 @@ ExecutingContext::~ExecutingContext() {
   valid_contexts[context_id_] = false;
   executing_context_status_->disposed = true;
 
+  /*TODO support
   // Check if current context have unhandled exceptions.
   JSValue exception = JS_GetException(script_state_.ctx());
   if (JS_IsObject(exception) || JS_IsException(exception)) {
@@ -133,11 +143,21 @@ ExecutingContext::~ExecutingContext() {
   for (auto& active_wrapper : active_wrappers_) {
     JS_FreeValue(ctx(), active_wrapper->ToQuickJSUnsafe());
   }
+  */
 }
 
+#if WEBF_QUICKJS_JS_ENGINE
 ExecutingContext* ExecutingContext::From(JSContext* ctx) {
   return static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
 }
+
+#elif WEBF_V8_JS_ENGINE
+ExecutingContext* From(v8::Isolate* isolate) {
+  // TODO support
+  return nullptr;
+}
+
+#endif
 
 bool ExecutingContext::EvaluateJavaScript(const char* code,
                                           size_t code_len,
@@ -145,6 +165,7 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
                                           uint64_t* bytecode_len,
                                           const char* sourceURL,
                                           int startLine) {
+  /*TODO support
   if (ScriptForbiddenScope::IsScriptForbidden()) {
     return false;
   }
@@ -191,26 +212,35 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
   dart_isolate_context_->profiler()->FinishTrackSteps();
 
   return success;
+  */
+  return false;
 }
 
 bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine) {
+  /*TODO support
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), length));
   JSValue result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
   DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
   return success;
+  */
+  return false;
 }
 
 bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine) {
+  /*TODO support
   JSValue result = JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, JS_EVAL_TYPE_GLOBAL);
   DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
   return success;
+  */
+  return false;
 }
 
 bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
+  /*TODO support
   dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::EvaluateByteCode");
 
   JSValue obj, val;
@@ -240,6 +270,8 @@ bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
   JS_FreeValue(script_state_.ctx(), val);
   dart_isolate_context_->profiler()->FinishTrackSteps();
   return true;
+  */
+  return false;
 }
 
 bool ExecutingContext::IsContextValid() const {
@@ -251,12 +283,17 @@ void ExecutingContext::SetContextInValid() {
 }
 
 bool ExecutingContext::IsCtxValid() const {
+  /* TODO
   return script_state_.Invalid();
+  */
+  return false;
 }
 
 void* ExecutingContext::owner() {
   return owner_;
 }
+
+#if WEBF_QUICKJS_JS_ENGINE
 
 bool ExecutingContext::HandleException(JSValue* exc) {
   if (JS_IsException(*exc)) {
@@ -484,6 +521,11 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
   }
 }
 
+#elif WEBF_V8_JS_ENGINE
+
+#endif
+
+/* TODO support
 void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason) {
   std::vector<NativeBindingObject*> deps;
   FlushUICommand(self, reason, deps);
@@ -657,7 +699,7 @@ void ExecutingContext::RegisterActiveScriptWrappers(ScriptWrappable* script_wrap
 void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable) {
   active_wrappers_.erase(script_wrappable);
 }
-
+*/
 // A lock free context validator.
 bool isContextValid(double contextId) {
   if (contextId > running_context_list)

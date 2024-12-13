@@ -10,6 +10,7 @@
 #include "foundation/native_type.h"
 #include "foundation/ui_command_buffer.h"
 #include "foundation/ui_command_strategy.h"
+#include "dart_readable.h"
 
 namespace webf {
 
@@ -19,11 +20,13 @@ class SharedUICommand : public DartReadable {
  public:
   SharedUICommand(ExecutingContext* context);
 
+  /*TODO support
   void AddCommand(UICommand type,
                   std::unique_ptr<SharedNativeString>&& args_01,
                   NativeBindingObject* native_binding_object,
                   void* nativePtr2,
                   bool request_ui_update = true);
+  */
 
   void* data();
   uint32_t kindFlag();
