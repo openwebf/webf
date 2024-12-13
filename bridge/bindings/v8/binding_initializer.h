@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-
 #ifndef WEBF_BINDING_INITIALIZER_H
 #define WEBF_BINDING_INITIALIZER_H
 
@@ -15,4 +14,4 @@ void InstallBindings(ExecutingContext* context);
 
 }  // namespace webf
 
-#endif //WEBF_BINDING_INITIALIZER_H
+#endif  // WEBF_BINDING_INITIALIZER_H

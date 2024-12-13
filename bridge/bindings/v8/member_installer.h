@@ -6,8 +6,8 @@
 #ifndef WEBF_BRIDGE_BINDINGS_V8_MEMBER_INSTALLER_H_
 #define WEBF_BRIDGE_BINDINGS_V8_MEMBER_INSTALLER_H_
 
-#include <initializer_list>
 #include <v8/v8.h>
+#include <initializer_list>
 
 namespace webf {
 
@@ -27,4 +27,4 @@ class MemberInstaller {
 
 }  // namespace webf
 
-#endif //WEBF_BRIDGE_BINDINGS_V8_MEMBER_INSTALLER_H_
+#endif  // WEBF_BRIDGE_BINDINGS_V8_MEMBER_INSTALLER_H_

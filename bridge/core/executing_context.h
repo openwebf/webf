@@ -104,9 +104,9 @@ class ExecutingContext {
   bool HandleException(ExceptionState& exception_state, char** rust_error_msg, uint32_t* rust_errmsg_len);
   void DrainMicrotasks();
   void EnqueueMicrotask(MicrotaskCallback callback, void* data = nullptr);
-/*TODO support ExecutionContextData
-  ExecutionContextData* contextData();
-*/
+  /*TODO support ExecutionContextData
+    ExecutionContextData* contextData();
+  */
   uint8_t* DumpByteCode(const char* code, uint32_t codeLength, const char* sourceURL, uint64_t* bytecodeLength);
 
 #if WEBF_QUICKJS_JS_ENGINE
@@ -216,7 +216,7 @@ class ExecutingContext {
 
   void DrainPendingPromiseJobs();
 #if WEBF_QUICKJS_JS_ENGINE
-static void promiseRejectTracker(JSContext* ctx,
+  static void promiseRejectTracker(JSContext* ctx,
                                    JSValueConst promise,
                                    JSValueConst reason,
                                    JS_BOOL is_handled,
@@ -250,16 +250,16 @@ static void promiseRejectTracker(JSContext* ctx,
 #elif WEBF_V8_JS_ENGINE
   v8::Local<v8::Value> global_object_;
 #endif
-/* TODO support
-  Document* document_{nullptr};
-  Window* window_{nullptr};
-  NativeLoader* native_loader_{nullptr};
-  Performance* performance_{nullptr};
-  DOMTimerCoordinator timers_;
-  ModuleListenerContainer module_listener_container_;
-  ModuleContextCoordinator module_contexts_;
-  ExecutionContextData context_data_{this};
-*/
+  /* TODO support
+    Document* document_{nullptr};
+    Window* window_{nullptr};
+    NativeLoader* native_loader_{nullptr};
+    Performance* performance_{nullptr};
+    DOMTimerCoordinator timers_;
+    ModuleListenerContainer module_listener_container_;
+    ModuleContextCoordinator module_contexts_;
+    ExecutionContextData context_data_{this};
+  */
   bool in_dispatch_error_event_{false};
 #if WEBF_QUICKJS_JS_ENGINE
   RejectedPromises rejected_promises_;

@@ -3,7 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "window_or_worker_global_scope.h"
-//TODO #include "core/frame/dom_timer.h"
+// TODO #include "core/frame/dom_timer.h"
 
 #if WEBF_QUICKJS_JS_ENGINE
 

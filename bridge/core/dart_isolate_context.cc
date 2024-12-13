@@ -148,12 +148,11 @@ void DartIsolateContext::FinalizeJSRuntime() {
 }
 
 DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length, bool profile_enabled)
-    : is_valid_(true),
-      running_thread_(std::this_thread::get_id()) {
-      /* TODO v8 suppport
-      profiler_(std::make_unique<WebFProfiler>(profile_enabled)),
-      dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
-      */
+    : is_valid_(true), running_thread_(std::this_thread::get_id()) {
+  /* TODO v8 suppport
+  profiler_(std::make_unique<WebFProfiler>(profile_enabled)),
+  dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
+  */
   is_valid_ = true;
   running_dart_isolates++;
 }

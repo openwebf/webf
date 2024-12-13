@@ -9,4 +9,4 @@
 #include "atomic_string.h"
 #include "script_value.h"
 
-#endif //WEBF_BRIDGE_BINDINGS_V8_GENERATED_CODE_HELPER_H_
+#endif  // WEBF_BRIDGE_BINDINGS_V8_GENERATED_CODE_HELPER_H_

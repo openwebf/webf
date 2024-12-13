@@ -47,22 +47,22 @@ WebFPage::WebFPage(DartIsolateContext* dart_isolate_context,
 bool WebFPage::parseHTML(const char* code, size_t length) {
   if (!context_->IsContextValid())
     return false;
-/*TODO
-  {
-    MemberMutationScope scope{context_};
+  /*TODO
+    {
+      MemberMutationScope scope{context_};
 
-    auto document_element = context_->document()->documentElement();
-    if (!document_element) {
-      return false;
+      auto document_element = context_->document()->documentElement();
+      if (!document_element) {
+        return false;
+      }
+
+      context_->dartIsolateContext()->profiler()->StartTrackSteps("HTMLParser::parseHTML");
+      HTMLParser::parseHTML(code, length, context_->document()->documentElement());
+      context_->dartIsolateContext()->profiler()->FinishTrackSteps();
     }
 
-    context_->dartIsolateContext()->profiler()->StartTrackSteps("HTMLParser::parseHTML");
-    HTMLParser::parseHTML(code, length, context_->document()->documentElement());
-    context_->dartIsolateContext()->profiler()->FinishTrackSteps();
-  }
-
-  context_->uiCommandBuffer()->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
-*/
+    context_->uiCommandBuffer()->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+  */
   return true;
 }
 
@@ -71,48 +71,48 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
                                          void* ptr,
                                          NativeValue* extra) {
   return nullptr;
-/*TODO
-  if (!context_->IsContextValid())
-    return nullptr;
+  /*TODO
+    if (!context_->IsContextValid())
+      return nullptr;
 
-  MemberMutationScope scope{context_};
+    MemberMutationScope scope{context_};
 
-  JSContext* ctx = context_->ctx();
-  Event* event = nullptr;
-  if (ptr != nullptr) {
-    std::string type = std::string(eventType);
-    auto* raw_event = static_cast<RawEvent*>(ptr);
-    event = EventFactory::Create(context_, AtomicString(ctx, type), raw_event);
-    delete raw_event;
-  }
+    JSContext* ctx = context_->ctx();
+    Event* event = nullptr;
+    if (ptr != nullptr) {
+      std::string type = std::string(eventType);
+      auto* raw_event = static_cast<RawEvent*>(ptr);
+      event = EventFactory::Create(context_, AtomicString(ctx, type), raw_event);
+      delete raw_event;
+    }
 
-  ScriptValue extraObject = ScriptValue(ctx, const_cast<const NativeValue&>(*extra));
-  AtomicString module_name = AtomicString(
-      ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_module_name)));
-  auto listener = context_->ModuleListeners()->listener(module_name);
+    ScriptValue extraObject = ScriptValue(ctx, const_cast<const NativeValue&>(*extra));
+    AtomicString module_name = AtomicString(
+        ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_module_name)));
+    auto listener = context_->ModuleListeners()->listener(module_name);
 
-  if (listener == nullptr) {
-    return nullptr;
-  }
+    if (listener == nullptr) {
+      return nullptr;
+    }
 
-  ScriptValue arguments[] = {event != nullptr ? event->ToValue() : ScriptValue::Empty(ctx), extraObject};
-  ScriptValue result = listener->value()->Invoke(ctx, ScriptValue::Empty(ctx), 2, arguments);
-  if (result.IsException()) {
-    context_->HandleException(&result);
-    return nullptr;
-  }
+    ScriptValue arguments[] = {event != nullptr ? event->ToValue() : ScriptValue::Empty(ctx), extraObject};
+    ScriptValue result = listener->value()->Invoke(ctx, ScriptValue::Empty(ctx), 2, arguments);
+    if (result.IsException()) {
+      context_->HandleException(&result);
+      return nullptr;
+    }
 
-  ExceptionState exception_state;
-  auto* return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
-  NativeValue tmp = result.ToNative(ctx, exception_state);
-  if (exception_state.HasException()) {
-    context_->HandleException(exception_state);
-    return nullptr;
-  }
+    ExceptionState exception_state;
+    auto* return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
+    NativeValue tmp = result.ToNative(ctx, exception_state);
+    if (exception_state.HasException()) {
+      context_->HandleException(exception_state);
+      return nullptr;
+    }
 
-  memcpy(return_value, &tmp, sizeof(NativeValue));
-  return return_value;
-*/
+    memcpy(return_value, &tmp, sizeof(NativeValue));
+    return return_value;
+  */
 }
 
 bool WebFPage::evaluateScript(const char* script,

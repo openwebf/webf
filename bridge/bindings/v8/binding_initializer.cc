@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-
 #include "binding_initializer.h"
 #include "v8_window_or_worker_global_scope.h"
 
