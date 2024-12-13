@@ -522,7 +522,7 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
 }
 
 #elif WEBF_V8_JS_ENGINE
-//v8::Local<v8::Value> Global() {
+// v8::Local<v8::Value> Global() {
 //}
 
 v8::Isolate* ExecutingContext::ctx() {
@@ -537,13 +537,9 @@ bool ExecutingContext::HandleException(v8::Local<v8::Value> exc) {
   return false;
 }
 
-void ExecutingContext::ReportError(v8::Local<v8::Value> error) {
+void ExecutingContext::ReportError(v8::Local<v8::Value> error) {}
 
-}
-
-void ExecutingContext::DefineGlobalProperty(const char* prop, v8::Local<v8::Value> value) {
-
-}
+void ExecutingContext::DefineGlobalProperty(const char* prop, v8::Local<v8::Value> value) {}
 
 #endif
 
