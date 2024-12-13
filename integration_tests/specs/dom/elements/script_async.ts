@@ -12,7 +12,7 @@ describe('script element async', () => {
     };
   });
 
-  fit('load failed with error event', (done) => {
+  fit('load failed with error event', async (done) => {
     const script = document.createElement('script');
     document.body.appendChild(script);
     script.onerror = () => {
@@ -47,7 +47,7 @@ describe('script element async', () => {
     };
   });
 
-  fit('could loading the kbc files', done => {
+  fit('could loading the kbc files', async (done) => {
     const script = document.createElement('script');
     // @ts-ignore
     script.src_async = 'assets:///assets/bundle.kbc1';
@@ -69,7 +69,7 @@ describe('script element async', () => {
   //   });
   // }
 
-  fit('Waiting order for large script loaded', (done) => {
+  fit('Waiting order for large script loaded', async (done) => {
     const scriptLarge = document.createElement('script');
     // @ts-ignore
     scriptLarge.src_async = 'assets:///assets/large-script.js';
