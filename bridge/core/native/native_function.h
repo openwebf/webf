@@ -16,9 +16,9 @@ class SharedExceptionState;
 typedef struct WebFNativeFunctionContext WebFNativeFunctionContext;
 
 using WebFNativeFunctionCallback = NativeValue (*)(WebFNativeFunctionContext* callback_context,
-                                            int32_t argc,
-                                            NativeValue* argv,
-                                            SharedExceptionState* shared_exception_state);
+                                                   int32_t argc,
+                                                   NativeValue* argv,
+                                                   SharedExceptionState* shared_exception_state);
 using WebFNativeFunctionFreePtrFn = void (*)(WebFNativeFunctionContext* callback_context);
 
 struct WebFNativeFunctionContext : public RustReadable {
