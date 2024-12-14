@@ -27,7 +27,7 @@ pub enum NativeTag {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Copy, Clone)]
 pub union ValueField {
   pub int64: i64,
   pub float64: f64,
@@ -35,7 +35,7 @@ pub union ValueField {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct NativeValue {
   pub u: ValueField,
   pub uint32: u32,
@@ -179,7 +179,7 @@ impl NativeValue {
 
     for (i, val) in values.iter().enumerate() {
       unsafe {
-        array_ptr.add(i).write(*val);
+        array_ptr.add(i).write(val.clone());
       }
     }
 
@@ -201,5 +201,25 @@ impl NativeValue {
       values.push(val);
     }
     values
+  }
+}
+
+impl Drop for NativeValue {
+  fn drop(&mut self) {
+    if self.tag == NativeTag::TagString as i32 {
+      println!("Drop NativeValue string: {}", self.to_string());
+    } else if self.tag == NativeTag::TagList as i32 {
+      println!("Drop NativeValue list");
+      let ptr = unsafe {
+        self.u.ptr as *mut NativeValue
+      };
+      for i in 0..self.uint32 {
+        let offset = i.try_into().unwrap();
+        let val = unsafe { ptr.add(offset).read() };
+        drop(val);
+      }
+    } else {
+      println!("Drop NativeValue: {:?}", self.tag);
+    }
   }
 }

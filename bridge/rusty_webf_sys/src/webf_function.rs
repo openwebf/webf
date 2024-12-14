@@ -4,7 +4,7 @@
 use std::ffi::*;
 use crate::*;
 
-pub type WebFNativeFunction = Box<dyn Fn(c_int, *const NativeValue)>;
+pub type WebFNativeFunction = Box<dyn Fn(c_int, *const NativeValue) -> NativeValue>;
 
 pub struct WebFNativeFunctionContextData {
   pub func: WebFNativeFunction,
@@ -21,7 +21,7 @@ pub struct WebFNativeFunctionContext {
   pub callback: extern "C" fn(callback_context: *const OpaquePtr,
                               argc: c_int,
                               argv: *const NativeValue,
-                              exception_state: *const OpaquePtr) -> *const c_void,
+                              exception_state: *const OpaquePtr) -> NativeValue,
   pub free_ptr: extern "C" fn(callback_context: *const OpaquePtr) -> *const c_void,
   pub ptr: *const WebFNativeFunctionContextData,
 }
@@ -31,7 +31,7 @@ pub extern "C" fn invoke_webf_native_function(
   argc: c_int,
   argv: *const NativeValue,
   exception_state: *const OpaquePtr,
-) -> *const c_void {
+) -> NativeValue {
   let callback_context = unsafe {
     &(*(callback_context_ptr as *mut WebFNativeFunctionContext))
   };
@@ -41,10 +41,8 @@ pub extern "C" fn invoke_webf_native_function(
 
   unsafe {
     let func = &(*callback_context_data).func;
-    func(argc, argv);
+    func(argc, argv)
   }
-
-  std::ptr::null()
 }
 
 pub extern "C" fn release_webf_native_function(callback_context_ptr: *const OpaquePtr) -> *const c_void {

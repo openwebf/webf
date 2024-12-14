@@ -50,7 +50,7 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
         context->HandleException(&result);
       }
       NativeValue native_result = result.ToNative(ctx, exception_state);
-      return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
+      return_value = static_cast<NativeValue*>(dart_malloc(sizeof(NativeValue)));
       memcpy(return_value, &native_result, sizeof(NativeValue));
     } else {
       ScriptValue arguments[] = {ScriptValue::Empty(ctx), ScriptValue(ctx, *extra_data)};
@@ -59,7 +59,7 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
         context->HandleException(&result);
       }
       NativeValue native_result = result.ToNative(ctx, exception_state);
-      return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
+      return_value = static_cast<NativeValue*>(dart_malloc(sizeof(NativeValue)));
       memcpy(return_value, &native_result, sizeof(NativeValue));
     }
 
@@ -75,18 +75,24 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
   } else if (auto* callback = DynamicTo<WebFNativeFunction>(callback_value.get())) {
     context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
     context->dartIsolateContext()->profiler()->StartTrackSteps("handleInvokeModuleTransientCallback");
+
+    NativeValue* return_value = nullptr;
     if (errmsg != nullptr) {
       NativeValue error_object = Native_NewCString(errmsg);
-      callback->Invoke(context, 1, &error_object);
+      NativeValue native_result = callback->Invoke(context, 1, &error_object);
+      return_value = static_cast<NativeValue*>(dart_malloc(sizeof(NativeValue)));
+      memcpy(return_value, &native_result, sizeof(NativeValue));
     } else {
       auto params = new NativeValue[2];
       params[0] = Native_NewNull();
       params[1] = *extra_data;
-      callback->Invoke(context, 2, params);
+      NativeValue native_result = callback->Invoke(context, 2, params);
+      return_value = static_cast<NativeValue*>(dart_malloc(sizeof(NativeValue)));
+      memcpy(return_value, &native_result, sizeof(NativeValue));
     }
     context->dartIsolateContext()->profiler()->FinishTrackSteps();
     context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
-    return nullptr;
+    return return_value;
   }
 }
 
