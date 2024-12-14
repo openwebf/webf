@@ -1,7 +1,8 @@
-use std::ffi::{c_void, CString};
+use std::ffi::c_void;
+use tokio::runtime;
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{async_storage, element, initialize_webf_api, navigator, AddEventListenerOptions, EventMethods, EventTargetMethods, NativeValue, RustValue};
+use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
@@ -14,17 +15,7 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   let navigator = context.navigator();
 
   let ua_string = navigator.user_agent(&exception_state);
-  let platform = navigator.platform(&exception_state);
-  let language = navigator.language(&exception_state);
-  let app_name = navigator.app_name(&exception_state);
-  let app_version = navigator.app_version(&exception_state);
-  let hardware_concurrency = navigator.hardware_concurrency(&exception_state);
   println!("User Agent: {}", ua_string);
-  println!("Platform: {}", platform);
-  println!("Language: {}", language);
-  println!("App Name: {}", app_name);
-  println!("App Version: {}", app_version);
-  println!("Hardware Concurrency: {}", hardware_concurrency);
 
   let local_storage = context.local_storage();
 
@@ -46,41 +37,15 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
 
   local_storage.clear(&exception_state);
 
-  let async_storage_1 = context.async_storage();
-
-  let async_storage_set_item_callback = Box::new(|value: Result<Option<String>, String>| {
-    match value {
-      Ok(value) => {
-        println!("Async Storage Set Item Success: {:?}", value);
-      },
-      Err(err) => {
-        println!("Async Storage Set Item Failed: {:?}", err);
-      }
-    }
-  });
-
-  async_storage_1.set_item("a", "b", async_storage_set_item_callback, &exception_state);
-
-  let async_storage_2 = context.async_storage();
-
-  let async_storage_get_item_callback = Box::new(|value: Result<Option<String>, String>| {
-    match value {
-      Ok(value) => {
-        println!("Async Storage Get Item Success: {:?}", value);
-      },
-      Err(err) => {
-        println!("Async Storage Get Item Failed: {:?}", err);
-      }
-    }
-  });
-
-  async_storage_2.get_item("a", async_storage_get_item_callback, &exception_state);
+  let async_storage = context.async_storage();
+  let exception_state = context.create_exception_state();
+  let _future = async_storage.get_item("a", &exception_state);
 
   let timer_callback = Box::new(move || {
     println!("Timer Callback");
   });
 
-  context.set_interval_with_callback_and_timeout(timer_callback, 1000, &exception_state).unwrap();
+  context.set_timeout_with_callback_and_timeout(timer_callback, 1000, &exception_state).unwrap();
 
   let click_event = document.create_event("custom_click", &exception_state).unwrap();
   document.dispatch_event(&click_event, &exception_state);
@@ -163,5 +128,6 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   event_cleaner_element.add_event_listener("click", event_cleaner_handler, &event_listener_options, &exception_state).unwrap();
 
   document.body().append_child(&event_cleaner_element.as_node(), &exception_state).unwrap();
+
   std::ptr::null_mut()
 }

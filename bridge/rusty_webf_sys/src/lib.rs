@@ -15,6 +15,7 @@ mod memory_utils;
 pub mod native_value;
 pub mod script_value_ref;
 pub mod webf_event_listener;
+pub mod webf_future;
 pub mod webf_function;
 
 pub use dom::*;
@@ -28,6 +29,7 @@ pub use executing_context::*;
 pub use native_value::*;
 pub use script_value_ref::*;
 pub use webf_event_listener::*;
+pub use webf_future::*;
 pub use webf_function::*;
 
 #[repr(C)]

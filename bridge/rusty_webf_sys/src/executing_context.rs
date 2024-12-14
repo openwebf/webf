@@ -261,6 +261,16 @@ impl ExecutingContext {
 
 }
 
+impl Clone for ExecutingContext {
+  fn clone(&self) -> ExecutingContext {
+    ExecutingContext {
+      ptr: self.ptr,
+      method_pointer: self.method_pointer,
+      status: self.status,
+    }
+  }
+}
+
 impl Drop for ExecutingContext {
   fn drop(&mut self) {
     unsafe {
