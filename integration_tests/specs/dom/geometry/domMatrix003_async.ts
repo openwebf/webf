@@ -205,28 +205,28 @@ test(async function () {
 
 test(async function () {
   // @ts-ignore
-  var result = initialDOMMatrix().rotateFromVector_async(0, 1);
+  var result = await initialDOMMatrix().rotateFromVector_async(0, 1);
   var expected = initialDOMMatrix().rotate(90);
   checkDOMMatrix(result, expected);
 }, "test rotateFromVector() with x being zero");  // TODO Expected value for m11 is 1.0606601717798214, actual value is 0.9507737510847889
 
 test(async function () {
   // @ts-ignore
-  var result = initialDOMMatrix().rotateFromVector_async(1, 0);
+  var result = await initialDOMMatrix().rotateFromVector_async(1, 0);
   var expected = initialDOMMatrix()
   checkDOMMatrix(result, expected);
 }, "test rotateFromVector() with y being zero");
 
 test(async function () {
   // @ts-ignore
-  var result = initialDOMMatrix().rotateFromVector_async(0, 0);
+  var result = await initialDOMMatrix().rotateFromVector_async(0, 0);
   var expected = initialDOMMatrix()
   checkDOMMatrix(result, expected);
 }, "test rotateFromVector() with two zeros");
 
 test(async function () {
   // @ts-ignore
-  var result = initialDOMMatrix().rotateAxisAngle_async(3, 3, 3, 120);
+  var result = await initialDOMMatrix().rotateAxisAngle_async(3, 3, 3, 120);
   var expected = initialDOMMatrix().multiply(getRotationMatrix(3, 3, 3, 120));
   checkDOMMatrix(result, expected);
 }, "test rotateAxisAngle() "); // TODO Expected value for m11 is 0.5000000000000002
@@ -234,7 +234,7 @@ test(async function () {
 test(async function () {
   var angleDeg = 75;
   // @ts-ignore
-  var result = initialDOMMatrix().skewX_async(angleDeg);
+  var result = await initialDOMMatrix().skewX_async(angleDeg);
   var tangent = Math.tan(angleDeg * Math.PI / 180);
   var skew = new DOMMatrix([
     1, 0, 0, 0,
