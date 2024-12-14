@@ -12,7 +12,7 @@
  * - Element.prototype.lastElementChild
  * - Element.prototype.parentElement
  */
-describe('DOM Element API', async() => {
+describe('DOM Element API async', async() => {
   it('should work', () => {
     const div = document.createElement('div');
     expect(div.nodeName === 'DIV').toBeTrue();

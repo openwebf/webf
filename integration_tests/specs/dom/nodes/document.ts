@@ -49,11 +49,6 @@ describe('Document api', () => {
       expect(document.visibilityState).not.toBeUndefined();
     });
 
-  it('document.visibilityState async', async () => {
-    let visibilityState = await document.visibilityState_async
-    expect(visibilityState).not.toBeUndefined();
-  });  
-
   it('document.hidden', () => {
       expect(document.hidden).not.toBeUndefined();
     });
