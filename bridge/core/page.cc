@@ -98,7 +98,7 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
     }
 
     ExceptionState exception_state;
-    auto* return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
+    auto* return_value = static_cast<NativeValue*>(dart_malloc(sizeof(NativeValue)));
     NativeValue tmp = result.ToNative(ctx, exception_state);
     if (exception_state.HasException()) {
       context_->HandleException(exception_state);
@@ -108,8 +108,7 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
     memcpy(return_value, &tmp, sizeof(NativeValue));
     return return_value;
   } else if (auto* callback = DynamicTo<WebFNativeFunction>(callback_value.get())) {
-    NativeValue* params = new NativeValue[2];
-
+    auto* params = new NativeValue[2];
     ExceptionState exception_state;
     ScriptValue eventValue = event != nullptr ? event->ToValue() : ScriptValue::Empty(ctx);
     params[0] = eventValue.ToNative(ctx, exception_state);
@@ -120,8 +119,10 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
       return nullptr;
     }
 
-    callback->Invoke(context_, 2, params);
-    return nullptr;
+    NativeValue tmp = callback->Invoke(context_, 2, params);
+    auto* return_value = static_cast<NativeValue*>(dart_malloc(sizeof(NativeValue)));
+    memcpy(return_value, &tmp, sizeof(NativeValue));
+    return return_value;
   }
 }
 
