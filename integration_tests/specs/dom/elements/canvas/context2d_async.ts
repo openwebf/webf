@@ -1,5 +1,5 @@
 describe('Canvas context 2d async', () => {
-  fit('can change size by width and height property', async () => {
+  it('can change size by width and height property', async () => {
     var canvas = document.createElement('canvas');
     document.body.appendChild(canvas);
 
@@ -26,7 +26,7 @@ describe('Canvas context 2d async', () => {
     await snapshot();
   });
 
-  fit('should work with font and rect', async () => {
+  it('should work with font and rect', async () => {
     var div = document.createElement('div');
     div.style.width = div.style.height = '300px';
     div.style.backgroundColor = '#eee';
@@ -140,7 +140,7 @@ describe('Canvas context 2d async', () => {
   });
 
 
-  fit('should work with miterLimit', async () => {
+  it('should work with miterLimit', async () => {
     const canvas = <canvas width="150" height="150" />;
     document.body.appendChild(canvas);
     const ctx = canvas.getContext('2d');
@@ -215,7 +215,7 @@ describe('Canvas context 2d async', () => {
   });
 
 
-  fit('should work with rotate and translate', async () => {
+  it('should work with rotate and translate', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -234,7 +234,7 @@ describe('Canvas context 2d async', () => {
     await snapshot(canvas);
   });
 
-  fit('should work with roundRect', async (done) => {
+  it('should work with roundRect', async (done) => {
     const canvas = <canvas height="400" width="400" />;
     document.body.appendChild(canvas);
     const ctx = canvas.getContext('2d');
@@ -276,7 +276,7 @@ describe('Canvas context 2d async', () => {
     done();
   });
 
-  fit('should work with transform and resetTransform', async () => {
+  it('should work with transform and resetTransform', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -316,7 +316,7 @@ describe('Canvas context 2d async', () => {
     await snapshot(canvas);
   });
 
-  fit('should work with rect and fill [async]', async () => {
+  it('should work with rect and fill [async]', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -326,7 +326,7 @@ describe('Canvas context 2d async', () => {
     await snapshot(canvas);
   });
 
-  fit('should work with bezierCurveTo [async]', async () => {
+  it('should work with bezierCurveTo [async]', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -359,7 +359,7 @@ describe('Canvas context 2d async', () => {
     await snapshot(canvas);
   });
 
-  fit('should work with quadraticCurveTo [async]', async () => {
+  it('should work with quadraticCurveTo [async]', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -386,7 +386,7 @@ describe('Canvas context 2d async', () => {
   });
 
 
-  fit('should work with fill and fillRect and clearRect', async () => {
+  it('should work with fill and fillRect and clearRect', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -410,7 +410,7 @@ describe('Canvas context 2d async', () => {
     await snapshot(canvas);
   });
 
-  fit('should work with clip', async () => {
+  it('should work with clip', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -494,7 +494,7 @@ describe('Canvas context 2d async', () => {
     done();
   });
 
-  fit('should work when draw overflow element [async]', async () => {
+  it('should work when draw overflow element [async]', async () => {
     const canvas = document.createElement('canvas')
     canvas.style.width = canvas.style.height = '200px';
     canvas.style.border = '1px solid green';
@@ -514,7 +514,7 @@ describe('Canvas context 2d async', () => {
     await snapshot();
   });
 
-  fit('should work with createLinearGradient', async (done) => {
+  it('should work with createLinearGradient', async (done) => {
     const canvas = <canvas height="300" width="300" />;
     document.body.appendChild(canvas);
 
@@ -536,7 +536,7 @@ describe('Canvas context 2d async', () => {
     done();
   });
 
-  fit('should work with createRadialGradient', async (done) => {
+  it('should work with createRadialGradient', async (done) => {
     const canvas = <canvas height="300" width="300" />;
     document.body.appendChild(canvas);
 
@@ -557,7 +557,7 @@ describe('Canvas context 2d async', () => {
     done();
   });
 
-  fit('should work with createPattern from a canvas when repetition is repeat', async (done) => {
+  it('should work with createPattern from a canvas when repetition is repeat', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -597,7 +597,7 @@ describe('Canvas context 2d async', () => {
 
   });
 
-  fit('should work with createPattern from a canvas when repetition is repeat-x', async (done) => {
+  it('should work with createPattern from a canvas when repetition is repeat-x', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -637,7 +637,7 @@ describe('Canvas context 2d async', () => {
 
   });
 
-  fit('should work with createPattern from a canvas when repetition is repeat-y', async (done) => {
+  it('should work with createPattern from a canvas when repetition is repeat-y', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -677,7 +677,7 @@ describe('Canvas context 2d async', () => {
 
   });
 
-  fit('should work with createPattern from a canvas when repetition is no-repeat', async (done) => {
+  it('should work with createPattern from a canvas when repetition is no-repeat', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -717,7 +717,7 @@ describe('Canvas context 2d async', () => {
 
   });
 
-  fit('should work with createPattern from an image when repetition is repeat', async (done) => {
+  it('should work with createPattern from an image when repetition is repeat', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -737,7 +737,7 @@ describe('Canvas context 2d async', () => {
 
   })
 
-  fit('should work with createPattern from an image when repetition is repeat-x', async (done) => {
+  it('should work with createPattern from an image when repetition is repeat-x', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -757,7 +757,7 @@ describe('Canvas context 2d async', () => {
 
   })
 
-  fit('should work with createPattern from an image when repetition is repeat-y', async (done) => {
+  it('should work with createPattern from an image when repetition is repeat-y', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -777,7 +777,7 @@ describe('Canvas context 2d async', () => {
 
   })
 
-  fit('should work with createPattern from an image when repetition is no-repeat', async (done) => {
+  it('should work with createPattern from an image when repetition is no-repeat', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -870,7 +870,7 @@ describe('Canvas context 2d async', () => {
   })
 
 
-  fit('should work with create Path2D addPath with DOMMatrix', async (done) => {
+  it('should work with create Path2D addPath with DOMMatrix', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 

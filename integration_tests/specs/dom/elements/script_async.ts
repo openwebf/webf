@@ -1,5 +1,5 @@
 describe('script element async', () => {
-  fit('should work with src', async (done) => {
+  it('should work with src', async (done) => {
     const p = <p>Should see hello below:</p>;
     document.body.appendChild(p);
     var x = document.createElement('script');
@@ -12,7 +12,7 @@ describe('script element async', () => {
     };
   });
 
-  fit('load failed with error event', async (done) => {
+  it('load failed with error event', async (done) => {
     const script = document.createElement('script');
     document.body.appendChild(script);
     script.onerror = () => {
@@ -22,7 +22,7 @@ describe('script element async', () => {
     script.src_async = '/404';
   });
 
-  fit('async script execute in delayed order', async (done) => {
+  it('async script execute in delayed order', async (done) => {
     const scriptA = document.createElement('script');
     // @ts-ignore
     scriptA.async_async = true;
@@ -47,7 +47,7 @@ describe('script element async', () => {
     };
   });
 
-  fit('could loading the kbc files', async (done) => {
+  it('could loading the kbc files', async (done) => {
     const script = document.createElement('script');
     // @ts-ignore
     script.src_async = 'assets:///assets/bundle.kbc1';
@@ -69,7 +69,7 @@ describe('script element async', () => {
   //   });
   // }
 
-  fit('Waiting order for large script loaded', async (done) => {
+  it('Waiting order for large script loaded', async (done) => {
     const scriptLarge = document.createElement('script');
     // @ts-ignore
     scriptLarge.src_async = 'assets:///assets/large-script.js';
@@ -91,7 +91,7 @@ describe('script element async', () => {
     });
   });
 
-  fit('should run by element\'s place order', async (done) => {
+  it('should run by element\'s place order', async (done) => {
     const scriptA = document.createElement('script');
     // @ts-ignore
     scriptA.src_async = 'assets:///assets/defineA.js';
