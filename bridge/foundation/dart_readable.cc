@@ -32,7 +32,15 @@ void* DartReadable::operator new(std::size_t size) {
   return dart_malloc(size);
 }
 
+void* DartReadable::operator new[](std::size_t size) {
+  return dart_malloc(size);
+}
+
 void DartReadable::operator delete(void* memory) noexcept {
+  dart_free(memory);
+}
+
+void DartReadable::operator delete[](void* memory) noexcept {
   dart_free(memory);
 }
 
