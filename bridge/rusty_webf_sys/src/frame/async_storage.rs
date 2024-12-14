@@ -27,22 +27,23 @@ impl AsyncStorage {
     let key_string = NativeValue::new_string(key);
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
       if argc == 1 {
-        let error_string = unsafe { *argv };
+        let error_string = unsafe { (*argv).clone() };
         let error_string = error_string.to_string();
         callback(Err(error_string));
-        return;
+        return NativeValue::new_null();
       }
       if argc == 2 {
-        let item_string = unsafe { *argv.wrapping_add(1) };
+        let item_string = unsafe { (*argv.wrapping_add(1)).clone() };
         if item_string.is_null() {
           callback(Ok(None));
-          return;
+          return NativeValue::new_null();
         }
         let item_string = item_string.to_string();
         callback(Ok(Some(item_string)));
-        return;
+        return NativeValue::new_null();
       }
-      println!("Invalid argument count for timeout callback");
+      println!("Invalid argument count for async storage callback");
+      NativeValue::new_null()
     });
     self.context().webf_invoke_module_with_params_and_callback("AsyncStorage", "getItem", &key_string, general_callback, exception_state).unwrap();
   }
@@ -54,18 +55,19 @@ impl AsyncStorage {
     let params = NativeValue::new_list(params_vec);
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
       if argc == 1 {
-        let error_string = unsafe { *argv };
+        let error_string = unsafe { (*argv).clone() };
         let error_string = error_string.to_string();
         callback(Err(error_string));
-        return;
+        return NativeValue::new_null();
       }
       if argc == 2 {
-        let result = unsafe { *argv.wrapping_add(1) };
+        let result = unsafe { (*argv.wrapping_add(1)).clone() };
         let result = result.to_string();
         callback(Ok(Some(result)));
-        return;
+        return NativeValue::new_null();
       }
-      println!("Invalid argument count for timeout callback");
+      println!("Invalid argument count for async storage callback");
+      NativeValue::new_null()
     });
     self.context().webf_invoke_module_with_params_and_callback("AsyncStorage", "setItem", &params, general_callback, exception_state).unwrap();
   }

@@ -175,9 +175,10 @@ impl ExecutingContext {
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
       if argc != 0 {
         println!("Invalid argument count for timeout callback");
-        return;
+        return NativeValue::new_null();
       }
       callback();
+      NativeValue::new_null()
     });
 
     let callback_data = Box::new(WebFNativeFunctionContextData {
@@ -214,9 +215,10 @@ impl ExecutingContext {
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
       if argc != 0 {
         println!("Invalid argument count for interval callback");
-        return;
+        return NativeValue::new_null();
       }
       callback();
+      NativeValue::new_null()
     });
 
     let callback_data = Box::new(WebFNativeFunctionContextData {
