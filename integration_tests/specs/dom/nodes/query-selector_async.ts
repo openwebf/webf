@@ -4,7 +4,7 @@
  * - document.querySelectorAll
  */
 describe('querySelector api', async () => {
-  it('document querySelector cant find element', () => {
+  it('document querySelector cant find element', async() => {
     ['red', 'black', 'green', 'yellow', 'blue'].forEach((item, index) => {
       const div = document.createElement('div')
       div.style.width = '100px';
@@ -79,7 +79,7 @@ describe('querySelector api', async () => {
     expect(span.length).toBe(0);
   });
 
-  it('document querySelector find element by id', () => {
+  it('document querySelector find element by id', async () => {
     ['red', 'black', 'green', 'yellow', 'blue'].forEach((item, index) => {
       const div = document.createElement('div')
       div.style.width = '100px';

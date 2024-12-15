@@ -1,22 +1,9 @@
 describe('Tags img async', () => {
-  // it('basic', (done) => {
-  //   const img = document.createElement('img');
-  //   img.addEventListener('load', async () => {
-  //     await snapshot(img);
-  //     done();
-  //   });
-  //   img.style.width = '60px';
-  //   img.setAttribute(
-  //     'src',
-  //     'assets/100x100-green.png'
-  //   );
-
-  //   document.body.appendChild(img);
-  // });
-
-  it('should have not size when img not mounted', () => {
+  it('should have not size when img not mounted', async () => {
     const img = document.createElement('img');
+    // @ts-ignore
     let w = await img.width_async;
+    // @ts-ignore
     let h = await img.height_async;
     expect(w).toBe(0);
     expect(h).toBe(0);
@@ -24,6 +11,7 @@ describe('Tags img async', () => {
 
   it('have no effect setting empty src', (done) => {
     const img = document.createElement('img');
+    // @ts-ignore
     img.src_async = '';
     document.body.appendChild(img);
     img.onload = () => {
@@ -36,6 +24,7 @@ describe('Tags img async', () => {
 
   it('don\'t error when append child on img element', async (done) => {
     let img = document.createElement('img');
+    // @ts-ignore
     img.src_async = 'https://gw.alicdn.com/tfs/TB1MRC_cvb2gK0jSZK9XXaEgFXa-1701-1535.png';
     document.body.appendChild(img);
 
@@ -54,6 +43,7 @@ describe('Tags img async', () => {
     img.onload = img.onerror = (evt) => {
       done();
     };
+    // @ts-ignore
     img.src_async = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
   });
   
@@ -62,7 +52,9 @@ describe('Tags img async', () => {
     img.onload = img.onerror = (evt) => {
       done();
     };
+    // @ts-ignore
     img.src_async = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
+    // @ts-ignore
     img.src_async = 'https://gw.alicdn.com/tfs/TB1MRC_cvb2gK0jSZK9XXaEgFXa-1701-1535.png';
   });
 
@@ -71,10 +63,12 @@ describe('Tags img async', () => {
       src: 'assets/rabbit.png'
     }) as HTMLImageElement;
     BODY.appendChild(img);
+    // @ts-ignore
     let src = await img.src_async;
     expect(src).toBe(`http://localhost:${location.port}/public/assets/rabbit.png`);
     // have to wait for asset load?
     await snapshot(0.1);
+    // @ts-ignore
     img.src_async = 'assets/solidblue.png';
     await snapshot(0.1);
     src = await img.src;
@@ -92,6 +86,7 @@ describe('Tags img async', () => {
       await snapshot();
       done();
     };
+    // @ts-ignore
     img.src_async = 'assets/rabbit.png';
     BODY.appendChild(img);
   });
@@ -102,6 +97,7 @@ describe('Tags img async', () => {
     }) as HTMLImageElement;
     BODY.appendChild(img);
     await snapshot(0.2);
+    // @ts-ignore
     img.src_async = 'assets/300x150-green.png';
     await snapshot(0.2);
     done();
@@ -109,6 +105,7 @@ describe('Tags img async', () => {
 
   it('support base64 data url', async (done) => {
     var img = document.createElement('img');
+    // @ts-ignore
     img.src_async = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAIAAAC0tAIdAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAACJJREFUKFNjZGD4z0AKAKomHpGgFOQK4g0eVY01rEZCCAIAC+rSL3tdVQUAAAAASUVORK5CYII=';
     document.body.appendChild(img);
     await snapshot(0.2);
@@ -117,6 +114,7 @@ describe('Tags img async', () => {
 
   it('minwidth and minheight of image is 0', async (done) => {
     var img = document.createElement('img');
+    // @ts-ignore
     img.src_async = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
     img.style.minWidth = '0';
     img.style.minHeight = '0';
@@ -129,13 +127,16 @@ describe('Tags img async', () => {
   it('image size and image natural size', async (done) => {
     var imageURL = 'https://img.alicdn.com/tfs/TB1RRzFeKL2gK0jSZFmXXc7iXXa-200-200.png?network';
     var img = document.createElement('img');
-    img.onload = function() {
+    img.onload = async function() {
+      // @ts-ignore
       let natualW = await img.naturalWidth_async;
+      // @ts-ignore
       let natualH = await img.naturalHeight_async;
       expect(natualW).toEqual(20);
       expect(natualH).toEqual(20);
       done();      
     };
+    // @ts-ignore
     img.src_async = imageURL;
     Object.assign(img.style, {
       width: '20px',
@@ -145,13 +146,16 @@ describe('Tags img async', () => {
     document.body.style.background = 'green';
     document.body.appendChild(img);
     
-
+    // @ts-ignore
     let w = await img.width_async;
+    // @ts-ignore
     let h = await img.height_async;
     expect(w).toEqual(20);
     expect(h).toEqual(20);
     // Image has not been loaded.
+    // @ts-ignore
     let natualW = await img.naturalWidth_async;
+    // @ts-ignore
     let natualH = await img.naturalHeight_async;
     expect(natualW).toEqual(0);
     expect(natualH).toEqual(0);
@@ -162,6 +166,7 @@ describe('Tags img async', () => {
     const img = document.createElement('img');
     // Make image loading=lazy.
     img.setAttribute('loading', 'lazy');
+    // @ts-ignore
     img.src_async = 'assets/100x100-green.png';
     img.style.width = '60px';
 
@@ -194,6 +199,7 @@ describe('Tags img async', () => {
       await snapshot(0.5);
       done();
     };
+    // @ts-ignore
     img.src_async = 'https://gw.alicdn.com/tfs/TB1CxCYq5_1gK0jSZFqXXcpaXXa-128-90.png';
 
     requestAnimationFrame(() => {
@@ -205,6 +211,7 @@ describe('Tags img async', () => {
   it('same image src should only trigger once event', async (done) => {
     const imageURL = 'assets/100x100-green.png';
     const img = document.createElement('img');
+    // @ts-ignore
     img.src_async = imageURL;
 
     var loadCount = 0;
@@ -220,6 +227,7 @@ describe('Tags img async', () => {
       if (loadCount == 1) {
         done();
       } else {
+        // @ts-ignore
         done('load event should only trigger once.');
       }
     }, 200);
@@ -247,6 +255,7 @@ describe('Tags img async', () => {
     };
 
     document.body.appendChild(img);
+    // @ts-ignore
     img.src_async = imageURL;
   });
 
@@ -259,6 +268,7 @@ describe('Tags img async', () => {
     BODY.appendChild(img);
 
     requestAnimationFrame(async () => {
+      // @ts-ignore
       img.width_async = 200;
       await snapshot(0.1);
       done();
@@ -301,7 +311,7 @@ describe('Tags img async', () => {
       div.style.width = '100px';
       div.style.height = '100px';
       div.style.border = `3px solid ${colors[i % colors.length]}`
-      div.appendChild(document.createTextNode(i));
+      div.appendChild(document.createTextNode(i + ''));
 
       const img = document.createElement('img');
       img.onload = async () => {
@@ -311,6 +321,7 @@ describe('Tags img async', () => {
           done();
         }
       };
+      // @ts-ignore
       img.src_async = images[i % images.length];
       div.appendChild(img);
       img.style.width = '80px';

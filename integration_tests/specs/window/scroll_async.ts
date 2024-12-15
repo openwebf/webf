@@ -1,4 +1,4 @@
-describe('window scroll API', () => {
+describe('window scroll API async', () => {
   it('scrollTo', async (doneFn) => {
     let div = document.createElement('div');
     div.style.border = '2px solid #000';
@@ -11,10 +11,15 @@ describe('window scroll API', () => {
     await snapshot();
 
     requestAnimationFrame(async () => {
-      window.scrollTo(0, 55);
+      // @ts-ignore
+      window.scrollTo_async(0, 55);
       await snapshot();
-      expect(window.scrollX).toBe(0);
-      expect(window.scrollY).toBe(55);
+      // @ts-ignore
+      let scrollX = await window.scrollX_async;
+      // @ts-ignore
+      let scrollY = await window.scrollY_async;
+      expect(scrollX).toBe(0);
+      expect(scrollY).toBe(55);
       doneFn();
     });
   });
@@ -31,11 +36,16 @@ describe('window scroll API', () => {
     await snapshot();
 
     requestAnimationFrame(async () => {
-      window.scroll(0, 40);
+      // @ts-ignore
+      window.scroll_async(0, 40);
       await snapshot();
 
-      expect(window.scrollX).toBe(0);
-      expect(window.scrollY).toBe(40);
+      // @ts-ignore
+      let scrollX = await window.scrollX_async;
+      // @ts-ignore
+      let scrollY = await window.scrollY_async;
+      expect(scrollX).toBe(0);
+      expect(scrollY).toBe(40);
       doneFn();
     });
   });
@@ -52,12 +62,18 @@ describe('window scroll API', () => {
     await snapshot();
 
     requestAnimationFrame(async () => {
-      window.scroll(0, 5);
-      window.scrollBy(0, 20);
+      // @ts-ignore
+      window.scroll_async(0, 5);
+      // @ts-ignore
+      window.scrollBy_async(0, 20);
       await snapshot();
 
-      expect(window.scrollX).toBe(0);
-      expect(window.scrollY).toBe(25);
+      // @ts-ignore
+      let scrollX = await window.scrollX_async;
+      // @ts-ignore
+      let scrollY = await window.scrollY_async;
+      expect(scrollX).toBe(0);
+      expect(scrollY).toBe(25);
       doneFn();
     });
   });
@@ -82,6 +98,7 @@ describe('window scroll API', () => {
 
     window.addEventListener('scroll', scrollListener);
 
-    window.scrollTo(0, 100)
+    // @ts-ignore
+    window.scrollTo_async(0, 100)
   });
 });

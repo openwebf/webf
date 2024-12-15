@@ -1,5 +1,5 @@
 describe('anchor element async', async () => {
-  it('should work with set href attribute', () => {
+  it('should work with set href attribute', async () => {
     let a = document.createElement('a');
     // @ts-ignore
     a.href_async = 'https://v3.vuejs.org/guide/introduction.html';
