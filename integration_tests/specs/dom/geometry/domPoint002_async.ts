@@ -6,65 +6,16 @@ function getMatrixTransform(matrix, point) {
   return new DOMPoint(x, y, w, z)
 }
 
-test(function() {
-  checkDOMPoint(new DOMPoint(), {x:0, y:0, z:0, w:1});
-},'test DOMPoint Constructor no args');
-test(function() {
-  checkDOMPoint(new DOMPoint(1), {x:1, y:0, z:0, w:1});
-},'test DOMPoint Constructor one args');
-test(function() {
-  checkDOMPoint(new DOMPoint(1, 2), {x:1, y:2, z:0, w:1});
-},'test DOMPoint Constructor two args');
-test(function() {
-  checkDOMPoint(new DOMPoint(1, 2, 3), {x:1, y:2, z:3, w:1});
-},'test DOMPoint Constructor three args');
-test(function() {
-  checkDOMPoint(new DOMPoint(1, 2, 3, 4), {x:1, y:2, z:3, w:4});
-},'test DOMPoint Constructor four args');
-test(function() {
-  checkDOMPoint(new DOMPoint(1, 2, 3, 4, 5), {x:1, y:2, z:3, w:4});
-},'test DOMPoint Constructor more then four args');
-test(function() {
-  checkDOMPoint(new DOMPoint(1, undefined), {x:1, y:0, z:0, w:1});
-},'test DOMPoint Constructor with undefined');
-// test(function() {
-//   checkDOMPoint(new DOMPoint("a", "b"), {x:NaN, y:NaN, z:0, w:1});
-// },'test DOMPoint Constructor with string'); //TODO
-// test(function() {
-//   checkDOMPoint(new DOMPoint({}), {x:NaN, y:0, z:0, w:1});
-// },'test DOMPoint Constructor with empty object'); //TODO
-test(function() {
-  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({})), {x:0, y:0, z:0, w:1});
-},'test DOMPoint fromPoint with empty object');
-test(function() {
-  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1})), {x:1, y:0, z:0, w:1});
-},'test DOMPoint fromPoint with x');
-test(function() {
-  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1, y:2})), {x:1, y:2, z:0, w:1});
-},'test DOMPoint fromPoint with x, y');
-test(function() {
-  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1, y:2, z:3})), {x:1, y:2, z:3, w:1});
-},'test DOMPoint fromPoint with x, y, z');
-test(function() {
-  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1, y:2, z:3, w:4})), {x:1, y:2, z:3, w:4});
-},'test DOMPoint fromPoint with x, y, z, w');
-test(function() {
-  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1, y:2, z:3, w:4, v:5})), {x:1, y:2, z:3, w:4});
-},'test DOMPoint fromPoint with x, y, z, w, v');
-test(function() {
-  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1, z:3})), {x:1, y:0, z:3, w:1});
-},'test DOMPoint fromPoint with x, z');
-test(function() {
-  checkDOMPoint(DOMPoint.fromPoint(new DOMPoint({x:1, y: undefined, z:3})), {x:1, y:0, z:3, w:1});
-},'test DOMPoint fromPoint with undefined value');
-test(function() {
+test(async function(done) {
   var point = new DOMPoint(5, 4);
   var matrix = new DOMMatrix([2, 0, 0, 2, 10, 10]);
-  var result = point.matrixTransform(matrix);
+  // @ts-ignore
+  var result = await point.matrixTransform_async(matrix);
   var expected = getMatrixTransform(matrix, point);
   checkDOMPoint(result, expected);
+  done()
 },'test DOMPoint matrixTransform');
-test(async function() {
+test(async function(done) {
   var p = new DOMPoint(0, 0, 0, 1);
   // @ts-ignore
   p.x_async = undefined;
@@ -75,8 +26,9 @@ test(async function() {
   // @ts-ignore
   p.w_async = undefined;
   checkDOMPoint(p, {x:NaN, y:NaN, z:NaN, w:NaN});
+  done()
 },'test DOMPoint Attributes undefined');
-test(async function() {
+test(async function(done) {
   var p = new DOMPoint(0, 0, 0, 1);
   // @ts-ignore
   p.x_async = NaN;
@@ -87,16 +39,18 @@ test(async function() {
   // @ts-ignore
   p.w_async = Infinity;
   checkDOMPoint(p, {x:NaN, y:Infinity, z:-Infinity, w:Infinity});
+  done();
 },'test DOMPoint Attributes NaN Infinity');
-test(async function() {
+test(async function(done) {
   var point = new DOMPointReadOnly(5, 4);
   var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6]);
   // @ts-ignore
   var result = await point.matrixTransform_async(matrix);
   var expected = getMatrixTransform(matrix, point);
   checkDOMPoint(result, expected);
+  done();
 },'test DOMPointReadOnly matrixTransform');
-test(async function() {
+test(async function(done) {
   var p = new DOMPointReadOnly(0, 0, 0, 1);
   // @ts-ignore
   p.x_async = undefined;
@@ -107,6 +61,7 @@ test(async function() {
   // @ts-ignore
   p.w_async = undefined;
   checkDOMPoint(p, {x:0, y:0, z:0, w:1});
+  done();
 },'test DOMPointReadOnly Attributes undefined');
 
 async function checkDOMPoint(p, exp) {
