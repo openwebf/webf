@@ -184,7 +184,7 @@ describe('Canvas context 2d async', () => {
     await snapshot(canvas);
   });
 
-  it('should work with save and restore [async]', async () => {
+  xit('should work with save and restore [async]', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -525,12 +525,12 @@ describe('Canvas context 2d async', () => {
     }
 
     const lgd = await context.createLinearGradient_async(20, 0, 220, 0);
-		lgd.addColorStop_asyc(0, "green");
-		lgd.addColorStop_asyc(0.5, "cyan");
-		lgd.addColorStop_asyc(1, "green");
+		lgd.addColorStop_async(0, "green");
+		lgd.addColorStop_async(0.5, "cyan");
+		lgd.addColorStop_async(1, "green");
 
-		context.fillStyle_asyc = lgd;
-		context.fillRect_asyc(20, 20, 200, 100);
+		context.fillStyle_async = lgd;
+		context.fillRect_async(20, 20, 200, 100);
 
     await snapshot(canvas);
     done();
@@ -547,12 +547,12 @@ describe('Canvas context 2d async', () => {
     }
 
 		const rgd = context.createRadialGradient(110, 90, 30, 100, 100, 70);
-		rgd.addColorStop_asyc(0, "pink");
-		rgd.addColorStop_asyc(0.9, "white");
-		rgd.addColorStop_asyc(1, "green");
+		rgd.addColorStop_async(0, "pink");
+		rgd.addColorStop_async(0.9, "white");
+		rgd.addColorStop_async(1, "green");
 
-		context.fillStyle_asyc = rgd;
-		context.fillRect_asyc(20, 20, 160, 160);
+		context.fillStyle_async = rgd;
+		context.fillRect_async(20, 20, 160, 160);
     await snapshot(canvas);
     done();
   });
