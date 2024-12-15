@@ -57,6 +57,11 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   void fill(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern,
             const AtomicString& fillRule,
             ExceptionState& exception_state);
+  void fill_async(ExceptionState& exception_state);
+  void fill_async(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern, ExceptionState& exception_state);
+  void fill_async(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern,
+                  const AtomicString& fillRule,
+                  ExceptionState& exception_state);
 
   std::shared_ptr<QJSUnionDomStringCanvasGradient> strokeStyle();
   ScriptPromise strokeStyle_async(ExceptionState& exception_state);

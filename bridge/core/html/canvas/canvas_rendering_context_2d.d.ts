@@ -27,7 +27,7 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     drawImage(image: HTMLImageElement, dx: number, dy: number, dw: number, dh: number): SupportAsync<DartImpl<void>>;
     drawImage(image: HTMLImageElement, dx: number, dy: number): SupportAsync<DartImpl<void>>;
     ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise?: boolean): SupportAsync<DartImpl<void>>;
-    fill(path?: Path2D | string, fillRule?: string): void;
+    fill(path?: Path2D | string, fillRule?: string): SupportAsyncManual<void>;
     fillRect(x: number, y: number, w: number, h: number): SupportAsync<DartImpl<void>>;
     fillText(text: string, x: number, y: number, maxWidth?: number): SupportAsync<DartImpl<void>>;
     lineTo(x: number, y: number): SupportAsync<DartImpl<void>>;

@@ -271,6 +271,36 @@ void CanvasRenderingContext2D::fill(std::shared_ptr<const QJSUnionPath2DDomStrin
                       FlushUICommandReason::kDependentsOnElement, exception_state);
 }
 
+void CanvasRenderingContext2D::fill_async(webf::ExceptionState& exception_state) {
+  InvokeBindingMethodAsync(binding_call_methods::kfill, 0, nullptr, exception_state);
+}
+
+void CanvasRenderingContext2D::fill_async(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern,
+                                          webf::ExceptionState& exception_state) {
+  if (pathOrPattern->IsDomString()) {
+    NativeValue arguments[] = {
+        NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), pathOrPattern->GetAsDomString())};
+    InvokeBindingMethodAsync(binding_call_methods::kfill, sizeof(arguments) / sizeof(NativeValue), arguments,
+                             exception_state);
+  } else if (pathOrPattern->IsPath2D()) {
+    NativeValue arguments[] = {
+        NativeValueConverter<NativeTypePointer<Path2D>>::ToNativeValue(pathOrPattern->GetAsPath2D())};
+    InvokeBindingMethodAsync(binding_call_methods::kfill, sizeof(arguments) / sizeof(NativeValue), arguments,
+                             exception_state);
+  }
+}
+
+void CanvasRenderingContext2D::fill_async(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern,
+                                          const webf::AtomicString& fillRule,
+                                          webf::ExceptionState& exception_state) {
+  assert(pathOrPattern->IsPath2D());
+  NativeValue arguments[] = {
+      NativeValueConverter<NativeTypePointer<Path2D>>::ToNativeValue(pathOrPattern->GetAsPath2D()),
+      NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), fillRule)};
+  InvokeBindingMethodAsync(binding_call_methods::kfill, sizeof(arguments) / sizeof(NativeValue), arguments,
+                           exception_state);
+}
+
 void CanvasRenderingContext2D::Trace(GCVisitor* visitor) const {
   if (fill_style_ != nullptr)
     fill_style_->Trace(visitor);
