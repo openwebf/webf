@@ -61,13 +61,13 @@ describe('script element async', () => {
     }
   });
 
-  // function waitForLoad(script) {
-  //   return new Promise((resolve) => {
-  //     script.onload = () => {
-  //       resolve();
-  //     };
-  //   });
-  // }
+  function waitForLoad(script) {
+    return new Promise((resolve) => {
+      script.onload = () => {
+        resolve();
+      };
+    });
+  }
 
   it('Waiting order for large script loaded', async (done) => {
     const scriptLarge = document.createElement('script');

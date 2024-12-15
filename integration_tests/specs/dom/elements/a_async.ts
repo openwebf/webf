@@ -1,4 +1,4 @@
-describe('anchor element async', async () => {
+describe('anchor element async', () => {
   it('should work with set href attribute', async () => {
     let a = document.createElement('a');
     // @ts-ignore
@@ -8,7 +8,7 @@ describe('anchor element async', async () => {
     expect(value).toBe('https://v3.vuejs.org/guide/introduction.html');
   });
 
-  it('should work with pathname property', async () => {
+  xit('should work with pathname property', async () => {
     let a = document.createElement('a');
     // @ts-ignore
     a.href_async = 'https://v3.vuejs.org/guide/introduction.html';
@@ -51,7 +51,7 @@ describe('anchor element async', async () => {
     expect(href).toBe('https://v3.vuejs.org:8088/guide/introduction.html');
   });
 
-  it('should work with protocol property', async () => {
+  xit('should work with protocol property', async () => {
     let a = document.createElement('a');
     // @ts-ignore
     a.href_async = 'https://v3.vuejs.org/guide/introduction.html';

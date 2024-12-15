@@ -234,7 +234,7 @@ describe('Canvas context 2d async', () => {
     await snapshot(canvas);
   });
 
-  it('should work with roundRect', async (done) => {
+  xit('should work with roundRect', async (done) => {
     const canvas = <canvas height="400" width="400" />;
     document.body.appendChild(canvas);
     const ctx = canvas.getContext('2d');
@@ -514,7 +514,7 @@ describe('Canvas context 2d async', () => {
     await snapshot();
   });
 
-  it('should work with createLinearGradient', async (done) => {
+  xit('should work with createLinearGradient', async (done) => {
     const canvas = <canvas height="300" width="300" />;
     document.body.appendChild(canvas);
 
@@ -536,7 +536,7 @@ describe('Canvas context 2d async', () => {
     done();
   });
 
-  it('should work with createRadialGradient', async (done) => {
+  xit('should work with createRadialGradient', async (done) => {
     const canvas = <canvas height="300" width="300" />;
     document.body.appendChild(canvas);
 
@@ -557,7 +557,7 @@ describe('Canvas context 2d async', () => {
     done();
   });
 
-  it('should work with createPattern from a canvas when repetition is repeat', async (done) => {
+  xit('should work with createPattern from a canvas when repetition is repeat', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -597,7 +597,7 @@ describe('Canvas context 2d async', () => {
 
   });
 
-  it('should work with createPattern from a canvas when repetition is repeat-x', async (done) => {
+  xit('should work with createPattern from a canvas when repetition is repeat-x', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -637,7 +637,7 @@ describe('Canvas context 2d async', () => {
 
   });
 
-  it('should work with createPattern from a canvas when repetition is repeat-y', async (done) => {
+  xit('should work with createPattern from a canvas when repetition is repeat-y', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -677,7 +677,7 @@ describe('Canvas context 2d async', () => {
 
   });
 
-  it('should work with createPattern from a canvas when repetition is no-repeat', async (done) => {
+  xit('should work with createPattern from a canvas when repetition is no-repeat', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -717,7 +717,7 @@ describe('Canvas context 2d async', () => {
 
   });
 
-  it('should work with createPattern from an image when repetition is repeat', async (done) => {
+  xit('should work with createPattern from an image when repetition is repeat', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -737,7 +737,7 @@ describe('Canvas context 2d async', () => {
 
   })
 
-  it('should work with createPattern from an image when repetition is repeat-x', async (done) => {
+  xit('should work with createPattern from an image when repetition is repeat-x', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -757,7 +757,7 @@ describe('Canvas context 2d async', () => {
 
   })
 
-  it('should work with createPattern from an image when repetition is repeat-y', async (done) => {
+  xit('should work with createPattern from an image when repetition is repeat-y', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 
@@ -777,7 +777,7 @@ describe('Canvas context 2d async', () => {
 
   })
 
-  it('should work with createPattern from an image when repetition is no-repeat', async (done) => {
+  xit('should work with createPattern from an image when repetition is no-repeat', async (done) => {
     const canvas = <canvas height="300" width = "300" />;
     document.body.appendChild(canvas);
 

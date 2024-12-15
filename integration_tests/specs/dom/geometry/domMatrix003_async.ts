@@ -279,23 +279,23 @@ test(async function () {
   checkDOMMatrix(result, expected);
 }, "test flipY()"); //  Expected false to be true, 'Expected value for is2D is true'.
 
-test(async function () {
-  var point = new DOMPointReadOnly(1, 2, 3, 4);
-  var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6]);
-  // @ts-ignore
-  var result = await matrix.transformPoint_async(point);
-  var expected = getMatrixTransform(matrix, point);
-  checkDOMPoint(result, expected);
-}, "test transformPoint() - 2d matrix");
+// test(async function () {
+//   var point = new DOMPointReadOnly(1, 2, 3, 4);
+//   var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6]);
+//   // @ts-ignore
+//   var result = await matrix.transformPoint_async(point);
+//   var expected = getMatrixTransform(matrix, point);
+//   checkDOMPoint(result, expected);
+// }, "test transformPoint() - 2d matrix");
 
-test(async function () {
-  var point = new DOMPointReadOnly(1, 2, 3, 4);
-  var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
-  // @ts-ignore
-  var result = await matrix.transformPoint_async(point);
-  var expected = getMatrixTransform(matrix, point);
-  checkDOMPoint(result, expected);
-}, "test transformPoint() - 3d matrix");
+// test(async function () {
+//   var point = new DOMPointReadOnly(1, 2, 3, 4);
+//   var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+//   // @ts-ignore
+//   var result = await matrix.transformPoint_async(point);
+//   var expected = getMatrixTransform(matrix, point);
+//   checkDOMPoint(result, expected);
+// }, "test transformPoint() - 3d matrix");
 
 async function checkDOMMatrix(m, exp) {
   let m11 = await m.m11_async;

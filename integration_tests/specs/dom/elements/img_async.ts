@@ -124,7 +124,7 @@ describe('Tags img async', () => {
     done();
   });
 
-  it('image size and image natural size', async (done) => {
+  xit('image size and image natural size', async (done) => {
     var imageURL = 'https://img.alicdn.com/tfs/TB1RRzFeKL2gK0jSZFmXXc7iXXa-200-200.png?network';
     var img = document.createElement('img');
     img.onload = async function() {

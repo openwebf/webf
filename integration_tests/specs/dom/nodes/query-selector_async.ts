@@ -3,7 +3,7 @@
  * - document.querySelector
  * - document.querySelectorAll
  */
-describe('querySelector api', async () => {
+describe('querySelector api', () => {
   it('document querySelector cant find element', async() => {
     ['red', 'black', 'green', 'yellow', 'blue'].forEach((item, index) => {
       const div = document.createElement('div')
@@ -143,7 +143,7 @@ describe('querySelector api', async () => {
     parentDiv.appendChild(childDiv);
     document.body.appendChild(parentDiv);
     // @ts-ignore
-    const ele = childDiv.closest_async('.class-parent');
+    const ele = await childDiv.closest_async('.class-parent');
     expect(ele?.getAttribute('id')).toBe('id-0');
   });
 });
