@@ -837,7 +837,6 @@ mixin BaseRadioElement on WidgetElement, BaseCheckedElement {
                     map[name] = newValue;
                     _streamController.sink.add(map);
 
-                    // UI 交互时触发 input 和 change 事件
                     dispatchEvent(InputEvent(inputType: 'radio', data: newValue));
                     dispatchEvent(Event('change'));
                   });
