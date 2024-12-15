@@ -36,6 +36,7 @@ const Map<String, dynamic> _checkboxDefaultStyle = {
 
 class FlutterInputElement extends WidgetElement
     with
+        BaseCheckedElement,
         BaseRadioElement,
         BaseCheckBoxElement,
         BaseButtonElement,
@@ -648,16 +649,93 @@ mixin BaseInputElement on WidgetElement {
   }
 }
 
+mixin BaseCheckedElement on WidgetElement {
+  bool _checked = false;
+
+  bool _getChecked() {
+    if (this is FlutterInputElement) {
+      FlutterInputElement input = this as FlutterInputElement;
+      switch(input.type) {
+        case 'radio':
+          return _getRadioChecked();
+        case 'checkbox':
+          return _checked;
+        default:
+          return _checked;
+      }
+    }
+    return _checked;
+  }
+
+  _setChecked(bool value) {
+    if (this is FlutterInputElement) {
+      FlutterInputElement input = this as FlutterInputElement;
+      switch (input.type) {
+        case 'radio':
+          _setRadioChecked(value);
+          break;
+        case 'checkbox':
+          _checked = value;
+          break;
+        default:
+          _checked = value;
+      }
+    }
+  }
+
+  bool _getRadioChecked() {
+    if (this is BaseRadioElement) {
+      BaseRadioElement radio = this as BaseRadioElement;
+      return radio.groupValue == '${radio.name}-${radio.value}';
+    }
+    return false;
+  }
+
+  void _setRadioChecked(bool newValue) {
+    if (this is BaseRadioElement && newValue) {
+      BaseRadioElement radio = this as BaseRadioElement;
+      String newGroupValue = '${radio.name}-${radio.value}';
+      Map<String, String> map = <String, String>{};
+      map[radio.name] = newGroupValue;
+
+      BaseRadioElement._groupValues[radio.name] = newGroupValue;
+
+      if (BaseRadioElement._streamController.hasListener) {
+        BaseRadioElement._streamController.sink.add(map);
+      }
+    }
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+
+    properties['checked'] = BindingObjectProperty(
+      getter: () => _getChecked(),
+      setter: (value) {
+        _setChecked(value == true);
+      }
+    );
+  }
+
+  @override
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
+
+    attributes['checked'] = ElementAttributeProperty(
+      getter: () => _getChecked().toString(),
+      setter: (value) => _setChecked(value == 'true')
+    );
+  }
+}
+
 /// create a radio widget when input type='radio'
 
-mixin BaseRadioElement on WidgetElement {
+mixin BaseRadioElement on WidgetElement, BaseCheckedElement {
   static final Map<String, String> _groupValues = <String, String>{};
 
   static final StreamController<Map<String, String>> _streamController =
       StreamController<Map<String, String>>.broadcast();
-
-  //  static final   Stream<Map<String, String>> stream = _streamController.stream.asBroadcastStream(onLis);
-
   late StreamSubscription<Map<String, String>> _subscription;
 
   void initRadioState() {
@@ -665,16 +743,22 @@ mixin BaseRadioElement on WidgetElement {
       setState(() {
         for (var entry in message.entries) {
           if (entry.key == name) {
-            groupValue = entry.value;
+            _groupValues[entry.key] = entry.value;
           }
         }
       });
     });
+
+    if (_groupValues.containsKey(name)) {
+      setState(() {});
+    }
   }
 
   void disposeRadio() {
     _subscription.cancel();
-    _groupValues.remove(name);
+    if (_groupValues.containsKey(name)) {
+      _groupValues.remove(name);
+    }
     if (_groupValues.isEmpty) {
       _streamController.close();
     }
@@ -706,6 +790,13 @@ mixin BaseRadioElement on WidgetElement {
 
     properties['name'] = BindingObjectProperty(
         getter: () => name, setter: (value) => name = value);
+
+    properties['value'] = BindingObjectProperty(
+      getter: () => value,
+      setter: (value) {
+        internalSetAttribute('value', value?.toString() ?? '');
+      }
+    );
   }
 
   @override
@@ -714,6 +805,11 @@ mixin BaseRadioElement on WidgetElement {
 
     attributes['name'] = ElementAttributeProperty(
         getter: () => name, setter: (value) => name = value);
+
+    attributes['value'] = ElementAttributeProperty(
+      getter: () => value,
+      setter: (value) => internalSetAttribute('value', value)
+    );
   }
 
   double getRadioSize() {
@@ -730,17 +826,22 @@ mixin BaseRadioElement on WidgetElement {
     return Transform.scale(
       child: Radio<String>(
           value: singleRadioValue,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
           onChanged: disabled
               ? null
               : (String? newValue) {
-                  setState(() {
-                    if (newValue != null) {
-                      Map<String, String> map = <String, String>{};
-                      map[name] = newValue;
-                      _streamController.sink.add(map);
-                    }
+                  if (newValue != null) {
+                    setState(() {
+                    Map<String, String> map = <String, String>{};
+                    map[name] = newValue;
+                    _streamController.sink.add(map);
+
+                    // UI 交互时触发 input 和 change 事件
+                    dispatchEvent(InputEvent(inputType: 'radio', data: newValue));
                     dispatchEvent(Event('change'));
                   });
+                }
                 },
           groupValue: groupValue),
       scale: getRadioSize(),
@@ -749,24 +850,17 @@ mixin BaseRadioElement on WidgetElement {
 }
 
 /// create a checkBox widget when input type='checkbox'
-mixin BaseCheckBoxElement on WidgetElement {
-  bool checked = false;
-
+mixin BaseCheckBoxElement on WidgetElement, BaseCheckedElement {
   bool get disabled => getAttribute('disabled') != null;
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
-
-    properties['checked'] = BindingObjectProperty(getter: () => checked, setter: (value) => checked = value);
   }
 
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
-
-    attributes['checked'] =
-        ElementAttributeProperty(getter: () => checked.toString(), setter: (value) => checked = value == 'true');
   }
 
   double getCheckboxSize() {
@@ -781,14 +875,14 @@ mixin BaseCheckBoxElement on WidgetElement {
   Widget createCheckBox(BuildContext context) {
     return Transform.scale(
       child: Checkbox(
-        value: checked,
+        value: _getChecked(),
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
         onChanged: disabled
             ? null
             : (bool? newValue) {
                 setState(() {
-                  checked = newValue!;
+                  _setChecked(newValue!);
                   dispatchEvent(Event('change'));
                 });
               },
