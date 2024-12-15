@@ -29,14 +29,14 @@ describe('Document api async', () => {
 
   it('document.visibilityState', async (done) => {
       // @ts-ignore
-      let visibilityState = document.visibilityState_async
+      let visibilityState = await document.visibilityState_async
       expect(visibilityState).not.toBeUndefined();
       done();
     }); 
 
-  it('document.hidden', (done) => {
+  it('document.hidden', async (done) => {
       // @ts-ignore
-      let hidden = document.hidden_async
+      let hidden = await document.hidden_async
       expect(hidden).not.toBeUndefined();
       done();
     });
