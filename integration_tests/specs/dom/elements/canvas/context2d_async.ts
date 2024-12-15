@@ -1,5 +1,5 @@
 describe('Canvas context 2d async', () => {
-  it('can change size by width and height property', async () => {
+  it('can change size by width and height property', async (done) => {
     var canvas = document.createElement('canvas');
     document.body.appendChild(canvas);
 
@@ -24,9 +24,10 @@ describe('Canvas context 2d async', () => {
     // @ts-ignore
     context.fillRect_async(10, 10, 380, 380);
     await snapshot();
+    done();
   });
 
-  it('should work with font and rect', async () => {
+  it('should work with font and rect', async (done) => {
     var div = document.createElement('div');
     div.style.width = div.style.height = '300px';
     div.style.backgroundColor = '#eee';
@@ -62,9 +63,10 @@ describe('Canvas context 2d async', () => {
     document.body.appendChild(div);
 
     await snapshot(canvas);
+    done();
   });
 
-  it('should work with lineWidth [async]', async () => {
+  it('should work with lineWidth [async]', async (done) => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -78,9 +80,10 @@ describe('Canvas context 2d async', () => {
     ctx.rect_async(40, 40, 70, 70);
     ctx.stroke_async();
     await snapshot(canvas);
+    done();
   });
 
-  it('should work with lineJoin [async]', async () => {
+  it('should work with lineJoin [async]', async (done) => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -95,10 +98,11 @@ describe('Canvas context 2d async', () => {
     ctx.lineTo_async(280, 150);
     ctx.stroke_async();
     await snapshot(canvas);
+    done();
   });
 
 
-  it('should work with lineCap [async]', async () => {
+  it('should work with lineCap [async]', async (done) => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -111,9 +115,10 @@ describe('Canvas context 2d async', () => {
     ctx.lineTo_async(100, 100);
     ctx.stroke_async();
     await snapshot(canvas);
+    done();
   });
 
-  it('should work with textAlign [async]', async () => {
+  it('should work with textAlign [async]', async (done) => {
     const canvas = <canvas widht="350" />;
     document.body.appendChild(canvas);
 
@@ -137,10 +142,11 @@ describe('Canvas context 2d async', () => {
     ctx.textAlign_async = 'right';
     ctx.fillText_async('right-aligned', x, 130);
     await snapshot(canvas);
+    done();
   });
 
 
-  it('should work with miterLimit', async () => {
+  it('should work with miterLimit', async (done) => {
     const canvas = <canvas width="150" height="150" />;
     document.body.appendChild(canvas);
     const ctx = canvas.getContext('2d');
@@ -165,9 +171,10 @@ describe('Canvas context 2d async', () => {
     ctx.stroke_async();
 
     await snapshot(canvas);
+    done();
   });
 
-  it('should work with ellipse [async]', async () => {
+  it('should work with ellipse [async]', async (done) => {
     const canvas = <canvas height="200" width="200" />;
     document.body.appendChild(canvas);
 
@@ -182,9 +189,10 @@ describe('Canvas context 2d async', () => {
     ctx.lineTo_async(200, 0);
     ctx.stroke_async();
     await snapshot(canvas);
+    done();
   });
 
-  xit('should work with save and restore [async]', async () => {
+  xit('should work with save and restore [async]', async (done) => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -200,9 +208,10 @@ describe('Canvas context 2d async', () => {
 
     ctx.fillRect_async(150, 40, 100, 100);
     await snapshot(canvas);
+    done();
   });
 
-  it('should work with moveTo and lineTo [async]', async () => {
+  it('should work with moveTo and lineTo [async]', async (done) => {
     const canvas = <canvas height="200" width="200" />;
     document.body.appendChild(canvas);
 
@@ -212,10 +221,11 @@ describe('Canvas context 2d async', () => {
     await ctx.lineTo_async(200, 0);
     ctx.stroke();
     await snapshot(canvas);
+    done();
   });
 
 
-  it('should work with rotate and translate', async () => {
+  it('should work with rotate and translate', async (done) => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -232,6 +242,7 @@ describe('Canvas context 2d async', () => {
     ctx.fillStyle_async = 'red';
     ctx.fillRect_async(80, 60, 140, 30);
     await snapshot(canvas);
+    done();
   });
 
   xit('should work with roundRect', async (done) => {
@@ -276,7 +287,7 @@ describe('Canvas context 2d async', () => {
     done();
   });
 
-  it('should work with transform and resetTransform', async () => {
+  it('should work with transform and resetTransform', async (done) => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -293,9 +304,10 @@ describe('Canvas context 2d async', () => {
     ctx.fillRect_async(40, 40, 50, 20);
     ctx.fillRect_async(40, 90, 50, 20);
     await snapshot(canvas);
+    done();
   });
 
-  it('should work with strokeText [async]', async () => {
+  it('should work with strokeText [async]', async (done) => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -303,10 +315,11 @@ describe('Canvas context 2d async', () => {
     ctx.font_async = '50px serif';
     ctx.strokeText_async('Hello world', 50, 90);
     await snapshot(canvas);
+    done();
   });
   
 
-  it('should work with fillText [async]', async () => {
+  it('should work with fillText [async]', async (done) => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -314,9 +327,10 @@ describe('Canvas context 2d async', () => {
     ctx.font_async = '50px serif';
     ctx.fillText_async('Hello world', 50, 90);
     await snapshot(canvas);
+    done();
   });
 
-  it('should work with rect and fill [async]', async () => {
+  it('should work with rect and fill [async]', async (done) => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -324,9 +338,10 @@ describe('Canvas context 2d async', () => {
     ctx.rect_async(10, 20, 150, 100);
     ctx.fill_async();
     await snapshot(canvas);
+    done();
   });
 
-  it('should work with bezierCurveTo [async]', async () => {
+  it('should work with bezierCurveTo [async]', async (done) => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -357,9 +372,10 @@ describe('Canvas context 2d async', () => {
     ctx.arc_async(cp2.x, cp2.y, 5, 0, 2 * Math.PI);  // Control point two
     ctx.fill_async();
     await snapshot(canvas);
+    done();
   });
 
-  it('should work with quadraticCurveTo [async]', async () => {
+  it('should work with quadraticCurveTo [async]', async (done) => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -383,10 +399,11 @@ describe('Canvas context 2d async', () => {
     ctx.arc_async(230, 30, 5, 0, 2 * Math.PI);
     ctx.fill_async();
     await snapshot(canvas);
+    done();
   });
 
 
-  it('should work with fill and fillRect and clearRect', async () => {
+  it('should work with fill and fillRect and clearRect', async (done) => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -408,9 +425,10 @@ describe('Canvas context 2d async', () => {
     // Clear part of the canvas
     ctx.clearRect_async(10, 10, 120, 100);
     await snapshot(canvas);
+    done();
   });
 
-  it('should work with clip', async () => {
+  it('should work with clip', async (done) => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
 
@@ -426,6 +444,7 @@ describe('Canvas context 2d async', () => {
     ctx.fillStyle_async = 'orange';
     ctx.fillRect_async(0, 0, 100, 100);
     await snapshot(canvas);
+    done();
   });
 
   // it('should work with setTransform [async]', async () => {
@@ -494,7 +513,7 @@ describe('Canvas context 2d async', () => {
     done();
   });
 
-  it('should work when draw overflow element [async]', async () => {
+  it('should work when draw overflow element [async]', async (done) => {
     const canvas = document.createElement('canvas')
     canvas.style.width = canvas.style.height = '200px';
     canvas.style.border = '1px solid green';
@@ -512,6 +531,7 @@ describe('Canvas context 2d async', () => {
     ctx.fillRect_async(10, 10, 200, 200);
 
     await snapshot();
+    done();
   });
 
   xit('should work with createLinearGradient', async (done) => {

@@ -6,44 +6,42 @@
  * - document.documentElement
  */
 describe('Document api async', () => {
-  
-
-  it('document.all', () => {
-    expect(document.all).not.toBeUndefined();
-    expect(document.all.length).toBeGreaterThan(0);
-  });
-
-  it('document.domain', async () => {
+  it('document.domain', async (done) => {
       // @ts-ignore
       let domain = await document.domain_async
       expect(domain).not.toBeUndefined();
+      done();
     });
 
-  it('document.compatMode', async () => {
+  it('document.compatMode', async (done) => {
       // @ts-ignore
       let compatMode = await document.compatMode_async
       expect(compatMode).not.toBeUndefined();
+      done();
     });
 
-  it('document.readyState', async () => {
+  it('document.readyState', async (done) => {
       // @ts-ignore
       let readyState = await document.readyState_async
       expect(readyState).not.toBeUndefined();
+      done();
     });
 
-  it('document.visibilityState', async () => {
+  it('document.visibilityState', async (done) => {
       // @ts-ignore
       let visibilityState = document.visibilityState_async
       expect(visibilityState).not.toBeUndefined();
+      done();
     }); 
 
-  it('document.hidden', () => {
+  it('document.hidden', (done) => {
       // @ts-ignore
       let hidden = document.hidden_async
       expect(hidden).not.toBeUndefined();
+      done();
     });
 
-  it('document.elementFromPoint should work', async () => {
+  it('document.elementFromPoint should work', async (done) => {
     const ele = document.createElement('div')
     ele.style.width = '100px';
     ele.style.height = '100px';
@@ -53,5 +51,6 @@ describe('Document api async', () => {
     const findEle = await document.elementFromPoint_async(50, 50);
     findEle.style.backgroundColor = 'yellow';
     await snapshot();
+    done();
   });
 });

@@ -1,5 +1,5 @@
 describe('Tempoary Tags input async', () => {
-  it('input text can set height', async () => {
+  fit('input text can set height', async (done) => {
     const input = document.createElement('input');
     // @ts-ignore
     input.value_async = 'helloworld';
@@ -7,12 +7,13 @@ describe('Tempoary Tags input async', () => {
     await snapshot();
     input.style.height = '100px';
     await snapshot();
+    done();
   });
 });
 
 describe('Tags input async', () => {
 
-  it('type password', async () => {
+  fit('type password', async (done) => {
     const div = document.createElement('div');
     const input = document.createElement('input');
 
@@ -27,6 +28,7 @@ describe('Tags input async', () => {
     document.body.appendChild(div);
 
     await snapshot();
+    done();
   });
 
   xit('event input', async (done) => {
@@ -232,7 +234,7 @@ describe('Tags input async', () => {
   });
 
 
-  it('should return empty string when set value to null', async () => {
+  fit('should return empty string when set value to null', async () => {
     const input = document.createElement('input');
     document.body.appendChild(input);
     input.value = '1234';

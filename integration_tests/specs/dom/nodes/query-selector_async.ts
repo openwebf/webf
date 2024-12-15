@@ -4,7 +4,7 @@
  * - document.querySelectorAll
  */
 describe('querySelector api', () => {
-  it('document querySelector cant find element', async() => {
+  it('document querySelector cant find element', async(done) => {
     ['red', 'black', 'green', 'yellow', 'blue'].forEach((item, index) => {
       const div = document.createElement('div')
       div.style.width = '100px';
@@ -16,9 +16,10 @@ describe('querySelector api', () => {
     // @ts-ignore
     let span = await document.querySelector_async('span')
     expect(span).toBeNull();
+    done();
   });
 
-  it('document querySelector find first element', async() => {
+  it('document querySelector find first element', async(done) => {
     ['red', 'black', 'green', 'yellow', 'blue'].forEach((item, index) => {
       const div = document.createElement('div')
       div.style.width = '100px';
@@ -31,9 +32,10 @@ describe('querySelector api', () => {
     // @ts-ignore
     const ele = await document.querySelector_async('div');
     expect(ele?.getAttribute('id')).toBe('id-0');
+    done();
   });
 
-  it('document querySelectorAll length of elements', async () => {
+  it('document querySelectorAll length of elements', async (done) => {
     const szEle = ['red', 'black', 'green', 'yellow', 'blue'];
     szEle.forEach((item, index) => {
       const div = document.createElement('div')
@@ -47,9 +49,10 @@ describe('querySelector api', () => {
     // @ts-ignore
     const eles = await document.querySelectorAll_async('div');
     expect(eles.length).toBe(szEle.length);
+    done();
   });
 
-  it('document querySelectorAll first element', async () => {
+  it('document querySelectorAll first element', async (done) => {
     const szEle = ['red', 'black', 'green', 'yellow', 'blue'];
     szEle.forEach((item, index) => {
       const div = document.createElement('div')
@@ -63,9 +66,10 @@ describe('querySelector api', () => {
     // @ts-ignore
     const eles = await document.querySelectorAll_async('div');
     expect(eles[0].getAttribute('id')).toBe('id-0');
+    done();
   });
 
-  it('document querySelectorAll cant find element by tag name', async () => {
+  it('document querySelectorAll cant find element by tag name', async (done) => {
     ['red', 'black', 'green', 'yellow', 'blue'].forEach((item, index) => {
       const div = document.createElement('div')
       div.style.width = '100px';
@@ -77,9 +81,10 @@ describe('querySelector api', () => {
     // @ts-ignore
     const span = await document.querySelectorAll_async('span')
     expect(span.length).toBe(0);
+    done();
   });
 
-  it('document querySelector find element by id', async () => {
+  it('document querySelector find element by id', async (done) => {
     ['red', 'black', 'green', 'yellow', 'blue'].forEach((item, index) => {
       const div = document.createElement('div')
       div.style.width = '100px';
@@ -92,9 +97,10 @@ describe('querySelector api', () => {
     // @ts-ignore
     const elem = await document.querySelector_async('#id-1')
     expect(elem?.style.backgroundColor).toBe('black');
+    done();
   });
 
-  it('document querySelector find element by className', async() => {
+  it('document querySelector find element by className', async(done) => {
     ['red', 'black', 'green', 'yellow', 'blue'].forEach((item, index) => {
       const div = document.createElement('div')
       div.style.width = '100px';
@@ -108,9 +114,10 @@ describe('querySelector api', () => {
     // @ts-ignore
     const elem = await document.querySelector_async('.class-2')
     expect(elem?.style.backgroundColor).toBe('green');
+    done();
   });
 
-  it('document querySelectorAll find all element', async () => {
+  it('document querySelectorAll find all element', async (done) => {
     ['red', 'black', 'green', 'yellow', 'blue'].forEach((item, index) => {
       const div = document.createElement('div')
       div.style.width = '100px';
@@ -124,9 +131,10 @@ describe('querySelector api', () => {
     // @ts-ignore
     const elems = await document.querySelectorAll_async('*')
     expect(elems.length).toBe(8);
+    done();
   });
 
-  it('element closest cant find element', async () => {
+  it('element closest cant find element', async (done) => {
     const parentDiv = document.createElement('div')
     parentDiv.style.width = '100px';
     parentDiv.style.height = '100px';
@@ -145,5 +153,6 @@ describe('querySelector api', () => {
     // @ts-ignore
     const ele = await childDiv.closest_async('.class-parent');
     expect(ele?.getAttribute('id')).toBe('id-0');
+    done();
   });
 });

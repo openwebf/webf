@@ -1,14 +1,15 @@
 describe('anchor element async', () => {
-  it('should work with set href attribute', async () => {
+  it('should work with set href attribute', async (done) => {
     let a = document.createElement('a');
     // @ts-ignore
     a.href_async = 'https://v3.vuejs.org/guide/introduction.html';
     // @ts-ignore
     let value = await a.href_async
     expect(value).toBe('https://v3.vuejs.org/guide/introduction.html');
+    done();
   });
 
-  xit('should work with pathname property', async () => {
+  xit('should work with pathname property', async (done) => {
     let a = document.createElement('a');
     // @ts-ignore
     a.href_async = 'https://v3.vuejs.org/guide/introduction.html';
@@ -22,9 +23,10 @@ describe('anchor element async', () => {
     // @ts-ignore
     value = await a.href_async
     expect(value).toBe('https://v3.vuejs.org/guide/introduction.html%23what-is-vue-js');
+    done();
   });
 
-  it('should work with host property', async () => {
+  it('should work with host property', async (done) => {
     let a = document.createElement('a');
     // @ts-ignore
     a.href_async = 'https://v3.vuejs.org:8093/guide/introduction.html';
@@ -49,9 +51,10 @@ describe('anchor element async', () => {
     // @ts-ignore
     href = await a.href_async
     expect(href).toBe('https://v3.vuejs.org:8088/guide/introduction.html');
+    done();
   });
 
-  xit('should work with protocol property', async () => {
+  xit('should work with protocol property', async (done) => {
     let a = document.createElement('a');
     // @ts-ignore
     a.href_async = 'https://v3.vuejs.org/guide/introduction.html';
@@ -65,5 +68,6 @@ describe('anchor element async', () => {
     // @ts-ignore
     let href = await a.href_async
     expect(href).toBe('http://v3.vuejs.org/guide/introduction.html');
+    done();
   });
 });
