@@ -139,9 +139,7 @@ void ThreadState::DetachFromIsolate() {
 }
 
 ThreadState::ThreadState(v8::Platform* platform)
-    : cpp_heap_(v8::CppHeap::Create(
-          platform,
-          v8::CppHeapCreateParams(CustomSpaces::CreateCustomSpaces()))),
+    : cpp_heap_(v8::CppHeap::Create(platform, v8::CppHeapCreateParams(CustomSpaces::CreateCustomSpaces()))),
       heap_handle_(cpp_heap_->GetHeapHandle()) {}
 /*TODO support thread_id_  WrapperDescriptor
  * thread_id_(CurrentThread()) {}
