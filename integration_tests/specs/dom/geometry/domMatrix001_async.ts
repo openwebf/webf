@@ -128,63 +128,63 @@ var scaleTranslate2D = {
   test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
-    matrix.translate_async(1,5,3);
+    await matrix.translate_async(1,5,3);
     checkDOMMatrixSync(matrix, initialMatrix());
   },"test translate() doesn't mutate");
 
   test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
-    matrix.scale_async(1,5,3,0,1,3);
+    await matrix.scale_async(1,5,3,0,1,3);
     checkDOMMatrixSync(matrix, initialMatrix());
   },"test scale() doesn't mutate");
 
   test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
-    matrix.scaleNonUniform_async(1,5);
+    await matrix.scaleNonUniform_async(1,5);
     checkDOMMatrixSync(matrix, initialMatrix());
   },"test scaleNonUniform() doesn't mutate");
 
   test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
-    matrix.scale3d_async(3,2,1,1);
+    await matrix.scale3d_async(3,2,1,1);
     checkDOMMatrixSync(matrix, initialMatrix());
   },"test scale3d() doesn't mutate");
 
   test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
-    matrix.rotate_async(Math.PI, Math.PI/2, Math.PI/6);
+    await matrix.rotate_async(Math.PI, Math.PI/2, Math.PI/6);
     checkDOMMatrixSync(matrix, initialMatrix());
   },"test rotate() doesn't mutate");
 
   test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
-    matrix.rotateFromVector_async(10,-4);
+    await matrix.rotateFromVector_async(10,-4);
     checkDOMMatrixSync(matrix, initialMatrix());
   },"test rotateFromVector() doesn't mutate");
 
   test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
-    matrix.rotateAxisAngle_async(3,4,5, Math.PI/6);
+    await matrix.rotateAxisAngle_async(3,4,5, Math.PI/6);
     checkDOMMatrixSync(matrix, initialMatrix());
   },"test rotateAxisAngle() doesn't mutate");
 
   test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
-    matrix.skewX_async(20);
+    await matrix.skewX_async(20);
     checkDOMMatrixSync(matrix, initialMatrix());
   },"test skewX() doesn't mutate");
 
   test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
-    matrix.skewY_async(20);
+    await matrix.skewY_async(20);
     checkDOMMatrixSync(matrix, initialMatrix());
   },"test skewY() doesn't mutate");
 
@@ -198,28 +198,28 @@ var scaleTranslate2D = {
     //                   is2D: false,
     //                   isIdentity:false });
     // @ts-ignore
-    matrix.multiply_async(m)
+    await matrix.multiply_async(m)
     checkDOMMatrixSync(matrix, initialMatrix());
   },"test multiply() doesn't mutate");
 
   test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
-    matrix.flipX_async();
+    await matrix.flipX_async();
     checkDOMMatrixSync(matrix, initialMatrix());
   },"test flipX() doesn't mutate");
 
   test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
-    matrix.flipY_async();
+    await matrix.flipY_async();
     checkDOMMatrixSync(matrix, initialMatrix());
   },"test flipY() doesn't mutate");
 
   test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
-    matrix.inverse_async();
+    await matrix.inverse_async();
     checkDOMMatrixSync(matrix, initialMatrix());
   },"test inverse() doesn't mutate");
   
