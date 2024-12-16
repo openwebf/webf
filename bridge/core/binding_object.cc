@@ -208,7 +208,6 @@ ScriptPromise BindingObject::InvokeBindingMethodAsync(BindingMethodCallOperation
   return InvokeBindingMethodAsyncInternal(method_on_stack, argc, args, exception_state);
 }
 
-
 ScriptPromise BindingObject::InvokeBindingMethodAsyncInternal(NativeValue method,
                                                               int32_t argc,
                                                               const webf::NativeValue* argv,
@@ -257,9 +256,8 @@ ScriptPromise BindingObject::GetBindingPropertyAsync(const webf::AtomicString& p
 }
 
 void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop,
-                                                     NativeValue value,
-                                                     webf::ExceptionState& exception_state) {
-
+                                            NativeValue value,
+                                            webf::ExceptionState& exception_state) {
   std::unique_ptr<SharedNativeString> args_01 = prop.ToNativeString(ctx());
 
   auto* args_02 = (NativeValue*)dart_malloc(sizeof(NativeValue));

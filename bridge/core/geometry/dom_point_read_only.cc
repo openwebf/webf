@@ -150,9 +150,7 @@ void DOMPointReadOnly::setPointProperty(const AtomicString& prop, double v, Exce
   }
 }
 
-void DOMPointReadOnly::setPointPropertyAsync(const AtomicString& prop,
-                                                      double v,
-                                                      ExceptionState& exception_state) {
+void DOMPointReadOnly::setPointPropertyAsync(const AtomicString& prop, double v, ExceptionState& exception_state) {
   if (DynamicTo<DOMPoint>(this)) {
     SetBindingPropertyAsync(prop, NativeValueConverter<NativeTypeDouble>::ToNativeValue(v), exception_state);
   }

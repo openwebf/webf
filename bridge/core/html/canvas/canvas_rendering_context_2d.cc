@@ -141,9 +141,8 @@ void CanvasRenderingContext2D::setFillStyle(const std::shared_ptr<QJSUnionDomStr
   fill_style_ = style;
 }
 
-void CanvasRenderingContext2D::setFillStyle_async(
-    const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
-    ExceptionState& exception_state) {
+void CanvasRenderingContext2D::setFillStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
+                                                  ExceptionState& exception_state) {
   NativeValue value = Native_NewNull();
 
   if (style->IsDomString()) {
@@ -178,9 +177,8 @@ void CanvasRenderingContext2D::setStrokeStyle(const std::shared_ptr<QJSUnionDomS
   stroke_style_ = style;
 }
 
-void CanvasRenderingContext2D::setStrokeStyle_async(
-    const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
-    ExceptionState& exception_state) {
+void CanvasRenderingContext2D::setStrokeStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
+                                                    ExceptionState& exception_state) {
   NativeValue value = Native_NewNull();
 
   if (style->IsDomString()) {

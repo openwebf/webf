@@ -103,9 +103,7 @@ void DOMMatrixReadOnly::setMatrixProperty(const AtomicString& prop, double v, Ex
   }
 }
 
-void DOMMatrixReadOnly::setMatrixPropertyAsync(const AtomicString& prop,
-                                                        double v,
-                                                        ExceptionState& exception_state) {
+void DOMMatrixReadOnly::setMatrixPropertyAsync(const AtomicString& prop, double v, ExceptionState& exception_state) {
   if (DynamicTo<DOMMatrix>(this)) {
     SetBindingPropertyAsync(prop, NativeValueConverter<NativeTypeDouble>::ToNativeValue(v), exception_state);
   }

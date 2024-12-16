@@ -8,7 +8,6 @@
 #include "bindings/qjs/script_promise_resolver.h"
 #include "built_in_string.h"
 #include "core/dom/document.h"
-#include "bindings/qjs/script_promise_resolver.h"
 #include "foundation/native_value_converter.h"
 #include "widget_element_shape.h"
 
