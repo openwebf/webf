@@ -113,15 +113,11 @@ class BindingObject : public ScriptWrappable {
                                   int32_t argc,
                                   const NativeValue* args,
                                   ExceptionState& exception_state) const;
-  ScriptPromise InvokeBindingMethodAsync(const AtomicString& method,
-                                         int32_t argc,
-                                         const NativeValue* args,
-                                         ExceptionState& exception_state) const;
   NativeValue GetBindingProperty(const AtomicString& prop, uint32_t reason, ExceptionState& exception_state) const;
   NativeValue SetBindingProperty(const AtomicString& prop, NativeValue value, ExceptionState& exception_state) const;
 
   ScriptPromise GetBindingPropertyAsync(const AtomicString& prop, ExceptionState& exception_state);
-  ScriptPromise SetBindingPropertyAsync(const AtomicString& prop, NativeValue value, ExceptionState& exception_state);
+  void SetBindingPropertyAsync(const AtomicString& prop, NativeValue value, ExceptionState& exception_state);
 
   void CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& deps, size_t argc, const NativeValue* args) const;
 

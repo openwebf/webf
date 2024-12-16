@@ -243,20 +243,19 @@ static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst
     return exception_state.ToQuickJS();
   }
   <% if (prop.typeMode && prop.typeMode.dartImpl && prop.typeMode.supportAsync) { %>
-  ScriptPromise promise = <%= blob.filename %>->SetBindingPropertyAsync(binding_call_methods::k<%= prop.name.split('_async')[0] %>, NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::ToNativeValue(<% if (isDOMStringType(prop.type)) { %>ctx, <% } %>v),exception_state);
+  <%= blob.filename %>->SetBindingPropertyAsync(binding_call_methods::k<%= prop.name.split('_async')[0] %>, NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::ToNativeValue(<% if (isDOMStringType(prop.type)) { %>ctx, <% } %>v),exception_state);
   if (UNLIKELY(exception_state.HasException())) {
     return exception_state.ToQuickJS();
   }
-  auto result = Converter<IDLPromise>::ToValue(ctx, promise);
-  return result;
+
+  return JS_DupValue(ctx, argv[0]);
 }
   <% } else if (prop.typeMode && prop.typeMode.supportAsync)  { %>
-  ScriptPromise promise = <%= blob.filename %>->set<%= prop.name[0].toUpperCase() + prop.name.slice(1) %>(v, exception_state);
+  <%= blob.filename %>->set<%= prop.name[0].toUpperCase() + prop.name.slice(1) %>(v, exception_state);
   if (exception_state.HasException()) {
     return exception_state.ToQuickJS();
   }
-  auto result = Converter<IDLPromise>::ToValue(ctx, promise);
-  return result;
+  return JS_DupValue(ctx, argv[0]);
 }
   <% } else { %>
   <% if (prop.typeMode && prop.typeMode.dartImpl && !prop.typeMode.supportAsync) { %>

@@ -155,7 +155,7 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
 
     if (is_async) {
       AtomicString sync_key = AtomicString(ctx(), sync_key_string.data());
-      SetBindingPropertyAsync(sync_key, value.ToNative(ctx(), exception_state));
+      SetBindingPropertyAsync(sync_key, value.ToNative(ctx(), exception_state), exception_state);
       return true;
     }
 

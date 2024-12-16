@@ -208,13 +208,6 @@ ScriptPromise BindingObject::InvokeBindingMethodAsync(BindingMethodCallOperation
   return InvokeBindingMethodAsyncInternal(method_on_stack, argc, args, exception_state);
 }
 
-ScriptPromise BindingObject::InvokeBindingMethodAsyncInternal(NativeValue method,
-                                                      int32_t argc,
-                                                      const NativeValue* args,
-                                                      ExceptionState& exception_state) const {
-  NativeValue method_on_stack = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
-  return InvokeBindingMethodAsyncInternal(method_on_stack, argc, args, exception_state);
-}
 
 ScriptPromise BindingObject::InvokeBindingMethodAsyncInternal(NativeValue method,
                                                               int32_t argc,
@@ -263,17 +256,17 @@ ScriptPromise BindingObject::GetBindingPropertyAsync(const webf::AtomicString& p
   return InvokeBindingMethodAsync(BindingMethodCallOperations::kGetProperty, 1, argv, exception_state);
 }
 
-ScriptPromise BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop,
+void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop,
                                                      NativeValue value,
                                                      webf::ExceptionState& exception_state) {
-  if (UNLIKELY(binding_object_->disposed_)) {
-    exception_state.ThrowException(
-        ctx(), ErrorType::InternalError,
-        "Can not set binding property on BindingObject, dart binding object had been disposed");
-    return ScriptPromise(ctx(), JS_NULL);
-  }
-  const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release()), value};
-  return InvokeBindingMethodAsync(BindingMethodCallOperations::kSetProperty, 2, argv, exception_state);
+
+  std::unique_ptr<SharedNativeString> args_01 = prop.ToNativeString(ctx());
+
+  auto* args_02 = (NativeValue*)dart_malloc(sizeof(NativeValue));
+  memcpy((void*)args_02, &value, sizeof(NativeValue));
+
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetProperty, std::move(args_01), bindingObject(),
+                                                       args_02);
 }
 
 NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,

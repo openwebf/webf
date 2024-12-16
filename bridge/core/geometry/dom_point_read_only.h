@@ -69,22 +69,22 @@ class DOMPointReadOnly : public BindingObject {
   double x() const;
   void setX(double v, ExceptionState& exception_state);
   ScriptPromise x_async(ExceptionState& exception_state);
-  ScriptPromise setX_async(double v, ExceptionState& exception_state);
+  void setX_async(double v, ExceptionState& exception_state);
 
   double y();
   void setY(double v, ExceptionState& exception_state);
   ScriptPromise y_async(ExceptionState& exception_state);
-  ScriptPromise setY_async(double v, ExceptionState& exception_state);
+  void setY_async(double v, ExceptionState& exception_state);
 
   double z() const;
   void setZ(double v, ExceptionState& exception_state);
   ScriptPromise z_async(ExceptionState& exception_state);
-  ScriptPromise setZ_async(double v, ExceptionState& exception_state);
+  void setZ_async(double v, ExceptionState& exception_state);
 
   double w() const;
   void setW(double v, ExceptionState& exception_state);
   ScriptPromise w_async(ExceptionState& exception_state);
-  ScriptPromise setW_async(double v, ExceptionState& exception_state);
+  void setW_async(double v, ExceptionState& exception_state);
 
   DOMPoint* matrixTransform(DOMMatrix* matrix, ExceptionState& exception_state) const;
 
@@ -106,7 +106,7 @@ class DOMPointReadOnly : public BindingObject {
 
   [[nodiscard]] double getPointProperty(const AtomicString& prop) const;
   void setPointProperty(const AtomicString& prop, double v, ExceptionState& exception_state);
-  ScriptPromise setPointPropertyAsync(const AtomicString& prop, double v, ExceptionState& exception_state);
+  void setPointPropertyAsync(const AtomicString& prop, double v, ExceptionState& exception_state);
 };
 
 }  // namespace webf

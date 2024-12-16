@@ -48,7 +48,7 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   std::shared_ptr<QJSUnionDomStringCanvasGradient> fillStyle();
   ScriptPromise fillStyle_async(ExceptionState& exception_state);
   void setFillStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);
-  ScriptPromise setFillStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
+  void setFillStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
                                    ExceptionState& exception_state);
   bool IsCanvas2d() const override;
 
@@ -66,7 +66,7 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   std::shared_ptr<QJSUnionDomStringCanvasGradient> strokeStyle();
   ScriptPromise strokeStyle_async(ExceptionState& exception_state);
   void setStrokeStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);
-  ScriptPromise setStrokeStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
+  void setStrokeStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
                                      ExceptionState& exception_state);
 
   void roundRect(double x,

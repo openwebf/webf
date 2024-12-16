@@ -21,7 +21,7 @@ class HTMLImageElement : public HTMLElement {
   void setSrc(const AtomicString& value, ExceptionState& exception_state);
 
   ScriptPromise src_async(ExceptionState& exception_state);
-  ScriptPromise setSrc_async(const AtomicString& value, ExceptionState& exception_state);
+  void setSrc_async(const AtomicString& value, ExceptionState& exception_state);
 
   DispatchEventResult FireEventListeners(Event&, ExceptionState&) override;
   DispatchEventResult FireEventListeners(Event&, bool isCapture, ExceptionState&) override;

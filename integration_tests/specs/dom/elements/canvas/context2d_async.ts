@@ -13,7 +13,7 @@ describe('Canvas context 2d async', () => {
     // @ts-ignore
     context.fillStyle_async = "red";
     // @ts-ignore
-    context.fillRect_async(10, 10, 380, 380);
+    await context.fillRect_async(10, 10, 380, 380);
 
     await snapshot();
     // @ts-ignore
@@ -22,7 +22,7 @@ describe('Canvas context 2d async', () => {
     // @ts-ignore
     context.fillStyle_async = "red";
     // @ts-ignore
-    context.fillRect_async(10, 10, 380, 380);
+    await context.fillRect_async(10, 10, 380, 380);
     await snapshot();
     done();
   });

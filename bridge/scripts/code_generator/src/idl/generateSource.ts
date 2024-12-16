@@ -677,6 +677,8 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
         object.methods.forEach(addObjectMethods);
         object.staticMethods.forEach(addObjectStaticMethods);
 
+        console.log(options.classMethodsInstallList);
+
         if (object.construct) {
           options.constructorInstallList.push(`{defined_properties::k${className}.Impl(), nullptr, nullptr, constructor}`)
         }
