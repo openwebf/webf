@@ -17,8 +17,13 @@ import 'node.dart';
 mixin ElementAdapterMixin on ElementBase {
   @override
   flutter.Widget toWidget() {
-    return Portal(
+    flutter.Widget child = Portal(
         key: flutter.ObjectKey(this), ownerElement: this as Element, child: _WebFElementWidget(this as Element));
+
+    if ((this as Element).isRepaintBoundary) {
+      child = flutter.RepaintBoundary(child: child);
+    }
+    return child;
   }
 }
 
@@ -194,9 +199,9 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     Element element = webFElement;
-    element.willDetachRenderer();
+    element.willDetachRenderer(this);
     super.unmount();
-    element.didDetachRenderer();
+    element.didDetachRenderer(this);
   }
 }
 

@@ -24,7 +24,8 @@ typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObjec
 
 enum RenderObjectUpdateReason {
   updateChildNodes,
-  updateRenderReplaced
+  updateRenderReplaced,
+  toRepaintBoundary
 }
 
 typedef SomeRenderBoxModelHandlerCallback = bool Function(RenderBoxModel renderBoxModel);
@@ -429,6 +430,13 @@ abstract class RenderStyle extends DiagnosticableTree {
     return _widgetRenderObjects.isNotEmpty || domRenderBoxModel != null;
   }
 
+  RenderBoxModel? getSelfRenderBox(flutter.RenderObjectElement? flutterWidgetElement) {
+    if (flutterWidgetElement == null) {
+      return _domRenderObjects;
+    }
+    return _widgetRenderObjects[flutterWidgetElement];
+  }
+
   @pragma('vm:prefer-inline')
   bool isSelfScrollingContentBox() {
     return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self,
@@ -785,11 +793,14 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   @pragma('vm:prefer-inline')
-  void clearIntersectionChangeListeners() {
-    everyRenderBox((_, renderBoxModel) {
-      renderBoxModel.clearIntersectionChangeListeners();
-      return true;
-    });
+  void clearIntersectionChangeListeners([flutter.RenderObjectElement? flutterWidgetElement]) {
+    if (flutterWidgetElement == null) {
+      domRenderBoxModel?.clearIntersectionChangeListeners();
+      return;
+    }
+
+    RenderBoxModel? widgetRenderBox = _widgetRenderObjects[flutterWidgetElement];
+    widgetRenderBox?.clearIntersectionChangeListeners();
   }
 
   void attachToRenderBoxModel() {

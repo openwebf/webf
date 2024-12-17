@@ -46,7 +46,14 @@ abstract class WidgetElement extends dom.Element {
   @override
   Widget toWidget() {
     _widget = _WidgetElementAdapter(this);
-    return WebFRenderWidgetAdaptor(this, child: _widget, key: ObjectKey(this));
+
+    Widget child = WebFRenderWidgetAdaptor(this, child: _widget, key: ObjectKey(this));
+
+    if (isRepaintBoundary) {
+      child = RepaintBoundary(child: child);
+    }
+
+    return child;
   }
 
   @override

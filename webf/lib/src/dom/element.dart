@@ -172,7 +172,11 @@ abstract class Element extends ContainerNode
       return;
     }
     _forceToRepaintBoundary = value;
-    updateOrCreateRenderBoxModel();
+    if (managedByFlutterWidget) {
+      renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.toRepaintBoundary);
+    } else {
+      updateOrCreateRenderBoxModel();
+    }
   }
 
   final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
@@ -425,20 +429,23 @@ abstract class Element extends ContainerNode
 
   @override
   void willDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
-    super.willDetachRenderer();
+    super.willDetachRenderer(flutterWidgetElement);
 
-    // Cancel running transition.
-    renderStyle.cancelRunningTransition();
+    if (!renderStyle.hasRenderBox()) {
 
-    // Cancel running animation.
-    renderStyle.cancelRunningAnimation();
+      // Cancel running transition.
+      renderStyle.cancelRunningTransition();
 
-    ownerView.window.unwatchViewportSizeChangeForElement(this);
+      // Cancel running animation.
+      renderStyle.cancelRunningAnimation();
+
+      ownerView.window.unwatchViewportSizeChangeForElement(this);
+    }
 
     // Remove all intersection change listeners.
-    renderStyle.clearIntersectionChangeListeners();
+    renderStyle.clearIntersectionChangeListeners(flutterWidgetElement);
 
-    if (renderStyle.hasRenderBox()) {
+    if (!managedByFlutterWidget) {
       // Remove fixed children from root when element disposed.
       if (ownerDocument.viewport != null && renderStyle.position == CSSPositionType.fixed) {
         _removeFixedChild(renderStyle.domRenderBoxModel!, ownerDocument);
@@ -446,13 +453,15 @@ abstract class Element extends ContainerNode
       // Remove renderBox.
       renderStyle.attachedRenderBoxModel?.detachFromContainingBlock();
 
-      // Clear pointer listener
-      clearEventResponder(renderStyle.attachedRenderBoxModel);
-
       // Remove scrollable
       renderStyle.attachedRenderBoxModel?.disposeScrollable();
       renderStyle.disposeScrollable();
     }
+
+    RenderBoxModel? renderBoxModel = renderStyle.getSelfRenderBox(flutterWidgetElement);
+
+    // Clear pointer listener
+    clearEventResponder(renderBoxModel);
   }
 
   BoundingClientRect getBoundingClientRect() => boundingClientRect;

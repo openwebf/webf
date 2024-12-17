@@ -106,7 +106,12 @@ class ImageElement extends Element {
 
   @override
   flutter.Widget toWidget() {
-    return WebFReplacedElementWidget(webFElement: this, key: flutter.ObjectKey(this), child: WebFImage(this));
+    flutter.Widget child = WebFReplacedElementWidget(webFElement: this, key: flutter.ObjectKey(this), child: WebFImage(this));
+
+    if (isRepaintBoundary) {
+      return flutter.RepaintBoundary(child: child);
+    }
+    return child;
   }
 
   @override
