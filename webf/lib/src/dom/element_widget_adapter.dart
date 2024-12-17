@@ -16,9 +16,9 @@ import 'node.dart';
 
 mixin ElementAdapterMixin on ElementBase {
   @override
-  flutter.Widget toWidget() {
+  flutter.Widget toWidget({Key? key}) {
     flutter.Widget child = Portal(
-        key: flutter.ObjectKey(this), ownerElement: this as Element, child: _WebFElementWidget(this as Element));
+        key: key ?? flutter.ObjectKey(this), ownerElement: this as Element, child: _WebFElementWidget(this as Element));
 
     if ((this as Element).isRepaintBoundary) {
       child = flutter.RepaintBoundary(child: child);

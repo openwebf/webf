@@ -105,8 +105,8 @@ class ImageElement extends Element {
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   @override
-  flutter.Widget toWidget() {
-    flutter.Widget child = WebFReplacedElementWidget(webFElement: this, key: flutter.ObjectKey(this), child: WebFImage(this));
+  flutter.Widget toWidget({Key? key}) {
+    flutter.Widget child = WebFReplacedElementWidget(webFElement: this, key: key ?? flutter.ObjectKey(this), child: WebFImage(this));
 
     if (isRepaintBoundary) {
       return flutter.RepaintBoundary(child: child);

@@ -289,7 +289,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return ensureNodeData().ensureEmptyChildNodeList(this);
   }
 
-  flutter.Widget toWidget() {
+  flutter.Widget toWidget({Key? key}) {
     throw FlutterError('UnKnown node types for widget conversion');
   }
 

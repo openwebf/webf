@@ -24,8 +24,8 @@ class TextNode extends CharacterData {
   TextNode(this._data, [BindingContext? context]) : super(NodeType.TEXT_NODE, context);
 
   @override
-  flutter.Widget toWidget() {
-    return TextNodeAdapter(this, key: flutter.ObjectKey(this));
+  flutter.Widget toWidget({Key? key}) {
+    return TextNodeAdapter(this, key: key ?? flutter.ObjectKey(this));
   }
 
   final Set<_TextNodeAdapterElement> _attachedFlutterWidgetElements = {};
