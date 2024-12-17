@@ -155,7 +155,7 @@ class ImageElement extends Element {
     RenderObject renderObject = super.willAttachRenderer(flutterWidgetElement);
     style.addStyleChangeListener(_stylePropertyChanged);
     RenderReplaced? renderReplaced = renderObject as RenderReplaced;
-    if (_didWatchAnimationImage && renderReplaced.hasIntersectionObserver() == false) {
+    if ((_didWatchAnimationImage || managedByFlutterWidget) && renderReplaced.hasIntersectionObserver() == false) {
       renderReplaced.addIntersectionChangeListener(_handleIntersectionChange);
     }
 
@@ -360,6 +360,7 @@ class ImageElement extends Element {
   int naturalHeight = 0;
 
   void _handleIntersectionChange(IntersectionObserverEntry entry) async {
+    print('intersection change');
     // When appear
     if (entry.isIntersecting) {
       _updateImageDataLazyCompleter?.complete();
@@ -515,6 +516,7 @@ class ImageElement extends Element {
       WebFProfiler.instance.startTrackUICommand();
     }
     _cachedImageInfo = imageInfo;
+    print('image frame');
 
     if (_currentRequest?.state != _ImageRequestState.completelyAvailable) {
       _currentRequest?.state = _ImageRequestState.completelyAvailable;
@@ -564,11 +566,13 @@ class ImageElement extends Element {
       final completer = Completer<bool?>();
       _updateImageDataLazyCompleter = completer;
 
-      RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
-      renderReplaced
-        ?..isInLazyRendering = true
+      if (!managedByFlutterWidget) {
+        RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
+        renderReplaced
+          ?..isInLazyRendering = true
         // When detach renderer, all listeners will be cleared.
-        ..addIntersectionChangeListener(_handleIntersectionChange);
+          ..addIntersectionChangeListener(_handleIntersectionChange);
+      }
 
       /// The method is foolproof to avoid IntersectionObserver not working
       Future.delayed(Duration(seconds: 3), () {
@@ -583,8 +587,10 @@ class ImageElement extends Element {
       // Because the renderObject can changed between rendering, So we need to reassign the value;
       _updateImageDataLazyCompleter = null;
 
-      renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
-      renderReplaced?.isInLazyRendering = false;
+      if (!managedByFlutterWidget) {
+        RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
+        renderReplaced?.isInLazyRendering = false;
+      }
     }
 
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
