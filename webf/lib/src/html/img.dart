@@ -520,9 +520,7 @@ class ImageElement extends Element {
       _renderImage!.width = naturalWidth.toDouble();
       _renderImage!.height = naturalHeight.toDouble();
     } else {
-      // if (renderStyle.hasRenderBox()) {
-      //   assert(false);
-      // }
+      renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.updateRenderReplaced);
     }
 
     // Fire the load event at first frame come.

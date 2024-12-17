@@ -103,6 +103,15 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
   @override
   WebFReplacedElementWidget get widget => super.widget as WebFReplacedElementWidget;
 
+  // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
+  void requestForBuild() {
+    visitChildElements((flutter.Element childElement) {
+      if (childElement is flutter.StatefulElement) {
+        childElement.markNeedsBuild();
+      }
+    });
+  }
+
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
     Element webFElement = widget.webFElement;

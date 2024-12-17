@@ -23,7 +23,8 @@ import 'svg.dart';
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
 
 enum RenderObjectUpdateReason {
-  updateChildNodes
+  updateChildNodes,
+  updateRenderReplaced
 }
 
 typedef SomeRenderBoxModelHandlerCallback = bool Function(RenderBoxModel renderBoxModel);
@@ -386,6 +387,8 @@ abstract class RenderStyle extends DiagnosticableTree {
       if (element is WebRenderLayoutRenderObjectElement) {
         element.requestForBuild();
       } else if (element is RenderWidgetElement) {
+        element.requestForBuild();
+      } else if (element is WebFRenderReplacedRenderObjectElement) {
         element.requestForBuild();
       }
     });
