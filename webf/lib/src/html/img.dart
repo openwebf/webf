@@ -293,7 +293,7 @@ class ImageElement extends Element {
   // Width and height set through style declaration.
   double? get _styleWidth {
     String width = style.getPropertyValue(WIDTH);
-    if (width.isNotEmpty && isRendererAttached) {
+    if (width.isNotEmpty && isRendererAttachedToSegmentTree) {
       CSSLengthValue len = CSSLength.parseLength(width, renderStyle, WIDTH);
       return len.computedValue;
     }
@@ -302,7 +302,7 @@ class ImageElement extends Element {
 
   double? get _styleHeight {
     String height = style.getPropertyValue(HEIGHT);
-    if (height.isNotEmpty && isRendererAttached) {
+    if (height.isNotEmpty && isRendererAttachedToSegmentTree) {
       CSSLengthValue len = CSSLength.parseLength(height, renderStyle, HEIGHT);
       return len.computedValue;
     }
