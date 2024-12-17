@@ -910,7 +910,9 @@ abstract class Element extends ContainerNode
   @override
   void childrenChanged(ChildrenChange change) {
     super.childrenChanged(change);
-    renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.updateChildNodes);
+    if (managedByFlutterWidget) {
+      renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.updateChildNodes);
+    }
   }
 
   @override

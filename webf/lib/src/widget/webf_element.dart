@@ -48,6 +48,35 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
   }
 
   @override
+  WebFHTMLElement get widget => super.widget as WebFHTMLElement;
+
+  dom.Element? findClosestAncestorHTMLElement(Element? parent) {
+    if (parent == null) return null;
+    dom.Element? target;
+    parent.visitAncestorElements((Element element) {
+      if (element is WebFWidgetElementElement) {
+        target = element.widget.widgetElement;
+        return false;
+      } else if (element is SelfOwnedWebRenderLayoutWidgetElement) {
+        target = element._webFElement;
+        return false;
+      } else if (element is ExternalWebRenderLayoutWidgetElement) {
+        target = element.webFElement;
+        return false;
+      }
+      return true;
+    });
+    return target;
+  }
+
+  void fullFillInlineStyle(Map<String, String> inlineStyle) {
+    inlineStyle.forEach((key, value) {
+      _webFElement!.setInlineStyle(key, value);
+    });
+    _webFElement!.recalculateStyle();
+  }
+
+  @override
   void mount(Element? parent, Object? newSlot) {
     dom.Element element = dom.createElement(
         tagName,
@@ -56,6 +85,30 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
     _webFElement = element;
 
     super.mount(parent, newSlot);
+
+    dom.Element? parentElement = findClosestAncestorHTMLElement(this);
+
+    if (parentElement != null) {
+      if (parentElement is RouterLinkElement) {
+        // @TODO: RouterLink Support
+        // Migrate previous childNodes into RouterLinkElement.
+        // parentElement.cachedChildNodes.forEach((node) {
+        //   htmlElement!.appendChild(node);
+        // });
+      }
+
+      if (widget.inlineStyle != null) {
+        fullFillInlineStyle(widget.inlineStyle!);
+      }
+
+      // htmlElement!.ensureChildAttached();
+      _webFElement!.applyStyle(_webFElement!.style);
+
+      if (_webFElement!.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
+        // Flush pending style before child attached.
+        _webFElement!.style.flushPendingProperties();
+      }
+    }
   }
 
   @override

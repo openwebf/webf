@@ -152,7 +152,7 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
 
   @override
   WebRenderLayoutRenderObjectElement createElement() {
-    WebRenderLayoutRenderObjectElement element = _ExternalWebRenderLayoutWidgetElement(webFElement!, this);
+    WebRenderLayoutRenderObjectElement element = ExternalWebRenderLayoutWidgetElement(webFElement!, this);
     return element;
   }
 
@@ -205,10 +205,10 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
   }
 }
 
-class _ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectElement {
+class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectElement {
   final Element _webfElement;
 
-  _ExternalWebRenderLayoutWidgetElement(this._webfElement, WebFRenderLayoutWidgetAdaptor widget) : super(widget);
+  ExternalWebRenderLayoutWidgetElement(this._webfElement, WebFRenderLayoutWidgetAdaptor widget) : super(widget);
 
   @override
   Element get webFElement => _webfElement;
