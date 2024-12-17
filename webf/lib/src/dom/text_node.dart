@@ -161,6 +161,11 @@ class TextNode extends CharacterData {
     if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE && parent.renderStyle.hasRenderBox()) {
       RenderBox renderBox = domRenderer!;
 
+      // Replaced element didn't have the child.
+      if (parent.renderStyle.isSelfRenderReplaced()) {
+        return;
+      }
+
       RenderBox? afterRenderObject = Node.findMostClosedSiblings(previousSibling ?? this.previousSibling);
 
       RenderBoxModel.attachRenderBox(parent.domRenderer!, renderBox, after: afterRenderObject);

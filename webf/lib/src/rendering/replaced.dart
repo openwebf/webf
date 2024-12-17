@@ -96,7 +96,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       height = attempingSize.height;
     }
 
-    size = contentConstraints!.constrain(Size(width, height));
+    size = constraints!.constrain(Size(width, height));
     assert(size.isFinite);
   }
 

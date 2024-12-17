@@ -516,7 +516,6 @@ class ImageElement extends Element {
       WebFProfiler.instance.startTrackUICommand();
     }
     _cachedImageInfo = imageInfo;
-    print('image frame');
 
     if (_currentRequest?.state != _ImageRequestState.completelyAvailable) {
       _currentRequest?.state = _ImageRequestState.completelyAvailable;

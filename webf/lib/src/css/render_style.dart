@@ -390,7 +390,7 @@ abstract class RenderStyle extends DiagnosticableTree {
       } else if (element is RenderWidgetElement) {
         element.requestForBuild();
       } else if (element is WebFRenderReplacedRenderObjectElement) {
-        element.requestForBuild();
+        element.requestForBuild(reason);
       }
     });
   }

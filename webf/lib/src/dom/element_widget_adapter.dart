@@ -7,9 +7,8 @@ import 'dart:collection';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 import 'element.dart';
 import 'node.dart';
@@ -109,7 +108,9 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
   WebFReplacedElementWidget get widget => super.widget as WebFReplacedElementWidget;
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
-  void requestForBuild() {
+  void requestForBuild(RenderObjectUpdateReason reason) {
+    if (reason == RenderObjectUpdateReason.updateChildNodes) return;
+
     visitChildElements((flutter.Element childElement) {
       if (childElement is flutter.StatefulElement) {
         childElement.markNeedsBuild();
