@@ -308,6 +308,12 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
     widgetElement.initState();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    widgetElement.didChangeDependencies();
+  }
+
   void requestUpdateState([VoidCallback? callback]) {
     if (mounted) {
       setState(callback ?? () {});
