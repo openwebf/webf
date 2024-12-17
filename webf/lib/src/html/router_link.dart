@@ -69,6 +69,6 @@ class RouterLinkElement extends WidgetElement {
     return WebFHTMLElement(tagName: 'HTML', children: childNodes.toWidgetList(), inlineStyle: {
       'overflow': 'auto',
       'position': 'relative'
-    });
+    }, controller: ownerDocument.controller,);
   }
 }

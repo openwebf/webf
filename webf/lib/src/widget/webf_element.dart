@@ -8,10 +8,12 @@ import 'package:webf/webf.dart';
 
 class WebFHTMLElement extends WebFRenderLayoutWidgetAdaptor {
   final String tagName;
+  final WebFController controller;
   final Map<String, String>? inlineStyle;
 
   WebFHTMLElement({
     required this.tagName,
+    required this.controller,
     Key? key,
     required List<Widget> children,
     this.inlineStyle,
@@ -25,7 +27,7 @@ class WebFHTMLElement extends WebFRenderLayoutWidgetAdaptor {
 
   @override
   WebRenderLayoutRenderObjectElement createElement() {
-    return SelfOwnedWebRenderLayoutWidgetElement(this);
+    return SelfOwnedWebRenderLayoutWidgetElement(this, tagName, controller);
   }
 
   @override
@@ -35,20 +37,25 @@ class WebFHTMLElement extends WebFRenderLayoutWidgetAdaptor {
 }
 
 class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectElement {
-  SelfOwnedWebRenderLayoutWidgetElement(super.widget);
+  SelfOwnedWebRenderLayoutWidgetElement(super.widget, this.tagName, this.controller);
 
   dom.Element? _webFElement;
+  String tagName;
+  WebFController controller;
 
   RenderObject createRenderLayoutBox(String tagName) {
-    WebFContextInheritElement? webfContext =
-        getElementForInheritedWidgetOfExactType<WebFContext>() as WebFContextInheritElement;
+    return _webFElement!.renderStyle.getWidgetPairedRenderBoxModel(this)!;
+  }
+
+  @override
+  void mount(Element? parent, Object? newSlot) {
     dom.Element element = dom.createElement(
         tagName,
-        BindingContext(
-            webfContext.controller!.view, webfContext.controller!.view.contextId, allocateNewBindingObject()));
+        BindingContext(controller.view, controller.view.contextId, allocateNewBindingObject()));
     element.managedByFlutterWidget = true;
     _webFElement = element;
-    return element.createRenderer(this);
+
+    super.mount(parent, newSlot);
   }
 
   @override

@@ -108,8 +108,7 @@ abstract class WidgetElement extends dom.Element {
   @mustCallSuper
   @override
   RenderObject willAttachRenderer([RenderObjectElement? flutterWidgetElement]) {
-    assert(!managedByFlutterWidget);
-    RenderObject renderObject = super.willAttachRenderer();
+    RenderObject renderObject = super.willAttachRenderer(flutterWidgetElement);
     if (renderStyle.display != CSSDisplay.none && !managedByFlutterWidget) {
       RenderObject hostedRenderObject = flutterWidgetElement != null
           ? renderStyle.getWidgetPairedRenderBoxModel(flutterWidgetElement)!
@@ -122,7 +121,6 @@ abstract class WidgetElement extends dom.Element {
   @mustCallSuper
   @override
   void didAttachRenderer([Element? flutterWidgetElement]) {
-    assert(!managedByFlutterWidget);
     // Children of WidgetElement should insert render object by Flutter Framework.
     attachWidget(widget);
   }
@@ -232,7 +230,7 @@ abstract class WidgetElement extends dom.Element {
   }
 
   void attachWidget(Widget widget) {
-    if (attachedAdapter == null) return;
+    if (attachedAdapter == null || managedByFlutterWidget) return;
 
     if (ownerDocument.controller.mode == WebFLoadingMode.standard ||
         ownerDocument.controller.isPreLoadingOrPreRenderingComplete) {
