@@ -438,6 +438,13 @@ class RenderWidgetElement extends SingleChildRenderObjectElement {
     widget.widgetElement.willAttachRenderer(this);
     super.mount(parent, newSlot);
     widget.widgetElement.didAttachRenderer(this);
+
+    widget.widgetElement.applyStyle(widget.widgetElement.style);
+
+    if (widget.widgetElement.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
+      // Flush pending style before child attached.
+      widget.widgetElement.style.flushPendingProperties();
+    }
   }
 
   @override
