@@ -9,9 +9,9 @@ class MultipleRenderElement extends WidgetElement {
     return Flex(
       direction: Axis.vertical,
       children: [
-        childNodes.first.toWidget(),
+        childNodes.first.toWidget(key: Key('1')),
         Text('----'),
-        childNodes.first.toWidget(),
+        childNodes.first.toWidget(key: Key('2')),
       ],
     );
   }
