@@ -852,7 +852,7 @@ abstract class Element extends ContainerNode
         style.flushPendingProperties();
       }
 
-      didAttachRenderer();
+      didAttachRenderer(null);
     }
 
     if (enableWebFProfileTracking) {
@@ -884,7 +884,7 @@ abstract class Element extends ContainerNode
       }
     }
 
-    didDetachRenderer();
+    didDetachRenderer(null);
 
     // Only normal HTMLElements in DOM mode needs to manual dispose RenderObjects.
     if (this is! WidgetElement) {

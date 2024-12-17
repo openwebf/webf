@@ -129,19 +129,19 @@ abstract class RenderObjectNode {
   /// This method should not do anything to update the children of the render
   /// object.
   @protected
-  void willAttachRenderer();
+  void willAttachRenderer(flutter.RenderObjectElement? flutterWidgetElement);
 
   @protected
-  void didAttachRenderer();
+  void didAttachRenderer(flutter.RenderObjectElement? flutterWidgetElement);
 
   /// A render object previously associated with this Node will be / has been removed
   /// from the tree. The given [RenderObject] will be of the same type as
   /// returned by this object's [createRenderer].
   @protected
-  void willDetachRenderer();
+  void willDetachRenderer(flutter.RenderObjectElement? flutterWidgetElement);
 
   @protected
-  void didDetachRenderer();
+  void didDetachRenderer(flutter.RenderObjectElement? flutterWidgetElement);
 }
 
 /// Lifecycle that triggered when node tree changes.
@@ -344,13 +344,13 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       throw FlutterError('[willAttachRenderer] is not implemented.');
 
   @override
-  void didAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {}
+  void didAttachRenderer(flutter.RenderObjectElement? flutterWidgetElement) {}
 
   @override
-  void willDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {}
+  void willDetachRenderer(flutter.RenderObjectElement? flutterWidgetElement) {}
 
   @override
-  void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {}
+  void didDetachRenderer(flutter.RenderObjectElement? flutterWidgetElement) {}
 
   Node? appendChild(Node child) {
     return null;

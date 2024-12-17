@@ -90,7 +90,7 @@ abstract class WidgetElement extends dom.Element {
   @mustCallSuper
   @override
   void didDetachRenderer([RenderObjectElement? flutterWidgetElement]) {
-    super.didDetachRenderer();
+    super.didDetachRenderer(flutterWidgetElement);
     detachWidget();
   }
 

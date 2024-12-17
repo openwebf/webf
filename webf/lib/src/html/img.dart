@@ -172,7 +172,7 @@ class ImageElement extends Element {
 
   @override
   void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) async {
-    super.didDetachRenderer();
+    super.didDetachRenderer(flutterWidgetElement);
     style.removeStyleChangeListener(_stylePropertyChanged);
 
     if (renderStyle.hasRenderBox() && !managedByFlutterWidget) {

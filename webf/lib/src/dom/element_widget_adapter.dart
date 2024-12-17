@@ -138,9 +138,9 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     Element element = widget.webFElement;
-    element.willDetachRenderer();
+    element.willDetachRenderer(this);
     super.unmount();
-    element.didDetachRenderer();
+    element.didDetachRenderer(this);
   }
 }
 
