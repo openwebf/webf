@@ -22,8 +22,8 @@ std::unique_ptr<v8::Platform> platform;
 void TestAtomicString(TestCallback callback) {
   if (!v8_platform_inited) {
     // Initialize V8.
-//    v8::V8::InitializeICUDefaultLocation(nullptr);
-//    v8::V8::InitializeExternalStartupData(nullptr);
+    //    v8::V8::InitializeICUDefaultLocation(nullptr);
+    //    v8::V8::InitializeExternalStartupData(nullptr);
     platform = v8::platform::NewDefaultPlatform();
     v8::V8::InitializePlatform(platform.get());
     v8::V8::Initialize();
