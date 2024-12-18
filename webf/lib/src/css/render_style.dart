@@ -516,9 +516,9 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   @pragma('vm:prefer-inline')
-  bool isPreviousSiblingAreRenderBoxModel() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.previousSibling, (renderObject, _) => renderObject is RenderBoxModel);
+  bool isPreviousSiblingAreRenderObject() {
+    return everyAttachedRenderObjectByTypeAndMatch(
+        RenderObjectGetType.previousSibling, (renderObject, _) => renderObject is RenderObject);
   }
 
   @pragma('vm:prefer-inline')
@@ -1032,6 +1032,18 @@ abstract class RenderStyle extends DiagnosticableTree {
     return false;
   }
 
+  bool everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType getType, RenderObjectMatchers matcher) {
+    if (target.managedByFlutterWidget) {
+      return everyAttachedWidgetRenderBox((_, renderBoxModel) {
+        return _renderObjectMatchFn(renderBoxModel, getType, matcher);
+      });
+    }
+    if (domRenderBoxModel != null) {
+      return _renderObjectMatchFn(domRenderBoxModel!, getType, matcher);
+    }
+    return false;
+  }
+
   bool everyRenderBox(EveryRenderBoxModelHandlerCallback callback) {
     bool hasMatch = everyWidgetRenderBox(callback);
     if (!hasMatch) {
@@ -1050,6 +1062,18 @@ abstract class RenderStyle extends DiagnosticableTree {
       if (!result) return false;
     }
 
+    return true;
+  }
+
+  bool everyAttachedWidgetRenderBox(EveryRenderBoxModelHandlerCallback callback) {
+    for (var entry in _widgetRenderObjects.entries) {
+      RenderObject renderObject = entry.value;
+      if (!renderObject.attached) {
+        continue;
+      }
+      bool result = callback(entry.key, entry.value);
+      if (!result) return false;
+    }
     return true;
   }
 

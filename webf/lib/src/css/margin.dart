@@ -99,7 +99,7 @@ mixin CSSMarginMixin on RenderStyle {
       return _marginTop;
     }
 
-    if (!isPreviousSiblingAreRenderBoxModel()) {
+    if (!isPreviousSiblingAreRenderObject()) {
       // Margin top collapse with its parent if it is the first child of its parent and its value is 0.
       _marginTop = _collapsedMarginTopWithParent;
     } else {
@@ -210,7 +210,7 @@ mixin CSSMarginMixin on RenderStyle {
   // in-flow block-level sibling, unless that sibling has clearance.
   double get _collapsedMarginTopWithPreSibling {
     double marginTop = _collapsedMarginTopWithFirstChild;
-    if (isPreviousSiblingAreRenderBoxModel() &&
+    if (isPreviousSiblingAreRenderObject() &&
         (isPreviousSiblingStyleMatch((renderStyle) =>
             renderStyle.effectiveDisplay == CSSDisplay.block || renderStyle.effectiveDisplay == CSSDisplay.flex))) {
       double preSiblingMarginBottom = getPreviousSiblingRenderStyle<CSSMarginMixin>()!.collapsedMarginBottom;
