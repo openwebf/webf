@@ -928,7 +928,7 @@ abstract class RenderStyle extends DiagnosticableTree {
   @pragma('vm:prefer-inline')
   void markNeedsCompositingBitsUpdate() {
     everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
-      renderObject?.markNeedsCompositedLayerUpdate();
+      renderObject?.markNeedsCompositingBitsUpdate();
       return true;
     });
   }

@@ -68,7 +68,7 @@ mixin CSSDisplayMixin on RenderStyle {
     }
 
     if (hasRenderBox()) {
-      if (isParentRenderBoxModel()) {
+      if (!isParentRenderBoxModel()) {
         return transformedDisplay;
       } else if (isParentRenderFlexLayout()) {
         // Margin change in flex layout may affect transformed display
