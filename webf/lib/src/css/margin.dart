@@ -254,9 +254,7 @@ mixin CSSMarginMixin on RenderStyle {
       return _marginBottom;
     }
 
-    bool nextSiblingIsRenderBoxModel = isNextSiblingAreRenderBoxModel();
-
-    if (!nextSiblingIsRenderBoxModel) {
+    if (!isNextSiblingAreRenderObject()) {
       // Margin bottom collapse with its parent if it is the last child of its parent and its value is 0.
       _marginBottom = _collapsedMarginBottomWithParent;
     } else {

@@ -510,9 +510,9 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   @pragma('vm:prefer-inline')
-  bool isNextSiblingAreRenderBoxModel() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.nextSibling, (renderObject, _) => renderObject is RenderBoxModel);
+  bool isNextSiblingAreRenderObject() {
+    return everyAttachedRenderObjectByTypeAndMatch(
+        RenderObjectGetType.nextSibling, (renderObject, _) => renderObject is RenderObject);
   }
 
   @pragma('vm:prefer-inline')
