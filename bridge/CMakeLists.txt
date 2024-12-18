@@ -884,6 +884,11 @@ if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
   endif ()
 endif ()
 
+if (${WEBF_JS_ENGINE} MATCHES "v8")
+  add_definitions(-DV8_COMPRESS_POINTERS=1)
+  add_definitions(-DV8_ENABLE_SANDBOX=1)
+endif ()
+
 execute_process(
   COMMAND node get_app_ver.js
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/scripts
