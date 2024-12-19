@@ -262,14 +262,12 @@
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/example_app/example_app.framework",
 				"${PODS_ROOT}/../Flutter/ephemeral/.symlinks/plugins/webf/macos/libwebf.dylib",
-				"${PODS_ROOT}/../Flutter/ephemeral/.symlinks/plugins/webf/macos/libquickjs.dylib",
 				"${BUILT_PRODUCTS_DIR}/webf/webf.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/example_app.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/libwebf.dylib",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/libquickjs.dylib",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/webf.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;

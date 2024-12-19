@@ -16,7 +16,7 @@ A W3C standard compliant Web rendering engine based on Flutter..
   s.source_files     = 'Classes/**/*'
   s.public_header_files = 'Classes/**/*.h'
   s.dependency 'FlutterMacOS'
-  s.vendored_libraries = 'libwebf.dylib', 'libquickjs.dylib'
+  s.vendored_libraries = 'libwebf.dylib'#, 'libquickjs.dylib'
   s.prepare_command = 'bash prepare.sh'
 
   s.platform = :osx, '10.11'
