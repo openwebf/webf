@@ -53,6 +53,16 @@ struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<
     assert(value.tag == NativeTag::TAG_STRING);
     return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
   }
+
+  static ImplType FromNativeValueShared(JSContext* ctx, NativeValue& value) {
+    if (value.tag == NativeTag::TAG_NULL) {
+      return AtomicString::Empty();
+    }
+    assert(value.tag == NativeTag::TAG_STRING);
+
+    auto shared_string = reinterpret_cast<SharedNativeString*>(value.u.ptr);
+    return {ctx, shared_string->string(), shared_string->length()};
+  }
 };
 
 template <>
