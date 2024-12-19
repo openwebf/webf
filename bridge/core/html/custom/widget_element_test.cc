@@ -3,10 +3,10 @@
  */
 
 #include "widget_element.h"
+#include "core/html/custom/widget_element_shape.h"
+#include "foundation/native_value.h"
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
-#include "foundation/native_value.h"
-#include "core/html/custom/widget_element_shape.h"
 
 using namespace webf;
 
@@ -46,7 +46,7 @@ TEST(WidgetElement, safeForMultipleInstance) {
   };
 
   NativeWidgetElementShape native_widget_element_shape{
-    .name = "FLUTTER-CHECKBOX",
+      .name = "FLUTTER-CHECKBOX",
   };
   native_widget_element_shape.name = "FLUTTER-CHECKBOX";
 
@@ -71,16 +71,19 @@ TEST(WidgetElement, safeForMultipleInstance) {
   auto async_functions = Native_NewList(5, async_methods);
   native_widget_element_shape.async_methods = &async_functions;
 
-  auto env = TEST_init([](double contextId, const char* errmsg) {
-    WEBF_LOG(VERBOSE) << errmsg;
-    errorCalled = true;
-  }, &native_widget_element_shape, 1);
+  auto env = TEST_init(
+      [](double contextId, const char* errmsg) {
+        WEBF_LOG(VERBOSE) << errmsg;
+        errorCalled = true;
+      },
+      &native_widget_element_shape, 1);
 
-
-  auto env2 = TEST_init([](double contextId, const char* errmsg) {
-    WEBF_LOG(VERBOSE) << errmsg;
-    errorCalled = true;
-  }, &native_widget_element_shape, 1);
+  auto env2 = TEST_init(
+      [](double contextId, const char* errmsg) {
+        WEBF_LOG(VERBOSE) << errmsg;
+        errorCalled = true;
+      },
+      &native_widget_element_shape, 1);
 
   const char* code =
       "let checkbox = document.createElement('flutter-checkbox'); "
