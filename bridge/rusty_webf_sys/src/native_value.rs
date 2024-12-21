@@ -57,8 +57,7 @@ impl NativeValue {
     value
   }
 
-  pub fn new_string(val: &str) -> Self {
-    let len = val.len();
+  fn create_string_ptr(val: &str, len: usize) -> *mut SharedNativeString {
     let size = len * mem::size_of::<u16>();
 
     #[cfg(target_os = "windows")]
@@ -68,10 +67,8 @@ impl NativeValue {
     let ptr = unsafe { libc::malloc(size) };
 
     let ptr = ptr as *mut u16;
-    let mut length = 0;
 
     for (i, c) in val.encode_utf16().enumerate() {
-      length = i + 1;
       unsafe {
         ptr.add(i).write(c);
       }
@@ -79,7 +76,7 @@ impl NativeValue {
 
     let mut shared_string = SharedNativeString {
       string_: ptr,
-      length_: length as u32,
+      length_: len as u32,
     };
 
     let shared_string_size = mem::size_of::<SharedNativeString>();
@@ -95,6 +92,12 @@ impl NativeValue {
       shared_string_ptr.write(shared_string);
     }
 
+    shared_string_ptr
+  }
+
+  pub fn new_string(val: &str) -> Self {
+    let len = val.len();
+    let shared_string_ptr = Self::create_string_ptr(val, len);
     let mut value = Self::new();
     value.tag = NativeTag::TagString as i32;
     value.u.ptr = shared_string_ptr as *mut c_void;
@@ -194,8 +197,9 @@ impl NativeValue {
     let array_ptr = array_ptr as *mut NativeValue;
 
     for (i, val) in values.iter().enumerate() {
+      let mut value = val.clone();
       unsafe {
-        array_ptr.add(i).write(val.clone());
+        array_ptr.add(i).write(value);
       }
     }
 
@@ -226,20 +230,6 @@ impl NativeValue {
 
 impl Drop for NativeValue {
   fn drop(&mut self) {
-    if self.tag == NativeTag::TagString as i32 {
-      println!("Drop NativeValue string: {}", self.to_string());
-    } else if self.tag == NativeTag::TagList as i32 {
-      println!("Drop NativeValue list");
-      let ptr = unsafe {
-        self.u.ptr as *mut NativeValue
-      };
-      for i in 0..self.uint32 {
-        let offset = i.try_into().unwrap();
-        let val = unsafe { ptr.add(offset).read() };
-        drop(val);
-      }
-    } else {
-      println!("Drop NativeValue: {:?}", self.tag);
-    }
+    // no need to drop inner structure, it will be freed by the dart side
   }
 }
