@@ -396,13 +396,10 @@ void ExecutingContext::DrainWebFNativeFutures() {
   for (auto it = native_future_tasks_.begin(); it != native_future_tasks_.end();) {
     const WebFNativeFutureData* future_data = *it;
     int result = future_data->poll_fn(future_data->future_ptr);
-    if (result == 0) {
-      it = native_future_tasks_.erase(it);
-      delete future_data;
-    } else {
-      ++it;
-    }
+    ++it;
   }
+
+  native_future_tasks_.clear();
 }
 
 void ExecutingContext::EnqueueRustFuture(WebFNativeFutureData* future_data) {

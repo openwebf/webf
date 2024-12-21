@@ -263,16 +263,14 @@ impl ExecutingContext {
   pub fn spawn_local<F>(&self, future: F)
     where F: Future<Output = ()> + 'static,
   {
-    let future_pin = Box::pin(future);
-    let future_ptr = unsafe { Box::into_raw(Box::new(future_pin)) };
+    let boxed: Pin<Box<dyn Future<Output = ()> + 'static>> = Box::pin(future);
+    let raw = Box::into_raw(Box::new(boxed));
     let data = Box::new(WebFNativeFutureData {
-      ptr: future_ptr,
+      ptr: raw,
       poll_fn: poll_webf_native_future
     });
-    let data_ptr = Box::into_raw(data);
-
     unsafe {
-      ((*self.method_pointer).spawn_local)(self.ptr, data_ptr as *mut OpaquePtr);
+      ((*self.method_pointer).spawn_local)(self.ptr, Box::into_raw(data) as *mut OpaquePtr);
     }
   }
 

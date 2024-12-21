@@ -8,10 +8,8 @@ use std::sync::{Arc, Mutex};
 use std::cell::RefCell;
 
 #[repr(C)]
-pub struct WebFNativeFutureData<F>
-  where F: Future<Output = ()> + 'static,
-{
-  pub ptr: *mut Pin<Box<F>>,
+pub struct WebFNativeFutureData {
+  pub ptr: *mut Pin<Box<dyn Future<Output=()>>>,
   pub poll_fn: extern "C" fn(ptr: *mut c_void) -> c_int,
 }
 
