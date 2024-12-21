@@ -102,6 +102,10 @@ impl NativeValue {
     value
   }
 
+  pub fn is_string(&self) -> bool {
+    self.tag == NativeTag::TagString as i32
+  }
+
   pub fn to_string(&self) -> String {
     let ptr = unsafe {
       self.u.ptr as *mut SharedNativeString
@@ -131,6 +135,10 @@ impl NativeValue {
     value
   }
 
+  pub fn is_float64(&self) -> bool {
+    self.tag == NativeTag::TagFloat64 as i32
+  }
+
   pub fn to_float64(&self) -> f64 {
     unsafe {
       self.u.float64
@@ -145,6 +153,10 @@ impl NativeValue {
     value
   }
 
+  pub fn is_bool(&self) -> bool {
+    self.tag == NativeTag::TagBool as i32
+  }
+
   pub fn to_bool(&self) -> bool {
     unsafe {
       self.u.int64 != 0
@@ -157,6 +169,10 @@ impl NativeValue {
     value.u.int64 = val;
     value.uint32 = 0;
     value
+  }
+
+  pub fn is_int64(&self) -> bool {
+    self.tag == NativeTag::TagInt as i32
   }
 
   pub fn to_int64(&self) -> i64 {
@@ -188,6 +204,10 @@ impl NativeValue {
     value.u.ptr = array_ptr as *mut c_void;
     value.uint32 = size as u32;
     value
+  }
+
+  pub fn is_list(&self) -> bool {
+    self.tag == NativeTag::TagList as i32
   }
 
   pub fn to_list(&self) -> Vec<NativeValue> {
