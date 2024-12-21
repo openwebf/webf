@@ -14,17 +14,7 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   let navigator = context.navigator();
 
   let ua_string = navigator.user_agent(&exception_state);
-  let platform = navigator.platform(&exception_state);
-  let language = navigator.language(&exception_state);
-  let app_name = navigator.app_name(&exception_state);
-  let app_version = navigator.app_version(&exception_state);
-  let hardware_concurrency = navigator.hardware_concurrency(&exception_state);
   println!("User Agent: {}", ua_string);
-  println!("Platform: {}", platform);
-  println!("Language: {}", language);
-  println!("App Name: {}", app_name);
-  println!("App Version: {}", app_version);
-  println!("Hardware Concurrency: {}", hardware_concurrency);
 
   let local_storage = context.local_storage();
 
@@ -80,7 +70,7 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
     println!("Timer Callback");
   });
 
-  context.set_interval_with_callback_and_timeout(timer_callback, 1000, &exception_state).unwrap();
+  context.set_timeout_with_callback_and_timeout(timer_callback, 1000, &exception_state).unwrap();
 
   let click_event = document.create_event("custom_click", &exception_state).unwrap();
   document.dispatch_event(&click_event, &exception_state);
