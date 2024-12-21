@@ -8,6 +8,7 @@
 #include "core/native/native_function.h"
 #include "document.h"
 #include "exception_state.h"
+#include "foundation/native_value.h"
 #include "window.h"
 
 namespace webf {
@@ -20,6 +21,16 @@ using PublicContextGetDocument = WebFValue<Document, DocumentPublicMethods> (*)(
 using PublicContextGetWindow = WebFValue<Window, WindowPublicMethods> (*)(ExecutingContext*);
 using PublicContextGetExceptionState = WebFValue<SharedExceptionState, ExceptionStatePublicMethods> (*)();
 using PublicFinishRecordingUIOperations = void (*)(ExecutingContext* context);
+using PublicWebFInvokeModule = NativeValue (*)(ExecutingContext*, const char*, const char*, SharedExceptionState*);
+using PublicWebFInvokeModuleWithParams =
+    NativeValue (*)(ExecutingContext*, const char*, const char*, NativeValue*, SharedExceptionState*);
+using PublicWebFInvokeModuleWithParamsAndCallback = NativeValue (*)(ExecutingContext*,
+                                                                    const char*,
+                                                                    const char*,
+                                                                    NativeValue*,
+                                                                    WebFNativeFunctionContext*,
+                                                                    SharedExceptionState*);
+using PublicWebFLocationReload = void (*)(ExecutingContext*, SharedExceptionState*);
 using PublicContextSetTimeout = int32_t (*)(ExecutingContext*,
                                             WebFNativeFunctionContext*,
                                             int32_t,
@@ -38,6 +49,22 @@ struct ExecutingContextWebFMethods {
   static WebFValue<Window, WindowPublicMethods> window(ExecutingContext* context);
   static WebFValue<SharedExceptionState, ExceptionStatePublicMethods> CreateExceptionState();
   static void FinishRecordingUIOperations(ExecutingContext* context);
+  static NativeValue WebFInvokeModule(ExecutingContext* context,
+                                      const char* module_name,
+                                      const char* method,
+                                      SharedExceptionState* shared_exception_state);
+  static NativeValue WebFInvokeModuleWithParams(ExecutingContext* context,
+                                                const char* module_name,
+                                                const char* method,
+                                                NativeValue* params,
+                                                SharedExceptionState* shared_exception_state);
+  static NativeValue WebFInvokeModuleWithParamsAndCallback(ExecutingContext* context,
+                                                           const char* module_name,
+                                                           const char* method,
+                                                           NativeValue* params,
+                                                           WebFNativeFunctionContext* callback_context,
+                                                           SharedExceptionState* shared_exception_state);
+  static void WebFLocationReload(ExecutingContext* context, SharedExceptionState* shared_exception_state);
   static int32_t SetTimeout(ExecutingContext* context,
                             WebFNativeFunctionContext* callback_context,
                             int32_t timeout,
@@ -56,6 +83,11 @@ struct ExecutingContextWebFMethods {
   PublicContextGetWindow context_get_window{window};
   PublicContextGetExceptionState context_get_exception_state{CreateExceptionState};
   PublicFinishRecordingUIOperations context_finish_recording_ui_operations{FinishRecordingUIOperations};
+  PublicWebFInvokeModule context_webf_invoke_module{WebFInvokeModule};
+  PublicWebFInvokeModuleWithParams context_webf_invoke_module_with_params{WebFInvokeModuleWithParams};
+  PublicWebFInvokeModuleWithParamsAndCallback context_webf_invoke_module_with_params_and_callback{
+      WebFInvokeModuleWithParamsAndCallback};
+  PublicWebFLocationReload context_webf_location_reload{WebFLocationReload};
   PublicContextSetTimeout context_set_timeout{SetTimeout};
   PublicContextSetInterval context_set_interval{SetInterval};
   PublicContextClearTimeout context_clear_timeout{ClearTimeout};

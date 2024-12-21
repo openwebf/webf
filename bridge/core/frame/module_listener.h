@@ -17,13 +17,13 @@ class ModuleListenerContainer;
 // operations.
 class ModuleListener {
  public:
-  static std::shared_ptr<ModuleListener> Create(const std::shared_ptr<QJSFunction>& function);
-  explicit ModuleListener(std::shared_ptr<QJSFunction> function);
+  static std::shared_ptr<ModuleListener> Create(const std::shared_ptr<Function>& function);
+  explicit ModuleListener(std::shared_ptr<Function> function);
 
-  const std::shared_ptr<QJSFunction>& value();
+  const std::shared_ptr<Function>& value();
 
  private:
-  std::shared_ptr<QJSFunction> function_{nullptr};
+  std::shared_ptr<Function> function_{nullptr};
 
   friend ModuleListenerContainer;
   friend ModuleContextCoordinator;

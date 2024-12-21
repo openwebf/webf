@@ -15,13 +15,13 @@ namespace webf {
 // executing environment.
 class ModuleCallback {
  public:
-  static std::shared_ptr<ModuleCallback> Create(const std::shared_ptr<QJSFunction>& function);
-  explicit ModuleCallback(std::shared_ptr<QJSFunction> function);
+  static std::shared_ptr<ModuleCallback> Create(const std::shared_ptr<Function>& function);
+  explicit ModuleCallback(std::shared_ptr<Function> function);
 
-  std::shared_ptr<QJSFunction> value();
+  std::shared_ptr<Function> value();
 
  private:
-  std::shared_ptr<QJSFunction> function_{nullptr};
+  std::shared_ptr<Function> function_{nullptr};
 };
 
 }  // namespace webf
