@@ -16,6 +16,7 @@ namespace webf {
 class Document;
 class ExecutingContext;
 class Window;
+struct WebFNativeFutureData;
 
 using PublicContextGetDocument = WebFValue<Document, DocumentPublicMethods> (*)(ExecutingContext*);
 using PublicContextGetWindow = WebFValue<Window, WindowPublicMethods> (*)(ExecutingContext*);
@@ -41,6 +42,7 @@ using PublicContextSetInterval = int32_t (*)(ExecutingContext*,
                                              SharedExceptionState*);
 using PublicContextClearTimeout = void (*)(ExecutingContext*, int32_t, SharedExceptionState*);
 using PublicContextClearInterval = void (*)(ExecutingContext*, int32_t, SharedExceptionState*);
+using PublicContextSpawnLocal = void (*)(ExecutingContext*, WebFNativeFutureData*);
 
 // Memory aligned and readable from WebF side.
 // Only C type member can be included in this class, any C++ type and classes can is not allowed to use here.
@@ -77,6 +79,7 @@ struct ExecutingContextWebFMethods {
   static void ClearInterval(ExecutingContext* context,
                             int32_t interval_id,
                             SharedExceptionState* shared_exception_state);
+  static void SpawnLocal(ExecutingContext* context, WebFNativeFutureData* future_data);
 
   double version{1.0};
   PublicContextGetDocument context_get_document{document};
@@ -92,6 +95,7 @@ struct ExecutingContextWebFMethods {
   PublicContextSetInterval context_set_interval{SetInterval};
   PublicContextClearTimeout context_clear_timeout{ClearTimeout};
   PublicContextClearInterval context_clear_interval{ClearInterval};
+  PublicContextSpawnLocal context_spawn_local{SpawnLocal};
 };
 
 }  // namespace webf

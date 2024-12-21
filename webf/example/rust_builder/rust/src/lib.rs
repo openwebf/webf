@@ -1,7 +1,7 @@
-use std::ffi::{c_void, CString};
+use std::ffi::c_void;
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{async_storage, element, initialize_webf_api, navigator, AddEventListenerOptions, EventMethods, EventTargetMethods, NativeValue, RustValue};
+use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
@@ -36,35 +36,29 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
 
   local_storage.clear(&exception_state);
 
-  let async_storage_1 = context.async_storage();
+  let async_storage = context.async_storage();
+  let exception_state2 = context.create_exception_state();
 
-  let async_storage_set_item_callback = Box::new(|value: Result<Option<String>, String>| {
-    match value {
-      Ok(value) => {
-        println!("Async Storage Set Item Success: {:?}", value);
+  context.spawn_local(async move {
+    let set_result = async_storage.set_item("a", "b", &exception_state2).await;
+    match set_result {
+      Ok(_) => {
+        println!("Async Storage Set Item Success");
+        let result = async_storage.get_item("a", &exception_state2).await;
+        match result {
+          Ok(value) => {
+            println!("Async Storage Get Item Success: {:?}", value);
+          },
+          Err(err) => {
+            println!("Async Storage Get Item Failed: {:?}", err);
+          }
+        }
       },
       Err(err) => {
         println!("Async Storage Set Item Failed: {:?}", err);
       }
     }
   });
-
-  async_storage_1.set_item("a", "b", async_storage_set_item_callback, &exception_state);
-
-  let async_storage_2 = context.async_storage();
-
-  let async_storage_get_item_callback = Box::new(|value: Result<Option<String>, String>| {
-    match value {
-      Ok(value) => {
-        println!("Async Storage Get Item Success: {:?}", value);
-      },
-      Err(err) => {
-        println!("Async Storage Get Item Failed: {:?}", err);
-      }
-    }
-  });
-
-  async_storage_2.get_item("a", async_storage_get_item_callback, &exception_state);
 
   let timer_callback = Box::new(move || {
     println!("Timer Callback");
@@ -153,5 +147,6 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   event_cleaner_element.add_event_listener("click", event_cleaner_handler, &event_listener_options, &exception_state).unwrap();
 
   document.body().append_child(&event_cleaner_element.as_node(), &exception_state).unwrap();
+
   std::ptr::null_mut()
 }

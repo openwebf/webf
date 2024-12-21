@@ -132,4 +132,8 @@ void ExecutingContextWebFMethods::ClearInterval(ExecutingContext* context,
   WindowOrWorkerGlobalScope::clearInterval(context, interval_id, shared_exception_state->exception_state);
 }
 
+void ExecutingContextWebFMethods::SpawnLocal(ExecutingContext* context, WebFNativeFutureData* future_data) {
+  context->EnqueueRustFuture(future_data);
+}
+
 }  // namespace webf

@@ -2,7 +2,7 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-use std::ffi::*;
+use std::{ffi::*, future::{self, Future}, pin::Pin};
 use native_value::NativeValue;
 
 use crate::*;
@@ -22,6 +22,7 @@ pub struct ExecutingContextRustMethods {
   pub set_interval: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, c_int, *const OpaquePtr) -> c_int,
   pub clear_timeout: extern "C" fn(*const OpaquePtr, c_int, *const OpaquePtr),
   pub clear_interval: extern "C" fn(*const OpaquePtr, c_int, *const OpaquePtr),
+  pub spawn_local: extern "C" fn(*const OpaquePtr, *mut OpaquePtr),
 }
 
 pub type TimeoutCallback = Box<dyn Fn()>;
@@ -259,6 +260,32 @@ impl ExecutingContext {
     }
   }
 
+  pub fn spawn_local<F>(&self, future: F)
+    where F: Future<Output = ()> + 'static,
+  {
+    let future_pin = Box::pin(future);
+    let future_ptr = unsafe { Box::into_raw(Box::new(future_pin)) };
+    let data = Box::new(WebFNativeFutureData {
+      ptr: future_ptr,
+      poll_fn: poll_webf_native_future
+    });
+    let data_ptr = Box::into_raw(data);
+
+    unsafe {
+      ((*self.method_pointer).spawn_local)(self.ptr, data_ptr as *mut OpaquePtr);
+    }
+  }
+
+}
+
+impl Clone for ExecutingContext {
+  fn clone(&self) -> ExecutingContext {
+    ExecutingContext {
+      ptr: self.ptr,
+      method_pointer: self.method_pointer,
+      status: self.status,
+    }
+  }
 }
 
 impl Drop for ExecutingContext {

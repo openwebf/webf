@@ -236,7 +236,6 @@ impl NativeValue {
 impl Drop for NativeValue {
   fn drop(&mut self) {
     if self.is_string() {
-      println!("Drop NativeValue string: {}", self.to_string());
       let ptr = unsafe {
         self.u.ptr as *mut SharedNativeString
       };

@@ -392,6 +392,23 @@ void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) 
   JS_FreeValue(ctx(), proxy_data);
 }
 
+void ExecutingContext::DrainWebFNativeFutures() {
+  for (auto it = native_future_tasks_.begin(); it != native_future_tasks_.end();) {
+    const WebFNativeFutureData* future_data = *it;
+    int result = future_data->poll_fn(future_data->future_ptr);
+    if (result == 0) {
+      it = native_future_tasks_.erase(it);
+      delete future_data;
+    } else {
+      ++it;
+    }
+  }
+}
+
+void ExecutingContext::EnqueueRustFuture(WebFNativeFutureData* future_data) {
+  native_future_tasks_.push_back(future_data);
+}
+
 void ExecutingContext::DrainPendingPromiseJobs() {
   // should executing pending promise jobs.
   JSContext* pctx;

@@ -57,8 +57,14 @@ class ScriptWrappable;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
 using MicrotaskCallback = void (*)(void* data);
+using FuturePollFn = int (*)(void*);
 
 bool isContextValid(double contextId);
+
+struct WebFNativeFutureData {
+  void* future_ptr;
+  FuturePollFn poll_fn;
+};
 
 // An environment in which script can execute. This class exposes the common
 // properties of script execution environments on the webf.
@@ -101,6 +107,8 @@ class ExecutingContext {
   void ReportError(JSValueConst error, char** rust_errmsg, uint32_t* rust_errmsg_length);
   void DrainMicrotasks();
   void EnqueueMicrotask(MicrotaskCallback callback, void* data = nullptr);
+  void DrainWebFNativeFutures();
+  void EnqueueRustFuture(WebFNativeFutureData* future_data);
   void DefineGlobalProperty(const char* prop, JSValueConst value);
   ExecutionContextData* contextData();
   uint8_t* DumpByteCode(const char* code, uint32_t codeLength, const char* sourceURL, uint64_t* bytecodeLength);
@@ -225,6 +233,10 @@ class ExecutingContext {
 
   // Rust methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<ExecutingContextWebFMethods> public_method_ptr_ = nullptr;
+
+  // Rust future task queue.
+  std::vector<WebFNativeFutureData*> native_future_tasks_;
+
 };
 
 class ObjectProperty {
