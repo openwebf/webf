@@ -236,7 +236,6 @@ class ExecutingContext {
 
   // Rust future task queue.
   std::vector<WebFNativeFutureData*> native_future_tasks_;
-
 };
 
 class ObjectProperty {
