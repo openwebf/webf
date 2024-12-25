@@ -895,8 +895,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     // Matrix4
     // [ a, b, 0, 0,
     //   c, d, 0, 0,
-    //   e, f, 1, 0,
-    //   0, 0, 0, 1 ]
+    //   0, 0, 1, 0,
+    //   e, f, 0, 1 ]
     final Float64List m4storage = Float64List(16);
     m4storage[0] = a;
     m4storage[1] = b;
@@ -906,12 +906,12 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     m4storage[5] = d;
     m4storage[6] = 0.0;
     m4storage[7] = 0.0;
-    m4storage[8] = e;
-    m4storage[9] = f;
+    m4storage[8] = 0.0;
+    m4storage[9] = 0.0;
     m4storage[10] = 1.0;
     m4storage[11] = 0.0;
-    m4storage[12] = 0.0;
-    m4storage[13] = 0.0;
+    m4storage[12] = e;
+    m4storage[13] = f;
     m4storage[14] = 0.0;
     m4storage[15] = 1.0;
 
