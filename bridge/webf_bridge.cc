@@ -3,6 +3,8 @@
  */
 
 #include "include/webf_bridge.h"
+#include <core/binding_object.h>
+
 #include "core/dart_isolate_context.h"
 #include "core/html/parser/html_parser.h"
 #include "core/page.h"
@@ -258,6 +260,14 @@ void collectNativeProfileData(void* ptr, const char** data, uint32_t* len) {
 void clearNativeProfileData(void* ptr) {
   auto* dart_isolate_context = static_cast<webf::DartIsolateContext*>(ptr);
   dart_isolate_context->profiler()->clear();
+}
+
+void* allocateNativeBindingObject() {
+  return new webf::NativeBindingObject(nullptr);
+}
+
+bool isNativeBindingObjectDisposed(void* native_binding_object) {
+  return webf::NativeBindingObject::IsDisposed(static_cast<webf::NativeBindingObject*>(native_binding_object));
 }
 
 void dispatchUITask(void* page_, void* context, void* callback) {
