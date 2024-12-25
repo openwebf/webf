@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/html.dart';
+import 'package:webf/bridge.dart';
 
 class _DragEventInfo extends Drag {
   _DragEventInfo(this.gestureDispatcher);
@@ -432,7 +433,7 @@ class GestureDispatcher {
         // The touch target might be eliminated from the DOM tree and collected by JavaScript GC,
         // resulting in it becoming invisible and inaccessible, yet this change is not synchronized with Dart instantly.
         // Therefore, refrain from triggering events on these unavailable DOM targets.
-        if (touch.target.pointer?.ref.disposed == true) {
+        if (isBindingObjectDisposed(touch.target.pointer)) {
           continue;
         }
 
