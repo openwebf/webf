@@ -125,35 +125,39 @@ var scaleTranslate2D = {
     );
   }
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.translate_async(1,5,3);
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test translate() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.scale_async(1,5,3,0,1,3);
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test scale() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.scaleNonUniform_async(1,5);
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test scaleNonUniform() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.scale3d_async(3,2,1,1);
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test scale3d() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.rotate_async(Math.PI, Math.PI/2, Math.PI/6);

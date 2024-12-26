@@ -174,7 +174,7 @@ test(async function () {
 
 test(async function () {
   // @ts-ignore
-  var result = initialDOMMatrix().rotate_async(-90);
+  var result = await initialDOMMatrix().rotate_async(-90);
   var expected = initialDOMMatrix().multiply(getRotationMatrix(0, 0, 1, -90));
   checkDOMMatrix(result, expected);
 }, "test rotate() 2d");

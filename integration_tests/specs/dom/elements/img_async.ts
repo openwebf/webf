@@ -1,5 +1,5 @@
 describe('Tags img async', () => {
-  it('should have not size when img not mounted', async () => {
+  it('should have not size when img not mounted', async (done) => {
     const img = document.createElement('img');
     // @ts-ignore
     let w = await img.width_async;
@@ -7,6 +7,7 @@ describe('Tags img async', () => {
     let h = await img.height_async;
     expect(w).toBe(0);
     expect(h).toBe(0);
+    done()
   });
 
   it('have no effect setting empty src', (done) => {

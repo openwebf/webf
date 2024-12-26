@@ -12,7 +12,7 @@ describe('window scroll API async', () => {
 
     requestAnimationFrame(async () => {
       // @ts-ignore
-      window.scrollTo_async(0, 55);
+      await window.scrollTo_async(0, 55);
       await snapshot();
       // @ts-ignore
       let scrollX = await window.scrollX_async;
@@ -37,7 +37,7 @@ describe('window scroll API async', () => {
 
     requestAnimationFrame(async () => {
       // @ts-ignore
-      window.scroll_async(0, 40);
+      await window.scroll_async(0, 40);
       await snapshot();
 
       // @ts-ignore
@@ -63,9 +63,9 @@ describe('window scroll API async', () => {
 
     requestAnimationFrame(async () => {
       // @ts-ignore
-      window.scroll_async(0, 5);
+      await window.scroll_async(0, 5);
       // @ts-ignore
-      window.scrollBy_async(0, 20);
+      await window.scrollBy_async(0, 20);
       await snapshot();
 
       // @ts-ignore
@@ -99,6 +99,6 @@ describe('window scroll API async', () => {
     window.addEventListener('scroll', scrollListener);
 
     // @ts-ignore
-    window.scrollTo_async(0, 100)
+    await window.scrollTo_async(0, 100)
   });
 });

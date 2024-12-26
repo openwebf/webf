@@ -73,7 +73,7 @@ describe('DOM Element API async', () => {
     } as any);
 
     // @ts-ignore
-    div.scrollBy_async(0, 10);
+    await div.scrollBy_async(0, 10);
 
     // @ts-ignore
     boundingClientRect = await div.getBoundingClientRect_async();
