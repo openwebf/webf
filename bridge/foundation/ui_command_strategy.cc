@@ -2,6 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include <algorithm>
 #include "ui_command_strategy.h"
 #include <math.h>
 #include "core/binding_object.h"
