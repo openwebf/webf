@@ -8,21 +8,15 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
-import 'package:webf/launcher.dart';
 import 'package:webf/widget.dart';
+import 'package:webf/launcher.dart';
 import 'element.dart';
 import 'node.dart';
 
 mixin ElementAdapterMixin on ElementBase {
   @override
   flutter.Widget toWidget({Key? key}) {
-    flutter.Widget child = Portal(
-        key: key ?? flutter.ObjectKey(this), ownerElement: this as Element, child: _WebFElementWidget(this as Element));
-
-    if ((this as Element).isRepaintBoundary) {
-      child = flutter.RepaintBoundary(child: child);
-    }
-    return child;
+    return _WebFElementWidget(this as Element, key: key);
   }
 }
 
@@ -59,8 +53,20 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
 
   Node get webFElement => _webFElement;
 
-  void requestForChildNodeUpdate() {
-    setState(() {});
+  bool _hasEvent = false;
+
+  void requestForChildNodeUpdate(RenderObjectUpdateReason reason) {
+    setState(() {
+      switch(reason) {
+        case RenderObjectUpdateReason.updateChildNodes:
+        case RenderObjectUpdateReason.updateRenderReplaced:
+        case RenderObjectUpdateReason.toRepaintBoundary:
+          break;
+        case RenderObjectUpdateReason.addEvent:
+          _hasEvent = true;
+          break;
+      }
+    });
   }
 
   @override
@@ -73,11 +79,21 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
       children = (webFElement.childNodes as ChildNodeList).toWidgetList();
     }
 
-    return WebFRenderLayoutWidgetAdaptor(
+    flutter.Widget widget = WebFRenderLayoutWidgetAdaptor(
       webFElement: _webFElement,
       children: children,
       key: flutter.ObjectKey(_webFElement),
     );
+
+    if (_hasEvent) {
+      widget = Portal(ownerElement: _webFElement, child: widget);
+    }
+
+    if (_webFElement.isRepaintBoundary) {
+      widget = flutter.RepaintBoundary(child: widget);
+    }
+
+    return widget;
   }
 
   @override
@@ -177,9 +193,9 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
   Element get webFElement;
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
-  void requestForBuild() {
+  void requestForBuild(RenderObjectUpdateReason reason) {
     _WebFElementWidgetState state = findAncestorStateOfType<_WebFElementWidgetState>()!;
-    state.requestForChildNodeUpdate();
+    state.requestForChildNodeUpdate(reason);
   }
 
   @override

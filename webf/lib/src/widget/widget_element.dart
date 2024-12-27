@@ -10,6 +10,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/launcher.dart';
+import 'package:webf/widget.dart';
 
 const Map<String, dynamic> _defaultStyle = {
   DISPLAY: BLOCK,
@@ -302,6 +303,8 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
 
   _WebFWidgetElementState(this.widgetElement);
 
+  bool _hasEvent = false;
+
   @override
   void initState() {
     super.initState();
@@ -314,9 +317,26 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
     widgetElement.didChangeDependencies();
   }
 
-  void requestUpdateState([VoidCallback? callback]) {
+  void requestUpdateState([VoidCallback? callback, RenderObjectUpdateReason? reason]) {
     if (mounted) {
-      setState(callback ?? () {});
+      setState(() {
+        if (callback != null) {
+          callback();
+        }
+
+        switch(reason) {
+          case RenderObjectUpdateReason.updateChildNodes:
+          case RenderObjectUpdateReason.updateRenderReplaced:
+          case RenderObjectUpdateReason.toRepaintBoundary:
+            break;
+          case null:
+            break;
+          case RenderObjectUpdateReason.addEvent:
+            _hasEvent = true;
+            break;
+        }
+      });
+
     }
   }
 
@@ -327,7 +347,11 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
 
   @override
   Widget build(BuildContext context) {
-    return widgetElement.build(context, widgetElement.childNodes as dom.ChildNodeList);
+    Widget widget = widgetElement.build(context, widgetElement.childNodes as dom.ChildNodeList);
+    if (_hasEvent) {
+      widget = Portal(ownerElement: widgetElement, child: widget);
+    }
+    return widget;
   }
 }
 
@@ -431,10 +455,10 @@ class RenderWidgetElement extends SingleChildRenderObjectElement {
   WebFRenderWidgetAdaptor get widget => super.widget as WebFRenderWidgetAdaptor;
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
-  void requestForBuild() {
+  void requestForBuild(RenderObjectUpdateReason reason) {
     visitChildElements((element) {
       if (element is WebFWidgetElementElement) {
-        element.state.requestUpdateState();
+        element.state.requestUpdateState(null, reason);
       }
     });
   }

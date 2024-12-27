@@ -445,6 +445,11 @@ abstract class Element extends ContainerNode
     // Remove all intersection change listeners.
     renderStyle.clearIntersectionChangeListeners(flutterWidgetElement);
 
+    RenderBoxModel? renderBoxModel = renderStyle.getSelfRenderBox(flutterWidgetElement);
+
+    // Clear pointer listener
+    clearEventResponder(renderBoxModel);
+
     if (!managedByFlutterWidget) {
       // Remove fixed children from root when element disposed.
       if (ownerDocument.viewport != null && renderStyle.position == CSSPositionType.fixed) {
@@ -456,12 +461,9 @@ abstract class Element extends ContainerNode
       // Remove scrollable
       renderStyle.attachedRenderBoxModel?.disposeScrollable();
       renderStyle.disposeScrollable();
+    } else {
+      renderStyle.removeRenderObject(flutterWidgetElement);
     }
-
-    RenderBoxModel? renderBoxModel = renderStyle.getSelfRenderBox(flutterWidgetElement);
-
-    // Clear pointer listener
-    clearEventResponder(renderBoxModel);
   }
 
   BoundingClientRect getBoundingClientRect() => boundingClientRect;

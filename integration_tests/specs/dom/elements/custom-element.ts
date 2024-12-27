@@ -42,6 +42,64 @@ describe('custom widget element', () => {
     await simulateClick(10, 10);
   });
 
+  it('should works with event listener inside of binded event widgetElement', async () => {
+    let normal;
+    let flutterContainer;
+    let elementInsideOfWidget;
+    const event_container = createElement('event-container', {
+
+    }, [
+      normal = createElement('div', {
+      }, [
+        createText('Normal DIV Text')
+      ]),
+      flutterContainer = createElement('div', {
+        id: 'flutter-container',
+        style: {
+          marginTop: '10px'
+        }
+      }, [
+        elementInsideOfWidget = createElement('div', {
+
+        }, [
+          createText('inside of flutter container')
+        ])
+      ])
+    ]);
+
+    BODY.appendChild(event_container);
+
+    let eventContainerClickCount = 0;
+    let flutterContainerClickCount = 0;
+    let insideElementClickCount = 0;
+
+    event_container.addEventListener('tapped', (e: MouseEvent) => {
+      eventContainerClickCount++;
+    });
+
+    flutterContainer.addEventListener('click', (e: MouseEvent) => {
+      flutterContainerClickCount++;
+    });
+
+    elementInsideOfWidget.addEventListener('click', () => {
+      insideElementClickCount++;
+    });
+
+    
+    await simulateClick(window.screen.width / 2, 0);
+    expect([eventContainerClickCount, flutterContainerClickCount, insideElementClickCount]).toEqual([1, 0, 0]);
+
+    await simulateClick(10, 20);
+
+    expect([eventContainerClickCount, flutterContainerClickCount, insideElementClickCount]).toEqual([2, 0, 0]);
+
+    await simulateClick(10, 60);
+
+    expect([eventContainerClickCount, flutterContainerClickCount, insideElementClickCount]).toEqual([2, 1, 1]);
+
+    await snapshot();
+  });
+
   it('text node should be child of flutter container', async () => {
     const container = document.createElement('flutter-container');
     const text = document.createTextNode('text');

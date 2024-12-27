@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'package:flutter/foundation.dart';
+import 'package:webf/css.dart';
 import 'package:webf/html.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -43,6 +44,9 @@ abstract class EventTarget extends DynamicBindingObject {
         _eventHandlers[eventType] = existHandler = [];
     }
     existHandler.add(eventHandler);
+    if (this is Element) {
+      (this as Element).renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.addEvent);
+    }
   }
 
   @mustCallSuper

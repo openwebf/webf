@@ -172,8 +172,13 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   set managedByFlutterWidget(bool value) {
     if (_managedByFlutterWidget) return;
-    for (Node node in NodeTraversal.childrenOf(this)) {
-      node._managedByFlutterWidget = value;
+
+    _managedByFlutterWidget = true;
+
+    Node? first = firstChild;
+    while(first != null) {
+      first.managedByFlutterWidget = true;
+      first = first.nextSibling;
     }
   }
 

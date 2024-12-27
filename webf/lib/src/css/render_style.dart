@@ -9,6 +9,7 @@ import 'dart:ui';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -25,7 +26,8 @@ typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObjec
 enum RenderObjectUpdateReason {
   updateChildNodes,
   updateRenderReplaced,
-  toRepaintBoundary
+  toRepaintBoundary,
+  addEvent
 }
 
 typedef SomeRenderBoxModelHandlerCallback = bool Function(RenderBoxModel renderBoxModel);
@@ -384,14 +386,16 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   // For some style changes, we needs to upgrade
   void requestWidgetToRebuild(RenderObjectUpdateReason reason) {
-    _widgetRenderObjects.keys.forEach((element) {
-      if (element is WebRenderLayoutRenderObjectElement) {
-        element.requestForBuild();
-      } else if (element is RenderWidgetElement) {
-        element.requestForBuild();
-      } else if (element is WebFRenderReplacedRenderObjectElement) {
-        element.requestForBuild(reason);
-      }
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _widgetRenderObjects.keys.forEach((element) {
+        if (element is WebRenderLayoutRenderObjectElement) {
+          element.requestForBuild(reason);
+        } else if (element is RenderWidgetElement) {
+          element.requestForBuild(reason);
+        } else if (element is WebFRenderReplacedRenderObjectElement) {
+          element.requestForBuild(reason);
+        }
+      });
     });
   }
 
