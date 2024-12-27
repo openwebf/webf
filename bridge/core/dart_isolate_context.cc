@@ -2,8 +2,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include <algorithm>
 #include "dart_isolate_context.h"
+#include <algorithm>
 #include <unordered_set>
 #include "defined_properties_initializer.h"
 #include "event_factory.h"
