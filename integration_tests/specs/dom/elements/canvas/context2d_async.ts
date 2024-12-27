@@ -254,7 +254,7 @@ describe('Canvas context 2d async', () => {
 
     // 半径为零的圆角矩形（指定为数字）
     ctx.strokeStyle_async = "red";
-    await ctx.beginPat_asynch();
+    await ctx.beginPath_async();
     await ctx.roundRect_async(10, 20, 150, 100, 0);
     await ctx.stroke_async();
     
@@ -447,28 +447,28 @@ describe('Canvas context 2d async', () => {
     done();
   });
 
-  // it('should work with setTransform [async]', async (done) => {
-  //   const canvas1 = <canvas />;
-  //   const canvas2 = <canvas />;
-  //   document.body.appendChild(canvas1);
-  //   document.body.appendChild(canvas2);
+  it('should work with setTransform [async]', async (done) => {
+    const canvas1 = <canvas />;
+    const canvas2 = <canvas />;
+    document.body.appendChild(canvas1);
+    document.body.appendChild(canvas2);
 
-  //   const ctx1 = canvas1.getContext('2d');
-  //   const ctx2 = canvas2.getContext('2d');
+    const ctx1 = canvas1.getContext('2d');
+    const ctx2 = canvas2.getContext('2d');
 
-  //   await ctx1.rotate_async(45 * Math.PI / 180);
-  //   await ctx1.setTransform_async(1, .2, .8, 1, 0, 0);
-  //   await ctx1.fillRect_async(25, 25, 50, 50);
+    await ctx1.rotate_async(45 * Math.PI / 180);
+    await ctx1.setTransform_async(1, .2, .8, 1, 0, 0);
+    await ctx1.fillRect_async(25, 25, 50, 50);
 
-  //   await ctx2.scale_async(9, 3);
-  //   await ctx2.setTransform_async(1, .2, .8, 1, 0, 0);
-  //   await ctx2.beginPath_async();
-  //   await ctx2.arc_async(50, 50, 50, 0, 2 * Math.PI);
-  //   await ctx2.fill_async();
+    await ctx2.scale_async(9, 3);
+    await ctx2.setTransform_async(1, .2, .8, 1, 0, 0);
+    await ctx2.beginPath_async();
+    await ctx2.arc_async(50, 50, 50, 0, 2 * Math.PI);
+    await ctx2.fill_async();
 
-  //   await snapshot();
-  //   done();
-  // });
+    await snapshot();
+    done();
+  });
 
 
   it('should work with drawImage [async]', async (done) => {

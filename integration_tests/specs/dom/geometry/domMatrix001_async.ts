@@ -149,15 +149,14 @@ var scaleTranslate2D = {
     done();
   },"test scaleNonUniform() doesn't mutate");
 
-  test(async function(done) {
+  test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.scale3d_async(3,2,1,1);
     checkDOMMatrixSync(matrix, initialMatrix());
-    done();
   },"test scale3d() doesn't mutate");
 
-  test(async function(done) {
+  test(async function() {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.rotate_async(Math.PI, Math.PI/2, Math.PI/6);
