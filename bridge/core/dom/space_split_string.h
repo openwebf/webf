@@ -5,6 +5,7 @@
 #ifndef WEBF_CORE_DOM_SPACE_SPLIT_STRING_H_
 #define WEBF_CORE_DOM_SPACE_SPLIT_STRING_H_
 
+#include <algorithm>
 #include <unordered_map>
 #include <vector>
 #include "bindings/qjs/atomic_string.h"
