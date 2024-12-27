@@ -100,6 +100,37 @@ describe('custom widget element', () => {
     await snapshot();
   });
 
+  it('replaced elements inside of widgetElement should works with click', async (done) => {
+    let img;
+    const container = createElement('event-container', () => {}, [
+      img = createElement('img', {
+        src: 'assets/50x50-green.png'
+      }, [])
+    ]);
+
+    let containerClickedCount = 0;
+    let imgClickedCount = 0;
+
+    container.addEventListener('tapped', () => {
+      containerClickedCount++;
+    });
+    img.addEventListener('click', () => {
+      imgClickedCount++;
+    });
+    BODY.append(container);
+
+    img.addEventListener('load', async () => {
+      await simulateClick(5, 5);
+      expect([containerClickedCount, imgClickedCount]).toEqual([1, 0]);
+
+      await simulateClick(15, 50);
+      expect([containerClickedCount, imgClickedCount]).toEqual([1, 1]);
+
+      await snapshot();
+      done();
+    });
+  });
+
   it('text node should be child of flutter container', async () => {
     const container = document.createElement('flutter-container');
     const text = document.createTextNode('text');

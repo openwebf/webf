@@ -18,6 +18,7 @@ import 'package:webf/launcher.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/scheduler/debounce.dart';
+import 'package:webf/src/widget/portal.dart';
 import 'package:webf/svg.dart';
 
 const String IMAGE = 'IMG';
@@ -111,7 +112,7 @@ class ImageElement extends Element {
     if (isRepaintBoundary) {
       return flutter.RepaintBoundary(child: child);
     }
-    return child;
+    return Portal(ownerElement: this, child: child);
   }
 
   @override
