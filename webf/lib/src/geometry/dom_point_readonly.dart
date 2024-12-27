@@ -37,15 +37,17 @@ class DOMPointReadOnly extends DynamicBindingObject with StaticDefinedBindingObj
   double get z => _data[2];
   double get w => _data[3];
 
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    methods['matrixTransform'] = BindingObjectMethodSync(call: (args) {
+  static final StaticDefinedSyncBindingObjectMethodMap _syncDOMPointReadonlyMethods = {
+    'matrixTransform': StaticDefinedSyncBindingObjectMethod(call: (point, args) {
       BindingObject domMatrix = args[0];
       if (domMatrix is DOMMatrix) {
-        return matrixTransform(domMatrix);
+        return castToType<DOMPointReadOnly>(point).matrixTransform(domMatrix);
       }
-    });
-  }
+    })
+  };
+
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _syncDOMPointReadonlyMethods];
 
   static final StaticDefinedBindingPropertyMap _domPointReadonlyProperties = {
     'x': StaticDefinedBindingProperty(
