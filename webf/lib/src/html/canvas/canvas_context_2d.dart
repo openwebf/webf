@@ -382,7 +382,6 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   // HACK: We need record the current matrix state because flutter canvas not export resetTransform now.
   // https://github.com/flutter/engine/pull/25449
   Matrix4 _matrix = Matrix4.identity();
-  Matrix4 _lastMatrix = Matrix4.identity();
 
   int get actionCount => _actions.length;
 
@@ -408,10 +407,6 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   // Perform canvas drawing.
   List<CanvasAction> performActions(Canvas canvas, Size size) {
-    // HACK: Must sync transform first because each paint will saveLayer and restore that make the transform not effect
-    if (!_lastMatrix.isIdentity()) {
-      canvas.transform(_lastMatrix.storage);
-    }
     _pendingActions = _actions;
     _actions = [];
     for (int i = 0; i < _pendingActions.length; i++) {
@@ -422,9 +417,6 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   // Clear the saved pending actions.
   void clearActions(List<CanvasAction> actions) {
-    if (_lastMatrix != _matrix) {
-      _lastMatrix = _matrix.clone();
-    }
     actions.clear();
   }
 
@@ -1276,7 +1268,6 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     _actions = [];
     _states.clear();
     _matrix = Matrix4.identity();
-    _lastMatrix = Matrix4.identity();
     _textAlign = TextAlign.start;
     _textBaseline = CanvasTextBaseline.alphabetic;
     _direction = TextDirection.ltr;

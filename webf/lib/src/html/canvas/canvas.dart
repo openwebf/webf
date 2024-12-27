@@ -25,18 +25,19 @@ class RenderCanvasPaint extends RenderCustomPaint {
   @override
   bool get isRepaintBoundary => true;
 
-  RenderCanvasPaint(
-      {required CustomPainter painter, required Size preferredSize})
+  @override
+  CanvasPainter? get painter => super.painter as CanvasPainter;
+
+  RenderCanvasPaint({required CustomPainter painter, required Size preferredSize})
       : super(
-          painter: painter,
-          foregroundPainter: null, // Ignore foreground painter
-          preferredSize: preferredSize,
-        );
+            painter: painter,
+            foregroundPainter: null, // Ignore foreground painter
+            preferredSize: preferredSize);
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    context.pushClipRect(needsCompositing, offset,
-        Rect.fromLTWH(0, 0, preferredSize.width, preferredSize.height),
+    if (painter?.context == null) return;
+    context.pushClipRect(true, offset, Rect.fromLTWH(0, 0, preferredSize.width, preferredSize.height),
         (context, offset) {
       super.paint(context, offset);
     });
@@ -71,18 +72,15 @@ class CanvasElement extends Element {
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
     super.initializeMethods(methods);
-    methods['getContext'] = BindingObjectMethodSync(
-        call: (args) => getContext(castToType<String>(args[0])));
+    methods['getContext'] = BindingObjectMethodSync(call: (args) => getContext(castToType<String>(args[0])));
   }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
-    properties['width'] = BindingObjectProperty(
-        getter: () => width, setter: (value) => width = castToType<int>(value));
-    properties['height'] = BindingObjectProperty(
-        getter: () => height,
-        setter: (value) => height = castToType<int>(value));
+    properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => width = castToType<int>(value));
+    properties['height'] =
+        BindingObjectProperty(getter: () => height, setter: (value) => height = castToType<int>(value));
   }
 
   @override
@@ -113,7 +111,8 @@ class CanvasElement extends Element {
           painter.dispose();
         }
 
-        context2d = CanvasRenderingContext2D(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), this);
+        context2d =
+            CanvasRenderingContext2D(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), this);
         painter.context = context2d;
 
         return context2d!;
