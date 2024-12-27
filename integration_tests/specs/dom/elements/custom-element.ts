@@ -85,7 +85,71 @@ describe('custom widget element', () => {
       insideElementClickCount++;
     });
 
-    
+
+    await simulateClick(window.screen.width / 2, 0);
+    expect([eventContainerClickCount, flutterContainerClickCount, insideElementClickCount]).toEqual([1, 0, 0]);
+
+    await simulateClick(10, 20);
+
+    expect([eventContainerClickCount, flutterContainerClickCount, insideElementClickCount]).toEqual([2, 0, 0]);
+
+    await simulateClick(10, 60);
+
+    expect([eventContainerClickCount, flutterContainerClickCount, insideElementClickCount]).toEqual([2, 1, 1]);
+
+    await snapshot();
+  });
+
+  it('should works with event listener wrapped with portal inside of binded event widgetElement', async () => {
+    let normal;
+    let flutterContainer;
+    let elementInsideOfWidget;
+    const event_container = createElement('event-container', {
+
+    }, [
+      normal = createElement('div', {
+      }, [
+        createText('Normal DIV Text')
+      ]),
+      createElement('portal', {}, [
+        flutterContainer = createElement('div', {
+          id: 'flutter-container',
+          style: {
+            marginTop: '10px'
+          }
+        }, [
+          createElement('portal', {}, [
+            elementInsideOfWidget = createElement('div', {
+  
+            }, [
+              createElement('portal', {}, [
+                createText('inside of flutter container')
+              ])
+            ])
+          ])
+        ])
+      ])
+    ]);
+
+    BODY.appendChild(event_container);
+
+    let eventContainerClickCount = 0;
+    let flutterContainerClickCount = 0;
+    let insideElementClickCount = 0;
+
+    event_container.addEventListener('tapped', (e: MouseEvent) => {
+      eventContainerClickCount++;
+    });
+
+    flutterContainer.addEventListener('click', (e: MouseEvent) => {
+      flutterContainerClickCount++;
+    });
+
+    elementInsideOfWidget.addEventListener('click', () => {
+      insideElementClickCount++;
+    });
+
+
     await simulateClick(window.screen.width / 2, 0);
     expect([eventContainerClickCount, flutterContainerClickCount, insideElementClickCount]).toEqual([1, 0, 0]);
 
@@ -102,7 +166,7 @@ describe('custom widget element', () => {
 
   it('replaced elements inside of widgetElement should works with click', async (done) => {
     let img;
-    const container = createElement('event-container', () => {}, [
+    const container = createElement('event-container', {}, [
       img = createElement('img', {
         src: 'assets/50x50-green.png'
       }, [])
@@ -129,6 +193,13 @@ describe('custom widget element', () => {
       await snapshot();
       done();
     });
+  });
+
+  it('event propgation should works inside of widgetElement', async () => {
+    const container = createElement('event-container', {}, [
+
+    ]);
+
   });
 
   it('text node should be child of flutter container', async () => {
@@ -731,7 +802,7 @@ describe('custom html element', () => {
 
   it('should works with multiple build instance', async () => {
     const container = createElement('multiple-rendering', async (done) => {
-      
+
     }, [
       createElement('div', {
         style: {
