@@ -46,7 +46,7 @@ describe('custom widget element', () => {
     let normal;
     let flutterContainer;
     let elementInsideOfWidget;
-    const event_container = createElement('event-container', {
+    const event_container = createElement('event-container-unpoped', {
 
     }, [
       normal = createElement('div', {
@@ -104,7 +104,7 @@ describe('custom widget element', () => {
     let normal;
     let flutterContainer;
     let elementInsideOfWidget;
-    const event_container = createElement('event-container', {
+    const event_container = createElement('event-container-unpoped', {
 
     }, [
       normal = createElement('div', {
@@ -166,7 +166,7 @@ describe('custom widget element', () => {
 
   it('replaced elements inside of widgetElement should works with click', async (done) => {
     let img;
-    const container = createElement('event-container', {}, [
+    const container = createElement('event-container-unpoped', {}, [
       img = createElement('img', {
         src: 'assets/50x50-green.png'
       }, [])
@@ -196,10 +196,42 @@ describe('custom widget element', () => {
   });
 
   it('event propgation should works inside of widgetElement', async () => {
+    let innerElement;
     const container = createElement('event-container', {}, [
-
+      innerElement = createElement('div', () => {}, [
+        createText('inner text')
+      ])
     ]);
 
+    let bodyClickedCount = 0;
+    let bodyCaptureClickedCount = 0;
+    let innerElementClickedCount = 0;
+    let containerClickedCount = 0;
+
+    BODY.addEventListener('click', () => {
+      bodyClickedCount++;
+    });
+    BODY.addEventListener('click', () => {
+      bodyCaptureClickedCount++;
+    }, true);
+
+    innerElement.addEventListener('click', () => {
+      innerElementClickedCount++;
+    });
+    container.addEventListener('click', () => {
+      containerClickedCount++;
+    });
+
+    BODY.appendChild(container);
+
+    await simulateClick(window.screen.width / 2, 5);
+    expect([bodyClickedCount, bodyCaptureClickedCount, innerElementClickedCount, containerClickedCount]).toEqual([1, 1, 0, 1]);
+
+    await simulateClick(5, 40);
+
+    expect([bodyClickedCount, bodyCaptureClickedCount, innerElementClickedCount, containerClickedCount]).toEqual([2, 2, 1, 2]);
+
+    await snapshot();
   });
 
   it('text node should be child of flutter container', async () => {

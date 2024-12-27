@@ -7,6 +7,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/gestures.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
@@ -195,8 +196,8 @@ class Event {
       (_target != null && _target.pointer != null) ? _target.pointer!.address : nullptr.address,
       (_currentTarget != null && _currentTarget.pointer != null) ? _currentTarget.pointer!.address : nullptr.address,
       sharedJSProps.address, // EventProps* props
-      propLen,  // int64_t props_len
-      allocateLen   // int64_t alloc_size;
+      propLen, // int64_t props_len
+      allocateLen // int64_t alloc_size;
     ];
 
     // Allocate extra bytes to store subclass's members.
@@ -241,7 +242,7 @@ class HybridRouterChangeEvent extends Event {
   final String kind;
   final String name;
 
-  HybridRouterChangeEvent({this.state, required this.kind, required this.name}): super(EVENT_HYBRID_ROUTER_CHANGE);
+  HybridRouterChangeEvent({this.state, required this.kind, required this.name}) : super(EVENT_HYBRID_ROUTER_CHANGE);
 
   @override
   Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
@@ -269,10 +270,7 @@ class HashChangeEvent extends Event {
 
   @override
   Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
-    List<int> methods = [
-      stringToNativeString(newUrl).address,
-      stringToNativeString(oldUrl).address
-    ];
+    List<int> methods = [stringToNativeString(newUrl).address, stringToNativeString(oldUrl).address];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
     int currentStructSize = rawEvent.ref.length + methods.length;
@@ -369,6 +367,22 @@ class MouseEvent extends UIEvent {
     EventTarget? view,
     double which = 0.0,
   }) : super(type, detail: detail, view: view, which: which, bubbles: true, cancelable: true, composed: false);
+
+  static MouseEvent fromTapUp(Element ownerElement, TapUpDetails tapDetails) {
+    Offset globalPosition = tapDetails.globalPosition;
+    Offset localPosition = tapDetails.localPosition;
+    Offset globalOffset =
+        ownerElement.ownerDocument.domRenderer!.globalToLocal(Offset(globalPosition.dx, globalPosition.dy));
+    double clientX = globalOffset.dx;
+    double clientY = globalOffset.dy;
+
+    return MouseEvent(EVENT_CLICK,
+        clientX: clientX,
+        clientY: clientY,
+        offsetX: localPosition.dx,
+        offsetY: localPosition.dy,
+        view: ownerElement.ownerDocument.defaultView);
+  }
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {

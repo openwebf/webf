@@ -2,15 +2,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/dom.dart';
 
-class EventContainer extends WidgetElement {
-  EventContainer(super.context);
+class EventContainerUnpoped extends WidgetElement {
+  EventContainerUnpoped(super.context);
 
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
     return GestureDetector(
       onTapUp: (details) {
-        MouseEvent mouseEvent = MouseEvent.fromTapUp(this, details);
-        dispatchEvent(mouseEvent);
+        // Normal event are not propagated.
+        dispatchEvent(Event('tapped'));
       },
       child: Column(
         children: [
