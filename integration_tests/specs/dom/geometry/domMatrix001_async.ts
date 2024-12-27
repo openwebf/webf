@@ -149,49 +149,55 @@ var scaleTranslate2D = {
     done();
   },"test scaleNonUniform() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.scale3d_async(3,2,1,1);
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test scale3d() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.rotate_async(Math.PI, Math.PI/2, Math.PI/6);
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test rotate() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.rotateFromVector_async(10,-4);
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test rotateFromVector() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.rotateAxisAngle_async(3,4,5, Math.PI/6);
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test rotateAxisAngle() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.skewX_async(20);
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test skewX() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.skewY_async(20);
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test skewY() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     var m = new DOMMatrix([1,2,0,0,-1,2,-1,0,0,0,1,0,5,0,2,1])
     // matrix.multiply({ m11:1, m12:2, m13: 0, m14:0,
@@ -203,27 +209,31 @@ var scaleTranslate2D = {
     // @ts-ignore
     await matrix.multiply_async(m)
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test multiply() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.flipX_async();
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test flipX() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.flipY_async();
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test flipY() doesn't mutate");
 
-  test(async function() {
+  test(async function(done) {
     var matrix = initialMatrix();
     // @ts-ignore
     await matrix.inverse_async();
     checkDOMMatrixSync(matrix, initialMatrix());
+    done();
   },"test inverse() doesn't mutate");
   
 });

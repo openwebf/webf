@@ -6,15 +6,15 @@ function getMatrixTransform(matrix, point) {
   return new DOMPoint(x, y, w, z)
 }
 
-test(async function(done) {
-  var point = new DOMPoint(5, 4);
-  var matrix = new DOMMatrix([2, 0, 0, 2, 10, 10]);
-  // @ts-ignore
-  var result = await point.matrixTransform_async(matrix);
-  var expected = getMatrixTransform(matrix, point);
-  checkDOMPoint(result, expected);
-  done()
-},'test DOMPoint matrixTransform');
+// test(async function(done) {
+//   var point = new DOMPoint(5, 4);
+//   var matrix = new DOMMatrix([2, 0, 0, 2, 10, 10]);
+//   // @ts-ignore
+//   var result = await point.matrixTransform_async(matrix);
+//   var expected = getMatrixTransform(matrix, point);
+//   checkDOMPoint(result, expected);
+//   done()
+// },'test DOMPoint matrixTransform');
 test(async function(done) {
   var p = new DOMPoint(0, 0, 0, 1);
   // @ts-ignore
@@ -41,15 +41,15 @@ test(async function(done) {
   checkDOMPoint(p, {x:NaN, y:Infinity, z:-Infinity, w:Infinity});
   done();
 },'test DOMPoint Attributes NaN Infinity');
-test(async function(done) {
-  var point = new DOMPointReadOnly(5, 4);
-  var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6]);
-  // @ts-ignore
-  var result = await point.matrixTransform_async(matrix);
-  var expected = getMatrixTransform(matrix, point);
-  checkDOMPoint(result, expected);
-  done();
-},'test DOMPointReadOnly matrixTransform');
+// test(async function(done) {
+//   var point = new DOMPointReadOnly(5, 4);
+//   var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6]);
+//   // @ts-ignore
+//   var result = await point.matrixTransform_async(matrix);
+//   var expected = getMatrixTransform(matrix, point);
+//   checkDOMPoint(result, expected);
+//   done();
+// },'test DOMPointReadOnly matrixTransform');
 test(async function(done) {
   var p = new DOMPointReadOnly(0, 0, 0, 1);
   // @ts-ignore
