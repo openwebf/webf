@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  intl: ^0.18.0 # Pure dart module. DO NOT MODIFY UNLESS FLUTTER SDK UPDATED.
+  intl: ^0.19.0 # Pure dart module. DO NOT MODIFY UNLESS FLUTTER SDK UPDATED.
 
   path: ^1.8.1 # Pure dart module.
   meta: ^1.7.0 # Pure dart module.
