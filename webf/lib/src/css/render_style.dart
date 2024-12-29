@@ -23,12 +23,7 @@ import 'svg.dart';
 
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
 
-enum RenderObjectUpdateReason {
-  updateChildNodes,
-  updateRenderReplaced,
-  toRepaintBoundary,
-  addEvent
-}
+enum RenderObjectUpdateReason { updateChildNodes, updateRenderReplaced, toRepaintBoundary, addEvent }
 
 typedef SomeRenderBoxModelHandlerCallback = bool Function(RenderBoxModel renderBoxModel);
 typedef EveryRenderBoxModelHandlerCallback = bool Function(flutter.Element?, RenderBoxModel renderBoxModel);
@@ -807,8 +802,7 @@ abstract class RenderStyle extends DiagnosticableTree {
     widgetRenderBox?.clearIntersectionChangeListeners();
   }
 
-  void attachToRenderBoxModel() {
-  }
+  void attachToRenderBoxModel() {}
 
   @pragma('vm:prefer-inline')
   void markNeedsLayout() {
@@ -966,7 +960,8 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   dynamic getRenderBoxValueByType(RenderObjectGetType getType, RenderBoxModelGetter getter) {
     if (target.managedByFlutterWidget) {
-      RenderBoxModel? widgetRenderBoxModel = widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached);
+      RenderBoxModel? widgetRenderBoxModel =
+          widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached);
 
       if (widgetRenderBoxModel == null) return null;
 
@@ -988,12 +983,14 @@ abstract class RenderStyle extends DiagnosticableTree {
     return null;
   }
 
-  dynamic _renderObjectMatchFn(RenderBoxModel renderBoxModel, RenderObjectGetType getType, RenderObjectMatchers matcher) {
+  dynamic _renderObjectMatchFn(
+      RenderBoxModel renderBoxModel, RenderObjectGetType getType, RenderObjectMatchers matcher) {
     switch (getType) {
       case RenderObjectGetType.self:
         return matcher(renderBoxModel, renderBoxModel.renderStyle);
       case RenderObjectGetType.parent:
-        return matcher(renderBoxModel.parent, renderBoxModel.parent is RenderBoxModel ? (renderBoxModel.parent as RenderBoxModel).renderStyle : null);
+        return matcher(renderBoxModel.parent,
+            renderBoxModel.parent is RenderBoxModel ? (renderBoxModel.parent as RenderBoxModel).renderStyle : null);
       case RenderObjectGetType.firstChild:
         if (renderBoxModel is RenderLayoutBox) {
           RenderObject? firstChild = renderBoxModel.firstChild;
@@ -1100,7 +1097,8 @@ abstract class RenderStyle extends DiagnosticableTree {
     });
   }
 
-  void addOrUpdateWidgetRenderObjects(flutter.RenderObjectElement ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
+  void addOrUpdateWidgetRenderObjects(
+      flutter.RenderObjectElement ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
     assert(!_widgetRenderObjects.containsKey(ownerRenderObjectElement));
     _widgetRenderObjects[ownerRenderObjectElement] = targetRenderBoxModel;
   }
@@ -1145,10 +1143,7 @@ abstract class RenderStyle extends DiagnosticableTree {
     _domRenderObjects!.visitChildren(visitor);
   }
 
-  void disposeScrollable();
-
   void dispose() {
-    disposeScrollable();
     _domRenderObjects = null;
     _widgetRenderObjects.clear();
   }
@@ -2302,7 +2297,9 @@ class CSSRenderStyle extends RenderStyle
     }
 
     // If renderBoxModel definite content constraints, use it as max constrains width of content.
-    BoxConstraints? contentConstraints = this.contentConstraints();
+    BoxConstraints? contentConstraints = isSelfScrollingContentBox()
+        ? getParentRenderStyle()!.contentConstraints()
+        : this.contentConstraints();
     if (contentConstraints != null && contentConstraints.maxWidth != double.infinity) {
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackLayoutStep();

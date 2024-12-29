@@ -1695,6 +1695,7 @@ class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('position', renderStyle.position));
     properties.add(DiagnosticsProperty('backgroundColor', renderStyle.backgroundColor?.value));
     properties.add(DiagnosticsProperty('isSizeTight', isSizeTight));
+    properties.add(DiagnosticsProperty('effectiveDisplay', renderStyle.effectiveDisplay));
     properties.add(DiagnosticsProperty('width', renderStyle.width.value));
     properties.add(DiagnosticsProperty('height', renderStyle.height.value));
 

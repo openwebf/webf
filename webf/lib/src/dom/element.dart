@@ -460,7 +460,7 @@ abstract class Element extends ContainerNode
 
       // Remove scrollable
       renderStyle.attachedRenderBoxModel?.disposeScrollable();
-      renderStyle.disposeScrollable();
+      disposeScrollable();
     } else {
       renderStyle.removeRenderObject(flutterWidgetElement);
     }
