@@ -132,4 +132,12 @@ void ExecutingContextWebFMethods::ClearInterval(ExecutingContext* context,
   WindowOrWorkerGlobalScope::clearInterval(context, interval_id, shared_exception_state->exception_state);
 }
 
+void ExecutingContextWebFMethods::SetRunRustFutureTasks(ExecutingContext* context,
+                                                        WebFNativeFunctionContext* callback_context,
+                                                        SharedExceptionState* shared_exception_state) {
+  auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
+
+  context->SetRunRustFutureTasks(callback_impl);
+}
+
 }  // namespace webf

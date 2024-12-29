@@ -1,7 +1,10 @@
-use std::ffi::{c_void, CString};
+use std::cell::RefCell;
+use std::ffi::c_void;
+use std::rc::Rc;
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{async_storage, element, initialize_webf_api, navigator, AddEventListenerOptions, EventMethods, EventTargetMethods, NativeValue, RustValue};
+use webf_sys::webf_future::FutureRuntime;
+use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
@@ -36,25 +39,31 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
 
   local_storage.clear(&exception_state);
 
-  let async_storage_1 = context.async_storage();
+  let context2 = context.clone();
 
-  let async_storage_set_item_callback = Box::new(|value: Result<Option<String>, String>| {
-    match value {
-      Ok(value) => {
-        println!("Async Storage Set Item Success: {:?}", value);
+  let runtime = Rc::new(RefCell::new(FutureRuntime::new()));
+
+  runtime.borrow_mut().spawn(async move {
+    let context = context2.clone();
+    let exception_state = context.create_exception_state();
+    let async_storage_2 = context.async_storage();
+
+    println!("Hello from Rust async context!");
+
+    let result = async_storage_2.set_item("a", "b", &exception_state).await;
+
+    match result {
+      Ok(_) => {
+        println!("Async Storage Set Item Success");
       },
       Err(err) => {
         println!("Async Storage Set Item Failed: {:?}", err);
       }
     }
-  });
 
-  async_storage_1.set_item("a", "b", async_storage_set_item_callback, &exception_state);
+    let result = async_storage_2.get_item("a", &exception_state).await;
 
-  let async_storage_2 = context.async_storage();
-
-  let async_storage_get_item_callback = Box::new(|value: Result<Option<String>, String>| {
-    match value {
+    match result {
       Ok(value) => {
         println!("Async Storage Get Item Success: {:?}", value);
       },
@@ -64,13 +73,11 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
     }
   });
 
-  async_storage_2.get_item("a", async_storage_get_item_callback, &exception_state);
-
-  let timer_callback = Box::new(move || {
-    println!("Timer Callback");
+  let runtime_run_task_callback = Box::new(move || {
+    runtime.borrow_mut().run();
   });
 
-  context.set_timeout_with_callback_and_timeout(timer_callback, 1000, &exception_state).unwrap();
+  context.set_run_rust_future_tasks(runtime_run_task_callback, &exception_state).unwrap();
 
   let click_event = document.create_event("custom_click", &exception_state).unwrap();
   document.dispatch_event(&click_event, &exception_state);

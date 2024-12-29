@@ -41,6 +41,9 @@ using PublicContextSetInterval = int32_t (*)(ExecutingContext*,
                                              SharedExceptionState*);
 using PublicContextClearTimeout = void (*)(ExecutingContext*, int32_t, SharedExceptionState*);
 using PublicContextClearInterval = void (*)(ExecutingContext*, int32_t, SharedExceptionState*);
+using PublicContextSetRunRustFutureTasks = void (*)(ExecutingContext*,
+                                                    WebFNativeFunctionContext*,
+                                                    SharedExceptionState*);
 
 // Memory aligned and readable from WebF side.
 // Only C type member can be included in this class, any C++ type and classes can is not allowed to use here.
@@ -77,6 +80,9 @@ struct ExecutingContextWebFMethods {
   static void ClearInterval(ExecutingContext* context,
                             int32_t interval_id,
                             SharedExceptionState* shared_exception_state);
+  static void SetRunRustFutureTasks(ExecutingContext* context,
+                                    WebFNativeFunctionContext* callback_context,
+                                    SharedExceptionState* shared_exception_state);
 
   double version{1.0};
   PublicContextGetDocument context_get_document{document};
@@ -92,6 +98,7 @@ struct ExecutingContextWebFMethods {
   PublicContextSetInterval context_set_interval{SetInterval};
   PublicContextClearTimeout context_clear_timeout{ClearTimeout};
   PublicContextClearInterval context_clear_interval{ClearInterval};
+  PublicContextSetRunRustFutureTasks context_set_run_rust_future_tasks{SetRunRustFutureTasks};
 };
 
 }  // namespace webf

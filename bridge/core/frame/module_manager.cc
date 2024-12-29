@@ -92,6 +92,7 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
     }
     context->dartIsolateContext()->profiler()->FinishTrackSteps();
     context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
+    context->RunRustFutureTasks();
     return return_value;
   }
 }
