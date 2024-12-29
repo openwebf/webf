@@ -83,7 +83,8 @@ where
   }
 }
 
-impl Clone for WebFNativeFuture<String> {
+impl<T> Clone for WebFNativeFuture<T>
+{
   fn clone(&self) -> Self {
     WebFNativeFuture {
       inner: self.inner.clone(),
