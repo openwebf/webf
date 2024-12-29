@@ -551,20 +551,21 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   // push state on state stack
   void restore() {
     addAction((Canvas canvas, Size size) {
-      var state = _states.last;
-      _states.removeLast();
-      _strokeStyle = state[0];
-      _fillStyle = state[1];
-      _lineWidth = state[2];
-      _lineCap = state[3];
-      _lineJoin = state[4];
-      _lineDashOffset = state[5];
-      _miterLimit = state[6];
-      _font = state[7];
-      _textAlign = state[8];
-      _direction = state[9];
-
-      canvas.restore();
+      if(_states.isNotEmpty) {
+        var state = _states.last;
+        _states.removeLast();
+        _strokeStyle = state[0];
+        _fillStyle = state[1];
+        _lineWidth = state[2];
+        _lineCap = state[3];
+        _lineJoin = state[4];
+        _lineDashOffset = state[5];
+        _miterLimit = state[6];
+        _font = state[7];
+        _textAlign = state[8];
+        _direction = state[9];
+        canvas.restore();
+      }
     });
   }
 
