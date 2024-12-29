@@ -379,10 +379,6 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   CanvasElement canvas;
 
-  // HACK: We need record the current matrix state because flutter canvas not export resetTransform now.
-  // https://github.com/flutter/engine/pull/25449
-  Matrix4 _matrix = Matrix4.identity();
-
   int get actionCount => _actions.length;
 
   List<CanvasAction> _actions = [];
@@ -832,14 +828,12 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   }
 
   void translate(double x, double y) {
-    _matrix.translate(x, y);
     addAction((Canvas canvas, Size size) {
       canvas.translate(x, y);
     });
   }
 
   void rotate(double angle) {
-    _matrix.setRotationZ(angle);
     addAction((Canvas canvas, Size size) {
       canvas.rotate(angle);
     });
@@ -853,14 +847,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   // transformations (default transform is the identity matrix)
   void scale(double x, double y) {
-    _matrix.scale(x, y);
     addAction((Canvas canvas, Size size) {
       canvas.scale(x, y);
     });
-  }
-
-  Matrix4 getTransform() {
-    return _matrix;
   }
 
   // https://github.com/WebKit/WebKit/blob/a77a158d4e2086fbe712e488ed147e8a54d44d3c/Source/WebCore/html/canvas/CanvasRenderingContext2DBase.cpp#L843
@@ -872,9 +861,10 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   // Resets the current transform to the identity matrix.
   void resetTransform() {
-    Matrix4 m4 = Matrix4.inverted(_matrix);
-    _matrix = Matrix4.identity();
     addAction((Canvas canvas, Size size) {
+      Float64List curM4Storage = canvas.getTransform();
+      Matrix4 curM4 = Matrix4.fromFloat64List(curM4Storage);
+      Matrix4 m4 = Matrix4.inverted(curM4);
       canvas.transform(m4.storage);
     });
   }
@@ -908,7 +898,6 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     m4storage[14] = 0.0;
     m4storage[15] = 1.0;
 
-    _matrix = Matrix4.fromFloat64List(m4storage)..multiply(_matrix);
     addAction((Canvas canvas, Size size) {
       canvas.transform(m4storage);
     });
@@ -1268,7 +1257,6 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     _pendingActions = [];
     _actions = [];
     _states.clear();
-    _matrix = Matrix4.identity();
     _textAlign = TextAlign.start;
     _textBaseline = CanvasTextBaseline.alphabetic;
     _direction = TextDirection.ltr;
