@@ -16,6 +16,7 @@ pub mod native_value;
 pub mod script_value_ref;
 pub mod webf_event_listener;
 pub mod webf_function;
+pub mod webf_future;
 
 pub use dom::*;
 pub use events::*;
@@ -29,6 +30,7 @@ pub use native_value::*;
 pub use script_value_ref::*;
 pub use webf_event_listener::*;
 pub use webf_function::*;
+pub use webf_future::*;
 
 #[repr(C)]
 pub struct OpaquePtr;

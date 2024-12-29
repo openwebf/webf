@@ -122,6 +122,7 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
     NativeValue tmp = callback->Invoke(context_, 2, params);
     auto* return_value = static_cast<NativeValue*>(dart_malloc(sizeof(NativeValue)));
     memcpy(return_value, &tmp, sizeof(NativeValue));
+    context_->RunRustFutureTasks();
     return return_value;
   }
 }
