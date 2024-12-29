@@ -63,8 +63,8 @@ class MouseEvent : public UIEvent {
 
  private:
   bool alt_key_;
-  double button_;
-  double buttons_;
+  double button_{0};
+  double buttons_{0};
   double client_x_;
   double client_y_;
   bool ctrl_key_;

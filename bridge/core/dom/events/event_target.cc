@@ -25,6 +25,7 @@ namespace webf {
 struct EventDispatchResult : public DartReadable {
   bool canceled{false};
   bool propagationStopped{false};
+  bool preventDefaulted{false};
 };
 
 struct DartEventListenerOptions : public DartReadable {
@@ -443,7 +444,7 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   GetExecutingContext()->dartIsolateContext()->profiler()->FinishTrackSteps();
 
   auto* result = new EventDispatchResult{.canceled = dispatch_result == DispatchEventResult::kCanceledByEventHandler,
-                                         .propagationStopped = event->propagationStopped()};
+                                         .propagationStopped = event->propagationStopped(), .preventDefaulted = event->defaultPrevented()};
   return NativeValueConverter<NativeTypePointer<EventDispatchResult>>::ToNativeValue(result);
 }
 

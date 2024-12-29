@@ -10,10 +10,11 @@ const String _TARGET_SELF = 'self';
 
 class HTMLAnchorElement extends Element {
   HTMLAnchorElement([BindingContext? context]) : super(context) {
-    addEventListener(EVENT_CLICK, _handleClick);
+    addEventListener(EVENT_CLICK, _handleClick, builtInCallback: true);
   }
 
   Future<void> _handleClick(Event event) async {
+    if (event.defaultPrevented) return;
     String? href = attributes['href'];
     if (href != null && href.isNotEmpty) {
       String baseUrl = ownerDocument.controller.url;
@@ -23,9 +24,9 @@ class HTMLAnchorElement extends Element {
       if (href.trim().startsWith('#')) {
         HistoryModule historyModule = ownerDocument.controller.module.moduleManager.getModule('History')!;
         historyModule.pushState(null, url: href);
-        ownerView.window.dispatchEvent(HashChangeEvent(newUrl: resolvedUri.toString(), oldUrl: baseUrl));
+        await ownerView.window.dispatchEvent(HashChangeEvent(newUrl: resolvedUri.toString(), oldUrl: baseUrl));
       } else {
-        ownerDocument.controller.view
+        await ownerDocument.controller.view
             .handleNavigationAction(baseUrl, resolvedUri.toString(), _getNavigationType(resolvedUri.scheme));
       }
     }
