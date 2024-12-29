@@ -13,7 +13,7 @@ class CanvasPainter extends CustomPainter {
   CanvasPainter({required Listenable repaint}) : super(repaint: repaint);
 
   CanvasRenderingContext2D? context;
-
+  final Paint _saveLayerPaint = Paint();
   final Paint _snapshotPaint = Paint();
 
   // Cache the last paint image.
@@ -49,6 +49,7 @@ class CanvasPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    canvas.saveLayer(null, _saveLayerPaint);
     if (_scaleX != 1.0 || _scaleY != 1.0) {
       canvas.scale(_scaleX, _scaleY);
     }
@@ -58,7 +59,8 @@ class CanvasPainter extends CustomPainter {
     if (_shouldPainting) {
       actions = context!.performActions(canvas, size);
     }
-
+    // Must pair each call to save()/saveLayer() with a later matching call to restore().
+    canvas.restore();
     // Clear actions after snapshot was created, or next frame call may empty.
     if (actions != null) {
       context!.clearActions(actions);
