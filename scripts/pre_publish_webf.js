@@ -23,6 +23,44 @@ function moveFile(path, realPath, replaceDll = false) {
   }
 }
 
+function cleanUpBridge() {
+  let bridgeDir = PATH.join(__dirname, "../bridge");
+  exec('rm -rf cmake-*', {
+    cwd: bridgeDir
+  });
+  exec('rm -rf build', {
+    cwd: bridgeDir
+  });
+  exec('rm -rf polyfill/node_modules', {
+    cwd: bridgeDir
+  });
+  exec('rm -rf polyfill/package-lock.json', {
+    cwd: bridgeDir
+  });
+  exec('rm -rf polyfill/.gitignore', {
+    cwd: bridgeDir
+  });
+  exec('rm -rf rusty_webf_sys/target', {
+    cwd: bridgeDir
+  });
+  exec('rm -rf scripts/code_generator', {
+    cwd: bridgeDir
+  });
+  exec('rm -rf ../webf/win_src', {
+    cwd: bridgeDir
+  });
+  exec('rm -rf .gitignore', {
+    cwd: bridgeDir
+  })
+}
+
+function patchWindowsCMake(baseDir) {
+  const windowCMake = PATH.join(baseDir, 'windows/CMakeLists.txt');
+  let txt = fs.readFileSync(windowCMake, {encoding: 'utf-8'});
+  txt = txt.replace('win_src', 'src');
+  fs.writeFileSync(windowCMake, txt);
+}
+
 const krakenDir = PATH.join(__dirname, "../webf");
 
 const symbolFiles = [
@@ -36,3 +74,14 @@ for (let file of symbolFiles) {
   symbolicToRealFile(PATH.join(krakenDir, file));
 }
 
+cleanUpBridge();
+
+const sourceSymbolFiles = [
+  "src",
+];
+
+for (let file of sourceSymbolFiles) {
+  symbolicToRealFile(PATH.join(krakenDir, file));
+}
+
+patchWindowsCMake(krakenDir);
