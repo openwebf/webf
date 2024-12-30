@@ -361,7 +361,6 @@ class ImageElement extends Element {
   int naturalHeight = 0;
 
   void _handleIntersectionChange(IntersectionObserverEntry entry) async {
-    print('intersection change');
     // When appear
     if (entry.isIntersecting) {
       _updateImageDataLazyCompleter?.complete();

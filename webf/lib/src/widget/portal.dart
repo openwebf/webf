@@ -12,7 +12,7 @@ class Portal extends SingleChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return RenderPortal(controller: ownerElement.ownerDocument.controller);
+    return RenderPortal(controller: ownerElement.ownerDocument.controller, renderStyle: ownerElement.renderStyle);
   }
 
   @override
