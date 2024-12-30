@@ -23,6 +23,27 @@ function moveFile(path, realPath, replaceDll = false) {
   }
 }
 
+function patchCMakeList(baseDir) {
+  const gitHead = exec('git rev-parse --short HEAD');
+  const cmake = PATH.join(baseDir, 'src/CMakeLists.txt');
+  let txt = fs.readFileSync(cmake, { encoding: 'utf-8' });
+
+  // Split the content into lines
+  const lines = txt.split('\n');
+
+  const start = lines.findIndex(line => line.indexOf('git rev-parse') >= 0);
+
+  // Remove lines 690 to 696 (indexes are 689 to 695 because arrays are zero-based)
+  let updatedContent = [
+    ...lines.slice(0, start - 1),
+    ...lines.slice(start + 5)
+  ].join('\n');
+
+  updatedContent = updatedContent.replace('${GIT_HEAD}', gitHead.toString().trim());
+
+  fs.writeFileSync(cmake, updatedContent);
+}
+
 function cleanUpBridge() {
   let bridgeDir = PATH.join(__dirname, "../bridge");
   exec('rm -rf cmake-*', {
@@ -51,12 +72,15 @@ function cleanUpBridge() {
   });
   exec('rm -rf .gitignore', {
     cwd: bridgeDir
+  });
+  exec('rm -rf ../.gitignore', {
+    cwd: bridgeDir
   })
 }
 
 function patchWindowsCMake(baseDir) {
   const windowCMake = PATH.join(baseDir, 'windows/CMakeLists.txt');
-  let txt = fs.readFileSync(windowCMake, {encoding: 'utf-8'});
+  let txt = fs.readFileSync(windowCMake, { encoding: 'utf-8' });
   txt = txt.replace('win_src', 'src');
   fs.writeFileSync(windowCMake, txt);
 }
@@ -85,3 +109,5 @@ for (let file of sourceSymbolFiles) {
 }
 
 patchWindowsCMake(krakenDir);
+
+patchCMakeList(krakenDir);
