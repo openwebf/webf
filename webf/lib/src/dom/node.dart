@@ -323,7 +323,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   /// Attach a renderObject to parent.
-  void attachTo(Element parent, {Node? previousSibling}) {}
+  void attachTo(Element parent, {RenderBox? after}) {}
 
   /// Unmount referenced render object.
   void unmountRenderObjectInDOMMode({bool keepFixedAlive = false}) {}
@@ -465,6 +465,23 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     }
 
     return afterRenderObject;
+  }
+
+  static RenderBox? findParentLastRenderBox(Node currentNode) {
+    RenderBox? after;
+    RenderBox? box = currentNode.domRenderer;
+    if (box is RenderLayoutBox) {
+      RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
+      if (scrollingContentBox != null) {
+        after = scrollingContentBox.lastChild;
+      } else {
+        after = box.lastChild;
+      }
+    } else if (box is ContainerRenderObjectMixin<RenderBox, ContainerParentDataMixin<RenderBox>>) {
+      after = (box as ContainerRenderObjectMixin<RenderBox, ContainerParentDataMixin<RenderBox>>).lastChild;
+    }
+
+    return after;
   }
 
   DocumentPosition compareDocumentPosition(Node other) {

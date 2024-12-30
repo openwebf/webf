@@ -11,6 +11,8 @@ import 'package:webf/rendering.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/src/css/computed_style_declaration.dart';
 
+import '../../svg.dart';
+
 const String WHITE_SPACE_CHAR = ' ';
 const String NEW_LINE_CHAR = '\n';
 const String RETURN_CHAR = '\r';
@@ -151,7 +153,7 @@ class TextNode extends CharacterData {
 
   // Attach renderObject of current node to parent
   @override
-  void attachTo(Element parent, {Node? previousSibling}) {
+  void attachTo(Element parent, {RenderBox? after}) {
     // Empty string of TextNode should not attach to render tree.
     if (_data.isEmpty) return;
 
@@ -166,9 +168,7 @@ class TextNode extends CharacterData {
         return;
       }
 
-      RenderBox? afterRenderObject = Node.findMostClosedSiblings(previousSibling ?? this.previousSibling);
-
-      RenderBoxModel.attachRenderBox(parent.domRenderer!, renderBox, after: afterRenderObject);
+      RenderBoxModel.attachRenderBox(parent.domRenderer!, renderBox, after: after);
     }
 
     _applyTextStyle();

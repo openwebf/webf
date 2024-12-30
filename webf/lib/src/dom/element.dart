@@ -15,6 +15,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/svg/rendering/container.dart';
 import 'package:webf/src/bridge/native_types.dart';
 import 'package:webf/widget.dart';
 import 'element_widget_adapter.dart';
@@ -432,7 +433,6 @@ abstract class Element extends ContainerNode
     super.willDetachRenderer(flutterWidgetElement);
 
     if (!renderStyle.hasRenderBox()) {
-
       // Cancel running transition.
       renderStyle.cancelRunningTransition();
 
@@ -822,7 +822,7 @@ abstract class Element extends ContainerNode
 
   // Attach renderObject of current node to parent
   @override
-  void attachTo(Node parent, {Node? previousSibling}) {
+  void attachTo(Node parent, {RenderBox? after}) {
     if (managedByFlutterWidget) {
       return;
     }
@@ -838,10 +838,7 @@ abstract class Element extends ContainerNode
     if (domRenderer != null) {
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
-        // If afterRenderObject is null, which means insert child at the head of parent.
-        RenderBox? afterRenderObject = Node.findMostClosedSiblings(previousSibling ?? this.previousSibling);
-
-        RenderBoxModel.attachRenderBox(parent!.domRenderer!, domRenderer!, after: afterRenderObject);
+        RenderBoxModel.attachRenderBox(parent!.domRenderer!, domRenderer!, after: after);
         if (renderStyle.position != CSSPositionType.static) {
           _updateRenderBoxModelWithPosition(CSSPositionType.static);
         }
@@ -900,9 +897,24 @@ abstract class Element extends ContainerNode
   void ensureChildAttached() {
     if (isRendererAttachedToSegmentTree && !managedByFlutterWidget) {
       if (!renderStyle.hasRenderBox()) return;
+
+      final box = domRenderer;
+
       for (Node child in childNodes) {
         if (!child.isRendererAttachedToSegmentTree) {
-          child.attachTo(this);
+          RenderBox? after;
+          if (box is RenderLayoutBox) {
+            RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
+            if (scrollingContentBox != null) {
+              after = scrollingContentBox.lastChild;
+            } else {
+              after = box.lastChild;
+            }
+          } else if (box is RenderSVGContainer) {
+            after = box.lastChild;
+          }
+
+          child.attachTo(this, after: after);
           child.ensureChildAttached();
         }
       }
@@ -938,7 +950,9 @@ abstract class Element extends ContainerNode
         if (!child.isRendererAttachedToSegmentTree &&
             renderStyle.hasRenderBox() &&
             renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
-          child.attachTo(this);
+
+          RenderBox? after = Node.findParentLastRenderBox(this);
+          child.attachTo(this, after: after);
         }
       }
     }
@@ -988,7 +1002,9 @@ abstract class Element extends ContainerNode
     if (!managedByFlutterWidget && isRendererAttachedToSegmentTree) {
       // Only append child renderer when which is not attached.
       if (!child.isRendererAttachedToSegmentTree) {
-        child.attachTo(this, previousSibling: previousSibling);
+        // If afterRenderObject is null, which means insert child at the head of parent.
+        RenderBox? afterRenderObject = Node.findMostClosedSiblings(previousSibling ?? child.previousSibling);
+        child.attachTo(this, after: afterRenderObject);
       }
     }
 
