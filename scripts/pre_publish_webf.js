@@ -23,7 +23,7 @@ function moveFile(path, realPath, replaceDll = false) {
   }
 }
 
-function patchCMakeList(baseDir) {
+function patchAppRev(baseDir) {
   const gitHead = exec('git rev-parse --short HEAD');
   const cmake = PATH.join(baseDir, 'src/CMakeLists.txt');
   let txt = fs.readFileSync(cmake, { encoding: 'utf-8' });
@@ -41,6 +41,29 @@ function patchCMakeList(baseDir) {
 
   updatedContent = updatedContent.replace('${GIT_HEAD}', gitHead.toString().trim());
 
+  fs.writeFileSync(cmake, updatedContent);
+}
+
+function patchAppVersion(baseDir) {
+  const appVer = exec('node bridge/scripts/get_app_ver.js', {
+    cwd: PATH.join(__dirname, '../')
+  });
+
+  const cmake = PATH.join(baseDir, 'src/CMakeLists.txt');
+  let txt = fs.readFileSync(cmake, { encoding: 'utf-8' });
+
+  // Split the content into lines
+  const lines = txt.split('\n');
+
+  const start = lines.findIndex(line => line.indexOf('node get_app_ver.js') >= 0);
+
+  // Remove lines 690 to 696 (indexes are 689 to 695 because arrays are zero-based)
+  let updatedContent = [
+    ...lines.slice(0, start - 1),
+    ...lines.slice(start + 5)
+  ].join('\n');
+
+  updatedContent = updatedContent.replace('${APP_VER}', appVer.toString().trim());
   fs.writeFileSync(cmake, updatedContent);
 }
 
@@ -75,7 +98,14 @@ function cleanUpBridge() {
   });
   exec('rm -rf ../.gitignore', {
     cwd: bridgeDir
-  })
+  });
+}
+
+function addGenFilesToGit() {
+  let webfDir = PATH.join(__dirname, "../webf");
+  exec('git add src', {
+    cwd: webfDir
+  });
 }
 
 function patchWindowsCMake(baseDir) {
@@ -108,6 +138,10 @@ for (let file of sourceSymbolFiles) {
   symbolicToRealFile(PATH.join(krakenDir, file));
 }
 
+addGenFilesToGit();
 patchWindowsCMake(krakenDir);
 
-patchCMakeList(krakenDir);
+patchAppRev(krakenDir);
+patchAppVersion(krakenDir);
+
+addGenFilesToGit();
