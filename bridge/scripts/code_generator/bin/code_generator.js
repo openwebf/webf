@@ -277,12 +277,15 @@ function genRustCodeFromTypeDefine() {
   for (let i = 0; i < blobs.length; i ++) {
     let b = blobs[i];
     let result = generateRustSource(b);
+    const folders = b.source.replace(source, '').replace(b.filename + '.d.ts', '').split(path.sep)
+      .filter(f => f !== '').join(path.sep);
+    const rsDist = path.join(b.dist, '../rusty_webf_sys/src', folders);
 
-    if (!fs.existsSync(b.dist)) {
-      fs.mkdirSync(b.dist, {recursive: true});
+    if (!fs.existsSync(rsDist)) {
+      fs.mkdirSync(rsDist, {recursive: true});
     }
 
-    let genFilePath = path.join(b.dist, '../rusty_webf_sys/src', b.filename);
+    let genFilePath = path.join(rsDist, b.filename);
 
     wirteFileIfChanged(genFilePath + '.rs', result);
   }

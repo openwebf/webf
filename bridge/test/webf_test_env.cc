@@ -209,10 +209,14 @@ WebFTestEnv::~WebFTestEnv() {
 }
 
 std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {
+  return TEST_init(onJsError, nullptr, 0);
+}
+
+std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError, NativeWidgetElementShape* shape, size_t shape_len) {
   auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
   auto* dart_isolate_context = initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size(), true);
   double pageContextId = contextId -= 1;
-  auto* page = allocateNewPageSync(pageContextId, dart_isolate_context, nullptr, 0);
+  auto* page = allocateNewPageSync(pageContextId, dart_isolate_context, shape, shape_len);
   void* testContext = initTestFramework(page);
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
   TEST_mockTestEnvDartMethods(testContext, onJsError);

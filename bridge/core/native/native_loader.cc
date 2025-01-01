@@ -37,6 +37,7 @@ static void ExecuteNativeLibrary(PluginLibraryEntryPoint entry_point,
         native_library_load_context->context, native_library_load_context->context->publicMethodPtr(),
         native_library_load_context->context->status()};
     void* result = entry_point(entry_data);
+    native_library_load_context->context->RunRustFutureTasks();
   }
 
   delete native_library_load_context;

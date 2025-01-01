@@ -3,6 +3,7 @@
  */
 
 #include "dart_isolate_context.h"
+#include <algorithm>
 #include <unordered_set>
 #include "core/html/custom/widget_element_shape.h"
 #include "defined_properties_initializer.h"

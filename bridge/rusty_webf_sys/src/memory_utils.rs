@@ -1,18 +1,14 @@
-#[cfg(target_os = "windows")]
-use windows::Win32;
-use libc;
 use crate::OpaquePtr;
+use libc;
+#[cfg(target_os = "windows")]
+use windows::Win32::System::Com::CoTaskMemFree;
 
 pub fn safe_free_cpp_ptr<T>(ptr: *const T) {
   unsafe {
     if cfg!(target_os = "windows") {
       #[cfg(target_os = "windows")]
       {
-        Win32::System::Memory::HeapFree(
-          Win32::System::Memory::GetProcessHeap().unwrap(),
-          Win32::System::Memory::HEAP_FLAGS(0),
-          Option::from(ptr as *const libc::c_void)
-        ).expect("Failed to call HeapFree");
+        CoTaskMemFree(Option::from(ptr as *const libc::c_void));
       }
     } else {
       libc::free(ptr.cast_mut() as *mut libc::c_void);

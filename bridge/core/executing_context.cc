@@ -405,6 +405,14 @@ void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) 
   JS_FreeValue(ctx(), proxy_data);
 }
 
+void ExecutingContext::SetRunRustFutureTasks(const std::shared_ptr<WebFNativeFunction>& run_future_task) {
+  run_rust_future_tasks_ = run_future_task;
+}
+
+void ExecutingContext::RunRustFutureTasks() {
+  run_rust_future_tasks_->Invoke(this, 0, nullptr);
+}
+
 void ExecutingContext::DrainPendingPromiseJobs() {
   // should executing pending promise jobs.
   JSContext* pctx;

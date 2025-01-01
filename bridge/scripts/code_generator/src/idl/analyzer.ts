@@ -391,7 +391,6 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
                 obj.staticMethods.push(f);
               }
             }
-
             if (f.returnTypeMode?.supportAsync) {
               // keep asyncFunc supportAsync = true
               let asyncFunc = Object.assign({}, f);

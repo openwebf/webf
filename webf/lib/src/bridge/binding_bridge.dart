@@ -104,8 +104,8 @@ Future<void> _dispatchEventToNative(Event event, bool isCapture) async {
   if (contextId != null &&
       pointer != null &&
       pointer.ref.invokeBindingMethodFromDart != nullptr &&
-      event.target?.pointer?.ref.disposed != true &&
-      event.currentTarget?.pointer?.ref.disposed != true
+      !isBindingObjectDisposed(event.target?.pointer) &&
+      !isBindingObjectDisposed(event.currentTarget?.pointer)
   ) {
     Completer completer = Completer();
 
@@ -198,7 +198,7 @@ abstract class BindingBridge {
         view.setBindingObject(nativeBindingObject, object);
       }
 
-      if (!nativeBindingObject.ref.disposed) {
+      if (!isBindingObjectDisposed(nativeBindingObject)) {
         nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNativeSync;
       }
     }

@@ -3,6 +3,8 @@
 */
 
 use std::ffi::*;
+use native_value::NativeValue;
+
 use crate::*;
 
 #[repr(C)]
@@ -11,15 +13,21 @@ pub struct ExecutingContextRustMethods {
   pub get_document: extern "C" fn(*const OpaquePtr) -> RustValue<DocumentRustMethods>,
   pub get_window: extern "C" fn(*const OpaquePtr) -> RustValue<WindowRustMethods>,
   pub create_exception_state: extern "C" fn() -> RustValue<ExceptionStateRustMethods>,
-  pub finish_recording_ui_operations: extern "C" fn(executing_context: *const OpaquePtr) -> c_void,
+  pub finish_recording_ui_operations: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub webf_invoke_module: extern "C" fn(*const OpaquePtr, *const c_char, *const c_char, *const OpaquePtr) -> NativeValue,
+  pub webf_invoke_module_with_params: extern "C" fn(*const OpaquePtr, *const c_char, *const c_char, *const NativeValue, *const OpaquePtr) -> NativeValue,
+  pub webf_invoke_module_with_params_and_callback: extern "C" fn(*const OpaquePtr, *const c_char, *const c_char, *const NativeValue, *const WebFNativeFunctionContext, *const OpaquePtr) -> NativeValue,
+  pub webf_location_reload: extern "C" fn(*const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
   pub set_timeout: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, c_int, *const OpaquePtr) -> c_int,
   pub set_interval: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, c_int, *const OpaquePtr) -> c_int,
   pub clear_timeout: extern "C" fn(*const OpaquePtr, c_int, *const OpaquePtr),
   pub clear_interval: extern "C" fn(*const OpaquePtr, c_int, *const OpaquePtr),
+  pub set_run_rust_future_tasks: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const OpaquePtr) -> c_void,
 }
 
 pub type TimeoutCallback = Box<dyn Fn()>;
 pub type IntervalCallback = Box<dyn Fn()>;
+pub type RunRustFutureTasksCallback = Box<dyn Fn()>;
 
 /// An environment contains all the necessary running states of a web page.
 ///
@@ -74,11 +82,91 @@ impl ExecutingContext {
     return Document::initialize::<DocumentRustMethods>(result.value, self, result.method_pointer, result.status);
   }
 
+  pub fn navigator(&self) -> Navigator {
+    Navigator::initialize(self)
+  }
+
+  pub fn async_storage(&self) -> AsyncStorage {
+    AsyncStorage::initialize(self)
+  }
+
+  pub fn local_storage(&self) -> Storage {
+    Storage::initialize(self, "LocalStorage")
+  }
+
+  pub fn session_storage(&self) -> Storage {
+    Storage::initialize(self, "SessionStorage")
+  }
+
   pub fn create_exception_state(&self) -> ExceptionState {
     let result = unsafe {
       ((*self.method_pointer).create_exception_state)()
     };
     ExceptionState::initialize(result.value, result.method_pointer)
+  }
+
+  pub fn webf_invoke_module(&self, module_name: &str, method: &str, exception_state: &ExceptionState) -> Result<NativeValue, String> {
+    let module_name = CString::new(module_name).unwrap();
+    let method = CString::new(method).unwrap();
+    let result = unsafe {
+      ((*self.method_pointer).webf_invoke_module)(self.ptr, module_name.as_ptr(), method.as_ptr(), exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+
+    Ok(result)
+  }
+
+  pub fn webf_invoke_module_with_params(&self, module_name: &str, method: &str, params: &NativeValue, exception_state: &ExceptionState) -> Result<NativeValue, String> {
+    let module_name = CString::new(module_name).unwrap();
+    let method = CString::new(method).unwrap();
+    let result = unsafe {
+      ((*self.method_pointer).webf_invoke_module_with_params)(self.ptr, module_name.as_ptr(), method.as_ptr(), params, exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+
+    Ok(result)
+  }
+
+  pub fn webf_invoke_module_with_params_and_callback(&self, module_name: &str, method: &str, params: &NativeValue, callback: WebFNativeFunction, exception_state: &ExceptionState) -> Result<NativeValue, String> {
+    let module_name = CString::new(module_name).unwrap();
+    let method = CString::new(method).unwrap();
+
+    let callback_data = Box::new(WebFNativeFunctionContextData {
+      func: callback,
+    });
+    let callback_context_data_ptr = Box::into_raw(callback_data);
+    let callback_context = Box::new(WebFNativeFunctionContext {
+      callback: invoke_webf_native_function,
+      free_ptr: release_webf_native_function,
+      ptr: callback_context_data_ptr,
+    });
+    let callback_context_ptr = Box::into_raw(callback_context);
+
+    let result = unsafe {
+      (((*self.method_pointer).webf_invoke_module_with_params_and_callback))(self.ptr, module_name.as_ptr(), method.as_ptr(), params, callback_context_ptr, exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      unsafe {
+        let _ = Box::from_raw(callback_context_ptr);
+        let _ = Box::from_raw(callback_context_data_ptr);
+      }
+      return Err(exception_state.stringify(self));
+    }
+
+    Ok(result)
+  }
+
+  pub fn webf_location_reload(&self, exception_state: &ExceptionState) {
+    unsafe {
+      ((*self.method_pointer).webf_location_reload)(self.ptr, exception_state.ptr);
+    }
   }
 
   pub fn set_timeout_with_callback(&self, callback: TimeoutCallback, exception_state: &ExceptionState) -> Result<i32, String> {
@@ -89,9 +177,10 @@ impl ExecutingContext {
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
       if argc != 0 {
         println!("Invalid argument count for timeout callback");
-        return;
+        return NativeValue::new_null();
       }
       callback();
+      NativeValue::new_null()
     });
 
     let callback_data = Box::new(WebFNativeFunctionContextData {
@@ -128,9 +217,10 @@ impl ExecutingContext {
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
       if argc != 0 {
         println!("Invalid argument count for interval callback");
-        return;
+        return NativeValue::new_null();
       }
       callback();
+      NativeValue::new_null()
     });
 
     let callback_data = Box::new(WebFNativeFunctionContextData {
@@ -171,6 +261,43 @@ impl ExecutingContext {
     }
   }
 
+  pub fn set_run_rust_future_tasks(&self, callback: RunRustFutureTasksCallback, exception_state: &ExceptionState) -> Result<(), String> {
+    let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
+      if argc != 0 {
+        println!("Invalid argument count for run rust future tasks callback");
+        return NativeValue::new_null();
+      }
+      callback();
+      NativeValue::new_null()
+    });
+
+    let callback_data = Box::new(WebFNativeFunctionContextData {
+      func: general_callback,
+    });
+    let callback_context_data_ptr = Box::into_raw(callback_data);
+    let callback_context = Box::new(WebFNativeFunctionContext {
+      callback: invoke_webf_native_function,
+      free_ptr: release_webf_native_function,
+      ptr: callback_context_data_ptr,
+    });
+    let callback_context_ptr = Box::into_raw(callback_context);
+
+    unsafe {
+      ((*self.method_pointer).set_run_rust_future_tasks)(self.ptr, callback_context_ptr, exception_state.ptr);
+    }
+
+    if exception_state.has_exception() {
+      unsafe {
+        let _ = Box::from_raw(callback_context_ptr);
+        let _ = Box::from_raw(callback_context_data_ptr);
+      }
+      return Err(exception_state.stringify(self));
+    }
+
+    Ok(())
+
+  }
+
 }
 
 impl Drop for ExecutingContext {
@@ -180,6 +307,16 @@ impl Drop for ExecutingContext {
         return;
       };
       ((*self.method_pointer).finish_recording_ui_operations)(self.ptr);
+    }
+  }
+}
+
+impl Clone for ExecutingContext {
+  fn clone(&self) -> Self {
+    ExecutingContext {
+      ptr: self.ptr,
+      method_pointer: self.method_pointer,
+      status: self.status,
     }
   }
 }

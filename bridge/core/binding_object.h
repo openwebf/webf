@@ -55,12 +55,14 @@ struct NativeBindingObject : public DartReadable {
                                      const NativeValue* argv,
                                      Dart_PersistentHandle dart_object,
                                      DartInvokeResultCallback result_callback);
-
-  bool disposed_{false};
+  static bool IsDisposed(const NativeBindingObject* native_binding_object) {
+    return native_binding_object->disposed_.load(std::memory_order_acquire);
+  }
   BindingObject* binding_target_{nullptr};
   InvokeBindingMethodsFromDart invoke_binding_methods_from_dart{nullptr};
   InvokeBindingsMethodsFromNative invoke_bindings_methods_from_native{nullptr};
   void* extra{nullptr};
+  std::atomic<bool> disposed_{false};
 };
 
 enum BindingMethodCallOperations {
