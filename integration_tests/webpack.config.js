@@ -87,6 +87,7 @@ module.exports = {
               workspacePath: context,
               testPath,
               snapshotPath,
+              buildPath,
             }
           }
         ]

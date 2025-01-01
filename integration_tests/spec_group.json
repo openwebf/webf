@@ -117,5 +117,11 @@
     "specs": [
       "specs/svg/**/*.{js,jsx,ts,tsx,html,svg}"
     ]
+  },
+  {
+    "name": "Blink_CSS1",
+    "specs": [
+      "specs/blink/css1/**/*.{js,jsx,ts,tsx,html,svg}"
+    ]
   }
 ]
