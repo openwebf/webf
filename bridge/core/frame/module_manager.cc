@@ -33,42 +33,68 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
   if (ctx == nullptr)
     return nullptr;
 
-  context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
-  context->dartIsolateContext()->profiler()->StartTrackSteps("handleInvokeModuleTransientCallback");
+  auto callback_value = moduleContext->callback->value();
 
-  ExceptionState exception_state;
+  if (auto* callback = DynamicTo<QJSFunction>(callback_value.get())) {
+    context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
+    context->dartIsolateContext()->profiler()->StartTrackSteps("handleInvokeModuleTransientCallback");
 
-  NativeValue* return_value = nullptr;
-  if (errmsg != nullptr) {
-    ScriptValue error_object = ScriptValue::CreateErrorObject(ctx, errmsg);
-    ScriptValue arguments[] = {error_object};
-    ScriptValue result = moduleContext->callback->value()->Invoke(ctx, ScriptValue::Empty(ctx), 1, arguments);
-    if (result.IsException()) {
-      context->HandleException(&result);
+    ExceptionState exception_state;
+
+    NativeValue* return_value = nullptr;
+    if (errmsg != nullptr) {
+      ScriptValue error_object = ScriptValue::CreateErrorObject(ctx, errmsg);
+      ScriptValue arguments[] = {error_object};
+      ScriptValue result = callback->Invoke(ctx, ScriptValue::Empty(ctx), 1, arguments);
+      if (result.IsException()) {
+        context->HandleException(&result);
+      }
+      NativeValue native_result = result.ToNative(ctx, exception_state);
+      return_value = static_cast<NativeValue*>(dart_malloc(sizeof(NativeValue)));
+      memcpy(return_value, &native_result, sizeof(NativeValue));
+    } else {
+      ScriptValue arguments[] = {ScriptValue::Empty(ctx), ScriptValue(ctx, *extra_data)};
+      ScriptValue result = callback->Invoke(ctx, ScriptValue::Empty(ctx), 2, arguments);
+      if (result.IsException()) {
+        context->HandleException(&result);
+      }
+      NativeValue native_result = result.ToNative(ctx, exception_state);
+      return_value = static_cast<NativeValue*>(dart_malloc(sizeof(NativeValue)));
+      memcpy(return_value, &native_result, sizeof(NativeValue));
     }
-    NativeValue native_result = result.ToNative(ctx, exception_state);
-    return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
-    memcpy(return_value, &native_result, sizeof(NativeValue));
-  } else {
-    ScriptValue arguments[] = {ScriptValue::Empty(ctx), ScriptValue(ctx, *extra_data)};
-    ScriptValue result = moduleContext->callback->value()->Invoke(ctx, ScriptValue::Empty(ctx), 2, arguments);
-    if (result.IsException()) {
-      context->HandleException(&result);
+
+    context->dartIsolateContext()->profiler()->FinishTrackSteps();
+    context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
+
+    if (exception_state.HasException()) {
+      context->HandleException(exception_state);
+      return nullptr;
     }
-    NativeValue native_result = result.ToNative(ctx, exception_state);
-    return_value = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
-    memcpy(return_value, &native_result, sizeof(NativeValue));
+
+    return return_value;
+  } else if (auto* callback = DynamicTo<WebFNativeFunction>(callback_value.get())) {
+    context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
+    context->dartIsolateContext()->profiler()->StartTrackSteps("handleInvokeModuleTransientCallback");
+
+    NativeValue* return_value = nullptr;
+    if (errmsg != nullptr) {
+      NativeValue error_object = Native_NewCString(errmsg);
+      NativeValue native_result = callback->Invoke(context, 1, &error_object);
+      return_value = static_cast<NativeValue*>(dart_malloc(sizeof(NativeValue)));
+      memcpy(return_value, &native_result, sizeof(NativeValue));
+    } else {
+      auto params = new NativeValue[2];
+      params[0] = Native_NewNull();
+      params[1] = *extra_data;
+      NativeValue native_result = callback->Invoke(context, 2, params);
+      return_value = static_cast<NativeValue*>(dart_malloc(sizeof(NativeValue)));
+      memcpy(return_value, &native_result, sizeof(NativeValue));
+    }
+    context->dartIsolateContext()->profiler()->FinishTrackSteps();
+    context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
+    context->RunRustFutureTasks();
+    return return_value;
   }
-
-  context->dartIsolateContext()->profiler()->FinishTrackSteps();
-  context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
-
-  if (exception_state.HasException()) {
-    context->HandleException(exception_state);
-    return nullptr;
-  }
-
-  return return_value;
 }
 
 static void ReturnResultToDart(Dart_PersistentHandle persistent_handle,
@@ -134,7 +160,7 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                   const AtomicString& module_name,
                                                   const AtomicString& method,
                                                   ScriptValue& params_value,
-                                                  const std::shared_ptr<QJSFunction>& callback,
+                                                  const std::shared_ptr<Function>& callback,
                                                   ExceptionState& exception) {
   NativeValue params = params_value.ToNative(context->ctx(), exception);
 
@@ -151,7 +177,7 @@ NativeValue* ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                    const AtomicString& module_name,
                                                    const AtomicString& method,
                                                    NativeValue& params,
-                                                   const std::shared_ptr<QJSFunction>& callback,
+                                                   const std::shared_ptr<Function>& callback,
                                                    ExceptionState& exception) {
   if (exception.HasException()) {
     return nullptr;
@@ -190,7 +216,7 @@ NativeValue* ModuleManager::__webf_invoke_module__(ExecutingContext* context,
 
 void ModuleManager::__webf_add_module_listener__(ExecutingContext* context,
                                                  const AtomicString& module_name,
-                                                 const std::shared_ptr<QJSFunction>& handler,
+                                                 const std::shared_ptr<Function>& handler,
                                                  ExceptionState& exception) {
   auto listener = ModuleListener::Create(handler);
   context->ModuleListeners()->AddModuleListener(module_name, listener);

@@ -39,6 +39,7 @@ void DOMTimer::Fire() {
     }
   } else if (auto* callback = DynamicTo<WebFNativeFunction>(callback_.get())) {
     callback->Invoke(context_, 0, nullptr);
+    context_->RunRustFutureTasks();
   }
 }
 

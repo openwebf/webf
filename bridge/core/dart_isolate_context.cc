@@ -3,6 +3,7 @@
  */
 
 #include "dart_isolate_context.h"
+#include <algorithm>
 #include <unordered_set>
 #include "defined_properties_initializer.h"
 #include "event_factory.h"

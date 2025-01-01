@@ -8,13 +8,13 @@
 
 namespace webf {
 
-std::shared_ptr<ModuleCallback> ModuleCallback::Create(const std::shared_ptr<QJSFunction>& function) {
+std::shared_ptr<ModuleCallback> ModuleCallback::Create(const std::shared_ptr<Function>& function) {
   return std::make_shared<ModuleCallback>(function);
 }
 
-ModuleCallback::ModuleCallback(std::shared_ptr<QJSFunction> function) : function_(std::move(function)) {}
+ModuleCallback::ModuleCallback(std::shared_ptr<Function> function) : function_(std::move(function)) {}
 
-std::shared_ptr<QJSFunction> ModuleCallback::value() {
+std::shared_ptr<Function> ModuleCallback::value() {
   return function_;
 }
 

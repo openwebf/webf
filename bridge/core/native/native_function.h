@@ -15,10 +15,10 @@ namespace webf {
 class SharedExceptionState;
 typedef struct WebFNativeFunctionContext WebFNativeFunctionContext;
 
-using WebFNativeFunctionCallback = void (*)(WebFNativeFunctionContext* callback_context,
-                                            int32_t argc,
-                                            NativeValue* argv,
-                                            SharedExceptionState* shared_exception_state);
+using WebFNativeFunctionCallback = NativeValue (*)(WebFNativeFunctionContext* callback_context,
+                                                   int32_t argc,
+                                                   NativeValue* argv,
+                                                   SharedExceptionState* shared_exception_state);
 using WebFNativeFunctionFreePtrFn = void (*)(WebFNativeFunctionContext* callback_context);
 
 struct WebFNativeFunctionContext : public RustReadable {
@@ -44,8 +44,8 @@ class WebFNativeFunction : public Function {
 
   bool IsWebFNativeFunction() const override { return true; }
 
-  void Invoke(ExecutingContext* context, int32_t argc, NativeValue* argv) {
-    callback_context_->callback(callback_context_, argc, argv, shared_exception_state_);
+  NativeValue Invoke(ExecutingContext* context, int32_t argc, NativeValue* argv) {
+    return callback_context_->callback(callback_context_, argc, argv, shared_exception_state_);
   }
 
  private:

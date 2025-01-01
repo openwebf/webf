@@ -7,6 +7,7 @@
 
 #include <quickjs/quickjs.h>
 
+#include <algorithm>
 #include <vector>
 
 #include "bindings/qjs/atomic_string.h"

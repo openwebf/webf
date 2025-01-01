@@ -1,7 +1,10 @@
-use std::ffi::{c_void, CString};
+use std::cell::RefCell;
+use std::ffi::c_void;
+use std::rc::Rc;
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{element, initialize_webf_api, AddEventListenerOptions, EventMethods, EventTargetMethods, RustValue};
+use webf_sys::webf_future::FutureRuntime;
+use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
@@ -11,12 +14,70 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   println!("Context created");
   let exception_state = context.create_exception_state();
   let document = context.document();
+  let navigator = context.navigator();
 
-  let timer_callback = Box::new(move || {
-    println!("Timer Callback");
+  let ua_string = navigator.user_agent(&exception_state);
+  println!("User Agent: {}", ua_string);
+
+  let local_storage = context.local_storage();
+
+  let result = local_storage.set_item("test", "test2", &exception_state);
+
+  match result {
+    Ok(_) => {
+      println!("Local Storage Set Item Success");
+    },
+    Err(err) => {
+      println!("Local Storage Set Item Failed: {:?}", err);
+    }
+  }
+
+  println!("Local Storage value for \"a\": {:?}", local_storage.get_item("a", &exception_state));
+  println!("Local Storage Keys: {:?}", local_storage.get_all_keys(&exception_state));
+  println!("Local Storage Length: {:?}", local_storage.length(&exception_state));
+  println!("Local Storage value for \"test\": {:?}", local_storage.get_item("test", &exception_state));
+
+  local_storage.clear(&exception_state);
+
+  let context2 = context.clone();
+
+  let runtime = Rc::new(RefCell::new(FutureRuntime::new()));
+
+  runtime.borrow_mut().spawn(async move {
+    let context = context2.clone();
+    let exception_state = context.create_exception_state();
+    let async_storage_2 = context.async_storage();
+
+    println!("Hello from Rust async context!");
+
+    let result = async_storage_2.set_item("a", "b", &exception_state).await;
+
+    match result {
+      Ok(_) => {
+        println!("Async Storage Set Item Success");
+      },
+      Err(err) => {
+        println!("Async Storage Set Item Failed: {:?}", err);
+      }
+    }
+
+    let result = async_storage_2.get_item("a", &exception_state).await;
+
+    match result {
+      Ok(value) => {
+        println!("Async Storage Get Item Success: {:?}", value);
+      },
+      Err(err) => {
+        println!("Async Storage Get Item Failed: {:?}", err);
+      }
+    }
   });
 
-  context.set_interval_with_callback_and_timeout(timer_callback, 1000, &exception_state).unwrap();
+  let runtime_run_task_callback = Box::new(move || {
+    runtime.borrow_mut().run();
+  });
+
+  context.set_run_rust_future_tasks(runtime_run_task_callback, &exception_state).unwrap();
 
   let click_event = document.create_event("custom_click", &exception_state).unwrap();
   document.dispatch_event(&click_event, &exception_state);
