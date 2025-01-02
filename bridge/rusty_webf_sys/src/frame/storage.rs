@@ -51,9 +51,17 @@ impl Storage {
     Ok(())
   }
 
-  pub fn remove_item(&self, key: &str, exception_state: &ExceptionState) {
+  pub fn remove_item(&self, key: &str, exception_state: &ExceptionState) -> Result<(), String> {
     let key_string = NativeValue::new_string(key);
-    self.context().webf_invoke_module_with_params(&self.module_name, "removeItem", &key_string, exception_state);
+    let result = self.context().webf_invoke_module_with_params(&self.module_name, "removeItem", &key_string, exception_state);
+
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    match result {
+      Ok(result) => Ok(()),
+      Err(err) => Err(err),
+    }
   }
 
   pub fn clear(&self, exception_state: &ExceptionState) {

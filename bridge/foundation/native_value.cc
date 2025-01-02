@@ -142,6 +142,19 @@ NativeValue Native_NewJSON(JSContext* ctx, const ScriptValue& value, ExceptionSt
 #endif
 }
 
+NativeValue Native_NewUint8Bytes(uint32_t length, uint8_t* bytes) {
+#if _MSC_VER
+  NativeValue v{};
+  v.u.ptr = reinterpret_cast<void*>(bytes);
+  v.uint32 = length;
+  v.tag = NativeTag::TAG_UINT8_BYTES;
+  return v;
+#else
+  return (NativeValue){
+      .u = {.ptr = reinterpret_cast<void*>(bytes)}, .uint32 = length, .tag = NativeTag::TAG_UINT8_BYTES};
+#endif
+}
+
 JSPointerType GetPointerTypeOfNativePointer(NativeValue native_value) {
   assert(native_value.tag == NativeTag::TAG_POINTER);
   return static_cast<JSPointerType>(native_value.uint32);

@@ -385,12 +385,12 @@ Element& Element::CloneWithoutAttributesAndChildren(Document& factory) const {
   return *(factory.createElement(local_name_, ASSERT_NO_EXCEPTION()));
 }
 
-class ElementSnapshotReader {
+class ElementSnapshotPromiseReader {
  public:
-  ElementSnapshotReader(ExecutingContext* context,
-                        Element* element,
-                        std::shared_ptr<ScriptPromiseResolver> resolver,
-                        double device_pixel_ratio)
+  ElementSnapshotPromiseReader(ExecutingContext* context,
+                               Element* element,
+                               std::shared_ptr<ScriptPromiseResolver> resolver,
+                               double device_pixel_ratio)
       : context_(context), element_(element), resolver_(std::move(resolver)), device_pixel_ratio_(device_pixel_ratio) {
     Start();
   };
@@ -406,17 +406,17 @@ class ElementSnapshotReader {
   double device_pixel_ratio_;
 };
 
-void ElementSnapshotReader::Start() {
+void ElementSnapshotPromiseReader::Start() {
   context_->FlushUICommand(element_,
                            FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout);
 
   auto callback = [](void* ptr, double contextId, char* error, uint8_t* bytes, int32_t length) -> void {
-    auto* reader = static_cast<ElementSnapshotReader*>(ptr);
+    auto* reader = static_cast<ElementSnapshotPromiseReader*>(ptr);
     auto* context = reader->context_;
 
     reader->context_->dartIsolateContext()->dispatcher()->PostToJs(
         context->isDedicated(), context->contextId(),
-        [](ElementSnapshotReader* reader, char* error, uint8_t* bytes, int32_t length) {
+        [](ElementSnapshotPromiseReader* reader, char* error, uint8_t* bytes, int32_t length) {
           if (error != nullptr) {
             reader->HandleFailed(error);
             dart_free(error);
@@ -433,7 +433,7 @@ void ElementSnapshotReader::Start() {
                                     element_->bindingObject(), device_pixel_ratio_);
 }
 
-void ElementSnapshotReader::HandleSnapshot(uint8_t* bytes, int32_t length) {
+void ElementSnapshotPromiseReader::HandleSnapshot(uint8_t* bytes, int32_t length) {
   MemberMutationScope mutation_scope{context_};
   Blob* blob = Blob::Create(context_);
   blob->SetMineType("image/png");
@@ -441,13 +441,65 @@ void ElementSnapshotReader::HandleSnapshot(uint8_t* bytes, int32_t length) {
   resolver_->Resolve<Blob*>(blob);
 }
 
-void ElementSnapshotReader::HandleFailed(const char* error) {
+void ElementSnapshotPromiseReader::HandleFailed(const char* error) {
   MemberMutationScope mutation_scope{context_};
   ExceptionState exception_state;
   exception_state.ThrowException(context_->ctx(), ErrorType::InternalError, error);
   JSValue exception_value = ExceptionState::CurrentException(context_->ctx());
   resolver_->Reject(exception_value);
   JS_FreeValue(context_->ctx(), exception_value);
+}
+
+class ElementSnapshotNativeFunctionReader {
+ public:
+  ElementSnapshotNativeFunctionReader(ExecutingContext* context,
+                                      Element* element,
+                                      std::shared_ptr<WebFNativeFunction> function,
+                                      double device_pixel_ratio)
+      : context_(context), element_(element), function_(std::move(function)), device_pixel_ratio_(device_pixel_ratio) {
+    Start();
+  };
+
+  void Start();
+
+ private:
+  ExecutingContext* context_;
+  Element* element_;
+  std::shared_ptr<WebFNativeFunction> function_{nullptr};
+  double device_pixel_ratio_;
+};
+
+void ElementSnapshotNativeFunctionReader::Start() {
+  context_->FlushUICommand(element_,
+                           FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout);
+
+  auto callback = [](void* ptr, double contextId, char* error, uint8_t* bytes, int32_t length) -> void {
+    auto* reader = static_cast<ElementSnapshotNativeFunctionReader*>(ptr);
+    auto* context = reader->context_;
+
+    reader->context_->dartIsolateContext()->dispatcher()->PostToJs(
+        context->isDedicated(), context->contextId(),
+        [](ElementSnapshotNativeFunctionReader* reader, char* error, uint8_t* bytes, int32_t length) {
+          if (error != nullptr) {
+            NativeValue error_object = Native_NewCString(error);
+            reader->function_->Invoke(reader->context_, 1, &error_object);
+            dart_free(error);
+          } else {
+            auto params = new NativeValue[2];
+            params[0] = Native_NewNull();
+            params[1] = Native_NewUint8Bytes(length, bytes);
+            reader->function_->Invoke(reader->context_, 2, params);
+            dart_free(bytes);
+          }
+
+          reader->context_->RunRustFutureTasks();
+          delete reader;
+        },
+        reader, error, bytes, length);
+  };
+
+  context_->dartMethodPtr()->toBlob(context_->isDedicated(), this, context_->contextId(), callback,
+                                    element_->bindingObject(), device_pixel_ratio_);
 }
 
 ScriptPromise Element::toBlob(ExceptionState& exception_state) {
@@ -460,8 +512,22 @@ ScriptPromise Element::toBlob(ExceptionState& exception_state) {
 
 ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& exception_state) {
   auto resolver = ScriptPromiseResolver::Create(GetExecutingContext());
-  new ElementSnapshotReader(GetExecutingContext(), this, resolver, device_pixel_ratio);
+  new ElementSnapshotPromiseReader(GetExecutingContext(), this, resolver, device_pixel_ratio);
   return resolver->Promise();
+}
+
+void Element::toBlob(const std::shared_ptr<WebFNativeFunction>& callback, ExceptionState& exception_state) {
+  Window* window = GetExecutingContext()->window();
+  double device_pixel_ratio = NativeValueConverter<NativeTypeDouble>::FromNativeValue(window->GetBindingProperty(
+      binding_call_methods::kdevicePixelRatio,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state));
+  return toBlob(device_pixel_ratio, callback, exception_state);
+}
+
+void Element::toBlob(double device_pixel_ratio,
+                     const std::shared_ptr<WebFNativeFunction>& callback,
+                     ExceptionState& exception_state) {
+  new ElementSnapshotNativeFunctionReader(GetExecutingContext(), this, callback, device_pixel_ratio);
 }
 
 ScriptValue Element::___testGlobalToLocal__(double x, double y, webf::ExceptionState& exception_state) {

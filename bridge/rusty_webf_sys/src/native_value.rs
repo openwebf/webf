@@ -226,6 +226,23 @@ impl NativeValue {
     }
     values
   }
+
+  pub fn is_u8_bytes(&self) -> bool {
+    self.tag == NativeTag::TagUint8Bytes as i32
+  }
+
+  pub fn to_u8_bytes(&self) -> Vec<u8> {
+    let mut values = Vec::new();
+    let ptr = unsafe {
+      self.u.ptr as *mut u8
+    };
+    for i in 0..self.uint32 {
+      let offset = i.try_into().unwrap();
+      let val = unsafe { ptr.add(offset).read() };
+      values.push(val);
+    }
+    values
+  }
 }
 
 impl Drop for NativeValue {
