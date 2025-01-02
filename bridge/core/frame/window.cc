@@ -250,18 +250,6 @@ void Window::scrollTo(const std::shared_ptr<ScrollToOptions>& options, Exception
   return scroll(options, exception_state);
 }
 
-void Window::scrollTo_async(ExceptionState& exception_state) {
-  return scroll_async(exception_state);
-}
-
-void Window::scrollTo_async(double x, double y, ExceptionState& exception_state) {
-  return scroll_async(x, y, exception_state);
-}
-
-void Window::scrollTo_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
-  return scroll_async(options, exception_state);
-}
-
 void Window::postMessage(const ScriptValue& message, ExceptionState& exception_state) {
   auto event_init = MessageEventInit::Create();
   event_init->setData(message);
