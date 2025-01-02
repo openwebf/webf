@@ -25,8 +25,10 @@ class RenderCanvasPaint extends RenderCustomPaint {
   @override
   bool get isRepaintBoundary => true;
 
-  RenderCanvasPaint(
-      {required CustomPainter painter, required Size preferredSize})
+  @override
+  CanvasPainter? get painter => super.painter as CanvasPainter;
+
+  RenderCanvasPaint({required CustomPainter painter, required Size preferredSize})
       : super(
           painter: painter,
           foregroundPainter: null, // Ignore foreground painter
@@ -35,8 +37,8 @@ class RenderCanvasPaint extends RenderCustomPaint {
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    context.pushClipRect(needsCompositing, offset,
-        Rect.fromLTWH(0, 0, preferredSize.width, preferredSize.height),
+    if (painter?.context == null) return;
+    context.pushClipRect(needsCompositing, offset, Rect.fromLTWH(0, 0, preferredSize.width, preferredSize.height),
         (context, offset) {
       super.paint(context, offset);
     });

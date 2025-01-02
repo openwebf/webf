@@ -115,7 +115,7 @@ void CanvasRenderingContext2D::setFillStyle(const std::shared_ptr<QJSUnionDomStr
   }
   SetBindingProperty(binding_call_methods::kfillStyle, value, exception_state);
 
-  //  fill_style_ = style;
+  fill_style_ = style;
 }
 
 std::shared_ptr<QJSUnionDomStringCanvasGradient> CanvasRenderingContext2D::strokeStyle() {
@@ -135,6 +135,18 @@ void CanvasRenderingContext2D::setStrokeStyle(const std::shared_ptr<QJSUnionDomS
   SetBindingProperty(binding_call_methods::kstrokeStyle, value, exception_state);
 
   stroke_style_ = style;
+}
+TextMetrics* CanvasRenderingContext2D::measureText(const AtomicString& text, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), text)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kmeasureText, 1, arguments,
+                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeBindingObject* native_binding_object =
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result);
+
+  if (native_binding_object == nullptr) {
+    return nullptr;
+  }
+  return TextMetrics::Create(GetExecutingContext(), native_binding_object);
 }
 
 void CanvasRenderingContext2D::roundRect(double x,

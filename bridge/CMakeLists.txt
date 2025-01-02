@@ -412,6 +412,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/canvas/canvas_gradient.cc
     core/html/canvas/canvas_pattern.cc
     core/html/canvas/path_2d.cc
+    core/html/canvas/text_metrics.cc
     core/geometry/dom_matrix.cc
     core/geometry/dom_matrix_read_only.cc
     core/geometry/dom_point.cc
@@ -549,6 +550,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_canvas_gradient.cc
     out/qjs_canvas_pattern.cc
     out/qjs_path_2d.cc
+    out/qjs_text_metrics.cc
     out/qjs_dom_matrix_init.cc
     out/qjs_dom_matrix.cc
     out/qjs_dom_matrix_read_only.cc

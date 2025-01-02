@@ -45,8 +45,8 @@ class Path2D : public BindingObject {
                                      Dart_Handle dart_object) override;
 
  private:
-};  // namespace webf
+};
 
 }  // namespace webf
 
-#endif  // WEBF_CORE_HTML_CANVAS_CANVAS_PATH_2D_H_a
+#endif  // WEBF_CORE_HTML_CANVAS_CANVAS_PATH_2D_H_

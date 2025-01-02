@@ -103,6 +103,7 @@
     "fillText",
     "lineTo",
     "moveTo",
+    "measureText",
     "rect",
     "roundRect",
     "restore",
