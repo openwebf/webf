@@ -1,10 +1,12 @@
 use std::cell::RefCell;
 use std::ffi::c_void;
+use std::fs::{self, File};
+use std::io::Write;
 use std::rc::Rc;
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
 use webf_sys::webf_future::FutureRuntime;
-use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, RustValue};
+use webf_sys::{document, initialize_webf_api, AddEventListenerOptions, ElementMethods, EventTargetMethods, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
@@ -50,17 +52,7 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
 
     println!("Hello from Rust async context!");
 
-    let result = async_storage_2.set_item("a", "b", &exception_state).await;
-
-    match result {
-      Ok(_) => {
-        println!("Async Storage Set Item Success");
-      },
-      Err(err) => {
-        println!("Async Storage Set Item Failed: {:?}", err);
-      }
-    }
-
+    async_storage_2.set_item("a", "b", &exception_state).await.unwrap();
     let result = async_storage_2.get_item("a", &exception_state).await;
 
     match result {
@@ -71,6 +63,12 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
         println!("Async Storage Get Item Failed: {:?}", err);
       }
     }
+
+    let html_element = context.document().document_element();
+    let blob = html_element.to_blob(&exception_state).await.unwrap().unwrap();
+
+    let mut file = File::create("output.png").unwrap();
+    file.write_all(&blob).unwrap();
   });
 
   let runtime_run_task_callback = Box::new(move || {
