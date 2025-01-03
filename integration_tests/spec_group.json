@@ -120,6 +120,7 @@
   },
   {
     "name": "Blink_CSS1",
+    "snapshotRoot": "body",
     "specs": [
       "specs/blink/css1/**/*.{js,jsx,ts,tsx,html,svg}"
     ]

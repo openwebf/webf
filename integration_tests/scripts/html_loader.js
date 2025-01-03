@@ -47,7 +47,7 @@ const processStyleImports = (styleContent, filepath, buildPath) => {
   return styleContent.replace(importRegex, (match, importPath) => {
     if (!importPath.startsWith('http') && !importPath.startsWith('//')) {
       const absolutePath = path.resolve(path.dirname(filepath), importPath);
-      if (fs.existsSync(absolutePath)) {
+      if (fs.existsSync(absolutePath) && absolutePath.includes('blink')) {
         copyFileWithParentDir(absolutePath, buildPath);
       }
       return `@import '${normalizeLocalPath(importPath)}';`;
@@ -74,7 +74,7 @@ const traverseParseHTML = (ele, scripts, filepath, buildPath) => {
       const href = e.getAttribute('href');
       if (href && !href.startsWith('http') && !href.startsWith('//')) {
         const absolutePath = path.resolve(path.dirname(filepath), href);
-        if (fs.existsSync(absolutePath)) {
+        if (fs.existsSync(absolutePath) && absolutePath.includes('blink')) {
           copyFileWithParentDir(absolutePath, buildPath);
         }
         e.setAttribute('href', normalizeLocalPath(href));
@@ -129,12 +129,15 @@ const loader = function(source) {
     return {'\n': '','\'': '\\'}[c];
   });
 
+  const snapshotRoot = this.query.getSnapshotRoot(filepath);
+  const snapshotTarget = snapshotRoot === 'body' ? 'document.body' : 'null';
+
   return `
     describe('HTMLSpec/${testRelativePath}', () => {
       // Use html_parse to parser html in html file.
       const html_parse = () => __webf_parse_html__(\`${htmlString}\`);
       var index = 0;
-      const snapshotAction = async () => { await snapshot(document.body, '${snapshotFilepath}', ${scripts.length === 0 ? 'null' : 'index.toString()'}); index++; };
+      const snapshotAction = async () => { await snapshot(${snapshotTarget}, '${snapshotFilepath}', ${scripts.length === 0 ? 'null' : 'index.toString()'}); index++; };
       ${isFit ? 'fit' : isXit ? 'xit' : 'it'}("should work", async (done) => {\
         html_parse();\
         requestAnimationFrame(async () => {
