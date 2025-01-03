@@ -44,7 +44,13 @@ class CanvasRenderingContext2DSettings {
 
 enum FillStyleType { string, canvasGradient }
 
-typedef CanvasAction = void Function(Canvas, Size);
+typedef CanvasActionFn = void Function(Canvas, Size);
+
+class CanvasAction {
+  CanvasAction(this.name, this.fn);
+  CanvasActionFn fn;
+  String name;
+}
 
 class CanvasRenderingContext2D extends DynamicBindingObject {
   CanvasRenderingContext2D(BindingContext context, this.canvas)
@@ -402,8 +408,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     }
   }
 
-  void addAction(CanvasAction action) {
-    _actions.add(action);
+  void addAction(String name, CanvasActionFn action) {
+    _actions.add(CanvasAction(name, action));
     // Must trigger repaint after action
     canvas.repaintNotifier
         .notifyListeners(); // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
@@ -414,7 +420,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     Path2D paintTemp = path2d;
     path2d = Path2D();
     _actions.forEach((action) {
-      action.call(canvas, size);
+      action.fn.call(canvas, size);
     });
     path2d = paintTemp;
   }
@@ -426,9 +432,14 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     }
     _pendingActions = _actions;
     _actions = [];
+    print('----------- BEGIN ---------');
+    _pendingActions.forEach((action) {
+      print('action: ${action.name}');
+    });
     for (int i = 0; i < _pendingActions.length; i++) {
-      _pendingActions[i](canvas, size);
+      _pendingActions[i].fn(canvas, size);
     }
+    print('----------- END ---------');
     return _pendingActions;
   }
 
@@ -456,7 +467,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   TextAlign _textAlign = TextAlign.start; // (default: "start")
   set textAlign(TextAlign? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('textAlign', (Canvas canvas, Size size) {
       _textAlign = value;
     });
   }
@@ -485,7 +496,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
       CanvasTextBaseline.alphabetic; // (default: "alphabetic")
   set textBaseline(CanvasTextBaseline? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('textBaseline', (Canvas canvas, Size size) {
       _textBaseline = value;
     });
   }
@@ -508,7 +519,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   TextDirection _direction = TextDirection.ltr; // (default: "inherit")
   set direction(TextDirection? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('direction', (Canvas canvas, Size size) {
       _direction = value;
     });
   }
@@ -554,7 +565,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   String _font = _DEFAULT_FONT; // (default 10px sans-serif)
   set font(String value) {
     _font = value;
-    addAction((Canvas canvas, Size size) {
+    addAction('font', (Canvas canvas, Size size) {
       // Must lazy parse in action because it has side-effect with _fontProperties.
       if (_parseFont(value)) {
         _font = value;
@@ -570,7 +581,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   // push state on state stack
   void restore() {
     saveCount--;
-    addAction((Canvas canvas, Size size) {
+    addAction('restore', (Canvas canvas, Size size) {
       var state = _states.last;
       _states.removeLast();
       _strokeStyle = state[0];
@@ -586,12 +597,15 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
       canvas.restore();
     });
+    if (saveCount== 0) {
+      print(2);
+    }
   }
 
   // pop state stack and restore state
   void save() {
     saveCount++;
-    addAction((Canvas canvas, Size size) {
+    addAction('save', (Canvas canvas, Size size) {
       _states.add([
         strokeStyle,
         fillStyle,
@@ -611,13 +625,13 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   Path2D path2d = Path2D();
 
   void beginPath() {
-    addAction((Canvas canvas, Size size) {
+    addAction('beginPath', (Canvas canvas, Size size) {
       path2d = Path2D();
     });
   }
 
   void clip(PathFillType fillType, {Path2D? path}) {
-    addAction((Canvas canvas, Size size) {
+    addAction('clip', (Canvas canvas, Size size) {
       path?.path.fillType = fillType;
       path2d.path.fillType = fillType;
       canvas.clipPath(path?.path ?? path2d.path);
@@ -625,7 +639,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   }
 
   void fill(PathFillType fillType, {Path2D? path}) {
-    addAction((Canvas canvas, Size size) {
+    addAction('fill', (Canvas canvas, Size size) {
       if (fillStyle is! Color) {
         return;
       }
@@ -644,7 +658,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   }
 
   void stroke({Path2D? path}) {
-    addAction((Canvas canvas, Size size) {
+    addAction('stroke', (Canvas canvas, Size size) {
       if (strokeStyle is! Color) {
         return;
       }
@@ -670,27 +684,27 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   void arc(
       double x, double y, double radius, double startAngle, double endAngle,
       {bool anticlockwise = false}) {
-    addAction((Canvas canvas, Size size) {
+    addAction('arc', (Canvas canvas, Size size) {
       path2d.arc(x, y, radius, startAngle, endAngle,
           anticlockwise: anticlockwise);
     });
   }
 
   void arcTo(double x1, double y1, double x2, double y2, double radius) {
-    addAction((Canvas canvas, Size size) {
+    addAction('arcTo', (Canvas canvas, Size size) {
       path2d.arcTo(x1, y1, x2, y2, radius);
     });
   }
 
   void bezierCurveTo(
       double cp1x, double cp1y, double cp2x, double cp2y, double x, double y) {
-    addAction((Canvas canvas, Size size) {
+    addAction('bezierCurveTo', (Canvas canvas, Size size) {
       path2d.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
     });
   }
 
   void closePath() {
-    addAction((Canvas canvas, Size size) {
+    addAction('closePath', (Canvas canvas, Size size) {
       path2d.closePath();
     });
   }
@@ -707,7 +721,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
       double dWidth,
       double dHeight) {
 
-    addAction((Canvas canvas, Size size) {
+    addAction('drawImage', (Canvas canvas, Size size) {
       if (imgElement?.image == null) return;
 
       Image img = imgElement!.image!;
@@ -732,32 +746,32 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   void ellipse(double x, double y, double radiusX, double radiusY,
       double rotation, double startAngle, double endAngle,
       {bool anticlockwise = false}) {
-    addAction((Canvas canvas, Size size) {
+    addAction('ellipse', (Canvas canvas, Size size) {
       path2d.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle,
           anticlockwise: anticlockwise);
     });
   }
 
   void lineTo(double x, double y) {
-    addAction((Canvas canvas, Size size) {
+    addAction('lineTo', (Canvas canvas, Size size) {
       path2d.lineTo(x, y);
     });
   }
 
   void moveTo(double x, double y) {
-    addAction((Canvas canvas, Size size) {
+    addAction('moveTo', (Canvas canvas, Size size) {
       path2d.moveTo(x, y);
     });
   }
 
   void quadraticCurveTo(double cpx, double cpy, double x, double y) {
-    addAction((Canvas canvas, Size size) {
+    addAction('quadraticCurveTo', (Canvas canvas, Size size) {
       path2d.quadraticCurveTo(cpx, cpy, x, y);
     });
   }
 
   void rect(double x, double y, double w, double h) {
-    addAction((Canvas canvas, Size size) {
+    addAction('rect', (Canvas canvas, Size size) {
       path2d.rect(x, y, w, h);
     });
   }
@@ -778,7 +792,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   StrokeCap _lineCap = StrokeCap.butt; // (default "butt")
   set lineCap(StrokeCap? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('lineCap', (Canvas canvas, Size size) {
       _lineCap = value;
     });
   }
@@ -789,7 +803,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   set lineDashOffset(double? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('lineDashOffset', (Canvas canvas, Size size) {
       _lineDashOffset = value;
     });
   }
@@ -814,7 +828,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   set lineJoin(StrokeJoin? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('lineJoin', (Canvas canvas, Size size) {
       _lineJoin = value;
     });
   }
@@ -824,7 +838,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   double _lineWidth = 1.0; // (default 1)
   set lineWidth(double? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('lineWidth', (Canvas canvas, Size size) {
       _lineWidth = value;
     });
   }
@@ -834,7 +848,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   double _miterLimit = 10.0; // (default 10)
   set miterLimit(double? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('miterLimit', (Canvas canvas, Size size) {
       _miterLimit = value;
     });
   }
@@ -852,26 +866,26 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   }
 
   void translate(double x, double y) {
-    addAction((Canvas canvas, Size size) {
+    addAction('translate', (Canvas canvas, Size size) {
       canvas.translate(x, y);
     });
   }
 
   void rotate(double angle) {
-    addAction((Canvas canvas, Size size) {
+    addAction('rotate', (Canvas canvas, Size size) {
       canvas.rotate(angle);
     });
   }
 
   void roundRect(double x, double y, double w, double h, List<double> radii) {
-    addAction((Canvas canvas, Size size) {
+    addAction('roundRect', (Canvas canvas, Size size) {
       path2d.roundRect(x, y, w, h, radii);
     });
   }
 
   // transformations (default transform is the identity matrix)
   void scale(double x, double y) {
-    addAction((Canvas canvas, Size size) {
+    addAction('scale', (Canvas canvas, Size size) {
       canvas.scale(x, y);
     });
   }
@@ -885,7 +899,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   // Resets the current transform to the identity matrix.
   void resetTransform() {
-    addAction((Canvas canvas, Size size) {
+    addAction('resetTransform', (Canvas canvas, Size size) {
       Float64List curM4Storage = canvas.getTransform();
       Matrix4 curM4 = Matrix4.fromFloat64List(curM4Storage);
       Matrix4 m4 = Matrix4.inverted(curM4);
@@ -923,7 +937,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     m4storage[14] = 0.0;
     m4storage[15] = 1.0;
 
-    addAction((Canvas canvas, Size size) {
+    addAction('transform', (Canvas canvas, Size size) {
       canvas.transform(m4storage);
     });
   }
@@ -933,7 +947,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   set strokeStyle(Object? newValue) {
     if (newValue == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('strokeStyle', (Canvas canvas, Size size) {
       _strokeStyle = newValue;
     });
   }
@@ -943,7 +957,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   set fillStyle(Object? newValue) {
     if (newValue == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('fillStyle', (Canvas canvas, Size size) {
       _fillStyle = newValue;
     });
   }
@@ -964,7 +978,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   void clearRect(double x, double y, double w, double h) {
     Rect rect = Rect.fromLTWH(x, y, w, h);
-    addAction((Canvas canvas, Size size) {
+    addAction('clearRect', (Canvas canvas, Size size) {
       // Must saveLayer before clear avoid there is a "black" background
       Paint paint = Paint()
         ..style = PaintingStyle.fill
@@ -975,7 +989,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   void fillRect(double x, double y, double w, double h) {
     Rect rect = Rect.fromLTWH(x, y, w, h);
-    addAction((Canvas canvas, Size size) {
+    addAction('fillRect', (Canvas canvas, Size size) {
       Paint paint = Paint();
       if (fillStyle is Color ||
           fillStyle is CanvasRadialGradient ||
@@ -1073,7 +1087,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   void strokeRect(double x, double y, double w, double h) {
     Rect rect = Rect.fromLTWH(x, y, w, h);
-    addAction((Canvas canvas, Size size) {
+    addAction('strokeRect', (Canvas canvas, Size size) {
       Paint paint = Paint();
       if (strokeStyle is Color) {
         paint..color = strokeStyle as Color;
@@ -1164,7 +1178,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   }
 
   void fillText(String text, double x, double y, {double? maxWidth}) {
-    addAction((Canvas canvas, Size size) {
+    addAction('fillText', (Canvas canvas, Size size) {
       if (fillStyle is! Color) {
         return;
       }
@@ -1184,7 +1198,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   }
 
   void strokeText(String text, double x, double y, {double? maxWidth}) {
-    addAction((Canvas canvas, Size size) {
+    addAction('strokeText', (Canvas canvas, Size size) {
       if (strokeStyle is! Color) {
         return;
       }
