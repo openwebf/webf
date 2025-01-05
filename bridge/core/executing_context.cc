@@ -681,7 +681,6 @@ void ExecutingContext::RemoveCanvasContext2D(CanvasRenderingContext2D* canvas_re
   active_canvas_rendering_context_2ds_.erase(canvas_rendering_context_2d);
 }
 
-
 void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable) {
   active_wrappers_.erase(script_wrappable);
 }
