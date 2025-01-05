@@ -49,6 +49,7 @@ class Window;
 class Performance;
 class MemberMutationScope;
 class ErrorEvent;
+class CanvasRenderingContext2D;
 class DartContext;
 class MutationObserver;
 class BindingObject;
@@ -114,6 +115,9 @@ class ExecutingContext {
   // Register active script wrappers.
   void RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable);
   void InActiveScriptWrappers(ScriptWrappable* script_wrappable);
+
+  void RegisterActiveCanvasContext2D(CanvasRenderingContext2D* canvas_rendering_context_2d);
+  void RemoveCanvasContext2D(CanvasRenderingContext2D* canvas_rendering_context_2d);
 
   void RegisterActiveScriptPromise(std::shared_ptr<ScriptPromiseResolver> promise_resolver);
 
@@ -224,6 +228,7 @@ class ExecutingContext {
   bool in_dispatch_error_event_{false};
   RejectedPromises rejected_promises_;
   MemberMutationScope* active_mutation_scope{nullptr};
+  std::unordered_set<CanvasRenderingContext2D*> active_canvas_rendering_context_2ds_;
   std::unordered_set<ScriptWrappable*> active_wrappers_;
   WebFValueStatus* executing_context_status_{new WebFValueStatus()};
   std::unordered_set<std::shared_ptr<ScriptPromiseResolver>> active_pending_promises_;

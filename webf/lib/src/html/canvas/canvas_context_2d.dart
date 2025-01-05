@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'dart:ui';
 import 'dart:ffi' as ffi;
 
+import 'package:collection/collection.dart';
 import 'package:flutter/painting.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
@@ -310,6 +311,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     methods['createPattern'] = BindingObjectMethodSync(
         call: (args) => createPattern(
             CanvasImageSource(args[0]), castToType<String>(args[1])));
+    methods['drawFrame'] = BindingObjectMethodSync(call: (_) => drawFrame());
   }
 
   @override
@@ -389,7 +391,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   CanvasElement canvas;
 
   int get actionCount {
-    return _saveActions.isNotEmpty ?  _saveActions.length : _actions.length;
+    return 1;
   }
 
   List<CanvasAction> _actions = [];
@@ -412,11 +414,11 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   List<CanvasAction> _saveActions = [];
   void saveActions() {
-    _saveActions = _actions;
-    _actions = [];
-    print('saveActions .... ${_saveActions.length}');
-    canvas.repaintNotifier
-        .notifyListeners(); // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
+    // _saveActions = _actions;
+    // _actions = [];
+    // print('saveActions .... ${_saveActions.length}');
+    // canvas.repaintNotifier
+    //     .notifyListeners(); // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
   }
 
   void addAction(String name, CanvasActionFn action) {
@@ -436,19 +438,35 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     path2d = paintTemp;
   }
 
+  void drawFrame() {
+    if (_actions.isNotEmpty && _actions.last.name == 'drawFrame') return;
+    addAction('drawFrame', (p0, p1) { });
+    // assert(_pendingActions.isEmpty);
+    // _pendingActions = _actions;
+    // _actions = [];
+    // canvas.repaintNotifier
+    //     .notifyListeners();
+  }
+
   // Perform canvas drawing.
   List<CanvasAction> performActions(Canvas canvas, Size size) {
-    if(_saveActions.isNotEmpty) {
-      print('----------- BEGIN --- saveActions ${_saveActions.length}--------- ${DateTime.timestamp()}');
-      _pendingActions = _saveActions;
-      _saveActions = [];
-    } else if ( saveCount == 0) {
-      print('----------- BEGIN --- actions ${_actions.length}--------- ${DateTime.timestamp()}');
-      _pendingActions = _actions;
-      _actions = [];
-    } else {
-      return [];
-    }
+    // if(_saveActions.isNotEmpty) {
+    //   print('----------- BEGIN --- saveActions ${_saveActions.length}--------- ${DateTime.timestamp()}');
+    //   _pendingActions = _saveActions;
+    //   _saveActions = [];
+    // } else if ( saveCount == 0) {
+    //   print('----------- BEGIN --- actions ${_actions.length}--------- ${DateTime.timestamp()}');
+    //   _pendingActions = _actions;
+    //   _actions = [];
+    // } else {
+    //   return [];
+    // }
+    int actionIndex = _actions.indexWhere((action) {
+      return action.name == 'drawFrame';
+    });
+    _pendingActions = _actions.sublist(0, actionIndex);
+    _actions = _actions.sublist(actionIndex + 1);
+
     _pendingActions.forEach((action) {
       print('action: ${action.name}');
     });
@@ -593,10 +611,10 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   final List _states = [];
 
-  int saveCount = 0;
+  // int saveCount = 0;
   // push state on state stack
   void restore() {
-    saveCount--;
+    // saveCount--;
     addAction('restore', (Canvas canvas, Size size) {
       var state = _states.last;
       _states.removeLast();
@@ -613,18 +631,18 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
       canvas.restore();
     });
-    if (saveCount== 0) {
-      print(2);
-      print('saveCount: 0');
-      saveActions();
-    } else {
-      print('saveCount: $saveCount');
-    }
+    // if (saveCount== 0) {
+    //   print(2);
+    //   print('saveCount: 0');
+    //   saveActions();
+    // } else {
+    //   print('saveCount: $saveCount');
+    // }
   }
 
   // pop state stack and restore state
   void save() {
-    saveCount++;
+    // saveCount++;
     addAction('save', (Canvas canvas, Size size) {
       _states.add([
         strokeStyle,

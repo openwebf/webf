@@ -17,7 +17,16 @@ bool CanvasRenderingContext2D::IsCanvas2d() const {
 
 CanvasRenderingContext2D::CanvasRenderingContext2D(ExecutingContext* context,
                                                    NativeBindingObject* native_binding_object)
-    : CanvasRenderingContext(context->ctx(), native_binding_object) {}
+    : CanvasRenderingContext(context->ctx(), native_binding_object) {
+  context->RegisterActiveCanvasContext2D(this);
+}
+
+ CanvasRenderingContext2D::~CanvasRenderingContext2D() {
+  if (GetExecutingContext()->IsContextValid()) {
+    GetExecutingContext()->RemoveCanvasContext2D(this);
+  }
+}
+
 
 NativeValue CanvasRenderingContext2D::HandleCallFromDartSide(const AtomicString& method,
                                                              int32_t argc,
@@ -172,6 +181,13 @@ void CanvasRenderingContext2D::roundRect(double x,
   InvokeBindingMethod(binding_call_methods::kroundRect, sizeof(arguments) / sizeof(NativeValue), arguments,
                       FlushUICommandReason::kDependentsOnElement, exception_state);
 }
+
+void CanvasRenderingContext2D::drawFrame() {
+  if (bindingObject()->invoke_bindings_methods_from_native == nullptr) return;
+  WEBF_LOG(VERBOSE) << "CanvasRenderingContext2D::drawFrame()";
+  InvokeBindingMethod(binding_call_methods::kdrawFrame, 0, nullptr, kDependentsOnElement, ASSERT_NO_EXCEPTION());
+}
+
 
 void CanvasRenderingContext2D::fill(webf::ExceptionState& exception_state) {
   InvokeBindingMethod(binding_call_methods::kfill, 0, nullptr, FlushUICommandReason::kDependentsOnElement,

@@ -23,6 +23,7 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   using ImplType = CanvasRenderingContext2D*;
   CanvasRenderingContext2D() = delete;
   explicit CanvasRenderingContext2D(ExecutingContext* context, NativeBindingObject* native_binding_object);
+  ~CanvasRenderingContext2D();
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,
@@ -64,6 +65,8 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
                  double h,
                  std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
                  ExceptionState& exception_state);
+
+  void drawFrame();
 
   void Trace(GCVisitor* visitor) const override;
 

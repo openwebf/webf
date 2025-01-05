@@ -14,6 +14,7 @@
 #include "core/events/promise_rejection_event.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
+#include "html/canvas/canvas_rendering_context_2d.h"
 #include "polyfill.h"
 #include "qjs_window.h"
 #include "script_forbidden_scope.h"
@@ -108,6 +109,12 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   dart_isolate_context->profiler()->FinishTrackSteps();
 
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+
+  if (!active_canvas_rendering_context_2ds_.empty() && is_dedicated) {
+    for (auto& canvas : active_canvas_rendering_context_2ds_) {
+      canvas->drawFrame();
+    }
+  }
 }
 
 ExecutingContext::~ExecutingContext() {
@@ -359,6 +366,12 @@ void ExecutingContext::DrainMicrotasks() {
   DrainPendingPromiseJobs();
 
   dart_isolate_context_->profiler()->FinishTrackSteps();
+
+  if (!active_canvas_rendering_context_2ds_.empty() && is_dedicated_) {
+    for (auto& canvas : active_canvas_rendering_context_2ds_) {
+      canvas->drawFrame();
+    }
+  }
 
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
@@ -659,6 +672,15 @@ void ExecutingContext::InstallGlobal() {
 void ExecutingContext::RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable) {
   active_wrappers_.emplace(script_wrappable);
 }
+
+void ExecutingContext::RegisterActiveCanvasContext2D(CanvasRenderingContext2D* canvas_rendering_context_2d) {
+  active_canvas_rendering_context_2ds_.emplace(canvas_rendering_context_2d);
+}
+
+void ExecutingContext::RemoveCanvasContext2D(CanvasRenderingContext2D* canvas_rendering_context_2d) {
+  active_canvas_rendering_context_2ds_.erase(canvas_rendering_context_2d);
+}
+
 
 void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable) {
   active_wrappers_.erase(script_wrappable);

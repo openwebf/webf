@@ -35,7 +35,7 @@ static void handleRAFTransientCallback(void* ptr, double contextId, double highR
 
   frame_callback->SetStatus(FrameCallback::FrameStatus::kExecuting);
 
-  // Trigger callbacks.
+  WEBF_LOG(VERBOSE) << "handleRAFTransientCallback executing";
   frame_callback->Fire(highResTimeStamp);
 
   frame_callback->SetStatus(FrameCallback::FrameStatus::kFinished);
