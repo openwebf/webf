@@ -388,7 +388,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   CanvasElement canvas;
 
-  int get actionCount => _actions.length;
+  int get actionCount {
+    return _saveActions.isNotEmpty ?  _saveActions.length : _actions.length;
+  }
 
   List<CanvasAction> _actions = [];
   List<CanvasAction> _pendingActions = [];
@@ -406,6 +408,15 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     if (value != null && value != _scaleY) {
       _scaleY = value;
     }
+  }
+
+  List<CanvasAction> _saveActions = [];
+  void saveActions() {
+    _saveActions = _actions;
+    _actions = [];
+    print('saveActions .... ${_saveActions.length}');
+    canvas.repaintNotifier
+        .notifyListeners(); // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
   }
 
   void addAction(String name, CanvasActionFn action) {
@@ -427,12 +438,17 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   // Perform canvas drawing.
   List<CanvasAction> performActions(Canvas canvas, Size size) {
-    if(saveCount !=  0 ) {
+    if(_saveActions.isNotEmpty) {
+      print('----------- BEGIN --- saveActions ${_saveActions.length}--------- ${DateTime.timestamp()}');
+      _pendingActions = _saveActions;
+      _saveActions = [];
+    } else if ( saveCount == 0) {
+      print('----------- BEGIN --- actions ${_actions.length}--------- ${DateTime.timestamp()}');
+      _pendingActions = _actions;
+      _actions = [];
+    } else {
       return [];
     }
-    _pendingActions = _actions;
-    _actions = [];
-    print('----------- BEGIN ---------');
     _pendingActions.forEach((action) {
       print('action: ${action.name}');
     });
@@ -599,6 +615,10 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     });
     if (saveCount== 0) {
       print(2);
+      print('saveCount: 0');
+      saveActions();
+    } else {
+      print('saveCount: $saveCount');
     }
   }
 
