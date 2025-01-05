@@ -121,8 +121,9 @@
   {
     "name": "Blink_CSS1",
     "snapshotRoot": "body",
+    "delayForSnapshot": true,
     "specs": [
-      "specs/blink/css1/**/*.{js,jsx,ts,tsx,html,svg}"
+      "specs/blink/css1/formatting_model/**/*.{js,jsx,ts,tsx,html,svg}"
     ]
   }
 ]

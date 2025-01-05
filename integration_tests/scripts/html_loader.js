@@ -81,6 +81,17 @@ const traverseParseHTML = (ele, scripts, filepath, buildPath) => {
       }
     }
 
+    if (e.rawTagName && e.rawTagName.toLowerCase() === 'img') {
+      const src = e.getAttribute('src');
+      if (src && !src.startsWith('http') && !src.startsWith('//')) {
+        const absolutePath = path.resolve(path.dirname(filepath), src);
+        if (fs.existsSync(absolutePath) && absolutePath.includes('blink')) {
+          copyFileWithParentDir(absolutePath, buildPath);
+        }
+        e.setAttribute('src', normalizeLocalPath(src));
+      }
+    }
+
     // Handle <style>
     if (e.rawTagName && e.rawTagName.toLowerCase() === 'style') {
       e.childNodes.forEach(item => {
@@ -129,7 +140,7 @@ const loader = function(source) {
     return {'\n': '','\'': '\\'}[c];
   });
 
-  const snapshotRoot = this.query.getSnapshotRoot(filepath);
+  const { snapshotRoot, delayForSnapshot } = this.query.getSnapshotOption(filepath);
   const snapshotTarget = snapshotRoot === 'body' ? 'document.body' : 'null';
 
   return `
@@ -140,10 +151,19 @@ const loader = function(source) {
       const snapshotAction = async () => { await snapshot(${snapshotTarget}, '${snapshotFilepath}', ${scripts.length === 0 ? 'null' : 'index.toString()'}); index++; };
       ${isFit ? 'fit' : isXit ? 'xit' : 'it'}("should work", async (done) => {\
         html_parse();\
+        ${delayForSnapshot ? `
+        setTimeout(() => {
+          requestAnimationFrame(async () => {
+            ${scripts.length === 0 ? `await snapshotAction();` : scripts.join('\n')}
+            done();
+          });
+        }, 3000);
+        ` : `
         requestAnimationFrame(async () => {
           ${scripts.length === 0 ? `await snapshotAction();` : scripts.join('\n')}
           done();
         });
+        `}
       })
     });
   `;

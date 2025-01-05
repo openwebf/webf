@@ -14,12 +14,12 @@ const snapshotPath = path.join(context, 'snapshots');
 const specGroup = require('./spec_group.json');
 
 let coreSpecFiles = [];
-let getSnapshotRootForFile = () => null;
+let getSnapshotOption = () => ({ snapshotRoot: null, delayForSnapshot: false });
 
 if (process.env.SPEC_SCOPE) {
  let targetSpec = specGroup.find((item) => item.name === process.env.SPEC_SCOPE.trim());
  if (targetSpec) {
-  getSnapshotRootForFile = () => targetSpec.snapshotRoot || null;
+  getSnapshotOption = () => ({ snapshotRoot: targetSpec.snapshotRoot || null, delayForSnapshot: !!targetSpec.delayForSnapshot });
 
    let targetSpecCollection = targetSpec.specs;
    targetSpecCollection.forEach(spec => {
@@ -40,15 +40,14 @@ if (process.env.SPEC_SCOPE) {
  if (process.env.WEBF_TEST_FILTER) {
    coreSpecFiles = coreSpecFiles.filter(name => name.includes(process.env.WEBF_TEST_FILTER))
  }
-
- getSnapshotRootForFile = (file) => {
+ getSnapshotOption = (file) => {
   for (const group of specGroup) {
     if (group.specs.some(pattern => minimatch(file, pattern))) {
-      return group.snapshotRoot || null;
+      return { snapshotRoot: group.snapshotRoot || null, delayForSnapshot: !!targetSpec.delayForSnapshot };
     }
   }
-  return null;
-};
+  return { snapshotRoot: null, delayForSnapshot: false };
+ }
 }
 
 const dartVersion = execSync('dart --version', {encoding: 'utf-8'});
@@ -101,9 +100,9 @@ module.exports = {
               testPath,
               snapshotPath,
               buildPath,
-              getSnapshotRoot: (filepath) => {
+              getSnapshotOption: (filepath) => {
                 const relativePath = path.relative(context, filepath);
-                return getSnapshotRootForFile(relativePath);
+                return getSnapshotOption(relativePath);
               }
             }
           }
