@@ -424,8 +424,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   void addAction(String name, CanvasActionFn action) {
     _actions.add(CanvasAction(name, action));
     // Must trigger repaint after action
-    canvas.repaintNotifier
-        .notifyListeners(); // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
+    // canvas.repaintNotifier
+    //     .notifyListeners(); // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
   }
 
   // For CanvasRenderingContext2D: createPattern() method; Creating a pattern from a canvas need to replay the actions because the canvas element may be not drawn.
@@ -441,32 +441,17 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   void drawFrame() {
     if (_actions.isNotEmpty && _actions.last.name == 'drawFrame') return;
     addAction('drawFrame', (p0, p1) { });
-    // assert(_pendingActions.isEmpty);
-    // _pendingActions = _actions;
-    // _actions = [];
-    // canvas.repaintNotifier
-    //     .notifyListeners();
+    canvas.repaintNotifier.notifyListeners();
   }
 
   // Perform canvas drawing.
   List<CanvasAction> performActions(Canvas canvas, Size size) {
-    // if(_saveActions.isNotEmpty) {
-    //   print('----------- BEGIN --- saveActions ${_saveActions.length}--------- ${DateTime.timestamp()}');
-    //   _pendingActions = _saveActions;
-    //   _saveActions = [];
-    // } else if ( saveCount == 0) {
-    //   print('----------- BEGIN --- actions ${_actions.length}--------- ${DateTime.timestamp()}');
-    //   _pendingActions = _actions;
-    //   _actions = [];
-    // } else {
-    //   return [];
-    // }
     int actionIndex = _actions.indexWhere((action) {
       return action.name == 'drawFrame';
     });
     _pendingActions = _actions.sublist(0, actionIndex);
     _actions = _actions.sublist(actionIndex + 1);
-
+    print('----------- BEGIN --- actions ${_pendingActions.length}--------- ${DateTime.timestamp()}');
     _pendingActions.forEach((action) {
       print('action: ${action.name}');
     });
