@@ -391,7 +391,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   CanvasElement canvas;
 
   int get actionCount {
-    return 1;
+    return _pendingActions.isNotEmpty ? _pendingActions.length : _actions.length;
   }
 
   List<CanvasAction> _actions = [];
@@ -410,15 +410,6 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     if (value != null && value != _scaleY) {
       _scaleY = value;
     }
-  }
-
-  List<CanvasAction> _saveActions = [];
-  void saveActions() {
-    // _saveActions = _actions;
-    // _actions = [];
-    // print('saveActions .... ${_saveActions.length}');
-    // canvas.repaintNotifier
-    //     .notifyListeners(); // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
   }
 
   void addAction(String name, CanvasActionFn action) {
@@ -441,6 +432,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   void drawFrame() {
     if (_actions.isNotEmpty && _actions.last.name == 'drawFrame') return;
     addAction('drawFrame', (p0, p1) { });
+    // Must trigger repaint after drawFrame
     canvas.repaintNotifier.notifyListeners();
   }
 
@@ -451,14 +443,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     });
     _pendingActions = _actions.sublist(0, actionIndex);
     _actions = _actions.sublist(actionIndex + 1);
-    print('----------- BEGIN --- actions ${_pendingActions.length}--------- ${DateTime.timestamp()}');
-    _pendingActions.forEach((action) {
-      print('action: ${action.name}');
-    });
     for (int i = 0; i < _pendingActions.length; i++) {
       _pendingActions[i].fn(canvas, size);
     }
-    print('----------- END ---------');
     return _pendingActions;
   }
 
@@ -596,10 +583,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   final List _states = [];
 
-  // int saveCount = 0;
   // push state on state stack
   void restore() {
-    // saveCount--;
     addAction('restore', (Canvas canvas, Size size) {
       var state = _states.last;
       _states.removeLast();
@@ -616,18 +601,10 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
       canvas.restore();
     });
-    // if (saveCount== 0) {
-    //   print(2);
-    //   print('saveCount: 0');
-    //   saveActions();
-    // } else {
-    //   print('saveCount: $saveCount');
-    // }
   }
 
   // pop state stack and restore state
   void save() {
-    // saveCount++;
     addAction('save', (Canvas canvas, Size size) {
       _states.add([
         strokeStyle,

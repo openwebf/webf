@@ -184,7 +184,6 @@ void CanvasRenderingContext2D::roundRect(double x,
 void CanvasRenderingContext2D::drawFrame() {
   if (bindingObject()->invoke_bindings_methods_from_native == nullptr)
     return;
-  WEBF_LOG(VERBOSE) << "CanvasRenderingContext2D::drawFrame()";
   InvokeBindingMethod(binding_call_methods::kdrawFrame, 0, nullptr, kDependentsOnElement, ASSERT_NO_EXCEPTION());
 }
 

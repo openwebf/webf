@@ -20,9 +20,6 @@ class CanvasPainter extends CustomPainter {
   // Cache the last paint image.
   Image? _snapshot;
   Image? get snapshot {
-    if(_curCanvas != Null && _curSize != Size.zero) {
-      // TODO create snapshot form _curCanvas
-    }
     // picture.toImage
     return _snapshot;
   }
@@ -55,8 +52,6 @@ class CanvasPainter extends CustomPainter {
   }
 
   bool _firstPaint = true;
-  Canvas? _curCanvas;
-  Size _curSize = Size.zero;
   @override
   void paint(Canvas canvas, Size size) async {
     if(_firstPaint && context != null) {
@@ -67,8 +62,6 @@ class CanvasPainter extends CustomPainter {
         canvas.scale(_scaleX, _scaleY);
       }
     }
-    _curCanvas = canvas;
-    _curSize = size;
       // This lets you create composite effects, for example making a group of drawing commands semi-transparent.
     // Without using saveLayer, each part of the group would be painted individually,
     // so where they overlap would be darker than where they do not. By using saveLayer to group them together,
