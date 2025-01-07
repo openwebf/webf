@@ -47,10 +47,16 @@ enum FillStyleType { string, canvasGradient }
 
 typedef CanvasActionFn = void Function(Canvas, Size);
 
+enum CanvasActionType {
+  execute,
+  needsPaint
+}
+
 class CanvasAction {
-  CanvasAction(this.name, this.fn);
+  CanvasAction(this.debugName, this.fn, [this.type = CanvasActionType.execute]);
   CanvasActionFn fn;
-  String name;
+  CanvasActionType type;
+  String debugName;
 }
 
 class CanvasRenderingContext2D extends DynamicBindingObject {
@@ -408,9 +414,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     }
   }
 
-  List<int> drawFrameIndexes = [];
-  void addAction(String name, CanvasActionFn action) {
-    _actions.add(CanvasAction(name, action));
+  void addAction(String name, CanvasActionFn action, [CanvasActionType type = CanvasActionType.execute] ) {
+    _actions.add(CanvasAction(name, action, type));
   }
 
   // For CanvasRenderingContext2D: createPattern() method; Creating a pattern from a canvas need to replay the actions because the canvas element may be not drawn.
@@ -423,35 +428,36 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     path2d = paintTemp;
   }
 
+  List<int> needsPaintIndexes = [];
   void needsPaint() {
-    if (_actions.isNotEmpty && _actions.last.name == 'needsPaint' || _actions.isEmpty) return;
-    addAction('needsPaint', (p0, p1) { });
+    if (_actions.isEmpty || _actions.last.type == CanvasActionType.needsPaint) return;
+    addAction('needsPaint', (p0, p1) { }, CanvasActionType.needsPaint);
 
-    int drawFrameIndex = _actions.length - 1;
-    drawFrameIndexes.add(drawFrameIndex);
-    // Must trigger repaint after drawFrame
+    int needsPaintIndex = _actions.length - 1;
+    needsPaintIndexes.add(needsPaintIndex);
+    // Must trigger repaint after add needsPaint
     canvas.repaintNotifier.notifyListeners();
   }
 
   // Perform canvas drawing.
   List<CanvasAction> performActions(Canvas canvas, Size size) {
-    if(drawFrameIndexes.isEmpty) {
+    if(needsPaintIndexes.isEmpty) {
       return [];
     }
 
-    int drawFrameIndex = drawFrameIndexes[0];
-    _pendingActions = _actions.sublist(0, drawFrameIndex);
-    _actions = _actions.sublist(drawFrameIndex + 1);
+    int needsPaintIndex = needsPaintIndexes[0];
+    _pendingActions = _actions.sublist(0, needsPaintIndex);
+    _actions = _actions.sublist(needsPaintIndex + 1);
 
     for (int i = 0; i < _pendingActions.length; i++) {
       _pendingActions[i].fn(canvas, size);
     }
 
-    // update draw frame index
-    for (int i = 0; i < drawFrameIndexes.length; i++) {
-      drawFrameIndexes[i] = drawFrameIndexes[i] - (drawFrameIndex+1);
+    // update needsPaint index
+    for (int i = 0; i < needsPaintIndexes.length; i++) {
+      needsPaintIndexes[i] = needsPaintIndexes[i] - (needsPaintIndex + 1);
     }
-    drawFrameIndexes = drawFrameIndexes.sublist(1);
+    needsPaintIndexes = needsPaintIndexes.sublist(1);
     return _pendingActions;
   }
 
