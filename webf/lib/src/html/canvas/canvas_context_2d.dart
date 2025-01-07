@@ -412,11 +412,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     }
   }
 
+  int _drawFrameIndex = -1;
   void addAction(String name, CanvasActionFn action) {
     _actions.add(CanvasAction(name, action));
-    // Must trigger repaint after action
-    // canvas.repaintNotifier
-    //     .notifyListeners(); // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
   }
 
   // For CanvasRenderingContext2D: createPattern() method; Creating a pattern from a canvas need to replay the actions because the canvas element may be not drawn.
@@ -432,20 +430,31 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   void drawFrame() {
     if (_actions.isNotEmpty && _actions.last.name == 'drawFrame') return;
     addAction('drawFrame', (p0, p1) { });
+    _drawFrameIndex = _actions.length - 1;
+
     // Must trigger repaint after drawFrame
     canvas.repaintNotifier.notifyListeners();
   }
 
   // Perform canvas drawing.
   List<CanvasAction> performActions(Canvas canvas, Size size) {
-    int actionIndex = _actions.indexWhere((action) {
-      return action.name == 'drawFrame';
-    });
-    _pendingActions = _actions.sublist(0, actionIndex);
-    _actions = _actions.sublist(actionIndex + 1);
+    if(_drawFrameIndex < 0) {
+      return [];
+    }
+    // drawFrame only in actions
+    if (_actions.length == 1 && _drawFrameIndex == 0) {
+      _drawFrameIndex = -1;
+      _actions = [];
+      return [];
+    }
+
+    _pendingActions = _actions.sublist(0, _drawFrameIndex);
+    _actions = _actions.sublist(_drawFrameIndex + 1);
+
     for (int i = 0; i < _pendingActions.length; i++) {
       _pendingActions[i].fn(canvas, size);
     }
+    _drawFrameIndex = -1;
     return _pendingActions;
   }
 
