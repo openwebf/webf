@@ -515,7 +515,6 @@ void ExecutingContext::DrawCanvasElementIfNeeded() {
   }
 }
 
-
 bool ExecutingContext::SyncUICommandBuffer(const BindingObject* self,
                                            uint32_t reason,
                                            std::vector<NativeBindingObject*>& deps) {
