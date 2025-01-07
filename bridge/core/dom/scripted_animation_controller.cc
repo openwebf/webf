@@ -35,7 +35,6 @@ static void handleRAFTransientCallback(void* ptr, double contextId, double highR
 
   frame_callback->SetStatus(FrameCallback::FrameStatus::kExecuting);
 
-  // Trigger callbacks.
   frame_callback->Fire(highResTimeStamp);
 
   frame_callback->SetStatus(FrameCallback::FrameStatus::kFinished);

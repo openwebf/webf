@@ -460,7 +460,9 @@ ScriptPromise Element::toBlob(ExceptionState& exception_state) {
 
 ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& exception_state) {
   auto resolver = ScriptPromiseResolver::Create(GetExecutingContext());
-  new ElementSnapshotReader(GetExecutingContext(), this, resolver, device_pixel_ratio);
+  auto* context = GetExecutingContext();
+  context->DrawCanvasElementIfNeeded();
+  new ElementSnapshotReader(context, this, resolver, device_pixel_ratio);
   return resolver->Promise();
 }
 

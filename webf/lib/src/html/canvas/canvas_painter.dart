@@ -19,13 +19,16 @@ class CanvasPainter extends CustomPainter {
 
   // Cache the last paint image.
   Image? _snapshot;
-  Image? get snapshot => _snapshot;
+  Image? get snapshot {
+    // picture.toImage
+    return _snapshot;
+  }
 
   bool _shouldRepaint = false;
   // Indicate that snapshot is not generated yet, should not to perform next frame now.
   bool _updatingSnapshot = false;
 
-  bool get _shouldPainting => context != null && context!.actionCount > 0;
+  bool get _shouldPainting => context != null;
   bool get _hasSnapshot => context != null && _snapshot != null;
 
   // Notice: Canvas is stateless, change scaleX or scaleY will case dropping drawn content.
@@ -48,61 +51,49 @@ class CanvasPainter extends CustomPainter {
     }
   }
 
+  Picture? lastPicture;
+
+  bool _firstPaint = true;
   @override
-  void paint(Canvas canvas, Size size) async {
-    if (_hasSnapshot && !_shouldPainting) {
-      return canvas.drawImage(_snapshot!, Offset.zero, _snapshotPaint);
+  void paint(Canvas rootCanvas, Size size) async {
+    if (lastPicture != null) {
+      rootCanvas.drawPicture(lastPicture!);
     }
 
     final PictureRecorder pictureRecorder = PictureRecorder();
-    final Canvas recordCanvas = Canvas(pictureRecorder);
+    final Canvas canvas = Canvas(pictureRecorder);
 
-    if (_scaleX != 1.0 || _scaleY != 1.0) {
-      recordCanvas.scale(_scaleX, _scaleY);
+    if(_firstPaint && context != null) {
+      _firstPaint = false;
+      context?.scaleX = _scaleX;
+      context?.scaleY = _scaleY;
+      if (_scaleX != 1.0 || _scaleY != 1.0) {
+        canvas.scale(_scaleX, _scaleY);
+      }
     }
-
     // This lets you create composite effects, for example making a group of drawing commands semi-transparent.
     // Without using saveLayer, each part of the group would be painted individually,
     // so where they overlap would be darker than where they do not. By using saveLayer to group them together,
     // they can be drawn with an opaque color at first,
     // and then the entire group can be made transparent using the saveLayer's paint.
-    recordCanvas.saveLayer(null, _saveLayerPaint);
-
-    // Paint last content
-    if (_hasSnapshot) {
-      recordCanvas.drawImage(_snapshot!, Offset.zero, _snapshotPaint);
-      _disposeSnapshot();
-    }
+    canvas.saveLayer(null, _saveLayerPaint);
 
     // Paint new actions
     List<CanvasAction>? actions;
     if (_shouldPainting) {
-      actions = context!.performActions(recordCanvas, size);
+      actions = context!.performActions(canvas, size);
     }
 
     // Must pair each call to save()/saveLayer() with a later matching call to restore().
-    recordCanvas.restore();
+    canvas.restore();
 
-    // After calling this function, both the picture recorder
-    // and the canvas objects are invalid and cannot be used further.
-    final Picture picture = pictureRecorder.endRecording();
-    canvas.drawPicture(picture);
-
-    // Must flat picture to image, or raster will accept a growing command buffer.
-    await _createSnapshot(picture, size);
-
-    // Dispose the used picture.
-    picture.dispose();
     // Clear actions after snapshot was created, or next frame call may empty.
     if (actions != null) {
       context!.clearActions(actions);
     }
-  }
 
-  Future<void> _createSnapshot(Picture picture, Size size) async {
-    _updatingSnapshot = true;
-    _snapshot = await picture.toImage(size.width.toInt(), size.height.toInt());
-    _updatingSnapshot = false;
+    lastPicture = pictureRecorder.endRecording();
+    rootCanvas.drawPicture(lastPicture!);
   }
 
   @override
@@ -115,7 +106,6 @@ class CanvasPainter extends CustomPainter {
   }
 
   void _resetPaintingContext() {
-    _disposeSnapshot();
     _shouldRepaint = true;
   }
 

@@ -95,6 +95,7 @@
 #include "qjs_svg_text_element.h"
 #include "qjs_svg_text_positioning_element.h"
 #include "qjs_text.h"
+#include "qjs_text_metrics.h"
 #include "qjs_touch.h"
 #include "qjs_touch_event.h"
 #include "qjs_touch_list.h"
@@ -167,6 +168,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSCanvasPattern::Install(context);
   QJSCanvasGradient::Install(context);
   QJSPath2D::Install(context);
+  QJSTextMetrics::Install(context);
   QJSDOMMatrixReadOnly::Install(context);
   QJSDOMMatrix::Install(context);
   QJSDOMPointReadOnly::Install(context);

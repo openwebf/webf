@@ -12,6 +12,7 @@
 #include "qjs_union_dom_stringcanvas_gradient.h"
 #include "qjs_unionhtml_image_elementhtml_canvas_element.h"
 #include "qjs_unionpath_2_d_dom_string.h"
+#include "text_metrics.h"
 
 namespace webf {
 
@@ -22,6 +23,7 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   using ImplType = CanvasRenderingContext2D*;
   CanvasRenderingContext2D() = delete;
   explicit CanvasRenderingContext2D(ExecutingContext* context, NativeBindingObject* native_binding_object);
+  ~CanvasRenderingContext2D();
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,
@@ -55,12 +57,16 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   std::shared_ptr<QJSUnionDomStringCanvasGradient> strokeStyle();
   void setStrokeStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);
 
+  TextMetrics* measureText(const AtomicString& text, ExceptionState& exception_state);
+
   void roundRect(double x,
                  double y,
                  double w,
                  double h,
                  std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
                  ExceptionState& exception_state);
+
+  void needsPaint() const;
 
   void Trace(GCVisitor* visitor) const override;
 

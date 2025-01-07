@@ -14,6 +14,7 @@
 #include "core/events/promise_rejection_event.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
+#include "html/canvas/canvas_rendering_context_2d.h"
 #include "polyfill.h"
 #include "qjs_window.h"
 #include "script_forbidden_scope.h"
@@ -108,6 +109,8 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   dart_isolate_context->profiler()->FinishTrackSteps();
 
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+
+  DrawCanvasElementIfNeeded();
 }
 
 ExecutingContext::~ExecutingContext() {
@@ -360,6 +363,7 @@ void ExecutingContext::DrainMicrotasks() {
 
   dart_isolate_context_->profiler()->FinishTrackSteps();
 
+  DrawCanvasElementIfNeeded();
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
 
@@ -500,6 +504,14 @@ void ExecutingContext::FlushUICommand(const webf::BindingObject* self,
                                       std::vector<NativeBindingObject*>& deps) {
   if (SyncUICommandBuffer(self, reason, deps)) {
     dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject());
+  }
+}
+
+void ExecutingContext::DrawCanvasElementIfNeeded() {
+  if (!active_canvas_rendering_context_2ds_.empty()) {
+    for (auto& canvas : active_canvas_rendering_context_2ds_) {
+      canvas->needsPaint();
+    }
   }
 }
 
@@ -658,6 +670,14 @@ void ExecutingContext::InstallGlobal() {
 
 void ExecutingContext::RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable) {
   active_wrappers_.emplace(script_wrappable);
+}
+
+void ExecutingContext::RegisterActiveCanvasContext2D(CanvasRenderingContext2D* canvas_rendering_context_2d) {
+  active_canvas_rendering_context_2ds_.emplace(canvas_rendering_context_2d);
+}
+
+void ExecutingContext::RemoveCanvasContext2D(CanvasRenderingContext2D* canvas_rendering_context_2d) {
+  active_canvas_rendering_context_2ds_.erase(canvas_rendering_context_2d);
 }
 
 void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable) {
