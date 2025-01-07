@@ -311,7 +311,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     methods['createPattern'] = BindingObjectMethodSync(
         call: (args) => createPattern(
             CanvasImageSource(args[0]), castToType<String>(args[1])));
-    methods['drawFrame'] = BindingObjectMethodSync(call: (_) => drawFrame());
+    methods['needsPaint'] = BindingObjectMethodSync(call: (_) => needsPaint());
   }
 
   @override
@@ -423,9 +423,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     path2d = paintTemp;
   }
 
-  void drawFrame() {
-    if (_actions.isNotEmpty && _actions.last.name == 'drawFrame') return;
-    addAction('drawFrame', (p0, p1) { });
+  void needsPaint() {
+    if (_actions.isNotEmpty && _actions.last.name == 'needsPaint' || _actions.isEmpty) return;
+    addAction('needsPaint', (p0, p1) { });
 
     int drawFrameIndex = _actions.length - 1;
     drawFrameIndexes.add(drawFrameIndex);

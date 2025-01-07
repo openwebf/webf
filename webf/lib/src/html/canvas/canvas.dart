@@ -3,8 +3,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -25,15 +28,22 @@ class RenderCanvasPaint extends RenderCustomPaint {
   @override
   bool get isRepaintBoundary => true;
 
+  double pixelRatio;
+
   @override
   CanvasPainter? get painter => super.painter as CanvasPainter;
 
-  RenderCanvasPaint({required CustomPainter painter, required Size preferredSize})
+  RenderCanvasPaint({required CustomPainter painter, required Size preferredSize, required this.pixelRatio})
       : super(
           painter: painter,
           foregroundPainter: null, // Ignore foreground painter
           preferredSize: preferredSize,
         );
+
+  Future<Image> toImage(Size size) {
+    return (layer as OffsetLayer).toImage(Rect.fromLTRB(0, 0, size.width, size.height),
+        pixelRatio: pixelRatio);
+  }
 
   @override
   void paint(PaintingContext context, Offset offset) {
@@ -52,7 +62,7 @@ class CanvasElement extends Element {
   late CanvasPainter painter;
 
   // The custom paint render object.
-  RenderCustomPaint? renderCustomPaint;
+  RenderCanvasPaint? renderCustomPaint;
 
   CanvasElement([BindingContext? context]) : super(context) {
     painter = CanvasPainter(repaint: repaintNotifier);
@@ -73,18 +83,15 @@ class CanvasElement extends Element {
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
     super.initializeMethods(methods);
-    methods['getContext'] = BindingObjectMethodSync(
-        call: (args) => getContext(castToType<String>(args[0])));
+    methods['getContext'] = BindingObjectMethodSync(call: (args) => getContext(castToType<String>(args[0])));
   }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
-    properties['width'] = BindingObjectProperty(
-        getter: () => width, setter: (value) => width = castToType<int>(value));
-    properties['height'] = BindingObjectProperty(
-        getter: () => height,
-        setter: (value) => height = castToType<int>(value));
+    properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => width = castToType<int>(value));
+    properties['height'] =
+        BindingObjectProperty(getter: () => height, setter: (value) => height = castToType<int>(value));
   }
 
   @override
@@ -93,6 +100,7 @@ class CanvasElement extends Element {
     renderCustomPaint = RenderCanvasPaint(
       painter: painter,
       preferredSize: size,
+      pixelRatio: ownerDocument.controller.ownerFlutterView.devicePixelRatio
     );
 
     addChild(renderCustomPaint!);

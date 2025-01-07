@@ -110,11 +110,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
 
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 
-  if (!active_canvas_rendering_context_2ds_.empty() && is_dedicated) {
-    for (auto& canvas : active_canvas_rendering_context_2ds_) {
-      canvas->drawFrame();
-    }
-  }
+  DrawCanvasElementIfNeeded();
 }
 
 ExecutingContext::~ExecutingContext() {
@@ -367,12 +363,7 @@ void ExecutingContext::DrainMicrotasks() {
 
   dart_isolate_context_->profiler()->FinishTrackSteps();
 
-  if (!active_canvas_rendering_context_2ds_.empty() && is_dedicated_) {
-    for (auto& canvas : active_canvas_rendering_context_2ds_) {
-      canvas->drawFrame();
-    }
-  }
-
+  DrawCanvasElementIfNeeded();
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
 
@@ -515,6 +506,15 @@ void ExecutingContext::FlushUICommand(const webf::BindingObject* self,
     dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject());
   }
 }
+
+void ExecutingContext::DrawCanvasElementIfNeeded() {
+  if (!active_canvas_rendering_context_2ds_.empty()) {
+    for (auto& canvas : active_canvas_rendering_context_2ds_) {
+      canvas->needsPaint();
+    }
+  }
+}
+
 
 bool ExecutingContext::SyncUICommandBuffer(const BindingObject* self,
                                            uint32_t reason,

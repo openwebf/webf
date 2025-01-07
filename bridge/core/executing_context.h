@@ -159,6 +159,8 @@ class ExecutingContext {
   void FlushUICommand(const BindingObject* self, uint32_t reason);
   void FlushUICommand(const BindingObject* self, uint32_t reason, std::vector<NativeBindingObject*>& deps);
 
+  void DrawCanvasElementIfNeeded();
+
   // Sync pending ui commands and make it accessible to Dart
   bool SyncUICommandBuffer(const BindingObject* self, uint32_t reason, std::vector<NativeBindingObject*>& deps);
 

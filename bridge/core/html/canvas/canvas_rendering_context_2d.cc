@@ -181,10 +181,10 @@ void CanvasRenderingContext2D::roundRect(double x,
                       FlushUICommandReason::kDependentsOnElement, exception_state);
 }
 
-void CanvasRenderingContext2D::drawFrame() {
+void CanvasRenderingContext2D::needsPaint() const {
   if (bindingObject()->invoke_bindings_methods_from_native == nullptr)
     return;
-  InvokeBindingMethod(binding_call_methods::kdrawFrame, 0, nullptr, kDependentsOnElement, ASSERT_NO_EXCEPTION());
+  InvokeBindingMethod(binding_call_methods::kneedsPaint, 0, nullptr, kDependentsOnElement, ASSERT_NO_EXCEPTION());
 }
 
 void CanvasRenderingContext2D::fill(webf::ExceptionState& exception_state) {

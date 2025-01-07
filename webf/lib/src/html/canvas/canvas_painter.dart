@@ -51,9 +51,18 @@ class CanvasPainter extends CustomPainter {
     }
   }
 
+  Picture? lastPicture;
+
   bool _firstPaint = true;
   @override
-  void paint(Canvas canvas, Size size) async {
+  void paint(Canvas rootCanvas, Size size) async {
+    if (lastPicture != null) {
+      rootCanvas.drawPicture(lastPicture!);
+    }
+
+    final PictureRecorder pictureRecorder = PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+
     if(_firstPaint && context != null) {
       _firstPaint = false;
       context?.scaleX = _scaleX;
@@ -62,7 +71,7 @@ class CanvasPainter extends CustomPainter {
         canvas.scale(_scaleX, _scaleY);
       }
     }
-      // This lets you create composite effects, for example making a group of drawing commands semi-transparent.
+    // This lets you create composite effects, for example making a group of drawing commands semi-transparent.
     // Without using saveLayer, each part of the group would be painted individually,
     // so where they overlap would be darker than where they do not. By using saveLayer to group them together,
     // they can be drawn with an opaque color at first,
@@ -82,6 +91,9 @@ class CanvasPainter extends CustomPainter {
     if (actions != null) {
       context!.clearActions(actions);
     }
+
+    lastPicture = pictureRecorder.endRecording();
+    rootCanvas.drawPicture(lastPicture!);
   }
 
   @override

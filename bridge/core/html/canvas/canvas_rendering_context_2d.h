@@ -66,7 +66,7 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
                  std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
                  ExceptionState& exception_state);
 
-  void drawFrame();
+  void needsPaint() const;
 
   void Trace(GCVisitor* visitor) const override;
 
