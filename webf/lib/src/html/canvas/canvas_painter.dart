@@ -28,7 +28,7 @@ class CanvasPainter extends CustomPainter {
   // Indicate that snapshot is not generated yet, should not to perform next frame now.
   bool _updatingSnapshot = false;
 
-  bool get _shouldPainting => context != null && context!.actionCount > 0;
+  bool get _shouldPainting => context != null;
   bool get _hasSnapshot => context != null && _snapshot != null;
 
   // Notice: Canvas is stateless, change scaleX or scaleY will case dropping drawn content.

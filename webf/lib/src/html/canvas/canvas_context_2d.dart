@@ -390,10 +390,6 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
 
   CanvasElement canvas;
 
-  int get actionCount {
-    return _pendingActions.isNotEmpty ? _pendingActions.length : _actions.length;
-  }
-
   List<CanvasAction> _actions = [];
   List<CanvasAction> _pendingActions = [];
 
@@ -412,7 +408,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
     }
   }
 
-  int _drawFrameIndex = -1;
+  List<int> drawFrameIndexes = [];
   void addAction(String name, CanvasActionFn action) {
     _actions.add(CanvasAction(name, action));
   }
@@ -430,31 +426,32 @@ class CanvasRenderingContext2D extends DynamicBindingObject {
   void drawFrame() {
     if (_actions.isNotEmpty && _actions.last.name == 'drawFrame') return;
     addAction('drawFrame', (p0, p1) { });
-    _drawFrameIndex = _actions.length - 1;
 
+    int drawFrameIndex = _actions.length - 1;
+    drawFrameIndexes.add(drawFrameIndex);
     // Must trigger repaint after drawFrame
     canvas.repaintNotifier.notifyListeners();
   }
 
   // Perform canvas drawing.
   List<CanvasAction> performActions(Canvas canvas, Size size) {
-    if(_drawFrameIndex < 0) {
-      return [];
-    }
-    // drawFrame only in actions
-    if (_actions.length == 1 && _drawFrameIndex == 0) {
-      _drawFrameIndex = -1;
-      _actions = [];
+    if(drawFrameIndexes.isEmpty) {
       return [];
     }
 
-    _pendingActions = _actions.sublist(0, _drawFrameIndex);
-    _actions = _actions.sublist(_drawFrameIndex + 1);
+    int drawFrameIndex = drawFrameIndexes[0];
+    _pendingActions = _actions.sublist(0, drawFrameIndex);
+    _actions = _actions.sublist(drawFrameIndex + 1);
 
     for (int i = 0; i < _pendingActions.length; i++) {
       _pendingActions[i].fn(canvas, size);
     }
-    _drawFrameIndex = -1;
+
+    // update draw frame index
+    for (int i = 0; i < drawFrameIndexes.length; i++) {
+      drawFrameIndexes[i] = drawFrameIndexes[i] - (drawFrameIndex+1);
+    }
+    drawFrameIndexes = drawFrameIndexes.sublist(1);
     return _pendingActions;
   }
 
