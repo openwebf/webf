@@ -913,14 +913,14 @@ class RenderFlexLayout extends RenderLayoutBox {
           _RunChild? _runChild = runChildren[nodeId];
           if (_runChild != null) {
             index += 1;
-            if (overWidth <= 0) {// 剩余宽度少于0情况
+            if (overWidth <= 0) {// the remaining width is less than 0.
               BoxConstraints oldConstraints = _runChild.child.constraints;
               double _minWidth = oldConstraints.minWidth;
               _runChild.child.layout(BoxConstraints(minWidth: _minWidth, maxWidth: _minWidth, minHeight: oldConstraints.minHeight, maxHeight: oldConstraints.maxHeight), parentUsesSize: true);
               _runChild.originalMainSize = _minWidth;
               _childrenIntrinsicMainSizes[nodeId] = _minWidth;
-            } else if (_runChild.originalMainSize <= avgOverWidth) {// 子控件实际宽度小于剩余宽度的平均值情况
-              // child不需要做layout计算，调整平均值
+            } else if (_runChild.originalMainSize <= avgOverWidth) {// the actual width of a subwidget is less than the average value of the remaining width.
+              // The child does not need layout calculations; adjust the average value.
               overWidth -= _runChild.originalMainSize;
               avgOverWidth = overWidth / (_overflowNodeSize - index);
             } else {
