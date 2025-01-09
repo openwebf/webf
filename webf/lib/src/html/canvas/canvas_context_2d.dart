@@ -8,12 +8,14 @@ import 'dart:typed_data';
 import 'dart:ui';
 import 'dart:ffi' as ffi;
 
+import 'package:collection/collection.dart';
 import 'package:flutter/painting.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
 import 'package:vector_math/vector_math_64.dart';
+import 'package:webf/src/html/canvas/canvas_text_metrics.dart';
 
 import 'canvas_context.dart';
 import 'canvas_path_2d.dart';
@@ -43,7 +45,19 @@ class CanvasRenderingContext2DSettings {
 
 enum FillStyleType { string, canvasGradient }
 
-typedef CanvasAction = void Function(Canvas, Size);
+typedef CanvasActionFn = void Function(Canvas, Size);
+
+enum CanvasActionType {
+  execute,
+  needsPaint
+}
+
+class CanvasAction {
+  CanvasAction(this.debugName, this.fn, [this.type = CanvasActionType.execute]);
+  CanvasActionFn fn;
+  CanvasActionType type;
+  String debugName;
+}
 
 class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBindingObject {
   CanvasRenderingContext2D(BindingContext context, this.canvas)
@@ -217,6 +231,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
       return castToType<CanvasRenderingContext2D>(context)
           .moveTo(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble());
     }),
+    'measureText': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
+      return castToType<CanvasRenderingContext2D>(context).measureText(castToType<String>(args[0]));
+    }),
     'quadraticCurveTo': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
       return castToType<CanvasRenderingContext2D>(context).quadraticCurveTo(
           castToType<num>(args[0]).toDouble(),
@@ -300,7 +317,10 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     'createPattern': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
       return castToType<CanvasRenderingContext2D>(context)
           .createPattern(CanvasImageSource(args[0]), castToType<String>(args[1]));
-    })
+    }),
+    'needsPaint': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
+       castToType<CanvasRenderingContext2D>(context).needsPaint();
+    }
   };
 
   @override
@@ -388,21 +408,26 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   CanvasElement canvas;
 
-  // HACK: We need record the current matrix state because flutter canvas not export resetTransform now.
-  // https://github.com/flutter/engine/pull/25449
-  Matrix4 _matrix = Matrix4.identity();
-  Matrix4 _lastMatrix = Matrix4.identity();
-
-  int get actionCount => _actions.length;
-
   List<CanvasAction> _actions = [];
   List<CanvasAction> _pendingActions = [];
 
-  void addAction(CanvasAction action) {
-    _actions.add(action);
-    // Must trigger repaint after action
-    canvas.repaintNotifier
-        .notifyListeners(); // ignore: invalid_use_of_visible_for_testing_member, invalid_use_of_protected_member
+  double _scaleX = 1.0;
+  double _scaleY = 1.0;
+
+  set scaleX(double? value) {
+    if (value != null && value != _scaleX) {
+      _scaleX = value;
+    }
+  }
+
+  set scaleY(double? value) {
+    if (value != null && value != _scaleY) {
+      _scaleY = value;
+    }
+  }
+
+  void addAction(String name, CanvasActionFn action, [CanvasActionType type = CanvasActionType.execute] ) {
+    _actions.add(CanvasAction(name, action, type));
   }
 
   // For CanvasRenderingContext2D: createPattern() method; Creating a pattern from a canvas need to replay the actions because the canvas element may be not drawn.
@@ -410,30 +435,46 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     Path2D paintTemp = path2d;
     path2d = Path2D();
     _actions.forEach((action) {
-      action.call(canvas, size);
+      action.fn.call(canvas, size);
     });
     path2d = paintTemp;
   }
 
+  List<int> needsPaintIndexes = [];
+  void needsPaint() {
+    if (_actions.isEmpty || _actions.last.type == CanvasActionType.needsPaint) return;
+    addAction('needsPaint', (p0, p1) { }, CanvasActionType.needsPaint);
+
+    int needsPaintIndex = _actions.length - 1;
+    needsPaintIndexes.add(needsPaintIndex);
+    // Must trigger repaint after add needsPaint
+    canvas.repaintNotifier.notifyListeners();
+  }
+
   // Perform canvas drawing.
   List<CanvasAction> performActions(Canvas canvas, Size size) {
-    // HACK: Must sync transform first because each paint will saveLayer and restore that make the transform not effect
-    if (!_lastMatrix.isIdentity()) {
-      canvas.transform(_lastMatrix.storage);
+    if(needsPaintIndexes.isEmpty) {
+      return [];
     }
-    _pendingActions = _actions;
-    _actions = [];
+
+    int needsPaintIndex = needsPaintIndexes[0];
+    _pendingActions = _actions.sublist(0, needsPaintIndex);
+    _actions = _actions.sublist(needsPaintIndex + 1);
+
     for (int i = 0; i < _pendingActions.length; i++) {
-      _pendingActions[i](canvas, size);
+      _pendingActions[i].fn(canvas, size);
     }
+
+    // update needsPaint index
+    for (int i = 0; i < needsPaintIndexes.length; i++) {
+      needsPaintIndexes[i] = needsPaintIndexes[i] - (needsPaintIndex + 1);
+    }
+    needsPaintIndexes = needsPaintIndexes.sublist(1);
     return _pendingActions;
   }
 
   // Clear the saved pending actions.
   void clearActions(List<CanvasAction> actions) {
-    if (_lastMatrix != _matrix) {
-      _lastMatrix = _matrix.clone();
-    }
     actions.clear();
   }
 
@@ -456,7 +497,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   TextAlign _textAlign = TextAlign.start; // (default: "start")
   set textAlign(TextAlign? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('textAlign', (Canvas canvas, Size size) {
       _textAlign = value;
     });
   }
@@ -484,7 +525,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   CanvasTextBaseline _textBaseline = CanvasTextBaseline.alphabetic; // (default: "alphabetic")
   set textBaseline(CanvasTextBaseline? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('textBaseline', (Canvas canvas, Size size) {
       _textBaseline = value;
     });
   }
@@ -507,7 +548,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   TextDirection _direction = TextDirection.ltr; // (default: "inherit")
   set direction(TextDirection? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('direction', (Canvas canvas, Size size) {
       _direction = value;
     });
   }
@@ -550,7 +591,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   String _font = _DEFAULT_FONT; // (default 10px sans-serif)
   set font(String value) {
-    addAction((Canvas canvas, Size size) {
+    _font = value;
+    addAction('font', (Canvas canvas, Size size) {
       // Must lazy parse in action because it has side-effect with _fontProperties.
       if (_parseFont(value)) {
         _font = value;
@@ -564,7 +606,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   // push state on state stack
   void restore() {
-    addAction((Canvas canvas, Size size) {
+    addAction('restore', (Canvas canvas, Size size) {
       var state = _states.last;
       _states.removeLast();
       _strokeStyle = state[0];
@@ -584,7 +626,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   // pop state stack and restore state
   void save() {
-    addAction((Canvas canvas, Size size) {
+    addAction('save', (Canvas canvas, Size size) {
       _states.add([
         strokeStyle,
         fillStyle,
@@ -604,13 +646,13 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   Path2D path2d = Path2D();
 
   void beginPath() {
-    addAction((Canvas canvas, Size size) {
+    addAction('beginPath', (Canvas canvas, Size size) {
       path2d = Path2D();
     });
   }
 
   void clip(PathFillType fillType, {Path2D? path}) {
-    addAction((Canvas canvas, Size size) {
+    addAction('clip', (Canvas canvas, Size size) {
       path?.path.fillType = fillType;
       path2d.path.fillType = fillType;
       canvas.clipPath(path?.path ?? path2d.path);
@@ -618,7 +660,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   }
 
   void fill(PathFillType fillType, {Path2D? path}) {
-    addAction((Canvas canvas, Size size) {
+    addAction('fill', (Canvas canvas, Size size) {
       if (fillStyle is! Color) {
         return;
       }
@@ -637,7 +679,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   }
 
   void stroke({Path2D? path}) {
-    addAction((Canvas canvas, Size size) {
+    addAction('stroke', (Canvas canvas, Size size) {
       if (strokeStyle is! Color) {
         return;
       }
@@ -660,33 +702,47 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     return path2d.path.contains(Offset(x, y));
   }
 
-  void arc(double x, double y, double radius, double startAngle, double endAngle, {bool anticlockwise = false}) {
-    addAction((Canvas canvas, Size size) {
-      path2d.arc(x, y, radius, startAngle, endAngle, anticlockwise: anticlockwise);
+  void arc(
+      double x, double y, double radius, double startAngle, double endAngle,
+      {bool anticlockwise = false}) {
+    addAction('arc', (Canvas canvas, Size size) {
+      path2d.arc(x, y, radius, startAngle, endAngle,
+          anticlockwise: anticlockwise);
     });
   }
 
   void arcTo(double x1, double y1, double x2, double y2, double radius) {
-    addAction((Canvas canvas, Size size) {
+    addAction('arcTo', (Canvas canvas, Size size) {
       path2d.arcTo(x1, y1, x2, y2, radius);
     });
   }
 
-  void bezierCurveTo(double cp1x, double cp1y, double cp2x, double cp2y, double x, double y) {
-    addAction((Canvas canvas, Size size) {
+  void bezierCurveTo(
+      double cp1x, double cp1y, double cp2x, double cp2y, double x, double y) {
+    addAction('bezierCurveTo', (Canvas canvas, Size size) {
       path2d.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
     });
   }
 
   void closePath() {
-    addAction((Canvas canvas, Size size) {
+    addAction('closePath', (Canvas canvas, Size size) {
       path2d.closePath();
     });
   }
 
-  void drawImage(int argumentCount, ImageElement? imgElement, double sx, double sy, double sWidth, double sHeight,
-      double dx, double dy, double dWidth, double dHeight) {
-    addAction((Canvas canvas, Size size) {
+  void drawImage(
+      int argumentCount,
+      ImageElement? imgElement,
+      double sx,
+      double sy,
+      double sWidth,
+      double sHeight,
+      double dx,
+      double dy,
+      double dWidth,
+      double dHeight) {
+
+    addAction('drawImage', (Canvas canvas, Size size) {
       if (imgElement?.image == null) return;
 
       Image img = imgElement!.image!;
@@ -702,39 +758,41 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
           sHeight = img.height.toDouble();
         }
 
-        canvas.drawImageRect(
-            img, Rect.fromLTWH(sx, sy, sWidth, sHeight), Rect.fromLTWH(dx, dy, dWidth, dHeight), Paint());
+        canvas.drawImageRect(img, Rect.fromLTWH(sx, sy, sWidth, sHeight),
+            Rect.fromLTWH(dx, dy, dWidth, dHeight), Paint());
       }
     });
   }
 
-  void ellipse(double x, double y, double radiusX, double radiusY, double rotation, double startAngle, double endAngle,
+  void ellipse(double x, double y, double radiusX, double radiusY,
+      double rotation, double startAngle, double endAngle,
       {bool anticlockwise = false}) {
-    addAction((Canvas canvas, Size size) {
-      path2d.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise: anticlockwise);
+    addAction('ellipse', (Canvas canvas, Size size) {
+      path2d.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle,
+          anticlockwise: anticlockwise);
     });
   }
 
   void lineTo(double x, double y) {
-    addAction((Canvas canvas, Size size) {
+    addAction('lineTo', (Canvas canvas, Size size) {
       path2d.lineTo(x, y);
     });
   }
 
   void moveTo(double x, double y) {
-    addAction((Canvas canvas, Size size) {
+    addAction('moveTo', (Canvas canvas, Size size) {
       path2d.moveTo(x, y);
     });
   }
 
   void quadraticCurveTo(double cpx, double cpy, double x, double y) {
-    addAction((Canvas canvas, Size size) {
+    addAction('quadraticCurveTo', (Canvas canvas, Size size) {
       path2d.quadraticCurveTo(cpx, cpy, x, y);
     });
   }
 
   void rect(double x, double y, double w, double h) {
-    addAction((Canvas canvas, Size size) {
+    addAction('rect', (Canvas canvas, Size size) {
       path2d.rect(x, y, w, h);
     });
   }
@@ -755,7 +813,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   StrokeCap _lineCap = StrokeCap.butt; // (default "butt")
   set lineCap(StrokeCap? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('lineCap', (Canvas canvas, Size size) {
       _lineCap = value;
     });
   }
@@ -766,7 +824,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   set lineDashOffset(double? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('lineDashOffset', (Canvas canvas, Size size) {
       _lineDashOffset = value;
     });
   }
@@ -791,7 +849,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   set lineJoin(StrokeJoin? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('lineJoin', (Canvas canvas, Size size) {
       _lineJoin = value;
     });
   }
@@ -801,7 +859,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   double _lineWidth = 1.0; // (default 1)
   set lineWidth(double? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('lineWidth', (Canvas canvas, Size size) {
       _lineWidth = value;
     });
   }
@@ -811,7 +869,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   double _miterLimit = 10.0; // (default 10)
   set miterLimit(double? value) {
     if (value == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('miterLimit', (Canvas canvas, Size size) {
       _miterLimit = value;
     });
   }
@@ -829,35 +887,28 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   }
 
   void translate(double x, double y) {
-    _matrix.translate(x, y);
-    addAction((Canvas canvas, Size size) {
+    addAction('translate', (Canvas canvas, Size size) {
       canvas.translate(x, y);
     });
   }
 
   void rotate(double angle) {
-    _matrix.setRotationZ(angle);
-    addAction((Canvas canvas, Size size) {
+    addAction('rotate', (Canvas canvas, Size size) {
       canvas.rotate(angle);
     });
   }
 
   void roundRect(double x, double y, double w, double h, List<double> radii) {
-    addAction((Canvas canvas, Size size) {
+    addAction('roundRect', (Canvas canvas, Size size) {
       path2d.roundRect(x, y, w, h, radii);
     });
   }
 
   // transformations (default transform is the identity matrix)
   void scale(double x, double y) {
-    _matrix.scale(x, y);
-    addAction((Canvas canvas, Size size) {
+    addAction('scale', (Canvas canvas, Size size) {
       canvas.scale(x, y);
     });
-  }
-
-  Matrix4 getTransform() {
-    return _matrix;
   }
 
   // https://github.com/WebKit/WebKit/blob/a77a158d4e2086fbe712e488ed147e8a54d44d3c/Source/WebCore/html/canvas/CanvasRenderingContext2DBase.cpp#L843
@@ -868,10 +919,12 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   // Resets the current transform to the identity matrix.
   void resetTransform() {
-    Matrix4 m4 = Matrix4.inverted(_matrix);
-    _matrix = Matrix4.identity();
-    addAction((Canvas canvas, Size size) {
+    addAction('resetTransform', (Canvas canvas, Size size) {
+      Float64List curM4Storage = canvas.getTransform();
+      Matrix4 curM4 = Matrix4.fromFloat64List(curM4Storage);
+      Matrix4 m4 = Matrix4.inverted(curM4);
       canvas.transform(m4.storage);
+      canvas.scale(_scaleX, _scaleY);
     });
   }
 
@@ -884,8 +937,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     // Matrix4
     // [ a, b, 0, 0,
     //   c, d, 0, 0,
-    //   e, f, 1, 0,
-    //   0, 0, 0, 1 ]
+    //   0, 0, 1, 0,
+    //   e, f, 0, 1 ]
     final Float64List m4storage = Float64List(16);
     m4storage[0] = a;
     m4storage[1] = b;
@@ -895,17 +948,16 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     m4storage[5] = d;
     m4storage[6] = 0.0;
     m4storage[7] = 0.0;
-    m4storage[8] = e;
-    m4storage[9] = f;
+    m4storage[8] = 0.0;
+    m4storage[9] = 0.0;
     m4storage[10] = 1.0;
     m4storage[11] = 0.0;
-    m4storage[12] = 0.0;
-    m4storage[13] = 0.0;
+    m4storage[12] = e;
+    m4storage[13] = f;
     m4storage[14] = 0.0;
     m4storage[15] = 1.0;
 
-    _matrix = Matrix4.fromFloat64List(m4storage)..multiply(_matrix);
-    addAction((Canvas canvas, Size size) {
+    addAction('transform', (Canvas canvas, Size size) {
       canvas.transform(m4storage);
     });
   }
@@ -915,7 +967,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   set strokeStyle(Object? newValue) {
     if (newValue == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('strokeStyle', (Canvas canvas, Size size) {
       _strokeStyle = newValue;
     });
   }
@@ -925,7 +977,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   set fillStyle(Object? newValue) {
     if (newValue == null) return;
-    addAction((Canvas canvas, Size size) {
+    addAction('fillStyle', (Canvas canvas, Size size) {
       _fillStyle = newValue;
     });
   }
@@ -946,7 +998,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   void clearRect(double x, double y, double w, double h) {
     Rect rect = Rect.fromLTWH(x, y, w, h);
-    addAction((Canvas canvas, Size size) {
+    addAction('clearRect', (Canvas canvas, Size size) {
       // Must saveLayer before clear avoid there is a "black" background
       Paint paint = Paint()
         ..style = PaintingStyle.fill
@@ -957,7 +1009,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   void fillRect(double x, double y, double w, double h) {
     Rect rect = Rect.fromLTWH(x, y, w, h);
-    addAction((Canvas canvas, Size size) {
+    addAction('fillRect', (Canvas canvas, Size size) {
       Paint paint = Paint();
       if (fillStyle is Color || fillStyle is CanvasRadialGradient || fillStyle is CanvasLinearGradient) {
         if (fillStyle is Color) {
@@ -1040,7 +1092,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   void strokeRect(double x, double y, double w, double h) {
     Rect rect = Rect.fromLTWH(x, y, w, h);
-    addAction((Canvas canvas, Size size) {
+    addAction('strokeRect', (Canvas canvas, Size size) {
       Paint paint = Paint();
       if (strokeStyle is Color) {
         paint..color = strokeStyle as Color;
@@ -1118,7 +1170,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   }
 
   void fillText(String text, double x, double y, {double? maxWidth}) {
-    addAction((Canvas canvas, Size size) {
+    addAction('fillText', (Canvas canvas, Size size) {
       if (fillStyle is! Color) {
         return;
       }
@@ -1136,7 +1188,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   }
 
   void strokeText(String text, double x, double y, {double? maxWidth}) {
-    addAction((Canvas canvas, Size size) {
+    addAction('strokeText', (Canvas canvas, Size size) {
       if (strokeStyle is! Color) {
         return;
       }
@@ -1155,9 +1207,14 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   }
 
   TextMetrics? measureText(String text) {
-    // TextPainter textPainter = _getTextPainter(text, fillStyle);
-    // TODO: transform textPainter layout info into TextMetrics.
-    return null;
+    // create TextPainter after parse font
+    _parseFont(_font);
+    TextPainter textPainter = _getTextPainter(text, fillStyle as Color);
+    textPainter.layout();
+    double width = textPainter.width;
+    TextMetrics textMetrics =
+        TextMetrics(context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), width: width);
+    return textMetrics;
   }
 
   LinearGradient _drawLinearGradient(CanvasLinearGradient gradient, double rX, double rY, double rW, double rH) {
@@ -1222,8 +1279,6 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     _pendingActions = [];
     _actions = [];
     _states.clear();
-    _matrix = Matrix4.identity();
-    _lastMatrix = Matrix4.identity();
     _textAlign = TextAlign.start;
     _textBaseline = CanvasTextBaseline.alphabetic;
     _direction = TextDirection.ltr;

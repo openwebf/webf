@@ -1,6 +1,7 @@
 import {HTMLImageElement} from "../html_image_element";
 import {HTMLCanvasElement} from "./html_canvas_element";
 import {Path2D} from "./path_2d";
+import {CanvasPattern} from "./canvas_pattern";
 
 interface CanvasRenderingContext2D extends CanvasRenderingContext {
     fillStyle: SupportAsync<string | CanvasGradient | null>;
@@ -31,6 +32,7 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     fillRect(x: number, y: number, w: number, h: number): SupportAsync<DartImpl<void>>;
     fillText(text: string, x: number, y: number, maxWidth?: number): SupportAsync<DartImpl<void>>;
     lineTo(x: number, y: number): SupportAsync<DartImpl<void>>;
+  measureText(text: string): SupportAsync<TextMetrics>;
     moveTo(x: number, y: number): SupportAsync<DartImpl<void>>;
     rect(x: number, y: number, w: number, h: number): SupportAsync<DartImpl<void>>;
     restore(): SupportAsync<DartImpl<void>>;

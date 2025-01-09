@@ -17,7 +17,15 @@ bool CanvasRenderingContext2D::IsCanvas2d() const {
 
 CanvasRenderingContext2D::CanvasRenderingContext2D(ExecutingContext* context,
                                                    NativeBindingObject* native_binding_object)
-    : CanvasRenderingContext(context->ctx(), native_binding_object) {}
+    : CanvasRenderingContext(context->ctx(), native_binding_object) {
+  context->RegisterActiveCanvasContext2D(this);
+}
+
+CanvasRenderingContext2D::~CanvasRenderingContext2D() {
+  if (GetExecutingContext()->IsContextValid()) {
+    GetExecutingContext()->RemoveCanvasContext2D(this);
+  }
+}
 
 NativeValue CanvasRenderingContext2D::HandleCallFromDartSide(const AtomicString& method,
                                                              int32_t argc,
@@ -176,6 +184,18 @@ void CanvasRenderingContext2D::setStrokeStyle(const std::shared_ptr<QJSUnionDomS
 
   stroke_style_ = style;
 }
+TextMetrics* CanvasRenderingContext2D::measureText(const AtomicString& text, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), text)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kmeasureText, 1, arguments,
+                                           FlushUICommandReason::kDependentsOnElement, exception_state);
+  NativeBindingObject* native_binding_object =
+      NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result);
+
+  if (native_binding_object == nullptr) {
+    return nullptr;
+  }
+  return TextMetrics::Create(GetExecutingContext(), native_binding_object);
+}
 
 void CanvasRenderingContext2D::setStrokeStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
                                                     ExceptionState& exception_state) {
@@ -212,6 +232,12 @@ void CanvasRenderingContext2D::roundRect(double x,
 
   InvokeBindingMethod(binding_call_methods::kroundRect, sizeof(arguments) / sizeof(NativeValue), arguments,
                       FlushUICommandReason::kDependentsOnElement, exception_state);
+}
+
+void CanvasRenderingContext2D::needsPaint() const {
+  if (bindingObject()->invoke_bindings_methods_from_native == nullptr)
+    return;
+  InvokeBindingMethod(binding_call_methods::kneedsPaint, 0, nullptr, kDependentsOnElement, ASSERT_NO_EXCEPTION());
 }
 
 void CanvasRenderingContext2D::roundRect_async(double x,

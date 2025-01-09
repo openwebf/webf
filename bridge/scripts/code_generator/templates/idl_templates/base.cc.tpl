@@ -18,6 +18,7 @@
 #include "core/dom/document.h"
 #include "core/dom/document_fragment.h"
 #include "core/dom/comment.h"
+#include "core/html/canvas/text_metrics.h"
 #include "core/geometry/dom_matrix.h"
 #include "core/geometry/dom_point.h"
 #include "core/input/touch_list.h"
