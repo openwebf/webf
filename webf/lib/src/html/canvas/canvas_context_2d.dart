@@ -320,7 +320,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
     }),
     'needsPaint': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
        castToType<CanvasRenderingContext2D>(context).needsPaint();
-    }
+    })
   };
 
   @override
