@@ -1,0 +1,56 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<HTML>
+<HEAD>
+<TITLE>CSS1 Test Suite: 5.5.13 border-bottom-width</TITLE>
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<META http-equiv="Content-Style-Type" content="text/css">
+
+<LINK rel="stylesheet" type="text/css" media="screen" href="../resources/base.css">
+
+<STYLE type="text/css">
+.zero {background-color: silver; border-bottom-width: 0;}
+.one {border-bottom-width: 50px; border-style: solid;}
+.two {border-bottom-width: thick; border-style: solid;}
+.three {border-bottom-width: medium; border-style: solid;}
+.four {border-bottom-width: thin; border-style: solid;}
+.five {border-bottom-width: 25px;}</STYLE>
+
+</LINK></META></META></HEAD>
+
+<BODY><p>The style declarations which apply to the text below are:</p>
+<PRE>.zero {background-color: silver; border-bottom-width: 0;}
+.one {border-bottom-width: 50px; border-style: solid;}
+.two {border-bottom-width: thick; border-style: solid;}
+.three {border-bottom-width: medium; border-style: solid;}
+.four {border-bottom-width: thin; border-style: solid;}
+.five {border-bottom-width: 25px;}
+</PRE>
+<HR>
+<p>
+(These will only work if <CODE>border-style</CODE> is supported.)
+</p>
+<p class="zero">
+This element has a class of zero.
+</p>
+<p class="one">
+This element should have a bottom border width of 50 pixels.
+</p>
+<p class="two">
+This element should have a thick bottom border width.
+</p>
+<p class="three">
+This element should have a medium bottom border width.
+</p>
+<p class="four">
+This element should have a thin bottom border width.
+</p>
+<p class="five">
+This element should have no border and no extra "padding" on its bottom side, as no <CODE>border-style</CODE> was set.
+</p>
+<p class="zero">
+This element has a class of zero.
+</p>
+
+
+</HR></BODY>
+</HTML>
