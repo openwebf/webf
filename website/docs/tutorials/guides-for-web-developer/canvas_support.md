@@ -93,6 +93,7 @@ let ctx = canvas.getContext('2d');
 
 - **scale(x, y)**: Scales the canvas units.
 - **rotate(angle)**: Rotates the canvas around the current origin.
+- **roundRect(x, y, width, height, radii)**: Add a rectangle with radius of corners in the current path.
 - **translate(x, y)**: Moves the canvas origin to a different point.
 - **transform(a, b, c, d, e, f)**: Multiplies the current transformation matrix with the given matrix.
 - **setTransform(a, b, c, d, e, f)**: Resets the current transform to the identity and then invokes `transform()`.
