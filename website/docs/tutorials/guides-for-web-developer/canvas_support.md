@@ -69,7 +69,7 @@ let ctx = canvas.getContext('2d');
 - **textBaseline**: Property to set the baseline alignment (`"top"`, `"hanging"`, `"middle"`, `"alphabetic"`, `"ideographic"`, or `"bottom"`).
 - **fillText(text, x, y, [maxWidth])**: Fills a text string at the specified coordinates.
 - **strokeText(text, x, y, [maxWidth])**: Outlines a text string at the specified coordinates.
-- ~~**measureText(text)**: Returns a `TextMetrics` object containing information about the width of the text.~~ 
+- **measureText(text)**: Returns a `TextMetrics` object containing information about the width of the text.
 
 ### Image Drawing:
 
