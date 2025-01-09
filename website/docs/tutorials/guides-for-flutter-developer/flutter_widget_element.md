@@ -135,20 +135,20 @@ standard HTML element:
   </div>
 </template>
 <script>
-export default {
-  name: 'App',
-  methods: {
-    handleCanPlay() {
-      this.state = 'canplay';
-    },
-    handlePlaying() {
-      this.state = 'playing';
-    },
-    handlePaused() {
-      this.state = 'paused';
+  export default {
+    name: 'App',
+    methods: {
+      handleCanPlay() {
+        this.state = 'canplay';
+      },
+      handlePlaying() {
+        this.state = 'playing';
+      },
+      handlePaused() {
+        this.state = 'paused';
+      }
     }
   }
-}
 </script>
   ```
 
@@ -208,13 +208,35 @@ sourced from Dart.
   ></video-player>
 </template>
 <script>
-export default {
-  name: 'App',
-  mounted() {
-    console.log(this.$refs['videoPlayer'].src); // Outputs: [VIDEO SRC]
+  export default {
+    name: 'App',
+    mounted() {
+      console.log(this.$refs['videoPlayer'].src); // Outputs: [VIDEO SRC]
+    }
   }
-}
 </script>
+```
+
+**Use an Asynchronous Approach to Read Properties**
+
+In dedicated thread mode, accessing properties blocks the JavaScript thread while waiting for the property getter to
+return. For better performance optimization, JavaScript developers are encouraged to use a more efficient approach to
+access properties on `widgetElement` without blocking the JavaScript thread.
+
+By appending the `_async` suffix to the synchronous property, a Promise object is returned to JavaScript, enabling an
+asynchronous approach:
+
+```javascript
+console.log(this.$refs['videoPlayer'].src); // The synchronous approach
+console.log(this.$refs['videoPlayer'].src_async); // The asynchronous approach, which returns a Promise instead of the actual value.
+```
+
+Use the `.then` method or the `async`/`await` keywords to handle asynchronous access:
+
+```javascript
+async function getSrc() {
+  return await this.$refs['videoPlayer'].src_async;
+}
 ```
 
 ### Defining Methods
@@ -277,17 +299,17 @@ invocation of functions defined in Dart.
 </template>
 
 <script>
-export default {
-  name: 'App',
-  methods: {
-    handlePlay() {
-      this.$refs['videoPlayer'].play();
-    },
-    handlePause() {
-      this.$refs['videoPlayer'].pause();
+  export default {
+    name: 'App',
+    methods: {
+      handlePlay() {
+        this.$refs['videoPlayer'].play();
+      },
+      handlePause() {
+        this.$refs['videoPlayer'].pause();
+      }
     }
   }
-}
 </script>
 ```
 
@@ -303,6 +325,25 @@ Here's comparative illustrating Dart methods and their corresponding JavaScript 
 |----------------------------|---------------------|
 | `AsyncBindingObjectMethod` | async function() {} |
 | `BindingObjectMethodSync`  | function() { }      |
+
+**Use an Asynchronous Approach to Synchronous Functions**
+
+In dedicated thread mode, calling synchronous methods blocks the JavaScript thread while waiting for the Dart synchronous methods to return. For better performance optimization, JavaScript developers are encouraged to use a more efficient approach to call the same Dart synchronous method on `widgetElement` without blocking the JavaScript thread.
+
+By appending the `_async` suffix to the synchronous Dart method name, a Promise object is returned to JavaScript, enabling an asynchronous approach:
+
+```javascript
+this.$refs['videoPlayer'].play(); // This function is synchronous
+this.$refs['videoPlayer'].play_async(); // Calls the same synchronous `play` method in Dart but returns a Promise object.
+```
+
+Use the `.then` method or the `async`/`await` keywords to handle asynchronous execution:
+
+```javascript
+async function play() {
+  await this.$refs['videoPlayer'].play_async();
+}
+```
 
 ### Handling Events from Dart
 
@@ -341,7 +382,7 @@ const videoPlayerElement = document.createElement('video-player');
 
 // Register a callback for the `play` event dispatched from the Dart side.
 videoPlayerElement.addEventListener('play', (e) => {
-    // If the event object is a CustomEvent, access e.detail to retrieve the data sent from Dart.
+  // If the event object is a CustomEvent, access e.detail to retrieve the data sent from Dart.
 });
 ```
 
@@ -363,20 +404,20 @@ For example, in Vue, simply prefix the event name with @ to register the event h
 </template>
 
 <script>
-export default {
-  name: 'App',
-  methods: {
-    handleCanPlay() {
-      this.state = 'canplay';
-    },
-    handlePlaying() {
-      this.state = 'playing';
-    },
-    handlePaused() {
-      this.state = 'paused';
-    },
+  export default {
+    name: 'App',
+    methods: {
+      handleCanPlay() {
+        this.state = 'canplay';
+      },
+      handlePlaying() {
+        this.state = 'playing';
+      },
+      handlePaused() {
+        this.state = 'paused';
+      },
+    }
   }
-}
 </script>
 ```
 
@@ -399,14 +440,14 @@ For instance, to ensure the video player always remains visible on the screen, y
 </template>
 <style>
 
-#video-player {
-  width: 300px;
-  position: fixed;
-  left: 0;
-  top: 0;
-  right: 0;
-  margin: auto;
-}
+  #video-player {
+    width: 300px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    margin: auto;
+  }
 </style>
 ```
 
@@ -419,7 +460,8 @@ while the inner content is structured using HTML and CSS, this combination allow
 
 ### Another Demo
 
-[The demo](https://github.com/openwebf/samples/tree/main/demos/widget-elements) below highlights the potential of blended embedding. When designing the UI, you're not confined to a single
+[The demo](https://github.com/openwebf/samples/tree/main/demos/widget-elements) below highlights the potential of
+blended embedding. When designing the UI, you're not confined to a single
 technical framework. If you possess a collection of existing Flutter widget components, you can seamlessly integrate
 them with WebF, making them accessible for web applications.
 
