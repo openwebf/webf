@@ -154,74 +154,44 @@ export default {
 
 ## Define API and Events
 
-Methods and properties for custom elements can be fully defined and implemented in Dart and accessed or modified through the following JavaScript API.
+Methods and properties for custom elements can be 100% defined and implemented in Dart. Once you have defined your
+properties and methods for your custom element, WebF's binding system will create the corresponding JavaScript API for
+you can let
+you easily communicate with JavaScript.
 
 ### Defining Properties
 
-To add custom properties to your custom element, override the `initializeProperties` method within the `WidgetElement` class:
+To enhance your custom element with additional properties, override the `initializeProperties` method
+within `WidgetElement`.
 
 ```dart
 @override
 void initializeProperties(Map<String, BindingObjectProperty> properties) {
   super.initializeProperties(properties);
-  properties['src'] = BindingObjectProperty(
-    getter: () => '[VIDEO SRC]', 
-    setter: (src) {
-      // Define the action to be taken when JavaScript updates the `src` property
-      // of your custom element instance.
-    },
-  );
+  properties['src'] = BindingObjectProperty(getter: () => '[VIDEO SRC]', setter: (src) {
+    // Action to be taken when JavaScript attempts to update the `src` property of your custom element instance.
+  });
 }
 ```
 
-- **`BindingObjectProperty`**: 
-  - Provides **getter** and **setter** callbacks.
-  - The `getter` defines how the property value is retrieved from Dart.
-  - The `setter` specifies the action to be executed when JavaScript attempts to update the property.
+`BindingObjectProperty` provides both getter and setter callbacks.
 
-### On the JavaScript Side
+When JavaScript seeks to retrieve a value using this property, the `getter` callback gets activated.
 
-The element created by Flutter widgets exposes the following methods for JavaScript developers to get or set data with Dart:
+Conversely, when JavaScript intends to assign a value to this property, the `setter` callback comes into play.
 
-```typescript
-interface WidgetElement extends HTMLElement {
-  // Retrieve the value returned from Dart synchronously
-  getPropertyValue(key: string): any;
-
-  // Retrieve the value returned from Dart asynchronously, without blocking the Flutter UI thread
-  getPropertyValueAsync(key: string): Promise<any>;
-
-  // Assign a value to Dart synchronously
-  // This action will activate the setter callback in Dart immediately.
-  setPropertyValue(key: string, value: any): void;
-
-  // Assign a value to Dart asynchronously
-  // This action will activate the setter callback in Dart without blocking the Flutter UI thread.
-  setPropertyValueAsync(key: string, value: any): Promise<void>;
-}
-```
-
-### Example Usage
-
-Below is an example of how to get and set properties between JavaScript and Dart:
+On the JavaScript side, if you're manipulating the DOM element directly, you can effortlessly interact with these
+properties on the DOM instance:
 
 ```javascript
-// Create a custom video player element
+// JavaScript Implementation
 const videoPlayerElement = document.createElement('video-player');
 
-// Retrieve the value returned from Dart synchronously
-console.log(videoPlayerElement.getPropertyValue('src')); // Outputs: [VIDEO SRC]
+// Retrieve the value returned from Dart
+console.log(videoPlayerElement.src); // Outputs: [VIDEO SRC]
 
-// Retrieve the value returned from Dart asynchronously, without blocking the Flutter UI thread
-console.log(await videoPlayerElement.getPropertyValueAsync('src'));
-
-// Assign a value to Dart synchronously
-// This action will activate the setter callback in Dart immediately.
-videoPlayerElement.setPropertyValue('src', 'NEW VIDEO SRC');
-
-// Assign a value to Dart asynchronously
-// This action will activate the setter callback in Dart without blocking the Flutter UI thread.
-await videoPlayerElement.setPropertyValueAsync('src', 'NEW VIDEO SRC');
+// Assign a value to Dart
+videoPlayerElement.src = 'NEW VIDEO SRC'; // This action will activate the setter callback in Dart.
 ```
 
 For those utilizing specific frameworks, it's advisable to access the DOM instance through the respective framework's
@@ -240,75 +210,61 @@ sourced from Dart.
 <script>
 export default {
   name: 'App',
-  async mounted() {
-    console.log(await this.$refs['videoPlayer'].getPropertyValueAsync('src')); // Outputs: [VIDEO SRC]
+  mounted() {
+    console.log(this.$refs['videoPlayer'].src); // Outputs: [VIDEO SRC]
   }
 }
 </script>
 ```
 
----
-
 ### Defining Methods
 
-Adding methods to your custom elements in WebF is similar to adding properties:
+Incorporation methods to your custom elements in WebF closely parallels the approach for adding properties. WebF's
+binding
+system auto-generates the relevant JavaScript functions corresponding to your Dart methods.
 
-To provide your custom element with additional methods, override the `initializeMethods` method within `WidgetElement`:
+To equip your custom element with additional methods, override the `initializeMethods` methods within `WidgetElement`:
 
 ```dart
 @override
 void initializeMethods(Map<String, BindingObjectMethod> methods) {
   super.initializeMethods(methods);
-  // Define a method named 'play' that returns a Promise.
-  // For synchronous execution, use the `BindingObjectMethodSync` class instead.
+  // Here, we're defining a method named 'play' that returns a Promise.
+  // For synchronous execution, opt for the `BindingObjectMethodSync` class.
   methods['play'] = AsyncBindingObjectMethod(call: (args) async {
-    // This action is triggered when JavaScript invokes the `play()` method.
-    // 'args' contains the parameters passed from the JavaScript side.
+    // This is the action that occurs when JavaScript invokes the `play()` method.
+    // 'args' will contain parameters passed from the JavaScript side.
 
-    // Implement the desired functionality for this method.
-    // Example: await _controller.play();
+    // Implement your desired functionality for this method.
+    // For instance: await _controller.play();
     // ...
 
-    // Dispatch an event to the JavaScript side to trigger a callback.
+    // Dispatch an event to the JavaScript side to activate a callback.
     dispatchEvent(Event('play'));
   });
 }
 ```
 
----
+Post initialization, the custom element instance on the JavaScript side will possess a `play()` that returns a Promise.
 
-### On the JavaScript Side
-
-JavaScript developers can use `callMethod` and `callAsyncMethod` to invoke the sync and async binding methods defined in Dart:
-
-```typescript
-interface WidgetElement extends HTMLElement {
-  // Call synchronous Dart methods. Supports `BindingObjectMethodSync` only and returns the result immediately.
-  callMethod(methodName: string, ...args: any[]): any;
-
-  // Call Dart methods asynchronously. Supports both `BindingObjectMethodSync` and `AsyncBindingObjectMethod`, returning a Promise that resolves when the callback completes.
-  callAsyncMethod(methodName: string, ...args: any[]): Promise<any>;
-}
-```
+If directly interacting with the DOM element, these methods can be invoked with ease:
 
 ```javascript
 // JavaScript Code
 const videoPlayerElement = document.createElement('video-player');
 
-// Invoke the `play` method asynchronously, as defined in Dart.
-// All values after the first argument are passed to Dart:
-await videoPlayerElement.callAsyncMethod('play', '<src>');
+// Invoke the `play` method, as crafted in Dart.
+await videoPlayerElement.play();
 ```
 
----
+For developers working within distinct frameworks, it's recommended to fetch the DOM instance using the framework's
+native API.
 
-### Framework Integration
-
-For developers using frameworks, it is recommended to retrieve the DOM instance using the framework's native API.
-
-For example, in Vue, the `ref()` function can be used to obtain the DOM instance, enabling the invocation of methods defined in Dart:
+For instance, in Vue, the `ref()` function allows developers to obtain the DOM instance, subsequently facilitating the
+invocation of functions defined in Dart.
 
 ```vue
+
 <template>
   <video-player
       ref="videoPlayer"
@@ -324,27 +280,29 @@ For example, in Vue, the `ref()` function can be used to obtain the DOM instance
 export default {
   name: 'App',
   methods: {
-    async handlePlay() {
-      await this.$refs.videoPlayer.callAsyncMethod('play', '<src>');
+    handlePlay() {
+      this.$refs['videoPlayer'].play();
     },
-    async handlePause() {
-      await this.$refs.videoPlayer.callAsyncMethod('pause');
+    handlePause() {
+      this.$refs['videoPlayer'].pause();
     }
   }
 }
 </script>
 ```
 
----
+**Synchronous & Asynchronous Functions**
 
-### Synchronous & Asynchronous Functions
+WebF's binding system accommodates both synchronous and asynchronous functions.
 
-Dart developers can define two types of binding methods: `AsyncBindingObjectMethod` and `BindingObjectMethodSync`.
+Depending on your requirements, you can tailor your functions accordingly.
 
-- `callAsyncMethod` supports both types of methods, enabling asynchronous execution.
-- `callMethod` is limited to invoking methods defined with `BindingObjectMethodSync`, providing immediate results.
+Here's comparative illustrating Dart methods and their corresponding JavaScript counterparts:
 
-
+| Dart                       | JavaScript          |
+|----------------------------|---------------------|
+| `AsyncBindingObjectMethod` | async function() {} |
+| `BindingObjectMethodSync`  | function() { }      |
 
 ### Handling Events from Dart
 
