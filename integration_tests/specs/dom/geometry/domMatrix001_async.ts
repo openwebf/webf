@@ -131,7 +131,7 @@ var scaleTranslate2D = {
     await matrix.translate_async(1,5,3);
     checkDOMMatrixSync(matrix, initialMatrix());
     done();
-  },"test translate() doesn't mutate");
+  },"async test translate() doesn't mutate");
 
   test(async function(done) {
     var matrix = initialMatrix();
@@ -139,7 +139,7 @@ var scaleTranslate2D = {
     await matrix.scale_async(1,5,3,0,1,3);
     checkDOMMatrixSync(matrix, initialMatrix());
     done();
-  },"test scale() doesn't mutate");
+  },"async test scale() doesn't mutate");
 
   test(async function(done) {
     var matrix = initialMatrix();
@@ -147,7 +147,7 @@ var scaleTranslate2D = {
     await matrix.scaleNonUniform_async(1,5);
     checkDOMMatrixSync(matrix, initialMatrix());
     done();
-  },"test scaleNonUniform() doesn't mutate");
+  },"async test scaleNonUniform() doesn't mutate");
 
   test(async function(done) {
     var matrix = initialMatrix();
@@ -155,7 +155,7 @@ var scaleTranslate2D = {
     await matrix.scale3d_async(3,2,1,1);
     checkDOMMatrixSync(matrix, initialMatrix());
     done();
-  },"test scale3d() doesn't mutate");
+  },"async test scale3d() doesn't mutate");
 
   test(async function(done) {
     var matrix = initialMatrix();
@@ -163,7 +163,7 @@ var scaleTranslate2D = {
     await matrix.rotate_async(Math.PI, Math.PI/2, Math.PI/6);
     checkDOMMatrixSync(matrix, initialMatrix());
     done();
-  },"test rotate() doesn't mutate");
+  },"async test rotate() doesn't mutate");
 
   test(async function(done) {
     var matrix = initialMatrix();
@@ -171,7 +171,7 @@ var scaleTranslate2D = {
     await matrix.rotateFromVector_async(10,-4);
     checkDOMMatrixSync(matrix, initialMatrix());
     done();
-  },"test rotateFromVector() doesn't mutate");
+  },"async test rotateFromVector() doesn't mutate");
 
   test(async function(done) {
     var matrix = initialMatrix();
@@ -179,7 +179,7 @@ var scaleTranslate2D = {
     await matrix.rotateAxisAngle_async(3,4,5, Math.PI/6);
     checkDOMMatrixSync(matrix, initialMatrix());
     done();
-  },"test rotateAxisAngle() doesn't mutate");
+  },"async test rotateAxisAngle() doesn't mutate");
 
   test(async function(done) {
     var matrix = initialMatrix();
@@ -187,7 +187,7 @@ var scaleTranslate2D = {
     await matrix.skewX_async(20);
     checkDOMMatrixSync(matrix, initialMatrix());
     done();
-  },"test skewX() doesn't mutate");
+  },"async test skewX() doesn't mutate");
 
   test(async function(done) {
     var matrix = initialMatrix();
@@ -195,7 +195,7 @@ var scaleTranslate2D = {
     await matrix.skewY_async(20);
     checkDOMMatrixSync(matrix, initialMatrix());
     done();
-  },"test skewY() doesn't mutate");
+  },"async test skewY() doesn't mutate");
 
   test(async function(done) {
     var matrix = initialMatrix();
@@ -210,7 +210,7 @@ var scaleTranslate2D = {
     await matrix.multiply_async(m)
     checkDOMMatrixSync(matrix, initialMatrix());
     done();
-  },"test multiply() doesn't mutate");
+  },"async test multiply() doesn't mutate");
 
   test(async function(done) {
     var matrix = initialMatrix();
@@ -218,7 +218,7 @@ var scaleTranslate2D = {
     await matrix.flipX_async();
     checkDOMMatrixSync(matrix, initialMatrix());
     done();
-  },"test flipX() doesn't mutate");
+  },"async test flipX() doesn't mutate");
 
   test(async function(done) {
     var matrix = initialMatrix();
@@ -226,7 +226,7 @@ var scaleTranslate2D = {
     await matrix.flipY_async();
     checkDOMMatrixSync(matrix, initialMatrix());
     done();
-  },"test flipY() doesn't mutate");
+  },"async test flipY() doesn't mutate");
 
   test(async function(done) {
     var matrix = initialMatrix();
@@ -234,6 +234,6 @@ var scaleTranslate2D = {
     await matrix.inverse_async();
     checkDOMMatrixSync(matrix, initialMatrix());
     done();
-  },"test inverse() doesn't mutate");
+  },"async test inverse() doesn't mutate");
   
 });

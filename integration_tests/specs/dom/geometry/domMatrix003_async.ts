@@ -96,8 +96,8 @@ test(async function () {
     m.m43 += tx * m.m13 + ty * m.m23 + tz * m.m33;
     m.m44 += tx * m.m14 + ty * m.m24 + tz * m.m34;
   });
-  checkDOMMatrix(result, expected);
-}, "test translate()");
+  checkDOMMatrixAsync(result, expected);
+}, "async test translate()");
 
 test(async function () {
   var sx = 2;
@@ -119,8 +119,8 @@ test(async function () {
     m.m33 *= sz;
     m.m34 *= sz;
   });
-  checkDOMMatrix(result, expected);
-}, "test scale() without offsets");
+  checkDOMMatrixAsync(result, expected);
+}, "async test scale() without offsets");
 
 test(async function () {
   // @ts-ignore
@@ -129,38 +129,38 @@ test(async function () {
     .translate(11, 7, 13)
     .scale(2, 5, 3)
     .translate(-11, -7, -13);
-  checkDOMMatrix(result, expected);
-}, "test scale() with offsets");
+  checkDOMMatrixAsync(result, expected);
+}, "async test scale() with offsets");
 
 test(async function () {
   // @ts-ignore
   var result = await new DOMMatrixReadOnly([1, 2, 3, 4, 5, 6]).scale_async(1, 1, 1, 1, 1, 1);
   var expected = new DOMMatrixReadOnly([1, 2, 0, 0, 3, 4, 0, 0, 0, 0, 1, 0, 5, 6, 0, 1]);
-  checkDOMMatrix(result, expected);
-}, "test scale() with identity scale and nonzero originZ");
+  checkDOMMatrixAsync(result, expected);
+}, "async test scale() with identity scale and nonzero originZ");
 
 test(async function () {
   // @ts-ignore
   var result = await initialDOMMatrix().scaleNonUniform_async();
   var expected = initialDOMMatrix()
     .scale(1, 1, 1, 0, 0, 0);
-  checkDOMMatrix(result, expected);
-}, "test scaleNonUniform()");
+  checkDOMMatrixAsync(result, expected);
+}, "async test scaleNonUniform()");
 
 test(async function () {
   // @ts-ignore
   var result = await initialDOMMatrix().scaleNonUniform_async(6);
   var expected = initialDOMMatrix().scale(6, 1, 1, 0, 0, 0);
-  checkDOMMatrix(result, expected);
-}, "test scaleNonUniform() with sx");
+  checkDOMMatrixAsync(result, expected);
+}, "async test scaleNonUniform() with sx");
 
 test(async function () {
   // @ts-ignore
   var result = await initialDOMMatrix().scaleNonUniform_async(5, 7);
   var expected = initialDOMMatrix()
     .scale(5, 7, 1, 0, 0, 0);
-  checkDOMMatrix(result, expected);
-}, "test scaleNonUniform() with sx, sy");
+  checkDOMMatrixAsync(result, expected);
+}, "async test scaleNonUniform() with sx, sy");
 
 test(async function () {
   // @ts-ignore
@@ -169,22 +169,22 @@ test(async function () {
     .translate(5, 2, 3)
     .scale(7, 7, 7)
     .translate(-5, -2, -3);
-  checkDOMMatrix(result, expected);
-}, "test scale3d()");
+  checkDOMMatrixAsync(result, expected);
+}, "async test scale3d()");
 
 test(async function () {
   // @ts-ignore
   var result = await initialDOMMatrix().rotate_async(-90);
   var expected = initialDOMMatrix().multiply(getRotationMatrix(0, 0, 1, -90));
-  checkDOMMatrix(result, expected);
-}, "test rotate() 2d");
+  checkDOMMatrixAsync(result, expected);
+}, "async test rotate() 2d");
 
 test(async function () {
   // @ts-ignore
   var result = await initialDOMMatrix().rotate_async(180, 180, 90);
   var expected = initialDOMMatrix().rotate(0, 0, -90);
-  checkDOMMatrix(result, expected);
-}, "test rotate()");
+  checkDOMMatrixAsync(result, expected);
+}, "async test rotate()");
 
 test(async function () {
   // @ts-ignore
@@ -193,43 +193,43 @@ test(async function () {
     .rotate(0, 0, 90)
     .rotate(0, 90, 0)
     .rotate(90, 0, 0);
-  checkDOMMatrix(result, expected);
-}, "test rotate() order");
+  checkDOMMatrixAsync(result, expected);
+}, "async test rotate() order");
 
 test(async function () {
   // @ts-ignore
   var result = await initialDOMMatrix().rotateFromVector_async(1, 1);
   var expected = initialDOMMatrix().rotate(45);
-  checkDOMMatrix(result, expected);
-}, "test rotateFromVector()"); // TODO Expected value for m11 is -1, actual value is 6.123233995736767e-17
+  checkDOMMatrixAsync(result, expected);
+}, "async test rotateFromVector()"); // TODO Expected value for m11 is -1, actual value is 6.123233995736767e-17
 
 test(async function () {
   // @ts-ignore
   var result = await initialDOMMatrix().rotateFromVector_async(0, 1);
   var expected = initialDOMMatrix().rotate(90);
-  checkDOMMatrix(result, expected);
-}, "test rotateFromVector() with x being zero");  // TODO Expected value for m11 is 1.0606601717798214, actual value is 0.9507737510847889
+  checkDOMMatrixAsync(result, expected);
+}, "async test rotateFromVector() with x being zero");  // TODO Expected value for m11 is 1.0606601717798214, actual value is 0.9507737510847889
 
 test(async function () {
   // @ts-ignore
   var result = await initialDOMMatrix().rotateFromVector_async(1, 0);
   var expected = initialDOMMatrix()
-  checkDOMMatrix(result, expected);
-}, "test rotateFromVector() with y being zero");
+  checkDOMMatrixAsync(result, expected);
+}, "async test rotateFromVector() with y being zero");
 
 test(async function () {
   // @ts-ignore
   var result = await initialDOMMatrix().rotateFromVector_async(0, 0);
   var expected = initialDOMMatrix()
-  checkDOMMatrix(result, expected);
-}, "test rotateFromVector() with two zeros");
+  checkDOMMatrixAsync(result, expected);
+}, "async test rotateFromVector() with two zeros");
 
 test(async function () {
   // @ts-ignore
   var result = await initialDOMMatrix().rotateAxisAngle_async(3, 3, 3, 120);
   var expected = initialDOMMatrix().multiply(getRotationMatrix(3, 3, 3, 120));
-  checkDOMMatrix(result, expected);
-}, "test rotateAxisAngle() "); // TODO Expected value for m11 is 0.5000000000000002
+  checkDOMMatrixAsync(result, expected);
+}, "async test rotateAxisAngle() "); // TODO Expected value for m11 is 0.5000000000000002
 
 test(async function () {
   var angleDeg = 75;
@@ -242,8 +242,8 @@ test(async function () {
     0, 0, 1, 0,
     0, 0, 0, 1])
   var expected = initialDOMMatrix().multiply(skew);
-  checkDOMMatrix(result, expected);
-}, "test skewX()");
+  checkDOMMatrixAsync(result, expected);
+}, "async test skewX()");
 
 test(async function () {
   var angleDeg = 18;
@@ -256,28 +256,28 @@ test(async function () {
     0, 0, 1, 0,
     0, 0, 0, 1])
   var expected = initialDOMMatrix().multiply(skew);
-  checkDOMMatrix(result, expected);
-}, "test skewY()"); // TODO 'Expected value for m11 is 1.1624598481164532
+  checkDOMMatrixAsync(result, expected);
+}, "async test skewY()"); // TODO 'Expected value for m11 is 1.1624598481164532
 
 test(async function () {
   // @ts-ignore
   var result = await initialDOMMatrix().multiply_async(initialDOMMatrix().inverse());
-  checkDOMMatrix(result, identity());
-}, "test multiply with inverse is identity");
+  checkDOMMatrixAsync(result, identity());
+}, "async test multiply with inverse is identity");
 
 test(async function () {
   // @ts-ignore
   var result = await initialDOMMatrix().flipX_async();
   var expected = initialDOMMatrix().multiply(new DOMMatrix([-1, 0, 0, 1, 0, 0]));
-  checkDOMMatrix(result, expected);
-}, "test flipX()"); //Expected false to be true, 'Expected value for is2D is true'
+  checkDOMMatrixAsync(result, expected);
+}, "async test flipX()"); //Expected false to be true, 'Expected value for is2D is true'
 
 test(async function () {
   // @ts-ignore
   var result = await initialDOMMatrix().flipY_async();
   var expected = initialDOMMatrix().multiply(new DOMMatrix([1, 0, 0, -1, 0, 0]));
-  checkDOMMatrix(result, expected);
-}, "test flipY()"); //  Expected false to be true, 'Expected value for is2D is true'.
+  checkDOMMatrixAsync(result, expected);
+}, "async test flipY()"); //  Expected false to be true, 'Expected value for is2D is true'.
 
 // test(async function () {
 //   var point = new DOMPointReadOnly(1, 2, 3, 4);
@@ -286,7 +286,7 @@ test(async function () {
 //   var result = await matrix.transformPoint_async(point);
 //   var expected = getMatrixTransform(matrix, point);
 //   checkDOMPoint(result, expected);
-// }, "test transformPoint() - 2d matrix");
+// }, "async test transformPoint() - 2d matrix");
 
 // test(async function () {
 //   var point = new DOMPointReadOnly(1, 2, 3, 4);
@@ -295,9 +295,9 @@ test(async function () {
 //   var result = await matrix.transformPoint_async(point);
 //   var expected = getMatrixTransform(matrix, point);
 //   checkDOMPoint(result, expected);
-// }, "test transformPoint() - 3d matrix");
+// }, "async test transformPoint() - 3d matrix");
 
-async function checkDOMMatrix(m, exp) {
+async function checkDOMMatrixAsync(m, exp) {
   let m11 = await m.m11_async;
   let m12 = await m.m12_async;
   let m13 = await m.m13_async;

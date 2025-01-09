@@ -12,9 +12,9 @@ function getMatrixTransform(matrix, point) {
 //   // @ts-ignore
 //   var result = await point.matrixTransform_async(matrix);
 //   var expected = getMatrixTransform(matrix, point);
-//   checkDOMPoint(result, expected);
+//   checkDOMPointAsync(result, expected);
 //   done()
-// },'test DOMPoint matrixTransform');
+// },'async test DOMPoint matrixTransform');
 test(async function(done) {
   var p = new DOMPoint(0, 0, 0, 1);
   // @ts-ignore
@@ -25,9 +25,9 @@ test(async function(done) {
   p.z_async = undefined;
   // @ts-ignore
   p.w_async = undefined;
-  checkDOMPoint(p, {x:NaN, y:NaN, z:NaN, w:NaN});
+  checkDOMPointAsync(p, {x:NaN, y:NaN, z:NaN, w:NaN});
   done()
-},'test DOMPoint Attributes undefined');
+},'async test DOMPoint Attributes undefined');
 test(async function(done) {
   var p = new DOMPoint(0, 0, 0, 1);
   // @ts-ignore
@@ -38,18 +38,18 @@ test(async function(done) {
   p.z_async = Number.NEGATIVE_INFINITY;
   // @ts-ignore
   p.w_async = Infinity;
-  checkDOMPoint(p, {x:NaN, y:Infinity, z:-Infinity, w:Infinity});
+  checkDOMPointAsync(p, {x:NaN, y:Infinity, z:-Infinity, w:Infinity});
   done();
-},'test DOMPoint Attributes NaN Infinity');
+},'async test DOMPoint Attributes NaN Infinity');
 // test(async function(done) {
 //   var point = new DOMPointReadOnly(5, 4);
 //   var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6]);
 //   // @ts-ignore
 //   var result = await point.matrixTransform_async(matrix);
 //   var expected = getMatrixTransform(matrix, point);
-//   checkDOMPoint(result, expected);
+//   checkDOMPointAsync(result, expected);
 //   done();
-// },'test DOMPointReadOnly matrixTransform');
+// },'async test DOMPointReadOnly matrixTransform');
 test(async function(done) {
   var p = new DOMPointReadOnly(0, 0, 0, 1);
   // @ts-ignore
@@ -60,11 +60,11 @@ test(async function(done) {
   p.z_async = undefined;
   // @ts-ignore
   p.w_async = undefined;
-  checkDOMPoint(p, {x:0, y:0, z:0, w:1});
+  checkDOMPointAsync(p, {x:0, y:0, z:0, w:1});
   done();
-},'test DOMPointReadOnly Attributes undefined');
+},'async test DOMPointReadOnly Attributes undefined');
 
-async function checkDOMPoint(p, exp) {
+async function checkDOMPointAsync(p, exp) {
   let x = await p.x_async;
   let y = await p.y_async;
   let z = await p.z_async;

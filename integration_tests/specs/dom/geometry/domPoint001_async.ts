@@ -1,4 +1,4 @@
-async function checkDOMPoint(p, exp) {
+async function checkDOMPointAsync(p, exp) {
   let x = await p.x_async;
   let y = await p.y_async;
   let z = await p.z_async;
@@ -10,60 +10,60 @@ async function checkDOMPoint(p, exp) {
 }
 
 test(async function(done) {
-  checkDOMPoint(new DOMPoint(), {x:0, y:0, z:0, w:1});
+  checkDOMPointAsync(new DOMPoint(), {x:0, y:0, z:0, w:1});
   done();
-},'testConstructor0');
+},'async testConstructor0');
 test(async function(done) {
-  checkDOMPoint(new DOMPoint(1), {x:1, y:0, z:0, w:1});
+  checkDOMPointAsync(new DOMPoint(1), {x:1, y:0, z:0, w:1});
   done();
-},'testConstructor1');
+},'async testConstructor1');
 test(async function(done) {
-  checkDOMPoint(new DOMPoint(1, 2), {x:1, y:2, z:0, w:1});
+  checkDOMPointAsync(new DOMPoint(1, 2), {x:1, y:2, z:0, w:1});
   done();
-},'testConstructor2');
+},'async testConstructor2');
 test(async function(done) {
-  checkDOMPoint(new DOMPoint(1, 2, 3), {x:1, y:2, z:3, w:1});
+  checkDOMPointAsync(new DOMPoint(1, 2, 3), {x:1, y:2, z:3, w:1});
   done();
-},'testConstructor3');
+},'async testConstructor3');
 test(async function(done) {
-  checkDOMPoint(new DOMPoint(1, 2, 3, 4), {x:1, y:2, z:3, w:4});
+  checkDOMPointAsync(new DOMPoint(1, 2, 3, 4), {x:1, y:2, z:3, w:4});
   done();
-},'testConstructor4');
+},'async testConstructor4');
 test(async function(done) {
-  checkDOMPoint(new DOMPoint(1, 2, 3, 4, 5), {x:1, y:2, z:3, w:4});
+  checkDOMPointAsync(new DOMPoint(1, 2, 3, 4, 5), {x:1, y:2, z:3, w:4});
   done();
-},'testConstructor5');
+},'async testConstructor5');
 // test(async function(done) {
-//   checkDOMPoint(new DOMPoint({}), {x:NaN, y:0, z:0, w:1});
+//   checkDOMPointAsync(new DOMPoint({}), {x:NaN, y:0, z:0, w:1});
 //   done();
-// },'testConstructorDictionary0'); //TODO
+// },'async testConstructorDictionary0'); //TODO
 // test(async function(done) {
-//   checkDOMPoint(new DOMPoint({x:1}), {x:NaN, y:0, z:0, w:1});
+//   checkDOMPointAsync(new DOMPoint({x:1}), {x:NaN, y:0, z:0, w:1});
 //   done();
-// },'testConstructorDictionary1'); //TODO
+// },'async testConstructorDictionary1'); //TODO
 // test(async function(done) {
-//   checkDOMPoint(new DOMPoint({x:1, y:2}), {x:NaN, y:0, z:0, w:1});
+//   checkDOMPointAsync(new DOMPoint({x:1, y:2}), {x:NaN, y:0, z:0, w:1});
 //   done();
-// },'testConstructorDictionary2'); //TODO
+// },'async testConstructorDictionary2'); //TODO
 test(async function(done) {
-  checkDOMPoint(new DOMPoint(1, undefined), {x:1, y:0, z:0, w:1});
+  checkDOMPointAsync(new DOMPoint(1, undefined), {x:1, y:0, z:0, w:1});
   done();
-},'testConstructor2undefined');
+},'async testConstructor2undefined');
 // test(async function(done) {
-//   checkDOMPoint(new DOMPoint("a", "b"), {x:NaN, y:NaN, z:0, w:1});
-// },'testConstructorUndefined1'); //TODO
+//   checkDOMPointAsync(new DOMPoint("a", "b"), {x:NaN, y:NaN, z:0, w:1});
+// },'async testConstructorUndefined1'); //TODO
 // test(async function(done) {
-//   checkDOMPoint(new DOMPoint({x:"a", y:"b"}), {x:NaN, y:0, z:0, w:1});
+//   checkDOMPointAsync(new DOMPoint({x:"a", y:"b"}), {x:NaN, y:0, z:0, w:1});
 //   done();
-// },'testConstructorUndefined2'); //TODO
+// },'async testConstructorUndefined2'); //TODO
 test(async function(done) {
-  checkDOMPoint(new DOMPointReadOnly(), {x:0, y:0, z:0, w:1});
+  checkDOMPointAsync(new DOMPointReadOnly(), {x:0, y:0, z:0, w:1});
   done();
-},'DOMPointReadOnly constructor with no values');
+},'async DOMPointReadOnly constructor with no values');
 test(async function(done) {
-  checkDOMPoint(new DOMPointReadOnly(1, 2, 3, 4), {x:1, y:2, z:3, w:4});
+  checkDOMPointAsync(new DOMPointReadOnly(1, 2, 3, 4), {x:1, y:2, z:3, w:4});
   done();
-},'DOMPointReadOnly constructor with 4 values');
+},'async DOMPointReadOnly constructor with 4 values');
 test(async function(done) {
   var p = new DOMPoint(0, 0, 0, 1);
   // @ts-ignore
@@ -74,9 +74,9 @@ test(async function(done) {
   p.z_async = undefined;
   // @ts-ignore
   p.w_async = undefined;
-  checkDOMPoint(p, {x:NaN, y:NaN, z:NaN, w:NaN});
+  checkDOMPointAsync(p, {x:NaN, y:NaN, z:NaN, w:NaN});
   done();
-},'testAttributesUndefined'); //TODO
+},'async testAttributesUndefined'); //TODO
 test(async function(done) {
   var p = new DOMPoint(0, 0, 0, 1);
   // @ts-ignore
@@ -87,6 +87,6 @@ test(async function(done) {
   p.z_async = Number.NEGATIVE_INFINITY;
   // @ts-ignore
   p.w_async = Infinity;
-  checkDOMPoint(p, {x:NaN, y:Infinity, z:-Infinity, w:Infinity});
+  checkDOMPointAsync(p, {x:NaN, y:Infinity, z:-Infinity, w:Infinity});
   done();
-},'testAttributesNaNInfinity');  //TODO
+},'async testAttributesNaNInfinity');  //TODO
