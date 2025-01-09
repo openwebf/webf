@@ -108,13 +108,17 @@ class DOMMatrixReadOnly extends DynamicBindingObject with StaticDefinedBindingOb
           .rotateFromVector(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble());
     }),
     'scale': StaticDefinedSyncBindingObjectMethod(call: (matrix, args) {
-      return castToType<DOMMatrixReadOnly>(matrix).scale(
-          castToType<num>(args[0]).toDouble(),
-          castToType<num>(args[1]).toDouble(),
-          castToType<num>(args[2]).toDouble(),
-          castToType<num>(args[3]).toDouble(),
-          castToType<num>(args[4]).toDouble(),
-          castToType<num>(args[5]).toDouble());
+      double sx = 1, sy = 1, sz = 1, ox = 0, oy = 0, oz = 0;
+      int length = args.length;
+      if (length > 0) sx = castToType<num>(args[0]).toDouble();
+      if (length > 1) sy = castToType<num>(args[1]).toDouble();
+      if (length > 2) sz = castToType<num>(args[2]).toDouble();
+      if (length > 3) ox = castToType<num>(args[3]).toDouble();
+      if (length > 4) oy = castToType<num>(args[4]).toDouble();
+      if (length > 5) oz = castToType<num>(args[5]).toDouble();
+
+      return castToType<DOMMatrixReadOnly>(matrix)
+          .scale(sx, sy, sz, ox, oy, oz);
     }),
     'scale3d': StaticDefinedSyncBindingObjectMethod(call: (matrix, args) {
       return castToType<DOMMatrixReadOnly>(matrix).scale3d(
@@ -125,8 +129,11 @@ class DOMMatrixReadOnly extends DynamicBindingObject with StaticDefinedBindingOb
       );
     }),
     'scaleNonUniform': StaticDefinedSyncBindingObjectMethod(call: (matrix, args) {
-      return castToType<DOMMatrixReadOnly>(matrix)
-          .scaleNonUniform(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble());
+      double sx = 1, sy = 1;
+      int length = args.length;
+      if (length > 0) sx = castToType<num>(args[0]).toDouble();
+      if (length > 1) sy = castToType<num>(args[1]).toDouble();
+      return castToType<DOMMatrixReadOnly>(matrix).scaleNonUniform(sx, sy);
     }),
     'skewX': StaticDefinedSyncBindingObjectMethod(
         call: (matrix, args) => castToType<DOMMatrixReadOnly>(matrix).skewX(castToType<num>(args[0]).toDouble())),

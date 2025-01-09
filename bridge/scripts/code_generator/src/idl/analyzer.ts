@@ -155,6 +155,12 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
 
       // @ts-ignore
       return getParameterBaseType(argument);
+    } else if (identifier == 'DependentsOnLayout') {
+      if (mode) mode.layoutDependent = true;
+      let argument: ts.TypeNode = typeReference.typeArguments![0] as unknown as ts.TypeNode;
+      argument = typeReference.typeArguments![0] as unknown as ts.TypeNode;
+      // @ts-ignore
+      return getParameterBaseType(argument);
     } else if (identifier === 'StaticMember') {
       if (mode) mode.static = true;
       let argument = typeReference.typeArguments![0];
@@ -167,9 +173,30 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
       return getParameterBaseType(argument);
     } else if (identifier === 'LegacyNullToEmptyString') {
       return FunctionArgumentType.legacy_dom_string;
-    } else if (identifier === 'SupportAsync') {
-      if (mode) mode.supportAsync = true;
-      let argument = typeReference.typeArguments![0];
+    } else if (identifier.indexOf('SupportAsync') >= 0) {
+      if (mode) {
+        mode.supportAsync = true;
+        if (identifier === "SupportAsyncManual"){
+          mode.supportAsyncManual = true;
+        }
+      }
+      let argument = typeReference.typeArguments![0] as unknown as ts.TypeNode;
+      if (argument.kind == ts.SyntaxKind.TypeReference) {
+        let typeReference: ts.TypeReference = argument as unknown as ts.TypeReference;
+        // @ts-ignore
+        let identifier = (typeReference.typeName as ts.Identifier).text;
+        if (identifier == 'DartImpl') {
+          if (mode) {
+            mode.dartImpl = true;
+          }
+          argument = typeReference.typeArguments![0] as unknown as ts.TypeNode;
+        }
+      } else if (argument.kind == ts.SyntaxKind.ArrayType) {
+        let elementType = (argument as ts.ArrayTypeNode).elementType as ts.TypeReferenceNode;
+        if (mode) mode.supportAsyncArrayValue = true;
+        return getParameterBaseType(elementType);
+      }
+
       // @ts-ignore
       return getParameterBaseType(argument);
     }
@@ -179,7 +206,6 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
     // @ts-ignore
     return getParameterBaseType((type as ts.LiteralTypeNode).literal, mode);
   }
-
   return FunctionArgumentType.any;
 }
 
@@ -206,6 +232,31 @@ function getParameterType(type: ts.TypeNode, unionTypeCollector: UnionTypeCollec
       unionTypeCollector.types.add(result.value);
     }
     return result;
+  } else if (type.kind === ts.SyntaxKind.TypeReference) {
+    let typeReference: ts.TypeReference = type as unknown as ts.TypeReference;
+    // @ts-ignore
+    let identifier = (typeReference.typeName as ts.Identifier).text;
+    if (identifier.indexOf('SupportAsync') >= 0) {
+      let argument = typeReference.typeArguments![0] as unknown as ts.TypeNode;
+      if (argument.kind == ts.SyntaxKind.UnionType) {
+        if (mode) {
+          mode.supportAsync = true
+          if (identifier === 'SupportAsyncManual') {
+            mode.supportAsyncManual = true
+          }
+        }
+        let node = argument as unknown as ts.UnionType;
+        let types = node.types;
+        let result = {
+          isArray: false,
+          value: types.map(type => getParameterType(type as unknown as ts.TypeNode, unionTypeCollector, mode))
+        };
+        if (isUnionType(result)) {
+          unionTypeCollector.types.add(result.value);
+        }
+        return result;
+      }
+    }
   }
   return {
     isArray: false,
@@ -293,7 +344,13 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
                 obj.props.push(prop);
 
                 if (prop.typeMode.supportAsync) {
+                  // keep asyncProp supportAsync = true
                   let asyncProp = Object.assign({}, prop);
+                  // set prop supportAsync = false
+                  let syncMode = Object.assign({}, mode);
+                  syncMode.supportAsync = false;
+                  mode.supportAsyncManual = false;
+                  prop.typeMode = syncMode
                   asyncProp.name = asyncProp.name + '_async';
                   definedPropertyCollector.properties.add(asyncProp.name);
                   asyncProp.async_type = {
@@ -320,25 +377,39 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
             if (m.type) {
               let mode = new ParameterMode();
               f.returnType = getParameterType(m.type, unionTypeCollector, mode);
+
+              // Override the default type for SupportAsync<Type[]> to support ArrayTypes;
+              if (mode.supportAsyncArrayValue) {
+                f.returnType = {
+                  isArray: true,
+                  value: f.returnType
+                };
+              }
+
               f.returnTypeMode = mode;
               if (f.returnTypeMode.staticMethod) {
                 obj.staticMethods.push(f);
               }
             }
             if (f.returnTypeMode?.supportAsync) {
-              let asyncFunc = new FunctionDeclaration();
+              // keep asyncFunc supportAsync = true
+              let asyncFunc = Object.assign({}, f);
+              let mode = Object.assign({}, f.returnTypeMode);
+              mode.supportAsync = false;
+              mode.supportAsyncManual = false;
+              f.returnTypeMode = mode
               asyncFunc.name = getPropName(m.name) + '_async';
               asyncFunc.args = [];
               m.parameters.forEach(params => {
                 let p = paramsNodeToArguments(params, unionTypeCollector);
                 asyncFunc.args.push(p);
               });
-              obj.methods.push(asyncFunc);
-              if (m.type) {
-                let mode = new ParameterMode();
-                asyncFunc.returnType = getParameterType(m.type, unionTypeCollector, mode);
-                asyncFunc.returnTypeMode = mode;
+              asyncFunc.async_returnType = {
+                isArray: false,
+                value: FunctionArgumentType.promise
               }
+
+              obj.methods.push(asyncFunc);
             }
             break;
           }

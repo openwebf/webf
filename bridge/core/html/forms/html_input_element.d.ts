@@ -3,13 +3,13 @@ import {HTMLElement} from "../html_element";
 interface HTMLInputElement extends HTMLElement {
   width: DartImpl<number>;
   height: DartImpl<number>;
-  defaultValue: DartImpl<string>;
-  value: DartImpl<LegacyNullToEmptyString>;
+  defaultValue: SupportAsync<DartImpl<string>>;
+  value: SupportAsync<DartImpl<LegacyNullToEmptyString>>;
   accept: DartImpl<string>;
   autocomplete: DartImpl<string>;
-  autofocus: DartImpl<boolean>;
+  autofocus: SupportAsync<DartImpl<boolean>>;
   checked: DartImpl<boolean>;
-  disabled: DartImpl<boolean>;
+  disabled: SupportAsync<DartImpl<boolean>>;
   min: DartImpl<string>;
   max: DartImpl<string>;
   minLength: DartImpl<double>;
@@ -20,11 +20,11 @@ interface HTMLInputElement extends HTMLElement {
   step: DartImpl<string>;
   pattern: DartImpl<string>;
   required: DartImpl<boolean>;
-  readonly: DartImpl<boolean>;
-  placeholder: DartImpl<string>
-  type: DartImpl<string>;
+  readonly: SupportAsync<DartImpl<boolean>>;
+  placeholder: SupportAsync<DartImpl<string>>
+  type: SupportAsync<DartImpl<string>>;
   inputMode: DartImpl<string>;
-  focus(): DartImpl<void>;
-  blur(): DartImpl<void>;
+  focus(): SupportAsync<DartImpl<void>>;
+  blur(): SupportAsync<DartImpl<void>>;
   new(): void;
 }

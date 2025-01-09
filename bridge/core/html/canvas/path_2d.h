@@ -30,7 +30,9 @@ class Path2D : public BindingObject {
                   ExceptionState& exception_state);
 
   void addPath(Path2D* path, DOMMatrixReadOnly* dom_matrix, ExceptionState& exception_state);
+  void addPath_async(Path2D* path, DOMMatrixReadOnly* dom_matrix, ExceptionState& exception_state);
   void addPath(Path2D* path, ExceptionState& exception_state);
+  void addPath_async(Path2D* path, ExceptionState& exception_state);
 
   void roundRect(double x,
                  double y,
@@ -38,6 +40,13 @@ class Path2D : public BindingObject {
                  double h,
                  std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
                  ExceptionState& exception_state);
+
+  void roundRect_async(double x,
+                       double y,
+                       double w,
+                       double h,
+                       std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
+                       ExceptionState& exception_state);
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,

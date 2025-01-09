@@ -255,13 +255,16 @@ ScriptPromise BindingObject::GetBindingPropertyAsync(const webf::AtomicString& p
   return InvokeBindingMethodAsync(BindingMethodCallOperations::kGetProperty, 1, argv, exception_state);
 }
 
-void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop, NativeValue value) {
+void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop,
+                                            NativeValue value,
+                                            webf::ExceptionState& exception_state) {
   std::unique_ptr<SharedNativeString> args_01 = prop.ToNativeString(ctx());
-  auto* native_value = (NativeValue*)dart_malloc(sizeof(NativeValue));
-  memcpy(native_value, &value, sizeof(NativeValue));
+
+  auto* args_02 = (NativeValue*)dart_malloc(sizeof(NativeValue));
+  memcpy((void*)args_02, &value, sizeof(NativeValue));
 
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetProperty, std::move(args_01), bindingObject(),
-                                                       native_value);
+                                                       args_02);
 }
 
 NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations binding_method_call_operation,

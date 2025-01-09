@@ -97,6 +97,7 @@ describe('window scroll API', () => {
     document.body.appendChild(container);
 
     function scrollListener() {
+      window.removeEventListener('scroll', scrollListener);
       done();
     }
 

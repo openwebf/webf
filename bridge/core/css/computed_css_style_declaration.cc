@@ -51,6 +51,10 @@ int64_t ComputedCssStyleDeclaration::length() const {
   return NativeValueConverter<NativeTypeInt64>::FromNativeValue(result);
 }
 
+ScriptPromise ComputedCssStyleDeclaration::length_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(binding_call_methods::klength, exception_state);
+}
+
 AtomicString ComputedCssStyleDeclaration::getPropertyValue(const AtomicString& key, ExceptionState& exception_state) {
   return item(key, exception_state).ToLegacyDOMString(ctx());
 }
@@ -59,6 +63,15 @@ void ComputedCssStyleDeclaration::setProperty(const AtomicString& key,
                                               const ScriptValue& value,
                                               ExceptionState& exception_state) {
   SetItem(key, value, exception_state);
+}
+
+void ComputedCssStyleDeclaration::setProperty_async(const webf::AtomicString& key,
+                                                    const webf::ScriptValue& value,
+                                                    webf::ExceptionState& exception_state) {
+  NativeValue arguments[] = {
+      NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key),
+      NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value.ToLegacyDOMString(ctx()))};
+  InvokeBindingMethodAsync(binding_call_methods::ksetProperty, 2, arguments, exception_state);
 }
 
 AtomicString ComputedCssStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {
@@ -96,6 +109,15 @@ AtomicString ComputedCssStyleDeclaration::cssText() const {
   return AtomicString::Empty();
 }
 
+ScriptPromise ComputedCssStyleDeclaration::cssText_async(ExceptionState& exception_state) {
+  return ScriptPromise(ctx(), JS_NULL);
+}
+
 void ComputedCssStyleDeclaration::setCssText(const webf::AtomicString& value, webf::ExceptionState& exception_state) {}
+
+ScriptPromise ComputedCssStyleDeclaration::setCssText_async(const AtomicString& value,
+                                                            ExceptionState& exception_state) {
+  return ScriptPromise(ctx(), JS_NULL);
+}
 
 }  // namespace webf

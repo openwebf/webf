@@ -14,17 +14,17 @@ interface Element extends Node, ParentNode, ChildNode {
   name: DartImpl<string>;
   readonly attributes: ElementAttributes;
   readonly style: CSSStyleDeclaration;
-  readonly clientHeight: DartImpl<DependentsOnLayout<number>>;
-  readonly clientLeft: DartImpl<DependentsOnLayout<number>>;
-  readonly clientTop: DartImpl<DependentsOnLayout<number>>;
-  readonly clientWidth: DartImpl<DependentsOnLayout<number>>;
+  readonly clientHeight: SupportAsync<DartImpl<DependentsOnLayout<number>>>;
+  readonly clientLeft: SupportAsync<DartImpl<DependentsOnLayout<number>>>;
+  readonly clientTop: SupportAsync<DartImpl<DependentsOnLayout<number>>>;
+  readonly clientWidth: SupportAsync<DartImpl<DependentsOnLayout<number>>>;
   readonly outerHTML: string;
   innerHTML: string;
   readonly ownerDocument: Document;
-  scrollLeft: DartImpl<DependentsOnLayout<number>>;
-  scrollTop: DartImpl<DependentsOnLayout<number>>;
-  readonly scrollWidth: DartImpl<DependentsOnLayout<number>>;
-  readonly scrollHeight: DartImpl<DependentsOnLayout<number>>;
+  scrollLeft: SupportAsync<DartImpl<DependentsOnLayout<number>>>;
+  scrollTop:SupportAsync< DartImpl<DependentsOnLayout<number>>>;
+  readonly scrollWidth: SupportAsync<DartImpl<DependentsOnLayout<number>>>;
+  readonly scrollHeight:SupportAsync< DartImpl<DependentsOnLayout<number>>>;
   readonly prefix: string | null;
   readonly localName: string;
   readonly namespaceURI: string | null;
@@ -53,24 +53,24 @@ interface Element extends Node, ParentNode, ChildNode {
 
   // CSSOM View Module
   // https://drafts.csswg.org/cssom-view/#extension-to-the-element-interface
-  getBoundingClientRect(): BoundingClientRect;
-  getClientRects(): BoundingClientRect[];
+  getBoundingClientRect(): SupportAsync<BoundingClientRect>;
+  getClientRects(): SupportAsync<BoundingClientRect[]>;
 
-  getElementsByClassName(className: string) : Element[];
-  getElementsByTagName(tagName: string): Element[];
+  getElementsByClassName(className: string) : SupportAsync<Element[]>;
+  getElementsByTagName(tagName: string): SupportAsync<Element[]>;
 
-  querySelector(selectors: string): Element | null;
-  querySelectorAll(selectors: string): Element[];
-  matches(selectors: string): boolean;
+  querySelector(selectors: string): SupportAsync<Element | null>;
+  querySelectorAll(selectors: string): SupportAsync<Element[]>;
+  matches(selectors: string): SupportAsync<boolean>;
 
-  closest(selectors: string): Element | null;
+  closest(selectors: string): SupportAsync<Element | null>;
 
-  scroll(options?: ScrollToOptions): void;
-  scroll(x: number, y: number): void;
-  scrollBy(options?: ScrollToOptions): void;
-  scrollBy(x: number, y: number): void;
-  scrollTo(options?: ScrollToOptions): void;
-  scrollTo(x: number, y: number): void;
+  scroll(options?: ScrollToOptions): SupportAsyncManual<void>;
+  scroll(x: number, y: number): SupportAsyncManual<void>;
+  scrollBy(options?: ScrollToOptions): SupportAsyncManual<void>;
+  scrollBy(x: number, y: number): SupportAsyncManual<void>;
+  scrollTo(options?: ScrollToOptions): SupportAsyncManual<void>;
+  scrollTo(x: number, y: number): SupportAsyncManual<void>;
 
   // Export the target element's rendering content to PNG.
   // WebF special API.
