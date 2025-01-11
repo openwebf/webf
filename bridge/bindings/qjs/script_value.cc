@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "script_value.h"
+
+#include <core/geometry/dom_matrix.h>
 #include <quickjs/quickjs.h>
 #include <vector>
 #include "bindings/qjs/converter_impl.h"
@@ -94,6 +96,12 @@ static JSValue FromNativeValue(ExecutingContext* context,
             return event_target->ToQuickJS();
           }
           break;
+        }
+        case JSPointerType::DOMMatrix: {
+          return MakeGarbageCollected<DOMMatrix>(context, ptr)->ToQuickJS();
+        }
+        case JSPointerType::BoundingClientRect: {
+          return MakeGarbageCollected<BoundingClientRect>(context, ptr)->ToQuickJS();
         }
         case JSPointerType::Others: {
           return JS_DupValue(context->ctx(), JS_MKPTR(JS_TAG_OBJECT, ptr));
