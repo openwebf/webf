@@ -152,7 +152,7 @@ function patchAppVersion(baseDir) {
 function patchGitIgnore() {
   let rootGitIgnore = PATH.join(__dirname, "../.gitignore");
   let bridgeGitIgnore = PATH.join(__dirname, "../bridge/.gitignore");
-  let polyfillGitIgnore = PATH.join(__dirname, "../polyfill/.gitignore");
+  let polyfillGitIgnore = PATH.join(__dirname, "../bridge/polyfill/.gitignore");
   fs.writeFileSync(rootGitIgnore, updatedRootGitIgnore);
   fs.writeFileSync(bridgeGitIgnore, updatedBridgeIgnore);
   fs.writeFileSync(polyfillGitIgnore, updatedPolyFillIgnore);
@@ -162,6 +162,21 @@ function addGenFilesToGit() {
   let webfDir = PATH.join(__dirname, "../webf");
   exec('git add src', {
     cwd: webfDir
+  });
+  exec('rm -rf webf/win_src', {
+    cwd: PATH.join(__dirname, '../')
+  });
+  exec(`git add windows/CMakeLists.txt`, {
+    cwd: webfDir
+  });
+  exec(`git add .gitignore`, {
+    cwd: PATH.join(__dirname, '../')
+  });
+  exec(`git add bridge/.gitignore`, {
+    cwd: PATH.join(__dirname, '../')
+  });
+  exec(`git add bridge/polyfill/.gitignore`, {
+    cwd: PATH.join(__dirname, '../')
   });
   exec('git commit -m "init"');
 }
@@ -175,16 +190,16 @@ function patchWindowsCMake(baseDir) {
 
 const krakenDir = PATH.join(__dirname, "../webf");
 
-const symbolFiles = [
-  "ios/Frameworks/webf_bridge.xcframework",
-  "ios/Frameworks/quickjs.xcframework",
-  "macos/libwebf.dylib",
-  "macos/libquickjs.dylib",
-];
+// const symbolFiles = [
+//   "ios/Frameworks/webf_bridge.xcframework",
+//   "ios/Frameworks/quickjs.xcframework",
+//   "macos/libwebf.dylib",
+//   "macos/libquickjs.dylib",
+// ];
 
-for (let file of symbolFiles) {
-  symbolicToRealFile(PATH.join(krakenDir, file));
-}
+// for (let file of symbolFiles) {
+//   symbolicToRealFile(PATH.join(krakenDir, file));
+// }
 
 patchGitIgnore();
 
@@ -196,7 +211,6 @@ for (let file of sourceSymbolFiles) {
   symbolicToRealFile(PATH.join(krakenDir, file));
 }
 
-addGenFilesToGit();
 patchWindowsCMake(krakenDir);
 
 patchAppRev(krakenDir);
