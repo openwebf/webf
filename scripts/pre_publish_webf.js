@@ -192,16 +192,16 @@ function patchWindowsCMake(baseDir) {
 
 const krakenDir = PATH.join(__dirname, "../webf");
 
-// const symbolFiles = [
-//   "ios/Frameworks/webf_bridge.xcframework",
-//   "ios/Frameworks/quickjs.xcframework",
-//   "macos/libwebf.dylib",
-//   "macos/libquickjs.dylib",
-// ];
+const symbolFiles = [
+  "ios/Frameworks/webf_bridge.xcframework",
+  "ios/Frameworks/quickjs.xcframework",
+  "macos/libwebf.dylib",
+  "macos/libquickjs.dylib",
+];
 
-// for (let file of symbolFiles) {
-//   symbolicToRealFile(PATH.join(krakenDir, file));
-// }
+for (let file of symbolFiles) {
+  symbolicToRealFile(PATH.join(krakenDir, file));
+}
 
 patchGitIgnore();
 
