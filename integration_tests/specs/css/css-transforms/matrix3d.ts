@@ -10,6 +10,9 @@ describe('Transform matrix3d', function () {
     document.body.appendChild(div);
     const style = window.getComputedStyle(div);
     expect(style['transform']).toEqual('none');
+    // @ts-ignore
+    const style_async = await window.getComputedStyle_async(div);
+    expect(style['transform']).toEqual('none');
     await snapshot();
   })
 })

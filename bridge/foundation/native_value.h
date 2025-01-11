@@ -35,7 +35,8 @@ enum class JSPointerType {
   BoundingClientRect = 2,
   TextMetrics = 3,
   Screen = 4,
-  Others = 5
+  ComputedCSSStyleDeclaration = 5,
+  Others = 6
 };
 
 class ExecutingContext;

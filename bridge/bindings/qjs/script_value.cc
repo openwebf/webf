@@ -110,6 +110,9 @@ static JSValue FromNativeValue(ExecutingContext* context,
         case JSPointerType::TextMetrics: {
           return MakeGarbageCollected<TextMetrics>(context, ptr)->ToQuickJS();
         }
+        case JSPointerType::ComputedCSSStyleDeclaration: {
+          return MakeGarbageCollected<ComputedCssStyleDeclaration>(context, ptr)->ToQuickJS();
+        }
         case JSPointerType::Others: {
           return JS_DupValue(context->ctx(), JS_MKPTR(JS_TAG_OBJECT, ptr));
         }

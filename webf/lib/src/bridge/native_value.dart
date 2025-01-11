@@ -48,6 +48,7 @@ enum JSPointerType {
   BoundingClientRect,
   TextMetrics,
   Screen,
+  ComputedCSSStyleDeclaration,
   Others
 }
 
@@ -65,6 +66,8 @@ JSPointerType getPointerTypeOfBindingObject(BindingObject bindingObject) {
     return JSPointerType.TextMetrics;
   } else if (bindingObject is Screen) {
     return JSPointerType.Screen;
+  } else if (bindingObject is ComputedCSSStyleDeclaration) {
+    return JSPointerType.ComputedCSSStyleDeclaration;
   }
 
   return JSPointerType.Others;
