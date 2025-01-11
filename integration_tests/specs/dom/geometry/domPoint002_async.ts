@@ -25,7 +25,7 @@ test(async function(done) {
   p.z_async = undefined;
   // @ts-ignore
   p.w_async = undefined;
-  checkDOMPointAsync(p, {x:NaN, y:NaN, z:NaN, w:NaN});
+  await checkDOMPointAsync(p, {x:NaN, y:NaN, z:NaN, w:NaN});
   done()
 },'async test DOMPoint Attributes undefined');
 test(async function(done) {
@@ -38,7 +38,7 @@ test(async function(done) {
   p.z_async = Number.NEGATIVE_INFINITY;
   // @ts-ignore
   p.w_async = Infinity;
-  checkDOMPointAsync(p, {x:NaN, y:Infinity, z:-Infinity, w:Infinity});
+  await checkDOMPointAsync(p, {x:NaN, y:Infinity, z:-Infinity, w:Infinity});
   done();
 },'async test DOMPoint Attributes NaN Infinity');
 // test(async function(done) {
@@ -60,7 +60,7 @@ test(async function(done) {
   p.z_async = undefined;
   // @ts-ignore
   p.w_async = undefined;
-  checkDOMPointAsync(p, {x:0, y:0, z:0, w:1});
+  await checkDOMPointAsync(p, {x:0, y:0, z:0, w:1});
   done();
 },'async test DOMPointReadOnly Attributes undefined');
 

@@ -13,7 +13,7 @@
  * - Element.prototype.parentElement
  */
 describe('DOM Element API async', () => {
-  xit('should work', async () => {
+  it('should work', async () => {
     const div = document.createElement('div');
     expect(div.nodeName === 'DIV').toBeTrue();
 
@@ -45,7 +45,7 @@ describe('DOM Element API async', () => {
     expect(div.hasAttribute('foo')).toBeFalse();
   });
 
-  xit('should work with scroll', async () => {
+  it('should work with scroll', async () => {
     const div = document.createElement('div');
 
     div.style.width = div.style.height = '200px';
@@ -69,7 +69,14 @@ describe('DOM Element API async', () => {
     // @ts-ignore
     let boundingClientRect = await div.getBoundingClientRect_async();
     expect(JSON.parse(JSON.stringify(boundingClientRect))).toEqual({
-      bottom: 210, height: 30, left: 30, right: 60, top: 180, width: 30, x: 30, y: 180
+      x: 20.0,
+      y: 20.0,
+      width: 200.0,
+      height: 200.0,
+      top: 20.0,
+      left: 20.0,
+      right: 220.0,
+      bottom: 220.0,
     } as any);
 
     // @ts-ignore
@@ -83,7 +90,7 @@ describe('DOM Element API async', () => {
 
   });
 
-  xit('should works when getting multiple zero rects', async() => {
+  it('should works when getting multiple zero rects', async() => {
     const div = document.createElement('div');
     // @ts-ignore
     let boundingClientRect = await div.getBoundingClientRect_async();
