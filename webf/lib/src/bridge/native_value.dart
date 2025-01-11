@@ -46,6 +46,8 @@ enum JSPointerType {
   NativeBindingObject,
   DOMMatrix,
   BoundingClientRect,
+  TextMetrics,
+  Screen,
   Others
 }
 
@@ -59,6 +61,10 @@ JSPointerType getPointerTypeOfBindingObject(BindingObject bindingObject) {
     return JSPointerType.DOMMatrix;
   } else if (bindingObject is BoundingClientRect) {
     return JSPointerType.BoundingClientRect;
+  } else if (bindingObject is TextMetrics) {
+    return JSPointerType.TextMetrics;
+  } else if (bindingObject is Screen) {
+    return JSPointerType.Screen;
   }
 
   return JSPointerType.Others;

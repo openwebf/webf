@@ -33,7 +33,9 @@ enum class JSPointerType {
   NativeBindingObject = 0,
   DOMMatrix = 1,
   BoundingClientRect = 2,
-  Others = 3
+  TextMetrics = 3,
+  Screen = 4,
+  Others = 5
 };
 
 class ExecutingContext;

@@ -5,6 +5,7 @@
 #include "script_value.h"
 
 #include <core/geometry/dom_matrix.h>
+#include <core/html/canvas/text_metrics.h>
 #include <quickjs/quickjs.h>
 #include <vector>
 #include "bindings/qjs/converter_impl.h"
@@ -102,6 +103,12 @@ static JSValue FromNativeValue(ExecutingContext* context,
         }
         case JSPointerType::BoundingClientRect: {
           return MakeGarbageCollected<BoundingClientRect>(context, ptr)->ToQuickJS();
+        }
+        case JSPointerType::Screen: {
+          return MakeGarbageCollected<Screen>(context, ptr)->ToQuickJS();
+        }
+        case JSPointerType::TextMetrics: {
+          return MakeGarbageCollected<TextMetrics>(context, ptr)->ToQuickJS();
         }
         case JSPointerType::Others: {
           return JS_DupValue(context->ctx(), JS_MKPTR(JS_TAG_OBJECT, ptr));

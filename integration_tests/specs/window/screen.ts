@@ -25,3 +25,12 @@ describe('Screen', () => {
     expect(screen.availHeight > 0).toEqual(true);
   });
 });
+
+
+describe('Screen Async', () => {
+  it('basic', async() => {
+    expect(screen !== undefined).toEqual(true);
+    // @ts-ignore
+    expect(await window.screen_async).toEqual(screen);
+  });
+});

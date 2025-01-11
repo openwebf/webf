@@ -939,4 +939,16 @@ describe('Canvas context 2d async', () => {
     
   })
 
+  it('should work with measureText', async () => {
+    const canvas = <canvas height="300" width = "300" />;
+    document.body.appendChild(canvas);
+    var ctx = canvas.getContext('2d');    
+
+    let text = ctx.measureText("Hello world");
+    expect(typeof text.width).toBe('number');
+    
+    let async_text = await ctx.measureText_async("Hello world");
+    expect(typeof async_text.width).toBe('number');
+  });
+
 });

@@ -133,7 +133,7 @@ Screen* Window::screen() {
         NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
     if (native_binding_object == nullptr)
       return nullptr;
-    screen_ = MakeGarbageCollected<Screen>(this, native_binding_object);
+    screen_ = MakeGarbageCollected<Screen>(GetExecutingContext(), native_binding_object);
   }
   return screen_;
 }
