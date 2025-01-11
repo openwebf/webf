@@ -52,33 +52,8 @@ jobs:
       with:
         name: ios_binary
         path: bridge/build/ios/
-    runs-on: macos-14
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-    - uses: actions/setup-node@v2
-      with:
-        node-version: "16"
-    - uses: nttld/setup-ndk@v1
-      id: setup-ndk
-      with:
-        ndk-version: r22b
-    - uses: jwlawson/actions-setup-cmake@v1.11
-      with:
-        cmake-version: ${{ env.cmakeVersion }}
-    - name: NPM INSTALL
-      run: npm install
-    - name: Build bridge binary
-      run: npm run build:bridge:android:release
-      env:
-        ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
-    - uses: actions/upload-artifact@v4
-      with:
-        name: android_binary
-        path: bridge/build/android/
   publish:
-    needs: [build_linux_binary, build_android_binary, build_ios_binary, build_macos_binary, build_windows_binary]
+    needs: [build_ios_binary, build_macos_binary]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
