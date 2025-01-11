@@ -36,7 +36,10 @@ enum class JSPointerType {
   TextMetrics = 3,
   Screen = 4,
   ComputedCSSStyleDeclaration = 5,
-  Others = 6
+  DOMPoint = 6,
+  CanvasGradient = 7,
+  CanvasPattern = 8,
+  Others = 9
 };
 
 class ExecutingContext;

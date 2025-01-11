@@ -5,6 +5,9 @@
 #include "script_value.h"
 
 #include <core/geometry/dom_matrix.h>
+#include <core/geometry/dom_point.h>
+#include <core/html/canvas/canvas_gradient.h>
+#include <core/html/canvas/canvas_pattern.h>
 #include <core/html/canvas/text_metrics.h>
 #include <quickjs/quickjs.h>
 #include <vector>
@@ -112,6 +115,15 @@ static JSValue FromNativeValue(ExecutingContext* context,
         }
         case JSPointerType::ComputedCSSStyleDeclaration: {
           return MakeGarbageCollected<ComputedCssStyleDeclaration>(context, ptr)->ToQuickJS();
+        }
+        case JSPointerType::DOMPoint: {
+          return MakeGarbageCollected<DOMPoint>(context, ptr)->ToQuickJS();
+        }
+        case JSPointerType::CanvasGradient: {
+          return MakeGarbageCollected<CanvasGradient>(context, ptr)->ToQuickJS();
+        }
+        case JSPointerType::CanvasPattern: {
+          return MakeGarbageCollected<CanvasPattern>(context, ptr)->ToQuickJS();
         }
         case JSPointerType::Others: {
           return JS_DupValue(context->ctx(), JS_MKPTR(JS_TAG_OBJECT, ptr));

@@ -279,23 +279,23 @@ test(async function () {
   await checkDOMMatrixAsync(result, expected);
 }, "async test flipY()"); //  Expected false to be true, 'Expected value for is2D is true'.
 
-// test(async function () {
-//   var point = new DOMPointReadOnly(1, 2, 3, 4);
-//   var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6]);
-//   // @ts-ignore
-//   var result = await matrix.transformPoint_async(point);
-//   var expected = getMatrixTransform(matrix, point);
-//   checkDOMPoint(result, expected);
-// }, "async test transformPoint() - 2d matrix");
+test(async function () {
+  var point = new DOMPointReadOnly(1, 2, 3, 4);
+  var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6]);
+  // @ts-ignore
+  var result = await matrix.transformPoint_async(point);
+  var expected = getMatrixTransform(matrix, point);
+  checkDOMPoint(result, expected);
+}, "async test transformPoint() - 2d matrix");
 
-// test(async function () {
-//   var point = new DOMPointReadOnly(1, 2, 3, 4);
-//   var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
-//   // @ts-ignore
-//   var result = await matrix.transformPoint_async(point);
-//   var expected = getMatrixTransform(matrix, point);
-//   checkDOMPoint(result, expected);
-// }, "async test transformPoint() - 3d matrix");
+test(async function () {
+  var point = new DOMPointReadOnly(1, 2, 3, 4);
+  var matrix = new DOMMatrix([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+  // @ts-ignore
+  var result = await matrix.transformPoint_async(point);
+  var expected = getMatrixTransform(matrix, point);
+  checkDOMPoint(result, expected);
+}, "async test transformPoint() - 3d matrix");
 
 async function checkDOMMatrixAsync(m, exp) {
   let m11 = await m.m11_async;
@@ -314,7 +314,7 @@ async function checkDOMMatrixAsync(m, exp) {
   let m42 = await m.m42_async;
   let m43 = await m.m43_async;
   let m44 = await m.m44_async;
-  
+
   assert_approx_equals(m11, exp.m11, epsilon, "Expected value for m11 is " + exp.m11);
   assert_approx_equals(m12, exp.m12, epsilon, "Expected value for m12 is " + exp.m12);
   assert_approx_equals(m13, exp.m13, epsilon, "Expected value for m13 is " + exp.m13);

@@ -49,6 +49,9 @@ enum JSPointerType {
   TextMetrics,
   Screen,
   ComputedCSSStyleDeclaration,
+  DOMPoint,
+  CanvasGradient,
+  CanvasPattern,
   Others
 }
 
@@ -68,6 +71,12 @@ JSPointerType getPointerTypeOfBindingObject(BindingObject bindingObject) {
     return JSPointerType.Screen;
   } else if (bindingObject is ComputedCSSStyleDeclaration) {
     return JSPointerType.ComputedCSSStyleDeclaration;
+  } else if (bindingObject is DOMPoint) {
+    return JSPointerType.DOMPoint;
+  } else if (bindingObject is CanvasGradient) {
+    return JSPointerType.CanvasGradient;
+  } else if (bindingObject is CanvasPattern) {
+    return JSPointerType.CanvasPattern;
   }
 
   return JSPointerType.Others;
