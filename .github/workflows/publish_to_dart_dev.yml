@@ -8,51 +8,10 @@ on:
 env:
   nodeVersion: "16"
   cmakeVersion: "3.22.x"
-  flutterVersion: "2.2.0"
+  flutterVersion: "3.24.0"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  build_windows_binary:
-    runs-on: windows-2022
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - uses: actions/setup-node@v2
-        with:
-          node-version: ${{ env.nodeVersion }}
-      - uses: jwlawson/actions-setup-cmake@v1.11
-        with:
-          cmake-version: ${{ env.cmakeVersion }}
-      - run: npm i
-      - name: Build windows dll
-        run: npm run build:bridge:windows:release
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows_binary
-          path: bridge/build/windows/
-
-  build_linux_binary:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-      - uses: jwlawson/actions-setup-cmake@v1.11
-        with:
-          cmake-version: "3.22.x"
-      - run: |
-          sudo apt-get update
-          sudo apt-get install chrpath ninja-build pkg-config -y
-      - run: npm i
-      - run: npm run build:bridge:linux:release
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux_binary
-          path: bridge/build/linux/
   build_macos_binary:
     runs-on: macos-latest
     steps:
@@ -93,7 +52,6 @@ jobs:
       with:
         name: ios_binary
         path: bridge/build/ios/
-  build_android_binary:
     runs-on: macos-14
     steps:
     - uses: actions/checkout@v3
@@ -133,26 +91,15 @@ jobs:
       run: npm install
     - uses: actions/download-artifact@v4
       with:
-        name: linux_binary
-        path: bridge/build/linux/
-    - uses: actions/download-artifact@v4
-      with:
         name: ios_binary
         path: bridge/build/ios/
     - uses: actions/download-artifact@v4
       with:
         name: macos_binary
         path: bridge/build/macos/
-    - uses: actions/download-artifact@v4
-      with:
-        name: android_binary
-        path: bridge/build/android/
-    - uses: actions/download-artifact@v4
-      with:
-        name: windows_binary
-        path: bridge/build/windows/
     - name: Prepare distribute binaries
       run: node scripts/pre_publish_webf.js
+    - run: git log
     - name: Publish
       uses: k-paxian/dart-package-publisher@master
       with:
