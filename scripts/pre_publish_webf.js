@@ -3,6 +3,88 @@ const fs = require("fs");
 const PATH = require("path");
 const os = require('os');
 
+const updatedRootGitIgnore = `.vscode
+.history
+*.log
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+.gradle/
+local.properties
+
+# IntelliJ
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/libraries
+.idea/caches
+.idea
+
+# External native build folder generated in Android Studio 2.2 and later
+.externalNativeBuild
+
+# OS-specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# cquery
+compile_commands.json
+
+# Gradle files
+.gradle/
+build/
+
+# Android Studio
+/*/build/
+/*/local.properties
+/*/*/build
+/*/*/production
+*.ipr
+*~
+*.swp
+
+# NDK
+obj/
+yarn.lock
+node_modules
+
+# cmake
+cmake-build-debug
+cmake-build-release
+cmake-build-macos
+
+# Node.js
+package-lock.json
+
+Podfile.lock
+.cxx
+
+temp
+coverage
+pubspec.lock
+.fvm
+`;
+
+const updatedBridgeIgnore = `
+xcschememanagement.plist
+
+cmake-build-*
+build
+`;
+
+const updatedPolyFillIgnore = `
+package-lock.json
+`;
+
 function symbolicToRealFile(path) {
   let realPath = PATH.join(path, "../", fs.readlinkSync(path));
   moveFile(path, realPath);
@@ -67,38 +149,13 @@ function patchAppVersion(baseDir) {
   fs.writeFileSync(cmake, updatedContent);
 }
 
-function cleanUpBridge() {
-  let bridgeDir = PATH.join(__dirname, "../bridge");
-  exec('rm -rf cmake-*', {
-    cwd: bridgeDir
-  });
-  exec('rm -rf build', {
-    cwd: bridgeDir
-  });
-  exec('rm -rf polyfill/node_modules', {
-    cwd: bridgeDir
-  });
-  exec('rm -rf polyfill/package-lock.json', {
-    cwd: bridgeDir
-  });
-  exec('rm -rf polyfill/.gitignore', {
-    cwd: bridgeDir
-  });
-  exec('rm -rf rusty_webf_sys/target', {
-    cwd: bridgeDir
-  });
-  exec('rm -rf scripts/code_generator', {
-    cwd: bridgeDir
-  });
-  exec('rm -rf ../webf/win_src', {
-    cwd: bridgeDir
-  });
-  exec('rm -rf .gitignore', {
-    cwd: bridgeDir
-  });
-  exec('rm -rf ../.gitignore', {
-    cwd: bridgeDir
-  });
+function patchGitIgnore() {
+  let rootGitIgnore = PATH.join(__dirname, "../.gitignore");
+  let bridgeGitIgnore = PATH.join(__dirname, "../bridge/.gitignore");
+  let polyfillGitIgnore = PATH.join(__dirname, "../polyfill/.gitignore");
+  fs.writeFileSync(rootGitIgnore, updatedRootGitIgnore);
+  fs.writeFileSync(bridgeGitIgnore, updatedBridgeIgnore);
+  fs.writeFileSync(polyfillGitIgnore, updatedPolyFillIgnore);
 }
 
 function addGenFilesToGit() {
@@ -106,6 +163,7 @@ function addGenFilesToGit() {
   exec('git add src', {
     cwd: webfDir
   });
+  exec('git commit -m "init"');
 }
 
 function patchWindowsCMake(baseDir) {
@@ -128,7 +186,7 @@ for (let file of symbolFiles) {
   symbolicToRealFile(PATH.join(krakenDir, file));
 }
 
-cleanUpBridge();
+patchGitIgnore();
 
 const sourceSymbolFiles = [
   "src",
