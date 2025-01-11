@@ -455,7 +455,15 @@ void invokeBindingMethodFromNativeSync(
 Future<void> asyncInvokeBindingMethodFromNativeImpl(WebFViewController view,
     Pointer<BindingObjectAsyncCallContext> asyncCallContext, Pointer<NativeBindingObject> nativeBindingObject) async {
   Pointer<NativeValue> returnValue = malloc.allocate(sizeOf<NativeValue>());
-  DartBindingObjectAsyncCallCallback f = asyncCallContext.ref.callback.asFunction(isLeaf: true);
+
+  DartBindingObjectAsyncCallCallback f;
+  // This is an optimization for dedication thread mode for creating an small, short-running, non-blocking functions which are not allowed to
+  // call back into Dart or use any Dart VM APIs
+  if (isContextDedicatedThread(view.contextId)) {
+    f = asyncCallContext.ref.callback.asFunction(isLeaf: true);
+  } else {
+    f = asyncCallContext.ref.callback.asFunction();
+  }
 
   try {
     await _invokeBindingMethodFromNativeImpl(view.contextId, -1, nativeBindingObject, returnValue,
