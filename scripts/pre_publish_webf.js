@@ -178,6 +178,8 @@ function addGenFilesToGit() {
   exec(`git add bridge/polyfill/.gitignore`, {
     cwd: PATH.join(__dirname, '../')
   });
+  exec('git config user.email bot@openwebf.com');
+  exec('git config user.name openwebf-bot');
   exec('git commit -m "init"');
 }
 
