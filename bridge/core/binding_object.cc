@@ -198,6 +198,7 @@ static void handleAsyncInvokeCallback(ScriptPromiseResolver* resolver,
   } else {
     assert(false);
   }
+  context->UnRegisterActiveScriptPromise(resolver);
 }
 
 ScriptPromise BindingObject::InvokeBindingMethodAsync(BindingMethodCallOperations binding_method_call_operation,

@@ -719,6 +719,16 @@ void ExecutingContext::RegisterActiveScriptPromise(std::shared_ptr<ScriptPromise
   active_pending_promises_.emplace(std::move(promise_resolver));
 }
 
+void ExecutingContext::UnRegisterActiveScriptPromise(const ScriptPromiseResolver* promise_resolver) {
+  auto it = std::find_if(active_pending_promises_.begin(), active_pending_promises_.end(),
+                         [promise_resolver](const std::shared_ptr<ScriptPromiseResolver>& item) {
+                           return item.get() == promise_resolver;
+                         });
+  if (it != active_pending_promises_.end()) {
+    active_pending_promises_.erase(it);
+  }
+}
+
 // A lock free context validator.
 bool isContextValid(double contextId) {
   if (contextId > running_context_list)

@@ -124,6 +124,7 @@ class ExecutingContext {
   void RemoveCanvasContext2D(CanvasRenderingContext2D* canvas_rendering_context_2d);
 
   void RegisterActiveScriptPromise(std::shared_ptr<ScriptPromiseResolver> promise_resolver);
+  void UnRegisterActiveScriptPromise(const ScriptPromiseResolver* promise_resolver);
 
   // Gets the DOMTimerCoordinator which maintains the "active timer
   // list" of tasks created by setTimeout and setInterval. The
