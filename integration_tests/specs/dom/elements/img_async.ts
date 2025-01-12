@@ -160,7 +160,6 @@ describe('Tags img async', () => {
     let natualH = await img.naturalHeight_async;
     expect(natualW).toEqual(0);
     expect(natualH).toEqual(0);
-    done()
   });
 
   it('should work with loading=lazy', (done) => {
