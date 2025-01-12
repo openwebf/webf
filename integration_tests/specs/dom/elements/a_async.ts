@@ -54,7 +54,7 @@ describe('anchor element async', () => {
     done();
   });
 
-  xit('should work with protocol property', async (done) => {
+  it('should work with protocol property', async (done) => {
     let a = document.createElement('a');
     // @ts-ignore
     a.href_async = 'https://v3.vuejs.org/guide/introduction.html';
