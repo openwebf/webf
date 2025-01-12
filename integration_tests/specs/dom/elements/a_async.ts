@@ -9,20 +9,20 @@ describe('anchor element async', () => {
     done();
   });
 
-  xit('should work with pathname property', async (done) => {
+  it('should work with pathname property', async (done) => {
     let a = document.createElement('a');
     // @ts-ignore
     a.href_async = 'https://v3.vuejs.org/guide/introduction.html';
 
     // @ts-ignore
-    let value = await a.pathname_async
-    expect(value).toBe('/guide/introduction.html');
+    let pathname = await a.pathname_async
+    expect(pathname).toBe('/guide/introduction.html');
 
     // @ts-ignore
-    a.pathname_sync = '/guide/introduction.html#what-is-vue-js';
+    a.pathname_async = '/guide/introduction.html#what-is-vue-js';
     // @ts-ignore
-    value = await a.href_async
-    expect(value).toBe('https://v3.vuejs.org/guide/introduction.html%23what-is-vue-js');
+    let href = await a.href_async
+    expect(href).toBe('https://v3.vuejs.org/guide/introduction.html%23what-is-vue-js');
     done();
   });
 
