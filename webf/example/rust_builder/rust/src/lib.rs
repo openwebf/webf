@@ -63,12 +63,6 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
         println!("Async Storage Get Item Failed: {:?}", err);
       }
     }
-
-    let html_element = context.document().document_element();
-    let blob = html_element.to_blob(&exception_state).await.unwrap().unwrap();
-
-    let mut file = File::create("output.png").unwrap();
-    file.write_all(&blob).unwrap();
   });
 
   let runtime_run_task_callback = Box::new(move || {
