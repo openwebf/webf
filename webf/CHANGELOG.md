@@ -1,3 +1,7 @@
+## 0.16.3+1
+
+Fixed compilation issues for Linux, Android, and Windows platforms.
+
 ## 0.16.3
 
 This version supports Flutter 3.27.x, 3.24.x, 3.22.x, 3.19.x, 3.16.x, and 3.13.x.
