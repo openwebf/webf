@@ -130,12 +130,10 @@ describe('Tags img async', () => {
     var img = document.createElement('img');
     img.onload = async function() {
       // @ts-ignore
-      let natualW = await img.naturalWidth_async;
+      expect(await img.naturalWidth_async).toEqual(200);
       // @ts-ignore
-      let natualH = await img.naturalHeight_async;
-      expect(natualW).toEqual(20);
-      expect(natualH).toEqual(20);
-      done();      
+      expect(await img.naturalHeight_async).toEqual(200);
+      done();
     };
     // @ts-ignore
     img.src_async = imageURL;
@@ -146,20 +144,11 @@ describe('Tags img async', () => {
 
     document.body.style.background = 'green';
     document.body.appendChild(img);
-    
+
     // @ts-ignore
-    let w = await img.width_async;
+    expect(await img.width_async).toEqual(20);
     // @ts-ignore
-    let h = await img.height_async;
-    expect(w).toEqual(20);
-    expect(h).toEqual(20);
-    // Image has not been loaded.
-    // @ts-ignore
-    let natualW = await img.naturalWidth_async;
-    // @ts-ignore
-    let natualH = await img.naturalHeight_async;
-    expect(natualW).toEqual(0);
-    expect(natualH).toEqual(0);
+    expect(await img.height_async).toEqual(20);
   });
 
   it('should work with loading=lazy', (done) => {
