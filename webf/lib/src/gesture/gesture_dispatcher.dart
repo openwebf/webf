@@ -215,6 +215,9 @@ class GestureDispatcher {
       eventTarget.getEventHandlers().keys.forEach((eventType) {
         _eventsInPath[eventType] = true;
       });
+      eventTarget.getBuiltInEventHandlers().keys.forEach((eventType) {
+        _eventsInPath[eventType] = true;
+      });
     }
   }
 
