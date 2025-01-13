@@ -779,6 +779,8 @@ extension VerticalAlignText on VerticalAlign {
         return 'top';
       case VerticalAlign.bottom:
         return 'bottom';
+      case VerticalAlign.textBottom:
+        return 'textBottom';
     }
   }
 }

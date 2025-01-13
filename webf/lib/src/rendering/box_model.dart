@@ -499,6 +499,22 @@ class RenderLayoutBox extends RenderBoxModel
     return result;
   }
 
+  bool get isNegativeMarginChangeHSize {
+    return renderStyle.width.isAuto && isMarginNegativeHorizontal();
+  }
+
+  bool isMarginNegativeVertical() {
+    double? marginBottom = renderStyle.marginBottom.computedValue;
+    double? marginTop = renderStyle.marginTop.computedValue;
+    return marginBottom < 0 || marginTop < 0;
+  }
+
+  bool isMarginNegativeHorizontal() {
+    double? marginLeft = renderStyle.marginLeft.computedValue;
+    double? marginRight = renderStyle.marginRight.computedValue;
+    return marginLeft < 0 || marginRight < 0;
+  }
+
   /// Common layout content size (including flow and flexbox layout) calculation logic
   Size getContentSize({
     required double contentWidth,
@@ -511,6 +527,15 @@ class RenderLayoutBox extends RenderBoxModel
     double? specifiedContentWidth = renderStyle.contentBoxLogicalWidth;
     double? specifiedContentHeight = renderStyle.contentBoxLogicalHeight;
 
+    // Margin negative will set element which is static && not set width, size bigger
+    double? marginLeft = renderStyle.marginLeft.computedValue;
+    double? marginRight = renderStyle.marginRight.computedValue;
+    double? marginAddSizeLeft = 0;
+    double? marginAddSizeRight = 0;
+    if(isNegativeMarginChangeHSize) {
+      marginAddSizeRight = marginLeft < 0 ? -marginLeft : 0;
+      marginAddSizeLeft = marginRight < 0 ? -marginRight : 0;
+    }
     // Flex basis takes priority over main size in flex item when flex-grow or flex-shrink not work.
     if (parent is RenderFlexLayout) {
       RenderBoxModel? parentRenderBoxModel = parent as RenderBoxModel?;
@@ -530,6 +555,11 @@ class RenderLayoutBox extends RenderBoxModel
 
     if (specifiedContentWidth != null) {
       finalContentWidth = math.max(specifiedContentWidth, contentWidth);
+    }
+    if(parent is RenderFlexLayout && marginAddSizeLeft > 0 && marginAddSizeRight > 0 ||
+        parent is RenderFlowLayout && (marginAddSizeRight > 0 || marginAddSizeLeft > 0)) {
+      finalContentWidth += marginAddSizeLeft;
+      finalContentWidth += marginAddSizeRight;
     }
     if (specifiedContentHeight != null) {
       finalContentHeight = math.max(specifiedContentHeight, contentHeight);
@@ -961,6 +991,10 @@ class RenderBoxModel extends RenderBox
     }
   }
 
+  LogicInlineBox createLogicInlineBox() {
+    return LogicInlineBox(renderObject: this);
+  }
+
   @override
   void layout(Constraints newConstraints, {bool parentUsesSize = false}) {
     renderBoxInLayoutHashCodes.add(hashCode);
@@ -1166,6 +1200,16 @@ class RenderBoxModel extends RenderBox
     return constraints.constrain(borderBoxSize);
   }
 
+  Size wrapOutContentSizeRight (Size contentSize) {
+    Size paddingBoxSize = renderStyle.wrapPaddingSizeRight(contentSize);
+    return renderStyle.wrapBorderSizeRight(paddingBoxSize);
+  }
+
+  Size wrapOutContentSize (Size contentSize) {
+    Size paddingBoxSize = renderStyle.wrapPaddingSize(contentSize);
+    return renderStyle.wrapBorderSize(paddingBoxSize);
+  }
+
   // The contentSize of layout box
   Size? _contentSize;
 
@@ -1277,7 +1321,7 @@ class RenderBoxModel extends RenderBox
     }
 
     // Positioned renderBoxModel will not trigger parent to relayout. Needs to update it's offset for itself.
-    if (parentData is RenderLayoutParentData) {
+    if (parentData is RenderLayoutParentData && parent is RenderBoxModel) {
       RenderLayoutParentData selfParentData = parentData as RenderLayoutParentData;
       RenderBoxModel? parentBox = parent as RenderBoxModel?;
       if (selfParentData.isPositioned && parentBox!.hasSize) {
@@ -1439,6 +1483,10 @@ class RenderBoxModel extends RenderBox
     Offset ancestorBorderWidth = Offset(ancestorBorderLeft, ancestorBorderTop);
 
     return getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset) + point - ancestorBorderWidth;
+  }
+
+  Offset getOffsetToRenderObjectAncestor(Offset point, RenderObject ancestor, {bool excludeScrollOffset = false}) {
+    return getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset) + point;
   }
 
   bool _hasLocalBackgroundImage(CSSRenderStyle renderStyle) {
