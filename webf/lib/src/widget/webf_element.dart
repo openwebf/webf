@@ -1,12 +1,19 @@
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
+
 import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/webf.dart';
 
-class WebFHTMLElement extends MultiChildRenderObjectWidget {
+class WebFHTMLElement extends WebFRenderLayoutWidgetAdaptor {
   final String tagName;
+  final WebFController controller;
   final Map<String, String>? inlineStyle;
+
   WebFHTMLElement({
     required this.tagName,
+    required this.controller,
     Key? key,
     required List<Widget> children,
     this.inlineStyle,
@@ -14,80 +21,34 @@ class WebFHTMLElement extends MultiChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
-    _WebFElement webfElement = context as _WebFElement;
-    WebFContextInheritElement? webfContext = context.getElementForInheritedWidgetOfExactType<WebFContext>() as WebFContextInheritElement;
-    context.htmlElement = dom.createElement(tagName, BindingContext(webfContext.controller!.view, webfContext.controller!.view.contextId, allocateNewBindingObject()));
-    RenderObject renderObject = webfElement.htmlElement!.createRenderer();
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
-
-    return renderObject;
+    SelfOwnedWebRenderLayoutWidgetElement element = context as SelfOwnedWebRenderLayoutWidgetElement;
+    return element.createRenderLayoutBox(tagName);
   }
 
   @override
-  MultiChildRenderObjectElement createElement() {
-    return _WebFElement(this);
+  WebRenderLayoutRenderObjectElement createElement() {
+    return SelfOwnedWebRenderLayoutWidgetElement(this, tagName, controller);
+  }
+
+  @override
+  String toStringShort() {
+    return 'WebFHTMLElement($tagName)';
   }
 }
 
-class _WebFElement extends MultiChildRenderObjectElement {
-  dom.Element? htmlElement;
+class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectElement {
+  SelfOwnedWebRenderLayoutWidgetElement(super.widget, this.tagName, this.controller);
 
-  _WebFElement(WebFHTMLElement widget): super(widget);
+  dom.Element? _webFElement;
+  String tagName;
+  WebFController controller;
+
+  RenderObject createRenderLayoutBox(String tagName) {
+    return _webFElement!.renderStyle.getWidgetPairedRenderBoxModel(this)!;
+  }
 
   @override
   WebFHTMLElement get widget => super.widget as WebFHTMLElement;
-
-  void fullFillInlineStyle(Map<String, String> inlineStyle) {
-    inlineStyle.forEach((key, value) {
-      htmlElement!.setInlineStyle(key, value);
-    });
-    htmlElement!.recalculateStyle();
-  }
-
-  @override
-  void mount(Element? parent, Object? newSlot) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
-    super.mount(parent, newSlot);
-    htmlElement!.managedByFlutterWidget = true;
-    htmlElement!.createdByFlutterWidget = true;
-
-    dom.Element? parentElement = findClosestAncestorHTMLElement(this);
-
-    if (parentElement != null) {
-      parentElement.appendChild(htmlElement!);
-
-      if (parentElement is RouterLinkElement) {
-        // Migrate previous childNodes into RouterLinkElement.
-        parentElement.cachedChildNodes.forEach((node) {
-          htmlElement!.appendChild(node);
-        });
-      }
-
-      if (widget.inlineStyle != null) {
-        fullFillInlineStyle(widget.inlineStyle!);
-      }
-
-      htmlElement!.ensureChildAttached();
-      htmlElement!.applyStyle(htmlElement!.style);
-
-      if (htmlElement!.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
-        // Flush pending style before child attached.
-        htmlElement!.style.flushPendingProperties();
-      }
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
-  }
 
   dom.Element? findClosestAncestorHTMLElement(Element? parent) {
     if (parent == null) return null;
@@ -96,10 +57,10 @@ class _WebFElement extends MultiChildRenderObjectElement {
       if (element is WebFWidgetElementElement) {
         target = element.widget.widgetElement;
         return false;
-      } else if (element is _WebFElement) {
-        target = element.htmlElement;
+      } else if (element is SelfOwnedWebRenderLayoutWidgetElement) {
+        target = element._webFElement;
         return false;
-      } else if (element is WebFHTMLElementToFlutterElementAdaptor) {
+      } else if (element is ExternalWebRenderLayoutWidgetElement) {
         target = element.webFElement;
         return false;
       }
@@ -108,10 +69,48 @@ class _WebFElement extends MultiChildRenderObjectElement {
     return target;
   }
 
-  @override
-  void unmount() {
-    // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
-    super.unmount();
-    htmlElement!.unmountRenderObject(dispose: false, fromFlutterWidget: true);
+  void fullFillInlineStyle(Map<String, String> inlineStyle) {
+    inlineStyle.forEach((key, value) {
+      _webFElement!.setInlineStyle(key, value);
+    });
+    _webFElement!.recalculateStyle();
   }
+
+  @override
+  void mount(Element? parent, Object? newSlot) {
+    dom.Element element = dom.createElement(
+        tagName,
+        BindingContext(controller.view, controller.view.contextId, allocateNewBindingObject()));
+    element.managedByFlutterWidget = true;
+    _webFElement = element;
+
+    super.mount(parent, newSlot);
+
+    dom.Element? parentElement = findClosestAncestorHTMLElement(this);
+
+    if (parentElement != null) {
+      if (parentElement is RouterLinkElement) {
+        // @TODO: RouterLink Support
+        // Migrate previous childNodes into RouterLinkElement.
+        // parentElement.cachedChildNodes.forEach((node) {
+        //   htmlElement!.appendChild(node);
+        // });
+      }
+
+      if (widget.inlineStyle != null) {
+        fullFillInlineStyle(widget.inlineStyle!);
+      }
+
+      // htmlElement!.ensureChildAttached();
+      _webFElement!.applyStyle(_webFElement!.style);
+
+      if (_webFElement!.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
+        // Flush pending style before child attached.
+        _webFElement!.style.flushPendingProperties();
+      }
+    }
+  }
+
+  @override
+  dom.Element get webFElement => _webFElement!;
 }

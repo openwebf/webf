@@ -5,7 +5,6 @@
 
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 const Offset _DEFAULT_TRANSFORM_OFFSET = Offset.zero;
@@ -43,17 +42,16 @@ mixin CSSTransformMixin on RenderStyle {
     // Mark the compositing state for this render object as dirty
     // cause it will create new layer when transform is valid.
     if (value != null) {
-      renderBoxModel?.markNeedsCompositingBitsUpdate();
+      markNeedsCompositingBitsUpdate();
     }
 
     // Transform effect the stacking context.
-    RenderBoxModel? parentRenderer = parent?.renderBoxModel;
-    if (parentRenderer is RenderLayoutBox) {
-      parentRenderer.markChildrenNeedsSort();
+    if (isParentRenderLayoutBox()) {
+      markParentNeedsSort();
     }
 
     // Transform stage are applied at paint stage, should avoid re-layout.
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   static List<CSSFunctionalNotation>? resolveTransform(String present) {
@@ -86,22 +84,23 @@ mixin CSSTransformMixin on RenderStyle {
   set transformMatrix(Matrix4? value) {
     if (value == null || _transformMatrix == value) return;
     _transformMatrix = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   // Effective transform matrix after renderBoxModel has been layouted.
   // Copy from flutter [RenderTransform._effectiveTransform]
   @override
   Matrix4 get effectiveTransformMatrix {
+    assert(hasRenderBox());
     // Make sure it is used after renderBoxModel been created.
-    assert(renderBoxModel != null);
-    RenderBoxModel boxModel = renderBoxModel!;
     final Matrix4 result = Matrix4.identity();
     result.translate(transformOffset.dx, transformOffset.dy);
     late Offset translation;
     if (transformAlignment != Alignment.topLeft) {
       // Use boxSize instead of size to avoid Flutter cannot access size beyond parent access warning
-      translation = boxModel.hasSize ? transformAlignment.alongSize(boxModel.boxSize!) : Offset.zero;
+      translation = isBoxModelHaveSize() ? transformAlignment.alongSize(boxSize()!) : Offset.zero;
+
+      // translation =
       result.translate(translation.dx, translation.dy);
     }
 
@@ -120,7 +119,7 @@ mixin CSSTransformMixin on RenderStyle {
   // Effective transform offset after renderBoxModel has been layouted.
   Offset? get effectiveTransformOffset {
     // Make sure it is used after renderBoxModel been created.
-    assert(renderBoxModel != null);
+    assert(hasRenderBox());
     Vector3 translation = effectiveTransformMatrix.getTranslation();
     return Offset(translation[0], translation[1]);
   }
@@ -128,7 +127,7 @@ mixin CSSTransformMixin on RenderStyle {
   // Effective transform scale after renderBoxModel has been layouted.
   @override
   double get effectiveTransformScale {
-    assert(renderBoxModel != null);
+    assert(hasRenderBox());
     double scale = effectiveTransformMatrix.getMaxScaleOnAxis();
     return scale;
   }
@@ -138,7 +137,7 @@ mixin CSSTransformMixin on RenderStyle {
   set transformOffset(Offset value) {
     if (_transformOffset == value) return;
     _transformOffset = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   Alignment get transformAlignment => _transformAlignment;
@@ -146,7 +145,7 @@ mixin CSSTransformMixin on RenderStyle {
   set transformAlignment(Alignment value) {
     if (_transformAlignment == value) return;
     _transformAlignment = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   CSSOrigin? _transformOrigin;

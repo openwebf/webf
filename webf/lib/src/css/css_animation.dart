@@ -83,7 +83,7 @@ mixin CSSAnimationMixin on RenderStyle {
   }
 
   bool shouldAnimation(List<String> properties) {
-    if (renderBoxModel != null) {
+    if (hasRenderBox()) {
       bool shouldAnimation = false;
       if (properties.any((element) => element.startsWith('animation'))) {
         shouldAnimation = true;
@@ -178,7 +178,7 @@ mixin CSSAnimationMixin on RenderStyle {
       List<Keyframe>? keyframes = _getKeyFrames(name);
 
       if (keyframes != null) {
-        KeyframeEffect effect = KeyframeEffect(this, target, keyframes, options);
+        KeyframeEffect effect = KeyframeEffect(this, keyframes, options);
 
         Animation? animation = _runningAnimation[name];
 

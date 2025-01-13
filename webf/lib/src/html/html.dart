@@ -2,8 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-import 'package:flutter/widgets.dart' show FocusManager;
-import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
@@ -18,7 +17,7 @@ class HTMLElement extends Element {
   HTMLElement([BindingContext? context]) : super(context) {
     // Add default behavior unfocus focused input or textarea elements.
     addEventListener('click', (event) async {
-      FocusManager.instance.primaryFocus?.unfocus();
+      flutter.FocusManager.instance.primaryFocus?.unfocus();
     });
   }
 
@@ -39,19 +38,13 @@ class HTMLElement extends Element {
   }
 
   @override
-  void ensureChildAttached() {
-    final box = renderBoxModel as RenderLayoutBox?;
+  void ensureChildAttached([flutter.Element? flutterWidgetElement]) {
+    assert(!managedByFlutterWidget);
+    final box = domRenderer as RenderLayoutBox?;
     if (box == null) return;
     for (Node child in childNodes) {
-      RenderBox? after;
-      RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
-      if (scrollingContentBox != null) {
-        after = scrollingContentBox.lastChild;
-      } else {
-        after = box.lastChild;
-      }
       if (!child.isRendererAttachedToSegmentTree) {
-        child.attachTo(this, after: after);
+        child.attachTo(this);
         child.ensureChildAttached();
       }
     }
@@ -59,7 +52,7 @@ class HTMLElement extends Element {
 
   // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
   @override
-  bool get isRendererAttachedToSegmentTree => renderer != null;
+  bool get isRendererAttachedToSegmentTree => domRenderer != null;
 
   @override
   void setRenderStyle(String property, String present, { String? baseHref }) {

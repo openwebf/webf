@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -62,8 +63,17 @@ class BRElement extends Element {
   }
 
   @override
-  RenderBox createRenderer() {
-    return renderBoxModel = RenderLineBreak(renderStyle);
+  RenderBox createRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
+    RenderLineBreak lineBreak = RenderLineBreak(renderStyle);
+
+    if (managedByFlutterWidget) {
+      assert(flutterWidgetElement != null);
+      renderStyle.addOrUpdateWidgetRenderObjects(flutterWidgetElement!, lineBreak);
+    } else {
+      renderStyle.setDomRenderObject(lineBreak);
+    }
+
+    return lineBreak;
   }
 }
 

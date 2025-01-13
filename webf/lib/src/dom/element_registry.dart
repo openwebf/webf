@@ -5,7 +5,6 @@
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/bridge.dart';
-import 'package:webf/src/html/router_link.dart';
 import 'package:webf/svg.dart';
 
 typedef ElementCreator = Element Function(BindingContext? context);
@@ -195,6 +194,7 @@ void defineBuiltInElements() {
   defineElement(IMAGE, (context) => ImageElement(context));
   defineElement(CANVAS, (context) => CanvasElement(context));
   defineElement(LISTVIEW, (context) => FlutterListViewElement(context));
+  defineElement(PORTAL, (context) => PortalElement(context));
 
   // Hybrid Routers
   defineElement(ROUTER_LINK, (context) => RouterLinkElement(context));

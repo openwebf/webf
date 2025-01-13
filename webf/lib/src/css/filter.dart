@@ -8,7 +8,6 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
 
 const String GRAYSCALE = 'grayscale';
 const String SEPIA = 'sepia';
@@ -252,12 +251,10 @@ mixin CSSFilterEffectsMixin on RenderStyle {
     _cachedImageFilter = null;
 
     // Filter effect the stacking context.
-    RenderBoxModel? parentRenderer = parent?.renderBoxModel;
-    if (parentRenderer is RenderLayoutBox) {
-      parentRenderer.markChildrenNeedsSort();
-    }
+    RenderStyle? parentRenderStyle = getParentRenderStyle();
+    parentRenderStyle?.markChildrenNeedsSort();
 
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
 
     if (!kReleaseMode && functions != null) {
       ColorFilter? colorFilter = _parseColorFilters(functions);

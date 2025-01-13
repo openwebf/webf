@@ -88,7 +88,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
   @override
   void performResize() {
     double width = 0, height = 0;
-    final Size attempingSize = constraints.biggest;
+    final Size attempingSize = contentConstraints!.biggest;
     if (attempingSize.width.isFinite) {
       width = attempingSize.width;
     }
@@ -96,7 +96,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       height = attempingSize.height;
     }
 
-    size = constraints.constrain(Size(width, height));
+    size = constraints!.constrain(Size(width, height));
     assert(size.isFinite);
   }
 
@@ -151,6 +151,14 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     return copyWith(newChild);
   }
 
+  RenderReplaced toReplaced() {
+    RenderObject? childRenderObject = child;
+    child = null;
+    RenderReplaced newChild = RenderReplaced(renderStyle);
+    newChild.child = childRenderObject as RenderBox?;
+    return copyWith(newChild);
+  }
+
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
     if (!hasSize || child?.hasSize == false) return false;
@@ -173,12 +181,4 @@ class RenderRepaintBoundaryReplaced extends RenderReplaced {
 
   @override
   bool get isRepaintBoundary => true;
-
-  RenderReplaced toReplaced() {
-    RenderObject? childRenderObject = child;
-    child = null;
-    RenderReplaced newChild = RenderReplaced(renderStyle);
-    newChild.child = childRenderObject as RenderBox?;
-    return copyWith(newChild);
-  }
 }

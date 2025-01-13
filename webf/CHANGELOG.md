@@ -1,3 +1,39 @@
+## 0.16.3
+
+This version supports Flutter 3.27.x, 3.24.x, 3.22.x, 3.19.x, 3.16.x, and 3.13.x.
+
+## Features
+
++ Optimize Dart/C++ FFI performance in multiple thread mode. https://github.com/openwebf/webf/pull/654
++ Change viewport css property value automatically when app metrics changed. https://github.com/openwebf/webf/pull/655
++ Optimize listview performance. https://github.com/openwebf/webf/pull/669
++ Full support of CanvasContext2D.Path2D. https://github.com/openwebf/webf/pull/684
++ Add WebFChildNodeSize widget. https://github.com/openwebf/webf/pull/690
++ Add console.inspect() API for inspecting JavaScript Objects. https://github.com/openwebf/webf/pull/691
++ Using std::atomic value types for disposed checks of NativeBindingObject. https://github.com/openwebf/webf/pull/699
++ Upgrade intl deps to 0.19.0. https://github.com/openwebf/webf/pull/701
+
+## Bug Fixed
+
++ Fix dart type error when attach flex layout underneath of Flutter ListView. https://github.com/openwebf/webf/pull/650
++ Fix crash when clear ui commands without commands. https://github.com/openwebf/webf/pull/651
++ Fix onClick events respond very slowly on React 18. https://github.com/openwebf/webf/pull/665
++ Fix negative percentage translate in positioned elements. https://github.com/openwebf/webf/pull/680
++ Fix ios simulator[arm64] build. https://github.com/openwebf/webf/pull/681
++ Fix globalToLocal coordinate conversion related to position fixed layout. https://github.com/openwebf/webf/pull/686
++ Rework inline cache handling. https://github.com/openwebf/webf/pull/688
++ Fix crash when add property maybe failed on build arguments. https://github.com/openwebf/webf/pull/689
+
+## Experimental Features
+
+### Rust/Native API
+
+**Have a Try**
+
+https://github.com/openwebf/webf/tree/main/webf/example/rust_builder/rust
+
+Provides support for native plugin APIs and offers corresponding Rust bindings.
+
 ## 0.16.2
 
 This version supports Flutter 3.24.x, 3.22.x, 3.19.x, 3.16.x, and 3.13.x.
@@ -48,7 +84,7 @@ WebFController(
 **Big News**
 
 1. Added PreRendering and Preload loading modes, which can save up to 90% of loading time.
-   Click [here](http://openwebf.com/docs/tutorials/performance_optimization/prerendering_and_preload_mode) for more details.
+   Click [here](https://openwebf.com/docs/tutorials/performance_optimization/prerendering_and_preload_mode) for more details.
 
 **Features**
 

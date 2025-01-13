@@ -271,8 +271,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return style.right.cssText();
       case CSSPropertyID.Width:
         if (style.width.isAuto) {
-          if (style.renderBoxModel?.hasSize == true) {
-            final boxWidth = style.renderBoxModel?.boxSize?.width;
+          if (style.isBoxModelHaveSize()) {
+            double? boxWidth = style.getSelfRenderBoxValue((renderBox, _) => renderBox.boxSize?.width);
             if (boxWidth != null && boxWidth > 0) {
               return '${boxWidth.cssText()}px';
             }
@@ -281,8 +281,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return style.width.cssText();
       case CSSPropertyID.Height:
         if (style.height.isAuto) {
-          if (style.renderBoxModel?.hasSize == true) {
-            final boxHeight = style.renderBoxModel?.boxSize?.height;
+          if (style.isBoxModelHaveSize()) {
+            double? boxHeight = style.getSelfRenderBoxValue((renderBox, _) => renderBox.boxSize?.height);
             if (boxHeight != null && boxHeight > 0) {
               return '${boxHeight.cssText()}px';
             }
@@ -687,8 +687,6 @@ extension CSSDisplayText on CSSDisplay {
     switch (this) {
       case CSSDisplay.none:
         return 'none';
-      case CSSDisplay.sliver:
-        return 'sliver';
       case CSSDisplay.block:
         return 'block';
       case CSSDisplay.inlineBlock:

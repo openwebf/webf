@@ -2,9 +2,10 @@
  * Copyright (C) 2023-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/svg.dart';
 import 'package:webf/widget.dart';
@@ -35,17 +36,17 @@ class DefsAttributeElement extends WidgetElement {
 
   // Sub SVG element must to override this getter to add custom attributes
   get presentationAttributeConfigs => [
-    DefsAttributeConfig('font-size'),
-    DefsAttributeConfig('font-family'),
-    DefsAttributeConfig('fill'),
-    DefsAttributeConfig('fill-rule'),
-    DefsAttributeConfig('clip-path'),
-    DefsAttributeConfig('stroke'),
-    DefsAttributeConfig('stroke-width'),
-    DefsAttributeConfig('stroke-linecap'),
-    DefsAttributeConfig('stroke-linejoin'),
-    DefsAttributeConfig('transform')
-  ];
+        DefsAttributeConfig('font-size'),
+        DefsAttributeConfig('font-family'),
+        DefsAttributeConfig('fill'),
+        DefsAttributeConfig('fill-rule'),
+        DefsAttributeConfig('clip-path'),
+        DefsAttributeConfig('stroke'),
+        DefsAttributeConfig('stroke-width'),
+        DefsAttributeConfig('stroke-linecap'),
+        DefsAttributeConfig('stroke-linejoin'),
+        DefsAttributeConfig('transform')
+      ];
 
   DefsAttributeElement? findRoot() {
     var parent = parentElement;
@@ -66,8 +67,10 @@ class DefsAttributeElement extends WidgetElement {
   }
 
   @override
-  void updateRenderBoxModel({ bool forceUpdate = false }) {
+  RenderBoxModel? updateOrCreateRenderBoxModel(
+      {flutter.Element? flutterWidgetElement}) {
     // do not needs to update
+    return null;
   }
 
   @override
@@ -99,7 +102,7 @@ class DefsAttributeElement extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
-    return SizedBox.shrink();
+  flutter.Widget build(flutter.BuildContext context, ChildNodeList children) {
+    return flutter.SizedBox.shrink();
   }
 }

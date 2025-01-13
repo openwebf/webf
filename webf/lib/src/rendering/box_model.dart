@@ -10,7 +10,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
-import 'package:webf/gesture.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 
@@ -58,8 +57,6 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
       }
 
       stackOffsets.add(parentRenderer.obtainLayoutTransform(childRenderer, excludeScrollOffset));
-    } else if (parentRenderer is RenderSliverRepaintProxy) {
-      parentRenderer.applyLayoutTransform(childRenderer, transform, excludeScrollOffset);
     } else if (parentRenderer is RenderBox) {
       assert(childRenderer.parent == parentRenderer);
       if (childRenderer.parentData is BoxParentData) {
@@ -677,6 +674,7 @@ class RenderLayoutBox extends RenderBoxModel
       renderStyle: renderStyle,
     );
     copyWith(repaintBoundaryFlexLayout);
+
     repaintBoundaryFlexLayout.addAll(detachChildren());
     return repaintBoundaryFlexLayout;
   }
@@ -687,6 +685,7 @@ class RenderLayoutBox extends RenderBoxModel
       renderStyle: renderStyle,
     );
     copyWith(flowLayout);
+
     flowLayout.addAll(detachChildren());
     return flowLayout;
   }
@@ -697,17 +696,9 @@ class RenderLayoutBox extends RenderBoxModel
       renderStyle: renderStyle,
     );
     copyWith(repaintBoundaryFlowLayout);
+
     repaintBoundaryFlowLayout.addAll(detachChildren());
     return repaintBoundaryFlowLayout;
-  }
-
-  RenderSliverListLayout toSliverLayout(RenderSliverElementChildManager manager, ScrollListener? onScroll) {
-    RenderSliverListLayout sliverListLayout = RenderSliverListLayout(
-        renderStyle: renderStyle, manager: manager, onScroll: onScroll, currentView: renderStyle.currentFlutterView);
-    manager.setupSliverListLayout(sliverListLayout);
-    copyWith(sliverListLayout);
-    sliverListLayout.addAll(detachChildren());
-    return sliverListLayout;
   }
 
   @override
@@ -775,6 +766,11 @@ class RenderBoxModel extends RenderBox
   void markNeedsRecalculateRenderStyle() {
     if (_needsRecalculateStyle) return;
     _needsRecalculateStyle = true;
+  }
+
+  @override
+  String toStringShort() {
+    return super.toStringShort() + ' ${renderStyle.target}';
   }
 
   bool get isSizeTight {
@@ -1192,16 +1188,7 @@ class RenderBoxModel extends RenderBox
   // Base layout methods to compute content constraints before content box layout.
   // Call this method before content box layout.
   void beforeLayout() {
-    BoxConstraints contentConstraints;
-    // @FIXME: Normally constraints is calculated in getConstraints by parent RenderLayoutBox in Kraken,
-    // except in sliver layout, constraints is calculated by [RenderSliverList] which kraken can not control,
-    // so it needs to invoke getConstraints here for sliver container's direct child.
-    if (parent is RenderSliverRepaintProxy || parent is RenderSliverList) {
-      contentConstraints = getConstraints();
-    } else {
-      // Constraints is already calculated in parent layout.
-      contentConstraints = constraints;
-    }
+    BoxConstraints contentConstraints = parent is RenderBoxModel ? constraints : getConstraints();
 
     // Deflate border constraints.
     contentConstraints = renderStyle.deflateBorderConstraints(contentConstraints);
@@ -1707,6 +1694,7 @@ class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('position', renderStyle.position));
     properties.add(DiagnosticsProperty('backgroundColor', renderStyle.backgroundColor?.value));
     properties.add(DiagnosticsProperty('isSizeTight', isSizeTight));
+    properties.add(DiagnosticsProperty('effectiveDisplay', renderStyle.effectiveDisplay));
     properties.add(DiagnosticsProperty('width', renderStyle.width.value));
     properties.add(DiagnosticsProperty('height', renderStyle.height.value));
 

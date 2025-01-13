@@ -37,6 +37,10 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
 
   @override
   void performLayout() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayout(this);
+    }
+
     beforeLayout();
 
     if (child != null) {
@@ -66,6 +70,10 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
     }
 
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayout(this);
+    }
   }
 
   @override

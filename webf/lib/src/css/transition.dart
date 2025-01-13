@@ -138,8 +138,8 @@ Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue 
   var beginMatrix = CSSMatrix.computeTransformMatrix(begin.value, renderStyle);
   var endMatrix = CSSMatrix.computeTransformMatrix(end.value, renderStyle);
 
-  if (!renderStyle.renderBoxModel!.isRepaintBoundary) {
-    renderStyle.target.updateRenderBoxModel();
+  if (!renderStyle.isRepaintBoundary()) {
+    renderStyle.target.updateOrCreateRenderBoxModel();
   }
 
   if (beginMatrix != null && endMatrix != null) {
@@ -347,8 +347,8 @@ mixin CSSTransitionMixin on RenderStyle {
     }
 
     // Transition does not work when renderBoxModel has not been layout yet.
-    if (renderBoxModel != null &&
-        renderBoxModel!.hasSize &&
+    if (hasRenderBox() &&
+        isBoxModelHaveSize() &&
         CSSTransitionHandlers[property] != null &&
         (effectiveTransitions.containsKey(property) || effectiveTransitions.containsKey(ALL))) {
       bool shouldTransition = false;
@@ -405,7 +405,7 @@ mixin CSSTransitionMixin on RenderStyle {
       Keyframe(propertyName, begin, 0, LINEAR),
       Keyframe(propertyName, end, 1, LINEAR),
     ];
-    KeyframeEffect effect = KeyframeEffect(this, target, keyframes, options);
+    KeyframeEffect effect = KeyframeEffect(this, keyframes, options);
     Animation animation = Animation(effect, target.ownerDocument.animationTimeline);
     _propertyRunningTransition[propertyName] = animation;
 

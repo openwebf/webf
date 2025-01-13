@@ -7,7 +7,6 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/html.dart';
-import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
 
 typedef StyleChangeListener = void Function(String property, String? original, String present, {String? baseHref});
@@ -448,8 +447,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
 
     // Display change from none to other value that the renderBoxModel is null.
     if (_pendingProperties.containsKey(DISPLAY) &&
-        _target.isConnected &&
-        _target.parentElement?.renderStyle.display != CSSDisplay.sliver) {
+        _target.isConnected) {
       CSSPropertyValue? prevValue = _properties[DISPLAY];
       CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
       _properties[DISPLAY] = currentValue;
@@ -457,8 +455,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
 
-    RenderBoxModel? renderBoxModel = _target.renderBoxModel;
-    if (_pendingProperties.isEmpty || renderBoxModel == null) {
+    if (_pendingProperties.isEmpty || !_target.renderStyle.hasRenderBox()) {
       return;
     }
 

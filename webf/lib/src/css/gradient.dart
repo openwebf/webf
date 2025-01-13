@@ -154,7 +154,7 @@ class CSSRadialGradient extends RadialGradient with BorderGradientMixin {
       _impliedStops(),
       tileMode,
       _resolveTransform(rect, textDirection),
-      focal == null ? null : focal!.resolve(textDirection).withinRect(rect),
+      focal?.resolve(textDirection).withinRect(rect),
       focalRadius * rect.shortestSide,
     );
   }

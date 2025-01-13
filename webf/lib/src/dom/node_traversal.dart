@@ -28,7 +28,7 @@ class InclusiveDescendantsOfIterator<T extends Node> extends Iterator<T> {
       _current = current.nextSibling as T?;
       return true;
     }
-    _current = NodeTraversal.nextAncestorSibling(current) as T?;
+    _current = NodeTraversal.nextAncestorSibling(current, _root as Node) as T?;
     return _current != null;
   }
 }
@@ -64,10 +64,52 @@ class AncestorOfIterable<T extends Node> extends Iterable<T> {
   Iterator<T> get iterator => AncestorsOfTraversal<T>(_root);
 }
 
+class ChildrenOfIterator<T extends Node> extends Iterator<T> {
+  final T? _root;
+  T? _current;
+
+  ChildrenOfIterator(this._root);
+
+  @override
+  T get current => _current!;
+
+  @override
+  bool moveNext() {
+    if (_current == null) {
+      _current = _root;
+      return true;
+    }
+
+    if (current.hasChildren()) {
+      _current = current.firstChild as T?;
+      return true;
+    }
+
+    if (current.nextSibling != null) {
+      _current = current.nextSibling as T?;
+      return true;
+    }
+
+    return false;
+  }
+}
+
+class ChildrenOfIterable<T extends Node> extends Iterable<T> {
+  final T? _root;
+  ChildrenOfIterable(this._root);
+
+  @override
+  Iterator<T> get iterator => ChildrenOfIterator(_root);
+}
+
 class NodeTraversal {
-  static Node? nextAncestorSibling(Node current) {
+  static Node? nextAncestorSibling(Node current, Node stayWithin) {
     assert(current.nextSibling == null);
     for (Node parent in ancestorsOf(current)) {
+      if (parent == stayWithin) {
+        return null;
+      }
+
       if (parent.nextSibling != null) {
         return parent.nextSibling;
       }
@@ -81,6 +123,10 @@ class NodeTraversal {
 
   static Iterable<Node> inclusiveDescendantsOf(Node node) {
     return InclusiveDescendantsOfIterable(node);
+  }
+
+  static Iterable<Node> childrenOf(Node node) {
+    return ChildrenOfIterable(node);
   }
 }
 

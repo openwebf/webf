@@ -34,8 +34,8 @@ typedef TitleChangedHandler = void Function(String title);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
-typedef OnCustomElementAttached = void Function(WebFWidgetElementToWidgetAdapter newWidget);
-typedef OnCustomElementDetached = void Function(WebFWidgetElementToWidgetAdapter detachedWidget);
+typedef OnCustomElementAttached = void Function(SharedRenderWidgetAdapter newWidget);
+typedef OnCustomElementDetached = void Function(SharedRenderWidgetAdapter detachedWidget);
 
 typedef TraverseElementCallback = void Function(Element element);
 
@@ -388,9 +388,9 @@ class WebFViewController implements WidgetsBindingObserver {
   // Attach renderObject to an renderObject.
   void attachTo(RenderObject parent, [RenderObject? previousSibling]) {
     if (parent is ContainerRenderObjectMixin) {
-      parent.insert(document.renderer!, after: previousSibling);
+      parent.insert(document.domRenderer!, after: previousSibling);
     } else if (parent is RenderObjectWithChildMixin) {
-      parent.child = document.renderer;
+      parent.child = document.domRenderer;
     }
   }
 
@@ -740,7 +740,7 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   RenderBox? getRootRenderObject() {
-    return document.documentElement?.renderer;
+    return document.documentElement?.domRenderer;
   }
 
   @override
@@ -788,7 +788,7 @@ class WebFViewController implements WidgetsBindingObserver {
       Element? focusedElement = document.focusedElement;
       double scrollOffset = 0;
       if (focusedElement != null) {
-        RenderBox? renderer = focusedElement.renderer;
+        RenderBox? renderer = focusedElement.domRenderer;
         if (renderer != null && renderer.attached && renderer.hasSize) {
           Offset focusOffset = renderer.localToGlobal(Offset.zero);
           // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
@@ -1489,7 +1489,7 @@ class WebFController {
     _pendingCallbacks.clear();
   }
 
-  final List<WebFWidgetElementToWidgetAdapter> pendingWidgetElements = [];
+  final List<SharedRenderWidgetAdapter> pendingWidgetElements = [];
 
   void flushPendingUnAttachedWidgetElements() {
     assert(onCustomElementAttached != null);

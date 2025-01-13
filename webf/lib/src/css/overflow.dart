@@ -125,11 +125,8 @@ mixin ElementOverflowMixin on ElementBase {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('$this.updateRenderBoxModelWithOverflowX');
     }
-    if (renderBoxModel is RenderSliverListLayout) {
-      RenderSliverListLayout renderBoxModel = this.renderBoxModel as RenderSliverListLayout;
-      renderBoxModel.scrollOffsetX = renderBoxModel.axis == Axis.horizontal ? renderBoxModel.scrollable.position : null;
-    } else if (renderBoxModel != null) {
-      RenderBoxModel renderBoxModel = this.renderBoxModel!;
+    if (renderStyle.hasRenderBox()) {
+      RenderBoxModel renderBoxModel = renderStyle.domRenderBoxModel!;
       CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
       switch (overflowX) {
         case CSSOverflowType.clip:
@@ -138,7 +135,7 @@ mixin ElementOverflowMixin on ElementBase {
         case CSSOverflowType.hidden:
         case CSSOverflowType.auto:
         case CSSOverflowType.scroll:
-          // If the render has been offset when previous overflow is auto or scroll, _scrollableX should not reset.
+        // If the render has been offset when previous overflow is auto or scroll, _scrollableX should not reset.
           if (_scrollableX == null) {
             _scrollableX = WebFScrollable(
                 axisDirection: AxisDirection.right,
@@ -167,11 +164,8 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void updateRenderBoxModelWithOverflowY(ScrollListener scrollListener) {
-    if (renderBoxModel is RenderSliverListLayout) {
-      RenderSliverListLayout renderBoxModel = this.renderBoxModel as RenderSliverListLayout;
-      renderBoxModel.scrollOffsetY = renderBoxModel.axis == Axis.vertical ? renderBoxModel.scrollable.position : null;
-    } else if (renderBoxModel != null) {
-      RenderBoxModel renderBoxModel = this.renderBoxModel!;
+    if (renderStyle.hasRenderBox()) {
+      RenderBoxModel renderBoxModel = renderStyle.domRenderBoxModel!;
       CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
       switch (overflowY) {
         case CSSOverflowType.clip:
@@ -180,7 +174,7 @@ mixin ElementOverflowMixin on ElementBase {
         case CSSOverflowType.hidden:
         case CSSOverflowType.auto:
         case CSSOverflowType.scroll:
-          // If the render has been offset when previous overflow is auto or scroll, _scrollableY should not reset.
+        // If the render has been offset when previous overflow is auto or scroll, _scrollableY should not reset.
           if (_scrollableY == null) {
             _scrollableY = WebFScrollable(
                 axisDirection: AxisDirection.down,
@@ -206,9 +200,9 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void scrollingContentBoxStyleListener(String property, String? original, String present, {String? baseHref}) {
-    if (renderBoxModel == null) return;
+    if (!renderStyle.hasRenderBox()) return;
 
-    RenderLayoutBox? scrollingContentBox = (renderBoxModel as RenderLayoutBox).renderScrollingContent;
+    RenderLayoutBox? scrollingContentBox = (renderStyle.domRenderBoxModel as RenderLayoutBox).renderScrollingContent;
     // Sliver content has no multi scroll content box.
     if (scrollingContentBox == null) return;
 
@@ -295,7 +289,7 @@ mixin ElementOverflowMixin on ElementBase {
     CSSOverflowType effectiveOverflowY = renderStyle.effectiveOverflowY;
     CSSOverflowType effectiveOverflowX = renderStyle.effectiveOverflowX;
 
-    if (renderBoxModel is RenderLayoutBox) {
+    if (renderStyle.domRenderBoxModel is RenderLayoutBox) {
       // Create two repaintBoundary for scroll container if any direction is scrollable.
       bool shouldScrolling =
           (effectiveOverflowX == CSSOverflowType.auto || effectiveOverflowX == CSSOverflowType.scroll) ||
@@ -321,7 +315,7 @@ mixin ElementOverflowMixin on ElementBase {
   // Outer repaintBoundary avoid repaint of parent and sibling renderObjects when scrolling.
   // Inner repaintBoundary avoid repaint of child renderObjects when scrolling.
   void _attachScrollingContentBox() {
-    RenderLayoutBox outerLayoutBox = renderBoxModel as RenderLayoutBox;
+    RenderLayoutBox outerLayoutBox = renderStyle.domRenderBoxModel as RenderLayoutBox;
     RenderLayoutBox? scrollingContentBox = outerLayoutBox.renderScrollingContent;
     if (scrollingContentBox != null) {
       return;
@@ -345,7 +339,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void _detachScrollingContentBox() {
-    RenderLayoutBox outerLayoutBox = renderBoxModel as RenderLayoutBox;
+    RenderLayoutBox outerLayoutBox = renderStyle.domRenderBoxModel as RenderLayoutBox;
     RenderLayoutBox? scrollingContentBox = outerLayoutBox.renderScrollingContent;
     if (scrollingContentBox == null) return;
 
@@ -396,8 +390,8 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void _ensureRenderObjectHasLayout() {
-    if (renderBoxModel?.needsLayout == true) {
-      renderBoxModel!.owner?.flushLayout();
+    if (renderStyle.getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.needsLayout) == true) {
+      RendererBinding.instance.rootPipelineOwner.flushLayout();
     }
   }
 
@@ -421,10 +415,10 @@ mixin ElementOverflowMixin on ElementBase {
     WebFScrollable? scrollable = _getScrollable(Axis.vertical);
     if (scrollable?.position?.maxScrollExtent != null) {
       // Viewport height + maxScrollExtent
-      return renderBoxModel!.clientHeight + scrollable!.position!.maxScrollExtent;
+      return renderStyle.clientHeight()! + scrollable!.position!.maxScrollExtent;
     }
 
-    Size scrollContainerSize = renderBoxModel!.scrollableSize;
+    Size scrollContainerSize = renderStyle.scrollableSize()!;
     return scrollContainerSize.height;
   }
 
@@ -435,9 +429,9 @@ mixin ElementOverflowMixin on ElementBase {
     _ensureRenderObjectHasLayout();
     WebFScrollable? scrollable = _getScrollable(Axis.horizontal);
     if (scrollable?.position?.maxScrollExtent != null) {
-      return renderBoxModel!.clientWidth + scrollable!.position!.maxScrollExtent;
+      return renderStyle.clientWidth()! + scrollable!.position!.maxScrollExtent;
     }
-    Size scrollContainerSize = renderBoxModel!.scrollableSize;
+    Size scrollContainerSize = renderStyle.scrollableSize()!;
     return scrollContainerSize.width;
   }
 
@@ -447,40 +441,34 @@ mixin ElementOverflowMixin on ElementBase {
 
   double get clientTop {
     _ensureRenderObjectHasLayout();
-    return renderBoxModel?.renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
+    return renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
   }
 
   double get clientLeft {
     _ensureRenderObjectHasLayout();
-    return renderBoxModel?.renderStyle.effectiveBorderLeftWidth.computedValue ?? 0.0;
+    return renderStyle.effectiveBorderLeftWidth.computedValue ?? 0.0;
   }
 
   double get clientWidth {
     _ensureRenderObjectHasLayout();
-    return renderBoxModel?.clientWidth ?? 0.0;
+    return renderStyle.clientWidth() ?? 0.0;
   }
 
   double get clientHeight {
     _ensureRenderObjectHasLayout();
-    return renderBoxModel?.clientHeight ?? 0.0;
+    return renderStyle.clientHeight() ?? 0.0;
   }
 
   double get offsetWidth {
     _ensureRenderObjectHasLayout();
-    RenderBoxModel? renderBox = renderBoxModel;
-    if (renderBox == null) {
-      return 0;
-    }
-    return renderBox.hasSize ? renderBox.size.width : 0.0;
+    if (!renderStyle.hasRenderBox()) return 0;
+    return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.width : 0.0);
   }
 
   double get offsetHeight {
     _ensureRenderObjectHasLayout();
-    RenderBoxModel? renderBox = renderBoxModel;
-    if (renderBox == null) {
-      return 0;
-    }
-    return renderBox.hasSize ? renderBox.size.height : 0.0;
+    if (!renderStyle.hasRenderBox()) return 0;
+    return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.height : 0.0);
   }
 
   void _scrollBy({double dx = 0.0, double dy = 0.0, bool? withAnimation}) {
@@ -504,15 +492,11 @@ mixin ElementOverflowMixin on ElementBase {
 
   WebFScrollable? _getScrollable(Axis direction) {
     WebFScrollable? scrollable;
-    if (renderer is RenderSliverListLayout) {
-      RenderSliverListLayout recyclerLayout = renderer as RenderSliverListLayout;
-      scrollable = direction == recyclerLayout.axis ? recyclerLayout.scrollable : null;
-    } else {
-      if (direction == Axis.horizontal) {
-        scrollable = _scrollableX;
-      } else if (direction == Axis.vertical) {
-        scrollable = _scrollableY;
-      }
+
+    if (direction == Axis.horizontal) {
+      scrollable = _scrollableX;
+    } else if (direction == Axis.vertical) {
+      scrollable = _scrollableY;
     }
     return scrollable;
   }
@@ -524,7 +508,7 @@ mixin ElementOverflowMixin on ElementBase {
 
       // Apply scroll effect after layout.
       assert(isRendererAttached, 'Overflow can only be added to a RenderBox.');
-      renderer!.owner!.flushLayout();
+      RendererBinding.instance.rootPipelineOwner.flushLayout();
 
       scrollable.position!.moveTo(
         distance,

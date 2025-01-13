@@ -7,7 +7,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -104,7 +104,7 @@ class CanvasElement extends Element {
   }
 
   @override
-  void willAttachRenderer() {
+  RenderObject willAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     super.willAttachRenderer();
     renderCustomPaint = RenderCanvasPaint(
       painter: painter,
@@ -112,13 +112,14 @@ class CanvasElement extends Element {
       pixelRatio: ownerDocument.controller.ownerFlutterView.devicePixelRatio
     );
 
-    addChild(renderCustomPaint!);
+    addChildForDOMMode(renderCustomPaint!);
     style.addStyleChangeListener(_styleChangedListener);
+    return renderCustomPaint!;
   }
 
   @override
-  void didDetachRenderer() {
-    super.didDetachRenderer();
+  void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
+    super.didDetachRenderer(flutterWidgetElement);
     style.removeStyleChangeListener(_styleChangedListener);
     painter.dispose();
     renderCustomPaint = null;
@@ -151,7 +152,6 @@ class CanvasElement extends Element {
     double? width;
     double? height;
 
-    RenderStyle renderStyle = renderBoxModel!.renderStyle;
     double? styleWidth = renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
     double? styleHeight = renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
 
@@ -200,7 +200,6 @@ class CanvasElement extends Element {
       // to the object-fit CSS property.
       // @TODO: CSS object-fit for canvas.
       // To fill (default value of object-fit) the bitmap content, use scale to get the same performed.
-      RenderStyle renderStyle = renderBoxModel!.renderStyle;
       double? styleWidth = renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
       double? styleHeight = renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
 

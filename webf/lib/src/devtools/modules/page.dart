@@ -232,8 +232,11 @@ class InspectPageModule extends UIInspectorModule {
     Element root = document.documentElement!;
     // the devtools of some pc do not automatically scale. so modify devicePixelRatio for it
     double? devicePixelRatio;
-    double viewportWidth = document.viewport!.viewportSize.width;
-    double viewportHeight = document.viewport!.viewportSize.height;
+    double? viewportWidth = document.viewport?.viewportSize.width;
+    double? viewportHeight = document.viewport?.viewportSize.height;
+
+    if (viewportWidth == null || viewportHeight == null) return;
+
     if (_devToolsMaxWidth > 0 && _devToolsMaxHeight > 0 && viewportWidth > 0 && viewportHeight > 0) {
       devicePixelRatio = math.min(_devToolsMaxHeight / viewportHeight, _devToolsMaxHeight / viewportHeight);
       devicePixelRatio = math.min(devicePixelRatio, document.controller.ownerFlutterView.devicePixelRatio);

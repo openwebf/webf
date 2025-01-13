@@ -91,7 +91,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
               previousSibling.renderStyle.display == CSSDisplay.flex)) {
         // If previousSibling is block,should trimLeft slef.
         CSSDisplay? display = previousSibling.renderStyle.display;
-        if (display == CSSDisplay.block || display == CSSDisplay.sliver || display == CSSDisplay.flex) {
+        if (display == CSSDisplay.block || display == CSSDisplay.flex) {
           collapsedData = _trimLeftWhitespace(collapsedData);
         }
       } else if (previousSibling is RenderTextBox && isEndWithSpace(previousSibling.data)) {
@@ -110,7 +110,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
               nextSibling.renderStyle.display == CSSDisplay.flex)) {
         // If nextSibling is block,should trimRight slef.
         CSSDisplay? display = nextSibling.renderStyle.display;
-        if (display == CSSDisplay.block || display == CSSDisplay.sliver || display == CSSDisplay.flex) {
+        if (display == CSSDisplay.block || display == CSSDisplay.flex) {
           collapsedData = _trimRightWhitespace(collapsedData);
         }
       }
@@ -341,6 +341,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   static String _trimRightWhitespace(String string) {
     return string.replaceAllMapped(_trimRightWhitespaceReg, (Match m) => '${m[1]}');
   }
+
 
   @override
   void performLayout() {

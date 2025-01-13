@@ -118,8 +118,7 @@ class CSSLengthValue {
   String? propertyName;
   double? _computedValue;
 
-  static bool _isPercentageRelativeContainer(RenderBoxModel containerRenderBox) {
-    CSSRenderStyle renderStyle = containerRenderBox.renderStyle;
+  static bool _isPercentageRelativeContainerRenderStyle(RenderStyle renderStyle) {
     bool isBlockLevelBox = renderStyle.display == CSSDisplay.block || renderStyle.display == CSSDisplay.flex;
     bool isBlockInlineHaveSize = (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
             renderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
@@ -138,9 +137,8 @@ class CSSLengthValue {
 
     // Use cached value if type is not percentage which may needs 2 layout passes to resolve the
     // final computed value.
-    if (renderStyle?.renderBoxModel != null && propertyName != null && type != CSSLengthType.PERCENTAGE) {
-      RenderBoxModel? renderBoxModel = renderStyle!.renderBoxModel;
-      double? cachedValue = getCachedComputedValue(renderBoxModel.hashCode, propertyName!);
+    if (renderStyle?.hasRenderBox() == true && propertyName != null && type != CSSLengthType.PERCENTAGE) {
+      double? cachedValue = getCachedComputedValue(renderStyle!, propertyName!);
       if (cachedValue != null) {
         return cachedValue;
       }
@@ -193,21 +191,23 @@ class CSSLengthValue {
         CSSPositionType positionType = renderStyle!.position;
         bool isPositioned = positionType == CSSPositionType.absolute || positionType == CSSPositionType.fixed;
 
-        RenderBoxModel? renderBoxModel = renderStyle!.renderBoxModel;
+        RenderStyle? currentRenderStyle = renderStyle;
+        RenderStyle? parentRenderStyle = currentRenderStyle?.getParentRenderStyle();
+        // RenderBoxModel? renderBoxModel = renderStyle!.renderBoxModel;
         // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
         // cause the element of renderStyle parent may not equal to containing block.
-        RenderObject? containerRenderBox = renderBoxModel?.parent;
-        CSSRenderStyle? parentRenderStyle;
-        while (containerRenderBox != null) {
-          if (containerRenderBox is RenderBoxModel && (_isPercentageRelativeContainer(containerRenderBox))) {
+        // RenderObject? containerRenderBox = renderBoxModel?.parent;
+        // CSSRenderStyle? parentRenderStyle;
+        while (parentRenderStyle != null) {
+          if (parentRenderStyle.isBoxModel() && (_isPercentageRelativeContainerRenderStyle(parentRenderStyle))) {
             // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
             // content box is only a fraction of the complete renderStyle.
-            parentRenderStyle = containerRenderBox.isScrollingContentBox
-                ? (containerRenderBox.parent as RenderBoxModel).renderStyle
-                : containerRenderBox.renderStyle;
+            parentRenderStyle = parentRenderStyle.isSelfScrollingContentBox()
+                ? parentRenderStyle.getParentRenderStyle()
+                : parentRenderStyle;
             break;
           }
-          containerRenderBox = containerRenderBox.parent;
+          parentRenderStyle = parentRenderStyle.getParentRenderStyle();
         }
 
         // Percentage relative width priority: logical width > renderer width
@@ -244,9 +244,7 @@ class CSSLengthValue {
               _computedValue = value! * relativeParentWidth;
             } else {
               // Mark parent to relayout to get renderer width of parent.
-              if (renderBoxModel != null) {
-                renderBoxModel.markParentNeedsRelayout();
-              }
+              renderStyle?.markParentNeedsRelayout();
               _computedValue = double.infinity;
             }
             break;
@@ -271,9 +269,7 @@ class CSSLengthValue {
                 _computedValue = value! * relativeParentHeight;
               } else {
                 // Mark parent to relayout to get renderer height of parent.
-                if (renderBoxModel != null) {
-                  renderBoxModel.markParentNeedsRelayout();
-                }
+                renderStyle?.markParentNeedsRelayout();
                 _computedValue = double.infinity;
               }
             } else {
@@ -300,9 +296,7 @@ class CSSLengthValue {
               _computedValue = value! * relativeParentWidth;
             } else {
               // Mark parent to relayout to get renderer height of parent.
-              if (renderBoxModel != null) {
-                renderBoxModel.markParentNeedsRelayout();
-              }
+              renderStyle?.markParentNeedsRelayout();
               _computedValue = 0;
             }
             break;
@@ -332,9 +326,7 @@ class CSSLengthValue {
               _computedValue = value! * parentPaddingBoxHeight;
             } else {
               // Mark parent to relayout to get renderer height of parent.
-              if (renderBoxModel != null) {
-                renderBoxModel.markParentNeedsRelayout();
-              }
+              renderStyle?.markParentNeedsRelayout();
               // Set as initial value, use infinity as auto value.
               _computedValue = double.infinity;
             }
@@ -346,9 +338,7 @@ class CSSLengthValue {
               _computedValue = value! * parentPaddingBoxWidth;
             } else {
               // Mark parent to relayout to get renderer height of parent.
-              if (renderBoxModel != null) {
-                renderBoxModel.markParentNeedsRelayout();
-              }
+              renderStyle?.markParentNeedsRelayout();
               _computedValue = double.infinity;
             }
             break;
@@ -378,7 +368,8 @@ class CSSLengthValue {
           case BACKGROUND_POSITION_X:
             double? borderBoxWidth = renderStyle!.borderBoxWidth ?? renderStyle!.borderBoxLogicalWidth;
             if (isPercentage && borderBoxWidth != null) {
-              final destinationWidth = renderBoxModel!.boxPainter?.backgroundImageSize?.width.toDouble() ?? 0;
+              final destinationWidth = renderStyle?.getRenderBoxValueByType(RenderObjectGetType.self,
+                  (renderBox, _) => renderBox.boxPainter?.backgroundImageSize?.width.toDouble()) ?? 0;
               _computedValue = (borderBoxWidth - destinationWidth) * value!;
             } else {
               _computedValue = value!;
@@ -387,7 +378,8 @@ class CSSLengthValue {
           case BACKGROUND_POSITION_Y:
             double? borderBoxHeight = renderStyle!.borderBoxHeight ?? renderStyle!.borderBoxLogicalHeight;
             if (isPercentage && borderBoxHeight != null) {
-              final destinationHeight = renderBoxModel!.boxPainter?.backgroundImageSize?.height.toDouble() ?? 0;
+              final destinationHeight = renderStyle?.getRenderBoxValueByType(RenderObjectGetType.self,
+                      (renderBox, _) => renderBox.boxPainter?.backgroundImageSize?.height.toDouble()) ?? 0;
               _computedValue = (borderBoxHeight - destinationHeight) * value!;
             } else {
               _computedValue = value!;
@@ -421,9 +413,8 @@ class CSSLengthValue {
     }
 
     // Cache computed value.
-    if (renderStyle?.renderBoxModel != null && propertyName != null && type != CSSLengthType.PERCENTAGE) {
-      RenderBoxModel? renderBoxModel = renderStyle!.renderBoxModel;
-      cacheComputedValue(renderBoxModel.hashCode, propertyName!, _computedValue!);
+    if (renderStyle?.hasRenderBox() == true && propertyName != null && type != CSSLengthType.PERCENTAGE) {
+      cacheComputedValue(renderStyle!, propertyName!, _computedValue!);
     }
     return _computedValue!;
   }
@@ -470,7 +461,8 @@ class CSSLengthValue {
         type == CSSLengthType.VMIN ||
         type == CSSLengthType.VMAX ||
         type == CSSLengthType.EM ||
-        type == CSSLengthType.REM || type == CSSLengthType.PERCENTAGE;
+        type == CSSLengthType.REM ||
+        type == CSSLengthType.PERCENTAGE;
   }
 
   bool get isNone {
@@ -512,18 +504,18 @@ class CSSLengthValue {
 final LinkedLruHashMap<int, Map<String, double>> _cachedComputedValue = LinkedLruHashMap(maximumSize: 500);
 
 // Get computed length value from cache only in perform layout stage.
-double? getCachedComputedValue(int hashCode, String propertyName) {
+double? getCachedComputedValue(RenderStyle renderStyle, String propertyName) {
   if (renderBoxInLayoutHashCodes.isNotEmpty) {
-    return _cachedComputedValue[hashCode]?[propertyName];
+    return _cachedComputedValue[renderStyle.hashCode]?[propertyName];
   }
   return null;
 }
 
 // Cache computed length value only in perform layout stage.
-void cacheComputedValue(int hashCode, String propertyName, double value) {
+void cacheComputedValue(RenderStyle renderStyle, String propertyName, double value) {
   if (renderBoxInLayoutHashCodes.isNotEmpty) {
-    _cachedComputedValue[hashCode] = _cachedComputedValue[hashCode] ?? {};
-    _cachedComputedValue[hashCode]![propertyName] = value;
+    _cachedComputedValue[renderStyle.hashCode] = _cachedComputedValue[renderStyle.hashCode] ?? {};
+    _cachedComputedValue[renderStyle.hashCode]![propertyName] = value;
   }
 }
 

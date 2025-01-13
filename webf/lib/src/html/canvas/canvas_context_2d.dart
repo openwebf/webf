@@ -8,7 +8,6 @@ import 'dart:typed_data';
 import 'dart:ui';
 import 'dart:ffi' as ffi;
 
-import 'package:collection/collection.dart';
 import 'package:flutter/painting.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';

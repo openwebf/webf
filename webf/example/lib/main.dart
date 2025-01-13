@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';

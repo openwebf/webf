@@ -9,7 +9,6 @@ import 'dart:ui';
 import 'dart:ffi' as ffi;
 
 import 'package:flutter/painting.dart';
-import 'package:meta/meta.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/css.dart';
 

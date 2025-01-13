@@ -71,10 +71,10 @@ class SwiperElement extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context, ChildNodeList childNodes) {
     print('SwiperElement build children: ${children.length}');
     return Swiper.children(
-      children: children,
+      children: childNodes.toWidgetList(),
       scrollDirection: _getScrollDirection(),
       axisDirection: _getAxisDirection(),
       autoplayDelay: int.parse(interval),

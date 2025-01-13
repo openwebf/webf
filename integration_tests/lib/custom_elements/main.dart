@@ -10,6 +10,9 @@ import 'flutter_container.dart';
 import 'sample_element.dart';
 import 'flutter_layout_box.dart';
 import 'flutter_swiper.dart';
+import 'multiple_rendering.dart';
+import 'event_container.dart';
+import 'event_container_unpoped.dart';
 
 void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-button',
@@ -27,4 +30,7 @@ void defineWebFCustomElements() {
     return ImageWidgetElement(context);
   });
   WebF.defineCustomElement('flutter-swiper', (context) => SwiperElement(context));
+  WebF.defineCustomElement('multiple-rendering', (context) => MultipleRenderElement(context));
+  WebF.defineCustomElement('event-container', (context) => EventContainer(context));
+  WebF.defineCustomElement('event-container-unpoped', (context) => EventContainerUnpoped(context));
 }

@@ -11,7 +11,7 @@ mixin CSSBorderRadiusMixin on RenderStyle {
   set borderTopLeftRadius(CSSBorderRadius? value) {
     if (value == _borderTopLeftRadius) return;
     _borderTopLeftRadius = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   @override
@@ -21,7 +21,7 @@ mixin CSSBorderRadiusMixin on RenderStyle {
   set borderTopRightRadius(CSSBorderRadius? value) {
     if (value == _borderTopRightRadius) return;
     _borderTopRightRadius = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   @override
@@ -31,7 +31,7 @@ mixin CSSBorderRadiusMixin on RenderStyle {
   set borderBottomRightRadius(CSSBorderRadius? value) {
     if (value == _borderBottomRightRadius) return;
     _borderBottomRightRadius = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   @override
@@ -41,7 +41,7 @@ mixin CSSBorderRadiusMixin on RenderStyle {
   set borderBottomLeftRadius(CSSBorderRadius? value) {
     if (value == _borderBottomLeftRadius) return;
     _borderBottomLeftRadius = value;
-    renderBoxModel?.markNeedsPaint();
+    markNeedsPaint();
   }
 
   @override

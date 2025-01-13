@@ -45,7 +45,7 @@ class InspectDOMModule extends UIInspectorModule {
     int x = params['x'];
     int y = params['y'];
 
-    RenderBox rootRenderObject = document.renderer!;
+    RenderBox rootRenderObject = document.domRenderer!;
     BoxHitTestResult result = BoxHitTestResult();
     rootRenderObject.hitTest(result, position: Offset(x.toDouble(), y.toDouble()));
     var hitPath = result.path;
@@ -107,12 +107,11 @@ class InspectDOMModule extends UIInspectorModule {
     if (node is Element) element = node;
 
     // BoxModel design to BorderBox in kraken.
-    if (element != null && element.renderBoxModel != null && element.renderBoxModel!.hasSize) {
-      ui.Offset contentBoxOffset =
-          element.renderBoxModel!.localToGlobal(ui.Offset.zero, ancestor: element.ownerDocument.viewport);
+    if (element != null && element.renderStyle.hasRenderBox() && element.renderStyle.isBoxModelHaveSize()) {
+      ui.Offset contentBoxOffset = element.renderStyle.localToGlobal(ui.Offset.zero, ancestor: element.ownerDocument.viewport);
 
-      int widthWithinBorder = element.renderBoxModel!.size.width.toInt();
-      int heightWithinBorder = element.renderBoxModel!.size.height.toInt();
+      int widthWithinBorder = element.renderStyle.boxSize()!.width.toInt();
+      int heightWithinBorder = element.renderStyle.boxSize()!.height.toInt();
       List<double> border = [
         contentBoxOffset.dx,
         contentBoxOffset.dy,
@@ -124,34 +123,34 @@ class InspectDOMModule extends UIInspectorModule {
         contentBoxOffset.dy + heightWithinBorder,
       ];
       List<double> padding = [
-        border[0] + (element.renderBoxModel!.renderStyle.borderLeftWidth?.computedValue ?? 0),
-        border[1] + (element.renderBoxModel!.renderStyle.borderTopWidth?.computedValue ?? 0),
-        border[2] - (element.renderBoxModel!.renderStyle.borderRightWidth?.computedValue ?? 0),
-        border[3] + (element.renderBoxModel!.renderStyle.borderTopWidth?.computedValue ?? 0),
-        border[4] - (element.renderBoxModel!.renderStyle.borderRightWidth?.computedValue ?? 0),
-        border[5] - (element.renderBoxModel!.renderStyle.borderBottomWidth?.computedValue ?? 0),
-        border[6] + (element.renderBoxModel!.renderStyle.borderLeftWidth?.computedValue ?? 0),
-        border[7] - (element.renderBoxModel!.renderStyle.borderBottomWidth?.computedValue ?? 0),
+        border[0] + (element.renderStyle.borderLeftWidth?.computedValue ?? 0),
+        border[1] + (element.renderStyle.borderTopWidth?.computedValue ?? 0),
+        border[2] - (element.renderStyle.borderRightWidth?.computedValue ?? 0),
+        border[3] + (element.renderStyle.borderTopWidth?.computedValue ?? 0),
+        border[4] - (element.renderStyle.borderRightWidth?.computedValue ?? 0),
+        border[5] - (element.renderStyle.borderBottomWidth?.computedValue ?? 0),
+        border[6] + (element.renderStyle.borderLeftWidth?.computedValue ?? 0),
+        border[7] - (element.renderStyle.borderBottomWidth?.computedValue ?? 0),
       ];
       List<double> content = [
-        padding[0] + element.renderBoxModel!.renderStyle.paddingLeft.computedValue,
-        padding[1] + element.renderBoxModel!.renderStyle.paddingTop.computedValue,
-        padding[2] - element.renderBoxModel!.renderStyle.paddingRight.computedValue,
-        padding[3] + element.renderBoxModel!.renderStyle.paddingTop.computedValue,
-        padding[4] - element.renderBoxModel!.renderStyle.paddingRight.computedValue,
-        padding[5] - element.renderBoxModel!.renderStyle.paddingBottom.computedValue,
-        padding[6] + element.renderBoxModel!.renderStyle.paddingLeft.computedValue,
-        padding[7] - element.renderBoxModel!.renderStyle.paddingBottom.computedValue,
+        padding[0] + element.renderStyle.paddingLeft.computedValue,
+        padding[1] + element.renderStyle.paddingTop.computedValue,
+        padding[2] - element.renderStyle.paddingRight.computedValue,
+        padding[3] + element.renderStyle.paddingTop.computedValue,
+        padding[4] - element.renderStyle.paddingRight.computedValue,
+        padding[5] - element.renderStyle.paddingBottom.computedValue,
+        padding[6] + element.renderStyle.paddingLeft.computedValue,
+        padding[7] - element.renderStyle.paddingBottom.computedValue,
       ];
       List<double> margin = [
-        border[0] - element.renderBoxModel!.renderStyle.marginLeft.computedValue,
-        border[1] - element.renderBoxModel!.renderStyle.marginTop.computedValue,
-        border[2] + element.renderBoxModel!.renderStyle.marginRight.computedValue,
-        border[3] - element.renderBoxModel!.renderStyle.marginTop.computedValue,
-        border[4] + element.renderBoxModel!.renderStyle.marginRight.computedValue,
-        border[5] + element.renderBoxModel!.renderStyle.marginBottom.computedValue,
-        border[6] - element.renderBoxModel!.renderStyle.marginLeft.computedValue,
-        border[7] + element.renderBoxModel!.renderStyle.marginBottom.computedValue,
+        border[0] - element.renderStyle.marginLeft.computedValue,
+        border[1] - element.renderStyle.marginTop.computedValue,
+        border[2] + element.renderStyle.marginRight.computedValue,
+        border[3] - element.renderStyle.marginTop.computedValue,
+        border[4] + element.renderStyle.marginRight.computedValue,
+        border[5] + element.renderStyle.marginBottom.computedValue,
+        border[6] - element.renderStyle.marginLeft.computedValue,
+        border[7] + element.renderStyle.marginBottom.computedValue,
       ];
 
       BoxModel boxModel = BoxModel(

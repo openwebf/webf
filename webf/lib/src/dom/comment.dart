@@ -4,15 +4,16 @@
  */
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/bridge.dart';
 
 class Comment extends CharacterData {
-  Comment([context]) : super(NodeType.COMMENT_NODE, context);
+  Comment([BindingContext? context]) : super(NodeType.COMMENT_NODE, context);
 
   @override
   String get nodeName => '#comment';
 
   @override
-  RenderBox? get renderer => null;
+  RenderBox? get domRenderer => null;
 
   // @TODO: Get data from bridge side.
   String get data => '';

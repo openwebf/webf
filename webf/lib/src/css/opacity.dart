@@ -6,7 +6,6 @@
 import 'dart:ui' as ui;
 
 import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
 
 mixin CSSOpacityMixin on RenderStyle {
   /// The fraction to scale the child's alpha value.
@@ -27,20 +26,21 @@ mixin CSSOpacityMixin on RenderStyle {
 
     _opacity = value;
     int alpha = ui.Color.getAlphaFromOpacity(opacity);
-    renderBoxModel!.alpha = alpha;
+    getSelfRenderBoxValue((renderBoxModel, _) {
+      renderBoxModel.alpha = alpha;
+    });
 
     // Mark the compositing state for this render object as dirty
     // cause it will create new layer when opacity is valid.
     if (alpha != 0 && alpha != 255) {
-      renderBoxModel?.markNeedsCompositingBitsUpdate();
-    }
-    // Opacity effect the stacking context.
-    RenderBoxModel? parentRenderer = parent?.renderBoxModel;
-    if (parentRenderer is RenderLayoutBox) {
-      parentRenderer.markChildrenNeedsSort();
+      markNeedsCompositingBitsUpdate();
     }
 
-    renderBoxModel?.markNeedsPaint();
+    // Opacity effect the stacking context.
+    RenderStyle? parentRenderStyle = getParentRenderStyle();
+    parentRenderStyle?.markChildrenNeedsSort();
+
+    markNeedsPaint();
   }
 
   static double? resolveOpacity(String value) {

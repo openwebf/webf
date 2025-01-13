@@ -2,6 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/widgets.dart';
 import 'node.dart';
 import 'node_list.dart';
 import 'container_node.dart';
@@ -39,6 +40,7 @@ class ChildNodeList extends NodeList {
 
   final ContainerNode _owner;
   final CollectionIndexCache<ChildNodeList, Node> _collectionIndexCache;
+  List<Widget>? _cachedWidgetList;
 
   @override
   int get length => _collectionIndexCache.nodeCount(this);
@@ -53,6 +55,12 @@ class ChildNodeList extends NodeList {
     return _collectionIndexCache.nodeAt(this, index);
   }
 
+  List<Widget> toWidgetList() {
+    if (_cachedWidgetList != null) return _cachedWidgetList!;
+    List<Widget> result = _cachedWidgetList = map((node) => node.toWidget()).toList();
+    return result;
+  }
+
   void childrenChanged(ChildrenChange change) {
     if (change.isChildInsertion()) {
       _collectionIndexCache.nodeInserted();
@@ -61,10 +69,12 @@ class ChildNodeList extends NodeList {
     } else {
       _collectionIndexCache.invalidate();
     }
+    _cachedWidgetList = null;
   }
 
   void invalidateCache() {
     _collectionIndexCache.invalidate();
+    _cachedWidgetList = null;
   }
 
   bool get canTraverseBackward => true;

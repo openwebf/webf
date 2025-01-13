@@ -7,6 +7,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/gestures.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
@@ -74,60 +75,30 @@ const String EVENT_STATE_CANCEL = 'cancel';
 mixin ElementEventMixin on ElementBase {
   AppearEventType _prevAppearState = AppearEventType.none;
 
-  void clearEventResponder(RenderEventListenerMixin renderBox) {
-    renderBox.getEventTarget = null;
+  void clearEventResponder(RenderEventListenerMixin? renderBox) {
+    renderBox?.getEventTarget = null;
   }
 
-  void ensureEventResponderBound() {
-    // Must bind event responder on render box model whatever there is no event listener.
-    RenderBoxModel? renderBox = renderBoxModel;
-    if (renderBox != null) {
-      // Make sure pointer responder bind.
-      renderBox.getEventTarget = getEventTarget;
-
-      if (_hasIntersectionObserverEvent()) {
-        renderBox.addIntersectionChangeListener(handleIntersectionChange);
-        // Mark the compositing state for this render object as dirty
-        // cause it will create new layer.
-        renderBox.markNeedsCompositingBitsUpdate();
-      } else {
-        // Remove listener when no intersection related event
-        renderBox.removeIntersectionChangeListener(handleIntersectionChange);
-      }
-      if (_hasResizeObserverEvent()) {
-        renderBox.addResizeListener(handleResizeChange);
-      } else {
-        renderBox.removeResizeListener(handleResizeChange);
-      }
-    }
-  }
-
-  bool _hasIntersectionObserverEvent() {
+  bool hasIntersectionObserverEvent() {
     return hasEventListener(EVENT_APPEAR) ||
         hasEventListener(EVENT_DISAPPEAR) ||
         hasEventListener(EVENT_INTERSECTION_CHANGE);
   }
 
-  bool _hasResizeObserverEvent() {
+  bool hasResizeObserverEvent() {
     return hasEventListener(EVENT_RESIZE);
   }
 
   @override
   void addEventListener(String eventType, EventHandler handler, {EventListenerOptions? addEventListenerOptions}) {
     super.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
-    RenderBoxModel? renderBox = renderBoxModel;
-    if (renderBox != null) {
-      ensureEventResponderBound();
-    }
+    renderStyle.ensureEventResponderBound();
   }
 
   @override
   void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false}) {
     super.removeEventListener(eventType, handler, isCapture: isCapture);
-    RenderBoxModel? renderBox = renderBoxModel;
-    if (renderBox != null) {
-      ensureEventResponderBound();
-    }
+    renderStyle.ensureEventResponderBound();
   }
 
   EventTarget getEventTarget() {
@@ -225,8 +196,8 @@ class Event {
       (_target != null && _target.pointer != null) ? _target.pointer!.address : nullptr.address,
       (_currentTarget != null && _currentTarget.pointer != null) ? _currentTarget.pointer!.address : nullptr.address,
       sharedJSProps.address, // EventProps* props
-      propLen,  // int64_t props_len
-      allocateLen   // int64_t alloc_size;
+      propLen, // int64_t props_len
+      allocateLen // int64_t alloc_size;
     ];
 
     // Allocate extra bytes to store subclass's members.
@@ -271,7 +242,7 @@ class HybridRouterChangeEvent extends Event {
   final String kind;
   final String name;
 
-  HybridRouterChangeEvent({this.state, required this.kind, required this.name}): super(EVENT_HYBRID_ROUTER_CHANGE);
+  HybridRouterChangeEvent({this.state, required this.kind, required this.name}) : super(EVENT_HYBRID_ROUTER_CHANGE);
 
   @override
   Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
@@ -299,10 +270,7 @@ class HashChangeEvent extends Event {
 
   @override
   Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
-    List<int> methods = [
-      stringToNativeString(newUrl).address,
-      stringToNativeString(oldUrl).address
-    ];
+    List<int> methods = [stringToNativeString(newUrl).address, stringToNativeString(oldUrl).address];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
     int currentStructSize = rawEvent.ref.length + methods.length;
@@ -399,6 +367,22 @@ class MouseEvent extends UIEvent {
     EventTarget? view,
     double which = 0.0,
   }) : super(type, detail: detail, view: view, which: which, bubbles: true, cancelable: true, composed: false);
+
+  static MouseEvent fromTapUp(Element ownerElement, TapUpDetails tapDetails) {
+    Offset globalPosition = tapDetails.globalPosition;
+    Offset localPosition = tapDetails.localPosition;
+    Offset globalOffset =
+        ownerElement.ownerDocument.domRenderer!.globalToLocal(Offset(globalPosition.dx, globalPosition.dy));
+    double clientX = globalOffset.dx;
+    double clientY = globalOffset.dy;
+
+    return MouseEvent(EVENT_CLICK,
+        clientX: clientX,
+        clientY: clientY,
+        offsetX: localPosition.dx,
+        offsetY: localPosition.dy,
+        view: ownerElement.ownerDocument.defaultView);
+  }
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {

@@ -42,6 +42,198 @@ describe('custom widget element', () => {
     await simulateClick(10, 10);
   });
 
+  it('should works with event listener inside of binded event widgetElement', async () => {
+    let normal;
+    let flutterContainer;
+    let elementInsideOfWidget;
+    const event_container = createElement('event-container-unpoped', {
+
+    }, [
+      normal = createElement('div', {
+      }, [
+        createText('Normal DIV Text')
+      ]),
+      flutterContainer = createElement('div', {
+        id: 'flutter-container',
+        style: {
+          marginTop: '10px'
+        }
+      }, [
+        elementInsideOfWidget = createElement('div', {
+
+        }, [
+          createText('inside of flutter container')
+        ])
+      ])
+    ]);
+
+    BODY.appendChild(event_container);
+
+    let eventContainerClickCount = 0;
+    let flutterContainerClickCount = 0;
+    let insideElementClickCount = 0;
+
+    event_container.addEventListener('tapped', (e: MouseEvent) => {
+      eventContainerClickCount++;
+    });
+
+    flutterContainer.addEventListener('click', (e: MouseEvent) => {
+      flutterContainerClickCount++;
+    });
+
+    elementInsideOfWidget.addEventListener('click', () => {
+      insideElementClickCount++;
+    });
+
+
+    await simulateClick(window.screen.width / 2, 0);
+    expect([eventContainerClickCount, flutterContainerClickCount, insideElementClickCount]).toEqual([1, 0, 0]);
+
+    await simulateClick(10, 20);
+
+    expect([eventContainerClickCount, flutterContainerClickCount, insideElementClickCount]).toEqual([2, 0, 0]);
+
+    await simulateClick(10, 60);
+
+    expect([eventContainerClickCount, flutterContainerClickCount, insideElementClickCount]).toEqual([2, 1, 1]);
+
+    await snapshot();
+  });
+
+  it('should works with event listener wrapped with portal inside of binded event widgetElement', async () => {
+    let normal;
+    let flutterContainer;
+    let elementInsideOfWidget;
+    const event_container = createElement('event-container-unpoped', {
+
+    }, [
+      normal = createElement('div', {
+      }, [
+        createText('Normal DIV Text')
+      ]),
+      createElement('portal', {}, [
+        flutterContainer = createElement('div', {
+          id: 'flutter-container',
+          style: {
+            marginTop: '10px'
+          }
+        }, [
+          createElement('portal', {}, [
+            elementInsideOfWidget = createElement('div', {
+  
+            }, [
+              createElement('portal', {}, [
+                createText('inside of flutter container')
+              ])
+            ])
+          ])
+        ])
+      ])
+    ]);
+
+    BODY.appendChild(event_container);
+
+    let eventContainerClickCount = 0;
+    let flutterContainerClickCount = 0;
+    let insideElementClickCount = 0;
+
+    event_container.addEventListener('tapped', (e: MouseEvent) => {
+      eventContainerClickCount++;
+    });
+
+    flutterContainer.addEventListener('click', (e: MouseEvent) => {
+      flutterContainerClickCount++;
+    });
+
+    elementInsideOfWidget.addEventListener('click', () => {
+      insideElementClickCount++;
+    });
+
+
+    await simulateClick(window.screen.width / 2, 0);
+    expect([eventContainerClickCount, flutterContainerClickCount, insideElementClickCount]).toEqual([1, 0, 0]);
+
+    await simulateClick(10, 20);
+
+    expect([eventContainerClickCount, flutterContainerClickCount, insideElementClickCount]).toEqual([2, 0, 0]);
+
+    await simulateClick(10, 60);
+
+    expect([eventContainerClickCount, flutterContainerClickCount, insideElementClickCount]).toEqual([2, 1, 1]);
+
+    await snapshot();
+  });
+
+  it('replaced elements inside of widgetElement should works with click', async (done) => {
+    let img;
+    const container = createElement('event-container-unpoped', {}, [
+      img = createElement('img', {
+        src: 'assets/50x50-green.png'
+      }, [])
+    ]);
+
+    let containerClickedCount = 0;
+    let imgClickedCount = 0;
+
+    container.addEventListener('tapped', () => {
+      containerClickedCount++;
+    });
+    img.addEventListener('click', () => {
+      imgClickedCount++;
+    });
+    BODY.append(container);
+
+    img.addEventListener('load', async () => {
+      await simulateClick(5, 5);
+      expect([containerClickedCount, imgClickedCount]).toEqual([1, 0]);
+
+      await simulateClick(15, 50);
+      expect([containerClickedCount, imgClickedCount]).toEqual([1, 1]);
+
+      await snapshot();
+      done();
+    });
+  });
+
+  it('event propgation should works inside of widgetElement', async () => {
+    let innerElement;
+    const container = createElement('event-container', {}, [
+      innerElement = createElement('div', () => {}, [
+        createText('inner text')
+      ])
+    ]);
+
+    let bodyClickedCount = 0;
+    let bodyCaptureClickedCount = 0;
+    let innerElementClickedCount = 0;
+    let containerClickedCount = 0;
+
+    BODY.addEventListener('click', () => {
+      bodyClickedCount++;
+    });
+    BODY.addEventListener('click', () => {
+      bodyCaptureClickedCount++;
+    }, true);
+
+    innerElement.addEventListener('click', () => {
+      innerElementClickedCount++;
+    });
+    container.addEventListener('click', () => {
+      containerClickedCount++;
+    });
+
+    BODY.appendChild(container);
+
+    await simulateClick(window.screen.width / 2, 5);
+    expect([bodyClickedCount, bodyCaptureClickedCount, innerElementClickedCount, containerClickedCount]).toEqual([1, 1, 0, 1]);
+
+    await simulateClick(5, 40);
+
+    expect([bodyClickedCount, bodyCaptureClickedCount, innerElementClickedCount, containerClickedCount]).toEqual([2, 2, 1, 2]);
+
+    await snapshot();
+  });
+
   it('text node should be child of flutter container', async () => {
     const container = document.createElement('flutter-container');
     const text = document.createTextNode('text');
@@ -616,5 +808,24 @@ describe('custom html element', () => {
       await snapshot();
       done();
     });
+  });
+
+  it('should works with multiple build instance', async () => {
+    const container = createElement('multiple-rendering', async (done) => {
+
+    }, [
+      createElement('div', {
+        style: {
+          border: '1px solid red'
+        }
+      }, [
+        createElement('div', {}, [
+          createText('AAA')
+        ])
+      ])
+    ]);
+
+    BODY.appendChild(container);
+    await snapshot();
   });
 });

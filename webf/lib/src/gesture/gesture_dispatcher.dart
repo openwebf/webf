@@ -4,7 +4,6 @@
  */
 
 import 'dart:async';
-import 'dart:ffi';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -366,8 +365,8 @@ class GestureDispatcher {
     if (_target == null) {
       return;
     }
-    // @TODO
-    RenderBox? root = (_target as Node).ownerDocument.renderer;
+
+    RenderBox? root = (_target as Node).ownerDocument.domRenderer;
 
     if (root == null) {
       return;

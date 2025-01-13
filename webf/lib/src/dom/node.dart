@@ -6,10 +6,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart' show Widget;
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
-import 'package:webf/widget.dart';
+import 'package:webf/rendering.dart';
 import 'node_data.dart';
 
 enum NodeType {
@@ -39,15 +39,9 @@ enum ChildrenChangeType {
   TEXT_CHANGE
 }
 
-enum ChildrenChangeSource {
-  API,
-  PARSER
-}
+enum ChildrenChangeSource { API, PARSER }
 
-enum ChildrenChangeAffectsElements {
-  NO,
-  YES
-}
+enum ChildrenChangeAffectsElements { NO, YES }
 
 class ChildrenChange {
   final ChildrenChangeType type;
@@ -115,7 +109,8 @@ typedef NodeVisitor = void Function(Node node);
 /// [Node] or [Element]s, which wrap [RenderObject]s, which provide the actual
 /// rendering of the application.
 abstract class RenderObjectNode {
-  RenderBox? get renderer;
+  RenderBox? get domRenderer;
+  RenderBox? get attachedRenderer;
 
   /// Creates an instance of the [RenderObject] class that this
   /// [RenderObjectNode] represents, using the configuration described by this
@@ -132,19 +127,19 @@ abstract class RenderObjectNode {
   /// This method should not do anything to update the children of the render
   /// object.
   @protected
-  void willAttachRenderer();
+  void willAttachRenderer(flutter.RenderObjectElement? flutterWidgetElement);
 
   @protected
-  void didAttachRenderer();
+  void didAttachRenderer(flutter.RenderObjectElement? flutterWidgetElement);
 
   /// A render object previously associated with this Node will be / has been removed
   /// from the tree. The given [RenderObject] will be of the same type as
   /// returned by this object's [createRenderer].
   @protected
-  void willDetachRenderer();
+  void willDetachRenderer(flutter.RenderObjectElement? flutterWidgetElement);
 
   @protected
-  void didDetachRenderer();
+  void didDetachRenderer(flutter.RenderObjectElement? flutterWidgetElement);
 }
 
 /// Lifecycle that triggered when node tree changes.
@@ -167,20 +162,31 @@ abstract class LifecycleCallbacks {
 }
 
 abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCallbacks {
-  Widget? get flutterWidget => null;
-
-  /// WebF nodes could be wrapped by [WebFHTMLElementToWidgetAdaptor] and the renderObject of this node is managed by Flutter framework.
+  /// WebF nodes could be wrapped by [WebFRenderLayoutWidgetAdaptor] and the renderObject of this node is managed by Flutter framework.
   /// So if managedByFlutterWidget is true, WebF DOM can not disposed Node's renderObject directly.
-  bool managedByFlutterWidget = false;
+  bool _managedByFlutterWidget = false;
 
-  /// true if node are created by Flutter widgets.
-  bool createdByFlutterWidget = false;
+  bool get managedByFlutterWidget => _managedByFlutterWidget;
+
+  set managedByFlutterWidget(bool value) {
+    if (_managedByFlutterWidget) return;
+
+    _managedByFlutterWidget = true;
+
+    Node? first = firstChild;
+    while(first != null) {
+      first.managedByFlutterWidget = true;
+      first = first.nextSibling;
+    }
+  }
 
   /// The Node.parentNode read-only property returns the parent of the specified node in the DOM tree.
   ContainerNode? get parentNode => parentOrShadowHostNode;
 
   ContainerNode? _parentOrShadowHostNode;
+
   ContainerNode? get parentOrShadowHostNode => _parentOrShadowHostNode;
+
   set parentOrShadowHostNode(ContainerNode? value) {
     _parentOrShadowHostNode = value;
   }
@@ -189,13 +195,17 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   Node? _next;
 
   Node? get firstChild;
+
   Node? get lastChild;
 
   NodeType nodeType;
+
   String get nodeName;
 
   NodeData? _node_data;
+
   NodeData? get nodeData => _node_data;
+
   NodeData ensureNodeData() {
     _node_data ??= NodeData();
     return _node_data!;
@@ -232,7 +242,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   Element? get previousElementSibling {
     Node? previous = previousSibling;
-    while(previous != null) {
+    while (previous != null) {
       if (previous is Element) {
         return previous;
       }
@@ -243,7 +253,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   Element? get nextElementSibling {
     Node? next = nextSibling;
-    while(next != null) {
+    while (next != null) {
       if (next is Element) {
         return next;
       }
@@ -255,17 +265,22 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   Node(this.nodeType, [BindingContext? context]) : super(context);
 
   bool _isConnected = false;
+
   // If node is on the tree, the root parent is body.
   bool get isConnected => _isConnected;
 
-  bool isInTreeScope() { return isConnected; }
+  bool isInTreeScope() {
+    return isConnected;
+  }
 
   Node? get previousSibling => _previous;
+
   set previousSibling(Node? value) {
     _previous = value;
   }
 
   Node? get nextSibling => _next;
+
   set nextSibling(Node? value) {
     _next = value;
   }
@@ -277,10 +292,15 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return ensureNodeData().ensureEmptyChildNodeList(this);
   }
 
+  flutter.Widget toWidget({Key? key}) {
+    throw FlutterError('UnKnown node types for widget conversion');
+  }
+
   // Is child renderObject attached.
-  bool get isRendererAttached => renderer != null && renderer!.attached;
+  bool get isRendererAttached;
+
   // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
-  bool get isRendererAttachedToSegmentTree => renderer != null && renderer!.parent != null;
+  bool get isRendererAttachedToSegmentTree;
 
   bool isDescendantOf(Node? other) {
     // Return true if other is an ancestor of this, otherwise false
@@ -304,7 +324,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   void attachTo(Element parent, {RenderBox? after}) {}
 
   /// Unmount referenced render object.
-  void unmountRenderObject({bool deep = false, bool keepFixedAlive = false}) {}
+  void unmountRenderObjectInDOMMode({bool keepFixedAlive = false}) {}
 
   /// Release any resources held by this node.
   @override
@@ -319,27 +339,37 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   }
 
   @override
-  RenderBox createRenderer() => throw FlutterError('[createRenderer] is not implemented.');
+  RenderBox createRenderer([WebRenderLayoutRenderObjectElement? flutterWidgetElement]) =>
+      throw FlutterError('[createRenderer] is not implemented.');
 
   @override
-  void willAttachRenderer() {}
+  RenderObject willAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) =>
+      throw FlutterError('[willAttachRenderer] is not implemented.');
 
   @override
-  void didAttachRenderer() {}
+  void didAttachRenderer(flutter.RenderObjectElement? flutterWidgetElement) {}
 
   @override
-  void willDetachRenderer() {}
+  void willDetachRenderer(flutter.RenderObjectElement? flutterWidgetElement) {}
 
   @override
-  void didDetachRenderer() {}
+  void didDetachRenderer(flutter.RenderObjectElement? flutterWidgetElement) {}
 
-  Node? appendChild(Node child) { return null; }
+  Node? appendChild(Node child) {
+    return null;
+  }
 
-  Node? insertBefore(Node child, Node referenceNode) { return null; }
+  Node? insertBefore(Node child, Node referenceNode) {
+    return null;
+  }
 
-  Node? removeChild(Node child) { return null; }
+  Node? removeChild(Node child) {
+    return null;
+  }
 
-  Node? replaceChild(Node newNode, Node oldNode) { return null; }
+  Node? replaceChild(Node newNode, Node oldNode) {
+    return null;
+  }
 
   /// Ensure child and child's child render object is attached.
   void ensureChildAttached() {}
@@ -390,11 +420,67 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     }
   }
 
-  bool isTextNode() { return this is TextNode; }
-  bool isContainerNode() { return this is ContainerNode; }
-  bool isElementNode() { return this is Element; }
-  bool isDocumentFragment() { return this is DocumentFragment;}
-  bool hasChildren() { return firstChild != null; }
+  bool isTextNode() {
+    return this is TextNode;
+  }
+
+  bool isContainerNode() {
+    return this is ContainerNode;
+  }
+
+  bool isElementNode() {
+    return this is Element;
+  }
+
+  bool isDocumentFragment() {
+    return this is DocumentFragment;
+  }
+
+  bool hasChildren() {
+    return firstChild != null;
+  }
+
+  static RenderBox? findMostClosedSiblings(Node? previousSibling) {
+    RenderBox? afterRenderObject = previousSibling?.domRenderer;
+
+    // Found the most closed
+    if (afterRenderObject == null) {
+      Node? ref = previousSibling?.previousSibling;
+      while (ref != null && afterRenderObject == null) {
+        afterRenderObject = ref.domRenderer;
+        ref = ref.previousSibling;
+      }
+    }
+
+    // Renderer of referenceNode may not moved to a difference place compared to its original place
+    // in the dom tree due to position absolute/fixed.
+    // Use the renderPositionPlaceholder to get the same place as dom tree in this case.
+    if (afterRenderObject is RenderBoxModel) {
+      RenderBox? renderPositionPlaceholder = afterRenderObject.renderPositionPlaceholder;
+      if (renderPositionPlaceholder != null) {
+        afterRenderObject = renderPositionPlaceholder;
+      }
+    }
+
+    return afterRenderObject;
+  }
+
+  static RenderBox? findParentLastRenderBox(Node currentNode) {
+    RenderBox? after;
+    RenderBox? box = currentNode.domRenderer;
+    if (box is RenderLayoutBox) {
+      RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
+      if (scrollingContentBox != null) {
+        after = scrollingContentBox.lastChild;
+      } else {
+        after = box.lastChild;
+      }
+    } else if (box is ContainerRenderObjectMixin<RenderBox, ContainerParentDataMixin<RenderBox>>) {
+      after = (box as ContainerRenderObjectMixin<RenderBox, ContainerParentDataMixin<RenderBox>>).lastChild;
+    }
+
+    return after;
+  }
 
   DocumentPosition compareDocumentPosition(Node other) {
     if (this == other) {

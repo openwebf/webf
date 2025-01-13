@@ -2,46 +2,80 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'package:collection/collection.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
+import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/bridge.dart';
-import 'package:webf/src/svg/rendering/text.dart';
+
 
 const String WHITE_SPACE_CHAR = ' ';
 const String NEW_LINE_CHAR = '\n';
 const String RETURN_CHAR = '\r';
 const String TAB_CHAR = '\t';
 
+typedef EveryRenderTextBoxHandler = void Function(RenderTextBox? textBox);
+
 class TextNode extends CharacterData {
   static const String NORMAL_SPACE = '\u0020';
 
   TextNode(this._data, [BindingContext? context]) : super(NodeType.TEXT_NODE, context);
 
+  @override
+  flutter.Widget toWidget({Key? key}) {
+    return TextNodeAdapter(this, key: key ?? flutter.ObjectKey(this));
+  }
+
+  final Set<_TextNodeAdapterElement> _attachedFlutterWidgetElements = {};
+
+  void everyRenderTextBox(EveryRenderTextBoxHandler handler) {
+    if (managedByFlutterWidget) {
+      for (var textNode in _attachedFlutterWidgetElements) {
+        handler(textNode.renderObject);
+      }
+    } else {
+      handler(_domRenderTextBox);
+    }
+  }
+
   // Must be existed after text node is attached, and all text update will after text attached.
-  RenderTextBox? _renderTextBox;
+  RenderTextBox? _domRenderTextBox;
 
   // The text string.
   String _data = '';
+
   String get data => _data;
+
   set data(String newData) {
     String oldData = data;
     if (oldData == newData) return;
 
     _data = newData;
 
-    // Empty string of textNode should not attach to render tree.
-    if (oldData.isNotEmpty && newData.isEmpty) {
-      _detachRenderTextBox();
-    } else if (oldData.isEmpty && newData.isNotEmpty) {
-      attachTo(parentElement!);
-    } else {
+    if (managedByFlutterWidget) {
       _applyTextStyle();
-
       // To replace data of node node with offset offset, count count, and data data, run step 12 from the spec:
       // 12. If node’s parent is non-null, then run the children changed steps for node’s parent.
       // https://dom.spec.whatwg.org/#concept-cd-replace
-      parentNode?.childrenChanged(ChildrenChange.forInsertion(this, previousSibling, nextSibling, ChildrenChangeSource.API));
+      parentNode
+          ?.childrenChanged(ChildrenChange.forInsertion(this, previousSibling, nextSibling, ChildrenChangeSource.API));
+    } else {
+      // Empty string of textNode should not attach to render tree.
+      if (oldData.isNotEmpty && newData.isEmpty) {
+        _detachRenderTextBox();
+      } else if (oldData.isEmpty && newData.isNotEmpty) {
+        attachTo(parentElement!);
+      } else {
+        _applyTextStyle();
+
+        // To replace data of node node with offset offset, count count, and data data, run step 12 from the spec:
+        // 12. If node’s parent is non-null, then run the children changed steps for node’s parent.
+        // https://dom.spec.whatwg.org/#concept-cd-replace
+        parentNode?.childrenChanged(
+            ChildrenChange.forInsertion(this, previousSibling, nextSibling, ChildrenChangeSource.API));
+      }
     }
   }
 
@@ -49,31 +83,70 @@ class TextNode extends CharacterData {
   String get nodeName => '#text';
 
   @override
-  RenderBox? get renderer => _renderTextBox;
+  RenderBox? get domRenderer {
+    assert(!managedByFlutterWidget);
+    return _domRenderTextBox;
+  }
+
+  @override
+  RenderBox? get attachedRenderer {
+    if (managedByFlutterWidget) {
+      return _attachedFlutterWidgetElements
+          .firstWhereOrNull((flutterElement) => flutterElement.renderObject.attached)
+          ?.renderObject;
+    }
+
+    return _domRenderTextBox;
+  }
+
+  @override
+  bool get isRendererAttached {
+    return _domRenderTextBox?.attached == true;
+  }
+
+  @override
+  bool get isRendererAttachedToSegmentTree {
+    if (managedByFlutterWidget) {
+      for (var renderText in _attachedFlutterWidgetElements) {
+        if (renderText.renderObject.parent != null) return true;
+      }
+      return false;
+    }
+
+    return _domRenderTextBox?.parent != null;
+  }
 
   void _applyTextStyle() {
     if (isRendererAttachedToSegmentTree) {
       Element _parentElement = parentElement!;
 
-      // The parentNode must be an element.
-      _renderTextBox!.renderStyle = _parentElement.renderStyle;
-      _renderTextBox!.data = data;
+      everyRenderTextBox((textNode) {
+        if (textNode == null) return;
 
-      WebFRenderParagraph renderParagraph = _renderTextBox!.child as WebFRenderParagraph;
-      renderParagraph.markNeedsLayout();
+        // The parentNode must be an element.
+        textNode.renderStyle = _parentElement.renderStyle;
+        textNode.data = data;
 
-      RenderBoxModel parentRenderLayoutBox = _parentElement.renderBoxModel!;
-      if (parentRenderLayoutBox is RenderLayoutBox) {
-        parentRenderLayoutBox = parentRenderLayoutBox.renderScrollingContent ?? parentRenderLayoutBox;
-      }
-      _setTextSizeType(parentRenderLayoutBox.widthSizeType, parentRenderLayoutBox.heightSizeType);
+        WebFRenderParagraph renderParagraph = textNode.child as WebFRenderParagraph;
+        renderParagraph.markNeedsLayout();
+
+        RenderStyle parentElementRenderStyle = _parentElement.renderStyle;
+
+        if (parentElementRenderStyle.isSelfRenderLayoutBox()) {
+          parentElementRenderStyle = parentElementRenderStyle.isSelfScrollingContentBox()
+              ? parentElementRenderStyle.getScrollContentRenderStyle()!
+              : parentElementRenderStyle;
+        }
+
+        _setTextSizeType(textNode, parentElementRenderStyle.widthSizeType(), parentElementRenderStyle.heightSizeType());
+      });
     }
   }
 
-  void _setTextSizeType(BoxSizeType width, BoxSizeType height) {
+  void _setTextSizeType(RenderTextBox renderTextBox, BoxSizeType width, BoxSizeType height) {
     // Migrate element's size type to RenderTextBox.
-    _renderTextBox!.widthSizeType = width;
-    _renderTextBox!.heightSizeType = height;
+    renderTextBox.widthSizeType = width;
+    renderTextBox.heightSizeType = height;
   }
 
   // Attach renderObject of current node to parent
@@ -85,17 +158,15 @@ class TextNode extends CharacterData {
     createRenderer();
 
     // If element attach WidgetElement, render object should be attach to render tree when mount.
-    if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE && parent.renderBoxModel != null) {
-      ContainerRenderObjectMixin? parentRenderBox;
-      if (parent.renderBoxModel is RenderLayoutBox) {
-        final layoutBox = parent.renderBoxModel as RenderLayoutBox;
-        parentRenderBox = layoutBox.renderScrollingContent ?? layoutBox;
-      } else if (parent.renderBoxModel is RenderSVGText) {
-        (parent.renderBoxModel as RenderSVGText).child = _renderTextBox;
+    if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE && parent.renderStyle.hasRenderBox()) {
+      RenderBox renderBox = domRenderer!;
+
+      // Replaced element didn't have the child.
+      if (parent.renderStyle.isSelfRenderReplaced()) {
+        return;
       }
-      if (parentRenderBox != null) {
-        parentRenderBox.insert(_renderTextBox!, after: after);
-      }
+
+      RenderBoxModel.attachRenderBox(parent.domRenderer!, renderBox, after: after);
     }
 
     _applyTextStyle();
@@ -103,8 +174,8 @@ class TextNode extends CharacterData {
 
   // Detach renderObject of current node from parent
   void _detachRenderTextBox() {
-    if (isRendererAttachedToSegmentTree) {
-      RenderTextBox renderTextBox = _renderTextBox!;
+    if (isRendererAttachedToSegmentTree && !managedByFlutterWidget) {
+      RenderTextBox renderTextBox = _domRenderTextBox!;
       RenderBox parent = renderTextBox.parent as RenderBox;
       if (parent is ContainerRenderObjectMixin) {
         (parent as ContainerRenderObjectMixin).remove(renderTextBox);
@@ -121,24 +192,69 @@ class TextNode extends CharacterData {
 
   // Detach renderObject of current node from parent
   @override
-  void unmountRenderObject({bool deep = false, bool keepFixedAlive = false}) {
-    /// If a node is managed by flutter framework, the ownership of this render object will transferred to Flutter framework.
-    /// So we do nothing here.
-    if (managedByFlutterWidget) {
-      return;
+  void unmountRenderObjectInDOMMode({bool keepFixedAlive = false}) {
+    if (!managedByFlutterWidget) {
+      _detachRenderTextBox();
+      _domRenderTextBox = null;
     }
-    _detachRenderTextBox();
-    _renderTextBox = null;
   }
 
   @override
-  RenderBox createRenderer() {
-    return _renderTextBox = RenderTextBox(data, renderStyle: parentElement!.renderStyle);
+  RenderBox createRenderer([flutter.Element? flutterWidgetElement]) {
+    RenderTextBox textBox = RenderTextBox(data, renderStyle: parentElement!.renderStyle);
+    if (flutterWidgetElement == null) {
+      _domRenderTextBox = textBox;
+    } else {
+      _attachedFlutterWidgetElements.add(flutterWidgetElement as _TextNodeAdapterElement);
+    }
+
+    return textBox;
   }
 
   @override
   Future<void> dispose() async {
-    unmountRenderObject();
+    unmountRenderObjectInDOMMode();
+    _attachedFlutterWidgetElements.clear();
     super.dispose();
   }
+}
+
+// Flutter adapters, controlled the renderObject by flutter frameworks when wrapped TextNode into any WidgetElements.
+class TextNodeAdapter extends flutter.SingleChildRenderObjectWidget {
+  final TextNode textNode;
+
+  TextNodeAdapter(this.textNode, {Key? key}) : super(key: key) {
+    textNode.managedByFlutterWidget = true;
+  }
+
+  @override
+  _TextNodeAdapterElement createElement() {
+    return _TextNodeAdapterElement(this);
+  }
+
+  @override
+  RenderObject createRenderObject(flutter.BuildContext context) {
+    return textNode.createRenderer(context as flutter.RenderObjectElement);
+  }
+
+  @override
+  String toStringShort() {
+    return '"${textNode.data}"';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(AttributedStringProperty('data', AttributedString(textNode.data)));
+  }
+}
+
+class _TextNodeAdapterElement extends flutter.SingleChildRenderObjectElement {
+  _TextNodeAdapterElement(TextNodeAdapter widget) : super(widget);
+
+  @override
+  RenderTextBox get renderObject => super.renderObject as RenderTextBox;
+
+  @override
+  TextNodeAdapter get widget => super.widget as TextNodeAdapter;
 }

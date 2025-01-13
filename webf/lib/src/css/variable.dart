@@ -5,6 +5,7 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 
 mixin CSSVariableMixin on RenderStyle {
@@ -97,8 +98,9 @@ mixin CSSVariableMixin on RenderStyle {
         });
       }
     });
-    visitChildren((CSSRenderStyle childRenderStyle) {
-      childRenderStyle._notifyCSSVariableChanged(identifier, value);
+
+    target.children.forEach((Element childElement) {
+      childElement.renderStyle._notifyCSSVariableChanged(identifier, value);
     });
   }
 }

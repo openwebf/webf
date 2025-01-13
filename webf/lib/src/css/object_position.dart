@@ -13,7 +13,7 @@ mixin CSSObjectPositionMixin on RenderStyle {
   set objectPosition(Alignment? value) {
     if (_objectPosition == value) return;
     _objectPosition = value;
-    renderBoxModel?.markNeedsLayout();
+    markNeedsLayout();
   }
 
   static Alignment resolveObjectPosition(String? position) {

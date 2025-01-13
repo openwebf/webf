@@ -3,20 +3,22 @@
  */
 
 import 'package:flutter/rendering.dart';
+import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 
 class RenderPortalsParentData extends ContainerBoxParentData<RenderPortal> {}
 
-class RenderPortal extends RenderBox
+class RenderPortal extends RenderBoxModel
     with
         RenderEventListenerMixin,
         RenderObjectWithChildMixin<RenderBox>,
         RenderProxyBoxMixin<RenderBox> {
   RenderPortal({
+    required CSSRenderStyle renderStyle,
     required this.controller
-  });
+  }) : super(renderStyle: renderStyle);
 
   WebFController controller;
 
@@ -28,6 +30,14 @@ class RenderPortal extends RenderBox
   @override
   void setupParentData(covariant RenderObject child) {
     child.parentData = RenderPortalsParentData();
+  }
+
+  @override
+  void performLayout() {
+    super.performLayout();
+
+
+    initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
   }
 
   @override

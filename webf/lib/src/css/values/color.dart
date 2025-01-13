@@ -523,7 +523,7 @@ double? _parseColorPart(String value, double min, double max, RenderStyle? rende
 
   if (v == null) return null;
 
-  return v! < min ? min : (v > max ? max : v);
+  return v < min ? min : (v > max ? max : v);
 }
 
 double? _parseColorHue(String number, String? unit) {
