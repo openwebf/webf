@@ -12,7 +12,7 @@ import 'package:webf/geometry.dart';
 import 'package:webf/src/css/matrix.dart';
 import 'package:webf/src/geometry/dom_point.dart';
 
-class DOMMatrixReadOnly extends DynamicBindingObject {
+class DOMMatrixReadOnly extends DynamicBindingObject with StaticDefinedBindingObject {
   // Matrix4 Values are stored in column major order.
   Matrix4 _matrix4 = Matrix4.identity();
 
@@ -75,265 +75,258 @@ class DOMMatrixReadOnly extends DynamicBindingObject {
     }
   }
 
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    methods['flipX'] = BindingObjectMethodSync(call: (_) => flipX());
-    methods['flipY'] = BindingObjectMethodSync(call: (_) => flipY());
-    methods['inverse'] = BindingObjectMethodSync(call: (_) => inverse());
-    methods['multiply'] = BindingObjectMethodSync(call: (args) {
+  static final StaticDefinedSyncBindingObjectMethodMap _syncDOMMatrixReadonlyMethods = {
+    'flipX': StaticDefinedSyncBindingObjectMethod(call: (matrix, _) => castToType<DOMMatrixReadOnly>(matrix).flipX()),
+    'flipY': StaticDefinedSyncBindingObjectMethod(call: (matrix, _) => castToType<DOMMatrixReadOnly>(matrix).flipY()),
+    'inverse':
+        StaticDefinedSyncBindingObjectMethod(call: (matrix, _) => castToType<DOMMatrixReadOnly>(matrix).inverse()),
+    'multiply': StaticDefinedSyncBindingObjectMethod(call: (matrix, args) {
       BindingObject domMatrix = args[0];
       if (domMatrix is DOMMatrix) {
-        return multiply((domMatrix as DOMMatrix));
+        return castToType<DOMMatrixReadOnly>(matrix).multiply((domMatrix));
       }
-    });
-    methods['rotateAxisAngle'] = BindingObjectMethodSync(
-      call: (args) => rotateAxisAngle(
-        castToType<num>(args[0]).toDouble(),
-        castToType<num>(args[1]).toDouble(),
-        castToType<num>(args[2]).toDouble(),
-        castToType<num>(args[3]).toDouble()
-      )
-    );
-    methods['rotate'] = BindingObjectMethodSync(call: (args) {
+    }),
+    'rotateAxisAngle': StaticDefinedSyncBindingObjectMethod(call: (matrix, args) {
+      return castToType<DOMMatrixReadOnly>(matrix).rotateAxisAngle(
+          castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(),
+          castToType<num>(args[2]).toDouble(),
+          castToType<num>(args[3]).toDouble());
+    }),
+    'rotate': StaticDefinedSyncBindingObjectMethod(call: (matrix, args) {
       if (args.length == 1) {
         // rotate(x)
-        return rotateZ(castToType<num>(args[0]).toDouble());
+        return castToType<DOMMatrixReadOnly>(matrix).rotateZ(castToType<num>(args[0]).toDouble());
       } else if (args.length == 3) {
         // rotate(x,y,z)
-        return rotate(
-            castToType<num>(args[0]).toDouble(),
-            castToType<num>(args[1]).toDouble(),
-            castToType<num>(args[2]).toDouble());
+        return castToType<DOMMatrixReadOnly>(matrix).rotate(castToType<num>(args[0]).toDouble(),
+            castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
       }
-    });
+    }),
+    'rotateFromVector': StaticDefinedSyncBindingObjectMethod(call: (matrix, args) {
+      return castToType<DOMMatrixReadOnly>(matrix)
+          .rotateFromVector(castToType<num>(args[0]).toDouble(), castToType<num>(args[1]).toDouble());
+    }),
+    'scale': StaticDefinedSyncBindingObjectMethod(call: (matrix, args) {
+      double sx = 1, sy = 1, sz = 1, ox = 0, oy = 0, oz = 0;
+      int length = args.length;
+      if (length > 0) sx = castToType<num>(args[0]).toDouble();
+      if (length > 1) sy = castToType<num>(args[1]).toDouble();
+      if (length > 2) sz = castToType<num>(args[2]).toDouble();
+      if (length > 3) ox = castToType<num>(args[3]).toDouble();
+      if (length > 4) oy = castToType<num>(args[4]).toDouble();
+      if (length > 5) oz = castToType<num>(args[5]).toDouble();
 
-    methods['rotateFromVector'] = BindingObjectMethodSync(
-      call: (args) => rotateFromVector(
-        castToType<num>(args[0]).toDouble(),
-        castToType<num>(args[1]).toDouble()
-      )
-    );
-    methods['scale'] = BindingObjectMethodSync(
-      call: (args) => scale(
+      return castToType<DOMMatrixReadOnly>(matrix)
+          .scale(sx, sy, sz, ox, oy, oz);
+    }),
+    'scale3d': StaticDefinedSyncBindingObjectMethod(call: (matrix, args) {
+      return castToType<DOMMatrixReadOnly>(matrix).scale3d(
         castToType<num>(args[0]).toDouble(),
         castToType<num>(args[1]).toDouble(),
         castToType<num>(args[2]).toDouble(),
         castToType<num>(args[3]).toDouble(),
-        castToType<num>(args[4]).toDouble(),
-        castToType<num>(args[5]).toDouble()
-      )
-    );
-    methods['scale3d'] = BindingObjectMethodSync(
-      call: (args) => scale3d(
-        castToType<num>(args[0]).toDouble(),
-        castToType<num>(args[1]).toDouble(),
-        castToType<num>(args[2]).toDouble(),
-        castToType<num>(args[3]).toDouble(),
-      )
-    );
-    methods['scaleNonUniform'] = BindingObjectMethodSync(
-      call: (args) => scaleNonUniform(
-        castToType<num>(args[0]).toDouble(),
-        castToType<num>(args[1]).toDouble()
-      )
-    );
-    methods['scale3d'] = BindingObjectMethodSync(
-      call: (args) => scale3d(
-        castToType<num>(args[0]).toDouble(),
-        castToType<num>(args[1]).toDouble(),
-        castToType<num>(args[2]).toDouble(),
-        castToType<num>(args[3]).toDouble(),
-      )
-    );
-    methods['skewX'] = BindingObjectMethodSync(call: (args) => skewX(castToType<num>(args[0]).toDouble()));
-    methods['skewY'] = BindingObjectMethodSync(call: (args) => skewY(castToType<num>(args[0]).toDouble()));
+      );
+    }),
+    'scaleNonUniform': StaticDefinedSyncBindingObjectMethod(call: (matrix, args) {
+      double sx = 1, sy = 1;
+      int length = args.length;
+      if (length > 0) sx = castToType<num>(args[0]).toDouble();
+      if (length > 1) sy = castToType<num>(args[1]).toDouble();
+      return castToType<DOMMatrixReadOnly>(matrix).scaleNonUniform(sx, sy);
+    }),
+    'skewX': StaticDefinedSyncBindingObjectMethod(
+        call: (matrix, args) => castToType<DOMMatrixReadOnly>(matrix).skewX(castToType<num>(args[0]).toDouble())),
+    'skewY': StaticDefinedSyncBindingObjectMethod(
+        call: (matrix, args) => castToType<DOMMatrixReadOnly>(matrix).skewY(castToType<num>(args[0]).toDouble())),
     // toFloat32Array(): number[];
     // toFloat64Array(): number[];
     // toJSON(): DartImpl<JSON>;
-    methods['toString'] = BindingObjectMethodSync(call: (args) => toString());
-    methods['transformPoint'] = BindingObjectMethodSync(call: (args) {
+    'toString':
+        StaticDefinedSyncBindingObjectMethod(call: (matrix, args) => castToType<DOMMatrixReadOnly>(matrix).toString()),
+    'transformPoint': StaticDefinedSyncBindingObjectMethod(call: (matrix, args) {
       BindingObject domPoint = args[0];
       if (domPoint is DOMPoint) {
-        return transformPoint(domPoint);
+        return castToType<DOMMatrixReadOnly>(matrix).transformPoint(domPoint);
       }
-    });
-    methods['translate'] = BindingObjectMethodSync(
-      call: (args) => translate(
-        castToType<num>(args[0]).toDouble(),
-        castToType<num>(args[1]).toDouble(),
-        castToType<num>(args[2]).toDouble()
-      )
-    );
-  }
+    }),
+    'translate': StaticDefinedSyncBindingObjectMethod(call: (matrix, args) {
+      return castToType<DOMMatrixReadOnly>(matrix).translate(castToType<num>(args[0]).toDouble(),
+          castToType<num>(args[1]).toDouble(), castToType<num>(args[2]).toDouble());
+    })
+  };
 
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['is2D'] = BindingObjectProperty(getter: () => _is2D);
-    properties['isIdentity'] = BindingObjectProperty(getter: () => _matrix4.isIdentity());
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _syncDOMMatrixReadonlyMethods];
+
+  static final StaticDefinedBindingPropertyMap _domMatrixReadonlyProperties = {
+    'is2D': StaticDefinedBindingProperty(getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._is2D),
+    'isIdentity':
+        StaticDefinedBindingProperty(getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4.isIdentity()),
     // m11 = a
-    properties['m11'] = BindingObjectProperty(getter: () {
-      return _matrix4[0];
-    }, setter: (value) {
+    'm11': StaticDefinedBindingProperty(getter: (matrix) {
+      return castToType<DOMMatrixReadOnly>(matrix)._matrix4[0];
+    }, setter: (matrix, value) {
       if (value is double) {
-        _matrix4[0] = value;
+        castToType<DOMMatrixReadOnly>(matrix)._matrix4[0] = value;
       }
-    });
-    properties['a'] = BindingObjectProperty(
-        getter: () => _matrix4[0],
-        setter: (value) {
+    }),
+    'a': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[0],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[0] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[0] = value;
           }
-        });
+        }),
     // m12 = b
-    properties['m12'] = BindingObjectProperty(
-        getter: () => _matrix4[1],
-        setter: (value) {
+    'm12': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[1],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[1] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[1] = value;
           }
-        });
-    properties['b'] = BindingObjectProperty(
-        getter: () => _matrix4[1],
-        setter: (value) {
+        }),
+    'b': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[1],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[1] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[1] = value;
           }
-        });
-    properties['m13'] = BindingObjectProperty(
-        getter: () => _matrix4[2],
-        setter: (value) {
+        }),
+    'm13': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[2],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[2] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[2] = value;
           }
-        });
-    properties['m14'] = BindingObjectProperty(
-        getter: () => _matrix4[3],
-        setter: (value) {
+        }),
+    'm14': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[3],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[3] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[3] = value;
           }
-        });
-
-    // m22 = c
-    properties['m21'] = BindingObjectProperty(
-        getter: () => _matrix4[4],
-        setter: (value) {
+        }),
+    // m21 = c
+    'm21': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[4],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[4] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[4] = value;
           }
-        });
-    properties['c'] = BindingObjectProperty(
-        getter: () => _matrix4[4],
-        setter: (value) {
+        }),
+    'c': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[4],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[4] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[4] = value;
           }
-        });
+        }),
     // m22 = d
-    properties['m22'] = BindingObjectProperty(
-        getter: () => _matrix4[5],
-        setter: (value) {
+    'm22': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[5],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[5] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[5] = value;
           }
-        });
-    properties['d'] = BindingObjectProperty(
-        getter: () => _matrix4[5],
-        setter: (value) {
+        }),
+    'd': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[5],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[5] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[5] = value;
           }
-        });
-    properties['m23'] = BindingObjectProperty(
-        getter: () => _matrix4[6],
-        setter: (value) {
+        }),
+    'm23': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[6],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[6] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[6] = value;
           }
-        });
-    properties['m24'] = BindingObjectProperty(
-        getter: () => _matrix4[7],
-        setter: (value) {
+        }),
+    'm24': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[7],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[7] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[7] = value;
           }
-        });
-
-    properties['m31'] = BindingObjectProperty(
-        getter: () => _matrix4[8],
-        setter: (value) {
+        }),
+    'm31': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[8],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[8] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[8] = value;
           }
-        });
-    properties['m32'] = BindingObjectProperty(
-        getter: () => _matrix4[9],
-        setter: (value) {
+        }),
+    'm32': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[9],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[9] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[9] = value;
           }
-        });
-    properties['m33'] = BindingObjectProperty(
-        getter: () => _matrix4[10],
-        setter: (value) {
+        }),
+    'm33': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[10],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[10] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[10] = value;
           }
-        });
-    properties['m34'] = BindingObjectProperty(
-        getter: () => _matrix4[11],
-        setter: (value) {
+        }),
+    'm34': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[11],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[11] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[11] = value;
           }
-        });
-
+        }),
     // m41 = e
-    properties['m41'] = BindingObjectProperty(
-        getter: () => _matrix4[12],
-        setter: (value) {
+    'm41': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[12],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[12] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[12] = value;
           }
-        });
-    properties['e'] = BindingObjectProperty(
-        getter: () => _matrix4[12],
-        setter: (value) {
+        }),
+    'e': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[12],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[12] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[12] = value;
           }
-        });
+        }),
     // m42 = f
-    properties['m42'] = BindingObjectProperty(
-        getter: () => _matrix4[13],
-        setter: (value) {
+    'm42': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[13],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[13] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[13] = value;
           }
-        });
-    properties['f'] = BindingObjectProperty(
-        getter: () => _matrix4[13],
-        setter: (value) {
+        }),
+    'f': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[13],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[13] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[13] = value;
           }
-        });
-    properties['m43'] = BindingObjectProperty(
-        getter: () => _matrix4[14],
-        setter: (value) {
+        }),
+    'm43': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[14],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[14] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[14] = value;
           }
-        });
-    properties['m44'] = BindingObjectProperty(
-        getter: () => _matrix4[15],
-        setter: (value) {
+        }),
+    'm44': StaticDefinedBindingProperty(
+        getter: (matrix) => castToType<DOMMatrixReadOnly>(matrix)._matrix4[15],
+        setter: (matrix, value) {
           if (value is double) {
-            _matrix4[15] = value;
+            castToType<DOMMatrixReadOnly>(matrix)._matrix4[15] = value;
           }
-        });
-  }
+        })
+  };
+
+  @override
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _domMatrixReadonlyProperties];
 
   DOMMatrix flipX() {
     Matrix4 m = Matrix4.identity()..setEntry(0, 0, -1);
@@ -354,8 +347,7 @@ class DOMMatrixReadOnly extends DynamicBindingObject {
 
   DOMMatrix multiply(DOMMatrix domMatrix) {
     Matrix4 m = _matrix4.multiplied(domMatrix.matrix);
-    return DOMMatrix.fromMatrix4(
-        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, _is2D);
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, _is2D);
   }
 
   DOMMatrix rotateAxisAngle(double x, double y, double z, double angle) {
@@ -381,7 +373,8 @@ class DOMMatrixReadOnly extends DynamicBindingObject {
     if (x != 0 || y == 0) {
       flag2D = false;
     }
-    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, flag2D);
+    return DOMMatrix.fromMatrix4(
+        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), _matrix4 * m, flag2D);
   }
 
   DOMMatrix rotateFromVector(double x, double y) {
@@ -463,20 +456,28 @@ class DOMMatrixReadOnly extends DynamicBindingObject {
     if (tz != 0) {
       flag2D = false;
     }
-    return DOMMatrix.fromMatrix4(
-        BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, flag2D);
+    return DOMMatrix.fromMatrix4(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), m, flag2D);
   }
 
   static bool isIdentityOrTranslation(Matrix4 matrix) {
-    return matrix[0] == 1 && matrix[1] == 0 && matrix[2] == 0 && matrix[3] == 0 &&
-      matrix[4] == 0 && matrix[5] == 1 && matrix[6] == 0 && matrix[7] == 0 &&
-      matrix[8] == 0 && matrix[9] == 0 && matrix[10] == 1 && matrix[11] == 0 &&
-      matrix[15] == 1;
+    return matrix[0] == 1 &&
+        matrix[1] == 0 &&
+        matrix[2] == 0 &&
+        matrix[3] == 0 &&
+        matrix[4] == 0 &&
+        matrix[5] == 1 &&
+        matrix[6] == 0 &&
+        matrix[7] == 0 &&
+        matrix[8] == 0 &&
+        matrix[9] == 0 &&
+        matrix[10] == 1 &&
+        matrix[11] == 0 &&
+        matrix[15] == 1;
   }
 
   static Matrix4 rotate3d(double x, double y, double z, double angle) {
     // normalizing x,y,z
-    List<double> vec = [x,y,z];
+    List<double> vec = [x, y, z];
     List<double> norVec = normalize(vec);
     double nx = norVec[0];
     double ny = norVec[1];
@@ -485,7 +486,7 @@ class DOMMatrixReadOnly extends DynamicBindingObject {
     // The 3D rotation matrix is described in CSS Transforms with alpha.
     // Please see: https://drafts.csswg.org/css-transforms-2/#Rotate3dDefined
     double alpha_in_radians = degrees2Radians * (angle / 2);
-    double sc = sin (alpha_in_radians) * cos(alpha_in_radians);
+    double sc = sin(alpha_in_radians) * cos(alpha_in_radians);
     double sq = sin(alpha_in_radians) * sin(alpha_in_radians);
 
     double m11 = 1 - 2 * (ny * ny + nz * nz) * sq;

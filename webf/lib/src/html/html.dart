@@ -7,7 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 
 const String HTML = 'HTML';
 const Map<String, dynamic> _defaultStyle = {

@@ -4,7 +4,7 @@
  */
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 
 const String H1 = 'H1';
 const String H2 = 'H2';

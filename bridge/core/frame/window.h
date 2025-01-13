@@ -28,6 +28,7 @@ class Window : public EventTargetWithInlineData {
   Window* open(const AtomicString& url, ExceptionState& exception_state);
 
   Screen* screen();
+  ScriptPromise screen_async(ExceptionState& exception_state);
 
   [[nodiscard]] const Window* window() const { return this; }
   [[nodiscard]] const Window* self() const { return this; }
@@ -39,12 +40,21 @@ class Window : public EventTargetWithInlineData {
   void scroll(ExceptionState& exception_state);
   void scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
   void scroll(double x, double y, ExceptionState& exception_state);
+  void scroll_async(ExceptionState& exception_state);
+  void scroll_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
+  void scroll_async(double x, double y, ExceptionState& exception_state);
   void scrollTo(ExceptionState& exception_state);
   void scrollTo(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
   void scrollTo(double x, double y, ExceptionState& exception_state);
+  void scrollTo_async(ExceptionState& exception_state);
+  void scrollTo_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
+  void scrollTo_async(double x, double y, ExceptionState& exception_state);
   void scrollBy(ExceptionState& exception_state);
   void scrollBy(double x, double y, ExceptionState& exception_state);
   void scrollBy(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
+  void scrollBy_async(ExceptionState& exception_state);
+  void scrollBy_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state);
+  void scrollBy_async(double x, double y, ExceptionState& exception_state);
 
   void postMessage(const ScriptValue& message, ExceptionState& exception_state);
   void postMessage(const ScriptValue& message, const AtomicString& target_origin, ExceptionState& exception_state);

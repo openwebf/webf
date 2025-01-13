@@ -16,6 +16,7 @@ type DartImpl<T> = T;
 type StaticMember<T> = T;
 type StaticMethod<T> = T;
 type SupportAsync<T> = T;
+type SupportAsyncManual<T> = T;
 
 
 type DependentsOnLayout<T> = T;

@@ -30,7 +30,9 @@ class Path2D : public BindingObject {
                   ExceptionState& exception_state);
 
   void addPath(Path2D* path, DOMMatrixReadOnly* dom_matrix, ExceptionState& exception_state);
+  void addPath_async(Path2D* path, DOMMatrixReadOnly* dom_matrix, ExceptionState& exception_state);
   void addPath(Path2D* path, ExceptionState& exception_state);
+  void addPath_async(Path2D* path, ExceptionState& exception_state);
 
   void roundRect(double x,
                  double y,
@@ -39,14 +41,21 @@ class Path2D : public BindingObject {
                  std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
                  ExceptionState& exception_state);
 
+  void roundRect_async(double x,
+                       double y,
+                       double w,
+                       double h,
+                       std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
+                       ExceptionState& exception_state);
+
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,
                                      const NativeValue* argv,
                                      Dart_Handle dart_object) override;
 
  private:
-};  // namespace webf
+};
 
 }  // namespace webf
 
-#endif  // WEBF_CORE_HTML_CANVAS_CANVAS_PATH_2D_H_a
+#endif  // WEBF_CORE_HTML_CANVAS_CANVAS_PATH_2D_H_

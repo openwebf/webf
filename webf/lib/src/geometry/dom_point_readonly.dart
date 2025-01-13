@@ -12,12 +12,12 @@ import 'package:webf/geometry.dart';
 import 'package:webf/src/css/matrix.dart';
 import 'package:webf/src/geometry/dom_point.dart';
 
+class DOMPointReadOnly extends DynamicBindingObject with StaticDefinedBindingObject {
+  final List<double> _data = [0, 0, 0, 1];
 
-class DOMPointReadOnly extends DynamicBindingObject {
-  final List<double> _data = [0,0,0,1];
   DOMPointReadOnly(BindingContext context, List<dynamic> domPointInit) : super(context) {
-    for(int i = 0; i < domPointInit.length; i ++) {
-      if(domPointInit[i].runtimeType == double) {
+    for (int i = 0; i < domPointInit.length; i++) {
+      if (domPointInit[i].runtimeType == double) {
         _data[i] = domPointInit[i];
       }
     }
@@ -32,10 +32,10 @@ class DOMPointReadOnly extends DynamicBindingObject {
     }
   }
 
-  double get x  => _data[0];
-  double get y  => _data[1];
-  double get z  => _data[2];
-  double get w  => _data[3];
+  double get x => _data[0];
+  double get y => _data[1];
+  double get z => _data[2];
+  double get w => _data[3];
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
@@ -47,30 +47,28 @@ class DOMPointReadOnly extends DynamicBindingObject {
     });
   }
 
+  static final StaticDefinedBindingPropertyMap _domPointReadonlyProperties = {
+    'x': StaticDefinedBindingProperty(
+        getter: (point) => castToType<DOMPointReadOnly>(point)._data[0],
+        setter: (point, value) => castToType<DOMPointReadOnly>(point)._data[0] = castToType<num>(value).toDouble()),
+    'y': StaticDefinedBindingProperty(
+        getter: (point) => castToType<DOMPointReadOnly>(point)._data[1],
+        setter: (point, value) => castToType<DOMPointReadOnly>(point)._data[1] = castToType<num>(value).toDouble()),
+    'z': StaticDefinedBindingProperty(
+        getter: (point) => castToType<DOMPointReadOnly>(point)._data[2],
+        setter: (point, value) => castToType<DOMPointReadOnly>(point)._data[2] = castToType<num>(value).toDouble()),
+    'w': StaticDefinedBindingProperty(
+        getter: (point) => castToType<DOMPointReadOnly>(point)._data[3],
+        setter: (point, value) => castToType<DOMPointReadOnly>(point)._data[3] = castToType<num>(value).toDouble()),
+  };
+
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['x'] = BindingObjectProperty(
-      getter: () => _data[0],
-      setter: (value) => _data[0] = castToType<num>(value).toDouble()
-    );
-    properties['y'] = BindingObjectProperty(
-        getter: () => _data[1],
-        setter: (value) => _data[1] = castToType<num>(value).toDouble()
-    );
-    properties['z'] = BindingObjectProperty(
-        getter: () => _data[2],
-        setter: (value) => _data[2] = castToType<num>(value).toDouble()
-    );
-    properties['w'] = BindingObjectProperty(
-        getter: () => _data[3],
-        setter: (value) => _data[3] = castToType<num>(value).toDouble()
-    );
-  }
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _domPointReadonlyProperties];
 
   DOMPoint matrixTransform(DOMMatrix domMatrix) {
     Matrix4 matrix = domMatrix.matrix;
     double x = _data[0], y = _data[1], z = _data[2], w = _data[3];
-    if ( DOMMatrixReadOnly.isIdentityOrTranslation(matrix)) {
+    if (DOMMatrixReadOnly.isIdentityOrTranslation(matrix)) {
       x += matrix[12];
       y += matrix[13];
       z += matrix[14];

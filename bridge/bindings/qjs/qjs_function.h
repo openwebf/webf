@@ -17,6 +17,11 @@ using QJSFunctionCallback = ScriptValue (*)(JSContext* ctx,
                                             const ScriptValue* argv,
                                             void* private_data);
 
+struct QJSFunctionCallbackContext {
+  QJSFunctionCallback qjs_function_callback;
+  void* private_data;
+};
+
 // https://webidl.spec.whatwg.org/#dfn-callback-interface
 // QJSFunction memory are auto managed by std::shared_ptr.
 class QJSFunction : public Function {
@@ -27,15 +32,22 @@ class QJSFunction : public Function {
   static std::shared_ptr<QJSFunction> Create(JSContext* ctx,
                                              QJSFunctionCallback qjs_function_callback,
                                              int32_t length,
-                                             void* private_data) {
-    return std::make_shared<QJSFunction>(ctx, qjs_function_callback, length, private_data);
+                                             void* private_data,
+                                             JSClassGCMark gc_mark,
+                                             JSClassFinalizer gc_finalizer) {
+    return std::make_shared<QJSFunction>(ctx, qjs_function_callback, length, private_data, gc_mark, gc_finalizer);
   }
   static std::shared_ptr<QJSFunction> Create(JSContext* ctx, JSValue function, JSValue this_val) {
     return std::make_shared<QJSFunction>(ctx, function, this_val);
   };
   explicit QJSFunction(JSContext* ctx, JSValue function)
       : ctx_(ctx), runtime_(JS_GetRuntime(ctx)), function_(JS_DupValue(ctx, function)){};
-  explicit QJSFunction(JSContext* ctx, QJSFunctionCallback qjs_function_callback, int32_t length, void* private_data);
+  explicit QJSFunction(JSContext* ctx,
+                       QJSFunctionCallback qjs_function_callback,
+                       int32_t length,
+                       void* private_data,
+                       JSClassGCMark gc_mark,
+                       JSClassFinalizer gc_finalizer);
   explicit QJSFunction(JSContext* ctx, JSValue function, JSValue this_val)
       : ctx_(ctx),
         runtime_(JS_GetRuntime(ctx)),
@@ -74,7 +86,6 @@ template <>
 struct DowncastTraits<QJSFunction> {
   static bool AllowFrom(const Function& function) { return function.IsQJSFunction(); }
 };
-
 }  // namespace webf
 
 #endif  // BRIDGE_QJS_FUNCTION_H

@@ -157,12 +157,12 @@ enum PreRenderingStatus {
   done
 }
 
-// An kraken View Controller designed for multiple kraken view control.
+// An View Controller designed for multiple view control.
 class WebFViewController implements WidgetsBindingObserver {
   WebFController rootController;
 
-  // The methods of the KrakenNavigateDelegation help you implement custom behaviors that are triggered
-  // during a kraken view's process of loading, and completing a navigation request.
+  // The methods of the WebFNavigationDelegate help you implement custom behaviors that are triggered
+  // during a view's process of loading, and completing a navigation request.
   WebFNavigationDelegate? navigationDelegate;
 
   GestureListener? gestureListener;
@@ -302,7 +302,7 @@ class WebFViewController implements WidgetsBindingObserver {
   // Enable print debug message when rendering.
   bool enableDebug;
 
-  // Kraken have already disposed.
+  // have already disposed.
   bool _disposed = false;
 
   bool get disposed => _disposed;
@@ -385,7 +385,7 @@ class WebFViewController implements WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
   }
 
-  // Attach kraken's renderObject to an renderObject.
+  // Attach renderObject to an renderObject.
   void attachTo(RenderObject parent, [RenderObject? previousSibling]) {
     if (parent is ContainerRenderObjectMixin) {
       parent.insert(document.domRenderer!, after: previousSibling);
@@ -858,7 +858,7 @@ class WebFViewController implements WidgetsBindingObserver {
   void didChangeViewFocus(event) {}
 }
 
-// An controller designed to control kraken's functional modules.
+// An controller designed to control functional modules.
 class WebFModuleController with TimerMixin, ScheduleFrameMixin {
   late ModuleManager _moduleManager;
 
@@ -984,7 +984,7 @@ class WebFController {
   /// https://api.flutter.dev/flutter/widgets/RouteObserver-class.html
   final RouteObserver<ModalRoute<void>>? routeObserver;
 
-  // The kraken view entrypoint bundle.
+  // The view entrypoint bundle.
   WebFBundle? _entrypoint;
   WebFBundle? get entrypoint => _entrypoint;
 
@@ -1487,7 +1487,7 @@ class WebFController {
 
   }
 
-  // Pause all timers and callbacks if kraken page are invisible.
+  // Pause all timers and callbacks if page are invisible.
   void pause() {
     if (_paused) return;
     _paused = true;
@@ -1496,7 +1496,7 @@ class WebFController {
     view.stopAnimationsTimeLine();
   }
 
-  // Resume all timers and callbacks if kraken page now visible.
+  // Resume all timers and callbacks if page now visible.
   void resume() {
     if (!_paused) return;
 

@@ -7,6 +7,7 @@
 #define BRIDGE_SCRIPT_WRAPPABLE_H
 
 #include <quickjs/quickjs.h>
+#include "atomic_string.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "foundation/macros.h"
 #include "multiple_threading/dispatcher.h"
@@ -60,6 +61,13 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
   FORCE_INLINE double contextId() const { return context_id_; }
 
   void InitializeQuickJSObject() override;
+
+  bool IsPrototypeProperty(const AtomicString& key) const {
+    JSValue proto = JS_GetPrototype(ctx_, jsObject_);
+    bool is_proto_property = JS_HasProperty(ctx_, proto, key.Impl());
+    JS_FreeValue(ctx_, proto);
+    return is_proto_property;
+  }
 
   /**
    * Classes kept alive as long as they have a pending activity.

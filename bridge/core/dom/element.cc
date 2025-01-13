@@ -109,10 +109,10 @@ std::vector<BoundingClientRect*> Element::getClientRects(ExceptionState& excepti
   return vecRects;
 }
 
-void Element::click(ExceptionState& exception_state) {
-  InvokeBindingMethod(binding_call_methods::kclick, 0, nullptr, FlushUICommandReason::kDependentsOnElement,
-                      exception_state);
-}
+// void Element::click(ExceptionState& exception_state) {
+//  InvokeBindingMethod(binding_call_methods::kclick, 0, nullptr, FlushUICommandReason::kDependentsOnElement,
+//                      exception_state);
+//}
 
 void Element::scroll(ExceptionState& exception_state) {
   return scroll(0, 0, exception_state);
@@ -136,6 +136,25 @@ void Element::scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionS
   InvokeBindingMethod(binding_call_methods::kscroll, 2, args,
                       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
                       exception_state);
+}
+void Element::scroll_async(ExceptionState& exception_state) {
+  return scroll_async(0, 0, exception_state);
+}
+
+void Element::scroll_async(double x, double y, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscroll, 2, args, exception_state);
+}
+
+void Element::scroll_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscroll, 2, args, exception_state);
 }
 
 void Element::scrollBy(ExceptionState& exception_state) {
@@ -161,6 +180,24 @@ void Element::scrollBy(const std::shared_ptr<ScrollToOptions>& options, Exceptio
                       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
                       exception_state);
 }
+void Element::scrollBy_async(ExceptionState& exception_state) {
+  return scrollBy_async(0, 0, exception_state);
+}
+
+void Element::scrollBy_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscrollBy, 2, args, exception_state);
+}
+void Element::scrollBy_async(double x, double y, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscrollBy, 2, args, exception_state);
+}
 
 void Element::scrollTo(ExceptionState& exception_state) {
   return scroll(exception_state);
@@ -172,6 +209,18 @@ void Element::scrollTo(double x, double y, ExceptionState& exception_state) {
 
 void Element::scrollTo(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
   return scroll(options, exception_state);
+}
+
+void Element::scrollTo_async(ExceptionState& exception_state) {
+  return scroll_async(exception_state);
+}
+
+void Element::scrollTo_async(double x, double y, ExceptionState& exception_state) {
+  return scroll_async(x, y, exception_state);
+}
+
+void Element::scrollTo_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
+  return scroll_async(options, exception_state);
 }
 
 bool Element::HasTagName(const AtomicString& name) const {
@@ -460,7 +509,9 @@ ScriptPromise Element::toBlob(ExceptionState& exception_state) {
 
 ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& exception_state) {
   auto resolver = ScriptPromiseResolver::Create(GetExecutingContext());
-  new ElementSnapshotReader(GetExecutingContext(), this, resolver, device_pixel_ratio);
+  auto* context = GetExecutingContext();
+  context->DrawCanvasElementIfNeeded();
+  new ElementSnapshotReader(context, this, resolver, device_pixel_ratio);
   return resolver->Promise();
 }
 

@@ -498,28 +498,6 @@ void _loadNativeLibrary(double contextId, Pointer<NativeString> nativeLibName, P
 
 final Pointer<NativeFunction<NativeLoadNativeLibrary>> _nativeLoadLibrary = Pointer.fromFunction(_loadNativeLibrary);
 
-typedef NativeGetWidgetElementShape = Int8 Function(
-    Double contextId, Pointer<NativeBindingObject> nativeBindingObject, Pointer<NativeValue> result);
-
-int _getWidgetElementShape(
-    double contextId, Pointer<NativeBindingObject> nativeBindingObject, Pointer<NativeValue> result) {
-  try {
-    WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
-    DynamicBindingObject object = controller.view.getBindingObject<DynamicBindingObject>(nativeBindingObject)!;
-
-    if (object is WidgetElement) {
-      object.nativeGetPropertiesAndMethods(result);
-      return 1;
-    }
-  } catch (e, stack) {
-    print('$e\n$stack');
-  }
-  return 0;
-}
-
-final Pointer<NativeFunction<NativeGetWidgetElementShape>> _nativeGetWidgetElementShape =
-    Pointer.fromFunction(_getWidgetElementShape, 0);
-
 typedef NativeJSError = Void Function(Double contextId, Pointer<Utf8>);
 
 void _onJSError(double contextId, Pointer<Utf8> charStr) {
@@ -563,7 +541,6 @@ final List<int> _dartNativeMethods = [
   _nativeFlushUICommand.address,
   _nativeCreateBindingObject.address,
   _nativeLoadLibrary.address,
-  _nativeGetWidgetElementShape.address,
   _nativeOnJsError.address,
   _nativeOnJsLog.address,
 ];

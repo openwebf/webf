@@ -10,6 +10,7 @@
 #include "core/dart_methods.h"
 #include "core/dom/document.h"
 #include "core/frame/window.h"
+#include "core/html/custom/widget_element_shape.h"
 #include "core/html/html_html_element.h"
 #include "core/html/parser/html_parser.h"
 #include "event_factory.h"
@@ -26,10 +27,12 @@ WebFPage::WebFPage(DartIsolateContext* dart_isolate_context,
                    bool is_dedicated,
                    size_t sync_buffer_size,
                    double context_id,
+                   NativeWidgetElementShape* naive_widget_element_shape,
+                   int32_t shape_len,
                    const JSExceptionHandler& handler)
     : ownerThreadId(std::this_thread::get_id()), dart_isolate_context_(dart_isolate_context) {
   context_ = new ExecutingContext(
-      dart_isolate_context, is_dedicated, sync_buffer_size, context_id,
+      dart_isolate_context, is_dedicated, sync_buffer_size, context_id, naive_widget_element_shape, shape_len,
       [](ExecutingContext* context, const char* message) {
         WEBF_LOG(ERROR) << message << std::endl;
         if (context->IsContextValid()) {

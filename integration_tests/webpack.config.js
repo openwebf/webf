@@ -1,4 +1,5 @@
 const path = require('path');
+const { minimatch } = require('minimatch');
 const glob = require('glob');
 const execSync = require('child_process').execSync;
 const bableTransformSnapshotPlugin = require('./scripts/babel_transform_snapshot');
@@ -13,10 +14,13 @@ const snapshotPath = path.join(context, 'snapshots');
 const specGroup = require('./spec_group.json');
 
 let coreSpecFiles = [];
+let getSnapshotOption = () => ({ snapshotRoot: null, delayForSnapshot: false });
 
 if (process.env.SPEC_SCOPE) {
  let targetSpec = specGroup.find((item) => item.name === process.env.SPEC_SCOPE.trim());
  if (targetSpec) {
+  getSnapshotOption = () => ({ snapshotRoot: targetSpec.snapshotRoot || null, delayForSnapshot: !!targetSpec.delayForSnapshot });
+
    let targetSpecCollection = targetSpec.specs;
    targetSpecCollection.forEach(spec => {
      let files = glob.sync(spec, {
@@ -35,6 +39,14 @@ if (process.env.SPEC_SCOPE) {
  }).map((file) => './' + file);
  if (process.env.WEBF_TEST_FILTER) {
    coreSpecFiles = coreSpecFiles.filter(name => name.includes(process.env.WEBF_TEST_FILTER))
+ }
+ getSnapshotOption = (file) => {
+  for (const group of specGroup) {
+    if (group.specs.some(pattern => minimatch(file, pattern))) {
+      return { snapshotRoot: group.snapshotRoot || null, delayForSnapshot: false };
+    }
+  }
+  return { snapshotRoot: null, delayForSnapshot: false };
  }
 }
 
@@ -87,6 +99,11 @@ module.exports = {
               workspacePath: context,
               testPath,
               snapshotPath,
+              buildPath,
+              getSnapshotOption: (filepath) => {
+                const relativePath = path.relative(context, filepath);
+                return getSnapshotOption(relativePath);
+              }
             }
           }
         ]

@@ -44,26 +44,44 @@ class HTMLAnchorElement extends Element {
     return WebFNavigationType.navigate;
   }
 
+  static final StaticDefinedBindingPropertyMap _anchorElementProperties = {
+    'href': StaticDefinedBindingProperty(
+        getter: (element) => castToType<HTMLAnchorElement>(element).href,
+        setter: (element, value) => castToType<HTMLAnchorElement>(element).href = castToType<String>(value)),
+    'target': StaticDefinedBindingProperty(
+        getter: (element) => castToType<HTMLAnchorElement>(element).target,
+        setter: (element, value) => castToType<HTMLAnchorElement>(element).target = castToType<String>(value)),
+    'rel': StaticDefinedBindingProperty(
+        getter: (element) => castToType<HTMLAnchorElement>(element).rel,
+        setter: (element, value) => castToType<HTMLAnchorElement>(element).rel = castToType<String>(value)),
+    'type': StaticDefinedBindingProperty(
+        getter: (element) => castToType<HTMLAnchorElement>(element).type,
+        setter: (element, value) => castToType<HTMLAnchorElement>(element).type = castToType<String>(value)),
+    'protocol': StaticDefinedBindingProperty(
+        getter: (element) => castToType<HTMLAnchorElement>(element).protocol,
+        setter: (element, value) => castToType<HTMLAnchorElement>(element).protocol = castToType<String>(value)),
+    'host': StaticDefinedBindingProperty(
+        getter: (element) => castToType<HTMLAnchorElement>(element).host,
+        setter: (element, value) => castToType<HTMLAnchorElement>(element).host = castToType<String>(value)),
+    'hostname': StaticDefinedBindingProperty(
+        getter: (element) => castToType<HTMLAnchorElement>(element).hostname,
+        setter: (element, value) => castToType<HTMLAnchorElement>(element).hostname = castToType<String>(value)),
+    'port': StaticDefinedBindingProperty(
+        getter: (element) => castToType<HTMLAnchorElement>(element).port,
+        setter: (element, value) => castToType<HTMLAnchorElement>(element).port = castToType<String>(value)),
+    'pathname': StaticDefinedBindingProperty(
+        getter: (element) => castToType<HTMLAnchorElement>(element).pathname,
+        setter: (element, value) => castToType<HTMLAnchorElement>(element).pathname = castToType<String>(value)),
+    'search': StaticDefinedBindingProperty(
+        getter: (element) => castToType<HTMLAnchorElement>(element).search,
+        setter: (element, value) => castToType<HTMLAnchorElement>(element).search = castToType<String>(value)),
+    'hash': StaticDefinedBindingProperty(
+        getter: (element) => castToType<HTMLAnchorElement>(element).hash,
+        setter: (element, value) => castToType<HTMLAnchorElement>(element).hash = castToType<String>(value)),
+  };
+
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
-    properties['href'] = BindingObjectProperty(getter: () => href, setter: (value) => href = castToType<String>(value));
-    properties['target'] =
-        BindingObjectProperty(getter: () => target, setter: (value) => target = castToType<String>(value));
-    properties['rel'] = BindingObjectProperty(getter: () => rel, setter: (value) => rel = castToType<String>(value));
-    properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
-    properties['protocol'] =
-        BindingObjectProperty(getter: () => protocol, setter: (value) => protocol = castToType<String>(value));
-    properties['host'] = BindingObjectProperty(getter: () => host, setter: (value) => host = castToType<String>(value));
-    properties['hostname'] =
-        BindingObjectProperty(getter: () => hostname, setter: (value) => hostname = castToType<String>(value));
-    properties['port'] = BindingObjectProperty(getter: () => port, setter: (value) => port = castToType<String>(value));
-    properties['pathname'] =
-        BindingObjectProperty(getter: () => pathname, setter: (value) => pathname = castToType<String>(value));
-    properties['search'] =
-        BindingObjectProperty(getter: () => search, setter: (value) => search = castToType<String>(value));
-    properties['hash'] = BindingObjectProperty(getter: () => hash, setter: (value) => hash = castToType<String>(value));
-  }
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _anchorElementProperties];
 
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
@@ -87,8 +105,8 @@ class HTMLAnchorElement extends Element {
     attributes['search'] =
         ElementAttributeProperty(getter: () => search, setter: (value) => search = attributeToProperty<String>(value));
     attributes['hash'] = ElementAttributeProperty(
-      getter: () => hash,
-      setter: (value) => hash = attributeToProperty<String>(value)
+        getter: () => hash,
+        setter: (value) => hash = attributeToProperty<String>(value)
     );
   }
 
@@ -117,21 +135,25 @@ class HTMLAnchorElement extends Element {
   }
 
   String get target => _DOMString(getAttribute('target'));
+
   set target(String value) {
     internalSetAttribute('target', value);
   }
 
   String get rel => _DOMString(getAttribute('rel'));
+
   set rel(String value) {
     internalSetAttribute('rel', value);
   }
 
   String get type => _DOMString(getAttribute('type'));
+
   set type(String value) {
     internalSetAttribute('type', value);
   }
 
   String get protocol => _DOMString(_resolvedHyperlink?.scheme) + ':';
+
   set protocol(String value) {
     if (_resolvedHyperlink == null) return;
 

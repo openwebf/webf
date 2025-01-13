@@ -5,6 +5,8 @@
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
+import 'package:webf/src/html/router_link.dart';
 import 'package:webf/svg.dart';
 
 typedef ElementCreator = Element Function(BindingContext? context);
@@ -14,6 +16,7 @@ final SVG_ELEMENT_URI = 'http://www.w3.org/2000/svg';
 final MATHML_ELEMENT_URI = 'http://www.w3.org/1998/Math/MathML';
 
 final Map<String, ElementCreator> _htmlRegistry = {};
+final Map<String, ElementCreator> _widgetElements = {};
 
 final Map<String, ElementCreator> _svgRegistry = {};
 
@@ -27,11 +30,22 @@ class _UnknownNamespaceElement extends Element {
   _UnknownNamespaceElement([BindingContext? context]) : super(context);
 }
 
+Map<String, ElementCreator> getAllWidgetElements() {
+  return _widgetElements;
+}
+
 void defineElement(String name, ElementCreator creator) {
   if (_htmlRegistry.containsKey(name)) {
     throw Exception('An element with name "$name" has already been defined.');
   }
   _htmlRegistry[name] = creator;
+}
+
+void defineWidgetElement(String name, ElementCreator creator) {
+  if (_widgetElements.containsKey(name)) {
+    throw Exception('An element with name "$name" has already been defined.');
+  }
+  _widgetElements[name] = creator;
 }
 
 defineElementNS(String uri, String name, ElementCreator creator) {
@@ -46,7 +60,7 @@ defineElementNS(String uri, String name, ElementCreator creator) {
 }
 
 Element createElement(String name, [BindingContext? context]) {
-  ElementCreator? creator = _htmlRegistry[name];
+  ElementCreator? creator = _htmlRegistry[name] ?? _widgetElements[name];
   Element element;
   if (creator == null) {
     print('Unexpected HTML element "$name"');

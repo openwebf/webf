@@ -26,9 +26,11 @@ class ComputedCssStyleDeclaration : public CSSStyleDeclaration {
   bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
   bool DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) override;
   int64_t length() const override;
+  ScriptPromise length_async(ExceptionState& exception_state);
 
   AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
   void setProperty(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
+  void setProperty_async(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);
   AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) override;
 
   bool NamedPropertyQuery(const AtomicString&, ExceptionState&) override;
@@ -37,7 +39,9 @@ class ComputedCssStyleDeclaration : public CSSStyleDeclaration {
   bool IsComputedCssStyleDeclaration() const override;
 
   AtomicString cssText() const override;
+  ScriptPromise cssText_async(ExceptionState& exception_state);
   void setCssText(const AtomicString& value, ExceptionState& exception_state) override;
+  ScriptPromise setCssText_async(const AtomicString& value, ExceptionState& exception_state);
 
  private:
 };

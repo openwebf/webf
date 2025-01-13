@@ -133,9 +133,13 @@ Screen* Window::screen() {
         NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(value);
     if (native_binding_object == nullptr)
       return nullptr;
-    screen_ = MakeGarbageCollected<Screen>(this, native_binding_object);
+    screen_ = MakeGarbageCollected<Screen>(GetExecutingContext(), native_binding_object);
   }
   return screen_;
+}
+
+ScriptPromise Window::screen_async(ExceptionState& exceptionState) {
+  return GetBindingPropertyAsync(binding_call_methods::kscreen, exceptionState);
 }
 
 void Window::scroll(ExceptionState& exception_state) {
@@ -162,6 +166,26 @@ void Window::scroll(const std::shared_ptr<ScrollToOptions>& options, ExceptionSt
                       exception_state);
 }
 
+void Window::scroll_async(ExceptionState& exception_state) {
+  return scroll_async(0, 0, exception_state);
+}
+
+void Window::scroll_async(double x, double y, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscroll, 2, args, exception_state);
+}
+
+void Window::scroll_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscroll, 2, args, exception_state);
+}
+
 void Window::scrollBy(ExceptionState& exception_state) {
   return scrollBy(0, 0, exception_state);
 }
@@ -181,9 +205,25 @@ void Window::scrollBy(const std::shared_ptr<ScrollToOptions>& options, Exception
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
       NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
   };
-  InvokeBindingMethod(binding_call_methods::kscrollBy, 2, args,
-                      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout,
-                      exception_state);
+  InvokeBindingMethodAsync(binding_call_methods::kscrollBy, 2, args, exception_state);
+}
+void Window::scrollBy_async(ExceptionState& exception_state) {
+  return scrollBy_async(0, 0, exception_state);
+}
+
+void Window::scrollBy_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasLeft() ? options->left() : 0.0),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(options->hasTop() ? options->top() : 0.0),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscrollBy, 2, args, exception_state);
+}
+void Window::scrollBy_async(double x, double y, ExceptionState& exception_state) {
+  const NativeValue args[] = {
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(x),
+      NativeValueConverter<NativeTypeDouble>::ToNativeValue(y),
+  };
+  InvokeBindingMethodAsync(binding_call_methods::kscrollBy, 2, args, exception_state);
 }
 
 void Window::scrollTo(ExceptionState& exception_state) {
@@ -192,6 +232,18 @@ void Window::scrollTo(ExceptionState& exception_state) {
 
 void Window::scrollTo(double x, double y, ExceptionState& exception_state) {
   return scroll(x, y, exception_state);
+}
+
+void Window::scrollTo_async(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {
+  return scroll_async(options, exception_state);
+}
+
+void Window::scrollTo_async(ExceptionState& exception_state) {
+  return scroll_async(exception_state);
+}
+
+void Window::scrollTo_async(double x, double y, ExceptionState& exception_state) {
+  return scroll_async(x, y, exception_state);
 }
 
 void Window::scrollTo(const std::shared_ptr<ScrollToOptions>& options, ExceptionState& exception_state) {

@@ -311,7 +311,6 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/api/character_data.cc
     core/api/script_value_ref.cc
     core/dart_isolate_context.cc
-    core/dart_context_data.cc
     core/executing_context_data.cc
     core/fileapi/blob.cc
     core/fileapi/blob_part.cc
@@ -372,6 +371,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/child_list_mutation_scope.cc
     core/dom/container_node.cc
     core/html/custom/widget_element.cc
+    core/html/custom/widget_element_shape.cc
     core/events/error_event.cc
     core/events/message_event.cc
     core/events/animation_event.cc
@@ -412,6 +412,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/canvas/canvas_gradient.cc
     core/html/canvas/canvas_pattern.cc
     core/html/canvas/path_2d.cc
+    core/html/canvas/text_metrics.cc
     core/geometry/dom_matrix.cc
     core/geometry/dom_matrix_read_only.cc
     core/geometry/dom_point.cc
@@ -549,6 +550,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_canvas_gradient.cc
     out/qjs_canvas_pattern.cc
     out/qjs_path_2d.cc
+    out/qjs_text_metrics.cc
     out/qjs_dom_matrix_init.cc
     out/qjs_dom_matrix.cc
     out/qjs_dom_matrix_read_only.cc

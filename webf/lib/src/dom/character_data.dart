@@ -4,7 +4,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
-import 'package:webf/src/foundation/binding.dart';
+import 'package:webf/src/bridge/binding_object.dart';
 import 'package:webf/widget.dart';
 
 class CharacterData extends Node {
@@ -27,14 +27,6 @@ class CharacterData extends Node {
   @override
   flutter.Widget toWidget({Key? key}) {
     return const flutter.SizedBox.shrink();
-  }
-
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-  }
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
   }
 
   @override

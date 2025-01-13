@@ -21,9 +21,6 @@ import 'package:webf/src/html/canvas/canvas_path_2d.dart';
 enum BindingMethodCallOperations {
   GetProperty,
   SetProperty,
-  GetAllPropertyNames,
-  AnonymousFunctionCall,
-  AsyncAnonymousFunction,
 }
 
 typedef NativeAsyncAnonymousFunctionCallback = Void Function(
@@ -36,9 +33,6 @@ typedef BindingCallFunc = dynamic Function(BindingObject bindingObject, List<dyn
 List<BindingCallFunc> bindingCallMethodDispatchTable = [
   getterBindingCall,
   setterBindingCall,
-  getPropertyNamesBindingCall,
-  invokeBindingMethodSync,
-  invokeBindingMethodAsync
 ];
 
 // Dispatch the event to the binding side.
@@ -165,11 +159,11 @@ enum CreateBindingObjectType {
 }
 
 abstract class BindingBridge {
-  static final Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> _invokeBindingMethodFromNative =
-      Pointer.fromFunction(invokeBindingMethodFromNativeImpl);
+  static final Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> _invokeBindingMethodFromNativeSync =
+      Pointer.fromFunction(invokeBindingMethodFromNativeSync);
 
   static Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> get nativeInvokeBindingMethod =>
-      _invokeBindingMethodFromNative;
+      _invokeBindingMethodFromNativeSync;
 
   static void createBindingObject(double contextId, Pointer<NativeBindingObject> pointer, CreateBindingObjectType type, Pointer<NativeValue> args, int argc) {
     WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
@@ -205,7 +199,7 @@ abstract class BindingBridge {
       }
 
       if (!isBindingObjectDisposed(nativeBindingObject)) {
-        nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNative;
+        nativeBindingObject.ref.invokeBindingMethodFromNative = _invokeBindingMethodFromNativeSync;
       }
     }
   }

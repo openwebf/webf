@@ -10,6 +10,7 @@ import 'dart:ui';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/geometry.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/src/css/values/path.dart';
 
 // ignore: non_constant_identifier_names
@@ -17,7 +18,7 @@ final double _2pi = 2 * math.pi;
 final double _pi = math.pi;
 final double _piOver2 = math.pi / 2;
 
-class Path2D extends DynamicBindingObject {
+class Path2D extends DynamicBindingObject{
   Path _path = Path();
 
   get path {

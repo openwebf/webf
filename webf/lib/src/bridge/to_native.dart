@@ -11,6 +11,7 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:webf/src/bridge/widget_element_shape.dart';
 import 'package:webf/webf.dart';
 
 // Steps for using dart:ffi to call a C function from Dart:
@@ -570,13 +571,13 @@ int newPageId() {
   return _newPageId();
 }
 
-typedef NativeAllocateNewPageSync = Pointer<Void> Function(Double, Pointer<Void>);
-typedef DartAllocateNewPageSync = Pointer<Void> Function(double, Pointer<Void>);
+typedef NativeAllocateNewPageSync = Pointer<Void> Function(Double, Pointer<Void>, Pointer<WidgetElementShape>, Int32);
+typedef DartAllocateNewPageSync = Pointer<Void> Function(double, Pointer<Void>, Pointer<WidgetElementShape>, int);
 typedef HandleAllocateNewPageResult = Void Function(Handle object, Pointer<Void> page);
 typedef NativeAllocateNewPage = Void Function(
-    Double, Int32, Pointer<Void>, Handle object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
+    Double, Int32, Pointer<Void>, Pointer<WidgetElementShape>, Int32 shapeLen, Handle object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
 typedef DartAllocateNewPage = void Function(
-    double, int, Pointer<Void>, Object object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
+    double, int, Pointer<Void>, Pointer<WidgetElementShape>, int shapeLen, Object object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
 
 final DartAllocateNewPageSync _allocateNewPageSync =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeAllocateNewPageSync>>('allocateNewPageSync').asFunction();
@@ -601,14 +602,17 @@ class _AllocateNewPageContext {
 Future<void> allocateNewPage(bool sync, double newContextId, int syncBufferSize) async {
   await waitingSyncTaskComplete(newContextId);
 
+  Map<String, ElementCreator> widgetElementCreators = getAllWidgetElements();
+  Pointer<WidgetElementShape> shapes = createWidgetElementShape(widgetElementCreators);
+
   if (!sync) {
     Completer<void> completer = Completer();
     _AllocateNewPageContext context = _AllocateNewPageContext(completer, newContextId);
     Pointer<NativeFunction<HandleAllocateNewPageResult>> f = Pointer.fromFunction(_handleAllocateNewPageResult);
-    _allocateNewPage(newContextId, syncBufferSize, dartContext!.pointer, context, f);
+    _allocateNewPage(newContextId, syncBufferSize, dartContext!.pointer, shapes, widgetElementCreators.length, context, f);
     return completer.future;
   } else {
-    Pointer<Void> page = _allocateNewPageSync(newContextId, dartContext!.pointer);
+    Pointer<Void> page = _allocateNewPageSync(newContextId, dartContext!.pointer, shapes, widgetElementCreators.length);
     assert(!_allocatedPages.containsKey(newContextId));
     _allocatedPages[newContextId] = page;
   }
@@ -680,6 +684,7 @@ enum UICommandType {
   setStyle,
   clearStyle,
   setAttribute,
+  setProperty,
   removeAttribute,
   cloneNode,
   removeEvent,

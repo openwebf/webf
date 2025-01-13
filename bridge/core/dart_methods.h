@@ -84,7 +84,6 @@ typedef void (*LoadNativeLibrary)(double context_id,
                                   void* initialize_data,
                                   void* import_data,
                                   LoadNativeLibraryCallback callback);
-typedef int8_t (*GetWidgetElementShape)(double context_id, void* native_binding_object, NativeValue* value);
 
 using MatchImageSnapshotCallback = void (*)(void* callback_context, double context_id, int8_t, char* errmsg);
 using MatchImageSnapshot = void (*)(void* callback_context,
@@ -197,7 +196,6 @@ class DartMethodPointer {
                          void* initialize_data,
                          void* import_data,
                          LoadNativeLibraryCallback callback);
-  bool getWidgetElementShape(bool is_dedicated, double context_id, void* native_binding_object, NativeValue* value);
 
   void onJSError(bool is_dedicated, double context_id, const char*);
   void onJSLog(bool is_dedicated, double context_id, int32_t level, const char*);
@@ -249,7 +247,6 @@ class DartMethodPointer {
   FlushUICommand flush_ui_command_{nullptr};
   CreateBindingObject create_binding_object_{nullptr};
   LoadNativeLibrary load_native_library_{nullptr};
-  GetWidgetElementShape get_widget_element_shape_{nullptr};
   OnJSError on_js_error_{nullptr};
   OnJSLog on_js_log_{nullptr};
   MatchImageSnapshot match_image_snapshot_{nullptr};

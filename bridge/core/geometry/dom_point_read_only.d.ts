@@ -3,11 +3,11 @@ import {DOMMatrix} from "./dom_matrix";
 import {DOMPoint} from "./dom_point";
 
 interface DOMPointReadOnly {
-    x: number;
-    y: number;
-    z: number;
-    w: number;
-    matrixTransform(matrix: DOMMatrix): DOMPoint;
+    x: SupportAsync<number>;
+    y: SupportAsync<number>;
+    z: SupportAsync<number>;
+    w: SupportAsync<number>;
+    matrixTransform(matrix: DOMMatrix): SupportAsync<DOMPoint>;
     fromPoint(point: DOMPoint): StaticMethod<DOMPoint>;
     new(x?: number | DOMPointInit, y?: number, z?: number, w?: number): DOMPointReadOnly;
 }

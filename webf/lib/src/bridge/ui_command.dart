@@ -271,9 +271,26 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
             WebFProfiler.instance.finishTrackUICommandStep();
           }
           break;
+        case UICommandType.setProperty:
+          if (enableWebFProfileTracking) {
+            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.setProperty');
+          }
+
+          BindingObject? target = view.getBindingObject<BindingObject>(nativePtr.cast<NativeBindingObject>());
+          if (target == null) {
+            break;
+          }
+
+          List<dynamic> args = [command.args, fromNativeValue(view, command.nativePtr2.cast<NativeValue>())];
+          setterBindingCall(target, args);
+
+          if (enableWebFProfileTracking) {
+            WebFProfiler.instance.finishTrackUICommandStep();
+          }
+          break;
         case UICommandType.removeAttribute:
           if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.setAttribute');
+            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.removeAttribute');
           }
           String key = command.args;
           view.removeAttribute(nativePtr, key);

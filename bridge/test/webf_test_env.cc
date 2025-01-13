@@ -209,10 +209,14 @@ WebFTestEnv::~WebFTestEnv() {
 }
 
 std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {
+  return TEST_init(onJsError, nullptr, 0);
+}
+
+std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError, NativeWidgetElementShape* shape, size_t shape_len) {
   auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
   auto* dart_isolate_context = initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size(), true);
   double pageContextId = contextId -= 1;
-  auto* page = allocateNewPageSync(pageContextId, dart_isolate_context);
+  auto* page = allocateNewPageSync(pageContextId, dart_isolate_context, shape, shape_len);
   void* testContext = initTestFramework(page);
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
   TEST_mockTestEnvDartMethods(testContext, onJsError);
@@ -232,7 +236,7 @@ std::unique_ptr<webf::WebFPage> TEST_allocateNewPage(OnJSError onJsError) {
   auto dart_isolate_context = std::unique_ptr<DartIsolateContext>(
       (DartIsolateContext*)initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size(), true));
   int pageContextId = contextId -= 1;
-  auto* page = allocateNewPageSync(pageContextId, dart_isolate_context.get());
+  auto* page = allocateNewPageSync(pageContextId, dart_isolate_context.get(), nullptr, 0);
   void* testContext = initTestFramework(page);
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
 
@@ -335,8 +339,7 @@ std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
                                     reinterpret_cast<uint64_t>(TEST_toBlob),
                                     reinterpret_cast<uint64_t>(TEST_flushUICommand),
                                     reinterpret_cast<uint64_t>(TEST_CreateBindingObject),
-                                    reinterpret_cast<uint64_t>(TEST_LoadNativeLibrary),
-                                    reinterpret_cast<uint64_t>(TEST_GetWidgetElementShape)};
+                                    reinterpret_cast<uint64_t>(TEST_LoadNativeLibrary)};
 
   WEBF_LOG(VERBOSE) << " ON JS ERROR" << onJSError;
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(onJSError));

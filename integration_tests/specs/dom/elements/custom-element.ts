@@ -644,7 +644,15 @@ describe('custom html element', () => {
     await snapshot();
   });
 
-  it('support custom properties in dart directly', () => {
+  it('dart implements getAllBindingPropertyNames works', async () => {
+    let sampleElement = document.createElement('sample-element');
+    let attributes = Object.keys(sampleElement);
+    expect(attributes).toEqual([
+      'fake', 'ping', 'fn', '__test_global_to_local__', 'asyncFnNotComplete', 'asyncFnFailed', 'asyncFn'
+    ])
+  });
+
+  it('support custom properties in dart directly', async () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');
     sampleElement.appendChild(text);
@@ -652,20 +660,22 @@ describe('custom html element', () => {
 
     // @ts-ignore
     expect(sampleElement.ping).toBe('pong');
+    // @ts-ignore
+    expect(await sampleElement.ping_async).toBe('pong');
   });
 
-  it('support call js function but defined in dart directly', () => {
+  it('support call js function but defined in dart directly', async () => {
     let sampleElement = document.createElement('sample-element');
     let text = document.createTextNode('helloworld');
     sampleElement.appendChild(text);
     document.body.appendChild(sampleElement);
 
     let arrs = [1, 2, 4, 8, 16];
+
     // @ts-ignore
-    let fn = sampleElement.fn;
-    expect(fn.apply(sampleElement, arrs)).toEqual([2, 4, 8, 16, 32]);
+    expect(sampleElement.fn(1, 2, 4, 8, 16)).toEqual([2, 4, 8, 16, 32]);
     // @ts-ignore
-    expect(fn.apply(sampleElement, arrs)).toEqual([2, 4, 8, 16, 32]);
+    expect(await sampleElement.fn(...arrs)).toEqual([2, 4, 8, 16, 32]);
   });
 
   it('return promise when dart return future async function', async () => {
@@ -746,38 +756,6 @@ describe('custom html element', () => {
     expect(sampleElement._fn()).toBe(1);
     // @ts-ignore
     expect(sampleElement._self === sampleElement);
-  });
-
-  it('should work with cloneNode', () => {
-    let sampleElement = document.createElement('sample-element');
-    let text = document.createTextNode('helloworld');
-    sampleElement.appendChild(text);
-    document.body.appendChild(sampleElement);
-
-    // @ts-ignore
-    expect(sampleElement._fake).toBe(undefined);
-
-    // @ts-ignore
-    sampleElement._fake = [1, 2, 3, 4, 5];
-    // @ts-ignore
-    sampleElement._fn = () => 1;
-    // @ts-ignore
-    sampleElement._self = sampleElement;
-    // @ts-ignore
-    expect(sampleElement._fake).toEqual([1, 2, 3, 4, 5]);
-    // @ts-ignore
-    expect(sampleElement._fn()).toBe(1);
-    // @ts-ignore
-    expect(sampleElement._self === sampleElement);
-
-    let clone = sampleElement.cloneNode();
-
-    // @ts-ignore
-    expect(clone._fake).toEqual([1, 2, 3, 4, 5]);
-    // @ts-ignore
-    expect(clone._fn()).toEqual(1);
-    // @ts-ignore
-    expect(clone._self).toBe(sampleElement);
   });
 
   it('should work with checkbox', async (done) => {

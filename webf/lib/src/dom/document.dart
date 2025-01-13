@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+
 import 'dart:collection';
 import 'dart:ffi';
 import 'dart:io';
@@ -11,6 +12,7 @@ import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
@@ -73,7 +75,7 @@ class _InactiveRenderObjects {
   }
 
   void finalizeInactiveRenderObjects() {
-    for(RenderObject object in _renderObjects) {
+    for (RenderObject object in _renderObjects) {
       assert(!object.attached);
       object.dispose();
     }
@@ -103,6 +105,7 @@ class Document extends ContainerNode {
   void markElementStyleDirty(Element element) {
     _styleDirtyElements.add(element.pointer!.address);
   }
+
   void clearElementStyleDirty(Element element) {
     _styleDirtyElements.remove(element.pointer!.address);
   }
@@ -221,34 +224,53 @@ class Document extends ContainerNode {
     }
   }
 
+  static final StaticDefinedBindingPropertyMap _documentProperties = {
+    'cookie': StaticDefinedBindingProperty(
+        getter: (document) => castToType<Document>(document).cookie.cookie(),
+        setter: (document, value) => castToType<Document>(document).cookie.setCookieString(value)),
+    'compatMode': StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).compatMode),
+    'domain': StaticDefinedBindingProperty(
+        getter: (document) => castToType<Document>(document).domain,
+        setter: (document, value) => castToType<Document>(document).domain = value),
+    'readyState': StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).readyState),
+    'visibilityState':
+        StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).visibilityState),
+    'hidden': StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).hidden),
+    'title': StaticDefinedBindingProperty(
+        getter: (document) => castToType<Document>(document)._title ?? '',
+        setter: (document, value) {
+          castToType<Document>(document)._title = value ?? '';
+          castToType<Document>(document).controller.onTitleChanged?.call(castToType<Document>(document).title);
+        })
+  };
+
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['cookie'] =
-        BindingObjectProperty(getter: () => cookie.cookie(), setter: (value) => cookie.setCookieString(value));
-    properties['compatMode'] = BindingObjectProperty(getter: () => compatMode);
-    properties['domain'] = BindingObjectProperty(getter: () => domain, setter: (value) => domain = value);
-    properties['readyState'] = BindingObjectProperty(getter: () => readyState);
-    properties['visibilityState'] = BindingObjectProperty(getter: () => visibilityState);
-    properties['hidden'] = BindingObjectProperty(getter: () => hidden);
-    properties['title'] = BindingObjectProperty(
-      getter: () => _title ?? '',
-      setter: (value) {
-        _title = value ?? '';
-        ownerDocument.controller.onTitleChanged?.call(title);
-      },
-    );
-  }
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _documentProperties];
+
+  static final StaticDefinedSyncBindingObjectMethodMap _syncDocumentMethods = {
+    'querySelectorAll': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).querySelectorAll(args)),
+    'querySelector': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).querySelector(args)),
+    'getElementById': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).getElementById(args)),
+    'getElementsByClassName': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).getElementsByClassName(args)),
+    'getElementsByTagName': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).getElementsByTagName(args)),
+    'getElementsByName': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).getElementsByName(args)),
+    'elementFromPoint': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) =>
+            castToType<Document>(document).elementFromPoint(castToType<double>(args[0]), castToType<double>(args[1]))),
+  };
+
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _syncDocumentMethods];
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    methods['querySelectorAll'] = BindingObjectMethodSync(call: (args) => querySelectorAll(args));
-    methods['querySelector'] = BindingObjectMethodSync(call: (args) => querySelector(args));
-    methods['getElementById'] = BindingObjectMethodSync(call: (args) => getElementById(args));
-    methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
-    methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
-    methods['getElementsByName'] = BindingObjectMethodSync(call: (args) => getElementsByName(args));
-    methods['elementFromPoint'] = BindingObjectMethodSync(
-        call: (args) => elementFromPoint(castToType<double>(args[0]), castToType<double>(args[1])));
+    super.initializeMethods(methods);
     if (kDebugMode || kProfileMode) {
       methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
     }

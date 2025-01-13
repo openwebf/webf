@@ -19,6 +19,10 @@ abstract class WebFThread {
   int syncBufferSize();
 }
 
+bool isContextDedicatedThread(double contextId) {
+  return contextId >= 0;
+}
+
 /// Executes your JavaScript code within the Flutter UI thread.
 class FlutterUIThread extends WebFThread {
   FlutterUIThread();

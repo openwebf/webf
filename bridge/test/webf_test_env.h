@@ -38,6 +38,7 @@ class WebFTestEnv {
 };
 
 std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError);
+std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError, NativeWidgetElementShape* shape, size_t shape_len);
 std::unique_ptr<WebFTestEnv> TEST_init();
 std::unique_ptr<WebFPage> TEST_allocateNewPage(OnJSError onJsError);
 void TEST_runLoop(ExecutingContext* context);

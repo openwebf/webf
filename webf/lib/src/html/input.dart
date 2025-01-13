@@ -14,7 +14,7 @@ import 'package:webf/css.dart';
 import 'package:webf/html.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/widget.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 
 enum InputSize {
   small,

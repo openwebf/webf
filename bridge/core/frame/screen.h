@@ -23,7 +23,7 @@ class Screen : public EventTargetWithInlineData {
 
  public:
   using ImplType = Screen*;
-  explicit Screen(Window* window, NativeBindingObject* binding_object);
+  explicit Screen(ExecutingContext* context, NativeBindingObject* binding_object);
 
   [[nodiscard]] int64_t availWidth() const { return extra_->availWidth; }
   [[nodiscard]] int64_t availHeight() const { return extra_->availHeight; }

@@ -12,6 +12,7 @@
 #include "qjs_union_dom_stringcanvas_gradient.h"
 #include "qjs_unionhtml_image_elementhtml_canvas_element.h"
 #include "qjs_unionpath_2_d_dom_string.h"
+#include "text_metrics.h"
 
 namespace webf {
 
@@ -22,6 +23,7 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   using ImplType = CanvasRenderingContext2D*;
   CanvasRenderingContext2D() = delete;
   explicit CanvasRenderingContext2D(ExecutingContext* context, NativeBindingObject* native_binding_object);
+  ~CanvasRenderingContext2D();
 
   NativeValue HandleCallFromDartSide(const AtomicString& method,
                                      int32_t argc,
@@ -42,8 +44,14 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   CanvasPattern* createPattern(const std::shared_ptr<QJSUnionHTMLImageElementHTMLCanvasElement>& init,
                                const AtomicString& repetition,
                                ExceptionState& exception_state);
+  ScriptPromise createPattern_async(const std::shared_ptr<QJSUnionHTMLImageElementHTMLCanvasElement>& init,
+                                    const AtomicString& repetition,
+                                    ExceptionState& exception_state);
   std::shared_ptr<QJSUnionDomStringCanvasGradient> fillStyle();
+  ScriptPromise fillStyle_async(ExceptionState& exception_state);
   void setFillStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);
+  void setFillStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
+                          ExceptionState& exception_state);
   bool IsCanvas2d() const override;
 
   void fill(ExceptionState& exception_state);
@@ -51,9 +59,19 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
   void fill(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern,
             const AtomicString& fillRule,
             ExceptionState& exception_state);
+  void fill_async(ExceptionState& exception_state);
+  void fill_async(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern, ExceptionState& exception_state);
+  void fill_async(std::shared_ptr<const QJSUnionPath2DDomString> pathOrPattern,
+                  const AtomicString& fillRule,
+                  ExceptionState& exception_state);
 
   std::shared_ptr<QJSUnionDomStringCanvasGradient> strokeStyle();
+  ScriptPromise strokeStyle_async(ExceptionState& exception_state);
   void setStrokeStyle(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style, ExceptionState& exception_state);
+  void setStrokeStyle_async(const std::shared_ptr<QJSUnionDomStringCanvasGradient>& style,
+                            ExceptionState& exception_state);
+
+  TextMetrics* measureText(const AtomicString& text, ExceptionState& exception_state);
 
   void roundRect(double x,
                  double y,
@@ -61,6 +79,15 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
                  double h,
                  std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
                  ExceptionState& exception_state);
+
+  void roundRect_async(double x,
+                       double y,
+                       double w,
+                       double h,
+                       std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
+                       ExceptionState& exception_state);
+
+  void needsPaint() const;
 
   void Trace(GCVisitor* visitor) const override;
 

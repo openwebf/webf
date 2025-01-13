@@ -40,6 +40,10 @@ function generateMethodArgumentsCheck(m: FunctionDeclaration) {
     return '';
   }
 
+  if (m.args.some(v => v.isDotDotDot)) {
+    requiredArgsCount--;
+  }
+
   return `  if (argc < ${requiredArgsCount}) {
     return JS_ThrowTypeError(ctx, "Failed to execute '${m.name}' : ${requiredArgsCount} argument required, but %d present.", argc);
   }
@@ -359,6 +363,49 @@ ${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverte
   `.trim();
 }
 
+function generateAsyncDartImplCallCode(blob: IDLBlob, declare: FunctionDeclaration, args: FunctionArguments[]): string {
+  let nativeArguments = args.map(i => {
+    return `NativeValueConverter<${generateNativeValueTypeConverter(i.type)}>::ToNativeValue(${isDOMStringType(i.type) ? 'ctx, ' : ''}args_${i.name})`;
+  });
+
+  let returnValueAssignment = '';
+
+  if (declare.returnType.value != FunctionArgumentType.void) {
+    returnValueAssignment = 'auto&& native_value =';
+  }
+
+  return `
+auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
+${nativeArguments.length > 0 ? `NativeValue arguments[] = {
+  ${nativeArguments.join(',\n')}
+}` : 'NativeValue* arguments = nullptr;'};
+${returnValueAssignment}self->InvokeBindingMethodAsync(binding_call_methods::k${declare.name.split('_async')[0]}, ${nativeArguments.length}, arguments, exception_state);
+${returnValueAssignment.length > 0 ? `return Converter<${generateIDLTypeConverter(declare.returnType)}>::ToValue(NativeValueConverter<${generateNativeValueTypeConverter(declare.returnType)}>::FromNativeValue(native_value))` : ''};
+  `.trim();
+}
+
+function generateReturnPromiseCallCode(blob: IDLBlob, declare: FunctionDeclaration, args: FunctionArguments[]): string {
+  let nativeArguments = args.map(i => {
+    return `NativeValueConverter<${generateNativeValueTypeConverter(i.type)}>::ToNativeValue(${isDOMStringType(i.type) ? 'ctx, ' : ''}args_${i.name})`;
+  });
+
+  let returnValueAssignment = '';
+
+  if (declare.returnType.value != FunctionArgumentType.void) {
+    returnValueAssignment = 'return_value = ';
+  }
+
+  return `
+auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
+${nativeArguments.length > 0 ? `NativeValue arguments[] = {
+  ${nativeArguments.join(',\n')}
+}` : 'NativeValue* arguments = nullptr;'};
+${returnValueAssignment}self->InvokeBindingMethodAsync(binding_call_methods::k${declare.name.split('_async')[0]}, ${nativeArguments.length}, arguments, exception_state);
+
+${'if (UNLIKELY(exception_state.HasException())) {\n  return exception_state.ToQuickJS();\n}'}
+ `.trim();
+}
+
 function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, argument: FunctionArguments, argsIndex: number, argsLength: number, previousArguments: string[], options: GenFunctionBodyOptions) {
   let call = '';
   let returnValueAssignment = '';
@@ -366,10 +413,16 @@ function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, a
     returnValueAssignment = 'return_value =';
   }
   if (declare.returnTypeMode?.dartImpl) {
-    call = generateDartImplCallCode(blob, declare, declare.returnTypeMode?.layoutDependent ?? false, declare.args.slice(0, argsIndex + 1));
+    if (declare.returnTypeMode?.supportAsync) {
+      call = generateAsyncDartImplCallCode(blob, declare, declare.args.slice(0, argsIndex + 1));
+    } else {
+      call = generateDartImplCallCode(blob, declare, declare.returnTypeMode?.layoutDependent ?? false, declare.args.slice(0, argsIndex + 1));
+    }
+  } else if(declare.returnTypeMode?.supportAsync && !declare.returnTypeMode?.supportAsyncManual) {
+    call = generateReturnPromiseCallCode(blob, declare, declare.args.slice(0, argsIndex + 1));
   } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
-${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...previousArguments, `args_${argument.name}`, 'exception_state'].join(',')});`;
+  ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...previousArguments, `args_${argument.name}`, 'exception_state'].join(',')});`;
   } else {
     call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declare.name)}(context, ${[...previousArguments, `args_${argument.name}`].join(',')}, exception_state);`;
   }
@@ -426,7 +479,16 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
     returnValueAssignment = 'return_value =';
   }
   if (declaration.returnTypeMode?.dartImpl) {
-    call = generateDartImplCallCode(blob, declaration, declaration.returnTypeMode?.layoutDependent ?? false, declaration.args.slice(0, minimalRequiredArgc));
+    if (declaration.returnTypeMode?.supportAsync) {
+      call = generateAsyncDartImplCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc));
+    } else {
+      call = generateDartImplCallCode(blob, declaration, declaration.returnTypeMode?.layoutDependent ?? false, declaration.args.slice(0, minimalRequiredArgc));
+    }
+  } else if (declaration.returnTypeMode?.supportAsync && !declaration.returnTypeMode?.supportAsyncManual && declaration.returnType.value != FunctionArgumentType.void) {
+    // TODO 判断逻辑可以优化
+    call = generateReturnPromiseCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc))
+  } else if (declaration.returnTypeMode?.supportAsync && !declaration.returnTypeMode?.supportAsyncManual ) {
+    call = generateReturnPromiseCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc))
   } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
 ${returnValueAssignment} self->${generateCallMethodName(declaration.name)}(${minimalRequiredArgc > 0 ? `${requiredArguments.join(',')}` : 'exception_state'});`;
@@ -434,7 +496,7 @@ ${returnValueAssignment} self->${generateCallMethodName(declaration.name)}(${min
     call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declaration.name)}(context, ${requiredArguments.join(',')});`;
   }
 
-  let minimalRequiredCall = (declaration.args.length == 0 || (declaration.args[0].isDotDotDot)) ? call : `if (argc <= ${minimalRequiredArgc}) {
+  let minimalRequiredCall = (declaration.args.length == 0 || (declaration.args.some(v => v.isDotDotDot))) ? call : `if (argc <= ${minimalRequiredArgc}) {
   ${call}
   break;
 }`;
@@ -483,15 +545,21 @@ function generateDictionaryInit(blob: IDLBlob, props: PropsDeclaration[]) {
   return ': ' + initExpression.join(',');
 }
 
-function generateReturnValueInit(blob: IDLBlob, type: ParameterType, options: GenFunctionBodyOptions = {
+function generateReturnValueInit(blob: IDLBlob, declare: FunctionDeclaration, options: GenFunctionBodyOptions = {
   isConstructor: false,
   isInstanceMethod: false
 }) {
+  let type = declare.returnType;
   if (type.value == FunctionArgumentType.void) return '';
+
+  if(declare.returnTypeMode?.supportAsync) {
+    return 'ScriptPromise return_value;';
+  }
 
   if (options.isConstructor) {
     return `${getClassName(blob)}* return_value = nullptr;`
   }
+
   if (isPointerType(type)) {
     if (getPointerType(type) === 'Promise') {
       return 'ScriptPromise return_value;';
@@ -499,19 +567,28 @@ function generateReturnValueInit(blob: IDLBlob, type: ParameterType, options: Ge
       return `${getPointerType(type)}* return_value = nullptr;`;
     }
   }
+
+
   return `Converter<${generateIDLTypeConverter(type)}>::ImplType return_value;`;
 }
 
-function generateReturnValueResult(blob: IDLBlob, type: ParameterType, mode?: ParameterMode, options: GenFunctionBodyOptions = {
+function generateReturnValueResult(blob: IDLBlob, declare: FunctionDeclaration, options: GenFunctionBodyOptions = {
   isConstructor: false,
   isInstanceMethod: false
 }): string {
+  let type: ParameterType = declare.returnType
+  let mode = declare.returnTypeMode
   if (type.value == FunctionArgumentType.void) return 'JS_NULL';
   let method = 'ToQuickJS';
 
   if (options.isConstructor) {
     return `return_value->${method}()`;
   }
+
+  if (declare.returnTypeMode?.supportAsync && declare.async_returnType ) {
+    return `Converter<${generateIDLTypeConverter(declare.async_returnType)}>::ToValue(ctx, std::move(return_value))`
+  }
+
 
   return `Converter<${generateIDLTypeConverter(type)}>::ToValue(ctx, std::move(return_value))`;
 }
@@ -524,8 +601,8 @@ function generateFunctionBody(blob: IDLBlob, declare: FunctionDeclaration, optio
 }) {
   let paramCheck = generateMethodArgumentsCheck(declare);
   let callBody = generateFunctionCallBody(blob, declare, options);
-  let returnValueInit = generateReturnValueInit(blob, declare.returnType, options);
-  let returnValueResult = generateReturnValueResult(blob, declare.returnType, declare.returnTypeMode, options);
+  let returnValueInit = generateReturnValueInit(blob, declare, options);
+  let returnValueResult = generateReturnValueResult(blob, declare, options);
 
   let constructorPrototypeInit = (options.isConstructor && returnValueInit.length > 0) ? `JSValue proto = JS_GetPropertyStr(ctx, this_val, "prototype");
   JS_SetPrototype(ctx, return_value->ToQuickJSUnsafe(), proto);

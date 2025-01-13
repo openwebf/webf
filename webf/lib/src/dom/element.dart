@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -14,7 +15,9 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/bridge/binding_object.dart';
 import 'package:webf/src/svg/rendering/container.dart';
 import 'package:webf/src/bridge/native_types.dart';
 import 'package:webf/widget.dart';
@@ -260,52 +263,82 @@ abstract class Element extends ContainerNode
     });
   }
 
+  static bool isElementStaticProperties(StaticDefinedBindingPropertyMap map) {
+    return map == _elementProperties;
+  }
+
   // https://www.w3.org/TR/cssom-view-1/#extensions-to-the-htmlelement-interface
   // https://www.w3.org/TR/cssom-view-1/#extension-to-the-element-interface
+  static final StaticDefinedBindingPropertyMap _elementProperties = {
+    'offsetTop': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).offsetTop),
+    'offsetLeft': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).offsetLeft),
+    'offsetWidth': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).offsetWidth),
+    'offsetHeight': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).offsetHeight),
+    'scrollTop': StaticDefinedBindingProperty(
+        getter: (element) => castToType<Element>(element).scrollTop,
+        setter: (element, value) => castToType<Element>(element).scrollTop = castToType<double>(value)),
+    'scrollLeft': StaticDefinedBindingProperty(
+        getter: (element) => castToType<Element>(element).scrollLeft,
+        setter: (element, value) => castToType<Element>(element).scrollLeft = castToType<double>(value)),
+    'scrollWidth': StaticDefinedBindingProperty(
+      getter: (element) => castToType<Element>(element).scrollWidth,
+    ),
+    'scrollHeight': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).scrollHeight),
+    'clientTop': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).clientTop),
+    'clientLeft': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).clientLeft),
+    'clientWidth': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).clientWidth),
+    'clientHeight': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).clientHeight),
+    'id': StaticDefinedBindingProperty(
+        getter: (element) => castToType<Element>(element).id,
+        setter: (element, value) => castToType<Element>(element).id = castToType<String>(value)),
+    'classList': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).classList),
+    'className': StaticDefinedBindingProperty(
+        getter: (element) => castToType<Element>(element).className,
+        setter: (element, value) => castToType<Element>(element).className = castToType<String>(value)),
+    'dir': StaticDefinedBindingProperty(getter: (element) => castToType<Element>(element).dir),
+  };
+
   @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    properties['offsetTop'] = BindingObjectProperty(getter: () => offsetTop);
-    properties['offsetLeft'] = BindingObjectProperty(getter: () => offsetLeft);
-    properties['offsetWidth'] = BindingObjectProperty(getter: () => offsetWidth);
-    properties['offsetHeight'] = BindingObjectProperty(getter: () => offsetHeight);
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _elementProperties];
 
-    properties['scrollTop'] =
-        BindingObjectProperty(getter: () => scrollTop, setter: (value) => scrollTop = castToType<double>(value));
-    properties['scrollLeft'] =
-        BindingObjectProperty(getter: () => scrollLeft, setter: (value) => scrollLeft = castToType<double>(value));
-    properties['scrollWidth'] = BindingObjectProperty(getter: () => scrollWidth);
-    properties['scrollHeight'] = BindingObjectProperty(getter: () => scrollHeight);
-
-    properties['clientTop'] = BindingObjectProperty(getter: () => clientTop);
-    properties['clientLeft'] = BindingObjectProperty(getter: () => clientLeft);
-    properties['clientWidth'] = BindingObjectProperty(getter: () => clientWidth);
-    properties['clientHeight'] = BindingObjectProperty(getter: () => clientHeight);
-
-    properties['id'] = BindingObjectProperty(getter: () => id, setter: (value) => id = castToType<String>(value));
-    properties['className'] =
-        BindingObjectProperty(getter: () => className, setter: (value) => className = castToType<String>(value));
-    properties['classList'] = BindingObjectProperty(getter: () => classList);
-    properties['dir'] = BindingObjectProperty(getter: () => dir, setter: (value) => {});
+  static bool isElementStaticSyncMethods(StaticDefinedSyncBindingObjectMethodMap map) {
+    return map == _elementSyncMethods;
   }
+
+  static final StaticDefinedSyncBindingObjectMethodMap _elementSyncMethods = {
+    'getBoundingClientRect': StaticDefinedSyncBindingObjectMethod(
+        call: (element, _) => castToType<Element>(element).getBoundingClientRect()),
+    'getClientRects': StaticDefinedSyncBindingObjectMethod(call: (element, _) => castToType<Element>(element).getClientRects()),
+    'scroll': StaticDefinedSyncBindingObjectMethod(
+        call: (element, args) =>
+            castToType<Element>(element).scroll(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'scrollBy': StaticDefinedSyncBindingObjectMethod(
+        call: (element, args) =>
+            castToType<Element>(element).scrollBy(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'scrollTo': StaticDefinedSyncBindingObjectMethod(
+        call: (element, args) =>
+            castToType<Element>(element).scrollTo(castToType<double>(args[0]), castToType<double>(args[1]))),
+    'click': StaticDefinedSyncBindingObjectMethod(call: (element, _) => castToType<Element>(element).click()),
+    'getElementsByClassName': StaticDefinedSyncBindingObjectMethod(
+        call: (element, args) => castToType<Element>(element).getElementsByClassName(args)),
+    'getElementsByTagName': StaticDefinedSyncBindingObjectMethod(
+        call: (element, args) => castToType<Element>(element).getElementsByTagName(args)),
+    'querySelectorAll': StaticDefinedSyncBindingObjectMethod(
+        call: (element, args) => castToType<Element>(element).querySelectorAll(args)),
+    'querySelector':
+        StaticDefinedSyncBindingObjectMethod(call: (element, args) => castToType<Element>(element).querySelector(args)),
+    'matches':
+        StaticDefinedSyncBindingObjectMethod(call: (element, args) => castToType<Element>(element).matches(args)),
+    'closest':
+        StaticDefinedSyncBindingObjectMethod(call: (element, args) => castToType<Element>(element).closest(args)),
+  };
+
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _elementSyncMethods];
+
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    methods['getBoundingClientRect'] = BindingObjectMethodSync(call: (_) => getBoundingClientRect());
-    methods['getClientRects'] = BindingObjectMethodSync(call: (_) => getClientRects());
-    methods['scroll'] =
-        BindingObjectMethodSync(call: (args) => scroll(castToType<double>(args[0]), castToType<double>(args[1])));
-    methods['scrollBy'] =
-        BindingObjectMethodSync(call: (args) => scrollBy(castToType<double>(args[0]), castToType<double>(args[1])));
-    methods['scrollTo'] =
-        BindingObjectMethodSync(call: (args) => scrollTo(castToType<double>(args[0]), castToType<double>(args[1])));
-    methods['click'] = BindingObjectMethodSync(call: (_) => click());
-    methods['getElementsByClassName'] = BindingObjectMethodSync(call: (args) => getElementsByClassName(args));
-    methods['getElementsByTagName'] = BindingObjectMethodSync(call: (args) => getElementsByTagName(args));
-    methods['querySelectorAll'] = BindingObjectMethodSync(call: (args) => querySelectorAll(args));
-    methods['querySelector'] = BindingObjectMethodSync(call: (args) => querySelector(args));
-    methods['matches'] = BindingObjectMethodSync(call: (args) => matches(args));
-    methods['closest'] = BindingObjectMethodSync(call: (args) => closest(args));
-
     if (kDebugMode || kProfileMode) {
       methods['__test_global_to_local__'] =
           BindingObjectMethodSync(call: (args) => testGlobalToLocal(args[0], args[1]));

@@ -14,6 +14,9 @@
 #include "core/events/promise_rejection_event.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
+#include "foundation/native_value_converter.h"
+#include "html/canvas/canvas_rendering_context_2d.h"
+#include "html/custom/widget_element_shape.h"
 #include "polyfill.h"
 #include "qjs_window.h"
 #include "script_forbidden_scope.h"
@@ -31,6 +34,8 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
                                    bool is_dedicated,
                                    size_t sync_buffer_size,
                                    double context_id,
+                                   NativeWidgetElementShape* native_widget_element_shape,
+                                   int32_t shape_len,
                                    JSExceptionHandler handler,
                                    void* owner)
     : dart_isolate_context_(dart_isolate_context),
@@ -107,7 +112,15 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
 
   dart_isolate_context->profiler()->FinishTrackSteps();
 
+  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InitializeWidgetShape");
+
+  SetWidgetElementShape(native_widget_element_shape, shape_len);
+
+  dart_isolate_context->profiler()->FinishTrackSteps();
+
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+
+  DrawCanvasElementIfNeeded();
 }
 
 ExecutingContext::~ExecutingContext() {
@@ -360,6 +373,7 @@ void ExecutingContext::DrainMicrotasks() {
 
   dart_isolate_context_->profiler()->FinishTrackSteps();
 
+  DrawCanvasElementIfNeeded();
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 }
 
@@ -490,6 +504,27 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
   }
 }
 
+const WidgetElementShape* ExecutingContext::GetWidgetElementShape(const AtomicString& key) {
+  if (widget_element_shapes_.count(key) > 0) {
+    return widget_element_shapes_[key].get();
+  }
+  return nullptr;
+}
+
+bool ExecutingContext::HasWidgetElementShape(const AtomicString& key) const {
+  return widget_element_shapes_.count(key) > 0;
+}
+
+void ExecutingContext::SetWidgetElementShape(NativeWidgetElementShape* native_widget_element_shape, size_t len) {
+  if (len == 0 || native_widget_element_shape == nullptr || native_widget_element_shape->name == nullptr)
+    return;
+
+  for (size_t i = 0; i < len; i++) {
+    const auto key = AtomicString(ctx(), native_widget_element_shape[i].name);
+    widget_element_shapes_[key] = std::make_unique<WidgetElementShape>(ctx(), &native_widget_element_shape[i]);
+  }
+}
+
 void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason) {
   std::vector<NativeBindingObject*> deps;
   FlushUICommand(self, reason, deps);
@@ -500,6 +535,14 @@ void ExecutingContext::FlushUICommand(const webf::BindingObject* self,
                                       std::vector<NativeBindingObject*>& deps) {
   if (SyncUICommandBuffer(self, reason, deps)) {
     dartMethodPtr()->flushUICommand(is_dedicated_, context_id_, self->bindingObject());
+  }
+}
+
+void ExecutingContext::DrawCanvasElementIfNeeded() {
+  if (!active_canvas_rendering_context_2ds_.empty()) {
+    for (auto& canvas : active_canvas_rendering_context_2ds_) {
+      canvas->needsPaint();
+    }
   }
 }
 
@@ -660,12 +703,30 @@ void ExecutingContext::RegisterActiveScriptWrappers(ScriptWrappable* script_wrap
   active_wrappers_.emplace(script_wrappable);
 }
 
+void ExecutingContext::RegisterActiveCanvasContext2D(CanvasRenderingContext2D* canvas_rendering_context_2d) {
+  active_canvas_rendering_context_2ds_.emplace(canvas_rendering_context_2d);
+}
+
+void ExecutingContext::RemoveCanvasContext2D(CanvasRenderingContext2D* canvas_rendering_context_2d) {
+  active_canvas_rendering_context_2ds_.erase(canvas_rendering_context_2d);
+}
+
 void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable) {
   active_wrappers_.erase(script_wrappable);
 }
 
 void ExecutingContext::RegisterActiveScriptPromise(std::shared_ptr<ScriptPromiseResolver> promise_resolver) {
   active_pending_promises_.emplace(std::move(promise_resolver));
+}
+
+void ExecutingContext::UnRegisterActiveScriptPromise(const ScriptPromiseResolver* promise_resolver) {
+  auto it = std::find_if(active_pending_promises_.begin(), active_pending_promises_.end(),
+                         [promise_resolver](const std::shared_ptr<ScriptPromiseResolver>& item) {
+                           return item.get() == promise_resolver;
+                         });
+  if (it != active_pending_promises_.end()) {
+    active_pending_promises_.erase(it);
+  }
 }
 
 // A lock free context validator.

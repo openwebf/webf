@@ -37,40 +37,6 @@ class ImageData {
   Uint8List data;
 }
 
-@immutable
-class TextMetrics {
-  TextMetrics(
-    this.width,
-    this.actualBoundingBoxLeft,
-    this.actualBoundingBoxRight,
-    this.fontBoundingBoxAscent,
-    this.fontBoundingBoxDescent,
-    this.actualBoundingBoxAscent,
-    this.actualBoundingBoxDescent,
-    this.emHeightAscent,
-    this.emHeightDescent,
-    this.hangingBaseline,
-    this.alphabeticBaseline,
-    this.ideographicBaseline,
-  );
-
-  // x-direction
-  final double width;
-  final double actualBoundingBoxLeft;
-  final double actualBoundingBoxRight;
-
-  // y-direction
-  final double fontBoundingBoxAscent;
-  final double fontBoundingBoxDescent;
-  final double actualBoundingBoxAscent;
-  final double actualBoundingBoxDescent;
-  final double emHeightAscent;
-  final double emHeightDescent;
-  final double hangingBaseline;
-  final double alphabeticBaseline;
-  final double ideographicBaseline;
-}
-
 abstract class CanvasCompositing {
   double globalAlpha = 1.0; // (default 1.0)
   String globalCompositeOperation = 'source-over'; // (default source-over)
@@ -161,9 +127,6 @@ class CanvasGradient extends DynamicBindingObject {
     methods['addColorStop'] =
         BindingObjectMethodSync(call: (args) => addColorStop(castToType<num>(args[0]), castToType<String>(args[1])));
   }
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 }
 
 // ignore: one_member_abstracts

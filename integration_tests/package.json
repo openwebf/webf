@@ -25,6 +25,7 @@
     "express": "^4.18.2",
     "glob": "^7.1.6",
     "is-port-reachable": "^3.0.0",
+    "minimatch": "^10.0.1",
     "prettier": "^1.19.1",
     "qs": "^6.11.0",
     "stylesheet-loader": "^0.8.5",

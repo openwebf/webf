@@ -11,13 +11,13 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   // base64 utility methods
   btoa(string: string): string;
   atob(string: string): string;
-  open(url?: string): Window | null;
-  scroll(x: number, y: number): void;
-  scroll(options?: ScrollToOptions): void;
-  scrollTo(options?: ScrollToOptions): void;
-  scrollTo(x: number, y: number): void;
-  scrollBy(options?: ScrollToOptions): void;
-  scrollBy(x: number, y: number): void;
+  open(url?: string): SupportAsync<Window | null>;
+  scroll(x: number, y: number): SupportAsyncManual<void>;
+  scroll(options?: ScrollToOptions): SupportAsyncManual<void>;
+  scrollTo(options?: ScrollToOptions): SupportAsyncManual<void>;
+  scrollTo(x: number, y: number):  SupportAsyncManual<void>;
+  scrollBy(options?: ScrollToOptions): SupportAsyncManual<void>;
+  scrollBy(x: number, y: number): SupportAsyncManual<void>;
 
   postMessage(message: any, targetOrigin: string): void;
   postMessage(message: any): void;
@@ -25,21 +25,21 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   requestAnimationFrame(callback: Function): double;
   cancelAnimationFrame(request_id: double): void;
 
-  getComputedStyle(element: Element, pseudoElt?: string): ComputedCssStyleDeclaration;
+  getComputedStyle(element: Element, pseudoElt?: string): SupportAsync<ComputedCssStyleDeclaration>;
 
   readonly window: Window;
   readonly parent: Window;
   readonly self: Window;
-  readonly screen: Screen;
+  readonly screen: SupportAsync<Screen>;
 
-  readonly scrollX: DartImpl<DependentsOnLayout<double>>;
-  readonly scrollY: DartImpl<DependentsOnLayout<double>>;
-  readonly pageXOffset: DartImpl<DependentsOnLayout<double>>;
-  readonly pageYOffset: DartImpl<DependentsOnLayout<double>>;
-  readonly devicePixelRatio: DartImpl<double>;
-  readonly colorScheme: DartImpl<string>;
-  readonly innerWidth: DartImpl<double>;
-  readonly innerHeight: DartImpl<double>;
+  readonly scrollX: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
+  readonly scrollY: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
+  readonly pageXOffset: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
+  readonly pageYOffset: SupportAsync<DartImpl<DependentsOnLayout<double>>>;
+  readonly devicePixelRatio: SupportAsync<DartImpl<double>>;
+  readonly colorScheme: SupportAsync<DartImpl<string>>;
+  readonly innerWidth: SupportAsync<DartImpl<double>>;
+  readonly innerHeight: SupportAsync<DartImpl<double>>;
 
   new(): void;
 }

@@ -103,6 +103,7 @@
     "fillText",
     "lineTo",
     "moveTo",
+    "measureText",
     "rect",
     "roundRect",
     "restore",
@@ -200,6 +201,7 @@
     "toString",
     "transformPoint",
     "matrixTransform",
-    "__test_global_to_local__"
+    "__test_global_to_local__",
+    "needsPaint"
   ]
 }
