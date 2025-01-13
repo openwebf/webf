@@ -5,11 +5,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:webf/html.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 
 typedef EventHandler = Future<void> Function(Event event);
 
-abstract class EventTarget extends DynamicBindingObject {
+abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindingObject {
   EventTarget(BindingContext? context) : super(context);
 
   bool _disposed = false;

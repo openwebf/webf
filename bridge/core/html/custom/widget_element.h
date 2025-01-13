@@ -33,14 +33,15 @@ class WidgetElement : public HTMLElement {
 
   bool IsWidgetElement() const override;
 
-  void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag) override;
-
   void Trace(GCVisitor* visitor) const override;
 
  private:
   ScriptValue CreateSyncMethodFunc(const AtomicString& method_name);
   ScriptValue CreateAsyncMethodFunc(const AtomicString& method_name);
-  const WidgetElementShape* SaveWidgetElementsShapeData(const NativeValue* argv);
+
+  static void HandleJSCallbackGCMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func);
+  static void HandleJSFinalizer(JSRuntime* rt, JSValue val);
+
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> cached_methods_;
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> async_cached_methods_;
   std::unordered_map<AtomicString, ScriptValue, AtomicString::KeyHasher> unimplemented_properties_;

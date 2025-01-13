@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:webf/widget.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 
 class SampleElement extends WidgetElement {
@@ -28,6 +29,15 @@ class SampleElement extends WidgetElement {
     methods['asyncFnFailed'] = AsyncBindingObjectMethod(call: asyncFnFailed);
     methods['asyncFnNotComplete'] = AsyncBindingObjectMethod(call: asyncFnNotComplete);
   }
+
+  static final StaticDefinedAsyncBindingObjectMethodMap _elementAsyncMethods = {
+    'asyncFn': StaticDefinedAsyncBindingObjectMethod(call: (element, args) async {
+      return castToType<SampleElement>(element).asyncFn(args);
+    })
+  };
+
+  @override
+  List<StaticDefinedAsyncBindingObjectMethodMap> get asyncMethods => [...super.asyncMethods, _elementAsyncMethods];
 
   String get ping => 'pong';
 

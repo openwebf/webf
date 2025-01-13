@@ -35,6 +35,8 @@ export class ParameterMode {
   layoutDependent?: boolean;
   static?: boolean;
   supportAsync?: boolean;
+  supportAsyncManual?: boolean;
+  supportAsyncArrayValue?: boolean;
   staticMethod?: boolean;
 }
 
@@ -55,6 +57,7 @@ export class IndexedPropertyDeclaration extends PropsDeclaration {
 export class FunctionDeclaration extends PropsDeclaration {
   args: FunctionArguments[] =  [];
   returnType: ParameterType;
+  async_returnType?: ParameterType;
   returnTypeMode?: ParameterMode;
 }
 

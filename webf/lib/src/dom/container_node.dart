@@ -5,6 +5,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/src/dom/node_traversal.dart';
 
 typedef InsertNodeHandler = void Function(ContainerNode container, Node child, Node? next);

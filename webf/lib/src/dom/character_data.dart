@@ -3,7 +3,7 @@
  */
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/src/foundation/binding.dart';
+import 'package:webf/src/bridge/binding_object.dart';
 import 'package:webf/widget.dart';
 
 class CharacterData extends Node {
@@ -26,14 +26,6 @@ class CharacterData extends Node {
   Future<void> dispose() async {
     super.dispose();
     flutterWidget = null;
-  }
-
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-  }
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
   }
 
   @override

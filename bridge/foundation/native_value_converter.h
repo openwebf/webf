@@ -53,6 +53,16 @@ struct NativeValueConverter<NativeTypeString> : public NativeValueConverterBase<
     assert(value.tag == NativeTag::TAG_STRING);
     return {ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(value.u.ptr))};
   }
+
+  static ImplType FromNativeValueShared(JSContext* ctx, NativeValue& value) {
+    if (value.tag == NativeTag::TAG_NULL) {
+      return AtomicString::Empty();
+    }
+    assert(value.tag == NativeTag::TAG_STRING);
+
+    auto shared_string = reinterpret_cast<SharedNativeString*>(value.u.ptr);
+    return {ctx, shared_string->string(), shared_string->length()};
+  }
 };
 
 template <>
@@ -175,34 +185,6 @@ struct NativeValueConverter<NativeTypePointer<T>, std::enable_if_t<std::is_base_
     assert(value.tag == NativeTag::TAG_POINTER);
     assert(value.uint32 == static_cast<int32_t>(JSPointerType::NativeBindingObject));
     return DynamicTo<T>(BindingObject::From(static_cast<NativeBindingObject*>(value.u.ptr)));
-  }
-};
-
-template <>
-struct NativeValueConverter<NativeTypeFunction> : public NativeValueConverterBase<NativeTypeFunction> {
-  static NativeValue ToNativeValue(ImplType value) {
-    // Not supported.
-    assert(false);
-    return Native_NewNull();
-  }
-
-  static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
-    assert(value.tag == NativeTag::TAG_FUNCTION);
-    return QJSFunction::Create(ctx, BindingObject::AnonymousFunctionCallback, 4, value.u.ptr);
-  };
-};
-
-template <>
-struct NativeValueConverter<NativeTypeAsyncFunction> : public NativeValueConverterBase<NativeTypeAsyncFunction> {
-  static NativeValue ToNativeValue(ImplType value) {
-    // Not supported.
-    assert(false);
-    return Native_NewNull();
-  }
-
-  static ImplType FromNativeValue(JSContext* ctx, NativeValue value) {
-    assert(value.tag == NativeTag::TAG_ASYNC_FUNCTION);
-    return QJSFunction::Create(ctx, BindingObject::AnonymousAsyncFunctionCallback, 4, value.u.ptr);
   }
 };
 

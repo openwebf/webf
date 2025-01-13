@@ -3,6 +3,12 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "script_value.h"
+
+#include <core/geometry/dom_matrix.h>
+#include <core/geometry/dom_point.h>
+#include <core/html/canvas/canvas_gradient.h>
+#include <core/html/canvas/canvas_pattern.h>
+#include <core/html/canvas/text_metrics.h>
 #include <quickjs/quickjs.h>
 #include <vector>
 #include "bindings/qjs/converter_impl.h"
@@ -94,6 +100,30 @@ static JSValue FromNativeValue(ExecutingContext* context,
             return event_target->ToQuickJS();
           }
           break;
+        }
+        case JSPointerType::DOMMatrix: {
+          return MakeGarbageCollected<DOMMatrix>(context, ptr)->ToQuickJS();
+        }
+        case JSPointerType::BoundingClientRect: {
+          return MakeGarbageCollected<BoundingClientRect>(context, ptr)->ToQuickJS();
+        }
+        case JSPointerType::Screen: {
+          return MakeGarbageCollected<Screen>(context, ptr)->ToQuickJS();
+        }
+        case JSPointerType::TextMetrics: {
+          return MakeGarbageCollected<TextMetrics>(context, ptr)->ToQuickJS();
+        }
+        case JSPointerType::ComputedCSSStyleDeclaration: {
+          return MakeGarbageCollected<ComputedCssStyleDeclaration>(context, ptr)->ToQuickJS();
+        }
+        case JSPointerType::DOMPoint: {
+          return MakeGarbageCollected<DOMPoint>(context, ptr)->ToQuickJS();
+        }
+        case JSPointerType::CanvasGradient: {
+          return MakeGarbageCollected<CanvasGradient>(context, ptr)->ToQuickJS();
+        }
+        case JSPointerType::CanvasPattern: {
+          return MakeGarbageCollected<CanvasPattern>(context, ptr)->ToQuickJS();
         }
         case JSPointerType::Others: {
           return JS_DupValue(context->ctx(), JS_MKPTR(JS_TAG_OBJECT, ptr));

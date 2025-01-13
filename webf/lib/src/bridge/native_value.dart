@@ -8,8 +8,14 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/src/geometry/dom_point.dart';
+import 'package:webf/src/geometry/dom_point_readonly.dart';
+import 'package:webf/src/html/canvas/canvas_context.dart';
+import 'package:webf/src/html/canvas/canvas_context_2d.dart';
+import 'package:webf/src/html/canvas/canvas_text_metrics.dart';
+import 'package:webf/webf.dart';
 
 class NativeValue extends Struct {
   @Int64()
@@ -38,7 +44,42 @@ enum JSValueType {
 
 enum JSPointerType {
   NativeBindingObject,
+  DOMMatrix,
+  BoundingClientRect,
+  TextMetrics,
+  Screen,
+  ComputedCSSStyleDeclaration,
+  DOMPoint,
+  CanvasGradient,
+  CanvasPattern,
   Others
+}
+
+
+JSPointerType getPointerTypeOfBindingObject(BindingObject bindingObject) {
+  if (bindingObject.pointer?.ref.instance != nullptr) {
+    return JSPointerType.NativeBindingObject;
+  }
+
+  if (bindingObject is DOMMatrix) {
+    return JSPointerType.DOMMatrix;
+  } else if (bindingObject is BoundingClientRect) {
+    return JSPointerType.BoundingClientRect;
+  } else if (bindingObject is TextMetrics) {
+    return JSPointerType.TextMetrics;
+  } else if (bindingObject is Screen) {
+    return JSPointerType.Screen;
+  } else if (bindingObject is ComputedCSSStyleDeclaration) {
+    return JSPointerType.ComputedCSSStyleDeclaration;
+  } else if (bindingObject is DOMPoint) {
+    return JSPointerType.DOMPoint;
+  } else if (bindingObject is CanvasGradient) {
+    return JSPointerType.CanvasGradient;
+  } else if (bindingObject is CanvasPattern) {
+    return JSPointerType.CanvasPattern;
+  }
+
+  return JSPointerType.Others;
 }
 
 typedef AnonymousNativeFunction = dynamic Function(List<dynamic> args);
@@ -64,7 +105,7 @@ dynamic fromNativeValue(WebFViewController view, Pointer<NativeValue> nativeValu
       return uInt64ToDouble(nativeValue.ref.u);
     case JSValueType.TAG_POINTER:
       JSPointerType pointerType = JSPointerType.values[nativeValue.ref.uint32];
-      if (pointerType == JSPointerType.NativeBindingObject) {
+      if (pointerType.index < JSPointerType.Others.index) {
         return view.getBindingObject(Pointer.fromAddress(nativeValue.ref.u));
       }
 
@@ -120,7 +161,7 @@ void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBind
   } else if (value is BindingObject) {
     assert((value.pointer)!.address != nullptr);
     target.ref.tag = JSValueType.TAG_POINTER.index;
-    target.ref.uint32 = JSPointerType.NativeBindingObject.index;
+    target.ref.uint32 = getPointerTypeOfBindingObject(value).index;
     target.ref.u = (value.pointer)!.address;
   } else if (value is List) {
     target.ref.tag = JSValueType.TAG_LIST.index;
@@ -128,7 +169,7 @@ void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBind
     Pointer<NativeValue> lists = malloc.allocate(sizeOf<NativeValue>() * value.length);
     target.ref.u = lists.address;
     for(int i = 0; i < value.length; i ++) {
-      toNativeValue(lists.elementAt(i), value[i], ownerBindingObject);
+      toNativeValue(lists + i, value[i], ownerBindingObject);
     }
   } else if (value is Object) {
     String str = jsonEncode(value);
@@ -141,7 +182,7 @@ Pointer<NativeValue> makeNativeValueArguments(BindingObject ownerBindingObject, 
   Pointer<NativeValue> buffer = malloc.allocate(sizeOf<NativeValue>() * args.length);
 
   for(int i = 0; i < args.length; i ++) {
-    toNativeValue(buffer.elementAt(i), args[i], ownerBindingObject);
+    toNativeValue(buffer + i, args[i], ownerBindingObject);
   }
 
   return buffer.cast<NativeValue>();

@@ -14,19 +14,19 @@ import {ParentNode} from "./parent_node";
 
 interface Document extends Node, ParentNode {
   readonly all: HTMLAllCollection;
-  title: DartImpl<string>;
+  title: SupportAsync<DartImpl<string>>;
   body: HTMLBodyElement | null;
-  cookie: DartImpl<string>;
+  cookie: SupportAsync<DartImpl<string>>;
   __clear_cookies__(): DartImpl<void>;
-  domain: string;
+  domain: SupportAsync<DartImpl<string>>;
   readonly head: HTMLHeadElement | null;
   readonly documentElement: HTMLHtmlElement | null;
   // Legacy impl: get the polyfill implements from global object.
   readonly location: any;
-  readonly compatMode: string;
-  readonly readyState: string;
-  readonly visibilityState: DartImpl<string>;
-  readonly hidden: boolean;
+  readonly compatMode: SupportAsync<DartImpl<string>>;
+  readonly readyState: SupportAsync<DartImpl<string>>;
+  readonly visibilityState: SupportAsync<DartImpl<string>>;
+  readonly hidden: SupportAsync<DartImpl<boolean>>;
   readonly defaultView: Window;
 
   createElement(tagName: string, options?: any): Element;
@@ -36,15 +36,15 @@ interface Document extends Node, ParentNode {
   createComment(data: string): Comment;
   createEvent(event_type: string): Event;
 
-  getElementById(id: string): Element | null;
-  getElementsByClassName(className: string) : Element[];
-  getElementsByTagName(tagName: string): Element[];
-  getElementsByName(name: string): Element[];
+  getElementById(id: string): SupportAsync<Element | null>;
+  getElementsByClassName(className: string) : SupportAsync<Element[]>;
+  getElementsByTagName(tagName: string): SupportAsync<Element[]>;
+  getElementsByName(name: string): SupportAsync<Element[]>;
 
-  querySelector(selectors: string): Element | null;
-  querySelectorAll(selectors: string): Element[];
+  querySelector(selectors: string): SupportAsync<Element | null>;
+  querySelectorAll(selectors: string): SupportAsync<Element[]>;
 
-  elementFromPoint(x: number, y: number): Element | null;
+  elementFromPoint(x: number, y: number): SupportAsync<Element | null>;
 
   onreadystatechange: IDLEventHandler | null;
   new(): Document;

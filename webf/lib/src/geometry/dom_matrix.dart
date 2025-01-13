@@ -5,7 +5,7 @@
 import 'dart:typed_data';
 
 import 'package:vector_math/vector_math_64.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 import 'dom_matrix_readonly.dart';
 
 class DOMMatrix extends DOMMatrixReadOnly {

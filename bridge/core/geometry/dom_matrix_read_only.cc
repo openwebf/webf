@@ -103,11 +103,23 @@ void DOMMatrixReadOnly::setMatrixProperty(const AtomicString& prop, double v, Ex
   }
 }
 
+void DOMMatrixReadOnly::setMatrixPropertyAsync(const AtomicString& prop, double v, ExceptionState& exception_state) {
+  if (DynamicTo<DOMMatrix>(this)) {
+    SetBindingPropertyAsync(prop, NativeValueConverter<NativeTypeDouble>::ToNativeValue(v), exception_state);
+  }
+}
+
 double DOMMatrixReadOnly::m11() const {
   return getMatrixProperty(defined_properties::km11);
 }
 void DOMMatrixReadOnly::setM11(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km11, v, exception_state);
+}
+ScriptPromise DOMMatrixReadOnly::m11_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km11, exception_state);
+}
+void DOMMatrixReadOnly::setM11_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km11, v, exception_state);
 }
 double DOMMatrixReadOnly::m12() const {
   return getMatrixProperty(defined_properties::km12);
@@ -115,17 +127,37 @@ double DOMMatrixReadOnly::m12() const {
 void DOMMatrixReadOnly::setM12(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km12, v, exception_state);
 }
+ScriptPromise DOMMatrixReadOnly::m12_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km12, exception_state);
+}
+void DOMMatrixReadOnly::setM12_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km12, v, exception_state);
+}
+
 double DOMMatrixReadOnly::m13() const {
   return getMatrixProperty(defined_properties::km13);
 }
 void DOMMatrixReadOnly::setM13(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km13, v, exception_state);
 }
+ScriptPromise DOMMatrixReadOnly::m13_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km13, exception_state);
+}
+void DOMMatrixReadOnly::setM13_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km13, v, exception_state);
+}
+
 double DOMMatrixReadOnly::m14() const {
   return getMatrixProperty(defined_properties::km14);
 }
 void DOMMatrixReadOnly::setM14(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km14, v, exception_state);
+}
+ScriptPromise DOMMatrixReadOnly::m14_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km14, exception_state);
+}
+void DOMMatrixReadOnly::setM14_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km14, v, exception_state);
 }
 
 double DOMMatrixReadOnly::m21() const {
@@ -134,23 +166,50 @@ double DOMMatrixReadOnly::m21() const {
 void DOMMatrixReadOnly::setM21(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km21, v, exception_state);
 }
+ScriptPromise DOMMatrixReadOnly::m21_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km21, exception_state);
+}
+void DOMMatrixReadOnly::setM21_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km21, v, exception_state);
+}
+
 double DOMMatrixReadOnly::m22() const {
   return getMatrixProperty(defined_properties::km22);
 }
 void DOMMatrixReadOnly::setM22(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km22, v, exception_state);
 }
+ScriptPromise DOMMatrixReadOnly::m22_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km22, exception_state);
+}
+void DOMMatrixReadOnly::setM22_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km22, v, exception_state);
+}
+
 double DOMMatrixReadOnly::m23() const {
   return getMatrixProperty(defined_properties::km23);
 }
 void DOMMatrixReadOnly::setM23(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km23, v, exception_state);
 }
+ScriptPromise DOMMatrixReadOnly::m23_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km23, exception_state);
+}
+void DOMMatrixReadOnly::setM23_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km23, v, exception_state);
+}
+
 double DOMMatrixReadOnly::m24() const {
   return getMatrixProperty(defined_properties::km24);
 }
 void DOMMatrixReadOnly::setM24(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km24, v, exception_state);
+}
+ScriptPromise DOMMatrixReadOnly::m24_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km24, exception_state);
+}
+void DOMMatrixReadOnly::setM24_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km24, v, exception_state);
 }
 
 double DOMMatrixReadOnly::m31() const {
@@ -159,47 +218,102 @@ double DOMMatrixReadOnly::m31() const {
 void DOMMatrixReadOnly::setM31(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km31, v, exception_state);
 }
+ScriptPromise DOMMatrixReadOnly::m31_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km31, exception_state);
+}
+void DOMMatrixReadOnly::setM31_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km31, v, exception_state);
+}
+
 double DOMMatrixReadOnly::m32() const {
   return getMatrixProperty(defined_properties::km32);
 }
 void DOMMatrixReadOnly::setM32(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km32, v, exception_state);
 }
+ScriptPromise DOMMatrixReadOnly::m32_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km32, exception_state);
+}
+void DOMMatrixReadOnly::setM32_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km32, v, exception_state);
+}
+
 double DOMMatrixReadOnly::m33() const {
   return getMatrixProperty(defined_properties::km33);
 }
 void DOMMatrixReadOnly::setM33(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km33, v, exception_state);
 }
+ScriptPromise DOMMatrixReadOnly::m33_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km33, exception_state);
+}
+void DOMMatrixReadOnly::setM33_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km33, v, exception_state);
+}
+
 double DOMMatrixReadOnly::m34() const {
   return getMatrixProperty(defined_properties::km34);
 }
 void DOMMatrixReadOnly::setM34(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km34, v, exception_state);
 }
+ScriptPromise DOMMatrixReadOnly::m34_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km34, exception_state);
+}
+void DOMMatrixReadOnly::setM34_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km34, v, exception_state);
+}
+
 double DOMMatrixReadOnly::m41() const {
   return getMatrixProperty(defined_properties::km41);
 }
 void DOMMatrixReadOnly::setM41(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km41, v, exception_state);
 }
+ScriptPromise DOMMatrixReadOnly::m41_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km41, exception_state);
+}
+void DOMMatrixReadOnly::setM41_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km41, v, exception_state);
+}
+
 double DOMMatrixReadOnly::m42() const {
   return getMatrixProperty(defined_properties::km42);
 }
 void DOMMatrixReadOnly::setM42(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km42, v, exception_state);
 }
+ScriptPromise DOMMatrixReadOnly::m42_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km42, exception_state);
+}
+void DOMMatrixReadOnly::setM42_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km42, v, exception_state);
+}
+
 double DOMMatrixReadOnly::m43() const {
   return getMatrixProperty(defined_properties::km43);
 }
 void DOMMatrixReadOnly::setM43(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km43, v, exception_state);
 }
+ScriptPromise DOMMatrixReadOnly::m43_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km43, exception_state);
+}
+void DOMMatrixReadOnly::setM43_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km43, v, exception_state);
+}
+
 double DOMMatrixReadOnly::m44() const {
   return getMatrixProperty(defined_properties::km44);
 }
 void DOMMatrixReadOnly::setM44(double v, ExceptionState& exception_state) {
   setMatrixProperty(defined_properties::km44, v, exception_state);
+}
+ScriptPromise DOMMatrixReadOnly::m44_async(ExceptionState& exception_state) {
+  return GetBindingPropertyAsync(defined_properties::km44, exception_state);
+}
+void DOMMatrixReadOnly::setM44_async(double v, ExceptionState& exception_state) {
+  setMatrixPropertyAsync(defined_properties::km44, v, exception_state);
 }
 
 DOMMatrix* DOMMatrixReadOnly::flipX(ExceptionState& exception_state) const {

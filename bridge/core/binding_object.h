@@ -68,9 +68,6 @@ struct NativeBindingObject : public DartReadable {
 enum BindingMethodCallOperations {
   kGetProperty,
   kSetProperty,
-  kGetAllPropertyNames,
-  kAnonymousFunctionCall,
-  kAsyncAnonymousFunction,
 };
 
 enum CreateBindingObjectType {
@@ -91,7 +88,6 @@ using BindingObjectAsyncCallback = void (*)(ScriptPromiseResolver* resolver,
 
 struct BindingObjectAsyncCallContext : public DartReadable {
   NativeValue* method_name;
-  int64_t profile_id;
   int32_t argc;
   const webf::NativeValue* argv;
   ScriptPromiseResolver* async_invoke_reader;
@@ -100,26 +96,6 @@ struct BindingObjectAsyncCallContext : public DartReadable {
 
 class BindingObject : public ScriptWrappable {
  public:
-  struct AnonymousFunctionData {
-    std::string method_name;
-  };
-
-  // This function were called when the anonymous function returned to the JS code has been called by users.
-  static ScriptValue AnonymousFunctionCallback(JSContext* ctx,
-                                               const ScriptValue& this_val,
-                                               uint32_t argc,
-                                               const ScriptValue* argv,
-                                               void* private_data);
-  static ScriptValue AnonymousAsyncFunctionCallback(JSContext* ctx,
-                                                    const ScriptValue& this_val,
-                                                    uint32_t argc,
-                                                    const ScriptValue* argv,
-                                                    void* private_data);
-  static void HandleAnonymousAsyncCalledFromDart(void* ptr,
-                                                 NativeValue* native_value,
-                                                 double contextId,
-                                                 const char* errmsg);
-
   BindingObject() = delete;
   ~BindingObject();
   explicit BindingObject(JSContext* ctx);
@@ -135,13 +111,15 @@ class BindingObject : public ScriptWrappable {
                                   const NativeValue* args,
                                   uint32_t reason,
                                   ExceptionState& exception_state) const;
+  ScriptPromise InvokeBindingMethodAsync(const AtomicString& method,
+                                         int32_t argc,
+                                         const NativeValue* args,
+                                         ExceptionState& exception_state) const;
   NativeValue GetBindingProperty(const AtomicString& prop, uint32_t reason, ExceptionState& exception_state) const;
   NativeValue SetBindingProperty(const AtomicString& prop, NativeValue value, ExceptionState& exception_state) const;
 
   ScriptPromise GetBindingPropertyAsync(const AtomicString& prop, ExceptionState& exception_state);
-  void SetBindingPropertyAsync(const AtomicString& prop, const AtomicString& value);
-
-  NativeValue GetAllBindingPropertyNames(ExceptionState& exception_state) const;
+  void SetBindingPropertyAsync(const AtomicString& prop, NativeValue value, ExceptionState& exception_state);
 
   void CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& deps, size_t argc, const NativeValue* args) const;
 
@@ -173,6 +151,10 @@ class BindingObject : public ScriptWrappable {
                                          int32_t argc,
                                          const NativeValue* args,
                                          ExceptionState& exception_state) const;
+  ScriptPromise InvokeBindingMethodAsyncInternal(NativeValue method,
+                                                 int32_t argc,
+                                                 const NativeValue* args,
+                                                 ExceptionState& exception_state) const;
 
   // NativeBindingObject may allocated at Dart side. Binding this with Dart allocated NativeBindingObject.
   explicit BindingObject(JSContext* ctx, NativeBindingObject* native_binding_object);

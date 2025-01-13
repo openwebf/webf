@@ -29,7 +29,18 @@ enum NativeTag {
   TAG_UINT8_BYTES = 10,
 };
 
-enum class JSPointerType { NativeBindingObject = 0, Others = 1 };
+enum class JSPointerType {
+  NativeBindingObject = 0,
+  DOMMatrix = 1,
+  BoundingClientRect = 2,
+  TextMetrics = 3,
+  Screen = 4,
+  ComputedCSSStyleDeclaration = 5,
+  DOMPoint = 6,
+  CanvasGradient = 7,
+  CanvasPattern = 8,
+  Others = 9
+};
 
 class ExecutingContext;
 class ExceptionState;

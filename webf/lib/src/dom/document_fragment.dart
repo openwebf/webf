@@ -5,7 +5,7 @@
 
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/src/foundation/binding.dart';
+import 'package:webf/src/bridge/binding_object.dart';
 
 const String DOCUMENT_FRAGMENT = 'DOCUMENTFRAGMENT';
 
@@ -18,11 +18,4 @@ class DocumentFragment extends ContainerNode {
   @override
   RenderBox? get renderer => null;
 
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-  }
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-  }
 }

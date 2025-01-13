@@ -5,7 +5,7 @@
 
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
@@ -77,7 +77,7 @@ class CSSPropertyValue {
 ///    object on the first CSS rule in the document's first stylesheet.
 /// 3. Via [Window.getComputedStyle()], which exposes the [CSSStyleDeclaration]
 ///    object as a read-only interface.
-class CSSStyleDeclaration extends DynamicBindingObject {
+class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBindingObject {
   Element? target;
 
   // TODO(yuanyan): defaultStyle should be longhand properties.
@@ -694,12 +694,6 @@ class CSSStyleDeclaration extends DynamicBindingObject {
   Iterator<MapEntry<String, CSSPropertyValue>> get iterator {
     return _properties.entries.followedBy(_pendingProperties.entries).iterator;
   }
-
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {}
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {}
 }
 
 // aB to a-b

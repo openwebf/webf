@@ -134,7 +134,7 @@ class WebF extends StatefulWidget {
     if (!_isValidCustomElementName(tagName)) {
       throw ArgumentError('The element name "$tagName" is not valid.');
     }
-    defineElement(tagName.toUpperCase(), creator);
+    defineWidgetElement(tagName.toUpperCase(), creator);
   }
 
   Future<void> load(WebFBundle bundle) async {

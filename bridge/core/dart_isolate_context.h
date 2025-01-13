@@ -5,9 +5,8 @@
 #ifndef WEBF_DART_CONTEXT_H_
 #define WEBF_DART_CONTEXT_H_
 
-#include <set>
+#include <unordered_set>
 #include "bindings/qjs/script_value.h"
-#include "dart_context_data.h"
 #include "dart_methods.h"
 #include "foundation/profiler.h"
 #include "multiple_threading/dispatcher.h"
@@ -16,6 +15,7 @@ namespace webf {
 
 class WebFPage;
 class DartIsolateContext;
+class NativeWidgetElementShape;
 
 class PageGroup {
  public:
@@ -58,13 +58,13 @@ class DartIsolateContext {
   }
   FORCE_INLINE WebFProfiler* profiler() const { return profiler_.get(); };
 
-  const std::unique_ptr<DartContextData>& EnsureData() const;
-
   void* AddNewPage(double thread_identity,
                    int32_t sync_buffer_size,
+                   void* native_widget_element_shapes,
+                   int32_t shape_len,
                    Dart_Handle dart_handle,
                    AllocateNewPageCallback result_callback);
-  void* AddNewPageSync(double thread_identity);
+  void* AddNewPageSync(double thread_identity, void* native_widget_element_shapes, int32_t shape_len);
   void RemovePage(double thread_identity, WebFPage* page, Dart_Handle dart_handle, DisposePageCallback result_callback);
   void RemovePageSync(double thread_identity, WebFPage* page);
 
@@ -76,11 +76,15 @@ class DartIsolateContext {
   static void FinalizeJSRuntime();
   static std::unique_ptr<WebFPage> InitializeNewPageSync(DartIsolateContext* dart_isolate_context,
                                                          size_t sync_buffer_size,
-                                                         double page_context_id);
+                                                         double page_context_id,
+                                                         void* native_widget_element_shapes,
+                                                         int32_t shape_len);
   static void InitializeNewPageInJSThread(PageGroup* page_group,
                                           DartIsolateContext* dart_isolate_context,
                                           double page_context_id,
                                           int32_t sync_buffer_size,
+                                          NativeWidgetElementShape* native_widget_element_shapes,
+                                          int32_t shape_len,
                                           Dart_Handle dart_handle,
                                           AllocateNewPageCallback result_callback);
   static void DisposePageAndKilledJSThread(DartIsolateContext* dart_isolate_context,
@@ -105,7 +109,6 @@ class DartIsolateContext {
   std::unique_ptr<WebFProfiler> profiler_;
   int is_valid_{false};
   std::thread::id running_thread_;
-  mutable std::unique_ptr<DartContextData> data_;
   std::unordered_set<std::unique_ptr<WebFPage>> pages_in_ui_thread_;
   std::unique_ptr<multi_threading::Dispatcher> dispatcher_ = nullptr;
   // Dart methods ptr should keep alive when ExecutingContext is disposing.

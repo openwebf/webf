@@ -3,7 +3,7 @@
  */
 
 import 'package:webf/svg.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 
 class SVGGraphicsElement extends SVGElement {
   @override

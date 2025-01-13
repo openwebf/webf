@@ -86,12 +86,21 @@ class CanvasElement extends Element {
     methods['getContext'] = BindingObjectMethodSync(call: (args) => getContext(castToType<String>(args[0])));
   }
 
+  static final StaticDefinedBindingPropertyMap _canvasProperties = {
+    'width': StaticDefinedBindingProperty(
+        getter: (canvas) => castToType<CanvasElement>(canvas).width,
+        setter: (canvas, value) => castToType<CanvasElement>(canvas).width = castToType<int>(value)),
+    'height': StaticDefinedBindingProperty(
+        getter: (canvas) => castToType<CanvasElement>(canvas).height,
+        setter: (canvas, value) => castToType<CanvasElement>(canvas).height = castToType<int>(value)),
+  };
+
+  @override
+  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _canvasProperties];
+
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
-    properties['width'] = BindingObjectProperty(getter: () => width, setter: (value) => width = castToType<int>(value));
-    properties['height'] =
-        BindingObjectProperty(getter: () => height, setter: (value) => height = castToType<int>(value));
   }
 
   @override
@@ -123,7 +132,8 @@ class CanvasElement extends Element {
           painter.dispose();
         }
 
-        context2d = CanvasRenderingContext2D(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), this);
+        context2d =
+            CanvasRenderingContext2D(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()), this);
         painter.context = context2d;
 
         return context2d!;
