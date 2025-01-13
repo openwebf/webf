@@ -76,7 +76,6 @@ class LinkElement extends Element {
     'media': StaticDefinedBindingProperty(
       getter: (element) => castToType<LinkElement>(element).media,
       setter: (element, value) => castToType<LinkElement>(element).media = castToType<String>(value))
-    )
   };
 
   @override
