@@ -6,7 +6,6 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -17,11 +16,8 @@ import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/bridge/binding_object.dart';
 import 'package:webf/src/svg/rendering/container.dart';
-import 'package:webf/src/bridge/native_types.dart';
 import 'package:webf/widget.dart';
-import 'element_widget_adapter.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 
 final RegExp classNameSplitRegExp = RegExp(r'\s+');
@@ -339,6 +335,7 @@ abstract class Element extends ContainerNode
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeMethods(methods);
     if (kDebugMode || kProfileMode) {
       methods['__test_global_to_local__'] =
           BindingObjectMethodSync(call: (args) => testGlobalToLocal(args[0], args[1]));
@@ -871,7 +868,7 @@ abstract class Element extends ContainerNode
     if (domRenderer != null) {
       // If element attach WidgetElement, render object should be attach to render tree when mount.
       if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
-        RenderBoxModel.attachRenderBox(parent!.domRenderer!, domRenderer!, after: after);
+        RenderBoxModel.attachRenderBox(parent.domRenderer!, domRenderer!, after: after);
         if (renderStyle.position != CSSPositionType.static) {
           _updateRenderBoxModelWithPosition(CSSPositionType.static);
         }

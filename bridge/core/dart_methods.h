@@ -120,6 +120,7 @@ struct MousePointer {
 };
 using SimulatePointer =
     void (*)(void* ptr, MousePointer*, int32_t length, int32_t pointer, AsyncCallback async_callback);
+using SimulateChangeDartMode = void (*)(double context_id, int8_t is_dark_mode);
 using SimulateInputText = void (*)(SharedNativeString* nativeString);
 
 enum FlushUICommandReason : uint32_t {
@@ -218,6 +219,7 @@ class DartMethodPointer {
                                MatchImageSnapshotCallback callback);
 
   const char* environment(bool is_dedicated, double context_id);
+  void simulateChangeDarkMode(bool is_dedicated, double context_id, bool is_dark_mode) const;
   void simulatePointer(bool is_dedicated,
                        void* ptr,
                        MousePointer*,
@@ -230,6 +232,7 @@ class DartMethodPointer {
   void SetMatchImageSnapshot(MatchImageSnapshot func);
   void SetMatchImageSnapshotBytes(MatchImageSnapshotBytes func);
   void SetEnvironment(Environment func);
+  void SetSimulateChangeDarkMode(SimulateChangeDartMode func);
   void SetSimulatePointer(SimulatePointer func);
   void SetSimulateInputText(SimulateInputText func);
 
@@ -252,6 +255,7 @@ class DartMethodPointer {
   MatchImageSnapshot match_image_snapshot_{nullptr};
   MatchImageSnapshotBytes match_image_snapshot_bytes_{nullptr};
   Environment environment_{nullptr};
+  SimulateChangeDartMode simulate_change_dart_mode_{nullptr};
   SimulatePointer simulate_pointer_{nullptr};
   SimulateInputText simulate_input_text_{nullptr};
 };

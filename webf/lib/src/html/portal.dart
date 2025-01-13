@@ -1,7 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:webf/src/dom/child_node_list.dart';
-import 'package:webf/src/widget/widget_element.dart';
 import 'package:webf/widget.dart';
 
 const PORTAL = 'PORTAL';

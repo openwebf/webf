@@ -6,7 +6,6 @@
 import 'dart:ui' as ui;
 
 import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
 
 mixin CSSOpacityMixin on RenderStyle {
   /// The fraction to scale the child's alpha value.

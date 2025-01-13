@@ -1,6 +1,4 @@
 import 'package:flutter/rendering.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/widget.dart';
 import 'dart:math' as math;
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/rendering.dart';

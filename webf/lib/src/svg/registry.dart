@@ -4,7 +4,6 @@
 
 import 'package:webf/dom.dart';
 import 'package:webf/svg.dart';
-import 'package:webf/bridge.dart';
 
 final Map<String, ElementCreator> svgElementsRegistry = {
   TAG_SVG: (context) => SVGSVGElement(context),

@@ -138,6 +138,7 @@ global.simulatePointer = function simulatePointer(list, pointer) {
 }
 
 global.simulateInputText = __webf_simulate_inputtext__;
+global.simulateChangeDarkMode = __webf_change_dark_mode__;
 
 function resetDocumentElement() {
   document.removeChild(document.documentElement);

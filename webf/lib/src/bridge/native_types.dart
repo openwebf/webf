@@ -8,7 +8,6 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
 
-import 'native_value.dart';
 
 // MUST READ:
 // All the class which extends Struct class has a corresponding struct in C++ code.

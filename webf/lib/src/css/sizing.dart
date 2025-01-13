@@ -3,10 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
-import 'package:webf/src/svg/rendering/shape.dart';
 
 // CSS Box Sizing: https://drafts.csswg.org/css-sizing-3/
 

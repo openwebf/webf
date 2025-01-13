@@ -172,6 +172,7 @@ final _colorHslRegExp =
     RegExp(r'^([0-9.-]+)(deg|rad|grad|turn)?[,\s]+([0-9.]+%)[,\s]+([0-9.]+%)([,\s/]+([0-9.]+%?))?\s*$');
 final _colorRgbRegExp =
     RegExp(r'^([+-]?[^\s,]+%?)[,\s]+([+-]?[^\s,]+%?)[,\s]+([+-]?[^\s,]+%?)([,\s/]+([+-]?[^\s,]+%?))?\s*$');
+final _variableRgbRegExp = RegExp(r'var\(([^()]*\(.*?\)[^()]*)\)|var\(([^()]*)\)');
 
 final LinkedLruHashMap<String, Color> _cachedParsedColor = LinkedLruHashMap(maximumSize: 100);
 
@@ -231,7 +232,17 @@ class CSSColor {
   }
 
   static bool isColor(String color) {
-    return color == CURRENT_COLOR || parseColor(color) != null;
+    return color == CURRENT_COLOR ||
+        color == TRANSPARENT ||
+        color == INHERIT ||
+        color.startsWith('#') ||
+        color.startsWith(RGB) ||
+        color.startsWith(HSL) ||
+        _namedColors.containsKey(color);
+  }
+
+  static void clearCachedColorValue(String color) {
+    _cachedParsedColor.remove(color.toLowerCase());
   }
 
   static CSSColor? resolveColor(String color, RenderStyle renderStyle, String propertyName) {
@@ -243,15 +254,30 @@ class CSSColor {
       renderStyle.addColorRelativeProperty(propertyName);
       return renderStyle.color;
     }
-    Color? value = parseColor(color, renderStyle: renderStyle);
+    Color? value = parseColor(color, renderStyle: renderStyle, propertyName: propertyName);
     if (value == null) {
       return null;
     }
     return CSSColor(value);
   }
 
-  static Color? parseColor(String color, {RenderStyle? renderStyle}) {
-    color = color.trim().toLowerCase();
+  static String tryParserCSSColorWithVariable(
+      String fullColor, String input, RenderStyle renderStyle, String propertyName) {
+    return input.replaceAllMapped(_variableRgbRegExp, (Match match) {
+      String? varString = match[0];
+      if (varString == null) return '';
+      var variable = renderStyle.resolveValue(propertyName, varString);
+
+      if (variable is CSSVariable) {
+        return renderStyle.getCSSVariable(variable.identifier, propertyName + '_' + fullColor) ?? '';
+      }
+      return '';
+    });
+  }
+
+  static Color? parseColor(String color, {RenderStyle? renderStyle, String? propertyName}) {
+    String originalColor = color.trim();
+    color = originalColor.toLowerCase();
 
     if (color == TRANSPARENT) {
       return CSSColor.transparent;
@@ -286,11 +312,11 @@ class CSSColor {
       }
     } else if (color.startsWith(RGB)) {
       bool isRgba = color.startsWith(RGBA);
-      String colorBody = color.substring(isRgba ? 5 : 4, color.length - 1);
+      String colorBody = originalColor.substring(isRgba ? 5 : 4, color.length - 1);
 
       final rgbMatch;
       if (renderStyle != null && colorBody.contains('var')) {
-        final result = CSSVariable.tryReplaceVariableInString(colorBody, renderStyle);
+        final result = tryParserCSSColorWithVariable(originalColor, colorBody, renderStyle, propertyName ?? '');
         rgbMatch = _colorRgbRegExp.firstMatch(result);
       } else {
         rgbMatch = _colorRgbRegExp.firstMatch(colorBody);
@@ -307,11 +333,11 @@ class CSSColor {
       }
     } else if (color.startsWith(HSL)) {
       bool isHsla = color.startsWith(HSLA);
-      String colorBody = color.substring(isHsla ? 5 : 4, color.length - 1);
+      String colorBody = originalColor.substring(isHsla ? 5 : 4, color.length - 1);
 
       final hslMatch;
       if (renderStyle != null && colorBody.contains('var')) {
-        final result = CSSVariable.tryReplaceVariableInString(colorBody, renderStyle);
+        final result = tryParserCSSColorWithVariable(originalColor, colorBody, renderStyle, propertyName ?? '');
         hslMatch = _colorHslRegExp.firstMatch(result);
       } else {
         hslMatch = _colorHslRegExp.firstMatch(colorBody);
@@ -495,7 +521,9 @@ double? _parseColorPart(String value, double min, double max, RenderStyle? rende
 
   v ??= double.tryParse(value);
 
-  return v! < min ? min : (v > max ? max : v);
+  if (v == null) return null;
+
+  return v < min ? min : (v > max ? max : v);
 }
 
 double? _parseColorHue(String number, String? unit) {

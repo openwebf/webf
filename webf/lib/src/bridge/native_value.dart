@@ -7,13 +7,9 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
-import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
-import 'package:webf/launcher.dart';
 import 'package:webf/src/geometry/dom_point.dart';
-import 'package:webf/src/geometry/dom_point_readonly.dart';
 import 'package:webf/src/html/canvas/canvas_context.dart';
-import 'package:webf/src/html/canvas/canvas_context_2d.dart';
 import 'package:webf/src/html/canvas/canvas_text_metrics.dart';
 import 'package:webf/webf.dart';
 

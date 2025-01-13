@@ -11,7 +11,6 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:webf/src/bridge/widget_element_shape.dart';
 import 'package:webf/webf.dart';
 
 // Steps for using dart:ffi to call a C function from Dart:

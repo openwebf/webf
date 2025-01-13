@@ -4,7 +4,6 @@
  */
 
 import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
 
 enum CSSDisplay {
   inline,

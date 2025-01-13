@@ -4,7 +4,6 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:meta/meta.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';

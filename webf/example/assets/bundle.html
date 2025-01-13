@@ -2,6 +2,34 @@
 <html>
   <head>
     <style>
+      :root {
+        --title-font-size: 20px;
+      }
+
+      @media only screen and (max-width: 400px) and (min-width: 100px) {
+        :root {
+          --title-font-size: 14px;
+        }
+      }
+
+      @media (prefers-color-scheme:dark) {
+          :root {
+              --font-color: #0000ff;
+          }
+      }
+
+      @media (prefers-color-scheme:light) {
+          :root {
+              --font-color: #ff0000;
+          }
+      }
+
+      .webf-title {
+        text-align: center;
+        font-size: var(--title-font-size);
+        color: var(--font-color);
+      }
+
       .container {
         margin: 64px 0 32px;
         text-align: center;
@@ -35,6 +63,7 @@
     </style>
   </head>
   <body>
+    <h1 class="webf-title">WebF DEMO</h1>
     <div class="container">
       <img class="logo" src="./webf.png" />
     </div>

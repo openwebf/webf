@@ -1370,7 +1370,7 @@ class CSSRenderStyle extends RenderStyle
 
   setProperty(String name, value) {
     // Memorize the variable value to renderStyle object.
-    if (CSSVariable.isVariable(name)) {
+    if (CSSVariable.isCSSSVariableProperty(name)) {
       setCSSVariable(name, value.toString());
       return;
     }
@@ -1752,15 +1752,7 @@ class CSSRenderStyle extends RenderStyle
   }
 
   @override
-  dynamic resolveValue(String propertyName, String propertyValue, {String? baseHref}) {
-    bool uiCommandTracked = false;
-    if (enableWebFProfileTracking) {
-      if (!WebFProfiler.instance.currentPipeline.containsActiveUICommand()) {
-        WebFProfiler.instance.startTrackUICommand();
-        uiCommandTracked = true;
-      }
-      WebFProfiler.instance.startTrackUICommandStep('$this.renderStyle.resolveValue');
-    }
+  dynamic resolveValue(String propertyName, String propertyValue, { String? baseHref }) {
     RenderStyle renderStyle = this;
 
     if (propertyValue == INITIAL) {
@@ -1770,12 +1762,6 @@ class CSSRenderStyle extends RenderStyle
     // Process CSSVariable.
     dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
     if (value != null) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackUICommandStep();
-        if (uiCommandTracked) {
-          WebFProfiler.instance.finishTrackUICommand();
-        }
-      }
       return value;
     }
 
@@ -2043,16 +2029,9 @@ class CSSRenderStyle extends RenderStyle
         break;
     }
 
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-      if (uiCommandTracked) {
-        WebFProfiler.instance.finishTrackUICommand();
-      }
-    }
-
     // --x: foo;
     // Directly passing the value, not to resolve now.
-    if (CSSVariable.isVariable(propertyName)) {
+    if (CSSVariable.isCSSSVariableProperty(propertyName)) {
       return propertyValue;
     }
 

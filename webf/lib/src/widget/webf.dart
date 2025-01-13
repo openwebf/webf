@@ -365,31 +365,29 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
   RenderObject createRenderObject(BuildContext context) {
     WebFController controller = _webfWidget.controller ??
         WebFController(context,
-            name: shortHash(_webfWidget),
-            viewportWidth: _webfWidget.viewportWidth,
-            viewportHeight: _webfWidget.viewportHeight,
-            background: _webfWidget.background,
-            bundle: _webfWidget.bundle,
-            // Execute entrypoint when mount manually.
-            autoExecuteEntrypoint: false,
-            externalController: false,
-            onLoad: _webfWidget.onLoad,
-            routeObserver: _webfWidget.routeObserver,
-            onDOMContentLoaded: _webfWidget.onDOMContentLoaded,
-            onLoadError: _webfWidget.onLoadError,
-            onJSError: _webfWidget.onJSError,
-            runningThread: _webfWidget.runningThread,
-            methodChannel: _webfWidget.javaScriptChannel,
-            gestureListener: _webfWidget.gestureListener,
-            navigationDelegate: _webfWidget.navigationDelegate,
-            devToolsService: _webfWidget.devToolsService,
-            httpClientInterceptor: _webfWidget.httpClientInterceptor,
-            onCustomElementAttached: onCustomElementAttached,
-            onCustomElementDetached: onCustomElementDetached,
-            initialCookies: _webfWidget.initialCookies,
-            uriParser: _webfWidget.uriParser,
-            preloadedBundles: _webfWidget.preloadedBundles,
-            resizeToAvoidBottomInsets: resizeToAvoidBottomInsets);
+          name: shortHash(_webfWidget),
+          viewportWidth: _webfWidget.viewportWidth,
+          viewportHeight: _webfWidget.viewportHeight,
+          background: _webfWidget.background,
+          bundle: _webfWidget.bundle,
+          externalController: false,
+          onLoad: _webfWidget.onLoad,
+          routeObserver: _webfWidget.routeObserver,
+          onDOMContentLoaded: _webfWidget.onDOMContentLoaded,
+          onLoadError: _webfWidget.onLoadError,
+          onJSError: _webfWidget.onJSError,
+          runningThread: _webfWidget.runningThread,
+          methodChannel: _webfWidget.javaScriptChannel,
+          gestureListener: _webfWidget.gestureListener,
+          navigationDelegate: _webfWidget.navigationDelegate,
+          devToolsService: _webfWidget.devToolsService,
+          httpClientInterceptor: _webfWidget.httpClientInterceptor,
+          onCustomElementAttached: onCustomElementAttached,
+          onCustomElementDetached: onCustomElementDetached,
+          initialCookies: _webfWidget.initialCookies,
+          uriParser: _webfWidget.uriParser,
+          preloadedBundles: _webfWidget.preloadedBundles,
+          resizeToAvoidBottomInsets: resizeToAvoidBottomInsets);
 
     (context as _WebFRenderObjectElement).controller = controller;
 
@@ -399,7 +397,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
     OnControllerCreated? onControllerCreated = _webfWidget.onControllerCreated;
     if (onControllerCreated != null) {
       controller.controlledInitCompleter.future.then((_) {
-        onControllerCreated(controller);
+        onControllerCreated(controller!);
       });
     }
 

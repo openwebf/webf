@@ -809,7 +809,9 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   @override
-  void didChangePlatformBrightness() {}
+  void didChangePlatformBrightness() {
+    document.recalculateStyleImmediately();
+  }
 
   @override
   void didChangeTextScaleFactor() {}
@@ -947,6 +949,15 @@ class WebFController {
   List<BuildContext> buildContextStack = [];
   bool resizeToAvoidBottomInsets;
 
+  bool? _darkModeOverride;
+  set darkModeOverride(value) {
+    _darkModeOverride = value;
+  }
+
+  bool get isDarkMode {
+    return _darkModeOverride ?? ownerFlutterView.platformDispatcher.platformBrightness != Brightness.light;
+  }
+
   String? _name;
 
   String? get name => _name;
@@ -987,6 +998,8 @@ class WebFController {
   // The view entrypoint bundle.
   WebFBundle? _entrypoint;
   WebFBundle? get entrypoint => _entrypoint;
+  ui.Size? _viewportSize;
+  ui.Size? get viewportSize => _viewportSize;
 
   final WebFThread runningThread;
 
@@ -1000,9 +1013,7 @@ class WebFController {
     String? name,
     double? viewportWidth,
     double? viewportHeight,
-    bool showPerformanceOverlay = false,
     bool enableDebug = false,
-    bool autoExecuteEntrypoint = true,
     Color? background,
     GestureListener? gestureListener,
     WebFNavigationDelegate? navigationDelegate,
@@ -1282,6 +1293,7 @@ class WebFController {
   /// Using this mode can save up to 50% of loading time, while maintaining a high level of compatibility with the standard mode.
   /// It's safe and recommended to use this mode for all types of pages.
   Future<void> preload(WebFBundle bundle, {ui.Size? viewportSize}) async {
+    if (_preloadStatus == PreloadingStatus.done) return;
     controllerPreloadingCompleter = Completer();
 
     await controlledInitCompleter.future;
@@ -1289,6 +1301,7 @@ class WebFController {
     if (_preloadStatus != PreloadingStatus.none) return;
     if (_preRenderingStatus != PreRenderingStatus.none) return;
 
+    _viewportSize = viewportSize;
     // Update entrypoint.
     _entrypoint = bundle;
     _replaceCurrentHistory(bundle);
@@ -1305,6 +1318,7 @@ class WebFController {
       WebFProfiler.instance.startTrackUICommand();
     }
 
+    view.document.preloadViewportSize = _viewportSize;
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
     view.document.documentElement!.createRenderer();
@@ -1377,6 +1391,8 @@ class WebFController {
   /// These callbacks are triggered once the WebF widget is mounted into the Flutter tree.
   /// Apps optimized for this mode remain compatible with both `standard` and `preloading` modes.
   Future<void> preRendering(WebFBundle bundle) async {
+    if (_preRenderingStatus == PreRenderingStatus.done) return;
+
     controllerPreRenderingCompleter = Completer();
 
     await controlledInitCompleter.future;

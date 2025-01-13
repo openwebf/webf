@@ -4,7 +4,6 @@
  */
 
 import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 import 'package:webf/src/bridge/binding_object.dart';
 

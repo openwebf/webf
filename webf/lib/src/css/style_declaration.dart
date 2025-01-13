@@ -7,7 +7,6 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/html.dart';
-import 'package:webf/rendering.dart';
 import 'package:quiver/collection.dart';
 
 typedef StyleChangeListener = void Function(String property, String? original, String present, {String? baseHref});
@@ -481,8 +480,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     propertyNames.sort((left, right) {
-      final isVariableLeft = CSSVariable.isVariable(left) ? 1 : 0;
-      final isVariableRight = CSSVariable.isVariable(right) ? 1 : 0;
+      final isVariableLeft = CSSVariable.isCSSSVariableProperty(left) ? 1 : 0;
+      final isVariableRight = CSSVariable.isCSSSVariableProperty(right) ? 1 : 0;
       if (isVariableLeft == 1 || isVariableRight == 1) {
         return isVariableRight - isVariableLeft;
       }

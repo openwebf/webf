@@ -4,7 +4,6 @@
  */
 
 import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
 
 // CSS Flexible Box Layout: https://drafts.csswg.org/css-flexbox-1/
 

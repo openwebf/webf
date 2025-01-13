@@ -6,7 +6,6 @@ import 'dart:ui';
 
 import 'package:webf/css.dart';
 
-import '../svg/rendering/shape.dart';
 
 enum CSSFillRule {
   nonzero,

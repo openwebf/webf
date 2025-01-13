@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
@@ -35,22 +36,22 @@ class FirstPage extends StatefulWidget {
 }
 
 class FirstPageState extends State<FirstPage> {
-  late WebFController controller;
+  WebFController? controller;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    controller = WebFController(
+    controller = controller ?? WebFController(
       context,
       devToolsService: ChromeDevToolsService(),
     );
-    controller.preload(WebFBundle.fromUrl('assets:assets/bundle.html'));
+    controller!.preload(WebFBundle.fromUrl('assets:assets/bundle.html'), viewportSize: MediaQuery.of(context).size);
   }
 
   @override
   void dispose() {
     super.dispose();
-    controller.dispose();
+    controller?.dispose();
   }
 
   @override
@@ -63,7 +64,7 @@ class FirstPageState extends State<FirstPage> {
         child: ElevatedButton(
           onPressed: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) {
-              return WebFDemo(controller: controller);
+              return WebFDemo(controller: controller!);
             }));
           },
           child: const Text('Open WebF Page'),
@@ -84,6 +85,9 @@ class WebFDemo extends StatelessWidget {
         appBar: AppBar(
           title: Text('WebF Demo'),
         ),
+        floatingActionButton: FloatingActionButton(onPressed: () {
+          print(controller.view.getRootRenderObject()!.toStringDeep());
+        }),
         body: Center(
           // Center is a layout widget. It takes a single child and positions it
           // in the middle of the parent.

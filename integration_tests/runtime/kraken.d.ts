@@ -47,8 +47,10 @@ declare enum PointerSignalKind {
 
 type SimulatePointer = (list: [number, number, number, number?, number?, number?][], pointer: number) => void;
 type SimulateInputText = (chars: string) => void;
+type SimulateChangeDarkMode = (isDartMode: boolean) => void;
 declare const simulatePointer: SimulatePointer;
 declare const simulateInputText: SimulateInputText;
+declare const simulateChangeDarkMode: SimulateChangeDarkMode;
 
 interface Navigator {
   connection: {

@@ -2,7 +2,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:collection';
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
@@ -10,8 +9,6 @@ import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/launcher.dart';
-import 'element.dart';
-import 'node.dart';
 
 mixin ElementAdapterMixin on ElementBase {
   @override

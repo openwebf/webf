@@ -6,9 +6,9 @@
 import 'dart:collection';
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
@@ -149,6 +149,14 @@ class Document extends ContainerNode {
   EventTarget? get parentEventTarget => defaultView;
 
   RenderViewportBox? get viewport => controller.view.viewport;
+
+  ui.Size? _preloadViewportSize;
+
+  set preloadViewportSize(viewportSize) {
+    _preloadViewportSize = viewportSize;
+  }
+
+  ui.Size? get preloadViewportSize => _preloadViewportSize;
 
   @override
   Document get ownerDocument => this;
@@ -600,6 +608,17 @@ class Document extends ContainerNode {
     for (WidgetElement widgetElement in aliveWidgetElements) {
       widgetElement.reactiveRenderer();
     }
+  }
+
+  void recalculateStyleImmediately() {
+    var styleSheetNodes = styleNodeManager.styleSheetCandidateNodes;
+    styleSheetNodes.forEach((element) {
+      if (element is StyleElementMixin) {
+        element.reloadStyle();
+      } else if (element is LinkElement) {
+        element.fetchAndApplyCSSStyle();
+      }
+    });
   }
 
   @override

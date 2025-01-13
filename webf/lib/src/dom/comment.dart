@@ -4,7 +4,7 @@
  */
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
+import 'package:webf/bridge.dart';
 
 class Comment extends CharacterData {
   Comment([BindingContext? context]) : super(NodeType.COMMENT_NODE, context);

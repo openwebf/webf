@@ -3,7 +3,6 @@
  */
 
 import 'package:flutter/widgets.dart';
-import 'comment.dart';
 import 'node.dart';
 import 'node_list.dart';
 import 'container_node.dart';

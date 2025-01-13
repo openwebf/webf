@@ -284,6 +284,19 @@ static JSValue triggerGlobalError(JSContext* ctx, JSValueConst this_val, int arg
   return JS_NULL;
 }
 
+static JSValue changeDarkMode(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+  auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
+
+  if (argc == 0)
+    return JS_ThrowTypeError(ctx, "parameter required");
+
+  bool isDarkMode = JS_ToBool(ctx, argv[0]);
+
+  context->dartMethodPtr()->simulateChangeDarkMode(context->isDedicated(), context->contextId(), isDarkMode);
+
+  return JS_NULL;
+}
+
 struct ExecuteCallbackContext {
   ExecuteCallbackContext() = delete;
 
@@ -364,6 +377,7 @@ WebFTestContext::WebFTestContext(ExecutingContext* context)
       {"__webf_simulate_inputtext__", simulateInputText, 1},
       {"__webf_sync_buffer__", syncThreadBuffer, 0},
       {"__webf_trigger_global_error__", triggerGlobalError, 0},
+      {"__webf_change_dark_mode__", changeDarkMode, 1},
       {"__webf_parse_html__", parseHTML, 1},
   };
 
@@ -393,6 +407,7 @@ void WebFTestContext::registerTestEnvDartMethods(uint64_t* methodBytes, int32_t 
   dartMethodPtr->SetMatchImageSnapshot(reinterpret_cast<MatchImageSnapshot>(methodBytes[i++]));
   dartMethodPtr->SetMatchImageSnapshotBytes(reinterpret_cast<MatchImageSnapshotBytes>(methodBytes[i++]));
   dartMethodPtr->SetEnvironment(reinterpret_cast<Environment>(methodBytes[i++]));
+  dartMethodPtr->SetSimulateChangeDarkMode(reinterpret_cast<SimulateChangeDartMode>(methodBytes[i++]));
   dartMethodPtr->SetSimulatePointer(reinterpret_cast<SimulatePointer>(methodBytes[i++]));
   dartMethodPtr->SetSimulateInputText(reinterpret_cast<SimulateInputText>(methodBytes[i++]));
 

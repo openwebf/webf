@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
 import 'dart:collection';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
@@ -76,10 +77,26 @@ mixin CSSVariableMixin on RenderStyle {
     }
   }
 
-  void _notifyCSSVariableChanged(String identifier,String value) {
-    List<String>? propertyNames = _propertyDependencies[identifier];
-    propertyNames?.forEach((String propertyName) {
-      target.setRenderStyle(propertyName, value);
+  void _notifyCSSVariableChanged(String identifier, String value) {
+    List<String>? propertyNamesWithPattern = _propertyDependencies[identifier];
+    propertyNamesWithPattern?.forEach((String propertyNameWithPattern) {
+      List<String> group = propertyNameWithPattern.split('_');
+      String propertyName = group[0];
+      String? variableString;
+      if (group.length > 1) {
+        variableString = group[1];
+      }
+
+      String propertyValue = target.style.getPropertyValue(propertyName);
+      if (target.style.contains(propertyName) && CSSVariable.isCSSVariableValue(propertyValue)) {
+        scheduleMicrotask(() {
+          String propertyValue = variableString ?? value;
+          if (CSSColor.isColor(propertyValue)) {
+            CSSColor.clearCachedColorValue(propertyValue);
+          }
+          target.setRenderStyle(propertyName, variableString ?? value);
+        });
+      }
     });
 
     target.children.forEach((Element childElement) {

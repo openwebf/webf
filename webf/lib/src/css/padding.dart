@@ -4,7 +4,6 @@
  */
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
 
 mixin CSSPaddingMixin on RenderStyle {
   /// The amount to pad the child in each dimension.

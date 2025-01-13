@@ -9,10 +9,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
-import 'package:webf/widget.dart';
 import 'package:webf/rendering.dart';
 import 'node_data.dart';
-import 'node_traversal.dart';
 
 enum NodeType {
   ELEMENT_NODE,

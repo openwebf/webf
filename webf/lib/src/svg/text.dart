@@ -5,7 +5,6 @@
 import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 
-import 'rendering/text.dart';
 
 class SVGTextElement extends SVGTextPositioningElement {
   @override

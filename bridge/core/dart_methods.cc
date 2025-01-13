@@ -296,6 +296,22 @@ const char* DartMethodPointer::environment(bool is_dedicated, double context_id)
   return result;
 }
 
+void DartMethodPointer::simulateChangeDarkMode(bool is_dedicated, double context_id, bool is_dark_mode) const {
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::environment callSync START";
+#endif
+
+  dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, [&](bool cancel) -> void {
+    if (cancel)
+      return;
+    simulate_change_dart_mode_(context_id, is_dark_mode ? 1 : 0);
+  });
+
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::environment callSync END";
+#endif
+}
+
 void DartMethodPointer::simulatePointer(bool is_dedicated,
                                         void* ptr,
                                         MousePointer* mouse_pointer,
@@ -324,6 +340,10 @@ void DartMethodPointer::SetMatchImageSnapshotBytes(MatchImageSnapshotBytes func)
 
 void DartMethodPointer::SetEnvironment(Environment func) {
   environment_ = func;
+}
+
+void DartMethodPointer::SetSimulateChangeDarkMode(SimulateChangeDartMode func) {
+  simulate_change_dart_mode_ = func;
 }
 
 void DartMethodPointer::SetSimulateInputText(SimulateInputText func) {

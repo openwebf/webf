@@ -4,8 +4,6 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
-import 'package:webf/src/bridge/binding_object.dart';
-import 'package:webf/widget.dart';
 
 class CharacterData extends Node {
   CharacterData(NodeType type, [context]) : super(type, context);

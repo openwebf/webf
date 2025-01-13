@@ -5,7 +5,6 @@
 
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
-import 'package:webf/rendering.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 const Offset _DEFAULT_TRANSFORM_OFFSET = Offset.zero;

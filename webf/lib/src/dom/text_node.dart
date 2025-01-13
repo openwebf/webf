@@ -9,11 +9,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/bridge.dart';
-import 'package:webf/src/svg/rendering/text.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/src/css/computed_style_declaration.dart';
 
-import '../../svg.dart';
 
 const String WHITE_SPACE_CHAR = ' ';
 const String NEW_LINE_CHAR = '\n';
