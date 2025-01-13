@@ -176,7 +176,7 @@ const loader = function(source) {
           });
         }, 3000);
         ` : `
-        requestAnimationFrame(async () => {
+          requestAnimationFrame(async () => {
           ${scripts.length === 0 ? `await snapshotAction();` : scripts.join('\n')}
           done();
         });
