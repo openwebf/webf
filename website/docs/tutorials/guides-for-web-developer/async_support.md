@@ -32,8 +32,6 @@ let scrollY = await window.scrollY_async;
 
 The following list outlines the properties and methods that support asynchrony in WebF.
 
-### Docuemnt
-
 ### CSSStyleDeclaration
 
 #### Property
