@@ -59,9 +59,6 @@ void main() async {
   Process mockHttpServer = await startHttpMockServer(mockServerPort);
   sleep(Duration(seconds: 2));
 
-  // FIXME: This is a workaround for testcases.
-  debugOverridePDefaultStyle({DISPLAY: BLOCK});
-
   // Start local HTTP server.
   var httpServer = LocalHttpServer.getInstance();
   print('Local HTTP server started at: ${httpServer.getUri()}');

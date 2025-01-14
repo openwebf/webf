@@ -44,16 +44,33 @@ const normalizeLocalPath = (originalPath) => {
 // Handle @import in <style>
 const processStyleImports = (styleContent, filepath, buildPath) => {
   const importRegex = /@import\s+(?:url\(['"]?|['"])(.*?)['"]?\)?;/g;
-  return styleContent.replace(importRegex, (match, importPath) => {
+  const backgroundRegex = /background(?:-image)?:\s*url\(['"]?(.*?)['"]?\)/g;
+
+  styleContent = styleContent.replace(importRegex, (match, importPath) => {
     if (!importPath.startsWith('http') && !importPath.startsWith('//')) {
       const absolutePath = path.resolve(path.dirname(filepath), importPath);
       if (fs.existsSync(absolutePath) && absolutePath.includes('blink')) {
         copyFileWithParentDir(absolutePath, buildPath);
       }
-      return `@import '${normalizeLocalPath(importPath)}';`;
+      // return `@import '${normalizeLocalPath(importPath)}';`;
+      return match.replace(importPath, normalizeLocalPath(importPath));
     }
     return match;
   });
+
+  styleContent = styleContent.replace(backgroundRegex, (match, urlPath) => {
+    if (!urlPath.startsWith('http') && !urlPath.startsWith('//')) {
+      const absolutePath = path.resolve(path.dirname(filepath), urlPath);
+      if (fs.existsSync(absolutePath) && absolutePath.includes('blink')) {
+        copyFileWithParentDir(absolutePath, buildPath);
+      }
+      // return `background: url("${normalizeLocalPath(urlPath)}");`;
+      return match.replace(urlPath, normalizeLocalPath(urlPath));
+    }
+    return match;
+  });
+
+  return styleContent;
 }
 
 const traverseParseHTML = (ele, scripts, filepath, buildPath) => {
@@ -159,12 +176,12 @@ const loader = function(source) {
           });
         }, 3000);
         ` : `
-        requestAnimationFrame(async () => {
+          requestAnimationFrame(async () => {
           ${scripts.length === 0 ? `await snapshotAction();` : scripts.join('\n')}
           done();
         });
         `}
-      })
+      }, 8000)
     });
   `;
 };

@@ -43,7 +43,7 @@ if (process.env.SPEC_SCOPE) {
  getSnapshotOption = (file) => {
   for (const group of specGroup) {
     if (group.specs.some(pattern => minimatch(file, pattern))) {
-      return { snapshotRoot: group.snapshotRoot || null, delayForSnapshot: false };
+      return { snapshotRoot: group.snapshotRoot || null, delayForSnapshot: group.delayForSnapshot };
     }
   }
   return { snapshotRoot: null, delayForSnapshot: false };
