@@ -1,7 +1,6 @@
-
 ---
 sidebar_position: 11
-title: Asynchrony Property and Method
+title: Asynchrony Support
 ---
 
 # Asynchrony Support
@@ -32,9 +31,6 @@ let scrollY = await window.scrollY_async;
 ## Asynchrony List
 
 The following list outlines the properties and methods that support asynchrony in WebF.
-
-
-### Docuemnt
 
 ### CSSStyleDeclaration
 #### Property
