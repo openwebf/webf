@@ -1,26 +1,26 @@
 ---
 sidebar_position: 11
-title: Asynchrony Support
+title: Asynchronous Web API
 ---
 
 # Asynchrony Support
-Asynchrony is a new feature in WebF that allows properties and methods to be accessed both synchronously and asynchronously for classes that support Asynchrony. This capability is particularly useful for preventing UI freezes and improving the overall performance of WebF applications.
 
+Asynchrony is a new feature in WebF that allows properties and methods of Element and WidgetElement to be accessed both synchronously and asynchronously. This capability is particularly beneficial as it leverages the advantages of dedicated threading, reduces blocking on the Flutter UI thread, and improves the overall performance of WebF applications.
 
 ## How to Use
-To access a property or call a method asynchronously, simply add the "_async" suffix to the end of the original property or method. The arguments and return value remain unchanged.
+
+To access a property or call a method asynchronously, simply add the "_async" suffix to the end of the original property or method. The arguments and return values remain unchanged.
 
 Here’s an example:
 
-
 ```js
-// In synchrony
+// Synchronously
 // Call the scroll method and access scrollX/scrollY properties
 window.scroll(0, 40);
 let scrollX = window.scrollX;
 let scrollY = window.scrollY;
 
-// In asynchrony
+// Asynchronously
 // Call the scroll method asynchronously with scroll_async
 // Access scrollX and scrollY properties asynchronously with scrollX_async and scrollY_async
 await window.scroll_async(0, 40);
@@ -28,11 +28,12 @@ let scrollX = await window.scrollX_async;
 let scrollY = await window.scrollY_async;
 ```
 
-## Asynchrony List
+## Supported API
 
 The following list outlines the properties and methods that support asynchrony in WebF.
 
 ### CSSStyleDeclaration
+
 #### Property
 * cssText
 * length
