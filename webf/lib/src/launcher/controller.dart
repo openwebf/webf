@@ -1207,7 +1207,8 @@ class WebFController {
 
     _isComplete = false;
 
-    RenderViewportBox rootRenderObject = view.viewport!;
+    RenderViewportBox? rootRenderObject = view.viewport;
+    if (rootRenderObject == null) return;
 
     await unload();
 

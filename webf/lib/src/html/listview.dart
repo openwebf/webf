@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 
 const LISTVIEW = 'LISTVIEW';
+const WEBF_LISTVIEW = 'WEBF-LISTVIEW';
 
 class FlutterListViewElement extends WidgetElement {
   FlutterListViewElement(BindingContext? context) : super(context);
