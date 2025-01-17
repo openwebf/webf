@@ -92,7 +92,7 @@ class TextNode extends CharacterData {
   RenderBox? get attachedRenderer {
     if (managedByFlutterWidget) {
       return _attachedFlutterWidgetElements
-          .firstWhereOrNull((flutterElement) => flutterElement.renderObject.attached)
+          .firstWhereOrNull((flutterElement) => flutterElement.mounted)
           ?.renderObject;
     }
 
@@ -108,7 +108,7 @@ class TextNode extends CharacterData {
   bool get isRendererAttachedToSegmentTree {
     if (managedByFlutterWidget) {
       for (var renderText in _attachedFlutterWidgetElements) {
-        if (renderText.renderObject.parent != null) return true;
+        if (renderText.mounted) return true;
       }
       return false;
     }
