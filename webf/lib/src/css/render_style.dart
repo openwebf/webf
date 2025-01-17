@@ -23,7 +23,7 @@ import 'svg.dart';
 
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
 
-enum RenderObjectUpdateReason { updateChildNodes, updateRenderReplaced, toRepaintBoundary, addEvent }
+enum RenderObjectUpdateReason { updateChildNodes, updateRenderReplaced, toRepaintBoundary, addEvent, updateDisplay }
 
 typedef SomeRenderBoxModelHandlerCallback = bool Function(RenderBoxModel renderBoxModel);
 typedef EveryRenderBoxModelHandlerCallback = bool Function(flutter.Element?, RenderBoxModel renderBoxModel);
@@ -392,6 +392,7 @@ abstract class RenderStyle extends DiagnosticableTree {
         }
       });
     });
+    SchedulerBinding.instance.scheduleFrame();
   }
 
   bool someRenderBoxSatisfy(SomeRenderBoxModelHandlerCallback callback) {
@@ -1086,6 +1087,11 @@ abstract class RenderStyle extends DiagnosticableTree {
     }
   }
 
+  void removeAllRenderObject() {
+    _widgetRenderObjects.clear();
+    _domRenderObjects = null;
+  }
+
   void setDomRenderObject(RenderBoxModel? renderBoxModel) {
     _domRenderObjects = renderBoxModel;
   }
@@ -1099,7 +1105,6 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   void addOrUpdateWidgetRenderObjects(
       flutter.RenderObjectElement ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
-    assert(!_widgetRenderObjects.containsKey(ownerRenderObjectElement));
     _widgetRenderObjects[ownerRenderObjectElement] = targetRenderBoxModel;
   }
 
@@ -1135,7 +1140,7 @@ abstract class RenderStyle extends DiagnosticableTree {
   void visitChildren(RenderObjectVisitor visitor) {
     if (target.managedByFlutterWidget) {
       everyWidgetRenderBox((_, renderBoxMode) {
-        visitor(renderBoxMode);
+        renderBoxMode.visitChildren(visitor);
         return true;
       });
       return;
