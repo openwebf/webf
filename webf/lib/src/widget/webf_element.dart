@@ -89,14 +89,6 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
     dom.Element? parentElement = findClosestAncestorHTMLElement(this);
 
     if (parentElement != null) {
-      if (parentElement is RouterLinkElement) {
-        // @TODO: RouterLink Support
-        // Migrate previous childNodes into RouterLinkElement.
-        // parentElement.cachedChildNodes.forEach((node) {
-        //   htmlElement!.appendChild(node);
-        // });
-      }
-
       if (widget.inlineStyle != null) {
         fullFillInlineStyle(widget.inlineStyle!);
       }
