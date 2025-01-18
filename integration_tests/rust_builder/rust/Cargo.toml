@@ -1,0 +1,13 @@
+[package]
+name = "rust_native_api_tests"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+webf-sys = "0.16.0"
+
+[patch.crates-io]
+webf-sys = { path = "../../../bridge/rusty_webf_sys" }
