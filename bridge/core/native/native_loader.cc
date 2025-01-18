@@ -40,8 +40,6 @@ static void ExecuteNativeLibrary(PluginLibraryEntryPoint entry_point,
     native_library_load_context->context->RunRustFutureTasks();
   }
 
-  native_library_load_context->promise_resolver->Resolve(JS_UNDEFINED);
-
   delete native_library_load_context;
 }
 
