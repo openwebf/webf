@@ -397,6 +397,8 @@ void ExecutingContext::SetRunRustFutureTasks(const std::shared_ptr<WebFNativeFun
 }
 
 void ExecutingContext::RunRustFutureTasks() {
+  if (run_rust_future_tasks_ == nullptr)
+    return;
   run_rust_future_tasks_->Invoke(this, 0, nullptr);
 }
 
