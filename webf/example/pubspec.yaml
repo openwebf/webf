@@ -34,3 +34,4 @@ flutter:
     - vue_project/dist/
     - vue_project/dist/js/
     - vue_project/dist/css/
+    - vue_project/dist/img/
