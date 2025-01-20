@@ -4,38 +4,74 @@
  */
 
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
 
+import 'custom_elements/icon.dart';
+import 'custom_elements/search.dart';
+import 'custom_elements/select.dart';
+import 'custom_elements/button.dart';
+import 'custom_elements/bottom_sheet.dart';
+import 'custom_elements/tab.dart';
+
 void main() {
+  WebF.defineCustomElement('flutter-tab', (context) => FlutterTab(context));
+  WebF.defineCustomElement('flutter-tab-item', (context) => FlutterTabItem(context));
+  WebF.defineCustomElement('flutter-icon', (context) => FlutterIcon(context));
+  WebF.defineCustomElement('flutter-search', (context) => FlutterSearch(context));
+  WebF.defineCustomElement('flutter-select', (context) => FlutterSelect(context));
+  WebF.defineCustomElement('flutter-button', (context) => FlutterButton(context));
+  WebF.defineCustomElement('flutter-bottom-sheet', (context) => FlutterBottomSheet(context));
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+class TodoMVCPage extends StatelessWidget {
+  const TodoMVCPage({super.key, required this.title, required this.controller});
+  final WebFController controller;
+  final String title;
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Kraken Browser',
-      // theme: ThemeData.dark(),
-      debugShowCheckedModeBanner: false,
-      home: FirstPage(title: 'Landing Bay'),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: WebFRouterView(controller: controller, path: '/todomvc'),
     );
   }
 }
 
-class FirstPage extends StatefulWidget {
-  const FirstPage({Key? key, required this.title}) : super(key: key);
-  final String title;
+class SecondScreen extends StatelessWidget {
+  const SecondScreen({super.key});
 
   @override
-  State<StatefulWidget> createState() {
-    return FirstPageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Second Screen'),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            // Navigate back to first screen when tapped.
+          },
+          child: const Text('Go back!'),
+        ),
+      ),
+    );
   }
 }
 
-class FirstPageState extends State<FirstPage> {
+class MyApp extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() {
+    return MyAppState();
+  }
+}
+
+class MyAppState extends State<MyApp> {
   WebFController? controller;
 
   @override
@@ -43,9 +79,24 @@ class FirstPageState extends State<FirstPage> {
     super.didChangeDependencies();
     controller = controller ?? WebFController(
       context,
-      devToolsService: ChromeDevToolsService(),
+      devToolsService: kDebugMode ? ChromeDevToolsService() : null,
     );
-    controller!.preload(WebFBundle.fromUrl('assets:assets/bundle.html'), viewportSize: MediaQuery.of(context).size);
+    controller!.preload(WebFBundle.fromUrl('http://localhost:8081/'), viewportSize: MediaQuery.of(context).size);
+    // controller!.preload(WebFBundle.fromUrl('assets:///vue_project/dist/index.html'));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'WebF Example App',
+      initialRoute: '/',
+      routes: {
+        '/todomvc': (context) => TodoMVCPage(title: 'TodoMVC', controller: controller!),
+      },
+      // theme: ThemeData.dark(),
+      debugShowCheckedModeBanner: false,
+      home: FirstPage(title: 'Landing Bay', controller: controller!),
+    );
   }
 
   @override
@@ -53,12 +104,18 @@ class FirstPageState extends State<FirstPage> {
     super.dispose();
     controller?.dispose();
   }
+}
+
+class FirstPage extends StatelessWidget {
+  const FirstPage({Key? key, required this.title, required this.controller}) : super(key: key);
+  final String title;
+  final WebFController controller;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(title),
       ),
       body: Center(
         child: ElevatedButton(
