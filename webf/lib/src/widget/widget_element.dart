@@ -31,6 +31,9 @@ abstract class WidgetElement extends dom.Element {
     _state = newState;
   }
 
+  @override
+  dom.ChildNodeList get childNodes => super.childNodes as dom.ChildNodeList;
+
   SharedRenderWidgetAdapter? attachedAdapter;
 
   bool isRouterLinkElement = false;
@@ -464,16 +467,12 @@ class RenderWidgetElement extends SingleChildRenderObjectElement {
 
   @override
   void mount(Element? parent, Object? newSlot) {
+    widget.widgetElement.applyStyle(widget.widgetElement.style);
+    widget.widgetElement.style.flushPendingProperties();
+
     widget.widgetElement.willAttachRenderer(this);
     super.mount(parent, newSlot);
     widget.widgetElement.didAttachRenderer(this);
-
-    widget.widgetElement.applyStyle(widget.widgetElement.style);
-
-    if (widget.widgetElement.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
-      // Flush pending style before child attached.
-      widget.widgetElement.style.flushPendingProperties();
-    }
   }
 
   @override

@@ -440,6 +440,21 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     _pendingProperties[propertyName] = CSSPropertyValue(normalizedValue, baseHref: baseHref);
   }
 
+  void flushDisplayProperties() {
+    Element? _target = target;
+    // If style target element not exists, no need to do flush operation.
+    if (_target == null) return;
+
+    if (_pendingProperties.containsKey(DISPLAY) &&
+        _target.isConnected) {
+      CSSPropertyValue? prevValue = _properties[DISPLAY];
+      CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
+      _properties[DISPLAY] = currentValue;
+      _pendingProperties.remove(DISPLAY);
+      _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
+    }
+  }
+
   void flushPendingProperties() {
     Element? _target = target;
     // If style target element not exists, no need to do flush operation.
@@ -455,7 +470,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
 
-    if (_pendingProperties.isEmpty || !_target.renderStyle.hasRenderBox()) {
+    if (_pendingProperties.isEmpty || (!_target.managedByFlutterWidget && !_target.renderStyle.hasRenderBox())) {
       return;
     }
 

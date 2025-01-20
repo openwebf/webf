@@ -1269,6 +1269,28 @@ abstract class Element extends ContainerNode
     }
   }
 
+  void _updateHostingWidgetWithDisplay() {
+    CSSDisplay presentDisplay = renderStyle.display;
+
+    if (parentElement == null || !parentElement!.isConnected) return;
+
+    assert(managedByFlutterWidget);
+
+    // Destroy renderer of element when display is changed to none.
+    if (presentDisplay == CSSDisplay.none) {
+      renderStyle.removeAllRenderObject();
+      renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.updateDisplay);
+      return;
+    }
+
+    renderStyle.widgetRenderObjects.forEach((renderObjectElement, renderObject) {
+      willAttachRenderer(renderObjectElement);
+      didAttachRenderer(renderObjectElement);
+    });
+
+    renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.updateDisplay);
+  }
+
   void setRenderStyleProperty(String name, value) {
     if (renderStyle.target.disposed) return;
 
@@ -1298,10 +1320,15 @@ abstract class Element extends ContainerNode
       case DISPLAY:
         assert(oldValue != null);
         if (value != oldValue) {
-          _updateRenderBoxModelWithDisplay();
+          if (!managedByFlutterWidget) {
+            _updateRenderBoxModelWithDisplay();
+          } else {
+            _updateHostingWidgetWithDisplay();
+          }
         }
         break;
       case OVERFLOW_X:
+        if (managedByFlutterWidget) return;
         assert(oldValue != null);
         CSSOverflowType oldEffectiveOverflowY = oldValue;
         updateOrCreateRenderBoxModel();
@@ -1315,6 +1342,7 @@ abstract class Element extends ContainerNode
         updateOverflowRenderBox();
         break;
       case OVERFLOW_Y:
+        if (managedByFlutterWidget) return;
         assert(oldValue != null);
         CSSOverflowType oldEffectiveOverflowX = oldValue;
         updateOrCreateRenderBoxModel();
@@ -1328,6 +1356,7 @@ abstract class Element extends ContainerNode
         updateOverflowRenderBox();
         break;
       case POSITION:
+        if (managedByFlutterWidget) return;
         assert(oldValue != null);
         _updateRenderBoxModelWithPosition(oldValue);
         break;

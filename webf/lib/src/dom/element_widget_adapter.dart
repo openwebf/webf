@@ -58,6 +58,7 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
         case RenderObjectUpdateReason.updateChildNodes:
         case RenderObjectUpdateReason.updateRenderReplaced:
         case RenderObjectUpdateReason.toRepaintBoundary:
+        case RenderObjectUpdateReason.updateDisplay:
           break;
         case RenderObjectUpdateReason.addEvent:
           _hasEvent = true;
@@ -197,16 +198,14 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
 
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
+    webFElement.applyStyle(webFElement.style);
+    webFElement.style.flushDisplayProperties();
+
     webFElement.willAttachRenderer(this);
     super.mount(parent, newSlot);
     webFElement.didAttachRenderer();
 
-    webFElement.applyStyle(webFElement.style);
-
-    if (webFElement.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
-      // Flush pending style before child attached.
-      webFElement.style.flushPendingProperties();
-    }
+    webFElement.style.flushPendingProperties();
   }
 
   @override

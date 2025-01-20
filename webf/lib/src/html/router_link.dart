@@ -32,13 +32,6 @@ class RouterLinkElement extends WidgetElement {
   void attachWidget(Widget widget) {
     if (isRouterLinkElement && _path.isNotEmpty) {
       ownerView.setHybridRouterView(_path, widget);
-      for(var node in childNodes) {
-        cachedChildNodes.add(node);
-      }
-
-      cachedChildNodes.forEach((node) {
-        removeChild(node);
-      });
     } else {
       super.attachWidget(widget);
     }
@@ -66,9 +59,9 @@ class RouterLinkElement extends WidgetElement {
 
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
-    return WebFHTMLElement(tagName: 'HTML', children: childNodes.toWidgetList(), inlineStyle: {
-      'overflow': 'auto',
-      'position': 'relative'
+    return WebFHTMLElement(tagName: 'DIV', children: childNodes.toWidgetList(), inlineStyle: {
+      // 'overflow': 'auto',
+      // 'position': 'relative'
     }, controller: ownerDocument.controller,);
   }
 }

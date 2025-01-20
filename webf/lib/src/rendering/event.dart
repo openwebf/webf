@@ -37,8 +37,6 @@ mixin RenderEventListenerMixin on RenderBox {
       if (event is PointerDownEvent) {
         // Store the first handleEvent the event path list.
         GestureDispatcher? dispatcher = gestureDispatcher;
-        assert(dispatcher != null, 'GestureDispatcher is not implemented, the event handing won\'t work properly. '
-            'If you are rendering WebF renderObjects outside of WebF, You needs to wrap it with [Portal] widget.');
         if (dispatcher != null && dispatcher.getEventPath().isEmpty) {
           dispatcher.setEventPath(getEventTarget!());
         }
