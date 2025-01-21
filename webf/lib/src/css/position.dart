@@ -129,7 +129,7 @@ mixin CSSPositionMixin on RenderStyle {
     // to bubble up in the RenderObject tree.
     if (isSelfParentDataAreRenderLayoutParentData()) {
       RenderStyle renderStyle = this;
-      RenderStyle? parentRenderStyle = renderStyle.parent;
+      RenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
       // The z-index CSS property sets the z-order of a positioned element and its descendants or flex items.
       if (renderStyle.position != DEFAULT_POSITION_TYPE ||
           parentRenderStyle?.effectiveDisplay == CSSDisplay.flex ||

@@ -86,7 +86,6 @@ class SVGRenderBoxBuilder {
           assert(parent is RenderSVGContainer);
           parent.insert(renderBox);
           // We need to build renderStyle tree manually.
-          renderBox.renderStyle.parent = parent.renderStyle;
         }
 
         return renderBox;

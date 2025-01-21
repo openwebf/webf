@@ -154,10 +154,10 @@ class CSSLengthValue {
         // and font size of the element itself, in the case of other properties like width.
         if (realPropertyName == FONT_SIZE) {
           // If root element set fontSize as em unit.
-          if (renderStyle!.parent == null) {
+          if (renderStyle!.getParentRenderStyle() == null) {
             _computedValue = value! * 16;
           } else {
-            _computedValue = value! * renderStyle!.parent!.fontSize.computedValue;
+            _computedValue = value! * renderStyle!.getParentRenderStyle()!.fontSize.computedValue;
           }
         } else {
           _computedValue = value! * renderStyle!.fontSize.computedValue;
@@ -165,7 +165,7 @@ class CSSLengthValue {
         break;
       case CSSLengthType.REM:
         // If root element set fontSize as rem unit.
-        if (renderStyle!.parent == null) {
+        if (renderStyle!.getParentRenderStyle() == null) {
           _computedValue = value! * 16;
         } else {
           // Font rem is calculated against the root element's font size.
@@ -227,10 +227,10 @@ class CSSLengthValue {
         switch (realPropertyName) {
           case FONT_SIZE:
             // Relative to the parent font size.
-            if (renderStyle!.parent == null) {
+            if (renderStyle!.getParentRenderStyle() == null) {
               _computedValue = value! * 16;
             } else {
-              _computedValue = value! * renderStyle!.parent!.fontSize.computedValue;
+              _computedValue = value! * renderStyle!.getParentRenderStyle()!.fontSize.computedValue;
             }
             break;
           case LINE_HEIGHT:
@@ -258,7 +258,7 @@ class CSSLengthValue {
             // There are two exceptions when percentage height is resolved against actual render height of parent:
             // 1. positioned element
             // 2. parent is flex item
-            RenderStyle? grandParentRenderStyle = parentRenderStyle?.parent;
+            RenderStyle? grandParentRenderStyle = parentRenderStyle?.getParentRenderStyle();
             bool isGrandParentFlexLayout = grandParentRenderStyle?.display == CSSDisplay.flex ||
                 grandParentRenderStyle?.display == CSSDisplay.inlineFlex;
 
@@ -303,7 +303,7 @@ class CSSLengthValue {
           case FLEX_BASIS:
             // Flex-basis computation is called in RenderFlexLayout which
             // will ensure parent exists.
-            RenderStyle parentRenderStyle = renderStyle!.parent!;
+            RenderStyle parentRenderStyle = renderStyle!.getParentRenderStyle()!;
             double? mainContentSize =
                 parentRenderStyle.flexDirection == FlexDirection.row ? parentContentBoxWidth : parentContentBoxHeight;
             if (mainContentSize != null) {

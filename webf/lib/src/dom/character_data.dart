@@ -17,10 +17,10 @@ class CharacterData extends Node {
   }
 
   @override
-  RenderBox? get domRenderer => throw UnimplementedError();
+  RenderBox? get domRenderer => null;
 
   @override
-  RenderBox? get attachedRenderer => throw UnimplementedError();
+  RenderBox? get attachedRenderer => null;
 
   @override
   flutter.Widget toWidget({Key? key}) {

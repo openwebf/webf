@@ -36,9 +36,11 @@ class FlutterListViewElement extends WidgetElement {
         child: ListView.builder(
           itemCount: childNodes.length,
           itemBuilder: (context, index) {
-            return WebFHTMLElement(tagName: 'DIV', controller: ownerDocument.controller, children: [
-              childNodes.elementAt(index).toWidget()
-            ]);
+            return WebFHTMLElement(
+                tagName: 'DIV',
+                controller: ownerDocument.controller,
+                parentElement: this,
+                children: [childNodes.elementAt(index).toWidget()]);
           },
           padding: const EdgeInsets.all(0),
           controller: controller,

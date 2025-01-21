@@ -36,7 +36,7 @@ mixin CSSVariableMixin on RenderStyle {
       return variable!.defaultValue;
     }
     // Inherits from renderStyle tree.
-    return parent?.getCSSVariable(identifier, propertyName);
+    return getParentRenderStyle()?.getCSSVariable(identifier, propertyName);
   }
 
   CSSVariable? _getRawVariable(String identifier) {

@@ -25,8 +25,8 @@ mixin CSSTextMixin on RenderStyle {
   CSSColor get color {
     // Get style from self or closest parent if specified style property is not set
     // due to style inheritance.
-    if (_color == null && parent != null) {
-      return parent!.color;
+    if (_color == null && getParentRenderStyle() != null) {
+      return getParentRenderStyle()!.color;
     }
 
     // The root element has no color, and the color is initial.
@@ -94,8 +94,8 @@ mixin CSSTextMixin on RenderStyle {
   FontWeight get fontWeight {
     // Get style from self or closest parent if specified style property is not set
     // due to style inheritance.
-    if (_fontWeight == null && parent != null) {
-      return parent!.fontWeight;
+    if (_fontWeight == null && getParentRenderStyle() != null) {
+      return getParentRenderStyle()!.fontWeight;
     }
 
     // The root element has no fontWeight, and the fontWeight is initial.
@@ -115,8 +115,8 @@ mixin CSSTextMixin on RenderStyle {
   FontStyle get fontStyle {
     // Get style from self or closest parent if specified style property is not set
     // due to style inheritance.
-    if (_fontStyle == null && parent != null) {
-      return parent!.fontStyle;
+    if (_fontStyle == null && getParentRenderStyle() != null) {
+      return getParentRenderStyle()!.fontStyle;
     }
 
     // The root element has no fontWeight, and the fontWeight is initial.
@@ -136,8 +136,8 @@ mixin CSSTextMixin on RenderStyle {
   List<String>? get fontFamily {
     // Get style from self or closest parent if specified style property is not set
     // due to style inheritance.
-    if (_fontFamily == null && parent != null) {
-      return parent!.fontFamily;
+    if (_fontFamily == null && getParentRenderStyle() != null) {
+      return getParentRenderStyle()!.fontFamily;
     }
     return _fontFamily ?? CSSText.DEFAULT_FONT_FAMILY_FALLBACK;
   }
@@ -157,8 +157,8 @@ mixin CSSTextMixin on RenderStyle {
   CSSLengthValue get fontSize {
     // Get style from self or closest parent if specified style property is not set
     // due to style inheritance.
-    if (_fontSize == null && parent != null) {
-      return parent!.fontSize;
+    if (_fontSize == null && getParentRenderStyle() != null) {
+      return getParentRenderStyle()!.fontSize;
     }
     return _fontSize ?? CSSText.DEFAULT_FONT_SIZE;
   }
@@ -208,8 +208,8 @@ mixin CSSTextMixin on RenderStyle {
 
   @override
   CSSLengthValue get lineHeight {
-    if (_lineHeight == null && parent != null) {
-      return parent!.lineHeight;
+    if (_lineHeight == null && getParentRenderStyle() != null) {
+      return getParentRenderStyle()!.lineHeight;
     }
 
     return _lineHeight ?? CSSText.DEFAULT_LINE_HEIGHT;
@@ -228,8 +228,8 @@ mixin CSSTextMixin on RenderStyle {
   CSSLengthValue? get letterSpacing {
     // Get style from self or closest parent if specified style property is not set
     // due to style inheritance.
-    if (_letterSpacing == null && parent != null) {
-      return parent!.letterSpacing;
+    if (_letterSpacing == null && getParentRenderStyle() != null) {
+      return getParentRenderStyle()!.letterSpacing;
     }
     return _letterSpacing;
   }
@@ -247,8 +247,8 @@ mixin CSSTextMixin on RenderStyle {
   CSSLengthValue? get wordSpacing {
     // Get style from self or closest parent if specified style property is not set
     // due to style inheritance.
-    if (_wordSpacing == null && parent != null) {
-      return parent!.wordSpacing;
+    if (_wordSpacing == null && getParentRenderStyle() != null) {
+      return getParentRenderStyle()!.wordSpacing;
     }
     return _wordSpacing;
   }
@@ -266,8 +266,8 @@ mixin CSSTextMixin on RenderStyle {
   List<Shadow>? get textShadow {
     // Get style from self or closest parent if specified style property is not set
     // due to style inheritance.
-    if (_textShadow == null && parent != null) {
-      return parent!.textShadow;
+    if (_textShadow == null && getParentRenderStyle() != null) {
+      return getParentRenderStyle()!.textShadow;
     }
     return _textShadow;
   }
@@ -285,8 +285,8 @@ mixin CSSTextMixin on RenderStyle {
   WhiteSpace get whiteSpace {
     // Get style from self or closest parent if specified style property is not set
     // due to style inheritance.
-    if (_whiteSpace == null && parent != null) {
-      return parent!.whiteSpace;
+    if (_whiteSpace == null && getParentRenderStyle() != null) {
+      return getParentRenderStyle()!.whiteSpace;
     }
     return _whiteSpace ?? WhiteSpace.normal;
   }
@@ -350,8 +350,8 @@ mixin CSSTextMixin on RenderStyle {
   TextAlign get textAlign {
     // Get style from self or closest parent if specified style property is not set
     // due to style inheritance.
-    if (_textAlign == null && parent != null) {
-      return parent!.textAlign;
+    if (_textAlign == null && getParentRenderStyle() != null) {
+      return getParentRenderStyle()!.textAlign;
     }
     return _textAlign ?? TextAlign.start;
   }

@@ -9,12 +9,14 @@ import 'package:webf/webf.dart';
 class WebFHTMLElement extends WebFRenderLayoutWidgetAdaptor {
   final String tagName;
   final WebFController controller;
+  final dom.Element? parentElement;
   final Map<String, String>? inlineStyle;
 
   WebFHTMLElement({
     required this.tagName,
     required this.controller,
     Key? key,
+    this.parentElement,
     required List<Widget> children,
     this.inlineStyle,
   }) : super(key: key, children: children);
@@ -82,6 +84,7 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
         tagName,
         BindingContext(controller.view, controller.view.contextId, allocateNewBindingObject()));
     element.managedByFlutterWidget = true;
+    element.parentOrShadowHostNode = widget.parentElement;
     _webFElement = element;
 
     super.mount(parent, newSlot);

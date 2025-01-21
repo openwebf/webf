@@ -834,7 +834,7 @@ class RenderBoxModel extends RenderBox
       // Element with a position value absolute, relative, fixed or sticky.
       renderStyle.position != CSSPositionType.static ||
           // Element that is a child of a flex container with z-index value other than auto.
-          ((renderStyle.parent!.display == CSSDisplay.flex || renderStyle.parent!.display == CSSDisplay.inlineFlex) &&
+          ((renderStyle.getParentRenderStyle()!.display == CSSDisplay.flex || renderStyle.getParentRenderStyle()!.display == CSSDisplay.inlineFlex) &&
               renderStyle.zIndex != null) ||
           // Element with a opacity value less than 1.
           renderStyle.opacity < 1.0 ||

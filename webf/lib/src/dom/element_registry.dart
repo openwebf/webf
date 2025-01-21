@@ -22,6 +22,11 @@ final Map<String, Map<String, ElementCreator>> _registries = {};
 
 class _UnknownHTMLElement extends Element {
   _UnknownHTMLElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => {
+    'display': 'block'
+  };
 }
 
 class _UnknownNamespaceElement extends Element {
