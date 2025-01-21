@@ -326,15 +326,11 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
           callback();
         }
 
-        switch(reason) {
-          case RenderObjectUpdateReason.updateChildNodes:
-          case RenderObjectUpdateReason.updateRenderReplaced:
-          case RenderObjectUpdateReason.toRepaintBoundary:
-            break;
-          case null:
-            break;
-          case RenderObjectUpdateReason.addEvent:
+        switch(reason.runtimeType) {
+          case RenderObjectUpdateReason:
             _hasEvent = true;
+            break;
+          default:
             break;
         }
       });

@@ -20,7 +20,7 @@ final Map<String, ElementCreator> _svgRegistry = {};
 
 final Map<String, Map<String, ElementCreator>> _registries = {};
 
-class _UnknownHTMLElement extends HTMLElement {
+class _UnknownHTMLElement extends Element {
   _UnknownHTMLElement([BindingContext? context]) : super(context);
 }
 

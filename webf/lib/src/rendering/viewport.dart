@@ -102,7 +102,7 @@ class RenderViewportBox extends RenderBox
       final ContainerBoxParentData<RenderObject> childParentData =
           child.parentData as ContainerBoxParentData<RenderObject>;
 
-      RenderBoxModel rootRenderLayoutBox = child as RenderLayoutBox;
+      RenderBoxModel rootRenderLayoutBox = child as RenderBoxModel;
 
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.pauseCurrentLayoutOp();

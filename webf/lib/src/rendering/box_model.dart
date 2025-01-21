@@ -770,7 +770,7 @@ class RenderBoxModel extends RenderBox
 
   @override
   String toStringShort() {
-    return super.toStringShort() + ' ${renderStyle.target}';
+    return super.toStringShort() + ' ${renderStyle.target}[managedByFlutter=${renderStyle.target.managedByFlutterWidget}]';
   }
 
   bool get isSizeTight {
@@ -1279,8 +1279,8 @@ class RenderBoxModel extends RenderBox
     // Positioned renderBoxModel will not trigger parent to relayout. Needs to update it's offset for itself.
     if (parentData is RenderLayoutParentData) {
       RenderLayoutParentData selfParentData = parentData as RenderLayoutParentData;
-      RenderBoxModel? parentBox = parent as RenderBoxModel?;
-      if (selfParentData.isPositioned && parentBox!.hasSize) {
+      RenderObject? parentBox = parent;
+      if (selfParentData.isPositioned && parentBox is RenderBoxModel && parentBox.hasSize) {
         CSSPositionedLayout.applyPositionedChildOffset(parentBox, this);
       }
     }

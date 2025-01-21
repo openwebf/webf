@@ -33,8 +33,13 @@ class FlutterListViewElement extends WidgetElement {
   Widget build(BuildContext context, ChildNodeList childNodes) {
     return WebFChildNodeSize(
         ownerElement: this,
-        child: ListView(
-          children: childNodes.toWidgetList(),
+        child: ListView.builder(
+          itemCount: childNodes.length,
+          itemBuilder: (context, index) {
+            return WebFHTMLElement(tagName: 'DIV', controller: ownerDocument.controller, children: [
+              childNodes.elementAt(index).toWidget()
+            ]);
+          },
           padding: const EdgeInsets.all(0),
           controller: controller,
           physics: const AlwaysScrollableScrollPhysics(),

@@ -45,7 +45,7 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     }
     existHandler.add(eventHandler);
     if (this is Element) {
-      (this as Element).renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.addEvent);
+      (this as Element).renderStyle.requestWidgetToRebuild(AddEventUpdateReason());
     }
   }
 

@@ -23,7 +23,22 @@ import 'svg.dart';
 
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
 
-enum RenderObjectUpdateReason { updateChildNodes, updateRenderReplaced, toRepaintBoundary, addEvent, updateDisplay }
+class RenderObjectUpdateReason {}
+class UpdateDisplayReason extends RenderObjectUpdateReason {}
+class UpdateChildNodeUpdateReason extends RenderObjectUpdateReason {}
+class UpdateRenderReplacedUpdateReason extends RenderObjectUpdateReason {}
+class ToRepaintBoundaryUpdateReason extends RenderObjectUpdateReason {}
+class AddEventUpdateReason extends RenderObjectUpdateReason {}
+
+class ToPositionPlaceHolderUpdateReason extends RenderObjectUpdateReason {
+  Element positionedElement;
+  ToPositionPlaceHolderUpdateReason(this.positionedElement);
+}
+
+class AttachPositionedChild extends RenderObjectUpdateReason {
+  Element positionedElement;
+  AttachPositionedChild(this.positionedElement);
+}
 
 typedef SomeRenderBoxModelHandlerCallback = bool Function(RenderBoxModel renderBoxModel);
 typedef EveryRenderBoxModelHandlerCallback = bool Function(flutter.Element?, RenderBoxModel renderBoxModel);
