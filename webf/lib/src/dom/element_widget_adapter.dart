@@ -86,7 +86,7 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
 
     List<flutter.Widget> children;
     if (webFElement.childNodes.isEmpty) {
-      children = List.empty();
+      children = [];
     } else {
       children = (webFElement.childNodes as ChildNodeList).toWidgetList();
     }

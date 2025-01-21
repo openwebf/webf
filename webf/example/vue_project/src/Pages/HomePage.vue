@@ -25,17 +25,6 @@ export default {
     }
   },
   methods: {
-    handleArticleClick() {
-      window.webf.hybridHistory.pushState({}, '/activity')
-    },
-    handleSelectChange(e) {
-      const option = this.selectOptions.find(op => op.value === e.detail);
-      this.selectValueName = option.name;
-    },
-    handleBuy: async function (data) {
-      this.activeValue = data;
-      await this.$refs['bottom-sheet'].showBottomSheet_async();
-    }
   }
 }
 </script>
@@ -43,7 +32,7 @@ export default {
 
 <style scoped>
 #main {
-  background-color: rgb(36, 30, 47);
+  background-color: var(--background-color);
 }
 
 #list {

@@ -15,10 +15,9 @@
   width: 95%;
   margin: 15px auto 0;
   border: 1px solid red;
-  background-color: #1e1e2f;
+  background-color: var(--background-color);
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  color: #fff;
   font-family: 'Arial', sans-serif;
 }
 
@@ -45,6 +44,7 @@
 
 .card-title {
   font-size: 20px;
+  color: var(--font-color);
   margin: 0 0 8px 0;
 }
 

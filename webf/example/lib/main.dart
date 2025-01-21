@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
@@ -15,8 +14,13 @@ import 'custom_elements/select.dart';
 import 'custom_elements/button.dart';
 import 'custom_elements/bottom_sheet.dart';
 import 'custom_elements/tab.dart';
+import 'custom_elements/syntax_highlight.dart';
+import 'package:day_night_switcher/day_night_switcher.dart';
+import 'package:adaptive_theme/adaptive_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final savedThemeMode = await AdaptiveTheme.getThemeMode();
   WebF.defineCustomElement('flutter-tab', (context) => FlutterTab(context));
   WebF.defineCustomElement('flutter-tab-item', (context) => FlutterTabItem(context));
   WebF.defineCustomElement('flutter-icon', (context) => FlutterIcon(context));
@@ -24,13 +28,16 @@ void main() {
   WebF.defineCustomElement('flutter-select', (context) => FlutterSelect(context));
   WebF.defineCustomElement('flutter-button', (context) => FlutterButton(context));
   WebF.defineCustomElement('flutter-bottom-sheet', (context) => FlutterBottomSheet(context));
-  runApp(MyApp());
+  WebF.defineCustomElement('flutter-syntax-highlight', (context) => FlutterSyntaxHighLight(context));
+  runApp(MyApp(savedThemeMode: savedThemeMode));
 }
 
-class TodoMVCPage extends StatelessWidget {
-  const TodoMVCPage({super.key, required this.title, required this.controller});
+class WebFSubView extends StatelessWidget {
+  const WebFSubView({super.key, required this.title, required this.path, required this.controller});
+
   final WebFController controller;
   final String title;
+  final String path;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +45,10 @@ class TodoMVCPage extends StatelessWidget {
       appBar: AppBar(
         title: Text(title),
       ),
-      body: WebFRouterView(controller: controller, path: '/todomvc'),
+      floatingActionButton: FloatingActionButton(onPressed: () {
+        print(context.findRenderObject()?.toStringDeep());
+      }),
+      body: WebFRouterView(controller: controller, path: path),
     );
   }
 }
@@ -65,6 +75,10 @@ class SecondScreen extends StatelessWidget {
 }
 
 class MyApp extends StatefulWidget {
+  final AdaptiveThemeMode? savedThemeMode;
+
+  MyApp({required this.savedThemeMode});
+
   @override
   State<StatefulWidget> createState() {
     return MyAppState();
@@ -77,25 +91,38 @@ class MyAppState extends State<MyApp> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    controller = controller ?? WebFController(
-      context,
-      devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-    );
+    // bool isDark = AdaptiveTheme.of(context).theme.brightness == Brightness.dark;
+    controller = controller ??
+        WebFController(
+          context,
+          devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+        );
+    controller!.darkModeOverride = widget.savedThemeMode == AdaptiveThemeMode.dark;
+    // controller!.preload(WebFBundle.fromUrl('assets:///assets/bundle.html'));
     controller!.preload(WebFBundle.fromUrl('http://localhost:8080/'), viewportSize: MediaQuery.of(context).size);
     // controller!.preload(WebFBundle.fromUrl('assets:///vue_project/dist/index.html'));
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'WebF Example App',
-      initialRoute: '/',
-      routes: {
-        '/todomvc': (context) => TodoMVCPage(title: 'TodoMVC', controller: controller!),
-      },
-      // theme: ThemeData.dark(),
-      debugShowCheckedModeBanner: false,
-      home: FirstPage(title: 'Landing Bay', controller: controller!),
+    return AdaptiveTheme(
+      light: ThemeData.light(useMaterial3: true),
+      dark: ThemeData.dark(useMaterial3: true),
+      initial: widget.savedThemeMode ?? AdaptiveThemeMode.light,
+      builder: (theme, darkTheme) => MaterialApp(
+        title: 'WebF Example App',
+        initialRoute: '/',
+        theme: theme,
+        darkTheme: darkTheme,
+        themeMode: ThemeMode.system,
+        routes: {
+          '/todomvc': (context) => WebFSubView(title: 'TodoMVC', path: '/todomvc', controller: controller!),
+          '/positioned_layout': (context) =>
+              WebFSubView(title: 'CSS Positioned Layout', path: '/positioned_layout', controller: controller!)
+        },
+        debugShowCheckedModeBanner: false,
+        home: FirstPage(title: 'Landing Bay', controller: controller!),
+      ),
     );
   }
 
@@ -134,13 +161,27 @@ class FirstPage extends StatelessWidget {
 class WebFDemo extends StatelessWidget {
   final WebFController controller;
 
-  WebFDemo({ required this.controller });
+  WebFDemo({required this.controller});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
           title: Text('WebF Demo'),
+          actions: [
+            Padding(
+                padding: EdgeInsets.fromLTRB(0, 0, 20, 0),
+                child: DayNightSwitcherIcon(
+                  isDarkModeEnabled: AdaptiveTheme.of(context).theme.brightness == Brightness.dark,
+                  onStateChanged: (isDarkModeEnabled) async {
+                    // sets theme mode to dark
+                    !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight()
+                        : AdaptiveTheme.of(context).setDark();
+                    controller.darkModeOverride = isDarkModeEnabled;
+                    controller.view.onPlatformBrightnessChanged();
+                  },
+                )),
+          ],
         ),
         floatingActionButton: FloatingActionButton(onPressed: () {
           print(controller.view.getRootRenderObject()!.toStringDeep());

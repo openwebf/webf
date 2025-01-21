@@ -1055,10 +1055,6 @@ abstract class Element extends ContainerNode
     }
     Node? previousSibling = referenceNode.previousSibling;
     Node? node = super.insertBefore(child, referenceNode);
-    // Update renderStyle tree.
-    // if (child is Element) {
-    //   child.renderStyle.parent = renderStyle;
-    // }
 
     if (managedByFlutterWidget || this is WidgetElement) {
       child.managedByFlutterWidget = true;
@@ -1086,14 +1082,6 @@ abstract class Element extends ContainerNode
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('Element.replaceChild');
     }
-    // Update renderStyle tree.
-    // if (newNode is Element) {
-    //   newNode.renderStyle.parent = renderStyle;
-    // }
-    // if (oldNode is Element) {
-    //   oldNode.renderStyle.parent = null;
-    // }
-
     if (managedByFlutterWidget || this is WidgetElement) {
       newNode.managedByFlutterWidget = true;
     }
