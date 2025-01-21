@@ -1,13 +1,11 @@
 <template>
-  <div>
-    <div class="card" @click="handleCardClick">
-      <div class="image-container">
-        <img :src="src" alt="Image not loaded" class="image" />
-      </div>
-      <div class="card-footer">
-        <h3 class="card-title">{{ title }}</h3>
-        <p class="card-description">{{ desc }}</p>
-      </div>
+  <div class="card" @click="handleCardClick">
+    <div class="image-container">
+      <img :src="src" alt="Image not loaded" class="image" />
+    </div>
+    <div class="card-footer">
+      <h3 class="card-title">{{ title }}</h3>
+      <p class="card-description">{{ desc }}</p>
     </div>
   </div>
 </template>
@@ -15,7 +13,8 @@
 <style scoped>
 .card {
   width: 95%;
-  margin: 15px auto;
+  margin: 15px auto 0;
+  border: 1px solid red;
   background-color: #1e1e2f;
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -23,9 +22,15 @@
   font-family: 'Arial', sans-serif;
 }
 
+/* Tablet and larger screens */
+@media (min-width: 768px) {
+  .card {
+    width: 45%;
+  }
+}
+
 .image-container {
   background-color: #2e2e3e;
-  height: 200px;
 }
 
 .image {
