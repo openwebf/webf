@@ -430,7 +430,7 @@ mixin CSSTextMixin on RenderStyle {
   // Inheritable style change should loop nest children to update text node with specified style property
   // not set in its parent.
   void _markChildrenTextNeedsPaint(RenderStyle renderStyle, String styleProperty) {
-    renderStyle.visitChildren((RenderObject child) {
+    visitor(RenderObject child) {
       if (child is RenderBoxModel) {
         // Only need to update child text when style property is not set.
         if (child.renderStyle.target.style[styleProperty].isEmpty) {
@@ -448,8 +448,12 @@ mixin CSSTextMixin on RenderStyle {
           // Mark as needs layout if renderParagraph has not layouted yet.
           renderParagraph.markNeedsLayout();
         }
+      } else {
+        child.visitChildren(visitor);
       }
-    });
+    }
+
+    renderStyle.visitChildren(visitor);
   }
 
   static TextAlign? resolveTextAlign(String value) {

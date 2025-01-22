@@ -101,10 +101,14 @@ mixin CSSVariableMixin on RenderStyle {
       }
     });
 
-    visitChildren((RenderObject child) {
+    notifyCSSVariableChangedRecursive(RenderObject child) {
       if (child is RenderBoxModel) {
         child.renderStyle._notifyCSSVariableChanged(identifier, value);
+      } else {
+        child.visitChildren(notifyCSSVariableChangedRecursive);
       }
-    });
+    }
+
+    visitChildren(notifyCSSVariableChangedRecursive);
   }
 }
