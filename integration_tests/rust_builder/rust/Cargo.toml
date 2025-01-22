@@ -8,6 +8,11 @@ crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
 webf-sys = "0.16.0"
+webf_test_macros = "0.1.0"
+webf_test_utils = "0.1.0"
+ctor = "0.2.9"
 
 [patch.crates-io]
 webf-sys = { path = "../../../bridge/rusty_webf_sys" }
+webf_test_macros = { path = "./webf_test_macros" }
+webf_test_utils = { path = "./webf_test_utils" }

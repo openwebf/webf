@@ -1,5 +1,7 @@
 use webf_sys::ExecutingContext;
+use webf_test_macros::webf_test;
 
+#[webf_test]
 pub fn test_local_storage_method_access(context: ExecutingContext) {
   let storage = context.local_storage();
   let exception_state = context.create_exception_state();
@@ -19,6 +21,7 @@ pub fn test_local_storage_method_access(context: ExecutingContext) {
   assert_eq!(keys.len(), 0);
 }
 
+#[webf_test]
 pub fn test_session_storage_method_access(context: ExecutingContext) {
   let storage = context.session_storage();
   let exception_state = context.create_exception_state();
