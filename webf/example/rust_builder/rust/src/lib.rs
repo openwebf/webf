@@ -1,12 +1,10 @@
 use std::cell::RefCell;
 use std::ffi::c_void;
-use std::fs::{self, File};
-use std::io::Write;
 use std::rc::Rc;
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
 use webf_sys::webf_future::FutureRuntime;
-use webf_sys::{document, initialize_webf_api, AddEventListenerOptions, ElementMethods, EventTargetMethods, RustValue};
+use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
@@ -16,30 +14,6 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   println!("Context created");
   let exception_state = context.create_exception_state();
   let document = context.document();
-  let navigator = context.navigator();
-
-  let ua_string = navigator.user_agent(&exception_state);
-  println!("User Agent: {}", ua_string);
-
-  let local_storage = context.local_storage();
-
-  let result = local_storage.set_item("test", "test2", &exception_state);
-
-  match result {
-    Ok(_) => {
-      println!("Local Storage Set Item Success");
-    },
-    Err(err) => {
-      println!("Local Storage Set Item Failed: {:?}", err);
-    }
-  }
-
-  println!("Local Storage value for \"a\": {:?}", local_storage.get_item("a", &exception_state));
-  println!("Local Storage Keys: {:?}", local_storage.get_all_keys(&exception_state));
-  println!("Local Storage Length: {:?}", local_storage.length(&exception_state));
-  println!("Local Storage value for \"test\": {:?}", local_storage.get_item("test", &exception_state));
-
-  local_storage.clear(&exception_state);
 
   let context2 = context.clone();
 
