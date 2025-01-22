@@ -3,8 +3,10 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 
 final RegExp _commaRegExp = RegExp(r'\s*,\s*');
@@ -453,7 +455,15 @@ mixin CSSTextMixin on RenderStyle {
       }
     }
 
-    renderStyle.visitChildren(visitor);
+    // The renderObjects rendered by RouterLinkElement is not as an child in RenderWidget
+    // We needs delegate to DOM elements to indicate the roots
+    if (renderStyle.target is RouterLinkElement) {
+      renderStyle.target.children.forEach((element) {
+        element.renderStyle.visitChildren(visitor);
+      });
+    } else {
+      renderStyle.visitChildren(visitor);
+    }
   }
 
   static TextAlign? resolveTextAlign(String value) {

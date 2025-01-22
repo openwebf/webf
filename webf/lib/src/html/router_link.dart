@@ -58,6 +58,11 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
+  String toString() {
+    return 'RouterLinkElement [path=$_path]';
+  }
+
+  @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
     return WebFHTMLElement(tagName: 'DIV', children: childNodes.toWidgetList(), inlineStyle: {
       // 'overflow': 'auto',
