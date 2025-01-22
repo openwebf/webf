@@ -369,14 +369,17 @@ mixin CSSTextMixin on RenderStyle {
   void _markNestFlowLayoutNeedsLayout(RenderStyle renderStyle, String styleProperty) {
     if (renderStyle.isSelfRenderFlowLayout()) {
       renderStyle.markNeedsLayout();
-      renderStyle.visitChildren((RenderObject child) {
+      visitor(RenderObject child) {
         if (child is RenderFlowLayout) {
           // Only need to layout when the specified style property is not set.
           if (child.renderStyle.target.style[styleProperty].isEmpty) {
             _markNestFlowLayoutNeedsLayout(child.renderStyle, styleProperty);
           }
+        } else {
+          child.visitChildren(visitor);
         }
-      });
+      }
+      renderStyle.visitChildren(visitor);
     }
   }
 
@@ -385,7 +388,8 @@ mixin CSSTextMixin on RenderStyle {
   void _markNestChildrenTextAndLayoutNeedsLayout(RenderStyle renderStyle, String styleProperty) {
     if (renderStyle.isSelfRenderLayoutBox()) {
       renderStyle.markNeedsLayout();
-      renderStyle.visitChildren((RenderObject child) {
+
+      visitor(RenderObject child) {
         if (child is RenderLayoutBox) {
           // Only need to layout when the specified style property is not set.
           if (child.renderStyle.target.style[styleProperty].isEmpty) {
@@ -394,8 +398,12 @@ mixin CSSTextMixin on RenderStyle {
         } else if (child is RenderTextBox) {
           WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
           renderParagraph.markNeedsLayout();
+        } else {
+          child.visitChildren(visitor);
         }
-      });
+      }
+
+      renderStyle.visitChildren(visitor);
     }
   }
 
@@ -403,19 +411,22 @@ mixin CSSTextMixin on RenderStyle {
   // None inheritable style change should only loop direct children to update text node with specified
   // style property not set in its parent.
   void _markTextNeedsLayout() {
-    visitChildren((RenderObject child) {
+    visitor(RenderObject child) {
       if (child is RenderTextBox) {
         WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
         renderParagraph.markNeedsLayout();
+      } else {
+        child.visitChildren(visitor);
       }
-    });
+    }
+    visitChildren(visitor);
   }
 
   // Mark nested children text as needs layout.
   // Inheritable style change should loop nest children to update text node with specified style property
   // not set in its parent.
   void _markChildrenTextNeedsLayout(RenderStyle renderStyle, String styleProperty) {
-    renderStyle.visitChildren((RenderObject child) {
+    visitor(RenderObject child) {
       if (child is RenderBoxModel) {
         // Only need to update child text when style property is not set.
         if (child.renderStyle.target.style[styleProperty].isEmpty) {
@@ -424,8 +435,12 @@ mixin CSSTextMixin on RenderStyle {
       } else if (child is RenderTextBox) {
         WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
         renderParagraph.markNeedsLayout();
+      } else {
+        child.visitChildren(visitor);
       }
-    });
+    }
+
+    renderStyle.visitChildren(visitor);
   }
 
   // Mark nested children text as needs paint.
@@ -455,15 +470,7 @@ mixin CSSTextMixin on RenderStyle {
       }
     }
 
-    // The renderObjects rendered by RouterLinkElement is not as an child in RenderWidget
-    // We needs delegate to DOM elements to indicate the roots
-    if (renderStyle.target is RouterLinkElement) {
-      renderStyle.target.children.forEach((element) {
-        element.renderStyle.visitChildren(visitor);
-      });
-    } else {
-      renderStyle.visitChildren(visitor);
-    }
+    renderStyle.visitChildren(visitor);
   }
 
   static TextAlign? resolveTextAlign(String value) {

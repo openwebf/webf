@@ -14,6 +14,7 @@ import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/css_animation.dart';
@@ -1163,6 +1164,15 @@ abstract class RenderStyle extends DiagnosticableTree {
   double get rootFontSize => target.ownerDocument.documentElement!.renderStyle.fontSize.computedValue;
 
   void visitChildren(RenderObjectVisitor visitor) {
+    // The renderObjects rendered by RouterLinkElement is not as an child in RenderWidget
+    // We needs delegate to DOM elements to indicate the roots
+    if (target is RouterLinkElement) {
+      target.children.forEach((element) {
+        element.renderStyle.visitChildren(visitor);
+      });
+      return;
+    }
+
     if (target.managedByFlutterWidget) {
       everyWidgetRenderBox((_, renderBoxMode) {
         renderBoxMode.visitChildren(visitor);
