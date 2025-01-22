@@ -3,6 +3,7 @@
  */
 
 #include "plugin_api/document.h"
+#include "binding_call_methods.h"
 #include "core/api/exception_state.h"
 #include "core/dom/comment.h"
 #include "core/dom/document.h"
@@ -244,6 +245,11 @@ WebFValue<Element, HTMLElementPublicMethods> DocumentPublicMethods::Body(webf::D
   auto* body = document->body();
   WebFValueStatus* status_block = body->KeepAlive();
   return WebFValue<Element, HTMLElementPublicMethods>{body, body->htmlElementPublicMethods(), status_block};
+}
+
+void DocumentPublicMethods::ClearCookie(webf::Document* document, webf::SharedExceptionState* shared_exception_state) {
+  document->InvokeBindingMethod(binding_call_methods::k___clear_cookies__, 0, nullptr,
+                                FlushUICommandReason::kDependentsOnElement, shared_exception_state->exception_state);
 }
 
 }  // namespace webf

@@ -28,7 +28,7 @@ WebFValue<Node, NodePublicMethods> NodePublicMethods::RemoveChild(webf::Node* se
                                                                   webf::Node* target_node,
                                                                   webf::SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{self_node->GetExecutingContext()};
-  Node* returned_node = target_node->removeChild(target_node, shared_exception_state->exception_state);
+  Node* returned_node = self_node->removeChild(target_node, shared_exception_state->exception_state);
   if (shared_exception_state->exception_state.HasException()) {
     return WebFValue<Node, NodePublicMethods>::Null();
   }

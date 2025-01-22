@@ -1,0 +1,3 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.integration_tests.rust_native_api_tests">
+</manifest>

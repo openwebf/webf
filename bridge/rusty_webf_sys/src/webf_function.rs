@@ -12,7 +12,6 @@ pub struct WebFNativeFunctionContextData {
 
 impl Drop for WebFNativeFunctionContextData {
   fn drop(&mut self) {
-    println!("Drop webf native function context data");
   }
 }
 

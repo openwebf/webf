@@ -37,6 +37,7 @@ pub struct DocumentRustMethods {
   pub document_element: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub head: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub body: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub ___clear_cookies__: extern "C" fn(*const OpaquePtr, *const OpaquePtr),
 }
 
 impl RustMethods for DocumentRustMethods {}
@@ -262,6 +263,12 @@ impl Document {
       ((*self.method_pointer).body)(event_target.ptr)
     };
     return HTMLElement::initialize(body_element_value.value, event_target.context(), body_element_value.method_pointer, body_element_value.status);
+  }
+
+  pub fn ___clear_cookies__(&self, exception_state: &ExceptionState) {
+    unsafe {
+      ((*self.method_pointer).___clear_cookies__)(self.ptr(), exception_state.ptr);
+    }
   }
 }
 
