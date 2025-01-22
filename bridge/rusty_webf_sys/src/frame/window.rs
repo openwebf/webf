@@ -2,15 +2,14 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-use std::ffi::c_double;
-use crate::event_target::{EventTargetRustMethods, RustMethods};
-use crate::executing_context::ExecutingContext;
-use crate::{OpaquePtr, RustValueStatus};
+use std::ffi::*;
+use crate::*;
 
 #[repr(C)]
 pub struct WindowRustMethods {
   pub version: c_double,
   pub event_target: EventTargetRustMethods,
+  pub scroll_to_with_x_and_y: extern "C" fn(*const OpaquePtr, c_double, c_double, *const OpaquePtr),
 }
 
 impl RustMethods for WindowRustMethods {}
@@ -30,4 +29,11 @@ impl Window {
       status,
     }
   }
+
+  pub fn scroll_to_with_x_and_y(&self, x: f64, y: f64, exception_state: &ExceptionState) {
+    unsafe {
+      ((*self.method_pointer).scroll_to_with_x_and_y)(self.ptr, x, y, exception_state.ptr)
+    }
+  }
+
 }

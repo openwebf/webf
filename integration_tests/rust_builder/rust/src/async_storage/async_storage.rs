@@ -1,5 +1,7 @@
 use webf_sys::ExecutingContext;
+use webf_test_macros::webf_test_async;
 
+#[webf_test_async]
 pub async fn test_should_work_with_set_item(context: ExecutingContext) {
   let storage = context.async_storage();
   let exception_state = context.create_exception_state();

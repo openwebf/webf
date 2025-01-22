@@ -1,5 +1,7 @@
 use webf_sys::ExecutingContext;
+use webf_test_macros::webf_test;
 
+#[webf_test]
 pub fn test_hardware_concurrency(context: ExecutingContext) {
   let navigator = context.navigator();
   let exception_state = context.create_exception_state();
@@ -8,6 +10,7 @@ pub fn test_hardware_concurrency(context: ExecutingContext) {
   assert!(hardware_concurrency > 0);
 }
 
+#[webf_test]
 pub fn test_user_agent(context: ExecutingContext) {
   let navigator = context.navigator();
   let exception_state = context.create_exception_state();
