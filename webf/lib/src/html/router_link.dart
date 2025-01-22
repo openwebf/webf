@@ -67,6 +67,6 @@ class RouterLinkElement extends WidgetElement {
     return WebFHTMLElement(tagName: 'DIV', children: childNodes.toWidgetList(), inlineStyle: {
       // 'overflow': 'auto',
       // 'position': 'relative'
-    }, controller: ownerDocument.controller, parentElement: this,);
+    }, controller: ownerDocument.controller, parentElement: this);
   }
 }
