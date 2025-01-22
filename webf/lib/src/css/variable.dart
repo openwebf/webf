@@ -5,7 +5,8 @@
 
 import 'dart:async';
 import 'dart:collection';
-import 'package:webf/dom.dart';
+import 'package:flutter/widgets.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 
 mixin CSSVariableMixin on RenderStyle {
@@ -94,13 +95,16 @@ mixin CSSVariableMixin on RenderStyle {
           if (CSSColor.isColor(propertyValue)) {
             CSSColor.clearCachedColorValue(propertyValue);
           }
-          target.setRenderStyle(propertyName, variableString ?? value);
+          target.style.setProperty(propertyName, variableString ?? value);
+          target.style.flushPendingProperties();
         });
       }
     });
 
-    target.children.forEach((Element childElement) {
-      childElement.renderStyle._notifyCSSVariableChanged(identifier, value);
+    visitChildren((RenderObject child) {
+      if (child is RenderBoxModel) {
+        child.renderStyle._notifyCSSVariableChanged(identifier, value);
+      }
     });
   }
 }
