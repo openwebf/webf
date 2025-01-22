@@ -35,6 +35,10 @@ void ExecutingContextWebFMethods::FinishRecordingUIOperations(webf::ExecutingCon
   context->uiCommandBuffer()->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr, false);
 }
 
+void ExecutingContextWebFMethods::WebFSyncBuffer(webf::ExecutingContext* context) {
+  context->uiCommandBuffer()->SyncToActive();
+}
+
 NativeValue ExecutingContextWebFMethods::WebFInvokeModule(ExecutingContext* context,
                                                           const char* module_name,
                                                           const char* method,
