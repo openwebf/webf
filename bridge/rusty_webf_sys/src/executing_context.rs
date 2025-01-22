@@ -14,6 +14,7 @@ pub struct ExecutingContextRustMethods {
   pub get_window: extern "C" fn(*const OpaquePtr) -> RustValue<WindowRustMethods>,
   pub create_exception_state: extern "C" fn() -> RustValue<ExceptionStateRustMethods>,
   pub finish_recording_ui_operations: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub webf_sync_buffer: extern "C" fn(*const OpaquePtr) -> c_void,
   pub webf_invoke_module: extern "C" fn(*const OpaquePtr, *const c_char, *const c_char, *const OpaquePtr) -> NativeValue,
   pub webf_invoke_module_with_params: extern "C" fn(*const OpaquePtr, *const c_char, *const c_char, *const NativeValue, *const OpaquePtr) -> NativeValue,
   pub webf_invoke_module_with_params_and_callback: extern "C" fn(*const OpaquePtr, *const c_char, *const c_char, *const NativeValue, *const WebFNativeFunctionContext, *const OpaquePtr) -> NativeValue,
@@ -103,6 +104,12 @@ impl ExecutingContext {
       ((*self.method_pointer).create_exception_state)()
     };
     ExceptionState::initialize(result.value, result.method_pointer)
+  }
+
+  pub fn __webf_sync_buffer__(&self) {
+    unsafe {
+      ((*self.method_pointer).webf_sync_buffer)(self.ptr);
+    }
   }
 
   pub fn webf_invoke_module(&self, module_name: &str, method: &str, exception_state: &ExceptionState) -> Result<NativeValue, String> {

@@ -21,6 +21,7 @@ using PublicContextGetDocument = WebFValue<Document, DocumentPublicMethods> (*)(
 using PublicContextGetWindow = WebFValue<Window, WindowPublicMethods> (*)(ExecutingContext*);
 using PublicContextGetExceptionState = WebFValue<SharedExceptionState, ExceptionStatePublicMethods> (*)();
 using PublicFinishRecordingUIOperations = void (*)(ExecutingContext* context);
+using PublicWebFSyncBuffer = void (*)(ExecutingContext* context);
 using PublicWebFInvokeModule = NativeValue (*)(ExecutingContext*, const char*, const char*, SharedExceptionState*);
 using PublicWebFInvokeModuleWithParams =
     NativeValue (*)(ExecutingContext*, const char*, const char*, NativeValue*, SharedExceptionState*);
@@ -52,6 +53,7 @@ struct ExecutingContextWebFMethods {
   static WebFValue<Window, WindowPublicMethods> window(ExecutingContext* context);
   static WebFValue<SharedExceptionState, ExceptionStatePublicMethods> CreateExceptionState();
   static void FinishRecordingUIOperations(ExecutingContext* context);
+  static void WebFSyncBuffer(ExecutingContext* context);
   static NativeValue WebFInvokeModule(ExecutingContext* context,
                                       const char* module_name,
                                       const char* method,
@@ -89,6 +91,7 @@ struct ExecutingContextWebFMethods {
   PublicContextGetWindow context_get_window{window};
   PublicContextGetExceptionState context_get_exception_state{CreateExceptionState};
   PublicFinishRecordingUIOperations context_finish_recording_ui_operations{FinishRecordingUIOperations};
+  PublicWebFSyncBuffer context_webf_sync_buffer{WebFSyncBuffer};
   PublicWebFInvokeModule context_webf_invoke_module{WebFInvokeModule};
   PublicWebFInvokeModuleWithParams context_webf_invoke_module_with_params{WebFInvokeModuleWithParams};
   PublicWebFInvokeModuleWithParamsAndCallback context_webf_invoke_module_with_params_and_callback{

@@ -41,11 +41,9 @@ fn clear_cookies(context: ExecutingContext) {
   document.___clear_cookies__(&exception_state);
 }
 
-// @TODO: Implement this
-// __webf_sync_buffer__();
-
 pub fn spec_done(context: ExecutingContext) {
   clear_all_timer(context.clone());
   reset_document_element(context.clone());
   clear_cookies(context.clone());
+  context.__webf_sync_buffer__();
 }
