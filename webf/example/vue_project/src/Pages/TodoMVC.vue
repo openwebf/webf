@@ -1,6 +1,7 @@
 <template>
-  <div>todo mvc</div>
+  <TodosComponent />
 </template>
 
-<script>
+<script setup>
+import TodosComponent from "../Components/TodoMVC/TodosComponent.vue";
 </script>
