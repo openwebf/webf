@@ -34,6 +34,7 @@
 
 .image {
   width: 100%;
+  height: 200px;
 }
 
 .card-footer {
@@ -44,14 +45,12 @@
 
 .card-title {
   font-size: 20px;
-  color: var(--font-color);
   margin: 0 0 8px 0;
 }
 
 .card-description {
   font-size: 14px;
   margin: 0;
-  color: #aaa;
 }
 </style>
 

@@ -14,7 +14,6 @@ import 'custom_elements/select.dart';
 import 'custom_elements/button.dart';
 import 'custom_elements/bottom_sheet.dart';
 import 'custom_elements/tab.dart';
-import 'custom_elements/syntax_highlight.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
@@ -28,7 +27,6 @@ void main() async {
   WebF.defineCustomElement('flutter-select', (context) => FlutterSelect(context));
   WebF.defineCustomElement('flutter-button', (context) => FlutterButton(context));
   WebF.defineCustomElement('flutter-bottom-sheet', (context) => FlutterBottomSheet(context));
-  WebF.defineCustomElement('flutter-syntax-highlight', (context) => FlutterSyntaxHighLight(context));
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }
 
@@ -44,6 +42,20 @@ class WebFSubView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
+        actions: [
+          Padding(
+              padding: EdgeInsets.fromLTRB(0, 0, 20, 0),
+              child: DayNightSwitcherIcon(
+                isDarkModeEnabled: AdaptiveTheme.of(context).theme.brightness == Brightness.dark,
+                onStateChanged: (isDarkModeEnabled) async {
+                  // sets theme mode to dark
+                  !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight()
+                      : AdaptiveTheme.of(context).setDark();
+                  controller.darkModeOverride = isDarkModeEnabled;
+                  controller.view.onPlatformBrightnessChanged();
+                },
+              )),
+        ],
       ),
       floatingActionButton: FloatingActionButton(onPressed: () {
         print(context.findRenderObject()?.toStringDeep());
