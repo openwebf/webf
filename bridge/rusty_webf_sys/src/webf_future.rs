@@ -4,8 +4,8 @@ use std::future::Future;
 use std::pin::Pin;
 use std::rc::Rc;
 use std::task::{Context, Poll, Waker};
-
 use futures::task;
+use crate::ExecutingContext;
 
 type Task = Pin<Box<dyn Future<Output = ()>>>;
 
@@ -90,4 +90,17 @@ impl<T> Clone for WebFNativeFuture<T>
       inner: self.inner.clone(),
     }
   }
+}
+
+pub fn spawn<F>(context: ExecutingContext, future: F)
+where
+  F: Future<Output = ()> + 'static,
+{
+  let runtime = Rc::new(RefCell::new(FutureRuntime::new()));
+  runtime.borrow_mut().spawn(future);
+  let runtime_run_task_callback = Box::new(move || {
+    runtime.borrow_mut().run();
+  });
+  let exception_state = context.create_exception_state();
+  context.set_run_rust_future_tasks(runtime_run_task_callback, &exception_state).unwrap();
 }
