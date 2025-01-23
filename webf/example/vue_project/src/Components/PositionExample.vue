@@ -29,7 +29,7 @@ export default {
 <style scoped>
 #example-element-container {
   position: relative;
-  padding: 40px;
+  padding: 10px;
   border: 1px solid red;
 }
 

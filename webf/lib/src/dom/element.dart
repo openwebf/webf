@@ -714,12 +714,7 @@ abstract class Element extends ContainerNode
       // Find the renderBox of its containing block.
       Element? containingBlockElement = getContainingBlockElement();
 
-      if (containingBlockElement == null) return;
-      // @TODO containing block == WidgetElement wrapper
-      // @TODO containing block outside of WidgetElement wrapper
-      //
-      //
-      // @TODO add containing block in widget mode
+      if (containingBlockElement == null || containingBlockElement is WidgetElement) return;
       if (containingBlockElement is HTMLElement) {
         // containingBlockElement.fixedElements!.appendChild(this);
       } else {

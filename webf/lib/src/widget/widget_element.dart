@@ -345,7 +345,7 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
 
   @override
   Widget build(BuildContext context) {
-    Widget widget = widgetElement.build(context, widgetElement.childNodes as dom.ChildNodeList);
+    Widget widget = widgetElement.build(context, widgetElement.childNodes);
     if (_hasEvent) {
       widget = Portal(ownerElement: widgetElement, child: widget);
     }
