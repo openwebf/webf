@@ -711,26 +711,20 @@ abstract class Element extends ContainerNode
         !(oldPosition == CSSPositionType.relative && currentPosition == CSSPositionType.static)) {
       Map<flutter.RenderObjectElement, RenderBoxModel> widgetRenderObjects = renderStyle.widgetRenderObjects;
 
-      for (var entry in widgetRenderObjects.entries) {
-        RenderBoxModel renderBoxModel = entry.value;
-        if (!renderBoxModel.attached) continue;
+      // Find the renderBox of its containing block.
+      Element? containingBlockElement = getContainingBlockElement();
 
-        // Find the renderBox of its containing block.
-        Element? containingBlockElement = getContainingBlockElement();
-
-        if (containingBlockElement == null) continue;
-        // @TODO containing block == WidgetElement wrapper
-        // @TODO containing block outside of WidgetElement wrapper
-        //
-        //
-        // @TODO add containing block in widget mode
-
-        if (containingBlockElement is HTMLElement) {
-          // containingBlockElement.fixedElements!.appendChild(this);
-        } else {
-          renderStyle.requestWidgetToRebuild(ToPositionPlaceHolderUpdateReason(this));
-          containingBlockElement.renderStyle.requestWidgetToRebuild(AttachPositionedChild(this));
-        }
+      if (containingBlockElement == null) return;
+      // @TODO containing block == WidgetElement wrapper
+      // @TODO containing block outside of WidgetElement wrapper
+      //
+      //
+      // @TODO add containing block in widget mode
+      if (containingBlockElement is HTMLElement) {
+        // containingBlockElement.fixedElements!.appendChild(this);
+      } else {
+        renderStyle.requestWidgetToRebuild(ToPositionPlaceHolderUpdateReason(this));
+        containingBlockElement.renderStyle.requestWidgetToRebuild(AttachPositionedChild(this));
       }
     }
   }

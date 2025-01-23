@@ -18,7 +18,7 @@ export default {
   components: {
     HomePage,
     TodoMVC,
-    PositionedLayout
+    PositionedLayout,
   },
   methods: {}
 }

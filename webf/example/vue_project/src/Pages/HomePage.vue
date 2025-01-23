@@ -31,10 +31,6 @@ export default {
 
 
 <style scoped>
-#main {
-  background-color: var(--background-color);
-}
-
 #list {
   padding: 10px 0;
   height: 100vh;

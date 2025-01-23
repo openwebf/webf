@@ -1,16 +1,14 @@
 <template>
   <flutter-tab>
     <flutter-tab-item title="Relative">
-      <position-example layout="relative" top="30px" left="30px"></position-example>
+      <position-example :style="{position: 'relative', left: '20px'}"></position-example>
     </flutter-tab-item>
     <flutter-tab-item title="Absolute">
-      <div>absolute</div>
+      <position-example :style="{position: 'absolute', left: '110px', top: '140px'}"></position-example>
     </flutter-tab-item>
     <flutter-tab-item title="Fixed">
-      <div>Fixed</div>
     </flutter-tab-item>
     <flutter-tab-item title="Sticky">
-      <div>Sticky</div>
     </flutter-tab-item>
   </flutter-tab>
 
@@ -26,14 +24,4 @@ export default {
 </script>
 
 <style scoped>
-.container {
-  /* color: var(--font-color); */
-}
-
-.demo-container {
-  border: 1px solid #ccc;
-  /* overflow-y: auto; */
-  position: relative;
-  background-color: blue;
-}
 </style>

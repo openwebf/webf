@@ -668,7 +668,7 @@ class WebFViewController implements WidgetsBindingObserver {
     Node? target = getBindingObject<Node>(Pointer.fromAddress(address));
     if (target == null) return;
 
-    if (target is Element) {
+    if (target is Element && target.isConnected) {
       target.style.flushPendingProperties();
     } else {
       debugPrint(
