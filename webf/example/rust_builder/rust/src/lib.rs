@@ -1,9 +1,6 @@
-use std::cell::RefCell;
 use std::ffi::c_void;
-use std::rc::Rc;
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::webf_future::FutureRuntime;
 use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
@@ -14,12 +11,9 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   println!("Context created");
   let exception_state = context.create_exception_state();
   let document = context.document();
-
   let context2 = context.clone();
 
-  let runtime = Rc::new(RefCell::new(FutureRuntime::new()));
-
-  runtime.borrow_mut().spawn(async move {
+  webf_sys::webf_future::spawn(context.clone(), async move {
     let context = context2.clone();
     let exception_state = context.create_exception_state();
     let async_storage_2 = context.async_storage();
@@ -38,12 +32,6 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
       }
     }
   });
-
-  let runtime_run_task_callback = Box::new(move || {
-    runtime.borrow_mut().run();
-  });
-
-  context.set_run_rust_future_tasks(runtime_run_task_callback, &exception_state).unwrap();
 
   let click_event = document.create_event("custom_click", &exception_state).unwrap();
   document.dispatch_event(&click_event, &exception_state);
@@ -126,5 +114,6 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
   event_cleaner_element.add_event_listener("click", event_cleaner_handler, &event_listener_options, &exception_state).unwrap();
 
   document.body().append_child(&event_cleaner_element.as_node(), &exception_state).unwrap();
+
   std::ptr::null_mut()
 }
