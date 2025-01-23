@@ -48,7 +48,7 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
 
   _WebFElementWidgetState(this._webFElement);
 
-  Node get webFElement => _webFElement;
+  Element get webFElement => _webFElement;
 
   bool _hasEvent = false;
 
@@ -82,6 +82,10 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
 
     if (_renderPositionHolder) {
       return PositionPlaceHolder(_positionedElement!);
+    }
+
+    if (webFElement.renderStyle.effectiveDisplay == CSSDisplay.none) {
+      return flutter.SizedBox.shrink();
     }
 
     List<flutter.Widget> children;
@@ -159,15 +163,9 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
     webFElement.willAttachRenderer(this);
 
     super.mount(parent, newSlot);
+    webFElement.didAttachRenderer();
 
-    webFElement.didAttachRenderer(this);
-
-    webFElement.applyStyle(webFElement.style);
-
-    if (webFElement.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
-      // Flush pending style before child attached.
-      webFElement.style.flushPendingProperties();
-    }
+    webFElement.style.flushPendingProperties();
   }
 
   @override
@@ -224,9 +222,6 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
 
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
-    webFElement.applyStyle(webFElement.style);
-    webFElement.style.flushDisplayProperties();
-
     webFElement.willAttachRenderer(this);
     super.mount(parent, newSlot);
     webFElement.didAttachRenderer();

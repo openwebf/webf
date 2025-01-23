@@ -1131,6 +1131,11 @@ abstract class Element extends ContainerNode
     super.connectedCallback();
     _updateNameMap(getAttribute(_NAME));
     _updateIDMap(_id);
+
+    if (managedByFlutterWidget) {
+      applyStyle(style);
+      style.flushDisplayProperties();
+    }
   }
 
   @override
@@ -1395,6 +1400,7 @@ abstract class Element extends ContainerNode
         _updateFontRelativeLengthWithFontSize();
         break;
       case TRANSFORM:
+        if (managedByFlutterWidget) return;
         updateOrCreateRenderBoxModel();
         break;
     }

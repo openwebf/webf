@@ -463,9 +463,6 @@ class RenderWidgetElement extends SingleChildRenderObjectElement {
 
   @override
   void mount(Element? parent, Object? newSlot) {
-    widget.widgetElement.applyStyle(widget.widgetElement.style);
-    widget.widgetElement.style.flushPendingProperties();
-
     widget.widgetElement.willAttachRenderer(this);
     super.mount(parent, newSlot);
     widget.widgetElement.didAttachRenderer(this);
