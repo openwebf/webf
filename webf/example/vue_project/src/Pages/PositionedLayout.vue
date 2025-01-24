@@ -1,10 +1,10 @@
 <template>
   <flutter-tab>
     <flutter-tab-item title="Relative">
-      <position-example :style="{ position: 'relative', left: '20px' }"></position-example>
+      <position-example :style="{ position: 'relative', left: '20' }"></position-example>
     </flutter-tab-item>
     <flutter-tab-item title="Absolute">
-      <position-example :style="{ position: 'absolute', left: '100px', top: '110px' }"></position-example>
+      <position-example :style="{ position: 'absolute', left: '100', top: '110' }"></position-example>
     </flutter-tab-item>
     <flutter-tab-item title="Fixed">
     </flutter-tab-item>

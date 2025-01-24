@@ -49,11 +49,9 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
       Size viewportSize = renderStyle.target.ownerDocument.viewport!.viewportSize;
       BoxConstraints childConstraints = BoxConstraints(
           minWidth: contentConstraints!.minWidth,
-          maxWidth: math.max(viewportSize.width,
-              contentConstraints!.maxWidth == double.infinity ? viewportSize.width : contentConstraints!.maxWidth),
+          maxWidth: math.min(viewportSize.width, contentConstraints!.maxWidth),
           minHeight: contentConstraints!.minHeight,
-          maxHeight: math.max(viewportSize.height,
-              contentConstraints!.maxHeight == double.infinity ? viewportSize.height : contentConstraints!.maxHeight));
+          maxHeight: math.min(viewportSize.height, contentConstraints!.maxHeight));
 
       child!.layout(childConstraints, parentUsesSize: true);
 

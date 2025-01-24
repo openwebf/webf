@@ -1123,7 +1123,7 @@ abstract class Element extends ContainerNode
 
     if (managedByFlutterWidget) {
       applyStyle(style);
-      style.flushDisplayProperties();
+      style.flushPendingProperties();
     }
   }
 
