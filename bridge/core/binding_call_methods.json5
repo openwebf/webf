@@ -133,6 +133,8 @@
     "max",
     "minLength",
     "maxLength",
+    "selectionStart",
+    "selectionEnd",
     "size",
     "multiple",
     "name",

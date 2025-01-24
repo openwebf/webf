@@ -60,15 +60,15 @@
         "intersectionchange"
       ]
     },
-//    {
-//      "class": "KeyboardEvent",
-//      "types": [
-//        "keydown",
-//        "keypress",
-//        "keystatuseschange",
-//        "keyup"
-//      ]
-//    },
+    {
+      "class": "KeyboardEvent",
+      "types": [
+        "keydown",
+        "keypress",
+        "keystatuseschange",
+        "keyup"
+      ]
+    },
     "message",
 //    {
 //      "class": "PointerEvent",
