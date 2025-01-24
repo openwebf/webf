@@ -14,7 +14,7 @@ namespace webf {
 
 void* RustReadable::operator new(std::size_t size) {
 #if defined(_WIN32)
-  return HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, size);
+  return CoTaskMemAlloc(size);
 #else
   return malloc(size);
 #endif
@@ -22,8 +22,9 @@ void* RustReadable::operator new(std::size_t size) {
 
 void RustReadable::operator delete(void* memory) noexcept {
 #if defined(_WIN32)
-  HeapFree(GetProcessHeap(), 0, memory);
+  return CoTaskMemFree(memory);
 #else
+  return free(memory);
 #endif
 }
 

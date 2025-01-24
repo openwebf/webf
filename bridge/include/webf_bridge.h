@@ -124,6 +124,12 @@ WEBF_EXPORT_C
 void clearNativeProfileData(void* ptr);
 
 WEBF_EXPORT_C
+void* allocateNativeBindingObject();
+
+WEBF_EXPORT_C
+bool isNativeBindingObjectDisposed(void* native_binding_object);
+
+WEBF_EXPORT_C
 WebFInfo* getWebFInfo();
 WEBF_EXPORT_C
 void dispatchUITask(void* page, void* context, void* callback);

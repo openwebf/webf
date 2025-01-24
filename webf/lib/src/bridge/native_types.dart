@@ -6,6 +6,7 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
+import 'package:webf/bridge.dart';
 
 import 'native_value.dart';
 
@@ -109,27 +110,64 @@ class NativeTouch extends Struct {
   external double azimuthAngle;
 }
 
-typedef InvokeBindingsMethodsFromNative = Void Function(Double contextId, Int64 profileId, Pointer<NativeBindingObject> binding_object,
-    Pointer<NativeValue> return_value, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv);
+typedef InvokeBindingsMethodsFromNative = Void Function(
+    Double contextId,
+    Int64 profileId,
+    Pointer<NativeBindingObject> binding_object,
+    Pointer<NativeValue> return_value,
+    Pointer<NativeValue> method,
+    Int32 argc,
+    Pointer<NativeValue> argv);
 typedef NativeInvokeResultCallback = Void Function(Handle object, Pointer<NativeValue> result);
 
-typedef InvokeBindingMethodsFromDart = Void Function(Pointer<NativeBindingObject> binding_object, Int64 profileId, Pointer<NativeValue> method, Int32 argc, Pointer<NativeValue> argv, Handle bindingDartObject, Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
-typedef DartInvokeBindingMethodsFromDart = void Function(Pointer<NativeBindingObject> binding_object, int profileId, Pointer<NativeValue> method, int argc, Pointer<NativeValue> argv, Object bindingDartObject, Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
+typedef InvokeBindingMethodsFromDart = Void Function(
+    Pointer<NativeBindingObject> binding_object,
+    Int64 profileId,
+    Pointer<NativeValue> method,
+    Int32 argc,
+    Pointer<NativeValue> argv,
+    Handle bindingDartObject,
+    Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
+typedef DartInvokeBindingMethodsFromDart = void Function(
+    Pointer<NativeBindingObject> binding_object,
+    int profileId,
+    Pointer<NativeValue> method,
+    int argc,
+    Pointer<NativeValue> argv,
+    Object bindingDartObject,
+    Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
 
 class NativeBindingObject extends Struct {
-  @Bool()
-  external bool disposed;
   external Pointer<Void> instance;
   external Pointer<NativeFunction<InvokeBindingMethodsFromDart>> invokeBindingMethodFromDart;
   // Shared method called by JS side.
   external Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> invokeBindingMethodFromNative;
   external Pointer<Void> extra;
+  @Bool()
+  external bool _disposed;
 }
 
+typedef NativeAllocateNativeBindingObject = Pointer<NativeBindingObject> Function();
+typedef DartAllocateNativeBindingObject = Pointer<NativeBindingObject> Function();
+
+final DartAllocateNativeBindingObject _allocateNativeBindingObject = WebFDynamicLibrary.ref
+    .lookup<NativeFunction<NativeAllocateNativeBindingObject>>('allocateNativeBindingObject')
+    .asFunction();
+
+typedef NativeIsNativeBindingObjectDisposed = Bool Function(Pointer<NativeBindingObject>);
+typedef DartIsNativeBindingObjectDisposed = bool Function(Pointer<NativeBindingObject>);
+
+final DartIsNativeBindingObjectDisposed _isNativeBindingObjectDisposed = WebFDynamicLibrary.ref
+    .lookup<NativeFunction<NativeIsNativeBindingObjectDisposed>>('isNativeBindingObjectDisposed')
+    .asFunction();
+
 Pointer<NativeBindingObject> allocateNewBindingObject() {
-  Pointer<NativeBindingObject> pointer = malloc.allocate(sizeOf<NativeBindingObject>());
-  pointer.ref.disposed = false;
-  return pointer;
+  return _allocateNativeBindingObject();
+}
+
+bool isBindingObjectDisposed(Pointer<NativeBindingObject>? nativeBindingObject) {
+  if (nativeBindingObject == null) return true;
+  return _isNativeBindingObjectDisposed(nativeBindingObject);
 }
 
 class NativePerformanceEntry extends Struct {
