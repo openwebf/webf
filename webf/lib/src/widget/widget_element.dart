@@ -101,6 +101,8 @@ abstract class WidgetElement extends dom.Element {
   void setState(VoidCallback callback) {
     if (_state != null) {
       _state!.requestUpdateState(callback);
+    } else {
+      callback();
     }
   }
 

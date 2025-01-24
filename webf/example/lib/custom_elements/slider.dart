@@ -20,7 +20,6 @@ class SliderElement extends WidgetElement {
       tooltip: null,
       max: double.parse(getAttribute('max') ?? '100'),
       min: double.parse(getAttribute('min') ?? '-100'),
-      disabled: getAttribute('disabled') != 'true',
       onDragging: (handlerIndex, lowerValue, upperValue) {
         setState(() {
           value = lowerValue;

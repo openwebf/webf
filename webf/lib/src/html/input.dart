@@ -671,16 +671,18 @@ mixin BaseCheckedElement on WidgetElement {
   _setChecked(bool value) {
     if (this is FlutterInputElement) {
       FlutterInputElement input = this as FlutterInputElement;
-      switch (input.type) {
-        case 'radio':
-          _setRadioChecked(value);
-          break;
-        case 'checkbox':
-          _checked = value;
-          break;
-        default:
-          _checked = value;
-      }
+      setState(() {
+        switch (input.type) {
+          case 'radio':
+            _setRadioChecked(value);
+            break;
+          case 'checkbox':
+            _checked = value;
+            break;
+          default:
+            _checked = value;
+        }
+      });
     }
   }
 

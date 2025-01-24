@@ -18,6 +18,7 @@ import 'custom_elements/slider.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 void main() async {
+  enableWebFCommandLog = true;
   WidgetsFlutterBinding.ensureInitialized();
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
   WebF.defineCustomElement('flutter-tab', (context) => FlutterTab(context));

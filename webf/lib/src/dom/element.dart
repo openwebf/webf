@@ -994,11 +994,14 @@ abstract class Element extends ContainerNode
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('Element.appendChild');
     }
-    super.appendChild(child);
 
     if (managedByFlutterWidget || this is WidgetElement) {
       child.managedByFlutterWidget = true;
-    } else {
+    }
+
+    super.appendChild(child);
+
+    if (!managedByFlutterWidget && this is! WidgetElement) {
       // final box = renderBoxModel;
       if (isRendererAttachedToSegmentTree) {
         // Only append child renderer when which is not attached.
@@ -1042,12 +1045,13 @@ abstract class Element extends ContainerNode
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('Element.insertBefore');
     }
-    Node? previousSibling = referenceNode.previousSibling;
-    Node? node = super.insertBefore(child, referenceNode);
 
     if (managedByFlutterWidget || this is WidgetElement) {
       child.managedByFlutterWidget = true;
     }
+
+    Node? previousSibling = referenceNode.previousSibling;
+    Node? node = super.insertBefore(child, referenceNode);
 
     if (!managedByFlutterWidget && isRendererAttachedToSegmentTree) {
       // Only append child renderer when which is not attached.

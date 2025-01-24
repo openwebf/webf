@@ -38,8 +38,7 @@
       </div>
       <div class="control-item" v-if="enableRight">
         <div class="control-title">right: </div>
-        <flutter-slider class="control-slider" :val="right"
-          @change="onControlChange($event, 'right')"></flutter-slider>
+        <flutter-slider class="control-slider" :val="right" @change="onControlChange($event, 'right')"></flutter-slider>
         <div class="control-result">{{ right }}</div>
       </div>
       <div class="control-item" v-if="enableBottom">
@@ -65,10 +64,10 @@ export default {
   },
   data() {
     return {
-      top: undefined,
-      left: undefined,
-      right: undefined,
-      bottom: undefined,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
       enableTop: true,
       enableLeft: true,
       enableRight: false,
@@ -81,10 +80,10 @@ export default {
         'position': this.$props.style['position'],
         zIndex: 100
       };
-      if (this.top !== null) style.top = this.top + 'px';
-      if (this.left !== null) style.left = this.left + 'px';
-      if (this.right !== null) style.right = this.right + 'px';
-      if (this.bottom !== null) style.bottom = this.bottom + 'px';
+      if (this.top !== null && this.enableTop) style.top = this.top + 'px';
+      if (this.left !== null && this.enableLeft) style.left = this.left + 'px';
+      if (this.right !== null && this.enableRight) style.right = this.right + 'px';
+      if (this.bottom !== null && this.enableBottom) style.bottom = this.bottom + 'px';
       return style;
     },
   },
@@ -108,7 +107,32 @@ export default {
     onPanelChange(e) {
       console.log('check', e.target.checked);
     }
-  }
+  },
+  watch: {
+    enableTop(newValue) {
+      if (newValue) {
+        this.enableBottom = !newValue;
+      }
+    },
+    enableBottom(newValue) {
+      if (newValue) {
+        this.enableTop = !newValue;
+      }
+
+    },
+    enableLeft(newValue) {
+      if (newValue) {
+        this.enableRight = !newValue;
+      }
+
+    },
+    enableRight(newValue) {
+      if (newValue) {
+        this.enableLeft = !newValue;
+      }
+
+    }
+  },
 }
 </script>
 
