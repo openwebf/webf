@@ -3,49 +3,51 @@
     <p>In this demo the yellow box is set with 'position: {{ style['position'] }}'</p>
     <div class="box-group">
       <div class="box">A</div>
-      <div class="box" id="example-element"
-        :style="computedStyle">B</div>
+      <div class="box" id="example-element" :style="computedStyle">B</div>
       <div class="box">C</div>
     </div>
     <div class="controls">
       <div class="control-panel">
         <div>
           <span>Top: </span>
-          <input type="checkbox" @change="onPanelChange"/>
+          <input type="checkbox" v-model="enableTop" @change="onPanelChange" />
         </div>
         <div>
           <span>left: </span>
-          <input type="checkbox" />
+          <input type="checkbox" v-model="enableLeft" />
         </div>
         <div>
           <span>right: </span>
-          <input type="checkbox" />
+          <input type="checkbox" v-model="enableRight" />
         </div>
         <div>
           <span>bottom: </span>
-          <input type="checkbox" />
+          <input type="checkbox" v-model="enableBottom" />
         </div>
       </div>
-      <div class="control-item">
+      <div class="control-item" v-if="enableTop">
         <div class="control-title">top: </div>
-        <flutter-slider max="100" min="-100" :val="top" class="control-slider" @change="onControlChange($event, 'top')"></flutter-slider>
+        <flutter-slider max="100" min="-100" :val="top" class="control-slider"
+          @change="onControlChange($event, 'top')"></flutter-slider>
         <div class="control-result">{{ top }}</div>
-      </div>    
-      <div class="control-item" >
+      </div>
+      <div class="control-item" v-if="enableLeft">
         <div class="control-title">left: </div>
         <flutter-slider class="control-slider" :val="left" @change="onControlChange($event, 'left')"></flutter-slider>
         <div class="control-result">{{ left }}</div>
-      </div>    
-      <div class="control-item" >
+      </div>
+      <div class="control-item" v-if="enableRight">
         <div class="control-title">right: </div>
-        <flutter-slider class="control-slider" :val="right" disabled="true" @change="onControlChange($event, 'right')"></flutter-slider>
+        <flutter-slider class="control-slider" :val="right"
+          @change="onControlChange($event, 'right')"></flutter-slider>
         <div class="control-result">{{ right }}</div>
-      </div>    
-      <div class="control-item" >
+      </div>
+      <div class="control-item" v-if="enableBottom">
         <div class="control-title">bottom: </div>
-        <flutter-slider class="control-slider" :val="bottom" @change="onControlChange($event, 'bottom')"></flutter-slider>
+        <flutter-slider class="control-slider" :val="bottom"
+          @change="onControlChange($event, 'bottom')"></flutter-slider>
         <div class="control-result">{{ bottom }}</div>
-      </div>      
+      </div>
     </div>
   </div>
 </template>
@@ -66,7 +68,11 @@ export default {
       top: undefined,
       left: undefined,
       right: undefined,
-      bottom: undefined
+      bottom: undefined,
+      enableTop: true,
+      enableLeft: true,
+      enableRight: false,
+      enableBottom: false
     }
   },
   computed: {
@@ -84,7 +90,7 @@ export default {
   },
   methods: {
     onControlChange(e, label) {
-      switch(label) {
+      switch (label) {
         case 'top':
           this.top = e.detail;
           break;
@@ -142,7 +148,7 @@ export default {
 }
 
 .control-panel span {
-  line-height: 40px;
+  line-height: 30px;
 }
 
 .control-item {
@@ -166,5 +172,4 @@ export default {
   margin-left: 10px;
   height: 50px;
 }
-
 </style>
