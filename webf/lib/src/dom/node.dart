@@ -296,6 +296,8 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     throw FlutterError('UnKnown node types for widget conversion');
   }
 
+  String get hashKey;
+
   // Is child renderObject attached.
   bool get isRendererAttached;
 

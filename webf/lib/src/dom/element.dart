@@ -95,6 +95,18 @@ abstract class Element extends ContainerNode
     recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
+  String? _cachedHashKey;
+
+  @override
+  String get hashKey {
+    if (_cachedHashKey != null) {
+      return _cachedHashKey!;
+    }
+
+    _cachedHashKey = hashCode.toString() + '_' + childNodes.hashKey();
+    return _cachedHashKey!;
+  }
+
   // Is element an replaced element.
   // https://drafts.csswg.org/css-display/#replaced-element
   bool get isReplacedElement => false;
@@ -986,6 +998,7 @@ abstract class Element extends ContainerNode
     if (managedByFlutterWidget) {
       renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
     }
+    _cachedHashKey = null;
   }
 
   @override

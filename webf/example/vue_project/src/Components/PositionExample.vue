@@ -10,7 +10,7 @@
       <div class="control-panel">
         <div>
           <span>Top: </span>
-          <input type="checkbox" v-model="enableTop" @change="onPanelChange" />
+          <input type="checkbox" v-model="enableTop" />
         </div>
         <div>
           <span>left: </span>
@@ -104,9 +104,6 @@ export default {
           break;
       }
     },
-    onPanelChange(e) {
-      console.log('check', e.target.checked);
-    }
   },
   watch: {
     enableTop(newValue) {

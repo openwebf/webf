@@ -5,7 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 
-class CharacterData extends Node {
+abstract class CharacterData extends Node {
   CharacterData(NodeType type, [context]) : super(type, context);
 
   @override

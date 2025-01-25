@@ -39,7 +39,7 @@ class _WebFElementWidget extends flutter.StatefulWidget {
       attributes += 'class="' + webFElement.className + '"';
     }
 
-    return '<${webFElement.tagName.toLowerCase()} $attributes>';
+    return '<${webFElement.tagName.toLowerCase()}($hashCode) $attributes>';
   }
 }
 
@@ -102,8 +102,10 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
     flutter.Widget widget = WebFRenderLayoutWidgetAdaptor(
       webFElement: _webFElement,
       children: children,
-      key: flutter.ObjectKey(_webFElement),
+      key: flutter.Key(_webFElement.hashKey)
     );
+
+    print('${_webFElement.hashKey} children: $children ${_webFElement.childNodes}');
 
     if (_hasEvent) {
       widget = Portal(ownerElement: _webFElement, child: widget);

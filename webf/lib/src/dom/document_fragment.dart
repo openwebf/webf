@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/src/bridge/binding_object.dart';
@@ -34,4 +35,7 @@ class DocumentFragment extends ContainerNode {
 
   @override
   bool get isRendererAttachedToSegmentTree => false;
+
+  @override
+  String get hashKey => '#documentFragment';
 }

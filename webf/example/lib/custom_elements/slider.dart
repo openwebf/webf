@@ -11,8 +11,6 @@ class SliderElement extends WidgetElement {
     'width': '100%'
   };
 
-  double value = 0;
-
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
     return FlutterSlider(
@@ -21,9 +19,6 @@ class SliderElement extends WidgetElement {
       max: double.parse(getAttribute('max') ?? '100'),
       min: double.parse(getAttribute('min') ?? '-100'),
       onDragging: (handlerIndex, lowerValue, upperValue) {
-        setState(() {
-          value = lowerValue;
-        });
         dispatchEvent(CustomEvent('change', detail: lowerValue));
       },
     );

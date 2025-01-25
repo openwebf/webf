@@ -639,4 +639,7 @@ class Document extends ContainerNode {
 
   @override
   bool get isRendererAttachedToSegmentTree => viewport?.parent != null;
+
+  @override
+  String get hashKey => '#document';
 }
