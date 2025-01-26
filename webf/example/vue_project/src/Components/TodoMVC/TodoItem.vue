@@ -75,18 +75,32 @@ function updateTodo() {
 </template>
 
 <style lang="postcss">
-@import "tailwindcss";
-
 .visually-hidden {
-    @apply border-0 h-[1px] w-[1px] m-[-1px] p-0 overflow-hidden absolute whitespace-nowrap;
+    border: 0;
     clip: rect(0 0 0 0);
     clip-path: inset(50%);
+    height: 1px;
+    width: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
 }
 
 .edit {
-    @apply relative m-0 w-full text-2xl leading-[1.4em] p-1.5 border border-[#999] shadow-[inset_0_-1px_5px_0_rgba(0,0,0,0.2)] box-border;
+    position: relative;
+	margin: 0;
+	width: 100%;
+	font-size: 24px;
 	font-family: inherit;
 	font-weight: inherit;
+	line-height: 1.4em;
 	color: inherit;
+	padding: 6px;
+	border: 1px solid #999;
+	box-shadow: inset 0 -1px 5px 0 rgba(0, 0, 0, 0.2);
+	box-sizing: border-box;
+	-webkit-font-smoothing: antialiased;
 }
 </style>

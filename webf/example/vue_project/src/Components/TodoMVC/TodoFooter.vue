@@ -22,37 +22,83 @@ const emit = defineEmits(['deleteCompleted', 'changeView']);
 </template>
 
 <style lang="postcss">
-@import "tailwindcss";
-
 .footer {
-	@apply h-[50px] bottom-[10px] px-4 py-2.5 text-center text-sm border-t border-gray-200;
-	@apply before:content-[''] before:absolute before:right-0 before:bottom-0 before:left-0 before:h-[50px] before:overflow-hidden before:shadow-[0_1px_1px_rgba(0,0,0,0.2),0_8px_0_-3px_#f6f6f6,0_9px_1px_-3px_rgba(0,0,0,0.2),0_16px_0_-6px_#f6f6f6];
+    padding: 10px 15px;
+	height: 50px;
+	text-align: center;
+	font-size: 15px;
+	border-top: 1px solid #e6e6e6;
+
+    &:before {
+        content: '';
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: 50px;
+        overflow: hidden;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2),
+                    0 8px 0 -3px #f6f6f6,
+                    0 9px 1px -3px rgba(0, 0, 0, 0.2),
+                    0 16px 0 -6px #f6f6f6,
+                    0 17px 2px -6px rgba(0, 0, 0, 0.2);
+    }
 
     .todo-count {
-        @apply flex justify-between;
+        display: flex;
+        justify-content: space-between;
 
         strong {
-            @apply font-light;
+            font-weight: 300;
         }
 
         .clear-completed {
-            @apply leading-[19px] no-underline cursor-pointer;
-            @apply hover:underline;
+            line-height: 19px;
+            text-decoration: none;
+            cursor: pointer;
+
+            margin: 0;
+            padding: 0;
+            border: 0;
+            background-color: transparent;
+            font-size: 100%;
+            vertical-align: baseline;
+            appearance: none;
+            font-family: inherit;
+            font-weight: inherit;
+            color: inherit;
+
+            &:hover {
+                text-decoration: underline;
+            }
         }
     }
 
     .filters {
-        @apply absolute right-0 left-0 m-0 p-0 list-none;
+        position: absolute;
+        right: 0;
+        left: 0;
+        margin: 0;
+        padding: 0;
+        list-style: none;
 
         li {
-            @apply inline;
+            display: inline;
 
             a {
-                @apply m-[3px] py-[3px] px-[7px] no-underline border border-transparent rounded-[3px];
-                @apply hover:border-[#DB7676];
+                color: inherit;
+                margin: 3px;
+                padding: 3px 7px;
+                text-decoration: none;
+                border: 1px solid transparent;
+                border-radius: 3px;
+
+                &:hover {
+                    border-color: #DB7676;
+                }
 
                 &.selected {
-                    @apply border-[#CE4646];
+                    border-color: #CE4646;
                 }
             }
         }

@@ -21,13 +21,44 @@
 </template>
 
 <style lang="postcss">
-@import "tailwindcss";
-
 .title {
-  @apply absolute -top-140 w-full text-7xl font-extralight text-center text-red-400;
+  position: absolute;
+	top: -140px;
+	width: 100%;
+	font-size: 80px;
+	font-weight: 200;
+	text-align: center;
+	color: #b83f45;
+	-webkit-text-rendering: optimizeLegibility;
+	-moz-text-rendering: optimizeLegibility;
+	text-rendering: optimizeLegibility;
 }
 
 .new-todo {
-    @apply relative box-border m-0 w-full h-65 pt-16 pr-16 pb-16 pl-60 text-2xl font-light border-none bg-gray-50 inset-shadow-xs placeholder:italic placeholder:text-gray-400 placeholder:font-normal placeholder:text-black/40;
+    position: relative;
+    margin: 0;
+    width: 100%;
+    font-size: 24px;
+    font-family: inherit;
+    font-weight: 300;
+    line-height: 1.4em;
+    color: inherit;
+
+    border: 1px solid #999;
+    box-shadow: inset 0 -1px 5px 0 rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    padding: 16px 16px 16px 60px;
+    height: 65px;
+    border: none;
+    background: rgba(0, 0, 0, 0.003);
+    box-shadow: inset 0 -2px 1px rgba(0,0,0,0.03);
+
+    &::placeholder {
+      font-style: italic;
+      font-weight: 400;
+      color: rgba(0, 0, 0, 0.4);
+    }
 }
 </style>

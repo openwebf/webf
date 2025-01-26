@@ -92,92 +92,183 @@ function deleteCompleted() {
     </div>
 </template>
 <style lang="postcss">
-@import "tailwindcss";
-
 .todoapp {
-    @apply bg-white mx-4 mt-[130px] mb-10 relative shadow-[0_2px_4px_0_rgba(0,0,0,0.2),0_25px_50px_0_rgba(0,0,0,0.1)];
+    background: #fff;
+	margin: 130px 0 40px 0;
+	position: relative;
+	box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2),0 25px 50px 0 rgba(0, 0, 0, 0.1);
 
     .main {
-        @apply relative z-2 border-t border-gray-300;
+        position: relative;
+        z-index: 2;
+        border-top: 1px solid #e6e6e6;
 
         .toggle-all {
-            @apply w-[40px] h-[60px] border-none opacity-0 absolute right-auto bottom-full;
+            width: 40px;
+            height: 60px;
+            border: none; 
+            opacity: 0;
+            position: absolute;
+            right: auto;
+            bottom: 100%;
 
             &:focus + label {
-                @apply outline-none shadow-[0_0_2px_2px_#CF7D7D];
+                outline: none;
+                box-shadow: 0 0 2px 2px #CF7D7D;
             }
         
             & + label {
-                @apply flex items-center justify-center w-[45px] h-[65px] text-[0px] absolute -top-[65px] left-0;
-                @apply before:inline-block before:text-[22px] before:text-[#949494] before:py-[10px] before:px-[27px] before:rotate-90 before:content-['❯'];   
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 45px;
+                height: 65px;
+                font-size: 0;
+                position: absolute;
+                top: -65px;
+                left: -0;
+            }
+            & + label:before {
+                content: '❯';
+                display: inline-block;
+                font-size: 22px;
+                color: #949494;
+                padding: 10px 27px 10px 27px;
+                -webkit-transform: rotate(90deg);
+                transform: rotate(90deg);
             }
             &:checked + label {
-                @apply before:text-[#484848];
+                color: #484848;
             }
         }
 
         .todo-list {
-            @apply m-0 p-0 list-none;
+            margin: 0;
+            padding: 0;
+            list-style: none;
 
             li {
-                @apply relative text-[24px] border-b border-[#ededed];
-                @apply last:border-b-0;
+                position: relative;
+                font-size: 24px;
+                border-bottom: 1px solid #ededed;
+
+                &:last-child {
+                    border-bottom: none;
+                }
                 
                 &.editing {
-                    @apply border-b-0 p-0;
-                    @apply last:mb-[-1px];
+                    border-bottom: none;
+                    padding: 0;
 
                     .edit {
-                        @apply block w-[calc(100%-43px)] py-3 px-4 ml-[43px];
+                        display: block;
+                        width: calc(100% - 43px);
+                        padding: 12px 16px;
+                        margin: 0 0 0 43px;
                     }
                     .view {
-                        @apply hidden;
+                        display: none;
+                    }
+
+                    &:last-child {
+                        margin-bottom: -1px;
                     }
                 }
 
                 .toggle {
-                    @apply text-center w-[40px] h-[40px] h-auto absolute top-0 bottom-0 my-auto mx-0 border-none appearance-none opacity-0;
+                    text-align: center;
+                    width: 40px;
+                    height: auto;
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    margin: auto 0;
+                    border: none;
+                    appearance: none;
+                    opacity: 0;
 
                     &:focus + label {
-                        @apply outline-none shadow-[0_0_2px_2px_#CF7D7D];
+                        outline: none;
+                        box-shadow: 0 0 2px 2px #CF7D7D;
                     }
 
                     & + label {
-                        @apply bg-[url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%22-10%20-18%20100%20135%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2250%22%20fill%3D%22none%22%20stroke%3D%22%23949494%22%20stroke-width%3D%223%22/%3E%3C/svg%3E')] bg-no-repeat bg-[center_left];
+                        background-image: url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%22-10%20-18%20100%20135%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2250%22%20fill%3D%22none%22%20stroke%3D%22%23949494%22%20stroke-width%3D%223%22/%3E%3C/svg%3E');
+                        background-repeat: no-repeat;
+                        background-position: center left;
                     }
 
                     &:checked + label {
-                        @apply bg-[url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%22-10%20-18%20100%20135%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2250%22%20fill%3D%22none%22%20stroke%3D%22%2359A193%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20fill%3D%22%233EA390%22%20d%3D%22M72%2025L42%2071%2027%2056l-4%204%2020%2020%2034-52z%22%2F%3E%3C%2Fsvg%3E')];
+                        background-image: url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%22-10%20-18%20100%20135%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2250%22%20fill%3D%22none%22%20stroke%3D%22%2359A193%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20fill%3D%22%233EA390%22%20d%3D%22M72%2025L42%2071%2027%2056l-4%204%2020%2020%2034-52z%22%2F%3E%3C%2Fsvg%3E');
                     }
                 }
 
                 label {
-                    @apply break-words py-[15px] pr-[15px] pl-[60px] block leading-[1.2] transition duration-400 font-normal text-[#484848];
+                    overflow-wrap: break-word;
+                    padding: 15px 15px 15px 60px;
+                    display: block;
+                    line-height: 1.2;
+                    transition: color 0.4s;
+                    font-weight: 400;
+                    color: #484848;
                 }
 
                 &.completed label {
-                    @apply text-[#949494] line-through;
+                    color: #949494;
+                    text-decoration: line-through;
                 }
 
                 .destroy {
-                    @apply hidden absolute top-0 right-[10px] bottom-0 my-auto mx-0 w-[40px] h-[40px] text-[30px] text-[#949494] transition duration-200 ease-out;
-                    @apply hover:text-[#C18585] focus:text-[#C18585];
-                    @apply after:content-['×'] after:block after:h-[100%] after:leading-[1.1];
+                    padding: 0;
+                    border: 0;
+                    background-color: transparent;
+                    vertical-align: baseline;
+                    appearance: none;
+                    font-family: inherit;
+                    font-weight: inherit;
+                    display: none;
+                    position: absolute;
+                    top: 0;
+                    right: 10px;
+                    bottom: 0;
+                    width: 40px;
+                    height: 40px;
+                    margin: auto 0;
+                    font-size: 30px;
+                    color: #949494;
+                    transition: color 0.2s ease-out;
+
+
+                    &:hover {
+                        color: #C18585;
+                    }
+
+                    &:focus {
+                        color: #C18585;
+                    }
+
+                    &:after {
+                        content: '×';
+                        display: block;
+                        height: 100%;
+                        line-height: 1.1;
+                    }
                 }
 
                 &:hover .destroy {
-                    @apply block;
+                    display: block;
                 }
 
                 .edit {
-                    @apply hidden;
+                    display: none;
                 }
             }
         }
     }
 
     *:focus {
-        @apply outline-none shadow-[0_0_2px_2px_#CF7D7D];
+        outline: none;
+        box-shadow: 0 0 2px 2px #CF7D7D;
     }
 }
 
