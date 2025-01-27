@@ -1,5 +1,5 @@
 <template>
-  <div id="example-element-container">
+  <webf-listview id="example-element-container">
     <p>In this demo the yellow box is set with 'position: {{ style['position'] }}'</p>
     <div class="box-group">
       <div class="box">A</div>
@@ -25,66 +25,58 @@
           <input type="checkbox" v-model="enableBottom" />
         </div>
       </div>
+      <div class="control-buttons" v-if="style['position'] == 'absolute'">
+        <flutter-button @press="onMarginAutoButtonClick('horizontal')">margin auto + left,right == 0</flutter-button>
+        <flutter-button @press="onMarginAutoButtonClick('vertical')">margin auto + top,bottom == 0</flutter-button>
+      </div>
       <div class="control-item" v-if="enableTop">
         <div class="control-title">top: </div>
         <flutter-slider max="100" min="-100" :val="top" class="control-slider"
           @change="onControlChange($event, 'top')"></flutter-slider>
-        <div class="control-result">{{ top }}</div>
+        <div class="control-result">{{ top }} {{  topPercentage ? '%' : 'px' }}</div>
+        <flutter-switch :selected="topPercentage" @change="onSwitchChange($event, 'top')"></flutter-switch>
       </div>
       <div class="control-item" v-if="enableLeft">
         <div class="control-title">left: </div>
         <flutter-slider class="control-slider" :val="left" @change="onControlChange($event, 'left')"></flutter-slider>
-        <div class="control-result">{{ left }}</div>
+        <div class="control-result">{{ left }} {{ leftPercentage ? '%' : 'px' }}</div>
+        <flutter-switch :selected="leftPercentage" @change="onSwitchChange($event, 'left')"></flutter-switch>
       </div>
       <div class="control-item" v-if="enableRight">
         <div class="control-title">right: </div>
         <flutter-slider class="control-slider" :val="right" @change="onControlChange($event, 'right')"></flutter-slider>
-        <div class="control-result">{{ right }}</div>
+        <div class="control-result">{{ right }} {{ rightPercentage ? '%' : 'px'}}</div>
+        <flutter-switch :selected="rightPercentage" @change="onSwitchChange($event, 'right')"></flutter-switch>
       </div>
       <div class="control-item" v-if="enableBottom">
         <div class="control-title">bottom: </div>
         <flutter-slider class="control-slider" :val="bottom"
           @change="onControlChange($event, 'bottom')"></flutter-slider>
-        <div class="control-result">{{ bottom }}</div>
+        <div class="control-result">{{ bottom }} {{ bottomPercentage ? '%' : 'px' }}</div>
+        <flutter-switch :selected="bottomPercentage" @change="onSwitchChange($event, 'bottom')"></flutter-switch>
       </div>
       <div class="control-item">
         <div class="control-title">margin-top: </div>
         <flutter-slider class="control-slider" :val="marginTop"
           @change="onControlChange($event, 'marginTop')"></flutter-slider>
-        <div class="control-result">{{ marginTop }}</div>
-      </div>
-      <div class="control-item">
-        <div class="control-title">margin-bottom: </div>
-        <flutter-slider class="control-slider" :val="marginBottom"
-          @change="onControlChange($event, 'marginBottom')"></flutter-slider>
-        <div class="control-result">{{ marginBottom }}</div>
+        <div class="control-result">{{ marginTopAuto ? 'auto' : marginTop }} {{ marginTopAuto ? '' : (marginTopPercentage ?  '%' : 'px') }}</div>
+        <flutter-switch :selected="marginTopPercentage" @change="onSwitchChange($event, 'marginTop')"></flutter-switch>
       </div>
       <div class="control-item">
         <div class="control-title">margin-left: </div>
         <flutter-slider class="control-slider" :val="marginLeft"
           @change="onControlChange($event, 'marginLeft')"></flutter-slider>
-        <div class="control-result">{{ marginLeft }}</div>
-      </div>
-      <div class="control-item">
-        <div class="control-title">margin-right: </div>
-        <flutter-slider class="control-slider" :val="marginRight"
-          @change="onControlChange($event, 'marginRight')"></flutter-slider>
-        <div class="control-result">{{ marginRight }}</div>
+        <div class="control-result">{{ marginLeftAuto ? 'auto' : marginLeft }} {{ marginLeftAuto ? '' : (marginLeftPercentage ? '%' : 'px') }}</div>
+        <flutter-switch :selected="marginLeftPercentage" @change="onSwitchChange($event, 'marginLeft')"></flutter-switch>
       </div>
     </div>
-  </div>
+  </webf-listview>
 </template>
 
 <script>
 export default {
   props: {
     style: Object
-  },
-  created() {
-    this.top = this.style['top'];
-    this.left = this.style['left'];
-    this.right = this.style['right'];
-    this.bottom = this.style['bottom'];
   },
   data() {
     return {
@@ -99,7 +91,19 @@ export default {
       enableTop: true,
       enableLeft: true,
       enableRight: false,
-      enableBottom: false
+      enableBottom: false,
+      topPercentage: false,
+      leftPercentage: false,
+      rightPercentage: false,
+      bottomPercentage: false,
+      marginTopPercentage: false,
+      marginRightPercentage: false,
+      marginBottomPercentage: false,
+      marginLeftPercentage: false,
+      marginLeftAuto: false,
+      marginRightAuto: false,
+      marginTopAuto: false,
+      marginBottomAuto: false
     }
   },
   computed: {
@@ -107,15 +111,15 @@ export default {
       const style = {
         'position': this.$props.style['position'],
         zIndex: 100,
-        'margin-top': this.marginTop + 'px',
-        'margin-bottom': this.marginBottom + 'px',
-        'margin-left': this.marginLeft + 'px',
-        'margin-right': this.marginRight + 'px'
+        'margin-top': this.marginTopAuto ? 'auto' : (this.marginTop + (this.marginTopPercentage ? '%' : 'px')),
+        'margin-bottom': this.marginBottomAuto ? 'auto' : (this.marginBottom + (this.marginBottomPercentage ? '%' : 'px')),
+        'margin-left': this.marginLeftAuto ? 'auto' : (this.marginLeft + (this.marginLeftPercentage ? '%' : 'px')),
+        'margin-right': this.marginRightAuto ? 'auto' : (this.marginRight + (this.marginRightPercentage ? '%' : 'px'))
       };
-      if (this.top !== null && this.enableTop) style.top = this.top + 'px';
-      if (this.left !== null && this.enableLeft) style.left = this.left + 'px';
-      if (this.right !== null && this.enableRight) style.right = this.right + 'px';
-      if (this.bottom !== null && this.enableBottom) style.bottom = this.bottom + 'px';
+      if (this.top !== null && this.enableTop) style.top = this.top + (this.topPercentage ? '%' : 'px');
+      if (this.left !== null && this.enableLeft) style.left = this.left + (this.leftPercentage ? '%' : 'px');
+      if (this.right !== null && this.enableRight) style.right = this.right + (this.rightPercentage ? '%' : 'px');
+      if (this.bottom !== null && this.enableBottom) style.bottom = this.bottom + (this.bottomPercentage ? '%' : 'px');
       return style;
     },
   },
@@ -136,9 +140,13 @@ export default {
           break;
         case 'marginTop':
           this.marginTop = e.detail;
+          this.marginTopAuto = false;
+          this.marginBottomAuto = false;
           break;
         case 'marginLeft':
           this.marginLeft = e.detail;
+          this.marginLeftAuto = false;
+          this.marginRightAuto = false;
           break;
         case 'marginRight':
           this.marginRight = e.detail;
@@ -148,27 +156,75 @@ export default {
             break;
       }
     },
+
+    onSwitchChange(e, label) {
+      switch (label) {
+        case 'top':
+          this.topPercentage = e.detail;
+          break;
+        case 'left':
+          this.leftPercentage = e.detail;
+          break;
+        case 'right':
+          this.rightPercentage = e.detail;
+          break;
+        case 'bottom':
+          this.bottomPercentage = e.detail;
+          break;
+        case 'marginTop':
+          this.marginTopPercentage = e.detail;
+          break;
+        case 'marginLeft':
+          this.marginLeftPercentage = e.detail;
+          break;
+        case 'marginRight':
+          this.marginRightPercentage = e.detail;
+          break;
+        case 'marginBottom':
+          this.marginBottomPercentage = e.detail;
+            break;
+      }
+    },
+
+    onMarginAutoButtonClick(direction) {
+      switch(direction) {
+        case 'horizontal':
+          this.left = 0;
+          this.right = 0;
+          this.enableRight = true;
+          this.marginLeftAuto = true;
+          this.marginRightAuto = true;
+          break;
+        case 'vertical':
+          this.top = 0;
+          this.bottom = 0;
+          this.enableBottom = true;
+          this.marginTopAuto = true;
+          this.marginBottomAuto = true;
+          break;
+      }
+    }
   },
   watch: {
     enableTop(newValue) {
-      if (newValue) {
+      if (newValue && !this.marginTopAuto && !this.marginBottomAuto) {
         this.enableBottom = !newValue;
       }
     },
     enableBottom(newValue) {
-      if (newValue) {
+      if (newValue && !this.marginTopAuto && !this.marginBottomAuto) {
         this.enableTop = !newValue;
       }
 
     },
     enableLeft(newValue) {
-      if (newValue) {
+      if (newValue && !this.marginLeftAuto && !this.marginRightAuto) {
         this.enableRight = !newValue;
       }
 
     },
     enableRight(newValue) {
-      if (newValue) {
+      if (newValue && !this.marginLeftAuto && !this.marginRightAuto) {
         this.enableLeft = !newValue;
       }
 
@@ -182,6 +238,7 @@ export default {
   position: relative;
   padding: 10px;
   border: 1px solid red;
+  height: 90vh;
 }
 
 .box {
@@ -204,6 +261,7 @@ export default {
 .controls {
   margin-top: 50px;
   width: 100%;
+  height: 45vh;
 }
 
 .control-panel {
@@ -214,6 +272,10 @@ export default {
 
 .control-panel span {
   line-height: 30px;
+}
+
+.control-panel input {
+  border: 1px solid red;
 }
 
 .control-item {
@@ -236,5 +298,10 @@ export default {
   flex: 2;
   margin-left: 10px;
   height: 50px;
+}
+
+.control-buttons {
+  display: flex;
+  justify-content: space-between;
 }
 </style>

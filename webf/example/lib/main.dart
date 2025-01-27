@@ -14,11 +14,12 @@ import 'custom_elements/select.dart';
 import 'custom_elements/button.dart';
 import 'custom_elements/bottom_sheet.dart';
 import 'custom_elements/tab.dart';
+import 'custom_elements/switch.dart';
 import 'custom_elements/slider.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
+
 void main() async {
-  enableWebFCommandLog = true;
   WidgetsFlutterBinding.ensureInitialized();
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
   WebF.defineCustomElement('flutter-tab', (context) => FlutterTab(context));
@@ -29,6 +30,7 @@ void main() async {
   WebF.defineCustomElement('flutter-button', (context) => FlutterButton(context));
   WebF.defineCustomElement('flutter-bottom-sheet', (context) => FlutterBottomSheet(context));
   WebF.defineCustomElement('flutter-slider', (context) => SliderElement(context));
+  WebF.defineCustomElement('flutter-switch', (context) => FlutterSwitch(context));
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }
 

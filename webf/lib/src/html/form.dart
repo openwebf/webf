@@ -27,7 +27,11 @@ class FlutterFormElement extends WidgetElement {
   Widget build(BuildContext context, ChildNodeList childNodes) {
     return Form(
         child: FlutterFormElementContext(
-      child: WebFHTMLElement(tagName: 'DIV', children: childNodes.toWidgetList(), controller: ownerDocument.controller),
+      child: WebFHTMLElement(
+          tagName: 'DIV',
+          parentElement: this,
+          children: childNodes.toWidgetList(),
+          controller: ownerDocument.controller),
     ));
   }
 }

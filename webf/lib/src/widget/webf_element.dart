@@ -16,7 +16,7 @@ class WebFHTMLElement extends WebFRenderLayoutWidgetAdaptor {
     required this.tagName,
     required this.controller,
     Key? key,
-    this.parentElement,
+    required this.parentElement,
     required List<Widget> children,
     this.inlineStyle,
   }) : super(key: key, children: children);

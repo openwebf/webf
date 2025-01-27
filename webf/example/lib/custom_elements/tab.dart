@@ -43,6 +43,7 @@ class FlutterTabItem extends WidgetElement {
 
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
-    return WebFHTMLElement(tagName: 'DIV', controller: ownerDocument.controller, children: childNodes.toWidgetList());
+    return WebFHTMLElement(
+        tagName: 'DIV', parentElement: this, controller: ownerDocument.controller, children: childNodes.toWidgetList());
   }
 }

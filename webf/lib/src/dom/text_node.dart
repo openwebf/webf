@@ -30,8 +30,7 @@ class TextNode extends CharacterData {
     if (_cachedHashKey != null) {
       return _cachedHashKey!;
     }
-    _cachedHashKey = _data.hashCode.toString();
-    return _cachedHashKey!;
+    return _cachedHashKey = hashCode.toString();
   }
 
   @override

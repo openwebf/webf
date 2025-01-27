@@ -24,7 +24,7 @@ abstract class CharacterData extends Node {
 
   @override
   flutter.Widget toWidget({Key? key}) {
-    return const flutter.SizedBox.shrink();
+    return flutter.ConstrainedBox(constraints: BoxConstraints(maxWidth: 0, minHeight: 0, minWidth: 0, maxHeight: 0));
   }
 
   @override

@@ -292,9 +292,6 @@ class CSSPositionedLayout {
     RenderBoxModel parent,
     RenderBoxModel child,
   ) {
-    if (child.renderStyle.target.id == 'example-element') {
-      print(1);
-    }
     final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
     Size size = child.boxSize!;
     Size parentSize = parent.boxSize!;

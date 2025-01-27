@@ -365,6 +365,8 @@ class RenderFlowLayout extends RenderLayoutBox {
         childConstraints = child.getConstraints();
       } else if (child is RenderPositionPlaceholder) {
         childConstraints = BoxConstraints();
+      } else if (child is RenderConstrainedBox) {
+        childConstraints = child.additionalConstraints;
       } else {
         // RenderObject of custom element need to inherit constraints from its parents
         // which adhere to flutter's rule.

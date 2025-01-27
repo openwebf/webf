@@ -105,8 +105,6 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
       key: flutter.Key(_webFElement.hashKey)
     );
 
-    print('${_webFElement.hashKey} children: $children ${_webFElement.childNodes}');
-
     if (_hasEvent) {
       widget = Portal(ownerElement: _webFElement, child: widget);
     }
