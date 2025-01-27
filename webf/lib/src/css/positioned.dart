@@ -292,6 +292,9 @@ class CSSPositionedLayout {
     RenderBoxModel parent,
     RenderBoxModel child,
   ) {
+    if (child.renderStyle.target.id == 'example-element') {
+      print(1);
+    }
     final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
     Size size = child.boxSize!;
     Size parentSize = parent.boxSize!;
@@ -404,7 +407,7 @@ class CSSPositionedLayout {
       // If all three of left, width, and right are auto: First set any auto values for margin-left
       // and margin-right to 0. Then, if the direction property of the element establishing the
       // static-position containing block is ltr set left to the static position.
-      offset = staticPosition;
+      offset = staticPosition + marginBefore.computedValue;
     } else {
       if (insetBefore.isNotAuto && insetAfter.isNotAuto) {
         double freeSpace = containingBlockLength - length - insetBefore.computedValue - insetAfter.computedValue;

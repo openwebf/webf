@@ -47,6 +47,30 @@
           @change="onControlChange($event, 'bottom')"></flutter-slider>
         <div class="control-result">{{ bottom }}</div>
       </div>
+      <div class="control-item">
+        <div class="control-title">margin-top: </div>
+        <flutter-slider class="control-slider" :val="marginTop"
+          @change="onControlChange($event, 'marginTop')"></flutter-slider>
+        <div class="control-result">{{ marginTop }}</div>
+      </div>
+      <div class="control-item">
+        <div class="control-title">margin-bottom: </div>
+        <flutter-slider class="control-slider" :val="marginBottom"
+          @change="onControlChange($event, 'marginBottom')"></flutter-slider>
+        <div class="control-result">{{ marginBottom }}</div>
+      </div>
+      <div class="control-item">
+        <div class="control-title">margin-left: </div>
+        <flutter-slider class="control-slider" :val="marginLeft"
+          @change="onControlChange($event, 'marginLeft')"></flutter-slider>
+        <div class="control-result">{{ marginLeft }}</div>
+      </div>
+      <div class="control-item">
+        <div class="control-title">margin-right: </div>
+        <flutter-slider class="control-slider" :val="marginRight"
+          @change="onControlChange($event, 'marginRight')"></flutter-slider>
+        <div class="control-result">{{ marginRight }}</div>
+      </div>
     </div>
   </div>
 </template>
@@ -68,6 +92,10 @@ export default {
       left: 0,
       right: 0,
       bottom: 0,
+      marginTop: 10,
+      marginBottom: 0,
+      marginLeft: 0,
+      marginRight: 0,
       enableTop: true,
       enableLeft: true,
       enableRight: false,
@@ -78,7 +106,11 @@ export default {
     computedStyle() {
       const style = {
         'position': this.$props.style['position'],
-        zIndex: 100
+        zIndex: 100,
+        'margin-top': this.marginTop + 'px',
+        'margin-bottom': this.marginBottom + 'px',
+        'margin-left': this.marginLeft + 'px',
+        'margin-right': this.marginRight + 'px'
       };
       if (this.top !== null && this.enableTop) style.top = this.top + 'px';
       if (this.left !== null && this.enableLeft) style.left = this.left + 'px';
@@ -102,6 +134,18 @@ export default {
         case 'bottom':
           this.bottom = e.detail;
           break;
+        case 'marginTop':
+          this.marginTop = e.detail;
+          break;
+        case 'marginLeft':
+          this.marginLeft = e.detail;
+          break;
+        case 'marginRight':
+          this.marginRight = e.detail;
+          break;
+        case 'marginBottom':
+          this.marginBottom = e.detail;
+            break;
       }
     },
   },
