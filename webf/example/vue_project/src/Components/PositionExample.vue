@@ -26,8 +26,8 @@
         </div>
       </div>
       <div class="control-buttons" v-if="style['position'] == 'absolute'">
-        <flutter-button @press="onMarginAutoButtonClick('horizontal')">margin auto + left,right == 0</flutter-button>
-        <flutter-button @press="onMarginAutoButtonClick('vertical')">margin auto + top,bottom == 0</flutter-button>
+        <flutter-button @press="onMarginAutoButtonClick('horizontal')">Horizontal Center</flutter-button>
+        <flutter-button @press="onMarginAutoButtonClick('vertical')">Vertical Center</flutter-button>
       </div>
       <div class="control-item" v-if="enableTop">
         <div class="control-title">top: </div>
@@ -237,7 +237,6 @@ export default {
 #example-element-container {
   position: relative;
   padding: 10px;
-  border: 1px solid red;
   height: 90vh;
 }
 
@@ -302,6 +301,6 @@ export default {
 
 .control-buttons {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
 }
 </style>
