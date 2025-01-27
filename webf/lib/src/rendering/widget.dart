@@ -143,6 +143,14 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
     if (renderStyle.transformMatrix != null) {
       return hitTestIntrinsicChild(result, child, position!);
     }
+
+    // Reduce the area occupied by the padding and border size of RenderWidget.
+    if (position != null) {
+      position -=
+          Offset(renderStyle.borderLeftWidth?.computedValue ?? 0.0, renderStyle.borderTopWidth?.computedValue ?? 0.0);
+      position -= Offset(renderStyle.paddingLeft.computedValue, renderStyle.paddingTop.computedValue);
+    }
+
     return super.hitTestChildren(result, position: position!);
   }
 }
