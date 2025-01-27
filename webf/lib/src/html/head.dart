@@ -129,6 +129,21 @@ class LinkElement extends Element {
     });
   }
 
+  String? _cachedStyleSheetText;
+
+  void reloadStyle() {
+    if (_styleSheet != null) {
+      _styleSheet!.replaceSync(_cachedStyleSheetText!, windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+    } else {
+      _styleSheet = CSSParser(_cachedStyleSheetText!).parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+    }
+    if (_styleSheet != null) {
+      ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
+      ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+      ownerDocument.updateStyleIfNeeded();
+    }
+  }
+
   Future<void> _resolveHyperlink() async {
     String? href = getAttribute('href');
     String? rel = getAttribute('rel');
@@ -164,8 +179,12 @@ class LinkElement extends Element {
   void _fetchAndApplyCSSStyle() async {
     if (_resolvedHyperlink != null &&
         rel == _REL_STYLESHEET &&
-        isConnected &&
-        !_stylesheetLoaded.containsKey(_resolvedHyperlink.toString())) {
+        isConnected) {
+      if (_stylesheetLoaded.containsKey(_resolvedHyperlink.toString()) && _cachedStyleSheetText != null) {
+        reloadStyle();
+        return;
+      }
+
       if (!isValidMedia(media)) {
         return;
       }
@@ -190,7 +209,7 @@ class LinkElement extends Element {
         // Decrement count when response.
         ownerDocument.decrementRequestCount();
 
-        final String cssString = await resolveStringFromData(bundle.data!);
+        final String cssString = _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
 
         if (enableWebFProfileTracking) {
           WebFProfiler.instance.startTrackUICommand();
@@ -317,6 +336,12 @@ class LinkElement extends Element {
     }
     mediaMap[media] = isValid;
     return isValid;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _cachedStyleSheetText = null;
   }
 }
 
