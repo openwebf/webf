@@ -59,7 +59,7 @@ KeyboardEvent::KeyboardEvent(ExecutingContext* context,
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_keyboard_event->code)))),
       key_(AtomicString(
           ctx(),
-          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_keyboard_event->key)))),
+          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_keyboard_event->key))))
 #else
       code_(AtomicString(
           ctx(),
