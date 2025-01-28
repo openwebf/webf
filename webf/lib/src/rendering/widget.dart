@@ -10,7 +10,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 /// RenderBox of a widget element whose content is rendering by Flutter Widgets.
-class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<RenderBox>, RenderProxyBoxMixin<RenderBox> {
+class RenderWidget extends RenderLayoutBox {
   RenderWidget({required super.renderStyle});
 
   @override
@@ -35,6 +35,27 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
     }
   }
 
+  void _layoutChild(RenderBox child) {
+    // To maximum compact with Flutter, We needs to limit the maxWidth and maxHeight constraints to
+    // the viewportSize, as same as the MaterialApp does.
+    Size viewportSize = renderStyle.target.ownerDocument.viewport!.viewportSize;
+    BoxConstraints childConstraints = BoxConstraints(
+        minWidth: contentConstraints!.minWidth,
+        maxWidth: math.min(viewportSize.width, contentConstraints!.maxWidth),
+        minHeight: contentConstraints!.minHeight,
+        maxHeight: math.min(viewportSize.height, contentConstraints!.maxHeight));
+
+    child.layout(childConstraints, parentUsesSize: true);
+
+    Size childSize = child.size;
+
+    setMaxScrollableSize(childSize);
+    size = getBoxSize(childSize);
+
+    minContentWidth = renderStyle.intrinsicWidth;
+    minContentHeight = renderStyle.intrinsicHeight;
+  }
+
   @override
   void performLayout() {
     if (enableWebFProfileTracking) {
@@ -43,26 +64,33 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
 
     beforeLayout();
 
-    if (child != null) {
-      // To maximum compact with Flutter, We needs to limit the maxWidth and maxHeight constraints to
-      // the viewportSize, as same as the MaterialApp does.
-      Size viewportSize = renderStyle.target.ownerDocument.viewport!.viewportSize;
-      BoxConstraints childConstraints = BoxConstraints(
-          minWidth: contentConstraints!.minWidth,
-          maxWidth: math.min(viewportSize.width, contentConstraints!.maxWidth),
-          minHeight: contentConstraints!.minHeight,
-          maxHeight: math.min(viewportSize.height, contentConstraints!.maxHeight));
+    List<RenderBoxModel> _positionedChildren = [];
+    List<RenderBox> _nonPositionedChildren = [];
+    List<RenderBoxModel> _stickyChildren = [];
 
-      child!.layout(childConstraints, parentUsesSize: true);
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+      if (child is RenderBoxModel && childParentData.isPositioned) {
+        _positionedChildren.add(child);
+      } else {
+        _nonPositionedChildren.add(child);
+        if (child is RenderBoxModel && CSSPositionedLayout.isSticky(child)) {
+          _stickyChildren.add(child);
+        }
+      }
+      child = childParentData.nextSibling;
+    }
 
-      Size childSize = child!.size;
+    // Need to layout out of flow positioned element before normal flow element
+    // cause the size of RenderPositionPlaceholder in flex layout needs to use
+    // the size of its original RenderBoxModel.
+    for (RenderBoxModel child in _positionedChildren) {
+      CSSPositionedLayout.layoutPositionedChild(this, child);
+    }
 
-      setMaxScrollableSize(childSize);
-      size = getBoxSize(childSize);
-
-      minContentWidth = renderStyle.intrinsicWidth;
-      minContentHeight = renderStyle.intrinsicHeight;
-
+    if (_nonPositionedChildren.isNotEmpty) {
+      _layoutChild(_nonPositionedChildren.first);
       didLayout();
     } else {
       performResize();
@@ -127,11 +155,11 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
     offset +=
         Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
 
-    if (child != null) {
+    if (firstChild != null) {
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.pauseCurrentPaintOp();
       }
-      context.paintChild(child!, offset);
+      context.paintChild(firstChild!, offset);
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.resumeCurrentPaintOp();
       }
@@ -141,7 +169,7 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
     if (renderStyle.transformMatrix != null) {
-      return hitTestIntrinsicChild(result, child, position!);
+      return hitTestIntrinsicChild(result, firstChild, position!);
     }
 
     // Reduce the area occupied by the padding and border size of RenderWidget.
@@ -151,6 +179,6 @@ class RenderWidget extends RenderBoxModel with RenderObjectWithChildMixin<Render
       position -= Offset(renderStyle.paddingLeft.computedValue, renderStyle.paddingTop.computedValue);
     }
 
-    return super.hitTestChildren(result, position: position!);
+    return firstChild?.hitTest(result, position: position!) ?? false;
   }
 }

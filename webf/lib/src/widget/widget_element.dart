@@ -50,7 +50,7 @@ abstract class WidgetElement extends dom.Element {
   Widget toWidget({Key? key}) {
     _widget = _WidgetElementAdapter(this);
 
-    Widget child = WebFRenderWidgetAdaptor(this, child: _widget, key: key ?? ObjectKey(this));
+    Widget child = WebFRenderWidgetAdaptor(this, children: [_widget!], key: key ?? ObjectKey(this));
 
     if (isRepaintBoundary) {
       child = RepaintBoundary(child: child);
@@ -118,7 +118,8 @@ abstract class WidgetElement extends dom.Element {
       RenderObject hostedRenderObject = flutterWidgetElement != null
           ? renderStyle.getWidgetPairedRenderBoxModel(flutterWidgetElement)!
           : renderStyle.domRenderBoxModel!;
-      attachedAdapter = SharedRenderWidgetAdapter(child: widget, container: hostedRenderObject, widgetElement: this);
+      attachedAdapter =
+          SharedRenderWidgetAdapter(children: [widget], container: hostedRenderObject, widgetElement: this);
     }
     return renderObject;
   }
@@ -326,7 +327,6 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
           callback();
         }
       });
-
     }
   }
 
@@ -345,13 +345,13 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
   }
 }
 
-class SharedRenderWidgetAdapter<T extends RenderObject> extends SingleChildRenderObjectWidget {
+class SharedRenderWidgetAdapter<T extends RenderObject> extends MultiChildRenderObjectWidget {
   SharedRenderWidgetAdapter({
-    Widget? child,
+    required List<Widget> children,
     required this.container,
     required this.widgetElement,
     this.debugShortDescription,
-  }) : super(key: GlobalObjectKey(container), child: child);
+  }) : super(key: GlobalObjectKey(container), children: children);
 
   /// The [RenderObject] that is the parent of the [Element] created by this widget.
   final RenderObject container;
@@ -392,35 +392,33 @@ class SharedRenderWidgetAdapter<T extends RenderObject> extends SingleChildRende
 }
 
 /// Sharing the RenderWidget renderObject beween Flutter element and WebF DOM Elements.
-class _SharedRenderWidgetElement<T extends RenderObject> extends SingleChildRenderObjectElement {
+class _SharedRenderWidgetElement<T extends RenderObject> extends MultiChildRenderObjectElement {
   _SharedRenderWidgetElement(SharedRenderWidgetAdapter<T> widget) : super(widget);
 
   @override
   SharedRenderWidgetAdapter get widget => super.widget as SharedRenderWidgetAdapter<T>;
 
-  @override
-  RenderObjectWithChildMixin<RenderObject> get renderObject =>
-      super.renderObject as RenderObjectWithChildMixin<RenderObject>;
-
-  @override
-  void insertRenderObjectChild(RenderObject child, Object? slot) {
-    assert(renderObject.debugValidateChild(child));
-    renderObject.child = child;
-  }
+  //
+  // @override
+  // void insertRenderObjectChild(RenderObject child, Object? slot) {
+  //   assert(renderObject.debugValidateChild(child));
+  //   renderObject.child = child;
+  // }
 
   @override
   void moveRenderObjectChild(RenderObject child, Object? oldSlot, Object? newSlot) {
     assert(false);
   }
 
-  @override
-  void removeRenderObjectChild(RenderObject child, Object? slot) {
-    renderObject.child = null;
-  }
+// @override
+// void removeRenderObjectChild(RenderObject child, Object? slot) {
+//   renderObject.child = null;
+// }
 }
 
-class WebFRenderWidgetAdaptor extends SingleChildRenderObjectWidget {
-  WebFRenderWidgetAdaptor(this.widgetElement, {Widget? child, Key? key}) : super(child: child, key: key);
+class WebFRenderWidgetAdaptor extends MultiChildRenderObjectWidget {
+  WebFRenderWidgetAdaptor(this.widgetElement, {required List<Widget> children, Key? key})
+      : super(children: children, key: key);
 
   final WidgetElement widgetElement;
 
@@ -433,12 +431,12 @@ class WebFRenderWidgetAdaptor extends SingleChildRenderObjectWidget {
   String toStringShort() => '<${widgetElement.tagName.toLowerCase()} />';
 
   @override
-  SingleChildRenderObjectElement createElement() {
+  MultiChildRenderObjectElement createElement() {
     return RenderWidgetElement(this);
   }
 }
 
-class RenderWidgetElement extends SingleChildRenderObjectElement {
+class RenderWidgetElement extends MultiChildRenderObjectElement {
   RenderWidgetElement(super.widget);
 
   @override
@@ -464,5 +462,4 @@ class RenderWidgetElement extends SingleChildRenderObjectElement {
   void unmount() {
     super.unmount();
   }
-
 }
