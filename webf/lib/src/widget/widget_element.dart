@@ -307,8 +307,6 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
 
   _WebFWidgetElementState(this.widgetElement);
 
-  bool _hasEvent = false;
-
   @override
   void initState() {
     super.initState();
@@ -327,14 +325,6 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
         if (callback != null) {
           callback();
         }
-
-        switch(reason.runtimeType) {
-          case RenderObjectUpdateReason:
-            _hasEvent = true;
-            break;
-          default:
-            break;
-        }
       });
 
     }
@@ -348,7 +338,7 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
   @override
   Widget build(BuildContext context) {
     Widget widget = widgetElement.build(context, widgetElement.childNodes);
-    if (_hasEvent) {
+    if (widgetElement.hasEvent) {
       widget = Portal(ownerElement: widgetElement, child: widget);
     }
     return widget;

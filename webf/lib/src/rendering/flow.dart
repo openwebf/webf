@@ -1161,7 +1161,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     } else if (child is RenderBoxModel) {
       childRenderStyle = child.renderStyle;
     } else if (child is RenderPositionPlaceholder) {
-      childRenderStyle = child.positioned!.renderStyle;
+      childRenderStyle = child.positioned?.renderStyle;
     }
     return childRenderStyle;
   }

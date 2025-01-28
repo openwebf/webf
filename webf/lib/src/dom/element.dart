@@ -875,6 +875,8 @@ abstract class Element extends ContainerNode
       ownerDocument.inactiveRenderObjects.add(renderStyle.domRenderBoxModel);
     }
     ownerDocument.clearElementStyleDirty(this);
+    positionedElements.clear();
+    holderAttachedPositionedElement = null;
     _beforeElement?.dispose();
     _beforeElement = null;
     _afterElement?.dispose();

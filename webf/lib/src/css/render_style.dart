@@ -402,18 +402,29 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   // For some style changes, we needs to upgrade
   void requestWidgetToRebuild(RenderObjectUpdateReason reason) {
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      _widgetRenderObjects.keys.forEach((element) {
-        if (element is WebRenderLayoutRenderObjectElement) {
-          element.requestForBuild(reason);
-        } else if (element is RenderWidgetElement) {
-          element.requestForBuild(reason);
-        } else if (element is WebFRenderReplacedRenderObjectElement) {
-          element.requestForBuild(reason);
-        }
-      });
+    switch(reason.runtimeType) {
+      case AddEventUpdateReason:
+        target.hasEvent = true;
+        break;
+      case ToPositionPlaceHolderUpdateReason:
+        target.holderAttachedPositionedElement = (reason as ToPositionPlaceHolderUpdateReason).positionedElement;
+        break;
+      case AttachPositionedChild:
+        target.positionedElements.add((reason as AttachPositionedChild).positionedElement);
+        break;
+      default:
+        break;
+    }
+
+    _widgetRenderObjects.keys.forEach((element) {
+      if (element is WebRenderLayoutRenderObjectElement) {
+        element.requestForBuild(reason);
+      } else if (element is RenderWidgetElement) {
+        element.requestForBuild(reason);
+      } else if (element is WebFRenderReplacedRenderObjectElement) {
+        element.requestForBuild(reason);
+      }
     });
-    SchedulerBinding.instance.scheduleFrame();
   }
 
   bool someRenderBoxSatisfy(SomeRenderBoxModelHandlerCallback callback) {

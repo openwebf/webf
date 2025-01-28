@@ -2,6 +2,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
+
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
@@ -11,6 +13,11 @@ import 'package:webf/widget.dart';
 import 'package:webf/launcher.dart';
 
 mixin ElementAdapterMixin on ElementBase {
+  final List<Element> positionedElements = [];
+  // Rendering this element as an RenderPositionHolder
+  Element? holderAttachedPositionedElement;
+  bool hasEvent = false;
+
   @override
   flutter.Widget toWidget({Key? key}) {
     return _WebFElementWidget(this as Element, key: key);
@@ -50,39 +57,13 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
 
   Element get webFElement => _webFElement;
 
-  bool _hasEvent = false;
-
-  final List<Element> positionedElements = [];
-
-  bool _renderPositionHolder = false;
-  Element? _positionedElement;
-
   void requestForChildNodeUpdate(RenderObjectUpdateReason reason) {
-    setState(() {
-      switch (reason.runtimeType) {
-        case AddEventUpdateReason:
-          _hasEvent = true;
-          break;
-        case ToPositionPlaceHolderUpdateReason:
-          _renderPositionHolder = true;
-          _positionedElement = (reason as ToPositionPlaceHolderUpdateReason).positionedElement;
-          break;
-        case AttachPositionedChild:
-          positionedElements.add((reason as AttachPositionedChild).positionedElement);
-          break;
-        default:
-          break;
-      }
-    });
+    setState(() {});
   }
 
   @override
   flutter.Widget build(flutter.BuildContext context) {
     super.build(context);
-
-    if (_renderPositionHolder) {
-      return PositionPlaceHolder(_positionedElement!);
-    }
 
     if (webFElement.renderStyle.effectiveDisplay == CSSDisplay.none) {
       return flutter.SizedBox.shrink();
@@ -92,10 +73,16 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
     if (webFElement.childNodes.isEmpty) {
       children = [];
     } else {
-      children = (webFElement.childNodes as ChildNodeList).toWidgetList();
+      children = (webFElement.childNodes as ChildNodeList).map((node) {
+        if (node is Element && node.renderStyle.position == CSSPositionType.absolute) {
+          return PositionPlaceHolder(node.holderAttachedPositionedElement!);
+        } else {
+          return node.toWidget();
+        }
+      }).toList();
     }
 
-    children.addAll(positionedElements.map((element) {
+    children.addAll(webFElement.positionedElements.map((element) {
       return element.toWidget();
     }));
 
@@ -105,7 +92,7 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
       key: flutter.Key(_webFElement.hashKey)
     );
 
-    if (_hasEvent) {
+    if (webFElement.hasEvent) {
       widget = Portal(ownerElement: _webFElement, child: widget);
     }
 
@@ -115,8 +102,6 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
   @override
   void dispose() {
     super.dispose();
-
-    positionedElements.clear();
   }
 
   @override
@@ -273,9 +258,13 @@ class _PositionedPlaceHolderElement extends flutter.SingleChildRenderObjectEleme
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
-    widget.positionedElement;
-    RenderPositionPlaceholder renderPositionPlaceholder = renderObject as RenderPositionPlaceholder;
-    renderPositionPlaceholder.positioned = widget.positionedElement.renderStyle.attachedRenderBoxModel;
-    renderPositionPlaceholder.positioned!.renderPositionPlaceholder = renderPositionPlaceholder;
+    print('mount render place holder: $this ${widget.positionedElement}');
+    scheduleMicrotask(() {
+      RenderPositionPlaceholder renderPositionPlaceholder = renderObject as RenderPositionPlaceholder;
+      renderPositionPlaceholder.positioned = widget.positionedElement.renderStyle.attachedRenderBoxModel;
+      renderPositionPlaceholder.positioned!.renderPositionPlaceholder = renderPositionPlaceholder;
+      renderPositionPlaceholder.markNeedsLayout();
+      renderPositionPlaceholder.positioned!.markNeedsLayout();
+    });
   }
 }

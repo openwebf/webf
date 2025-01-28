@@ -240,6 +240,11 @@ export default {
   height: 90vh;
 }
 
+.box-group {
+  position: relative;
+  border: 1px solid black;
+}
+
 .box {
   background-color: rgba(0, 0, 255, .2);
   border: 3px solid #00f;
