@@ -23,6 +23,7 @@ const emit = defineEmits(['deleteCompleted', 'changeView']);
 
 <style lang="postcss">
 .footer {
+    position: relative;
     padding: 10px 15px;
 	height: 50px;
 	text-align: center;
