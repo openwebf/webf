@@ -180,14 +180,23 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
       position -= Offset(renderStyle.paddingLeft.computedValue, renderStyle.paddingTop.computedValue);
     }
 
-    RenderBox? child = firstChild;
+    RenderBox? child = lastChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
 
-      bool isHit = child.hitTest(result, position: position! + childParentData.offset);
-      if (isHit) return true;
+      final bool isHit = result.addWithPaintOffset(
+        offset: childParentData.offset,
+        position: position!,
+        hitTest: (BoxHitTestResult result, Offset transformed) {
+          assert(transformed == position! - childParentData.offset);
+          return child!.hitTest(result, position: transformed);
+        },
+      );
+      if (isHit) {
+        return true;
+      }
 
-      child = childParentData.nextSibling;
+      child = childParentData.previousSibling;
     }
 
     return false;

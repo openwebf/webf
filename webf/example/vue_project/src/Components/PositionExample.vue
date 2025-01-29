@@ -3,7 +3,7 @@
     <p>In this demo the yellow box is set with 'position: {{ style['position'] }}'</p>
     <div class="box-group">
       <div class="box">A</div>
-      <div class="box" id="example-element" :style="computedStyle">B</div>
+      <div class="box" id="example-element" :style="computedStyle" @click="onBClicked">B</div>
       <div class="box">C</div>
     </div>
     <div class="controls">
@@ -185,7 +185,9 @@ export default {
             break;
       }
     },
-
+    onBClicked(e) {
+      e.target.style.backgroundColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+    },
     onMarginAutoButtonClick(direction) {
       switch(direction) {
         case 'horizontal':
@@ -241,7 +243,6 @@ export default {
 }
 
 .box-group {
-  position: relative;
   border: 1px solid black;
 }
 

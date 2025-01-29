@@ -32,7 +32,7 @@ void SharedUICommand::AddCommand(UICommand type,
   }
 
   if (type == UICommand::kFinishRecordingCommand || ui_command_sync_strategy_->ShouldSync()) {
-    bool should_request_batch_update = reserve_buffer_->size() + waiting_buffer_->size() > 1;
+    bool should_request_batch_update = reserve_buffer_->size() + waiting_buffer_->size() > 0;
 
     SyncToActive();
     if (should_request_batch_update) {
