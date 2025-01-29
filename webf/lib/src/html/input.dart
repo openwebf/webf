@@ -565,6 +565,14 @@ mixin BaseInputElement on WidgetElement {
           if (isSearch) {
             dispatchEvent(Event('search'));
           }
+          dispatchEvent(KeyboardEvent(EVENT_KEY_DOWN,
+            code: 'Enter',
+            key: 'Enter',
+          ));
+          dispatchEvent(KeyboardEvent(EVENT_KEY_UP,
+            code: 'Enter',
+            key: 'Enter',
+          ));
         },
         decoration: decoration,
       );
@@ -613,7 +621,6 @@ mixin BaseInputElement on WidgetElement {
           code: event.physicalKey.debugName ?? '',
           key: event.logicalKey.keyLabel,
       ));
-      return true;
     } else if (event is KeyDownEvent) {
       dispatchEvent(KeyboardEvent(EVENT_KEY_DOWN,
         code: event.physicalKey.debugName ?? '',
