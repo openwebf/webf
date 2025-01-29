@@ -1,5 +1,12 @@
 <script setup>
-// TODO:点击 todos 跳转到 /
+import { defineEmits } from 'vue';
+const emit = defineEmits(['add-todo']);
+const onKeyUp = (event) => {
+  if (event.code === 'Enter') {
+    emit('add-todo', event.target.value);
+    event.target.value = '';
+  }
+}
 </script>
 <template>
   <header>
@@ -9,13 +16,8 @@
       class="new-todo" 
       autofocus 
       autocomplete="off" 
-      placeholder="What needs to be done?" 
-      @keyup.enter="
-        // @ts-ignore
-        $emit('add-todo', $event.target.value);
-        // @ts-ignore
-        $event.target.value = '';
-      "
+      placeholder="What needs to be done?"
+      @keyup="onKeyUp"  
     />
   </header>
 </template>

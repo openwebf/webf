@@ -51,10 +51,11 @@ function uuid() {
 }
 
 function addTodo(value) {
+    const id = uuid();
     todos.value.push({
         completed: false,
         title: value,
-        id: uuid(),
+        id: id,
     })
 }
 
@@ -78,6 +79,7 @@ function deleteCompleted() {
 <template>
     <div class="todoapp">
         <TodoHeader @add-todo="addTodo" />
+        todo-list 长度是：{{todos.length}}
         <main class="main" v-show="todos.length > 0">
             <div class="toggle-all-container">
                 <input type="checkbox" id="toggle-all-input" class="toggle-all" v-model="toggleAllModel" :disabled="filteredTodos.value.length === 0"/>
