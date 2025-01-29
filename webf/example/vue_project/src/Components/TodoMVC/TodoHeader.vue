@@ -43,7 +43,7 @@ const onKeyUp = (event) => {
     font-size: 24px;
     font-family: inherit;
     font-weight: 300;
-    line-height: 1.4em;
+    line-height: 3em;
     color: inherit;
 
     border: 1px solid #999;
