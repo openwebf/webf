@@ -926,24 +926,82 @@ abstract class RenderStyle extends DiagnosticableTree {
     });
   }
 
+  bool _paintingOrderNeedsSort = false;
+
   @pragma('vm:prefer-inline')
   void markChildrenNeedsSort() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
-      if (renderObject is RenderLayoutBox) {
-        renderObject.markChildrenNeedsSort();
-      }
-      return true;
-    });
+    _paintingOrderNeedsSort = true;
   }
 
   @pragma('vm:prefer-inline')
   void markParentNeedsSort() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent, (renderObject, _) {
-      if (renderObject is RenderLayoutBox) {
-        renderObject.markChildrenNeedsSort();
+    getParentRenderStyle()?._paintingOrderNeedsSort = true;
+  }
+
+  // Sort children by zIndex, used for paint and hitTest.
+  List<RenderBox>? _paintingOrder;
+
+  List<RenderBox> get paintingOrder {
+    if (_paintingOrder != null) {
+      return _paintingOrder!;
+    }
+
+    if (attachedRenderBoxModel == null) return [];
+
+    RenderBoxModel attachedRoot = attachedRenderBoxModel as RenderBoxModel;
+
+    if (attachedRoot is RenderObjectWithChildMixin && (attachedRoot as RenderObjectWithChildMixin).child != null) {
+      return _paintingOrder = [(attachedRoot as RenderObjectWithChildMixin).child as RenderBox];
+    }
+
+    RenderLayoutBox containerLayoutBox = attachedRoot as RenderLayoutBox;
+
+    if (containerLayoutBox.childCount == 0) {
+      // No child.
+      return _paintingOrder = const [];
+    } else if (containerLayoutBox.childCount == 1) {
+      // Only one child.
+      final List<RenderBox> order = <RenderBox>[containerLayoutBox.firstChild as RenderBox];
+      return _paintingOrder = order;
+    } else {
+      // Sort by zIndex.
+      List<RenderBox> children = containerLayoutBox.getChildren();
+      if (_paintingOrderNeedsSort) {
+        children.sort((RenderBox left, RenderBox right) {
+          // @FIXME: Add patch to handle nested fixed element paint priority, need to remove
+          // this logic after Kraken has implemented stacking context tree.
+          if (left is RenderBoxModel &&
+              left.renderStyle.position == CSSPositionType.fixed &&
+              right is RenderBoxModel &&
+              right.renderStyle.position == CSSPositionType.fixed) {
+            // Child element always paint after parent element when their position are both fixed
+            // as W3C stacking context specified.
+            // Kraken will place these two renderObjects as siblings of the children of HTML renderObject
+            // due to lack stacking context support, so it needs to add this patch to handle this case.
+            if (right.renderStyle.isAncestorOf(left.renderStyle)) return 1;
+            if (left.renderStyle.isAncestorOf(right.renderStyle)) return -1;
+          }
+
+          bool isLeftNeedsStacking = left is RenderBoxModel && left.needsStacking;
+          bool isRightNeedsStacking = right is RenderBoxModel && right.needsStacking;
+          if (!isLeftNeedsStacking && isRightNeedsStacking) {
+            return 0 <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
+          } else if (isLeftNeedsStacking && !isRightNeedsStacking) {
+            return (left.renderStyle.zIndex ?? 0) < 0 ? -1 : 1;
+          } else if (isLeftNeedsStacking && isRightNeedsStacking) {
+            return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
+          } else {
+            return -1;
+          }
+        });
+        _paintingOrderNeedsSort = false;
       }
-      return true;
-    });
+      return _paintingOrder = children;
+    }
+  }
+
+  void clearPaintingOrder() {
+    _paintingOrder = null;
   }
 
   // Sizing may affect parent size, mark parent as needsLayout in case
