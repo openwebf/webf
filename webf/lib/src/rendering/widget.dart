@@ -10,7 +10,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 /// RenderBox of a widget element whose content is rendering by Flutter Widgets.
-class RenderWidget extends RenderLayoutBox {
+class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
   RenderWidget({required super.renderStyle});
 
   @override
@@ -96,6 +96,10 @@ class RenderWidget extends RenderLayoutBox {
       performResize();
     }
 
+    for (RenderBoxModel child in _positionedChildren) {
+      CSSPositionedLayout.applyPositionedChildOffset(this, child);
+    }
+
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
 
     if (enableWebFProfileTracking) {
@@ -155,14 +159,11 @@ class RenderWidget extends RenderLayoutBox {
     offset +=
         Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
 
-    if (firstChild != null) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.pauseCurrentPaintOp();
-      }
-      context.paintChild(firstChild!, offset);
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.resumeCurrentPaintOp();
-      }
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+      context.paintChild(child, offset + childParentData.offset);
+      child = childParentData.nextSibling;
     }
   }
 
@@ -179,6 +180,16 @@ class RenderWidget extends RenderLayoutBox {
       position -= Offset(renderStyle.paddingLeft.computedValue, renderStyle.paddingTop.computedValue);
     }
 
-    return firstChild?.hitTest(result, position: position!) ?? false;
+    RenderBox? child = firstChild;
+    while (child != null) {
+      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+
+      bool isHit = child.hitTest(result, position: position! + childParentData.offset);
+      if (isHit) return true;
+
+      child = childParentData.nextSibling;
+    }
+
+    return false;
   }
 }

@@ -50,7 +50,9 @@ abstract class WidgetElement extends dom.Element {
   Widget toWidget({Key? key}) {
     _widget = _WidgetElementAdapter(this);
 
-    Widget child = WebFRenderWidgetAdaptor(this, children: [_widget!], key: key ?? ObjectKey(this));
+    List<Widget> children = [_widget!, ...positionedElements.map((element) => element.toWidget())];
+    print('children: $children');
+    Widget child = WebFRenderWidgetAdaptor(this, children: children, key: key ?? ObjectKey(this));
 
     if (isRepaintBoundary) {
       child = RepaintBoundary(child: child);
@@ -118,8 +120,9 @@ abstract class WidgetElement extends dom.Element {
       RenderObject hostedRenderObject = flutterWidgetElement != null
           ? renderStyle.getWidgetPairedRenderBoxModel(flutterWidgetElement)!
           : renderStyle.domRenderBoxModel!;
+      List<Widget> children = [widget, ...positionedElements.map((element) => element.toWidget())];
       attachedAdapter =
-          SharedRenderWidgetAdapter(children: [widget], container: hostedRenderObject, widgetElement: this);
+          SharedRenderWidgetAdapter(children: children, container: hostedRenderObject, widgetElement: this);
     }
     return renderObject;
   }

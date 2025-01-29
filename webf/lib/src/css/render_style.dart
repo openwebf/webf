@@ -416,15 +416,28 @@ abstract class RenderStyle extends DiagnosticableTree {
         break;
     }
 
-    _widgetRenderObjects.keys.forEach((element) {
-      if (element is WebRenderLayoutRenderObjectElement) {
-        element.requestForBuild(reason);
-      } else if (element is RenderWidgetElement) {
-        element.requestForBuild(reason);
-      } else if (element is WebFRenderReplacedRenderObjectElement) {
-        element.requestForBuild(reason);
+    if (_widgetRenderObjects.isNotEmpty) {
+      _widgetRenderObjects.keys.forEach((element) {
+        if (element is WebRenderLayoutRenderObjectElement) {
+          element.requestForBuild(reason);
+        } else if (element is RenderWidgetElement) {
+          element.requestForBuild(reason);
+        } else if (element is WebFRenderReplacedRenderObjectElement) {
+          element.requestForBuild(reason);
+        }
+      });
+    } else if(target is WidgetElement && !target.managedByFlutterWidget) {
+      // Reattach widgetElement to trigger WidgetElement's adapter to rebuild.
+      WidgetElement widgetElement = target as WidgetElement;
+      Node? previousSibling = widgetElement.previousSibling;
+      Element parent = widgetElement.parentElement!;
+      parent.removeChild(widgetElement);
+      if (previousSibling != null) {
+        parent.insertBefore(widgetElement, previousSibling);
+      } else {
+        parent.appendChild(widgetElement);
       }
-    });
+    }
   }
 
   bool someRenderBoxSatisfy(SomeRenderBoxModelHandlerCallback callback) {

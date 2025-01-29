@@ -258,7 +258,6 @@ class _PositionedPlaceHolderElement extends flutter.SingleChildRenderObjectEleme
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
-    print('mount render place holder: $this ${widget.positionedElement}');
     scheduleMicrotask(() {
       RenderPositionPlaceholder renderPositionPlaceholder = renderObject as RenderPositionPlaceholder;
       renderPositionPlaceholder.positioned = widget.positionedElement.renderStyle.attachedRenderBoxModel;
