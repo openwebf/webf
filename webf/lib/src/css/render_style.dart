@@ -416,7 +416,9 @@ abstract class RenderStyle extends DiagnosticableTree {
         break;
     }
 
-    if (_widgetRenderObjects.isNotEmpty) {
+    if (!target.managedByFlutterWidget && target is WidgetElement) {
+      (target as WidgetElement).reattachWidgetInDOMMode();
+    } else {
       _widgetRenderObjects.keys.forEach((element) {
         if (element is WebRenderLayoutRenderObjectElement) {
           element.requestForBuild(reason);
@@ -426,17 +428,6 @@ abstract class RenderStyle extends DiagnosticableTree {
           element.requestForBuild(reason);
         }
       });
-    } else if(target is WidgetElement && !target.managedByFlutterWidget) {
-      // Reattach widgetElement to trigger WidgetElement's adapter to rebuild.
-      WidgetElement widgetElement = target as WidgetElement;
-      Node? previousSibling = widgetElement.previousSibling;
-      Element parent = widgetElement.parentElement!;
-      parent.removeChild(widgetElement);
-      if (previousSibling != null) {
-        parent.insertBefore(widgetElement, previousSibling);
-      } else {
-        parent.appendChild(widgetElement);
-      }
     }
   }
 

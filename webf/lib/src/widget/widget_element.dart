@@ -51,7 +51,6 @@ abstract class WidgetElement extends dom.Element {
     _widget = _WidgetElementAdapter(this);
 
     List<Widget> children = [_widget!, ...positionedElements.map((element) => element.toWidget())];
-    print('children: $children');
     Widget child = WebFRenderWidgetAdaptor(this, children: children, key: key ?? ObjectKey(this));
 
     if (isRepaintBoundary) {
@@ -143,6 +142,15 @@ abstract class WidgetElement extends dom.Element {
       // Reattach to Flutter
       ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
     }
+  }
+
+  void reattachWidgetInDOMMode() {
+    if (attachedRenderer == null) return;
+    assert(!managedByFlutterWidget);
+    // RenderWidget hostedRenderObject = renderStyle.attachedRenderBoxModel! as RenderWidget;
+    detachWidget();
+    willAttachRenderer();
+    didAttachRenderer();
   }
 
   @override
