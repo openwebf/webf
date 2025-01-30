@@ -1248,7 +1248,11 @@ abstract class RenderStyle extends DiagnosticableTree {
 
     if (target.managedByFlutterWidget) {
       everyWidgetRenderBox((_, renderBoxMode) {
-        renderBoxMode.visitChildren(visitor);
+        if (renderBoxMode is RenderPortal) {
+          renderBoxMode.child?.visitChildren(visitor);
+        } else {
+          renderBoxMode.visitChildren(visitor);
+        }
         return true;
       });
       return;

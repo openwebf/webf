@@ -102,7 +102,7 @@ mixin CSSVariableMixin on RenderStyle {
     });
 
     notifyCSSVariableChangedRecursive(RenderObject child) {
-      if (child is RenderBoxModel) {
+      if (child is RenderBoxModel && child is! RenderPortal) {
         child.renderStyle._notifyCSSVariableChanged(identifier, value);
       } else {
         child.visitChildren(notifyCSSVariableChangedRecursive);

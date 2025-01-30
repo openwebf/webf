@@ -370,7 +370,7 @@ mixin CSSTextMixin on RenderStyle {
     if (renderStyle.isSelfRenderFlowLayout()) {
       renderStyle.markNeedsLayout();
       visitor(RenderObject child) {
-        if (child is RenderFlowLayout) {
+        if (child is RenderFlowLayout && child is! RenderPortal) {
           // Only need to layout when the specified style property is not set.
           if (child.renderStyle.target.style[styleProperty].isEmpty) {
             _markNestFlowLayoutNeedsLayout(child.renderStyle, styleProperty);
@@ -390,7 +390,7 @@ mixin CSSTextMixin on RenderStyle {
       renderStyle.markNeedsLayout();
 
       visitor(RenderObject child) {
-        if (child is RenderLayoutBox) {
+        if (child is RenderLayoutBox && child is! RenderPortal) {
           // Only need to layout when the specified style property is not set.
           if (child.renderStyle.target.style[styleProperty].isEmpty) {
             _markNestChildrenTextAndLayoutNeedsLayout(child.renderStyle, styleProperty);
@@ -427,7 +427,7 @@ mixin CSSTextMixin on RenderStyle {
   // not set in its parent.
   void _markChildrenTextNeedsLayout(RenderStyle renderStyle, String styleProperty) {
     visitor(RenderObject child) {
-      if (child is RenderBoxModel) {
+      if (child is RenderBoxModel && child is! RenderPortal) {
         // Only need to update child text when style property is not set.
         if (child.renderStyle.target.style[styleProperty].isEmpty) {
           _markChildrenTextNeedsLayout(child.renderStyle, styleProperty);
@@ -448,7 +448,7 @@ mixin CSSTextMixin on RenderStyle {
   // not set in its parent.
   void _markChildrenTextNeedsPaint(RenderStyle renderStyle, String styleProperty) {
     visitor(RenderObject child) {
-      if (child is RenderBoxModel) {
+      if (child is RenderBoxModel && child is! RenderPortal) {
         // Only need to update child text when style property is not set.
         if (child.renderStyle.target.style[styleProperty].isEmpty) {
           _markChildrenTextNeedsPaint(child.renderStyle, styleProperty);
