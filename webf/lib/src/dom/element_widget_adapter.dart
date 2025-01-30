@@ -10,7 +10,6 @@ import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
-import 'package:webf/launcher.dart';
 
 mixin ElementAdapterMixin on ElementBase {
   final List<Element> positionedElements = [];

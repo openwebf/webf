@@ -471,6 +471,9 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
 
   @override
   void unmount() {
+    dom.Element widgetElement = widget.widgetElement;
+    widgetElement.willDetachRenderer(this);
     super.unmount();
+    widgetElement.didDetachRenderer(this);
   }
 }
