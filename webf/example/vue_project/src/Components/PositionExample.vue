@@ -243,7 +243,8 @@ export default {
 }
 
 .box-group {
-  border: 1px solid black;
+  border: 1px solid var(--font-color);
+  position: relative;
 }
 
 .box {
