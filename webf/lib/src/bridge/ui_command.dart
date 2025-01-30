@@ -173,7 +173,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createWindow');
           }
 
-          view.disposeBindingObject(view, nativePtr.cast<NativeBindingObject>());
+          WebFViewController.disposeBindingObject(view, nativePtr.cast<NativeBindingObject>());
 
           if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();

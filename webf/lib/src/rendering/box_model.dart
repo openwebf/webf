@@ -134,7 +134,7 @@ mixin RenderBoxContainerDefaultsMixin<ChildType extends RenderBox,
     // The x, y parameters have the top left of the node's box as the origin.
 
     // The z-index needs to be sorted, and higher-level nodes are processed first.
-    List<RenderObject?> paintingOrder = (this as RenderLayoutBox).renderStyle.paintingOrder;
+    List<RenderObject?> paintingOrder = (this as RenderLayoutBox).paintingOrder;
     for (int i = paintingOrder.length - 1; i >= 0; i--) {
       ChildType child = paintingOrder[i] as ChildType;
       // Ignore detached render object.
@@ -204,29 +204,35 @@ class RenderLayoutBox extends RenderBoxModel
     return null;
   }
 
+  List<RenderBox>? _cachedPaintingOrder;
+  List<RenderBox> get paintingOrder {
+    _cachedPaintingOrder ??= renderStyle.paintingOrder;
+    return _cachedPaintingOrder!;
+  }
+
   // No need to override [all] and [addAll] method cause they invoke [insert] method eventually.
   @override
   void insert(RenderBox child, {RenderBox? after}) {
     super.insert(child, after: after);
-    renderStyle.clearPaintingOrder();
+    _cachedPaintingOrder = null;
   }
 
   @override
   void remove(RenderBox child) {
     super.remove(child);
-    renderStyle.clearPaintingOrder();
+    _cachedPaintingOrder = null;
   }
 
   @override
   void removeAll() {
     super.removeAll();
-    renderStyle.clearPaintingOrder();
+    _cachedPaintingOrder = null;
   }
 
   @override
   void move(RenderBox child, {RenderBox? after}) {
     super.move(child, after: after);
-    renderStyle.clearPaintingOrder();
+    _cachedPaintingOrder = null;
   }
 
   @override
@@ -327,8 +333,8 @@ class RenderLayoutBox extends RenderBoxModel
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
-    for (int i = 0; i < renderStyle.paintingOrder.length; i++) {
-      RenderBox child = renderStyle.paintingOrder[i];
+    for (int i = 0; i < paintingOrder.length; i++) {
+      RenderBox child = paintingOrder[i];
       if (!isPositionPlaceholder(child)) {
         final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
         if (child.hasSize) {

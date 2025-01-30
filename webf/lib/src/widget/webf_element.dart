@@ -107,5 +107,15 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
   }
 
   @override
+  void unmount() {
+    _webFElement!.willDetachRenderer(this);
+    super.unmount();
+    _webFElement!.didDetachRenderer(this);
+    _webFElement!.parentOrShadowHostNode = null;
+    WebFViewController.disposeBindingObject(_webFElement!.ownerView, _webFElement!.pointer!);
+    _webFElement = null;
+  }
+
+  @override
   dom.Element get webFElement => _webFElement!;
 }

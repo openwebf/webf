@@ -222,6 +222,12 @@ class TextNode extends CharacterData {
   }
 
   @override
+  void willDetachRenderer(flutter.RenderObjectElement? flutterWidgetElement) {
+    super.willDetachRenderer(flutterWidgetElement);
+    _attachedFlutterWidgetElements.remove(flutterWidgetElement);
+  }
+
+  @override
   Future<void> dispose() async {
     unmountRenderObjectInDOMMode();
     _attachedFlutterWidgetElements.clear();
@@ -267,4 +273,10 @@ class _TextNodeAdapterElement extends flutter.SingleChildRenderObjectElement {
 
   @override
   TextNodeAdapter get widget => super.widget as TextNodeAdapter;
+
+  @override
+  void unmount() {
+    widget.textNode.willDetachRenderer(this);
+    super.unmount();
+  }
 }

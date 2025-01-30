@@ -939,30 +939,24 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   // Sort children by zIndex, used for paint and hitTest.
-  List<RenderBox>? _paintingOrder;
-
   List<RenderBox> get paintingOrder {
-    if (_paintingOrder != null) {
-      return _paintingOrder!;
-    }
-
     if (attachedRenderBoxModel == null) return [];
 
     RenderBoxModel attachedRoot = attachedRenderBoxModel as RenderBoxModel;
 
     if (attachedRoot is RenderObjectWithChildMixin && (attachedRoot as RenderObjectWithChildMixin).child != null) {
-      return _paintingOrder = [(attachedRoot as RenderObjectWithChildMixin).child as RenderBox];
+      return [(attachedRoot as RenderObjectWithChildMixin).child as RenderBox];
     }
 
     RenderLayoutBox containerLayoutBox = attachedRoot as RenderLayoutBox;
 
     if (containerLayoutBox.childCount == 0) {
       // No child.
-      return _paintingOrder = const [];
+      return const [];
     } else if (containerLayoutBox.childCount == 1) {
       // Only one child.
       final List<RenderBox> order = <RenderBox>[containerLayoutBox.firstChild as RenderBox];
-      return _paintingOrder = order;
+      return order;
     } else {
       // Sort by zIndex.
       List<RenderBox> children = containerLayoutBox.getChildren();
@@ -996,12 +990,8 @@ abstract class RenderStyle extends DiagnosticableTree {
         });
         _paintingOrderNeedsSort = false;
       }
-      return _paintingOrder = children;
+      return children;
     }
-  }
-
-  void clearPaintingOrder() {
-    _paintingOrder = null;
   }
 
   // Sizing may affect parent size, mark parent as needsLayout in case
