@@ -442,6 +442,36 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return firstChild != null;
   }
 
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty('nodeType', nodeType));
+    properties.add(DiagnosticsProperty('nodeName', nodeName));
+    properties.add(DiagnosticsProperty('managedByFlutterWidget', managedByFlutterWidget));
+    properties.add(DiagnosticsProperty('isConnected', isConnected));
+    properties.add(DiagnosticsProperty('isRendererAttached', isRendererAttached));
+    properties.add(DiagnosticsProperty('isRendererAttachedToSegmentTree', isRendererAttachedToSegmentTree));
+    properties.add(DiagnosticsProperty('renderObjectManagerType', renderObjectManagerType));
+  }
+
+  @override
+  List<DiagnosticsNode> debugDescribeChildren() {
+    final List<DiagnosticsNode> children = <DiagnosticsNode>[];
+    if (firstChild != null) {
+      Node child = firstChild!;
+      int count = 1;
+      while (true) {
+        children.add(child.toDiagnosticsNode(name: 'child $count'));
+        if (child == lastChild) {
+          break;
+        }
+        count += 1;
+        child = child.nextSibling!;
+      }
+    }
+    return children;
+  }
+
   static RenderBox? findMostClosedSiblings(Node? previousSibling) {
     RenderBox? afterRenderObject = previousSibling?.domRenderer;
 

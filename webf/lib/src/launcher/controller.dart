@@ -542,7 +542,7 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void removeNode(Pointer pointer) {
-    assert(hasBindingObject(pointer), 'pointer: $pointer');
+    if (!hasBindingObject(pointer)) return;
 
     Node? target = getBindingObject<Node>(pointer);
     target?.parentNode?.removeChild(target);
@@ -646,8 +646,6 @@ class WebFViewController implements WidgetsBindingObserver {
 
     if (target is Element) {
       target.setInlineStyle(key, value);
-    } else {
-      debugPrint('Only element has style, try setting style.$key from Node(#$selfPtr).');
     }
   }
 
@@ -658,8 +656,6 @@ class WebFViewController implements WidgetsBindingObserver {
 
     if (target is Element) {
       target.clearInlineStyle();
-    } else {
-      debugPrint('Only element has style, try clear style from Node(#$selfPtr).');
     }
   }
 
@@ -670,9 +666,6 @@ class WebFViewController implements WidgetsBindingObserver {
 
     if (target is Element && target.isConnected) {
       target.style.flushPendingProperties();
-    } else {
-      debugPrint(
-          'Only element has style, try flushPendingStyleProperties from Node(#${Pointer.fromAddress(address)}).');
     }
   }
 

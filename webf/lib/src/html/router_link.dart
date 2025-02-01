@@ -58,7 +58,7 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
-  String toString() {
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
     return 'RouterLinkElement [path=$_path]';
   }
 

@@ -1807,7 +1807,7 @@ abstract class Element extends ContainerNode
   }
 
   @override
-  String toString() {
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
     String printText = '$tagName Element(${shortHash(this)})';
     if (className.isNotEmpty) {
       printText += ' className(.$className)';

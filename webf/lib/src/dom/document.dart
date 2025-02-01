@@ -476,7 +476,7 @@ class Document extends ContainerNode {
   }
 
   @override
-  String toString() {
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
     return 'Document($hashCode)';
   }
 

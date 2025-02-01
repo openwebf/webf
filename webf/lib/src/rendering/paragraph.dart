@@ -4,7 +4,7 @@
  */
 
 import 'dart:ui' as ui show LineMetrics, Gradient, Shader, TextBox, TextHeightBehavior;
-
+import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
@@ -432,6 +432,9 @@ class WebFRenderParagraph extends RenderBox
 
   @override
   void performLayout() {
+    if (!kReleaseMode) {
+      Timeline.startSync('WebFRenderParagraph.performLayout');
+    }
     if (_foregroundCallback != null) {
       _textPainter.layout();
       Size size = _textPainter.size;
@@ -444,7 +447,13 @@ class WebFRenderParagraph extends RenderBox
       }
     }
 
+    if (!kReleaseMode) {
+      Timeline.startSync('WebFRenderParagraph.layoutText');
+    }
     layoutText();
+    if (!kReleaseMode) {
+      Timeline.finishSync();
+    }
 
     // We grab _textPainter.size and _textPainter.didExceedMaxLines here because
     // assigning to `size` will trigger us to validate our intrinsic sizes,
@@ -517,6 +526,9 @@ class WebFRenderParagraph extends RenderBox
     } else {
       _needsClipping = false;
       _overflowShader = null;
+    }
+    if (!kReleaseMode) {
+      Timeline.finishSync();
     }
   }
 

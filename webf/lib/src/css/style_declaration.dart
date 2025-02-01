@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
@@ -692,7 +693,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   @override
-  String toString() => 'CSSStyleDeclaration($cssText)';
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) => 'CSSStyleDeclaration($cssText)';
 
   @override
   int get hashCode => cssText.hashCode;
@@ -701,6 +702,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   bool operator ==(Object other) {
     return hashCode == other.hashCode;
   }
+
 
   @override
   Iterator<MapEntry<String, CSSPropertyValue>> get iterator {

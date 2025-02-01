@@ -3,6 +3,7 @@
  */
 import 'dart:ffi' as ffi;
 import 'package:collection/collection.dart';
+import 'package:flutter/rendering.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:flutter/painting.dart';
 import 'package:webf/bridge.dart';
@@ -601,7 +602,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   }
 
   @override
-  String toString() {
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
     return 'ComputedCSSStyleDeclaration($_element)';
   }
 }

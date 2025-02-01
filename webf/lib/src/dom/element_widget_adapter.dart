@@ -45,7 +45,7 @@ class _WebFElementWidget extends flutter.StatefulWidget {
       attributes += 'class="' + webFElement.className + '"';
     }
 
-    return '<${webFElement.tagName.toLowerCase()}($hashCode) $attributes>';
+    return '<${webFElement.tagName.toLowerCase()} $attributes>';
   }
 }
 

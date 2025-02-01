@@ -61,7 +61,7 @@ class AsyncBindingObjectMethod extends BindingObjectMethod {
   final AsyncBindingMethodCallback call;
 }
 
-abstract class BindingObject<T> extends Iterable<T> {
+abstract class BindingObject<T> extends Iterable<T> with DiagnosticableTreeMixin {
   static BindingObjectOperation? bind;
   static BindingObjectOperation? unbind;
 
@@ -96,6 +96,12 @@ abstract class BindingObject<T> extends Iterable<T> {
   @mustCallSuper
   void dispose() {
     _unbind(_ownerView);
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    properties.add(DiagnosticsProperty('pointer', pointer));
+    properties.add(DiagnosticsProperty('contextId', contextId));
   }
 }
 
@@ -243,6 +249,17 @@ abstract class DynamicBindingObject<T> extends BindingObject<T> {
     }
 
     return null;
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    if (dynamicProperties.isNotEmpty) {
+      properties.add(IterableProperty('dynamicProperties', dynamicProperties.keys.toList()));
+    }
+    if (dynamicMethods.isNotEmpty) {
+      properties.add(IterableProperty('dynamicMethods', dynamicMethods.keys.toList()));
+    }
   }
 
   @override

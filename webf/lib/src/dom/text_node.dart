@@ -196,7 +196,7 @@ class TextNode extends CharacterData {
   }
 
   @override
-  String toString() {
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
     return 'TextNode($data)';
   }
 

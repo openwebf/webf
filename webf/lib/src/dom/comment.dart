@@ -26,7 +26,7 @@ class Comment extends CharacterData {
   int get length => data.length;
 
   @override
-  String toString() {
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
     return 'Comment()';
   }
 }
