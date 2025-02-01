@@ -265,6 +265,15 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   Node(this.nodeType, [BindingContext? context]) : super(context);
 
   bool _isConnected = false;
+  set isConnected(bool value) {
+    _isConnected = true;
+
+    Node? first = firstChild;
+    while(first != null) {
+      first.isConnected = true;
+      first = first.nextSibling;
+    }
+  }
 
   // If node is on the tree, the root parent is body.
   bool get isConnected => _isConnected;
