@@ -6,69 +6,61 @@
       <div class="box" id="example-element" :style="computedStyle" @click="onBClicked">B</div>
       <div class="box">C</div>
     </div>
-    <div class="controls">
-      <div class="control-panel">
-        <div>
-          <span>Top: </span>
-          <input type="checkbox" v-model="enableTop" />
-        </div>
-        <div>
-          <span>left: </span>
-          <input type="checkbox" v-model="enableLeft" />
-        </div>
-        <div>
-          <span>right: </span>
-          <input type="checkbox" v-model="enableRight" />
-        </div>
-        <div>
-          <span>bottom: </span>
-          <input type="checkbox" v-model="enableBottom" />
-        </div>
+    <div class="control-panel">
+      <div>
+        <span>Top: </span>
+        <input type="checkbox" v-model="enableTop" />
       </div>
-      <div class="control-buttons" v-if="style['position'] == 'absolute'">
-        <flutter-button @press="onMarginAutoButtonClick('horizontal')">Horizontal Center</flutter-button>
-        <flutter-button @press="onMarginAutoButtonClick('vertical')">Vertical Center</flutter-button>
+      <div>
+        <span>left: </span>
+        <input type="checkbox" v-model="enableLeft" />
       </div>
-      <div class="control-item" v-if="enableTop">
-        <div class="control-title">top: </div>
-        <flutter-slider max="100" min="-100" :val="top" class="control-slider"
-          @change="onControlChange($event, 'top')"></flutter-slider>
-        <div class="control-result">{{ top }} {{  topPercentage ? '%' : 'px' }}</div>
-        <flutter-switch :selected="topPercentage" @change="onSwitchChange($event, 'top')"></flutter-switch>
+      <div>
+        <span>right: </span>
+        <input type="checkbox" v-model="enableRight" />
       </div>
-      <div class="control-item" v-if="enableLeft">
-        <div class="control-title">left: </div>
-        <flutter-slider class="control-slider" :val="left" @change="onControlChange($event, 'left')"></flutter-slider>
-        <div class="control-result">{{ left }} {{ leftPercentage ? '%' : 'px' }}</div>
-        <flutter-switch :selected="leftPercentage" @change="onSwitchChange($event, 'left')"></flutter-switch>
+      <div>
+        <span>bottom: </span>
+        <input type="checkbox" v-model="enableBottom" />
       </div>
-      <div class="control-item" v-if="enableRight">
-        <div class="control-title">right: </div>
-        <flutter-slider class="control-slider" :val="right" @change="onControlChange($event, 'right')"></flutter-slider>
-        <div class="control-result">{{ right }} {{ rightPercentage ? '%' : 'px'}}</div>
-        <flutter-switch :selected="rightPercentage" @change="onSwitchChange($event, 'right')"></flutter-switch>
-      </div>
-      <div class="control-item" v-if="enableBottom">
-        <div class="control-title">bottom: </div>
-        <flutter-slider class="control-slider" :val="bottom"
-          @change="onControlChange($event, 'bottom')"></flutter-slider>
-        <div class="control-result">{{ bottom }} {{ bottomPercentage ? '%' : 'px' }}</div>
-        <flutter-switch :selected="bottomPercentage" @change="onSwitchChange($event, 'bottom')"></flutter-switch>
-      </div>
-      <div class="control-item">
-        <div class="control-title">margin-top: </div>
-        <flutter-slider class="control-slider" :val="marginTop"
-          @change="onControlChange($event, 'marginTop')"></flutter-slider>
-        <div class="control-result">{{ marginTopAuto ? 'auto' : marginTop }} {{ marginTopAuto ? '' : (marginTopPercentage ?  '%' : 'px') }}</div>
-        <flutter-switch :selected="marginTopPercentage" @change="onSwitchChange($event, 'marginTop')"></flutter-switch>
-      </div>
-      <div class="control-item">
-        <div class="control-title">margin-left: </div>
-        <flutter-slider class="control-slider" :val="marginLeft"
-          @change="onControlChange($event, 'marginLeft')"></flutter-slider>
-        <div class="control-result">{{ marginLeftAuto ? 'auto' : marginLeft }} {{ marginLeftAuto ? '' : (marginLeftPercentage ? '%' : 'px') }}</div>
-        <flutter-switch :selected="marginLeftPercentage" @change="onSwitchChange($event, 'marginLeft')"></flutter-switch>
-      </div>
+    </div>
+    <div class="control-buttons" v-if="style['position'] == 'absolute'">
+      <flutter-button @press="onMarginAutoButtonClick('horizontal')">Horizontal Center</flutter-button>
+      <flutter-button @press="onMarginAutoButtonClick('vertical')">Vertical Center</flutter-button>
+    </div>
+    <div class="control-item" v-if="enableTop">
+      <div class="control-title">top: </div>
+      <flutter-slider max="100" min="-100" :val="top" class="control-slider"
+        @change="onControlChange($event, 'top')"></flutter-slider>
+      <div class="control-result">{{ top }} {{ topPercentage ? '%' : 'px' }}</div>
+      <flutter-switch :selected="topPercentage" @change="onSwitchChange($event, 'top')"></flutter-switch>
+    </div>
+    <div class="control-item" v-if="enableLeft">
+      <div class="control-title">left: </div>
+      <flutter-slider class="control-slider" :val="left" @change="onControlChange($event, 'left')"></flutter-slider>
+      <div class="control-result">{{ left }} {{ leftPercentage ? '%' : 'px' }}</div>
+      <flutter-switch :selected="leftPercentage" @change="onSwitchChange($event, 'left')"></flutter-switch>
+    </div>
+    <div class="control-item" v-if="enableRight">
+      <div class="control-title">right: </div>
+      <flutter-slider class="control-slider" :val="right" @change="onControlChange($event, 'right')"></flutter-slider>
+      <div class="control-result">{{ right }} {{ rightPercentage ? '%' : 'px' }}</div>
+      <flutter-switch :selected="rightPercentage" @change="onSwitchChange($event, 'right')"></flutter-switch>
+    </div>
+    <div class="control-item" v-if="enableBottom">
+      <div class="control-title">bottom: </div>
+      <flutter-slider class="control-slider" :val="bottom" @change="onControlChange($event, 'bottom')"></flutter-slider>
+      <div class="control-result">{{ bottom }} {{ bottomPercentage ? '%' : 'px' }}</div>
+      <flutter-switch :selected="bottomPercentage" @change="onSwitchChange($event, 'bottom')"></flutter-switch>
+    </div>
+
+    <div class="control-item" v-for="n in 500" :key="n">
+      <div class="control-title">top: </div>
+      <flutter-slider class="control-slider" :val="marginTop"
+        @change="onControlChange($event, 'marginTop')"></flutter-slider>
+      <div class="control-result">{{ marginTopAuto ? 'auto' : marginTop }} {{ marginTopAuto ? '' : (marginTopPercentage
+        ? '%' : 'px') }}</div>
+      <flutter-switch :selected="marginTopPercentage" @change="onSwitchChange($event, 'marginTop')"></flutter-switch>
     </div>
   </webf-listview>
 </template>
@@ -153,7 +145,7 @@ export default {
           break;
         case 'marginBottom':
           this.marginBottom = e.detail;
-            break;
+          break;
       }
     },
 
@@ -182,14 +174,14 @@ export default {
           break;
         case 'marginBottom':
           this.marginBottomPercentage = e.detail;
-            break;
+          break;
       }
     },
     onBClicked(e) {
-      e.target.style.backgroundColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+      e.target.style.backgroundColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
     },
     onMarginAutoButtonClick(direction) {
-      switch(direction) {
+      switch (direction) {
         case 'horizontal':
           this.left = 0;
           this.right = 0;
@@ -264,13 +256,8 @@ export default {
   background-color: rgba(251, 235, 78);
 }
 
-.controls {
-  margin-top: 50px;
-  width: 100%;
-  height: 45vh;
-}
-
 .control-panel {
+  margin-top: 50px;
   display: flex;
   flex-direction: row;
   justify-content: space-around;
