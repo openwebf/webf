@@ -101,8 +101,12 @@ class ExecutingContext {
   void ReportError(JSValueConst error, char** rust_errmsg, uint32_t* rust_errmsg_length);
   void DrainMicrotasks();
   void EnqueueMicrotask(MicrotaskCallback callback, void* data = nullptr);
-  void SetRunRustFutureTasks(const std::shared_ptr<WebFNativeFunction>& run_rust_future_tasks);
+  static void AddRustFutureTask(const std::shared_ptr<WebFNativeFunction>& run_rust_future_tasks,
+                                NativeLibrartMetaData* meta_data);
+  static void RemoveRustFutureTask(const std::shared_ptr<WebFNativeFunction>& run_rust_future_tasks,
+                                   NativeLibrartMetaData* meta_data);
   void RunRustFutureTasks();
+  void RegisterNativeLibraryMetaData(NativeLibrartMetaData* meta_data);
   void DefineGlobalProperty(const char* prop, JSValueConst value);
   ExecutionContextData* contextData();
   uint8_t* DumpByteCode(const char* code, uint32_t codeLength, const char* sourceURL, uint64_t* bytecodeLength);
@@ -228,8 +232,8 @@ class ExecutingContext {
   // Rust methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<ExecutingContextWebFMethods> public_method_ptr_ = nullptr;
 
-  // Rust future task queue run trigger
-  std::shared_ptr<WebFNativeFunction> run_rust_future_tasks_;
+  // Native library metadata
+  std::vector<NativeLibrartMetaData*> native_library_meta_data_contaner_;
 };
 
 class ObjectProperty {
