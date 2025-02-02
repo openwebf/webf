@@ -131,5 +131,11 @@
     "specs": [
       "specs/blink/css1/**/*.{js,jsx,ts,tsx,html,svg}"
     ]
+  },
+  {
+    "name": "Rust",
+    "specs": [
+      "specs/rust/**/*.{js,jsx,ts,tsx,html}"
+    ]
   }
 ]

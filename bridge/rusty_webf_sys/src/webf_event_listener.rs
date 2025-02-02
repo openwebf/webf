@@ -9,6 +9,7 @@ pub type EventListenerCallback = Box<dyn Fn(&Event)>;
 pub struct EventCallbackContextData {
   pub executing_context_ptr: *const OpaquePtr,
   pub executing_context_method_pointer: *const ExecutingContextRustMethods,
+  pub executing_context_meta_data: *const NativeLibraryMetaData,
   pub executing_context_status: *const RustValueStatus,
   pub func: EventListenerCallback,
 }
@@ -49,7 +50,7 @@ pub extern "C" fn invoke_event_listener_callback(
   unsafe {
     let func = &(*callback_context_data).func;
     let callback_data = &(*callback_context_data);
-    let executing_context = ExecutingContext::initialize(callback_data.executing_context_ptr, callback_data.executing_context_method_pointer, callback_data.executing_context_status);
+    let executing_context = ExecutingContext::initialize(callback_data.executing_context_ptr, callback_data.executing_context_method_pointer, callback_context_data.executing_context_meta_data, callback_data.executing_context_status);
     let event = Event::initialize(event_ptr, &executing_context, event_method_pointer, status);
     func(&event);
   }

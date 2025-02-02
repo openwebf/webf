@@ -760,6 +760,9 @@ class RenderFlexLayout extends RenderLayoutBox {
     // Info about each flex item in each flex line
     Map<int?, _RunChild> runChildren = {};
 
+    List<int> overflowHiddenNodeId = [];
+    double overflowHiddenNodeTotalMinWidth = 0;
+    double overflowNotHiddenNodeTotalWidth = 0;
     for (RenderBox child in children) {
       final RenderLayoutParentData? childParentData = child.parentData as RenderLayoutParentData?;
       BoxConstraints childConstraints;
@@ -847,8 +850,8 @@ class RenderFlexLayout extends RenderLayoutBox {
       // Baseline alignment in column direction behave the same as flex-start.
       AlignSelf alignSelf = _getAlignSelf(child);
       bool isBaselineAlign = alignSelf == AlignSelf.baseline || renderStyle.alignItems == AlignItems.baseline;
-
-      if (_isHorizontalFlexDirection && isBaselineAlign) {
+      bool isHorizontal = _isHorizontalFlexDirection;
+      if (isHorizontal && isBaselineAlign) {
         // Distance from top to baseline of child
         double childAscent = _getChildAscent(child);
         double? childMarginTop = 0;
@@ -870,9 +873,10 @@ class RenderFlexLayout extends RenderLayoutBox {
         runCrossAxisExtent = math.max(runCrossAxisExtent, childCrossAxisExtent);
       }
 
+      double _originalMainSize = _getMainSize(child, shouldUseIntrinsicMainSize: true);
       runChildren[childNodeId] = _RunChild(
         child,
-        _getMainSize(child, shouldUseIntrinsicMainSize: true),
+        _originalMainSize,
         0,
         false,
       );
@@ -889,9 +893,51 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (flexShrink > 0) {
         totalFlexShrink += flexShrink;
       }
+      if (isHorizontal && child is RenderBoxModel) {
+        if (child.renderStyle.overflowX == CSSOverflowType.hidden) {
+          overflowHiddenNodeId.add(childNodeId);
+          overflowHiddenNodeTotalMinWidth += child.contentConstraints?.minWidth ?? 0;
+        } else {
+          overflowNotHiddenNodeTotalWidth += _originalMainSize;
+        }
+      }
     }
 
     if (runChildren.isNotEmpty) {
+      if (overflowHiddenNodeId.isNotEmpty && runMainAxisExtent > flexLineLimit && overflowHiddenNodeTotalMinWidth < flexLineLimit) {
+        int _overflowNodeSize = overflowHiddenNodeId.length;
+        double overWidth = flexLineLimit - overflowNotHiddenNodeTotalWidth;
+        double avgOverWidth = overWidth / _overflowNodeSize;
+        int index = 0;
+        for (int nodeId in overflowHiddenNodeId) {
+          _RunChild? _runChild = runChildren[nodeId];
+          if (_runChild != null) {
+            index += 1;
+            if (overWidth <= 0) {// the remaining width is less than 0.
+              BoxConstraints oldConstraints = _runChild.child.constraints;
+              double _minWidth = oldConstraints.minWidth;
+              _runChild.child.layout(BoxConstraints(minWidth: _minWidth, maxWidth: _minWidth, minHeight: oldConstraints.minHeight, maxHeight: oldConstraints.maxHeight), parentUsesSize: true);
+              _runChild.originalMainSize = _minWidth;
+              _childrenIntrinsicMainSizes[nodeId] = _minWidth;
+            } else if (_runChild.originalMainSize <= avgOverWidth) {// the actual width of a subwidget is less than the average value of the remaining width.
+              // The child does not need layout calculations; adjust the average value.
+              overWidth -= _runChild.originalMainSize;
+              avgOverWidth = overWidth / (_overflowNodeSize - index);
+            } else {
+              BoxConstraints oldConstraints = _runChild.child.constraints;
+              double _minWidth = oldConstraints.minWidth;
+              double _maxWidth = avgOverWidth;
+              if (_minWidth > _maxWidth) {
+                _maxWidth = _minWidth;
+              }
+              _runChild.child.layout(BoxConstraints(minWidth: _minWidth, maxWidth: _maxWidth, minHeight: oldConstraints.minHeight, maxHeight: oldConstraints.maxHeight), parentUsesSize: true);
+              _runChild.originalMainSize = avgOverWidth;
+              _childrenIntrinsicMainSizes[nodeId] = avgOverWidth;
+            }
+          }
+        }
+        runMainAxisExtent = flexLineLimit;
+      }
       _runMetrics.add(_RunMetrics(
           runMainAxisExtent, runCrossAxisExtent, totalFlexGrow, totalFlexShrink, maxSizeAboveBaseline, runChildren, 0));
     }

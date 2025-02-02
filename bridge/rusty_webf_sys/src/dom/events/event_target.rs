@@ -77,6 +77,7 @@ impl EventTarget {
     let callback_context_data = Box::new(EventCallbackContextData {
       executing_context_ptr: self.context().ptr,
       executing_context_method_pointer: self.context().method_pointer(),
+      executing_context_meta_data: self.context().meta_data,
       executing_context_status: self.context().status,
       func: callback,
     });
@@ -112,6 +113,7 @@ impl EventTarget {
     let callback_context_data = Box::new(EventCallbackContextData {
       executing_context_ptr: self.context().ptr,
       executing_context_method_pointer: self.context().method_pointer(),
+      executing_context_meta_data: self.context().meta_data,
       executing_context_status: self.context().status,
       func: callback,
     });

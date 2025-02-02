@@ -10,6 +10,21 @@
 
 namespace webf {
 
+class ScriptPromiseResolver;
+class WebFNativeFunction;
+
+struct NativeLibraryLoadContext {
+  ExecutingContext* context{nullptr};
+  std::shared_ptr<ScriptPromiseResolver> promise_resolver{nullptr};
+};
+
+struct NativeLibrartMetaData {
+  NativeValue* lib_name;
+  NativeLibraryLoadContext* load_context;
+  std::vector<std::shared_ptr<WebFNativeFunction>> callbacks;
+  std::vector<std::shared_ptr<WebFNativeFunction>> removed_callbacks;
+};
+
 class NativeLoader : public ScriptWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
