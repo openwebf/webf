@@ -35,6 +35,10 @@ void ExecutingContextWebFMethods::FinishRecordingUIOperations(webf::ExecutingCon
   context->uiCommandBuffer()->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr, false);
 }
 
+void ExecutingContextWebFMethods::WebFSyncBuffer(webf::ExecutingContext* context) {
+  context->uiCommandBuffer()->SyncToActive();
+}
+
 NativeValue ExecutingContextWebFMethods::WebFInvokeModule(ExecutingContext* context,
                                                           const char* module_name,
                                                           const char* method,
@@ -132,12 +136,22 @@ void ExecutingContextWebFMethods::ClearInterval(ExecutingContext* context,
   WindowOrWorkerGlobalScope::clearInterval(context, interval_id, shared_exception_state->exception_state);
 }
 
-void ExecutingContextWebFMethods::SetRunRustFutureTasks(ExecutingContext* context,
-                                                        WebFNativeFunctionContext* callback_context,
-                                                        SharedExceptionState* shared_exception_state) {
+void ExecutingContextWebFMethods::AddRustFutureTask(ExecutingContext* context,
+                                                    WebFNativeFunctionContext* callback_context,
+                                                    NativeLibrartMetaData* meta_data,
+                                                    SharedExceptionState* shared_exception_state) {
   auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
 
-  context->SetRunRustFutureTasks(callback_impl);
+  context->AddRustFutureTask(callback_impl, meta_data);
+}
+
+void ExecutingContextWebFMethods::RemoveRustFutureTask(ExecutingContext* context,
+                                                       WebFNativeFunctionContext* callback_context,
+                                                       NativeLibrartMetaData* meta_data,
+                                                       SharedExceptionState* shared_exception_state) {
+  auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
+
+  context->RemoveRustFutureTask(callback_impl, meta_data);
 }
 
 }  // namespace webf

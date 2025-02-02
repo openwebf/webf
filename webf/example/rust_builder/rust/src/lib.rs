@@ -1,66 +1,26 @@
-use std::cell::RefCell;
 use std::ffi::c_void;
-use std::rc::Rc;
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::webf_future::FutureRuntime;
-use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, RustValue};
+use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, NativeLibraryMetaData, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
 #[no_mangle]
-pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) -> *mut c_void {
-  let context = initialize_webf_api(handle);
+pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>, meta_data: *const NativeLibraryMetaData) -> *mut c_void {
+  let context = initialize_webf_api(handle, meta_data);
   println!("Context created");
   let exception_state = context.create_exception_state();
   let document = context.document();
-  let navigator = context.navigator();
-
-  let ua_string = navigator.user_agent(&exception_state);
-  println!("User Agent: {}", ua_string);
-
-  let local_storage = context.local_storage();
-
-  let result = local_storage.set_item("test", "test2", &exception_state);
-
-  match result {
-    Ok(_) => {
-      println!("Local Storage Set Item Success");
-    },
-    Err(err) => {
-      println!("Local Storage Set Item Failed: {:?}", err);
-    }
-  }
-
-  println!("Local Storage value for \"a\": {:?}", local_storage.get_item("a", &exception_state));
-  println!("Local Storage Keys: {:?}", local_storage.get_all_keys(&exception_state));
-  println!("Local Storage Length: {:?}", local_storage.length(&exception_state));
-  println!("Local Storage value for \"test\": {:?}", local_storage.get_item("test", &exception_state));
-
-  local_storage.clear(&exception_state);
-
   let context2 = context.clone();
 
-  let runtime = Rc::new(RefCell::new(FutureRuntime::new()));
-
-  runtime.borrow_mut().spawn(async move {
+  webf_sys::webf_future::spawn(context.clone(), async move {
     let context = context2.clone();
     let exception_state = context.create_exception_state();
     let async_storage_2 = context.async_storage();
 
     println!("Hello from Rust async context!");
 
-    let result = async_storage_2.set_item("a", "b", &exception_state).await;
-
-    match result {
-      Ok(_) => {
-        println!("Async Storage Set Item Success");
-      },
-      Err(err) => {
-        println!("Async Storage Set Item Failed: {:?}", err);
-      }
-    }
-
+    async_storage_2.set_item("a", "b", &exception_state).await.unwrap();
     let result = async_storage_2.get_item("a", &exception_state).await;
 
     match result {
@@ -72,12 +32,6 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) 
       }
     }
   });
-
-  let runtime_run_task_callback = Box::new(move || {
-    runtime.borrow_mut().run();
-  });
-
-  context.set_run_rust_future_tasks(runtime_run_task_callback, &exception_state).unwrap();
 
   let click_event = document.create_event("custom_click", &exception_state).unwrap();
   document.dispatch_event(&click_event, &exception_state);

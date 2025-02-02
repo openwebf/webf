@@ -81,7 +81,8 @@ class MyAppState extends State<MyApp> {
       context,
       devToolsService: kDebugMode ? ChromeDevToolsService() : null,
     );
-    controller!.preload(WebFBundle.fromUrl('http://localhost:8080/'), viewportSize: MediaQuery.of(context).size);
+    // controller!.preload(WebFBundle.fromUrl('http://localhost:8080/'), viewportSize: MediaQuery.of(context).size);
+    controller!.preload(WebFBundle.fromUrl('assets:///assets/bundle.html'), viewportSize: MediaQuery.of(context).size);
     // controller!.preload(WebFBundle.fromUrl('assets:///vue_project/dist/index.html'));
   }
 

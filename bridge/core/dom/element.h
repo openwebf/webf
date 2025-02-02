@@ -9,6 +9,7 @@
 #include "bindings/qjs/script_promise.h"
 #include "container_node.h"
 #include "core/css/inline_css_style_declaration.h"
+#include "core/native/native_function.h"
 #include "element_data.h"
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
@@ -89,6 +90,10 @@ class Element : public ContainerNode {
 
   ScriptPromise toBlob(double device_pixel_ratio, ExceptionState& exception_state);
   ScriptPromise toBlob(ExceptionState& exception_state);
+  void toBlob(double device_pixel_ratio,
+              const std::shared_ptr<WebFNativeFunction>& callback,
+              ExceptionState& exception_state);
+  void toBlob(const std::shared_ptr<WebFNativeFunction>& callback, ExceptionState& exception_state);
 
   ScriptValue ___testGlobalToLocal__(double x, double y, ExceptionState& exception_state);
 

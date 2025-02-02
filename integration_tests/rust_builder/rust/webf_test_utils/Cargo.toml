@@ -1,0 +1,10 @@
+[package]
+name = "webf_test_utils"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+webf-sys = "0.16.0"
+
+[patch.crates-io]
+webf-sys = { path = "../../../../bridge/rusty_webf_sys" }

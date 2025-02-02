@@ -120,7 +120,7 @@ describe('custom widget element', () => {
         }, [
           createElement('portal', {}, [
             elementInsideOfWidget = createElement('div', {
-  
+
             }, [
               createElement('portal', {}, [
                 createText('inside of flutter container')
