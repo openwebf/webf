@@ -458,9 +458,11 @@ typedef NativeLoadNativeLibrary = Void Function(
     Pointer<NativeFunction<NativeLoadNativeLibraryCallback>> callback);
 typedef NativeLoadNativeLibraryCallback = Pointer<Void> Function(
     Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> entryPoint,
+    Pointer<NativeString> libName,
     Pointer<Void> initializeData, Double contextId, Pointer<Void> exportData);
 typedef DartLoadNativeLibraryCallback = Pointer<Void> Function(
     Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> entryPoint,
+    Pointer<NativeString> libName,
     Pointer<Void> initializeData, double contextId, Pointer<Void> exportData);
 
 typedef StandardWebFPluginExternalSymbol = Void Function();
@@ -489,10 +491,10 @@ void _loadNativeLibrary(double contextId, Pointer<NativeString> nativeLibName, P
     Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> nativeFunction =
       library.lookup<NativeFunction<StandardWebFPluginExternalSymbol>>(entrySymbol);
 
-    callback(nativeFunction, initializeData, contextId, importData);
+    callback(nativeFunction, nativeLibName, initializeData, contextId, importData);
   } catch (e, stack) {
     String errmsg = '$e\n$stack';
-    callback(nullptr, initializeData, contextId, errmsg.toNativeUtf8().cast<Void>());
+    callback(nullptr, nativeLibName, initializeData, contextId, errmsg.toNativeUtf8().cast<Void>());
   }
 }
 

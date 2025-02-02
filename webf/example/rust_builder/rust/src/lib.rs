@@ -1,13 +1,13 @@
 use std::ffi::c_void;
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, RustValue};
+use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, NativeLibraryMetaData, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
 #[no_mangle]
-pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>) -> *mut c_void {
-  let context = initialize_webf_api(handle);
+pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>, meta_data: *const NativeLibraryMetaData) -> *mut c_void {
+  let context = initialize_webf_api(handle, meta_data);
   println!("Context created");
   let exception_state = context.create_exception_state();
   let document = context.document();

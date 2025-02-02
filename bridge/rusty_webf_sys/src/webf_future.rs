@@ -11,12 +11,16 @@ type Task = Pin<Box<dyn Future<Output = ()>>>;
 
 pub struct FutureRuntime {
   tasks: VecDeque<Task>,
+  context: ExecutingContext,
+  callback: Option<Box<dyn Fn()>>,
 }
 
 impl FutureRuntime {
-  pub fn new() -> FutureRuntime {
+  pub fn new(context: ExecutingContext) -> FutureRuntime {
     FutureRuntime {
       tasks: VecDeque::new(),
+      context,
+      callback: None,
     }
   }
 
@@ -39,7 +43,16 @@ impl FutureRuntime {
       }
     }
 
-    self.tasks.append(&mut unfinished_tasks);
+    if !unfinished_tasks.is_empty() {
+      self.tasks.append(&mut unfinished_tasks);
+      return;
+    }
+
+    if let Some(callback) = self.callback.take() {
+      let exception_state = self.context.create_exception_state();
+      self.context.remove_rust_future_task(callback, &exception_state);
+    }
+
   }
 }
 
@@ -96,11 +109,13 @@ pub fn spawn<F>(context: ExecutingContext, future: F)
 where
   F: Future<Output = ()> + 'static,
 {
-  let runtime = Rc::new(RefCell::new(FutureRuntime::new()));
+  let runtime = Rc::new(RefCell::new(FutureRuntime::new(context.clone())));
+  let runtime_clone = runtime.clone();
   runtime.borrow_mut().spawn(future);
   let runtime_run_task_callback = Box::new(move || {
     runtime.borrow_mut().run();
   });
+  runtime_clone.borrow_mut().callback = Some(runtime_run_task_callback.clone());
   let exception_state = context.create_exception_state();
-  context.set_run_rust_future_tasks(runtime_run_task_callback, &exception_state).unwrap();
+  context.add_rust_future_task(runtime_run_task_callback, &exception_state).unwrap();
 }
