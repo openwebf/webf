@@ -103,7 +103,8 @@ void SharedUICommand::SyncToActive() {
     return;
 
   // simply spin wait for the swapBuffers to finish.
-  while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {}
+  while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {
+  }
 
   is_blocking_reading_.store(true, std::memory_order::memory_order_release);
 
@@ -128,7 +129,6 @@ void SharedUICommand::appendCommand(std::unique_ptr<UICommandBuffer>& target,
   target->addCommands(command_item, original->size());
 
   original->clear();
-
 }
 
 }  // namespace webf

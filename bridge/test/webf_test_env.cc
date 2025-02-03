@@ -172,8 +172,7 @@ void TEST_toBlob(void* ptr,
   blobCallback(ptr, contextId, nullptr, bytes, 5);
 }
 
-void TEST_flushUICommand(double contextId) {
-}
+void TEST_flushUICommand(double contextId) {}
 
 void TEST_CreateBindingObject(double context_id, void* native_binding_object, int32_t type, void* args, int32_t argc) {}
 
