@@ -68,6 +68,7 @@ using PublicDocumentElementFromPoint =
 using PublicDocumentGetDocumentElement = WebFValue<Element, HTMLElementPublicMethods> (*)(Document*);
 using PublicDocumentGetDocumentHeader = WebFValue<Element, HTMLElementPublicMethods> (*)(Document*);
 using PublicDocumentGetDocumentBody = WebFValue<Element, HTMLElementPublicMethods> (*)(Document*);
+using PublicDocumentClearCookie = void (*)(Document*, SharedExceptionState*);
 
 struct DocumentPublicMethods : public WebFPublicMethods {
   static WebFValue<Element, ElementPublicMethods> CreateElement(Document* document,
@@ -113,6 +114,7 @@ struct DocumentPublicMethods : public WebFPublicMethods {
   static WebFValue<Element, HTMLElementPublicMethods> DocumentElement(Document* document);
   static WebFValue<Element, HTMLElementPublicMethods> Head(Document* document);
   static WebFValue<Element, HTMLElementPublicMethods> Body(Document* document);
+  static void ClearCookie(Document* document, SharedExceptionState* shared_exception_state);
 
   double version{1.0};
   ContainerNodePublicMethods container_node;
@@ -132,6 +134,7 @@ struct DocumentPublicMethods : public WebFPublicMethods {
   PublicDocumentGetDocumentElement document_get_document_element{DocumentElement};
   PublicDocumentGetDocumentHeader document_get_document_header{Head};
   PublicDocumentGetDocumentBody document_get_document_body{Body};
+  PublicDocumentClearCookie document_clear_cookie{ClearCookie};
 };
 
 }  // namespace webf

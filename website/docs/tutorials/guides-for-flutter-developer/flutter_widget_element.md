@@ -47,7 +47,7 @@ built with WebF. Here's a step-by-step guide:
   // Additional attributes and methods...
 
   @override
-  Widget build(BuildContext context, List<Widget> children) {
+  Widget build(BuildContext context, ChildNodeList children) {
     return SingleChildScrollView(
       child: Column(
         children: <Widget>[
@@ -156,25 +156,29 @@ standard HTML element:
 
 Methods and properties for custom elements can be 100% defined and implemented in Dart. Once you have defined your
 properties and methods for your custom element, WebF's binding system will create the corresponding JavaScript API for
-you can let
-you easily communicate with JavaScript.
+you can let you easily communicate with JavaScript.
 
 ### Defining Properties
 
-To enhance your custom element with additional properties, override the `initializeProperties` method
-within `WidgetElement`.
+To enhance your custom element with additional properties, declare a `StaticDefinedBindingPropertyMap` to define the extended properties for your `WidgetElement`, and append it to the `properties` getter.
 
 ```dart
+static StaticDefinedBindingPropertyMap videoPlayerProperties = {
+  'src': StaticDefinedBindingProperty(
+    getter: (element) => castToType<VideoPlayerElement>(element).src,
+    setter: (element, value) => 
+        castToType<VideoPlayerElement>(element).src = value,
+  ),
+};
+
 @override
-void initializeProperties(Map<String, BindingObjectProperty> properties) {
-  super.initializeProperties(properties);
-  properties['src'] = BindingObjectProperty(getter: () => '[VIDEO SRC]', setter: (src) {
-    // Action to be taken when JavaScript attempts to update the `src` property of your custom element instance.
-  });
-}
+List<StaticDefinedBindingPropertyMap> get properties => [
+      ...super.properties,
+      videoPlayerProperties,
+    ];
 ```
 
-`BindingObjectProperty` provides both getter and setter callbacks.
+The `StaticDefinedBindingProperty` class provides both getter and setter callbacks, enabling you to manage the property's value dynamically. Ensure that the `getter` and `setter` implementations correctly cast the element type and handle the property's behavior as intended.
 
 When JavaScript seeks to retrieve a value using this property, the `getter` callback gets activated.
 
@@ -245,27 +249,40 @@ Incorporation methods to your custom elements in WebF closely parallels the appr
 binding
 system auto-generates the relevant JavaScript functions corresponding to your Dart methods.
 
-To equip your custom element with additional methods, override the `initializeMethods` methods within `WidgetElement`:
+### Defining Methods
+
+To equip your custom element with additional methods, declare a `StaticDefinedSyncBindingObjectMethodMap` to define the extended synchronous methods for your `WidgetElement` and append it to the `methods` getter. Similarly, declare a `StaticDefinedAsyncBindingObjectMethodMap` for asynchronous methods and append it to the `asyncMethods` getter.
 
 ```dart
+static StaticDefinedSyncBindingObjectMethodMap videoPlayerSyncMethods = {
+  'status': StaticDefinedSyncBindingObjectMethod(
+    call: (element, args) {
+      return castToType<VideoPlayerElement>(element).status(args);
+    },
+  ),
+};
+
 @override
-void initializeMethods(Map<String, BindingObjectMethod> methods) {
-  super.initializeMethods(methods);
-  // Here, we're defining a method named 'play' that returns a Promise.
-  // For synchronous execution, opt for the `BindingObjectMethodSync` class.
-  methods['play'] = AsyncBindingObjectMethod(call: (args) async {
-    // This is the action that occurs when JavaScript invokes the `play()` method.
-    // 'args' will contain parameters passed from the JavaScript side.
+List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
+      ...super.methods,
+      videoPlayerSyncMethods,
+    ];
 
-    // Implement your desired functionality for this method.
-    // For instance: await _controller.play();
-    // ...
+static StaticDefinedAsyncBindingObjectMethodMap videoPlayerAsyncMethods = {
+  'play': StaticDefinedAsyncBindingObjectMethod(
+    call: (element, args) async {
+      return castToType<VideoPlayerElement>(element).play(args);
+    },
+  ),
+};
 
-    // Dispatch an event to the JavaScript side to activate a callback.
-    dispatchEvent(Event('play'));
-  });
-}
+@override
+List<StaticDefinedAsyncBindingObjectMethodMap> get asyncMethods => [
+      ...super.asyncMethods,
+      videoPlayerAsyncMethods,
+    ];
 ```
+
 
 Post initialization, the custom element instance on the JavaScript side will possess a `play()` that returns a Promise.
 
@@ -275,7 +292,10 @@ If directly interacting with the DOM element, these methods can be invoked with 
 // JavaScript Code
 const videoPlayerElement = document.createElement('video-player');
 
-// Invoke the `play` method, as crafted in Dart.
+// Invoke the `status` method, returned in sync results, as crafted in Dart.
+videoPlayerElement.status();
+
+// Invoke the `play` method, returned with a Promise object, as corresponding to the Future in Dart.
 await videoPlayerElement.play();
 ```
 
@@ -313,19 +333,6 @@ invocation of functions defined in Dart.
 </script>
 ```
 
-**Synchronous & Asynchronous Functions**
-
-WebF's binding system accommodates both synchronous and asynchronous functions.
-
-Depending on your requirements, you can tailor your functions accordingly.
-
-Here's comparative illustrating Dart methods and their corresponding JavaScript counterparts:
-
-| Dart                       | JavaScript          |
-|----------------------------|---------------------|
-| `AsyncBindingObjectMethod` | async function() {} |
-| `BindingObjectMethodSync`  | function() { }      |
-
 **Use an Asynchronous Approach to Synchronous Functions**
 
 In dedicated thread mode, calling synchronous methods blocks the JavaScript thread while waiting for the Dart synchronous methods to return. For better performance optimization, JavaScript developers are encouraged to use a more efficient approach to call the same Dart synchronous method on `widgetElement` without blocking the JavaScript thread.
@@ -333,15 +340,15 @@ In dedicated thread mode, calling synchronous methods blocks the JavaScript thre
 By appending the `_async` suffix to the synchronous Dart method name, a Promise object is returned to JavaScript, enabling an asynchronous approach:
 
 ```javascript
-this.$refs['videoPlayer'].play(); // This function is synchronous
-this.$refs['videoPlayer'].play_async(); // Calls the same synchronous `play` method in Dart but returns a Promise object.
+this.$refs['videoPlayer'].status(); // This function is synchronous
+this.$refs['videoPlayer'].status_async(); // Calls the same synchronous `status` method in Dart but returns a Promise object.
 ```
 
 Use the `.then` method or the `async`/`await` keywords to handle asynchronous execution:
 
 ```javascript
 async function play() {
-  await this.$refs['videoPlayer'].play_async();
+  await this.$refs['videoPlayer'].status_async();
 }
 ```
 
@@ -423,8 +430,7 @@ For example, in Vue, simply prefix the event name with @ to register the event h
 
 ## Use CSS Styles to Control Your Customized UI
 
-Custom elements can be styled with CSS. This includes setting width and height, arranging them alongside other regular
-elements, and using positioning to place them in specific locations.
+Custom elements can be styled with CSS. This includes setting width and height, arranging them alongside other regular elements, and using positioning to place them in specific locations.
 
 For instance, to ensure the video player always remains visible on the screen, you can use `position: fixed`.
 
@@ -451,98 +457,198 @@ For instance, to ensure the video player always remains visible on the screen, y
 </style>
 ```
 
-## Embedding HTMLElements as Children of Custom Elements
+### Use CSS Properties to Customize the Behavior of Your Widget Elements
 
-Custom elements can seamlessly integrate with standard HTMLElements to construct more intricate components.
+Matched CSS properties for your custom elements can be accessed via the `renderStyle` object in your `build()` methods. These properties allow you to adjust the layout and visual effects based on the CSS values.
 
-For instance, if you wish to design a complex component where the outer framework is crafted using Flutter widgets,
-while the inner content is structured using HTML and CSS, this combination allows for such versatility.
-
-### Another Demo
-
-[The demo](https://github.com/openwebf/samples/tree/main/demos/widget-elements) below highlights the potential of
-blended embedding. When designing the UI, you're not confined to a single
-technical framework. If you possess a collection of existing Flutter widget components, you can seamlessly integrate
-them with WebF, making them accessible for web applications.
-
-<video src="/videos/widget_elements.mov" controls style={{width: "500px", margin: '0 auto', display: 'block'}} />
-
-<br />
-
-Standard HTML elements can be set as children within custom elements.
-
-WebF's Flutter widget adapter will translate these child elements into a list of Flutter widgets, which are then passed
-to the `build()` function within the WidgetElement
-class.
-
-Consider a scenario where we've implemented a `FlutterButton` class using Flutter widgets and registered it with WebF
-under the tag name `flutter-button`.
-
-We might want this button to exhibit different behaviors for varied purposes, such as a red warning button or a green
-success button.
-
-Consequently, this button element should accept both properties and attributes as well as children parameters.
-
-```html
-// The success button
-<flutter-button type="primary">Success</flutter-button>
-
-// The error button
-<flutter-button type="default">Fail</flutter-button>
-```
-
-On the Dart side, the text "Success" and "Fail" are converted into widget children and stored in
-the `List<Widget> children` parameter.
-
-In this demonstration, we set these widgets as children of either the `ElevatedButton` or the `OutlinedButton` widget.
-Thus, the text will be displayed within the Flutter buttons.
-
-We also use the `initializeProperties` method to register a type property, which allows for the customization of the
-Flutter button based on its style.
-
-For the Flutter button's `onPressed` event handler, we dispatch a click event to JavaScript, enabling the web app to
-process the click gesture and execute further actions.
+For example, consider a custom element called `<flutter-search />` that accepts the CSS properties `font-size` and `border-radius` to customize its appearance:
 
 ```dart
-class FlutterButton extends WidgetElement {
-  FlutterButton(BindingContext? context) : super(context);
+WebF.defineCustomElement('flutter-search', (context) => FlutterSearch(context));
+```
 
-  handlePressed(BuildContext context) {
-    dispatchEvent(Event(EVENT_CLICK));
+```dart
+class FlutterSearch extends WidgetElement {
+  FlutterSearch(super.context);
+
+  final TextEditingController _controller = TextEditingController();
+  bool _hasText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      setState(() {
+        _hasText = _controller.text.isNotEmpty;
+      });
+    });
   }
 
   @override
-  Map<String, dynamic> get defaultStyle => {'display': 'inline-block'};
-
-  Widget buildButton(BuildContext context, String type, Widget child) {
-    switch (type) {
-      case 'primary':
-        return ElevatedButton(
-            onPressed: () => handlePressed(context), child: child);
-      case 'default':
-      default:
-        return OutlinedButton(
-            onPressed: () => handlePressed(context), child: child);
-    }
-  }
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
-    properties['type'] = BindingObjectProperty(
-        getter: () => type, setter: (value) => type = value);
-  }
-
-  String get type => getAttribute('type') ?? 'default';
-
-  set type(value) {
-    internalSetAttribute('type', value?.toString() ?? '');
-  }
-
-  @override
-  Widget build(BuildContext context, List<Widget> children) {
-    return buildButton(context, type,
-        children.isNotEmpty ? children[0] : SizedBox.fromSize(size: Size.zero));
+  Widget build(BuildContext context, ChildNodeList childNodes) {
+    return Container(
+      child: TextField(
+        maxLines: 1,
+        controller: _controller,
+        decoration: InputDecoration(
+          prefixIcon: Icon(Icons.search, color: Colors.grey),
+          suffixIcon: _hasText
+              ? IconButton(
+                  icon: Icon(Icons.clear, color: Colors.grey),
+                  onPressed: () {
+                    _controller.clear(); // Clear the input
+                  },
+                )
+              : null,
+          hintText: 'Search', // Placeholder text
+          hintStyle: TextStyle(color: Colors.grey, fontSize: 12), // Placeholder style
+          border: OutlineInputBorder(
+            borderRadius: renderStyle.borderRadius != null
+                ? BorderRadius.only(
+                    topLeft: renderStyle.borderRadius![0],
+                    topRight: renderStyle.borderRadius![1],
+                    bottomRight: renderStyle.borderRadius![2],
+                    bottomLeft: renderStyle.borderRadius![3],
+                  )
+                : BorderRadius.zero,
+            borderSide: BorderSide.none, // No default border
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: renderStyle.borderRadius != null
+                ? BorderRadius.only(
+                    topLeft: renderStyle.borderRadius![0],
+                    topRight: renderStyle.borderRadius![1],
+                    bottomRight: renderStyle.borderRadius![2],
+                    bottomLeft: renderStyle.borderRadius![3],
+                  )
+                : BorderRadius.zero, // Rounded corners
+            borderSide: BorderSide(color: Colors.blue, width: 1.0), // Outline when focused
+          ),
+          contentPadding: EdgeInsets.symmetric(vertical: 12.0), // Vertical padding
+        ),
+        style: TextStyle(
+          overflow: TextOverflow.visible, // Handles text overflow
+          fontSize: renderStyle.fontSize.computedValue, // Adjust font size dynamically
+        ),
+      ),
+    );
   }
 }
+```
+
+With this setup, the internal font size and border radius of the `<flutter-search />` element can be customized using the following HTML and CSS:
+
+```html
+<flutter-search id="search"></flutter-search>
+```
+
+```css
+#search {
+  font-size: 16px; /* Adjusts the font size for the input text */
+  border-radius: 8px; /* Changes the radius of the input's corners */
+}
+```
+
+
+## Embedding HTML Elements as Children of Custom Elements
+
+Custom elements can seamlessly integrate with standard HTML elements to construct more intricate components. 
+
+For example, you can design a complex component where the outer framework is created using Flutter widgets, while the inner content is structured using HTML and CSS. This combination provides exceptional flexibility and power.
+
+### Demo
+
+In this demo, we define two custom elements using Flutter: `<flutter-tab>` and `<flutter-tab-item>`.
+
+```dart
+WebF.defineCustomElement('flutter-tab', (context) => FlutterTab(context));
+WebF.defineCustomElement('flutter-tab-item', (context) => FlutterTabItem(context));
+```
+
+The following code converts the `childNodes` of the DOM tree into a list of `TabData` widgets, which form the basic tab items of the `DynamicTabBarWidget`:
+
+```dart
+List<TabData> tabs = childNodes.whereType<dom.Element>().map((element) {
+  return TabData(
+    index: _index++,
+    title: Tab(
+      child: Text(element.getAttribute('title') ?? ''),
+    ),
+    content: element.toWidget(key: ObjectKey(element)),
+  );
+}).toList(growable: false);
+```
+
+### Full Implementation
+
+```dart
+import 'package:dynamic_tabbar/dynamic_tabbar.dart';
+
+class FlutterTab extends WidgetElement {
+  FlutterTab(super.context);
+
+  bool isScrollable = false;
+  bool showNextIcon = true;
+  bool showBackIcon = true;
+
+  @override
+  Widget build(BuildContext context, ChildNodeList childNodes) {
+    int _index = 0;
+    List<TabData> tabs = childNodes.whereType<dom.Element>().map((element) {
+      return TabData(
+        index: _index++,
+        title: Tab(
+          child: Text(element.getAttribute('title') ?? ''),
+        ),
+        content: element.toWidget(key: ObjectKey(element)),
+      );
+    }).toList(growable: false);
+
+    return DynamicTabBarWidget(
+      dynamicTabs: tabs,
+      isScrollable: isScrollable,
+      onTabControllerUpdated: (controller) {
+        controller.index = 0;
+      },
+      onTabChanged: (index) {},
+      onAddTabMoveTo: MoveToTab.last,
+      showBackIcon: showBackIcon,
+      showNextIcon: showNextIcon,
+    );
+  }
+}
+
+class FlutterTabItem extends WidgetElement {
+  FlutterTabItem(super.context);
+
+  @override
+  Widget build(BuildContext context, ChildNodeList childNodes) {
+    return WebFHTMLElement(
+      tagName: 'DIV',
+      controller: ownerDocument.controller,
+      children: childNodes.toWidgetList(),
+    );
+  }
+}
+```
+
+### HTML Usage
+
+Once the custom elements are defined in Dart, you can use them in your HTML as follows:
+
+```html
+<flutter-tab>
+  <flutter-tab-item title="Relative">
+    <div>This is Relative</div>
+  </flutter-tab-item>
+  <flutter-tab-item title="Absolute">
+    <div>This is Absolute</div>
+  </flutter-tab-item>
+  <flutter-tab-item title="Fixed">
+    <div>This is Fixed</div>
+  </flutter-tab-item>
+  <flutter-tab-item title="Sticky">
+    <div>This is Sticky</div>
+  </flutter-tab-item>
+</flutter-tab>
 ```

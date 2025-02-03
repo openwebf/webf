@@ -3,6 +3,27 @@
  */
 
 #include "plugin_api/element.h"
+#include "core/api/exception_state.h"
 #include "core/dom/container_node.h"
+#include "core/dom/element.h"
 
-namespace webf {}  // namespace webf
+namespace webf {
+
+void ElementPublicMethods::ToBlob(Element* ptr,
+                                  WebFNativeFunctionContext* callback_context,
+                                  SharedExceptionState* shared_exception_state) {
+  auto* element = static_cast<webf::Element*>(ptr);
+  auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
+  return element->toBlob(callback_impl, shared_exception_state->exception_state);
+}
+
+void ElementPublicMethods::ToBlobWithDevicePixelRatio(Element* ptr,
+                                                      double device_pixel_ratio,
+                                                      WebFNativeFunctionContext* callback_context,
+                                                      SharedExceptionState* shared_exception_state) {
+  auto* element = static_cast<webf::Element*>(ptr);
+  auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
+  return element->toBlob(device_pixel_ratio, callback_impl, shared_exception_state->exception_state);
+}
+
+}  // namespace webf

@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <thread>
+#include "core/native/native_loader.h"
 #include "foundation/native_string.h"
 #include "foundation/native_value.h"
 #include "include/dart_api.h"
@@ -36,8 +37,10 @@ using AsyncModuleCallback = NativeValue* (*)(void* callback_context,
                                              Dart_PersistentHandle persistent_handle,
                                              InvokeModuleResultCallback result_callback);
 
-using PluginLibraryEntryPoint = void* (*)(WebFValue<ExecutingContext, ExecutingContextWebFMethods> handle_context);
+using PluginLibraryEntryPoint = void* (*)(WebFValue<ExecutingContext, ExecutingContextWebFMethods> handle_context,
+                                          NativeLibrartMetaData* meta_data);
 using LoadNativeLibraryCallback = void (*)(PluginLibraryEntryPoint entry_point,
+                                           NativeValue* lib_name,
                                            void* initialize_data,
                                            double context_id,
                                            void* imported_data);

@@ -20,7 +20,15 @@ pub struct HTMLElement {
 
 pub trait HTMLElementMethods: ElementMethods {}
 
-impl ElementMethods for HTMLElement {}
+impl ElementMethods for HTMLElement {
+  fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.element.to_blob(exception_state)
+  }
+
+  fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.element.to_blob_with_device_pixel_ratio(device_pixel_ratio, exception_state)
+  }
+}
 
 impl ContainerNodeMethods for HTMLElement {}
 
