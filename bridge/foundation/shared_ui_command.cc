@@ -67,14 +67,14 @@ void* SharedUICommand::data() {
 // third called by dart to clear commands.
 void SharedUICommand::clear() {
   // simply spin wait for the swapBuffers to finish.
-  while (is_blocking_reading_.load(std::memory_order::memory_order_acquire)) {}
+  while (is_blocking_reading_.load(std::memory_order::memory_order_acquire)) {
+  }
 
   is_blocking_writing_.store(true, std::memory_order::memory_order_release);
 
   active_buffer->clear();
 
   is_blocking_writing_.store(false, std::memory_order::memory_order_release);
-
 }
 
 // called by c++ to check if there are commands.
