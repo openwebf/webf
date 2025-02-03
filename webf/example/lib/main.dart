@@ -115,8 +115,8 @@ class MyAppState extends State<MyApp> {
         );
     controller!.darkModeOverride = widget.savedThemeMode == AdaptiveThemeMode.dark;
     // controller!.preload(WebFBundle.fromUrl('assets:///assets/bundle.html'));
-    controller!.preload(WebFBundle.fromUrl('http://localhost:8080/'), viewportSize: MediaQuery.of(context).size);
-    // controller!.preload(WebFBundle.fromUrl('assets:///vue_project/dist/index.html'));
+    // controller!.preload(WebFBundle.fromUrl('http://localhost:8080/'), viewportSize: MediaQuery.of(context).size);
+    controller!.preload(WebFBundle.fromUrl('assets:///vue_project/dist/index.html'));
   }
 
   @override

@@ -56,11 +56,10 @@
 
     <div class="control-item" v-for="n in 500" :key="n">
       <div class="control-title">top: </div>
-      <flutter-slider class="control-slider" :val="marginTop"
-        @change="onControlChange($event, 'marginTop')"></flutter-slider>
-      <div class="control-result">{{ marginTopAuto ? 'auto' : marginTop }} {{ marginTopAuto ? '' : (marginTopPercentage
-        ? '%' : 'px') }}</div>
-      <flutter-switch :selected="marginTopPercentage" @change="onSwitchChange($event, 'marginTop')"></flutter-switch>
+      <flutter-slider max="100" min="-100" :val="top" class="control-slider"
+        @change="onControlChange($event, 'top')"></flutter-slider>
+      <div class="control-result">{{ top }} {{ topPercentage ? '%' : 'px' }}</div>
+      <flutter-switch :selected="topPercentage" @change="onSwitchChange($event, 'top')"></flutter-switch>
     </div>
   </webf-listview>
 </template>
