@@ -710,8 +710,8 @@ class UICommandItem extends Struct {
   external Pointer nativePtr;
 }
 
-typedef NativeGetUICommandItems = Pointer<Uint64> Function(Pointer<Void>);
-typedef DartGetUICommandItems = Pointer<Uint64> Function(Pointer<Void>);
+typedef NativeGetUICommandItems = Pointer<UICommandBufferPack> Function(Pointer<Void>);
+typedef DartGetUICommandItems = Pointer<UICommandBufferPack> Function(Pointer<Void>);
 
 final DartGetUICommandItems _getUICommandItems =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetUICommandItems>>('getUICommandItems').asFunction();
@@ -759,30 +759,30 @@ void flushUICommandWithContextId(double contextId, Pointer<NativeBindingObject> 
 
 class _NativeCommandData {
   static _NativeCommandData empty() {
-    return _NativeCommandData(0, 0, []);
+    return _NativeCommandData(0, []);
   }
 
   int length;
-  int kindFlag;
   List<int> rawMemory;
 
-  _NativeCommandData(this.kindFlag, this.length, this.rawMemory);
+  _NativeCommandData(this.length, this.rawMemory);
 }
 
 _NativeCommandData readNativeUICommandMemory(double contextId) {
-  Pointer<Uint64> nativeCommandItemPointer = _getUICommandItems(_allocatedPages[contextId]!);
-  int flag = _getUICommandKindFlags(_allocatedPages[contextId]!);
-  int commandLength = _getUICommandItemSize(_allocatedPages[contextId]!);
+  Pointer<UICommandBufferPack> nativeCommandPack = _getUICommandItems(_allocatedPages[contextId]!);
 
-  if (commandLength == 0 || nativeCommandItemPointer == nullptr) {
+  int commandLength = nativeCommandPack.ref.length;
+  if (nativeCommandPack == nullptr || commandLength == 0) {
     return _NativeCommandData.empty();
   }
 
-  List<int> rawMemory =
-      nativeCommandItemPointer.cast<Int64>().asTypedList((commandLength) * nativeCommandSize).toList(growable: false);
-  _clearUICommandItems(_allocatedPages[contextId]!);
+  List<int> rawMemory = nativeCommandPack.ref.data
+      .cast<Int64>()
+      .asTypedList((commandLength) * nativeCommandSize)
+      .toList(growable: false);
+  _clearUICommandItems(nativeCommandPack.ref.head);
 
-  return _NativeCommandData(flag, commandLength, rawMemory);
+  return _NativeCommandData(commandLength, rawMemory);
 }
 
 void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPointer) {

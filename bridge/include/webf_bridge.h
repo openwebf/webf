@@ -140,13 +140,9 @@ WEBF_EXPORT_C
 void dispatchUITask(void* page, void* context, void* callback);
 WEBF_EXPORT_C
 void* getUICommandItems(void* page);
-WEBF_EXPORT_C
-uint32_t getUICommandKindFlag(void* page);
 
 WEBF_EXPORT_C
-int64_t getUICommandItemSize(void* page);
-WEBF_EXPORT_C
-void clearUICommandItems(void* page);
+void clearUICommandItems(void* ui_command_buffer);
 WEBF_EXPORT_C
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName);
 WEBF_EXPORT_C
