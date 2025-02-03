@@ -142,7 +142,10 @@ WEBF_EXPORT_C
 void* getUICommandItems(void* page);
 
 WEBF_EXPORT_C
-void clearUICommandItems(void* ui_command_buffer);
+void freeActiveCommandBuffer(void* ui_command_buffer);
+
+WEBF_EXPORT_C
+void clearUICommandItems(void* page);
 WEBF_EXPORT_C
 void registerPluginByteCode(uint8_t* bytes, int32_t length, const char* pluginName);
 WEBF_EXPORT_C

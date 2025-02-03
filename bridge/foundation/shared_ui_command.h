@@ -32,6 +32,7 @@ class SharedUICommand : public DartReadable {
                   bool request_ui_update = true);
 
   void* data();
+  void clear();
   bool empty();
   void SyncToActive();
   void SyncToReserve();

@@ -284,9 +284,14 @@ void* getUICommandItems(void* page_) {
   return page->executingContext()->uiCommandBuffer()->data();
 }
 
-void clearUICommandItems(void* ui_command_buffer) {
+void freeActiveCommandBuffer(void* ui_command_buffer) {
   auto* buffer = static_cast<webf::UICommandBuffer*>(ui_command_buffer);
   delete buffer;
+}
+
+void clearUICommandItems(void* page_) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  page->executingContext()->uiCommandBuffer()->clear();
 }
 
 // Callbacks when dart context object was finalized by Dart GC.

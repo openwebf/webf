@@ -734,6 +734,12 @@ typedef DartClearUICommandItems = void Function(Pointer<Void>);
 final DartClearUICommandItems _clearUICommandItems =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeClearUICommandItems>>('clearUICommandItems').asFunction();
 
+typedef NativeFreeActiveCommandBuffer = Void Function(Pointer<Void>);
+typedef DartFreeActiveCommandBuffer = void Function(Pointer<Void>);
+
+final DartClearUICommandItems _freeActiveCommandBuffer =
+WebFDynamicLibrary.ref.lookup<NativeFunction<NativeClearUICommandItems>>('freeActiveCommandBuffer').asFunction();
+
 typedef NativeIsJSThreadBlocked = Int8 Function(Pointer<Void>, Double);
 typedef DartIsJSThreadBlocked = int Function(Pointer<Void>, double);
 
@@ -780,7 +786,8 @@ _NativeCommandData readNativeUICommandMemory(double contextId) {
       .cast<Int64>()
       .asTypedList((commandLength) * nativeCommandSize)
       .toList(growable: false);
-  _clearUICommandItems(nativeCommandPack.ref.head);
+
+  _freeActiveCommandBuffer(nativeCommandPack.ref.head);
 
   return _NativeCommandData(commandLength, rawMemory);
 }
