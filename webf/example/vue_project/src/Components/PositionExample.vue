@@ -35,6 +35,13 @@
       <div class="control-result">{{ top }} {{ topPercentage ? '%' : 'px' }}</div>
       <flutter-switch :selected="topPercentage" @change="onSwitchChange($event, 'top')"></flutter-switch>
     </div>
+    <div class="control-item" v-for="n in 400" :key="n">
+      <div class="control-title">{{ n }}</div>
+      <flutter-slider max="100" min="-100" :val="top" class="control-slider"
+        @change="onControlChange($event, 'top')"></flutter-slider>
+      <div class="control-result">{{ top }} {{ topPercentage ? '%' : 'px' }}</div>
+      <flutter-switch :selected="topPercentage" @change="onSwitchChange($event, 'top')"></flutter-switch>
+    </div>
     <div class="control-item" v-if="enableLeft">
       <div class="control-title">left: </div>
       <flutter-slider class="control-slider" :val="left" @change="onControlChange($event, 'left')"></flutter-slider>
@@ -52,15 +59,7 @@
       <flutter-slider class="control-slider" :val="bottom" @change="onControlChange($event, 'bottom')"></flutter-slider>
       <div class="control-result">{{ bottom }} {{ bottomPercentage ? '%' : 'px' }}</div>
       <flutter-switch :selected="bottomPercentage" @change="onSwitchChange($event, 'bottom')"></flutter-switch>
-    </div>
-
-    <div class="control-item" v-for="n in 500" :key="n">
-      <div class="control-title">top: </div>
-      <flutter-slider max="100" min="-100" :val="top" class="control-slider"
-        @change="onControlChange($event, 'top')"></flutter-slider>
-      <div class="control-result">{{ top }} {{ topPercentage ? '%' : 'px' }}</div>
-      <flutter-switch :selected="topPercentage" @change="onSwitchChange($event, 'top')"></flutter-switch>
-    </div>
+    </div>  
   </webf-listview>
 </template>
 

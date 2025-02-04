@@ -418,22 +418,10 @@ class _SharedRenderWidgetElement<T extends RenderObject> extends MultiChildRende
   @override
   SharedRenderWidgetAdapter get widget => super.widget as SharedRenderWidgetAdapter<T>;
 
-  //
-  // @override
-  // void insertRenderObjectChild(RenderObject child, Object? slot) {
-  //   assert(renderObject.debugValidateChild(child));
-  //   renderObject.child = child;
-  // }
-
   @override
   void moveRenderObjectChild(RenderObject child, Object? oldSlot, Object? newSlot) {
     assert(false);
   }
-
-// @override
-// void removeRenderObjectChild(RenderObject child, Object? slot) {
-//   renderObject.child = null;
-// }
 }
 
 class WebFRenderWidgetAdaptor extends MultiChildRenderObjectWidget {
