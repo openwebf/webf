@@ -48,9 +48,9 @@ abstract class WidgetElement extends dom.Element {
 
   @override
   Widget toWidget({Key? key}) {
-    _widget = _WidgetElementAdapter(this);
+    _WidgetElementAdapter widget = _WidgetElementAdapter(this);
 
-    List<Widget> children = [_widget!, ...positionedElements.map((element) => element.toWidget())];
+    List<Widget> children = [widget, ...positionedElements.map((element) => element.toWidget())];
     Widget child = WebFRenderWidgetAdaptor(this, children: children, key: key ?? ObjectKey(this));
 
     if (isRepaintBoundary) {
@@ -267,6 +267,8 @@ abstract class WidgetElement extends dom.Element {
   @override
   void dispose() {
     super.dispose();
+    _state = null;
+    _widget = null;
     ownerDocument.aliveWidgetElements.remove(this);
   }
 }
@@ -353,6 +355,13 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
       widget = Portal(ownerElement: widgetElement, child: widget);
     }
     return widget;
+  }
+
+  @override
+  void dispose() {
+    widgetElement._widget = null;
+    widgetElement._state = null;
+    super.dispose();
   }
 }
 

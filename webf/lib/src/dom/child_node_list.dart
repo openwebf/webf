@@ -57,9 +57,9 @@ class ChildNodeList extends NodeList {
   }
 
   List<flutter.Widget> toWidgetList() {
-    // if (_cachedWidgetList != null) {
-    //   return _cachedWidgetList!;
-    // }
+    if (_cachedWidgetList != null) {
+      return _cachedWidgetList!;
+    }
     List<flutter.Widget> result = map((node) => node.toWidget()).toList();
     return result;
   }

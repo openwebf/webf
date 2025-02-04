@@ -276,7 +276,9 @@ class _TextNodeAdapterElement extends flutter.SingleChildRenderObjectElement {
 
   @override
   void unmount() {
-    widget.textNode.willDetachRenderer(this);
+    TextNode textNode = widget.textNode;
+    textNode.willDetachRenderer(this);
     super.unmount();
+    textNode.didDetachRenderer(this);
   }
 }
