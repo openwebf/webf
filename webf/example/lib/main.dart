@@ -16,6 +16,7 @@ import 'custom_elements/bottom_sheet.dart';
 import 'custom_elements/tab.dart';
 import 'custom_elements/switch.dart';
 import 'custom_elements/slider.dart';
+import 'custom_elements/tab_bar.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
@@ -31,6 +32,8 @@ void main() async {
   WebF.defineCustomElement('flutter-bottom-sheet', (context) => FlutterBottomSheet(context));
   WebF.defineCustomElement('flutter-slider', (context) => SliderElement(context));
   WebF.defineCustomElement('flutter-switch', (context) => FlutterSwitch(context));
+  WebF.defineCustomElement('flutter-tab-bar', (context) => FlutterTabBar(context));
+  WebF.defineCustomElement('flutter-tab-bar-item', (context) => FlutterTabBarItem(context));
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }
 
@@ -134,7 +137,14 @@ class MyAppState extends State<MyApp> {
         routes: {
           '/todomvc': (context) => WebFSubView(title: 'TodoMVC', path: '/todomvc', controller: controller!),
           '/positioned_layout': (context) =>
-              WebFSubView(title: 'CSS Positioned Layout', path: '/positioned_layout', controller: controller!)
+              WebFSubView(title: 'CSS Positioned Layout', path: '/positioned_layout', controller: controller!),
+          '/home': (context) => WebFSubView(title: 'Home', path: '/home', controller: controller!),
+          '/search': (context) => WebFSubView(title: 'Search', path: '/search', controller: controller!),
+          '/publish': (context) => WebFSubView(title: 'Publish', path: '/publish', controller: controller!),
+          '/message': (context) => WebFSubView(title: 'Message', path: '/message', controller: controller!),
+          '/my': (context) => WebFSubView(title: 'Me', path: '/my', controller: controller!),
+          '/register': (context) => WebFSubView(title: 'Register', path: '/register', controller: controller!),
+          '/login': (context) => WebFSubView(title: 'Login', path: '/login', controller: controller!),
         },
         debugShowCheckedModeBanner: false,
         home: FirstPage(title: 'Landing Bay', controller: controller!),
