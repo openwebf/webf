@@ -1,9 +1,9 @@
 <template>
-  <webf-router-link path="/register">
-    <register-page></register-page>
+  <webf-router-link path="/register" @mount="handleRouterMounted('register')">
+    <register-page v-if="activedRouter === 'register'"></register-page>
   </webf-router-link>
-  <webf-router-link path="/login">
-    <login-page></login-page>
+  <webf-router-link path="/login" @mount="handleRouterMounted('login')">
+    <login-page v-if="activedRouter === 'login'"></login-page>
   </webf-router-link>
   <flutter-tab-bar
     ref="tabBar"
@@ -75,8 +75,24 @@ export default {
     tabBarManager.setTabBarRef(this.$refs.tabBar);
   },
   methods: {
-  }
-}
+    handleRouterMounted(page) {
+      console.log('handleRouterMounted: ', page);
+      switch (page) {
+        case 'register':
+          this.activedRouter = 'register';
+          break;
+        case 'login':
+          this.activedRouter = 'login';
+          break;
+      }
+    },
+  },
+  data() {
+    return {
+      activedRouter: '',
+    };
+  },
+};
 </script>
 
 <style src="./assets/styles/app.css" />
