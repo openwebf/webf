@@ -9,6 +9,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/launcher.dart';
+import 'package:webf/src/bridge/binding_object.dart';
 import 'package:webf/widget.dart';
 
 const Map<String, dynamic> _defaultStyle = {
@@ -25,10 +26,15 @@ abstract class WidgetElement extends dom.Element {
     return _widget!;
   }
 
-  _WebFWidgetElementState? _state;
+  final Set<_WebFWidgetElementState> _states = {};
 
+  _WebFWidgetElementState? get state {
+    final stateFinder = _states.where((state) => state.mounted == true);
+    return stateFinder.isEmpty ? null : stateFinder.first;
+  }
   set state(_WebFWidgetElementState? newState) {
-    _state = newState;
+    if (newState == null) return;
+    _states.add(newState);
   }
 
   @override
@@ -39,7 +45,7 @@ abstract class WidgetElement extends dom.Element {
   bool isRouterLinkElement = false;
 
   BuildContext get context {
-    return _state!.context;
+    return state!.context;
   }
 
   WidgetElement(BindingContext? context) : super(context) {
@@ -51,7 +57,7 @@ abstract class WidgetElement extends dom.Element {
     _WidgetElementAdapter widget = _WidgetElementAdapter(this);
 
     List<Widget> children = [widget, ...positionedElements.map((element) => element.toWidget())];
-    Widget child = WebFRenderWidgetAdaptor(this, children: children, key: key ?? ObjectKey(this));
+    Widget child = WebFRenderWidgetAdaptor(this, children: children, key: UniqueKey());
 
     if (isRepaintBoundary) {
       child = RepaintBoundary(child: child);
@@ -69,7 +75,7 @@ abstract class WidgetElement extends dom.Element {
   void mount() {}
   void unmount() {}
 
-  bool get mounted => _state?.mounted ?? false;
+  bool get mounted => state?.mounted ?? false;
 
   // React to properties and attributes changes
   void attributeDidUpdate(String key, String value) {}
@@ -101,8 +107,8 @@ abstract class WidgetElement extends dom.Element {
 
   @nonVirtual
   void setState(VoidCallback callback) {
-    if (_state != null) {
-      _state!.requestUpdateState(callback);
+    if (state != null) {
+      state!.requestUpdateState(callback);
     } else {
       callback();
     }
@@ -170,8 +176,8 @@ abstract class WidgetElement extends dom.Element {
   void setInlineStyle(String property, String value) {
     super.setInlineStyle(property, value);
     bool shouldRebuild = shouldElementRebuild(property, style.getPropertyValue(property), value);
-    if (_state != null && shouldRebuild) {
-      _state!.requestUpdateState();
+    if (state != null && shouldRebuild) {
+      state!.requestUpdateState();
     }
     styleDidUpdate(property, value);
   }
@@ -181,8 +187,8 @@ abstract class WidgetElement extends dom.Element {
   void removeAttribute(String key) {
     super.removeAttribute(key);
     bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), null);
-    if (_state != null && shouldRebuild) {
-      _state!.requestUpdateState();
+    if (state != null && shouldRebuild) {
+      state!.requestUpdateState();
     }
     attributeDidUpdate(key, '');
   }
@@ -192,8 +198,8 @@ abstract class WidgetElement extends dom.Element {
   void setAttribute(String key, value) {
     super.setAttribute(key, value);
     bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), value);
-    if (_state != null && shouldRebuild) {
-      _state!.requestUpdateState();
+    if (state != null && shouldRebuild) {
+      state!.requestUpdateState();
     }
     attributeDidUpdate(key, value);
   }
@@ -204,8 +210,8 @@ abstract class WidgetElement extends dom.Element {
     super.appendChild(child);
 
     // Only trigger update if the child are created by JS. If it's created on Flutter widgets, the flutter framework will handle this.
-    if (_state != null) {
-      _state!.requestUpdateState();
+    if (state != null) {
+      state!.requestUpdateState();
     }
 
     return child;
@@ -216,8 +222,8 @@ abstract class WidgetElement extends dom.Element {
   dom.Node insertBefore(dom.Node child, dom.Node referenceNode) {
     dom.Node inserted = super.insertBefore(child, referenceNode);
 
-    if (_state != null) {
-      _state!.requestUpdateState();
+    if (state != null) {
+      state!.requestUpdateState();
     }
 
     return inserted;
@@ -228,8 +234,8 @@ abstract class WidgetElement extends dom.Element {
   dom.Node? replaceChild(dom.Node newNode, dom.Node oldNode) {
     dom.Node? replaced = super.replaceChild(newNode, oldNode);
 
-    if (_state != null) {
-      _state!.requestUpdateState();
+    if (state != null) {
+      state!.requestUpdateState();
     }
 
     return replaced;
@@ -240,8 +246,8 @@ abstract class WidgetElement extends dom.Element {
   dom.Node removeChild(dom.Node child) {
     super.removeChild(child);
 
-    if (_state != null) {
-      _state!.requestUpdateState();
+    if (state != null) {
+      state!.requestUpdateState();
     }
 
     return child;
@@ -268,7 +274,7 @@ abstract class WidgetElement extends dom.Element {
   @override
   void dispose() {
     super.dispose();
-    _state = null;
+    _states.clear();
     _widget = null;
     ownerDocument.aliveWidgetElements.remove(this);
   }
@@ -354,7 +360,7 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'WidgetElement(${widgetElement.tagName.toLowerCase()}) adapterWidgetState';
+    return 'WidgetElementState(${widgetElement.tagName.toLowerCase()})#${shortHash(this)}';
   }
 
   @override
@@ -369,7 +375,7 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
   @override
   void dispose() {
     widgetElement._widget = null;
-    widgetElement._state = null;
+    widgetElement._states.remove(this);
     super.dispose();
   }
 }

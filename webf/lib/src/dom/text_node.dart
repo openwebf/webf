@@ -35,7 +35,7 @@ class TextNode extends CharacterData {
 
   @override
   flutter.Widget toWidget({Key? key}) {
-    return TextNodeAdapter(this, key: key ?? flutter.Key(hashKey));
+    return TextNodeAdapter(this, key: flutter.UniqueKey());
   }
 
   final Set<_TextNodeAdapterElement> _attachedFlutterWidgetElements = {};
@@ -124,6 +124,12 @@ class TextNode extends CharacterData {
     }
 
     return _domRenderTextBox?.parent != null;
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty('data', data));
   }
 
   void _applyTextStyle() {

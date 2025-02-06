@@ -19,7 +19,7 @@ mixin ElementAdapterMixin on ElementBase {
 
   @override
   flutter.Widget toWidget({Key? key}) {
-    return _WebFElementWidget(this as Element, key: key);
+    return _WebFElementWidget(this as Element, key: flutter.UniqueKey());
   }
 }
 
@@ -45,7 +45,7 @@ class _WebFElementWidget extends flutter.StatefulWidget {
       attributes += 'class="' + webFElement.className + '"';
     }
 
-    return '<${webFElement.tagName.toLowerCase()} $attributes>';
+    return '<${webFElement.tagName.toLowerCase()}#$hashCode $attributes>';
   }
 }
 
