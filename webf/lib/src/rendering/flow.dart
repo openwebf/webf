@@ -883,7 +883,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
       // Should add horizontal margin of child to the main axis auto size of parent.
       if (runChild is RenderBoxModel) {
-        runChildMainSize = runChild.minContentWidth;
+        runChildMainSize = runChild.boxSize?.width ?? 0.0;
         double childMarginLeft = runChild.renderStyle.marginLeft.computedValue;
         double childMarginRight = runChild.renderStyle.marginRight.computedValue;
         runChildMainSize += childMarginLeft + childMarginRight;

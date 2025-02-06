@@ -436,7 +436,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     String? prevValue = getPropertyValue(propertyName);
-    if (normalizedValue == prevValue) return;
+    if (normalizedValue == prevValue && (!CSSVariable.isCSSVariableValue(normalizedValue))) return;
 
     _pendingProperties[propertyName] = CSSPropertyValue(normalizedValue, baseHref: baseHref);
   }
@@ -661,7 +661,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   void _emitPropertyChanged(String property, String? original, String present, {String? baseHref}) {
-    if (original == present) return;
+    if (original == present && (!CSSVariable.isCSSVariableValue(present))) return;
 
     if (onStyleChanged != null) {
       onStyleChanged!(property, original, present, baseHref: baseHref);
