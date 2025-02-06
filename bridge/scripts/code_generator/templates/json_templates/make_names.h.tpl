@@ -14,11 +14,11 @@ namespace <%= name %> {
 
 <% _.forEach(data, function(name, index) { %>
   <% if (_.isArray(name)) { %>
-    extern thread_local const AtomicString& k<%= name[0] %>;
+    extern thread_local const AtomicString& k<%= options.camelCase ? upperCamelCase(name[0]) : name[0] %>;
   <% } else if (_.isObject(name)) { %>
-    extern thread_local const AtomicString& k<%= name.name %>;
+    extern thread_local const AtomicString& k<%= options.camelCase ? upperCamelCase(name.name) : name.name %>;
   <% } else { %>
-  extern thread_local const AtomicString& k<%= name %>;
+  extern thread_local const AtomicString& k<%= options.camelCase ? upperCamelCase(name) : name %>;
   <% } %>
 <% }) %>
 

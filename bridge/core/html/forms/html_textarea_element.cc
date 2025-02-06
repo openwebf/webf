@@ -8,6 +8,6 @@
 
 namespace webf {
 
-HTMLTextareaElement::HTMLTextareaElement(Document& document) : WidgetElement(html_names::ktextarea, &document) {}
+HTMLTextareaElement::HTMLTextareaElement(Document& document) : WidgetElement(html_names::kTextarea, &document) {}
 
 }  // namespace webf

@@ -19,12 +19,12 @@ SharedUICommand::SharedUICommand(ExecutingContext* context)
       is_blocking_writing_(false) {}
 
 void SharedUICommand::AddCommand(UICommand type,
-                                 std::unique_ptr<SharedNativeString>&& args_01,
+                                 SharedNativeString* args_01,
                                  NativeBindingObject* native_binding_object,
                                  void* nativePtr2,
                                  bool request_ui_update) {
   if (!context_->isDedicated()) {
-    active_buffer->addCommand(type, std::move(args_01), native_binding_object, nativePtr2, request_ui_update);
+    active_buffer->AddCommand(type, args_01, native_binding_object, nativePtr2, request_ui_update);
     if (type == UICommand::kFinishRecordingCommand && active_buffer->size() > 0) {
       context_->dartMethodPtr()->requestBatchUpdate(false, context_->contextId());
     }

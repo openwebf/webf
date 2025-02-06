@@ -4,6 +4,9 @@
       {
         "template": "make_names",
         "filename": "svg_names",
+        "options": {
+          camelCase: true
+        }
         // "deps": [
         //   "./html_attribute_names.json5"
         // ]
@@ -12,7 +15,8 @@
          "template": "element_factory",
          "filename": "svg_element_factory",
          "options": {
-           "prefix": "SVG"
+           "prefix": "SVG",
+           camelCase: true
          }
        },
       // TODO: add svg element type helper

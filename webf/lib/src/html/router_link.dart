@@ -26,6 +26,16 @@ class RouterLinkElement extends WidgetElement {
     }
   }
 
+  @override
+  void mount() {
+    dispatchEvent(Event('mount'));
+  }
+
+  @override
+  void unmount() {
+    dispatchEvent(Event('unmount'));
+  }
+
   List<dom.Node> cachedChildNodes = [];
 
   @override

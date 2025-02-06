@@ -65,8 +65,9 @@ abstract class WidgetElement extends dom.Element {
 
   // State methods, proxy called from _state
   void initState() {}
-
   void didChangeDependencies() {}
+  void mount() {}
+  void unmount() {}
 
   bool get mounted => _state?.mounted ?? false;
 
@@ -313,6 +314,14 @@ class WebFWidgetElementElement extends StatefulElement {
   @override
   void mount(Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
+    widget.widgetElement.mount();
+  }
+
+  @override
+  void unmount() {
+    WidgetElement widgetElement = widget.widgetElement;
+    super.unmount();
+    widgetElement.unmount();
   }
 }
 

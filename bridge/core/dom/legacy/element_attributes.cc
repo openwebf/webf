@@ -67,7 +67,7 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
   std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString(ctx());
   std::unique_ptr<SharedNativeString> args_02 = name.ToNativeString(ctx());
 
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetAttribute, std::move(args_01),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetAttribute, args_01.release(),
                                                        element_->bindingObject(), args_02.release());
 
   return true;
@@ -102,7 +102,7 @@ void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState
   attributes_.erase(name);
 
   std::unique_ptr<SharedNativeString> args_01 = name.ToNativeString(ctx());
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveAttribute, std::move(args_01),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveAttribute, args_01.release(),
                                                        element_->bindingObject(), nullptr);
 }
 

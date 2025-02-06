@@ -7,6 +7,6 @@
 #include "svg_text_positioning_element.h"
 
 namespace webf {
-SVGTextElement::SVGTextElement(Document& document) : SVGTextPositioningElement(svg_names::ktext, document) {}
+SVGTextElement::SVGTextElement(Document& document) : SVGTextPositioningElement(svg_names::kText, document) {}
 
 }  // namespace webf

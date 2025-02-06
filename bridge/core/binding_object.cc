@@ -7,6 +7,7 @@
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise_resolver.h"
+#include "core/dom/container_node.h"
 #include "core/dom/events/event_target.h"
 #include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
@@ -264,7 +265,7 @@ void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop,
   auto* args_02 = (NativeValue*)dart_malloc(sizeof(NativeValue));
   memcpy((void*)args_02, &value, sizeof(NativeValue));
 
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetProperty, std::move(args_01), bindingObject(),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetProperty, args_01.release(), bindingObject(),
                                                        args_02);
 }
 

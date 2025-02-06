@@ -37,14 +37,6 @@ class HTMLImageElement : public HTMLElement {
   bool keep_alive = false;
 };
 
-template <>
-struct DowncastTraits<HTMLImageElement> {
-  static bool AllowFrom(const EventTarget& event_target) {
-    return event_target.IsNode() && To<Node>(event_target).IsHTMLElement() &&
-           To<HTMLElement>(event_target).tagName() == html_names::kimg;
-  }
-};
-
 }  // namespace webf
 
 #endif  // BRIDGE_CORE_HTML_HTML_IMAGE_ELEMENT_H_

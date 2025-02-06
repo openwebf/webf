@@ -35,13 +35,6 @@
       <div class="control-result">{{ top }} {{ topPercentage ? '%' : 'px' }}</div>
       <flutter-switch :selected="topPercentage" @change="onSwitchChange($event, 'top')"></flutter-switch>
     </div>
-    <div class="control-item" v-for="n in 400" :key="n">
-      <div class="control-title">{{ n }}</div>
-      <flutter-slider max="100" min="-100" :val="top" class="control-slider"
-        @change="onControlChange($event, 'top')"></flutter-slider>
-      <div class="control-result">{{ top }} {{ topPercentage ? '%' : 'px' }}</div>
-      <flutter-switch :selected="topPercentage" @change="onSwitchChange($event, 'top')"></flutter-switch>
-    </div>
     <div class="control-item" v-if="enableLeft">
       <div class="control-title">left: </div>
       <flutter-slider class="control-slider" :val="left" @change="onControlChange($event, 'left')"></flutter-slider>
@@ -59,7 +52,19 @@
       <flutter-slider class="control-slider" :val="bottom" @change="onControlChange($event, 'bottom')"></flutter-slider>
       <div class="control-result">{{ bottom }} {{ bottomPercentage ? '%' : 'px' }}</div>
       <flutter-switch :selected="bottomPercentage" @change="onSwitchChange($event, 'bottom')"></flutter-switch>
-    </div>  
+    </div>
+    <div class="control-item">
+      <div class="control-title">marginTop: </div>
+      <flutter-slider class="control-slider" :val="marginTop" @change="onControlChange($event, 'marginTop')"></flutter-slider>
+      <div class="control-result">{{ marginTop }} {{ marginTopPercentage ? '%' : 'px' }}</div>
+      <flutter-switch :selected="marginTopPercentage" @change="onSwitchChange($event, 'marginTop')"></flutter-switch>
+    </div>
+    <div class="control-item">
+      <div class="control-title">marginLeft: </div>
+      <flutter-slider class="control-slider" :val="marginLeft" @change="onControlChange($event, 'marginLeft')"></flutter-slider>
+      <div class="control-result">{{ marginLeft }} {{ marginLeftPercentage ? '%' : 'px' }}</div>
+      <flutter-switch :selected="marginLeftPercentage" @change="onSwitchChange($event, 'marginLeft')"></flutter-switch>
+    </div>
   </webf-listview>
 </template>
 

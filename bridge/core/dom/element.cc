@@ -34,13 +34,13 @@ Element::Element(const AtomicString& namespace_uri,
     : ContainerNode(document, construction_type), local_name_(local_name), namespace_uri_(namespace_uri) {
   auto buffer = GetExecutingContext()->uiCommandBuffer();
   if (namespace_uri == element_namespace_uris::khtml) {
-    buffer->AddCommand(UICommand::kCreateElement, std::move(local_name.ToNativeString(ctx())), bindingObject(),
+    buffer->AddCommand(UICommand::kCreateElement, local_name.ToNativeString(ctx()).release(), bindingObject(),
                        nullptr);
   } else if (namespace_uri == element_namespace_uris::ksvg) {
-    buffer->AddCommand(UICommand::kCreateSVGElement, std::move(local_name.ToNativeString(ctx())), bindingObject(),
+    buffer->AddCommand(UICommand::kCreateSVGElement, local_name.ToNativeString(ctx()).release(), bindingObject(),
                        nullptr);
   } else {
-    buffer->AddCommand(UICommand::kCreateElementNS, std::move(local_name.ToNativeString(ctx())), bindingObject(),
+    buffer->AddCommand(UICommand::kCreateElementNS, local_name.ToNativeString(ctx()).release(), bindingObject(),
                        namespace_uri.ToNativeString(ctx()).release());
   }
 }

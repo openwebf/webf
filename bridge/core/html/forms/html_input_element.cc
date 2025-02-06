@@ -8,6 +8,6 @@
 
 namespace webf {
 
-HTMLInputElement::HTMLInputElement(Document& document) : WidgetElement(html_names::kinput, &document) {}
+HTMLInputElement::HTMLInputElement(Document& document) : WidgetElement(html_names::kInput, &document) {}
 
 }  // namespace webf

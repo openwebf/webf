@@ -7,6 +7,6 @@
 #include "svg_names.h"
 
 namespace webf {
-SVGCircleElement::SVGCircleElement(Document& document) : SVGGeometryElement(svg_names::kcircle, document) {}
+SVGCircleElement::SVGCircleElement(Document& document) : SVGGeometryElement(svg_names::kCircle, document) {}
 
 }  // namespace webf

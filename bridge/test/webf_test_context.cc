@@ -268,6 +268,7 @@ static JSValue parseHTML(JSContext* ctx, JSValueConst this_val, int argc, JSValu
 static JSValue syncThreadBuffer(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
   context->uiCommandBuffer()->SyncToActive();
+  return JS_NULL;
 }
 
 static JSValue triggerGlobalError(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {

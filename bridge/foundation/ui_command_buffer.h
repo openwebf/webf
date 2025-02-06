@@ -73,8 +73,8 @@ class UICommandBuffer {
   UICommandBuffer() = delete;
   explicit UICommandBuffer(ExecutingContext* context);
   ~UICommandBuffer();
-  void addCommand(UICommand type,
-                  std::unique_ptr<SharedNativeString>&& args_01,
+  virtual void AddCommand(UICommand type,
+                  SharedNativeString* args_01,
                   void* nativePtr,
                   void* nativePtr2,
                   bool request_ui_update = true);
@@ -84,12 +84,15 @@ class UICommandBuffer {
   bool empty();
   void clear();
 
+ protected:
+  ExecutingContext* context_{nullptr};
+
  private:
   void addCommand(const UICommandItem& item, bool request_ui_update = true);
   void addCommands(const UICommandItem* items, int64_t item_size, bool request_ui_update = true);
   void updateFlags(UICommand command);
 
-  ExecutingContext* context_{nullptr};
+
   UICommandItem* buffer_{nullptr};
   uint32_t kind_flag{0};
   bool update_batched_{false};

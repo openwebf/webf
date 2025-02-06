@@ -95,6 +95,8 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
     context->RunRustFutureTasks();
     return return_value;
   }
+
+  return nullptr;
 }
 
 static void ReturnResultToDart(Dart_PersistentHandle persistent_handle,

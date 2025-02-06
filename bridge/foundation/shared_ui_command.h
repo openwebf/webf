@@ -26,7 +26,7 @@ class SharedUICommand : public DartReadable {
   SharedUICommand(ExecutingContext* context);
 
   void AddCommand(UICommand type,
-                  std::unique_ptr<SharedNativeString>&& args_01,
+                  SharedNativeString* args_01,
                   NativeBindingObject* native_binding_object,
                   void* nativePtr2,
                   bool request_ui_update = true);
