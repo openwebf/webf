@@ -560,7 +560,7 @@ class WebFViewController implements WidgetsBindingObserver {
   void insertAdjacentNode(
       Pointer<NativeBindingObject> selfPointer, String position, Pointer<NativeBindingObject> newPointer) {
     assert(hasBindingObject(selfPointer), 'targetId: $selfPointer position: $position newTargetId: $newPointer');
-    assert(hasBindingObject(selfPointer), 'newTargetId: $newPointer position: $position');
+    assert(hasBindingObject(newPointer), 'newTargetId: $newPointer position: $position');
 
     Node? target = getBindingObject<Node>(selfPointer);
     Node? newNode = getBindingObject<Node>(newPointer);

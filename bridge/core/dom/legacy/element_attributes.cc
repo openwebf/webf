@@ -82,13 +82,6 @@ bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& e
 
   bool has_attribute = attributes_.count(name) > 0;
 
-  if (!has_attribute && element_->IsWidgetElement()) {
-    // Fallback to directly FFI access to dart.
-    NativeValue dart_result =
-        element_->GetBindingProperty(name, FlushUICommandReason::kDependentsOnElement, exception_state);
-    return dart_result.tag != NativeTag::TAG_NULL;
-  }
-
   return has_attribute;
 }
 
