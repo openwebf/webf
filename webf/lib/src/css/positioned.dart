@@ -343,6 +343,11 @@ class CSSPositionedLayout {
       child.scrollingOffsetY = rootElement.scrollTop;
     }
 
+    // Fix side effects by render portal.
+    if (child is RenderPortal) {
+      child = child.child as RenderBoxModel;
+    }
+
     // The static position of positioned element is its offset when its position property had been static
     // which equals to the position of its placeholder renderBox.
     // https://www.w3.org/TR/CSS2/visudet.html#static-position
@@ -404,7 +409,7 @@ class CSSPositionedLayout {
       // If all three of left, width, and right are auto: First set any auto values for margin-left
       // and margin-right to 0. Then, if the direction property of the element establishing the
       // static-position containing block is ltr set left to the static position.
-      offset = staticPosition + marginBefore.computedValue;
+      offset = staticPosition;
     } else {
       if (insetBefore.isNotAuto && insetAfter.isNotAuto) {
         double freeSpace = containingBlockLength - length - insetBefore.computedValue - insetAfter.computedValue;
