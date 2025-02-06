@@ -16,7 +16,8 @@ import 'custom_elements/bottom_sheet.dart';
 import 'custom_elements/tab.dart';
 import 'custom_elements/switch.dart';
 import 'custom_elements/slider.dart';
-import 'custom_elements/tab_bar.dart';
+import 'custom_elements/cupertino/tab_bar.dart';
+import 'custom_elements/cupertino/button.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
