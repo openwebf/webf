@@ -2,6 +2,7 @@
   color: var(--font-color);
   --background-color: rgb(20, 18, 24);
   --font-color: #fff;
+  --secondary-font-color: #6b7280;
   --background-primary: #fff;
   --background-secondary: #f9f9fb;
   --background-tertiary: #fff;
@@ -15,6 +16,7 @@
   --border-primary: #cdcdcd;
   --border-secondary: #cdcdcd;
   --button-primary-default: #1b1b1b;
+  --button-primary-text: #ffffff;
   --button-primary-hover: #696969;
   --button-primary-active: #9e9e9e;
   --button-primary-inactive: #1b1b1b;
@@ -32,6 +34,7 @@
   :root {
     --background-color: rgb(255, 255, 255);
     --font-color: #000;
+    --secondary-font-color: #6b7280;
     --background-primary: #fff;
     --background-secondary: #f9f9fb;
     --background-tertiary: #fff;
@@ -45,6 +48,7 @@
     --border-primary: #cdcdcd;
     --border-secondary: #cdcdcd;
     --button-primary-default: #1b1b1b;
+    --button-primary-text: #ffffff;
     --button-primary-hover: #696969;
     --button-primary-active: #9e9e9e;
     --button-primary-inactive: #1b1b1b;
@@ -62,6 +66,7 @@
   :root {
     --background-color: rgb(20, 18, 24);
     --font-color: #fff;
+    --secondary-font-color: #6b7280;
     --background-primary: #1b1b1b;
     --background-secondary: #343434;
     --background-tertiary: #4e4e4e;
@@ -70,6 +75,7 @@
     --border-primary: #858585;
     --border-secondary: #696969;
     --button-primary-default: #fff;
+    --button-primary-text: #ffffff;
     --button-primary-hover: #cdcdcd;
     --button-primary-active: #9e9e9e;
     --button-primary-inactive: #fff;
