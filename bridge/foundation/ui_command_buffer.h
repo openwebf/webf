@@ -74,10 +74,10 @@ class UICommandBuffer {
   explicit UICommandBuffer(ExecutingContext* context);
   ~UICommandBuffer();
   virtual void AddCommand(UICommand type,
-                  SharedNativeString* args_01,
-                  void* nativePtr,
-                  void* nativePtr2,
-                  bool request_ui_update = true);
+                          SharedNativeString* args_01,
+                          void* nativePtr,
+                          void* nativePtr2,
+                          bool request_ui_update = true);
   UICommandItem* data();
   uint32_t kindFlag();
   int64_t size();
@@ -91,7 +91,6 @@ class UICommandBuffer {
   void addCommand(const UICommandItem& item, bool request_ui_update = true);
   void addCommands(const UICommandItem* items, int64_t item_size, bool request_ui_update = true);
   void updateFlags(UICommand command);
-
 
   UICommandItem* buffer_{nullptr};
   uint32_t kind_flag{0};
