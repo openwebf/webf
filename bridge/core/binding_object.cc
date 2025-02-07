@@ -365,8 +365,8 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
           MutationRecord::CreateAttributes(element, prop, AtomicString::Null(), old_value));
     }
     // Sync property to attributes
-    element->attributes()->setAttribute(prop, NativeValueConverter<NativeTypeString>::FromNativeValueShared(ctx(), value), exception_state, true);
-
+    element->attributes()->setAttribute(
+        prop, NativeValueConverter<NativeTypeString>::FromNativeValueShared(ctx(), value), exception_state, true);
   }
 
   std::unique_ptr<SharedNativeString> args_01 = prop.ToNativeString(ctx());

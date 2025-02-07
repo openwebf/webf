@@ -65,7 +65,8 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
   if (name == html_names::kStyleAttr)
     return true;
 
-  if (ignore_ui_command) return true;
+  if (ignore_ui_command)
+    return true;
 
   std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString(ctx());
   std::unique_ptr<SharedNativeString> args_02 = name.ToNativeString(ctx());
