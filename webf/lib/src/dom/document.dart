@@ -615,8 +615,8 @@ class Document extends ContainerNode {
     styleSheetNodes.forEach((element) {
       if (element is StyleElementMixin) {
         element.reloadStyle();
-      } else if (element is LinkElement) {
-        element.fetchAndApplyCSSStyle();
+      } else if (element is LinkElement && element.isCSSStyleSheetLoaded()) {
+        element.reloadStyle();
       }
     });
   }

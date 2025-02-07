@@ -29,7 +29,7 @@ class HeadElement extends Element {
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 }
 
-const String _REL_STYLESHEET = 'stylesheet';
+const String REL_STYLESHEET = 'stylesheet';
 const String DNS_PREFETCH = 'dns-prefetch';
 
 // https://www.w3.org/TR/2011/WD-html5-author-20110809/the-link-element.html#the-link-element
@@ -74,8 +74,8 @@ class LinkElement extends Element {
         getter: (element) => castToType<LinkElement>(element).type,
         setter: (element, value) => castToType<LinkElement>(element).type = castToType<String>(value)),
     'media': StaticDefinedBindingProperty(
-      getter: (element) => castToType<LinkElement>(element).media,
-      setter: (element, value) => castToType<LinkElement>(element).media = castToType<String>(value))
+        getter: (element) => castToType<LinkElement>(element).media,
+        setter: (element, value) => castToType<LinkElement>(element).media = castToType<String>(value))
   };
 
   @override
@@ -133,9 +133,11 @@ class LinkElement extends Element {
 
   void reloadStyle() {
     if (_styleSheet != null) {
-      _styleSheet!.replaceSync(_cachedStyleSheetText!, windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+      _styleSheet!.replaceSync(_cachedStyleSheetText!,
+          windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
     } else {
-      _styleSheet = CSSParser(_cachedStyleSheetText!).parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+      _styleSheet = CSSParser(_cachedStyleSheetText!)
+          .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
     }
     if (_styleSheet != null) {
       ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
@@ -176,15 +178,14 @@ class LinkElement extends Element {
     fetchAndApplyCSSStyle();
   }
 
+  bool isCSSStyleSheetLoaded() {
+    return _stylesheetLoaded.containsKey(_resolvedHyperlink.toString());
+  }
+
   void _fetchAndApplyCSSStyle() async {
     if (_resolvedHyperlink != null &&
-        rel == _REL_STYLESHEET &&
-        isConnected) {
-      if (_stylesheetLoaded.containsKey(_resolvedHyperlink.toString()) && _cachedStyleSheetText != null) {
-        reloadStyle();
-        return;
-      }
-
+        rel == REL_STYLESHEET &&
+        isConnected && !_stylesheetLoaded.containsKey(_resolvedHyperlink.toString())) {
       if (!isValidMedia(media)) {
         return;
       }
@@ -216,8 +217,8 @@ class LinkElement extends Element {
           WebFProfiler.instance.startTrackUICommandStep('Style.parseCSS');
         }
 
-        _styleSheet = CSSParser(cssString, href: href)
-            .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+        _styleSheet = CSSParser(cssString, href: href).parse(
+            windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         _styleSheet?.href = href;
 
         if (enableWebFProfileTracking) {
@@ -282,6 +283,7 @@ class LinkElement extends Element {
   //https://www.w3schools.com/cssref/css3_pr_mediaquery.php
   //https://www.w3school.com.cn/cssref/pr_mediaquery.asp
   Map<String, bool> mediaMap = {};
+
   bool isValidMedia(String media) {
     bool isValid = true;
     if (media.isEmpty) {
@@ -407,9 +409,11 @@ mixin StyleElementMixin on Element {
     String? text = collectElementChildText();
     if (text != null) {
       if (_styleSheet != null) {
-         _styleSheet!.replaceSync(text, windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+        _styleSheet!.replaceSync(text,
+            windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
       } else {
-        _styleSheet = CSSParser(text).parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+        _styleSheet = CSSParser(text).parse(
+            windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
       }
       if (_styleSheet != null) {
         ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
