@@ -266,11 +266,11 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   bool _isConnected = false;
   set isConnected(bool value) {
-    _isConnected = true;
+    _isConnected = value;
 
     Node? first = firstChild;
     while(first != null) {
-      first.isConnected = true;
+      first.isConnected = value;
       first = first.nextSibling;
     }
   }
