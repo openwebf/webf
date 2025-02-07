@@ -367,7 +367,8 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
 
     // Sync property to attributes
     if (value.tag == NativeTag::TAG_STRING) {
-      element->attributes()->setAttribute(prop, NativeValueConverter<NativeTypeString>::FromNativeValueShared(ctx(), value), exception_state, true);
+      element->attributes()->setAttribute(
+          prop, NativeValueConverter<NativeTypeString>::FromNativeValueShared(ctx(), value), exception_state, true);
     } else {
       ScriptValue script_value = ScriptValue(ctx(), value);
       element->attributes()->setAttribute(prop, script_value.ToString(ctx()), exception_state, true);
