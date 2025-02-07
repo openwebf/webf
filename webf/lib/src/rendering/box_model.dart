@@ -204,6 +204,10 @@ class RenderLayoutBox extends RenderBoxModel
     return null;
   }
 
+  void markChildrenNeedsSort() {
+    _cachedPaintingOrder = null;
+  }
+
   List<RenderBox>? _cachedPaintingOrder;
   List<RenderBox> get paintingOrder {
     _cachedPaintingOrder ??= renderStyle.paintingOrder;
@@ -646,6 +650,12 @@ class RenderLayoutBox extends RenderBoxModel
 
     repaintBoundaryFlowLayout.addAll(detachChildren());
     return repaintBoundaryFlowLayout;
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty('paintingOrder', paintingOrder));
   }
 
   @override

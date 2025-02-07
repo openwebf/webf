@@ -10,7 +10,7 @@ class FlutterLayoutBox extends WidgetElement {
     return WebFHTMLElement(tagName: 'DIV', children: [
       WebFHTMLElement(tagName: 'P', children: childNodes.toWidgetList(), controller: ownerDocument.controller, parentElement: this)
     ], inlineStyle: {
-      'width': '100px',
+      'width': '200px',
       'height': '100px',
       'padding': '20px',
       'border': '5px solid #000',

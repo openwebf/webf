@@ -926,16 +926,26 @@ abstract class RenderStyle extends DiagnosticableTree {
     });
   }
 
-  bool _paintingOrderNeedsSort = false;
-
   @pragma('vm:prefer-inline')
   void markChildrenNeedsSort() {
-    _paintingOrderNeedsSort = true;
+    everyRenderBox((_, renderBoxModel) {
+      if (renderBoxModel is RenderLayoutBox) {
+        renderBoxModel.markChildrenNeedsSort();
+      }
+
+      return true;
+    });
   }
 
   @pragma('vm:prefer-inline')
   void markParentNeedsSort() {
-    getParentRenderStyle()?._paintingOrderNeedsSort = true;
+    everyRenderBox((_, renderBoxModel) {
+      if (renderBoxModel is RenderLayoutBox) {
+        (renderBoxModel.parent as RenderLayoutBox?)?.markChildrenNeedsSort();
+      }
+
+      return true;
+    });
   }
 
   // Sort children by zIndex, used for paint and hitTest.
@@ -960,36 +970,33 @@ abstract class RenderStyle extends DiagnosticableTree {
     } else {
       // Sort by zIndex.
       List<RenderBox> children = containerLayoutBox.getChildren();
-      if (_paintingOrderNeedsSort) {
-        children.sort((RenderBox left, RenderBox right) {
-          // @FIXME: Add patch to handle nested fixed element paint priority, need to remove
-          // this logic after Kraken has implemented stacking context tree.
-          if (left is RenderBoxModel &&
-              left.renderStyle.position == CSSPositionType.fixed &&
-              right is RenderBoxModel &&
-              right.renderStyle.position == CSSPositionType.fixed) {
-            // Child element always paint after parent element when their position are both fixed
-            // as W3C stacking context specified.
-            // Kraken will place these two renderObjects as siblings of the children of HTML renderObject
-            // due to lack stacking context support, so it needs to add this patch to handle this case.
-            if (right.renderStyle.isAncestorOf(left.renderStyle)) return 1;
-            if (left.renderStyle.isAncestorOf(right.renderStyle)) return -1;
-          }
+      children.sort((RenderBox left, RenderBox right) {
+        // @FIXME: Add patch to handle nested fixed element paint priority, need to remove
+        // this logic after Kraken has implemented stacking context tree.
+        if (left is RenderBoxModel &&
+            left.renderStyle.position == CSSPositionType.fixed &&
+            right is RenderBoxModel &&
+            right.renderStyle.position == CSSPositionType.fixed) {
+          // Child element always paint after parent element when their position are both fixed
+          // as W3C stacking context specified.
+          // Kraken will place these two renderObjects as siblings of the children of HTML renderObject
+          // due to lack stacking context support, so it needs to add this patch to handle this case.
+          if (right.renderStyle.isAncestorOf(left.renderStyle)) return 1;
+          if (left.renderStyle.isAncestorOf(right.renderStyle)) return -1;
+        }
 
-          bool isLeftNeedsStacking = left is RenderBoxModel && left.needsStacking;
-          bool isRightNeedsStacking = right is RenderBoxModel && right.needsStacking;
-          if (!isLeftNeedsStacking && isRightNeedsStacking) {
-            return 0 <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
-          } else if (isLeftNeedsStacking && !isRightNeedsStacking) {
-            return (left.renderStyle.zIndex ?? 0) < 0 ? -1 : 1;
-          } else if (isLeftNeedsStacking && isRightNeedsStacking) {
-            return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
-          } else {
-            return -1;
-          }
-        });
-        _paintingOrderNeedsSort = false;
-      }
+        bool isLeftNeedsStacking = left is RenderBoxModel && left.needsStacking;
+        bool isRightNeedsStacking = right is RenderBoxModel && right.needsStacking;
+        if (!isLeftNeedsStacking && isRightNeedsStacking) {
+          return 0 <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
+        } else if (isLeftNeedsStacking && !isRightNeedsStacking) {
+          return (left.renderStyle.zIndex ?? 0) < 0 ? -1 : 1;
+        } else if (isLeftNeedsStacking && isRightNeedsStacking) {
+          return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
+        } else {
+          return -1;
+        }
+      });
       return children;
     }
   }
@@ -2863,12 +2870,13 @@ class CSSRenderStyle extends RenderStyle
 
   // Whether current renderStyle is ancestor for child renderStyle in the renderStyle tree.
   bool isAncestorOf(RenderStyle childRenderStyle) {
-    RenderStyle? parentRenderStyle = childRenderStyle.getParentRenderStyle();
-    while (parentRenderStyle != null) {
-      if (parentRenderStyle == this) {
+    Element? childElement = childRenderStyle.target;
+    Element? parentElement = childElement.parentElement;
+    while (parentElement != null) {
+      if (parentElement.renderStyle == this) {
         return true;
       }
-      parentRenderStyle = parentRenderStyle.getParentRenderStyle();
+      parentElement = parentElement.parentElement;
     }
     return false;
   }
