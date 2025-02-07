@@ -46,7 +46,8 @@ AtomicString ElementAttributes::getAttribute(const AtomicString& name, Exception
 
 bool ElementAttributes::setAttribute(const AtomicString& name,
                                      const AtomicString& value,
-                                     ExceptionState& exception_state) {
+                                     ExceptionState& exception_state,
+                                     bool ignore_ui_command) {
   bool numberIndex = IsNumberIndex(name.ToStringView());
 
   if (numberIndex) {
@@ -63,6 +64,8 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
   // Style attribute will be parsed and separated into multiple setStyle command.
   if (name == html_names::kStyleAttr)
     return true;
+
+  if (ignore_ui_command) return true;
 
   std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString(ctx());
   std::unique_ptr<SharedNativeString> args_02 = name.ToNativeString(ctx());

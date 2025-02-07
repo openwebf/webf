@@ -245,7 +245,10 @@ void MutationObserver::Deliver() {
   ScriptValue arguments[] = {ScriptValue(ctx(), v), ToValue()};
 
   JS_FreeValue(ctx(), v);
-  function_->Invoke(ctx(), ToValue(), 2, arguments);
+  ScriptValue result = function_->Invoke(ctx(), ToValue(), 2, arguments);
+  if (result.IsException()) {
+    GetExecutingContext()->HandleException(&result);
+  }
 }
 
 void MutationObserver::SetHasTransientRegistration() {

@@ -360,17 +360,24 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
   if (auto element = const_cast<WidgetElement*>(DynamicTo<WidgetElement>(this))) {
     if (std::shared_ptr<MutationObserverInterestGroup> recipients =
             MutationObserverInterestGroup::CreateForAttributesMutation(*element, prop)) {
-      NativeValue old_native_value =
-          GetBindingProperty(prop, FlushUICommandReason::kDependentsOnElement, exception_state);
-      ScriptValue old_value = ScriptValue(ctx(), old_native_value);
+      AtomicString old_value = element->attributes()->getAttribute(prop, exception_state);
       recipients->EnqueueMutationRecord(
-          MutationRecord::CreateAttributes(element, prop, AtomicString::Null(), old_value.ToString(ctx())));
+          MutationRecord::CreateAttributes(element, prop, AtomicString::Null(), old_value));
     }
+    // Sync property to attributes
+    element->attributes()->setAttribute(prop, NativeValueConverter<NativeTypeString>::FromNativeValueShared(ctx(), value), exception_state, true);
+
   }
 
-  const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release()), value};
-  return InvokeBindingMethod(BindingMethodCallOperations::kSetProperty, 2, argv,
-                             FlushUICommandReason::kDependentsOnElement, exception_state);
+  std::unique_ptr<SharedNativeString> args_01 = prop.ToNativeString(ctx());
+
+  auto* args_02 = (NativeValue*)dart_malloc(sizeof(NativeValue));
+  memcpy((void*)args_02, &value, sizeof(NativeValue));
+
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetProperty, args_01.release(), bindingObject(),
+                                                       args_02);
+
+  return Native_NewNull();
 }
 
 void BindingObject::CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& deps,
