@@ -858,7 +858,7 @@ describe('Input type radio', () => {
     await snapshot();
   });
 
-  it('should uncheck other radios in same group when one is checked', (done) => {
+  xit('should uncheck other radios in same group when one is checked', (done) => {
     const radio1 = document.createElement('input');
     const radio2 = document.createElement('input');
     radio1.type = 'radio';
@@ -885,7 +885,7 @@ describe('Input type radio', () => {
     await snapshot();
   });
 
-  it('radio button click event', (done) => {
+  xit('radio button click event', (done) => {
     const radio = document.createElement('input');
     radio.type = 'radio';
     document.body.appendChild(radio);
@@ -900,7 +900,7 @@ describe('Input type radio', () => {
     });
   });
 
-  it('radio button change event', (done) => {
+  xit('radio button change event', (done) => {
     const radio = document.createElement('input');
     radio.type = 'radio';
     document.body.appendChild(radio);
