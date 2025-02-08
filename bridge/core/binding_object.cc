@@ -375,15 +375,9 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
     }
   }
 
-  std::unique_ptr<SharedNativeString> args_01 = prop.ToNativeString(ctx());
-
-  auto* args_02 = (NativeValue*)dart_malloc(sizeof(NativeValue));
-  memcpy((void*)args_02, &value, sizeof(NativeValue));
-
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetProperty, args_01.release(), bindingObject(),
-                                                       args_02);
-
-  return Native_NewNull();
+  const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release()), value};
+  return InvokeBindingMethod(BindingMethodCallOperations::kSetProperty, 2, argv,
+                             FlushUICommandReason::kDependentsOnElement, exception_state);
 }
 
 void BindingObject::CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& deps,
