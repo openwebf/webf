@@ -1,50 +1,18 @@
 <template>
-  <div @click="onClick" class="my-container">
-    点我点我
-    <flutter-tab-bar
-    class="tab-bar"
-    backgroundColor="#FFFFFF"
-    activeColor="#007AFF"
-    :currentIndex="currentIndex"
-    @tabchange="handleTabChange"
-  >
-    <flutter-tab-bar-item
-      title="首页"
-      icon="home"
-      path="/home"
-    />
-    <flutter-tab-bar-item
-      title="搜索"
-      icon="search"
-      path="/search"
-    />
-    <flutter-tab-bar-item
-      title="发布"
-      icon="add_circled_solid"
-      path="/publish"
-    />
-    <flutter-tab-bar-item
-      title="消息"
-      icon="bell"
-      path="/message"
-    />
-    <flutter-tab-bar-item
-      title="我的"
-      icon="person"
-      path="/my"
-    />
-  </flutter-tab-bar>
+  <div @click="goToHomePage">
+    点我去首页
   </div>
-
+  <div @click="goToRegisterPage">
+    点我去注册页
+  </div>
 </template>
 
 <script>
 import tabBarManager from '../utils/tabBarManager';
 export default {
   components: {},
-  mounted(options) {
-    console.log('options: ', options);
-    console.log('window.hybridHistory: ', window.location.href);
+  mounted() {
+    console.log('my page mounted');
   },
   activated() {
     console.log('onShow');
@@ -54,9 +22,12 @@ export default {
     return {}
   },
   methods: {
-    onClick() {
+    goToHomePage() {
       console.log('tabBarManager.switchTab: ', tabBarManager.switchTab);
       tabBarManager.switchTab('/home');
+    },
+    goToRegisterPage() {
+      window.webf.hybridHistory.pushState({}, '/register');
     }
   }
 }
