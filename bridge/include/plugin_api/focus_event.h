@@ -8,15 +8,14 @@
 #define WEBF_CORE_WEBF_API_PLUGIN_API_FOCUS_EVENT_H_
 #include <stdint.h>
 #include "rust_readable.h"
-#include "script_value_ref.h"
 #include "ui_event.h"
 namespace webf {
 class EventTarget;
 typedef struct EventTargetPublicMethods EventTargetPublicMethods;
 class SharedExceptionState;
 class ExecutingContext;
+typedef struct NativeValue NativeValue;
 class FocusEvent;
-typedef struct ScriptValueRef ScriptValueRef;
 using PublicFocusEventGetRelatedTarget = WebFValue<EventTarget, EventTargetPublicMethods> (*)(FocusEvent*);
 struct FocusEventPublicMethods : public WebFPublicMethods {
   static WebFValue<EventTarget, EventTargetPublicMethods> RelatedTarget(FocusEvent* focus_event);

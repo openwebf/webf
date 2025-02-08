@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include "webf_value.h"
 namespace webf {
-typedef struct EventTarget EventTarget;
+class EventTarget;
 typedef struct EventTargetPublicMethods EventTargetPublicMethods;
 struct WebFTouchInit {
   double identifier;

@@ -8,13 +8,12 @@
 #define WEBF_CORE_WEBF_API_PLUGIN_API_GESTURE_EVENT_H_
 #include <stdint.h>
 #include "rust_readable.h"
-#include "script_value_ref.h"
 #include "event.h"
 namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
+typedef struct NativeValue NativeValue;
 class GestureEvent;
-typedef struct ScriptValueRef ScriptValueRef;
 using PublicGestureEventGetState = const char* (*)(GestureEvent*);
 using PublicGestureEventDupState = const char* (*)(GestureEvent*);
 using PublicGestureEventGetDirection = const char* (*)(GestureEvent*);

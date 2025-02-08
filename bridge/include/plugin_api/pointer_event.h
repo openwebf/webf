@@ -8,13 +8,12 @@
 #define WEBF_CORE_WEBF_API_PLUGIN_API_POINTER_EVENT_H_
 #include <stdint.h>
 #include "rust_readable.h"
-#include "script_value_ref.h"
 #include "mouse_event.h"
 namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
+typedef struct NativeValue NativeValue;
 class PointerEvent;
-typedef struct ScriptValueRef ScriptValueRef;
 using PublicPointerEventGetHeight = double (*)(PointerEvent*);
 using PublicPointerEventGetIsPrimary = int32_t (*)(PointerEvent*);
 using PublicPointerEventGetPointerId = double (*)(PointerEvent*);

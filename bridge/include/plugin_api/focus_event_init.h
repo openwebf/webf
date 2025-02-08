@@ -9,14 +9,17 @@
 #include <stdint.h>
 #include "webf_value.h"
 namespace webf {
-typedef struct EventTarget EventTarget;
+class EventTarget;
 typedef struct EventTargetPublicMethods EventTargetPublicMethods;
-typedef struct Window Window;
+class Window;
 typedef struct WindowPublicMethods WindowPublicMethods;
 struct WebFFocusEventInit {
   double detail;
   WebFValue<Window, WindowPublicMethods> view;
   double which;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
   WebFValue<EventTarget, EventTargetPublicMethods> related_target;
 };
 }  // namespace webf

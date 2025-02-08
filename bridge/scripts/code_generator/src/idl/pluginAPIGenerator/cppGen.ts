@@ -77,7 +77,7 @@ function generatePublicReturnTypeValue(type: ParameterType, is32Bit: boolean = f
       return 'SharedNativeString*';
     }
     case FunctionArgumentType.any: {
-      return 'WebFValue<ScriptValueRef, ScriptValueRefPublicMethods>';
+      return 'NativeValue';
     }
     case FunctionArgumentType.void:
       return 'void';
@@ -116,7 +116,7 @@ function generatePublicParameterType(type: ParameterType, is32Bit: boolean = fal
       return 'int32_t';
     }
     case FunctionArgumentType.any: {
-      return 'ScriptValueRef*';
+      return 'NativeValue';
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
@@ -158,7 +158,7 @@ function generatePublicParametersName(parameters: FunctionArguments[]): string {
   }
   return parameters.map(param => {
     const name = _.snakeCase(param.name);
-    return `${isStringType(param.type) ? name + '_atomic' : name}`;
+    return `${isStringType(param.type) ? name + '_atomic' : isAnyType(param.type)? name + '_script_value': name}`;
   }).join(', ') + ', ';
 }
 
@@ -219,6 +219,7 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
           generatePublicParametersType,
           generatePublicParametersTypeWithName,
           isStringType,
+          isAnyType,
           dependentTypes: Array.from(dependentTypes),
           subClasses: _.uniq(subClasses),
           options,
@@ -235,20 +236,27 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
           }
         });
 
-        const parentObject = ClassObject.globalClassMap[object.parent];
+        const parentObjects = [] as ClassObject[];
 
-        if (parentObject) {
-          parentObject.props.forEach(prop => {
-            if (isPointerType(prop.type)) {
-              dependentTypes.add(getPointerType(prop.type));
-            }
-          });
+        let node = object;
+
+        while (node && node.parent) {
+          const parentObject = ClassObject.globalClassMap[node.parent];
+          if (parentObject) {
+            parentObjects.push(parentObject);
+            parentObject.props.forEach(prop => {
+              if (isPointerType(prop.type)) {
+                dependentTypes.add(getPointerType(prop.type));
+              }
+            });
+          }
+          node = parentObject;
         }
 
         return _.template(readHeaderTemplate('dictionary'))({
           className: getClassName(blob),
           parentClassName: object.parent,
-          parentObject,
+          parentObjects,
           blob: blob,
           object,
           generatePublicReturnTypeValue,
@@ -302,6 +310,12 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           }
         });
 
+        object.construct?.args.forEach(param => {
+          if (isPointerType(param.type)) {
+            dependentTypes.add(getPointerType(param.type));
+          }
+        });
+
         const subClasses: string[] = [];
 
         function appendSubClasses(name: string) {
@@ -313,6 +327,28 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
 
         if (object.name in ClassObject.globalClassRelationMap) {
           appendSubClasses(object.name);
+        }
+
+        const dependentClasses: {[key: string]: ClassObject} = [...dependentTypes].reduce((classes, type) => {
+          classes[type] = ClassObject.globalClassMap[type];
+          
+          return classes;
+        }, {} as {[key: string]: ClassObject});
+        
+
+        for (const key in dependentClasses) {
+          if (key.endsWith('Options') || key.endsWith('Init')) {
+            const parents = [] as ClassObject[]
+            let node = dependentClasses[key];
+            while(node && node.parent) {
+              node = ClassObject.globalClassMap[node.parent];
+              parents.push(node);
+            }
+
+            const parentsProps = parents.flatMap(object => object.props);
+            dependentClasses[key].inheritedProps = parentsProps;
+
+          }
         }
 
         return _.template(readSourceTemplate('interface'))({
@@ -330,6 +366,7 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           isStringType,
           isAnyType,
           dependentTypes: Array.from(dependentTypes),
+          dependentClasses,
           subClasses: _.uniq(subClasses),
           options,
         });

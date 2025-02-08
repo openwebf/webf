@@ -9,12 +9,15 @@
 #include <stdint.h>
 #include "webf_value.h"
 namespace webf {
-typedef struct Window Window;
+class Window;
 typedef struct WindowPublicMethods WindowPublicMethods;
 struct WebFKeyboardEventInit {
   double detail;
   WebFValue<Window, WindowPublicMethods> view;
   double which;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
   int32_t alt_key;
   double char_code;
   const char* code;

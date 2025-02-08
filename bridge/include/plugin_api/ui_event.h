@@ -8,15 +8,14 @@
 #define WEBF_CORE_WEBF_API_PLUGIN_API_UI_EVENT_H_
 #include <stdint.h>
 #include "rust_readable.h"
-#include "script_value_ref.h"
 #include "event.h"
 namespace webf {
 class Window;
 typedef struct WindowPublicMethods WindowPublicMethods;
 class SharedExceptionState;
 class ExecutingContext;
+typedef struct NativeValue NativeValue;
 class UIEvent;
-typedef struct ScriptValueRef ScriptValueRef;
 using PublicUIEventGetDetail = double (*)(UIEvent*);
 using PublicUIEventGetView = WebFValue<Window, WindowPublicMethods> (*)(UIEvent*);
 using PublicUIEventGetWhich = double (*)(UIEvent*);

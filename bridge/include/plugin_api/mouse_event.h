@@ -8,13 +8,12 @@
 #define WEBF_CORE_WEBF_API_PLUGIN_API_MOUSE_EVENT_H_
 #include <stdint.h>
 #include "rust_readable.h"
-#include "script_value_ref.h"
 #include "ui_event.h"
 namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
+typedef struct NativeValue NativeValue;
 class MouseEvent;
-typedef struct ScriptValueRef ScriptValueRef;
 using PublicMouseEventGetButton = double (*)(MouseEvent*);
 using PublicMouseEventGetClientX = double (*)(MouseEvent*);
 using PublicMouseEventGetClientY = double (*)(MouseEvent*);

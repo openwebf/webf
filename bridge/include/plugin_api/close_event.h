@@ -8,13 +8,12 @@
 #define WEBF_CORE_WEBF_API_PLUGIN_API_CLOSE_EVENT_H_
 #include <stdint.h>
 #include "rust_readable.h"
-#include "script_value_ref.h"
 #include "event.h"
 namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
+typedef struct NativeValue NativeValue;
 class CloseEvent;
-typedef struct ScriptValueRef ScriptValueRef;
 using PublicCloseEventGetCode = int64_t (*)(CloseEvent*);
 using PublicCloseEventGetReason = const char* (*)(CloseEvent*);
 using PublicCloseEventDupReason = const char* (*)(CloseEvent*);

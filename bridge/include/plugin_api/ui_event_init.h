@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include "webf_value.h"
 namespace webf {
-typedef struct Window Window;
+class Window;
 typedef struct WindowPublicMethods WindowPublicMethods;
 struct WebFUIEventInit {
   int32_t bubbles;
