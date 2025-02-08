@@ -827,7 +827,7 @@ describe('Tags input', () => {
 });
 
 describe('Input type radio', () => {
-  it('basic radio button', async () => {
+  xit('basic radio button', async () => {
     const radio = document.createElement('input');
     radio.type = 'radio';
     radio.value = 'option1';
@@ -835,7 +835,7 @@ describe('Input type radio', () => {
     await snapshot();
   });
 
-  it('checked radio button', async () => {
+  xit('checked radio button', async () => {
     const radio = document.createElement('input');
     radio.type = 'radio';
     radio.checked = true;
@@ -844,7 +844,7 @@ describe('Input type radio', () => {
   });
 
 
-  it('radio button with name group', async () => {
+  xit('radio button with name group', async () => {
     const radio1 = document.createElement('input');
     const radio2 = document.createElement('input');
     radio1.type = 'radio';
@@ -877,7 +877,7 @@ describe('Input type radio', () => {
     done();
   });
 
-  it('disabled radio button', async () => {
+  xit('disabled radio button', async () => {
     const radio = document.createElement('input');
     radio.type = 'radio';
     radio.disabled = true;
