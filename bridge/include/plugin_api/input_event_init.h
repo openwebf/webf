@@ -15,6 +15,9 @@ struct WebFInputEventInit {
   double detail;
   WebFValue<Window, WindowPublicMethods> view;
   double which;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
   const char* input_type;
   const char* data;
 };

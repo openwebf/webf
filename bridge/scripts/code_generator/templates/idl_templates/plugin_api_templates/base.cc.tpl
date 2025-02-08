@@ -9,6 +9,7 @@
 #include "plugin_api/<%= blob.filename.replace('plugin_api_', '') %>.h"
 #include "plugin_api/event_target.h"
 #include "plugin_api/exception_state.h"
+#include "plugin_api/executing_context.h"
 #include "core/dom/events/event.h"
 #include "core/dom/events/custom_event.h"
 #include "core/native/script_value_ref.h"

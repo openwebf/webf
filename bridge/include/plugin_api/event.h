@@ -19,18 +19,17 @@ class Event;
 typedef struct ScriptValueRef ScriptValueRef;
 enum class EventType {
   kEvent = 0,
-  kCustomEvent = 1,
-  kAnimationEvent = 2,
-  kCloseEvent = 3,
-  kGestureEvent = 4,
-  kHashchangeEvent = 5,
-  kIntersectionChangeEvent = 6,
-  kTransitionEvent = 7,
-  kUIEvent = 8,
-  kFocusEvent = 9,
-  kInputEvent = 10,
-  kMouseEvent = 11,
-  kPointerEvent = 12,
+  kAnimationEvent = 1,
+  kCloseEvent = 2,
+  kGestureEvent = 3,
+  kHashchangeEvent = 4,
+  kIntersectionChangeEvent = 5,
+  kTransitionEvent = 6,
+  kUIEvent = 7,
+  kFocusEvent = 8,
+  kInputEvent = 9,
+  kMouseEvent = 10,
+  kPointerEvent = 11,
 };
 using PublicEventGetBubbles = int32_t (*)(Event*);
 using PublicEventGetCancelBubble = int32_t (*)(Event*);

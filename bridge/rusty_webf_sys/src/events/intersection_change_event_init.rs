@@ -10,5 +10,8 @@ pub struct IntersectionChangeEventInit {
   pub detail: c_double,
   pub view: RustValue<WindowRustMethods>,
   pub which: c_double,
+  pub bubbles: i32,
+  pub cancelable: i32,
+  pub composed: i32,
   pub intersection_ratio: c_double,
 }

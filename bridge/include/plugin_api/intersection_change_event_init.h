@@ -15,6 +15,9 @@ struct WebFIntersectionChangeEventInit {
   double detail;
   WebFValue<Window, WindowPublicMethods> view;
   double which;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
   double intersection_ratio;
 };
 }  // namespace webf

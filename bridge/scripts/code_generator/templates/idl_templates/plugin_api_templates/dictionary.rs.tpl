@@ -1,5 +1,6 @@
 #[repr(C)]
 pub struct <%= className %> {
+<% _.forEach(parentObjects, function(parentObject, index) { %>
 <% if (parentObject?.props) { %>
   <% _.forEach(parentObject.props, function(prop, index) { %>
     <% var propName = _.snakeCase(prop.name) %>
@@ -10,6 +11,8 @@ pub struct <%= className %> {
     <% } %>
   <% }); %>
 <% } %>
+<% }); %>
+
 <% _.forEach(object.props, function(prop, index) { %>
   <% var propName = _.snakeCase(prop.name) %>
   <% if (isStringType(prop.type)) { %>

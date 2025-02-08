@@ -195,7 +195,7 @@ const pluginApiList = [
   'input/touch_init.d.ts',
   'events/ui_event_init.d.ts',
   'dom/events/event.d.ts',
-  'dom/events/custom_event.d.ts',
+  // 'dom/events/custom_event.d.ts',
   'events/animation_event.d.ts',
   'events/close_event.d.ts',
   'events/focus_event.d.ts',
