@@ -1355,7 +1355,7 @@ abstract class Element extends ContainerNode
     switch (name) {
       case DISPLAY:
         assert(oldValue != null);
-        if (value != oldValue) {
+        if (value != oldValue && this is! WidgetElement) {
           if (!managedByFlutterWidget) {
             _updateRenderBoxModelWithDisplay();
           } else {
