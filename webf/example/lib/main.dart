@@ -20,6 +20,7 @@ import 'custom_elements/cupertino/tab_bar.dart';
 import 'custom_elements/cupertino/button.dart';
 import 'custom_elements/cupertino/input.dart';
 import 'custom_elements/cupertino/tab.dart';
+import 'custom_elements/cupertino/segmented_tab.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
@@ -41,6 +42,8 @@ void main() async {
   WebF.defineCustomElement('flutter-cupertino-input', (context) => FlutterCupertinoInput(context));
   WebF.defineCustomElement('flutter-cupertino-tab', (context) => FlutterCupertinoTab(context));
   WebF.defineCustomElement('flutter-cupertino-tab-item', (context) => FlutterCupertinoTabItem(context));
+  WebF.defineCustomElement('flutter-cupertino-segmented-tab', (context) => FlutterCupertinoSegmentedTab(context));
+  WebF.defineCustomElement('flutter-cupertino-segmented-tab-item', (context) => FlutterCupertinoSegmentedTabItem(context));
 
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }
