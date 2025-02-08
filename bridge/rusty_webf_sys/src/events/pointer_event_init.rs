@@ -7,6 +7,12 @@ use std::ffi::*;
 use crate::*;
 #[repr(C)]
 pub struct PointerEventInit {
+  pub detail: c_double,
+  pub view: RustValue<WindowRustMethods>,
+  pub which: c_double,
+  pub bubbles: i32,
+  pub cancelable: i32,
+  pub composed: i32,
   pub is_primary: i32,
   pub pointer_id: c_double,
   pub pointer_type: *const c_char,

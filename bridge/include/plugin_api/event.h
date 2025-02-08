@@ -8,15 +8,14 @@
 #define WEBF_CORE_WEBF_API_PLUGIN_API_EVENT_H_
 #include <stdint.h>
 #include "rust_readable.h"
-#include "script_value_ref.h"
 #include "webf_value.h"
 namespace webf {
 class EventTarget;
 typedef struct EventTargetPublicMethods EventTargetPublicMethods;
 class SharedExceptionState;
 class ExecutingContext;
+typedef struct NativeValue NativeValue;
 class Event;
-typedef struct ScriptValueRef ScriptValueRef;
 enum class EventType {
   kEvent = 0,
   kCustomEvent = 1,

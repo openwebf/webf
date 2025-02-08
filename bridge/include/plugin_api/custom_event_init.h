@@ -4,20 +4,16 @@
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef WEBF_CORE_WEBF_API_PLUGIN_API_MOUSE_EVENT_INIT_H_
-#define WEBF_CORE_WEBF_API_PLUGIN_API_MOUSE_EVENT_INIT_H_
+#ifndef WEBF_CORE_WEBF_API_PLUGIN_API_CUSTOM_EVENT_INIT_H_
+#define WEBF_CORE_WEBF_API_PLUGIN_API_CUSTOM_EVENT_INIT_H_
 #include <stdint.h>
 #include "webf_value.h"
 namespace webf {
-class Window;
-typedef struct WindowPublicMethods WindowPublicMethods;
-struct WebFMouseEventInit {
-  double detail;
-  WebFValue<Window, WindowPublicMethods> view;
-  double which;
+struct WebFCustomEventInit {
   int32_t bubbles;
   int32_t cancelable;
   int32_t composed;
+  NativeValue detail;
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_MOUSE_EVENT_INIT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_CUSTOM_EVENT_INIT_H_

@@ -8,18 +8,17 @@
 #define WEBF_CORE_WEBF_API_PLUGIN_API_CUSTOM_EVENT_H_
 #include <stdint.h>
 #include "rust_readable.h"
-#include "script_value_ref.h"
 #include "event.h"
 namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
+typedef struct NativeValue NativeValue;
 class CustomEvent;
-typedef struct ScriptValueRef ScriptValueRef;
-using PublicCustomEventGetDetail = WebFValue<ScriptValueRef, ScriptValueRefPublicMethods> (*)(CustomEvent*);
-using PublicCustomEventInitCustomEvent = void (*)(CustomEvent*, const char*, int32_t, int32_t, ScriptValueRef*, SharedExceptionState*);
+using PublicCustomEventGetDetail = NativeValue (*)(CustomEvent*, SharedExceptionState* shared_exception_state);
+using PublicCustomEventInitCustomEvent = void (*)(CustomEvent*, const char*, int32_t, int32_t, NativeValue, SharedExceptionState*);
 struct CustomEventPublicMethods : public WebFPublicMethods {
-  static WebFValue<ScriptValueRef, ScriptValueRefPublicMethods> Detail(CustomEvent* custom_event);
-  static void InitCustomEvent(CustomEvent* custom_event, const char* type, int32_t can_bubble, int32_t cancelable, ScriptValueRef* detail, SharedExceptionState* shared_exception_state);
+  static NativeValue Detail(CustomEvent* custom_event, SharedExceptionState* shared_exception_state);
+  static void InitCustomEvent(CustomEvent* custom_event, const char* type, int32_t can_bubble, int32_t cancelable, NativeValue detail, SharedExceptionState* shared_exception_state);
   double version{1.0};
   EventPublicMethods event;
   PublicCustomEventGetDetail custom_event_get_detail{Detail};

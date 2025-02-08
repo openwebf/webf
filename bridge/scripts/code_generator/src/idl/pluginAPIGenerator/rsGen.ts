@@ -33,7 +33,7 @@ function generatePublicReturnTypeValue(type: ParameterType) {
       return 'c_double';
     }
     case FunctionArgumentType.any: {
-      return 'RustValue<ScriptValueRefRustMethods>';
+      return 'NativeValue';
     }
     case FunctionArgumentType.boolean: {
       return 'i32';
@@ -62,7 +62,7 @@ function generateMethodReturnType(type: ParameterType) {
       return 'i64';
     }
     case FunctionArgumentType.any: {
-      return 'ScriptValueRef';
+      return 'NativeValue';
     }
     case FunctionArgumentType.double: {
       return 'f64';
@@ -97,7 +97,7 @@ function generatePublicParameterType(type: ParameterType): string {
       return 'c_double';
     }
     case FunctionArgumentType.any: {
-      return '*const OpaquePtr';
+      return 'NativeValue';
     }
     case FunctionArgumentType.boolean: {
       return 'i32';
@@ -154,7 +154,7 @@ function generateMethodParameterType(type: ParameterType): string {
       return 'f64';
     }
     case FunctionArgumentType.any: {
-      return '&ScriptValueRef';
+      return 'NativeValue';
     }
     case FunctionArgumentType.boolean: {
       return 'bool';
@@ -200,7 +200,7 @@ function generateMethodParametersName(parameters: FunctionArguments[]): string {
         return `i32::from(${generateValidRustIdentifier(param.name)})`;
       }
       case FunctionArgumentType.any:
-        return `${param.name}.ptr`;
+        return `${param.name}`;
       default:
         return `${generateValidRustIdentifier(param.name)}`;
     }
@@ -287,7 +287,7 @@ function generatePropReturnStatements(type: ParameterType) {
     value.to_str().unwrap().to_string()`;
     }
     case FunctionArgumentType.any: {
-      return `ScriptValueRef::initialize(value.value, self.context(), value.method_pointer)`;
+      return `value`;
     }
     default:
       return 'value';
@@ -351,12 +351,22 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
       }
       case TemplateKind.Dictionary: {
         object = object as ClassObject;
-        const parentObject = ClassObject.globalClassMap[object.parent];
+        const parentObjects = [] as ClassObject[];
+
+        let node = object;
+
+        while (node && node.parent) {
+          const parentObject = ClassObject.globalClassMap[node.parent];
+          if (parentObject) {
+            parentObjects.push(parentObject);
+          }
+          node = parentObject;
+        }
 
         return _.template(readSourceTemplate('dictionary'))({
           className: getClassName(blob),
           parentClassName: object.parent,
-          parentObject,
+          parentObjects,
           blob,
           object,
           generatePublicReturnTypeValue,

@@ -613,6 +613,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/plugin_api_event.cc
     out/plugin_api_animation_event.cc
     out/plugin_api_close_event.cc
+    out/plugin_api_custom_event.cc
     out/plugin_api_focus_event.cc
     out/plugin_api_gesture_event.cc
     out/plugin_api_hashchange_event.cc
@@ -622,7 +623,6 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/plugin_api_pointer_event.cc
     out/plugin_api_transition_event.cc
     out/plugin_api_ui_event.cc
-    out/plugin_api_custom_event.cc
     )
 
 

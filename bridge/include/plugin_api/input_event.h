@@ -8,13 +8,12 @@
 #define WEBF_CORE_WEBF_API_PLUGIN_API_INPUT_EVENT_H_
 #include <stdint.h>
 #include "rust_readable.h"
-#include "script_value_ref.h"
 #include "ui_event.h"
 namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
+typedef struct NativeValue NativeValue;
 class InputEvent;
-typedef struct ScriptValueRef ScriptValueRef;
 using PublicInputEventGetInputType = const char* (*)(InputEvent*);
 using PublicInputEventDupInputType = const char* (*)(InputEvent*);
 using PublicInputEventGetData = const char* (*)(InputEvent*);

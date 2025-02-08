@@ -9,7 +9,15 @@
 #include <stdint.h>
 #include "webf_value.h"
 namespace webf {
+class Window;
+typedef struct WindowPublicMethods WindowPublicMethods;
 struct WebFPointerEventInit {
+  double detail;
+  WebFValue<Window, WindowPublicMethods> view;
+  double which;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
   int32_t is_primary;
   double pointer_id;
   const char* pointer_type;

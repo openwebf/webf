@@ -6,6 +6,7 @@ use std::ffi::*;
 use native_value::NativeValue;
 
 use crate::*;
+use crate::custom_event_init::CustomEventInit;
 
 #[repr(C)]
 pub struct ExecutingContextRustMethods {
@@ -25,6 +26,33 @@ pub struct ExecutingContextRustMethods {
   pub clear_interval: extern "C" fn(*const OpaquePtr, c_int, *const OpaquePtr),
   pub add_rust_future_task: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const NativeLibraryMetaData, *const OpaquePtr) -> c_void,
   pub remove_rust_future_task: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const NativeLibraryMetaData, *const OpaquePtr) -> c_void,
+  pub set_run_rust_future_tasks: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const OpaquePtr) -> c_void,
+  pub create_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<EventRustMethods>,
+  pub create_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const EventInit, exception_state: *const OpaquePtr ) -> RustValue<EventRustMethods>,
+  pub create_animation_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<AnimationEventRustMethods>,
+  pub create_animation_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const AnimationEventInit, exception_state: *const OpaquePtr ) -> RustValue<AnimationEventRustMethods>,
+  pub create_close_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<CloseEventRustMethods>,
+  pub create_close_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const CloseEventInit, exception_state: *const OpaquePtr ) -> RustValue<CloseEventRustMethods>,
+  pub create_custom_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<CustomEventRustMethods>,
+  pub create_custom_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const CustomEventInit, exception_state: *const OpaquePtr ) -> RustValue<CustomEventRustMethods>,
+  pub create_focus_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<FocusEventRustMethods>,
+  pub create_focus_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const FocusEventInit, exception_state: *const OpaquePtr ) -> RustValue<FocusEventRustMethods>,
+  pub create_gesture_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<GestureEventRustMethods>,
+  pub create_gesture_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const GestureEventInit, exception_state: *const OpaquePtr ) -> RustValue<GestureEventRustMethods>,
+  pub create_hashchange_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<HashchangeEventRustMethods>,
+  pub create_hashchange_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const HashchangeEventInit, exception_state: *const OpaquePtr ) -> RustValue<HashchangeEventRustMethods>,
+  pub create_input_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<InputEventRustMethods>,
+  pub create_input_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const InputEventInit, exception_state: *const OpaquePtr ) -> RustValue<InputEventRustMethods>,
+  pub create_intersection_change_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<IntersectionChangeEventRustMethods>,
+  pub create_intersection_change_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const IntersectionChangeEventInit, exception_state: *const OpaquePtr ) -> RustValue<IntersectionChangeEventRustMethods>,
+  pub create_mouse_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<MouseEventRustMethods>,
+  pub create_mouse_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const MouseEventInit, exception_state: *const OpaquePtr ) -> RustValue<MouseEventRustMethods>,
+  pub create_pointer_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<PointerEventRustMethods>,
+  pub create_pointer_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const PointerEventInit, exception_state: *const OpaquePtr ) -> RustValue<PointerEventRustMethods>,
+  pub create_transition_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<TransitionEventRustMethods>,
+  pub create_transition_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const TransitionEventInit, exception_state: *const OpaquePtr ) -> RustValue<TransitionEventRustMethods>,
+  pub create_ui_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<UIEventRustMethods>,
+  pub create_ui_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const UIEventInit, exception_state: *const OpaquePtr ) -> RustValue<UIEventRustMethods>,
 }
 
 pub type TimeoutCallback = Box<dyn Fn()>;
@@ -54,7 +82,7 @@ pub struct ExecutingContext {
   // The underlying pointer points to the actual implementation of ExecutionContext in the C++ world.
   pub ptr: *const OpaquePtr,
   // Methods available for export from the C++ world for use.
-  method_pointer: *const ExecutingContextRustMethods,
+  pub(crate) method_pointer: *const ExecutingContextRustMethods,
   pub meta_data: *const NativeLibraryMetaData,
   pub status: *const RustValueStatus,
 }

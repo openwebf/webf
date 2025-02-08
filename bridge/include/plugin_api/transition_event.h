@@ -8,13 +8,12 @@
 #define WEBF_CORE_WEBF_API_PLUGIN_API_TRANSITION_EVENT_H_
 #include <stdint.h>
 #include "rust_readable.h"
-#include "script_value_ref.h"
 #include "event.h"
 namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
+typedef struct NativeValue NativeValue;
 class TransitionEvent;
-typedef struct ScriptValueRef ScriptValueRef;
 using PublicTransitionEventGetElapsedTime = double (*)(TransitionEvent*);
 using PublicTransitionEventGetPropertyName = const char* (*)(TransitionEvent*);
 using PublicTransitionEventDupPropertyName = const char* (*)(TransitionEvent*);
