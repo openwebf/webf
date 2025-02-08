@@ -18,6 +18,8 @@ import 'custom_elements/switch.dart';
 import 'custom_elements/slider.dart';
 import 'custom_elements/cupertino/tab_bar.dart';
 import 'custom_elements/cupertino/button.dart';
+import 'custom_elements/cupertino/input.dart';
+import 'custom_elements/cupertino/tab.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
@@ -35,6 +37,11 @@ void main() async {
   WebF.defineCustomElement('flutter-switch', (context) => FlutterSwitch(context));
   WebF.defineCustomElement('flutter-tab-bar', (context) => FlutterTabBar(context));
   WebF.defineCustomElement('flutter-tab-bar-item', (context) => FlutterTabBarItem(context));
+  WebF.defineCustomElement('flutter-cupertino-button', (context) => FlutterCupertinoButton(context));
+  WebF.defineCustomElement('flutter-cupertino-input', (context) => FlutterCupertinoInput(context));
+  WebF.defineCustomElement('flutter-cupertino-tab', (context) => FlutterCupertinoTab(context));
+  WebF.defineCustomElement('flutter-cupertino-tab-item', (context) => FlutterCupertinoTabItem(context));
+
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }
 

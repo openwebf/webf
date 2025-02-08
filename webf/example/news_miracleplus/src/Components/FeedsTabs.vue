@@ -1,13 +1,13 @@
 <template>
-    <flutter-tab>
-        <flutter-tab-item 
+    <flutter-cupertino-tab>
+        <flutter-cupertino-tab-item 
             v-for="tab in tabs" 
             :key="tab.id" 
             :title="tab.title"
         >
             <slot :name="tab.id"></slot>
-        </flutter-tab-item>
-    </flutter-tab>
+        </flutter-cupertino-tab-item>
+    </flutter-cupertino-tab>
 </template>
 <script>
 export default {
