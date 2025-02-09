@@ -4,16 +4,57 @@
         <!-- 热门标签页内容 -->
         <template #hot>
             <div>热门内容列表</div>
+            <div>Cupertino 组件展示</div>
+            <div>Cupertino Switch</div>
+            <flutter-cupertino-switch
+              :selected="switchValue"
+              @change="onSwitchChange"
+              active-color="#FF0000"
+              inactive-color="#CCCCCC"
+            />
+            <div>Cupertino Segmented Tabs</div>
+            <flutter-cupertino-segmented-tab>
+              <flutter-cupertino-segmented-tab-item title="标签1">
+                <div>内容1</div>
+              </flutter-cupertino-segmented-tab-item>
+              <flutter-cupertino-segmented-tab-item title="标签2">
+                <div>内容2</div>
+              </flutter-cupertino-segmented-tab-item>
+            </flutter-cupertino-segmented-tab>
         </template>
         
         <!-- 最新标签页内容 -->
         <template #latest>
             <div>最新内容列表</div>
+            <div>Cupertino 组件展示</div>
+            <div>Cupertino Picker</div>
+            <flutter-cupertino-picker height="200" item-height="32" @change="onPickerChange">
+              <flutter-cupertino-picker-item label="选项1"></flutter-cupertino-picker-item>
+              <flutter-cupertino-picker-item label="选项2"></flutter-cupertino-picker-item>
+              <flutter-cupertino-picker-item label="选项3"></flutter-cupertino-picker-item>
+            </flutter-cupertino-picker>
+            <div>Cupertino Date Picker</div>
+            <flutter-cupertino-date-picker
+              mode="date"
+              height="200"
+              minimum-date="2024-01-01"
+              maximum-date="2025-12-31"
+              value="2024-03-14"
+              use-24h="true"
+              @change="onDateChange"
+            />
         </template>
         
         <!-- 讨论标签页内容 -->
         <template #discussion>
             <div>讨论内容列表</div>
+            <div @click="showModalPopup">点我展示 modal</div>
+            <flutter-cupertino-modal-popup v-if="showModal" id="myModal" height="400" style="display: none;">
+              <div class="modal-content">
+                <h1>这是一个底部弹出框</h1>
+                <p>这里是内容区域</p>
+              </div>
+            </flutter-cupertino-modal-popup>
         </template>
         
         <!-- 新闻标签页内容 -->
@@ -55,9 +96,18 @@ export default {
         { id: 'product', title: '产品' }
       ],
       show: true,
+      switchValue: false,
+      showModal: false,
     }
   },
   methods: {
+    onSwitchChange(e) {
+      console.log('onSwitchChange', e.detail);
+      this.switchValue = e.detail;
+    },
+    showModalPopup() {
+      this.showModal = true;
+    }
   }
 }
 </script>
