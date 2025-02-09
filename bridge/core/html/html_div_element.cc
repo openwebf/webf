@@ -9,6 +9,6 @@
 
 namespace webf {
 
-HTMLDivElement::HTMLDivElement(Document& document) : HTMLElement(html_names::kdiv, &document) {}
+HTMLDivElement::HTMLDivElement(Document& document) : HTMLElement(html_names::kDiv, &document) {}
 
 }  // namespace webf

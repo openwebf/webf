@@ -14,6 +14,7 @@ import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/css_animation.dart';
@@ -23,7 +24,29 @@ import 'svg.dart';
 
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
 
-enum RenderObjectUpdateReason { updateChildNodes, updateRenderReplaced, toRepaintBoundary, addEvent, updateDisplay }
+class RenderObjectUpdateReason {}
+
+class UpdateDisplayReason extends RenderObjectUpdateReason {}
+
+class UpdateChildNodeUpdateReason extends RenderObjectUpdateReason {}
+
+class UpdateRenderReplacedUpdateReason extends RenderObjectUpdateReason {}
+
+class ToRepaintBoundaryUpdateReason extends RenderObjectUpdateReason {}
+
+class AddEventUpdateReason extends RenderObjectUpdateReason {}
+
+class ToPositionPlaceHolderUpdateReason extends RenderObjectUpdateReason {
+  Element positionedElement;
+
+  ToPositionPlaceHolderUpdateReason(this.positionedElement);
+}
+
+class AttachPositionedChild extends RenderObjectUpdateReason {
+  Element positionedElement;
+
+  AttachPositionedChild(this.positionedElement);
+}
 
 typedef SomeRenderBoxModelHandlerCallback = bool Function(RenderBoxModel renderBoxModel);
 typedef EveryRenderBoxModelHandlerCallback = bool Function(flutter.Element?, RenderBoxModel renderBoxModel);
@@ -40,8 +63,6 @@ enum RenderObjectGetType { self, parent, firstChild, lastChild, previousSibling,
 abstract class RenderStyle extends DiagnosticableTree {
   // Common
   Element get target;
-
-  RenderStyle? get parent;
 
   dynamic getProperty(String key);
 
@@ -381,7 +402,23 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   // For some style changes, we needs to upgrade
   void requestWidgetToRebuild(RenderObjectUpdateReason reason) {
-    SchedulerBinding.instance.addPostFrameCallback((_) {
+    switch(reason.runtimeType) {
+      case AddEventUpdateReason:
+        target.hasEvent = true;
+        break;
+      case ToPositionPlaceHolderUpdateReason:
+        target.holderAttachedPositionedElement = (reason as ToPositionPlaceHolderUpdateReason).positionedElement;
+        break;
+      case AttachPositionedChild:
+        target.positionedElements.add((reason as AttachPositionedChild).positionedElement);
+        break;
+      default:
+        break;
+    }
+
+    if (!target.managedByFlutterWidget && target is WidgetElement) {
+      (target as WidgetElement).reattachWidgetInDOMMode();
+    } else {
       _widgetRenderObjects.keys.forEach((element) {
         if (element is WebRenderLayoutRenderObjectElement) {
           element.requestForBuild(reason);
@@ -391,8 +428,7 @@ abstract class RenderStyle extends DiagnosticableTree {
           element.requestForBuild(reason);
         }
       });
-    });
-    SchedulerBinding.instance.scheduleFrame();
+    }
   }
 
   bool someRenderBoxSatisfy(SomeRenderBoxModelHandlerCallback callback) {
@@ -704,7 +740,8 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   T? getParentRenderStyle<T extends RenderStyle>() {
-    return getRenderBoxValueByType(RenderObjectGetType.parent, (_, renderStyle) => renderStyle) as T?;
+    return getRenderBoxValueByType(RenderObjectGetType.parent, (_, renderStyle) => renderStyle) as T? ??
+        target.parentElement?.renderStyle as T?;
   }
 
   @pragma('vm:prefer-inline')
@@ -891,22 +928,77 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   void markChildrenNeedsSort() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
-      if (renderObject is RenderLayoutBox) {
-        renderObject.markChildrenNeedsSort();
+    everyRenderBox((_, renderBoxModel) {
+      if (renderBoxModel is RenderLayoutBox) {
+        renderBoxModel.markChildrenNeedsSort();
       }
+
       return true;
     });
   }
 
   @pragma('vm:prefer-inline')
   void markParentNeedsSort() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent, (renderObject, _) {
-      if (renderObject is RenderLayoutBox) {
-        renderObject.markChildrenNeedsSort();
+    everyRenderBox((_, renderBoxModel) {
+      if (renderBoxModel is RenderLayoutBox) {
+        (renderBoxModel.parent as RenderLayoutBox?)?.markChildrenNeedsSort();
       }
+
       return true;
     });
+  }
+
+  // Sort children by zIndex, used for paint and hitTest.
+  List<RenderBox> get paintingOrder {
+    if (attachedRenderBoxModel == null) return [];
+
+    RenderBoxModel attachedRoot = attachedRenderBoxModel as RenderBoxModel;
+
+    if (attachedRoot is RenderObjectWithChildMixin && (attachedRoot as RenderObjectWithChildMixin).child != null) {
+      return [(attachedRoot as RenderObjectWithChildMixin).child as RenderBox];
+    }
+
+    RenderLayoutBox containerLayoutBox = attachedRoot as RenderLayoutBox;
+
+    if (containerLayoutBox.childCount == 0) {
+      // No child.
+      return const [];
+    } else if (containerLayoutBox.childCount == 1) {
+      // Only one child.
+      final List<RenderBox> order = <RenderBox>[containerLayoutBox.firstChild as RenderBox];
+      return order;
+    } else {
+      // Sort by zIndex.
+      List<RenderBox> children = containerLayoutBox.getChildren();
+      children.sort((RenderBox left, RenderBox right) {
+        // @FIXME: Add patch to handle nested fixed element paint priority, need to remove
+        // this logic after Kraken has implemented stacking context tree.
+        if (left is RenderBoxModel &&
+            left.renderStyle.position == CSSPositionType.fixed &&
+            right is RenderBoxModel &&
+            right.renderStyle.position == CSSPositionType.fixed) {
+          // Child element always paint after parent element when their position are both fixed
+          // as W3C stacking context specified.
+          // Kraken will place these two renderObjects as siblings of the children of HTML renderObject
+          // due to lack stacking context support, so it needs to add this patch to handle this case.
+          if (right.renderStyle.isAncestorOf(left.renderStyle)) return 1;
+          if (left.renderStyle.isAncestorOf(right.renderStyle)) return -1;
+        }
+
+        bool isLeftNeedsStacking = left is RenderBoxModel && left.needsStacking;
+        bool isRightNeedsStacking = right is RenderBoxModel && right.needsStacking;
+        if (!isLeftNeedsStacking && isRightNeedsStacking) {
+          return 0 <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
+        } else if (isLeftNeedsStacking && !isRightNeedsStacking) {
+          return (left.renderStyle.zIndex ?? 0) < 0 ? -1 : 1;
+        } else if (isLeftNeedsStacking && isRightNeedsStacking) {
+          return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
+        } else {
+          return -1;
+        }
+      });
+      return children;
+    }
   }
 
   // Sizing may affect parent size, mark parent as needsLayout in case
@@ -967,8 +1059,8 @@ abstract class RenderStyle extends DiagnosticableTree {
       if (widgetRenderBoxModel == null) return null;
 
       return _renderObjectMatchFn(widgetRenderBoxModel, getType, (renderObject, renderStyle) {
-        if (renderObject is RenderBoxModel) {
-          return getter(renderObject, renderStyle!);
+        if (renderObject is RenderBoxModel && renderStyle != null) {
+          return getter(renderObject, renderStyle);
         }
         return null;
       });
@@ -995,8 +1087,7 @@ abstract class RenderStyle extends DiagnosticableTree {
           parent = parent.parent;
         }
 
-        return matcher(renderBoxModel.parent,
-            parent is RenderBoxModel ? parent.renderStyle : null);
+        return matcher(renderBoxModel.parent, parent is RenderBoxModel ? parent.renderStyle : null);
       case RenderObjectGetType.firstChild:
         if (renderBoxModel is RenderLayoutBox) {
           RenderObject? firstChild = renderBoxModel.firstChild;
@@ -1143,9 +1234,22 @@ abstract class RenderStyle extends DiagnosticableTree {
   double get rootFontSize => target.ownerDocument.documentElement!.renderStyle.fontSize.computedValue;
 
   void visitChildren(RenderObjectVisitor visitor) {
+    // The renderObjects rendered by RouterLinkElement is not as an child in RenderWidget
+    // We needs delegate to DOM elements to indicate the roots
+    if (target is RouterLinkElement) {
+      target.children.forEach((element) {
+        element.renderStyle.visitChildren(visitor);
+      });
+      return;
+    }
+
     if (target.managedByFlutterWidget) {
       everyWidgetRenderBox((_, renderBoxMode) {
-        renderBoxMode.visitChildren(visitor);
+        if (renderBoxMode is RenderPortal) {
+          renderBoxMode.child?.visitChildren(visitor);
+        } else {
+          renderBoxMode.visitChildren(visitor);
+        }
         return true;
       });
       return;
@@ -1192,9 +1296,6 @@ class CSSRenderStyle extends RenderStyle
 
   @override
   Element target;
-
-  @override
-  CSSRenderStyle? parent;
 
   @override
   getProperty(String name) {
@@ -1762,7 +1863,7 @@ class CSSRenderStyle extends RenderStyle
   }
 
   @override
-  dynamic resolveValue(String propertyName, String propertyValue, { String? baseHref }) {
+  dynamic resolveValue(String propertyName, String propertyValue, {String? baseHref}) {
     RenderStyle renderStyle = this;
 
     if (propertyValue == INITIAL) {
@@ -2062,10 +2163,11 @@ class CSSRenderStyle extends RenderStyle
       _contentBoxLogicalWidth = null;
       return;
     } else if (effectiveDisplay == CSSDisplay.block || effectiveDisplay == CSSDisplay.flex) {
+      CSSRenderStyle? parentStyle = renderStyle.getParentRenderStyle();
       // Use width directly if defined.
       if (renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
-      } else if (renderStyle.parent != null) {
+      } else if (parentStyle != null) {
         // Block element (except replaced element) will stretch to the content width of its parent in flow layout.
         // Replaced element also stretch in flex layout if align-items is stretch.
         if (!renderStyle.isSelfRenderReplaced() || renderStyle.isParentRenderFlexLayout()) {
@@ -2185,9 +2287,9 @@ class CSSRenderStyle extends RenderStyle
             renderStyle.marginTop.computedValue -
             renderStyle.marginBottom.computedValue;
       } else {
-        if (renderStyle.parent != null) {
-          RenderStyle parentRenderStyle = renderStyle.parent!;
+        CSSRenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
 
+        if (parentRenderStyle != null) {
           if (renderStyle.isHeightStretch) {
             logicalHeight = parentRenderStyle.contentBoxLogicalHeight;
             // Should subtract vertical margin of own from its parent content height.
@@ -2234,11 +2336,11 @@ class CSSRenderStyle extends RenderStyle
   @override
   bool get isHeightStretch {
     RenderStyle renderStyle = this;
-    if (renderStyle.parent == null) {
+    CSSRenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
+    if (parentRenderStyle == null) {
       return false;
     }
     bool isStretch = false;
-    RenderStyle parentRenderStyle = renderStyle.parent!;
 
     bool isParentFlex =
         parentRenderStyle.display == CSSDisplay.flex || parentRenderStyle.display == CSSDisplay.inlineFlex;
@@ -2286,9 +2388,8 @@ class CSSRenderStyle extends RenderStyle
     }
 
     // If renderBoxModel definite content constraints, use it as max constrains width of content.
-    BoxConstraints? contentConstraints = isSelfScrollingContentBox()
-        ? getParentRenderStyle()!.contentConstraints()
-        : this.contentConstraints();
+    BoxConstraints? contentConstraints =
+        isSelfScrollingContentBox() ? getParentRenderStyle()!.contentConstraints() : this.contentConstraints();
     if (contentConstraints != null && contentConstraints.maxWidth != double.infinity) {
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackLayoutStep();
@@ -2718,21 +2819,20 @@ class CSSRenderStyle extends RenderStyle
   // Mark this node as detached.
   void detach() {
     // Clear reference to it's parent.
-    parent = null;
     backgroundImage = null;
   }
 
   // Find ancestor render style with display of not inline.
   RenderStyle? _findAncestorWithNoDisplayInline() {
     RenderStyle renderStyle = this;
-    RenderStyle? parentRenderStyle = renderStyle.parent;
+    CSSRenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
     while (parentRenderStyle != null) {
       // If ancestor element is WidgetElement, should return it because should get maxWidth of constraints for logicalWidth.
       if (parentRenderStyle.effectiveDisplay != CSSDisplay.inline ||
           parentRenderStyle.target.renderObjectManagerType == RenderObjectManagerType.FLUTTER_ELEMENT) {
         break;
       }
-      parentRenderStyle = parentRenderStyle.parent;
+      parentRenderStyle = parentRenderStyle.getParentRenderStyle<CSSRenderStyle>();
     }
     return parentRenderStyle;
   }
@@ -2740,10 +2840,10 @@ class CSSRenderStyle extends RenderStyle
   // Find ancestor render style with definite content box logical width.
   RenderStyle? _findAncestorWithContentBoxLogicalWidth() {
     RenderStyle renderStyle = this;
-    RenderStyle? parentRenderStyle = renderStyle.parent;
+    RenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
 
     while (parentRenderStyle != null) {
-      RenderStyle? grandParentRenderStyle = parentRenderStyle.parent;
+      RenderStyle? grandParentRenderStyle = parentRenderStyle.getParentRenderStyle();
       // Flex item with flex-shrink 0 and no width/max-width will have infinity constraints
       // even if parents have width when flex direction is row.
       if (grandParentRenderStyle != null) {
@@ -2770,12 +2870,13 @@ class CSSRenderStyle extends RenderStyle
 
   // Whether current renderStyle is ancestor for child renderStyle in the renderStyle tree.
   bool isAncestorOf(RenderStyle childRenderStyle) {
-    RenderStyle? parentRenderStyle = childRenderStyle.parent;
-    while (parentRenderStyle != null) {
-      if (parentRenderStyle == this) {
+    Element? childElement = childRenderStyle.target;
+    Element? parentElement = childElement.parentElement;
+    while (parentElement != null) {
+      if (parentElement.renderStyle == this) {
         return true;
       }
-      parentRenderStyle = parentRenderStyle.parent;
+      parentElement = parentElement.parentElement;
     }
     return false;
   }

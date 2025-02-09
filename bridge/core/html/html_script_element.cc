@@ -9,7 +9,7 @@
 
 namespace webf {
 
-HTMLScriptElement::HTMLScriptElement(Document& document) : HTMLElement(html_names::kscript, &document) {}
+HTMLScriptElement::HTMLScriptElement(Document& document) : HTMLElement(html_names::kScript, &document) {}
 
 bool HTMLScriptElement::supports(const AtomicString& type, ExceptionState& exception_state) {
   // Only class module support now.

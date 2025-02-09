@@ -904,7 +904,9 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     if (runChildren.isNotEmpty) {
-      if (overflowHiddenNodeId.isNotEmpty && runMainAxisExtent > flexLineLimit && overflowHiddenNodeTotalMinWidth < flexLineLimit) {
+      if (overflowHiddenNodeId.isNotEmpty &&
+          runMainAxisExtent > flexLineLimit &&
+          overflowHiddenNodeTotalMinWidth < flexLineLimit) {
         int _overflowNodeSize = overflowHiddenNodeId.length;
         double overWidth = flexLineLimit - overflowNotHiddenNodeTotalWidth;
         double avgOverWidth = overWidth / _overflowNodeSize;
@@ -913,13 +915,21 @@ class RenderFlexLayout extends RenderLayoutBox {
           _RunChild? _runChild = runChildren[nodeId];
           if (_runChild != null) {
             index += 1;
-            if (overWidth <= 0) {// the remaining width is less than 0.
+            if (overWidth <= 0) {
+              // the remaining width is less than 0.
               BoxConstraints oldConstraints = _runChild.child.constraints;
               double _minWidth = oldConstraints.minWidth;
-              _runChild.child.layout(BoxConstraints(minWidth: _minWidth, maxWidth: _minWidth, minHeight: oldConstraints.minHeight, maxHeight: oldConstraints.maxHeight), parentUsesSize: true);
+              _runChild.child.layout(
+                  BoxConstraints(
+                      minWidth: _minWidth,
+                      maxWidth: _minWidth,
+                      minHeight: oldConstraints.minHeight,
+                      maxHeight: oldConstraints.maxHeight),
+                  parentUsesSize: true);
               _runChild.originalMainSize = _minWidth;
               _childrenIntrinsicMainSizes[nodeId] = _minWidth;
-            } else if (_runChild.originalMainSize <= avgOverWidth) {// the actual width of a subwidget is less than the average value of the remaining width.
+            } else if (_runChild.originalMainSize <= avgOverWidth) {
+              // the actual width of a subwidget is less than the average value of the remaining width.
               // The child does not need layout calculations; adjust the average value.
               overWidth -= _runChild.originalMainSize;
               avgOverWidth = overWidth / (_overflowNodeSize - index);
@@ -930,7 +940,13 @@ class RenderFlexLayout extends RenderLayoutBox {
               if (_minWidth > _maxWidth) {
                 _maxWidth = _minWidth;
               }
-              _runChild.child.layout(BoxConstraints(minWidth: _minWidth, maxWidth: _maxWidth, minHeight: oldConstraints.minHeight, maxHeight: oldConstraints.maxHeight), parentUsesSize: true);
+              _runChild.child.layout(
+                  BoxConstraints(
+                      minWidth: _minWidth,
+                      maxWidth: _maxWidth,
+                      minHeight: oldConstraints.minHeight,
+                      maxHeight: oldConstraints.maxHeight),
+                  parentUsesSize: true);
               _runChild.originalMainSize = avgOverWidth;
               _childrenIntrinsicMainSizes[nodeId] = avgOverWidth;
             }
@@ -1118,9 +1134,9 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (child is RenderBoxModel && !_isChildMainAxisClip(child)) {
         double minMainAxisSize = _getMinMainAxisSize(child);
         double maxMainAxisSize = _getMaxMainAxisSize(child);
-        if (computedSize < minMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision ) {
+        if (computedSize < minMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision) {
           flexedMainSize = minMainAxisSize;
-        } else if (computedSize > maxMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision ) {
+        } else if (computedSize > maxMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision) {
           flexedMainSize = maxMainAxisSize;
         }
       }
@@ -1247,7 +1263,8 @@ class RenderFlexLayout extends RenderLayoutBox {
           initialFreeSpace == 0) {
         maxMainSize = math.max(layoutContentMainSize, minMainAxisSize);
 
-        double maxMainConstraints = _isHorizontalFlexDirection ? contentConstraints!.maxWidth : contentConstraints!.maxHeight;
+        double maxMainConstraints =
+            _isHorizontalFlexDirection ? contentConstraints!.maxWidth : contentConstraints!.maxHeight;
         // determining isScrollingContentBox is to reduce the scope of influence
         if (isScrollingContentBox && maxMainConstraints.isFinite) {
           maxMainSize = totalFlexShrink > 0 ? math.min(maxMainSize, maxMainConstraints) : maxMainSize;
@@ -1328,17 +1345,6 @@ class RenderFlexLayout extends RenderLayoutBox {
           childFlexedMainSize,
           childStretchedCrossSize,
         );
-
-        // Inflate constraints cause Flutter will skip child layout if
-        // its constraints not changed between two layouts.
-        if (child.constraints == childConstraints) {
-          childConstraints = BoxConstraints(
-            minWidth: childConstraints.maxWidth != double.infinity ? childConstraints.maxWidth : 0,
-            maxWidth: double.infinity,
-            minHeight: childConstraints.maxHeight != double.infinity ? childConstraints.maxHeight : 0,
-            maxHeight: double.infinity,
-          );
-        }
 
         child.layout(childConstraints, parentUsesSize: true);
 
@@ -1446,15 +1452,19 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     BoxConstraints oldConstraints = child.constraints;
-    double maxConstraintWidth =
-        child.hasOverrideContentLogicalWidth ? math.max(0, child.renderStyle.borderBoxLogicalWidth!) : oldConstraints.maxWidth;
-    double maxConstraintHeight =
-        child.hasOverrideContentLogicalHeight ? math.max(0, child.renderStyle.borderBoxLogicalHeight!) : oldConstraints.maxHeight;
+    double maxConstraintWidth = child.hasOverrideContentLogicalWidth
+        ? math.max(0, child.renderStyle.borderBoxLogicalWidth!)
+        : oldConstraints.maxWidth;
+    double maxConstraintHeight = child.hasOverrideContentLogicalHeight
+        ? math.max(0, child.renderStyle.borderBoxLogicalHeight!)
+        : oldConstraints.maxHeight;
 
-    double minConstraintWidth =
-        oldConstraints.minWidth > maxConstraintWidth ? maxConstraintWidth : oldConstraints.minWidth;
-    double minConstraintHeight =
-        oldConstraints.minHeight > maxConstraintHeight ? maxConstraintHeight : oldConstraints.minHeight;
+    double minConstraintWidth = child.hasOverrideContentLogicalWidth
+        ? math.max(0, child.renderStyle.borderBoxLogicalWidth!)
+        : (oldConstraints.minWidth > maxConstraintWidth ? maxConstraintWidth : oldConstraints.minWidth);
+    double minConstraintHeight = child.hasOverrideContentLogicalHeight
+        ? math.max(0, child.renderStyle.borderBoxLogicalHeight!)
+        : (oldConstraints.minHeight > maxConstraintHeight ? maxConstraintHeight : oldConstraints.minHeight);
 
     BoxConstraints childConstraints = BoxConstraints(
       minWidth: minConstraintWidth,
@@ -2131,7 +2141,9 @@ class RenderFlexLayout extends RenderLayoutBox {
     // is treated the same as flex-start.
     // https://www.w3.org/TR/css-flexbox-1/#abspos-items
     final ParentData? childParentData = child.parentData;
-    if (child is! RenderBoxModel || child is RenderLineBreak || (childParentData is RenderLayoutParentData && childParentData.isPositioned)) {
+    if (child is! RenderBoxModel ||
+        child is RenderLineBreak ||
+        (childParentData is RenderLayoutParentData && childParentData.isPositioned)) {
       return false;
     }
 

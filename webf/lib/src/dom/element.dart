@@ -95,6 +95,18 @@ abstract class Element extends ContainerNode
     recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
+  String? _cachedHashKey;
+
+  @override
+  String get hashKey {
+    if (_cachedHashKey != null) {
+      return _cachedHashKey!;
+    }
+
+    _cachedHashKey = hashCode.toString() + '_' + childNodes.hashKey();
+    return _cachedHashKey!;
+  }
+
   // Is element an replaced element.
   // https://drafts.csswg.org/css-display/#replaced-element
   bool get isReplacedElement => false;
@@ -173,7 +185,7 @@ abstract class Element extends ContainerNode
     }
     _forceToRepaintBoundary = value;
     if (managedByFlutterWidget) {
-      renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.toRepaintBoundary);
+      renderStyle.requestWidgetToRebuild(ToRepaintBoundaryUpdateReason());
     } else {
       updateOrCreateRenderBoxModel();
     }
@@ -304,7 +316,8 @@ abstract class Element extends ContainerNode
   static final StaticDefinedSyncBindingObjectMethodMap _elementSyncMethods = {
     'getBoundingClientRect': StaticDefinedSyncBindingObjectMethod(
         call: (element, _) => castToType<Element>(element).getBoundingClientRect()),
-    'getClientRects': StaticDefinedSyncBindingObjectMethod(call: (element, _) => castToType<Element>(element).getClientRects()),
+    'getClientRects':
+        StaticDefinedSyncBindingObjectMethod(call: (element, _) => castToType<Element>(element).getClientRects()),
     'scroll': StaticDefinedSyncBindingObjectMethod(
         call: (element, args) =>
             castToType<Element>(element).scroll(castToType<double>(args[0]), castToType<double>(args[1]))),
@@ -331,7 +344,6 @@ abstract class Element extends ContainerNode
 
   @override
   List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _elementSyncMethods];
-
 
   @override
   void initializeMethods(Map<String, BindingObjectMethod> methods) {
@@ -645,7 +657,8 @@ abstract class Element extends ContainerNode
       }
 
       // Find the renderBox of its containing block.
-      RenderBox? containingBlockRenderBox = getContainingBlockRenderBox();
+      Element? containingBlockElement = getContainingBlockElement();
+      RenderBox? containingBlockRenderBox = containingBlockElement?.renderStyle.domRenderBoxModel;
       // Find the previous siblings to insert before renderBoxModel is detached.
       RenderBox? previousSibling = _renderBoxModel.getPreviousSibling();
 
@@ -656,11 +669,16 @@ abstract class Element extends ContainerNode
         previousSibling = previousSibling.getPreviousSibling(followPlaceHolder: false);
       }
 
+      willDetachRenderer();
+
       // Detach renderBoxModel from its original parent.
       _renderBoxModel.detachFromContainingBlock();
       // Change renderBoxModel type in cases such as position changes to fixed which
       // need to create repaintBoundary.
       updateOrCreateRenderBoxModel();
+
+      willAttachRenderer();
+
       // Original parent renderBox.
       RenderBox parentRenderBox = parentElement!.renderStyle.domRenderBoxModel!;
       // Attach renderBoxModel to its containing block.
@@ -678,7 +696,7 @@ abstract class Element extends ContainerNode
     if (oldPosition == CSSPositionType.static) {
       List<Element> positionAbsoluteChildren = findNestedPositionAbsoluteChildren();
       positionAbsoluteChildren.forEach((Element child) {
-        child.addToContainingBlock();
+        child.addToContainingBlock(null);
       });
 
       // Need to change the containing block of direct position absolute children from this element
@@ -686,12 +704,35 @@ abstract class Element extends ContainerNode
     } else if (currentPosition == CSSPositionType.static) {
       List<Element> directPositionAbsoluteChildren = findDirectPositionAbsoluteChildren();
       directPositionAbsoluteChildren.forEach((Element child) {
-        child.addToContainingBlock();
+        child.addToContainingBlock(null);
       });
     }
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
+    }
+  }
+
+  void _updateHostingWidgetWithPosition(CSSPositionType oldPosition) {
+    assert(managedByFlutterWidget);
+    CSSPositionType currentPosition = renderStyle.position;
+
+    // No need to detach and reattach renderBoxMode when its position
+    // changes between static and relative.
+    if (!(oldPosition == CSSPositionType.static && currentPosition == CSSPositionType.relative) &&
+        !(oldPosition == CSSPositionType.relative && currentPosition == CSSPositionType.static)) {
+      Map<flutter.RenderObjectElement, RenderBoxModel> widgetRenderObjects = renderStyle.widgetRenderObjects;
+
+      // Find the renderBox of its containing block.
+      Element? containingBlockElement = getContainingBlockElement();
+
+      if (containingBlockElement == null) return;
+      if (containingBlockElement is HTMLElement) {
+        // containingBlockElement.fixedElements!.appendChild(this);
+      } else {
+        renderStyle.requestWidgetToRebuild(ToPositionPlaceHolderUpdateReason(this));
+        containingBlockElement.renderStyle.requestWidgetToRebuild(AttachPositionedChild(this));
+      }
     }
   }
 
@@ -793,11 +834,11 @@ abstract class Element extends ContainerNode
 
   // Add element to its containing block which includes the steps of detach the renderBoxModel
   // from its original parent and attach to its new containing block.
-  void addToContainingBlock() {
+  void addToContainingBlock(flutter.RenderObjectElement? flutterWidgetElement) {
     assert(!managedByFlutterWidget);
     RenderBoxModel _renderBoxModel = renderStyle.domRenderBoxModel!;
     // Find the renderBox of its containing block.
-    RenderBox? containingBlockRenderBox = getContainingBlockRenderBox();
+    Element? containingBlockElement = getContainingBlockElement();
     // Find the previous siblings to insert before renderBoxModel is detached.
     RenderBox? previousSibling = _renderBoxModel.getPreviousSibling();
     // Detach renderBoxModel from its original parent.
@@ -805,7 +846,7 @@ abstract class Element extends ContainerNode
     // Original parent renderBox.
     RenderBox parentRenderBox = parentElement!.renderStyle.domRenderBoxModel!;
     // Attach renderBoxModel of to its containing block.
-    _renderBoxModel.attachToContainingBlock(containingBlockRenderBox, parent: parentRenderBox, after: previousSibling);
+    _renderBoxModel.attachToContainingBlock(containingBlockElement?.renderStyle.domRenderBoxModel, parent: parentRenderBox, after: previousSibling);
   }
 
   void addChildForDOMMode(RenderBox child) {
@@ -834,6 +875,8 @@ abstract class Element extends ContainerNode
       ownerDocument.inactiveRenderObjects.add(renderStyle.domRenderBoxModel);
     }
     ownerDocument.clearElementStyleDirty(this);
+    positionedElements.clear();
+    holderAttachedPositionedElement = null;
     _beforeElement?.dispose();
     _beforeElement = null;
     _afterElement?.dispose();
@@ -955,8 +998,9 @@ abstract class Element extends ContainerNode
   void childrenChanged(ChildrenChange change) {
     super.childrenChanged(change);
     if (managedByFlutterWidget) {
-      renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.updateChildNodes);
+      renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
     }
+    _cachedHashKey = null;
   }
 
   @override
@@ -965,22 +1009,20 @@ abstract class Element extends ContainerNode
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('Element.appendChild');
     }
-    super.appendChild(child);
-    // Update renderStyle tree.
-    if (child is Element) {
-      child.renderStyle.parent = renderStyle;
-    }
 
     if (managedByFlutterWidget || this is WidgetElement) {
       child.managedByFlutterWidget = true;
-    } else {
+    }
+
+    super.appendChild(child);
+
+    if (!managedByFlutterWidget && this is! WidgetElement) {
       // final box = renderBoxModel;
       if (isRendererAttachedToSegmentTree) {
         // Only append child renderer when which is not attached.
         if (!child.isRendererAttachedToSegmentTree &&
             renderStyle.hasRenderBox() &&
             renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
-
           RenderBox? after = Node.findParentLastRenderBox(this);
           child.attachTo(this, after: after);
         }
@@ -1018,16 +1060,13 @@ abstract class Element extends ContainerNode
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('Element.insertBefore');
     }
-    Node? previousSibling = referenceNode.previousSibling;
-    Node? node = super.insertBefore(child, referenceNode);
-    // Update renderStyle tree.
-    if (child is Element) {
-      child.renderStyle.parent = renderStyle;
-    }
 
     if (managedByFlutterWidget || this is WidgetElement) {
       child.managedByFlutterWidget = true;
     }
+
+    Node? previousSibling = referenceNode.previousSibling;
+    Node? node = super.insertBefore(child, referenceNode);
 
     if (!managedByFlutterWidget && isRendererAttachedToSegmentTree) {
       // Only append child renderer when which is not attached.
@@ -1051,14 +1090,6 @@ abstract class Element extends ContainerNode
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommandStep('Element.replaceChild');
     }
-    // Update renderStyle tree.
-    if (newNode is Element) {
-      newNode.renderStyle.parent = renderStyle;
-    }
-    if (oldNode is Element) {
-      oldNode.renderStyle.parent = null;
-    }
-
     if (managedByFlutterWidget || this is WidgetElement) {
       newNode.managedByFlutterWidget = true;
     }
@@ -1108,6 +1139,11 @@ abstract class Element extends ContainerNode
     super.connectedCallback();
     _updateNameMap(getAttribute(_NAME));
     _updateIDMap(_id);
+
+    if (managedByFlutterWidget) {
+      applyStyle(style);
+      style.flushPendingProperties();
+    }
   }
 
   @override
@@ -1117,16 +1153,15 @@ abstract class Element extends ContainerNode
     _updateNameMap(null, oldName: getAttribute(_NAME));
   }
 
-  RenderBox? getContainingBlockRenderBox() {
-    assert(!managedByFlutterWidget);
-    RenderBox? containingBlockRenderBox;
+  Element? getContainingBlockElement() {
+    Element? containingBlockElement;
     CSSPositionType positionType = renderStyle.position;
 
     switch (positionType) {
       case CSSPositionType.relative:
       case CSSPositionType.static:
       case CSSPositionType.sticky:
-        containingBlockRenderBox = parentNode!.domRenderer;
+        containingBlockElement = parentElement;
         break;
       case CSSPositionType.absolute:
         Element viewportElement = ownerDocument.documentElement!;
@@ -1141,7 +1176,7 @@ abstract class Element extends ContainerNode
         //    the padding boxes of the first and the last inline boxes generated for that element.
         //    In CSS 2.1, if the inline element is split across multiple lines, the containing block is undefined.
         //  2. Otherwise, the containing block is formed by the padding edge of the ancestor.
-        containingBlockRenderBox = _findContainingBlock(this, viewportElement)?.renderStyle.domRenderBoxModel;
+        containingBlockElement = _findContainingBlock(this, viewportElement);
         break;
       case CSSPositionType.fixed:
         Element viewportElement = ownerDocument.documentElement!;
@@ -1152,10 +1187,10 @@ abstract class Element extends ContainerNode
 
         // If the element has 'position: fixed', the containing block is established by the viewport
         // in the case of continuous media or the page area in the case of paged media.
-        containingBlockRenderBox = viewportElement.domRenderer;
+        containingBlockElement = viewportElement;
         break;
     }
-    return containingBlockRenderBox;
+    return containingBlockElement;
   }
 
   @mustCallSuper
@@ -1242,7 +1277,8 @@ abstract class Element extends ContainerNode
       if (parentElement!.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
         RenderBoxModel _renderBoxModel = renderStyle.domRenderBoxModel!;
         // Find the renderBox of its containing block.
-        RenderBox? containingBlockRenderBox = getContainingBlockRenderBox();
+        Element? containingBlockElement = getContainingBlockElement();
+        RenderBox? containingBlockRenderBox = containingBlockElement?.renderStyle.domRenderBoxModel;
         Node? previousSiblingNode = previousSibling;
         // Find the previous siblings to insert before renderBoxModel is detached.
         RenderBox? previousSiblingRenderBox = previousSiblingNode?.domRenderer;
@@ -1279,7 +1315,7 @@ abstract class Element extends ContainerNode
     // Destroy renderer of element when display is changed to none.
     if (presentDisplay == CSSDisplay.none) {
       renderStyle.removeAllRenderObject();
-      renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.updateDisplay);
+      renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
       return;
     }
 
@@ -1288,7 +1324,7 @@ abstract class Element extends ContainerNode
       didAttachRenderer(renderObjectElement);
     });
 
-    renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.updateDisplay);
+    renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
   }
 
   void setRenderStyleProperty(String name, value) {
@@ -1319,7 +1355,7 @@ abstract class Element extends ContainerNode
     switch (name) {
       case DISPLAY:
         assert(oldValue != null);
-        if (value != oldValue) {
+        if (value != oldValue && this is! WidgetElement) {
           if (!managedByFlutterWidget) {
             _updateRenderBoxModelWithDisplay();
           } else {
@@ -1356,9 +1392,14 @@ abstract class Element extends ContainerNode
         updateOverflowRenderBox();
         break;
       case POSITION:
-        if (managedByFlutterWidget) return;
         assert(oldValue != null);
-        _updateRenderBoxModelWithPosition(oldValue);
+        if (!managedByFlutterWidget) {
+          _updateRenderBoxModelWithPosition(oldValue);
+        } else {
+          scheduleMicrotask(() {
+            _updateHostingWidgetWithPosition(oldValue);
+          });
+        }
         break;
       case COLOR:
         _updateColorRelativePropertyWithColor(this);
@@ -1367,6 +1408,7 @@ abstract class Element extends ContainerNode
         _updateFontRelativeLengthWithFontSize();
         break;
       case TRANSFORM:
+        if (managedByFlutterWidget) return;
         updateOrCreateRenderBoxModel();
         break;
     }
@@ -1765,7 +1807,7 @@ abstract class Element extends ContainerNode
   }
 
   @override
-  String toString() {
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
     String printText = '$tagName Element(${shortHash(this)})';
     if (className.isNotEmpty) {
       printText += ' className(.$className)';

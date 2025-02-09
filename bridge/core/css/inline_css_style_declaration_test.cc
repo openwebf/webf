@@ -52,10 +52,10 @@ document.body.style.setProperty('--blue', 'lightblue'); console.assert(document.
 document.body.style.setProperty('--main-color', 'lightblue'); console.assert(document.body.style.getPropertyValue('--main-color') === 'lightblue');
 )";
   env->page()->evaluateScript(code, strlen(code), "vm://", 0);
-  UICommandItem* buffer = static_cast<UICommandItem*>(context->uiCommandBuffer()->data());
-  size_t commandSize = context->uiCommandBuffer()->size();
+  UICommandBufferPack* p_buffer_pack = static_cast<UICommandBufferPack*>(context->uiCommandBuffer()->data());
+  size_t commandSize = p_buffer_pack->length;
 
-  UICommandItem& last = buffer[commandSize - 1];
+  UICommandItem& last = ((UICommandItem*)p_buffer_pack->data)[commandSize - 1];
 
   EXPECT_EQ(last.type, (int32_t)UICommand::kSetStyle);
   uint16_t* last_key = (uint16_t*)last.string_01;

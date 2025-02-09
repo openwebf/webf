@@ -5,7 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 
-class CharacterData extends Node {
+abstract class CharacterData extends Node {
   CharacterData(NodeType type, [context]) : super(type, context);
 
   @override
@@ -17,14 +17,14 @@ class CharacterData extends Node {
   }
 
   @override
-  RenderBox? get domRenderer => throw UnimplementedError();
+  RenderBox? get domRenderer => null;
 
   @override
-  RenderBox? get attachedRenderer => throw UnimplementedError();
+  RenderBox? get attachedRenderer => null;
 
   @override
   flutter.Widget toWidget({Key? key}) {
-    return const flutter.SizedBox.shrink();
+    return flutter.ConstrainedBox(constraints: BoxConstraints(maxWidth: 0, minHeight: 0, minWidth: 0, maxHeight: 0));
   }
 
   @override

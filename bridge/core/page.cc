@@ -128,6 +128,8 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
     context_->RunRustFutureTasks();
     return return_value;
   }
+
+  return nullptr;
 }
 
 bool WebFPage::evaluateScript(const char* script,

@@ -284,14 +284,9 @@ void* getUICommandItems(void* page_) {
   return page->executingContext()->uiCommandBuffer()->data();
 }
 
-uint32_t getUICommandKindFlag(void* page_) {
-  auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  return page->executingContext()->uiCommandBuffer()->kindFlag();
-}
-
-int64_t getUICommandItemSize(void* page_) {
-  auto page = reinterpret_cast<webf::WebFPage*>(page_);
-  return page->executingContext()->uiCommandBuffer()->size();
+void freeActiveCommandBuffer(void* ui_command_buffer) {
+  auto* buffer = static_cast<webf::UICommandBuffer*>(ui_command_buffer);
+  delete buffer;
 }
 
 void clearUICommandItems(void* page_) {

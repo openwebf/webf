@@ -30,7 +30,7 @@ class UICommandSyncStrategy {
   bool ShouldSync();
   void Reset();
   void RecordUICommand(UICommand type,
-                       std::unique_ptr<SharedNativeString>& args_01,
+                       SharedNativeString* args_01,
                        NativeBindingObject* native_ptr,
                        void* native_ptr2,
                        bool request_ui_update);

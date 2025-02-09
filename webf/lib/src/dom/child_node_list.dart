@@ -2,8 +2,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'node.dart';
+import 'element.dart';
 import 'node_list.dart';
 import 'container_node.dart';
 import 'collection_index_cache.dart';
@@ -40,7 +41,7 @@ class ChildNodeList extends NodeList {
 
   final ContainerNode _owner;
   final CollectionIndexCache<ChildNodeList, Node> _collectionIndexCache;
-  List<Widget>? _cachedWidgetList;
+  List<flutter.Widget>? _cachedWidgetList;
 
   @override
   int get length => _collectionIndexCache.nodeCount(this);
@@ -55,9 +56,11 @@ class ChildNodeList extends NodeList {
     return _collectionIndexCache.nodeAt(this, index);
   }
 
-  List<Widget> toWidgetList() {
-    if (_cachedWidgetList != null) return _cachedWidgetList!;
-    List<Widget> result = _cachedWidgetList = map((node) => node.toWidget()).toList();
+  List<flutter.Widget> toWidgetList() {
+    if (_cachedWidgetList != null) {
+      return _cachedWidgetList!;
+    }
+    List<flutter.Widget> result = map((node) => node.toWidget()).toList();
     return result;
   }
 
@@ -122,4 +125,13 @@ class ChildNodeList extends NodeList {
 
   @override
   Iterator<Node> get iterator => _ChildNodeListIterator(this);
+
+  @override
+  String hashKey() {
+    String key = '';
+    for (int i = 0; i < length; i ++) {
+      key += '_' + elementAt(i).hashKey;
+    }
+    return key;
+  }
 }

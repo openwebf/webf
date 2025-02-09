@@ -7,6 +7,7 @@
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise_resolver.h"
+#include "core/dom/container_node.h"
 #include "core/dom/events/event_target.h"
 #include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
@@ -264,7 +265,7 @@ void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop,
   auto* args_02 = (NativeValue*)dart_malloc(sizeof(NativeValue));
   memcpy((void*)args_02, &value, sizeof(NativeValue));
 
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetProperty, std::move(args_01), bindingObject(),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetProperty, args_01.release(), bindingObject(),
                                                        args_02);
 }
 
@@ -359,11 +360,18 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
   if (auto element = const_cast<WidgetElement*>(DynamicTo<WidgetElement>(this))) {
     if (std::shared_ptr<MutationObserverInterestGroup> recipients =
             MutationObserverInterestGroup::CreateForAttributesMutation(*element, prop)) {
-      NativeValue old_native_value =
-          GetBindingProperty(prop, FlushUICommandReason::kDependentsOnElement, exception_state);
-      ScriptValue old_value = ScriptValue(ctx(), old_native_value);
+      AtomicString old_value = element->attributes()->getAttribute(prop, exception_state);
       recipients->EnqueueMutationRecord(
-          MutationRecord::CreateAttributes(element, prop, AtomicString::Null(), old_value.ToString(ctx())));
+          MutationRecord::CreateAttributes(element, prop, AtomicString::Null(), old_value));
+    }
+
+    // Sync property to attributes
+    if (value.tag == NativeTag::TAG_STRING) {
+      element->attributes()->setAttribute(
+          prop, NativeValueConverter<NativeTypeString>::FromNativeValueShared(ctx(), value), exception_state, true);
+    } else {
+      ScriptValue script_value = ScriptValue(ctx(), value);
+      element->attributes()->setAttribute(prop, script_value.ToString(ctx()), exception_state, true);
     }
   }
 

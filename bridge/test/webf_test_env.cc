@@ -172,10 +172,7 @@ void TEST_toBlob(void* ptr,
   blobCallback(ptr, contextId, nullptr, bytes, 5);
 }
 
-void TEST_flushUICommand(double contextId) {
-  auto* page = test_context_map[contextId]->page();
-  clearUICommandItems(reinterpret_cast<void*>(page));
-}
+void TEST_flushUICommand(double contextId) {}
 
 void TEST_CreateBindingObject(double context_id, void* native_binding_object, int32_t type, void* args, int32_t argc) {}
 
@@ -325,6 +322,8 @@ const char* TEST_environment() {
 
 void TEST_simulatePointer(MousePointer*, int32_t length, int32_t pointer) {}
 
+void TEST_simulateChangeDarkMode(MousePointer*, int32_t length, int32_t pointer) {}
+
 void TEST_simulateInputText(SharedNativeString* nativeString) {}
 
 std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
@@ -353,6 +352,7 @@ void TEST_mockTestEnvDartMethods(void* testContext, OnJSError onJSError) {
       reinterpret_cast<uint64_t>(TEST_onMatchImageSnapshot),
       reinterpret_cast<uint64_t>(TEST_onMatchImageSnapshotBytes),
       reinterpret_cast<uint64_t>(TEST_environment),
+      reinterpret_cast<uint64_t>(TEST_simulateChangeDarkMode),
       reinterpret_cast<uint64_t>(TEST_simulatePointer),
       reinterpret_cast<uint64_t>(TEST_simulateInputText),
   };

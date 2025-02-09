@@ -17,11 +17,11 @@ thread_local void* html_attribute_names_storage[kHtmlAttributeNamesCount * ((siz
 
 <% _.forEach(data, function(name, index) { %>
   <% if (_.isArray(name)) { %>
-thread_local const AtomicString& k<%= name[0] %> = reinterpret_cast<AtomicString*>(&names_storage)[<%= index %>];
+thread_local const AtomicString& k<%= options.camelCase ? upperCamelCase(name[0]) : name[0] %> = reinterpret_cast<AtomicString*>(&names_storage)[<%= index %>];
   <% } else if (_.isObject(name)) { %>
-thread_local const AtomicString& k<%= name.name %> = reinterpret_cast<AtomicString*>(&names_storage)[<%= index %>];
+thread_local const AtomicString& k<%= options.camelCase ? upperCamelCase(name.name) : name.name %> = reinterpret_cast<AtomicString*>(&names_storage)[<%= index %>];
   <% } else { %>
-thread_local const AtomicString& k<%= name %> = reinterpret_cast<AtomicString*>(&names_storage)[<%= index %>];<% } %>
+thread_local const AtomicString& k<%= options.camelCase ? upperCamelCase(name) : name %> = reinterpret_cast<AtomicString*>(&names_storage)[<%= index %>];<% } %>
 <% }) %>
 
 <% if (deps && deps.html_attribute_names) { %>

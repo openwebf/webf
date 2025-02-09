@@ -26,6 +26,14 @@ class UICommand {
   }
 }
 
+class UICommandBufferPack extends Struct {
+  external Pointer<Void> head;
+  external Pointer<Void> data;
+
+  @Int64()
+  external int length;
+}
+
 // struct UICommandItem {
 //   int32_t type;             // offset: 0 ~ 0.5
 //   int32_t args_01_length;   // offset: 0.5 ~ 1
@@ -173,7 +181,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
             WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createWindow');
           }
 
-          view.disposeBindingObject(view, nativePtr.cast<NativeBindingObject>());
+          WebFViewController.disposeBindingObject(view, nativePtr.cast<NativeBindingObject>());
 
           if (enableWebFProfileTracking) {
             WebFProfiler.instance.finishTrackUICommandStep();

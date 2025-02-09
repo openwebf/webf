@@ -25,28 +25,28 @@
 namespace webf {
 
 
-<% function generateTypeHelperTemplate(name) {
+<% function generateTypeHelperTemplate(name, htmlName) {
   return `
-class HTML${_.upperFirst(name)}Element;
+class ${name};
 template <>
-inline bool IsElementOfType<const HTML${_.upperFirst(name)}Element>(const Node& node) {
- return IsA<HTML${_.upperFirst(name)}Element>(node);
+inline bool IsElementOfType<const ${name}>(const Node& node) {
+ return IsA<${name}>(node);
 }
 template <>
-inline bool IsElementOfType<const HTML${_.upperFirst(name)}Element>(const HTMLElement& element) {
- return IsA<HTML${_.upperFirst(name)}Element>(element);
+inline bool IsElementOfType<const ${name}>(const HTMLElement& element) {
+ return IsA<${name}>(element);
 }
 template <>
-struct DowncastTraits<HTML${_.upperFirst(name)}Element> {
+struct DowncastTraits<${name}> {
  static bool AllowFrom(const Element& element) {
-   return element.HasTagName(html_names::k${name});
+   return element.HasTagName(html_names::k${upperCamelCase(htmlName)});
  }
  static bool AllowFrom(const Node& node) {
-   return node.IsHTMLElement() && IsA<HTML${_.upperFirst(name)}Element>(To<HTMLElement>(node));
+   return node.IsHTMLElement() && IsA<${name}>(To<HTMLElement>(node));
  }
  static bool AllowFrom(const EventTarget& event_target) {
     return event_target.IsNode() && To<Node>(event_target).IsHTMLElement() &&
-            To<HTMLElement>(event_target).tagName() == html_names::k${ name };
+            To<HTMLElement>(event_target).tagName() == html_names::k${ upperCamelCase(htmlName) };
   }
 };
 `;
@@ -54,9 +54,9 @@ struct DowncastTraits<HTML${_.upperFirst(name)}Element> {
 
 <% _.forEach(data, (item, index) => { %>
   <% if (_.isString(item)) { %>
-    <%= generateTypeHelperTemplate(item) %>
+    <%= generateTypeHelperTemplate(`HTML${_.upperFirst(item)}Element`, item) %>
   <% } else if (_.isObject(item)) { %>
-    <%= generateTypeHelperTemplate(item.name) %>
+    <%= generateTypeHelperTemplate(item.interfaceName || `HTML${_.upperFirst(item.name)}Element`, item.name) %>
   <% } %>
 <% }) %>
 

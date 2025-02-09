@@ -45,7 +45,7 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     }
     existHandler.add(eventHandler);
     if (this is Element) {
-      (this as Element).renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.addEvent);
+      (this as Element).renderStyle.requestWidgetToRebuild(AddEventUpdateReason());
     }
   }
 
@@ -143,7 +143,20 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     }
     return path;
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<bool>('disposed', disposed));
+    if (_eventHandlers.isNotEmpty) {
+      properties.add(IterableProperty('eventHandlers', _eventHandlers.keys.toList()));
+    }
+    if (_eventCaptureHandlers.isNotEmpty) {
+      properties.add(IterableProperty('eventCaptureHandlers', _eventCaptureHandlers.keys.toList()));
+    }
+  }
 }
+
 class EventListenerOptions {
 
   bool capture;

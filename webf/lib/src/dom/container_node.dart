@@ -274,24 +274,12 @@ abstract class ContainerNode extends Node {
   }
 
   void notifyNodeRemoved(Node node) {
-    for (Node node in NodeTraversal.inclusiveDescendantsOf(node)) {
-      // As an optimization we skip notifying Text nodes and other leaf nodes
-      // of removal when they're not in the Document tree and not in a shadow root
-      // since the virtual call to removedFrom is not needed.
-      if (node is! ContainerNode && !node.isInTreeScope()) {
-        continue;
-      }
-      node.removedFrom(this);
-    }
+    node.isConnected = false;
   }
 
   void notifyNodeInsertedInternal(Node root) {
-    for (final node in NodeTraversal.inclusiveDescendantsOf(root)) {
-      if (!isConnected && !node.isContainerNode()) {
-        continue;
-      }
-      node.insertedInto(this);
-    }
+    if (!isConnected) return;
+    root.isConnected = isConnected;
   }
 
   void removeBetween(Node? previousChild, Node? nextChild, Node oldChild) {

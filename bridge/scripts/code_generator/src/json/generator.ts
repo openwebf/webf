@@ -38,6 +38,7 @@ function generateBody(blob: JSONBlob, template: JSONTemplate, deps?: JSONBlob[],
 
 type GenerateJSONOptions = {
   add_atom_prefix?: boolean;
+  camelCase?: boolean;
 };
 
 export function generateJSONTemplate(blob: JSONBlob, headerTemplate: JSONTemplate, bodyTemplate?: JSONTemplate, depsBlob?: JSONBlob[], options: GenerateJSONOptions = {}) {

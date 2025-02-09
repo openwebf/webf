@@ -8,6 +8,6 @@
 
 namespace webf {
 
-HTMLFormElement::HTMLFormElement(Document& document) : WidgetElement(html_names::kform, &document) {}
+HTMLFormElement::HTMLFormElement(Document& document) : WidgetElement(html_names::kFocusgroupAttr, &document) {}
 
 }  // namespace webf

@@ -106,12 +106,8 @@ class ImageElement extends Element {
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   @override
-  flutter.Widget toWidget({Key? key}) {
+  flutter.Widget toWidget({Key? key, bool positioned = false}) {
     flutter.Widget child = WebFReplacedElementWidget(webFElement: this, key: key ?? flutter.ObjectKey(this), child: WebFImage(this));
-
-    if (isRepaintBoundary) {
-      return flutter.RepaintBoundary(child: child);
-    }
     return Portal(ownerElement: this, child: child);
   }
 
@@ -526,7 +522,7 @@ class ImageElement extends Element {
       _renderImage!.width = naturalWidth.toDouble();
       _renderImage!.height = naturalHeight.toDouble();
     } else {
-      renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.updateRenderReplaced);
+      renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
     }
 
     // Fire the load event at first frame come.

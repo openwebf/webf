@@ -3,6 +3,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:developer';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -31,7 +34,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     _renderParagraph = child = WebFRenderParagraph(
       text,
       textDirection: TextDirection.ltr,
-      foregroundCallback: _getForeground,
+      foregroundCallback: needsPaintForeground() ? _getForeground : null,
     );
   }
 
@@ -177,6 +180,11 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     String clippedText = _getClippedText(_trimmedData);
     // FIXME(yuanyan): do not create text span every time.
     return CSSTextMixin.createTextSpan(clippedText, renderStyle);
+  }
+
+  bool needsPaintForeground() {
+    CSSBackgroundImage? backgroundImage = renderStyle.backgroundImage;
+    return backgroundImage?.gradient != null && renderStyle.backgroundClip == CSSBackgroundBoundary.text;
   }
 
   Paint? _getForeground(Rect bounds) {

@@ -37,4 +37,9 @@ class EmptyNodeList extends NodeList {
 
   @override
   Iterator<Node> get iterator => EmptyIterator();
+
+  @override
+  String hashKey() {
+    return '_EMPTY_';
+  }
 }

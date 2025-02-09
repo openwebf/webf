@@ -7,11 +7,8 @@ class FlutterButton extends WidgetElement {
 
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
-    return Container(
-      width: renderStyle.width.computedValue,
-      child: ElevatedButton(onPressed: () {
-        dispatchEvent(Event('press'));
-      }, child: childNodes.isNotEmpty ? childNodes.first.toWidget() : Text(''))
-    );
+    return ElevatedButton(onPressed: () {
+      dispatchEvent(Event('press'));
+    }, child: childNodes.isNotEmpty ? childNodes.first.toWidget() : Text(''));
   }
 }

@@ -13,7 +13,7 @@
 
 namespace webf {
 
-HTMLImageElement::HTMLImageElement(Document& document) : HTMLElement(html_names::kimg, &document) {}
+HTMLImageElement::HTMLImageElement(Document& document) : HTMLElement(html_names::kImg, &document) {}
 
 ScriptPromise HTMLImageElement::decode(ExceptionState& exception_state) const {
   exception_state.ThrowException(ctx(), ErrorType::InternalError, "Not implemented.");

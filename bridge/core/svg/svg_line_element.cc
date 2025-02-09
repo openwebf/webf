@@ -7,5 +7,5 @@
 #include "svg_names.h"
 
 namespace webf {
-SVGLineElement::SVGLineElement(Document& document) : SVGGeometryElement(svg_names::kline, document) {}
+SVGLineElement::SVGLineElement(Document& document) : SVGGeometryElement(svg_names::kLine, document) {}
 }  // namespace webf

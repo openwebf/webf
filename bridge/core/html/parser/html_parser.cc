@@ -98,7 +98,7 @@ void HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
   JSContext* ctx = root_node->GetExecutingContext()->ctx();
 
   auto* html_element = DynamicTo<Element>(root_node);
-  if (html_element != nullptr && html_element->localName() == html_names::khtml) {
+  if (html_element != nullptr && html_element->localName() == html_names::kHtml) {
     parseProperty(html_element, &node->v.element);
   }
 

@@ -26,6 +26,16 @@ class RouterLinkElement extends WidgetElement {
     }
   }
 
+  @override
+  void mount() {
+    dispatchEvent(Event('mount'));
+  }
+
+  @override
+  void unmount() {
+    dispatchEvent(Event('unmount'));
+  }
+
   List<dom.Node> cachedChildNodes = [];
 
   @override
@@ -58,10 +68,15 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+    return 'RouterLinkElement [path=$_path]';
+  }
+
+  @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
     return WebFHTMLElement(tagName: 'DIV', children: childNodes.toWidgetList(), inlineStyle: {
       // 'overflow': 'auto',
-      // 'position': 'relative'
-    }, controller: ownerDocument.controller,);
+      'position': 'relative'
+    }, controller: ownerDocument.controller, parentElement: this);
   }
 }

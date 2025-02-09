@@ -13,9 +13,10 @@ class FlutterTab extends WidgetElement {
 
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
+    int _index = 0;
     List<TabData> tabs = childNodes.whereType<dom.Element>().map((element) {
       return TabData(
-        index: 0,
+        index: _index++,
         title: Tab(
           child: Text(element.getAttribute('title') ?? ''),
         ),
@@ -26,7 +27,9 @@ class FlutterTab extends WidgetElement {
     return DynamicTabBarWidget(
       dynamicTabs: tabs,
       isScrollable: isScrollable,
-      onTabControllerUpdated: (controller) {},
+      onTabControllerUpdated: (controller) {
+        controller.index = 0;
+      },
       onTabChanged: (index) {},
       onAddTabMoveTo: MoveToTab.last,
       showBackIcon: showBackIcon,
@@ -40,6 +43,7 @@ class FlutterTabItem extends WidgetElement {
 
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
-    return WebFHTMLElement(tagName: 'DIV', controller: ownerDocument.controller, children: childNodes.toWidgetList());
+    return WebFHTMLElement(
+        tagName: 'DIV', parentElement: this, controller: ownerDocument.controller, children: childNodes.toWidgetList());
   }
 }

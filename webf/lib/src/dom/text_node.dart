@@ -23,9 +23,19 @@ class TextNode extends CharacterData {
 
   TextNode(this._data, [BindingContext? context]) : super(NodeType.TEXT_NODE, context);
 
+  String? _cachedHashKey;
+
+  @override
+  String get hashKey {
+    if (_cachedHashKey != null) {
+      return _cachedHashKey!;
+    }
+    return _cachedHashKey = hashCode.toString();
+  }
+
   @override
   flutter.Widget toWidget({Key? key}) {
-    return TextNodeAdapter(this, key: key ?? flutter.ObjectKey(this));
+    return TextNodeAdapter(this, key: flutter.UniqueKey());
   }
 
   final Set<_TextNodeAdapterElement> _attachedFlutterWidgetElements = {};
@@ -116,6 +126,12 @@ class TextNode extends CharacterData {
     return _domRenderTextBox?.parent != null;
   }
 
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty('data', data));
+  }
+
   void _applyTextStyle() {
     if (isRendererAttachedToSegmentTree) {
       Element _parentElement = parentElement!;
@@ -186,7 +202,7 @@ class TextNode extends CharacterData {
   }
 
   @override
-  String toString() {
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
     return 'TextNode($data)';
   }
 
@@ -209,6 +225,12 @@ class TextNode extends CharacterData {
     }
 
     return textBox;
+  }
+
+  @override
+  void willDetachRenderer(flutter.RenderObjectElement? flutterWidgetElement) {
+    super.willDetachRenderer(flutterWidgetElement);
+    _attachedFlutterWidgetElements.remove(flutterWidgetElement);
   }
 
   @override
@@ -257,4 +279,12 @@ class _TextNodeAdapterElement extends flutter.SingleChildRenderObjectElement {
 
   @override
   TextNodeAdapter get widget => super.widget as TextNodeAdapter;
+
+  @override
+  void unmount() {
+    TextNode textNode = widget.textNode;
+    textNode.willDetachRenderer(this);
+    super.unmount();
+    textNode.didDetachRenderer(this);
+  }
 }

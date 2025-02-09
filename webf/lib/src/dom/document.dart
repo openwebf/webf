@@ -476,7 +476,7 @@ class Document extends ContainerNode {
   }
 
   @override
-  String toString() {
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
     return 'Document($hashCode)';
   }
 
@@ -615,8 +615,8 @@ class Document extends ContainerNode {
     styleSheetNodes.forEach((element) {
       if (element is StyleElementMixin) {
         element.reloadStyle();
-      } else if (element is LinkElement) {
-        element.fetchAndApplyCSSStyle();
+      } else if (element is LinkElement && element.isCSSStyleSheetLoaded()) {
+        element.reloadStyle();
       }
     });
   }
@@ -639,4 +639,7 @@ class Document extends ContainerNode {
 
   @override
   bool get isRendererAttachedToSegmentTree => viewport?.parent != null;
+
+  @override
+  String get hashKey => '#document';
 }
