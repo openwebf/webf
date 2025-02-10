@@ -168,6 +168,10 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   bool get managedByFlutterWidget => _managedByFlutterWidget;
 
+  // Determine if this node or element was created by flutter widget
+  // If this value is true, this node won't participate the DOM event system.
+  bool isWidgetOwned = false;
+
   set managedByFlutterWidget(bool value) {
     if (_managedByFlutterWidget) return;
 
