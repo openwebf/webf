@@ -44,7 +44,7 @@ MouseEvent::MouseEvent(ExecutingContext* context, const AtomicString& type, Nati
     : UIEvent(context, type, &native_mouse_event->native_event),
       //    alt_key_(native_mouse_event->altKey),
       button_(native_mouse_event->button),
-//      buttons_(native_mouse_event->buttons),
+      //      buttons_(native_mouse_event->buttons),
       client_x_(native_mouse_event->clientX),
       client_y_(native_mouse_event->clientY),
       //    ctrl_key_(native_mouse_event->ctrlKey),

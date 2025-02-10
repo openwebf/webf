@@ -444,7 +444,8 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   GetExecutingContext()->dartIsolateContext()->profiler()->FinishTrackSteps();
 
   auto* result = new EventDispatchResult{.canceled = dispatch_result == DispatchEventResult::kCanceledByEventHandler,
-                                         .propagationStopped = event->propagationStopped(), .preventDefaulted = event->defaultPrevented()};
+                                         .propagationStopped = event->propagationStopped(),
+                                         .preventDefaulted = event->defaultPrevented()};
   return NativeValueConverter<NativeTypePointer<EventDispatchResult>>::ToNativeValue(result);
 }
 
