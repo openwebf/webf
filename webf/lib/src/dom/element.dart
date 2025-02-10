@@ -1364,7 +1364,7 @@ abstract class Element extends ContainerNode
         }
         break;
       case OVERFLOW_X:
-        if (managedByFlutterWidget) return;
+        if (managedByFlutterWidget || this is WidgetElement) return;
         assert(oldValue != null);
         CSSOverflowType oldEffectiveOverflowY = oldValue;
         updateOrCreateRenderBoxModel();
@@ -1378,7 +1378,7 @@ abstract class Element extends ContainerNode
         updateOverflowRenderBox();
         break;
       case OVERFLOW_Y:
-        if (managedByFlutterWidget) return;
+        if (managedByFlutterWidget || this is WidgetElement) return;
         assert(oldValue != null);
         CSSOverflowType oldEffectiveOverflowX = oldValue;
         updateOrCreateRenderBoxModel();
