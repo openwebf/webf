@@ -156,6 +156,9 @@ impl PointerEventMethods for PointerEvent {
   }
 }
 impl MouseEventMethods for PointerEvent {
+  fn button(&self) -> f64 {
+    self.mouse_event.button()
+  }
   fn client_x(&self) -> f64 {
     self.mouse_event.client_x()
   }

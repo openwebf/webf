@@ -786,4 +786,42 @@ describe('Event', () => {
     el.style.width = '102px';
     el2.style.width = '102px';
   });
+
+  it('should works with preventDefault in `<a /> element', async (done) => {
+    const anchorElement = createElement('a', {}, [createText('')]);
+    BODY.append(anchorElement);
+
+    anchorElement.addEventListener('click', async (e) => {
+      e.preventDefault();
+
+      BODY.append(createText('Nothing happened'));
+
+      await snapshot();
+      done();
+    });
+
+    anchorElement.click();
+  });
+
+  it('should satisfy react-router event check', (done) => {
+    function isModifiedEvent(event: MouseEvent) {
+      return !!(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey);
+    }
+    function shouldProcessLinkClick(event: MouseEvent) {
+      return event.button === 0 &&
+        // Let browser handle "target=_blank" etc.
+        !isModifiedEvent(event) // Ignore clicks with modifier keys
+        ;
+    }
+
+    const anchorElement = createElement('a', {}, []);
+    BODY.append(anchorElement);
+
+    anchorElement.addEventListener('click', async (e) => {
+      expect(shouldProcessLinkClick(e));
+      done();
+    });
+
+    anchorElement.click();
+  });
 });
