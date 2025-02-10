@@ -1783,9 +1783,11 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     // Max scrollable main size of all lines.
-    double maxScrollableMainSizeOfLines = scrollableMainSizeOfLines.reduce((double curr, double next) {
-      return curr > next ? curr : next;
-    });
+    double maxScrollableMainSizeOfLines = scrollableMainSizeOfLines.isEmpty
+        ? 0
+        : scrollableMainSizeOfLines.reduce((double curr, double next) {
+            return curr > next ? curr : next;
+          });
 
     RenderBoxModel container = isScrollingContentBox ? parent as RenderBoxModel : this;
     bool isScrollContainer = renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
@@ -1797,9 +1799,11 @@ class RenderFlexLayout extends RenderLayoutBox {
         (isScrollContainer ? _flowAwareMainAxisPadding(isEnd: true) : 0);
 
     // Max scrollable cross size of all lines.
-    double maxScrollableCrossSizeOfLines = scrollableCrossSizeOfLines.reduce((double curr, double next) {
-      return curr > next ? curr : next;
-    });
+    double maxScrollableCrossSizeOfLines = scrollableCrossSizeOfLines.isEmpty
+        ? 0
+        : scrollableCrossSizeOfLines.reduce((double curr, double next) {
+            return curr > next ? curr : next;
+          });
 
     // Padding in the end direction of axis should be included in scroll container.
     double maxScrollableCrossSizeOfChildren = maxScrollableCrossSizeOfLines +
