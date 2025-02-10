@@ -233,6 +233,7 @@ class WebFRenderParagraph extends RenderBox
 
   /// Compute distance to baseline of first text line
   double computeDistanceToFirstLineBaseline() {
+    if (_lineOffset.isEmpty) return 0.0;
     double firstLineOffset = _lineOffset[0];
     ui.LineMetrics firstLineMetrics = _lineMetrics[0];
 
