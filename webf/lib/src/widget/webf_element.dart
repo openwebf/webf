@@ -85,6 +85,7 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
         BindingContext(controller.view, controller.view.contextId, allocateNewBindingObject()));
     element.managedByFlutterWidget = true;
     element.parentOrShadowHostNode = widget.parentElement;
+    element.isWidgetOwned = true;
     _webFElement = element;
 
     super.mount(parent, newSlot);
