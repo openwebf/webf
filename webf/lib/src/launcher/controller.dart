@@ -943,10 +943,6 @@ class WebFController {
     _onJSLog = jsLogHandler;
   }
 
-  // Internal usable. Notifications to WebF widget when custom element had changed.
-  OnCustomElementAttached? onCustomElementAttached;
-  OnCustomElementDetached? onCustomElementDetached;
-
   final List<Cookie>? initialCookies;
 
   final ui.FlutterView ownerFlutterView;
@@ -1029,8 +1025,6 @@ class WebFController {
     WebFMethodChannel? methodChannel,
     WebFBundle? bundle,
     WebFThread? runningThread,
-    this.onCustomElementAttached,
-    this.onCustomElementDetached,
     this.onLoad,
     this.onDOMContentLoaded,
     this.onLoadError,

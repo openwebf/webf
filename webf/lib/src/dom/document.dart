@@ -117,8 +117,6 @@ class Document extends ContainerNode {
   StyleNodeManager get styleNodeManager => _styleNodeManager;
   late StyleNodeManager _styleNodeManager;
 
-  Set<WidgetElement> aliveWidgetElements = {};
-
   late RuleSet ruleSet;
 
   String? _domain;
@@ -600,12 +598,6 @@ class Document extends ContainerNode {
     _recalculating = false;
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
-    }
-  }
-
-  void reactiveWidgetElements() {
-    for (WidgetElement widgetElement in aliveWidgetElements) {
-      widgetElement.reactiveRenderer();
     }
   }
 

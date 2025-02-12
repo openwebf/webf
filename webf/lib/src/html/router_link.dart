@@ -40,8 +40,6 @@ class RouterLinkElement extends WidgetElement {
     if (isRouterLinkElement && _path.isNotEmpty) {
       ownerView.setHybridRouterView(_path, this);
       managedByFlutterWidget = true;
-    } else {
-      super.attachWidget();
     }
   }
 

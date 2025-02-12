@@ -101,7 +101,6 @@ abstract class WidgetElement extends dom.Element {
   @override
   void didDetachRenderer([RenderObjectElement? flutterWidgetElement]) {
     super.didDetachRenderer(flutterWidgetElement);
-    detachWidget();
   }
 
   @nonVirtual
@@ -135,44 +134,7 @@ abstract class WidgetElement extends dom.Element {
 
   @mustCallSuper
   @override
-  void didAttachRenderer([Element? flutterWidgetElement]) {
-    // Children of WidgetElement should insert render object by Flutter Framework.
-    attachWidget();
-  }
-
-  // Reconfigure renderObjects when already rendered pages reattached to flutter tree
-  void reactiveRenderer() {
-    if (renderStyle.display != CSSDisplay.none && !managedByFlutterWidget) {
-      // Generate a new adapter for this RenderWidget
-      willAttachRenderer();
-
-      // Reattach to Flutter
-      ownerDocument.controller.onCustomElementAttached!(widgetAdapter);
-
-      parentElement?.ensureChildAttached();
-    }
-  }
-
-  void reattachWidgetInDOMMode() {
-    if (attachedRenderer == null) return;
-    assert(!managedByFlutterWidget);
-    // RenderWidget hostedRenderObject = renderStyle.attachedRenderBoxModel! as RenderWidget;
-    detachWidget();
-    willAttachRenderer();
-    didAttachRenderer();
-  }
-
-  @override
-  void connectedCallback() {
-    super.connectedCallback();
-    ownerDocument.aliveWidgetElements.add(this);
-  }
-
-  @override
-  void disconnectedCallback() {
-    super.disconnectedCallback();
-    ownerDocument.aliveWidgetElements.remove(this);
-  }
+  void didAttachRenderer([Element? flutterWidgetElement]) {}
 
   @override
   void setInlineStyle(String property, String value) {
@@ -255,31 +217,11 @@ abstract class WidgetElement extends dom.Element {
     return child;
   }
 
-  void attachWidget() {
-    if (managedByFlutterWidget) return;
-
-    if (ownerDocument.controller.mode == WebFLoadingMode.standard ||
-        ownerDocument.controller.isPreLoadingOrPreRenderingComplete) {
-      ownerDocument.controller.onCustomElementAttached!(widgetAdapter);
-    } else {
-      ownerDocument.controller.pendingWidgetElements.add(widgetAdapter);
-    }
-  }
-
-  void detachWidget() {
-    if (!managedByFlutterWidget &&
-        ownerDocument.controller.onCustomElementDetached != null) {
-      ownerDocument.controller.onCustomElementDetached!(widgetAdapter);
-      _widgetAdapter = null;
-    }
-  }
-
   @override
   void dispose() {
     super.dispose();
     _states.clear();
     _widgetAdapter = null;
-    ownerDocument.aliveWidgetElements.remove(this);
   }
 }
 

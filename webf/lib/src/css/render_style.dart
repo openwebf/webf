@@ -27,6 +27,7 @@ typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObjec
 class AdapterUpdateReason {}
 
 class WebFInitReason extends AdapterUpdateReason {}
+
 class UpdateDisplayReason extends AdapterUpdateReason {}
 
 class UpdateChildNodeUpdateReason extends AdapterUpdateReason {}
@@ -403,7 +404,7 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   // For some style changes, we needs to upgrade
   void requestWidgetToRebuild(AdapterUpdateReason reason) {
-    switch(reason.runtimeType) {
+    switch (reason.runtimeType) {
       case AddEventUpdateReason:
         target.hasEvent = true;
         break;
@@ -417,19 +418,15 @@ abstract class RenderStyle extends DiagnosticableTree {
         break;
     }
 
-    if (!target.managedByFlutterWidget && target is WidgetElement) {
-      (target as WidgetElement).reattachWidgetInDOMMode();
-    } else {
-      _widgetRenderObjects.keys.forEach((element) {
-        if (element is WebRenderLayoutRenderObjectElement) {
-          element.requestForBuild(reason);
-        } else if (element is RenderWidgetElement) {
-          element.requestForBuild(reason);
-        } else if (element is WebFRenderReplacedRenderObjectElement) {
-          element.requestForBuild(reason);
-        }
-      });
-    }
+    _widgetRenderObjects.keys.forEach((element) {
+      if (element is WebRenderLayoutRenderObjectElement) {
+        element.requestForBuild(reason);
+      } else if (element is RenderWidgetElement) {
+        element.requestForBuild(reason);
+      } else if (element is WebFRenderReplacedRenderObjectElement) {
+        element.requestForBuild(reason);
+      }
+    });
   }
 
   bool someRenderBoxSatisfy(SomeRenderBoxModelHandlerCallback callback) {
