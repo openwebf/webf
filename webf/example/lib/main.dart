@@ -24,6 +24,7 @@ import 'custom_elements/cupertino/segmented_tab.dart';
 import 'custom_elements/cupertino/switch.dart';
 import 'custom_elements/cupertino/picker.dart';
 import 'custom_elements/cupertino/date_picker.dart';
+import 'custom_elements/cupertino/modal_popup.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
@@ -51,6 +52,7 @@ void main() async {
   WebF.defineCustomElement('flutter-cupertino-picker', (context) => FlutterCupertinoPicker(context));
   WebF.defineCustomElement('flutter-cupertino-picker-item', (context) => FlutterCupertinoPickerItem(context));
   WebF.defineCustomElement('flutter-cupertino-date-picker', (context) => FlutterCupertinoDatePicker(context));
+  WebF.defineCustomElement('flutter-cupertino-modal-popup', (context) => FlutterCupertinoModalPopup(context));
 
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }
