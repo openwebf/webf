@@ -744,11 +744,11 @@ abstract class Element extends ContainerNode
       renderStyle.requestWidgetToRebuild(ToPositionPlaceHolderUpdateReason(this));
 
       if (currentPosition == CSSPositionType.fixed) {
-        if (containingBlockElement is HTMLElement) {
-          ownerDocument.documentElement!.fixedElementContainer!.addFixedElement(this);
-        } else if (containingBlockElement is RouterLinkElement) {
-          // containingBlockElement.addPositionFixedElement(this);
-        }
+        // if (containingBlockElement is HTMLElement) {
+        //   ownerDocument.documentElement!.fixedElementContainer!.addFixedElement(this);
+        // } else if (containingBlockElement is RouterLinkElement) {
+        //   // containingBlockElement.addPositionFixedElement(this);
+        // }
       } else {
         containingBlockElement.renderStyle.requestWidgetToRebuild(AttachPositionedChild(this));
       }
@@ -1171,7 +1171,6 @@ abstract class Element extends ContainerNode
     _updateIDMap(null, oldID: _id);
     _updateNameMap(null, oldName: getAttribute(_NAME));
     if (renderStyle.position == CSSPositionType.fixed) {
-      ownerDocument.documentElement!.fixedElementContainer!.removeFixedElement(this);
     }
   }
 
@@ -1201,7 +1200,7 @@ abstract class Element extends ContainerNode
 
         if (managedByFlutterWidget) {
           // If the element has 'position: fixed', the router link element was behavior as the HTMLElement in DOM mode.
-          containingBlockElement = _findRouterLinkElement(this);
+          containingBlockElement = _findRouterLinkElement(this) ?? viewportElement;
         } else {
           // If the element has 'position: fixed', the containing block is established by the viewport
           // in the case of continuous media or the page area in the case of paged media.

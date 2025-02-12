@@ -56,7 +56,7 @@ class _WebFElementWidgetState extends flutter.State<WebFElementWidget> with flut
 
   Element get webFElement => _webFElement;
 
-  void requestForChildNodeUpdate(RenderObjectUpdateReason reason) {
+  void requestForChildNodeUpdate(AdapterUpdateReason reason) {
     setState(() {});
   }
 
@@ -130,7 +130,7 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
   WebFReplacedElementWidget get widget => super.widget as WebFReplacedElementWidget;
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
-  void requestForBuild(RenderObjectUpdateReason reason) {
+  void requestForBuild(AdapterUpdateReason reason) {
     if (reason is UpdateChildNodeUpdateReason) return;
 
     visitChildElements((flutter.Element childElement) {
@@ -198,7 +198,7 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
   Element get webFElement;
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
-  void requestForBuild(RenderObjectUpdateReason reason) {
+  void requestForBuild(AdapterUpdateReason reason) {
     _WebFElementWidgetState state = findAncestorStateOfType<_WebFElementWidgetState>()!;
     state.requestForChildNodeUpdate(reason);
   }

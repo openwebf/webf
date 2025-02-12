@@ -1331,8 +1331,6 @@ class WebFController {
     view.document.preloadViewportSize = _viewportSize;
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
-    view.document.documentElement!.createRenderer();
-    view.document.documentElement!.ensureChildAttached();
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
@@ -1427,8 +1425,6 @@ class WebFController {
 
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
-    view.document.documentElement!.createRenderer();
-    view.document.documentElement!.ensureChildAttached();
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
@@ -1493,16 +1489,6 @@ class WebFController {
       _pendingCallbacks[i]();
     }
     _pendingCallbacks.clear();
-  }
-
-  final List<WidgetElementAdapter> pendingWidgetElements = [];
-
-  void flushPendingUnAttachedWidgetElements() {
-    assert(onCustomElementAttached != null);
-    for (int i = 0; i < pendingWidgetElements.length; i++) {
-      onCustomElementAttached!(pendingWidgetElements[i]);
-    }
-    pendingWidgetElements.clear();
   }
 
   void reactiveWidgetElements() {}

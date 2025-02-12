@@ -14,6 +14,7 @@ export 'src/html/head.dart';
 export 'src/html/headings.dart';
 export 'src/html/html.dart';
 export 'src/html/img.dart';
+export 'src/html/br.dart';
 export 'src/html/input.dart';
 export 'src/html/listview.dart';
 export 'src/html/script.dart';

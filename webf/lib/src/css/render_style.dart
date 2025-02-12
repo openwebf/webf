@@ -24,25 +24,26 @@ import 'svg.dart';
 
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
 
-class RenderObjectUpdateReason {}
+class AdapterUpdateReason {}
 
-class UpdateDisplayReason extends RenderObjectUpdateReason {}
+class WebFInitReason extends AdapterUpdateReason {}
+class UpdateDisplayReason extends AdapterUpdateReason {}
 
-class UpdateChildNodeUpdateReason extends RenderObjectUpdateReason {}
+class UpdateChildNodeUpdateReason extends AdapterUpdateReason {}
 
-class UpdateRenderReplacedUpdateReason extends RenderObjectUpdateReason {}
+class UpdateRenderReplacedUpdateReason extends AdapterUpdateReason {}
 
-class ToRepaintBoundaryUpdateReason extends RenderObjectUpdateReason {}
+class ToRepaintBoundaryUpdateReason extends AdapterUpdateReason {}
 
-class AddEventUpdateReason extends RenderObjectUpdateReason {}
+class AddEventUpdateReason extends AdapterUpdateReason {}
 
-class ToPositionPlaceHolderUpdateReason extends RenderObjectUpdateReason {
+class ToPositionPlaceHolderUpdateReason extends AdapterUpdateReason {
   Element positionedElement;
 
   ToPositionPlaceHolderUpdateReason(this.positionedElement);
 }
 
-class AttachPositionedChild extends RenderObjectUpdateReason {
+class AttachPositionedChild extends AdapterUpdateReason {
   Element positionedElement;
 
   AttachPositionedChild(this.positionedElement);
@@ -401,7 +402,7 @@ abstract class RenderStyle extends DiagnosticableTree {
   Iterable<RenderBoxModel> get widgetRenderObjectIterator => _widgetRenderObjects.values;
 
   // For some style changes, we needs to upgrade
-  void requestWidgetToRebuild(RenderObjectUpdateReason reason) {
+  void requestWidgetToRebuild(AdapterUpdateReason reason) {
     switch(reason.runtimeType) {
       case AddEventUpdateReason:
         target.hasEvent = true;

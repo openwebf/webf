@@ -23,6 +23,9 @@ class HTMLElement extends Element {
   }
 
   @override
+  bool get managedByFlutterWidget => true;
+
+  @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   @override
@@ -37,10 +40,6 @@ class HTMLElement extends Element {
     }
     super.dispatchEvent(event);
   }
-
-  FixedElementContainer? _fixedElementContainer;
-
-  FixedElementContainer? get fixedElementContainer => _fixedElementContainer;
 
   @override
   Node appendChild(Node child) {
@@ -106,45 +105,5 @@ class HTMLElement extends Element {
       });
     }
     runner(this);
-  }
-}
-
-class FixedElementContainer extends WidgetElement {
-  FixedElementContainer(super.context);
-
-  @override
-  String get tagName => '_Fixed-Container';
-
-  @override
-  Map<String, dynamic> get defaultStyle => {'position': 'fixed', 'top': '0px', 'left': '0px'};
-
-  final List<Element> _fixedElement = [];
-
-  void addFixedElement(Element fixedElement) {
-    setState(() {
-      _fixedElement.add(fixedElement);
-    });
-  }
-
-  void removeFixedElement(Element fixedElement) {
-    setState(() {
-      _fixedElement.remove(fixedElement);
-    });
-  }
-
-  @override
-  flutter.Widget build(flutter.BuildContext context, ChildNodeList childNodes) {
-    return WebFHTMLElement(
-        tagName: 'DIV',
-        controller: ownerDocument.controller,
-        parentElement: this,
-        children: _fixedElement.map((element) => element.toWidget()).toList());
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-
-    _fixedElement.clear();
   }
 }

@@ -351,7 +351,7 @@ class WebFWidgetElementState extends State<WidgetElementAdapter> {
     widgetElement.didChangeDependencies();
   }
 
-  void requestUpdateState([VoidCallback? callback, RenderObjectUpdateReason? reason]) {
+  void requestUpdateState([VoidCallback? callback, AdapterUpdateReason? reason]) {
     if (mounted) {
       setState(() {
         if (callback != null) {
@@ -420,7 +420,7 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
   WebFRenderWidgetAdaptor get widget => super.widget as WebFRenderWidgetAdaptor;
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
-  void requestForBuild(RenderObjectUpdateReason reason) {
+  void requestForBuild(AdapterUpdateReason reason) {
     visitChildElements((element) {
       if (element is WebFWidgetElementElement) {
         element.state.requestUpdateState(null, reason);

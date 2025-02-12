@@ -297,10 +297,6 @@ class CSSPositionedLayout {
     Size size = child.boxSize!;
     Size parentSize = parent.boxSize!;
 
-    if (parent.renderStyle.target.parentElement is FixedElementContainer) {
-      parentSize = child.renderStyle.target.ownerDocument.documentElement!.domRenderer!.boxSize!;
-    }
-
     RenderStyle parentRenderStyle = parent.renderStyle;
 
     // Calculate offset to overflow container box first, then subtract border and padding
@@ -357,7 +353,9 @@ class CSSPositionedLayout {
     // The static position of positioned element is its offset when its position property had been static
     // which equals to the position of its placeholder renderBox.
     // https://www.w3.org/TR/CSS2/visudet.html#static-position
-    Offset staticPositionOffset = _getPlaceholderToParentOffset(child.renderPositionPlaceholder, parent);
+    Offset staticPositionOffset = childRenderStyle.position == CSSPositionType.fixed
+        ? Offset.zero
+        : _getPlaceholderToParentOffset(child.renderPositionPlaceholder, parent);
 
     double x = _computePositionedOffset(
       Axis.horizontal,
