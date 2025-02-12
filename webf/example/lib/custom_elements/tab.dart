@@ -4,6 +4,39 @@ import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:dynamic_tabbar/dynamic_tabbar.dart';
 
+class FlutterTabState extends WebFWidgetElementState with TickerProviderStateMixin {
+  late final TabController _tabController;
+
+  FlutterTabState(super.widgetElement);
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _tabController = TabController(length: widgetElement.children.length, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        widgetElement.dispatchEvent(CustomEvent('tabchange', detail: _tabController.index));
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return super.build(context);
+  }
+}
+
 class FlutterTab extends WidgetElement {
   FlutterTab(super.context);
 
@@ -12,28 +45,35 @@ class FlutterTab extends WidgetElement {
   bool showBackIcon = true;
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    int _index = 0;
-    List<TabData> tabs = childNodes.whereType<dom.Element>().map((element) {
-      return TabData(
-        index: _index++,
-        title: Tab(
-          child: Text(element.getAttribute('title') ?? ''),
-        ),
-        content: element.toWidget(key: ObjectKey(element)),
-      );
-    }).toList(growable: false);
+  FlutterTabState? get state => super.state as FlutterTabState?;
 
-    return DynamicTabBarWidget(
-      dynamicTabs: tabs,
-      isScrollable: isScrollable,
-      onTabControllerUpdated: (controller) {
-        controller.index = 0;
-      },
-      onTabChanged: (index) {},
-      onAddTabMoveTo: MoveToTab.last,
-      showBackIcon: showBackIcon,
-      showNextIcon: showNextIcon,
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterTabState(this);
+  }
+
+  @override
+  Widget build(BuildContext context, ChildNodeList childNodes) {
+    final tabs = childNodes.whereType<dom.Element>().map((element) {
+      return Tab(text: element.getAttribute('title'));
+    }).toList();
+    final children = childNodes.whereType<dom.Element>().map((element) {
+      return element.toWidget();
+    }).toList();
+
+    return Column(
+      children: <Widget>[
+        TabBar.secondary(
+          controller: state?._tabController,
+          tabs: tabs,
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: state?._tabController,
+            children: children,
+          ),
+        ),
+      ],
     );
   }
 }

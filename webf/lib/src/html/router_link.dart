@@ -2,8 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/widgets.dart';
-import 'package:webf/dom.dart' as dom;
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 import 'package:webf/widget.dart';
 
@@ -36,29 +35,26 @@ class RouterLinkElement extends WidgetElement {
     dispatchEvent(Event('unmount'));
   }
 
-  List<dom.Node> cachedChildNodes = [];
-
   @override
-  void attachWidget(Widget widget) {
+  void attachWidget() {
     if (isRouterLinkElement && _path.isNotEmpty) {
-      ownerView.setHybridRouterView(_path, widget);
+      ownerView.setHybridRouterView(_path, this);
+      managedByFlutterWidget = true;
     } else {
-      super.attachWidget(widget);
+      super.attachWidget();
     }
   }
 
   @override
   void dispose() {
     super.dispose();
-    cachedChildNodes.clear();
   }
 
   @override
-  void detachWidget() {
-    if (isRouterLinkElement && _path.isNotEmpty) {
+  void disconnectedCallback() {
+    super.disconnectedCallback();
+    if (_path.isNotEmpty) {
       ownerView.removeHybridRouterView(_path);
-    } else {
-      super.detachWidget();
     }
   }
 
@@ -68,12 +64,12 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
-  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+  String toString({ flutter.DiagnosticLevel minLevel = flutter.DiagnosticLevel.info }) {
     return 'RouterLinkElement [path=$_path]';
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  flutter.Widget build(flutter.BuildContext context, ChildNodeList childNodes) {
     return WebFHTMLElement(tagName: 'DIV', children: childNodes.toWidgetList(), inlineStyle: {
       // 'overflow': 'auto',
       'position': 'relative'

@@ -190,9 +190,14 @@ class CSSLengthValue {
       case CSSLengthType.PERCENTAGE:
         CSSPositionType positionType = renderStyle!.position;
         bool isPositioned = positionType == CSSPositionType.absolute || positionType == CSSPositionType.fixed;
-
+        bool isPositionFixed = positionType == CSSPositionType.fixed;
         RenderStyle? currentRenderStyle = renderStyle;
         RenderStyle? parentRenderStyle = currentRenderStyle?.getParentRenderStyle();
+
+        if (isPositionFixed) {
+          parentRenderStyle = renderStyle!.target.ownerDocument.documentElement!.renderStyle;
+        }
+
         // RenderBoxModel? renderBoxModel = renderStyle!.renderBoxModel;
         // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
         // cause the element of renderStyle parent may not equal to containing block.

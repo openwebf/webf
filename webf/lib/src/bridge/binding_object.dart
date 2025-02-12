@@ -100,7 +100,7 @@ abstract class BindingObject<T> extends Iterable<T> with DiagnosticableTreeMixin
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    properties.add(DiagnosticsProperty('pointer', pointer));
+    properties.add(DiagnosticsProperty('pointer', pointer?.toString()));
     properties.add(DiagnosticsProperty('contextId', contextId));
   }
 }

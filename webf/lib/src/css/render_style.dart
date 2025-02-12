@@ -851,6 +851,14 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   @pragma('vm:prefer-inline')
+  void markNeedsBuild() {
+    everyRenderBox((element, renderObject) {
+      element!.markNeedsBuild();
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
   void markParentNeedsLayout() {
     everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
       renderObject?.parent?.markNeedsLayout();
@@ -1155,6 +1163,8 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   bool everyWidgetRenderBox(EveryRenderBoxModelHandlerCallback callback) {
+    if (_widgetRenderObjects.isEmpty) return false;
+
     for (var entry in _widgetRenderObjects.entries) {
       bool result = callback(entry.key, entry.value);
       if (!result) return false;

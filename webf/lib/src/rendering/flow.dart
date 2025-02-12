@@ -405,7 +405,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       if (isPositionPlaceholder(child)) {
         RenderPositionPlaceholder positionHolder = child as RenderPositionPlaceholder;
         RenderBoxModel? childRenderBoxModel = positionHolder.positioned;
-        if (childRenderBoxModel != null) {
+        if (childRenderBoxModel != null && childRenderBoxModel.parentData != null) {
           RenderLayoutParentData childParentData = childRenderBoxModel.parentData as RenderLayoutParentData;
           if (childParentData.isPositioned) {
             childMainAxisExtent = childCrossAxisExtent = 0;

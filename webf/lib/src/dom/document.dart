@@ -422,9 +422,8 @@ class Document extends ContainerNode {
     return elementsByName[args.first];
   }
 
-  Element? _documentElement;
-
-  Element? get documentElement => _documentElement;
+  HTMLElement? _documentElement;
+  HTMLElement? get documentElement => _documentElement;
 
   set documentElement(Element? element) {
     if (_documentElement == element) {
@@ -443,7 +442,7 @@ class Document extends ContainerNode {
       }
     }
 
-    _documentElement = element;
+    _documentElement = element as HTMLElement;
 
     if (viewport?.hasSize == true && documentElementChanged) {
       initializeRootElementSize();
@@ -476,7 +475,7 @@ class Document extends ContainerNode {
   }
 
   @override
-  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'Document($hashCode)';
   }
 
@@ -631,6 +630,7 @@ class Document extends ContainerNode {
     _styleDirtyElements.clear();
     fixedChildren.clear();
     pendingPreloadingScriptCallbacks.clear();
+    _documentElement = null;
     super.dispose();
   }
 

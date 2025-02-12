@@ -38,6 +38,31 @@ class HTMLElement extends Element {
     super.dispatchEvent(event);
   }
 
+  FixedElementContainer? _fixedElementContainer;
+
+  FixedElementContainer? get fixedElementContainer => _fixedElementContainer;
+
+  @override
+  Node appendChild(Node child) {
+    // if (childNodes.isEmpty && _fixedElementContainer == null) {
+    //   _fixedElementContainer = FixedElementContainer(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
+    //   super.appendChild(_fixedElementContainer!);
+    // }
+
+    Node node = super.appendChild(child);
+    return node;
+  }
+
+  @override
+  Node removeChild(Node child) {
+    Node node = super.removeChild(child);
+    // if (child is BodyElement && childNodes.length == 1) {
+    //   super.removeChild(_fixedElementContainer!);
+    //   _fixedElementContainer = null;
+    // }
+    return node;
+  }
+
   @override
   void ensureChildAttached([flutter.Element? flutterWidgetElement]) {
     assert(!managedByFlutterWidget);
@@ -56,7 +81,7 @@ class HTMLElement extends Element {
   bool get isRendererAttachedToSegmentTree => domRenderer != null;
 
   @override
-  void setRenderStyle(String property, String present, { String? baseHref }) {
+  void setRenderStyle(String property, String present, {String? baseHref}) {
     switch (property) {
       // Visible should be interpreted as auto and clip should be interpreted as hidden when overflow apply to html.
       // https://drafts.csswg.org/css-overflow-3/#overflow-propagation
@@ -81,5 +106,45 @@ class HTMLElement extends Element {
       });
     }
     runner(this);
+  }
+}
+
+class FixedElementContainer extends WidgetElement {
+  FixedElementContainer(super.context);
+
+  @override
+  String get tagName => '_Fixed-Container';
+
+  @override
+  Map<String, dynamic> get defaultStyle => {'position': 'fixed', 'top': '0px', 'left': '0px'};
+
+  final List<Element> _fixedElement = [];
+
+  void addFixedElement(Element fixedElement) {
+    setState(() {
+      _fixedElement.add(fixedElement);
+    });
+  }
+
+  void removeFixedElement(Element fixedElement) {
+    setState(() {
+      _fixedElement.remove(fixedElement);
+    });
+  }
+
+  @override
+  flutter.Widget build(flutter.BuildContext context, ChildNodeList childNodes) {
+    return WebFHTMLElement(
+        tagName: 'DIV',
+        controller: ownerDocument.controller,
+        parentElement: this,
+        children: _fixedElement.map((element) => element.toWidget()).toList());
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+
+    _fixedElement.clear();
   }
 }

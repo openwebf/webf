@@ -19,7 +19,16 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart'
-    show AnimationController, BuildContext, ModalRoute, RouteInformation, RouteObserver, View, Widget, WidgetsBinding, WidgetsBindingObserver;
+    show
+        AnimationController,
+        BuildContext,
+        ModalRoute,
+        RouteInformation,
+        RouteObserver,
+        View,
+        Widget,
+        WidgetsBinding,
+        WidgetsBindingObserver;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
@@ -34,8 +43,8 @@ typedef TitleChangedHandler = void Function(String title);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
-typedef OnCustomElementAttached = void Function(SharedRenderWidgetAdapter newWidget);
-typedef OnCustomElementDetached = void Function(SharedRenderWidgetAdapter detachedWidget);
+typedef OnCustomElementAttached = void Function(WidgetElementAdapter newWidget);
+typedef OnCustomElementDetached = void Function(WidgetElementAdapter detachedWidget);
 
 typedef TraverseElementCallback = void Function(Element element);
 
@@ -65,27 +74,34 @@ abstract class DevToolsService {
   static DevToolsService? prevDevTools;
 
   static final Map<double, DevToolsService> _contextDevToolMap = {};
+
   static DevToolsService? getDevToolOfContextId(double contextId) {
     return _contextDevToolMap[contextId];
   }
 
   /// Used for debugger inspector.
   UIInspector? _uiInspector;
+
   UIInspector? get uiInspector => _uiInspector;
 
   late Isolate _isolateServer;
+
   Isolate get isolateServer => _isolateServer;
+
   set isolateServer(Isolate isolate) {
     _isolateServer = isolate;
   }
 
   SendPort? _isolateServerPort;
+
   SendPort? get isolateServerPort => _isolateServerPort;
+
   set isolateServerPort(SendPort? value) {
     _isolateServerPort = value;
   }
 
   WebFController? _controller;
+
   WebFController? get controller => _controller;
 
   void init(WebFController controller) {
@@ -149,13 +165,7 @@ enum PreloadingStatus {
   done,
 }
 
-enum PreRenderingStatus {
-  none,
-  preloading,
-  evaluate,
-  rendering,
-  done
-}
+enum PreRenderingStatus { none, preloading, evaluate, rendering, done }
 
 // An View Controller designed for multiple view control.
 class WebFViewController implements WidgetsBindingObserver {
@@ -183,8 +193,7 @@ class WebFViewController implements WidgetsBindingObserver {
       required this.runningThread,
       this.navigationDelegate,
       this.gestureListener,
-      this.initialCookies}) {
-  }
+      this.initialCookies}) {}
 
   Future<void> initialize() async {
     if (enableDebug) {
@@ -200,15 +209,18 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   bool _isAnimationTimelineStopped = false;
+
   bool get isAnimationTimelineStopped => _isAnimationTimelineStopped;
   final List<VoidCallback> _pendingAnimationTimesLines = [];
 
   void stopAnimationsTimeLine() {
     _isAnimationTimelineStopped = true;
   }
+
   void addPendingAnimationTimeline(VoidCallback callback) {
     _pendingAnimationTimesLines.add(callback);
   }
+
   void resumeAnimationTimeline() {
     _pendingAnimationTimesLines.forEach((callback) {
       callback();
@@ -226,22 +238,18 @@ class WebFViewController implements WidgetsBindingObserver {
     SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
   }
 
-  final Map<String, Widget> _hybridRouterViews = {};
+  final Map<String, WidgetElement> _hybridRouterViews = {};
 
-  void setHybridRouterView(String path, Widget root) {
+  void setHybridRouterView(String path, WidgetElement root) {
     _hybridRouterViews[path] = root;
   }
-  Widget? getHybridRouterView(String path) {
+
+  WidgetElement? getHybridRouterView(String path) {
     return _hybridRouterViews[path];
   }
+
   void removeHybridRouterView(String path) {
     _hybridRouterViews.remove(path);
-  }
-
-  RenderViewportBox? _activeRouterRoot;
-  RenderViewportBox? get activeRouterRoot => _activeRouterRoot;
-  set activeRouterRoot(RenderViewportBox? root) {
-    _activeRouterRoot = root;
   }
 
   final Map<int, BindingObject> _nativeObjects = {};
@@ -266,6 +274,7 @@ class WebFViewController implements WidgetsBindingObserver {
   // fix New version of chrome devTools castrating the last three digits of long targetId num strings and replacing them with 0
   int _nodeIdCount = 0;
   final Map<int, int> _targetIdToDevNodeIdMap = {};
+
   Map<int, int> get targetIdToDevNodeIdMap => _targetIdToDevNodeIdMap;
 
   int getTargetIdByNodeId(int? address) {
@@ -286,16 +295,18 @@ class WebFViewController implements WidgetsBindingObserver {
       if (targetIdToDevNodeIdMap[nativeAddress] != null) {
         return targetIdToDevNodeIdMap[nativeAddress]!;
       }
-      _nodeIdCount ++;
+      _nodeIdCount++;
       targetIdToDevNodeIdMap[nativeAddress] = _nodeIdCount;
       return _nodeIdCount;
     }
     return 0;
   }
+
   // fix New version of chrome devTools end
 
   // Index value which identify javascript runtime context.
   late double _contextId;
+
   double get contextId => _contextId;
 
   // Enable print debug message when rendering.
@@ -322,7 +333,8 @@ class WebFViewController implements WidgetsBindingObserver {
     if (gestureListener != null) {
       GestureListener listener = gestureListener!;
       if (listener.onTouchStart != null) {
-        document.addEventListener(EVENT_TOUCH_START, (Event event) async => listener.onTouchStart!(event as TouchEvent));
+        document.addEventListener(
+            EVENT_TOUCH_START, (Event event) async => listener.onTouchStart!(event as TouchEvent));
       }
 
       if (listener.onTouchMove != null) {
@@ -524,7 +536,6 @@ class WebFViewController implements WidgetsBindingObserver {
 
     if (originalTarget == null || newTarget == null) return;
 
-
     // Current only element clone will process in dart.
     if (originalTarget is Element) {
       Element newElement = newTarget as Element;
@@ -705,7 +716,8 @@ class WebFViewController implements WidgetsBindingObserver {
 
       switch (action.navigationType) {
         case WebFNavigationType.navigate:
-          await rootController.load(rootController.getPreloadBundleFromUrl(targetPath) ?? WebFBundle.fromUrl(targetPath));
+          await rootController
+              .load(rootController.getPreloadBundleFromUrl(targetPath) ?? WebFBundle.fromUrl(targetPath));
           break;
         case WebFNavigationType.reload:
           await rootController.reload();
@@ -786,8 +798,10 @@ class WebFViewController implements WidgetsBindingObserver {
           // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
           if (focusOffset.dy > viewport!.size.height - bottomInsets - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
             shouldScrollByToCenter = true;
-            scrollOffset =
-                focusOffset.dy - (viewport!.size.height - bottomInsets) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
+            scrollOffset = focusOffset.dy -
+                (viewport!.size.height - bottomInsets) +
+                renderer.size.height +
+                FOCUS_VIEWINSET_BOTTOM_OVERALL;
           }
         }
       }
@@ -832,12 +846,10 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   @override
-  void handleCancelBackGesture() {
-  }
+  void handleCancelBackGesture() {}
 
   @override
-  void handleCommitBackGesture() {
-  }
+  void handleCommitBackGesture() {}
 
   @override
   bool handleStartBackGesture(backEvent) {
@@ -845,8 +857,7 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   @override
-  void handleUpdateBackGestureProgress(backEvent) {
-  }
+  void handleUpdateBackGestureProgress(backEvent) {}
 
   @override
   void didChangeViewFocus(event) {}
@@ -863,6 +874,7 @@ class WebFModuleController with TimerMixin, ScheduleFrameMixin {
   }
 
   bool _initialized = false;
+
   Future<void> initialize() async {
     if (_initialized) return;
     await _moduleManager.initialize();
@@ -883,7 +895,8 @@ class WebFController {
   UriParser? uriParser;
   WebFLoadingMode mode = WebFLoadingMode.standard;
 
-  bool get isPreLoadingOrPreRenderingComplete => preloadStatus == PreloadingStatus.done || preRenderingStatus == PreRenderingStatus.done;
+  bool get isPreLoadingOrPreRenderingComplete =>
+      preloadStatus == PreloadingStatus.done || preRenderingStatus == PreRenderingStatus.done;
 
   static WebFController? getControllerOfJSContextId(double? contextId) {
     if (!_controllerMap.containsKey(contextId)) {
@@ -942,6 +955,7 @@ class WebFController {
   bool resizeToAvoidBottomInsets;
 
   bool? _darkModeOverride;
+
   set darkModeOverride(value) {
     _darkModeOverride = value;
   }
@@ -989,8 +1003,10 @@ class WebFController {
 
   // The view entrypoint bundle.
   WebFBundle? _entrypoint;
+
   WebFBundle? get entrypoint => _entrypoint;
   ui.Size? _viewportSize;
+
   ui.Size? get viewportSize => _viewportSize;
 
   final WebFThread runningThread;
@@ -1001,7 +1017,8 @@ class WebFController {
 
   bool externalController;
 
-  WebFController(BuildContext context, {
+  WebFController(
+    BuildContext context, {
     String? name,
     double? viewportWidth,
     double? viewportHeight,
@@ -1042,14 +1059,13 @@ class WebFController {
     PaintingBinding.instance.systemFonts.addListener(_watchFontLoading);
 
     _view = WebFViewController(
-      background: background,
-      enableDebug: enableDebug,
-      rootController: this,
-      runningThread: this.runningThread,
-      navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
-      gestureListener: _gestureListener,
-      initialCookies: initialCookies
-    );
+        background: background,
+        enableDebug: enableDebug,
+        rootController: this,
+        runningThread: this.runningThread,
+        navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
+        gestureListener: _gestureListener,
+        initialCookies: initialCookies);
 
     _view.initialize().then((_) {
       final double contextId = _view.contextId;
@@ -1102,6 +1118,7 @@ class WebFController {
   final Map<String, String> sessionStorage = {};
 
   HistoryModule get history => _module.moduleManager.getModule('History')!;
+
   HistoryModule get hybridHistory => _module.moduleManager.getModule('HybridHistory')!;
 
   static Uri fallbackBundleUri([double? id]) {
@@ -1114,6 +1131,7 @@ class WebFController {
   }
 
   bool isFontsLoading = false;
+
   void _watchFontLoading() {
     isFontsLoading = true;
     SchedulerBinding.instance.scheduleFrameCallback((_) {
@@ -1212,7 +1230,6 @@ class WebFController {
     Completer completer = Completer();
 
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
-
       // Sync viewport size to the documentElement.
       view.document.initializeRootElementSize();
       // Starting to flush ui commands every frames.
@@ -1255,7 +1272,6 @@ class WebFController {
     Completer completer = Completer();
 
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
-
       // Sync viewport size to the documentElement.
       view.document.initializeRootElementSize();
       // Starting to flush ui commands every frames.
@@ -1274,6 +1290,7 @@ class WebFController {
   }
 
   PreloadingStatus _preloadStatus = PreloadingStatus.none;
+
   PreloadingStatus get preloadStatus => _preloadStatus;
   VoidCallback? _onPreloadingFinished;
   int unfinishedPreloadResources = 0;
@@ -1321,10 +1338,7 @@ class WebFController {
       WebFProfiler.instance.finishTrackUICommand();
     }
 
-    await Future.wait([
-      _resolveEntrypoint(),
-      module.initialize()
-    ]);
+    await Future.wait([_resolveEntrypoint(), module.initialize()]);
 
     if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
       // Convert the JavaScript code into bytecode.
@@ -1374,7 +1388,9 @@ class WebFController {
   }
 
   PreRenderingStatus _preRenderingStatus = PreRenderingStatus.none;
+
   PreRenderingStatus get preRenderingStatus => _preRenderingStatus;
+
   /// The `aggressive` mode is a step further than `preloading`, cutting down up to 90% of loading time for optimal performance.
   /// This mode simulates the instantaneous response of native Flutter pages but may require modifications in the existing web codes for compatibility.
   /// In this mode, all remote resources are loaded and executed similarly to the standard mode, but with an offline-like behavior.
@@ -1419,10 +1435,7 @@ class WebFController {
     }
 
     // Preparing the entrypoint
-    await Future.wait([
-      _resolveEntrypoint(),
-      module.initialize()
-    ]);
+    await Future.wait([_resolveEntrypoint(), module.initialize()]);
 
     // Stop the animation frame
     module.pauseAnimationFrame();
@@ -1482,19 +1495,17 @@ class WebFController {
     _pendingCallbacks.clear();
   }
 
-  final List<SharedRenderWidgetAdapter> pendingWidgetElements = [];
+  final List<WidgetElementAdapter> pendingWidgetElements = [];
 
   void flushPendingUnAttachedWidgetElements() {
     assert(onCustomElementAttached != null);
-    for (int i = 0; i < pendingWidgetElements.length; i ++) {
+    for (int i = 0; i < pendingWidgetElements.length; i++) {
       onCustomElementAttached!(pendingWidgetElements[i]);
     }
     pendingWidgetElements.clear();
   }
 
-  void reactiveWidgetElements() {
-
-  }
+  void reactiveWidgetElements() {}
 
   // Pause all timers and callbacks if page are invisible.
   void pause() {
@@ -1528,6 +1539,7 @@ class WebFController {
   bool _disposed = false;
 
   bool get disposed => _disposed;
+
   Future<void> dispose() async {
     _module.dispose();
     PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
@@ -1551,10 +1563,7 @@ class WebFController {
       {bool shouldResolve = true, bool shouldEvaluate = true, AnimationController? animationController}) async {
     if (_entrypoint != null && shouldResolve) {
       await controlledInitCompleter.future;
-      await Future.wait([
-        _resolveEntrypoint(),
-        _module.initialize()
-      ]);
+      await Future.wait([_resolveEntrypoint(), _module.initialize()]);
       if (_entrypoint!.isResolved && shouldEvaluate) {
         await evaluateEntrypoint(animationController: animationController);
       } else {
@@ -1659,10 +1668,13 @@ class WebFController {
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/loader/FrameLoader.h#L470
   bool _isComplete = false;
+
   bool get isComplete => _isComplete;
 
   bool _evaluated = false;
+
   bool get evaluated => _evaluated;
+
   set evaluated(value) {
     _evaluated = value;
   }
@@ -1712,6 +1724,7 @@ class WebFController {
   }
 
   bool _domContentLoadedEventDispatched = false;
+
   void dispatchDOMContentLoadedEvent() {
     if (_domContentLoadedEventDispatched) return;
 
@@ -1730,6 +1743,7 @@ class WebFController {
   }
 
   bool _loadEventDispatched = false;
+
   void dispatchWindowLoadEvent() {
     if (_loadEventDispatched) return;
     _loadEventDispatched = true;
@@ -1746,6 +1760,7 @@ class WebFController {
   }
 
   bool _preloadEventDispatched = false;
+
   void dispatchWindowPreloadedEvent() {
     if (_preloadEventDispatched) return;
     _preloadEventDispatched = true;
@@ -1754,6 +1769,7 @@ class WebFController {
   }
 
   bool _preRenderedEventDispatched = false;
+
   void dispatchWindowPreRenderedEvent() {
     if (_preRenderedEventDispatched) return;
     _preRenderedEventDispatched = true;

@@ -205,9 +205,9 @@ class WebF extends StatefulWidget {
 class WebFState extends State<WebF> with RouteAware {
   bool _disposed = false;
 
-  final Set<SharedRenderWidgetAdapter> customElementWidgets = {};
+  final Set<WidgetElementAdapter> customElementWidgets = {};
 
-  void onCustomElementWidgetAdd(SharedRenderWidgetAdapter adapter) {
+  void onCustomElementWidgetAdd(WidgetElementAdapter adapter) {
     scheduleDelayForFrameCallback();
     Future.microtask(() {
       if (!_disposed) {
@@ -218,7 +218,7 @@ class WebFState extends State<WebF> with RouteAware {
     });
   }
 
-  void onCustomElementWidgetRemove(SharedRenderWidgetAdapter adapter) {
+  void onCustomElementWidgetRemove(WidgetElementAdapter adapter) {
     scheduleDelayForFrameCallback();
     Future.microtask(() {
       if (!_disposed) {

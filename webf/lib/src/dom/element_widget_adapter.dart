@@ -19,14 +19,14 @@ mixin ElementAdapterMixin on ElementBase {
 
   @override
   flutter.Widget toWidget({Key? key}) {
-    return _WebFElementWidget(this as Element, key: flutter.UniqueKey());
+    return WebFElementWidget(this as Element, key: key ?? flutter.Key(hashKey));
   }
 }
 
-class _WebFElementWidget extends flutter.StatefulWidget {
+class WebFElementWidget extends flutter.StatefulWidget {
   final Element webFElement;
 
-  _WebFElementWidget(this.webFElement, {flutter.Key? key}) : super(key: key) {
+  WebFElementWidget(this.webFElement, {flutter.Key? key}) : super(key: key) {
     webFElement.managedByFlutterWidget = true;
   }
 
@@ -49,7 +49,7 @@ class _WebFElementWidget extends flutter.StatefulWidget {
   }
 }
 
-class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flutter.AutomaticKeepAliveClientMixin {
+class _WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutter.AutomaticKeepAliveClientMixin {
   final Element _webFElement;
 
   _WebFElementWidgetState(this._webFElement);
@@ -73,7 +73,9 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
       children = [];
     } else {
       children = (webFElement.childNodes as ChildNodeList).map((node) {
-        if (node is Element && node.renderStyle.position == CSSPositionType.absolute) {
+        if (node is Element &&
+            (node.renderStyle.position == CSSPositionType.absolute ||
+                node.renderStyle.position == CSSPositionType.fixed)) {
           return PositionPlaceHolder(node.holderAttachedPositionedElement!);
         } else {
           return node.toWidget();
@@ -86,10 +88,7 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
     }));
 
     flutter.Widget widget = WebFRenderLayoutWidgetAdaptor(
-      webFElement: _webFElement,
-      children: children,
-      key: flutter.Key(_webFElement.hashKey)
-    );
+        webFElement: _webFElement, children: children, key: flutter.Key(_webFElement.hashKey));
 
     if (webFElement.hasEvent) {
       widget = Portal(ownerElement: _webFElement, child: widget);

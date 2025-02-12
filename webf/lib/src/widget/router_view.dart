@@ -18,8 +18,6 @@ class WebFRouterViewRenderObjectWidget extends MultiChildRenderObjectWidget {
   RenderObject createRenderObject(BuildContext context) {
     RenderViewportBox root = RenderViewportBox(viewportSize: null, controller: controller);
 
-    controller.view.activeRouterRoot = root;
-
     return root;
   }
 }
@@ -39,7 +37,6 @@ class WebFRouterViewRenderObjectElement extends MultiChildRenderObjectElement {
   @override
   void unmount() {
     widget.controller.buildContextStack.removeLast();
-    widget.controller.view.activeRouterRoot = null;
     super.unmount();
   }
 }
@@ -47,7 +44,7 @@ class WebFRouterViewRenderObjectElement extends MultiChildRenderObjectElement {
 class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   @override
   Widget build(BuildContext context) {
-    Widget? child = widget.controller.view.getHybridRouterView(widget.path);
+    WidgetElement? child = widget.controller.view.getHybridRouterView(widget.path);
     if (child == null) {
       if (widget.defaultViewBuilder == null) {
         return SizedBox.shrink();
@@ -60,7 +57,7 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
         child: WebFRouterViewRenderObjectWidget(
             controller: widget.controller,
             children: [
-              child
+              child.toWidget()
             ]));
   }
 

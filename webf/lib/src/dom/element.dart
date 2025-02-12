@@ -109,10 +109,13 @@ abstract class Element extends ContainerNode
 
   // Is element an replaced element.
   // https://drafts.csswg.org/css-display/#replaced-element
+  @pragma('vm:prefer-inline')
   bool get isReplacedElement => false;
 
+  @pragma('vm:prefer-inline')
   bool get isWidgetElement => false;
 
+  @pragma('vm:prefer-inline')
   bool get isSVGElement => false;
 
   // The attrs.
@@ -134,6 +137,7 @@ abstract class Element extends ContainerNode
 
   List<String> get classList => _classList;
 
+  @pragma('vm:prefer-inline')
   set className(String className) {
     List<String> classList = className.split(classNameSplitRegExp);
     final checkKeys = (_classList + classList).where((key) => !_classList.contains(key) || !classList.contains(key));
@@ -152,6 +156,7 @@ abstract class Element extends ContainerNode
 
   final bool isDefaultRepaintBoundary = false;
 
+  @pragma('vm:prefer-inline')
   /// Whether should as a repaintBoundary for this element when style changed
   bool get isRepaintBoundary {
     // Following cases should always convert to repaint boundary for performance consideration.
@@ -171,14 +176,17 @@ abstract class Element extends ContainerNode
     return hasOverflowScroll || hasTransform || hasPositionedFixed;
   }
 
+  @pragma('vm:prefer-inline')
   @override
   bool get isRendererAttached => renderStyle.isSelfRenderBoxAttached();
 
+  @pragma('vm:prefer-inline')
   @override
   bool get isRendererAttachedToSegmentTree => renderStyle.isSelfRenderBoxAttachedToSegmentTree();
 
   bool _forceToRepaintBoundary = false;
 
+  @pragma('vm:prefer-inline')
   set forceToRepaintBoundary(bool value) {
     if (_forceToRepaintBoundary == value) {
       return;
@@ -204,22 +212,27 @@ abstract class Element extends ContainerNode
     initializeAttributes(_attributeProperties);
   }
 
+  @pragma('vm:prefer-inline')
   @override
   String get nodeName => tagName;
 
+  @pragma('vm:prefer-inline')
   @override
   RenderBoxModel? get domRenderer => renderStyle.domRenderBoxModel;
 
+  @pragma('vm:prefer-inline')
   @override
   RenderBoxModel? get attachedRenderer => renderStyle.attachedRenderBoxModel;
 
   HTMLCollection? _collection;
 
+  @pragma('vm:prefer-inline')
   HTMLCollection ensureCachedCollection() {
     _collection ??= HTMLCollection(this);
     return _collection!;
   }
 
+  @pragma('vm:prefer-inline')
   // https://developer.mozilla.org/en-US/docs/Web/API/Element/children
   // The children is defined at interface [ParentNode].
   HTMLCollection get children => ensureCachedCollection();
@@ -727,10 +740,16 @@ abstract class Element extends ContainerNode
       Element? containingBlockElement = getContainingBlockElement();
 
       if (containingBlockElement == null) return;
-      if (containingBlockElement is HTMLElement) {
-        // containingBlockElement.fixedElements!.appendChild(this);
+
+      renderStyle.requestWidgetToRebuild(ToPositionPlaceHolderUpdateReason(this));
+
+      if (currentPosition == CSSPositionType.fixed) {
+        if (containingBlockElement is HTMLElement) {
+          ownerDocument.documentElement!.fixedElementContainer!.addFixedElement(this);
+        } else if (containingBlockElement is RouterLinkElement) {
+          // containingBlockElement.addPositionFixedElement(this);
+        }
       } else {
-        renderStyle.requestWidgetToRebuild(ToPositionPlaceHolderUpdateReason(this));
         containingBlockElement.renderStyle.requestWidgetToRebuild(AttachPositionedChild(this));
       }
     }
@@ -1151,6 +1170,9 @@ abstract class Element extends ContainerNode
     super.disconnectedCallback();
     _updateIDMap(null, oldID: _id);
     _updateNameMap(null, oldName: getAttribute(_NAME));
+    if (renderStyle.position == CSSPositionType.fixed) {
+      ownerDocument.documentElement!.fixedElementContainer!.removeFixedElement(this);
+    }
   }
 
   Element? getContainingBlockElement() {
@@ -1166,10 +1188,6 @@ abstract class Element extends ContainerNode
       case CSSPositionType.absolute:
         Element viewportElement = ownerDocument.documentElement!;
 
-        if (ownerView.activeRouterRoot != null) {
-          viewportElement = (ownerView.activeRouterRoot!.firstChild as RenderBoxModel).renderStyle.target;
-        }
-
         // If the element has 'position: absolute', the containing block is established by the nearest ancestor with
         // a 'position' of 'absolute', 'relative' or 'fixed', in the following way:
         //  1. In the case that the ancestor is an inline element, the containing block is the bounding box around
@@ -1181,13 +1199,15 @@ abstract class Element extends ContainerNode
       case CSSPositionType.fixed:
         Element viewportElement = ownerDocument.documentElement!;
 
-        if (ownerView.activeRouterRoot != null) {
-          viewportElement = (ownerView.activeRouterRoot!.firstChild as RenderBoxModel).renderStyle.target;
+        if (managedByFlutterWidget) {
+          // If the element has 'position: fixed', the router link element was behavior as the HTMLElement in DOM mode.
+          containingBlockElement = _findRouterLinkElement(this);
+        } else {
+          // If the element has 'position: fixed', the containing block is established by the viewport
+          // in the case of continuous media or the page area in the case of paged media.
+          containingBlockElement = viewportElement;
         }
 
-        // If the element has 'position: fixed', the containing block is established by the viewport
-        // in the case of continuous media or the page area in the case of paged media.
-        containingBlockElement = viewportElement;
         break;
     }
     return containingBlockElement;
@@ -1305,7 +1325,7 @@ abstract class Element extends ContainerNode
     }
   }
 
-  void _updateHostingWidgetWithDisplay() {
+  void _updateHostingWidgetWithDisplay(CSSDisplay oldDisplay) {
     CSSDisplay presentDisplay = renderStyle.display;
 
     if (parentElement == null || !parentElement!.isConnected) return;
@@ -1314,8 +1334,12 @@ abstract class Element extends ContainerNode
 
     // Destroy renderer of element when display is changed to none.
     if (presentDisplay == CSSDisplay.none) {
-      renderStyle.removeAllRenderObject();
       renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
+      return;
+    }
+    if (oldDisplay == CSSDisplay.none && presentDisplay != oldDisplay) {
+      assert(!renderStyle.hasRenderBox());
+      parentElement?.renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
       return;
     }
 
@@ -1359,7 +1383,7 @@ abstract class Element extends ContainerNode
           if (!managedByFlutterWidget) {
             _updateRenderBoxModelWithDisplay();
           } else {
-            _updateHostingWidgetWithDisplay();
+            _updateHostingWidgetWithDisplay(oldValue);
           }
         }
         break;
@@ -1854,6 +1878,18 @@ abstract class Element extends ContainerNode
   }
 }
 
+Element? _findRouterLinkElement(Element child) {
+  Element? parent = child.parentElement;
+
+  while(parent != null) {
+    if (parent is RouterLinkElement) {
+      break;
+    }
+    parent = parent.parentElement;
+  }
+  return parent;
+}
+
 // https://www.w3.org/TR/css-position-3/#def-cb
 Element? _findContainingBlock(Element child, Element viewportElement) {
   Element? parent = child.parentElement;
@@ -1861,8 +1897,9 @@ Element? _findContainingBlock(Element child, Element viewportElement) {
   while (parent != null) {
     bool isNonStatic = parent.renderStyle.position != CSSPositionType.static;
     bool hasTransform = parent.renderStyle.transform != null;
+    bool isRouterLinkElement = parent is RouterLinkElement;
     // https://www.w3.org/TR/CSS2/visudet.html#containing-block-details
-    if (parent == viewportElement || isNonStatic || hasTransform) {
+    if (parent == viewportElement || isNonStatic || hasTransform || isRouterLinkElement) {
       break;
     }
     parent = parent.parentElement;
