@@ -22,6 +22,7 @@ class RouterLinkElement extends WidgetElement {
 
     if (key == 'path') {
       _path = value;
+      ownerView.setHybridRouterView(_path, this);
     }
   }
 
@@ -33,14 +34,6 @@ class RouterLinkElement extends WidgetElement {
   @override
   void unmount() {
     dispatchEvent(Event('unmount'));
-  }
-
-  @override
-  void attachWidget() {
-    if (isRouterLinkElement && _path.isNotEmpty) {
-      ownerView.setHybridRouterView(_path, this);
-      managedByFlutterWidget = true;
-    }
   }
 
   @override
@@ -57,17 +50,15 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
-  void reactiveRenderer() {
-    // Override default behavior to avoid reattach.
-  }
-
-  @override
   String toString({ flutter.DiagnosticLevel minLevel = flutter.DiagnosticLevel.info }) {
     return 'RouterLinkElement [path=$_path]';
   }
 
   @override
   flutter.Widget build(flutter.BuildContext context, ChildNodeList childNodes) {
+    WebFRouterViewState? routerViewState = context.findAncestorStateOfType<WebFRouterViewState>();
+    if (routerViewState == null) return flutter.SizedBox.shrink();
+
     return WebFHTMLElement(tagName: 'DIV', children: childNodes.toWidgetList(), inlineStyle: {
       // 'overflow': 'auto',
       'position': 'relative'
