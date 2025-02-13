@@ -38,7 +38,7 @@ class SVGRenderBoxBuilder {
     return ui.Size(INTRINSIC_DEFAULT_WIDTH, INTRINSIC_DEFAULT_HEIGHT);
   }
 
-  Future<RenderBoxModel> decode() async {
+  Future<SVGElement> decode() async {
     final resp = await imageLoader;
 
     final code = convert.utf8.decode(resp.bytes);
@@ -65,43 +65,37 @@ class SVGRenderBoxBuilder {
       throw Error();
     }
 
-    final rootRenderObject = visitSVGTree(root, (node, parent) {
+    final rootSVGElement = visitSVGTree(root, (node, parent) {
       final type = node.ref.type;
       if (type == GumboNodeType.GUMBO_NODE_ELEMENT) {
         final element = node.ref.v.element;
         final tagName = element.original_tag.data
             .toDartString(length: element.original_tag.length)
             .toUpperCase();
-        final renderBox = getSVGRenderBox(tagName);
+        final svgElement = getSVGElement(tagName);
 
         final attributes = element.attributes;
         for (int i = 0; i < attributes.length; i++) {
           final attr = attributes.data[i] as Pointer<NativeGumboAttribute>;
           final name = attr.ref.name.toDartString();
           final value = attr.ref.value.toDartString();
-          setAttribute(tagName, renderBox, name, value);
+          setAttribute(tagName, svgElement, name, value);
         }
 
-        if (parent != null) {
-          assert(parent is RenderSVGContainer);
-          parent.insert(renderBox);
-          // We need to build renderStyle tree manually.
-        }
-
-        return renderBox;
+        return svgElement;
       }
       return false;
     });
 
     freeSVGResult(gumbo);
 
-    return rootRenderObject as RenderBoxModel;
+    return rootSVGElement;
   }
 
-  RenderBoxModel getSVGRenderBox(String tagName) {
+  SVGElement getSVGElement(String tagName) {
     final Constructor = svgElementsRegistry[tagName];
     if (Constructor != null) {
-      final element = Constructor(null);
+      SVGElement element = Constructor(null) as SVGElement;
       if (tagName == TAG_SVG) {
         /// See [setAttribute]
         element.renderStyle.height = CSSLengthValue.auto;
@@ -109,48 +103,47 @@ class SVGRenderBoxBuilder {
       }
       element.tagName = tagName;
       element.namespaceURI = SVG_ELEMENT_URI;
-      element.createRenderer();
-      return element.renderStyle.domRenderBoxModel!;
+      return element;
     }
     print('Unknown SVG element $tagName');
     final element = SVGUnknownElement(null);
     element.tagName = tagName;
     element.namespaceURI = SVG_ELEMENT_URI;
-    return element.renderStyle.domRenderBoxModel!;
+    return element;
   }
 
   void setAttribute(
-      String tagName, RenderBoxModel model, String name, String value) {
-    switch (tagName) {
-      case TAG_SVG:
-        {
-          final root = model as RenderSVGRoot;
-          switch (name) {
-            case 'viewBox':
-              {
-                root.viewBox = parseViewBox(value);
-                viewBox = root.viewBox;
-                return;
-              }
-            // width/height is always fixed as 100% to match the parent size
-            // IMPROVE: width/height should support unit like px/em/rem when needed in the future
-            case 'width':
-              {
-                width = double.tryParse(value);
-                return;
-              }
-            case 'height':
-              {
-                height = double.tryParse(value);
-                return;
-              }
-          }
-        }
-    }
-    // TODO: support base url in attribute value like background-image
-    final parsed = model.renderStyle.resolveValue(name, value);
+      String tagName, SVGElement svgElement, String name, String value) {
+    // switch (tagName) {
+    //   case TAG_SVG:
+    //     {
+    //       final root = model as RenderSVGRoot;
+    //       switch (name) {
+    //         case 'viewBox':
+    //           {
+    //             root.viewBox = parseViewBox(value);
+    //             viewBox = root.viewBox;
+    //             return;
+    //           }
+    //         // width/height is always fixed as 100% to match the parent size
+    //         // IMPROVE: width/height should support unit like px/em/rem when needed in the future
+    //         case 'width':
+    //           {
+    //             width = double.tryParse(value);
+    //             return;
+    //           }
+    //         case 'height':
+    //           {
+    //             height = double.tryParse(value);
+    //             return;
+    //           }
+    //       }
+    //     }
+    // }
+
+    final parsed = svgElement.renderStyle.resolveValue(name, value);
     if (parsed != null) {
-      model.renderStyle.setProperty(name, parsed);
+      svgElement.renderStyle.setProperty(name, parsed);
     }
   }
 }

@@ -95,18 +95,6 @@ abstract class Element extends ContainerNode
     recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
-  String? _cachedHashKey;
-
-  @override
-  String get hashKey {
-    if (_cachedHashKey != null) {
-      return _cachedHashKey!;
-    }
-
-    _cachedHashKey = hashCode.toString() + '_' + childNodes.hashKey();
-    return _cachedHashKey!;
-  }
-
   // Is element an replaced element.
   // https://drafts.csswg.org/css-display/#replaced-element
   @pragma('vm:prefer-inline')
@@ -129,6 +117,8 @@ abstract class Element extends ContainerNode
 
   /// The inline style is a map of style property name to style property value.
   final Map<String, dynamic> inlineStyle = {};
+
+  final flutter.Key key = flutter.GlobalKey();
 
   /// The Element.classList is a read-only property that returns a collection of the class attributes of the element.
   final List<String> _classList = [];
@@ -459,24 +449,6 @@ abstract class Element extends ContainerNode
 
     // The node attach may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
     renderStyle.markAdjacentRenderParagraphNeedsLayout();
-
-    // Ensure that the child is attached in DOM mode.
-    if (!managedByFlutterWidget) {
-      ensureChildAttached();
-      // Reconfigure scrollable contents.
-      bool needUpdateOverflowRenderBox = false;
-      if (renderStyle.overflowX != CSSOverflowType.visible) {
-        needUpdateOverflowRenderBox = true;
-        updateRenderBoxModelWithOverflowX(handleScroll);
-      }
-      if (renderStyle.overflowY != CSSOverflowType.visible) {
-        needUpdateOverflowRenderBox = true;
-        updateRenderBoxModelWithOverflowY(handleScroll);
-      }
-      if (needUpdateOverflowRenderBox) {
-        updateOverflowRenderBox();
-      }
-    }
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
@@ -986,40 +958,11 @@ abstract class Element extends ContainerNode
   }
 
   @override
-  void ensureChildAttached() {
-    if (isRendererAttachedToSegmentTree && !managedByFlutterWidget) {
-      if (!renderStyle.hasRenderBox()) return;
-
-      final box = domRenderer;
-
-      for (Node child in childNodes) {
-        if (!child.isRendererAttachedToSegmentTree) {
-          RenderBox? after;
-          if (box is RenderLayoutBox) {
-            RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
-            if (scrollingContentBox != null) {
-              after = scrollingContentBox.lastChild;
-            } else {
-              after = box.lastChild;
-            }
-          } else if (box is RenderSVGContainer) {
-            after = box.lastChild;
-          }
-
-          child.attachTo(this, after: after);
-          child.ensureChildAttached();
-        }
-      }
-    }
-  }
-
-  @override
   void childrenChanged(ChildrenChange change) {
     super.childrenChanged(change);
     if (managedByFlutterWidget) {
       renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
     }
-    _cachedHashKey = null;
   }
 
   @override

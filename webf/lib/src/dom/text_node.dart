@@ -23,19 +23,11 @@ class TextNode extends CharacterData {
 
   TextNode(this._data, [BindingContext? context]) : super(NodeType.TEXT_NODE, context);
 
-  String? _cachedHashKey;
-
-  @override
-  String get hashKey {
-    if (_cachedHashKey != null) {
-      return _cachedHashKey!;
-    }
-    return _cachedHashKey = hashCode.toString();
-  }
+  final flutter.Key key = flutter.GlobalKey();
 
   @override
   flutter.Widget toWidget({Key? key}) {
-    return TextNodeAdapter(this, key: flutter.UniqueKey());
+    return TextNodeAdapter(this, key: this.key);
   }
 
   final Set<_TextNodeAdapterElement> _attachedFlutterWidgetElements = {};

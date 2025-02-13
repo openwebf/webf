@@ -125,13 +125,4 @@ class ChildNodeList extends NodeList {
 
   @override
   Iterator<Node> get iterator => _ChildNodeListIterator(this);
-
-  @override
-  String hashKey() {
-    String key = '';
-    for (int i = 0; i < length; i ++) {
-      key += '_' + elementAt(i).hashKey;
-    }
-    return key;
-  }
 }

@@ -18,14 +18,6 @@ const Map<String, dynamic> _defaultStyle = {
 
 // WidgetElement is the base class for custom elements which rendering details are implemented by Flutter widgets.
 abstract class WidgetElement extends dom.Element {
-  // An state
-  WidgetElementAdapter? _widgetAdapter;
-
-  WidgetElementAdapter get widgetAdapter {
-    _widgetAdapter ??= WidgetElementAdapter(this);
-    return _widgetAdapter!;
-  }
-
   final Set<WebFWidgetElementState> _states = {};
 
   WebFWidgetElementState? get state {
@@ -58,7 +50,7 @@ abstract class WidgetElement extends dom.Element {
 
   @override
   Widget toWidget({Key? key}) {
-    WidgetElementAdapter widget = WidgetElementAdapter(this);
+    WidgetElementAdapter widget = WidgetElementAdapter(this, key: key ?? this.key);
     return widget;
   }
 
@@ -221,7 +213,6 @@ abstract class WidgetElement extends dom.Element {
   void dispose() {
     super.dispose();
     _states.clear();
-    _widgetAdapter = null;
   }
 }
 
@@ -321,12 +312,11 @@ class WebFWidgetElementState extends State<WidgetElementAdapter> {
 
     List<Widget> children = [child, ...widgetElement.positionedElements.map((element) => element.toWidget())];
 
-    return WebFRenderWidgetAdaptor(widgetElement, children: children, key: Key(widgetElement.hashKey));
+    return WebFRenderWidgetAdaptor(widgetElement, children: children);
   }
 
   @override
   void dispose() {
-    widgetElement._widgetAdapter = null;
     widgetElement._states.remove(this);
     super.dispose();
   }

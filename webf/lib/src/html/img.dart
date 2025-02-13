@@ -107,7 +107,7 @@ class ImageElement extends Element {
 
   @override
   flutter.Widget toWidget({Key? key, bool positioned = false}) {
-    flutter.Widget child = WebFReplacedElementWidget(webFElement: this, key: key ?? flutter.ObjectKey(this), child: WebFImage(this));
+    flutter.Widget child = WebFReplacedElementWidget(webFElement: this, key: key ?? this.key, child: WebFImage(this));
     return Portal(ownerElement: this, child: child);
   }
 
@@ -605,15 +605,15 @@ class ImageElement extends Element {
   void _loadSVGImage() {
     final builder = SVGRenderBoxBuilder(obtainImage(this, _resolvedUri!), target: this);
 
-    builder.decode().then((renderObject) {
+    builder.decode().then((svgElement) {
       final size = builder.getIntrinsicSize();
       naturalWidth = size.width.toInt();
       naturalHeight = size.height.toInt();
       _resizeImage();
-      _updateRenderObject(svg: renderObject);
-      _dispatchLoadEvent();
-      // Decrement load event delay count after decode.
-      ownerDocument.decrementLoadEventDelayCount();
+      // _updateRenderObject(svg: renderObject);
+      // _dispatchLoadEvent();
+      // // Decrement load event delay count after decode.
+      // ownerDocument.decrementLoadEventDelayCount();
     }, onError: (e, stack) {
       print('$e\n$stack');
       _dispatchErrorEvent();

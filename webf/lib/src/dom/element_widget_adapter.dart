@@ -19,7 +19,7 @@ mixin ElementAdapterMixin on ElementBase {
 
   @override
   flutter.Widget toWidget({Key? key}) {
-    return WebFElementWidget(this as Element, key: key ?? flutter.Key(hashKey));
+    return WebFElementWidget(this as Element, key: key ?? (this as Element).key);
   }
 }
 
@@ -87,8 +87,7 @@ class _WebFElementWidgetState extends flutter.State<WebFElementWidget> with flut
       return element.toWidget();
     }));
 
-    flutter.Widget widget = WebFRenderLayoutWidgetAdaptor(
-        webFElement: _webFElement, children: children, key: flutter.Key(_webFElement.hashKey));
+    flutter.Widget widget = WebFRenderLayoutWidgetAdaptor(webFElement: _webFElement, children: children);
 
     if (webFElement.hasEvent) {
       widget = Portal(ownerElement: _webFElement, child: widget);

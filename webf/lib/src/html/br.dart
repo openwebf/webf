@@ -22,7 +22,7 @@ class BRElement extends Element {
 
   @override
   flutter.Widget toWidget({flutter.Key? key}) {
-    return WebFReplacedElementWidget(webFElement: this, key: key ?? flutter.ObjectKey(this));
+    return WebFReplacedElementWidget(webFElement: this, key: key ?? this.key);
   }
 
   @override

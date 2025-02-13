@@ -43,11 +43,6 @@ class HTMLElement extends Element {
 
   @override
   Node appendChild(Node child) {
-    // if (childNodes.isEmpty && _fixedElementContainer == null) {
-    //   _fixedElementContainer = FixedElementContainer(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
-    //   super.appendChild(_fixedElementContainer!);
-    // }
-
     Node node = super.appendChild(child);
     return node;
   }
@@ -55,24 +50,7 @@ class HTMLElement extends Element {
   @override
   Node removeChild(Node child) {
     Node node = super.removeChild(child);
-    // if (child is BodyElement && childNodes.length == 1) {
-    //   super.removeChild(_fixedElementContainer!);
-    //   _fixedElementContainer = null;
-    // }
     return node;
-  }
-
-  @override
-  void ensureChildAttached([flutter.Element? flutterWidgetElement]) {
-    assert(!managedByFlutterWidget);
-    final box = domRenderer as RenderLayoutBox?;
-    if (box == null) return;
-    for (Node child in childNodes) {
-      if (!child.isRendererAttachedToSegmentTree) {
-        child.attachTo(this);
-        child.ensureChildAttached();
-      }
-    }
   }
 
   // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.

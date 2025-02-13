@@ -263,8 +263,8 @@ class WebFState extends State<WebF> with RouteAware {
     if (widget.routeObserver != null) {
       widget.routeObserver!.subscribe(this, ModalRoute.of(context)!);
     }
-    if (widget.controller?.routeObserver != null) {
-      widget.controller?.routeObserver!.subscribe(this, ModalRoute.of(context)!);
+    if (widget.controller.routeObserver != null) {
+      widget.controller.routeObserver!.subscribe(this, ModalRoute.of(context)!);
     }
   }
 
@@ -272,7 +272,7 @@ class WebFState extends State<WebF> with RouteAware {
   void didUpdateWidget(WebF oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.resizeToAvoidBottomInsets != widget.resizeToAvoidBottomInsets) {
-      widget.controller?.resizeToAvoidBottomInsets = widget.resizeToAvoidBottomInsets;
+      widget.controller.resizeToAvoidBottomInsets = widget.resizeToAvoidBottomInsets;
     }
   }
 

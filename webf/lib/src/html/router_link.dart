@@ -27,6 +27,9 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
+  flutter.Key get key => flutter.UniqueKey();
+
+  @override
   void mount() {
     dispatchEvent(Event('mount'));
   }
