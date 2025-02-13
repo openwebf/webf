@@ -213,6 +213,7 @@ class WebFState extends State<WebF> with RouteAware {
   void initState() {
     super.initState();
     watchWindowIsReady();
+    _isWebFInitReady = widget.controller.evaluated;
   }
 
   Future<void> load(WebFBundle bundle) async {
