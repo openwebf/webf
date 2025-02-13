@@ -40,13 +40,13 @@ class FlutterTabBar extends WidgetElement {
 
   List<BottomNavigationBarItem> _buildTabItems() {
     List<BottomNavigationBarItem> items = [];
-    
+
     for (var child in childNodes) {
       if (child is! dom.Element || child.tagName != 'FLUTTER-TAB-BAR-ITEM') continue;
 
       final title = child.getAttribute('title') ?? '';
       final icon = child.getAttribute('icon') ?? '';
-      
+
       items.add(BottomNavigationBarItem(
         icon: Icon(_iconMap[icon] ?? CupertinoIcons.home),
         label: title,
@@ -79,53 +79,41 @@ class FlutterTabBar extends WidgetElement {
   Widget build(BuildContext context, ChildNodeList childNodes) {
     final paths = _getTabPaths();
     final tabViews = _buildTabViews(childNodes);
-
-    // TODO: workaround for navigation bar height
-    final padding = MediaQuery.of(context).padding;
-    const appBarHeight = kToolbarHeight;
-    final topPadding = padding.top + appBarHeight;
-
-    return Padding(
-      padding: EdgeInsets.only(top: topPadding),
-      child:SizedBox(
-        height: MediaQuery.of(context).size.height - topPadding,
+    return SizedBox(
+        height: MediaQuery.of(context).size.height,
         child: CupertinoTabScaffold(
-          controller: _controller,
-          tabBar: CupertinoTabBar(
-            items: _buildTabItems(),
-            currentIndex: int.tryParse(getAttribute('currentIndex') ?? '0') ?? 0,
-            backgroundColor: getAttribute('backgroundColor') != null 
-              ? Color(int.parse(getAttribute('backgroundColor')!.replaceAll('#', ''), radix: 16) + 0xFF000000)
-              : null,
-            activeColor: getAttribute('activeColor') != null 
-              ? Color(int.parse(getAttribute('activeColor')!.replaceAll('#', ''), radix: 16) + 0xFF000000)
-              : null,
-            inactiveColor: getAttribute('inactiveColor') != null 
-              ? Color(int.parse(getAttribute('inactiveColor')!.replaceAll('#', ''), radix: 16) + 0xFF000000)
-              : CupertinoColors.inactiveGray,
-            iconSize: double.tryParse(getAttribute('iconSize') ?? '30.0') ?? 30.0,
-            height: double.tryParse(getAttribute('height') ?? '50.0') ?? 50.0,
-            onTap: (index) {
-              setAttribute('currentIndex', index.toString());
-              print('index: $index');
-            }
-        ), 
-        tabBuilder: (BuildContext context, int index) {
-          return CupertinoTabView(
-            builder: (BuildContext context) {
-              print('tabViews: ${tabViews.length}');
-              if (index < tabViews.length) {
-                return tabViews[index];
-              }
-              return Center(
-                child: Text('Invalid tab of $index for route ${paths[index]}'),
+            controller: _controller,
+            tabBar: CupertinoTabBar(
+                items: _buildTabItems(),
+                currentIndex: int.tryParse(getAttribute('currentIndex') ?? '0') ?? 0,
+                backgroundColor: getAttribute('backgroundColor') != null
+                    ? Color(int.parse(getAttribute('backgroundColor')!.replaceAll('#', ''), radix: 16) + 0xFF000000)
+                    : null,
+                activeColor: getAttribute('activeColor') != null
+                    ? Color(int.parse(getAttribute('activeColor')!.replaceAll('#', ''), radix: 16) + 0xFF000000)
+                    : null,
+                inactiveColor: getAttribute('inactiveColor') != null
+                    ? Color(int.parse(getAttribute('inactiveColor')!.replaceAll('#', ''), radix: 16) + 0xFF000000)
+                    : CupertinoColors.inactiveGray,
+                iconSize: double.tryParse(getAttribute('iconSize') ?? '30.0') ?? 30.0,
+                height: double.tryParse(getAttribute('height') ?? '50.0') ?? 50.0,
+                onTap: (index) {
+                  setAttribute('currentIndex', index.toString());
+                  print('index: $index');
+                }),
+            tabBuilder: (BuildContext context, int index) {
+              return CupertinoTabView(
+                builder: (BuildContext context) {
+                  print('tabViews: ${tabViews.length}');
+                  if (index < tabViews.length) {
+                    return tabViews[index];
+                  }
+                  return Center(
+                    child: Text('Invalid tab of $index for route ${paths[index]}'),
+                  );
+                },
               );
-            },
-          );
-        }
-      )
-    )
-    );
+            }));
   }
 
   @override
@@ -141,10 +129,6 @@ class FlutterTabBarItem extends WidgetElement {
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
     return WebFHTMLElement(
-      tagName: 'DIV', 
-      controller: ownerDocument.controller,
-      parentElement: this, 
-      children: childNodes.toWidgetList()
-    );
+        tagName: 'DIV', controller: ownerDocument.controller, parentElement: this, children: childNodes.toWidgetList());
   }
 }

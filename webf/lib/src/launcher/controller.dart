@@ -22,12 +22,8 @@ import 'package:flutter/widgets.dart'
     show
         AnimationController,
         BuildContext,
-        ModalRoute,
         RouteInformation,
-        RouteObserver,
         View,
-        Widget,
-        WidgetsBinding,
         WidgetsBindingObserver;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -103,6 +99,9 @@ class WebFController {
 
   /// The initial cookies to set.
   final List<Cookie>? initialCookies;
+
+  /// The path of the first route to show
+  final String? initialRoute;
 
   /// If true the content should size itself to avoid the onscreen keyboard
   /// whose height is defined by the ambient [FlutterView]'s
@@ -220,6 +219,7 @@ class WebFController {
         this.uriParser,
         this.preloadedBundles,
         this.initialCookies,
+        this.initialRoute,
         this.externalController = true,
         this.resizeToAvoidBottomInsets = true,
       })  : _entrypoint = bundle,

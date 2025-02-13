@@ -132,6 +132,7 @@ class MyAppState extends State<MyApp> {
     controller = controller ??
         WebFController(
           context,
+          initialRoute: '/home',
           devToolsService: kDebugMode ? ChromeDevToolsService() : null,
         );
     controller!.darkModeOverride = widget.savedThemeMode == AdaptiveThemeMode.dark;
