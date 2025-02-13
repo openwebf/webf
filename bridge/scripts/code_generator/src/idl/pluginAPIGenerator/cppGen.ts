@@ -234,21 +234,27 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
             dependentTypes.add(getPointerType(prop.type));
           }
         });
+        const parentObjects = [] as ClassObject[];
 
-        const parentObject = ClassObject.globalClassMap[object.parent];
+        let node = object;
 
-        if (parentObject) {
-          parentObject.props.forEach(prop => {
-            if (isPointerType(prop.type)) {
-              dependentTypes.add(getPointerType(prop.type));
-            }
-          });
+        while (node && node.parent) {
+          const parentObject = ClassObject.globalClassMap[node.parent];
+          if (parentObject) {
+            parentObjects.push(parentObject);
+            parentObject.props.forEach(prop => {
+              if (isPointerType(prop.type)) {
+                dependentTypes.add(getPointerType(prop.type));
+              }
+            });
+          }
+          node = parentObject;
         }
 
         return _.template(readHeaderTemplate('dictionary'))({
           className: getClassName(blob),
           parentClassName: object.parent,
-          parentObject,
+          parentObjects,
           blob: blob,
           object,
           generatePublicReturnTypeValue,
@@ -302,6 +308,12 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           }
         });
 
+        object.construct?.args.forEach(param => {
+          if (isPointerType(param.type)) {
+            dependentTypes.add(getPointerType(param.type));
+          }
+        });
+
         const subClasses: string[] = [];
 
         function appendSubClasses(name: string) {
@@ -313,6 +325,31 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
 
         if (object.name in ClassObject.globalClassRelationMap) {
           appendSubClasses(object.name);
+        }
+
+        const dependentClasses: {[key: string]: ClassObject} = [...dependentTypes].reduce((classes, type) => {
+          classes[type] = ClassObject.globalClassMap[type];
+          
+          return classes;
+        }, {} as {[key: string]: ClassObject});
+
+        for (const key in dependentClasses) {
+          if (key.endsWith('Options') || key.endsWith('Init')) {
+            const parents = [] as ClassObject[]
+            let node = dependentClasses[key];
+            while(node && node.parent) {
+              node = ClassObject.globalClassMap[node.parent];
+              parents.push(node);
+            }
+
+            const parentsProps = parents.flatMap(object => object.props);
+
+            for (const prop of parentsProps) {
+              if (!dependentClasses[key].props.includes(prop)) {
+                dependentClasses[key].props.push(prop);
+              }
+            }
+          }
         }
 
         return _.template(readSourceTemplate('interface'))({
@@ -330,6 +367,7 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           isStringType,
           isAnyType,
           dependentTypes: Array.from(dependentTypes),
+          dependentClasses,
           subClasses: _.uniq(subClasses),
           options,
         });

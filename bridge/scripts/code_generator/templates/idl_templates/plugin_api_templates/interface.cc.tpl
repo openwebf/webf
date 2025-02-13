@@ -1,3 +1,6 @@
+<% if (className.endsWith('Event')) { %>
+#include "include/plugin_api/<%= _.snakeCase(className) %>_init.h"
+<% }%>
 namespace webf {
 
 <% _.forEach(object.props, function(prop, index) { %>
@@ -67,5 +70,44 @@ WebFValue<<%= className %>, WebFPublicMethods> <%= className %>PublicMethods::Dy
   }
 }
 <% } %>
+<% if (object.construct) { %>
+  <% if (object.construct.args.length >= 1 && object.construct.args.some(arg => arg.name === 'type')) { %>
+WebFValue<<%= className %>, <%= className %>PublicMethods> ExecutingContextWebFMethods::Create<%= className %>(ExecutingContext* context,  <%= object.construct.args.some(arg => arg.name === 'type') ? "const char* type": null %>, ExceptionState& exception_state) {
+    <% if (object.construct.args.some(arg => arg.name === 'type')) { %>
+  AtomicString type_atomic = AtomicString(context->ctx(), type);
+    <% } %>
 
+  <%= className %>* event = <%= className %>::Create(context,  <% if (object.construct.args.some(arg => arg.name === 'type')) { %>type_atomic, <% } %> exception_state);
+
+  WebFValueStatus* status_block = event->KeepAlive();
+  return WebFValue<<%= className %>, <%= className %>PublicMethods>(event, event-><%= _.camelCase(className) %>PublicMethods(), status_block);
+};
+  <% } %>
+
+  <% if (object.construct.args.length > 1) { %>
+WebFValue<<%= className %>, <%= className %>PublicMethods> ExecutingContextWebFMethods::Create<%= className %>WithOptions(ExecutingContext* context, <%= generatePublicParametersTypeWithName(object.construct.args, true) %> ExceptionState& exception_state) {
+  <% if (object.construct.args.some(arg => arg.name === 'type')) { %>
+  AtomicString type_atomic = AtomicString(context->ctx(), type);
+  <% } %>
+  std::shared_ptr<<%= className %>Init> init_class = <%= className %>Init::Create();
+  <% if(dependentClasses[className + 'Init']){ %>
+  <% _.forEach(dependentClasses[className + 'Init'].props, function (prop) { %>
+  <% if(isStringType(prop.type)) { %>
+  AtomicString <%=_.snakeCase(prop.name)%>_atomic = AtomicString(context->ctx(), init-><%=_.snakeCase(prop.name)%>);
+  init_class->set<%=_.upperFirst(prop.name)%>(<%=_.snakeCase(prop.name)%>_atomic);
+  <% } else if (isPointerType(prop.type)) { %>
+  init_class->set<%=_.upperFirst(prop.name)%>(init-><%=_.snakeCase(prop.name)%>.value);
+  <% } else { %>
+  init_class->set<%=_.upperFirst(prop.name)%>(init-><%=_.snakeCase(prop.name)%>);
+  <% } %>
+  <% }) %>
+  <% } %>
+
+  <%= className %>* event = <%= className %>::Create(context,  <% if (object.construct.args.some(arg => arg.name === 'type')) { %>type_atomic, init_class<% } %>, exception_state);
+  
+  WebFValueStatus* status_block = event->KeepAlive();
+  return WebFValue<<%= className %>, <%= className %>PublicMethods>(event, event-><%= _.camelCase(className) %>PublicMethods(), status_block);
+  };
+<% } %>
+<% } %>
 }  // namespace webf

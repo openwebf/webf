@@ -17,6 +17,9 @@ struct WebFFocusEventInit {
   double detail;
   WebFValue<Window, WindowPublicMethods> view;
   double which;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
   WebFValue<EventTarget, EventTargetPublicMethods> related_target;
 };
 }  // namespace webf

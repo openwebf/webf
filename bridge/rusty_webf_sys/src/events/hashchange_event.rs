@@ -119,3 +119,25 @@ impl EventMethods for HashchangeEvent {
     &self.event
   }
 }
+impl ExecutingContext {
+  pub fn create_hashchange_event(&self, event_type: &str, exception_state: &ExceptionState) -> Result<HashchangeEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer).create_hashchange_event)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(HashchangeEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
+  }
+  pub fn create_hashchange_event_with_options(&self, event_type: &str, options: &HashchangeEventInit,  exception_state: &ExceptionState) -> Result<HashchangeEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer).create_hashchange_event_with_options)(self.ptr, event_type_c_string.as_ptr(), options, exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(HashchangeEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
+  }
+}

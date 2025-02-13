@@ -351,12 +351,22 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
       }
       case TemplateKind.Dictionary: {
         object = object as ClassObject;
-        const parentObject = ClassObject.globalClassMap[object.parent];
+        const parentObjects = [] as ClassObject[];
+
+        let node = object;
+
+        while (node && node.parent) {
+          const parentObject = ClassObject.globalClassMap[node.parent];
+          if (parentObject) {
+            parentObjects.push(parentObject);
+          }
+          node = parentObject;
+        }
 
         return _.template(readSourceTemplate('dictionary'))({
           className: getClassName(blob),
           parentClassName: object.parent,
-          parentObject,
+          parentObjects,
           blob,
           object,
           generatePublicReturnTypeValue,

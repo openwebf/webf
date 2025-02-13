@@ -12,17 +12,21 @@ typedef struct <%= dependentType %>PublicMethods <%= dependentType %>PublicMetho
 <% }); %>
 
 struct WebF<%= className %> {
-<% if (parentObject?.props) { %>
-  <% _.forEach(parentObject.props, function(prop, index) { %>
-    <% if (isStringType(prop.type)) { %>
+
+<% _.forEach(parentObjects, function(parentObject, index) { %>
+  <% if (parentObject?.props) { %>
+    <% _.forEach(parentObject.props, function(prop, index) { %>
+      <% if (isStringType(prop.type)) { %>
   <%= generatePublicReturnTypeValue(prop.type, true) %> <%= _.snakeCase(prop.name) %>;
-    <% } else if (prop.readonly) { %>
+      <% } else if (prop.readonly) { %>
   const <%= generatePublicReturnTypeValue(prop.type, true) %> <%= _.snakeCase(prop.name) %>;
-    <% } else { %>
+      <% } else { %>
   <%= generatePublicReturnTypeValue(prop.type, true) %> <%= _.snakeCase(prop.name) %>;
-    <% } %>
-  <% }); %>
-<% } %>
+      <% } %>
+    <% }); %>
+  <% } %>
+<% }); %>
+
 <% _.forEach(object.props, function(prop, index) { %>
   <% if (isStringType(prop.type)) { %>
   <%= generatePublicReturnTypeValue(prop.type, true) %> <%= _.snakeCase(prop.name) %>;

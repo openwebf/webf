@@ -8,18 +8,17 @@ use crate::*;
 #[repr(C)]
 enum EventType {
   Event = 0,
-  CustomEvent = 1,
-  AnimationEvent = 2,
-  CloseEvent = 3,
-  GestureEvent = 4,
-  HashchangeEvent = 5,
-  IntersectionChangeEvent = 6,
-  TransitionEvent = 7,
-  UIEvent = 8,
-  FocusEvent = 9,
-  InputEvent = 10,
-  MouseEvent = 11,
-  PointerEvent = 12,
+  AnimationEvent = 1,
+  CloseEvent = 2,
+  GestureEvent = 3,
+  HashchangeEvent = 4,
+  IntersectionChangeEvent = 5,
+  TransitionEvent = 6,
+  UIEvent = 7,
+  FocusEvent = 8,
+  InputEvent = 9,
+  MouseEvent = 10,
+  PointerEvent = 11,
 }
 #[repr(C)]
 pub struct EventRustMethods {
@@ -170,16 +169,6 @@ impl Event {
       return Err(exception_state.stringify(self.context()));
     }
     Ok(())
-  }
-  pub fn as_custom_event(&self) -> Result<CustomEvent, &str> {
-    let raw_ptr = unsafe {
-      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
-      ((*self.method_pointer).dynamic_to)(self.ptr, EventType::CustomEvent)
-    };
-    if (raw_ptr.value == std::ptr::null()) {
-      return Err("The type value of Event does not belong to the CustomEvent type.");
-    }
-    Ok(CustomEvent::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const CustomEventRustMethods, raw_ptr.status))
   }
   pub fn as_animation_event(&self) -> Result<AnimationEvent, &str> {
     let raw_ptr = unsafe {
@@ -365,5 +354,27 @@ impl EventMethods for Event {
   }
   fn as_event(&self) -> &Event {
     self
+  }
+}
+impl ExecutingContext {
+  pub fn create_event(&self, event_type: &str, exception_state: &ExceptionState) -> Result<Event, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer).create_event)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(Event::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
+  }
+  pub fn create_event_with_options(&self, event_type: &str, options: &EventInit,  exception_state: &ExceptionState) -> Result<Event, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer).create_event_with_options)(self.ptr, event_type_c_string.as_ptr(), options, exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(Event::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
   }
 }

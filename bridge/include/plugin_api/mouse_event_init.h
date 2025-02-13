@@ -15,6 +15,9 @@ struct WebFMouseEventInit {
   double detail;
   WebFValue<Window, WindowPublicMethods> view;
   double which;
+  int32_t bubbles;
+  int32_t cancelable;
+  int32_t composed;
 };
 }  // namespace webf
 #endif  // WEBF_CORE_WEBF_API_PLUGIN_API_MOUSE_EVENT_INIT_H_
