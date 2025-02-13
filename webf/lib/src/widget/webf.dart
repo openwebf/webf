@@ -19,94 +19,9 @@ import 'package:webf/gesture.dart';
 
 typedef OnControllerCreated = void Function(WebFController controller);
 
+/// The entry-point widget class responsible for rendering all content created by HTML, CSS, and JavaScript in WebF.
 class WebF extends StatefulWidget {
-  /// The background color for viewport, default to transparent.
-  final Color? background;
-
-  /// the width of webFWidget
-  final double? viewportWidth;
-
-  /// the height of webFWidget
-  final double? viewportHeight;
-
-  /// The methods of the webFNavigateDelegation help you implement custom behaviors that are triggered
-  /// during a webf view's process of loading, and completing a navigation request.
-  final WebFNavigationDelegate? navigationDelegate;
-
-  /// A method channel for receiving messaged from JavaScript code and sending message to JavaScript.
-  final WebFMethodChannel? javaScriptChannel;
-
-  /// Register the RouteObserver to observer page navigation.
-  /// This is useful if you wants to pause webf timers and callbacks when webf widget are hidden by page route.
-  /// https://api.flutter.dev/flutter/widgets/RouteObserver-class.html
-  final RouteObserver<ModalRoute<void>>? routeObserver;
-
-  /// Trigger when webf controller once created.
-  final OnControllerCreated? onControllerCreated;
-
-  /// Specify the running thread for your JavaScript codes.
-  /// Default value: DedicatedThread();
-  ///
-  /// [DedicatedThread] : Executes your JavaScript code in a dedicated thread.
-  ///   Advantage: Ideal for developers building applications with hundreds of DOM elements in JavaScript,
-  ///     where common user interactions like scrolling and swiping do not heavily depend on the JavaScript.
-  ///   Disadvantages: Increase communicate overhead since the JavaScript is runs in a separate thread.
-  ///     Data exchanges between Dart and JavaScript requires mutex and synchronization.
-  ///
-  /// [DedicatedThreadGroup] : Executes multiple JavaScript contexts in a single thread.
-  ///     Rather than creating a new thread for each WebF instance, this option allows placing multiple WebF instances and their JavaScript contexts
-  ///     into one dedicated thread.
-  ///   Advantage: JavaScript contexts in the same group can share global class and string data, reducing initialization time
-  ///     for new WebF instances and their JavaScript contexts in this thread.
-  ///   Disadvantages: Since all group members run in the same thread, one can block the others, even if they are not strong related.
-  ///
-  /// [FlutterUIThread] : Executes your JavaScript code within the Flutter UI thread.
-  ///   Advantage: This is the best mode for minimizing communication time between Dart and JavaScript, especially when you have animations
-  ///     controlled by JavaScript and rendered by Flutter. If you're building animations influenced by user interactions, like figure gestures,
-  ///     setting the runningThread to [FlutterUIThread] is the optimal choice.
-  ///   Disadvantages: Any executing of JavaScript will block the executing of Dart codes.
-  ///     If a JavaScript function takes longer than a single frame, it could cause lag, as all Dart code executing will be blocked by your JavaScript.
-  ///     Be mindful of JavaScript executing times when using this mode.
-  ///
-  final WebFThread? runningThread;
-
-  final LoadErrorHandler? onLoadError;
-
-  final LoadHandler? onLoad;
-
-  /// https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
-  final LoadHandler? onDOMContentLoaded;
-
-  final JSErrorHandler? onJSError;
-
-  // Open a service to support Chrome DevTools for debugging.
-  final DevToolsService? devToolsService;
-
-  final GestureListener? gestureListener;
-
-  final HttpClientInterceptor? httpClientInterceptor;
-
-  final UriParser? uriParser;
-
-  /// Remote resources (HTML, CSS, JavaScript, Images, and other content loadable via WebFBundle) can be pre-loaded before WebF is mounted in Flutter.
-  /// Use this property to reduce loading times when a WebF application attempts to load external resources on pages.
-  final List<WebFBundle>? preloadedBundles;
-
-  /// The initial cookies to set.
-  final List<Cookie>? initialCookies;
-
   final WebFController controller;
-
-  /// If true the content should size itself to avoid the onscreen keyboard
-  /// whose height is defined by the ambient [FlutterView]'s
-  /// [FlutterView.viewInsets] `bottom` property.
-  ///
-  /// For example, if there is an onscreen keyboard displayed above the widget,
-  /// the view can be resized to avoid overlapping the keyboard, which prevents
-  /// widgets inside the view from being obscured by the keyboard.
-  ///
-  /// Defaults to true.
-  final bool resizeToAvoidBottomInsets;
 
   // Set webf http cache mode.
   static void setHttpCacheMode(HttpCacheMode mode) {
@@ -127,48 +42,11 @@ class WebF extends StatefulWidget {
     defineWidgetElement(tagName.toUpperCase(), creator);
   }
 
-  WebF(
-      {Key? key,
-      this.viewportWidth,
-      this.viewportHeight,
-      this.onControllerCreated,
-      this.onLoad,
-      this.onDOMContentLoaded,
-      this.navigationDelegate,
-      this.javaScriptChannel,
-      this.background,
-      this.gestureListener,
-      this.devToolsService,
-      // webf's http client interceptor.
-      this.httpClientInterceptor,
-      this.uriParser,
-      WebFThread? runningThread,
-      this.routeObserver,
-      this.initialCookies,
-      this.preloadedBundles,
-      required this.controller,
-      // webf's viewportWidth options only works fine when viewportWidth is equal to window.physicalSize.width / window.devicePixelRatio.
-      // Maybe got unexpected error when change to other values, use this at your own risk!
-      // We will fixed this on next version released. (v0.6.0)
-      // Disable viewportWidth check and no assertion error report.
-      bool disableViewportWidthAssertion = false,
-      // webf's viewportHeight options only works fine when viewportHeight is equal to window.physicalSize.height / window.devicePixelRatio.
-      // Maybe got unexpected error when change to other values, use this at your own risk!
-      // We will fixed this on next version release. (v0.6.0)
-      // Disable viewportHeight check and no assertion error report.
-      bool disableViewportHeightAssertion = false,
-      // Callback functions when loading Javascript scripts failed.
-      this.onLoadError,
-      this.onJSError,
-      this.resizeToAvoidBottomInsets = true})
-      : runningThread = runningThread ?? DedicatedThread(),
-        super(key: key);
+  WebF({Key? key, required this.controller}) : super(key: key);
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<double>('viewportWidth', viewportWidth));
-    properties.add(DiagnosticsProperty<double>('viewportHeight', viewportHeight));
   }
 
   @override
@@ -230,7 +108,6 @@ class WebFState extends State<WebF> with RouteAware {
         _isWebFInitReady = true;
       });
     }
-
   }
 
   @override
@@ -249,9 +126,7 @@ class WebFState extends State<WebF> with RouteAware {
       child: WebFContext(
         child: WebFRootRenderObjectWidget(
           widget.controller,
-          background: widget.background,
           children: children,
-          resizeToAvoidBottomInsets: widget.resizeToAvoidBottomInsets,
         ),
       ),
     );
@@ -260,27 +135,15 @@ class WebFState extends State<WebF> with RouteAware {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (widget.routeObserver != null) {
-      widget.routeObserver!.subscribe(this, ModalRoute.of(context)!);
-    }
-    if (widget.controller.routeObserver != null) {
-      widget.controller.routeObserver!.subscribe(this, ModalRoute.of(context)!);
-    }
   }
 
   @override
   void didUpdateWidget(WebF oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.resizeToAvoidBottomInsets != widget.resizeToAvoidBottomInsets) {
-      widget.controller.resizeToAvoidBottomInsets = widget.resizeToAvoidBottomInsets;
-    }
   }
 
   @override
   void dispose() {
-    if (widget.routeObserver != null) {
-      widget.routeObserver!.unsubscribe(this);
-    }
     super.dispose();
   }
 }

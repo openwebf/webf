@@ -64,9 +64,6 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (widget.controller.routeObserver != null) {
-      widget.controller.routeObserver!.subscribe(this, ModalRoute.of(context)!);
-    }
   }
 
   @override
