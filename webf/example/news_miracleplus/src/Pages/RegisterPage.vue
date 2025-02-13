@@ -35,15 +35,21 @@
         type="password"
         @input="handleConfirmPasswordInput"
       />
-        <flutter-cupertino-button @press="handleRegister">
-          <div class="register-button">注册</div>
-        </flutter-cupertino-button>
+      <flutter-cupertino-button @press="handleRegister" class="register-button">
+        <div>注册</div>
+      </flutter-cupertino-button>
+      </div>
+      <div class="register-footer">
+        <div class="register-footer-text">已有账号？</div>
+        <a class="register-footer-link" @click="goToLogin">立即登录</a>
       </div>
     </div>
   </div>
 </template>
 <script>
 import LogoHeader from '../Components/LogoHeader.vue';
+import { api } from '../api';
+
 export default {
   name: 'RegisterPage',
   data() {
@@ -81,9 +87,17 @@ export default {
     handleConfirmPasswordInput(e) {
       this.confirmedPwd = e.detail;
     },
-    handleRegister() {
+    async handleRegister() {
       console.log('123123');
       console.log('this.phoneNumber', this.phoneNumber);
+      const res = await api.auth.register({
+        phone: this.phoneNumber,
+        password: this.setPwd,
+      });
+      console.log('res', res);
+    },
+    goToLogin() {
+      window.webf.hybridHistory.pushState({}, '/login');
     }
   }
 };
@@ -128,5 +142,19 @@ export default {
   justify-content: center;
   align-items: center;
   text-align: center;
+}
+.register-footer {
+  width: 100%;
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.register-footer-text {
+  font-size: 14px;
+  color: var(--secondary-font-color);
+}
+.register-footer-link {
+  color: var(--link-color);
 }
 </style>

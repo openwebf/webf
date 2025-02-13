@@ -4,7 +4,11 @@
         <!-- 热门标签页内容 -->
         <template #hot>
             <div>热门内容列表</div>
-            <div>Cupertino 组件展示</div>
+
+            <div @click="goToLogin">去登录页面</div>
+            <div @click="goToRegister">去注册页面</div>
+
+            <!-- <div>Cupertino 组件展示</div>
             <div>Cupertino Switch</div>
             <flutter-cupertino-switch
               :selected="switchValue"
@@ -20,7 +24,7 @@
               <flutter-cupertino-segmented-tab-item title="标签2">
                 <div>内容2</div>
               </flutter-cupertino-segmented-tab-item>
-            </flutter-cupertino-segmented-tab>
+            </flutter-cupertino-segmented-tab> -->
         </template>
         
         <!-- 最新标签页内容 -->
@@ -49,7 +53,11 @@
         <template #discussion>
             <div>讨论内容列表</div>
             <div @click="showModalPopup">点我展示 modal</div>
-            <flutter-cupertino-modal-popup v-if="showModal" id="myModal" height="400" style="display: none;">
+            <flutter-cupertino-modal-popup 
+              :show="showModal" 
+              height="400"
+              @close="onModalClose"
+            >
               <div class="modal-content">
                 <h1>这是一个底部弹出框</h1>
                 <p>这里是内容区域</p>
@@ -77,13 +85,26 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import FeedsTabs from "@/Components/FeedsTabs.vue";
 
 export default {
   components: {
     FeedsTabs,
   },
-  mounted() {
+  computed: {
+    ...mapGetters({
+      isLoggedIn: 'user/isLoggedIn',
+      userInfo: 'user/userInfo',
+      userName: 'user/userName',
+      userAvatar: 'user/userAvatar'
+    })
+  },
+  updated() {
+    console.log('isLoggedIn', this.isLoggedIn);
+    console.log('userInfo', this.userInfo);
+    console.log('userName', this.userName);
+    console.log('userAvatar', this.userAvatar);
   },
   data: () => {
     return {
@@ -107,6 +128,17 @@ export default {
     },
     showModalPopup() {
       this.showModal = true;
+      console.log('showModalPopup', this.showModal);
+    },
+    onModalClose() {
+      console.log('onModalClose');
+      this.showModal = false;
+    },
+    goToLogin() {
+      window.webf.hybridHistory.pushState({}, '/login');
+    },
+    goToRegister() {
+      window.webf.hybridHistory.pushState({}, '/register');
     }
   }
 }
