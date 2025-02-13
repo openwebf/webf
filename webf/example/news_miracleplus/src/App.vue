@@ -5,50 +5,26 @@
   <webf-router-link path="/login" @mount="handleRouterMounted('login')">
     <login-page v-if="activedRouter === 'login'"></login-page>
   </webf-router-link>
-  <flutter-tab-bar
-    ref="tabBar"
-    class="tab-bar"
-    backgroundColor="#FFFFFF"
-    activeColor="#007AFF"
-    :currentIndex="currentIndex"
-    @tabchange="handleTabChange"
-  >
-    <flutter-tab-bar-item
-      title="首页"
-      icon="home"
-      path="/home"
-    >
-      <home-page></home-page>
-    </flutter-tab-bar-item>
-    <flutter-tab-bar-item
-      title="搜索"
-      icon="search"
-      path="/search"
-    >
-      <search-page></search-page>
-    </flutter-tab-bar-item>
-    <flutter-tab-bar-item
-      title="发布"
-      icon="add_circled_solid"
-      path="/publish"
-    >
-      <publish-page></publish-page>
-    </flutter-tab-bar-item>
-    <flutter-tab-bar-item
-      title="消息"
-      icon="bell"
-      path="/message"
-    >
-      <notification-page></notification-page>
-    </flutter-tab-bar-item>
-    <flutter-tab-bar-item
-      title="我的"
-      icon="person"
-      path="/my"
-    >
-      <my-page></my-page>
-    </flutter-tab-bar-item>
-  </flutter-tab-bar>
+  <webf-router-link path="/home">
+    <flutter-tab-bar ref="tabBar" class="tab-bar" backgroundColor="#FFFFFF" activeColor="#007AFF"
+      :currentIndex="currentIndex" @tabchange="handleTabChange">
+      <flutter-tab-bar-item title="首页" icon="home" path="/home">
+        <home-page></home-page>
+      </flutter-tab-bar-item>
+      <flutter-tab-bar-item title="搜索" icon="search" path="/search">
+        <search-page></search-page>
+      </flutter-tab-bar-item>
+      <flutter-tab-bar-item title="发布" icon="add_circled_solid" path="/publish">
+        <publish-page></publish-page>
+      </flutter-tab-bar-item>
+      <flutter-tab-bar-item title="消息" icon="bell" path="/message">
+        <notification-page></notification-page>
+      </flutter-tab-bar-item>
+      <flutter-tab-bar-item title="我的" icon="person" path="/my">
+        <my-page></my-page>
+      </flutter-tab-bar-item>
+    </flutter-tab-bar>
+  </webf-router-link>
 </template>
 
 <script>
