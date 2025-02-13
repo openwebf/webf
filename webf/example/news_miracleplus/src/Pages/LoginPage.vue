@@ -30,6 +30,7 @@
           <div class="login-footer-text">忘记密码？</div>
           <a class="login-footer-link" @click="goToRegister">立即注册</a>
         </div>
+        <div @click="goToHome">去首页</div>
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="短信登录">
           <div class="login-form">
@@ -119,6 +120,9 @@ export default {
     },
     goToRegister() {
       window.webf.hybridHistory.pushState({}, '/register');
+    },
+    goToHome() {
+      window.webf.hybridHistory.pushState({}, '/home');
     }
   }
 };

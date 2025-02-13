@@ -43,6 +43,7 @@
         <div class="register-footer-text">已有账号？</div>
         <a class="register-footer-link" @click="goToLogin">立即登录</a>
       </div>
+      <div @click="goToHome">去首页</div>
     </div>
   </div>
 </template>
@@ -98,6 +99,9 @@ export default {
     },
     goToLogin() {
       window.webf.hybridHistory.pushState({}, '/login');
+    },
+    goToHome() {
+      window.webf.hybridHistory.pushState({}, '/home');
     }
   }
 };
