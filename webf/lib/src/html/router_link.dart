@@ -27,7 +27,7 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
-  flutter.Key get key => flutter.UniqueKey();
+  flutter.Key get key => flutter.ValueKey('WEBF_ROUTER_LINK_$_path');
 
   @override
   void mount() {

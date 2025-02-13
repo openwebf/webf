@@ -12,9 +12,10 @@ import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 
 mixin ElementAdapterMixin on ElementBase {
-  final List<Element> positionedElements = [];
+  final Set<Element> positionedElements = {};
   // Rendering this element as an RenderPositionHolder
   Element? holderAttachedPositionedElement;
+  Element? holderAttachedContainingBlockElement;
   bool hasEvent = false;
 
   @override

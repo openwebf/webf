@@ -333,12 +333,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return false;
   }
 
-  /// Attach a renderObject to parent.
-  void attachTo(Element parent, {RenderBox? after}) {}
-
-  /// Unmount referenced render object.
-  void unmountRenderObjectInDOMMode({bool keepFixedAlive = false}) {}
-
   /// Release any resources held by this node.
   @override
   void dispose() async {

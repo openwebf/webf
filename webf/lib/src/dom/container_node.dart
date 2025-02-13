@@ -185,13 +185,6 @@ abstract class ContainerNode extends Node {
   Node? removeChild(Node oldChild) {
     Node child = oldChild;
 
-    // Not remove node type which is not present in RenderObject tree such as Comment
-    // Only append node types which is visible in RenderObject tree
-    // Only remove childNode when it has parent
-    if (child.isRendererAttachedToSegmentTree && !child.managedByFlutterWidget) {
-      child.unmountRenderObjectInDOMMode();
-    }
-
     if (this is Element) {
       ownerDocument.markElementStyleDirty(this as Element);
     }

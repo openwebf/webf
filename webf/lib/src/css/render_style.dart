@@ -40,14 +40,22 @@ class AddEventUpdateReason extends AdapterUpdateReason {}
 
 class ToPositionPlaceHolderUpdateReason extends AdapterUpdateReason {
   Element positionedElement;
+  Element containingBlockElement;
 
-  ToPositionPlaceHolderUpdateReason(this.positionedElement);
+  ToPositionPlaceHolderUpdateReason({required this.positionedElement, required this.containingBlockElement});
 }
 
 class AttachPositionedChild extends AdapterUpdateReason {
   Element positionedElement;
+  Element containingBlockElement;
 
-  AttachPositionedChild(this.positionedElement);
+  AttachPositionedChild({required this.positionedElement, required this.containingBlockElement});
+}
+
+class RemovePositionedChild extends AdapterUpdateReason {
+  Element positionedElement;
+
+  RemovePositionedChild(this.positionedElement);
 }
 
 typedef SomeRenderBoxModelHandlerCallback = bool Function(RenderBoxModel renderBoxModel);
@@ -410,6 +418,7 @@ abstract class RenderStyle extends DiagnosticableTree {
         break;
       case ToPositionPlaceHolderUpdateReason:
         target.holderAttachedPositionedElement = (reason as ToPositionPlaceHolderUpdateReason).positionedElement;
+        target.holderAttachedContainingBlockElement = reason.containingBlockElement;
         break;
       case AttachPositionedChild:
         target.positionedElements.add((reason as AttachPositionedChild).positionedElement);

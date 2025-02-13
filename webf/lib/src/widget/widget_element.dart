@@ -112,15 +112,6 @@ abstract class WidgetElement extends dom.Element {
   @override
   RenderObject willAttachRenderer([RenderObjectElement? flutterWidgetElement]) {
     RenderObject renderObject = super.willAttachRenderer(flutterWidgetElement);
-    // if (renderStyle.display != CSSDisplay.none && !managedByFlutterWidget) {
-      // RenderObject hostedRenderObject = flutterWidgetElement != null
-      //     ? renderStyle.getWidgetPairedRenderBoxModel(flutterWidgetElement)!
-      //     : renderStyle.domRenderBoxModel!;
-      // attachedAdapter = widget;
-      // List<Widget> children = [widget, ...positionedElements.map((element) => element.toWidget())];
-      // attachedAdapter =
-      //     SharedRenderWidgetAdapter(children: children, container: hostedRenderObject, widgetElement: this);
-    // }
     return renderObject;
   }
 
@@ -353,11 +344,8 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
   void requestForBuild(AdapterUpdateReason reason) {
-    visitChildElements((element) {
-      if (element is WebFWidgetElementElement) {
-        element.state.requestUpdateState(null, reason);
-      }
-    });
+    WebFWidgetElementState? state = findAncestorStateOfType<WebFWidgetElementState>();
+    state?.requestUpdateState(null, reason);
   }
 
   @override

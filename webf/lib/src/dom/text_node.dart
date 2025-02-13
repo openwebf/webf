@@ -23,7 +23,7 @@ class TextNode extends CharacterData {
 
   TextNode(this._data, [BindingContext? context]) : super(NodeType.TEXT_NODE, context);
 
-  final flutter.Key key = flutter.GlobalKey();
+  final flutter.Key key = flutter.UniqueKey();
 
   @override
   flutter.Widget toWidget({Key? key}) {
