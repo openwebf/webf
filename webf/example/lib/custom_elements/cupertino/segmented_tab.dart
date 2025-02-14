@@ -13,11 +13,30 @@ class FlutterCupertinoSegmentedTab extends WidgetElement {
     final tabs = <int, Widget>{};
     final contents = <Widget>[];
 
+    // Default dimensions if not specified
+    final double defaultWidth = 80.0;
+    final double defaultHeight = 30.0;
+
     int index = 0;
     for (var element in childNodes.whereType<dom.Element>()) {
-      tabs[index] = Text(
-        element.getAttribute('title') ?? '',
-        style: const TextStyle(fontSize: 14),
+      tabs[index] = Container(
+        width: renderStyle.width.isAuto ? defaultWidth : renderStyle.width.computedValue,
+        height: renderStyle.height.isAuto ? defaultHeight : renderStyle.height.computedValue,
+        alignment: Alignment.center,
+        padding: EdgeInsets.symmetric(
+          horizontal: renderStyle.paddingLeft.computedValue,
+          vertical: renderStyle.paddingTop.computedValue,
+        ),
+        child: Text(
+          element.getAttribute('title') ?? '',
+          style: TextStyle(
+            fontSize: renderStyle.fontSize.computedValue,
+            // color: renderStyle.color,
+            fontWeight: renderStyle.fontWeight,
+            // fontFamily: renderStyle.fontFamily,
+          ),
+          textAlign: TextAlign.center,
+        ),
       );
       contents.add(element.toWidget(key: ObjectKey(element)));
       index++;
