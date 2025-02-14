@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'package:flutter/foundation.dart';
 import 'module_manager.dart';
 
 typedef WebFNavigationDecisionHandler = Future<WebFNavigationActionPolicy> Function(WebFNavigationAction action);
@@ -79,7 +80,25 @@ class WebFNavigationAction {
 }
 
 Future<WebFNavigationActionPolicy> defaultDecisionHandler(WebFNavigationAction action) async {
-  return WebFNavigationActionPolicy.allow;
+  if (kDebugMode || kProfileMode) {
+    print('''
+Attempting to navigate WebF to an external WebF page: **`${action.target}`** from **`${action.source}`**. This behavior is disabled by default.
+
+To customize navigation behavior, override the `navigationDelegate` property on `WebFController`:
+
+```dart
+WebFNavigationDelegate navigationDelegate = WebFNavigationDelegate();
+
+navigationDelegate.setDecisionHandler((WebFNavigationAction action) async {
+  return WebFNavigationActionPolicy.allow; // Allows all navigation actions
+});
+
+WebFController(navigationDelegate: navigationDelegate);
+```
+      ''');
+  }
+
+  return WebFNavigationActionPolicy.cancel;
 }
 
 class WebFNavigationDelegate {
