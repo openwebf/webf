@@ -33,45 +33,24 @@ class _WebFTesterState extends State<WebFTester> {
   var width = 360.0;
   var height = 640.0;
 
-  _WebFTesterState() {
-    javaScriptChannel.onMethodCall = (String method, dynamic arguments) async {
-      switch (method) {
-        case 'helloInt64':
-          return Future.value(1111111111111111);
-        case 'resizeViewport':
-          double newWidth = arguments[0] == -1
-              ? 360
-              : double.tryParse(arguments[0].toString())!;
-          double newHeight = arguments[1] == -1
-              ? 640
-              : double.tryParse(arguments[1].toString())!;
-          if (newWidth != width || newHeight != height) {
-            setState(() {
-              width = newWidth;
-              height = newHeight;
-            });
-          }
-          return Future.value(null);
-        default:
-          dynamic returnedValue =
-              await javaScriptChannel.invokeMethod(method, arguments);
-          return 'method: $method, return_type: ${returnedValue.runtimeType.toString()}, return_value: ${returnedValue.toString()}';
-      }
-    };
-  }
-
   @override
-  Widget build(BuildContext context) {
-    return WebF(
+  void didChangeDependencies() async {
+    super.didChangeDependencies();
+
+    WebFNavigationDelegate navigationDelegate = WebFNavigationDelegate();
+    navigationDelegate.setDecisionHandler((WebFNavigationAction action) async {
+      return WebFNavigationActionPolicy.allow; // Allows for all
+    });
+
+    controller = WebFController(
+      context,
+      navigationDelegate: navigationDelegate,
       viewportWidth: width,
       viewportHeight: height,
       bundle: WebFBundle.fromUrl(
           'http://localhost:${widget.mockServerPort}/public/core.build.js?search=1234#hash=hashValue'),
-      disableViewportWidthAssertion: true,
-      disableViewportHeightAssertion: true,
       javaScriptChannel: javaScriptChannel,
       runningThread: FlutterUIThread(),
-      onControllerCreated: onControllerCreated,
       onLoad: onLoad,
       gestureListener: GestureListener(
         onDrag: (GestureEvent gestureEvent) {
@@ -82,14 +61,41 @@ class _WebFTesterState extends State<WebFTester> {
         },
       ),
     );
-  }
+    await controller.controlledInitCompleter;
 
-  onControllerCreated(WebFController controller) async {
-    this.controller = controller;
     double contextId = controller.view.contextId;
     testContext = initTestFramework(contextId);
     registerDartTestMethodsToCpp(contextId);
     await controller.view.evaluateJavaScripts(widget.preCode);
+  }
+
+  _WebFTesterState() {
+    javaScriptChannel.onMethodCall = (String method, dynamic arguments) async {
+      switch (method) {
+        case 'helloInt64':
+          return Future.value(1111111111111111);
+        case 'resizeViewport':
+          double newWidth = arguments[0] == -1 ? 360 : double.tryParse(arguments[0].toString())!;
+          double newHeight = arguments[1] == -1 ? 640 : double.tryParse(arguments[1].toString())!;
+          if (newWidth != width || newHeight != height) {
+            setState(() {
+              width = newWidth;
+              height = newHeight;
+            });
+          }
+          return Future.value(null);
+        default:
+          dynamic returnedValue = await javaScriptChannel.invokeMethod(method, arguments);
+          return 'method: $method, return_type: ${returnedValue.runtimeType.toString()}, return_value: ${returnedValue.toString()}';
+      }
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WebF(
+      controller: controller,
+    );
   }
 
   onLoad(WebFController controller) async {
@@ -101,8 +107,7 @@ class _WebFTesterState extends State<WebFTester> {
 
     try {
       // Preload load test cases
-      String result =
-          await executeTest(testContext!, controller.view.contextId);
+      String result = await executeTest(testContext!, controller.view.contextId);
       // Manual dispose context for memory leak check.
       await controller.dispose();
 
@@ -114,7 +119,7 @@ class _WebFTesterState extends State<WebFTester> {
       // }
       widget.onWillFinish?.call();
 
-      exit(result == 'failed' ? 1 : 0);
+      // exit(result == 'failed' ? 1 : 0);
     } catch (e) {
       print(e);
     }

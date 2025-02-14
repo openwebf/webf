@@ -50,6 +50,7 @@ class IntegrationTestUriParser extends UriParser {
 
 class MemoryLeakPageState extends State<MemoryLeakPage> {
   BuildContext? _context;
+  late WebFController controller;
 
   void navigateBack() {
     Navigator.pop(_context!);
@@ -58,16 +59,20 @@ class MemoryLeakPageState extends State<MemoryLeakPage> {
   WebF? webf;
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    controller = WebFController(context,
+        viewportWidth: 360,
+        viewportHeight: 640,
+        bundle: WebFBundle.fromUrl('file://${widget.path}'),
+        uriParser: IntegrationTestUriParser());
+  }
+
+  @override
   Widget build(BuildContext context) {
     _context = context;
-    return webf = WebF(
-      viewportWidth: 360,
-      viewportHeight: 640,
-      bundle: WebFBundle.fromUrl('file://${widget.path}'),
-      disableViewportWidthAssertion: true,
-      disableViewportHeightAssertion: true,
-      uriParser: IntegrationTestUriParser(),
-    );
+    return webf = WebF(controller: controller);
   }
 }
 
@@ -86,7 +91,8 @@ class MemoryLeakPage extends StatefulWidget {
 
 class MultiplePageKey extends LabeledGlobalKey<MemoryLeakPageState> {
   final String name;
-  MultiplePageKey(this.name): super('$name');
+
+  MultiplePageKey(this.name) : super('$name');
 
   @override
   bool operator ==(other) {
@@ -124,6 +130,7 @@ class RootPage extends StatefulWidget {
 
 class RootPageState extends State<RootPage> {
   BuildContext? _context;
+
   Future<void> navigateToPage(String nextPage) {
     return Navigator.pushNamed(_context!, '/$nextPage');
   }
@@ -138,6 +145,7 @@ class RootPageState extends State<RootPage> {
 class CodeUnit {
   final String name;
   final String path;
+
   CodeUnit(this.name, this.path);
 }
 
@@ -145,15 +153,12 @@ Map<String, WidgetBuilder> buildRoutes(PageController pageController, List<CodeU
   Map<String, WidgetBuilder> routes = {};
   codes.forEach((code) {
     routes['/${code.name}'] = (context) => Scaffold(
-      body: Scaffold(
-        appBar: AppBar(title: Text(code.name)),
-        body: MemoryLeakPage(code.name, code.path, key: pageController.createKey(code.name))
-      ),
-    );
+          body: Scaffold(
+              appBar: AppBar(title: Text(code.name)),
+              body: MemoryLeakPage(code.name, code.path, key: pageController.createKey(code.name))),
+        );
   });
-  routes['/'] = (context) => Scaffold(
-      body: FirstRoute(key: rootPageKey)
-  );
+  routes['/'] = (context) => Scaffold(body: FirstRoute(key: rootPageKey));
   return routes;
 }
 
@@ -180,7 +185,7 @@ Future<void> sleep(Duration duration) {
 }
 
 Future<void> runWithMultiple(AsyncCallback callback, int multipleTime) async {
-  for (int i = 0; i < multipleTime; i ++) {
+  for (int i = 0; i < multipleTime; i++) {
     await callback();
   }
 }
@@ -225,7 +230,6 @@ class HomePageElement extends StatelessElement {
 
 class FirstRoute extends StatelessWidget {
   const FirstRoute({super.key});
-
 
   @override
   StatelessElement createElement() {
@@ -280,9 +284,7 @@ class MemoryLeakDetector extends StatelessWidget {
     return MaterialApp(
       initialRoute: '/',
       debugShowCheckedModeBanner: false,
-      navigatorObservers: [
-        MemoryLeakNavigatorObserver()
-      ],
+      navigatorObservers: [MemoryLeakNavigatorObserver()],
       routes: buildRoutes(pageController, codes),
     );
   }
