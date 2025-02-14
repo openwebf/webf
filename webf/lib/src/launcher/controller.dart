@@ -19,7 +19,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart'
-    show AnimationController, BuildContext, RouteInformation, View, WidgetsBindingObserver;
+    show AnimationController, BuildContext, RouteInformation, View, WidgetsBinding, WidgetsBindingObserver;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
@@ -1107,6 +1107,8 @@ class WebFViewController implements WidgetsBindingObserver {
 
     _contextId = await initBridge(this, runningThread);
 
+    _setupObserver();
+
     defineBuiltInElements();
   }
 
@@ -1290,6 +1292,14 @@ class WebFViewController implements WidgetsBindingObserver {
     await evaluateScripts(_contextId, Uint8List.fromList(data));
   }
 
+  void _setupObserver() {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  void _teardownObserver() {
+    WidgetsBinding.instance.removeObserver(this);
+  }
+
   // Attach renderObject to an renderObject.
   void attachTo(RenderObject parent, [RenderObject? previousSibling]) {
     if (parent is ContainerRenderObjectMixin) {
@@ -1305,6 +1315,7 @@ class WebFViewController implements WidgetsBindingObserver {
     _disposed = true;
     debugDOMTreeChanged = null;
 
+    _teardownObserver();
     _unregisterPlatformBrightnessChange();
 
     // Should clear previous page cached ui commands
