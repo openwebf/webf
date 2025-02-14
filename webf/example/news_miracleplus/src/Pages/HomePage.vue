@@ -4,7 +4,13 @@
         <!-- 热门标签页内容 -->
         <template #hot>
             <div>热门内容列表</div>
-            <div>Cupertino 组件展示</div>
+            <webf-listview class="listview">
+              <div v-for="item in hotList" :key="item.id">
+                <feed-card :item="item"></feed-card>
+              </div>
+            </webf-listview>
+
+            <!-- <div>Cupertino 组件展示</div>
             <div>Cupertino Switch</div>
             <flutter-cupertino-switch
               :selected="switchValue"
@@ -20,7 +26,7 @@
               <flutter-cupertino-segmented-tab-item title="标签2">
                 <div>内容2</div>
               </flutter-cupertino-segmented-tab-item>
-            </flutter-cupertino-segmented-tab>
+            </flutter-cupertino-segmented-tab> -->
         </template>
         
         <!-- 最新标签页内容 -->
@@ -49,7 +55,11 @@
         <template #discussion>
             <div>讨论内容列表</div>
             <div @click="showModalPopup">点我展示 modal</div>
-            <flutter-cupertino-modal-popup v-if="showModal" id="myModal" height="400" style="display: none;">
+            <flutter-cupertino-modal-popup 
+              :show="showModal" 
+              height="400"
+              @close="onModalClose"
+            >
               <div class="modal-content">
                 <h1>这是一个底部弹出框</h1>
                 <p>这里是内容区域</p>
@@ -77,13 +87,34 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import FeedsTabs from "@/Components/FeedsTabs.vue";
+import FeedCard from "@/Components/FeedCard.vue";
+import { api } from '@/api';
 
 export default {
   components: {
     FeedsTabs,
+    FeedCard,
   },
-  mounted() {
+  computed: {
+    ...mapGetters({
+      isLoggedIn: 'user/isLoggedIn',
+      userInfo: 'user/userInfo',
+      userName: 'user/userName',
+      userAvatar: 'user/userAvatar'
+    })
+  },
+  async mounted() {
+    console.log('HomePage mounted');
+    const res = await api.news.getHotList();
+    this.hotList = res.data.feeds;
+  },
+  updated() {
+    console.log('isLoggedIn', this.isLoggedIn);
+    console.log('userInfo', this.userInfo);
+    console.log('userName', this.userName);
+    console.log('userAvatar', this.userAvatar);
   },
   data: () => {
     return {
@@ -95,6 +126,10 @@ export default {
         { id: 'academic', title: '学术' },
         { id: 'product', title: '产品' }
       ],
+      hotList: [],
+      latestList: [],
+      commentList: [],
+      displayList: [],
       show: true,
       switchValue: false,
       showModal: false,
@@ -107,6 +142,17 @@ export default {
     },
     showModalPopup() {
       this.showModal = true;
+      console.log('showModalPopup', this.showModal);
+    },
+    onModalClose() {
+      console.log('onModalClose');
+      this.showModal = false;
+    },
+    goToLogin() {
+      window.webf.hybridHistory.pushState({}, '/login');
+    },
+    goToRegister() {
+      window.webf.hybridHistory.pushState({}, '/register');
     }
   }
 }
@@ -116,6 +162,11 @@ export default {
 <style scoped>
 #list {
   padding: 10px 0;
+  height: 100vh;
+  width: 100vw;
+}
+
+.listview {
   height: 100vh;
   width: 100vw;
 }

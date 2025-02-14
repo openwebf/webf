@@ -5,6 +5,9 @@
   <div @click="goToRegisterPage">
     点我去注册页
   </div>
+  <div @click="goToLoginPage">
+    点我去登录页
+  </div>
 </template>
 
 <script>
@@ -28,6 +31,9 @@ export default {
     },
     goToRegisterPage() {
       window.webf.hybridHistory.pushState({}, '/register');
+    },
+    goToLoginPage() {
+      window.webf.hybridHistory.pushState({}, '/login');
     }
   }
 }
