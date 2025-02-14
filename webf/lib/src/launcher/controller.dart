@@ -19,12 +19,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart'
-    show
-        AnimationController,
-        BuildContext,
-        RouteInformation,
-        View,
-        WidgetsBindingObserver;
+    show AnimationController, BuildContext, RouteInformation, View, WidgetsBindingObserver;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
@@ -36,10 +31,12 @@ class WebFController {
   /// The background color for viewport, default to transparent.
   final Color? background;
 
-  /// the width of webFWidget
+  /// the width of WebF Widget
+  /// default: the value of max-width in constraints.
   final double? viewportWidth;
 
-  /// the height of webFWidget
+  /// the height of WebF Widget
+  /// default: the value if max-height in constraints.
   final double? viewportHeight;
 
   /// The methods of the webFNavigateDelegation help you implement custom behaviors that are triggered
@@ -75,14 +72,18 @@ class WebFController {
   ///
   final WebFThread? runningThread;
 
-  final LoadErrorHandler? onLoadError;
+  /// Callback triggered when a network error occurs during loading.
+  LoadErrorHandler? onLoadError;
 
-  final LoadHandler? onLoad;
+  /// Callback triggered when the app is fully loaded, including DOM, CSS, JavaScript, and images.
+  LoadHandler? onLoad;
 
-  /// https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
-  final LoadHandler? onDOMContentLoaded;
+  /// Callback triggered when the app's DOM and CSS have finished loading.
+  /// See: https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
+  LoadHandler? onDOMContentLoaded;
 
-  final JSErrorHandler? onJSError;
+  /// Callback triggered when a JavaScript error occurs during loading.
+  JSErrorHandler? onJSError;
 
   // Open a service to support Chrome DevTools for debugging.
   final DevToolsService? devToolsService;
@@ -200,29 +201,29 @@ class WebFController {
   bool externalController;
 
   WebFController(
-      BuildContext context, {
-        bool enableDebug = false,
-        WebFBundle? bundle,
-        WebFThread? runningThread,
-        this.background,
-        this.viewportWidth,
-        this.viewportHeight,
-        this.gestureListener,
-        this.javaScriptChannel,
-        this.navigationDelegate,
-        this.onLoad,
-        this.onDOMContentLoaded,
-        this.onLoadError,
-        this.onJSError,
-        this.httpClientInterceptor,
-        this.devToolsService,
-        this.uriParser,
-        this.preloadedBundles,
-        this.initialCookies,
-        this.initialRoute,
-        this.externalController = true,
-        this.resizeToAvoidBottomInsets = true,
-      })  : _entrypoint = bundle,
+    BuildContext context, {
+    bool enableDebug = false,
+    WebFBundle? bundle,
+    WebFThread? runningThread,
+    this.background,
+    this.viewportWidth,
+    this.viewportHeight,
+    this.gestureListener,
+    this.javaScriptChannel,
+    this.navigationDelegate,
+    this.onLoad,
+    this.onDOMContentLoaded,
+    this.onLoadError,
+    this.onJSError,
+    this.httpClientInterceptor,
+    this.devToolsService,
+    this.uriParser,
+    this.preloadedBundles,
+    this.initialCookies,
+    this.initialRoute,
+    this.externalController = true,
+    this.resizeToAvoidBottomInsets = true,
+  })  : _entrypoint = bundle,
         _gestureListener = gestureListener,
         runningThread = runningThread ?? DedicatedThread(),
         ownerFlutterView = View.of(context) {
@@ -1357,18 +1358,21 @@ class WebFViewController implements WidgetsBindingObserver {
       }
       var node = eventTargetPointer == null ? document.documentElement : getBindingObject(eventTargetPointer);
       if (node is Element) {
-        if (!node.isRendererAttached) {
-          String msg = 'toImage: the element is not attached to document tree.';
-          completer.completeError(Exception(msg));
-          return completer.future;
-        }
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (!node.isRendererAttached) {
+            String msg = 'toImage: the element is not attached to document tree.';
+            completer.completeError(Exception(msg));
+          }
 
-        node.toBlob(devicePixelRatio: devicePixelRatio).then((Uint8List bytes) {
-          completer.complete(bytes);
-        }).catchError((e, stack) {
-          String msg = 'toBlob: failed to export image data from element id: $eventTargetPointer. error: $e}.\n$stack';
-          completer.completeError(Exception(msg));
+          node.toBlob(devicePixelRatio: devicePixelRatio).then((Uint8List bytes) {
+            completer.complete(bytes);
+          }).catchError((e, stack) {
+            String msg =
+                'toBlob: failed to export image data from element id: $eventTargetPointer. error: $e}.\n$stack';
+            completer.completeError(Exception(msg));
+          });
         });
+        return completer.future;
       } else {
         String msg = 'toBlob: node is not an element, id: $eventTargetPointer';
         completer.completeError(Exception(msg));
@@ -1636,7 +1640,7 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   RenderBox? getRootRenderObject() {
-    return document.documentElement?.domRenderer;
+    return document.viewport;
   }
 
   @override
