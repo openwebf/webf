@@ -121,6 +121,11 @@ class WebFReplacedElementWidget extends flutter.SingleChildRenderObjectWidget {
   flutter.SingleChildRenderObjectElement createElement() {
     return WebFRenderReplacedRenderObjectElement(this);
   }
+
+  @override
+  String toStringShort() {
+    return 'RenderObjectAdapter(${webFElement.tagName.toLowerCase()})';
+  }
 }
 
 class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObjectElement {

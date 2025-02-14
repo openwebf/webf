@@ -55,6 +55,9 @@ class ImageElement extends Element {
 
   bool _isListeningStream = false;
 
+  bool _isSVGImage = false;
+  SVGElement? _svgElement;
+
   // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-complete-dev
   // A boolean value which indicates whether or not the image has completely loaded.
   // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-complete-dev
@@ -107,7 +110,8 @@ class ImageElement extends Element {
 
   @override
   flutter.Widget toWidget({Key? key, bool positioned = false}) {
-    flutter.Widget child = WebFReplacedElementWidget(webFElement: this, key: key ?? this.key, child: WebFImage(this));
+    flutter.Widget child = WebFReplacedElementWidget(
+        webFElement: this, key: key ?? this.key, child: _isSVGImage ? WebFSVGImage(_svgElement!) : WebFImage(this));
     return Portal(ownerElement: this, child: child);
   }
 
@@ -287,6 +291,11 @@ class ImageElement extends Element {
     _currentImageProvider?.evict(configuration: _currentImageConfig ?? ImageConfiguration.empty);
     _currentImageConfig = null;
     _currentImageProvider = null;
+
+    if (_svgElement != null) {
+      _svgElement!.dispose();
+      _svgElement = null;
+    }
 
     // Dispose render object.
     _dropChild();
@@ -565,7 +574,7 @@ class ImageElement extends Element {
         RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
         renderReplaced
           ?..isInLazyRendering = true
-        // When detach renderer, all listeners will be cleared.
+          // When detach renderer, all listeners will be cleared.
           ..addIntersectionChangeListener(_handleIntersectionChange);
       }
 
@@ -602,22 +611,29 @@ class ImageElement extends Element {
     SchedulerBinding.instance.scheduleFrame();
   }
 
-  void _loadSVGImage() {
+  void _loadSVGImage() async {
     final builder = SVGRenderBoxBuilder(obtainImage(this, _resolvedUri!), target: this);
 
-    builder.decode().then((svgElement) {
+    try {
+      SVGElement svgElement = await builder.decode(ownerDocument.ownerView);
       final size = builder.getIntrinsicSize();
       naturalWidth = size.width.toInt();
       naturalHeight = size.height.toInt();
       _resizeImage();
+
+      _isSVGImage = true;
+      _svgElement = svgElement;
+
+      renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
+
       // _updateRenderObject(svg: renderObject);
-      // _dispatchLoadEvent();
-      // // Decrement load event delay count after decode.
-      // ownerDocument.decrementLoadEventDelayCount();
-    }, onError: (e, stack) {
+      _dispatchLoadEvent();
+      // Decrement load event delay count after decode.
+      ownerDocument.decrementLoadEventDelayCount();
+    } catch (e, stack) {
       print('$e\n$stack');
       _dispatchErrorEvent();
-    });
+    }
     return;
   }
 
@@ -748,6 +764,17 @@ class WebFImage extends flutter.StatefulWidget {
   @override
   flutter.State<flutter.StatefulWidget> createState() {
     return _ImageState(imageElement);
+  }
+}
+
+class WebFSVGImage extends flutter.StatelessWidget {
+  final SVGElement svgElement;
+
+  WebFSVGImage(this.svgElement);
+
+  @override
+  flutter.Widget build(flutter.BuildContext context) {
+    return svgElement.toWidget();
   }
 }
 

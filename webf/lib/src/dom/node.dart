@@ -118,7 +118,6 @@ abstract class RenderObjectNode {
   ///
   /// This method should not do anything with the children of the render object.
   /// That should instead be handled by the method that overrides
-  /// [Node.attachTo] in the object rendered by this object.
   RenderBox createRenderer();
 
   /// The renderObject will be / has been insert into parent. You can apply properties

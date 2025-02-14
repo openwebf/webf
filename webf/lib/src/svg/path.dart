@@ -18,5 +18,4 @@ class SVGPathElement extends SVGGeometryElement {
   RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
     return RenderSVGPath(renderStyle: renderStyle);
   }
-
 }

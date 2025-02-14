@@ -49,6 +49,13 @@ class RenderSVGRoot extends RenderSVGContainer {
         _ratio = ratio ?? const SVGPreserveAspectRatio() {}
 
   @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty('viewBox', viewBox));
+    properties.add(DiagnosticsProperty('ratio', ratio));
+  }
+
+  @override
   void performPaint(PaintingContext context, Offset offset) {
     _outerClipLayer.layer = context
         .pushClipRect(true, offset, Offset.zero & size, (context, offset) {

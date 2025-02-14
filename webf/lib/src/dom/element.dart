@@ -797,42 +797,6 @@ abstract class Element extends ContainerNode
     }
   }
 
-  // Attach renderObject of current node to parent
-  @override
-  void attachTo(Node parent, {RenderBox? after}) {
-    if (managedByFlutterWidget) {
-      return;
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this.attachTo');
-    }
-
-    applyStyle(style);
-
-    willAttachRenderer();
-
-    if (domRenderer != null) {
-      // If element attach WidgetElement, render object should be attach to render tree when mount.
-      if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE) {
-        RenderBoxModel.attachRenderBox(parent.domRenderer!, domRenderer!, after: after);
-        markBeforePseudoElementNeedsUpdate();
-        markAfterPseudoElementNeedsUpdate();
-      }
-
-      if (!ownerDocument.controller.shouldBlockingFlushingResolvedStyleProperties) {
-        // Flush pending style before child attached.
-        style.flushPendingProperties();
-      }
-
-      didAttachRenderer(null);
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-    }
-  }
-
   static bool isRenderObjectOwnedByFlutterFramework(Element element) {
     return element is WidgetElement || element.managedByFlutterWidget;
   }

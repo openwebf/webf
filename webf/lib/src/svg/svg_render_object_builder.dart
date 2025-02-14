@@ -7,6 +7,7 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/launcher.dart';
 import 'package:webf/src/svg/rendering/container.dart';
 import 'package:webf/svg.dart';
 
@@ -38,7 +39,7 @@ class SVGRenderBoxBuilder {
     return ui.Size(INTRINSIC_DEFAULT_WIDTH, INTRINSIC_DEFAULT_HEIGHT);
   }
 
-  Future<SVGElement> decode() async {
+  Future<SVGElement> decode(WebFViewController viewController) async {
     final resp = await imageLoader;
 
     final code = convert.utf8.decode(resp.bytes);
@@ -51,8 +52,7 @@ class SVGRenderBoxBuilder {
       final type = node.ref.type;
       if (type == GumboNodeType.GUMBO_NODE_ELEMENT) {
         final element = node.ref.v.element;
-        if (element.tag_namespace == GumboNamespaceEnum.GUMBO_NAMESPACE_SVG &&
-            element.tag == GumboTag.SVG) {
+        if (element.tag_namespace == GumboNamespaceEnum.GUMBO_NAMESPACE_SVG && element.tag == GumboTag.SVG) {
           // svg tag
           root = node;
           return false;
@@ -69,10 +69,12 @@ class SVGRenderBoxBuilder {
       final type = node.ref.type;
       if (type == GumboNodeType.GUMBO_NODE_ELEMENT) {
         final element = node.ref.v.element;
-        final tagName = element.original_tag.data
-            .toDartString(length: element.original_tag.length)
-            .toUpperCase();
-        final svgElement = getSVGElement(tagName);
+        final tagName = element.original_tag.data.toDartString(length: element.original_tag.length).toUpperCase();
+        final svgElement = getSVGElement(tagName, viewController);
+
+        if (parent != null) {
+          parent.appendChild(svgElement);
+        }
 
         final attributes = element.attributes;
         for (int i = 0; i < attributes.length; i++) {
@@ -92,10 +94,12 @@ class SVGRenderBoxBuilder {
     return rootSVGElement;
   }
 
-  SVGElement getSVGElement(String tagName) {
+  SVGElement getSVGElement(String tagName, WebFViewController viewController) {
     final Constructor = svgElementsRegistry[tagName];
     if (Constructor != null) {
-      SVGElement element = Constructor(null) as SVGElement;
+      SVGElement element =
+          Constructor(BindingContext(viewController, viewController.contextId, allocateNewBindingObject()))
+              as SVGElement;
       if (tagName == TAG_SVG) {
         /// See [setAttribute]
         element.renderStyle.height = CSSLengthValue.auto;
@@ -103,6 +107,7 @@ class SVGRenderBoxBuilder {
       }
       element.tagName = tagName;
       element.namespaceURI = SVG_ELEMENT_URI;
+      element.managedByFlutterWidget = true;
       return element;
     }
     print('Unknown SVG element $tagName');
@@ -112,34 +117,33 @@ class SVGRenderBoxBuilder {
     return element;
   }
 
-  void setAttribute(
-      String tagName, SVGElement svgElement, String name, String value) {
-    // switch (tagName) {
-    //   case TAG_SVG:
-    //     {
-    //       final root = model as RenderSVGRoot;
-    //       switch (name) {
-    //         case 'viewBox':
-    //           {
-    //             root.viewBox = parseViewBox(value);
-    //             viewBox = root.viewBox;
-    //             return;
-    //           }
-    //         // width/height is always fixed as 100% to match the parent size
-    //         // IMPROVE: width/height should support unit like px/em/rem when needed in the future
-    //         case 'width':
-    //           {
-    //             width = double.tryParse(value);
-    //             return;
-    //           }
-    //         case 'height':
-    //           {
-    //             height = double.tryParse(value);
-    //             return;
-    //           }
-    //       }
-    //     }
-    // }
+  void setAttribute(String tagName, SVGElement svgElement, String name, String value) {
+    switch (tagName) {
+      case TAG_SVG:
+        {
+          final root = svgElement;
+          switch (name) {
+            case 'viewBox':
+              {
+                root.setAttribute('viewBox', value);
+                viewBox = parseViewBox(value);
+                return;
+              }
+            // width/height is always fixed as 100% to match the parent size
+            // IMPROVE: width/height should support unit like px/em/rem when needed in the future
+            case 'width':
+              {
+                width = double.tryParse(value);
+                return;
+              }
+            case 'height':
+              {
+                height = double.tryParse(value);
+                return;
+              }
+          }
+        }
+    }
 
     final parsed = svgElement.renderStyle.resolveValue(name, value);
     if (parsed != null) {

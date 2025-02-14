@@ -2,6 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:meta/meta.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -18,8 +19,7 @@ class SVGPresentationAttributeConfig {
   // should add property binding
   final bool property;
 
-  SVGPresentationAttributeConfig(this.name, {this.property = false})
-      : camelName = camelize(name);
+  SVGPresentationAttributeConfig(this.name, {this.property = false}) : camelName = camelize(name);
 }
 
 class SVGElement extends Element {
@@ -68,24 +68,29 @@ class SVGElement extends Element {
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
-    final configs =
-        _presentationAttributesConfigsCache ??= presentationAttributeConfigs;
+    final configs = _presentationAttributesConfigsCache ??= presentationAttributeConfigs;
     for (final config in configs) {
-      attributes[config.name] = ElementAttributeProperty(
-          setter: (value) => setAttributeStyle(config.camelName, value));
+      attributes[config.name] = ElementAttributeProperty(setter: (value) => setAttributeStyle(config.camelName, value));
     }
   }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
-    final configs =
-        _presentationAttributesConfigsCache ??= presentationAttributeConfigs;
+    final configs = _presentationAttributesConfigsCache ??= presentationAttributeConfigs;
     for (var config in configs) {
       if (config.property) {
         // TODO: implements
         properties[config.camelName] = BindingObjectProperty(getter: () => {});
       }
     }
+  }
+
+  @override
+  void dispose() {
+    for (int i = 0; i < childNodes.length; i ++) {
+      childNodes.elementAt(i).dispose();
+    }
+    super.dispose();
   }
 }

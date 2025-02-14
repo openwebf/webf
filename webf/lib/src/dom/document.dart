@@ -431,16 +431,10 @@ class Document extends ContainerNode {
     bool documentElementChanged = element != null && element != _documentElement;
     // When document is disposed, viewport is null.
     if (viewport != null) {
-      if (element != null) {
-        element.attachTo(this);
-        _visibilityState = VisibilityState.visible;
-      } else {
-        // Detach document element.
-        viewport!.removeAll();
-      }
+      _visibilityState = VisibilityState.visible;
     }
 
-    _documentElement = element as HTMLElement;
+    _documentElement = element as HTMLElement?;
 
     if (viewport?.hasSize == true && documentElementChanged) {
       initializeRootElementSize();
