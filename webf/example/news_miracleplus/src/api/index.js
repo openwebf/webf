@@ -52,8 +52,12 @@ export const api = {
 
   // News APIs
   news: {
-    getList: (params) => request(`/news/list?${new URLSearchParams(params)}`),
-    getDetail: (id) => request(`/news/${id}`),
+    getHotList: ({ page = 1} = {}) => request(`/v1/feeds/hot?page=${page}`),
+    getLatestList: ({ page = 1} = {}) => request(`/v1/feeds/latest?page=${page}`),
+    getCommentList: ({ page = 1} = {}) => request(`/v1/feeds/comment?page=${page}`),
+    getDisplayList: ({ page = 1, topic = ''} = {}) => request(`/v1/feeds/display?page=${page}&topic=${topic}`),
+
+    getDetail: (id) => request(`/v1/share_links/${id}`),
     publish: (data) => request('/news/publish', {
       method: 'POST',
       body: JSON.stringify(data),

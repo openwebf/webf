@@ -4,9 +4,11 @@
         <!-- 热门标签页内容 -->
         <template #hot>
             <div>热门内容列表</div>
-
-            <div @click="goToLogin">去登录页面</div>
-            <div @click="goToRegister">去注册页面</div>
+            <webf-listview class="listview">
+              <div v-for="item in hotList" :key="item.id">
+                <feed-card :item="item"></feed-card>
+              </div>
+            </webf-listview>
 
             <!-- <div>Cupertino 组件展示</div>
             <div>Cupertino Switch</div>
@@ -87,10 +89,13 @@
 <script>
 import { mapGetters } from 'vuex'
 import FeedsTabs from "@/Components/FeedsTabs.vue";
+import FeedCard from "@/Components/FeedCard.vue";
+import { api } from '@/api';
 
 export default {
   components: {
     FeedsTabs,
+    FeedCard,
   },
   computed: {
     ...mapGetters({
@@ -99,6 +104,11 @@ export default {
       userName: 'user/userName',
       userAvatar: 'user/userAvatar'
     })
+  },
+  async mounted() {
+    console.log('HomePage mounted');
+    const res = await api.news.getHotList();
+    this.hotList = res.data.feeds;
   },
   updated() {
     console.log('isLoggedIn', this.isLoggedIn);
@@ -116,6 +126,10 @@ export default {
         { id: 'academic', title: '学术' },
         { id: 'product', title: '产品' }
       ],
+      hotList: [],
+      latestList: [],
+      commentList: [],
+      displayList: [],
       show: true,
       switchValue: false,
       showModal: false,
@@ -148,6 +162,11 @@ export default {
 <style scoped>
 #list {
   padding: 10px 0;
+  height: 100vh;
+  width: 100vw;
+}
+
+.listview {
   height: 100vh;
   width: 100vw;
 }
