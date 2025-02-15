@@ -11,4 +11,9 @@ CSSStyleDeclaration::CSSStyleDeclaration(JSContext* ctx) : BindingObject(ctx) {}
 CSSStyleDeclaration::CSSStyleDeclaration(JSContext* ctx, NativeBindingObject* native_binding_object)
     : BindingObject(ctx, native_binding_object) {}
 
+const CSSStyleDeclarationPublicMethods* CSSStyleDeclaration::cssStyleDeclarationPublicMethods() {
+  static CSSStyleDeclarationPublicMethods css_style_declaration_public_methods;
+  return &css_style_declaration_public_methods;
+}
+
 }  // namespace webf

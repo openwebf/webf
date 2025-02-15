@@ -4,6 +4,7 @@ use webf_sys::{initialize_webf_api, ExecutingContext, NativeLibraryMetaData, Rus
 
 pub mod async_storage;
 pub mod dom;
+pub mod cookie;
 pub mod navigator;
 pub mod storage;
 

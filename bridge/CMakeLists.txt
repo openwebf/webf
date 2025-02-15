@@ -80,7 +80,7 @@ if (ENABLE_ASAN)
   add_link_options(-fsanitize=address -fno-omit-frame-pointer)
 endif ()
 
-if (NOT MSVC) 
+if (NOT MSVC)
   if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     # Avoid quickjs stackoverflow.
     add_compile_options(-O1)
@@ -218,7 +218,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32")
     add_library(pthreadVC3 SHARED ${PTHREADS_ROOT}/pthread-JMP.c ${PTHREADS_ROOT}/version.rc)
     target_compile_definitions(pthreadVC3
-      PRIVATE 
+      PRIVATE
       _UNICODE
       UNICODE
       WIN32
@@ -308,6 +308,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/api/window.cc
     core/api/text.cc
     core/api/comment.cc
+    core/api/css_style_declaration.cc
     core/api/character_data.cc
     core/api/script_value_ref.cc
     core/dart_isolate_context.cc

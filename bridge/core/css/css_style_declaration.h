@@ -9,6 +9,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
 #include "defined_properties.h"
+#include "plugin_api/css_style_declaration.h"
 
 namespace webf {
 
@@ -42,6 +43,8 @@ class CSSStyleDeclaration : public BindingObject {
 
   //  virtual AtomicString cssText() const = 0;
   //  virtual void setCssText(const AtomicString& value, ExceptionState& exception_state) = 0;
+
+  const CSSStyleDeclarationPublicMethods* cssStyleDeclarationPublicMethods();
 
  private:
 };

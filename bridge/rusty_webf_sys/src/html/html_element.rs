@@ -21,6 +21,10 @@ pub struct HTMLElement {
 pub trait HTMLElementMethods: ElementMethods {}
 
 impl ElementMethods for HTMLElement {
+  fn style(&self) -> CSSStyleDeclaration {
+    self.element.style()
+  }
+
   fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
     self.element.to_blob(exception_state)
   }

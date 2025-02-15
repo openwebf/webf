@@ -3,6 +3,7 @@
 */
 #![allow(unused)]
 
+pub mod css;
 pub mod dom;
 pub mod events;
 pub mod frame;
@@ -18,6 +19,7 @@ pub mod webf_event_listener;
 pub mod webf_function;
 pub mod webf_future;
 
+pub use css::*;
 pub use dom::*;
 pub use events::*;
 pub use frame::*;
