@@ -1,5 +1,5 @@
 <% if (className.endsWith('Event')) { %>
-#include "include/plugin_api/<%= _.snakeCase(className) %>_init.h"
+#include "plugin_api/<%= _.snakeCase(className) %>_init.h"
 <% }%>
 namespace webf {
 
@@ -10,7 +10,9 @@ namespace webf {
   WebFValueStatus* status_block = result->KeepAlive();
   return <%= generatePublicReturnTypeValue(prop.type, true) %>(result, result-><%= _.camelCase(getPointerType(prop.type)) %>PublicMethods(), status_block);
   <% } else if (isAnyType(prop.type)) { %>
-  return <%= _.snakeCase(className) %>-><%= prop.name %>().ToNative(<%= _.snakeCase(className) %>->ctx(), shared_exception_state->exception_state, false);;
+  auto value = <%= _.snakeCase(className) %>-><%= prop.name %>();
+  auto native_value = value.ToNative(<%= _.snakeCase(className) %>->ctx(), shared_exception_state->exception_state, false);
+  return native_value;
   <% } else if (isStringType(prop.type)) { %>
   return <%= _.snakeCase(className) %>-><%= prop.name %>().ToStringView().Characters8();
   <% } else { %>
@@ -100,19 +102,19 @@ WebFValue<<%= className %>, <%= className %>PublicMethods> ExecutingContextWebFM
   init_class->set<%=_.upperFirst(prop.name)%>(init-><%=_.snakeCase(prop.name)%>.value);
   <% } else if (isAnyType(prop.type)) { %>
   NativeValue <%=_.snakeCase(prop.name)%> = init-><%=_.snakeCase(prop.name)%>;
-  ScriptValue script_value = ScriptValue(context->ctx(), <%=_.snakeCase(prop.name)%>);
-  init_class->set<%=_.upperFirst(prop.name)%>(script_value);
+  ScriptValue <%=_.snakeCase(prop.name)%>_script_value = ScriptValue(context->ctx(), <%=_.snakeCase(prop.name)%>);
+  init_class->set<%=_.upperFirst(prop.name)%>(<%=_.snakeCase(prop.name)%>_script_value);
   <% } else { %>
   init_class->set<%=_.upperFirst(prop.name)%>(init-><%=_.snakeCase(prop.name)%>);
   <% } %>
   <% }) %>
   <% } %>
 
-  <%= className %>* event = <%= className %>::Create(context,  <% if (object.construct.args.some(arg => arg.name === 'type')) { %>type_atomic, init_class<% } %>, exception_state);
-  
+  <%= className %>* event = <%= className %>::Create(context, <% if (object.construct.args.some(arg => arg.name === 'type')) { %>type_atomic, init_class<% } %>, exception_state);
+
   WebFValueStatus* status_block = event->KeepAlive();
   return WebFValue<<%= className %>, <%= className %>PublicMethods>(event, event-><%= _.camelCase(className) %>PublicMethods(), status_block);
-  };
+};
 <% } %>
 <% } %>
 }  // namespace webf

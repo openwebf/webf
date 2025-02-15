@@ -288,7 +288,7 @@ impl ExecutingContext {
   pub fn create_<%= _.snakeCase(className) %>(&self, event_type: &str, exception_state: &ExceptionState) -> Result<<%= className %>, String> {
     let event_type_c_string = CString::new(event_type).unwrap();
     let new_event = unsafe {
-      ((*self.method_pointer).create_<%= _.snakeCase(className) %>)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
+      ((*self.method_pointer()).create_<%= _.snakeCase(className) %>)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self));
@@ -299,7 +299,7 @@ impl ExecutingContext {
   pub fn create_<%= _.snakeCase(className) %>_with_options(&self, event_type: &str, options: &<%= className %>Init,  exception_state: &ExceptionState) -> Result<<%= className %>, String> {
     let event_type_c_string = CString::new(event_type).unwrap();
     let new_event = unsafe {
-      ((*self.method_pointer).create_<%= _.snakeCase(className) %>_with_options)(self.ptr, event_type_c_string.as_ptr(), options, exception_state.ptr)
+      ((*self.method_pointer()).create_<%= _.snakeCase(className) %>_with_options)(self.ptr, event_type_c_string.as_ptr(), options, exception_state.ptr)
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self));

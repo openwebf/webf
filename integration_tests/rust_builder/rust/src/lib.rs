@@ -3,6 +3,7 @@ use webf_sys::executing_context::ExecutingContextRustMethods;
 use webf_sys::{initialize_webf_api, ExecutingContext, NativeLibraryMetaData, RustValue};
 
 pub mod async_storage;
+pub mod dom;
 pub mod navigator;
 pub mod storage;
 

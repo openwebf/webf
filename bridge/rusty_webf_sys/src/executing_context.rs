@@ -6,7 +6,6 @@ use std::ffi::*;
 use native_value::NativeValue;
 
 use crate::*;
-use crate::custom_event_init::CustomEventInit;
 
 #[repr(C)]
 pub struct ExecutingContextRustMethods {
@@ -26,7 +25,6 @@ pub struct ExecutingContextRustMethods {
   pub clear_interval: extern "C" fn(*const OpaquePtr, c_int, *const OpaquePtr),
   pub add_rust_future_task: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const NativeLibraryMetaData, *const OpaquePtr) -> c_void,
   pub remove_rust_future_task: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const NativeLibraryMetaData, *const OpaquePtr) -> c_void,
-  pub set_run_rust_future_tasks: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const OpaquePtr) -> c_void,
   pub create_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<EventRustMethods>,
   pub create_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const EventInit, exception_state: *const OpaquePtr ) -> RustValue<EventRustMethods>,
   pub create_animation_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<AnimationEventRustMethods>,
@@ -82,7 +80,7 @@ pub struct ExecutingContext {
   // The underlying pointer points to the actual implementation of ExecutionContext in the C++ world.
   pub ptr: *const OpaquePtr,
   // Methods available for export from the C++ world for use.
-  pub(crate) method_pointer: *const ExecutingContextRustMethods,
+  method_pointer: *const ExecutingContextRustMethods,
   pub meta_data: *const NativeLibraryMetaData,
   pub status: *const RustValueStatus,
 }

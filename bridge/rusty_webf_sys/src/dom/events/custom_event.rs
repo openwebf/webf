@@ -122,7 +122,7 @@ impl ExecutingContext {
   pub fn create_custom_event(&self, event_type: &str, exception_state: &ExceptionState) -> Result<CustomEvent, String> {
     let event_type_c_string = CString::new(event_type).unwrap();
     let new_event = unsafe {
-      ((*self.method_pointer).create_custom_event)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
+      ((*self.method_pointer()).create_custom_event)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self));
@@ -132,7 +132,7 @@ impl ExecutingContext {
   pub fn create_custom_event_with_options(&self, event_type: &str, options: &CustomEventInit,  exception_state: &ExceptionState) -> Result<CustomEvent, String> {
     let event_type_c_string = CString::new(event_type).unwrap();
     let new_event = unsafe {
-      ((*self.method_pointer).create_custom_event_with_options)(self.ptr, event_type_c_string.as_ptr(), options, exception_state.ptr)
+      ((*self.method_pointer()).create_custom_event_with_options)(self.ptr, event_type_c_string.as_ptr(), options, exception_state.ptr)
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self));

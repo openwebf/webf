@@ -235,9 +235,7 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
             dependentTypes.add(getPointerType(prop.type));
           }
         });
-
         const parentObjects = [] as ClassObject[];
-
         let node = object;
 
         while (node && node.parent) {
@@ -331,10 +329,8 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
 
         const dependentClasses: {[key: string]: ClassObject} = [...dependentTypes].reduce((classes, type) => {
           classes[type] = ClassObject.globalClassMap[type];
-          
           return classes;
         }, {} as {[key: string]: ClassObject});
-        
 
         for (const key in dependentClasses) {
           if (key.endsWith('Options') || key.endsWith('Init')) {
@@ -347,7 +343,6 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
 
             const parentsProps = parents.flatMap(object => object.props);
             dependentClasses[key].inheritedProps = parentsProps;
-
           }
         }
 
