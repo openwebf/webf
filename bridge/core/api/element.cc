@@ -9,6 +9,13 @@
 
 namespace webf {
 
+WebFValue<CSSStyleDeclaration, CSSStyleDeclarationPublicMethods> ElementPublicMethods::Style(Element* ptr) {
+  auto* element = static_cast<webf::Element*>(ptr);
+  auto style = element->style();
+  WebFValueStatus* status_block = style->KeepAlive();
+  return WebFValue<CSSStyleDeclaration, CSSStyleDeclarationPublicMethods>(style, style->cssStyleDeclarationPublicMethods(), status_block);
+}
+
 void ElementPublicMethods::ToBlob(Element* ptr,
                                   WebFNativeFunctionContext* callback_context,
                                   SharedExceptionState* shared_exception_state) {

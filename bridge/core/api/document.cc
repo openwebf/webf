@@ -4,6 +4,7 @@
 
 #include "plugin_api/document.h"
 #include "binding_call_methods.h"
+#include "foundation/native_value_converter.h"
 #include "core/api/exception_state.h"
 #include "core/dom/comment.h"
 #include "core/dom/document.h"
@@ -245,6 +246,19 @@ WebFValue<Element, HTMLElementPublicMethods> DocumentPublicMethods::Body(webf::D
   auto* body = document->body();
   WebFValueStatus* status_block = body->KeepAlive();
   return WebFValue<Element, HTMLElementPublicMethods>{body, body->htmlElementPublicMethods(), status_block};
+}
+
+NativeValue DocumentPublicMethods::Cookie(webf::Document* document, webf::SharedExceptionState* shared_exception_state) {
+  auto cookie = document->GetBindingProperty(binding_call_methods::kcookie, FlushUICommandReason::kDependentsOnElement, shared_exception_state->exception_state);
+  if (shared_exception_state->exception_state.HasException()) {
+    return Native_NewNull();
+  }
+  return cookie;
+}
+
+void DocumentPublicMethods::SetCookie(webf::Document* document, const char* value, webf::SharedExceptionState* shared_exception_state) {
+  webf::AtomicString value_atomic = webf::AtomicString(document->ctx(), value);
+  document->SetBindingProperty(binding_call_methods::kcookie, NativeValueConverter<NativeTypeString>::ToNativeValue(document->ctx(), value_atomic), shared_exception_state->exception_state);
 }
 
 void DocumentPublicMethods::ClearCookie(webf::Document* document, webf::SharedExceptionState* shared_exception_state) {

@@ -9,6 +9,7 @@ use crate::*;
 pub struct ElementRustMethods {
   pub version: c_double,
   pub container_node: ContainerNodeRustMethods,
+  pub style: extern "C" fn(*const OpaquePtr) -> RustValue<CSSStyleDeclarationRustMethods>,
   pub to_blob: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const OpaquePtr) -> c_void,
   pub to_blob_with_device_pixel_ratio: extern "C" fn(*const OpaquePtr, c_double, *const WebFNativeFunctionContext, *const OpaquePtr) -> c_void,
 }
@@ -21,6 +22,16 @@ pub struct Element {
 }
 
 impl Element {
+  pub fn style(&self) -> CSSStyleDeclaration {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+
+    let style = unsafe {
+      (((*self.method_pointer).style))(event_target.ptr)
+    };
+
+    CSSStyleDeclaration::initialize(style.value, event_target.context(), style.method_pointer, style.status)
+  }
+
   pub fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
     let event_target: &EventTarget = &self.container_node.node.event_target;
 
@@ -97,6 +108,7 @@ impl Element {
 }
 
 pub trait ElementMethods: ContainerNodeMethods {
+  fn style(&self) -> CSSStyleDeclaration;
   fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>>;
   fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>>;
 }
@@ -157,6 +169,9 @@ impl EventTargetMethods for Element {
 }
 
 impl ElementMethods for Element {
+  fn style(&self) -> CSSStyleDeclaration {
+    self.style()
+  }
   fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
     self.to_blob(exception_state)
   }

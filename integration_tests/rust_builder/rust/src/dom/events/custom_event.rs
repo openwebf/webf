@@ -15,7 +15,6 @@ pub fn it_should_work_as_expected(context: ExecutingContext) {
   let custom_event = context.create_custom_event_with_options(
     "customEvent", &custom_event_init, &exception_state).unwrap();
 
-  let detail_2 = custom_event.detail();
-  let detail_3 = detail_2.to_string();
-  assert_eq!(detail_3, "detailMessage");
+  let detail_property = custom_event.detail().to_string();
+  assert_eq!(detail_property, "detailMessage");
 }

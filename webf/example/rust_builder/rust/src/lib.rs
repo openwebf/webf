@@ -1,7 +1,7 @@
 use std::ffi::c_void;
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, NativeLibraryMetaData, RustValue};
+use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, NativeLibraryMetaData, NativeValue, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
@@ -11,28 +11,6 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>, 
   println!("Context created");
   let exception_state = context.create_exception_state();
   let document = context.document();
-  let context2 = context.clone();
-
-  webf_sys::webf_future::spawn(context.clone(), async move {
-    let context = context2.clone();
-    let exception_state = context.create_exception_state();
-    let async_storage_2 = context.async_storage();
-
-    println!("Hello from Rust async context!");
-
-    async_storage_2.set_item("a", "b", &exception_state).await.unwrap();
-    let result = async_storage_2.get_item("a", &exception_state).await;
-
-    match result {
-      Ok(value) => {
-        println!("Async Storage Get Item Success: {:?}", value);
-      },
-      Err(err) => {
-        println!("Async Storage Get Item Failed: {:?}", err);
-      }
-    }
-  });
-
   let click_event = document.create_event("custom_click", &exception_state).unwrap();
   document.dispatch_event(&click_event, &exception_state);
 
@@ -49,6 +27,8 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>, 
     let exception_state = context.create_exception_state();
     let document = context.document();
     let div = document.create_element("div", &exception_state).unwrap();
+    let value = NativeValue::new_string("red");
+    div.style().set_property("color", value, &exception_state).unwrap();
     let text_node = document.create_text_node("Created By Event Handler", &exception_state).unwrap();
     div.append_child(&text_node.as_node(), &exception_state).unwrap();
     document.body().append_child(&div.as_node(), &exception_state).unwrap();
