@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
+import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 
@@ -65,6 +66,9 @@ class _WebFElementWidgetState extends flutter.State<WebFElementWidget> with flut
   flutter.Widget build(flutter.BuildContext context) {
     super.build(context);
 
+    WebFState? webFState;
+    WebFRouterViewState? routerViewState;
+
     if (webFElement.renderStyle.effectiveDisplay == CSSDisplay.none) {
       return flutter.SizedBox.shrink();
     }
@@ -78,6 +82,19 @@ class _WebFElementWidgetState extends flutter.State<WebFElementWidget> with flut
             (node.renderStyle.position == CSSPositionType.absolute ||
                 node.renderStyle.position == CSSPositionType.fixed)) {
           return PositionPlaceHolder(node.holderAttachedPositionedElement!);
+        } else if (node is RouterLinkElement) {
+          webFState ??= context.findAncestorStateOfType<WebFState>();
+          String routerPath = node.path;
+          if (webFState != null && webFState!.widget.controller.initialRoute == routerPath) {
+            return node.toWidget();
+          }
+
+          routerViewState ??= context.findAncestorStateOfType<WebFRouterViewState>();
+          if (routerViewState != null) {
+            return node.toWidget();
+          }
+
+          return flutter.SizedBox.shrink();
         } else {
           return node.toWidget();
         }

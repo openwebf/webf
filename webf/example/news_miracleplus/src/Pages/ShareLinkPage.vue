@@ -1,6 +1,6 @@
 <template>
     <div class="share-link-page">
-      <webf-listview>
+      <webf-listview class="webf-listview">
         <PostHeader :user="shareLink.user" />
         <PostContent :post="shareLink" />
         <InteractionBar 
@@ -73,6 +73,6 @@
   }
 
   .webf-listview {
-    height: 200vh;
+    height: 100vh;
   }
   </style>

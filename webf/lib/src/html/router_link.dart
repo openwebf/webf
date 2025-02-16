@@ -15,6 +15,7 @@ class RouterLinkElement extends WidgetElement {
   bool isRouterLinkElement = true;
 
   String _path = '';
+  String get path => _path;
 
   @override
   void setAttribute(String key, String value) {
@@ -59,16 +60,18 @@ class RouterLinkElement extends WidgetElement {
 
   @override
   flutter.Widget build(flutter.BuildContext context, ChildNodeList childNodes) {
-    WebFRouterViewState? routerViewState = context.findAncestorStateOfType<WebFRouterViewState>();
-    WebFState? webFState = context.findAncestorStateOfType<WebFState>();
+    return WebFHTMLElement(tagName: 'DIV', children: childNodes.toWidgetList(), inlineStyle: {
+      // 'overflow': 'auto',
+      'position': 'relative'
+    }, controller: ownerDocument.controller, parentElement: this);
 
-    if ((webFState != null && webFState.widget.controller.initialRoute == _path) || routerViewState != null) {
-      return WebFHTMLElement(tagName: 'DIV', children: childNodes.toWidgetList(), inlineStyle: {
-        // 'overflow': 'auto',
-        'position': 'relative'
-      }, controller: ownerDocument.controller, parentElement: this);
-    }
+    // WebFRouterViewState? routerViewState = context.findAncestorStateOfType<WebFRouterViewState>();
+    // WebFState? webFState = context.findAncestorStateOfType<WebFState>();
+    //
+    // if ((webFState != null && webFState.widget.controller.initialRoute == _path) || routerViewState != null) {
 
-    return flutter.SizedBox.shrink();
+    // }
+
+    // return flutter.SizedBox.shrink();
   }
 }
