@@ -1,3 +1,14 @@
+## 0.20.0
+
+Upgrade to enterprise version, which starts at 0.20.0 version.
+
++ Feat: Add support for fully async internal binding API.
++ Feat: Optimize the performance WidgetElement binding API. 
++ Feat: Add MediaQuery and Dark mode support.
++ Feat: Redesigned Flutter Widget Adapter System.
++ Feat: Add Echarts.js with line char graph support.
+
+
 ## 0.16.3+1
 
 Fixed compilation issues for Linux, Android, and Windows platforms.
