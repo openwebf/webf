@@ -18,6 +18,7 @@ interface Document extends Node, ParentNode {
   body: HTMLBodyElement | null;
   cookie: SupportAsync<DartImpl<string>>;
   __clear_cookies__(): DartImpl<void>;
+  __force_rebuild__(): DartImpl<void>;
   domain: SupportAsync<DartImpl<string>>;
   readonly head: HTMLHeadElement | null;
   readonly documentElement: HTMLHtmlElement | null;

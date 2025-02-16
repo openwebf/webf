@@ -152,6 +152,8 @@ function resetDocumentElement() {
   let body = document.createElement('body');
   document.documentElement.appendChild(body);
 
+  document.___force_rebuild__();
+
   window.scrollTo(0, 0);
   document.documentElement.style.backgroundColor = 'white';
 }
