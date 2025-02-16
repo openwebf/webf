@@ -3,6 +3,14 @@ sidebar_position: 4
 title: Flutter Widgets as HTMLElement
 ---
 
+:::caution
+The Flutter widget adapter in the open-source version of WebF is a demo version with lower performance and known bugs,
+making it unsuitable for production use in business applications.
+
+In contrast, [the enterprise version of WebF](/docs/enterprise/flutter_widget_element) includes a completely redesigned Flutter widget adapter
+with deeper integration with flutter widget and economy and significantly better performance compared to the open-source version.
+:::
+
 In a WebF application, any Flutter Widget can be transformed into its foundational unit — an HTMLElement. Web pages are
 fundamentally built from HTMLElement nodes.
 

@@ -16,6 +16,12 @@ const Map<String, dynamic> _defaultStyle = {
 };
 
 // WidgetElement is the base class for custom elements which rendering details are implemented by Flutter widgets.
+@Deprecated('''
+The Flutter widget adapter in the open-source version of WebF is a demo version with lower performance and known bugs,
+making it unsuitable for production use in business applications.
+In contrast, the enterprise version of WebF includes a completely redesigned Flutter widget adapter
+with deeper integration with flutter widget and economy and significantly better performance compared to the open-source version.
+''')
 abstract class WidgetElement extends dom.Element {
   // An state
   late WebFWidgetElementStatefulWidget _widget;
@@ -48,10 +54,13 @@ abstract class WidgetElement extends dom.Element {
 
   // React to properties and attributes changes
   void attributeDidUpdate(String key, String value) {}
+
   bool shouldElementRebuild(String key, previousValue, nextValue) {
     return previousValue == nextValue;
   }
+
   void propertyDidUpdate(String key, value) {}
+
   void styleDidUpdate(String property, String value) {}
 
   Widget build(BuildContext context, List<Widget> children);
@@ -87,7 +96,8 @@ abstract class WidgetElement extends dom.Element {
   void willAttachRenderer() {
     super.willAttachRenderer();
     if (renderStyle.display != CSSDisplay.none && attachedAdapter == null) {
-      attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!, widgetElement: this);
+      attachedAdapter =
+          WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!, widgetElement: this);
     }
   }
 
@@ -105,7 +115,8 @@ abstract class WidgetElement extends dom.Element {
 
     if (renderStyle.display != CSSDisplay.none) {
       // Generate a new adapter for this RenderWidget
-      attachedAdapter = WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!, widgetElement: this);
+      attachedAdapter =
+          WebFWidgetElementToWidgetAdapter(child: widget, container: renderBoxModel!, widgetElement: this);
 
       // Reattach to Flutter
       ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
