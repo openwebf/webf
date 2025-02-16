@@ -11,7 +11,7 @@ class FlutterCupertinoButton extends WidgetElement {
       onPressed: () {
         dispatchEvent(Event('press'));
       },
-      padding: EdgeInsets.zero,
+      padding: renderStyle.padding == EdgeInsets.zero ? EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0) : renderStyle.padding,
       child: childNodes.isNotEmpty ? childNodes.first.toWidget() : const Text(''),
     );
   }

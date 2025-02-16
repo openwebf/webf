@@ -25,6 +25,9 @@
       </flutter-tab-bar-item>
     </flutter-tab-bar>
   </webf-router-link>
+  <webf-router-link path="/share_link" @mount="handleRouterMounted('share_link')">
+    <share-link-page v-if="activedRouter === 'share_link'"></share-link-page>
+  </webf-router-link>
 </template>
 
 <script>
@@ -35,6 +38,7 @@ import NotificationPage from './Pages/NotificationPage.vue';
 import MyPage from './Pages/MyPage.vue';
 import RegisterPage from './Pages/RegisterPage.vue';
 import LoginPage from './Pages/LoginPage.vue';
+import ShareLinkPage from './Pages/ShareLinkPage.vue';
 import tabBarManager from './utils/tabBarManager';
 export default {
   name: 'App',
@@ -46,6 +50,7 @@ export default {
     MyPage,
     RegisterPage,
     LoginPage,
+    ShareLinkPage,
   },
   mounted() {
     tabBarManager.setTabBarRef(this.$refs.tabBar);
@@ -59,6 +64,9 @@ export default {
           break;
         case 'login':
           this.activedRouter = 'login';
+          break;
+        case 'share_link':
+          this.activedRouter = 'share_link';
           break;
       }
     },

@@ -1,43 +1,40 @@
 <template>
-    <div class="feed-card">
+    <div class="feed-card" @click="goToDetail">
       <!-- Top link -->
       <div class="top-link" v-if="isPinned">置顶</div>
       
-      <template v-if="item.item.introduction">
-        <!-- Description -->
-        <p class="description">{{ truncatedContent }}</p>
-
-        <!-- Title -->
-        <img class="logo" :src="item.item.logoUrl" />
-        <h2 class="title">{{ truncatedTitle }}</h2>
-
-        <!-- Introduction -->
-        <p class="introduction">{{ truncatedIntroduction }}</p>
+      <template v-if="item.item.link">
+        <div class="description">{{ item.item.content }}</div>
+        <display-content :item="item.item" />
       </template>
 
       <template v-else>
         <!-- Title -->
-        <h2 class="title">{{ truncatedTitle }}</h2>
+        <div class="title">{{ truncatedTitle }}</div>
 
         <!-- Description -->
         <p class="description">{{ truncatedContent }}</p>
       </template>
       <!-- Bottom info -->
-      <div class="bottom-info">
-        <span class="source">{{ item.account.name }}</span>
-        <span class="time">{{ computedCreatedAt }}</span>
-        <div class="stats">
-          <span class="views"><flutter-cupertino-icon type="eye" class="icon" />{{ item.item.viewsCount }}</span>
-          <span class="likes"><flutter-cupertino-icon type="hand_thumbsup" class="icon" />{{ item.item.likesCount }}</span>
-          <span class="comments"><flutter-cupertino-icon type="ellipsis_circle" class="icon" />{{ item.item.commentsCount }}</span>
-        </div>
-      </div>
+      <card-bottom-info 
+          :userName="item.account.name"
+          :createdAt="item.createdAt"
+          :viewsCount="item.item.viewsCount"
+          :likesCount="item.item.likesCount"
+          :commentsCount="item.item.commentsCount"
+      />
     </div>
   </template>
   
   <script>
+  import CardBottomInfo from './CardBottomInfo.vue'
+  import DisplayContent from './DisplayContent.vue'
   export default {
     name: 'FeedCard',
+    components: {
+      CardBottomInfo,
+      DisplayContent
+    },
     props: {
       item: {
         type: Object,
@@ -99,60 +96,43 @@
           return `${diffDays}天前`;
         }
       }
+    },
+    methods: {
+      goToDetail() {
+        window.webf.hybridHistory.pushState({
+            id: this.item.item.id
+        }, '/share_link');
+      }
     }
   }
-  </script>
-  
-  <style scoped>
-  .feed-card {
-    background: var(--background-primary);
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 12px;
-  }
-  
+</script>
+
+<style lang="scss" scoped>
+.feed-card {
+  background: var(--background-primary);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+
   .top-link {
     color: var(--link-color);
-    /* background-color: #E5F2FF; */
     font-size: 12px;
+    margin-bottom: 8px;
   }
-  
+
   .title {
     font-size: 16px;
     font-weight: bold;
     margin-bottom: 8px;
     color: var(--font-color);
   }
-  
+
   .description {
     font-size: 14px;
     color: var(--secondary-font-color);
     margin-bottom: 12px;
     line-height: 1.5;
   }
+}
+</style>
   
-  .bottom-info {
-    display: flex;
-    align-items: center;
-    font-size: 12px;
-    color: var(--secondary-font-color);
-  }
-  
-  .source, .time {
-    margin-right: 12px;
-  }
-  
-  .stats {
-    display: flex;
-  }
-  
-  .stats span {
-    margin-left: 12px;
-    display: flex;
-    align-items: center;
-  }
-  
-  .stats .icon {
-    margin-right: 4px;
-  }
-  </style>

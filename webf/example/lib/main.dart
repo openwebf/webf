@@ -168,6 +168,7 @@ class MyAppState extends State<MyApp> {
           '/my': (context) => WebFSubView(title: '我的', path: '/my', controller: controller!),
           '/register': (context) => WebFSubView(title: '注册', path: '/register', controller: controller!),
           '/login': (context) => WebFSubView(title: '登录', path: '/login', controller: controller!),
+          '/share_link': (context) => WebFSubView(title: '详情', path: '/share_link', controller: controller!),
         },
         debugShowCheckedModeBanner: false,
         home: FirstPage(title: 'Landing Bay', controller: controller!),

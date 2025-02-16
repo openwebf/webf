@@ -1,5 +1,5 @@
 <template>
-    <flutter-cupertino-tab>
+    <flutter-cupertino-tab @change="onTabChange">
         <flutter-cupertino-tab-item 
             v-for="tab in tabs" 
             :key="tab.id" 
@@ -24,6 +24,6 @@ export default {
                 { id: 'product', title: '产品' }
             ]
         }
-    }
+    },
 }
 </script>

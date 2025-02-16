@@ -1,85 +1,59 @@
 <template>
   <div id="main">
-    <feeds-tabs :tabs="tabsConfig">
+    <feeds-tabs :tabs="tabsConfig" @change="onTabChange">
         <!-- 热门标签页内容 -->
         <template #hot>
-            <div>热门内容列表</div>
             <webf-listview class="listview">
               <div v-for="item in hotList" :key="item.id">
                 <feed-card :item="item"></feed-card>
               </div>
             </webf-listview>
-
-            <!-- <div>Cupertino 组件展示</div>
-            <div>Cupertino Switch</div>
-            <flutter-cupertino-switch
-              :selected="switchValue"
-              @change="onSwitchChange"
-              active-color="#FF0000"
-              inactive-color="#CCCCCC"
-            />
-            <div>Cupertino Segmented Tabs</div>
-            <flutter-cupertino-segmented-tab>
-              <flutter-cupertino-segmented-tab-item title="标签1">
-                <div>内容1</div>
-              </flutter-cupertino-segmented-tab-item>
-              <flutter-cupertino-segmented-tab-item title="标签2">
-                <div>内容2</div>
-              </flutter-cupertino-segmented-tab-item>
-            </flutter-cupertino-segmented-tab> -->
         </template>
         
         <!-- 最新标签页内容 -->
         <template #latest>
-            <div>最新内容列表</div>
-            <div>Cupertino 组件展示</div>
-            <div>Cupertino Picker</div>
-            <flutter-cupertino-picker height="200" item-height="32" @change="onPickerChange">
-              <flutter-cupertino-picker-item label="选项1"></flutter-cupertino-picker-item>
-              <flutter-cupertino-picker-item label="选项2"></flutter-cupertino-picker-item>
-              <flutter-cupertino-picker-item label="选项3"></flutter-cupertino-picker-item>
-            </flutter-cupertino-picker>
-            <div>Cupertino Date Picker</div>
-            <flutter-cupertino-date-picker
-              mode="date"
-              height="200"
-              minimum-date="2024-01-01"
-              maximum-date="2025-12-31"
-              value="2024-03-14"
-              use-24h="true"
-              @change="onDateChange"
-            />
+          <webf-listview class="listview">
+            <div v-for="item in latestList" :key="item.id">
+              <feed-card :item="item"></feed-card>
+            </div>
+          </webf-listview>
+
         </template>
         
         <!-- 讨论标签页内容 -->
         <template #discussion>
-            <div>讨论内容列表</div>
-            <div @click="showModalPopup">点我展示 modal</div>
-            <flutter-cupertino-modal-popup 
-              :show="showModal" 
-              height="400"
-              @close="onModalClose"
-            >
-              <div class="modal-content">
-                <h1>这是一个底部弹出框</h1>
-                <p>这里是内容区域</p>
-              </div>
-            </flutter-cupertino-modal-popup>
+          <webf-listview class="listview">
+            <div v-for="item in commentList" :key="item.id">
+              <comment-card :item="item"></comment-card>
+            </div>
+          </webf-listview>
         </template>
         
         <!-- 新闻标签页内容 -->
         <template #news>
-            <div>新闻内容列表</div>
+            <webf-listview class="listview">
+              <div v-for="item in newsList" :key="item.id">
+                <display-card :item="item"></display-card>
+              </div>
+            </webf-listview>
         </template>
         
         <!-- 学术标签页内容 -->
         <template #academic>
-            <div>学术内容列表</div>
+            <webf-listview class="listview">
+              <div v-for="item in academicList" :key="item.id">
+                <display-card :item="item"></display-card>
+              </div>
+            </webf-listview>
         </template>
         
         <!-- 产品标签页内容 -->
         <template #product>
-            <div>产品内容列表</div>
+            <webf-listview class="listview">
+              <div v-for="item in productList" :key="item.id">
+                <display-card :item="item"></display-card>
+              </div>
+            </webf-listview>
         </template>
     </feeds-tabs>
   </div>
@@ -90,12 +64,16 @@
 import { mapGetters } from 'vuex'
 import FeedsTabs from "@/Components/FeedsTabs.vue";
 import FeedCard from "@/Components/FeedCard.vue";
+import CommentCard from "@/Components/comment/CommentCard.vue";
+import DisplayCard from "@/Components/DisplayCard.vue";
 import { api } from '@/api';
 
 export default {
   components: {
     FeedsTabs,
     FeedCard,
+    CommentCard,
+    DisplayCard,
   },
   computed: {
     ...mapGetters({
@@ -126,34 +104,43 @@ export default {
         { id: 'academic', title: '学术' },
         { id: 'product', title: '产品' }
       ],
+      loadedTabs: new Set(['hot']), 
       hotList: [],
       latestList: [],
       commentList: [],
-      displayList: [],
-      show: true,
-      switchValue: false,
-      showModal: false,
+      newsList: [],
+      academicList: [],
+      productList: [],
     }
   },
   methods: {
-    onSwitchChange(e) {
-      console.log('onSwitchChange', e.detail);
-      this.switchValue = e.detail;
+    async onTabChange(e) {
+      const tabIndex = e.detail;
+      if (this.loadedTabs.has(this.tabsConfig[tabIndex].id)) {
+        console.log('already loaded', this.tabsConfig[tabIndex].id);
+        return;
+      }
+      if (tabIndex === 0) {
+        const res = await api.news.getHotList();
+        this.hotList = res.data.feeds;
+      } else if (tabIndex === 1) {
+        const res = await api.news.getLatestList();
+        this.latestList = res.data.feeds;
+      } else if (tabIndex === 2) {
+        const res = await api.news.getCommentList();
+        this.commentList = res.data.feeds;
+      } else if (tabIndex === 3) {
+        const res = await api.news.getDisplayList({ topic: '新闻' });
+        this.newsList = res.data.displays;
+      } else if (tabIndex === 4) {
+        const res = await api.news.getDisplayList({ topic: '学术' });
+        this.academicList = res.data.displays;
+      } else if (tabIndex === 5) {
+        const res = await api.news.getDisplayList({ topic: '产品' });
+        this.productList = res.data.displays;
+      }
+      this.loadedTabs.add(this.tabsConfig[tabIndex].id);
     },
-    showModalPopup() {
-      this.showModal = true;
-      console.log('showModalPopup', this.showModal);
-    },
-    onModalClose() {
-      console.log('onModalClose');
-      this.showModal = false;
-    },
-    goToLogin() {
-      window.webf.hybridHistory.pushState({}, '/login');
-    },
-    goToRegister() {
-      window.webf.hybridHistory.pushState({}, '/register');
-    }
   }
 }
 </script>

@@ -20,9 +20,13 @@ const handleResponse = async (response) => {
 // Request wrapper
 const request = async (endpoint, options = {}) => {
   try {
+    const { headers = {}, ...restOptions } = options;
     const response = await fetch(`${BASE_URL}${endpoint}`, {
-      headers: DEFAULT_HEADERS,
-      ...options,
+      headers: {
+        ...DEFAULT_HEADERS,
+        ...headers,
+      },
+      ...restOptions,
     });
     return await handleResponse(response);
   } catch (error) {
@@ -48,14 +52,24 @@ export const api = {
       body: JSON.stringify(data),
     }),
     userInfo: () => request('/v1/users/user_info'),
+    getUserFeedsList: ({ 
+        page = 1, category = 'all', userId = '',
+        token = '', 
+        anonymousId = '',
+    } = {}) => request(`/v1/users/${userId}/feeds?page=${page}&category=${category}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Anonymous-Id': anonymousId,
+        },
+    }),
   },
 
   // News APIs
   news: {
-    getHotList: ({ page = 1} = {}) => request(`/v1/feeds/hot?page=${page}`),
-    getLatestList: ({ page = 1} = {}) => request(`/v1/feeds/latest?page=${page}`),
-    getCommentList: ({ page = 1} = {}) => request(`/v1/feeds/comment?page=${page}`),
-    getDisplayList: ({ page = 1, topic = ''} = {}) => request(`/v1/feeds/display?page=${page}&topic=${topic}`),
+    getHotList: ({ page = 1 } = {}) => request(`/v1/feeds/hot?page=${page}`),
+    getLatestList: ({ page = 1 } = {}) => request(`/v1/feeds/latest?page=${page}`),
+    getCommentList: ({ page = 1 } = {}) => request(`/v1/feeds/comment?page=${page}`),
+    getDisplayList: ({ page = 1, topic = '' } = {}) => request(`/v1/displays?page=${page}&topic=${topic}`),
 
     getDetail: (id) => request(`/v1/share_links/${id}`),
     publish: (data) => request('/news/publish', {
@@ -66,7 +80,7 @@ export const api = {
 
   // Comment APIs
   comments: {
-    getList: (newsId) => request(`/comments/${newsId}`),
+    getList: ({ page = 1, resourceId = '', resourceType = 'ShareLink'} = {}) => request(`/v1/comments?page=${page}&resource_id=${resourceId}&resource_type=${resourceType}`),
     create: (data) => request('/comments', {
       method: 'POST',
       body: JSON.stringify(data),
