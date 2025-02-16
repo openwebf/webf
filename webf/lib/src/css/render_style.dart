@@ -27,6 +27,7 @@ typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObjec
 class AdapterUpdateReason {}
 
 class WebFInitReason extends AdapterUpdateReason {}
+class DocumentElementChangedReason extends AdapterUpdateReason {}
 
 class UpdateDisplayReason extends AdapterUpdateReason {}
 

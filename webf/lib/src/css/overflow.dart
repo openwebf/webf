@@ -408,6 +408,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollHeight {
+    ownerDocument.forceRebuild();
     if (!isRendererAttached) {
       return 0.0;
     }
@@ -423,6 +424,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollWidth {
+    ownerDocument.forceRebuild();
     if (!isRendererAttached) {
       return 0.0;
     }
@@ -440,32 +442,38 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get clientTop {
+    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     return renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
   }
 
   double get clientLeft {
+    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     return renderStyle.effectiveBorderLeftWidth.computedValue ?? 0.0;
   }
 
   double get clientWidth {
+    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     return renderStyle.clientWidth() ?? 0.0;
   }
 
   double get clientHeight {
+    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     return renderStyle.clientHeight() ?? 0.0;
   }
 
   double get offsetWidth {
+    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     if (!renderStyle.hasRenderBox()) return 0;
     return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.width : 0.0);
   }
 
   double get offsetHeight {
+    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     if (!renderStyle.hasRenderBox()) return 0;
     return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.height : 0.0);

@@ -10,7 +10,7 @@ import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 
-class RenderViewportParentData extends ContainerBoxParentData<RenderViewportBox> {}
+class RenderViewportParentData extends ContainerBoxParentData<RenderBox> {}
 
 class RenderViewportBox extends RenderBox
     with

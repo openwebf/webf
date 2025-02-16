@@ -107,6 +107,8 @@ class WebFState extends State<WebF> with RouteAware {
       setState(() {
         _isWebFInitReady = true;
       });
+    } else if (reason is DocumentElementChangedReason) {
+      setState(() {});
     }
   }
 
@@ -118,7 +120,7 @@ class WebFState extends State<WebF> with RouteAware {
 
     List<Widget> children = [];
 
-    if (_isWebFInitReady) {
+    if (_isWebFInitReady && widget.controller.view.document.documentElement != null) {
       children = [widget.controller.view.document.documentElement!.toWidget()];
     }
 
@@ -126,6 +128,10 @@ class WebFState extends State<WebF> with RouteAware {
       child: WebFContext(
         child: WebFRootRenderObjectWidget(
           widget.controller,
+          viewportWidth: widget.controller.viewportWidth,
+          viewportHeight: widget.controller.viewportHeight,
+          background: widget.controller.background,
+          resizeToAvoidBottomInsets: widget.controller.resizeToAvoidBottomInsets,
           children: children,
         ),
       ),

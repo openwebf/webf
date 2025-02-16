@@ -119,7 +119,11 @@ abstract class Element extends ContainerNode
   final Map<String, dynamic> inlineStyle = {};
 
   @pragma('vm:prefer-inline')
-  final flutter.Key key = flutter.UniqueKey();
+  flutter.Key key = flutter.UniqueKey();
+
+  void updateElementKey() {
+    key = flutter.UniqueKey();
+  }
 
   /// The Element.classList is a read-only property that returns a collection of the class attributes of the element.
   final List<String> _classList = [];
@@ -184,11 +188,8 @@ abstract class Element extends ContainerNode
       return;
     }
     _forceToRepaintBoundary = value;
-    if (managedByFlutterWidget) {
-      renderStyle.requestWidgetToRebuild(ToRepaintBoundaryUpdateReason());
-    } else {
-      updateOrCreateRenderBoxModel();
-    }
+    renderStyle.requestWidgetToRebuild(ToRepaintBoundaryUpdateReason());
+    updateElementKey();
   }
 
   final ElementRuleCollector _elementRuleCollector = ElementRuleCollector();
@@ -1491,12 +1492,20 @@ abstract class Element extends ContainerNode
   }
 
   Future<Uint8List> toBlob({double? devicePixelRatio, BindingOpItem? currentProfileOp}) {
-    flushLayout();
-
     forceToRepaintBoundary = true;
+
+    ownerDocument.forceRebuild();
 
     Completer<Uint8List> completer = Completer();
     SchedulerBinding.instance.addPostFrameCallback((_) async {
+      flushLayout();
+
+      if (!isRendererAttached) {
+        String msg = 'toImage: the element is not attached to document tree.';
+        completer.completeError(Exception(msg));
+        return;
+      }
+
       Uint8List captured;
       // RenderBoxModel? _renderBoxModel = renderBoxModel;
 

@@ -9,6 +9,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
@@ -279,6 +280,7 @@ class Document extends ContainerNode {
     super.initializeMethods(methods);
     if (kDebugMode || kProfileMode) {
       methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
+      methods['___force_rebuild__'] = BindingObjectMethodSync(call: (args) => forceRebuild());
     }
   }
 
@@ -491,6 +493,25 @@ class Document extends ContainerNode {
     }
     return result;
   }
+  
+  void forceRebuild() {
+    List<flutter.BuildContext> buildContextStack = ownerView.rootController.buildContextStack;
+    flutter.BuildContext? rootContext = buildContextStack.isNotEmpty ? buildContextStack.first : null;
+    if (rootContext == null || flutter.WidgetsBinding.instance.buildOwner == null) return;
+    WebFState webFState = rootContext.findAncestorStateOfType<WebFState>()!;
+    flutter.WidgetsBinding.instance.buildOwner!.buildScope(webFState.context as flutter.Element);
+  }
+
+  @override
+  void childrenChanged(ChildrenChange change) {
+    super.childrenChanged(change);
+
+    List<flutter.BuildContext> buildContextStack = ownerView.rootController.buildContextStack;
+    if (buildContextStack.isNotEmpty) {
+      WebFState webFState = buildContextStack.first.findAncestorStateOfType<WebFState>()!;
+      webFState.requestForUpdate(DocumentElementChangedReason());
+    }
+  }
 
   @override
   Node? replaceChild(Node newNode, Node oldNode) {
@@ -625,7 +646,4 @@ class Document extends ContainerNode {
 
   @override
   bool get isRendererAttachedToSegmentTree => viewport?.parent != null;
-
-  @override
-  String get hashKey => '#document';
 }

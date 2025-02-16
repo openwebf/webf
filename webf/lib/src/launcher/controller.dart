@@ -1370,11 +1370,6 @@ class WebFViewController implements WidgetsBindingObserver {
       var node = eventTargetPointer == null ? document.documentElement : getBindingObject(eventTargetPointer);
       if (node is Element) {
         SchedulerBinding.instance.addPostFrameCallback((_) {
-          if (!node.isRendererAttached) {
-            String msg = 'toImage: the element is not attached to document tree.';
-            completer.completeError(Exception(msg));
-          }
-
           node.toBlob(devicePixelRatio: devicePixelRatio).then((Uint8List bytes) {
             completer.complete(bytes);
           }).catchError((e, stack) {
@@ -1383,6 +1378,7 @@ class WebFViewController implements WidgetsBindingObserver {
             completer.completeError(Exception(msg));
           });
         });
+        SchedulerBinding.instance.scheduleFrame();
         return completer.future;
       } else {
         String msg = 'toBlob: node is not an element, id: $eventTargetPointer';

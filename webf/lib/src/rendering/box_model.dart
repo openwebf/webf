@@ -1627,6 +1627,7 @@ class RenderBoxModel extends RenderBox
       SchedulerBinding.instance.scheduleFrameCallback((_) {
         completer.complete(toImage(pixelRatio: pixelRatio));
       });
+      SchedulerBinding.instance.scheduleFrame();
       return completer.future;
     }
     assert(isRepaintBoundary);

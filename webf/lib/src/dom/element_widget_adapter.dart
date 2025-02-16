@@ -88,7 +88,7 @@ class _WebFElementWidgetState extends flutter.State<WebFElementWidget> with flut
       return element.toWidget();
     }));
 
-    flutter.Widget widget = WebFRenderLayoutWidgetAdaptor(webFElement: _webFElement, children: children);
+    flutter.Widget widget = WebFRenderLayoutWidgetAdaptor(webFElement: _webFElement, children: children, key: _webFElement.key);
 
     if (webFElement.hasEvent) {
       widget = Portal(ownerElement: _webFElement, child: widget);
