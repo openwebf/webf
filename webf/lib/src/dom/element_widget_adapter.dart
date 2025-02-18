@@ -8,16 +8,19 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 
 mixin ElementAdapterMixin on ElementBase {
   final Set<Element> positionedElements = {};
+
   // Rendering this element as an RenderPositionHolder
   Element? holderAttachedPositionedElement;
   Element? holderAttachedContainingBlockElement;
   bool hasEvent = false;
+  bool hasScroll = false;
 
   @override
   flutter.Widget toWidget({Key? key}) {
@@ -34,7 +37,7 @@ class WebFElementWidget extends flutter.StatefulWidget {
 
   @override
   flutter.State<flutter.StatefulWidget> createState() {
-    return _WebFElementWidgetState(webFElement);
+    return WebFElementWidgetState(webFElement);
   }
 
   @override
@@ -51,12 +54,17 @@ class WebFElementWidget extends flutter.StatefulWidget {
   }
 }
 
-class _WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutter.AutomaticKeepAliveClientMixin {
+class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutter.AutomaticKeepAliveClientMixin {
   final Element _webFElement;
 
-  _WebFElementWidgetState(this._webFElement);
+  WebFElementWidgetState(this._webFElement) {
+    _webFElement.states.add(this);
+  }
 
   Element get webFElement => _webFElement;
+
+  flutter.ScrollController? scrollControllerX;
+  flutter.ScrollController? scrollControllerY;
 
   void requestForChildNodeUpdate(AdapterUpdateReason reason) {
     setState(() {});
@@ -105,18 +113,88 @@ class _WebFElementWidgetState extends flutter.State<WebFElementWidget> with flut
       return element.toWidget();
     }));
 
-    flutter.Widget widget = WebFRenderLayoutWidgetAdaptor(webFElement: _webFElement, children: children, key: _webFElement.key);
+    flutter.Widget widget;
+
+    if (webFElement.hasScroll) {
+      CSSOverflowType overflowX = webFElement.renderStyle.overflowX;
+      CSSOverflowType overflowY = webFElement.renderStyle.overflowY;
+
+      flutter.Scrollable? scrollableX;
+      if (overflowX == CSSOverflowType.scroll ||
+          overflowX == CSSOverflowType.auto ||
+          overflowX == CSSOverflowType.hidden) {
+        scrollControllerX ??= flutter.ScrollController();
+        scrollableX = flutter.Scrollable(
+            controller: scrollControllerX,
+            viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
+              return WebFRenderLayoutWidgetAdaptor(
+                webFElement: _webFElement,
+                children: children,
+                key: _webFElement.key,
+                scrollListener: webFElement.handleScroll,
+                positionX: position,
+                direction: Axis.horizontal,
+              );
+              // return renderLayoutWidgetAdaptor;
+            });
+      }
+
+      if (overflowY == CSSOverflowType.scroll ||
+          overflowY == CSSOverflowType.auto ||
+          overflowY == CSSOverflowType.hidden) {
+        scrollControllerY ??= flutter.ScrollController();
+        widget = flutter.Scrollable(
+          controller: scrollControllerY,
+          viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
+            if (scrollableX != null) {
+              return flutter.Scrollable(
+                  controller: scrollControllerX,
+                  viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
+                    return WebFRenderLayoutWidgetAdaptor(
+                      webFElement: _webFElement,
+                      children: children,
+                      key: _webFElement.key,
+                      scrollListener: webFElement.handleScroll,
+                      positionX: positionX,
+                      positionY: positionY,
+                      direction: Axis.horizontal,
+                    );
+                    // return renderLayoutWidgetAdaptor;
+                  });
+            }
+
+            return WebFRenderLayoutWidgetAdaptor(
+              webFElement: _webFElement,
+              children: children,
+              key: _webFElement.key,
+              scrollListener: webFElement.handleScroll,
+              positionY: positionY,
+              direction: Axis.horizontal,
+            );
+          },
+        );
+      } else {
+        widget = scrollableX ?? WebFRenderLayoutWidgetAdaptor(webFElement: _webFElement, children: children, key: _webFElement.key);
+      }
+    } else {
+      widget = WebFRenderLayoutWidgetAdaptor(webFElement: _webFElement, children: children, key: _webFElement.key);
+    }
 
     if (webFElement.hasEvent) {
       widget = Portal(ownerElement: _webFElement, child: widget);
     }
+
+    print('$this $scrollControllerY');
 
     return widget;
   }
 
   @override
   void dispose() {
+    webFElement.states.remove(this);
     super.dispose();
+    scrollControllerX?.dispose();
+    scrollControllerY?.dispose();
   }
 
   @override
@@ -184,10 +262,21 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
 }
 
 class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget {
-  WebFRenderLayoutWidgetAdaptor({this.webFElement, flutter.Key? key, required List<flutter.Widget> children})
+  WebFRenderLayoutWidgetAdaptor(
+      {this.webFElement,
+      flutter.Key? key,
+      this.positionX,
+      this.positionY,
+      this.scrollListener,
+      required List<flutter.Widget> children,
+      this.direction = Axis.vertical})
       : super(key: key, children: children) {}
 
   final Element? webFElement;
+  final ViewportOffset? positionX;
+  final ViewportOffset? positionY;
+  final Axis direction;
+  final ScrollListener? scrollListener;
 
   @override
   WebRenderLayoutRenderObjectElement createElement() {
@@ -202,7 +291,22 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
         webFElement!.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement)!;
     renderBoxModel.parentData = CSSPositionedLayout.getPositionParentData(renderBoxModel, parentData);
 
+    if (scrollListener != null) {
+      renderBoxModel.scrollOffsetX = positionX;
+      renderBoxModel.scrollOffsetY = positionY;
+      renderBoxModel.scrollListener = scrollListener;
+    }
+
     return renderBoxModel;
+  }
+
+  @override
+  void updateRenderObject(flutter.BuildContext context, RenderBoxModel renderBoxModel) {
+    if (scrollListener != null) {
+      renderBoxModel.scrollOffsetX = positionX;
+      renderBoxModel.scrollOffsetY = positionY;
+      renderBoxModel.scrollListener = scrollListener;
+    }
   }
 
   @override
@@ -221,7 +325,7 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
   void requestForBuild(AdapterUpdateReason reason) {
-    _WebFElementWidgetState state = findAncestorStateOfType<_WebFElementWidgetState>()!;
+    WebFElementWidgetState state = findAncestorStateOfType<WebFElementWidgetState>()!;
     state.requestForChildNodeUpdate(reason);
   }
 

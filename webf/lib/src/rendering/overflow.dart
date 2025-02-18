@@ -9,6 +9,8 @@ import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/gesture.dart';
 
+typedef ScrollListener = void Function(double scrollOffset, AxisDirection axisDirection);
+
 mixin RenderOverflowMixin on RenderBoxModelBase {
   ScrollListener? scrollListener;
   void Function(PointerEvent)? scrollablePointerListener;

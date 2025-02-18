@@ -106,6 +106,8 @@ abstract class Element extends ContainerNode
   @pragma('vm:prefer-inline')
   bool get isSVGElement => false;
 
+  final Set<WebFElementWidgetState> states = {};
+
   // The attrs.
   final Map<String, String> attributes = <String, String>{};
 
@@ -537,10 +539,11 @@ abstract class Element extends ContainerNode
 
   // Calculate sticky status according to scroll offset and scroll direction
   void _applyStickyChildrenOffset() {
-    RenderLayoutBox scrollContainer = renderStyle.domRenderBoxModel as RenderLayoutBox;
-    for (RenderBoxModel stickyChild in scrollContainer.stickyChildren) {
-      CSSPositionedLayout.applyStickyChildOffset(scrollContainer, stickyChild);
-    }
+    return;
+    // RenderLayoutBox scrollContainer = renderStyle.domRenderBoxModel as RenderLayoutBox;
+    // for (RenderBoxModel stickyChild in scrollContainer.stickyChildren) {
+    //   CSSPositionedLayout.applyStickyChildOffset(scrollContainer, stickyChild);
+    // }
   }
 
   // Find all the nested position absolute elements which need to change the containing block
@@ -615,6 +618,10 @@ abstract class Element extends ContainerNode
     }
 
     return directPositionAbsoluteChildren;
+  }
+
+  void _updateHostingWidgetWithOverflow(CSSOverflowType oldOverflow) {
+    renderStyle.requestWidgetToRebuild(AddScrollerUpdateReason());
   }
 
   void _updateHostingWidgetWithPosition(CSSPositionType oldPosition) {
@@ -774,6 +781,7 @@ abstract class Element extends ContainerNode
     renderStyle.dispose();
     style.dispose();
     attributes.clear();
+    states.clear();
     _attributeProperties.clear();
     if (!managedByFlutterWidget) {
       ownerDocument.inactiveRenderObjects.add(renderStyle.domRenderBoxModel);
@@ -1095,32 +1103,12 @@ abstract class Element extends ContainerNode
         }
         break;
       case OVERFLOW_X:
-        if (managedByFlutterWidget || this is WidgetElement) return;
-        assert(oldValue != null);
-        CSSOverflowType oldEffectiveOverflowY = oldValue;
-        updateOrCreateRenderBoxModel();
-        updateRenderBoxModelWithOverflowX(handleScroll);
-        // Change overflowX may affect effectiveOverflowY.
-        // https://drafts.csswg.org/css-overflow/#overflow-properties
-        CSSOverflowType effectiveOverflowY = renderStyle.effectiveOverflowY;
-        if (effectiveOverflowY != oldEffectiveOverflowY) {
-          updateRenderBoxModelWithOverflowY(handleScroll);
-        }
-        updateOverflowRenderBox();
+        if (this is WidgetElement) return;
+        _updateHostingWidgetWithOverflow(oldValue);
         break;
       case OVERFLOW_Y:
-        if (managedByFlutterWidget || this is WidgetElement) return;
-        assert(oldValue != null);
-        CSSOverflowType oldEffectiveOverflowX = oldValue;
-        updateOrCreateRenderBoxModel();
-        updateRenderBoxModelWithOverflowY(handleScroll);
-        // Change overflowY may affect the effectiveOverflowX.
-        // https://drafts.csswg.org/css-overflow/#overflow-properties
-        CSSOverflowType effectiveOverflowX = renderStyle.effectiveOverflowX;
-        if (effectiveOverflowX != oldEffectiveOverflowX) {
-          updateRenderBoxModelWithOverflowX(handleScroll);
-        }
-        updateOverflowRenderBox();
+        if (this is WidgetElement) return;
+        _updateHostingWidgetWithOverflow(oldValue);
         break;
       case POSITION:
         assert(oldValue != null);

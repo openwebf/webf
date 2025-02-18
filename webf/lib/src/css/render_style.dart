@@ -39,6 +39,9 @@ class ToRepaintBoundaryUpdateReason extends AdapterUpdateReason {}
 
 class AddEventUpdateReason extends AdapterUpdateReason {}
 
+class AddScrollerUpdateReason extends AdapterUpdateReason {
+}
+
 class ToPositionPlaceHolderUpdateReason extends AdapterUpdateReason {
   Element positionedElement;
   Element containingBlockElement;
@@ -416,6 +419,9 @@ abstract class RenderStyle extends DiagnosticableTree {
     switch (reason.runtimeType) {
       case AddEventUpdateReason:
         target.hasEvent = true;
+        break;
+      case AddScrollerUpdateReason:
+        target.hasScroll = true;
         break;
       case ToPositionPlaceHolderUpdateReason:
         target.holderAttachedPositionedElement = (reason as ToPositionPlaceHolderUpdateReason).positionedElement;
@@ -1238,11 +1244,11 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   RenderBoxModel? get attachedRenderBoxModel {
-    if (target.managedByFlutterWidget) {
-      return _widgetRenderObjects.values.firstWhereOrNull((renderBox) => renderBox.attached);
-    }
+    return _widgetRenderObjects.values.firstWhereOrNull((renderBox) => renderBox.attached);
+  }
 
-    return _domRenderObjects;
+  flutter.RenderObjectElement? get attachedRenderObjectElement {
+    return _widgetRenderObjects.entries.firstWhereOrNull((entry) => entry.value.attached)?.key;
   }
 
   Size get viewportSize => target.ownerDocument.viewport?.viewportSize ?? Size.zero;
@@ -2706,13 +2712,6 @@ class CSSRenderStyle extends RenderStyle
       }
     } else {
       throw FlutterError('Not supported display type $display');
-    }
-
-    // Update scrolling content layout type.
-    if (previousRenderLayoutBox != nextRenderLayoutBox &&
-        previousRenderLayoutBox?.renderScrollingContent != null &&
-        !target.managedByFlutterWidget) {
-      target.updateScrollingContentBox();
     }
 
     return nextRenderLayoutBox!;

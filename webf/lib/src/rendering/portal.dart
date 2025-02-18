@@ -47,6 +47,11 @@ class RenderPortal extends RenderBoxModel
     }
 
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
+
+    // Set the size of scrollable overflow area for Portal.
+    if (child is RenderBoxModel) {
+      scrollableSize = (child as RenderBoxModel).scrollableSize;
+    }
   }
 
   @override
