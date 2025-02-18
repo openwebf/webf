@@ -184,8 +184,6 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       widget = Portal(ownerElement: _webFElement, child: widget);
     }
 
-    print('$this $scrollControllerY');
-
     return widget;
   }
 

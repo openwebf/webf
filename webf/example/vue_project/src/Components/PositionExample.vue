@@ -7,19 +7,19 @@
       <div class="box">C</div>
     </div>
     <div class="control-panel">
-      <div>
+      <div class="panel-item">
         <span>Top: </span>
         <input type="checkbox" v-model="enableTop" />
       </div>
-      <div>
+      <div class="panel-item">
         <span>left: </span>
         <input type="checkbox" v-model="enableLeft" />
       </div>
-      <div>
+      <div class="panel-item">
         <span>right: </span>
         <input type="checkbox" v-model="enableRight" />
       </div>
-      <div>
+      <div class="panel-item">
         <span>bottom: </span>
         <input type="checkbox" v-model="enableBottom" />
       </div>
@@ -266,12 +266,14 @@ export default {
   justify-content: space-around;
 }
 
-.control-panel span {
-  line-height: 30px;
+.panel-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
 }
 
-.control-panel input {
-  border: 1px solid red;
+.control-panel span {
+  line-height: 30px;
 }
 
 .control-item {
