@@ -226,7 +226,8 @@ class WebFController {
   })  : _entrypoint = bundle,
         _gestureListener = gestureListener,
         runningThread = runningThread ?? DedicatedThread(),
-        ownerFlutterView = View.of(context) {
+        ownerFlutterView = View.of(context),
+        _methodChannel = javaScriptChannel {
     _initializePreloadBundle();
     if (enableWebFProfileTracking) {
       WebFProfiler.initialize();

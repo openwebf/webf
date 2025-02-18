@@ -493,13 +493,9 @@ class Document extends ContainerNode {
     }
     return result;
   }
-  
+
   void forceRebuild() {
-    List<flutter.BuildContext> buildContextStack = ownerView.rootController.buildContextStack;
-    flutter.BuildContext? rootContext = buildContextStack.isNotEmpty ? buildContextStack.first : null;
-    if (rootContext == null || flutter.WidgetsBinding.instance.buildOwner == null) return;
-    WebFState webFState = rootContext.findAncestorStateOfType<WebFState>()!;
-    flutter.WidgetsBinding.instance.buildOwner!.buildScope(webFState.context as flutter.Element);
+    flutter.WidgetsBinding.instance.buildOwner!.buildScope(flutter.WidgetsBinding.instance.rootElement!);
   }
 
   @override
