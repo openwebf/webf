@@ -26,6 +26,9 @@ class HTMLElement extends Element {
   bool get managedByFlutterWidget => true;
 
   @override
+  bool get isRepaintBoundary => true;
+
+  @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   @override

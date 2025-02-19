@@ -106,8 +106,6 @@ abstract class Element extends ContainerNode
   @pragma('vm:prefer-inline')
   bool get isSVGElement => false;
 
-  final Set<WebFElementWidgetState> states = {};
-
   // The attrs.
   final Map<String, String> attributes = <String, String>{};
 
@@ -186,7 +184,7 @@ abstract class Element extends ContainerNode
 
   @pragma('vm:prefer-inline')
   set forceToRepaintBoundary(bool value) {
-    if (_forceToRepaintBoundary == value) {
+    if (_forceToRepaintBoundary == value || isRepaintBoundary) {
       return;
     }
     _forceToRepaintBoundary = value;
@@ -786,7 +784,6 @@ abstract class Element extends ContainerNode
     renderStyle.dispose();
     style.dispose();
     attributes.clear();
-    states.clear();
     _attributeProperties.clear();
     if (!managedByFlutterWidget) {
       ownerDocument.inactiveRenderObjects.add(renderStyle.domRenderBoxModel);
@@ -799,6 +796,10 @@ abstract class Element extends ContainerNode
     _beforeElement = null;
     _afterElement?.dispose();
     _afterElement = null;
+    scrollControllerX?.dispose();
+    scrollControllerX = null;
+    scrollControllerY?.dispose();
+    scrollControllerY = null;
     super.dispose();
   }
 

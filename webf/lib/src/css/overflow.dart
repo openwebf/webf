@@ -113,12 +113,13 @@ mixin ElementOverflowMixin on ElementBase {
   // The duration time for element scrolling to a significant place.
   static const SCROLL_DURATION = Duration(milliseconds: 250);
 
+  flutter.ScrollController? scrollControllerX;
+  flutter.ScrollController? scrollControllerY;
+
   double get scrollTop {
     ownerDocument.forceRebuild();
-    WebFElementWidgetState? elementState = (this as Element).states.firstWhereOrNull((state) => state.mounted);
-
-    if (elementState != null && elementState.scrollControllerY != null) {
-      return elementState.scrollControllerY?.position.pixels ?? 0;
+    if (scrollControllerY != null) {
+      return scrollControllerY?.position.pixels ?? 0;
     }
 
     return 0.0;
@@ -151,12 +152,8 @@ mixin ElementOverflowMixin on ElementBase {
 
   double get scrollLeft {
     ownerDocument.forceRebuild();
-    WebFElementWidgetState? elementState = (this as Element).states.firstWhereOrNull((state) => state.mounted);
 
-    if (elementState != null && elementState.scrollControllerX != null) {
-      return elementState.scrollControllerX?.position.pixels ?? 0;
-    }
-    return 0.0;
+    return scrollControllerX?.position.pixels ?? 0;
   }
 
   set scrollLeft(double value) {
@@ -170,8 +167,7 @@ mixin ElementOverflowMixin on ElementBase {
     }
     _ensureRenderObjectHasLayout();
 
-    WebFElementWidgetState? elementState = (this as Element).states.firstWhereOrNull((state) => state.mounted);
-    flutter.ScrollController? scrollController = elementState?.scrollControllerY;
+    flutter.ScrollController? scrollController = scrollControllerY;
 
     if (scrollController != null) {
       // Viewport height + maxScrollExtent
@@ -188,8 +184,7 @@ mixin ElementOverflowMixin on ElementBase {
       return 0.0;
     }
     _ensureRenderObjectHasLayout();
-    WebFElementWidgetState? elementState = (this as Element).states.firstWhereOrNull((state) => state.mounted);
-    flutter.ScrollController? scrollController = elementState?.scrollControllerX;
+    flutter.ScrollController? scrollController = scrollControllerX;
 
     if (scrollController != null) {
       return renderStyle.clientWidth()! + scrollController.position.maxScrollExtent;
@@ -260,9 +255,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void _scroll(num aim, Axis direction, {bool? withAnimation = false}) {
-    WebFElementWidgetState? elementState = (this as Element).states.firstWhereOrNull((state) => state.mounted);
-    flutter.ScrollController? scrollController =
-        direction == Axis.horizontal ? elementState?.scrollControllerX : elementState?.scrollControllerY;
+    flutter.ScrollController? scrollController = direction == Axis.horizontal ? scrollControllerX : scrollControllerY;
 
     if (scrollController == null) return;
 

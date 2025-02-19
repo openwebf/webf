@@ -57,14 +57,9 @@ class WebFElementWidget extends flutter.StatefulWidget {
 class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutter.AutomaticKeepAliveClientMixin {
   final Element _webFElement;
 
-  WebFElementWidgetState(this._webFElement) {
-    _webFElement.states.add(this);
-  }
+  WebFElementWidgetState(this._webFElement);
 
   Element get webFElement => _webFElement;
-
-  flutter.ScrollController? scrollControllerX;
-  flutter.ScrollController? scrollControllerY;
 
   void requestForChildNodeUpdate(AdapterUpdateReason reason) {
     setState(() {});
@@ -123,9 +118,9 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       if (overflowX == CSSOverflowType.scroll ||
           overflowX == CSSOverflowType.auto ||
           overflowX == CSSOverflowType.hidden) {
-        scrollControllerX ??= flutter.ScrollController();
+        webFElement.scrollControllerX ??= flutter.ScrollController();
         scrollableX = flutter.Scrollable(
-            controller: scrollControllerX,
+            controller: webFElement.scrollControllerX,
             viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
               return WebFRenderLayoutWidgetAdaptor(
                 webFElement: _webFElement,
@@ -142,13 +137,13 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       if (overflowY == CSSOverflowType.scroll ||
           overflowY == CSSOverflowType.auto ||
           overflowY == CSSOverflowType.hidden) {
-        scrollControllerY ??= flutter.ScrollController();
+        webFElement.scrollControllerY ??= flutter.ScrollController();
         widget = flutter.Scrollable(
-          controller: scrollControllerY,
+          controller: webFElement.scrollControllerY,
           viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
             if (scrollableX != null) {
               return flutter.Scrollable(
-                  controller: scrollControllerX,
+                  controller: webFElement.scrollControllerX,
                   viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
                     return WebFRenderLayoutWidgetAdaptor(
                       webFElement: _webFElement,
@@ -185,14 +180,6 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     }
 
     return widget;
-  }
-
-  @override
-  void dispose() {
-    webFElement.states.remove(this);
-    super.dispose();
-    scrollControllerX?.dispose();
-    scrollControllerY?.dispose();
   }
 
   @override
