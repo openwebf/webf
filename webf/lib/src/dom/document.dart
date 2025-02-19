@@ -451,8 +451,8 @@ class Document extends ContainerNode {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackUICommand();
     }
-    // documentElement!.setRenderStyleProperty(OVERFLOW_X, CSSOverflowType.scroll);
-    // documentElement!.setRenderStyleProperty(OVERFLOW_Y, CSSOverflowType.scroll);
+    documentElement!.setRenderStyleProperty(OVERFLOW_X, CSSOverflowType.scroll);
+    documentElement!.setRenderStyleProperty(OVERFLOW_Y, CSSOverflowType.scroll);
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
     }
