@@ -110,6 +110,7 @@ typedef NodeVisitor = void Function(Node node);
 /// rendering of the application.
 abstract class RenderObjectNode {
   RenderBox? get domRenderer;
+
   RenderBox? get attachedRenderer;
 
   /// Creates an instance of the [RenderObject] class that this
@@ -177,7 +178,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     _managedByFlutterWidget = true;
 
     Node? first = firstChild;
-    while(first != null) {
+    while (first != null) {
       first.managedByFlutterWidget = true;
       first = first.nextSibling;
     }
@@ -268,11 +269,12 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   Node(this.nodeType, [BindingContext? context]) : super(context);
 
   bool _isConnected = false;
+
   set isConnected(bool value) {
     _isConnected = value;
 
     Node? first = firstChild;
-    while(first != null) {
+    while (first != null) {
       first.isConnected = value;
       first = first.nextSibling;
     }
@@ -287,11 +289,29 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   Node? get previousSibling => _previous;
 
+  Node? get attachedRenderPreviousSibling {
+    Node? previousSibling = this.previousSibling;
+    do {
+      if (previousSibling?.attachedRenderer != null) return previousSibling;
+      previousSibling = previousSibling?.previousSibling;
+    } while (previousSibling != null);
+    return null;
+  }
+
   set previousSibling(Node? value) {
     _previous = value;
   }
 
   Node? get nextSibling => _next;
+
+  Node? get attachedRenderNextSibling {
+    Node? nextSibling = this.nextSibling;
+    do {
+      if (nextSibling?.attachedRenderer != null) return nextSibling;
+      nextSibling = nextSibling?.nextSibling;
+    } while (nextSibling != null);
+    return null;
+  }
 
   set nextSibling(Node? value) {
     _next = value;

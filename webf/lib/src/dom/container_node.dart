@@ -355,6 +355,17 @@ abstract class ContainerNode extends Node {
   @override
   Node? get firstChild => _firstChild;
 
+  Node? get firstAttachedRenderChild {
+    Node? firstChild = _firstChild;
+    do {
+      if (firstChild?.attachedRenderer != null) {
+        return firstChild;
+      }
+      firstChild = firstChild?.nextSibling;
+    } while(firstChild != null);
+    return null;
+  }
+
   set firstChild(Node? value) {
     _firstChild = value;
   }
@@ -363,6 +374,18 @@ abstract class ContainerNode extends Node {
 
   @override
   Node? get lastChild => _lastChild;
+
+  Node? get lastAttachedRenderChild {
+    Node? lastChild = _lastChild;
+    do {
+      if (lastChild?.attachedRenderer != null) {
+        return lastChild;
+      }
+      lastChild = lastChild?.previousSibling;
+    } while(lastChild != null);
+    return null;
+  }
+
 
   set lastChild(Node? value) {
     _lastChild = value;

@@ -8,7 +8,7 @@ import 'package:webf/launcher.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 
-class RenderPortalsParentData extends ContainerBoxParentData<RenderPortal> {}
+class RenderPortalsParentData extends RenderLayoutParentData {}
 
 class RenderPortal extends RenderBoxModel
     with
@@ -29,7 +29,9 @@ class RenderPortal extends RenderBoxModel
 
   @override
   void setupParentData(covariant RenderObject child) {
-    child.parentData = RenderPortalsParentData();
+    if (child.parentData is! RenderPortalsParentData) {
+      child.parentData = RenderPortalsParentData();
+    }
   }
 
   @override
@@ -41,11 +43,6 @@ class RenderPortal extends RenderBoxModel
   @override
   void performLayout() {
     super.performLayout();
-
-    if (child is RenderBoxModel && parentData is BoxParentData) {
-      BoxParentData childParentData = child!.parentData as BoxParentData;
-      childParentData.offset = (parentData as BoxParentData).offset;
-    }
 
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
 

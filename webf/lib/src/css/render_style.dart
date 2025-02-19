@@ -561,56 +561,59 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   bool isNextSiblingAreRenderObject() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.nextSibling, (renderObject, _) => renderObject is RenderObject);
+    return target.attachedRenderNextSibling?.attachedRenderer is RenderObject;
   }
 
   @pragma('vm:prefer-inline')
   bool isPreviousSiblingAreRenderObject() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.previousSibling, (renderObject, _) => renderObject is RenderObject);
+    return target.attachedRenderPreviousSibling?.attachedRenderer is RenderObject;
   }
 
   @pragma('vm:prefer-inline')
   bool isFirstChildAreRenderFlowLayoutBox() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.firstChild, (renderObject, _) => renderObject is RenderFlowLayout);
+    return target.firstAttachedRenderChild?.attachedRenderer is RenderLayoutBox;
   }
 
   @pragma('vm:prefer-inline')
   bool isLastChildAreRenderLayoutBox() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.lastChild, (renderObject, _) => renderObject is RenderLayoutBox);
+    return target.lastAttachedRenderChild?.attachedRenderer is RenderLayoutBox;
   }
 
   @pragma('vm:prefer-inline')
   bool isFirstChildAreRenderBoxModel() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.firstChild, (renderObject, _) => renderObject is RenderBoxModel);
+    return target.firstAttachedRenderChild?.attachedRenderer is RenderBoxModel;
   }
 
   @pragma('vm:prefer-inline')
   bool isLastChildAreRenderBoxModel() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.lastChild, (renderObject, _) => renderObject is RenderBoxModel);
+    return target.lastAttachedRenderChild?.attachedRenderer is RenderBoxModel;
   }
 
   @pragma('vm:prefer-inline')
   bool isFirstChildStyleMatch(RenderStyleMatcher matcher) {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.firstChild, (_, renderStyle) => renderStyle != null ? matcher(renderStyle) : false);
+    Node? firstAttachedChild = target.firstAttachedRenderChild;
+    if (firstAttachedChild is Element) {
+      return matcher(firstAttachedChild.renderStyle);
+    }
+    return false;
   }
 
   @pragma('vm:prefer-inline')
   bool isLastChildStyleMatch(RenderStyleMatcher matcher) {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.lastChild, (_, renderStyle) => renderStyle != null ? matcher(renderStyle) : false);
+    Node? lastAttachedChild = target.lastAttachedRenderChild;
+    if (lastAttachedChild is Element) {
+      return matcher(lastAttachedChild.renderStyle);
+    }
+    return false;
   }
 
   @pragma('vm:prefer-inline')
   bool isPreviousSiblingStyleMatch(RenderStyleMatcher matcher) {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.previousSibling, (_, renderStyle) => renderStyle != null ? matcher(renderStyle) : false);
+    Node? previousSibling = target.attachedRenderPreviousSibling;
+    if (previousSibling is Element) {
+      return matcher(previousSibling.renderStyle);
+    }
+    return false;
   }
 
   @pragma('vm:prefer-inline')
@@ -736,22 +739,38 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   T? getFirstChildRenderStyle<T extends RenderStyle>() {
-    return getRenderBoxValueByType(RenderObjectGetType.firstChild, (_, renderStyle) => renderStyle) as T?;
+    Node? firstChild = target.firstAttachedRenderChild;
+    if (firstChild is Element) {
+      return firstChild.renderStyle as T;
+    }
+    return null;
   }
 
   @pragma('vm:prefer-inline')
   T? getLastChildRenderStyle<T extends RenderStyle>() {
-    return getRenderBoxValueByType(RenderObjectGetType.lastChild, (_, renderStyle) => renderStyle) as T?;
+    Node? lastChild = target.lastAttachedRenderChild;
+    if (lastChild is Element) {
+      return lastChild.renderStyle as T;
+    }
+    return null;
   }
 
   @pragma('vm:prefer-inline')
   T? getPreviousSiblingRenderStyle<T extends RenderStyle>() {
-    return getRenderBoxValueByType(RenderObjectGetType.previousSibling, (_, renderStyle) => renderStyle) as T?;
+    Node? previousSibling = target.attachedRenderPreviousSibling;
+    if (previousSibling is Element) {
+      return previousSibling.renderStyle as T;
+    }
+    return null;
   }
 
   @pragma('vm:prefer-inline')
   T? getNextSiblingRenderStyle<T extends RenderStyle>() {
-    return getRenderBoxValueByType(RenderObjectGetType.nextSibling, (_, renderStyle) => renderStyle) as T?;
+    Node? nextSibling = target.attachedRenderNextSibling;
+    if (nextSibling is Element) {
+      return nextSibling.renderStyle as T;
+    }
+    return null;
   }
 
   @pragma('vm:prefer-inline')
