@@ -624,6 +624,11 @@ abstract class Element extends ContainerNode
     renderStyle.requestWidgetToRebuild(AddScrollerUpdateReason());
   }
 
+  void _updateHostingWidgetWithTransform() {
+    updateElementKey();
+    renderStyle.requestWidgetToRebuild(UpdateTransformReason());
+  }
+
   void _updateHostingWidgetWithPosition(CSSPositionType oldPosition) {
     assert(managedByFlutterWidget);
     CSSPositionType currentPosition = renderStyle.position;
@@ -1123,8 +1128,7 @@ abstract class Element extends ContainerNode
         _updateFontRelativeLengthWithFontSize();
         break;
       case TRANSFORM:
-        if (managedByFlutterWidget) return;
-        updateOrCreateRenderBoxModel();
+        _updateHostingWidgetWithTransform();
         break;
     }
 
@@ -1370,6 +1374,7 @@ abstract class Element extends ContainerNode
     BoundingClientRect boundingClientRect =
         BoundingClientRect.zero(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
     if (isRendererAttached) {
+      ownerDocument.forceRebuild();
       flushLayout();
       // RenderBoxModel sizedBox = renderBoxModel!;
       // Force flush layout.
@@ -1460,6 +1465,7 @@ abstract class Element extends ContainerNode
   }
 
   void click() {
+    ownerDocument.forceRebuild();
     flushLayout();
     Event clickEvent = MouseEvent(EVENT_CLICK, detail: 1, view: ownerDocument.defaultView);
     // If element not in tree, click is fired and only response to itself.

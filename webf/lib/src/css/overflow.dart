@@ -114,6 +114,7 @@ mixin ElementOverflowMixin on ElementBase {
   static const SCROLL_DURATION = Duration(milliseconds: 250);
 
   double get scrollTop {
+    ownerDocument.forceRebuild();
     WebFElementWidgetState? elementState = (this as Element).states.firstWhereOrNull((state) => state.mounted);
 
     if (elementState != null && elementState.scrollControllerY != null) {
@@ -128,14 +129,17 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void scroll(double x, double y, [bool withAnimation = false]) {
+    ownerDocument.forceRebuild();
     _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
   void scrollBy(double x, double y, [bool withAnimation = false]) {
+    ownerDocument.forceRebuild();
     _scrollBy(dx: x, dy: y, withAnimation: withAnimation);
   }
 
   void scrollTo(double x, double y, [bool withAnimation = false]) {
+    ownerDocument.forceRebuild();
     _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
@@ -146,6 +150,7 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollLeft {
+    ownerDocument.forceRebuild();
     WebFElementWidgetState? elementState = (this as Element).states.firstWhereOrNull((state) => state.mounted);
 
     if (elementState != null && elementState.scrollControllerX != null) {

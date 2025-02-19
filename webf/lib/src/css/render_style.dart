@@ -30,6 +30,7 @@ class WebFInitReason extends AdapterUpdateReason {}
 class DocumentElementChangedReason extends AdapterUpdateReason {}
 
 class UpdateDisplayReason extends AdapterUpdateReason {}
+class UpdateTransformReason extends AdapterUpdateReason {}
 
 class UpdateChildNodeUpdateReason extends AdapterUpdateReason {}
 
@@ -39,8 +40,7 @@ class ToRepaintBoundaryUpdateReason extends AdapterUpdateReason {}
 
 class AddEventUpdateReason extends AdapterUpdateReason {}
 
-class AddScrollerUpdateReason extends AdapterUpdateReason {
-}
+class AddScrollerUpdateReason extends AdapterUpdateReason {}
 
 class ToPositionPlaceHolderUpdateReason extends AdapterUpdateReason {
   Element positionedElement;

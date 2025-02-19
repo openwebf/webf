@@ -42,8 +42,9 @@ class RenderPortal extends RenderBoxModel
   void performLayout() {
     super.performLayout();
 
-    if (child is RenderBoxModel) {
-      child!.parentData = parentData;
+    if (child is RenderBoxModel && parentData is BoxParentData) {
+      BoxParentData childParentData = child!.parentData as BoxParentData;
+      childParentData.offset = (parentData as BoxParentData).offset;
     }
 
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
