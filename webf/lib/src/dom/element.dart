@@ -952,8 +952,8 @@ abstract class Element extends ContainerNode
     _updateIDMap(null, oldID: _id);
     _updateNameMap(null, oldName: getAttribute(_NAME));
     if (renderStyle.position == CSSPositionType.fixed || renderStyle.position == CSSPositionType.absolute) {
-      holderAttachedContainingBlockElement!.positionedElements.remove(this);
-      holderAttachedContainingBlockElement!.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+      holderAttachedContainingBlockElement?.positionedElements.remove(this);
+      holderAttachedContainingBlockElement?.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
     }
   }
 

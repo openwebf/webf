@@ -353,6 +353,7 @@ class Document extends ContainerNode {
   }
 
   dynamic elementFromPoint(double x, double y) {
+    forceRebuild();
     documentElement?.flushLayout();
     return HitTestPoint(x, y);
   }
@@ -371,7 +372,7 @@ class Document extends ContainerNode {
   HitTestResult HitTestInDocument(double x, double y) {
     BoxHitTestResult boxHitTestResult = BoxHitTestResult();
     Offset offset = Offset(x, y);
-    documentElement?.domRenderer?.hitTest(boxHitTestResult, position: offset);
+    documentElement?.attachedRenderer?.hitTest(boxHitTestResult, position: offset);
     return boxHitTestResult;
   }
 
