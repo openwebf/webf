@@ -5,6 +5,7 @@
 import 'dart:ui';
 import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -147,6 +148,13 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   }
 
   LogicTextInlineBox get firstInlineBox => lineBoxes.firstChild;
+
+  InlineSpan? get firstInlineSpan => _renderParagraph.text.children?.first;
+
+  void appendInlineSpan(InlineSpan span) {
+    _renderParagraph.text.children?.add(span);
+  }
+
 
   // Box size equals to RenderBox.size to avoid flutter complain when read size property.
   Size? _boxSize;
@@ -453,22 +461,6 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
       // first set text is no use, so need check again
       paragraph.text = buildTextSpan(oldText: paragraph.text);
-
-      WebFTextSpan text = paragraph.text;
-      if (firstLineIndent > 0 && firstLineIndent != _lastFirstLineIndent) {
-        if (text.children!.isEmpty) {
-          WebFTextPlaceHolderSpan placeHolderSpan = WebFTextPlaceHolderSpan();
-          text.children!.add(placeHolderSpan);
-          text.textSpanPosition.add(placeHolderSpan);
-        }
-        _updatePlaceHolderDimensions(paragraph);
-      } else if (firstLineIndent == 0 && (firstLineIndent != _lastFirstLineIndent || text.children!.isNotEmpty)) {
-        text.children!.clear();
-        text.textSpanPosition.clear();
-        _clearPlaceHolderDimensions(paragraph);
-        paragraph.markUpdateTextPainter();
-      }
-      _lastFirstLineIndent = firstLineIndent;
       paragraph.maxLines = _maxLines;
       paragraph.lineHeight = _lineHeight;
       paragraph.layout(constraints, parentUsesSize: true);
@@ -540,6 +532,10 @@ class RenderTextLineBoxes {
   LogicTextInlineBox createAndAppendTextBox(RenderTextBox renderObject, Rect rect) {
     inlineBoxList.add(LogicTextInlineBox(logicRect: rect, renderObject: renderObject));
     return inlineBoxList.last;
+  }
+
+  void appendLineBox(LogicTextInlineBox box) {
+    inlineBoxList.add(box);
   }
 
   bool containLineBox(LogicTextInlineBox box) {
