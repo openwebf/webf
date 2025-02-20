@@ -118,6 +118,9 @@ abstract class Element extends ContainerNode
   /// The inline style is a map of style property name to style property value.
   final Map<String, dynamic> inlineStyle = {};
 
+  /// The StatefulElements that holding the reference of this elements
+  final Set<WebFElementWidgetState> states = {};
+
   @pragma('vm:prefer-inline')
   flutter.Key key = flutter.UniqueKey();
 

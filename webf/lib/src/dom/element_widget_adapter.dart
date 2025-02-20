@@ -57,7 +57,9 @@ class WebFElementWidget extends flutter.StatefulWidget {
 class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutter.AutomaticKeepAliveClientMixin {
   final Element _webFElement;
 
-  WebFElementWidgetState(this._webFElement);
+  WebFElementWidgetState(this._webFElement) {
+    _webFElement.states.add(this);
+  }
 
   Element get webFElement => _webFElement;
 
@@ -178,6 +180,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                       });
                 }
 
+                children.addAll(webFElement.positionedElements.map((element) => element.toWidget()));
                 return WebFRenderLayoutWidgetAdaptor(
                   webFElement: _webFElement,
                   children: children,
@@ -203,6 +206,24 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     }
 
     return widget;
+  }
+
+  @override
+  void deactivate() {
+    super.deactivate();
+    _webFElement.states.remove(this);
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    _webFElement.states.add(this);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _webFElement.states.remove(this);
   }
 
   @override
@@ -331,8 +352,9 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
   void requestForBuild(AdapterUpdateReason reason) {
-    WebFElementWidgetState state = findAncestorStateOfType<WebFElementWidgetState>()!;
-    state.requestForChildNodeUpdate(reason);
+    webFElement.states.forEach((state) {
+      state.requestForChildNodeUpdate(reason);
+    });
   }
 
   @override

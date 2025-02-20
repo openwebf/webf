@@ -50,7 +50,6 @@ class _WebFTesterState extends State<WebFTester> {
       bundle: WebFBundle.fromUrl(
           'http://localhost:${widget.mockServerPort}/public/core.build.js?search=1234#hash=hashValue'),
       javaScriptChannel: javaScriptChannel,
-      runningThread: FlutterUIThread(),
       onLoad: onLoad,
       gestureListener: GestureListener(
         onDrag: (GestureEvent gestureEvent) {
@@ -61,7 +60,8 @@ class _WebFTesterState extends State<WebFTester> {
         },
       ),
     );
-    await controller.controlledInitCompleter;
+
+    await controller.controlledInitCompleter.future;
 
     double contextId = controller.view.contextId;
     testContext = initTestFramework(contextId);
