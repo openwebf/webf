@@ -449,9 +449,6 @@ abstract class Element extends ContainerNode
     // Clear pointer listener
     clearEventResponder(renderBoxModel);
 
-    if (renderStyle.position == CSSPositionType.fixed) {
-      print(holderAttachedPositionedElement);
-    }
     renderStyle.removeRenderObject(flutterWidgetElement);
   }
 
@@ -1244,8 +1241,15 @@ abstract class Element extends ContainerNode
       }
 
       if (renderStyle.isBoxModelHaveSize()) {
+        RenderBoxModel ancestor;
+        if (ownerDocument.documentElement!.positionedElements.isNotEmpty) {
+          ancestor = ownerDocument.documentElement!.attachedRenderer!.parent as RenderBoxModel;
+        } else {
+          ancestor = ownerDocument.documentElement!.attachedRenderer as RenderBoxModel;
+        }
+
         Offset offset = renderStyle.getOffset(
-            ancestorRenderBox: ownerDocument.documentElement!.attachedRenderer as RenderBoxModel, excludeScrollOffset: true);
+            ancestorRenderBox: ancestor, excludeScrollOffset: true);
         Size size = renderStyle.boxSize()!;
         boundingClientRect = BoundingClientRect(
             context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),

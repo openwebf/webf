@@ -131,7 +131,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                     return WebFHTMLElement(
                         tagName: 'DIV',
                         controller: webFElement.ownerDocument.controller,
-                        parentElement: webFElement.parentElement,
+                        parentElement: webFElement,
                         children: [adapter, ...webFElement.positionedElements.map((element) => element.toWidget())]);
                   }
 
