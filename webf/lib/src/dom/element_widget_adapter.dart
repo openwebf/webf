@@ -383,9 +383,9 @@ class _PositionedPlaceHolderElement extends flutter.SingleChildRenderObjectEleme
     scheduleMicrotask(() {
       RenderPositionPlaceholder renderPositionPlaceholder = renderObject as RenderPositionPlaceholder;
       renderPositionPlaceholder.positioned = widget.positionedElement.renderStyle.attachedRenderBoxModel;
-      renderPositionPlaceholder.positioned!.renderPositionPlaceholder = renderPositionPlaceholder;
+      renderPositionPlaceholder.positioned?.renderPositionPlaceholder = renderPositionPlaceholder;
       renderPositionPlaceholder.markNeedsLayout();
-      renderPositionPlaceholder.positioned!.markNeedsLayout();
+      renderPositionPlaceholder.positioned?.markNeedsLayout();
     });
   }
 }
