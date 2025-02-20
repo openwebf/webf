@@ -46,6 +46,16 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
     final BoxParentData childParentData = child.parentData as BoxParentData;
     context.paintChild(child, offset + childParentData.offset);
   }
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    final RenderBox? child = this.child;
+    if (child == null) {
+      return false;
+    }
+    final BoxParentData childParentData = child.parentData as BoxParentData;
+    return super.hitTest(result, position: position - childParentData.offset);
+  }
 }
 
 class LayoutBoxWrapper extends SingleChildRenderObjectWidget {
