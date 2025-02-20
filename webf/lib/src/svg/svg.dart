@@ -79,8 +79,8 @@ class SVGSVGElement extends SVGGraphicsElement {
           setter: (val) {
             final nextViewBox = parseViewBox(val);
             _viewBox = nextViewBox;
-            if (nextViewBox != (renderStyle.domRenderBoxModel as RenderSVGRoot?)?.viewBox) {
-              (renderStyle.domRenderBoxModel as RenderSVGRoot?)?.viewBox = nextViewBox;
+            if (nextViewBox != (renderStyle.attachedRenderBoxModel as RenderSVGRoot?)?.viewBox) {
+              (renderStyle.attachedRenderBoxModel as RenderSVGRoot?)?.viewBox = nextViewBox;
             }
           }),
       'preserveAspectRatio': ElementAttributeProperty(setter: (val) {

@@ -603,7 +603,7 @@ class RenderFlowLayout extends RenderLayoutBox {
             // Element of display block will stretch to the width of its container
             // when its width is not specified.
             if (isChildBlockLevel) {
-              double contentBoxWidth = isScrollingContentBox ? boxSize!.width : renderStyle.contentBoxWidth!;
+              double contentBoxWidth = renderStyle.contentBoxWidth!;
               // No need to layout child when its width is identical to parent's width.
               if (child.renderStyle.borderBoxWidth == contentBoxWidth) {
                 continue;
@@ -819,7 +819,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (_lineBoxMetrics.isEmpty) {
       if (isDisplayInline) {
         // Flex item baseline does not includes margin-bottom.
-        Size? boxSize = isScrollingContentBox ? (parent as RenderBoxModel).boxSize : this.boxSize;
+        Size? boxSize = this.boxSize;
         lineDistance = isParentFlowLayout ? marginTop + boxSize!.height + marginBottom : marginTop + boxSize!.height;
         return lineDistance;
       } else {
@@ -1063,7 +1063,7 @@ class RenderFlowLayout extends RenderLayoutBox {
             return curr > next ? curr : next;
           });
 
-    RenderBoxModel container = isScrollingContentBox ? parent as RenderBoxModel : this;
+    RenderBoxModel container = this;
     bool isScrollContainer = renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
         renderStyle.effectiveOverflowY != CSSOverflowType.visible;
 
@@ -1183,13 +1183,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._getChildMarginTop');
     }
-    if (child.isScrollingContentBox) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackLayoutStep();
-      }
-
-      return 0;
-    }
     double result = child.renderStyle.collapsedMarginTop;
 
     if (enableWebFProfileTracking) {
@@ -1199,9 +1192,6 @@ class RenderFlowLayout extends RenderLayoutBox {
   }
 
   double _getChildMarginBottom(RenderBoxModel child) {
-    if (child.isScrollingContentBox) {
-      return 0;
-    }
     return child.renderStyle.collapsedMarginBottom;
   }
 

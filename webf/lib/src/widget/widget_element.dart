@@ -321,10 +321,7 @@ class WebFRenderWidgetAdaptor extends MultiChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    if (widgetElement.managedByFlutterWidget) {
-      return widgetElement.renderStyle.getWidgetPairedRenderBoxModel(context as RenderObjectElement)!;
-    }
-    return widgetElement.domRenderer!;
+    return widgetElement.renderStyle.getWidgetPairedRenderBoxModel(context as RenderObjectElement)!;
   }
 
   @override

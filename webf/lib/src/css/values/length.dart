@@ -205,11 +205,6 @@ class CSSLengthValue {
         // CSSRenderStyle? parentRenderStyle;
         while (parentRenderStyle != null) {
           if (parentRenderStyle.isBoxModel() && (_isPercentageRelativeContainerRenderStyle(parentRenderStyle))) {
-            // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
-            // content box is only a fraction of the complete renderStyle.
-            parentRenderStyle = parentRenderStyle.isSelfScrollingContentBox()
-                ? parentRenderStyle.getParentRenderStyle()
-                : parentRenderStyle;
             break;
           }
           parentRenderStyle = parentRenderStyle.getParentRenderStyle();

@@ -27,9 +27,11 @@ typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObjec
 class AdapterUpdateReason {}
 
 class WebFInitReason extends AdapterUpdateReason {}
+
 class DocumentElementChangedReason extends AdapterUpdateReason {}
 
 class UpdateDisplayReason extends AdapterUpdateReason {}
+
 class UpdateTransformReason extends AdapterUpdateReason {}
 
 class UpdateChildNodeUpdateReason extends AdapterUpdateReason {}
@@ -407,7 +409,6 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   double getHeightByAspectRatio();
 
-  RenderBoxModel? _domRenderObjects;
   final Map<flutter.RenderObjectElement, RenderBoxModel> _widgetRenderObjects = {};
 
   Map<flutter.RenderObjectElement, RenderBoxModel> get widgetRenderObjects => _widgetRenderObjects;
@@ -453,75 +454,38 @@ abstract class RenderStyle extends DiagnosticableTree {
       }
     }
 
-    if (domRenderBoxModel != null) {
-      return callback(domRenderBoxModel!);
-    }
     return false;
   }
 
   @pragma('vm:prefer-inline')
   bool isDocumentRootBox() {
-    return _domRenderObjects?.isDocumentRootBox == true;
+    return attachedRenderBoxModel?.isDocumentRootBox == true;
   }
 
   @pragma('vm:prefer-inline')
   bool isParentDocumentRootBox() {
-    if (_domRenderObjects?.parent is! RenderBoxModel) return false;
-    return (_domRenderObjects!.parent as RenderBoxModel).isDocumentRootBox;
+    if (attachedRenderBoxModel?.parent is! RenderBoxModel) return false;
+    return (attachedRenderBoxModel!.parent as RenderBoxModel).isDocumentRootBox;
   }
 
   @pragma('vm:prefer-inline')
   bool isParentRenderViewportBox() {
-    return _domRenderObjects?.parent is RenderViewportBox;
+    return attachedRenderBoxModel?.parent is RenderViewportBox;
   }
 
   @pragma('vm:prefer-inline')
   bool hasRenderBox() {
-    return _widgetRenderObjects.isNotEmpty || domRenderBoxModel != null;
+    return _widgetRenderObjects.isNotEmpty;
   }
 
   RenderBoxModel? getSelfRenderBox(flutter.RenderObjectElement? flutterWidgetElement) {
-    if (flutterWidgetElement == null) {
-      return _domRenderObjects;
-    }
     return _widgetRenderObjects[flutterWidgetElement];
-  }
-
-  @pragma('vm:prefer-inline')
-  bool isSelfScrollingContentBox() {
-    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self,
-        (renderObject, _) => renderObject is RenderBoxModel && renderObject.isScrollingContentBox);
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfParentDataAreRenderLayoutParentData() {
     return everyRenderObjectByTypeAndMatch(
         RenderObjectGetType.self, (renderObject, _) => renderObject?.parentData is RenderLayoutParentData);
-  }
-
-  @pragma('vm:prefer-inline')
-  CSSRenderStyle? getScrollContentRenderStyle() {
-    if (target.managedByFlutterWidget) {
-      for (var renderBoxModel in widgetRenderObjectIterator) {
-        if (renderBoxModel is RenderLayoutBox) {
-          return renderBoxModel.renderScrollingContent?.renderStyle;
-        }
-      }
-      return null;
-    }
-
-    if (_domRenderObjects is RenderLayoutBox) {
-      RenderLayoutBox? scrollingContentBox = (_domRenderObjects as RenderLayoutBox).renderScrollingContent;
-      return scrollingContentBox?.renderStyle;
-    }
-
-    return null;
-  }
-
-  @pragma('vm:prefer-inline')
-  bool isParentScrollingContentBox() {
-    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent,
-        (renderObject, _) => renderObject is RenderBoxModel && renderObject.isScrollingContentBox);
   }
 
   @pragma('vm:prefer-inline')
@@ -652,35 +616,23 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   bool isSelfContainsRenderPositionPlaceHolder() {
-    if (target.managedByFlutterWidget) {
-      return false;
-    }
-
-    return _domRenderObjects?.renderPositionPlaceholder != null;
+    return attachedRenderBoxModel?.renderPositionPlaceholder != null;
   }
 
   @pragma('vm:prefer-inline')
   bool isPositionHolderParentIsRenderFlexLayout() {
-    if (target.managedByFlutterWidget) {
-      return false;
-    }
-
-    return _domRenderObjects?.renderPositionPlaceholder?.parent is RenderFlexLayout;
+    return attachedRenderBoxModel?.renderPositionPlaceholder?.parent is RenderFlexLayout;
   }
 
   @pragma('vm:prefer-inline')
   bool isPositionHolderParentIsRenderLayoutBox() {
-    if (target.managedByFlutterWidget) {
-      return false;
-    }
-    return _domRenderObjects?.renderPositionPlaceholder?.parent is RenderLayoutBox;
+    return attachedRenderBoxModel?.renderPositionPlaceholder?.parent is RenderLayoutBox;
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfPositioned() {
-    assert(!target.managedByFlutterWidget, 'Currently not supported in widget mode');
-    if (_domRenderObjects?.parentData is RenderLayoutParentData) {
-      RenderLayoutParentData childParentData = _domRenderObjects?.parentData as RenderLayoutParentData;
+    if (attachedRenderBoxModel?.parentData is RenderLayoutParentData) {
+      RenderLayoutParentData childParentData = attachedRenderBoxModel?.parentData as RenderLayoutParentData;
       return childParentData.isPositioned;
     }
     return false;
@@ -688,43 +640,35 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderReplaced() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderReplaced);
+    return someRenderBoxSatisfy((renderObject) => renderObject is RenderReplaced);
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderLayoutBox() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderLayoutBox);
+    return someRenderBoxSatisfy((renderObject) => renderObject is RenderLayoutBox);
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfBoxModelMatch(RenderBoxModelMatcher matcher) {
-    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, renderStyle) {
-      if (renderObject is! RenderBoxModel) return false;
-
-      return matcher(renderObject, renderObject.renderStyle);
-    });
+    if (attachedRenderBoxModel != null) {
+      return matcher(attachedRenderBoxModel!, attachedRenderBoxModel!.renderStyle);
+    }
+    return false;
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfBoxModelSizeTight() {
-    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, renderStyle) {
-      if (renderObject is! RenderBoxModel) return false;
-
-      return renderObject.isSizeTight == true;
-    });
+    return attachedRenderBoxModel?.isSizeTight == true;
   }
 
   @pragma('vm:prefer-inline')
   bool isParentBoxModelMatch(RenderBoxModelMatcher matcher) {
-    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent, (renderObject, renderStyle) {
-      if (renderObject is! RenderBoxModel) return false;
-      if (renderObject is RenderPortal && renderObject.parent is RenderBoxModel)
-        return matcher(renderObject.parent as RenderBoxModel, renderObject.renderStyle);
+    RenderBoxModel? selfRender = attachedRenderBoxModel;
+    if (selfRender == null) return false;
+    if (selfRender is RenderPortal && selfRender.parent is RenderBoxModel)
+      return matcher(selfRender.parent as RenderBoxModel, selfRender.renderStyle);
 
-      return matcher(renderObject, renderObject.renderStyle);
-    });
+    return matcher(selfRender, selfRender.renderStyle);
   }
 
   @pragma('vm:prefer-inline')
@@ -866,11 +810,6 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   void clearIntersectionChangeListeners([flutter.RenderObjectElement? flutterWidgetElement]) {
-    if (flutterWidgetElement == null) {
-      domRenderBoxModel?.clearIntersectionChangeListeners();
-      return;
-    }
-
     RenderBoxModel? widgetRenderBox = _widgetRenderObjects[flutterWidgetElement];
     widgetRenderBox?.clearIntersectionChangeListeners();
   }
@@ -907,16 +846,6 @@ abstract class RenderStyle extends DiagnosticableTree {
       if (renderObject is RenderBoxModel) {
         renderObject.renderPositionPlaceholder?.parent?.markNeedsLayout();
       }
-      return true;
-    });
-  }
-
-  @pragma('vm:prefer-inline')
-  void markScrollingContainerNeedsLayout() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
-      if (renderObject is! RenderBoxModel) return false;
-      RenderLayoutBox? scrollContainer = renderObject.findScrollContainer() as RenderLayoutBox?;
-      scrollContainer?.renderScrollingContent?.markNeedsLayout();
       return true;
     });
   }
@@ -1108,14 +1037,6 @@ abstract class RenderStyle extends DiagnosticableTree {
         return null;
       });
     }
-    if (domRenderBoxModel != null) {
-      return _renderObjectMatchFn(domRenderBoxModel!, getType, (renderObject, renderStyle) {
-        if (renderObject is RenderBoxModel) {
-          return getter(renderObject, renderStyle!);
-        }
-        return null;
-      });
-    }
     return null;
   }
 
@@ -1167,9 +1088,6 @@ abstract class RenderStyle extends DiagnosticableTree {
         return _renderObjectMatchFn(renderBoxModel, getType, matcher);
       });
     }
-    if (domRenderBoxModel != null) {
-      return _renderObjectMatchFn(domRenderBoxModel!, getType, matcher);
-    }
     return false;
   }
 
@@ -1179,9 +1097,6 @@ abstract class RenderStyle extends DiagnosticableTree {
         return _renderObjectMatchFn(renderBoxModel, getType, matcher);
       });
     }
-    if (domRenderBoxModel != null) {
-      return _renderObjectMatchFn(domRenderBoxModel!, getType, matcher);
-    }
     return false;
   }
 
@@ -1189,10 +1104,6 @@ abstract class RenderStyle extends DiagnosticableTree {
     bool hasMatch = everyWidgetRenderBox(callback);
     if (!hasMatch) {
       return false;
-    }
-    if (!target.managedByFlutterWidget && domRenderBoxModel != null) {
-      bool domMatch = callback(null, domRenderBoxModel!);
-      if (!domMatch) return false;
     }
     return true;
   }
@@ -1223,18 +1134,11 @@ abstract class RenderStyle extends DiagnosticableTree {
   void removeRenderObject(flutter.Element? flutterWidgetElement) {
     if (flutterWidgetElement != null) {
       unmountWidgetRenderObject(flutterWidgetElement);
-    } else {
-      setDomRenderObject(null);
     }
   }
 
   void removeAllRenderObject() {
     _widgetRenderObjects.clear();
-    _domRenderObjects = null;
-  }
-
-  void setDomRenderObject(RenderBoxModel? renderBoxModel) {
-    _domRenderObjects = renderBoxModel;
   }
 
   void setDebugShouldPaintOverlay(bool value) {
@@ -1251,13 +1155,6 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   void unmountWidgetRenderObject(flutter.Element ownerRenderObjectElement) {
     _widgetRenderObjects.remove(ownerRenderObjectElement);
-  }
-
-  // Following properties used for exposing APIs
-  // for class that extends [AbstractRenderStyle].
-  @pragma('vm:prefer-inline')
-  RenderBoxModel? get domRenderBoxModel {
-    return _domRenderObjects;
   }
 
   RenderBoxModel? getWidgetPairedRenderBoxModel(flutter.Element targetRenderObjectElement) {
@@ -1299,11 +1196,9 @@ abstract class RenderStyle extends DiagnosticableTree {
       });
       return;
     }
-    _domRenderObjects!.visitChildren(visitor);
   }
 
   void dispose() {
-    _domRenderObjects = null;
     _widgetRenderObjects.clear();
   }
 }
@@ -2247,9 +2142,7 @@ class CSSRenderStyle extends RenderStyle
         // RenderBoxModel parent = current.parent as RenderBoxModel;
         // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
         // content box is only a fraction of the complete renderStyle.
-        RenderStyle parentRenderStyle = renderStyle.isParentScrollingContentBox()
-            ? (renderStyle.getParentRenderStyle())!.getParentRenderStyle()!
-            : renderStyle.getParentRenderStyle()!;
+        RenderStyle parentRenderStyle = renderStyle.getParentRenderStyle()!;
         // Width of positioned element should subtract its horizontal margin.
         logicalWidth = (parentRenderStyle.paddingBoxLogicalWidth ?? 0) -
             renderStyle.left.computedValue -
@@ -2322,9 +2215,7 @@ class CSSRenderStyle extends RenderStyle
         // RenderBoxModel parent = current.parent as RenderBoxModel;
         // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
         // content box is only a fraction of the complete renderStyle.
-        RenderStyle parentRenderStyle = renderStyle.isParentScrollingContentBox()
-            ? renderStyle.getParentRenderStyle()!.getParentRenderStyle()!
-            : renderStyle.getParentRenderStyle()!;
+        RenderStyle parentRenderStyle = renderStyle.getParentRenderStyle()!;
         // Height of positioned element should subtract its vertical margin.
         logicalHeight = (parentRenderStyle.paddingBoxLogicalHeight ?? 0) -
             renderStyle.top.computedValue -
@@ -2433,8 +2324,7 @@ class CSSRenderStyle extends RenderStyle
     }
 
     // If renderBoxModel definite content constraints, use it as max constrains width of content.
-    BoxConstraints? contentConstraints =
-        isSelfScrollingContentBox() ? getParentRenderStyle()!.contentConstraints() : this.contentConstraints();
+    BoxConstraints? contentConstraints = this.contentConstraints();
     if (contentConstraints != null && contentConstraints.maxWidth != double.infinity) {
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackLayoutStep();
@@ -2779,15 +2669,13 @@ class CSSRenderStyle extends RenderStyle
       nextRenderBoxModel = _createRenderWidget();
     } else if (target.isReplacedElement) {
       nextRenderBoxModel = _createRenderReplaced(
-          isRepaintBoundary: target.isRepaintBoundary,
-          previousReplaced: _domRenderObjects is RenderReplaced ? _domRenderObjects as RenderReplaced : null);
+          isRepaintBoundary: target.isRepaintBoundary);
     } else if (target.isSVGElement) {
       nextRenderBoxModel =
-          target.createRenderSVG(isRepaintBoundary: target.isRepaintBoundary, previous: _domRenderObjects);
+          target.createRenderSVG(isRepaintBoundary: target.isRepaintBoundary);
     } else {
       nextRenderBoxModel = createRenderLayout(
-          isRepaintBoundary: target.isRepaintBoundary,
-          previousRenderLayoutBox: _domRenderObjects is RenderLayoutBox ? _domRenderObjects as RenderLayoutBox : null);
+          isRepaintBoundary: target.isRepaintBoundary);
     }
 
     return nextRenderBoxModel;

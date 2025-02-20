@@ -1696,7 +1696,7 @@ class WebFViewController implements WidgetsBindingObserver {
       Element? focusedElement = document.focusedElement;
       double scrollOffset = 0;
       if (focusedElement != null) {
-        RenderBox? renderer = focusedElement.domRenderer;
+        RenderBox? renderer = focusedElement.attachedRenderer;
         if (renderer != null && renderer.attached && renderer.hasSize) {
           Offset focusOffset = renderer.localToGlobal(Offset.zero);
           // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
@@ -1714,7 +1714,6 @@ class WebFViewController implements WidgetsBindingObserver {
         window.scrollBy(0, scrollOffset, false);
       }
     }
-    window.resizeViewportRelatedElements();
     viewport?.bottomInset = bottomInsets;
   }
 

@@ -299,20 +299,6 @@ class CSSPositionedLayout {
 
     RenderStyle parentRenderStyle = parent.renderStyle;
 
-    // Calculate offset to overflow container box first, then subtract border and padding
-    // to get the offset to scrolling content box.
-    if (parent.isScrollingContentBox) {
-      RenderLayoutBox overflowContainerBox = parent.parent as RenderLayoutBox;
-      parentRenderStyle = overflowContainerBox.renderStyle;
-
-      // Overflow scroll container has width and height specified surely.
-      if (overflowContainerBox.widthSizeType == BoxSizeType.specified &&
-          overflowContainerBox.heightSizeType == BoxSizeType.specified) {
-        parentSize = Size(overflowContainerBox.renderStyle.width.computedValue,
-            overflowContainerBox.renderStyle.height.computedValue);
-      }
-    }
-
     CSSLengthValue parentBorderLeftWidth = parentRenderStyle.effectiveBorderLeftWidth;
     CSSLengthValue parentBorderRightWidth = parentRenderStyle.effectiveBorderRightWidth;
     CSSLengthValue parentBorderTopWidth = parentRenderStyle.effectiveBorderTopWidth;
@@ -359,7 +345,7 @@ class CSSPositionedLayout {
 
     double x = _computePositionedOffset(
       Axis.horizontal,
-      parent.isScrollingContentBox,
+      false,
       parentBorderLeftWidth,
       parentPaddingLeft,
       containingBlockSize.width,
@@ -373,7 +359,7 @@ class CSSPositionedLayout {
 
     double y = _computePositionedOffset(
       Axis.vertical,
-      parent.isScrollingContentBox,
+      false,
       parentBorderTopWidth,
       parentPaddingTop,
       containingBlockSize.height,

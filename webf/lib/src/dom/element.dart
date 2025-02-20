@@ -211,10 +211,6 @@ abstract class Element extends ContainerNode
 
   @pragma('vm:prefer-inline')
   @override
-  RenderBoxModel? get domRenderer => renderStyle.domRenderBoxModel;
-
-  @pragma('vm:prefer-inline')
-  @override
   RenderBoxModel? get attachedRenderer => renderStyle.attachedRenderBoxModel;
 
   HTMLCollection? _collection;
@@ -389,38 +385,11 @@ abstract class Element extends ContainerNode
   }
 
   RenderBoxModel? updateOrCreateRenderBoxModel({flutter.RenderObjectElement? flutterWidgetElement}) {
-    RenderBoxModel? previousRenderBoxModel = renderStyle.domRenderBoxModel;
     RenderBoxModel nextRenderBoxModel = renderStyle.updateOrCreateRenderBoxModel();
-
-    if (!managedByFlutterWidget && previousRenderBoxModel != nextRenderBoxModel) {
-      RenderObject? parentRenderObject;
-      RenderBox? after;
-      if (previousRenderBoxModel != null) {
-        parentRenderObject = previousRenderBoxModel.parent;
-
-        if (previousRenderBoxModel.parentData is ContainerParentDataMixin<RenderBox>) {
-          after = (previousRenderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
-        }
-
-        RenderBoxModel.detachRenderBox(previousRenderBoxModel);
-
-        if (parentRenderObject != null) {
-          RenderBoxModel.attachRenderBox(parentRenderObject, nextRenderBoxModel, after: after);
-        }
-
-        SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-          if (!previousRenderBoxModel.disposed) {
-            previousRenderBoxModel.dispose();
-          }
-        });
-      }
-    }
 
     if (managedByFlutterWidget) {
       assert(flutterWidgetElement != null);
       renderStyle.addOrUpdateWidgetRenderObjects(flutterWidgetElement!, nextRenderBoxModel);
-    } else {
-      renderStyle.setDomRenderObject(nextRenderBoxModel);
     }
 
     // Ensure that the event responder is bound.
@@ -542,80 +511,6 @@ abstract class Element extends ContainerNode
     // for (RenderBoxModel stickyChild in scrollContainer.stickyChildren) {
     //   CSSPositionedLayout.applyStickyChildOffset(scrollContainer, stickyChild);
     // }
-  }
-
-  // Find all the nested position absolute elements which need to change the containing block
-  // from other element to this element when element's position is changed from static to relative.
-  // Take following html for example, div of id=4 should reposition from div of id=1 to div of id=2.
-  // <div id="1" style="position: relative">
-  //    <div id="2" style="position: relative"> <!-- changed from "static" to "relative" -->
-  //        <div id="3">
-  //            <div id="4" style="position: absolute">
-  //            </div>
-  //        </div>
-  //    </div>
-  // </div>
-  List<Element> findNestedPositionAbsoluteChildren() {
-    List<Element> positionAbsoluteChildren = [];
-
-    if (!isRendererAttachedToSegmentTree) return positionAbsoluteChildren;
-
-    children.forEach((Element child) {
-      if (!child.isRendererAttachedToSegmentTree) return;
-
-      RenderBoxModel childRenderBoxModel = child.renderStyle.domRenderBoxModel!;
-      RenderStyle childRenderStyle = childRenderBoxModel.renderStyle;
-      if (childRenderStyle.position == CSSPositionType.absolute) {
-        positionAbsoluteChildren.add(child);
-      }
-      // No need to loop layout box whose position is not static.
-      if (childRenderStyle.position != CSSPositionType.static) {
-        return;
-      }
-      if (childRenderBoxModel is RenderLayoutBox) {
-        List<Element> mergedChildren = child.findNestedPositionAbsoluteChildren();
-        for (Element child in mergedChildren) {
-          positionAbsoluteChildren.add(child);
-        }
-      }
-    });
-
-    return positionAbsoluteChildren;
-  }
-
-  // Find all the direct position absolute elements which need to change the containing block
-  // from this element to other element when element's position is changed from relative to static.
-  // Take following html for example, div of id=4 should reposition from div of id=2 to div of id=1.
-  // <div id="1" style="position: relative">
-  //    <div id="2" style="position: static"> <!-- changed from "relative" to "static" -->
-  //        <div id="3">
-  //            <div id="4" style="position: absolute">
-  //            </div>
-  //        </div>
-  //    </div>
-  // </div>
-  List<Element> findDirectPositionAbsoluteChildren() {
-    List<Element> directPositionAbsoluteChildren = [];
-
-    assert(!managedByFlutterWidget);
-    if (!isRendererAttachedToSegmentTree) return directPositionAbsoluteChildren;
-
-    RenderBox? child = (renderStyle.domRenderBoxModel as RenderLayoutBox).firstChild;
-
-    while (child != null) {
-      final ContainerParentDataMixin<RenderBox>? childParentData =
-          child.parentData as ContainerParentDataMixin<RenderBox>?;
-      if (child is! RenderLayoutBox) {
-        child = childParentData!.nextSibling;
-        continue;
-      }
-      if (child.renderStyle.position == CSSPositionType.absolute) {
-        directPositionAbsoluteChildren.add(child.renderStyle.target);
-      }
-      child = childParentData!.nextSibling;
-    }
-
-    return directPositionAbsoluteChildren;
   }
 
   void _updateHostingWidgetWithOverflow(CSSOverflowType oldOverflow) {
@@ -745,39 +640,6 @@ abstract class Element extends ContainerNode
     }
   }
 
-  // Add element to its containing block which includes the steps of detach the renderBoxModel
-  // from its original parent and attach to its new containing block.
-  void addToContainingBlock(flutter.RenderObjectElement? flutterWidgetElement) {
-    assert(!managedByFlutterWidget);
-    RenderBoxModel _renderBoxModel = renderStyle.domRenderBoxModel!;
-    // Find the renderBox of its containing block.
-    Element? containingBlockElement = getContainingBlockElement();
-    // Find the previous siblings to insert before renderBoxModel is detached.
-    RenderBox? previousSibling = _renderBoxModel.getPreviousSibling();
-    // Detach renderBoxModel from its original parent.
-    _renderBoxModel.detachFromContainingBlock();
-    // Original parent renderBox.
-    RenderBox parentRenderBox = parentElement!.renderStyle.domRenderBoxModel!;
-    // Attach renderBoxModel of to its containing block.
-    _renderBoxModel.attachToContainingBlock(containingBlockElement?.renderStyle.domRenderBoxModel,
-        parent: parentRenderBox, after: previousSibling);
-  }
-
-  void addChildForDOMMode(RenderBox child) {
-    if (renderStyle.isSelfRenderLayoutBox()) {
-      RenderLayoutBox _renderLayoutBox = renderStyle.domRenderBoxModel as RenderLayoutBox;
-      RenderLayoutBox? scrollingContentBox = _renderLayoutBox.renderScrollingContent;
-      if (scrollingContentBox != null) {
-        scrollingContentBox.add(child);
-      } else {
-        _renderLayoutBox.add(child);
-      }
-    } else if (renderStyle.isSelfRenderReplaced()) {
-      RenderReplaced _renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced;
-      _renderReplaced.child = child;
-    }
-  }
-
   @override
   void dispose() async {
     renderStyle.detach();
@@ -785,9 +647,6 @@ abstract class Element extends ContainerNode
     style.dispose();
     attributes.clear();
     _attributeProperties.clear();
-    if (!managedByFlutterWidget) {
-      ownerDocument.inactiveRenderObjects.add(renderStyle.domRenderBoxModel);
-    }
     ownerDocument.clearElementStyleDirty(this);
     positionedElements.clear();
     holderAttachedPositionedElement = null;
@@ -1372,10 +1231,10 @@ abstract class Element extends ContainerNode
   // about the size of an element and its position relative to the viewport.
   // https://drafts.csswg.org/cssom-view/#dom-element-getboundingclientrect
   BoundingClientRect get boundingClientRect {
+    ownerDocument.forceRebuild();
     BoundingClientRect boundingClientRect =
         BoundingClientRect.zero(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
     if (isRendererAttached) {
-      ownerDocument.forceRebuild();
       flushLayout();
       // RenderBoxModel sizedBox = renderBoxModel!;
       // Force flush layout.
@@ -1386,7 +1245,7 @@ abstract class Element extends ContainerNode
 
       if (renderStyle.isBoxModelHaveSize()) {
         Offset offset = renderStyle.getOffset(
-            ancestorRenderBox: ownerDocument.documentElement!.domRenderer as RenderBoxModel, excludeScrollOffset: true);
+            ancestorRenderBox: ownerDocument.documentElement!.attachedRenderer as RenderBoxModel, excludeScrollOffset: true);
         Size size = renderStyle.boxSize()!;
         boundingClientRect = BoundingClientRect(
             context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),
@@ -1423,7 +1282,7 @@ abstract class Element extends ContainerNode
     }
 
     Offset offset = Offset(x, y);
-    Offset result = renderStyle.domRenderBoxModel!.globalToLocal(offset);
+    Offset result = renderStyle.attachedRenderBoxModel!.globalToLocal(offset);
     return {'x': result.dx, 'y': result.dy};
   }
 
@@ -1546,21 +1405,6 @@ abstract class Element extends ContainerNode
       printText += ' id($id)';
     }
     return printText;
-  }
-
-  // Create a new RenderLayoutBox for the scrolling content.
-  RenderLayoutBox createScrollingContentLayout() {
-    // FIXME: Create an empty renderStyle for do not share renderStyle with element.
-    CSSRenderStyle scrollingContentRenderStyle = CSSRenderStyle(target: this);
-    // Scrolling content layout need to be share the same display with its outer layout box.
-    scrollingContentRenderStyle.display = renderStyle.display;
-    RenderLayoutBox scrollingContentLayoutBox = renderStyle.createRenderLayout(
-      isRepaintBoundary: true,
-      cssRenderStyle: scrollingContentRenderStyle,
-    );
-    scrollingContentRenderStyle.setDomRenderObject(scrollingContentLayoutBox);
-    scrollingContentLayoutBox.isScrollingContentBox = true;
-    return scrollingContentLayoutBox;
   }
 
   bool _checkRecalculateStyle(List<String?> keys) {

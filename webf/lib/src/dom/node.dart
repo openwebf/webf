@@ -109,8 +109,6 @@ typedef NodeVisitor = void Function(Node node);
 /// [Node] or [Element]s, which wrap [RenderObject]s, which provide the actual
 /// rendering of the application.
 abstract class RenderObjectNode {
-  RenderBox? get domRenderer;
-
   RenderBox? get attachedRenderer;
 
   /// Creates an instance of the [RenderObject] class that this
@@ -491,48 +489,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       }
     }
     return children;
-  }
-
-  static RenderBox? findMostClosedSiblings(Node? previousSibling) {
-    RenderBox? afterRenderObject = previousSibling?.domRenderer;
-
-    // Found the most closed
-    if (afterRenderObject == null) {
-      Node? ref = previousSibling?.previousSibling;
-      while (ref != null && afterRenderObject == null) {
-        afterRenderObject = ref.domRenderer;
-        ref = ref.previousSibling;
-      }
-    }
-
-    // Renderer of referenceNode may not moved to a difference place compared to its original place
-    // in the dom tree due to position absolute/fixed.
-    // Use the renderPositionPlaceholder to get the same place as dom tree in this case.
-    if (afterRenderObject is RenderBoxModel) {
-      RenderBox? renderPositionPlaceholder = afterRenderObject.renderPositionPlaceholder;
-      if (renderPositionPlaceholder != null) {
-        afterRenderObject = renderPositionPlaceholder;
-      }
-    }
-
-    return afterRenderObject;
-  }
-
-  static RenderBox? findParentLastRenderBox(Node currentNode) {
-    RenderBox? after;
-    RenderBox? box = currentNode.domRenderer;
-    if (box is RenderLayoutBox) {
-      RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
-      if (scrollingContentBox != null) {
-        after = scrollingContentBox.lastChild;
-      } else {
-        after = box.lastChild;
-      }
-    } else if (box is ContainerRenderObjectMixin<RenderBox, ContainerParentDataMixin<RenderBox>>) {
-      after = (box as ContainerRenderObjectMixin<RenderBox, ContainerParentDataMixin<RenderBox>>).lastChild;
-    }
-
-    return after;
   }
 
   DocumentPosition compareDocumentPosition(Node other) {

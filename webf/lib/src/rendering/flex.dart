@@ -750,7 +750,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     double flexLineLimit = 0.0;
 
     // Use scrolling container to calculate flex line limit for scrolling content box
-    RenderBoxModel? containerBox = isScrollingContentBox ? parent as RenderBoxModel? : this;
+    RenderBoxModel? containerBox = this;
     if (_isHorizontalFlexDirection) {
       flexLineLimit = renderStyle.contentMaxConstraintsWidth;
     } else {
@@ -1266,7 +1266,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         double maxMainConstraints =
             _isHorizontalFlexDirection ? contentConstraints!.maxWidth : contentConstraints!.maxHeight;
         // determining isScrollingContentBox is to reduce the scope of influence
-        if (isScrollingContentBox && maxMainConstraints.isFinite) {
+        if (maxMainConstraints.isFinite) {
           maxMainSize = totalFlexShrink > 0 ? math.min(maxMainSize, maxMainConstraints) : maxMainSize;
           maxMainSize = totalFlexGrow > 0 ? math.max(maxMainSize, maxMainConstraints) : maxMainSize;
         }
@@ -1303,7 +1303,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         double childMainAxisExtent = _getMainAxisExtent(child);
 
         // Non renderBoxModel and scrolling content box of renderBoxModel does not to adjust size.
-        if (child is! RenderBoxModel || child.isScrollingContentBox) {
+        if (child is! RenderBoxModel) {
           mainAxisExtent += childMainAxisExtent;
           continue;
         }
@@ -1789,7 +1789,7 @@ class RenderFlexLayout extends RenderLayoutBox {
             return curr > next ? curr : next;
           });
 
-    RenderBoxModel container = isScrollingContentBox ? parent as RenderBoxModel : this;
+    RenderBoxModel container = this;
     bool isScrollContainer = renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
         renderStyle.effectiveOverflowY != CSSOverflowType.visible;
 
@@ -2301,7 +2301,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (_flexLineBoxMetrics.isEmpty) {
       if (isDisplayInline) {
         // Flex item baseline does not includes margin-bottom
-        Size? boxSize = isScrollingContentBox ? (parent as RenderBoxModel).boxSize : this.boxSize;
+        Size? boxSize = this.boxSize;
         lineDistance = isParentFlowLayout ? marginTop + boxSize!.height + marginBottom : marginTop + boxSize!.height;
         return lineDistance;
       } else {

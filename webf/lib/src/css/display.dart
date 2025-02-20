@@ -69,7 +69,7 @@ mixin CSSDisplayMixin on RenderStyle {
     if (hasRenderBox()) {
       if (!isParentRenderBoxModel()) {
         return transformedDisplay;
-      } else if (isSelfScrollingContentBox() ? getParentRenderStyle()!.isParentRenderFlexLayout() : isParentRenderFlexLayout()) {
+      } else if (isParentRenderFlexLayout()) {
         // Margin change in flex layout may affect transformed display
         // https://www.w3.org/TR/css-display-3/#transformations
 

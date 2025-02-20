@@ -58,7 +58,7 @@ class HTMLElement extends Element {
 
   // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
   @override
-  bool get isRendererAttachedToSegmentTree => domRenderer != null;
+  bool get isRendererAttachedToSegmentTree => attachedRenderer != null;
 
   @override
   void setRenderStyle(String property, String present, {String? baseHref}) {

@@ -37,13 +37,8 @@ class TextNode extends CharacterData {
       for (var textNode in _attachedFlutterWidgetElements) {
         handler(textNode.renderObject);
       }
-    } else {
-      handler(_domRenderTextBox);
     }
   }
-
-  // Must be existed after text node is attached, and all text update will after text attached.
-  RenderTextBox? _domRenderTextBox;
 
   // The text string.
   String _data = '';
@@ -63,32 +58,11 @@ class TextNode extends CharacterData {
       // https://dom.spec.whatwg.org/#concept-cd-replace
       parentNode
           ?.childrenChanged(ChildrenChange.forInsertion(this, previousSibling, nextSibling, ChildrenChangeSource.API));
-    } else {
-      // Empty string of textNode should not attach to render tree.
-      if (oldData.isNotEmpty && newData.isEmpty) {
-        _detachRenderTextBox();
-      } else if (oldData.isEmpty && newData.isNotEmpty) {
-        attachTo(parentElement!);
-      } else {
-        _applyTextStyle();
-
-        // To replace data of node node with offset offset, count count, and data data, run step 12 from the spec:
-        // 12. If node’s parent is non-null, then run the children changed steps for node’s parent.
-        // https://dom.spec.whatwg.org/#concept-cd-replace
-        parentNode?.childrenChanged(
-            ChildrenChange.forInsertion(this, previousSibling, nextSibling, ChildrenChangeSource.API));
-      }
     }
   }
 
   @override
   String get nodeName => '#text';
-
-  @override
-  RenderBox? get domRenderer {
-    assert(!managedByFlutterWidget);
-    return _domRenderTextBox;
-  }
 
   @override
   RenderBox? get attachedRenderer {
@@ -97,13 +71,12 @@ class TextNode extends CharacterData {
           .firstWhereOrNull((flutterElement) => flutterElement.mounted)
           ?.renderObject;
     }
-
-    return _domRenderTextBox;
+    return null;
   }
 
   @override
   bool get isRendererAttached {
-    return _domRenderTextBox?.attached == true;
+    return attachedRenderer?.attached == true;
   }
 
   @override
@@ -115,7 +88,7 @@ class TextNode extends CharacterData {
       return false;
     }
 
-    return _domRenderTextBox?.parent != null;
+    return false;
   }
 
   @override
@@ -140,12 +113,6 @@ class TextNode extends CharacterData {
 
         RenderStyle parentElementRenderStyle = _parentElement.renderStyle;
 
-        if (parentElementRenderStyle.isSelfRenderLayoutBox()) {
-          parentElementRenderStyle = parentElementRenderStyle.isSelfScrollingContentBox()
-              ? parentElementRenderStyle.getScrollContentRenderStyle()!
-              : parentElementRenderStyle;
-        }
-
         _setTextSizeType(textNode, parentElementRenderStyle.widthSizeType(), parentElementRenderStyle.heightSizeType());
       });
     }
@@ -157,64 +124,15 @@ class TextNode extends CharacterData {
     renderTextBox.heightSizeType = height;
   }
 
-  // Attach renderObject of current node to parent
-  @override
-  void attachTo(Element parent, {RenderBox? after}) {
-    // Empty string of TextNode should not attach to render tree.
-    if (_data.isEmpty) return;
-
-    createRenderer();
-
-    // If element attach WidgetElement, render object should be attach to render tree when mount.
-    if (parent.renderObjectManagerType == RenderObjectManagerType.WEBF_NODE && parent.renderStyle.hasRenderBox()) {
-      RenderBox renderBox = domRenderer!;
-
-      // Replaced element didn't have the child.
-      if (parent.renderStyle.isSelfRenderReplaced()) {
-        return;
-      }
-
-      RenderBoxModel.attachRenderBox(parent.domRenderer!, renderBox, after: after);
-    }
-
-    _applyTextStyle();
-  }
-
-  // Detach renderObject of current node from parent
-  void _detachRenderTextBox() {
-    if (isRendererAttachedToSegmentTree && !managedByFlutterWidget) {
-      RenderTextBox renderTextBox = _domRenderTextBox!;
-      RenderBox parent = renderTextBox.parent as RenderBox;
-      if (parent is ContainerRenderObjectMixin) {
-        (parent as ContainerRenderObjectMixin).remove(renderTextBox);
-      } else if (parent is RenderObjectWithChildMixin<RenderBox>) {
-        (parent as RenderObjectWithChildMixin).child = null;
-      }
-    }
-  }
-
   @override
   String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
     return 'TextNode($data)';
   }
 
-  // Detach renderObject of current node from parent
-  @override
-  void unmountRenderObjectInDOMMode({bool keepFixedAlive = false}) {
-    if (!managedByFlutterWidget) {
-      _detachRenderTextBox();
-      _domRenderTextBox = null;
-    }
-  }
-
   @override
   RenderBox createRenderer([flutter.Element? flutterWidgetElement]) {
     RenderTextBox textBox = RenderTextBox(data, renderStyle: parentElement!.renderStyle);
-    if (flutterWidgetElement == null) {
-      _domRenderTextBox = textBox;
-    } else {
-      _attachedFlutterWidgetElements.add(flutterWidgetElement as _TextNodeAdapterElement);
-    }
+    _attachedFlutterWidgetElements.add(flutterWidgetElement as _TextNodeAdapterElement);
 
     return textBox;
   }
@@ -227,7 +145,6 @@ class TextNode extends CharacterData {
 
   @override
   Future<void> dispose() async {
-    unmountRenderObjectInDOMMode();
     _attachedFlutterWidgetElements.clear();
     super.dispose();
   }

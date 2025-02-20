@@ -37,7 +37,6 @@ mixin CSSSizingMixin on RenderStyle {
     }
     _width = value;
     _markSelfAndParentNeedsLayout();
-    _markScrollContainerNeedsLayout();
   }
 
   CSSLengthValue? _height;
@@ -52,7 +51,6 @@ mixin CSSSizingMixin on RenderStyle {
     }
     _height = value;
     _markSelfAndParentNeedsLayout();
-    _markScrollContainerNeedsLayout();
   }
 
   // https://drafts.csswg.org/css-sizing-3/#min-size-properties
@@ -77,7 +75,6 @@ mixin CSSSizingMixin on RenderStyle {
     }
     _minWidth = value;
     _markSelfAndParentNeedsLayout();
-    _markScrollContainerNeedsLayout();
   }
 
   CSSLengthValue? _minHeight;
@@ -92,7 +89,6 @@ mixin CSSSizingMixin on RenderStyle {
     }
     _minHeight = value;
     _markSelfAndParentNeedsLayout();
-    _markScrollContainerNeedsLayout();
   }
 
   // https://drafts.csswg.org/css-sizing-3/#max-size-properties
@@ -117,7 +113,6 @@ mixin CSSSizingMixin on RenderStyle {
     }
     _maxWidth = value;
     _markSelfAndParentNeedsLayout();
-    _markScrollContainerNeedsLayout();
   }
 
   CSSLengthValue? _maxHeight;
@@ -139,7 +134,6 @@ mixin CSSSizingMixin on RenderStyle {
     }
     _maxHeight = value;
     _markSelfAndParentNeedsLayout();
-    _markScrollContainerNeedsLayout();
   }
 
   // Intrinsic width of replaced element.
@@ -153,7 +147,6 @@ mixin CSSSizingMixin on RenderStyle {
     if (_intrinsicWidth == value) return;
     _intrinsicWidth = value;
     _markSelfAndParentNeedsLayout();
-    _markScrollContainerNeedsLayout();
   }
 
   // Intrinsic height of replaced element.
@@ -167,7 +160,6 @@ mixin CSSSizingMixin on RenderStyle {
     if (_intrinsicHeight == value) return;
     _intrinsicHeight = value;
     _markSelfAndParentNeedsLayout();
-    _markScrollContainerNeedsLayout();
   }
 
   // Aspect ratio of replaced element.
@@ -183,11 +175,6 @@ mixin CSSSizingMixin on RenderStyle {
     if (_aspectRatio == value) return;
     _aspectRatio = value;
     _markSelfAndParentNeedsLayout();
-  }
-
-  void _markScrollContainerNeedsLayout() {
-    if (!hasRenderBox()) return;
-    markScrollingContainerNeedsLayout();
   }
 
   void _markSelfAndParentNeedsLayout() {

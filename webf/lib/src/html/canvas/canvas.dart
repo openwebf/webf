@@ -112,7 +112,7 @@ class CanvasElement extends Element {
       pixelRatio: ownerDocument.controller.ownerFlutterView.devicePixelRatio
     );
 
-    addChildForDOMMode(renderCustomPaint!);
+    // addChildForDOMMode(renderCustomPaint!);
     style.addStyleChangeListener(_styleChangedListener);
     return renderCustomPaint!;
   }

@@ -119,7 +119,7 @@ mixin CSSMarginMixin on RenderStyle {
   double get _collapsedMarginTopWithFirstChild {
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle? renderStyle = isSelfScrollingContentBox() ? getParentRenderStyle() : getSelfRenderStyle();
+    RenderStyle? renderStyle = getSelfRenderStyle();
     if (renderStyle == null) return 0.0;
 
     double paddingTop = renderStyle.paddingTop.computedValue;
@@ -184,8 +184,7 @@ mixin CSSMarginMixin on RenderStyle {
     double marginTop = _collapsedMarginTopWithFirstChild;
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle? parentRenderStyle =
-        isParentScrollingContentBox() ? getParentRenderStyle()!.getParentRenderStyle() : getParentRenderStyle();
+    RenderStyle? parentRenderStyle = getParentRenderStyle();
 
     if (parentRenderStyle == null) return 0.0;
 
@@ -276,7 +275,7 @@ mixin CSSMarginMixin on RenderStyle {
   double get _collapsedMarginBottomWithLastChild {
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle? renderStyle = isSelfScrollingContentBox() ? getParentRenderStyle() : getSelfRenderStyle();
+    RenderStyle? renderStyle = getSelfRenderStyle();
     if (renderStyle == null) return 0.0;
     double paddingBottom = renderStyle.paddingBottom.computedValue;
     double borderBottom = renderStyle.effectiveBorderBottomWidth.computedValue;
@@ -342,9 +341,7 @@ mixin CSSMarginMixin on RenderStyle {
     double marginBottom = _collapsedMarginBottomWithLastChild;
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle? parentRenderStyle = isParentScrollingContentBox()
-        ? getParentRenderStyle<CSSMarginMixin>()?.getParentRenderStyle<CSSMarginMixin>()
-        : getParentRenderStyle<CSSMarginMixin>();
+    RenderStyle? parentRenderStyle = getParentRenderStyle<CSSMarginMixin>();
 
     if (parentRenderStyle == null) return 0.0;
 

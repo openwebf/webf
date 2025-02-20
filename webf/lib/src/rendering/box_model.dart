@@ -193,17 +193,6 @@ class RenderLayoutBox extends RenderBoxModel
         RenderBoxContainerDefaultsMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
   RenderLayoutBox({required CSSRenderStyle renderStyle}) : super(renderStyle: renderStyle);
 
-  // Host content which can be scrolled.
-  RenderLayoutBox? get renderScrollingContent {
-    if (firstChild is RenderLayoutBox) {
-      RenderLayoutBox _firstChild = firstChild as RenderLayoutBox;
-      if (_firstChild.isScrollingContentBox) {
-        return _firstChild;
-      }
-    }
-    return null;
-  }
-
   void markChildrenNeedsSort() {
     _cachedPaintingOrder = null;
   }
@@ -246,51 +235,12 @@ class RenderLayoutBox extends RenderBoxModel
     }
 
     BoxConstraints boxConstraints = super.getConstraints();
-    if (isScrollingContentBox) {
-      // fix overflow:scroll/auto nested overflow:scroll/auto
-      BoxConstraints parentConstraints = (parent as RenderBoxModel).constraints;
-      RenderStyle parentRenderStyle = (parent as RenderBoxModel).renderStyle;
-      CSSOverflowType effectiveOverflowY = parentRenderStyle.effectiveOverflowY;
-      CSSOverflowType effectiveOverflowX = parentRenderStyle.effectiveOverflowX;
-      // not processing effectiveOverflow=hidden/clip is to reduce the scope of influence
-      bool shouldInheritY = (effectiveOverflowY == CSSOverflowType.auto || effectiveOverflowY == CSSOverflowType.scroll) && scrollShouldInheritConstraints(this, false);
-      bool shouldInheritX = (effectiveOverflowX == CSSOverflowType.auto || effectiveOverflowX == CSSOverflowType.scroll) && scrollShouldInheritConstraints(this, true);
-      if (shouldInheritY || shouldInheritX) {
-        boxConstraints = BoxConstraints(
-          minWidth: boxConstraints.minWidth,
-          maxWidth: shouldInheritX ? parentConstraints.maxWidth : boxConstraints.maxWidth,
-          minHeight: boxConstraints.minHeight,
-          maxHeight: shouldInheritY ? parentConstraints.maxHeight : boxConstraints.maxHeight,
-        );
-      }
-    }
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackLayoutStep();
     }
 
     return boxConstraints;
-  }
-
-  bool scrollShouldInheritConstraints(RenderLayoutBox layoutBox, bool horizontal) {
-    RenderBox? childBox = layoutBox.firstChild;
-    while (childBox != null && childBox.parentData is RenderLayoutParentData) {
-      final RenderLayoutParentData childParentData = childBox.parentData as RenderLayoutParentData;
-      if (childBox is RenderLayoutBox) {
-        if (childBox.renderScrollingContent != null) {
-          return true;
-        }
-        CSSOverflowType childOverflow = horizontal ? childBox.renderStyle.overflowX : childBox.renderStyle.overflowY;
-        // this condition comes from h5 test
-        if (childOverflow == CSSOverflowType.hidden || childOverflow == CSSOverflowType.clip) {
-          if (scrollShouldInheritConstraints(childBox, horizontal)) {
-            return true;
-          }
-        }
-      }
-      childBox = childParentData.nextSibling;
-    }
-    return false;
   }
 
   // iterate add child to overflowLayout
@@ -544,7 +494,7 @@ class RenderLayoutBox extends RenderBoxModel
     }
 
     if (childRenderStyle.right.isNotAuto) {
-      if (isScrollingContentBox && (parent as RenderBoxModel).widthSizeType == BoxSizeType.specified) {
+      if ((parent as RenderBoxModel).widthSizeType == BoxSizeType.specified) {
         RenderBoxModel overflowContainerBox = parent as RenderBoxModel;
         maxScrollableX = math.max(
             maxScrollableX,
@@ -567,7 +517,7 @@ class RenderLayoutBox extends RenderBoxModel
       maxScrollableY += transform.getTranslation()[1];
     }
     if (childRenderStyle.bottom.isNotAuto) {
-      if (isScrollingContentBox && (parent as RenderBoxModel).heightSizeType == BoxSizeType.specified) {
+      if ((parent as RenderBoxModel).heightSizeType == BoxSizeType.specified) {
         RenderBoxModel overflowContainerBox = parent as RenderBoxModel;
         maxScrollableY = math.max(
             maxScrollableY,
@@ -580,7 +530,7 @@ class RenderLayoutBox extends RenderBoxModel
       }
     }
 
-    RenderBoxModel scrollContainer = isScrollingContentBox ? parent as RenderBoxModel : this;
+    RenderBoxModel scrollContainer = this;
     // Scrollable area of positioned element will ignore padding area of scroll container.
     maxScrollableX -=
         scrollContainer.renderStyle.paddingLeft.computedValue + scrollContainer.renderStyle.paddingRight.computedValue;
@@ -714,9 +664,6 @@ class RenderBoxModel extends RenderBox
     return _contentConstraints;
   }
 
-  // When RenderBoxModel is scrolling box, contentConstraints are always equal to BoxConstraints();
-  bool isScrollingContentBox = false;
-
   bool _needsRecalculateStyle = false;
 
   void markNeedsRecalculateRenderStyle() {
@@ -833,7 +780,7 @@ class RenderBoxModel extends RenderBox
   /// Whether current box is the root of the document which corresponds to HTML element in dom tree.
   bool get isDocumentRootBox {
     // Get the outer box of overflow scroll box
-    RenderBoxModel currentBox = isScrollingContentBox ? parent as RenderBoxModel : this;
+    RenderBoxModel currentBox = this;
     // Root element of document is the child of viewport.
     return currentBox.parent is RenderViewportBox;
   }
@@ -887,7 +834,7 @@ class RenderBoxModel extends RenderBox
     } else {
       needsLayout = true;
       super.markNeedsLayout();
-      if ((isScrollingContentBox || !isSizeTight) && parent != null) {
+      if ((!isSizeTight) && parent != null) {
         markParentNeedsLayout();
       }
     }
@@ -954,44 +901,6 @@ class RenderBoxModel extends RenderBox
   BoxConstraints getConstraints() {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackLayoutStep('RenderBoxModel.getConstraints');
-    }
-
-    // Inner scrolling content box of overflow element inherits constraints from parent
-    // but has indefinite max constraints to allow children overflow
-    if (isScrollingContentBox) {
-      RenderStyle parentRenderStyle = (parent as RenderBoxModel).renderStyle;
-      EdgeInsets borderEdge = parentRenderStyle.border;
-      EdgeInsetsGeometry? padding = parentRenderStyle.padding;
-      double horizontalBorderLength = borderEdge.horizontal;
-      double verticalBorderLength = borderEdge.vertical;
-      double horizontalPaddingLength = padding.horizontal;
-      double verticalPaddingLength = padding.vertical;
-
-      BoxConstraints parentConstraints = (parent as RenderBoxModel).constraints;
-      BoxConstraints constraints = BoxConstraints(
-        minWidth: (parentConstraints.maxWidth != double.infinity && parentRenderStyle.width.value != null)
-            ? parentConstraints.maxWidth - horizontalBorderLength - horizontalPaddingLength
-            : 0,
-        maxWidth: double.infinity,
-        minHeight: (parentConstraints.maxHeight != double.infinity && parentRenderStyle.height.value != null)
-            ? parentConstraints.maxHeight - verticalBorderLength - verticalPaddingLength
-            : 0,
-        maxHeight: double.infinity,
-      );
-      if (parent is RenderFlexLayout) {
-        constraints = BoxConstraints(
-          minWidth: 0,
-          maxWidth: double.infinity,
-          minHeight: 0,
-          maxHeight: double.infinity,
-        );
-      }
-
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackLayoutStep();
-      }
-
-      return constraints;
     }
 
     CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
@@ -1161,7 +1070,7 @@ class RenderBoxModel extends RenderBox
     RenderObject? parent = this.parent;
 
     while (parent != null && parent is RenderLayoutBox) {
-      if (parent.isScrollingContentBox && parent.parent is RenderLayoutBox) {
+      if (parent.parent is RenderLayoutBox) {
         // Scroll container should has definite constraints
         scrollContainer = parent.parent as RenderBoxModel;
         break;
@@ -1308,9 +1217,6 @@ class RenderBoxModel extends RenderBox
     // If opacity to zero, only paint intersection observer.
     if (alpha == 0) {
       paintIntersectionObserver(context, offset, paintNothing);
-    } else if (isScrollingContentBox) {
-      // Scrolling content box should only size painted.
-      performPaint(context, offset);
     } else {
       // Paint fixed element to fixed position by compensating scroll offset
       double offsetY = scrollingOffsetY != null ? offset.dy + scrollingOffsetY! : offset.dy;
@@ -1403,103 +1309,6 @@ class RenderBoxModel extends RenderBox
 
   bool _hasLocalBackgroundImage(CSSRenderStyle renderStyle) {
     return renderStyle.backgroundImage != null && renderStyle.backgroundAttachment == CSSBackgroundAttachmentType.local;
-  }
-
-  // Detach renderBoxModel from its containing block.
-  // Need to remove position placeholder besides removing itself.
-  void detachFromContainingBlock() {
-    detachRenderBox(this);
-
-    // Remove placeholder of positioned element.
-    _detachPositionPlaceholder(this);
-  }
-
-  // The position and size of an element's box(es) are sometimes calculated relative to a certain rectangle,
-  // called the containing block of the element.
-  // Definition of "containing block": https://www.w3.org/TR/CSS21/visudet.html#containing-block-details
-  void attachToContainingBlock(RenderBox? containingBlockRenderBox, {RenderBox? parent, RenderBox? after}) {
-    if (parent == null || containingBlockRenderBox == null) return;
-
-    RenderBoxModel renderBoxModel = this;
-    CSSPositionType positionType = renderBoxModel.renderStyle.position;
-    // The containing block of an element is defined as follows:
-    if (positionType == CSSPositionType.relative ||
-        positionType == CSSPositionType.static ||
-        positionType == CSSPositionType.sticky) {
-      // If the previousSibling is positioned element, should relative to positionHolder.
-      if (after is RenderBoxModel) {
-        after = after.renderPositionPlaceholder ?? after;
-      }
-      // If the element's position is 'relative' or 'static',
-      // the containing block is formed by the content edge of the nearest block container ancestor box.
-      attachRenderBox(containingBlockRenderBox, renderBoxModel, after: after);
-      if (positionType == CSSPositionType.sticky) {
-        // Placeholder of sticky renderBox need to inherit offset from original renderBox,
-        // so it needs to layout before original renderBox.
-        _attachPositionPlaceholder(containingBlockRenderBox, renderBoxModel, after: after);
-      }
-    } else {
-      // Set custom positioned parentData.
-      RenderLayoutParentData parentData = RenderLayoutParentData();
-      renderBoxModel.parentData = CSSPositionedLayout.getPositionParentData(renderBoxModel, parentData);
-      // Add child to containing block parent.
-      attachRenderBox(containingBlockRenderBox, renderBoxModel, isLast: true);
-
-      // If container block is same as origin parent, the placeholder must after the origin renderBox
-      // because placeholder depends the constraints in layout stage.
-      RenderBox? previousSibling = containingBlockRenderBox == parent ? renderBoxModel : after;
-
-      // PreviousSibling of positionPlaceHolder should always been positionPlaceHolder.
-      if (previousSibling is RenderBoxModel && previousSibling.renderPositionPlaceholder != null) {
-        previousSibling = previousSibling.renderPositionPlaceholder;
-      }
-
-      // Add position holder to origin position parent.
-      _attachPositionPlaceholder(parent, renderBoxModel, after: previousSibling);
-    }
-  }
-
-  // Find previous sibling renderObject of renderBoxModel, used for inserting to containing block.
-  // If renderBoxModel is positioned, find the original place (position placeholder) to insert to
-  // when its position changes to relative/static/sticky.
-  RenderBox? getPreviousSibling({followPlaceHolder = true}) {
-    RenderBoxModel renderBoxModel = this;
-    RenderBox? previousSibling;
-    RenderPositionPlaceholder? renderPositionPlaceholder = renderBoxModel.renderPositionPlaceholder;
-    // It needs to find the previous sibling of the previous sibling if the placeholder of
-    // positioned element exists and follows renderObject at the same time, eg.
-    // <div style="position: relative"><div style="position: absolute" /></div>
-    if (followPlaceHolder && renderPositionPlaceholder != null && renderPositionPlaceholder.parentData != null) {
-      previousSibling = (renderPositionPlaceholder.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
-      // The placeholder's previousSibling maybe the origin renderBox.
-      if (previousSibling == renderBoxModel) {
-        previousSibling = (renderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
-      }
-    } else {
-      if (renderBoxModel.parentData != null) {
-        previousSibling = (renderBoxModel.parentData as ContainerParentDataMixin<RenderBox>).previousSibling;
-      }
-    }
-    return previousSibling;
-  }
-
-  // Attach placeholder of renderBoxModel from tree.
-  void _attachPositionPlaceholder(RenderBox parentRenderBox, RenderBoxModel renderBoxModel, {RenderBox? after}) {
-    // Position holder size will be updated on layout.
-    RenderPositionPlaceholder renderPositionPlaceholder = RenderPositionPlaceholder(preferredSize: Size.zero);
-    renderBoxModel.renderPositionPlaceholder = renderPositionPlaceholder;
-    renderPositionPlaceholder.positioned = renderBoxModel;
-
-    attachRenderBox(parentRenderBox, renderPositionPlaceholder, after: after);
-  }
-
-  // Detach placeholder of renderBoxModel from tree.
-  void _detachPositionPlaceholder(RenderBoxModel renderBoxModel) {
-    RenderPositionPlaceholder? renderPositionHolder = renderBoxModel.renderPositionPlaceholder;
-    if (renderPositionHolder != null) {
-      detachRenderBox(renderPositionHolder);
-      renderBoxModel.renderPositionPlaceholder = null;
-    }
   }
 
   bool _disposed = false;
@@ -1670,40 +1479,5 @@ class RenderBoxModel extends RenderBox
     debugOverflowProperties(properties);
     debugTransformProperties(properties);
     debugOpacityProperties(properties);
-  }
-
-  // Attach renderBox from tree.
-  static void attachRenderBox(RenderObject parentRenderObject, RenderBox renderBox,
-      {RenderObject? after, bool isLast = false}) {
-    if (isLast) {
-      assert(after == null);
-    }
-    if (parentRenderObject is RenderObjectWithChildMixin) {
-      // RenderViewportBox
-      parentRenderObject.child = renderBox;
-    } else if (parentRenderObject is ContainerRenderObjectMixin) {
-      // RenderLayoutBox or RenderSliverList
-      // Should attach to renderScrollingContent if it is scrollable.
-      if (parentRenderObject is RenderLayoutBox) {
-        parentRenderObject = parentRenderObject.renderScrollingContent ?? parentRenderObject;
-      }
-      if (isLast) {
-        after = parentRenderObject.lastChild;
-      }
-      parentRenderObject.insert(renderBox, after: after);
-    }
-  }
-
-  // Detach renderBox from tree.
-  static void detachRenderBox(RenderObject renderBox) {
-    if (renderBox.parent == null) return;
-
-    // Remove reference from parent.
-    RenderObject? parentRenderObject = renderBox.parent as RenderObject;
-    if (parentRenderObject is RenderObjectWithChildMixin) {
-      parentRenderObject.child = null; // Case for single child, eg. RenderViewportBox.
-    } else if (parentRenderObject is ContainerRenderObjectMixin) {
-      parentRenderObject.remove(renderBox); // Case for multi children, eg. RenderLayoutBox or RenderSliverList.
-    }
   }
 }

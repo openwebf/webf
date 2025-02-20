@@ -32,8 +32,6 @@ class BRElement extends Element {
     if (managedByFlutterWidget) {
       assert(flutterWidgetElement != null);
       renderStyle.addOrUpdateWidgetRenderObjects(flutterWidgetElement!, lineBreak);
-    } else {
-      renderStyle.setDomRenderObject(lineBreak);
     }
 
     return lineBreak;

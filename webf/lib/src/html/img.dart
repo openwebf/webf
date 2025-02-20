@@ -166,21 +166,12 @@ class ImageElement extends Element {
   @override
   void didAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     super.didAttachRenderer();
-    if (!managedByFlutterWidget) {
-      _reattachRenderObject();
-    }
   }
 
   @override
   void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) async {
     super.didDetachRenderer(flutterWidgetElement);
     style.removeStyleChangeListener(_stylePropertyChanged);
-
-    if (renderStyle.hasRenderBox() && !managedByFlutterWidget) {
-      // unlink render object and self render object
-      final replaced = renderStyle.domRenderBoxModel as RenderReplaced;
-      replaced.child = null;
-    }
   }
 
   String get scaling => getAttribute(SCALING) ?? '';
@@ -230,27 +221,6 @@ class ImageElement extends Element {
     }
   }
 
-  // Drop the current [RenderImage] off to render replaced.
-  void _dropChild() {
-    if (renderStyle.hasRenderBox()) {
-      if (managedByFlutterWidget) {
-      } else {
-        RenderReplaced renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced;
-        renderReplaced.child = null;
-        if (_renderImage != null) {
-          _renderImage!.image = null;
-
-          ownerDocument.inactiveRenderObjects.add(_renderImage);
-          _renderImage = null;
-        }
-        if (_svgRenderObject != null) {
-          ownerDocument.inactiveRenderObjects.add(_svgRenderObject!);
-          _svgRenderObject = null;
-        }
-      }
-    }
-  }
-
   ImageStreamListener? _imageStreamListener;
 
   ImageStreamListener get _listener =>
@@ -266,7 +236,7 @@ class ImageElement extends Element {
   bool _didWatchAnimationImage = false;
 
   void _watchAnimatedImageWhenVisible() {
-    RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
+    RenderReplaced? renderReplaced = renderStyle.attachedRenderBoxModel as RenderReplaced?;
     if (_isListeningStream && !_didWatchAnimationImage) {
       _stopListeningStream(keepStreamAlive: true);
       renderReplaced?.addIntersectionChangeListener(_handleIntersectionChange);
@@ -278,7 +248,7 @@ class ImageElement extends Element {
   void dispose() async {
     super.dispose();
 
-    RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
+    RenderReplaced? renderReplaced = renderStyle.attachedRenderBoxModel as RenderReplaced?;
     renderReplaced?.removeIntersectionChangeListener(_handleIntersectionChange);
 
     // Stop and remove image stream reference.
@@ -296,9 +266,6 @@ class ImageElement extends Element {
       _svgElement!.dispose();
       _svgElement = null;
     }
-
-    // Dispose render object.
-    _dropChild();
   }
 
   // Width and height set through style declaration.
@@ -431,46 +398,6 @@ class ImageElement extends Element {
     }
   }
 
-  void _reattachRenderObject() {
-    if (_isSVGMode) {
-      if (_svgRenderObject != null) {
-        addChildForDOMMode(_svgRenderObject!);
-      }
-    } else {
-      if (_renderImage != null) {
-        addChildForDOMMode(_renderImage!);
-      }
-    }
-  }
-
-  void _updateRenderObject({RenderBox? svg, Image? image}) {
-    if (svg != null) {
-      final oldSVG = _svgRenderObject;
-      _svgRenderObject = svg;
-      addChildForDOMMode(svg);
-      ownerDocument.inactiveRenderObjects.add(oldSVG);
-      if (_renderImage != null) {
-        _renderImage!.image = null;
-        ownerDocument.inactiveRenderObjects.add(_renderImage!);
-        _renderImage = null;
-      }
-    } else if (image != null) {
-      if (_renderImage == null) {
-        _renderImage = _createRenderImageBox();
-        addChildForDOMMode(_renderImage!);
-      }
-      if (_svgRenderObject != null) {
-        // dispose svg render object
-        ownerDocument.inactiveRenderObjects.add(_svgRenderObject!);
-        _svgRenderObject = null;
-      }
-      _renderImage?.image = image;
-      // _resizeCurrentImage();
-    } else {
-      assert(false); // wrong
-    }
-  }
-
   void _stopListeningStream({bool keepStreamAlive = false}) {
     if (!_isListeningStream) return;
 
@@ -526,13 +453,7 @@ class ImageElement extends Element {
       _currentRequest?.state = _ImageRequestState.completelyAvailable;
     }
 
-    if (!managedByFlutterWidget) {
-      _updateRenderObject(image: imageInfo.image);
-      _renderImage!.width = naturalWidth.toDouble();
-      _renderImage!.height = naturalHeight.toDouble();
-    } else {
-      renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
-    }
+    renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
 
     // Fire the load event at first frame come.
     if (!_loaded) {
@@ -570,14 +491,6 @@ class ImageElement extends Element {
       final completer = Completer<bool?>();
       _updateImageDataLazyCompleter = completer;
 
-      if (!managedByFlutterWidget) {
-        RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
-        renderReplaced
-          ?..isInLazyRendering = true
-          // When detach renderer, all listeners will be cleared.
-          ..addIntersectionChangeListener(_handleIntersectionChange);
-      }
-
       /// The method is foolproof to avoid IntersectionObserver not working
       Future.delayed(Duration(seconds: 3), () {
         _updateImageDataLazyCompleter?.complete();
@@ -590,11 +503,6 @@ class ImageElement extends Element {
       }
       // Because the renderObject can changed between rendering, So we need to reassign the value;
       _updateImageDataLazyCompleter = null;
-
-      if (!managedByFlutterWidget) {
-        RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
-        renderReplaced?.isInLazyRendering = false;
-      }
     }
 
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
