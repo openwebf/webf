@@ -147,7 +147,7 @@ class WebFTextPlaceHolderSpan extends PlaceholderSpan {
       currentDimensions.size.width,
       currentDimensions.size.height,
       alignment,
-      scale: textScaler.scale(style!.fontSize ?? kDefaultFontSize),
+      scale: textScaler.scale(style?.fontSize ?? kDefaultFontSize),
       baseline: currentDimensions.baseline,
       baselineOffset: currentDimensions.baselineOffset,
     );
