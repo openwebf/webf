@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/dom.dart' as dom;
 
 const LISTVIEW = 'LISTVIEW';
 const WEBF_LISTVIEW = 'WEBF-LISTVIEW';
@@ -14,13 +15,14 @@ class FlutterListViewElement extends WidgetElement {
         child: ListView.builder(
           itemCount: childNodes.length,
           itemBuilder: (context, index) {
-            return LayoutBoxWrapper(
-              child: WebFHTMLElement(
-                  tagName: 'DIV',
-                  controller: ownerDocument.controller,
-                  parentElement: this,
-                  children: [childNodes.elementAt(index).toWidget()])
-            );
+            Node? node = childNodes.elementAt(index);
+            if (node is dom.Element) {
+              return LayoutBoxWrapper(
+                  ownerElement: node,
+                  child: childNodes.elementAt(index).toWidget()
+              );
+            }
+            return node.toWidget();
           },
           padding: const EdgeInsets.all(0),
           // controller: controller,

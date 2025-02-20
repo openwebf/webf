@@ -110,84 +110,91 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       CSSOverflowType overflowX = webFElement.renderStyle.overflowX;
       CSSOverflowType overflowY = webFElement.renderStyle.overflowY;
 
-      flutter.Scrollable? scrollableX;
+      flutter.Widget? scrollableX;
       if (overflowX == CSSOverflowType.scroll ||
           overflowX == CSSOverflowType.auto ||
           overflowX == CSSOverflowType.hidden) {
         webFElement.scrollControllerX ??= flutter.ScrollController();
-        scrollableX = flutter.Scrollable(
-            controller: webFElement.scrollControllerX,
-            viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
-              flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
-                webFElement: _webFElement,
-                children: children,
-                key: _webFElement.key,
-                scrollListener: webFElement.handleScroll,
-                positionX: position,
-                direction: Axis.horizontal,
-              );
+        scrollableX = LayoutBoxWrapper(
+            child: flutter.Scrollable(
+                controller: webFElement.scrollControllerX,
+                viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
+                  flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
+                    webFElement: _webFElement,
+                    children: children,
+                    key: _webFElement.key,
+                    scrollListener: webFElement.handleScroll,
+                    positionX: position,
+                  );
 
-              if (webFElement.positionedElements.isNotEmpty) {
-                return WebFHTMLElement(
-                    tagName: 'DIV',
-                    controller: webFElement.ownerDocument.controller,
-                    parentElement: webFElement.parentElement,
-                    children: [adapter, ...webFElement.positionedElements.map((element) => element.toWidget())]);
-              }
+                  if (webFElement.positionedElements.isNotEmpty) {
+                    return WebFHTMLElement(
+                        tagName: 'DIV',
+                        controller: webFElement.ownerDocument.controller,
+                        parentElement: webFElement.parentElement,
+                        children: [adapter, ...webFElement.positionedElements.map((element) => element.toWidget())]);
+                  }
 
-              return adapter;
-              // return renderLayoutWidgetAdaptor;
-            });
+                  return adapter;
+                  // return renderLayoutWidgetAdaptor;
+                }),
+            ownerElement: webFElement
+        );
       }
 
       if (overflowY == CSSOverflowType.scroll ||
           overflowY == CSSOverflowType.auto ||
           overflowY == CSSOverflowType.hidden) {
         webFElement.scrollControllerY ??= flutter.ScrollController();
-        widget = flutter.Scrollable(
-          controller: webFElement.scrollControllerY,
-          viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
-            if (scrollableX != null) {
-              return flutter.Scrollable(
-                  controller: webFElement.scrollControllerX,
-                  viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
-                    flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
-                      webFElement: _webFElement,
-                      children: children,
-                      key: _webFElement.key,
-                      scrollListener: webFElement.handleScroll,
-                      positionX: positionX,
-                      positionY: positionY,
-                      direction: Axis.horizontal,
-                    );
+        widget = LayoutBoxWrapper(
+            child: flutter.Scrollable(
+              controller: webFElement.scrollControllerY,
+              viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
+                if (scrollableX != null) {
+                  return flutter.Scrollable(
+                      controller: webFElement.scrollControllerX,
+                      viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
+                        flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
+                          webFElement: _webFElement,
+                          children: children,
+                          key: _webFElement.key,
+                          scrollListener: webFElement.handleScroll,
+                          positionX: positionX,
+                          positionY: positionY,
+                        );
 
-                    if (webFElement.positionedElements.isNotEmpty) {
-                      return WebFHTMLElement(
-                          tagName: 'DIV',
-                          controller: webFElement.ownerDocument.controller,
-                          parentElement: webFElement.parentElement,
-                          children: [adapter, ...webFElement.positionedElements.map((element) => element.toWidget())]);
-                    }
+                        if (webFElement.positionedElements.isNotEmpty) {
+                          return WebFHTMLElement(
+                              tagName: 'DIV',
+                              controller: webFElement.ownerDocument.controller,
+                              parentElement: webFElement.parentElement,
+                              children: [
+                                adapter,
+                                ...webFElement.positionedElements.map((element) => element.toWidget())
+                              ]);
+                        }
 
-                    return adapter;
-                  });
-            }
+                        return adapter;
+                      });
+                }
 
-            return WebFRenderLayoutWidgetAdaptor(
-              webFElement: _webFElement,
-              children: children,
-              key: _webFElement.key,
-              scrollListener: webFElement.handleScroll,
-              positionY: positionY,
-              direction: Axis.horizontal,
-            );
-          },
-        );
+                return WebFRenderLayoutWidgetAdaptor(
+                  webFElement: _webFElement,
+                  children: children,
+                  key: _webFElement.key,
+                  scrollListener: webFElement.handleScroll,
+                  positionY: positionY,
+                );
+              },
+            ),
+            ownerElement: webFElement);
       } else {
+        children.addAll(webFElement.positionedElements.map((element) => element.toWidget()));
         widget = scrollableX ??
             WebFRenderLayoutWidgetAdaptor(webFElement: _webFElement, children: children, key: _webFElement.key);
       }
     } else {
+      children.addAll(webFElement.positionedElements.map((element) => element.toWidget()));
       widget = WebFRenderLayoutWidgetAdaptor(webFElement: _webFElement, children: children, key: _webFElement.key);
     }
 
@@ -269,14 +276,12 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
       this.positionX,
       this.positionY,
       this.scrollListener,
-      required List<flutter.Widget> children,
-      this.direction = Axis.vertical})
+      required List<flutter.Widget> children})
       : super(key: key, children: children) {}
 
   final Element? webFElement;
   final ViewportOffset? positionX;
   final ViewportOffset? positionY;
-  final Axis direction;
   final ScrollListener? scrollListener;
 
   @override

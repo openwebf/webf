@@ -1047,8 +1047,8 @@ abstract class RenderStyle extends DiagnosticableTree {
         return matcher(renderBoxModel, renderBoxModel.renderStyle);
       case RenderObjectGetType.parent:
         RenderObject? parent = renderBoxModel.parent;
-        if (parent is RenderPortal) {
-          parent = parent.parent;
+        if (parent is RenderPortal || parent is RenderLayoutBoxWrapper) {
+          parent = parent!.parent;
         }
 
         return matcher(renderBoxModel.parent, parent is RenderBoxModel ? parent.renderStyle : null);
