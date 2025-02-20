@@ -96,7 +96,7 @@ class RenderChildSize extends RenderProxyBox {
     } else if (child is RenderBoxModel) {
       childRenderStyle = child.renderStyle;
     } else if (child is RenderPositionPlaceholder) {
-      childRenderStyle = child.positioned!.renderStyle;
+      childRenderStyle = child.positioned?.renderStyle;
     }
     return childRenderStyle;
   }
@@ -181,7 +181,7 @@ class RenderChildSize extends RenderProxyBox {
     } else if (child is RenderBoxModel) {
       lineHeight = child.renderStyle.lineHeight;
     } else if (child is RenderPositionPlaceholder) {
-      lineHeight = child.positioned!.renderStyle.lineHeight;
+      lineHeight = child.positioned?.renderStyle.lineHeight;
     }
 
     if (lineHeight != null && lineHeight.type != CSSLengthType.NORMAL) {

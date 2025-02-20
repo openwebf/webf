@@ -769,8 +769,8 @@ class RenderFlexLayout extends RenderLayoutBox {
       int childNodeId = child.hashCode;
 
       if (_isPlaceholderPositioned(child)) {
-        RenderBoxModel positionedBox = (child as RenderPositionPlaceholder).positioned!;
-        if (positionedBox.hasSize) {
+        RenderBoxModel? positionedBox = (child as RenderPositionPlaceholder).positioaned?;
+        if (positionedBox?.hasSize == true) {
           // Flutter only allow access size of direct children, so cannot use realDisplayedBox.size
           Size realDisplayedBoxSize = positionedBox.getBoxSize(positionedBox.contentSize);
           double realDisplayedBoxWidth = realDisplayedBoxSize.width;
@@ -2412,7 +2412,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     } else if (child is RenderBoxModel) {
       lineHeight = child.renderStyle.lineHeight;
     } else if (child is RenderPositionPlaceholder) {
-      lineHeight = child.positioned!.renderStyle.lineHeight;
+      lineHeight = child.positioned?.renderStyle.lineHeight;
     }
 
     if (lineHeight != null && lineHeight.type != CSSLengthType.NORMAL) {
@@ -2437,8 +2437,8 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   static bool _isPlaceholderPositioned(RenderObject child) {
     if (child is RenderPositionPlaceholder) {
-      RenderBoxModel realDisplayedBox = child.positioned!;
-      if (realDisplayedBox.attached) {
+      RenderBoxModel? realDisplayedBox = child.positioned?;
+      if (realDisplayedBox?.attached == true) {
         RenderLayoutParentData? parentData = realDisplayedBox.parentData as RenderLayoutParentData?;
         if (parentData?.isPositioned == true) {
           return true;

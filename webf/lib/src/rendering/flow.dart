@@ -132,7 +132,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     } else if (child is RenderBoxModel) {
       lineHeight = child.renderStyle.lineHeight;
     } else if (child is RenderPositionPlaceholder) {
-      lineHeight = child.positioned!.renderStyle.lineHeight;
+      lineHeight = child.positioned?.renderStyle.lineHeight;
     }
 
     if (lineHeight != null && lineHeight.type != CSSLengthType.NORMAL) {
