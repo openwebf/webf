@@ -104,10 +104,6 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       }).toList();
     }
 
-    children.addAll(webFElement.positionedElements.map((element) {
-      return element.toWidget();
-    }));
-
     flutter.Widget widget;
 
     if (webFElement.hasScroll) {
@@ -122,7 +118,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
         scrollableX = flutter.Scrollable(
             controller: webFElement.scrollControllerX,
             viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
-              return WebFRenderLayoutWidgetAdaptor(
+              flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
                 webFElement: _webFElement,
                 children: children,
                 key: _webFElement.key,
@@ -130,6 +126,16 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                 positionX: position,
                 direction: Axis.horizontal,
               );
+
+              if (webFElement.positionedElements.isNotEmpty) {
+                return WebFHTMLElement(
+                    tagName: 'DIV',
+                    controller: webFElement.ownerDocument.controller,
+                    parentElement: webFElement.parentElement,
+                    children: [adapter, ...webFElement.positionedElements.map((element) => element.toWidget())]);
+              }
+
+              return adapter;
               // return renderLayoutWidgetAdaptor;
             });
       }
@@ -145,7 +151,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
               return flutter.Scrollable(
                   controller: webFElement.scrollControllerX,
                   viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
-                    return WebFRenderLayoutWidgetAdaptor(
+                    flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
                       webFElement: _webFElement,
                       children: children,
                       key: _webFElement.key,
@@ -154,7 +160,16 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                       positionY: positionY,
                       direction: Axis.horizontal,
                     );
-                    // return renderLayoutWidgetAdaptor;
+
+                    if (webFElement.positionedElements.isNotEmpty) {
+                      return WebFHTMLElement(
+                          tagName: 'DIV',
+                          controller: webFElement.ownerDocument.controller,
+                          parentElement: webFElement.parentElement,
+                          children: [adapter, ...webFElement.positionedElements.map((element) => element.toWidget())]);
+                    }
+
+                    return adapter;
                   });
             }
 
@@ -169,7 +184,8 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
           },
         );
       } else {
-        widget = scrollableX ?? WebFRenderLayoutWidgetAdaptor(webFElement: _webFElement, children: children, key: _webFElement.key);
+        widget = scrollableX ??
+            WebFRenderLayoutWidgetAdaptor(webFElement: _webFElement, children: children, key: _webFElement.key);
       }
     } else {
       widget = WebFRenderLayoutWidgetAdaptor(webFElement: _webFElement, children: children, key: _webFElement.key);
