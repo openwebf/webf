@@ -282,10 +282,12 @@ class LogicTextInlineBox extends LogicInlineBox {
     if (boxParentData != null) {
       int index = (renderObject as RenderTextBox).lineBoxes.findIndex(this);
       if (relativeOffset != null) {
-        // set RenderTextBox offset when update first LogicTextInlineBox offset
-        if (index == 0) {
-          boxParentData.offset = Offset(outLineMainSize, relativeOffset.dy);
-        }
+        // // set RenderTextBox offset when update first LogicTextInlineBox offset
+        // if (index == 0) {
+        //   // boxParentData.offset = Offset(outLineMainSize, relativeOffset.dy);
+        // }
+        // FIXME: outLineMainSize useless?
+        boxParentData.offset = relativeOffset;
         // paint logic not contain leading space, text paint use this offset, need - parent.offset.dy
         (renderObject as RenderTextBox)
             .updateRenderTextLineOffset(index, Offset(leadingSpace, relativeOffset.dy - boxParentData.offset.dy));

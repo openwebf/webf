@@ -57,6 +57,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   // Line boxes of flow layout.
   // https://www.w3.org/TR/css-inline-3/#line-boxes
+  // Fow example <i>Hello<br>world.</i> will have two <i> line boxes
   RenderLineBoxes lineBoxes = RenderLineBoxes();
 
   @override
@@ -467,6 +468,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     RenderBox? preChild;
     lineBoxes.clear();
     lineBoxes.mainAxisLimit = mainAxisLimit;
+    LogicLineBox? lastRunLineBox;
     LogicLineBox runLineBox = buildNewLineBox();
     runLineBox.isFirst = true;
     int remainLines = _maxLines;
@@ -587,6 +589,9 @@ class RenderFlowLayout extends RenderLayoutBox {
           }
         }
 
+        // set `happenJumpPaint=true` case below:
+        // 1. flow element, css style display:inline
+        // 2. text element, visualOverflow
         if (!happenJumpPaint &&
             ((child is RenderFlowLayout && isInlineLevel(child) && (child).lineBoxes.happenVisualOverflow()) ||
                 (child is RenderTextBox && child.happenVisualOverflow))) {
@@ -620,9 +625,11 @@ class RenderFlowLayout extends RenderLayoutBox {
               runLineBox.mainAxisExtentWithoutLineJoin, mainAxisLimit, childListLineMainAxisExtent)) {
             newLineBox.breakForExtentShort = true;
           }
+          lastRunLineBox = runLineBox;
           runLineBox = newLineBox;
         }
 
+        // create logicInlineBox
         LogicInlineBox? newLogicInlineBox = buildInlineBoxFromRender(child);
         if (child is RenderTextBox && newLogicInlineBox == null) {
           // null text need jump, because text lineRender is null.
@@ -1061,7 +1068,8 @@ class RenderFlowLayout extends RenderLayoutBox {
           // Because RenderTextBox layout use lineJoinOffset as placeholder,
           // which will make RenderTextBox paint offset lineJoinOffset,
           // when not happen line join, we need to fix it.
-          outLineMainSize -= runLineBox.firstLineLeftExtent;
+          // FIXME: outLineMainSize
+          // outLineMainSize -= runLineBox.firstLineLeftExtent;
         }
 
         Offset relativeOffset = _getOffset(
