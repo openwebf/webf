@@ -1001,9 +1001,6 @@ abstract class RenderStyle extends DiagnosticableTree {
       if (renderObject is! RenderBoxModel) return true;
       // Must bind event responder on render box model whatever there is no event listener.
 
-      // Make sure pointer responder bind.
-      renderObject.getEventTarget = target.getEventTarget;
-
       if (target.hasIntersectionObserverEvent()) {
         renderObject.addIntersectionChangeListener(target.handleIntersectionChange);
         // Mark the compositing state for this render object as dirty

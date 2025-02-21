@@ -182,11 +182,13 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     }
   }
 
+  @pragma('vm:prefer-inline')
   /// The Node.parentNode read-only property returns the parent of the specified node in the DOM tree.
   ContainerNode? get parentNode => parentOrShadowHostNode;
 
   ContainerNode? _parentOrShadowHostNode;
 
+  @pragma('vm:prefer-inline')
   ContainerNode? get parentOrShadowHostNode => _parentOrShadowHostNode;
 
   set parentOrShadowHostNode(ContainerNode? value) {
@@ -415,6 +417,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     super.dispatchEvent(event);
   }
 
+  @pragma('vm:prefer-inline')
   @override
   EventTarget? get parentEventTarget => parentNode;
 

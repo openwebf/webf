@@ -135,6 +135,7 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     super.dispose();
   }
 
+  @pragma('vm:prefer-inline')
   EventTarget? get parentEventTarget;
 
   List<EventTarget> get eventPath {

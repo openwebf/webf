@@ -11,6 +11,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 
 import 'box_overflow.dart';
@@ -602,6 +603,18 @@ class RenderLayoutBox extends RenderBoxModel
     return repaintBoundaryFlowLayout;
   }
 
+  RawPointerListener get rawPointerListener {
+    return renderStyle.target.ownerDocument.viewport!.rawPointerListener;
+  }
+
+  @override
+  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
+    super.handleEvent(event, entry);
+    if (event is PointerDownEvent) {
+      rawPointerListener.recordEventTarget(renderStyle.target);
+    }
+  }
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -631,8 +644,7 @@ class RenderBoxModel extends RenderBox
         RenderOpacityMixin,
         ResizeObserverMixin,
         RenderIntersectionObserverMixin,
-        RenderContentVisibilityMixin,
-        RenderEventListenerMixin {
+        RenderContentVisibilityMixin {
   RenderBoxModel({
     required this.renderStyle,
   }) : super();
@@ -766,9 +778,6 @@ class RenderBoxModel extends RenderBox
       ..scrollablePointerListener = scrollablePointerListener
       ..scrollOffsetX = scrollOffsetX
       ..scrollOffsetY = scrollOffsetY
-
-    // Copy event hook
-      ..getEventTarget = getEventTarget
 
     // Copy renderPositionHolder
       ..renderPositionPlaceholder = renderPositionPlaceholder

@@ -12,19 +12,18 @@ class RenderPortalsParentData extends RenderLayoutParentData {}
 
 class RenderPortal extends RenderBoxModel
     with
-        RenderEventListenerMixin,
         RenderObjectWithChildMixin<RenderBox>,
         RenderProxyBoxMixin<RenderBox> {
   RenderPortal({
     required CSSRenderStyle renderStyle,
     required this.controller
-  }) : super(renderStyle: renderStyle);
+  }) : super(renderStyle: renderStyle) {
+    _gestureDispatcher = GestureDispatcher(renderStyle.target);
+  }
 
   WebFController controller;
 
-  final GestureDispatcher _gestureDispatcher = GestureDispatcher();
-
-  @override
+  late GestureDispatcher _gestureDispatcher;
   GestureDispatcher? get gestureDispatcher => _gestureDispatcher;
 
   @override
@@ -57,11 +56,5 @@ class RenderPortal extends RenderBoxModel
     super.handleEvent(event, entry);
 
     _gestureDispatcher.handlePointerEvent(event);
-
-    // controller!.gestureDispatcher.handlePointerEvent(event);
-    if (event is PointerDownEvent) {
-      // Set event path at begin stage and reset it at end stage on viewport render box.
-      _gestureDispatcher.resetEventPath();
-    }
   }
 }

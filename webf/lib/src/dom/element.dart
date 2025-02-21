@@ -447,12 +447,6 @@ abstract class Element extends ContainerNode
 
     // Remove all intersection change listeners.
     renderStyle.clearIntersectionChangeListeners(flutterWidgetElement);
-
-    RenderBoxModel? renderBoxModel = renderStyle.getSelfRenderBox(flutterWidgetElement);
-
-    // Clear pointer listener
-    clearEventResponder(renderBoxModel);
-
     renderStyle.removeRenderObject(flutterWidgetElement);
   }
 

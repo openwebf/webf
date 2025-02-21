@@ -141,8 +141,6 @@ class WebFController {
     return getControllerOfJSContextId(contextId);
   }
 
-  GestureDispatcher gestureDispatcher = GestureDispatcher();
-
   TitleChangedHandler? onTitleChanged;
 
   WebFMethodChannel? _methodChannel;
