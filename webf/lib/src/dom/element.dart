@@ -53,6 +53,7 @@ enum BoxSizeType {
 }
 
 mixin ElementBase on Node {
+  @pragma('vm:prefer-inline')
   late CSSRenderStyle renderStyle;
 }
 
