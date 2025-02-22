@@ -1,5 +1,9 @@
 <template>
   <div id="main">
+    <div>我登录了吗：{{ isLoggedIn }}</div>
+    <div>我的信息：{{ userInfo }}</div>
+    <div>我的名字：{{ userName }}</div>
+    <div>我的头像：{{ userAvatar }}</div>
     <feeds-tabs :tabs="tabsConfig" @change="onTabChange">
         <!-- 热门标签页内容 -->
         <template #hot>
@@ -61,7 +65,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { useUserStore } from '@/stores/userStore'
 import FeedsTabs from "@/Components/FeedsTabs.vue";
 import FeedCard from "@/Components/FeedCard.vue";
 import CommentCard from "@/Components/comment/CommentCard.vue";
@@ -75,13 +79,25 @@ export default {
     CommentCard,
     DisplayCard,
   },
+  setup() {
+    const userStore = useUserStore();
+    return {
+      userStore,
+    }
+  },
   computed: {
-    ...mapGetters({
-      isLoggedIn: 'user/isLoggedIn',
-      userInfo: 'user/userInfo',
-      userName: 'user/userName',
-      userAvatar: 'user/userAvatar'
-    })
+    isLoggedIn() {
+      return this.userStore.isLoggedIn;
+    },
+    userInfo() {
+      return this.userStore.userInfo;
+    },
+    userName() {
+      return this.userStore.userName;
+    },
+    userAvatar() {
+      return this.userStore.userAvatar;
+    }
   },
   async mounted() {
     console.log('HomePage mounted');

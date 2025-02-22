@@ -33,9 +33,9 @@
     </div>
     <flutter-cupertino-segmented-tab>
       <flutter-cupertino-segmented-tab-item title="全部">
-        <div v-for="item in allFeeds" :key="item.id">
+        <!-- <div v-for="item in allFeeds" :key="item.id">
           <feed-card :item="item"></feed-card>
-        </div>
+        </div> -->
       </flutter-cupertino-segmented-tab-item>
       <flutter-cupertino-segmented-tab-item title="分享">
         <!-- <div v-for="item in shareFeeds" :key="item.id">

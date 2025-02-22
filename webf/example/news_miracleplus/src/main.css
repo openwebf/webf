@@ -1,7 +1,7 @@
 :root {
   color: var(--font-color);
-  --background-color: rgb(20, 18, 24);
-  --font-color: #fff;
+  --background-color: rgb(248, 249, 250);
+  --font-color: #ffffff;
   --font-color-primary: #1b1b1b;
   --font-color-secondary: #696969;
   --link-color: #0085f2;
@@ -37,8 +37,9 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --background-color: rgb(255, 255, 255);
-    --font-color: #000;
+    --background-color: rgb(248, 249, 250);
+    --font-color: #000000;
+    --font-color-primary: #ffffff;
     --secondary-font-color: #6b7280;
     --background-primary: #fff;
     --background-secondary: #f9f9fb;
@@ -70,8 +71,8 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --background-color: rgb(20, 18, 24);
-    --font-color: #fff;
-    --font-color-primary: #fff;
+    --font-color: #ffffff;
+    --font-color-primary: #ffffff;
     --font-color-secondary: #cdcdcd;
     --link-color: #3399ff;
     --card-border-color: #343434;

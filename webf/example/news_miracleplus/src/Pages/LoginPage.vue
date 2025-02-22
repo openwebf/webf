@@ -59,9 +59,10 @@
   </div>
 </template>
 <script>
-import LogoHeader from '../Components/LogoHeader.vue';
-import { api } from '../api';
-
+import LogoHeader from '@/Components/LogoHeader.vue';
+import { api } from '@/api';
+import { useUserStore } from '@/stores/userStore';
+import tabBarManager from '@/utils/tabBarManager';
 export default {
   name: 'LoginPage',
   data() {
@@ -107,22 +108,22 @@ export default {
           phone: this.phoneNumber,
           password: this.pwd,
         });
-        console.log('res', res);
-        await this.$store.dispatch('user/login', {
+        console.log('登录信息', res);
+        const userStore = useUserStore();
+        userStore.setUserInfo({
+          ...res.data.user,
           token: res.data.token,
-          user: res.data.user,
         });
-        window.webf.hybridHistory.pushState({}, '/home');
+        tabBarManager.switchTab('/home');
       } catch (error) {
         console.error('登录失败', error);
-        this.$store.dispatch('setError', '登录失败，请检查账号密码');
       }
     },
     goToRegister() {
       window.webf.hybridHistory.pushState({}, '/register');
     },
     goToHome() {
-      window.webf.hybridHistory.pushState({}, '/home');
+      window.webf.hybridHistory.pushState({}, '/index');
     }
   }
 };

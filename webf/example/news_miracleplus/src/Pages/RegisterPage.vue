@@ -101,7 +101,7 @@ export default {
       window.webf.hybridHistory.pushState({}, '/login');
     },
     goToHome() {
-      window.webf.hybridHistory.pushState({}, '/home');
+      window.webf.hybridHistory.pushState({}, '/index');
     }
   }
 };

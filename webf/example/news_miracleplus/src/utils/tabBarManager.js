@@ -1,6 +1,9 @@
 class TabBarManager {
     static instance = null;
     tabBarRef = null;
+
+    currentPath = '';
+    tabBarPath = '/home';
   
     static getInstance() {
       if (!TabBarManager.instance) {
@@ -12,10 +15,21 @@ class TabBarManager {
     setTabBarRef(ref) {
       this.tabBarRef = ref;
     }
+
+    setCurrentPath(path) {
+      this.currentPath = path;
+    }
   
-    switchTab(path) {
+    switchTab(targetPath) {
+      const isInTabBar = this.tabBarPath === this.currentPath;
+      console.log('isInTabBar', isInTabBar);
+      console.log('this.currentPath', this.currentPath);
       if (this.tabBarRef) {
-        this.tabBarRef.switchTab(path);
+        this.tabBarRef.switchTab(targetPath);
+      }
+      if (!isInTabBar) {
+        window.webf.hybridHistory.pushState({}, this.tabBarPath);
+        this.currentPath = this.tabBarPath;
       }
     }
   }

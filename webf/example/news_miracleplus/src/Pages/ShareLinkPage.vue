@@ -42,7 +42,9 @@
       }
     },
     async mounted() {
+      console.log('share link page mounted');
       const id = window.webf.hybridHistory.state.id || '59251';
+      console.log('id: ', id);
       const res = await api.news.getDetail(id);
       this.shareLink = res.data.share_link;
       this.comments = await this.fetchComments(id);
