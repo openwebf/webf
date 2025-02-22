@@ -26,6 +26,7 @@ import 'custom_elements/cupertino/picker.dart';
 import 'custom_elements/cupertino/date_picker.dart';
 import 'custom_elements/cupertino/modal_popup.dart';
 import 'custom_elements/cupertino/icon.dart';
+import 'custom_elements/cupertino/search_input.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
@@ -55,7 +56,7 @@ void main() async {
   WebF.defineCustomElement('flutter-cupertino-date-picker', (context) => FlutterCupertinoDatePicker(context));
   WebF.defineCustomElement('flutter-cupertino-modal-popup', (context) => FlutterCupertinoModalPopup(context));
   WebF.defineCustomElement('flutter-cupertino-icon', (context) => FlutterCupertinoIcon(context));
-
+  WebF.defineCustomElement('flutter-cupertino-search-input', (context) => FlutterCupertinoSearchInput(context));
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }
 
@@ -169,6 +170,11 @@ class MyAppState extends State<MyApp> {
           '/register': (context) => WebFSubView(title: '注册', path: '/register', controller: controller!),
           '/login': (context) => WebFSubView(title: '登录', path: '/login', controller: controller!),
           '/share_link': (context) => WebFSubView(title: '详情', path: '/share_link', controller: controller!),
+          '/user': (context) => WebFSubView(title: '用户', path: '/user', controller: controller!),
+          '/edit': (context) => WebFSubView(title: '编辑', path: '/edit', controller: controller!),
+          '/setting': (context) => WebFSubView(title: '设置', path: '/setting', controller: controller!),
+          '/user_agreement': (context) => WebFSubView(title: '用户服务协议', path: '/user_agreement', controller: controller!),
+          '/privacy_policy': (context) => WebFSubView(title: '隐私政策', path: '/privacy_policy', controller: controller!),
         },
         debugShowCheckedModeBanner: false,
         home: FirstPage(title: 'Landing Bay', controller: controller!),

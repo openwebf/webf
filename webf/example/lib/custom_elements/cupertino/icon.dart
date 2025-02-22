@@ -24,6 +24,12 @@ class FlutterCupertinoIcon extends WidgetElement {
         return CupertinoIcons.chat_bubble;
       case 'question_circle':
         return CupertinoIcons.question_circle;
+      case 'search':
+        return CupertinoIcons.search;
+      case 'pencil':
+        return CupertinoIcons.pencil;
+      case 'gear':
+        return CupertinoIcons.gear;
     }
 
     return null;
@@ -36,9 +42,8 @@ class FlutterCupertinoIcon extends WidgetElement {
 
     return Icon(
       iconType,
-      // TODO: support color and size
       color: renderStyle.color.value,
-      size: 24.0,
+      size: renderStyle.fontSize.value,
       semanticLabel: 'Text to announce in accessibility modes',
     );
   }

@@ -10,6 +10,7 @@ class FlutterCupertinoInput extends WidgetElement {
     'phone': CupertinoIcons.phone,
     'shield': CupertinoIcons.shield,
     'lock': CupertinoIcons.lock,
+    'search': CupertinoIcons.search,
     // ...
   };
 
@@ -80,7 +81,8 @@ class FlutterCupertinoInput extends WidgetElement {
         color: CupertinoColors.white,
         borderRadius: BorderRadius.circular(8),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+      // TODO: support custom padding
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
     );
   }
 
