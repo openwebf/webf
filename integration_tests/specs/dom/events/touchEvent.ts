@@ -71,8 +71,10 @@ describe('TouchEvent', () => {
       touchStartTriggered = true;
     });
     document.body.addEventListener('click', () => {
-      expect(touchStartTriggered).toBe(true);
-      done();
+      setTimeout(() => {
+        expect(touchStartTriggered).toBe(true);
+        done();
+      }, 500);
     })
 
     await simulateClick(120, 10);

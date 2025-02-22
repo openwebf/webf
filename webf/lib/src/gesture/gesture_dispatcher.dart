@@ -118,8 +118,6 @@ class GestureDispatcher {
 
   late List<GestureRecognizer> _gestureRecognizers;
 
-  final Map<int, TouchPoint> _touchPoints = {};
-
   void _handlePointerDown(PointerDownEvent event) {
     // Add pointer to gestures then register the gesture recognizer to the arena.
     _gestureRecognizers.forEach((gesture) {
@@ -145,15 +143,6 @@ class GestureDispatcher {
       _handlePointerPanZoomStart(event);
     }
 
-  }
-
-  Timer? _clearTargetTimer;
-
-  void _stopClearTargetTimer() {
-    if (_clearTargetTimer != null) {
-      _clearTargetTimer?.cancel();
-      _clearTargetTimer = null;
-    }
   }
 
   final DoubleClickDetector _doubleClickDetector = DoubleClickDetector();
