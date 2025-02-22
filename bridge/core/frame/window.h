@@ -54,7 +54,7 @@ class Window : public EventTargetWithInlineData {
                                                 const AtomicString& pseudo_elt,
                                                 ExceptionState& exception_state);
 
-  double requestAnimationFrame(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exceptionState);
+  double requestAnimationFrame(const std::shared_ptr<Function>& callback, ExceptionState& exceptionState);
   void cancelAnimationFrame(double request_id, ExceptionState& exception_state);
 
   void OnLoadEventFired();

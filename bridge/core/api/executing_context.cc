@@ -39,6 +39,93 @@ void ExecutingContextWebFMethods::WebFSyncBuffer(webf::ExecutingContext* context
   context->uiCommandBuffer()->SyncToActive();
 }
 
+struct ImageSnapshotNativeFunctionContext {
+  ExecutingContext* context_;
+  std::shared_ptr<WebFNativeFunction> function_;
+};
+
+void ExecutingContextWebFMethods::WebFMatchImageSnapshot(webf::ExecutingContext* context,
+                                                         NativeValue* bytes,
+                                                         NativeValue* filename,
+                                                         WebFNativeFunctionContext* callback_context,
+                                                         SharedExceptionState* shared_exception_state) {
+  auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
+  auto imageBytes = static_cast<uint8_t*>(bytes->u.ptr);
+  auto filenameNativeString = static_cast<SharedNativeString*>(filename->u.ptr);
+  auto* nativeFunctionContext = new ImageSnapshotNativeFunctionContext{context, callback_impl};
+
+  context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
+
+  auto fn = [](void* ptr, double contextId, int8_t result, char* errmsg) {
+    auto* reader = static_cast<ImageSnapshotNativeFunctionContext*>(ptr);
+    auto* context = reader->context_;
+
+    reader->context_->dartIsolateContext()->dispatcher()->PostToJs(
+        context->isDedicated(), context->contextId(),
+        [](ImageSnapshotNativeFunctionContext* reader, int8_t result, char* errmsg) {
+          if (errmsg != nullptr) {
+            NativeValue error_object = Native_NewCString(errmsg);
+            reader->function_->Invoke(reader->context_, 1, &error_object);
+            dart_free(errmsg);
+          } else {
+            auto params = new NativeValue[2];
+            params[0] = Native_NewNull();
+            params[1] = Native_NewInt64(result);
+            reader->function_->Invoke(reader->context_, 2, params);
+          }
+
+          reader->context_->RunRustFutureTasks();
+          delete reader;
+        },
+        reader, result, errmsg);
+  };
+
+  context->dartMethodPtr()->matchImageSnapshot(context->isDedicated(), nativeFunctionContext, context->contextId(),
+                                               imageBytes, bytes->uint32, filenameNativeString, fn);
+}
+
+void ExecutingContextWebFMethods::WebFMatchImageSnapshotBytes(webf::ExecutingContext* context,
+                                                              NativeValue* imageA,
+                                                              NativeValue* imageB,
+                                                              WebFNativeFunctionContext* callback_context,
+                                                              SharedExceptionState* shared_exception_state) {
+  auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
+  auto imageABytes = static_cast<uint8_t*>(imageA->u.ptr);
+  auto imageBBytes = static_cast<uint8_t*>(imageB->u.ptr);
+
+  auto* nativeFunctionContext = new ImageSnapshotNativeFunctionContext{context, callback_impl};
+
+  context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
+
+  auto fn = [](void* ptr, double contextId, int8_t result, char* errmsg) {
+    auto* reader = static_cast<ImageSnapshotNativeFunctionContext*>(ptr);
+    auto* context = reader->context_;
+
+    reader->context_->dartIsolateContext()->dispatcher()->PostToJs(
+        context->isDedicated(), context->contextId(),
+        [](ImageSnapshotNativeFunctionContext* reader, int8_t result, char* errmsg) {
+          if (errmsg != nullptr) {
+            NativeValue error_object = Native_NewCString(errmsg);
+            reader->function_->Invoke(reader->context_, 1, &error_object);
+            dart_free(errmsg);
+          } else {
+            auto params = new NativeValue[2];
+            params[0] = Native_NewNull();
+            params[1] = Native_NewInt64(result);
+            reader->function_->Invoke(reader->context_, 2, params);
+          }
+
+          reader->context_->RunRustFutureTasks();
+          delete reader;
+        },
+        reader, result, errmsg);
+  };
+
+  context->dartMethodPtr()->matchImageSnapshotBytes(context->isDedicated(), nativeFunctionContext, context->contextId(),
+                                                    imageABytes, imageA->uint32, imageBBytes,
+                                                    imageB->uint32, fn);
+}
+
 NativeValue ExecutingContextWebFMethods::WebFInvokeModule(ExecutingContext* context,
                                                           const char* module_name,
                                                           const char* method,

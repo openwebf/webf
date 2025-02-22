@@ -15,6 +15,8 @@ pub struct ExecutingContextRustMethods {
   pub create_exception_state: extern "C" fn() -> RustValue<ExceptionStateRustMethods>,
   pub finish_recording_ui_operations: extern "C" fn(*const OpaquePtr) -> c_void,
   pub webf_sync_buffer: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub webf_match_image_snapshot: extern "C" fn(*const OpaquePtr, *const NativeValue, *const NativeValue, *const WebFNativeFunctionContext, *const OpaquePtr) -> c_void,
+  pub webf_match_image_snapshot_bytes: extern "C" fn(*const OpaquePtr, *const NativeValue, *const NativeValue, *const WebFNativeFunctionContext, *const OpaquePtr) -> c_void,
   pub webf_invoke_module: extern "C" fn(*const OpaquePtr, *const c_char, *const c_char, *const OpaquePtr) -> NativeValue,
   pub webf_invoke_module_with_params: extern "C" fn(*const OpaquePtr, *const c_char, *const c_char, *const NativeValue, *const OpaquePtr) -> NativeValue,
   pub webf_invoke_module_with_params_and_callback: extern "C" fn(*const OpaquePtr, *const c_char, *const c_char, *const NativeValue, *const WebFNativeFunctionContext, *const OpaquePtr) -> NativeValue,
@@ -146,6 +148,86 @@ impl ExecutingContext {
     }
   }
 
+  pub fn __webf_match_image_snapshot__(&self, image: Vec<u8>, snapshot_filename: &str, exception_state: &ExceptionState) -> WebFNativeFuture<bool> {
+    let image_blob = NativeValue::new_u8_bytes(image);
+    let snapshot_filename_value = NativeValue::new_string(snapshot_filename);
+    let future_for_return = WebFNativeFuture::<bool>::new();
+    let future_in_callback = future_for_return.clone();
+    let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
+      if argc == 1 {
+        let error_string = unsafe { (*argv).clone() };
+        let error_string = error_string.to_string();
+        future_in_callback.set_result(Err(error_string));
+        return NativeValue::new_null();
+      }
+      if argc == 2 {
+        let match_result = unsafe { (*argv.wrapping_add(1)).clone() };
+        let match_result = match_result.to_int64();
+        future_in_callback.set_result(Ok(Some(match_result != 0)));
+        return NativeValue::new_null();
+      }
+      println!("Invalid argument count for async storage callback");
+      NativeValue::new_null()
+    });
+
+    let callback_data = Box::new(WebFNativeFunctionContextData {
+      func: general_callback,
+    });
+    let callback_context_data_ptr = Box::into_raw(callback_data);
+    let callback_context = Box::new(WebFNativeFunctionContext {
+      callback: invoke_webf_native_function,
+      free_ptr: release_webf_native_function,
+      ptr: callback_context_data_ptr,
+    });
+    let callback_context_ptr = Box::into_raw(callback_context);
+
+    let result = unsafe {
+      ((*self.method_pointer).webf_match_image_snapshot)(self.ptr, &image_blob, &snapshot_filename_value, callback_context_ptr, exception_state.ptr)
+    };
+
+    future_for_return
+  }
+
+  pub fn webf_match_image_snapshot_bytes(&self, image: Vec<u8>, snapshot: Vec<u8>, exception_state: &ExceptionState) -> WebFNativeFuture<bool> {
+    let image_blob = NativeValue::new_u8_bytes(image);
+    let snapshot_blob = NativeValue::new_u8_bytes(snapshot);
+    let future_for_return = WebFNativeFuture::<bool>::new();
+    let future_in_callback = future_for_return.clone();
+    let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
+      if argc == 1 {
+        let error_string = unsafe { (*argv).clone() };
+        let error_string = error_string.to_string();
+        future_in_callback.set_result(Err(error_string));
+        return NativeValue::new_null();
+      }
+      if argc == 2 {
+        let match_result = unsafe { (*argv.wrapping_add(1)).clone() };
+        let match_result = match_result.to_int64();
+        future_in_callback.set_result(Ok(Some(match_result != 0)));
+        return NativeValue::new_null();
+      }
+      println!("Invalid argument count for async storage callback");
+      NativeValue::new_null()
+    });
+
+    let callback_data = Box::new(WebFNativeFunctionContextData {
+      func: general_callback,
+    });
+    let callback_context_data_ptr = Box::into_raw(callback_data);
+    let callback_context = Box::new(WebFNativeFunctionContext {
+      callback: invoke_webf_native_function,
+      free_ptr: release_webf_native_function,
+      ptr: callback_context_data_ptr,
+    });
+    let callback_context_ptr = Box::into_raw(callback_context);
+
+    let result = unsafe {
+      ((*self.method_pointer).webf_match_image_snapshot)(self.ptr, &image_blob, &snapshot_blob, callback_context_ptr, exception_state.ptr)
+    };
+
+    future_for_return
+  }
+
   pub fn webf_invoke_module(&self, module_name: &str, method: &str, exception_state: &ExceptionState) -> Result<NativeValue, String> {
     let module_name = CString::new(module_name).unwrap();
     let method = CString::new(method).unwrap();
@@ -190,7 +272,7 @@ impl ExecutingContext {
     let callback_context_ptr = Box::into_raw(callback_context);
 
     let result = unsafe {
-      (((*self.method_pointer).webf_invoke_module_with_params_and_callback))(self.ptr, module_name.as_ptr(), method.as_ptr(), params, callback_context_ptr, exception_state.ptr)
+      ((*self.method_pointer).webf_invoke_module_with_params_and_callback)(self.ptr, module_name.as_ptr(), method.as_ptr(), params, callback_context_ptr, exception_state.ptr)
     };
 
     if exception_state.has_exception() {

@@ -16,9 +16,9 @@ class FrameRequestCallbackCollection;
 class FrameCallback {
  public:
   enum FrameStatus { kPending, kExecuting, kFinished, kCanceled };
-  static std::shared_ptr<FrameCallback> Create(ExecutingContext* context, const std::shared_ptr<QJSFunction>& callback);
+  static std::shared_ptr<FrameCallback> Create(ExecutingContext* context, const std::shared_ptr<Function>& callback);
 
-  FrameCallback(ExecutingContext* context, std::shared_ptr<QJSFunction> callback);
+  FrameCallback(ExecutingContext* context, std::shared_ptr<Function> callback);
 
   void Fire(double highResTimeStamp);
 
@@ -33,7 +33,7 @@ class FrameCallback {
   void Trace(GCVisitor* visitor) const;
 
  private:
-  std::shared_ptr<QJSFunction> callback_;
+  std::shared_ptr<Function> callback_;
   FrameStatus status_;
   uint32_t frame_id_;
   ExecutingContext* context_{nullptr};

@@ -227,6 +227,31 @@ impl NativeValue {
     values
   }
 
+  pub fn new_u8_bytes(values: Vec<u8>) -> Self {
+    let size = values.len();
+    let array_size = size * mem::size_of::<u8>();
+
+    #[cfg(target_os = "windows")]
+    let array_ptr = unsafe { CoTaskMemAlloc(array_size) };
+
+    #[cfg(not(target_os = "windows"))]
+    let array_ptr = unsafe { libc::malloc(array_size) };
+
+    let array_ptr = array_ptr as *mut u8;
+
+    for (i, val) in values.iter().enumerate() {
+      unsafe {
+        array_ptr.add(i).write(*val);
+      }
+    }
+
+    let mut value = Self::new();
+    value.tag = NativeTag::TagUint8Bytes as i32;
+    value.u.ptr = array_ptr as *mut c_void;
+    value.uint32 = size as u32;
+    value
+  }
+
   pub fn is_u8_bytes(&self) -> bool {
     self.tag == NativeTag::TagUint8Bytes as i32
   }
