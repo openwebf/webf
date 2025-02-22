@@ -292,6 +292,10 @@ class WebFWidgetElementState extends State<WidgetElementAdapter> {
 
   @override
   Widget build(BuildContext context) {
+    if (widgetElement.renderStyle.display == CSSDisplay.none) {
+      return SizedBox.shrink();
+    }
+
     Widget child = widgetElement.build(context, widgetElement.childNodes);
 
     if (widgetElement.isRepaintBoundary) {

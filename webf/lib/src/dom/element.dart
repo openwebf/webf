@@ -958,7 +958,7 @@ abstract class Element extends ContainerNode
     switch (name) {
       case DISPLAY:
         assert(oldValue != null);
-        if (value != oldValue && this is! WidgetElement) {
+        if (value != oldValue) {
           _updateHostingWidgetWithDisplay(oldValue);
         }
         break;
