@@ -367,7 +367,7 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, {Bind
 dynamic _callBindingObjectMethods(BindingObject bindingObject, String method, List<dynamic> args) {
   if (bindingObject is StaticDefinedBindingObject) {
     StaticDefinedSyncBindingObjectMethod? syncMethod = bindingObject.getStaticDefinedSyncMethod(method);
-    StaticDefinedAsyncBindingObjectMethod? asyncMethod = syncMethod != null ? bindingObject.getStaticDefinedAsyncMethod(method) : null;
+    StaticDefinedAsyncBindingObjectMethod? asyncMethod = bindingObject.getStaticDefinedAsyncMethod(method);
     if (syncMethod != null) {
       return syncMethod.call(bindingObject, args);
     }

@@ -198,8 +198,8 @@ void defineBuiltInElements() {
   defineElement(BODY, (context) => BodyElement(context));
   defineElement(IMAGE, (context) => ImageElement(context));
   defineElement(CANVAS, (context) => CanvasElement(context));
-  defineElement(LISTVIEW, (context) => FlutterListViewElement(context));
-  defineElement(WEBF_LISTVIEW, (context) => FlutterListViewElement(context));
+  defineWidgetElement(LISTVIEW, (context) => FlutterListViewElement(context));
+  defineWidgetElement(WEBF_LISTVIEW, (context) => FlutterListViewElement(context));
   defineElement(PORTAL, (context) => PortalElement(context));
 
   // Hybrid Routers

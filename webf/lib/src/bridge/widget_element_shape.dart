@@ -36,8 +36,12 @@ Pointer<WidgetElementShape> createWidgetElementShape(Map<String, ElementCreator>
     List<String> syncMethods = [];
     List<String> asyncMethods = [];
 
-    if (!Element.isElementStaticSyncMethods(widgetElement.methods.last)) {
-      syncMethods.addAll(widgetElement.methods.last.keys);
+    for (int i = 1; i < widgetElement.methods.length; i ++) {
+      syncMethods.addAll(widgetElement.methods[i].keys);
+    }
+
+    for (int i = 0; i < widgetElement.asyncMethods.length; i ++) {
+      asyncMethods.addAll(widgetElement.asyncMethods[i].keys);
     }
 
     widgetElement.dynamicMethods.forEach((key, method) {
