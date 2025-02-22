@@ -12,6 +12,18 @@ class FlutterListViewElement extends WidgetElement {
   Axis scrollDirection = Axis.vertical;
 
   @override
+  double get scrollLeft {
+    if (scrollDirection != Axis.horizontal) return 0.0;
+    ScrollController? scrollController = PrimaryScrollController.maybeOf(context);
+    return scrollController?.position.pixels ?? 0;
+  }
+
+  @override
+  set scrollLeft(double value) {
+    scroll(value, scrollTop);
+  }
+
+  @override
   void scroll(double x, double y, [bool withAnimation = false]) {
     ScrollController? scrollController = PrimaryScrollController.maybeOf(context);
     scrollController?.position.moveTo(
@@ -22,8 +34,25 @@ class FlutterListViewElement extends WidgetElement {
   }
 
   @override
+  void scrollBy(double x, double y, [bool withAnimation = false]) {
+    if (scrollDirection == Axis.horizontal) {
+      scroll(scrollLeft + x, scrollTop, withAnimation);
+    } else {
+      scroll(scrollLeft, scrollTop + y, withAnimation);
+    }
+  }
+
+  @override
+  double get scrollTop {
+    if (scrollDirection != Axis.vertical) return 0.0;
+    ScrollController? scrollController = PrimaryScrollController.maybeOf(context);
+
+    return scrollController?.position.pixels ?? 0;
+  }
+
+  @override
   set scrollTop(double value) {
-    scroll(0, value);
+    scroll(scrollLeft, value);
   }
 
   @override

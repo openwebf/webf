@@ -22,8 +22,8 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
     super.performLayout();
 
     if (child is RenderLayoutBox) {
-      double childMarginTop = renderStyle.marginTop.computedValue;
-      double childMarginBottom = renderStyle.marginBottom.computedValue;
+      double childMarginTop = renderStyle.collapsedMarginTop;
+      double childMarginBottom = renderStyle.collapsedMarginBottom;
       Size scrollableSize = (child as RenderLayoutBox).scrollableSize;
 
       size = constraints.constrain(Size(scrollableSize.width, childMarginTop + scrollableSize.height + childMarginBottom));
@@ -35,6 +35,8 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
       // Apply position relative offset change.
       CSSPositionedLayout.applyRelativeOffset(relativeOffset, child as RenderLayoutBox);
     }
+
+    initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
   }
 
   @override

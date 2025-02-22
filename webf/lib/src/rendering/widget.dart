@@ -54,6 +54,20 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
 
     minContentWidth = renderStyle.intrinsicWidth;
     minContentHeight = renderStyle.intrinsicHeight;
+
+    _setChildrenOffset(child);
+  }
+
+  void _setChildrenOffset(RenderBox child) {
+    double borderLeftWidth = renderStyle.borderLeftWidth?.computedValue ?? 0.0;
+    double borderTopWidth = renderStyle.borderTopWidth?.computedValue ?? 0.0;
+
+    double paddingLeftWidth = renderStyle.paddingLeft.computedValue ?? 0.0;
+    double paddingTopWidth = renderStyle.paddingTop.computedValue ?? 0.0;
+
+    Offset offset = Offset(borderLeftWidth + paddingLeftWidth, borderTopWidth + paddingTopWidth);
+    // Apply position relative offset change.
+    CSSPositionedLayout.applyRelativeOffset(offset, child);
   }
 
   @override
@@ -154,11 +168,6 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
-    offset += Offset(renderStyle.paddingLeft.computedValue, renderStyle.paddingTop.computedValue);
-
-    offset +=
-        Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
-
     RenderBox? child = firstChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
@@ -173,13 +182,6 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
       return hitTestIntrinsicChild(result, firstChild, position!);
     }
 
-    // Reduce the area occupied by the padding and border size of RenderWidget.
-    if (position != null) {
-      position -=
-          Offset(renderStyle.borderLeftWidth?.computedValue ?? 0.0, renderStyle.borderTopWidth?.computedValue ?? 0.0);
-      position -= Offset(renderStyle.paddingLeft.computedValue, renderStyle.paddingTop.computedValue);
-    }
-
     RenderBox? child = lastChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
@@ -188,7 +190,7 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
         offset: childParentData.offset,
         position: position!,
         hitTest: (BoxHitTestResult result, Offset transformed) {
-          assert(transformed == position! - childParentData.offset);
+          assert(transformed == position - childParentData.offset);
           return child!.hitTest(result, position: transformed);
         },
       );

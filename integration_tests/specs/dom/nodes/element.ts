@@ -77,6 +77,42 @@ describe('DOM Element API', () => {
 
   });
 
+  it('should work with listview', async () => {
+    const listview = document.createElement('webf-listview');
+
+    listview.style.width = listview.style.height = '200px';
+    listview.style.padding = '10px';
+    listview.style.margin = '20px';
+    listview.style.backgroundColor = 'grey';
+    document.body.appendChild(listview);
+
+    const scrollDiv = document.createElement('div');
+    scrollDiv.style.width = '100px';
+    scrollDiv.style.height = '1000px';
+    listview.appendChild(scrollDiv)
+
+    const childDiv = document.createElement('div');
+    childDiv.style.width = childDiv.style.height = '30px';
+    childDiv.style.marginTop = '150px';
+    childDiv.style.backgroundColor = 'yellow';
+    scrollDiv.appendChild(childDiv);
+
+    await snapshot();
+
+    expect(JSON.parse(JSON.stringify(childDiv.getBoundingClientRect()))).toEqual({
+      bottom: 210, height: 30, left: 30, right: 60, top: 180, width: 30, x: 30, y: 180
+    } as any);
+
+    listview.scrollBy(0, 10);
+
+    await snapshot();
+
+    expect(JSON.parse(JSON.stringify(childDiv.getBoundingClientRect()))).toEqual({
+      bottom: 200, height: 30, left: 30, right: 60, top: 170, width: 30, x: 30, y: 170
+    } as any);
+
+  });
+
   it('should work with scroll with fixed elements', async () => {
     const style = document.createElement('style');
     style.innerHTML = `.container {
@@ -113,9 +149,60 @@ describe('DOM Element API', () => {
     const rect1 = clickBox?.getBoundingClientRect();
 
     window.scrollTo(0, 200);
-    
+
     const rect2 = clickBox?.getBoundingClientRect();
-    
+
+    expect(JSON.stringify(rect1)).toEqual(JSON.stringify(rect2));
+  });
+
+  it('should work with listview with fixed elements', async () => {
+    const style = document.createElement('style');
+    style.innerHTML = `.container {
+        margin: 64px 0 32px;
+        text-align: center;
+        padding-top: 1000px;
+        padding-bottom: 300px;
+        background: linear-gradient(to right, #ff7e5f, #feb47b);
+      }`;
+    document.head.appendChild(style);
+
+    const container = createElement('div', {
+      className: 'container',
+    }, [
+      createElement('div', {
+        style: {
+          position: 'fixed',
+          top: '300px',
+          left: 0,
+        }
+      }, [
+        createElement('div', {
+          id: 'box'
+        }, [
+          createText('click me')
+        ])
+      ])
+    ]);
+
+    const listview = createElement('webf-listview', {}, [
+      container
+    ]);
+
+    BODY.append(listview);
+
+    const clickBox = document.querySelector('#box');
+
+    const rect1 = clickBox?.getBoundingClientRect();
+
+    await snapshot();
+
+    // @ts-ignore
+    listview.scrollTop = 200;
+
+    const rect2 = clickBox?.getBoundingClientRect();
+
+    await snapshot();
+
     expect(JSON.stringify(rect1)).toEqual(JSON.stringify(rect2));
   });
 
@@ -152,7 +239,7 @@ describe('DOM Element API', () => {
 
     const clickBox = document.querySelector('#box');
     const rect = clickBox?.getBoundingClientRect();
-    
+
     // @ts-ignore
     const offset1 = clickBox?.___testGlobalToLocal__(rect.x, rect.y + 10);
 
