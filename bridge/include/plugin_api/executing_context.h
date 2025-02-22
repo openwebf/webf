@@ -60,6 +60,8 @@ using PublicContextGetWindow = WebFValue<Window, WindowPublicMethods> (*)(Execut
 using PublicContextGetExceptionState = WebFValue<SharedExceptionState, ExceptionStatePublicMethods> (*)();
 using PublicFinishRecordingUIOperations = void (*)(ExecutingContext* context);
 using PublicWebFSyncBuffer = void (*)(ExecutingContext* context);
+using PublicWebFMatchImageSnapshot = void (*)(ExecutingContext*, NativeValue*, NativeValue*, WebFNativeFunctionContext*, SharedExceptionState*);
+using PublicWebFMatchImageSnapshotBytes = void (*)(ExecutingContext*, NativeValue*, NativeValue*, WebFNativeFunctionContext*, SharedExceptionState*);
 using PublicWebFInvokeModule = NativeValue (*)(ExecutingContext*, const char*, const char*, SharedExceptionState*);
 using PublicWebFInvokeModuleWithParams =
     NativeValue (*)(ExecutingContext*, const char*, const char*, NativeValue*, SharedExceptionState*);
@@ -135,6 +137,16 @@ struct ExecutingContextWebFMethods {
   static WebFValue<SharedExceptionState, ExceptionStatePublicMethods> CreateExceptionState();
   static void FinishRecordingUIOperations(ExecutingContext* context);
   static void WebFSyncBuffer(ExecutingContext* context);
+  static void WebFMatchImageSnapshot(ExecutingContext* context,
+                                     NativeValue* bytes,
+                                     NativeValue* filename,
+                                     WebFNativeFunctionContext* callback_context,
+                                     SharedExceptionState* shared_exception_state);
+  static void WebFMatchImageSnapshotBytes(ExecutingContext* context,
+                                          NativeValue* imageA,
+                                          NativeValue* imageB,
+                                          WebFNativeFunctionContext* callback_context,
+                                          SharedExceptionState* shared_exception_state);
   static NativeValue WebFInvokeModule(ExecutingContext* context,
                                       const char* module_name,
                                       const char* method,
@@ -219,6 +231,8 @@ struct ExecutingContextWebFMethods {
   PublicContextGetExceptionState context_get_exception_state{CreateExceptionState};
   PublicFinishRecordingUIOperations context_finish_recording_ui_operations{FinishRecordingUIOperations};
   PublicWebFSyncBuffer context_webf_sync_buffer{WebFSyncBuffer};
+  PublicWebFMatchImageSnapshot context_webf_match_image_snapshot{WebFMatchImageSnapshot};
+  PublicWebFMatchImageSnapshotBytes context_webf_match_image_snapshot_bytes{WebFMatchImageSnapshotBytes};
   PublicWebFInvokeModule context_webf_invoke_module{WebFInvokeModule};
   PublicWebFInvokeModuleWithParams context_webf_invoke_module_with_params{WebFInvokeModuleWithParams};
   PublicWebFInvokeModuleWithParamsAndCallback context_webf_invoke_module_with_params_and_callback{

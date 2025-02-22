@@ -238,7 +238,7 @@ ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element,
   return getComputedStyle(element, exception_state);
 }
 
-double Window::requestAnimationFrame(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exceptionState) {
+double Window::requestAnimationFrame(const std::shared_ptr<Function>& callback, ExceptionState& exceptionState) {
   GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kStandard);
   auto frame_callback = FrameCallback::Create(GetExecutingContext(), callback);
   uint32_t request_id = GetExecutingContext()->document()->RequestAnimationFrame(frame_callback, exceptionState);
