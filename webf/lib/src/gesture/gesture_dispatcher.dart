@@ -198,11 +198,13 @@ class GestureDispatcher {
   }
 
   void _handleMouseEvent(String type, {Offset localPosition = Offset.zero, Offset globalPosition = Offset.zero}) {
-    RenderBox? root = (target as Node).ownerDocument.attachedRenderer;
+    RenderBox? root = (this.target as Node).ownerDocument.attachedRenderer;
 
     if (root == null) {
       return;
     }
+
+    EventTarget target = this.target.ownerView.viewport?.rawPointerListener.lastActiveEventTarget ?? this.target;
 
     // When Kraken wraps the Flutter Widget, Kraken need to calculate the global coordinates relative to self.
     Offset globalOffset = root.globalToLocal(Offset(globalPosition.dx, globalPosition.dy));

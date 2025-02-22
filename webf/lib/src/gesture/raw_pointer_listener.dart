@@ -2,6 +2,8 @@
  * Copyright (C) 2024-present The OpenWebF(Cayman). All rights reserved.
  */
 
+import 'dart:async';
+
 import 'package:flutter/rendering.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
@@ -40,6 +42,7 @@ class RawPointerListener {
     eventTriggeredEventTargets.add(eventTarget);
   }
 
+  EventTarget? lastActiveEventTarget;
   final Map<int, EventTarget> _activeEventTarget = {};
   final Map<int, TouchPoint> _activeTouches = {};
 
@@ -48,6 +51,9 @@ class RawPointerListener {
 
     if (event is PointerDownEvent && eventTriggeredEventTargets.isNotEmpty) {
       EventTarget target = eventTriggeredEventTargets.first;
+
+      lastActiveEventTarget = target;
+
       _activeTouches[touchPoint.id] = touchPoint;
       _activeEventTarget[touchPoint.id] = target;
 
@@ -63,8 +69,11 @@ class RawPointerListener {
     if (event is PointerUpEvent && _activeEventTarget.containsKey(touchPoint.id)) {
       _handleTouchPoint(_activeEventTarget[touchPoint.id]!, touchPoint);
 
-      _activeEventTarget.remove(touchPoint.id);
-      _activeTouches.remove(touchPoint.id);
+      scheduleMicrotask(() {
+        _activeEventTarget.remove(touchPoint.id);
+        _activeTouches.remove(touchPoint.id);
+        lastActiveEventTarget = null;
+      });
     }
   }
 
