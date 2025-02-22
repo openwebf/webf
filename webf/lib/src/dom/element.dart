@@ -1246,8 +1246,7 @@ abstract class Element extends ContainerNode
           ancestor = ownerDocument.documentElement!.attachedRenderer as RenderBoxModel;
         }
 
-        Offset offset = renderStyle.getOffset(
-            ancestorRenderBox: ancestor, excludeScrollOffset: true);
+        Offset offset = renderStyle.getOffset(ancestorRenderBox: ancestor, excludeScrollOffset: true);
         Size size = renderStyle.boxSize()!;
         boundingClientRect = BoundingClientRect(
             context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),
@@ -1369,10 +1368,17 @@ abstract class Element extends ContainerNode
         // Return a blob with zero length.
         captured = Uint8List(0);
       } else {
-        Image image =
-            await renderStyle.toImage(devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
-        ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
-        captured = byteData!.buffer.asUint8List();
+        if (this is HTMLElement) {
+          Image image = await ownerDocument.viewport!
+              .toImage(devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
+          ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
+          captured = byteData!.buffer.asUint8List();
+        } else {
+          Image image =
+          await renderStyle.toImage(devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
+          ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
+          captured = byteData!.buffer.asUint8List();
+        }
       }
 
       completer.complete(captured);

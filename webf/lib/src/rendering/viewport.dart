@@ -67,6 +67,12 @@ class RenderViewportBox extends RenderBox
     _boxSize = value;
   }
 
+  Future<Image> toImage([double pixelRatio = 1.0]) {
+    assert(isRepaintBoundary);
+    final OffsetLayer offsetLayer = layer as OffsetLayer;
+    return offsetLayer.toImage(Offset.zero & size, pixelRatio: pixelRatio);
+  }
+
   @override
   void performLayout() {
     if (enableWebFProfileTracking) {
