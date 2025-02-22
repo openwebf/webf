@@ -1,4 +1,4 @@
-use webf_sys::{ExecutingContext, NodeMethods};
+use webf_sys::{ElementMethods, ExecutingContext, NativeValue, NodeMethods};
 
 fn clear_all_timer(context: ExecutingContext) {
   let exception_state = context.create_exception_state();
@@ -28,8 +28,7 @@ fn reset_document_element(context: ExecutingContext) {
   let window = context.window();
   window.scroll_to_with_x_and_y(0.0, 0.0, &exception_state);
 
-  // @TODO: Set the background color to white
-  // document.documentElement.style.backgroundColor = 'white';
+  document_element.style().set_property("background-color", NativeValue::new_string("white"), &exception_state).unwrap();
 }
 
 // @TODO: Implement this
