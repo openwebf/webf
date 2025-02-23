@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:webf/webf.dart';
-import 'package:flutter/material.dart';
+import 'package:collection/collection.dart';
+import 'package:webf/dom.dart' as dom;
 
 class FlutterCupertinoInput extends WidgetElement {
   FlutterCupertinoInput(super.context);
@@ -35,13 +36,31 @@ class FlutterCupertinoInput extends WidgetElement {
     }
   }
 
+  Widget? _buildSlotWidget(String slotName) {
+    final slotNode = childNodes.firstWhereOrNull((node) {
+      if (node is dom.Element) {
+        return node.getAttribute('slotName') == slotName;
+      }
+      return false;
+    });
+
+    if (slotNode != null) {
+      return SizedBox(
+        width: slotName == 'prefix' ? 60 : 100,
+        child: Center(
+          child: slotNode.toWidget(),
+        ),
+      );
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
     final placeholder = getAttribute('placeholder') ?? '';
-    final icon = getAttribute('icon');
     final type = getAttribute('type');
     final isPassword = type == 'password';
-    final suffixText = getAttribute('suffix-text');
+    final height = renderStyle.height.value ?? 44.0;
 
     final inputFormatter = _getInputFormatter(type);
     final List<TextInputFormatter> formatters = [];
@@ -49,40 +68,29 @@ class FlutterCupertinoInput extends WidgetElement {
       formatters.add(inputFormatter);
     }
     
-    return CupertinoTextField(
-      placeholder: placeholder,
-      obscureText: isPassword,
-      keyboardType: _getKeyboardType(type),
-      inputFormatters: formatters.isEmpty ? null : formatters,
-      onChanged: (value) {
-        dispatchEvent(CustomEvent('input', detail: value));
-      },
-      prefix: icon != null ? Padding(
-        padding: const EdgeInsets.only(left: 10),
-        child: Icon(
-          _iconMap[icon] ?? CupertinoIcons.circle,
-          color: CupertinoColors.systemGrey,
-        ),
-      ) : null,
-      // TODO: support custom elements for suffix
-      suffix: suffixText != null ? CupertinoButton(
-        padding: const EdgeInsets.only(right: 10),
-        child: Text(
-          suffixText,
-          style: const TextStyle(
-            color: CupertinoColors.activeBlue,
-          ),
-        ),
-        onPressed: () {
-          dispatchEvent(Event('suffix-click'));
+    // Get prefix and suffix from slots
+    final prefixWidget = _buildSlotWidget('prefix');
+    final suffixWidget = _buildSlotWidget('suffix');
+    
+    return SizedBox(
+      height: height,
+      child: CupertinoTextField(
+        placeholder: placeholder,
+        obscureText: isPassword,
+        keyboardType: _getKeyboardType(type),
+        inputFormatters: formatters.isEmpty ? null : formatters,
+        onChanged: (value) {
+          dispatchEvent(CustomEvent('input', detail: value));
         },
-      ) : null,
-      decoration: BoxDecoration(
-        color: CupertinoColors.white,
-        borderRadius: BorderRadius.circular(8),
+        prefix: prefixWidget,
+        suffix: suffixWidget,
+        decoration: BoxDecoration(
+          color: CupertinoColors.white,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        padding: EdgeInsets.symmetric(horizontal: 10),
+        style: TextStyle(height: 1),  
       ),
-      // TODO: support custom padding
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
     );
   }
 
