@@ -308,21 +308,23 @@ class RenderLayoutBox extends RenderBoxModel
         child.renderStyle.effectiveOverflowX == CSSOverflowType.auto ||
         child.renderStyle.effectiveOverflowY == CSSOverflowType.auto ||
         child.renderStyle.effectiveOverflowY == CSSOverflowType.visible) {
-      Rect childOverflowLayoutRect = child.overflowRect!.shift(Offset.zero);
+      if (child.overflowRect != null) {
+        Rect childOverflowLayoutRect = child.overflowRect!.shift(Offset.zero);
 
-      // child overflowLayout rect need transform for parent`s cartesian coordinates
-      final Matrix4 transform = Matrix4.identity();
-      applyLayoutTransform(child, transform, false);
-      Offset tlOffset =
-      MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
-      overflowRect = Rect.fromLTRB(
-          math.min(overflowRect.left, tlOffset.dx),
-          math.min(overflowRect.top, tlOffset.dy),
-          math.max(overflowRect.right, tlOffset.dx + childOverflowLayoutRect.width),
-          math.max(overflowRect.bottom, tlOffset.dy + childOverflowLayoutRect.height));
+        // child overflowLayout rect need transform for parent`s cartesian coordinates
+        final Matrix4 transform = Matrix4.identity();
+        applyLayoutTransform(child, transform, false);
+        Offset tlOffset =
+        MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
+        overflowRect = Rect.fromLTRB(
+            math.min(overflowRect.left, tlOffset.dx),
+            math.min(overflowRect.top, tlOffset.dy),
+            math.max(overflowRect.right, tlOffset.dx + childOverflowLayoutRect.width),
+            math.max(overflowRect.bottom, tlOffset.dy + childOverflowLayoutRect.height));
+      }
+
+      addLayoutOverflow(overflowRect);
     }
-
-    addLayoutOverflow(overflowRect);
   }
 
   // Sort children by zIndex, used for paint and hitTest.
