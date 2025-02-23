@@ -25,7 +25,9 @@ class FlutterCupertinoPicker extends WidgetElement {
       child: CupertinoPicker(
         itemExtent: double.tryParse(getAttribute('item-height') ?? '') ?? 32,
         onSelectedItemChanged: (index) {
-          dispatchEvent(CustomEvent('change', detail: index));
+          final selectedElement = childNodes.whereType<dom.Element>().elementAt(index);
+          final value = selectedElement.getAttribute('val') ?? selectedElement.getAttribute('label') ?? '';
+          dispatchEvent(CustomEvent('change', detail: value));
         },
         children: items,
       ),
