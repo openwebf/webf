@@ -5,8 +5,8 @@
 #ifndef WEBF_CORE_WEBF_API_CSS_STYLE_DECLARATION_H_
 #define WEBF_CORE_WEBF_API_CSS_STYLE_DECLARATION_H_
 
-#include "webf_value.h"
 #include "foundation/native_value.h"
+#include "webf_value.h"
 
 namespace webf {
 
@@ -19,14 +19,12 @@ using PublicCSSStyleDeclarationSetProperty = void (*)(CSSStyleDeclaration*,
                                                       SharedExceptionState* shared_exception_state);
 
 struct CSSStyleDeclarationPublicMethods : public WebFPublicMethods {
-
   static void SetProperty(CSSStyleDeclaration* self,
                           const char* property,
                           NativeValue value,
                           SharedExceptionState* shared_exception_state);
   double version{1.0};
   PublicCSSStyleDeclarationSetProperty css_style_declaration_set_property{SetProperty};
-
 };
 
 }  // namespace webf

@@ -25,8 +25,8 @@ pub struct ExecutingContextRustMethods {
   pub set_interval: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, c_int, *const OpaquePtr) -> c_int,
   pub clear_timeout: extern "C" fn(*const OpaquePtr, c_int, *const OpaquePtr),
   pub clear_interval: extern "C" fn(*const OpaquePtr, c_int, *const OpaquePtr),
-  pub add_rust_future_task: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const NativeLibraryMetaData, *const OpaquePtr) -> c_void,
-  pub remove_rust_future_task: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const NativeLibraryMetaData, *const OpaquePtr) -> c_void,
+  pub add_rust_future_task: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const NativeLibraryMetaData, *const OpaquePtr) -> c_int,
+  pub remove_rust_future_task: extern "C" fn(*const OpaquePtr, c_int, *const NativeLibraryMetaData, *const OpaquePtr) -> c_void,
   pub create_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<EventRustMethods>,
   pub create_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const EventInit, exception_state: *const OpaquePtr ) -> RustValue<EventRustMethods>,
   pub create_animation_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<AnimationEventRustMethods>,
@@ -384,7 +384,7 @@ impl ExecutingContext {
     }
   }
 
-  pub fn add_rust_future_task(&self, callback: RunRustFutureTasksCallback, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn add_rust_future_task(&self, callback: RunRustFutureTasksCallback, exception_state: &ExceptionState) -> Result<i32, String> {
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
       if argc != 0 {
         println!("Invalid argument count for run rust future tasks callback");
@@ -405,9 +405,9 @@ impl ExecutingContext {
     });
     let callback_context_ptr = Box::into_raw(callback_context);
 
-    unsafe {
-      ((*self.method_pointer).add_rust_future_task)(self.ptr, callback_context_ptr, self.meta_data, exception_state.ptr);
-    }
+    let callback_id = unsafe {
+      ((*self.method_pointer).add_rust_future_task)(self.ptr, callback_context_ptr, self.meta_data, exception_state.ptr)
+    };
 
     if exception_state.has_exception() {
       unsafe {
@@ -417,45 +417,16 @@ impl ExecutingContext {
       return Err(exception_state.stringify(self));
     }
 
-    Ok(())
+    Ok((callback_id))
 
   }
 
-  pub fn remove_rust_future_task(&self, callback: RunRustFutureTasksCallback, exception_state: &ExceptionState) -> Result<(), String> {
-    let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
-      if argc != 0 {
-        println!("Invalid argument count for run rust future tasks callback");
-        return NativeValue::new_null();
-      }
-      callback();
-      NativeValue::new_null()
-    });
-
-    let callback_data = Box::new(WebFNativeFunctionContextData {
-      func: general_callback,
-    });
-    let callback_context_data_ptr = Box::into_raw(callback_data);
-    let callback_context = Box::new(WebFNativeFunctionContext {
-      callback: invoke_webf_native_function,
-      free_ptr: release_webf_native_function,
-      ptr: callback_context_data_ptr,
-    });
-    let callback_context_ptr = Box::into_raw(callback_context);
-
+  pub fn remove_rust_future_task(&self, callback_id: i32, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).remove_rust_future_task)(self.ptr, callback_context_ptr, self.meta_data, exception_state.ptr);
-    }
-
-    if exception_state.has_exception() {
-      unsafe {
-        let _ = Box::from_raw(callback_context_ptr);
-        let _ = Box::from_raw(callback_context_data_ptr);
-      }
-      return Err(exception_state.stringify(self));
+      ((*self.method_pointer).remove_rust_future_task)(self.ptr, callback_id, self.meta_data, exception_state.ptr);
     }
 
     Ok(())
-
   }
 
 }
