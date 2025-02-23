@@ -494,7 +494,7 @@ class RenderLayoutBox extends RenderBoxModel
       maxScrollableX += transform.getTranslation()[0];
     }
 
-    if (childRenderStyle.right.isNotAuto) {
+    if (childRenderStyle.right.isNotAuto && parent is RenderBoxModel) {
       if ((parent as RenderBoxModel).widthSizeType == BoxSizeType.specified) {
         RenderBoxModel overflowContainerBox = parent as RenderBoxModel;
         maxScrollableX = math.max(
@@ -517,7 +517,7 @@ class RenderLayoutBox extends RenderBoxModel
     if (transform != null) {
       maxScrollableY += transform.getTranslation()[1];
     }
-    if (childRenderStyle.bottom.isNotAuto) {
+    if (childRenderStyle.bottom.isNotAuto && parent is RenderBoxModel) {
       if ((parent as RenderBoxModel).heightSizeType == BoxSizeType.specified) {
         RenderBoxModel overflowContainerBox = parent as RenderBoxModel;
         maxScrollableY = math.max(
