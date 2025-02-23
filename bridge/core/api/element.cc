@@ -14,7 +14,8 @@ WebFValue<CSSStyleDeclaration, CSSStyleDeclarationPublicMethods> ElementPublicMe
   MemberMutationScope member_mutation_scope{element->GetExecutingContext()};
   auto style = element->style();
   WebFValueStatus* status_block = style->KeepAlive();
-  return WebFValue<CSSStyleDeclaration, CSSStyleDeclarationPublicMethods>(style, style->cssStyleDeclarationPublicMethods(), status_block);
+  return WebFValue<CSSStyleDeclaration, CSSStyleDeclarationPublicMethods>(
+      style, style->cssStyleDeclarationPublicMethods(), status_block);
 }
 
 void ElementPublicMethods::ToBlob(Element* ptr,

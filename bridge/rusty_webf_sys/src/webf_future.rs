@@ -12,7 +12,7 @@ type Task = Pin<Box<dyn Future<Output = ()>>>;
 pub struct FutureRuntime {
   tasks: VecDeque<Task>,
   context: ExecutingContext,
-  callback: Option<Box<dyn Fn()>>,
+  callback_id: Option<i32>,
 }
 
 impl FutureRuntime {
@@ -20,7 +20,7 @@ impl FutureRuntime {
     FutureRuntime {
       tasks: VecDeque::new(),
       context,
-      callback: None,
+      callback_id: None,
     }
   }
 
@@ -48,9 +48,9 @@ impl FutureRuntime {
       return;
     }
 
-    if let Some(callback) = self.callback.take() {
+    if let Some(callback_id) = self.callback_id.take() {
       let exception_state = self.context.create_exception_state();
-      self.context.remove_rust_future_task(callback, &exception_state);
+      self.context.remove_rust_future_task(callback_id, &exception_state);
     }
 
   }
@@ -115,7 +115,7 @@ where
   let runtime_run_task_callback = Box::new(move || {
     runtime.borrow_mut().run();
   });
-  runtime_clone.borrow_mut().callback = Some(runtime_run_task_callback.clone());
   let exception_state = context.create_exception_state();
-  context.add_rust_future_task(runtime_run_task_callback, &exception_state).unwrap();
+  let callback_id = context.add_rust_future_task(runtime_run_task_callback, &exception_state).unwrap();
+  runtime_clone.borrow_mut().callback_id = Some(callback_id);
 }

@@ -38,7 +38,7 @@ using AsyncModuleCallback = NativeValue* (*)(void* callback_context,
                                              InvokeModuleResultCallback result_callback);
 
 using PluginLibraryEntryPoint = void* (*)(WebFValue<ExecutingContext, ExecutingContextWebFMethods> handle_context,
-                                          NativeLibrartMetaData* meta_data);
+                                          NativeLibraryMetaData* meta_data);
 using LoadNativeLibraryCallback = void (*)(PluginLibraryEntryPoint entry_point,
                                            NativeValue* lib_name,
                                            void* initialize_data,
