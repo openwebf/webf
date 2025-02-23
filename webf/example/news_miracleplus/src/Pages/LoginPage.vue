@@ -9,14 +9,14 @@
       <flutter-cupertino-segmented-tab class="login-tab">
         <flutter-cupertino-segmented-tab-item title="密码登录">
           <div class="login-form">
-            <flutter-cupertino-input class="tel-input" placeholder="请输入手机号" icon="phone" @input="handlePhoneInput">
+            <flutter-cupertino-input class="tel-input" placeholder="请输入手机号" @input="handlePhoneInput">
               <div slotName="prefix" class="country-code" @click="showCountryCodePicker">
                 +{{ countryCode }}
               </div>
             </flutter-cupertino-input>
-            <flutter-cupertino-input class="pwd-input" placeholder="请设置密码" icon="lock" type="password"
+            <flutter-cupertino-input class="pwd-input" placeholder="请设置密码" type="password"
               @input="handlePasswordInput" />
-            <flutter-cupertino-button @press="handleLoginByPassword" class="login-button">
+            <flutter-cupertino-button type="primary" @click="handleLoginByPassword" class="login-button">
               登录
             </flutter-cupertino-button>
           </div>
@@ -27,7 +27,7 @@
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="短信登录">
           <div class="login-form">
-            <flutter-cupertino-input class="tel-input" placeholder="请输入手机号" icon="phone" @input="handlePhoneInput">
+            <flutter-cupertino-input class="tel-input" placeholder="请输入手机号" @input="handlePhoneInput">
               <div slotName="prefix" class="country-code" @click="showCountryCodePicker">
                 +{{ countryCode }}
               </div>
@@ -43,7 +43,7 @@
                 </span>
               </div>
             </flutter-cupertino-input>
-            <flutter-cupertino-button @click="handleLoginByPhoneCode" class="login-button">
+            <flutter-cupertino-button type="primary" @click="handleLoginByPhoneCode" class="login-button">
               登录
             </flutter-cupertino-button>
           </div>
@@ -56,10 +56,17 @@
           :label="`+${item.code} (${item.name})`" :val="item.code"></flutter-cupertino-picker-item>
       </flutter-cupertino-picker>
     </flutter-cupertino-modal-popup>
+    <alert-dialog
+      ref="alertRef"
+      title="提示"
+      message="请输入正确的手机号"
+      confirm-text="确定"
+    />
   </div>
 </template>
 <script>
 import LogoHeader from '@/Components/LogoHeader.vue';
+import AlertDialog from '@/Components/AlertDialog.vue';
 import { api } from '@/api';
 import { useUserStore } from '@/stores/userStore';
 import { getCountryCodeList } from '@/utils/getCountryCodeList';
@@ -80,6 +87,7 @@ export default {
   },
   components: {
     LogoHeader,
+    AlertDialog,
   },
   mounted() {
     console.log('LoginPage mounted');
@@ -96,6 +104,7 @@ export default {
       if (!this.phoneNumber) {
         // TODO: 显示错误提示
         console.error('请输入手机号');
+        this.$refs.alertRef.show();
         return;
       }
       
@@ -118,7 +127,6 @@ export default {
     handlePasswordInput(e) {
       console.log('handlePasswordInput', e);
       this.pwd = e.detail;
-
     },
     async handleLoginByPassword() {
       try {
@@ -178,7 +186,6 @@ export default {
       this.countryCode = e.detail;
     },
     startCountdown() {
-      // 清除可能存在的旧定时器
       if (this.timer) {
         clearInterval(this.timer);
       }
