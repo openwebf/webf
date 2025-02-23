@@ -44,7 +44,7 @@ describe('DOM Element API', () => {
     expect(div.hasAttribute('foo')).toBeFalse();
   });
 
-  it('should work with scroll', () => {
+  it('should work with scroll', async () => {
     const div = document.createElement('div');
 
     div.style.width = div.style.height = '200px';
@@ -65,11 +65,15 @@ describe('DOM Element API', () => {
     childDiv.style.backgroundColor = 'yellow';
     scrollDiv.appendChild(childDiv);
 
+    await snapshot();
+
     expect(JSON.parse(JSON.stringify(childDiv.getBoundingClientRect()))).toEqual({
       bottom: 210, height: 30, left: 30, right: 60, top: 180, width: 30, x: 30, y: 180
     } as any);
 
     div.scrollBy(0, 10);
+
+    await snapshot();
 
     expect(JSON.parse(JSON.stringify(childDiv.getBoundingClientRect()))).toEqual({
       bottom: 200, height: 30, left: 30, right: 60, top: 170, width: 30, x: 30, y: 170
@@ -110,7 +114,6 @@ describe('DOM Element API', () => {
     expect(JSON.parse(JSON.stringify(childDiv.getBoundingClientRect()))).toEqual({
       bottom: 200, height: 30, left: 30, right: 60, top: 170, width: 30, x: 30, y: 170
     } as any);
-
   });
 
   it('should work with scroll with fixed elements', async () => {
@@ -148,11 +151,15 @@ describe('DOM Element API', () => {
 
     const rect1 = clickBox?.getBoundingClientRect();
 
+    await snapshot();
+
     window.scrollTo(0, 200);
 
     const rect2 = clickBox?.getBoundingClientRect();
 
     expect(JSON.stringify(rect1)).toEqual(JSON.stringify(rect2));
+
+    await snapshot();
   });
 
   it('should work with listview with fixed elements', async () => {

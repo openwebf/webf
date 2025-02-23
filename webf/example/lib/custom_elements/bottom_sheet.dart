@@ -15,7 +15,7 @@ class FlutterBottomSheet extends WidgetElement {
   void showBottomSheet() {
     showModalBottomSheet(
       isScrollControlled: true,
-      context: context,
+      context: context!,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(20),
