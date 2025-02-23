@@ -30,6 +30,8 @@ class FlutterCupertinoIcon extends WidgetElement {
         return CupertinoIcons.pencil;
       case 'gear':
         return CupertinoIcons.gear;
+      case 'doc_text':
+        return CupertinoIcons.doc_text;
     }
 
     return null;
