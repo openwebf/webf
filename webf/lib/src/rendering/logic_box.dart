@@ -316,7 +316,7 @@ class LogicLineBox {
 
   // TODO this value effect need optimize
   double firstLineLeftExtent = 0;
-  bool breakForExtentShort;
+  bool breakForExtentShort; //if set true, mainAxisExtent is short space, need to be truncated
 
   double _mainAxisExtent = 0;
 

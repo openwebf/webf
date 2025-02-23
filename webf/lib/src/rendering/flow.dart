@@ -625,6 +625,7 @@ class RenderFlowLayout extends RenderLayoutBox {
               String leftText = textData.substring(truncationText.length);
               print('leftText after truncate: $leftText');
 
+              // TODO
               // child.updateRenderParagraphIfNeedTruncation(leftWidthSpace);
             } else {
               runLineBox = processTextBoxBreak(child, runLineBox);
@@ -642,7 +643,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           LogicLineBox newLineBox = buildNewLineBox();
           if (isLineBreakForExtentShort(
               runLineBox.mainAxisExtentWithoutLineJoin, mainAxisLimit, childListLineMainAxisExtent)) {
-            newLineBox.breakForExtentShort = true; //标记
+            newLineBox.breakForExtentShort = true;
           }
           lastRunLineBox = runLineBox;
           runLineBox = newLineBox;
@@ -670,6 +671,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     lineBoxes.maxLines = _maxLines;
   }
 
+  // add child to current runLine and create a new RunLine if needed
   LogicLineBox processTextBoxBreak(RenderTextBox child, LogicLineBox runLine) {
     LogicLineBox newLineBox = runLine;
     if (child.happenLineJoin()) {
