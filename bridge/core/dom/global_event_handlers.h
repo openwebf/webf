@@ -84,6 +84,8 @@ class GlobalEventHandlers {
   DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(transitionstart, ktransitionstart);
   DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(waiting, kwaiting);
   DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(wheel, kwheel);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(mount, kmount);
+  DEFINE_STATIC_ATTRIBUTE_EVENT_LISTENER(unmount, kunmount);
 };
 
 }  // namespace webf

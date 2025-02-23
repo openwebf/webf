@@ -382,6 +382,18 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
   ExternalWebRenderLayoutWidgetElement(this._webfElement, WebFRenderLayoutWidgetAdaptor widget) : super(widget);
 
   @override
+  void mount(flutter.Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
+    _webfElement.dispatchEvent(Event('mount'));
+  }
+
+  @override
+  void unmount() {
+    super.unmount();
+    _webfElement.dispatchEvent(Event('unmount'));
+  }
+
+  @override
   Element get webFElement => _webfElement;
 }
 

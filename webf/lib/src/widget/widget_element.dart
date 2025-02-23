@@ -8,7 +8,6 @@ import 'package:flutter/widgets.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
-import 'package:webf/launcher.dart';
 import 'package:webf/src/bridge/binding_object.dart';
 import 'package:webf/widget.dart';
 
@@ -40,8 +39,8 @@ abstract class WidgetElement extends dom.Element {
 
   bool isRouterLinkElement = false;
 
-  BuildContext get context {
-    return state!.context;
+  BuildContext? get context {
+    return state?.context;
   }
 
   WidgetElement(BindingContext? context) : super(context) {
@@ -354,6 +353,7 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
     widget.widgetElement.willAttachRenderer(this);
     super.mount(parent, newSlot);
     widget.widgetElement.didAttachRenderer(this);
+    widget.widgetElement.dispatchEvent(dom.Event('mount'));
   }
 
   @override
@@ -362,5 +362,6 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
     widgetElement.willDetachRenderer(this);
     super.unmount();
     widgetElement.didDetachRenderer(this);
+    widgetElement.dispatchEvent(dom.Event('mount'));
   }
 }

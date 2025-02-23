@@ -241,4 +241,10 @@ export interface GlobalEventHandlers {
      */
     onwaiting: IDLEventHandler | null;
     onwheel: IDLEventHandler | null;
+
+    /**
+     * Occurs when the renderObject of this Element had been attached to detached from flutter tree
+     */
+    onmount: IDLEventHandler | null;
+    onunmount: IDLEventHandler | null;
 }
