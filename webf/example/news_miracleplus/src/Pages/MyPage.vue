@@ -2,18 +2,18 @@
   <div class="my-page">
     <div class="user-info-block">
       <img :src="formattedAvatar" class="avatar" />
-      <div class="name" v-if="isLoggedIn"  @click="goToLoginPage">{{ user.name }}</div>
+      <div class="name" v-if="isLoggedIn"  @click="goToLoginPage">{{ userInfo.name }}</div>
       <div class="login-button" v-else @click="goToLoginPage">登录/注册</div>
       <div class="title" v-if="isLoggedIn">
         {{ formattedTitle }}
       </div>
       <div class="stats">
         <div class="stat-item">
-          <div class="number">{{ user.followingCount || 0 }}</div>
+          <div class="number">{{ userInfo.followingCount || 0 }}</div>
           <div class="label">关注</div>
         </div>
         <div class="stat-item">
-          <div class="number">{{ user.followerCount || 0 }}</div>
+          <div class="number">{{ userInfo.followerCount || 0 }}</div>
           <div class="label">粉丝</div>
         </div>
       </div>
@@ -27,7 +27,7 @@
         </div>
       
       <div class="karma-count">
-        <div>社区 Karma： {{ user.karma || 0 }}</div>
+        <div>社区 Karma： {{ userInfo.karma || 0 }}</div>
         <flutter-cupertino-icon type="question_circle" />
       </div>
     </div>
@@ -125,14 +125,17 @@ export default {
     isLoggedIn() {
       return this.userStore.isLoggedIn;
     },
+    userInfo() {
+      return this.userStore.userInfo;
+    },
     formattedAvatar() {
-      return formatAvatar(this.user.avatar);
+      return formatAvatar(this.userInfo.avatar);
     },
     formattedTitle() {
-      if (this.user.jobTitle) {
-        return `${this.user.company} · ${this.user.jobTitle}`;
+      if (this.userInfo.jobTitle) {
+        return `${this.userInfo.company} · ${this.userInfo.jobTitle}`;
       }
-      return this.user.company;
+      return this.userInfo.company;
     }
   },
   activated() {
@@ -183,6 +186,7 @@ export default {
       font-weight: 600;
       color: #333;
       margin-bottom: 24px;
+      text-align: center;
     }
 
     .login-button {
