@@ -19,5 +19,5 @@ pub async fn test_tag_p_basic(context: ExecutingContext) {
   let body = document.body();
   body.append_child(&p.as_node(), &exception_state).unwrap();
 
-  snapshot_with_filename(context.clone(), "snapshots/dom/elements/p.ts.1f1e162c1").await.unwrap();
+  snapshot_with_filename(context.clone(), "snapshots/dom/elements/p.rs.1f1e162c1").await.unwrap();
 }
