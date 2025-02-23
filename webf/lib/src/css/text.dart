@@ -485,6 +485,7 @@ mixin CSSTextMixin on RenderStyle {
     Color? color,
     double? height,
     TextSpan? oldTextSpan,
+    List<InlineSpan>? children
   }) {
     // Creates a new TextStyle object.
     //   color: The color to use when painting the text. If this is specified, foreground must be null.
@@ -522,7 +523,7 @@ mixin CSSTextMixin on RenderStyle {
     if(oldTextSpan != null && oldTextSpan.text == text && oldTextSpan.style == textStyle) {
       return oldTextSpan;
     }
-    return WebFTextSpan(text: text, style: textStyle, children: []);
+    return WebFTextSpan(text: text, style: textStyle, children: children);
   }
 }
 

@@ -52,6 +52,28 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
   String get data => _data;
 
+  String? _truncationData;
+  String? _newData;
+
+  void updateRenderParagraphIfNeedTruncation(double maxWidth) {
+    int truncationIndex = getTruncationIndex(_data, maxWidth);
+    if(truncationIndex > 0) {
+      _truncationData = _data.substring(0, truncationIndex);
+      _newData = _data.substring(truncationIndex);
+
+      // create new WebFRenderParagraph with _truncationData & _newData
+      TextSpan newText = CSSTextMixin.createTextSpan(_newData, renderStyle);
+
+      TextSpan truncationText = CSSTextMixin.createTextSpan(_truncationData, renderStyle, children: [newText]);
+      _renderParagraph = child = WebFRenderParagraph(
+        truncationText,
+        textDirection: TextDirection.ltr,
+        foregroundCallback: _getForeground,
+      );
+      markNeedsLayout();
+    }
+  }
+
   bool isEndWithSpace(String str) {
     return str.endsWith(WHITE_SPACE_CHAR) ||
         str.endsWith(NEW_LINE_CHAR) ||
@@ -98,7 +120,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       } else if (previousSibling is RenderBoxModel &&
           (previousSibling.renderStyle.display == CSSDisplay.block ||
               previousSibling.renderStyle.display == CSSDisplay.flex)) {
-        // If previousSibling is block,should trimLeft slef.
+        // If previousSibling is block,should trimLeft self.
         CSSDisplay? display = previousSibling.renderStyle.display;
         if (display == CSSDisplay.block || display == CSSDisplay.flex) {
           collapsedData = _trimLeftWhitespace(collapsedData);
@@ -117,7 +139,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       } else if (nextSibling is RenderBoxModel &&
           (nextSibling.renderStyle.display == CSSDisplay.block ||
               nextSibling.renderStyle.display == CSSDisplay.flex)) {
-        // If nextSibling is block,should trimRight slef.
+        // If nextSibling is block,should trimRight self.
         CSSDisplay? display = nextSibling.renderStyle.display;
         if (display == CSSDisplay.block || display == CSSDisplay.flex) {
           collapsedData = _trimRightWhitespace(collapsedData);
@@ -416,6 +438,38 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       }
     }
     return clippedText;
+  }
+
+  int getTruncationIndex(String text, double maxWidth) {
+    TextStyle textStyle = TextStyle(
+      fontFamilyFallback: renderStyle.fontFamily,
+      fontSize: renderStyle.fontSize.computedValue,
+      textBaseline: CSSText.getTextBaseLine(),
+      package: CSSText.getFontPackage(),
+      locale: CSSText.getLocale(),
+    );
+    TextPainter painter = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: textStyle,
+        ),
+        textDirection: TextDirection.ltr);
+    painter.layout(maxWidth:  maxWidth);
+    TextRange range = painter.getLineBoundary(TextPosition(offset: 0));
+    return range.end;
+  }
+
+  // data, text string to be truncated
+  // textSize, left space size for text
+  // return truncationIndex
+  String getTruncationText(String data, Size textSize) {
+    String truncationText = data;
+    // Max character to display in one line.
+    int maxChars = (textSize.width / minCharSize.width).ceil();
+    if (data.length > maxChars) {
+      truncationText = data.substring(0, maxChars);
+    }
+    return truncationText;
   }
 
   // '  a b  c   \n' => ' a b c '

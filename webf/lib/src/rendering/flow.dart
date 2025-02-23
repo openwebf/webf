@@ -614,16 +614,35 @@ class RenderFlowLayout extends RenderLayoutBox {
             // if textBox happen linebreak need to create more lineBox
             child is RenderTextBox && child.lines > 1) {
           if (child is RenderTextBox) {
-            runLineBox = processTextBoxBreak(child, runLineBox);
-            preChild = child;
-            return;
+            if(isLineBreakForExtentShort(runLineBox.mainAxisExtent, mainAxisLimit, childListLineMainAxisExtent)) {
+              // append first
+              LogicTextInlineBox firstTextBox = child.lineBoxes.get(0);
+              String textData = child.data;
+              double leftWidthSpace = (mainAxisLimit - runLineBox.mainAxisExtent);
+              int firstTruncationIndex = child.getTruncationIndex(textData, leftWidthSpace);
+              String truncationText = textData.substring(0, firstTruncationIndex);
+              print('truncationText: $truncationText');
+              String leftText = textData.substring(truncationText.length);
+              print('leftText after truncate: $leftText');
+
+              // child.updateRenderParagraphIfNeedTruncation(leftWidthSpace);
+            } else {
+              runLineBox = processTextBoxBreak(child, runLineBox);
+              preChild = child;
+              return;
+            }
+          }
+
+          // child is RenderFlowLayout
+          if(child is RenderFlowLayout) {
+            print('111111');
           }
           appendLineBox(runLineBox);
 
           LogicLineBox newLineBox = buildNewLineBox();
           if (isLineBreakForExtentShort(
               runLineBox.mainAxisExtentWithoutLineJoin, mainAxisLimit, childListLineMainAxisExtent)) {
-            newLineBox.breakForExtentShort = true;
+            newLineBox.breakForExtentShort = true; //标记
           }
           lastRunLineBox = runLineBox;
           runLineBox = newLineBox;
@@ -1451,6 +1470,8 @@ enum BoxCrossSizeType {
   AUTO,
 }
 
+// RenderFlowLayout 中有一个 RenderLineBoxes
+// 放在 List<LogicLineBox> line 中， 对应一行或多行的元素，每一行元素逻辑信息 LogicLineBox 来表示
 class RenderLineBoxes {
   final List<LogicLineBox> _lineBoxList = [];
   double mainAxisLimit = 0;
@@ -1508,7 +1529,7 @@ class RenderLineBoxes {
       LogicLineBox lineBox = _lineBoxList[i];
       size += (type == BoxCrossSizeType.NORMAL ? lineBox.crossAxisExtent : lineBox.lineCrossAxisAutoSize);
       remainLines -= lineBox.innerLineLength;
-      if (remainLines <= 0 && i + 1 < _lineBoxList.length) {
+      if (remainLines <= 0 && i + 1 < _lineBoxList.length) {  // last lineBox happenLineJoin, add crossAxisExtent
         LogicLineBox nextLineBox = _lineBoxList[i + 1];
         if (nextLineBox.happenLineJoin) {
           size += (type == BoxCrossSizeType.NORMAL ? nextLineBox.crossAxisExtent : nextLineBox.lineCrossAxisAutoSize);
