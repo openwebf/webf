@@ -4,10 +4,10 @@
         
         <!-- Setting items list -->
         <div class="setting-list">
-            <div class="setting-item" @click="handleNotificationSetting">
+            <!-- <div class="setting-item" @click="handleNotificationSetting">
                 <span>通知设置</span>
                 <i class="arrow-right"></i>
-            </div>
+            </div> -->
             
             <div class="setting-item" @click="handleUserAgreement">
                 <span>用户服务协议</span>
@@ -28,6 +28,9 @@
 </template>
 
 <script>
+import { api } from '@/api';
+import { useUserStore } from '@/stores/userStore';
+
 export default {
     name: 'SettingPage',
     methods: {
@@ -43,9 +46,13 @@ export default {
             // Handle privacy policy navigation
             window.webf.hybridHistory.pushState({}, '/privacy_policy');
         },
-        handleLogout() {
+        async handleLogout() {
             // Handle account logout
-            console.log('Handle logout')
+            // TODO: 增加一个弹窗
+            await api.auth.logout();
+            const userStore = useUserStore();
+            userStore.clearUserInfo();
+            window.webf.hybridHistory.pushState({}, '/login');
         }
     }
 }
@@ -54,7 +61,7 @@ export default {
 <style scoped>
 .setting-page {
     padding: 16px;
-    background-color: #f5f5f5;
+    background-color: var(--background-color);
     min-height: 100vh;
 }
 
@@ -62,10 +69,11 @@ export default {
     font-size: 20px;
     font-weight: bold;
     margin-bottom: 20px;
+    color: var(--font-color);
 }
 
 .setting-list {
-    background-color: white;
+    background-color: var(--background-primary);
     border-radius: 8px;
 }
 
@@ -76,6 +84,7 @@ export default {
     padding: 16px;
     border-bottom: 1px solid #f0f0f0;
     cursor: pointer;
+    color: var(--font-color);
 }
 
 .setting-item:last-child {
@@ -88,10 +97,6 @@ export default {
     display: inline-block;
     padding: 3px;
     transform: rotate(-45deg);
-}
-
-.logout {
-    margin-top: 12px;
 }
 
 .logout span {

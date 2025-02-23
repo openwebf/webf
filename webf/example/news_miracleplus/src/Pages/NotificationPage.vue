@@ -33,6 +33,7 @@ export default {
     }
   },
   async mounted() {
+    console.log('NotificationPage mounted');
     await this.fetchNotifications();
   },
   methods: {
@@ -40,8 +41,8 @@ export default {
       try {
         const res = await api.auth.getUserNotifications({
           page: this.page,
-          token: this.userStore.userInfo.token,
-          anonymousId: this.userStore.userInfo.anonymousId,
+          token: this.userStore.userInfo?.token,
+          anonymousId: this.userStore.userInfo?.anonymousId,
         });
         this.notifications = res.data.notifications;
       } catch (error) {

@@ -254,8 +254,10 @@
 <style lang="css" scoped>
 .privacy-policy-page {
     padding: 16px;
+    background-color: var(--background-color);
     .main {
         height: 100vh;
+        color: var(--font-color);
     }
 }
 </style>

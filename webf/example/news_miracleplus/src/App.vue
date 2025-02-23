@@ -21,7 +21,7 @@
         <notification-page></notification-page>
       </flutter-tab-bar-item>
       <flutter-tab-bar-item title="我的" icon="person" path="/my">
-        <user-page></user-page>
+        <my-page></my-page>
       </flutter-tab-bar-item>
     </flutter-tab-bar>
   </webf-router-link>
@@ -51,6 +51,7 @@ import SearchPage from '@/Pages/SearchPage.vue';
 import PublishPage from '@/Pages/PublishPage.vue';
 import NotificationPage from '@/Pages/NotificationPage.vue';
 import UserPage from '@/Pages/UserPage.vue';
+import MyPage from '@/Pages/MyPage.vue';
 import RegisterPage from '@/Pages/RegisterPage.vue';
 import LoginPage from '@/Pages/LoginPage.vue';
 import ShareLinkPage from '@/Pages/ShareLinkPage.vue';
@@ -70,6 +71,7 @@ export default {
     LoginPage,
     ShareLinkPage,
     UserPage,
+    MyPage,
     EditPage,
     SettingPage,
     UserAgreementPage,
@@ -88,10 +90,15 @@ export default {
     handleRouterUnmounted() {
       this.activedRouter = '';
     },
+    handleTabChange(e) {
+      console.log('handleTabChange: ', e.detail);
+      this.currentIndex = e.detail;
+    }
   },
   data() {
     return {
       activedRouter: '',
+      currentIndex: 0
     };
   },
 };

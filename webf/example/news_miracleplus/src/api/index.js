@@ -94,7 +94,14 @@ export const api = {
       body: JSON.stringify(data),
     }),
     userInfo: () => request('/v1/users/user_info', {
-      requireAuth: true, // 标记需要认证
+      requireAuth: true,
+    }),
+    sendVerifyCode: (data) => request('/v1/users/sms_send', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    logout: () => request('/v1/users/user_info', {
+      requireAuth: false,
     }),
     getUserFeedsList: ({ page = 1, category = 'all', userId = '' } = {}) => 
       request(`/v1/users/${userId}/feeds?page=${page}&category=${category}`, {

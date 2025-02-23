@@ -128,8 +128,10 @@
 <style lang="css" scoped>
 .user-agreement-page {
     padding: 16px;
+    background-color: var(--background-color);
     .main {
         height: 100vh;
+        color: var(--font-color);
     }
 }
 </style>

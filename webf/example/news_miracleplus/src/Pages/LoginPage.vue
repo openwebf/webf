@@ -9,25 +9,15 @@
       <flutter-cupertino-segmented-tab class="login-tab">
         <flutter-cupertino-segmented-tab-item title="密码登录">
           <div class="login-form">
-            <flutter-cupertino-input
-                class="tel-input"
-                placeholder="请输入手机号"
-                icon="phone" 
-                @input="handlePhoneInput"
-              >           
-                <div slotName="prefix" class="country-code" @click="showCountryCodePicker">
-                  +{{ countryCode }}
-                </div>
-              </flutter-cupertino-input>
-            <flutter-cupertino-input
-              class="pwd-input"
-              placeholder="请设置密码"
-              icon="lock"
-              type="password"
-              @input="handlePasswordInput"
-            />
-            <flutter-cupertino-button @press="handleLogin" class="login-button">
-              <div>登录</div>
+            <flutter-cupertino-input class="tel-input" placeholder="请输入手机号" icon="phone" @input="handlePhoneInput">
+              <div slotName="prefix" class="country-code" @click="showCountryCodePicker">
+                +{{ countryCode }}
+              </div>
+            </flutter-cupertino-input>
+            <flutter-cupertino-input class="pwd-input" placeholder="请设置密码" icon="lock" type="password"
+              @input="handlePasswordInput" />
+            <flutter-cupertino-button @press="handleLoginByPassword" class="login-button">
+              登录
             </flutter-cupertino-button>
           </div>
           <div class="login-footer">
@@ -37,40 +27,34 @@
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="短信登录">
           <div class="login-form">
-            <flutter-cupertino-input
-              class="tel-input"
-              placeholder="请输入手机号"
-              icon="phone" 
-              @input="handlePhoneInput"
-            />
-            <flutter-cupertino-input
+            <flutter-cupertino-input class="tel-input" placeholder="请输入手机号" icon="phone" @input="handlePhoneInput">
+              <div slotName="prefix" class="country-code" @click="showCountryCodePicker">
+                +{{ countryCode }}
+              </div>
+            </flutter-cupertino-input>
+            <flutter-cupertino-input 
               class="code-input"
               placeholder="请输入验证码"
-              icon="shield"
-              suffix-text="获取验证码"
-              @suffix-click="handleGetVerifyCode"
               @input="handleVerifyCodeInput"
-            />
-            <flutter-cupertino-button @press="handleLogin" class="login-button">
-              <div>登录</div>
+            >
+              <div slotName="suffix" class="verify-code" @click="handleGetVerifyCode">
+                <span class="verify-code-text" :class="{ 'disabled': countdown > 0 }">
+                  {{ countdown > 0 ? `${countdown}秒后重试` : '获取验证码' }}
+                </span>
+              </div>
+            </flutter-cupertino-input>
+            <flutter-cupertino-button @click="handleLoginByPhoneCode" class="login-button">
+              登录
             </flutter-cupertino-button>
           </div>
         </flutter-cupertino-segmented-tab-item>
       </flutter-cupertino-segmented-tab>
     </div>
-    <flutter-cupertino-modal-popup 
-        :show="isSelectingCountryCode" 
-        height="400"
-        @close="onCountryCodePickerClose"
-        >
-        <flutter-cupertino-picker height="200" item-height="32" @change="onCountryCodePickerChange">  
-          <flutter-cupertino-picker-item 
-            v-for="item in countryCodeList" 
-            :key="item.code" 
-            :label="`+${item.code} (${item.name})`"
-            :val="item.code"
-          ></flutter-cupertino-picker-item>
-        </flutter-cupertino-picker>
+    <flutter-cupertino-modal-popup :show="isSelectingCountryCode" height="400" @close="onCountryCodePickerClose">
+      <flutter-cupertino-picker height="200" item-height="32" @change="onCountryCodePickerChange">
+        <flutter-cupertino-picker-item v-for="item in countryCodeList" :key="item.code"
+          :label="`+${item.code} (${item.name})`" :val="item.code"></flutter-cupertino-picker-item>
+      </flutter-cupertino-picker>
     </flutter-cupertino-modal-popup>
   </div>
 </template>
@@ -90,6 +74,8 @@ export default {
       countryCode: '86',
       isSelectingCountryCode: false,
       countryCodeList: getCountryCodeList(),
+      countdown: 0,
+      timer: null,
     }
   },
   components: {
@@ -104,8 +90,26 @@ export default {
       this.phoneNumber = e.detail;
     },
 
-    handleGetVerifyCode() {
-      console.log('啊哟，有人在艾特我哟');
+    async handleGetVerifyCode() {
+      if (this.countdown > 0) return;
+      
+      if (!this.phoneNumber) {
+        // TODO: 显示错误提示
+        console.error('请输入手机号');
+        return;
+      }
+      
+      try {
+        await api.auth.sendVerifyCode({
+          phone: this.phoneNumber,
+          country_code: this.countryCode,
+          use_case: 'login',
+        });        
+        this.countdown = 60;
+        this.startCountdown();
+      } catch (error) {
+        console.error('发送验证码失败', error);
+      }
     },
     handleVerifyCodeInput(e) {
       console.log('handleVerifyCodeInput', e);
@@ -116,7 +120,7 @@ export default {
       this.pwd = e.detail;
 
     },
-    async handleLogin() {
+    async handleLoginByPassword() {
       try {
         console.log('this.phoneNumber', this.phoneNumber);
         console.log('this.countryCode', this.countryCode);
@@ -138,6 +142,23 @@ export default {
         console.error('登录失败', error);
       }
     },
+    async handleLoginByPhoneCode() {
+      try {
+        console.log('this.phoneNumber', this.phoneNumber);
+        console.log('this.countryCode', this.countryCode);
+        console.log('this.verifyCode', this.verifyCode);
+        const res = await api.auth.loginByPhoneCode({
+          // TODO: anonymous_id
+          // anonymous_id: '',
+          phone: this.phoneNumber,
+          country_code: this.countryCode,
+          code: this.verifyCode,
+        });
+        console.log('登录信息', res);
+      } catch (error) {
+        console.error('登录失败', error);
+      }
+    },
     goToRegister() {
       window.webf.hybridHistory.pushState({}, '/register');
     },
@@ -155,6 +176,26 @@ export default {
     onCountryCodePickerChange(e) {
       console.log('onCountryCodePickerChange', e.detail);
       this.countryCode = e.detail;
+    },
+    startCountdown() {
+      // 清除可能存在的旧定时器
+      if (this.timer) {
+        clearInterval(this.timer);
+      }
+      
+      this.timer = setInterval(() => {
+        if (this.countdown > 0) {
+          this.countdown--;
+        } else {
+          clearInterval(this.timer);
+        }
+      }, 1000);
+    },
+  },
+  beforeUnmount() {
+    // 组件销毁前清除定时器
+    if (this.timer) {
+      clearInterval(this.timer);
     }
   }
 };
@@ -162,57 +203,67 @@ export default {
 <style lang="scss" scoped>
 .login-page {
 
-    &-content {
-        padding: 0 16px;
+  &-content {
+    padding: 0 16px;
+  }
+
+  .slogon {
+    margin-top: 56px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+
+    &-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--font-color);
     }
 
-    .slogon {
-        margin-top: 56px;
-        width: 100%;
+    &-description {
+      margin-top: 8px;
+      font-size: 16px;
+      color: var(--secondary-font-color);
+    }
+  }
+
+  .login-tab {
+    margin-top: 32px;
+  }
+
+  .login-form {
+    padding-top: 12px;
+
+    .tel-input,
+    .code-input,
+    .pwd-input {
+      margin-top: 16px;
+    }
+
+    .tel-input {
+      width: 100%;
+
+      .country-code {
+        width: 20%;
+        background-color: #fff;
+        border-radius: 4px;
+        padding: 0 8px;
+        height: 44px;
+
         display: flex;
-        flex-direction: column;
-        align-items: left;
+        align-items: center;
+        justify-content: center;
+      }
 
-        &-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--font-color);
-        }
-
-        &-description {
-            margin-top: 8px;
-            font-size: 16px;
-            color: var(--secondary-font-color);
-        }
+      .verify-code {
+        color: var(--link-color);
+        width: 20%;
+        border-radius: 4px;
+        padding: 0 8px;
+        height: 44px;
+      }
     }
-
-    .login-tab {
-        margin-top: 32px;
-    }
-
-    .login-form {
-        padding-top: 12px;
-
-        .tel-input, .code-input, .pwd-input {
-          margin-top: 16px;
-        }
-
-        .tel-input {
-          width: 100%;
-
-          .country-code {
-            width: 20%;
-            background-color: #fff;
-            border-radius: 4px;
-            padding: 0 8px;
-            height: 44px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-        }
-    }
+  }
     .login-button {
         margin-top: 16px;
         width: 100%;
@@ -241,5 +292,22 @@ export default {
             color: var(--link-color);
         }
     }
+
+  .verify-code {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &-text {
+      color: var(--link-color);
+      font-size: 14px;
+      
+      &.disabled {
+        color: var(--secondary-font-color);
+        opacity: 0.5;
+      }
+    }
+  }
 }
 </style>

@@ -1,58 +1,73 @@
 <template>
   <div class="my-page">
-    <div @click="goToHomePage">
-      点我去首页
-    </div>
-    <div @click="goToRegisterPage">
-      点我去注册页
-    </div>
-    <div @click="goToLoginPage">
-      点我去登录页
-    </div>
     <div class="user-info-block">
       <img :src="formattedAvatar" class="avatar" />
-      <div class="name">{{ user.name }}</div>
-      <div class="title">
+      <div class="name" v-if="isLoggedIn"  @click="goToLoginPage">{{ user.name }}</div>
+      <div class="login-button" v-else @click="goToLoginPage">登录/注册</div>
+      <div class="title" v-if="isLoggedIn">
         {{ formattedTitle }}
       </div>
       <div class="stats">
         <div class="stat-item">
-          <div class="number">{{ user.followingCount }}</div>
+          <div class="number">{{ user.followingCount || 0 }}</div>
           <div class="label">关注</div>
         </div>
         <div class="stat-item">
-          <div class="number">{{ user.followerCount }}</div>
+          <div class="number">{{ user.followerCount || 0 }}</div>
           <div class="label">粉丝</div>
         </div>
       </div>
+      <div class="edit-block" v-if="isLoggedIn">
+          <flutter-cupertino-button class="edit-profile" type="primary" shape="rounded" @click="goToEditPage">
+            编辑资料
+          </flutter-cupertino-button>
+          <flutter-cupertino-button class="setting" @click="goToSettingPage">
+            设置
+          </flutter-cupertino-button>
+        </div>
       
       <div class="karma-count">
-        <div>社区 Karma： {{ user.karma }}</div>
+        <div>社区 Karma： {{ user.karma || 0 }}</div>
         <flutter-cupertino-icon type="question_circle" />
       </div>
     </div>
     <flutter-cupertino-segmented-tab>
       <flutter-cupertino-segmented-tab-item title="全部">
+        <div v-if="!isLoggedIn">
+          <login-tip />
+        </div>
         <!-- <div v-for="item in allFeeds" :key="item.id">
           <feed-card :item="item"></feed-card>
         </div> -->
       </flutter-cupertino-segmented-tab-item>
       <flutter-cupertino-segmented-tab-item title="分享">
+        <div v-if="!isLoggedIn">
+          <login-tip />
+        </div>
         <!-- <div v-for="item in shareFeeds" :key="item.id">
           <feed-card :item="item"></feed-card>
         </div> -->
       </flutter-cupertino-segmented-tab-item>
       <flutter-cupertino-segmented-tab-item title="评论">
+        <div v-if="!isLoggedIn">
+          <login-tip />
+        </div>
         <!-- <div v-for="item in commentFeeds" :key="item.id">
           <comment-card :item="item"></comment-card>
         </div> -->
       </flutter-cupertino-segmented-tab-item>
       <flutter-cupertino-segmented-tab-item title="点赞">
+        <div v-if="!isLoggedIn">
+          <login-tip />
+        </div>
         <!-- <div v-for="item in likeFeeds" :key="item.id">
           <feed-card :item="item"></feed-card>
         </div> -->
       </flutter-cupertino-segmented-tab-item>
       <flutter-cupertino-segmented-tab-item title="收藏">
+        <div v-if="!isLoggedIn">
+          <login-tip />
+        </div>
         <!-- <div v-for="item in collectFeeds" :key="item.id">
           <feed-card :item="item"></feed-card>
         </div> -->
@@ -65,6 +80,9 @@
 <script>
 // import FeedCard from '@/Components/FeedCard.vue';
 // import CommentCard from '@/Components/comment/CommentCard.vue';
+import LoginTip from '@/Components/LoginTip.vue';
+
+import { useUserStore } from '@/stores/userStore';
 import tabBarManager from '@/utils/tabBarManager';
 import formatAvatar from '@/utils/formatAvatar';
 // import { api } from '@/api';
@@ -72,8 +90,9 @@ export default {
   components: {
     // FeedCard,
     // CommentCard,
+    LoginTip,
   },
-  async mounted() {
+  // async mounted() {
     // ['all', 'share', 'comment', 'like', 'collect'].forEach(async (category) => {
     //   const res = await api.auth.getUserFeedsList({
     //     userId: this.user.id,
@@ -84,33 +103,10 @@ export default {
     //   });
     //   this[`${category}Feeds`] = res.data.feeds;
     // });
-  },
+  // },
   data() {
     return {
       user: {
-        bio: null,
-        name: "殷木",
-        company: "OpenWebF",
-        phone: "15652964849",
-        email: "yxy0919@foxmail.com",
-        desc: "",
-        karma: 26,
-        roles: [],
-        id: "k6tJN2",
-        userId: 7492,
-        jobTitle: "工程师",
-        wechatId: null,
-        profileFullDisclosure: false,
-        anonymousId: "194a2cc892e7c7-0fb45bdd71fd0d-1d525636-1238988-194a2cc892f2615",
-        token: "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiNjc5NjM4OTJkMDE3YWEzYzM0ZTE3MTljIiwiaWF0IjoxNzM5NjAyNjk1fQ.06JzbsQCVuFCS3FC_o9Yzyz91aP9wHjuMV3PJQvuSt0",
-        followingCount: 5,
-        followerCount: 0,
-        likesCount: 0,
-        unreadNotificationCount: 2,
-        countryCode: "86",
-        karmaRanking: 352,
-        avatar: "/img/avatar/defaultavatar4.png",
-        wechatUser: null
       },
       allFeeds: [],
       shareFeeds: [],
@@ -119,7 +115,16 @@ export default {
       collectFeeds: [],
     }
   },
+  setup() {
+      const userStore = useUserStore();
+      return {
+        userStore,
+      }
+    },
   computed: {
+    isLoggedIn() {
+      return this.userStore.isLoggedIn;
+    },
     formattedAvatar() {
       return formatAvatar(this.user.avatar);
     },
@@ -144,6 +149,12 @@ export default {
     },
     goToLoginPage() {
       window.webf.hybridHistory.pushState({}, '/login');
+    },
+    goToEditPage() {
+        window.webf.hybridHistory.pushState({}, '/edit');
+      },
+    goToSettingPage() {
+        window.webf.hybridHistory.pushState({}, '/setting');
     }
   }
 }
@@ -156,7 +167,7 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 24px 16px;
+    padding: 16px;
     border-radius: 12px;
 
     .avatar {
@@ -171,7 +182,17 @@ export default {
       font-size: 18px;
       font-weight: 600;
       color: #333;
-      margin-bottom: 8px;
+      margin-bottom: 24px;
+    }
+
+    .login-button {
+      font-size: 18px;
+      font-weight: 600;
+      color: #666;
+      text-align: center;
+      margin-top: 8px;
+      margin-bottom: 24px;
+
     }
 
     .title {
@@ -204,6 +225,27 @@ export default {
           font-size: 14px;
           color: #666;
         }
+      }
+    }
+
+    .edit-block {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+
+      .edit-profile {
+        height: 36px;
+        margin-right: 12px;
+        width: 100px;
+        color: var(--font-color-primary);
+      }
+
+      .setting {
+        width: 100px;
+        height: 36px;
+        color: var(--font-color-primary);
       }
     }
 

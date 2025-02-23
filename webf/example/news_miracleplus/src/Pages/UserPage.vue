@@ -1,14 +1,5 @@
 <template>
     <div class="user-page">
-      <div @click="goToHomePage">
-        点我去首页
-      </div>
-      <div @click="goToRegisterPage">
-        点我去注册页
-      </div>
-      <div @click="goToLoginPage">
-        点我去登录页
-      </div>
       <div class="user-info-block">
         <img :src="formattedAvatar" class="avatar" />
         <div class="name">{{ user.name }}</div>
@@ -24,17 +15,7 @@
             <div class="number">{{ user.followerCount }}</div>
             <div class="label">粉丝</div>
           </div>
-        </div>
-        <div class="edit-block" v-if="isSelf">
-            <flutter-cupertino-button class="edit-profile" type="primary" shape="rounded" @click="goToEditPage">
-              编辑资料
-            </flutter-cupertino-button>
-            <flutter-cupertino-button class="setting" @click="goToSettingPage">
-              设置
-            </flutter-cupertino-button>
-        </div>
- 
-        
+        </div>        
         <div class="karma-count">
           <div>社区 Karma： {{ user.karma }}</div>
           <flutter-cupertino-icon type="question_circle" />
@@ -50,7 +31,6 @@
         <flutter-cupertino-segmented-tab-item title="点赞">
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="收藏">
-
         </flutter-cupertino-segmented-tab-item>
       </flutter-cupertino-segmented-tab>
     </div>
@@ -58,10 +38,7 @@
   </template>
   
   <script>
-  // import FeedCard from '@/Components/FeedCard.vue';
-  // import CommentCard from '@/Components/comment/CommentCard.vue';
   import { useUserStore } from '@/stores/userStore';
-  import tabBarManager from '@/utils/tabBarManager';
   import formatAvatar from '@/utils/formatAvatar';
   import { api } from '@/api';
   export default {
@@ -107,12 +84,12 @@
         }
         return this.user.company;
       },
-      isSelf() {
-        return this.user.id === this.userStore.userInfo?.id;
-      }
     },
     async mounted() {
-        const userId = window.webf.hybridHistory.state.id || this.userStore.userInfo.id;
+        const userId = window.webf.hybridHistory.state.id;
+        if (!userId) {
+            return;
+        }
         console.log('userId: ', userId);
         const res = await api.user.getFeeds({
             userId,
@@ -123,24 +100,7 @@
       console.log('onShow');
       console.log('window.webf.hybridHistory.state: ', window.webf.hybridHistory.state);
     },
-    methods: {
-      goToHomePage() {
-        console.log('tabBarManager.switchTab: ', tabBarManager.switchTab);
-        tabBarManager.switchTab('/home');
-      },
-      goToRegisterPage() {
-        window.webf.hybridHistory.pushState({}, '/register');
-      },
-      goToLoginPage() {
-        window.webf.hybridHistory.pushState({}, '/login');
-      },
-      goToEditPage() {
-        window.webf.hybridHistory.pushState({}, '/edit');
-      },
-      goToSettingPage() {
-        window.webf.hybridHistory.pushState({}, '/setting');
-      }
-    }
+    methods: {}
   }
   </script>
   
@@ -151,7 +111,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 24px 16px;
+      padding: 16px;
       border-radius: 12px;
   
       .avatar {
