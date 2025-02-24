@@ -55,13 +55,11 @@ class WebFElementWidget extends flutter.StatefulWidget {
 }
 
 class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutter.AutomaticKeepAliveClientMixin {
-  final Element _webFElement;
+  final Element webFElement;
 
-  WebFElementWidgetState(this._webFElement) {
-    _webFElement.states.add(this);
+  WebFElementWidgetState(this.webFElement) {
+    webFElement.states.add(this);
   }
-
-  Element get webFElement => _webFElement;
 
   void requestForChildNodeUpdate(AdapterUpdateReason reason) {
     setState(() {});
@@ -74,7 +72,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     WebFState? webFState;
     WebFRouterViewState? routerViewState;
 
-    if (webFElement.renderStyle.effectiveDisplay == CSSDisplay.none) {
+    if (this is WidgetElement || webFElement.renderStyle.effectiveDisplay == CSSDisplay.none) {
       return flutter.SizedBox.shrink();
     }
 
@@ -122,9 +120,9 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                 controller: webFElement.scrollControllerX,
                 viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
                   flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
-                    webFElement: _webFElement,
+                    webFElement: webFElement,
                     children: children,
-                    key: _webFElement.key,
+                    key: webFElement.key,
                     scrollListener: webFElement.handleScroll,
                     positionX: position,
                   );
@@ -157,9 +155,9 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                       controller: webFElement.scrollControllerX,
                       viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
                         flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
-                          webFElement: _webFElement,
+                          webFElement: webFElement,
                           children: children,
-                          key: _webFElement.key,
+                          key: webFElement.key,
                           scrollListener: webFElement.handleScroll,
                           positionX: positionX,
                           positionY: positionY,
@@ -182,9 +180,9 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
 
                 children.addAll(webFElement.positionedElements.map((element) => element.toWidget()));
                 return WebFRenderLayoutWidgetAdaptor(
-                  webFElement: _webFElement,
+                  webFElement: webFElement,
                   children: children,
-                  key: _webFElement.key,
+                  key: webFElement.key,
                   scrollListener: webFElement.handleScroll,
                   positionY: positionY,
                 );
@@ -194,15 +192,15 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       } else {
         children.addAll(webFElement.positionedElements.map((element) => element.toWidget()));
         widget = scrollableX ??
-            WebFRenderLayoutWidgetAdaptor(webFElement: _webFElement, children: children, key: _webFElement.key);
+            WebFRenderLayoutWidgetAdaptor(webFElement: webFElement, children: children, key: webFElement.key);
       }
     } else {
       children.addAll(webFElement.positionedElements.map((element) => element.toWidget()));
-      widget = WebFRenderLayoutWidgetAdaptor(webFElement: _webFElement, children: children, key: _webFElement.key);
+      widget = WebFRenderLayoutWidgetAdaptor(webFElement: webFElement, children: children, key: webFElement.key);
     }
 
     if (webFElement.hasEvent) {
-      widget = Portal(ownerElement: _webFElement, child: widget);
+      widget = Portal(ownerElement: webFElement, child: widget);
     }
 
     return widget;
@@ -211,19 +209,19 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   @override
   void deactivate() {
     super.deactivate();
-    _webFElement.states.remove(this);
+    webFElement.states.remove(this);
   }
 
   @override
   void activate() {
     super.activate();
-    _webFElement.states.add(this);
+    webFElement.states.add(this);
   }
 
   @override
   void dispose() {
+    webFElement.states.remove(this);
     super.dispose();
-    _webFElement.states.remove(this);
   }
 
   @override

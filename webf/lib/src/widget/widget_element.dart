@@ -17,16 +17,14 @@ const Map<String, dynamic> _defaultStyle = {
 
 // WidgetElement is the base class for custom elements which rendering details are implemented by Flutter widgets.
 abstract class WidgetElement extends dom.Element {
-  final Set<WebFWidgetElementState> _states = {};
-
   WebFWidgetElementState? get state {
-    final stateFinder = _states.where((state) => state.mounted == true);
-    return stateFinder.isEmpty ? null : stateFinder.first;
+    final stateFinder = states.where((state) => state.mounted == true);
+    return stateFinder.isEmpty ? null : stateFinder.first as WebFWidgetElementState;
   }
 
   set state(WebFWidgetElementState? newState) {
     if (newState == null) return;
-    _states.add(newState);
+    states.add(newState);
   }
 
   WebFWidgetElementState createState() {
@@ -204,14 +202,13 @@ abstract class WidgetElement extends dom.Element {
   @override
   void dispose() {
     super.dispose();
-    _states.clear();
   }
 }
 
-class WidgetElementAdapter extends StatefulWidget {
-  final WidgetElement widgetElement;
+class WidgetElementAdapter extends dom.WebFElementWidget {
+  WidgetElement get widgetElement => super.webFElement as WidgetElement;
 
-  WidgetElementAdapter(this.widgetElement, {Key? key}) : super(key: key);
+  WidgetElementAdapter(WidgetElement widgetElement, {Key? key}) : super(widgetElement, key: key);
 
   @override
   StatefulElement createElement() {
@@ -259,10 +256,10 @@ class WebFWidgetElementElement extends StatefulElement {
   }
 }
 
-class WebFWidgetElementState extends State<WidgetElementAdapter> {
-  final WidgetElement widgetElement;
+class WebFWidgetElementState extends dom.WebFElementWidgetState {
+  WebFWidgetElementState(WidgetElement widgetElement): super(widgetElement);
 
-  WebFWidgetElementState(this.widgetElement);
+  WidgetElement get widgetElement => super.webFElement as WidgetElement;
 
   @override
   void initState() {
@@ -293,6 +290,8 @@ class WebFWidgetElementState extends State<WidgetElementAdapter> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     if (widgetElement.renderStyle.display == CSSDisplay.none) {
       return SizedBox.shrink();
     }
@@ -314,7 +313,6 @@ class WebFWidgetElementState extends State<WidgetElementAdapter> {
   @override
   void dispose() {
     widgetElement.stateDispose();
-    widgetElement._states.remove(this);
     super.dispose();
   }
 }

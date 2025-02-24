@@ -639,6 +639,7 @@ abstract class Element extends ContainerNode
   void dispose() async {
     renderStyle.detach();
     renderStyle.dispose();
+    states.clear();
     style.dispose();
     attributes.clear();
     _attributeProperties.clear();
