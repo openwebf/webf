@@ -71,7 +71,7 @@ abstract class WidgetElement extends dom.Element {
   void attributeDidUpdate(String key, String value) {}
 
   bool shouldElementRebuild(String key, previousValue, nextValue) {
-    return previousValue == nextValue;
+    return previousValue != nextValue;
   }
 
   void propertyDidUpdate(String key, value) {}
@@ -120,8 +120,8 @@ abstract class WidgetElement extends dom.Element {
 
   @override
   void setInlineStyle(String property, String value) {
-    super.setInlineStyle(property, value);
     bool shouldRebuild = shouldElementRebuild(property, style.getPropertyValue(property), value);
+    super.setInlineStyle(property, value);
     if (state != null && shouldRebuild) {
       state!.requestUpdateState();
     }
@@ -131,8 +131,8 @@ abstract class WidgetElement extends dom.Element {
   @mustCallSuper
   @override
   void removeAttribute(String key) {
-    super.removeAttribute(key);
     bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), null);
+    super.removeAttribute(key);
     if (state != null && shouldRebuild) {
       state!.requestUpdateState();
     }
@@ -142,8 +142,8 @@ abstract class WidgetElement extends dom.Element {
   @mustCallSuper
   @override
   void setAttribute(String key, value) {
-    super.setAttribute(key, value);
     bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), value);
+    super.setAttribute(key, value);
     if (state != null && shouldRebuild) {
       state!.requestUpdateState();
     }
@@ -363,6 +363,6 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
     widgetElement.willDetachRenderer(this);
     super.unmount();
     widgetElement.didDetachRenderer(this);
-    widgetElement.dispatchEvent(dom.Event('mount'));
+    widgetElement.dispatchEvent(dom.Event('unmount'));
   }
 }
