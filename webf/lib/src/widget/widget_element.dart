@@ -65,6 +65,8 @@ abstract class WidgetElement extends dom.Element {
 
   void unmount() {}
 
+  void stateDispose() {}
+
   bool get mounted => state?.mounted ?? false;
 
   // React to properties and attributes changes
@@ -311,6 +313,7 @@ class WebFWidgetElementState extends State<WidgetElementAdapter> {
 
   @override
   void dispose() {
+    widgetElement.stateDispose();
     widgetElement._states.remove(this);
     super.dispose();
   }

@@ -89,9 +89,9 @@ class WebFSubView extends StatelessWidget {
               )),
         ],
       ),
-      floatingActionButton: FloatingActionButton(onPressed: () {
-        print(context.findRenderObject()?.toStringDeep());
-      }),
+      // floatingActionButton: FloatingActionButton(onPressed: () {
+      //   print(context.findRenderObject()?.toStringDeep());
+      // }),
       body: WebFRouterView(controller: controller, path: path),
     );
   }
@@ -241,9 +241,9 @@ class WebFDemo extends StatelessWidget {
                 )),
           ],
         ),
-        floatingActionButton: FloatingActionButton(onPressed: () {
-          print(controller.view.getRootRenderObject()!.toStringDeep());
-        }),
+        // floatingActionButton: FloatingActionButton(onPressed: () {
+        //   print(controller.view.getRootRenderObject()!.toStringDeep());
+        // }),
         body: Center(
           // Center is a layout widget. It takes a single child and positions it
           // in the middle of the parent.

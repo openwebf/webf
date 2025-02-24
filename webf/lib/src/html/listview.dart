@@ -21,6 +21,29 @@ class FlutterListViewElement extends WidgetElement {
     return context != null && scrollDirection == Axis.vertical ? PrimaryScrollController.maybeOf(context!) : null;
   }
 
+  void _scrollListener() {
+    ScrollController? scrollController = PrimaryScrollController.maybeOf(context!);
+    if (scrollController != null) {
+      if (scrollController.position.extentAfter < 50) {
+        dispatchEvent(dom.Event('end'));
+      }
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    ScrollController? scrollController = PrimaryScrollController.maybeOf(context!);
+    scrollController?.addListener(_scrollListener);
+  }
+
+  @override
+  void stateDispose() {
+    ScrollController? scrollController = PrimaryScrollController.maybeOf(context!);
+    scrollController?.removeListener(_scrollListener);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
     return WebFChildNodeSize(

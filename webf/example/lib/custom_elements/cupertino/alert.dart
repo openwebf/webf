@@ -27,7 +27,7 @@ class FlutterCupertinoAlert extends WidgetElement {
 
   List<Widget> _buildActions() {
     final actions = <Widget>[];
-    
+
     // 取消按钮（可选）
     final cancelText = getAttribute('cancel-text');
     if (cancelText != null && cancelText != '') {
@@ -63,13 +63,13 @@ class FlutterCupertinoAlert extends WidgetElement {
 
     methods['show'] = BindingObjectMethodSync(call: (args) {
       showCupertinoDialog(
-        context: context,
+        context: context!,
         builder: (BuildContext context) => build(context, childNodes),
       );
     });
 
     methods['hide'] = BindingObjectMethodSync(call: (args) {
-      Navigator.of(context).pop();
+      Navigator.of(context!).pop();
     });
   }
 }
