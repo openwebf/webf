@@ -329,7 +329,9 @@ class WebFCanvasPaint extends flutter.SingleChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(flutter.BuildContext context) {
-    return RenderCanvasPaint(painter: painter, preferredSize: preferredSize, pixelRatio: pixelRatio);
+    RenderCanvasPaint canvasPaint = RenderCanvasPaint(painter: painter, preferredSize: preferredSize, pixelRatio: pixelRatio);
+    updateCanvasPainterSize(preferredSize, canvasPaint);
+    return canvasPaint;
   }
 
   @override

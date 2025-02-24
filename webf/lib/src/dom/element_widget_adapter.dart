@@ -276,6 +276,7 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
     webFElement.didAttachRenderer();
 
     webFElement.style.flushPendingProperties();
+    webFElement.dispatchEvent(Event('mount'));
   }
 
   @override
@@ -285,6 +286,7 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
     element.willDetachRenderer(this);
     super.unmount();
     element.didDetachRenderer(this);
+    element.dispatchEvent(Event('unmount'));
   }
 }
 
