@@ -84,7 +84,7 @@ describe('Tags img', () => {
         );
 
         img.addEventListener('load', async () => {
-          await snapshot(img);
+          await snapshot();
           done();
         });
 
@@ -114,7 +114,7 @@ describe('Tags img', () => {
         );
 
         img.addEventListener('load', async () => {
-          await snapshot(img);
+          await snapshot();
           done();
         });
 
@@ -241,7 +241,7 @@ describe('Tags img', () => {
 
     img.onload = async () => {
       await sleep(0.5);
-      await snapshot(img);
+      await snapshot();
       done();
     };
   });
@@ -371,7 +371,7 @@ describe('Tags img', () => {
         // When img re-append to document, to Gif image will continue to play.
         document.body.appendChild(img);
         requestAnimationFrame(async () => {
-          await snapshot(img);
+          await snapshot();
           done();
         })
 
