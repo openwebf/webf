@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 
 /// RenderBox of a widget element whose content is rendering by Flutter Widgets.
@@ -175,6 +176,20 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
       child = childParentData.nextSibling;
     }
   }
+
+  RawPointerListener get rawPointerListener {
+    return renderStyle.target.ownerDocument.viewport!.rawPointerListener;
+  }
+
+  @override
+  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
+    super.handleEvent(event, entry);
+
+    if (event is PointerDownEvent) {
+      rawPointerListener.recordEventTarget(renderStyle.target);
+    }
+  }
+
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
