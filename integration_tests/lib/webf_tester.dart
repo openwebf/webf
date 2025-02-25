@@ -119,7 +119,7 @@ class _WebFTesterState extends State<WebFTester> {
       // }
       widget.onWillFinish?.call();
 
-      // exit(result == 'failed' ? 1 : 0);
+      exit(result == 'failed' ? 1 : 0);
     } catch (e) {
       print(e);
     }

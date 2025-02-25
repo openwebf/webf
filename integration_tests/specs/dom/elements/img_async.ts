@@ -284,7 +284,7 @@ describe('Tags img async', () => {
     BODY.appendChild(img);
 
     img.onload = async () => {
-      await snapshot(0.1);
+      await snapshot();
       done();      
     }
   });

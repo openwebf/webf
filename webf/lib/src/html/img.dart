@@ -81,7 +81,7 @@ class ImageElement extends Element {
   // This feature could save memory if the original image is much larger than it's actual display size.
   // Note that images with the same URL but different sizes could produce different resized images, and WebF will treat them
   // as different images. However, in most cases, using the same image with different sizes is much rarer than using images with different URL.
-  bool get _shouldScaling => true;
+  bool get _shouldScaling => getAttribute(SCALING) == SCALE;
 
   ImageStreamCompleterHandle? _completerHandle;
 
@@ -268,7 +268,7 @@ class ImageElement extends Element {
   // Width and height set through style declaration.
   double? get _styleWidth {
     String width = style.getPropertyValue(WIDTH);
-    if (width.isNotEmpty && isRendererAttachedToSegmentTree) {
+    if (width.isNotEmpty) {
       CSSLengthValue len = CSSLength.parseLength(width, renderStyle, WIDTH);
       return len.computedValue;
     }
@@ -277,7 +277,7 @@ class ImageElement extends Element {
 
   double? get _styleHeight {
     String height = style.getPropertyValue(HEIGHT);
-    if (height.isNotEmpty && isRendererAttachedToSegmentTree) {
+    if (height.isNotEmpty) {
       CSSLengthValue len = CSSLength.parseLength(height, renderStyle, HEIGHT);
       return len.computedValue;
     }
@@ -374,14 +374,6 @@ class ImageElement extends Element {
     } else {
       renderStyle.aspectRatio = naturalWidth / naturalHeight;
     }
-  }
-
-  WebFRenderImage _createRenderImageBox() {
-    return WebFRenderImage(
-      image: null,
-      fit: renderStyle.objectFit,
-      alignment: renderStyle.objectPosition,
-    );
   }
 
   @override
