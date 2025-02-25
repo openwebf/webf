@@ -1182,7 +1182,7 @@ abstract class Element extends ContainerNode
   }
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
-    if (renderStyle.hasRenderBox() || forceRecalculate || renderStyle.display == CSSDisplay.none) {
+    if (forceRecalculate || renderStyle.display != CSSDisplay.none) {
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.startTrackUICommandStep('$this.recalculateStyle');
       }

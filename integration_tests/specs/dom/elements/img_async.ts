@@ -283,8 +283,10 @@ describe('Tags img async', () => {
     });
     BODY.appendChild(img);
 
-    await snapshot(0.1);
-    done();
+    img.onload = async () => {
+      await snapshot(0.1);
+      done();      
+    }
   });
 
   it('can get natualSize from repeat image url', async (done) => {

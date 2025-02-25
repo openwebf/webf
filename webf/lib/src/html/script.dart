@@ -200,7 +200,7 @@ class ScriptRunner {
       await bundle.preProcessing(_contextId);
       _document.pendingPreloadingScriptCallbacks.add(() async => await task(shouldAsync));
 
-      if (_document.controller.preloadStatus != PreloadingStatus.none) {
+      if (_document.controller.preloadStatus != PreloadingStatus.done) {
         _document.controller.unfinishedPreloadResources--;
         _document.controller.checkPreloadCompleted();
       }

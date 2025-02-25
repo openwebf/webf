@@ -327,12 +327,12 @@ describe('Tags input', () => {
       done();
     });
 
-    requestAnimationFrame(() => {
+    input1.onmount = () => {
       input1.focus();
       requestAnimationFrame(() => {
         input2.focus();
       });
-    });
+    }
   });
 
 

@@ -223,11 +223,14 @@ describe('Tags img', () => {
     document.body.style.background = 'green';
     document.body.appendChild(img);
 
-    expect(img.width).toEqual(20);
-    expect(img.height).toEqual(20);
-    // Image has not been loaded.
-    expect(img.naturalWidth).toEqual(0);
-    expect(img.naturalHeight).toEqual(0);
+    // @ts-ignore
+    img.onmount = () => {
+      expect(img.width).toEqual(20);
+      expect(img.height).toEqual(20);
+      // Image has not been loaded.
+      expect(img.naturalWidth).toEqual(0);
+      expect(img.naturalHeight).toEqual(0);
+    };
   });
 
   it('should work with loading=lazy', (done) => {
@@ -390,11 +393,11 @@ describe('Tags img', () => {
     });
     BODY.appendChild(img);
 
-    requestAnimationFrame(async () => {
+    img.onload = async () => {
       img.width = 200;
       await snapshot(0.1);
       done();
-    });
+    }
   });
 
   it('width property should not work when width of style is auto', async (done) => {

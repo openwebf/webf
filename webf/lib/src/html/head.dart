@@ -245,7 +245,7 @@ class LinkElement extends Element {
       } finally {
         bundle.dispose();
 
-        if (ownerDocument.controller.preloadStatus != PreloadingStatus.none) {
+        if (ownerDocument.controller.preloadStatus != PreloadingStatus.done) {
           ownerDocument.controller.unfinishedPreloadResources--;
           ownerDocument.controller.checkPreloadCompleted();
         }
