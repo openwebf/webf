@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 
 /// RenderBox of a replaced element whose content is outside the scope of the CSS formatting model,
@@ -54,17 +55,17 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     beforeLayout();
 
     if (child != null) {
-      // To maximum compact with Flutter, We needs to limit the maxWidth and maxHeight constraints to
-      // the viewportSize, as same as the MaterialApp does.
-      Size viewportSize = renderStyle.target.ownerDocument.viewport!.viewportSize;
       BoxConstraints childConstraints = contentConstraints!;
-      if (renderStyle.target.renderObjectManagerType == RenderObjectManagerType.FLUTTER_ELEMENT) {
-        childConstraints = BoxConstraints(
-          minWidth: childConstraints.minWidth,
-          maxWidth: math.min(viewportSize.width, childConstraints.maxWidth),
-          minHeight: childConstraints.minHeight,
-          maxHeight: math.min(viewportSize.height, childConstraints.maxHeight)
-        );
+
+      double? width;
+      double? height;
+      if (renderStyle.width.isPrecise) {
+        width = renderStyle.width.computedValue;
+        childConstraints = childConstraints.tighten(width: width);
+      }
+      if (renderStyle.height.isPrecise) {
+        height = renderStyle.height.computedValue;
+        childConstraints = childConstraints.tighten(height: height);
       }
 
       child!.layout(childConstraints, parentUsesSize: true);
@@ -128,6 +129,19 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       paintIntersectionObserver(context, offset, paintNothing);
     } else if (shouldPaint) {
       paintBoxModel(context, offset);
+    }
+  }
+
+  RawPointerListener get rawPointerListener {
+    return renderStyle.target.ownerDocument.viewport!.rawPointerListener;
+  }
+
+  @override
+  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
+    super.handleEvent(event, entry);
+
+    if (event is PointerDownEvent) {
+      rawPointerListener.recordEventTarget(renderStyle.target);
     }
   }
 

@@ -99,7 +99,7 @@ describe('Offset api', () => {
     }
   });
 
-  it('offsetTop should be not affected by scroller', async () => {
+  it('offsetTop should be not affected by scroller', async (done) => {
     let box;
     let container = createElement('div', {
       style: {
@@ -135,10 +135,17 @@ describe('Offset api', () => {
     ]);
 
     document.body.appendChild(container);
-    expect(box.offsetTop).toBe(100);
 
-    container.scrollTo(0, 20);
-    expect(box.offsetTop).toBe(100);
+    // @ts-ignore
+    container.onmount = () => {
+      expect(box.offsetTop).toBe(100);
+
+      container.scrollTo(0, 20);
+      expect(box.offsetTop).toBe(100);
+      done();
+    }
+
+    
   });
     
   it('offsetTop and offsetLeft works when positioned parent not found', async () => {

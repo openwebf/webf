@@ -4,6 +4,7 @@
 
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/svg/rendering/container.dart';
 import 'package:webf/svg.dart';
@@ -143,5 +144,18 @@ abstract class RenderSVGShape extends RenderBoxModel {
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {
     return null;
+  }
+
+  RawPointerListener get rawPointerListener {
+    return renderStyle.target.ownerDocument.viewport!.rawPointerListener;
+  }
+
+  @override
+  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
+    super.handleEvent(event, entry);
+
+    if (event is PointerDownEvent) {
+      rawPointerListener.recordEventTarget(renderStyle.target);
+    }
   }
 }

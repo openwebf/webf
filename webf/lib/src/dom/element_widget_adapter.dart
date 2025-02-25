@@ -138,8 +138,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                   return adapter;
                   // return renderLayoutWidgetAdaptor;
                 }),
-            ownerElement: webFElement
-        );
+            ownerElement: webFElement);
       }
 
       if (overflowY == CSSOverflowType.scroll ||
@@ -277,6 +276,13 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
 
     webFElement.style.flushPendingProperties();
     webFElement.dispatchEvent(Event('mount'));
+
+    if (webFElement is ImageElement && webFElement.shouldLazyLoading) {
+      (renderObject as RenderReplaced)
+        ..intersectPadding = Rect.fromLTRB(0, 0, webFElement.ownerDocument.viewport!.viewportSize.width,
+            webFElement.ownerDocument.viewport!.viewportSize.height)
+        ..addIntersectionChangeListener(webFElement.handleIntersectionChange);
+    }
   }
 
   @override

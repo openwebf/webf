@@ -129,6 +129,7 @@ describe('Tags img async', () => {
     var imageURL = 'https://img.alicdn.com/tfs/TB1RRzFeKL2gK0jSZFmXXc7iXXa-200-200.png?network';
     var img = document.createElement('img');
     img.onload = async function() {
+      expect(imgSizeChecked).toBe(true);
       // @ts-ignore
       expect(await img.naturalWidth_async).toEqual(200);
       // @ts-ignore
@@ -145,10 +146,16 @@ describe('Tags img async', () => {
     document.body.style.background = 'green';
     document.body.appendChild(img);
 
+    let imgSizeChecked = false;
+
     // @ts-ignore
-    expect(await img.width_async).toEqual(20);
-    // @ts-ignore
-    expect(await img.height_async).toEqual(20);
+    img.onmount = async () => {
+      imgSizeChecked = true;
+        // @ts-ignore
+      expect(await img.width_async).toEqual(20);
+      // @ts-ignore
+      expect(await img.height_async).toEqual(20);
+    }
   });
 
   it('should work with loading=lazy', (done) => {
@@ -163,7 +170,8 @@ describe('Tags img async', () => {
 
     img.onload = async () => {
       await sleep(0.5);
-      await snapshot(img);
+      await snapshot();
+      console.log('done');
       done();
     };
   });

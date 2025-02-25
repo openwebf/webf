@@ -1444,14 +1444,7 @@ class RenderBoxModel extends RenderBox
   }
 
   Future<Image> toImage({double pixelRatio = 1.0}) {
-    if (layer == null) {
-      Completer<Image> completer = Completer<Image>();
-      SchedulerBinding.instance.scheduleFrameCallback((_) {
-        completer.complete(toImage(pixelRatio: pixelRatio));
-      });
-      SchedulerBinding.instance.scheduleFrame();
-      return completer.future;
-    }
+    assert(layer != null);
     assert(isRepaintBoundary);
     final OffsetLayer offsetLayer = layer as OffsetLayer;
     return offsetLayer.toImage(Offset.zero & size, pixelRatio: pixelRatio);

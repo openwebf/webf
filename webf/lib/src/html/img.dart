@@ -78,7 +78,7 @@ class ImageElement extends Element {
   // until some conditions associated with the element are met, according to the attribute's
   // current state.
   // https://html.spec.whatwg.org/multipage/urls-and-fetching.html#lazy-loading-attributes
-  bool get _shouldLazyLoading => getAttribute(LOADING) == LAZY;
+  bool get shouldLazyLoading => getAttribute(LOADING) == LAZY;
 
   // Resize the rendering image to a fixed size if the original image is much larger than the display size.
   // This feature could save memory if the original image is much larger than it's actual display size.
@@ -156,8 +156,8 @@ class ImageElement extends Element {
     RenderObject renderObject = super.willAttachRenderer(flutterWidgetElement);
     style.addStyleChangeListener(_stylePropertyChanged);
     RenderReplaced? renderReplaced = renderObject as RenderReplaced;
-    if ((_didWatchAnimationImage || managedByFlutterWidget) && renderReplaced.hasIntersectionObserver() == false) {
-      renderReplaced.addIntersectionChangeListener(_handleIntersectionChange);
+    if ((!_didWatchAnimationImage) && (shouldLazyLoading) && renderReplaced.hasIntersectionObserver() == false) {
+      renderReplaced.addIntersectionChangeListener(handleIntersectionChange);
     }
 
     return renderObject;
@@ -237,9 +237,9 @@ class ImageElement extends Element {
 
   void _watchAnimatedImageWhenVisible() {
     RenderReplaced? renderReplaced = renderStyle.attachedRenderBoxModel as RenderReplaced?;
-    if (_isListeningStream && !_didWatchAnimationImage) {
+    if (renderReplaced != null && _isListeningStream && !_didWatchAnimationImage) {
       _stopListeningStream(keepStreamAlive: true);
-      renderReplaced?.addIntersectionChangeListener(_handleIntersectionChange);
+      renderReplaced.addIntersectionChangeListener(handleIntersectionChange);
       _didWatchAnimationImage = true;
     }
   }
@@ -249,7 +249,7 @@ class ImageElement extends Element {
     super.dispose();
 
     RenderReplaced? renderReplaced = renderStyle.attachedRenderBoxModel as RenderReplaced?;
-    renderReplaced?.removeIntersectionChangeListener(_handleIntersectionChange);
+    renderReplaced?.removeIntersectionChangeListener(handleIntersectionChange);
 
     // Stop and remove image stream reference.
     _stopListeningStream();
@@ -322,8 +322,6 @@ class ImageElement extends Element {
 
   bool get _isSVGMode => _resolvedUri?.path.endsWith('.svg') ?? false;
 
-  RenderBox? _svgRenderObject = null;
-
   // Read the original image width of loaded image.
   // The getter must be called after image had loaded, otherwise will return 0.
   int naturalWidth = 0;
@@ -332,7 +330,10 @@ class ImageElement extends Element {
   // The getter must be called after image had loaded, otherwise will return 0.
   int naturalHeight = 0;
 
-  void _handleIntersectionChange(IntersectionObserverEntry entry) async {
+  @override
+  void handleIntersectionChange(IntersectionObserverEntry entry) async {
+    super.handleIntersectionChange(entry);
+
     // When appear
     if (entry.isIntersecting) {
       _updateImageDataLazyCompleter?.complete();
@@ -487,10 +488,9 @@ class ImageElement extends Element {
   }
 
   Future<void> _updateImageDataTask(int taskId) async {
-    if (_shouldLazyLoading) {
+    if (shouldLazyLoading) {
       final completer = Completer<bool?>();
       _updateImageDataLazyCompleter = completer;
-
       /// The method is foolproof to avoid IntersectionObserver not working
       Future.delayed(Duration(seconds: 3), () {
         _updateImageDataLazyCompleter?.complete();
@@ -614,7 +614,6 @@ class ImageElement extends Element {
 
   void _startLoadNewImage() {
     if (_resolvedUri == null) {
-      // TODO: should use empty image;
       return;
     }
 

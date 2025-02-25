@@ -106,7 +106,7 @@ mixin RenderIntersectionObserverMixin on RenderBox {
           onIntersectionChange: _onIntersectionChange!,
           intersectPadding: intersectPadding);
     } else {
-      _intersectionObserverLayer.layer!.elementSize = semanticBounds.size;
+      _intersectionObserverLayer.layer!.elementSize = paintBounds.size;
       _intersectionObserverLayer.layer!.paintOffset = offset;
     }
 

@@ -3,6 +3,7 @@
  */
 
 import 'package:flutter/rendering.dart' hide RenderBoxContainerDefaultsMixin;
+import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 
@@ -43,5 +44,18 @@ class RenderSVGContainer extends RenderBoxModel
   @override
   void setupParentData(covariant RenderObject child) {
     child.parentData = RenderLayoutParentData();
+  }
+
+  RawPointerListener get rawPointerListener {
+    return renderStyle.target.ownerDocument.viewport!.rawPointerListener;
+  }
+
+  @override
+  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
+    super.handleEvent(event, entry);
+
+    if (event is PointerDownEvent) {
+      rawPointerListener.recordEventTarget(renderStyle.target);
+    }
   }
 }
