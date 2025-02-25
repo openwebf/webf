@@ -36,9 +36,6 @@ const Map<String, dynamic> _defaultStyle = {
 
 // The HTMLImageElement.
 class ImageElement extends Element {
-  // The render box to draw image.
-  WebFRenderImage? _renderImage;
-
   BoxFitImage? _currentImageProvider;
   ImageConfiguration? _currentImageConfig;
 
@@ -372,10 +369,6 @@ class ImageElement extends Element {
     renderStyle.intrinsicWidth = naturalWidth.toDouble();
     renderStyle.intrinsicHeight = naturalHeight.toDouble();
 
-    // Set naturalWidth and naturalHeight to renderImage to avoid relayout when size didn't changes.
-    _renderImage?.width = naturalWidth.toDouble();
-    _renderImage?.height = naturalHeight.toDouble();
-
     if (naturalWidth == 0.0 || naturalHeight == 0.0) {
       renderStyle.aspectRatio = null;
     } else {
@@ -654,11 +647,10 @@ class ImageElement extends Element {
         _reloadImage();
       } else {
         _resizeImage();
+        renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
       }
-    } else if (property == OBJECT_FIT && _renderImage != null) {
-      _renderImage!.fit = renderStyle.objectFit;
-    } else if (property == OBJECT_POSITION && _renderImage != null) {
-      _renderImage!.alignment = renderStyle.objectPosition;
+    } else if (property == OBJECT_FIT || property == OBJECT_POSITION) {
+      renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
     }
   }
 }
@@ -695,6 +687,8 @@ class _ImageState extends flutter.State<WebFImage> {
     flutter.RawImage rawImage = flutter.RawImage(
         image: imageElement._cachedImageInfo?.image,
         width: imageElement.naturalWidth.toDouble(),
+        fit: imageElement.renderStyle.objectFit,
+        alignment: imageElement.renderStyle.objectPosition,
         height: imageElement.naturalHeight.toDouble());
 
     return rawImage;

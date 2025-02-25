@@ -61,11 +61,27 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       double? height;
       if (renderStyle.width.isPrecise) {
         width = renderStyle.width.computedValue;
-        childConstraints = childConstraints.tighten(width: width);
+        if (renderStyle.height.isPrecise) {
+          height = renderStyle.height.computedValue;
+          childConstraints = childConstraints.tighten(
+              width: width, height: height);
+        } else {
+          childConstraints = childConstraints.tighten(
+              width: width, height: renderStyle.aspectRatio != null ? width * renderStyle.aspectRatio! : null);
+        }
       }
       if (renderStyle.height.isPrecise) {
         height = renderStyle.height.computedValue;
-        childConstraints = childConstraints.tighten(height: height);
+        if (renderStyle.width.isPrecise) {
+          width = renderStyle.width.computedValue;
+          childConstraints = childConstraints.tighten(
+            width: width, height: height
+          );
+        } else {
+          childConstraints = childConstraints.tighten(
+            width: renderStyle.aspectRatio != null ? height * renderStyle.aspectRatio! : null, height: height
+          );
+        }
       }
 
       child!.layout(childConstraints, parentUsesSize: true);
