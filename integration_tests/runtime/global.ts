@@ -408,14 +408,10 @@ async function snapshot(target?: any, filename?: String, postfix?: boolean | str
   return new Promise<void>((resolve, reject) => {
     requestAnimationFrame(async () => {
       try {
-        if (target && target.toBlob) {
-          await expectAsync(target.toBlob(1.0)).toMatchSnapshot(filename, postfix);
-        } else {
-          if (typeof target == 'number') {
-            await sleep(target);
-          }
-          await expectAsync(document.documentElement.toBlob(1.0)).toMatchSnapshot(filename, postfix);
+        if (typeof target == 'number') {
+          await sleep(target);
         }
+        await expectAsync(document.documentElement.toBlob(1.0)).toMatchSnapshot(filename, postfix);
         resolve();
       } catch (e) {
         reject(e);

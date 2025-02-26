@@ -162,12 +162,12 @@ describe('Display block in inline', () => {
 
     document.body.addEventListener('click', async function listener() {
       toggleBlock.style.display = 'inline';
-      await snapshot(block);
+      await snapshot();
       document.body.removeEventListener('click', listener);
       done();
     });
 
-    await snapshot(block);
+    await snapshot();
 
     document.body.click();
   });
