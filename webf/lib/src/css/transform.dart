@@ -98,8 +98,7 @@ mixin CSSTransformMixin on RenderStyle {
     late Offset translation;
     if (transformAlignment != Alignment.topLeft) {
       // Use boxSize instead of size to avoid Flutter cannot access size beyond parent access warning
-      translation = isBoxModelHaveSize() ? transformAlignment.alongSize(boxSize()!) : Offset.zero;
-
+      translation = transformAlignment.alongSize(boxSize()!);
       // translation =
       result.translate(translation.dx, translation.dy);
     }

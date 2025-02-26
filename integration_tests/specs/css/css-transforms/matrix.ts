@@ -7,8 +7,12 @@ describe('Transform matrix', () => {
       transform: 'matrix(0,1,1,1,10,10)',
     });
     document.body.appendChild(div);
-    const style = window.getComputedStyle(div);
-    expect(style['transform']).toEqual('matrix(0, 1, 1, 1, 10, 10)');
-    await snapshot();
+
+    // @ts-ignore
+    div.onmount = async () => {
+      const style = window.getComputedStyle(div);
+      expect(style['transform']).toEqual('matrix(0, 1, 1, 1, 10, 10)');
+      await snapshot();
+    }
   })
 })

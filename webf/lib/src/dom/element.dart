@@ -1426,7 +1426,7 @@ abstract class Element extends ContainerNode
     return keys.any((element) => selectorKeySet.contains(element));
   }
 
-  RenderStyle? computedStyle(String? pseudoElementSpecifier) {
+  CSSRenderStyle? computedStyle(String? pseudoElementSpecifier) {
     recalculateStyle();
 
     if (!renderStyle.hasRenderBox()) {
