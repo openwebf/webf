@@ -36,6 +36,7 @@ mixin CSSSizingMixin on RenderStyle {
       return;
     }
     _width = value;
+    cleanContentBoxLogiclWidth();
     _markSelfAndParentNeedsLayout();
   }
 
@@ -50,6 +51,7 @@ mixin CSSSizingMixin on RenderStyle {
       return;
     }
     _height = value;
+    cleanContentBoxLogiclHeight();
     _markSelfAndParentNeedsLayout();
   }
 
@@ -74,6 +76,7 @@ mixin CSSSizingMixin on RenderStyle {
       return;
     }
     _minWidth = value;
+    cleanContentBoxLogiclWidth();
     _markSelfAndParentNeedsLayout();
   }
 
@@ -112,6 +115,7 @@ mixin CSSSizingMixin on RenderStyle {
       return;
     }
     _maxWidth = value;
+    cleanContentBoxLogiclWidth();
     _markSelfAndParentNeedsLayout();
   }
 
@@ -133,6 +137,7 @@ mixin CSSSizingMixin on RenderStyle {
       return;
     }
     _maxHeight = value;
+    cleanContentBoxLogiclHeight();
     _markSelfAndParentNeedsLayout();
   }
 
