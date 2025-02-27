@@ -58,6 +58,19 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
       }
 
       stackOffsets.add(parentRenderer.obtainLayoutTransform(childRenderer, excludeScrollOffset));
+    } else if (childRenderer is RenderIndexedSemantics && childRenderer.parentData is SliverMultiBoxAdaptorParentData) {
+      assert(childRenderer.parent == parentRenderer);
+
+      Axis scrollDirection = Axis.vertical;
+
+      if (ancestor is RenderWidget && ancestor.renderStyle.target is FlutterListViewElement) {
+        scrollDirection = (ancestor.renderStyle.target as FlutterListViewElement).scrollDirection;
+      }
+
+      double layoutOffset = (childRenderer.parentData as SliverMultiBoxAdaptorParentData).layoutOffset ?? 0.0;
+      Offset sliverScrollOffset = scrollDirection == Axis.vertical ? Offset(0, layoutOffset) : Offset(layoutOffset, 0);
+
+      stackOffsets.add(sliverScrollOffset);
     } else if (parentRenderer is RenderBox) {
       assert(childRenderer.parent == parentRenderer);
       if (childRenderer.parentData is BoxParentData) {
@@ -244,48 +257,6 @@ class RenderLayoutBox extends RenderBoxModel
     return boxConstraints;
   }
 
-  // iterate add child to overflowLayout
-  void addOverflowLayoutFromChildren(List<RenderBox> children) {
-    children.forEach((child) {
-      addOverflowLayoutFromChild(child);
-    });
-  }
-
-  void addOverflowLayoutFromChild(RenderBox child) {
-    final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-    // TODO not support custom element and inline element overflowRect
-    if (!child.hasSize || (child is! RenderBoxModel && child is! RenderReplaced)) {
-      return;
-    }
-    CSSRenderStyle style = (child as RenderBoxModel).renderStyle;
-    Rect overflowRect = Rect.fromLTWH(
-        childParentData.offset.dx, childParentData.offset.dy, child.boxSize!.width, child.boxSize!.height);
-
-    if (style.effectiveTransformOffset != null) {
-      overflowRect = overflowRect.shift(style.effectiveTransformOffset!);
-    }
-    // child overflowLayout effect parent overflowLayout when child effectiveOverflow is visible or auto
-    if (child.renderStyle.effectiveOverflowX == CSSOverflowType.visible ||
-        child.renderStyle.effectiveOverflowX == CSSOverflowType.auto ||
-        child.renderStyle.effectiveOverflowY == CSSOverflowType.auto ||
-        child.renderStyle.effectiveOverflowY == CSSOverflowType.visible) {
-      Rect childOverflowLayoutRect = child.overflowRect!.shift(Offset.zero);
-
-      // child overflowLayout rect need transform for parent`s cartesian coordinates
-      final Matrix4 transform = Matrix4.identity();
-      applyLayoutTransform(child, transform, false);
-      Offset tlOffset =
-      MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
-      overflowRect = Rect.fromLTRB(
-          math.min(overflowRect.left, tlOffset.dx),
-          math.min(overflowRect.top, tlOffset.dy),
-          math.max(overflowRect.right, tlOffset.dx + childOverflowLayoutRect.width),
-          math.max(overflowRect.bottom, tlOffset.dy + childOverflowLayoutRect.height));
-    }
-
-    addLayoutOverflow(overflowRect);
-  }
-
   @override
   void performPaint(PaintingContext context, Offset offset) {
     for (int i = 0; i < paintingOrder.length; i++) {
@@ -469,81 +440,6 @@ class RenderLayoutBox extends RenderBoxModel
     return finalContentSize;
   }
 
-  /// Extend max scrollable size of renderBoxModel by offset of positioned child,
-  /// get the max scrollable size of children of normal flow and single positioned child.
-  void extendMaxScrollableSize(RenderBoxModel child) {
-    Size? childScrollableSize;
-    RenderStyle childRenderStyle = child.renderStyle;
-    CSSOverflowType overflowX = childRenderStyle.effectiveOverflowX;
-    CSSOverflowType overflowY = childRenderStyle.effectiveOverflowY;
-    // Only non scroll container need to use scrollable size, otherwise use its own size
-    if (overflowX == CSSOverflowType.visible && overflowY == CSSOverflowType.visible) {
-      childScrollableSize = child.scrollableSize;
-    } else {
-      childScrollableSize = child.boxSize;
-    }
-
-    Matrix4? transform = (childRenderStyle as CSSRenderStyle).transformMatrix;
-    double maxScrollableX = childRenderStyle.left.computedValue + childScrollableSize!.width;
-
-    // maxScrollableX could be infinite due to the percentage value which depends on the parent box size,
-    // but in this stage, the parent's size will always to zero during the first initial layout.
-    if (maxScrollableX.isInfinite) return;
-
-    if (transform != null) {
-      maxScrollableX += transform.getTranslation()[0];
-    }
-
-    if (childRenderStyle.right.isNotAuto && parent is RenderBoxModel) {
-      if ((parent as RenderBoxModel).widthSizeType == BoxSizeType.specified) {
-        RenderBoxModel overflowContainerBox = parent as RenderBoxModel;
-        maxScrollableX = math.max(
-            maxScrollableX,
-            -childRenderStyle.right.computedValue +
-                overflowContainerBox.renderStyle.width.computedValue -
-                overflowContainerBox.renderStyle.effectiveBorderLeftWidth.computedValue -
-                overflowContainerBox.renderStyle.effectiveBorderRightWidth.computedValue);
-      } else {
-        maxScrollableX = math.max(maxScrollableX, -childRenderStyle.right.computedValue + _contentSize!.width);
-      }
-    }
-
-    double maxScrollableY = childRenderStyle.top.computedValue + childScrollableSize.height;
-
-    // maxScrollableX could be infinite due to the percentage value which depends on the parent box size,
-    // but in this stage, the parent's size will always to zero during the first initial layout.
-    if (maxScrollableY.isInfinite) return;
-
-    if (transform != null) {
-      maxScrollableY += transform.getTranslation()[1];
-    }
-    if (childRenderStyle.bottom.isNotAuto && parent is RenderBoxModel) {
-      if ((parent as RenderBoxModel).heightSizeType == BoxSizeType.specified) {
-        RenderBoxModel overflowContainerBox = parent as RenderBoxModel;
-        maxScrollableY = math.max(
-            maxScrollableY,
-            -childRenderStyle.bottom.computedValue +
-                overflowContainerBox.renderStyle.height.computedValue -
-                overflowContainerBox.renderStyle.effectiveBorderTopWidth.computedValue -
-                overflowContainerBox.renderStyle.effectiveBorderBottomWidth.computedValue);
-      } else {
-        maxScrollableY = math.max(maxScrollableY, -childRenderStyle.bottom.computedValue + _contentSize!.height);
-      }
-    }
-
-    RenderBoxModel scrollContainer = this;
-    // Scrollable area of positioned element will ignore padding area of scroll container.
-    maxScrollableX -=
-        scrollContainer.renderStyle.paddingLeft.computedValue + scrollContainer.renderStyle.paddingRight.computedValue;
-    maxScrollableY -=
-        scrollContainer.renderStyle.paddingTop.computedValue + scrollContainer.renderStyle.paddingBottom.computedValue;
-
-    maxScrollableX = math.max(maxScrollableX, scrollableSize.width);
-    maxScrollableY = math.max(maxScrollableY, scrollableSize.height);
-
-    scrollableSize = Size(maxScrollableX, maxScrollableY);
-  }
-
   double _getContentWidth(double width) {
     return width -
         (renderStyle.borderLeftWidth?.computedValue ?? 0) -
@@ -674,6 +570,9 @@ class RenderBoxModel extends RenderBox
 
   BoxConstraints? get contentConstraints {
     return _contentConstraints;
+  }
+  set contentConstraints(BoxConstraints? constraints) {
+    _contentConstraints = constraints;
   }
 
   bool _needsRecalculateStyle = false;
@@ -1139,6 +1038,123 @@ class RenderBoxModel extends RenderBox
 
   set scrollableViewportSize(Size value) {
     _scrollableViewportSize = value;
+  }
+
+  /// Extend max scrollable size of renderBoxModel by offset of positioned child,
+  /// get the max scrollable size of children of normal flow and single positioned child.
+  void extendMaxScrollableSize(RenderBoxModel child) {
+    Size? childScrollableSize;
+    RenderStyle childRenderStyle = child.renderStyle;
+    CSSOverflowType overflowX = childRenderStyle.effectiveOverflowX;
+    CSSOverflowType overflowY = childRenderStyle.effectiveOverflowY;
+    // Only non scroll container need to use scrollable size, otherwise use its own size
+    if (overflowX == CSSOverflowType.visible && overflowY == CSSOverflowType.visible) {
+      childScrollableSize = child.scrollableSize;
+    } else {
+      childScrollableSize = child.boxSize;
+    }
+
+    Matrix4? transform = (childRenderStyle as CSSRenderStyle).transformMatrix;
+    double maxScrollableX = childRenderStyle.left.computedValue + childScrollableSize!.width;
+
+    // maxScrollableX could be infinite due to the percentage value which depends on the parent box size,
+    // but in this stage, the parent's size will always to zero during the first initial layout.
+    if (maxScrollableX.isInfinite) return;
+
+    if (transform != null) {
+      maxScrollableX += transform.getTranslation()[0];
+    }
+
+    if (childRenderStyle.right.isNotAuto && parent is RenderBoxModel) {
+      if ((parent as RenderBoxModel).widthSizeType == BoxSizeType.specified) {
+        RenderBoxModel overflowContainerBox = parent as RenderBoxModel;
+        maxScrollableX = math.max(
+            maxScrollableX,
+            -childRenderStyle.right.computedValue +
+                overflowContainerBox.renderStyle.width.computedValue -
+                overflowContainerBox.renderStyle.effectiveBorderLeftWidth.computedValue -
+                overflowContainerBox.renderStyle.effectiveBorderRightWidth.computedValue);
+      } else {
+        maxScrollableX = math.max(maxScrollableX, -childRenderStyle.right.computedValue + _contentSize!.width);
+      }
+    }
+
+    double maxScrollableY = childRenderStyle.top.computedValue + childScrollableSize.height;
+
+    // maxScrollableX could be infinite due to the percentage value which depends on the parent box size,
+    // but in this stage, the parent's size will always to zero during the first initial layout.
+    if (maxScrollableY.isInfinite) return;
+
+    if (transform != null) {
+      maxScrollableY += transform.getTranslation()[1];
+    }
+    if (childRenderStyle.bottom.isNotAuto && parent is RenderBoxModel) {
+      if ((parent as RenderBoxModel).heightSizeType == BoxSizeType.specified) {
+        RenderBoxModel overflowContainerBox = parent as RenderBoxModel;
+        maxScrollableY = math.max(
+            maxScrollableY,
+            -childRenderStyle.bottom.computedValue +
+                overflowContainerBox.renderStyle.height.computedValue -
+                overflowContainerBox.renderStyle.effectiveBorderTopWidth.computedValue -
+                overflowContainerBox.renderStyle.effectiveBorderBottomWidth.computedValue);
+      } else {
+        maxScrollableY = math.max(maxScrollableY, -childRenderStyle.bottom.computedValue + _contentSize!.height);
+      }
+    }
+
+    RenderBoxModel scrollContainer = this;
+    // Scrollable area of positioned element will ignore padding area of scroll container.
+    maxScrollableX -=
+        scrollContainer.renderStyle.paddingLeft.computedValue + scrollContainer.renderStyle.paddingRight.computedValue;
+    maxScrollableY -=
+        scrollContainer.renderStyle.paddingTop.computedValue + scrollContainer.renderStyle.paddingBottom.computedValue;
+
+    maxScrollableX = math.max(maxScrollableX, scrollableSize.width);
+    maxScrollableY = math.max(maxScrollableY, scrollableSize.height);
+
+    scrollableSize = Size(maxScrollableX, maxScrollableY);
+  }
+
+  // iterate add child to overflowLayout
+  void addOverflowLayoutFromChildren(List<RenderBox> children) {
+    children.forEach((child) {
+      addOverflowLayoutFromChild(child);
+    });
+  }
+
+  void addOverflowLayoutFromChild(RenderBox child) {
+    final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+    // TODO not support custom element and inline element overflowRect
+    if (!child.hasSize || (child is! RenderBoxModel && child is! RenderReplaced)) {
+      return;
+    }
+    CSSRenderStyle style = (child as RenderBoxModel).renderStyle;
+    Rect overflowRect = Rect.fromLTWH(
+        childParentData.offset.dx, childParentData.offset.dy, child.boxSize!.width, child.boxSize!.height);
+
+    if (style.effectiveTransformOffset != null) {
+      overflowRect = overflowRect.shift(style.effectiveTransformOffset!);
+    }
+    // child overflowLayout effect parent overflowLayout when child effectiveOverflow is visible or auto
+    if (child.renderStyle.effectiveOverflowX == CSSOverflowType.visible ||
+        child.renderStyle.effectiveOverflowX == CSSOverflowType.auto ||
+        child.renderStyle.effectiveOverflowY == CSSOverflowType.auto ||
+        child.renderStyle.effectiveOverflowY == CSSOverflowType.visible) {
+      Rect childOverflowLayoutRect = child.overflowRect!.shift(Offset.zero);
+
+      // child overflowLayout rect need transform for parent`s cartesian coordinates
+      final Matrix4 transform = Matrix4.identity();
+      applyLayoutTransform(child, transform, false);
+      Offset tlOffset =
+      MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
+      overflowRect = Rect.fromLTRB(
+          math.min(overflowRect.left, tlOffset.dx),
+          math.min(overflowRect.top, tlOffset.dy),
+          math.max(overflowRect.right, tlOffset.dx + childOverflowLayoutRect.width),
+          math.max(overflowRect.bottom, tlOffset.dy + childOverflowLayoutRect.height));
+    }
+
+    addLayoutOverflow(overflowRect);
   }
 
   // Hooks when content box had layout.

@@ -217,6 +217,19 @@ abstract class Element extends ContainerNode
   @override
   RenderBoxModel? get attachedRenderer => renderStyle.attachedRenderBoxModel;
 
+  RenderLayoutBoxWrapper? get attachedRendererWrapper {
+    if (attachedRenderer == null) {
+      return null;
+    }
+
+    RenderObject? parent = attachedRenderer?.parent;
+    while(parent is! RenderLayoutBoxWrapper) {
+      parent = parent?.parent;
+    }
+
+    return parent;
+  }
+
   HTMLCollection? _collection;
 
   @pragma('vm:prefer-inline')
@@ -1273,7 +1286,12 @@ abstract class Element extends ContainerNode
     if (!isRendererAttached) {
       return offset;
     }
-    Offset relative = renderStyle.getOffset(ancestorRenderBox: offsetParent?.attachedRenderer);
+    Element? offsetParent = this.offsetParent;
+    RenderBoxModel? ancestor = offsetParent?.attachedRenderer;
+    if (offsetParent?.hasScroll == true) {
+      ancestor = offsetParent?.attachedRendererWrapper;
+    }
+    Offset relative = renderStyle.getOffset(ancestorRenderBox: ancestor);
     offset += relative.dx;
     return offset;
   }
@@ -1296,7 +1314,13 @@ abstract class Element extends ContainerNode
     if (!isRendererAttached) {
       return offset;
     }
-    Offset relative = renderStyle.getOffset(ancestorRenderBox: offsetParent?.attachedRenderer);
+    Element? offsetParent = this.offsetParent;
+    RenderBoxModel? ancestor = offsetParent?.attachedRenderer;
+    if (offsetParent?.hasScroll == true) {
+      ancestor = offsetParent?.attachedRendererWrapper;
+    }
+
+    Offset relative = renderStyle.getOffset(ancestorRenderBox: ancestor);
     offset += relative.dy;
     return offset;
   }

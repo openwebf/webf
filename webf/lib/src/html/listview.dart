@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:webf/src/css/position.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
@@ -55,6 +56,11 @@ class FlutterListViewElement extends WidgetElement {
           itemBuilder: (context, index) {
             Node? node = childNodes.elementAt(index);
             if (node is dom.Element) {
+              CSSPositionType positionType = node.renderStyle.position;
+              if (positionType == CSSPositionType.absolute || positionType == CSSPositionType.fixed) {
+                return PositionPlaceHolder(node.holderAttachedPositionedElement!);
+              }
+
               return LayoutBoxWrapper(ownerElement: node, child: childNodes.elementAt(index).toWidget());
             }
             return node.toWidget();

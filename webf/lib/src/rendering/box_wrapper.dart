@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024 The OpenWebF(Cayman) Company . All rights reserved.
+ */
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
@@ -21,10 +25,10 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
   void performLayout() {
     super.performLayout();
 
-    if (child is RenderLayoutBox) {
+    if (child is RenderBoxModel) {
       double childMarginTop = renderStyle.collapsedMarginTop;
       double childMarginBottom = renderStyle.collapsedMarginBottom;
-      Size scrollableSize = (child as RenderLayoutBox).scrollableSize;
+      Size scrollableSize = (child as RenderBoxModel).scrollableSize;
 
       size = constraints.constrain(Size(scrollableSize.width, childMarginTop + scrollableSize.height + childMarginBottom));
 
@@ -33,7 +37,7 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
       // No need to add padding and border for scrolling content box.
       Offset relativeOffset = Offset(childMarginLeft, childMarginTop);
       // Apply position relative offset change.
-      CSSPositionedLayout.applyRelativeOffset(relativeOffset, child as RenderLayoutBox);
+      CSSPositionedLayout.applyRelativeOffset(relativeOffset, child as RenderBoxModel);
     }
 
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
