@@ -32,9 +32,12 @@ export default {
       userStore,
     }
   },
-  async mounted() {
-    console.log('NotificationPage mounted');
+  async activated() {
+    console.log('NotificationPage activated');
     await this.fetchNotifications();
+  },
+  async deactivated() {
+    console.log('NotificationPage deactivated');
   },
   methods: {
     async fetchNotifications() {
@@ -44,7 +47,7 @@ export default {
           token: this.userStore.userInfo?.token,
           anonymousId: this.userStore.userInfo?.anonymousId,
         });
-        this.notifications = res.data.notifications;
+        this.notifications = res?.data?.notifications || [];
       } catch (error) {
         console.error('Failed to fetch notifications:', error);
       }

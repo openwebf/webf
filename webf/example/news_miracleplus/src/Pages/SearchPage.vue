@@ -10,7 +10,9 @@
     <div v-if="hasSearch">
       <flutter-cupertino-segmented-tab>
         <flutter-cupertino-segmented-tab-item title="分享">
-          <div>{{ shareLinks.length }}</div>
+          <webf-listview class="share-link-list">
+            <share-link-card v-for="shareLink in shareLinks" :key="shareLink.id" :data="shareLink" />
+          </webf-listview>
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="回答">
           <div>{{ answers.length }}</div>
@@ -35,14 +37,16 @@
 
 <script>
 import { api } from '@/api';
-import QuestionCard from '@/Components/QuestionCard.vue';
-import UserCard from '@/Components/UserCard.vue';
+import QuestionCard from '@/Components/search/QuestionCard.vue';
+import UserCard from '@/Components/search/UserCard.vue';
+import ShareLinkCard from '@/Components/search/ShareLinkCard.vue';
 
 export default {
   name: 'SearchPage',
   components: {
     QuestionCard,
     UserCard,
+    ShareLinkCard,
   },
   data() {
     return {
@@ -99,6 +103,9 @@ export default {
     align-items: center;
     justify-content: center;
     flex-direction: column;
+  }
+  .share-link-list {
+    height: 100vh;
   }
   .question-list {
     height: 100vh;

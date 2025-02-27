@@ -1,9 +1,5 @@
 <template>
   <div id="main">
-    <div>我登录了吗：{{ isLoggedIn }}</div>
-    <div>我的信息：{{ userInfo }}</div>
-    <div>我的名字：{{ userName }}</div>
-    <div>我的头像：{{ userAvatar }}</div>
     <feeds-tabs :tabs="tabsConfig" @change="onTabChange">
         <!-- 热门标签页内容 -->
         <template #hot>
@@ -99,10 +95,13 @@ export default {
       return this.userStore.userAvatar;
     }
   },
-  async mounted() {
-    console.log('HomePage mounted');
+  async activated() {
+    console.log('HomePage activated');
     const res = await api.news.getHotList();
     this.hotList = res.data.feeds;
+  },
+  async deactivated() {
+    console.log('HomePage deactivated');
   },
   updated() {
     console.log('isLoggedIn', this.isLoggedIn);

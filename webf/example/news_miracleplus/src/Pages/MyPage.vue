@@ -73,6 +73,7 @@
         </div> -->
       </flutter-cupertino-segmented-tab-item>
     </flutter-cupertino-segmented-tab>
+    <flutter-cupertino-toast ref="toast" />
   </div>
 
 </template>
@@ -126,10 +127,10 @@ export default {
       return this.userStore.isLoggedIn;
     },
     userInfo() {
-      return this.userStore.userInfo;
+      return this.userStore.userInfo || {};
     },
     formattedAvatar() {
-      return formatAvatar(this.userInfo.avatar);
+      return formatAvatar(this.userInfo?.avatar);
     },
     formattedTitle() {
       if (this.userInfo.jobTitle) {
@@ -139,8 +140,13 @@ export default {
     }
   },
   activated() {
-    console.log('onShow');
-    console.log('window.webf.hybridHistory.state: ', window.webf.hybridHistory.state);
+    console.log('MyPage activated');
+  },
+  deactivated() {
+    console.log('MyPage deactivated');
+  },
+  beforeUnmount() {
+    console.log('MyPage beforeUnmount');
   },
   methods: {
     goToHomePage() {
@@ -154,8 +160,8 @@ export default {
       window.webf.hybridHistory.pushState({}, '/login');
     },
     goToEditPage() {
-        window.webf.hybridHistory.pushState({}, '/edit');
-      },
+      window.webf.hybridHistory.pushState({}, '/edit');
+    },
     goToSettingPage() {
         window.webf.hybridHistory.pushState({}, '/setting');
     }
