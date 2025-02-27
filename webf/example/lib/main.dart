@@ -28,6 +28,7 @@ import 'custom_elements/cupertino/modal_popup.dart';
 import 'custom_elements/cupertino/icon.dart';
 import 'custom_elements/cupertino/search_input.dart';
 import 'custom_elements/cupertino/alert.dart';
+import 'custom_elements/cupertino/toast.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
@@ -59,6 +60,7 @@ void main() async {
   WebF.defineCustomElement('flutter-cupertino-icon', (context) => FlutterCupertinoIcon(context));
   WebF.defineCustomElement('flutter-cupertino-search-input', (context) => FlutterCupertinoSearchInput(context));
   WebF.defineCustomElement('flutter-cupertino-alert', (context) => FlutterCupertinoAlert(context));
+  WebF.defineCustomElement('flutter-cupertino-toast', (context) => FlutterCupertinoToast(context));
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }
 
