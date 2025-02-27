@@ -165,7 +165,7 @@ const loader = function(source) {
       // Use html_parse to parser html in html file.
       const html_parse = () => __webf_parse_html__(\`${htmlString}\`);
       var index = 0;
-      const snapshotAction = async () => { await snapshot(${snapshotTarget}, '${snapshotFilepath}', ${scripts.length === 0 ? 'null' : 'index.toString()'}); index++; };
+      const snapshotAction = async () => { await snapshotBody(${snapshotTarget}, '${snapshotFilepath}', ${scripts.length === 0 ? 'null' : 'index.toString()'}); index++; };
       ${isFit ? 'fit' : isXit ? 'xit' : 'it'}("should work", async (done) => {\
         html_parse();\
         ${delayForSnapshot ? `
