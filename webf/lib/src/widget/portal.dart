@@ -5,14 +5,14 @@ import 'package:webf/dom.dart' as dom;
 /// Portal is essential to capture WebF gestures on WebF elements when the renderObject is located outside of WebF's root renderObject tree.
 /// Exp: using [showModalBottomSheet] or [showDialog], it will create a standalone Widget Tree alone side with the original Widget Tree.
 /// Use this widget to make the gesture dispatcher works.
-class Portal extends SingleChildRenderObjectWidget {
+class WebFEventListener extends SingleChildRenderObjectWidget {
   final dom.Element ownerElement;
 
-  Portal({Widget? child, required this.ownerElement, Key? key}) : super(child: child, key: key);
+  WebFEventListener({Widget? child, required this.ownerElement, Key? key}) : super(child: child, key: key);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return RenderPortal(controller: ownerElement.ownerDocument.controller, renderStyle: ownerElement.renderStyle);
+    return RenderEventListener(controller: ownerElement.ownerDocument.controller, renderStyle: ownerElement.renderStyle);
   }
 
   @override
@@ -23,10 +23,10 @@ class _PortalElement extends SingleChildRenderObjectElement {
   _PortalElement(super.widget);
 
   @override
-  Portal get widget => super.widget as Portal;
+  WebFEventListener get widget => super.widget as WebFEventListener;
 
   @override
-  RenderPortal get renderObject => super.renderObject as RenderPortal;
+  RenderEventListener get renderObject => super.renderObject as RenderEventListener;
 
   @override
   void insertRenderObjectChild(RenderObject child, Object? slot) {

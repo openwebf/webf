@@ -10,11 +10,11 @@ import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 
 class RenderPortalsParentData extends RenderLayoutParentData {}
 
-class RenderPortal extends RenderBoxModel
+class RenderEventListener extends RenderBoxModel
     with
         RenderObjectWithChildMixin<RenderBox>,
         RenderProxyBoxMixin<RenderBox> {
-  RenderPortal({
+  RenderEventListener({
     required CSSRenderStyle renderStyle,
     required this.controller
   }) : super(renderStyle: renderStyle) {

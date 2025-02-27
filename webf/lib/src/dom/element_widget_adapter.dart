@@ -116,32 +116,26 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
           overflowX == CSSOverflowType.hidden) {
         webFElement.scrollControllerX ??= flutter.ScrollController();
         scrollableX = LayoutBoxWrapper(
-            child: flutter.ScrollConfiguration(
-              behavior: flutter.ScrollBehavior().copyWith(scrollbars: false),
-              child: flutter.Scrollable(
-                  controller: webFElement.scrollControllerX,
-                  viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
-                    flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
-                      webFElement: webFElement,
-                      children: children,
-                      key: webFElement.key,
-                      scrollListener: webFElement.handleScroll,
-                      positionX: position,
+            child: flutter.Scrollable(
+                controller: webFElement.scrollControllerX,
+                viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
+                  flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
+                    webFElement: webFElement,
+                    children: children,
+                    key: webFElement.key,
+                    scrollListener: webFElement.handleScroll,
+                    positionX: position,
+                  );
+
+                  if (webFElement.positionedElements.isNotEmpty) {
+                    return PositionedBoxWrapper(
+                      ownerElement: webFElement,
+                      children: [adapter, ...webFElement.positionedElements.map((element) => element.toWidget())],
                     );
+                  }
 
-                    if (webFElement.positionedElements.isNotEmpty) {
-                      return PositionedBoxWrapper(
-                        ownerElement: webFElement,
-                        children: [
-                          adapter,
-                          ...webFElement.positionedElements.map((element) => element.toWidget())
-                        ],
-                      );
-                    }
-
-                    return adapter;
-                  }),
-            ),
+                  return adapter;
+                }),
             ownerElement: webFElement);
       }
 
@@ -150,48 +144,45 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
           overflowY == CSSOverflowType.hidden) {
         webFElement.scrollControllerY ??= flutter.ScrollController();
         widget = LayoutBoxWrapper(
-            child: flutter.ScrollConfiguration(
-                behavior: flutter.ScrollBehavior().copyWith(scrollbars: false),
-                child: flutter.Scrollable(
-                  controller: webFElement.scrollControllerY,
-                  viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
-                    if (scrollableX != null) {
-                      return flutter.Scrollable(
-                          controller: webFElement.scrollControllerX,
-                          viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
-                            flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
-                              webFElement: webFElement,
-                              children: children,
-                              key: webFElement.key,
-                              scrollListener: webFElement.handleScroll,
-                              positionX: positionX,
-                              positionY: positionY,
+            child: flutter.Scrollable(
+                controller: webFElement.scrollControllerY,
+                viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
+                  if (scrollableX != null) {
+                    return flutter.Scrollable(
+                        controller: webFElement.scrollControllerX,
+                        viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
+                          flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
+                            webFElement: webFElement,
+                            children: children,
+                            key: webFElement.key,
+                            scrollListener: webFElement.handleScroll,
+                            positionX: positionX,
+                            positionY: positionY,
+                          );
+
+                          if (webFElement.positionedElements.isNotEmpty) {
+                            return PositionedBoxWrapper(
+                              ownerElement: webFElement,
+                              children: [
+                                adapter,
+                                ...webFElement.positionedElements.map((element) => element.toWidget())
+                              ],
                             );
+                          }
 
-                            if (webFElement.positionedElements.isNotEmpty) {
-                              return PositionedBoxWrapper(
-                                ownerElement: webFElement,
-                                children: [
-                                  adapter,
-                                  ...webFElement.positionedElements.map((element) => element.toWidget())
-                                ],
-                              );
-                            }
+                          return adapter;
+                        });
+                  }
 
-                            return adapter;
-                          });
-                    }
-
-                    children.addAll(webFElement.positionedElements.map((element) => element.toWidget()));
-                    return WebFRenderLayoutWidgetAdaptor(
-                      webFElement: webFElement,
-                      children: children,
-                      key: webFElement.key,
-                      scrollListener: webFElement.handleScroll,
-                      positionY: positionY,
-                    );
-                  },
-                )),
+                  children.addAll(webFElement.positionedElements.map((element) => element.toWidget()));
+                  return WebFRenderLayoutWidgetAdaptor(
+                    webFElement: webFElement,
+                    children: children,
+                    key: webFElement.key,
+                    scrollListener: webFElement.handleScroll,
+                    positionY: positionY,
+                  );
+                }),
             ownerElement: webFElement);
       } else {
         children.addAll(webFElement.positionedElements.map((element) => element.toWidget()));
@@ -204,7 +195,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     }
 
     if (webFElement.hasEvent) {
-      widget = Portal(ownerElement: webFElement, child: widget);
+      widget = WebFEventListener(ownerElement: webFElement, child: widget);
     }
 
     return widget;

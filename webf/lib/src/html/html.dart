@@ -56,6 +56,15 @@ class HTMLElement extends Element {
     return node;
   }
 
+  @override
+  flutter.Widget toWidget({flutter.Key? key}) {
+    flutter.Widget child = super.toWidget(key: key);
+    return flutter.ScrollConfiguration(
+      behavior: flutter.ScrollBehavior().copyWith(scrollbars: false),
+      child: child
+    );
+  }
+
   // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
   @override
   bool get isRendererAttachedToSegmentTree => attachedRenderer != null;

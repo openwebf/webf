@@ -332,7 +332,7 @@ class CSSPositionedLayout {
     }
 
     // Fix side effects by render portal.
-    if (child is RenderPortal && child.child is RenderBoxModel) {
+    if (child is RenderEventListener && child.child is RenderBoxModel) {
       child = child.child as RenderBoxModel;
     }
 

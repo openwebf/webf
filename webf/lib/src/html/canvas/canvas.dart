@@ -74,7 +74,7 @@ class CanvasElement extends Element {
   flutter.Widget toWidget({Key? key, bool positioned = false}) {
     flutter.Widget child =
         WebFReplacedElementWidget(webFElement: this, key: key ?? this.key, child: WebFCanvas(this, key: canvasKey));
-    return Portal(ownerElement: this, child: child);
+    return WebFEventListener(ownerElement: this, child: child);
   }
 
   @override

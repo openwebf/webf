@@ -109,7 +109,7 @@ class ImageElement extends Element {
   flutter.Widget toWidget({Key? key, bool positioned = false}) {
     flutter.Widget child = WebFReplacedElementWidget(
         webFElement: this, key: key ?? this.key, child: _isSVGImage ? WebFSVGImage(_svgElement!) : WebFImage(this));
-    return Portal(ownerElement: this, child: child);
+    return WebFEventListener(ownerElement: this, child: child);
   }
 
   @override

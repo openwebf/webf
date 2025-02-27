@@ -302,7 +302,7 @@ class WebFWidgetElementState extends dom.WebFElementWidgetState {
       child = RepaintBoundary(child: child);
     }
     if (widgetElement.hasEvent) {
-      child = Portal(ownerElement: widgetElement, child: child);
+      child = WebFEventListener(ownerElement: widgetElement, child: child);
     }
 
     List<Widget> children = [child, ...widgetElement.positionedElements.map((element) => element.toWidget())];

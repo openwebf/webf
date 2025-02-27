@@ -669,7 +669,7 @@ abstract class RenderStyle extends DiagnosticableTree {
   bool isParentBoxModelMatch(RenderBoxModelMatcher matcher) {
     RenderBoxModel? selfRender = attachedRenderBoxModel;
     if (selfRender == null) return false;
-    if (selfRender is RenderPortal && selfRender.parent is RenderBoxModel)
+    if (selfRender is RenderEventListener && selfRender.parent is RenderBoxModel)
       return matcher(selfRender.parent as RenderBoxModel, selfRender.renderStyle);
 
     return matcher(selfRender, selfRender.renderStyle);
@@ -1048,7 +1048,7 @@ abstract class RenderStyle extends DiagnosticableTree {
         return matcher(renderBoxModel, renderBoxModel.renderStyle);
       case RenderObjectGetType.parent:
         RenderObject? parent = renderBoxModel.parent;
-        while (parent is RenderPortal || parent is RenderLayoutBoxWrapper || parent is RenderPositionedBoxWrapper) {
+        while (parent is RenderEventListener || parent is RenderLayoutBoxWrapper || parent is RenderPositionedBoxWrapper) {
           parent = parent!.parent;
         }
 
@@ -1188,7 +1188,7 @@ abstract class RenderStyle extends DiagnosticableTree {
 
     if (target.managedByFlutterWidget) {
       everyWidgetRenderBox((_, renderBoxMode) {
-        if (renderBoxMode is RenderPortal) {
+        if (renderBoxMode is RenderEventListener) {
           renderBoxMode.child?.visitChildren(visitor);
         } else {
           renderBoxMode.visitChildren(visitor);

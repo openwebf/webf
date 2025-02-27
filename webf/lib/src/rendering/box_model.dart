@@ -1174,7 +1174,7 @@ class RenderBoxModel extends RenderBox
     if (parentData is RenderLayoutParentData) {
       RenderLayoutParentData selfParentData = parentData as RenderLayoutParentData;
       RenderObject? parentBox = parent;
-      if (parentBox is RenderPortal) {
+      if (parentBox is RenderEventListener) {
         parentBox = parentBox.parent;
       }
 
