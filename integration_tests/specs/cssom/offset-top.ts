@@ -125,6 +125,170 @@ describe('OffsetTop In Scrollable Parent', () => {
     }, 1000);
 
   });
+
+  it('005', async (done) => {
+    let checkedCount = 0;
+    createDOM(function onParentMount(e) {
+      const parent = e.target;
+      parent.style.marginTop = "166px"
+      parent.style.marginLeft = "33px";
+      checkedCount++;
+    }, function onChildMount(e) {
+      const child = e.target;
+      child.style.marginTop = "20px"
+      child.style.marginLeft = "100px";
+      child.style.borderTop = "13px solid green";
+      child.style.borderLeft = "7px solid green";
+      requestAnimationFrame(() => {
+        assert_equals(child.offsetTop, 220, "Child is after spacer and margin");
+        assert_equals(child.offsetLeft, 100, "Child is 100px from left");
+        checkedCount++;
+      })
+    }, function onAbsoluteChildMount(e) {
+      var absChild = e.target;
+      absChild.style.borderTop = "13px solid green";
+      absChild.style.borderLeft = "7px solid green";
+      absChild.style.marginTop = "20px"
+      absChild.style.marginLeft = "100px";
+      requestAnimationFrame(() => {
+        assert_equals(absChild.offsetTop, 61, "Abspos child is y-positioned and has margin");
+        assert_equals(absChild.offsetLeft, 143, "Abspos child is x-positioned and has margin");
+        checkedCount++;
+      });
+    });
+
+    setTimeout(() => {
+      expect(checkedCount).toBe(3);
+      done();
+    }, 1000);
+  });
+
+  it('006', async (done) => {
+    let checkedCount = 0;
+    createDOM(function onParentMount(e) {
+      const parent = e.target;
+      parent.style.marginTop = "166px"
+      parent.style.marginLeft = "33px";
+      parent.style.borderTop = "23px solid yellow";
+      parent.style.borderLeft = "19px solid yellow";
+      checkedCount++;
+    }, function onChildMount(e) {
+      const child = e.target;
+      child.style.marginTop = "20px"
+      child.style.marginLeft = "100px";
+      child.style.borderTop = "13px solid green";
+      child.style.borderLeft = "7px solid green";
+      requestAnimationFrame(() => {
+        assert_equals(child.offsetTop, 220, "Child is after spacer and margin");
+        assert_equals(child.offsetLeft, 100, "Child is 100px from left");
+        checkedCount++;
+      })
+    }, function onAbsoluteChildMount(e) {
+      var absChild = e.target;
+      absChild.style.borderTop = "13px solid green";
+      absChild.style.borderLeft = "7px solid green";
+      absChild.style.marginTop = "20px"
+      absChild.style.marginLeft = "100px";
+      requestAnimationFrame(() => {
+        assert_equals(absChild.offsetTop, 61, "Abspos child is y-positioned and has margin");
+        assert_equals(absChild.offsetLeft, 143, "Abspos child is x-positioned and has margin");
+        checkedCount++;
+      });
+    });
+
+    setTimeout(() => {
+      expect(checkedCount).toBe(3);
+      done();
+    }, 1000);
+  });
+
+  it('007', async (done) => {
+    let checkedCount = 0;
+    createDOM(function onParentMount(e) {
+      const parent = e.target;
+      parent.style.marginTop = "166px"
+      parent.style.marginLeft = "33px";
+      parent.style.borderTop = "23px solid yellow";
+      parent.style.borderLeft = "19px solid yellow";
+      checkedCount++;
+    }, function onChildMount(e) {
+      const child = e.target;
+      child.style.marginTop = "20px"
+      child.style.marginLeft = "100px";
+      child.style.borderTop = "13px solid green";
+      child.style.borderLeft = "7px solid green";
+      child.style.paddingTop = "31px";
+      child.style.paddingLeft = "37px";
+      requestAnimationFrame(() => {
+        assert_equals(child.offsetTop, 220, "Child is after spacer and margin");
+        assert_equals(child.offsetLeft, 100, "Child is 100px from left");
+        checkedCount++;
+      })
+    }, function onAbsoluteChildMount(e) {
+      var absChild = e.target;
+      absChild.style.borderTop = "13px solid green";
+      absChild.style.borderLeft = "7px solid green";
+      absChild.style.marginTop = "20px"
+      absChild.style.marginLeft = "100px";
+      absChild.style.paddingTop = "31px";
+      absChild.style.paddingLeft = "37px";
+      requestAnimationFrame(() => {
+        assert_equals(absChild.offsetTop, 61, "Abspos child is y-positioned and has margin");
+        assert_equals(absChild.offsetLeft, 143, "Abspos child is x-positioned and has margin");
+        checkedCount++;
+      });
+    });
+
+    setTimeout(() => {
+      expect(checkedCount).toBe(3);
+      done();
+    }, 1000);
+  });
+
+  it('008', async (done) => {
+    let checkedCount = 0;
+    createDOM(function onParentMount(e) {
+      const parent = e.target;
+      parent.style.marginTop = "166px"
+      parent.style.marginLeft = "33px";
+      parent.style.borderTop = "23px solid yellow";
+      parent.style.borderLeft = "19px solid yellow";
+      parent.style.paddingTop = "31px";
+      parent.style.paddingLeft = "37px";
+      checkedCount++;
+    }, function onChildMount(e) {
+      const child = e.target;
+      child.style.marginTop = "20px"
+      child.style.marginLeft = "100px";
+      child.style.borderTop = "13px solid green";
+      child.style.borderLeft = "7px solid green";
+      child.style.paddingTop = "31px";
+      child.style.paddingLeft = "37px";
+      requestAnimationFrame(() => {
+        assert_equals(child.offsetTop, 251, "Child is after spacer and margin and parent padding");
+        assert_equals(child.offsetLeft, 137, "Child is 100px + parent padding from left");
+        checkedCount++;
+      })
+    }, function onAbsoluteChildMount(e) {
+      var absChild = e.target;
+      absChild.style.borderTop = "13px solid green";
+      absChild.style.borderLeft = "7px solid green";
+      absChild.style.marginTop = "20px"
+      absChild.style.marginLeft = "100px";
+      absChild.style.paddingTop = "31px";
+      absChild.style.paddingLeft = "37px";
+      requestAnimationFrame(() => {
+        assert_equals(absChild.offsetTop, 61, "Abspos child is y-positioned and has margin");
+        assert_equals(absChild.offsetLeft, 143, "Abspos child is x-positioned and has margin");
+        checkedCount++;
+      });
+    });
+
+    setTimeout(() => {
+      expect(checkedCount).toBe(3);
+      done();
+    }, 1000);
+  });
 });
 
 describe('OffsetTop in ListView Parent', () => {
@@ -273,5 +437,169 @@ describe('OffsetTop in ListView Parent', () => {
       done();
     }, 1000)
 
+  });
+
+  it('005', async (done) => {
+    let checkedCount = 0;
+    createDOM(function onParentMount(e) {
+      const parent = e.target;
+      parent.style.marginTop = "166px"
+      parent.style.marginLeft = "33px";
+      checkedCount++;
+    }, function onChildMount(e) {
+      const child = e.target;
+      child.style.marginTop = "20px"
+      child.style.marginLeft = "100px";
+      child.style.borderTop = "13px solid green";
+      child.style.borderLeft = "7px solid green";
+      requestAnimationFrame(() => {
+        assert_equals(child.offsetTop, 220, "Child is after spacer and margin");
+        assert_equals(child.offsetLeft, 100, "Child is 100px from left");
+        checkedCount++;
+      })
+    }, function onAbsoluteChildMount(e) {
+      var absChild = e.target;
+      absChild.style.borderTop = "13px solid green";
+      absChild.style.borderLeft = "7px solid green";
+      absChild.style.marginTop = "20px"
+      absChild.style.marginLeft = "100px";
+      requestAnimationFrame(() => {
+        assert_equals(absChild.offsetTop, 61, "Abspos child is y-positioned and has margin");
+        assert_equals(absChild.offsetLeft, 143, "Abspos child is x-positioned and has margin");
+        checkedCount++;
+      });
+    });
+
+    setTimeout(() => {
+      expect(checkedCount).toBe(3);
+      done();
+    }, 1000);
+  });
+
+  it('006', async (done) => {
+    let checkedCount = 0;
+    createDOM(function onParentMount(e) {
+      const parent = e.target;
+      parent.style.marginTop = "166px"
+      parent.style.marginLeft = "33px";
+      parent.style.borderTop = "23px solid yellow";
+      parent.style.borderLeft = "19px solid yellow";
+      checkedCount++;
+    }, function onChildMount(e) {
+      const child = e.target;
+      child.style.marginTop = "20px"
+      child.style.marginLeft = "100px";
+      child.style.borderTop = "13px solid green";
+      child.style.borderLeft = "7px solid green";
+      requestAnimationFrame(() => {
+        assert_equals(child.offsetTop, 220, "Child is after spacer and margin");
+        assert_equals(child.offsetLeft, 100, "Child is 100px from left");
+        checkedCount++;
+      })
+    }, function onAbsoluteChildMount(e) {
+      var absChild = e.target;
+      absChild.style.borderTop = "13px solid green";
+      absChild.style.borderLeft = "7px solid green";
+      absChild.style.marginTop = "20px"
+      absChild.style.marginLeft = "100px";
+      requestAnimationFrame(() => {
+        assert_equals(absChild.offsetTop, 61, "Abspos child is y-positioned and has margin");
+        assert_equals(absChild.offsetLeft, 143, "Abspos child is x-positioned and has margin");
+        checkedCount++;
+      });
+    });
+
+    setTimeout(() => {
+      expect(checkedCount).toBe(3);
+      done();
+    }, 1000);
+  });
+
+  it('007', async (done) => {
+    let checkedCount = 0;
+    createDOM(function onParentMount(e) {
+      const parent = e.target;
+      parent.style.marginTop = "166px"
+      parent.style.marginLeft = "33px";
+      parent.style.borderTop = "23px solid yellow";
+      parent.style.borderLeft = "19px solid yellow";
+      checkedCount++;
+    }, function onChildMount(e) {
+      const child = e.target;
+      child.style.marginTop = "20px"
+      child.style.marginLeft = "100px";
+      child.style.borderTop = "13px solid green";
+      child.style.borderLeft = "7px solid green";
+      child.style.paddingTop = "31px";
+      child.style.paddingLeft = "37px";
+      requestAnimationFrame(() => {
+        assert_equals(child.offsetTop, 220, "Child is after spacer and margin");
+        assert_equals(child.offsetLeft, 100, "Child is 100px from left");
+        checkedCount++;
+      })
+    }, function onAbsoluteChildMount(e) {
+      var absChild = e.target;
+      absChild.style.borderTop = "13px solid green";
+      absChild.style.borderLeft = "7px solid green";
+      absChild.style.marginTop = "20px"
+      absChild.style.marginLeft = "100px";
+      absChild.style.paddingTop = "31px";
+      absChild.style.paddingLeft = "37px";
+      requestAnimationFrame(() => {
+        assert_equals(absChild.offsetTop, 61, "Abspos child is y-positioned and has margin");
+        assert_equals(absChild.offsetLeft, 143, "Abspos child is x-positioned and has margin");
+        checkedCount++;
+      });
+    });
+
+    setTimeout(() => {
+      expect(checkedCount).toBe(3);
+      done();
+    }, 1000);
+  });
+
+  it('008', async (done) => {
+    let checkedCount = 0;
+    createDOM(function onParentMount(e) {
+      const parent = e.target;
+      parent.style.marginTop = "166px"
+      parent.style.marginLeft = "33px";
+      parent.style.borderTop = "23px solid yellow";
+      parent.style.borderLeft = "19px solid yellow";
+      parent.style.paddingTop = "31px";
+      parent.style.paddingLeft = "37px";
+      checkedCount++;
+    }, function onChildMount(e) {
+      const child = e.target;
+      child.style.marginTop = "20px"
+      child.style.marginLeft = "100px";
+      child.style.borderTop = "13px solid green";
+      child.style.borderLeft = "7px solid green";
+      child.style.paddingTop = "31px";
+      child.style.paddingLeft = "37px";
+      requestAnimationFrame(() => {
+        assert_equals(child.offsetTop, 251, "Child is after spacer and margin and parent padding");
+        assert_equals(child.offsetLeft, 137, "Child is 100px + parent padding from left");
+        checkedCount++;
+      })
+    }, function onAbsoluteChildMount(e) {
+      var absChild = e.target;
+      absChild.style.borderTop = "13px solid green";
+      absChild.style.borderLeft = "7px solid green";
+      absChild.style.marginTop = "20px"
+      absChild.style.marginLeft = "100px";
+      absChild.style.paddingTop = "31px";
+      absChild.style.paddingLeft = "37px";
+      requestAnimationFrame(() => {
+        assert_equals(absChild.offsetTop, 61, "Abspos child is y-positioned and has margin");
+        assert_equals(absChild.offsetLeft, 143, "Abspos child is x-positioned and has margin");
+        checkedCount++;
+      });
+    });
+
+    setTimeout(() => {
+      expect(checkedCount).toBe(3);
+      done();
+    }, 1000);
   });
 });
