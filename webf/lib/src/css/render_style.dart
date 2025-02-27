@@ -405,6 +405,10 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   void addViewportSizeRelativeProperty();
 
+  void cleanContentBoxLogiclWidth();
+
+  void cleanContentBoxLogiclHeight();
+
   double getWidthByAspectRatio();
 
   double getHeightByAspectRatio();
@@ -2357,6 +2361,16 @@ class CSSRenderStyle extends RenderStyle
     }
 
     return contentMaxConstraintsWidth;
+  }
+
+  @override
+  void cleanContentBoxLogiclWidth() {
+      _contentBoxLogicalWidth = double.infinity;
+  }
+
+  @override
+  void cleanContentBoxLogiclHeight() {
+    _contentBoxLogicalHeight = double.infinity;
   }
 
   // Content width calculated from renderStyle tree.
