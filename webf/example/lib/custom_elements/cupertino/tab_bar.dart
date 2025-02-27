@@ -100,6 +100,7 @@ class FlutterTabBar extends WidgetElement {
                 onTap: (index) {
                   setAttribute('currentIndex', index.toString());
                   print('index: $index');
+                  dispatchEvent(CustomEvent('tabchange', detail: index));
                 }),
             tabBuilder: (BuildContext context, int index) {
               return CupertinoTabView(
