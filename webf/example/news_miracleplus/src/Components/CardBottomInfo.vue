@@ -2,23 +2,17 @@
     <div class="bottom-info">
       <span class="source">{{ userName }}</span>
       <span class="time">{{ computedCreatedAt }}</span>
-      <div class="stats">
-        <span class="views">
-          <flutter-cupertino-icon type="eye" class="icon" />{{ viewsCount }}
-        </span>
-        <span class="likes">
-          <flutter-cupertino-icon type="hand_thumbsup" class="icon" />{{ likesCount }}
-        </span>
-        <span class="comments">
-          <flutter-cupertino-icon type="ellipsis_circle" class="icon" />{{ commentsCount }}
-        </span>
-      </div>
+      <share-link-count :viewsCount="viewsCount" :likesCount="likesCount" :commentsCount="commentsCount" />
     </div>
   </template>
   
-  <script>
+  <script>  
+  import ShareLinkCount from './ShareLinkCount.vue';
   export default {
     name: 'CardBottomInfo',
+    components: {
+        ShareLinkCount,
+    },
     props: {
       userName: {
         type: String,
@@ -72,21 +66,6 @@
   
     .source, .time {
       margin-right: 12px;
-    }
-  
-    .stats {
-      display: flex;
-      margin-left: auto;
-  
-      span {
-        margin-left: 12px;
-        display: flex;
-        align-items: center;
-      }
-  
-      .icon {
-        margin-right: 4px;
-      }
     }
   }
   </style>

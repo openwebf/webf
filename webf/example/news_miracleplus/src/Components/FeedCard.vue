@@ -1,5 +1,5 @@
 <template>
-    <div class="feed-card" @click="goToDetail">
+    <div class="feed-card" @click="viewDetail">
       <!-- Top link -->
       <div class="top-link" v-if="isPinned">置顶</div>
       
@@ -98,7 +98,7 @@
       }
     },
     methods: {
-      goToDetail() {
+      viewDetail() {
         window.webf.hybridHistory.pushState({
             id: this.item.item.id
         }, '/share_link');
