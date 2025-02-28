@@ -410,8 +410,10 @@ async function snapshot(target?: any, filename?: String, postfix?: boolean | str
       try {
         if (typeof target == 'number') {
           await sleep(target);
+          target = null;
         }
-        await expectAsync(document.documentElement.toBlob(1.0)).toMatchSnapshot(filename, postfix);
+        const element = target || document.documentElement;
+        await expectAsync(element.toBlob(1.0)).toMatchSnapshot(filename, postfix);
         resolve();
       } catch (e) {
         reject(e);

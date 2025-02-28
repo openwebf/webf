@@ -1374,11 +1374,16 @@ abstract class Element extends ContainerNode
   Future<Uint8List> toBlob({double? devicePixelRatio, BindingOpItem? currentProfileOp}) {
     forceToRepaintBoundary = true;
 
-    ownerDocument.forceRebuild();
-
     Completer<Uint8List> completer = Completer();
     SchedulerBinding.instance.addPostFrameCallback((_) async {
+      ownerDocument.forceRebuild();
       flushLayout();
+
+      if (!renderStyle.isRepaintBoundary()) {
+        String msg = 'toImage: the element is not repaintBoundary.';
+        completer.completeError(Exception(msg));
+        return;
+      }
 
       if (!isRendererAttached) {
         String msg = 'toImage: the element is not attached to document tree.';
