@@ -208,6 +208,7 @@ const pluginApiList = [
   'events/pointer_event.d.ts',
   'events/transition_event.d.ts',
   'events/ui_event.d.ts',
+  'css/css_style_declaration.d.ts',
 ];
 
 genCodeFromTypeDefine();
