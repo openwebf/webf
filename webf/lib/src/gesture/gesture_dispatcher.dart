@@ -11,6 +11,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/html.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/svg.dart';
 
 class _DragEventInfo extends Drag {
   _DragEventInfo(this.gestureDispatcher);
@@ -205,6 +206,10 @@ class GestureDispatcher {
     }
 
     EventTarget target = this.target.ownerView.viewport?.rawPointerListener.lastActiveEventTarget ?? this.target;
+
+    if (target is SVGElement && target.hostingImageElement != null) {
+      target = target.hostingImageElement!;
+    }
 
     // When Kraken wraps the Flutter Widget, Kraken need to calculate the global coordinates relative to self.
     Offset globalOffset = root.globalToLocal(Offset(globalPosition.dx, globalPosition.dy));

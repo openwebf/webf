@@ -512,6 +512,7 @@ class ImageElement extends Element {
       final size = builder.getIntrinsicSize();
       naturalWidth = size.width.toInt();
       naturalHeight = size.height.toInt();
+      svgElement.hostingImageElement = this;
       _resizeImage();
 
       _isSVGImage = true;

@@ -28,6 +28,8 @@ class SVGElement extends Element {
   @override
   bool get isSVGElement => true;
 
+  EventTarget? hostingImageElement;
+
   // Presentation attribute config cache
   List<SVGPresentationAttributeConfig>? _presentationAttributesConfigsCache;
 
@@ -91,6 +93,7 @@ class SVGElement extends Element {
     for (int i = 0; i < childNodes.length; i ++) {
       childNodes.elementAt(i).dispose();
     }
+    hostingImageElement = null;
     super.dispose();
   }
 }

@@ -158,14 +158,14 @@ const loader = function(source) {
   });
 
   const { snapshotRoot, delayForSnapshot } = this.query.getSnapshotOption(filepath);
-  const snapshotTarget = snapshotRoot === 'body' ? 'document.body' : 'null';
+  const snapshotTarget = snapshotRoot === 'body' ? 'document.body' : 'document.documentElement';
 
   return `
     describe('HTMLSpec/${testRelativePath}', () => {
       // Use html_parse to parser html in html file.
       const html_parse = () => __webf_parse_html__(\`${htmlString}\`);
       var index = 0;
-      const snapshotAction = async () => { await snapshotBody(${snapshotTarget}, '${snapshotFilepath}', ${scripts.length === 0 ? 'null' : 'index.toString()'}); index++; };
+      const snapshotAction = async () => { await snapshot(${snapshotTarget}, '${snapshotFilepath}', ${scripts.length === 0 ? 'null' : 'index.toString()'}); index++; };
       ${isFit ? 'fit' : isXit ? 'xit' : 'it'}("should work", async (done) => {\
         html_parse();\
         ${delayForSnapshot ? `

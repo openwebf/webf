@@ -223,13 +223,14 @@ describe('Tags img', () => {
     document.body.style.background = 'green';
     document.body.appendChild(img);
 
+    // Image has not been loaded.
+    expect(img.naturalWidth).toEqual(0);
+    expect(img.naturalHeight).toEqual(0);
+
     // @ts-ignore
     img.onmount = () => {
       expect(img.width).toEqual(20);
       expect(img.height).toEqual(20);
-      // Image has not been loaded.
-      expect(img.naturalWidth).toEqual(0);
-      expect(img.naturalHeight).toEqual(0);
     };
   });
 
