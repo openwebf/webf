@@ -5,6 +5,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 import 'package:webf/dom.dart' as dom;
 
@@ -30,6 +32,10 @@ class RenderPositionedBoxWrapper extends RenderBoxModel
 
   @override
   void performLayout() {
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.startTrackLayout(this);
+    }
+
     // Positioned Box wrapper behavior as an RenderProxyBox for non positioned children.
     // Avoid deflate padding and margin from box model.
     contentConstraints = constraints;
@@ -75,6 +81,10 @@ class RenderPositionedBoxWrapper extends RenderBoxModel
       extendMaxScrollableSize(child);
       addOverflowLayoutFromChild(child);
     }
+
+    if (enableWebFProfileTracking) {
+      WebFProfiler.instance.finishTrackLayout(this);
+    }
   }
 
   @override
@@ -82,14 +92,41 @@ class RenderPositionedBoxWrapper extends RenderBoxModel
     defaultPaint(context, offset);
   }
 
-  @override
-  bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    return super.hitTest(result, position: position);
+  RawPointerListener get rawPointerListener {
+    return renderStyle.target.ownerDocument.viewport!.rawPointerListener;
   }
 
   @override
-  bool defaultHitTestChildren(BoxHitTestResult result, {required Offset position}) {
-    return super.defaultHitTestChildren(result, position: position);
+  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
+    super.handleEvent(event, entry);
+
+    if (event is PointerDownEvent) {
+      rawPointerListener.recordEventTarget(renderStyle.target);
+    }
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    RenderBox? child = lastChild;
+    while (child != null) {
+      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+
+      final bool isHit = result.addWithPaintOffset(
+        offset: childParentData.offset,
+        position: position,
+        hitTest: (BoxHitTestResult result, Offset transformed) {
+          assert(transformed == position - childParentData.offset);
+          return child!.hitTest(result, position: transformed);
+        },
+      );
+      if (isHit) {
+        return true;
+      }
+
+      child = childParentData.previousSibling;
+    }
+
+    return false;
   }
 }
 
