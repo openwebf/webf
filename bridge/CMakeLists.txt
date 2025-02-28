@@ -308,7 +308,6 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/api/window.cc
     core/api/text.cc
     core/api/comment.cc
-    core/api/css_style_declaration.cc
     core/api/character_data.cc
     core/api/script_value_ref.cc
     core/dart_isolate_context.cc
@@ -624,6 +623,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/plugin_api_pointer_event.cc
     out/plugin_api_transition_event.cc
     out/plugin_api_ui_event.cc
+    out/plugin_api_css_style_declaration.cc
     )
 
 
