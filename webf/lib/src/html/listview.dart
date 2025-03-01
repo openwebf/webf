@@ -23,7 +23,7 @@ class FlutterListViewElement extends WidgetElement {
   }
 
   void _scrollListener() {
-    ScrollController? scrollController = PrimaryScrollController.maybeOf(context!);
+    ScrollController? scrollController = context != null ? PrimaryScrollController.maybeOf(context!) : null;
     if (scrollController != null) {
       if (scrollController.position.extentAfter < 50) {
         dispatchEvent(dom.Event('end'));
