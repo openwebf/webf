@@ -11,7 +11,8 @@ import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 
 /// RenderBox of a widget element whose content is rendering by Flutter Widgets.
-class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
+class RenderWidget extends RenderBoxModel
+    with ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
   RenderWidget({required super.renderStyle});
 
   @override
@@ -42,9 +43,13 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
     Size viewportSize = renderStyle.target.ownerDocument.viewport!.viewportSize;
     BoxConstraints childConstraints = BoxConstraints(
         minWidth: contentConstraints!.minWidth,
-        maxWidth: math.min(viewportSize.width, contentConstraints!.maxWidth),
+        maxWidth: contentConstraints!.hasTightWidth
+            ? contentConstraints!.maxWidth
+            : math.min(viewportSize.width, contentConstraints!.maxWidth),
         minHeight: contentConstraints!.minHeight,
-        maxHeight: math.min(viewportSize.height, contentConstraints!.maxHeight));
+        maxHeight: contentConstraints!.hasTightHeight
+            ? contentConstraints!.maxHeight
+            : math.min(viewportSize.height, contentConstraints!.maxHeight));
 
     child.layout(childConstraints, parentUsesSize: true);
 
@@ -189,7 +194,6 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
       rawPointerListener.recordEventTarget(renderStyle.target);
     }
   }
-
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
