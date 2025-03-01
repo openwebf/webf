@@ -16,6 +16,8 @@ typedef struct NativeValue NativeValue;
 class CSSStyleDeclaration;
 enum class CSSStyleDeclarationType {
   kCSSStyleDeclaration = 0,
+  kComputedCssStyleDeclaration = 1,
+  kInlineCssStyleDeclaration = 2,
 };
 using PublicCSSStyleDeclarationGetCssText = const char* (*)(CSSStyleDeclaration*);
 using PublicCSSStyleDeclarationSetCssText = void (*)(CSSStyleDeclaration*, const char*, SharedExceptionState*);
