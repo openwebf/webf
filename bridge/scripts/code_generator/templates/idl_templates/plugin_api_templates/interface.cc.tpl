@@ -45,9 +45,15 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   ScriptValue <%=_.snakeCase(arg.name)%>_script_value = ScriptValue(<%= _.snakeCase(className) %>->ctx(), <%=_.snakeCase(arg.name)%>);
     <% } %>
   <% }); %>
-    <% if (method.returnType.value === 0) { %>
+    <% if (isStringType(method.returnType)) { %>
   webf::AtomicString value = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
   return value.ToStringView().Characters8();
+    <% } else if (isVoidType(method.returnType)) { %>
+  <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
+    <% } else if (isAnyType(method.returnType)) { %>
+  auto return_value = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
+  auto return_native_value = return_value.ToNative(<%= _.snakeCase(className) %>->ctx(), shared_exception_state->exception_state, false);
+  return return_native_value;
     <% } else { %>
   return <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
     <% } %>
@@ -81,7 +87,7 @@ WebFValue<<%= className %>, WebFPublicMethods> <%= className %>PublicMethods::Dy
   }
 }
 <% } %>
-<% if (object.construct && object.construct.returnType.value !== 8) { %>
+<% if (object.construct && !isVoidType(object.construct.returnType)) { %>
   <% if (object.construct.args.length === 0) { %>
 WebFValue<<%= className %>, <%= className %>PublicMethods> ExecutingContextWebFMethods::Create<%= className %>(ExecutingContext* context, ExceptionState& exception_state) {
 

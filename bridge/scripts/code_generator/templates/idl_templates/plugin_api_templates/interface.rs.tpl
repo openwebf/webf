@@ -283,7 +283,7 @@ impl <%= parentObject.name %>Methods for <%= className %> {
 }
 <% }); %>
 
-<% if (object.construct && object.construct.returnType.value !== 8) { %>
+<% if (object.construct && !isVoidType(object.construct.returnType)) { %>
 impl ExecutingContext {
 
   <% if (object.construct.args.length === 0) { %>
