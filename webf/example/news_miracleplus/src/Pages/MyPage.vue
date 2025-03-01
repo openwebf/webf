@@ -24,7 +24,15 @@
           <flutter-cupertino-button class="setting" @click="goToSettingPage">
             设置
           </flutter-cupertino-button>
-        </div>
+      </div>
+      <div class="edit-block" v-if="isLoggedIn">
+          <flutter-cupertino-button class="edit-profile" type="primary" shape="rounded" @click="goToQuestionPage">
+            问题详情
+          </flutter-cupertino-button>
+          <flutter-cupertino-button class="setting" @click="goToAnswerPage">
+            回答详情
+          </flutter-cupertino-button>
+      </div>
       
       <div class="karma-count">
         <div>社区 Karma： {{ userInfo.karma || 0 }}</div>
@@ -161,6 +169,17 @@ export default {
     },
     goToEditPage() {
       window.webf.hybridHistory.pushState({}, '/edit');
+    },
+    goToAnswerPage() {
+      window.webf.hybridHistory.pushState({
+        id: '2046',
+        questionId: 'xr9ho0',
+      }, '/answer');
+    },
+    goToQuestionPage() {
+      window.webf.hybridHistory.pushState({
+        id: 'xr9ho0',
+      }, '/question');
     },
     goToSettingPage() {
         window.webf.hybridHistory.pushState({}, '/setting');

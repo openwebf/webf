@@ -158,6 +158,14 @@ export const api = {
     shareLinks: ({ keyword = '', perPage = 10 } = {}) => request(`/v1/share_links/search?keyword=${keyword}&per_page=${perPage}`, {
         requireAuth: true,
     }),
+  },
+  question: {
+    getDetail: (id) => request(`/v1/questions/${id}`, { 
+        requireAuth: true,
+    }),
+    getAnswerDetail: (id) => request(`/v1/answers/${id}`, {
+      requireAuth: true,
+    }),
   }
 };
 

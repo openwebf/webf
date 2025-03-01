@@ -12,7 +12,7 @@
           :comments="comments" 
           :total="shareLink.commentsCount" 
         />
-        <CommentInput @submit="handleCommentSubmit" />
+        <!-- <CommentInput @submit="handleCommentSubmit" /> -->
       </webf-listview>
     </div>
   </template>
@@ -23,7 +23,7 @@
   import PostContent from '@/Components/post/PostContent.vue';
   import InteractionBar from '@/Components/post/InteractionBar.vue';
   import CommentsSection from '@/Components/comment/CommentsSection.vue';
-  import CommentInput from '@/Components/comment/CommentInput.vue';
+  // import CommentInput from '@/Components/comment/CommentInput.vue';
   
   export default {
     name: 'ShareLinkPage',
@@ -32,7 +32,7 @@
       PostContent,
       InteractionBar,
       CommentsSection,
-      CommentInput
+      // CommentInput
     },
     data() {
       return {

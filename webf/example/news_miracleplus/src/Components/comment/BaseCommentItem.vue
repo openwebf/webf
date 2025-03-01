@@ -11,7 +11,7 @@
       </div>
       
       <div class="comment-content">
-        <div class="comment-text" v-html="formattedContent"></div>
+        <div class="comment-text">{{ parseContent(comment.content || comment.richContent) }}</div>
       </div>
   
       <div class="comment-actions">
@@ -49,25 +49,26 @@
       formattedAvatar() {
         return formatAvatar(this.comment.user.avatar);
       },
-      formattedContent() {
-        if (this.comment.richContent) {
-          try {
-            const parsedContent = JSON.parse(this.comment.richContent);
-            return parsedContent.map(block => {
-              if (block.type === 'paragraph') {
-                return `<p>${block.children.map(child => child.text).join('')}</p>`;
-              }
-              return '';
-            }).join('');
-          } catch (e) {
-            return this.comment.content || '';
-          }
-        }
-        return this.comment.content || '';
-      },
       formattedTime() {
-        return new Date(this.comment.createdAt).toLocaleString();
+        const time = new Date(this.comment.createdAt).toLocaleString();
+        return time;
       }
+    },
+    methods: {
+      parseContent(content) {
+          try {
+              const parsed = JSON.parse(content);
+              // TODO: simple parse for text content
+              return parsed.map(block => {
+                  if (block.type === 'paragraph') {
+                      return block.children.map(child => child.text).join('');
+                  }
+                  return '';
+              }).join('\n');
+          } catch (e) {
+              return content;
+          }
+      },
     }
   }
   </script>

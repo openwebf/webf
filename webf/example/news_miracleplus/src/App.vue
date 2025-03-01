@@ -23,6 +23,12 @@
   <webf-router-link path="/privacy_policy" @mount="handleRouterMounted('privacy_policy')" @unmount="handleRouterUnmounted">
     <privacy-policy-page v-if="activedRouter === 'privacy_policy'"></privacy-policy-page>
   </webf-router-link>
+  <webf-router-link path="/answer" @mount="handleRouterMounted('answer')" @unmount="handleRouterUnmounted">
+    <answer-page v-if="activedRouter === 'answer'"></answer-page>
+  </webf-router-link>
+  <webf-router-link path="/question" @mount="handleRouterMounted('question')" @unmount="handleRouterUnmounted">
+    <question-page v-if="activedRouter === 'question'"></question-page>
+  </webf-router-link>
   <webf-router-link path="/home">
     <flutter-tab-bar ref="tabBar" class="tab-bar" backgroundColor="#FFFFFF" activeColor="#007AFF"
       :currentIndex="currentIndex" @tabchange="handleTabChange">
@@ -69,6 +75,8 @@ import EditPage from '@/Pages/EditPage.vue';
 import SettingPage from '@/Pages/SettingPage.vue';
 import UserAgreementPage from '@/Pages/UserAgreementPage.vue';
 import PrivacyPolicyPage from '@/Pages/PrivacyPolicyPage.vue';
+import AnswerPage from '@/Pages/AnswerPage.vue';
+import QuestionPage from '@/Pages/QuestionPage.vue';
 import tabBarManager from '@/utils/tabBarManager';
 export default {
   name: 'App',
@@ -86,6 +94,8 @@ export default {
     SettingPage,
     UserAgreementPage,
     PrivacyPolicyPage,
+    AnswerPage,
+    QuestionPage,
   },
   mounted() {
     tabBarManager.setTabBarRef(this.$refs.tabBar);

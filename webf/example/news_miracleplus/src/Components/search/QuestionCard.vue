@@ -47,8 +47,8 @@
   <style lang="scss" scoped>
   .question-card {
     padding: 16px;
-    border-bottom: 1px solid #EEEEEE;
-    // border-radius: 8px;
+    border-radius: 8px;
+    margin-top: 8px;
     background-color: var(--background-color);
   }
   

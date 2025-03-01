@@ -41,9 +41,9 @@
     display: flex;
     align-items: center;
     padding: 12px;
-    border-bottom: 1px solid #EEEEEE;
+    margin-top: 8px;
+    border-radius: 8px;
     background: var(--background-color);
-    // border-radius: 8px;
   
     .avatar {
       width: 40px;

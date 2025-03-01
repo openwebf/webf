@@ -41,8 +41,9 @@
   <style scoped>
   .share-link-preview-card {
     padding: 16px;
-    background-color: #FFFFFF;
-    margin-bottom: 8px;
+    background-color: var(--background-color);
+    margin-top: 8px;
+    border-radius: 8px;
 
     .preview-box {
       display: flex;

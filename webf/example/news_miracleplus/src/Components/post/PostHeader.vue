@@ -7,8 +7,8 @@
           <div class="time">2小时前</div>
         </div>
       </div>
-      <flutter-cupertino-button class="follow-btn">
-        <div>+ 关注</div>
+      <flutter-cupertino-button class="follow-btn" type="primary">
+        + 关注
       </flutter-cupertino-button>
     </div>
   </template>
@@ -55,6 +55,8 @@
       }
     }
     .follow-btn {
+      width: 100px;
+      height: 32px;
       text-align: center;
       border-radius: 8px;
       color: var(--button-primary-text, #fff); 

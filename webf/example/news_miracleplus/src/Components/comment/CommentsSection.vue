@@ -1,6 +1,5 @@
 <template>
     <div class="comments-section">
-      <div class="comments-header">评论 {{ total }}</div>
       <div class="comment-list">
         <CommentItem 
           v-for="comment in comments" 
@@ -23,10 +22,6 @@
       comments: {
         type: Array,
         default: () => []
-      },
-      total: {
-        type: Number,
-        default: 0
       }
     }
   }

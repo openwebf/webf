@@ -15,7 +15,9 @@
           </webf-listview>
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="回答">
-          <div>{{ answers.length }}</div>
+          <webf-listview class="answer-list">
+            <answer-card v-for="answer in answers" :key="answer.id" :data="answer" />
+          </webf-listview>
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="问题">
           <webf-listview class="question-list">
@@ -31,6 +33,7 @@
     </div>
     <div v-else class="search-empty">
       <img src="@/assets/img/logo.png" alt="logo" />
+      <div class="search-empty-text">最新最有趣的科技前沿内容</div>
     </div>
   </div>
 </template>
@@ -38,6 +41,7 @@
 <script>
 import { api } from '@/api';
 import QuestionCard from '@/Components/search/QuestionCard.vue';
+import AnswerCard from '@/Components/search/AnswerCard.vue';
 import UserCard from '@/Components/search/UserCard.vue';
 import ShareLinkCard from '@/Components/search/ShareLinkCard.vue';
 
@@ -47,6 +51,7 @@ export default {
     QuestionCard,
     UserCard,
     ShareLinkCard,
+    AnswerCard,
   },
   data() {
     return {
@@ -103,8 +108,17 @@ export default {
     align-items: center;
     justify-content: center;
     flex-direction: column;
+
+    .search-empty-text {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #999999;
+    }
   }
   .share-link-list {
+    height: 100vh;
+  }
+  .answer-list {
     height: 100vh;
   }
   .question-list {

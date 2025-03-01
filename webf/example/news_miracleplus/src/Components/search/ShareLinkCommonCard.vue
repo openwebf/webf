@@ -40,8 +40,9 @@ methods: {
 <style lang="scss" scoped>
   .share-link-card {
     padding: 16px;
-    background-color: #FFFFFF;
-    margin-bottom: 8px;
+    background-color: var(--background-color);
+    border-radius: 8px;
+    margin-top: 8px;
 
     .title {
       font-size: 16px;

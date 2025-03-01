@@ -30,9 +30,9 @@
 <script>
 import { api } from '@/api';
 import { useUserStore } from '@/stores/userStore';
-
 export default {
     name: 'SettingPage',
+    components: {},
     methods: {
         handleNotificationSetting() {
             // Handle notification settings navigation
