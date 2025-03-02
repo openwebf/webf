@@ -50,7 +50,7 @@
           <publish-page v-if="currentIndex === 2"></publish-page>
         </keep-alive>
       </flutter-tab-bar-item>
-      <flutter-tab-bar-item title="消息" icon="bell" path="/message">
+      <flutter-tab-bar-item title="消息" icon="bell" path="/notification">
         <keep-alive>
           <notification-page v-if="currentIndex === 3"></notification-page>
         </keep-alive>

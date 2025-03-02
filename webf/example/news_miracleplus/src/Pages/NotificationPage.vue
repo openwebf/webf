@@ -43,9 +43,7 @@ export default {
     async fetchNotifications() {
       try {
         const res = await api.auth.getUserNotifications({
-          page: this.page,
-          token: this.userStore.userInfo?.token,
-          anonymousId: this.userStore.userInfo?.anonymousId,
+          page: this.page
         });
         this.notifications = res?.data?.notifications || [];
       } catch (error) {

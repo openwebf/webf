@@ -93,7 +93,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-    userInfo: () => request('/v1/users/user_info', {
+    getUserInfo: () => request('/v1/users/user_info', {
       requireAuth: true,
     }),
     sendVerifyCode: (data) => request('/v1/users/sms_send', {
