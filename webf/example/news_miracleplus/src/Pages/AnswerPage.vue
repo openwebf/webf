@@ -54,6 +54,8 @@ export default {
       console.log('question: ', this.question);
       const currentAnswer = await this.fetchAnswer(id);
       this.answers = [currentAnswer];
+
+      api.news.viewCount({ id, modelType: 'Answer' });
   },
   methods: {
       formatUserDesc(user) {

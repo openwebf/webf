@@ -45,6 +45,8 @@ export default {
         const res = await api.question.getDetail(id);
         this.question = res.data.question;
         this.answers = await this.fetchAnswers();
+
+        api.news.viewCount({ id, modelType: 'Question' });
     },
     methods: {
         async fetchAnswers() {

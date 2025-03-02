@@ -48,6 +48,8 @@
       const res = await api.news.getDetail(id);
       this.shareLink = res.data.share_link;
       this.comments = await this.fetchComments(id);
+
+      api.news.viewCount({ id });
     },
     methods: {
       async fetchComments() {

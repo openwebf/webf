@@ -126,6 +126,13 @@ export const api = {
       body: JSON.stringify(data),
       requireAuth: true,
     }),
+    viewCount: ({ id, modelType = 'ShareLink' }) => request(`/v1/view_counts`, { 
+      method: 'POST',
+      body: JSON.stringify({
+        id,
+        model_type: modelType,
+      }),
+    }),
   },
 
   // Comment APIs
