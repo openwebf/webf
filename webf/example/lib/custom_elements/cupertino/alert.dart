@@ -4,18 +4,21 @@ import 'package:webf/webf.dart';
 class FlutterCupertinoAlert extends WidgetElement {
   FlutterCupertinoAlert(super.context);
 
+  String? _tempTitle;
+  String? _tempMessage;
+
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
     return CupertinoAlertDialog(
       title: Text(
-        getAttribute('title') ?? '',
+        _tempTitle ?? getAttribute('title') ?? '',
         style: const TextStyle(
           fontSize: 17,
           fontWeight: FontWeight.w600,
         ),
       ),
       content: Text(
-        getAttribute('message') ?? '',
+        _tempMessage ?? getAttribute('message') ?? '',
         style: const TextStyle(
           fontSize: 13,
           color: CupertinoColors.black,
@@ -28,7 +31,7 @@ class FlutterCupertinoAlert extends WidgetElement {
   List<Widget> _buildActions() {
     final actions = <Widget>[];
 
-    // 取消按钮（可选）
+    // Cancel button, optional
     final cancelText = getAttribute('cancel-text');
     if (cancelText != null && cancelText != '') {
       actions.add(
@@ -42,7 +45,7 @@ class FlutterCupertinoAlert extends WidgetElement {
       );
     }
 
-    // 确认按钮
+    // Confirm button
     final confirmText = getAttribute('confirm-text') ?? '确定';
     actions.add(
       CupertinoDialogAction(
@@ -62,6 +65,14 @@ class FlutterCupertinoAlert extends WidgetElement {
     super.initializeMethods(methods);
 
     methods['show'] = BindingObjectMethodSync(call: (args) {
+      if (args.isNotEmpty) {
+        final Map<String, dynamic> options = args[0];
+        _tempTitle = options['title']?.toString();
+        _tempMessage = options['message']?.toString();
+      }
+      print('showCupertinoDialog');
+      print(_tempTitle);
+      print(_tempMessage);
       showCupertinoDialog(
         context: context!,
         builder: (BuildContext context) => build(context, childNodes),
@@ -69,6 +80,8 @@ class FlutterCupertinoAlert extends WidgetElement {
     });
 
     methods['hide'] = BindingObjectMethodSync(call: (args) {
+      _tempTitle = null;
+      _tempMessage = null;
       Navigator.of(context!).pop();
     });
   }
