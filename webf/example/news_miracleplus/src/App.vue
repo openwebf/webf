@@ -1,33 +1,33 @@
 <template>
-  <webf-router-link path="/register" @mount="handleRouterMounted('register')" @unmount="handleRouterUnmounted">
-    <register-page v-if="activedRouter === 'register'"></register-page>
+  <webf-router-link path="/register" @mount="handleRouterMounted(ROUTE_FLAGS.REGISTER)">
+    <register-page v-if="isRouteActive(ROUTE_FLAGS.REGISTER)"></register-page>
   </webf-router-link>
-  <webf-router-link path="/login" @mount="handleRouterMounted('login')" @unmount="handleRouterUnmounted">
-    <login-page v-if="activedRouter === 'login'"></login-page>
+  <webf-router-link path="/login" @mount="handleRouterMounted(ROUTE_FLAGS.LOGIN)">
+    <login-page v-if="isRouteActive(ROUTE_FLAGS.LOGIN)"></login-page>
   </webf-router-link>
-  <webf-router-link path="/share_link" @mount="handleRouterMounted('share_link')" @unmount="handleRouterUnmounted">
-    <share-link-page v-if="activedRouter === 'share_link'"></share-link-page>
+  <webf-router-link path="/share_link" @mount="handleRouterMounted(ROUTE_FLAGS.SHARE_LINK)">
+    <share-link-page v-if="isRouteActive(ROUTE_FLAGS.SHARE_LINK)"></share-link-page>
   </webf-router-link>
-  <webf-router-link path="/user" @mount="handleRouterMounted('user')" @unmount="handleRouterUnmounted">
-    <user-page v-if="activedRouter === 'user'"></user-page>
+  <webf-router-link path="/user" @mount="handleRouterMounted(ROUTE_FLAGS.USER)">
+    <user-page v-if="isRouteActive(ROUTE_FLAGS.USER)"></user-page>
   </webf-router-link>
-  <webf-router-link path="/edit" @mount="handleRouterMounted('edit')" @unmount="handleRouterUnmounted">
-    <edit-page v-if="activedRouter === 'edit'"></edit-page>
+  <webf-router-link path="/edit" @mount="handleRouterMounted(ROUTE_FLAGS.EDIT)">
+    <edit-page v-if="isRouteActive(ROUTE_FLAGS.EDIT)"></edit-page>
   </webf-router-link>
-  <webf-router-link path="/setting" @mount="handleRouterMounted('setting')" @unmount="handleRouterUnmounted">
-    <setting-page v-if="activedRouter === 'setting'"></setting-page>
+  <webf-router-link path="/setting" @mount="handleRouterMounted(ROUTE_FLAGS.SETTING)">
+    <setting-page v-if="isRouteActive(ROUTE_FLAGS.SETTING)"></setting-page>
   </webf-router-link>
-  <webf-router-link path="/user_agreement" @mount="handleRouterMounted('user_agreement')" @unmount="handleRouterUnmounted">
-    <user-agreement-page v-if="activedRouter === 'user_agreement'"></user-agreement-page>
+  <webf-router-link path="/user_agreement" @mount="handleRouterMounted(ROUTE_FLAGS.USER_AGREEMENT)">
+    <user-agreement-page v-if="isRouteActive(ROUTE_FLAGS.USER_AGREEMENT)"></user-agreement-page>
   </webf-router-link>
-  <webf-router-link path="/privacy_policy" @mount="handleRouterMounted('privacy_policy')" @unmount="handleRouterUnmounted">
-    <privacy-policy-page v-if="activedRouter === 'privacy_policy'"></privacy-policy-page>
+  <webf-router-link path="/privacy_policy" @mount="handleRouterMounted(ROUTE_FLAGS.PRIVACY_POLICY)">
+    <privacy-policy-page v-if="isRouteActive(ROUTE_FLAGS.PRIVACY_POLICY)"></privacy-policy-page>
   </webf-router-link>
-  <webf-router-link path="/answer" @mount="handleRouterMounted('answer')" @unmount="handleRouterUnmounted">
-    <answer-page v-if="activedRouter === 'answer'"></answer-page>
+  <webf-router-link path="/answer" @mount="handleRouterMounted(ROUTE_FLAGS.ANSWER)">
+    <answer-page v-if="isRouteActive(ROUTE_FLAGS.ANSWER)"></answer-page>
   </webf-router-link>
-  <webf-router-link path="/question" @mount="handleRouterMounted('question')" @unmount="handleRouterUnmounted">
-    <question-page v-if="activedRouter === 'question'"></question-page>
+  <webf-router-link path="/question" @mount="handleRouterMounted(ROUTE_FLAGS.QUESTION)">
+    <question-page v-if="isRouteActive(ROUTE_FLAGS.QUESTION)"></question-page>
   </webf-router-link>
   <webf-router-link path="/topic" @mount="handleRouterMounted('topic')" @unmount="handleRouterUnmounted">
     <topic-page v-if="activedRouter === 'topic'"></topic-page>
@@ -82,6 +82,37 @@ import AnswerPage from '@/Pages/AnswerPage.vue';
 import QuestionPage from '@/Pages/QuestionPage.vue';
 import TopicPage from '@/Pages/TopicPage.vue';
 import tabBarManager from '@/utils/tabBarManager';
+
+// Define route flags as bit positions
+const ROUTE_FLAGS = {
+  REGISTER: 0x001,        // 0000 0000 0001
+  LOGIN: 0x002,           // 0000 0000 0010
+  SHARE_LINK: 0x004,      // 0000 0000 0100
+  USER: 0x008,            // 0000 0000 1000
+  EDIT: 0x010,            // 0000 0001 0000
+  SETTING: 0x020,         // 0000 0010 0000
+  USER_AGREEMENT: 0x040,  // 0000 0100 0000
+  PRIVACY_POLICY: 0x080,  // 0000 1000 0000
+  ANSWER: 0x100,          // 0001 0000 0000
+  QUESTION: 0x200,        // 0010 0000 0000
+  HOME: 0x400             // 0100 0000 0000
+};
+
+// Map paths to route flags
+// const PATH_TO_FLAG = {
+//   '/register': ROUTE_FLAGS.REGISTER,
+//   '/login': ROUTE_FLAGS.LOGIN,
+//   '/share_link': ROUTE_FLAGS.SHARE_LINK,
+//   '/user': ROUTE_FLAGS.USER,
+//   '/edit': ROUTE_FLAGS.EDIT,
+//   '/setting': ROUTE_FLAGS.SETTING,
+//   '/user_agreement': ROUTE_FLAGS.USER_AGREEMENT,
+//   '/privacy_policy': ROUTE_FLAGS.PRIVACY_POLICY,
+//   '/answer': ROUTE_FLAGS.ANSWER,
+//   '/question': ROUTE_FLAGS.QUESTION,
+//   '/home': ROUTE_FLAGS.HOME
+// };
+
 export default {
   name: 'App',
   components: {
@@ -107,14 +138,33 @@ export default {
     tabBarManager.setCurrentPath('/home');
   },
   methods: {
-    handleRouterMounted(page) {
-      console.log('handleRouterMounted: ', page);
-      this.activedRouter = page;
+    // Activate a specific route flag while preserving existing flags
+    handleRouterMounted(flag) {
+      console.log('handleRouterMounted with flag:', flag.toString(16));
+      
+      // Set the active route flag without clearing previous flags
+      this.routeFlags |= flag;
+      
+      // Get the page name from the current history path
+      const path = window.webf.hybridHistory.path;
+      console.log('Current path:', path);
+      
+      // Extract page name from path
+      const page = path.substring(1); // Remove leading slash
+      
       tabBarManager.setCurrentPath(`/${page}`);
     },
-    handleRouterUnmounted() {
-      this.activedRouter = '';
+    
+    // Deactivate a specific route flag
+    deactivateRoute(flag) {
+      this.routeFlags &= ~flag;
     },
+    
+    // Check if a specific route is active
+    isRouteActive(flag) {
+      return (this.routeFlags & flag) === flag;
+    },
+    
     handleTabChange(e) {
       console.log('handleTabChange: ', e.detail);
       this.currentIndex = e.detail;
@@ -122,8 +172,9 @@ export default {
   },
   data() {
     return {
-      activedRouter: '',
-      currentIndex: 0
+      routeFlags: 0, // Initialize with no routes active
+      currentIndex: 0,
+      ROUTE_FLAGS // Make flags available in template
     };
   },
 };
