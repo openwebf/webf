@@ -29,6 +29,9 @@
   <webf-router-link path="/question" @mount="handleRouterMounted('question')" @unmount="handleRouterUnmounted">
     <question-page v-if="activedRouter === 'question'"></question-page>
   </webf-router-link>
+  <webf-router-link path="/topic" @mount="handleRouterMounted('topic')" @unmount="handleRouterUnmounted">
+    <topic-page v-if="activedRouter === 'topic'"></topic-page>
+  </webf-router-link>
   <webf-router-link path="/home">
     <flutter-tab-bar ref="tabBar" class="tab-bar" backgroundColor="#FFFFFF" activeColor="#007AFF"
       :currentIndex="currentIndex" @tabchange="handleTabChange">
@@ -77,6 +80,7 @@ import UserAgreementPage from '@/Pages/UserAgreementPage.vue';
 import PrivacyPolicyPage from '@/Pages/PrivacyPolicyPage.vue';
 import AnswerPage from '@/Pages/AnswerPage.vue';
 import QuestionPage from '@/Pages/QuestionPage.vue';
+import TopicPage from '@/Pages/TopicPage.vue';
 import tabBarManager from '@/utils/tabBarManager';
 export default {
   name: 'App',
@@ -96,6 +100,7 @@ export default {
     PrivacyPolicyPage,
     AnswerPage,
     QuestionPage,
+    TopicPage,
   },
   mounted() {
     tabBarManager.setTabBarRef(this.$refs.tabBar);

@@ -178,7 +178,7 @@ export default {
     },
     goToQuestionPage() {
       window.webf.hybridHistory.pushState({
-        id: 'xr9ho0',
+        id: 'zwqhrL',
       }, '/question');
     },
     goToSettingPage() {
