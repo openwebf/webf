@@ -20,6 +20,13 @@ class HybridHistory {
     webf.invokeModule('HybridHistory', 'pushState', [state, name]);
   }
 
+  replaceState(state: any, name: string) {
+    if (arguments.length < 2) {
+      throw TypeError("Failed to execute 'replaceState' on 'HybridHistory': 2 arguments required, but only " + arguments.length + " present");
+    }
+    webf.invokeModule('HybridHistory', 'replaceState', [state, name]);
+  }
+
   get path() {
     return webf.invokeModule('HybridHistory', 'path');
   }

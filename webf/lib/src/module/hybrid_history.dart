@@ -29,6 +29,10 @@ class HybridHistoryModule extends BaseModule {
     Navigator.pushNamed(moduleManager!.controller.buildContextStack.last, name, arguments: state);
   }
 
+  void replaceState(state, String name) {
+    Navigator.pushReplacementNamed(moduleManager!.controller.buildContextStack.last, name, arguments: state);
+  }
+
   String path() {
     String? currentPath = ModalRoute.of(moduleManager!.controller.buildContextStack.last)?.settings.name;
     return currentPath ?? '';
@@ -48,6 +52,9 @@ class HybridHistoryModule extends BaseModule {
         break;
       case 'pushState':
         pushState(params[0], params[1]);
+        break;
+      case 'replaceState':
+        replaceState(params[0], params[1]);
         break;
       case 'path':
         return path();
