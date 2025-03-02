@@ -14,7 +14,7 @@
                 +{{ countryCode }}
               </div>
             </flutter-cupertino-input>
-            <flutter-cupertino-input class="pwd-input" placeholder="请设置密码" type="password"
+            <flutter-cupertino-input class="pwd-input" placeholder="请输入密码" type="password"
               @input="handlePasswordInput" />
             <flutter-cupertino-button type="primary" @click="handleLoginByPassword" class="login-button">
               登录
@@ -59,7 +59,6 @@
     <alert-dialog
       ref="alertRef"
       title="提示"
-      message="请输入正确的手机号"
       confirm-text="确定"
     />
   </div>
@@ -94,7 +93,6 @@ export default {
   },
   methods: {
     handlePhoneInput(e) {
-      console.log('handlePhoneInput', e.detail);
       this.phoneNumber = e.detail;
     },
 
@@ -102,9 +100,9 @@ export default {
       if (this.countdown > 0) return;
       
       if (!this.phoneNumber) {
-        // TODO: 显示错误提示
-        console.error('请输入手机号');
-        this.$refs.alertRef.show();
+        this.$refs.alertRef.show({
+          message: '请输入正确的手机号',
+        });
         return;
       }
       
@@ -118,54 +116,95 @@ export default {
         this.startCountdown();
       } catch (error) {
         console.error('发送验证码失败', error);
+        this.$refs.alertRef.show({
+          message: '发送验证码失败',
+        });
       }
     },
     handleVerifyCodeInput(e) {
-      console.log('handleVerifyCodeInput', e);
       this.verifyCode = e.detail;
     },
     handlePasswordInput(e) {
-      console.log('handlePasswordInput', e);
       this.pwd = e.detail;
     },
     async handleLoginByPassword() {
+      if (!this.phoneNumber) {
+        console.log('请输入正确的手机号');
+        this.$refs.alertRef.show({
+          message: '请输入正确的手机号',
+        });
+        return;
+      }
+
       try {
-        console.log('this.phoneNumber', this.phoneNumber);
-        console.log('this.countryCode', this.countryCode);
-        console.log('this.pwd', this.pwd);
         const res = await api.auth.loginByPhonePassword({
-          // TODO: 用户选择 countryCode
           country_code: this.countryCode,
           phone: this.phoneNumber,
           password: this.pwd,
         });
-        console.log('登录信息', res);
-        const userStore = useUserStore();
-        userStore.setUserInfo({
-          ...res.data.user,
-          token: res.data.token,
-        });
-        tabBarManager.switchTab('/home');
+        if (res.success !== false && res.data.token) {
+          const userStore = useUserStore();
+          userStore.setUserInfo({
+            ...res.data.user,
+            token: res.data.token,
+          });
+
+          const wholeUserInfo = await this.getUserInfo();
+          userStore.setUserInfo({
+            ...res.data.user,
+            ...wholeUserInfo,
+          });
+ 
+          tabBarManager.switchTab('/home');
+        } else {
+          this.$refs.alertRef.show({
+            message: res.message,
+          });
+        }
       } catch (error) {
         console.error('登录失败', error);
       }
     },
     async handleLoginByPhoneCode() {
+      if (!this.phoneNumber) {
+        this.$refs.alertRef.show({
+          message: '请输入正确的手机号',
+        });
+        return;
+      }
+
       try {
-        console.log('this.phoneNumber', this.phoneNumber);
-        console.log('this.countryCode', this.countryCode);
-        console.log('this.verifyCode', this.verifyCode);
         const res = await api.auth.loginByPhoneCode({
-          // TODO: anonymous_id
-          // anonymous_id: '',
           phone: this.phoneNumber,
           country_code: this.countryCode,
           code: this.verifyCode,
         });
-        console.log('登录信息', res);
+        if (res.success !== false && res.data.token) {
+          const userStore = useUserStore();
+          userStore.setUserInfo({
+            ...res.data.user,
+            token: res.data.token,
+          });
+
+          const wholeUserInfo = await this.getUserInfo();
+          userStore.setUserInfo({
+            ...res.data.user,
+            ...wholeUserInfo,
+          });
+ 
+          tabBarManager.switchTab('/home');
+        } else {
+          this.$refs.alertRef.show({
+            message: res.message,
+          });
+        }
       } catch (error) {
         console.error('登录失败', error);
       }
+    },
+    async getUserInfo() {
+      const userInfoRes = await api.auth.getUserInfo();
+      return userInfoRes.object;
     },
     goToRegister() {
       window.webf.hybridHistory.pushState({}, '/register');

@@ -39,7 +39,6 @@
     <alert-dialog
       ref="alertRef"
       title="提示"
-      message="请输入正确的手机号"
       confirm-text="确定"
     />
   </div>
@@ -49,8 +48,8 @@ import LogoHeader from '@/Components/LogoHeader.vue';
 import AlertDialog from '@/Components/AlertDialog.vue';
 import { api } from '@/api';
 import { getCountryCodeList } from '@/utils/getCountryCodeList';
-// import tabBarManager from '@/utils/tabBarManager';
-
+import tabBarManager from '@/utils/tabBarManager';
+import { useUserStore } from '@/stores/userStore';
 export default {
   name: 'RegisterPage',
   data() {
@@ -69,12 +68,8 @@ export default {
     LogoHeader,
     AlertDialog,
   },
-  mounted() {
-    console.log('RegisterPage mounted');
-  },
   methods: {
     handlePhoneInput(e) {
-      console.log('handlePhoneInput', e.detail);
       this.phoneNumber = e.detail;
     },
 
@@ -82,7 +77,9 @@ export default {
       if (this.countdown > 0) return;
       
       if (!this.phoneNumber) {
-        this.$refs.alertRef.show();
+        this.$refs.alertRef.show({
+          message: '请输入正确的手机号',
+        });
         return;
       }
       
@@ -96,7 +93,9 @@ export default {
         this.countdown = 60;
         this.startCountdown();
       } catch (error) {
-        console.error('发送验证码失败', error);
+        this.$refs.alertRef.show({
+          message: '发送验证码失败',
+        });
       }
     },
 
@@ -115,29 +114,56 @@ export default {
     },
 
     handleVerifyCodeInput(e) {
-      console.log('handleVerifyCodeInput', e);
       this.verifyCode = e.detail;
     },
     handlePasswordInput(e) {
-      console.log('handlePasswordInput', e);
       this.setPwd = e.detail;
 
     },
     async handleRegister() {
-      console.log('123123');
-      console.log('this.phoneNumber', this.phoneNumber);
+      if (!this.phoneNumber) {
+        this.$refs.alertRef.show({
+          message: '请输入正确的手机号',
+        });
+        return;
+      }
+      if (!this.verifyCode) {
+        this.$refs.alertRef.show({
+          message: '请输入验证码',
+        });
+        return;
+      }
+      if (!this.setPwd) {
+        this.$refs.alertRef.show({
+          message: '请设置密码',
+        });
+        return;
+      }
+      
       const res = await api.auth.register({
         phone: this.phoneNumber,
         password: this.setPwd,
       });
-      console.log('res', res);
+      // TODO: 待验证返回参数
+      if (res.success !== false && res.data.token) {
+        const userStore = useUserStore();
+        userStore.setUserInfo({
+          ...res.data.user,
+          token: res.data.token,
+        });
+
+        tabBarManager.switchTab('/home');
+      } else {
+        this.$refs.alertRef.show({
+          message: res.message,
+        });
+      }
+        
     },
     onCountryCodePickerClose() {
-      console.log('onCountryCodePickerClose');
       this.isSelectingCountryCode = false;
     },
     onCountryCodePickerChange(e) {
-      console.log('onCountryCodePickerChange', e.detail);
       this.countryCode = e.detail;
     },
     goToLogin() {
