@@ -33,6 +33,14 @@
             回答详情
           </flutter-cupertino-button>
       </div>
+      <div class="edit-block" v-if="isLoggedIn">
+          <flutter-cupertino-button class="setting" @click="goToLoginPage">
+            去登录页
+          </flutter-cupertino-button>
+          <flutter-cupertino-button class="setting" @click="goToHomePage">
+            切换 tab
+          </flutter-cupertino-button>
+      </div>
       
       <div class="karma-count">
         <div>社区 Karma： {{ userInfo.karma || 0 }}</div>
@@ -158,8 +166,7 @@ export default {
   },
   methods: {
     goToHomePage() {
-      console.log('tabBarManager.switchTab: ', tabBarManager.switchTab);
-      tabBarManager.switchTab('/home');
+      tabBarManager.switchTab('/notification');
     },
     goToRegisterPage() {
       window.webf.hybridHistory.pushState({}, '/register');

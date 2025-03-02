@@ -151,7 +151,7 @@ export default {
 
           const wholeUserInfo = await this.getUserInfo();
           userStore.setUserInfo({
-            ...res.data.user,
+            ...userStore.userInfo,
             ...wholeUserInfo,
           });
  
@@ -204,7 +204,7 @@ export default {
     },
     async getUserInfo() {
       const userInfoRes = await api.auth.getUserInfo();
-      return userInfoRes.object;
+      return userInfoRes.data;
     },
     goToRegister() {
       window.webf.hybridHistory.pushState({}, '/register');
