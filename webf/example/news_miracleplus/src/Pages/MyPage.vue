@@ -2,7 +2,7 @@
   <div class="my-page">
     <div class="user-info-block">
       <img :src="formattedAvatar" class="avatar" />
-      <div class="name" v-if="isLoggedIn"  @click="goToLoginPage">{{ userInfo.name }}</div>
+      <div class="name" v-if="isLoggedIn">{{ userInfo.name }}</div>
       <div class="login-button" v-else @click="goToLoginPage">登录/注册</div>
       <div class="title" v-if="isLoggedIn">
         {{ formattedTitle }}
@@ -31,14 +31,6 @@
           </flutter-cupertino-button>
           <flutter-cupertino-button class="setting" @click="goToAnswerPage">
             回答详情
-          </flutter-cupertino-button>
-      </div>
-      <div class="edit-block" v-if="isLoggedIn">
-          <flutter-cupertino-button class="setting" @click="goToLoginPage">
-            去登录页
-          </flutter-cupertino-button>
-          <flutter-cupertino-button class="setting" @click="goToHomePage">
-            切换 tab
           </flutter-cupertino-button>
       </div>
       
@@ -100,7 +92,6 @@
 import LoginTip from '@/Components/LoginTip.vue';
 
 import { useUserStore } from '@/stores/userStore';
-import tabBarManager from '@/utils/tabBarManager';
 import formatAvatar from '@/utils/formatAvatar';
 // import { api } from '@/api';
 export default {
@@ -165,12 +156,6 @@ export default {
     console.log('MyPage beforeUnmount');
   },
   methods: {
-    goToHomePage() {
-      tabBarManager.switchTab('/notification');
-    },
-    goToRegisterPage() {
-      window.webf.hybridHistory.pushState({}, '/register');
-    },
     goToLoginPage() {
       window.webf.hybridHistory.pushState({}, '/login');
     },
