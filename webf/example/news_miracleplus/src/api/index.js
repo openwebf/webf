@@ -166,6 +166,11 @@ export const api = {
     getAnswerDetail: (id) => request(`/v1/answers/${id}`, {
       requireAuth: true,
     }),
+  },
+  topic: {
+    getDetail: (id) => request(`/v1/topics/${id}`, {
+      requireAuth: true,
+    }),
   }
 };
 
