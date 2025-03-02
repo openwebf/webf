@@ -61,17 +61,7 @@ class RouterLinkElement extends WidgetElement {
   @override
   flutter.Widget build(flutter.BuildContext context, ChildNodeList childNodes) {
     return WebFHTMLElement(tagName: 'DIV', children: childNodes.toWidgetList(), inlineStyle: {
-      // 'overflow': 'auto',
       'position': 'relative'
     }, controller: ownerDocument.controller, parentElement: this);
-
-    // WebFRouterViewState? routerViewState = context.findAncestorStateOfType<WebFRouterViewState>();
-    // WebFState? webFState = context.findAncestorStateOfType<WebFState>();
-    //
-    // if ((webFState != null && webFState.widget.controller.initialRoute == _path) || routerViewState != null) {
-
-    // }
-
-    // return flutter.SizedBox.shrink();
   }
 }

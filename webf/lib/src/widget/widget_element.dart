@@ -345,8 +345,10 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
   void requestForBuild(AdapterUpdateReason reason) {
-    WebFWidgetElementState? state = findAncestorStateOfType<WebFWidgetElementState>();
-    state?.requestUpdateState(null, reason);
+    widget.widgetElement.states.forEach((state) {
+      if (!state.mounted) return;
+      (state as WebFWidgetElementState).requestUpdateState(null, reason);
+    });
   }
 
   @override

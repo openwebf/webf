@@ -43,7 +43,7 @@ class FlutterListViewElement extends WidgetElement {
     if (context == null) return;
     ScrollController? scrollController = PrimaryScrollController.maybeOf(context!);
     scrollController?.removeListener(_scrollListener);
-    super.dispose();
+    super.stateDispose();
   }
 
   @override
