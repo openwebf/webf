@@ -9,17 +9,19 @@ class HybridHistory {
   get state() {
     return JSON.parse(webf.invokeModule('HybridHistory', 'state'));
   }
-
   back() {
      webf.invokeModule('HybridHistory', 'back');
   }
-
   pushState(state: any, name: string) {
     if (arguments.length < 2) {
       throw TypeError("Failed to execute 'pushState' on 'HybridHistory': 2 arguments required, but only " + arguments.length + " present");
     }
 
     webf.invokeModule('HybridHistory', 'pushState', [state, name]);
+  }
+
+  get path() {
+    return webf.invokeModule('HybridHistory', 'path');
   }
 }
 

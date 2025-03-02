@@ -29,6 +29,11 @@ class HybridHistoryModule extends BaseModule {
     Navigator.pushNamed(moduleManager!.controller.buildContextStack.last, name, arguments: state);
   }
 
+  String path() {
+    String? currentPath = ModalRoute.of(moduleManager!.controller.buildContextStack.last)?.settings.name;
+    return currentPath ?? '';
+  }
+
   @override
   String invoke(String method, params, InvokeModuleCallback callback) {
     switch (method) {
@@ -44,6 +49,8 @@ class HybridHistoryModule extends BaseModule {
       case 'pushState':
         pushState(params[0], params[1]);
         break;
+      case 'path':
+        return path();
     }
     return EMPTY_STRING;
   }
