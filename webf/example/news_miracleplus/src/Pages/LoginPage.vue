@@ -19,6 +19,10 @@
             <flutter-cupertino-button type="primary" @click="handleLoginByPassword" class="login-button">
               登录
             </flutter-cupertino-button>
+
+            <flutter-cupertino-button @click="switchTab" class="login-button">
+              switchTab
+            </flutter-cupertino-button>
           </div>
           <div class="login-footer">
             <div class="login-footer-text">忘记密码？</div>
@@ -236,6 +240,9 @@ export default {
           clearInterval(this.timer);
         }
       }, 1000);
+    },
+    switchTab() {
+      tabBarManager.switchTab('/home');
     },
   },
   beforeUnmount() {
