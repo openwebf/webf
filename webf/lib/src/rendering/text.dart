@@ -229,8 +229,9 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     if (parent is RenderBoxModel) {
       RenderBoxModel parentRenderBoxModel = parent as RenderBoxModel;
       BoxConstraints parentConstraints = parentRenderBoxModel.constraints;
-
-      if (parentConstraints.maxWidth == double.infinity) {
+      if (parentRenderBoxModel.renderStyle.target.hasScroll && parentRenderBoxModel is! RenderFlexLayout) {
+        maxConstraintWidth = (parentRenderBoxModel).constraints.maxWidth;
+      } else if (parentConstraints.maxWidth == double.infinity) {
         final ParentData? parentParentData = parentRenderBoxModel.parentData;
         // Width of positioned element does not constrained by parent.
         if (parentParentData is RenderLayoutParentData && parentParentData.isPositioned) {
