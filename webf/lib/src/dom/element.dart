@@ -437,7 +437,7 @@ abstract class Element extends ContainerNode
     super.didAttachRenderer(flutterWidgetElement);
 
     // The node attach may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
-    renderStyle.markAdjacentRenderParagraphNeedsLayout();
+    // renderStyle.markAdjacentRenderParagraphNeedsLayout();
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommandStep();
