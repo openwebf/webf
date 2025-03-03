@@ -223,7 +223,7 @@ abstract class Element extends ContainerNode
     }
 
     RenderObject? parent = attachedRenderer?.parent;
-    while(parent is! RenderLayoutBoxWrapper) {
+    while (parent is! RenderLayoutBoxWrapper) {
       parent = parent?.parent;
     }
 
@@ -514,11 +514,10 @@ abstract class Element extends ContainerNode
 
   // Calculate sticky status according to scroll offset and scroll direction
   void _applyStickyChildrenOffset() {
-    return;
-    // RenderLayoutBox scrollContainer = renderStyle.domRenderBoxModel as RenderLayoutBox;
-    // for (RenderBoxModel stickyChild in scrollContainer.stickyChildren) {
-    //   CSSPositionedLayout.applyStickyChildOffset(scrollContainer, stickyChild);
-    // }
+    RenderLayoutBox scrollContainer = renderStyle.attachedRenderBoxModel as RenderLayoutBox;
+    for (RenderBoxModel stickyChild in scrollContainer.stickyChildren) {
+      CSSPositionedLayout.applyStickyChildOffset(scrollContainer, stickyChild);
+    }
   }
 
   void _updateHostingWidgetWithOverflow(CSSOverflowType oldOverflow) {
@@ -533,13 +532,12 @@ abstract class Element extends ContainerNode
   void _updateHostingWidgetWithPosition(CSSPositionType oldPosition) {
     assert(managedByFlutterWidget);
     CSSPositionType currentPosition = renderStyle.position;
+    if (oldPosition == currentPosition) return;
 
     // No need to detach and reattach renderBoxMode when its position
     // changes between static and relative.
-    if (!(oldPosition == CSSPositionType.static && currentPosition == CSSPositionType.relative) &&
-        !(oldPosition == CSSPositionType.relative && currentPosition == CSSPositionType.static)) {
-      Map<flutter.RenderObjectElement, RenderBoxModel> widgetRenderObjects = renderStyle.widgetRenderObjects;
-
+    if (currentPosition == CSSPositionType.absolute ||
+        currentPosition == CSSPositionType.fixed) {
       // Find the renderBox of its containing block.
       Element? containingBlockElement = getContainingBlockElement();
 
@@ -549,6 +547,14 @@ abstract class Element extends ContainerNode
           ToPositionPlaceHolderUpdateReason(positionedElement: this, containingBlockElement: containingBlockElement));
       containingBlockElement.renderStyle.requestWidgetToRebuild(
           AttachPositionedChild(positionedElement: this, containingBlockElement: containingBlockElement));
+    } else if (currentPosition == CSSPositionType.sticky) {
+      // Find the renderBox of its containing block.
+      Element? containingBlockElement = getContainingBlockElement();
+
+      if (containingBlockElement == null) return;
+
+      renderStyle.requestWidgetToRebuild(
+          ToPositionPlaceHolderUpdateReason(positionedElement: this, containingBlockElement: containingBlockElement));
     }
   }
 
@@ -658,6 +664,7 @@ abstract class Element extends ContainerNode
     _attributeProperties.clear();
     ownerDocument.clearElementStyleDirty(this);
     positionedElements.clear();
+    stickyPositionedElements.clear();
     holderAttachedPositionedElement = null;
     holderAttachedContainingBlockElement = null;
     _beforeElement?.dispose();
@@ -1405,7 +1412,7 @@ abstract class Element extends ContainerNode
           captured = byteData!.buffer.asUint8List();
         } else {
           Image image =
-          await renderStyle.toImage(devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
+              await renderStyle.toImage(devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
           ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
           captured = byteData!.buffer.asUint8List();
         }

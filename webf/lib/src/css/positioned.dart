@@ -228,7 +228,8 @@ class CSSPositionedLayout {
   // the offsets are automatically calculated in reference to the nearest scrollport.
   // https://www.w3.org/TR/css-position-3/#stickypos-insets
   static void applyStickyChildOffset(RenderBoxModel scrollContainer, RenderBoxModel child) {
-    RenderPositionPlaceholder childRenderPositionHolder = child.renderPositionPlaceholder!;
+    RenderPositionPlaceholder? childRenderPositionHolder = child.renderPositionPlaceholder;
+    if (childRenderPositionHolder == null) return;
     RenderLayoutParentData childPlaceHolderParentData = childRenderPositionHolder.parentData as RenderLayoutParentData;
     // Original offset of sticky child in relative status
     Offset childOriginalOffset = childPlaceHolderParentData.offset;

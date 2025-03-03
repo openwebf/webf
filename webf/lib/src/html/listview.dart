@@ -58,7 +58,7 @@ class FlutterListViewElement extends WidgetElement {
             if (node is dom.Element) {
               CSSPositionType positionType = node.renderStyle.position;
               if (positionType == CSSPositionType.absolute || positionType == CSSPositionType.fixed) {
-                return PositionPlaceHolder(node.holderAttachedPositionedElement!);
+                return PositionPlaceHolder(node.holderAttachedPositionedElement!, node);
               }
 
               return LayoutBoxWrapper(ownerElement: node, child: childNodes.elementAt(index).toWidget());
