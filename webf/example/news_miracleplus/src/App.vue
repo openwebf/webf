@@ -29,8 +29,8 @@
   <webf-router-link path="/question" @mount="handleRouterMounted(ROUTE_FLAGS.QUESTION)">
     <question-page v-if="isRouteActive(ROUTE_FLAGS.QUESTION)"></question-page>
   </webf-router-link>
-  <webf-router-link path="/topic" @mount="handleRouterMounted('topic')" @unmount="handleRouterUnmounted">
-    <topic-page v-if="activedRouter === 'topic'"></topic-page>
+  <webf-router-link path="/topic" @mount="handleRouterMounted(ROUTE_FLAGS.TOPIC)">
+    <topic-page v-if="isRouteActive(ROUTE_FLAGS.TOPIC)"></topic-page>
   </webf-router-link>
   <webf-router-link path="/home">
     <flutter-tab-bar ref="tabBar" class="tab-bar" backgroundColor="#FFFFFF" activeColor="#007AFF"
@@ -95,7 +95,8 @@ const ROUTE_FLAGS = {
   PRIVACY_POLICY: 0x080,  // 0000 1000 0000
   ANSWER: 0x100,          // 0001 0000 0000
   QUESTION: 0x200,        // 0010 0000 0000
-  HOME: 0x400             // 0100 0000 0000
+  HOME: 0x400,            // 0100 0000 0000
+  TOPIC: 0x800,           // 1000 0000 0000
 };
 
 // Map paths to route flags

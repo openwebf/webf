@@ -9,6 +9,7 @@
 
             <!-- <CommentInput @submit="handleCommentSubmit" /> -->
         </webf-listview>
+        <flutter-cupertino-loading ref="loading" />
     </div>
 </template>
 
@@ -41,11 +42,14 @@ export default {
         }
     },
     async mounted() {
+        this.$refs.loading.show({
+            text: '加载中...'
+        });
         const id = window.webf.hybridHistory.state.id;
         const res = await api.question.getDetail(id);
         this.question = res.data.question;
         this.answers = await this.fetchAnswers();
-
+        this.$refs.loading.hide();
         api.news.viewCount({ id, modelType: 'Question' });
     },
     methods: {

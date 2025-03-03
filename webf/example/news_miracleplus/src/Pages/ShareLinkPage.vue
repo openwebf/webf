@@ -14,6 +14,7 @@
         />
         <!-- <CommentInput @submit="handleCommentSubmit" /> -->
       </webf-listview>
+      <flutter-cupertino-loading ref="loading" />
     </div>
   </template>
   
@@ -23,7 +24,7 @@
   import PostContent from '@/Components/post/PostContent.vue';
   import InteractionBar from '@/Components/post/InteractionBar.vue';
   import CommentsSection from '@/Components/comment/CommentsSection.vue';
-  // import CommentInput from '@/Components/comment/CommentInput.vue';
+  import AlertDialog from '@/Components/AlertDialog.vue';
   
   export default {
     name: 'ShareLinkPage',
@@ -32,7 +33,7 @@
       PostContent,
       InteractionBar,
       CommentsSection,
-      // CommentInput
+      AlertDialog,
     },
     data() {
       return {
@@ -43,15 +44,28 @@
     },
     async mounted() {
       console.log('share link page mounted');
+      this.$refs.loading.show({
+        text: '加载中'
+      });
       const id = window.webf.hybridHistory.state.id || '59251';
       console.log('id: ', id);
-      const res = await api.news.getDetail(id);
-      this.shareLink = res.data.share_link;
+      this.id = id;
+      await this.fetchShareLinkDetail();
       this.comments = await this.fetchComments(id);
-
+      this.$refs.loading.hide();
       api.news.viewCount({ id });
     },
     methods: {
+      async fetchShareLinkDetail() {
+        try {
+          const res = await api.news.getDetail(this.id);
+          this.shareLink = res.data.share_link;
+        } catch (error) {
+          this.$refs.alertRef.show({
+            message: '获取分享详情失败'
+          });
+        }
+      },
       async fetchComments() {
         // TODO: mock data
         const res = await api.comments.getList({ resourceId: 55558 });

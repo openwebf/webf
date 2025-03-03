@@ -56,6 +56,7 @@
             </webf-listview>
         </template>
     </feeds-tabs>
+    <flutter-cupertino-loading ref="loading" />
   </div>
 
 </template>
@@ -97,8 +98,12 @@ export default {
   },
   async activated() {
     console.log('HomePage activated');
+    this.$refs.loading.show({
+      text: '加载中'
+    });
     const res = await api.news.getHotList();
     this.hotList = res.data.feeds;
+    this.$refs.loading.hide();
   },
   async deactivated() {
     console.log('HomePage deactivated');
@@ -135,6 +140,9 @@ export default {
         console.log('already loaded', this.tabsConfig[tabIndex].id);
         return;
       }
+      this.$refs.loading.show({
+        text: '加载中'
+      });
       if (tabIndex === 0) {
         const res = await api.news.getHotList();
         this.hotList = res.data.feeds;
@@ -155,6 +163,7 @@ export default {
         this.productList = res.data.displays;
       }
       this.loadedTabs.add(this.tabsConfig[tabIndex].id);
+      this.$refs.loading.hide();
     },
   }
 }

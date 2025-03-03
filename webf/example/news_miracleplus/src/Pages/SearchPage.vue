@@ -35,6 +35,7 @@
       <img src="@/assets/img/logo.png" alt="logo" />
       <div class="search-empty-text">最新最有趣的科技前沿内容</div>
     </div>
+    <flutter-cupertino-loading ref="loading" />
   </div>
 </template>
 
@@ -64,23 +65,22 @@ export default {
   },
   methods: {
     handleSearch(event) {
-      console.log('handleSearch', event.detail);
       this.hasSearch = true;
-      api.search.users({ keyword: event.detail }).then(res => {
-        console.log('search res', res);
-        this.users = res.data.users;
+      this.$refs.loading.show({
+        text: '加载中'
       });
-      api.search.answers({ keyword: event.detail }).then(res => {
-        console.log('search res', res);
-        this.answers = res.data.answers;
-      });
-      api.search.questions({ keyword: event.detail }).then(res => {
-        console.log('search res', res);
-        this.questions = res.data.questions;
-      });
-      api.search.shareLinks({ keyword: event.detail }).then(res => {
-        console.log('search res', res);
-        this.shareLinks = res.data.share_links;
+      Promise.all([
+        api.search.users({ keyword: event.detail }),
+        api.search.answers({ keyword: event.detail }),
+        api.search.questions({ keyword: event.detail }),
+        api.search.shareLinks({ keyword: event.detail })
+      ]).then(([usersRes, answersRes, questionsRes, shareLinksRes]) => {
+        console.log('search res', usersRes, answersRes, questionsRes, shareLinksRes);
+        this.users = usersRes.data.users;
+        this.answers = answersRes.data.answers;
+        this.questions = questionsRes.data.questions;
+        this.shareLinks = shareLinksRes.data.share_links;
+        this.$refs.loading.hide();
       });
     }
   }
