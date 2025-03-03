@@ -54,7 +54,11 @@ class FlutterCupertinoButton extends WidgetElement {
     final double borderRadius = shapeRadius[shape] ?? shapeRadius['default']!;
 
     Widget buttonChild = childNodes.isNotEmpty 
-        ? childNodes.first.toWidget() 
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: childNodes.map((child) => child.toWidget()).toList(),
+          )
         : const Text('');
 
     // Add loading spinner if loading
