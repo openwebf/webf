@@ -41,6 +41,7 @@
       title="提示"
       confirm-text="确定"
     />
+    <flutter-cupertino-toast ref="toast" />
   </div>
 </template>
 <script>
@@ -152,7 +153,13 @@ export default {
           token: res.data.token,
         });
 
-        tabBarManager.switchTab('/home');
+        this.$refs.toast.show({
+          type: 'success',
+          content: '注册成功',
+        });
+        setTimeout(() => {
+          tabBarManager.switchTab('/home');
+        }, 2000);
       } else {
         this.$refs.alertRef.show({
           message: res.message,

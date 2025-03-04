@@ -65,6 +65,7 @@
       title="提示"
       confirm-text="确定"
     />
+    <flutter-cupertino-toast ref="toast" />
   </div>
 </template>
 <script>
@@ -133,7 +134,6 @@ export default {
     },
     async handleLoginByPassword() {
       if (!this.phoneNumber) {
-        console.log('请输入正确的手机号');
         this.$refs.alertRef.show({
           message: '请输入正确的手机号',
         });
@@ -158,8 +158,15 @@ export default {
             ...userStore.userInfo,
             ...wholeUserInfo,
           });
+
+          this.$refs.toast.show({
+            type: 'success',
+            content: '登录成功',
+          });
+          setTimeout(() => {
+            tabBarManager.switchTab('/home');
+          }, 2000);
  
-          tabBarManager.switchTab('/home');
         } else {
           this.$refs.alertRef.show({
             message: res.message,
@@ -195,8 +202,14 @@ export default {
             ...res.data.user,
             ...wholeUserInfo,
           });
- 
-          tabBarManager.switchTab('/home');
+
+          this.$refs.toast.show({
+            type: 'success',
+            content: '登录成功',
+          });
+          setTimeout(() => {
+            tabBarManager.switchTab('/home');
+          }, 2000);
         } else {
           this.$refs.alertRef.show({
             message: res.message,
