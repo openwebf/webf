@@ -1,7 +1,7 @@
 <template>
     <div class="display-content">
       <!-- Title -->
-      <h2 class="title">{{ truncatedTitle }}</h2>
+      <div class="title">{{ truncatedTitle }}</div>
   
       <div class="content-wrapper">
         <!-- Logo Image -->
@@ -30,8 +30,8 @@
         return title.length > 50 ? title.slice(0, 50) + '...' : title ;
       },
       truncatedContent() {
-        const content = this.item.linkDescription;
-        return content.length > 100 ? content.slice(0, 100) + '...' : content;
+        const content = this.item.linkDescription || '';
+        return content.length > 100 ? content.slice(0, 97) + '...' : content;
       }
     }
   }
@@ -41,13 +41,16 @@
   .display-content {
     border: 1px solid #F3F4F6;
     border-radius: 8px;
-    padding: 4px 10px;
+    padding: 8px 10px;
     
     .title {
       font-size: 16px;
       font-weight: bold;
       margin-bottom: 5px;
       color: var(--font-color);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   
     .content-wrapper {
@@ -69,6 +72,8 @@
     .text-content {
       flex: 1;
       min-width: 0;
+      max-width: calc(100% - 50px);
+      overflow: hidden;
     }
   
     .description {
@@ -76,10 +81,9 @@
       color: var(--secondary-font-color);
       line-height: 1.5;
       margin: 0;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      line-clamp: 3;
-      -webkit-box-orient: vertical;
+      word-wrap: break-word;
+      word-break: break-all;
+      white-space: normal;
       overflow: hidden;
     }
   }
