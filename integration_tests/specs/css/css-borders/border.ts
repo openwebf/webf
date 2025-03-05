@@ -34,7 +34,7 @@ describe('border', () => {
 
     await snapshot();
   });
-  it('005', async () => {
+  fit('005', async () => {
     let reference;
     let test;
     let wrapper;
