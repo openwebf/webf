@@ -84,14 +84,15 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     if (webFElement.childNodes.isEmpty) {
       children = [];
     } else {
-      for (int i = 0; i < webFElement.childNodes.length; i ++) {
+      for (int i = 0; i < webFElement.childNodes.length; i++) {
         Node node = webFElement.childNodes.elementAt(i);
         if (node is Element &&
-            (node.renderStyle.position == CSSPositionType.absolute ||
-                node.renderStyle.position == CSSPositionType.fixed)) {
+            (node.renderStyle.position == CSSPositionType.fixed)) {
           children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
           continue;
-        } else if (node is Element && (node.renderStyle.position == CSSPositionType.sticky)) {
+        } else if (node is Element &&
+            (node.renderStyle.position == CSSPositionType.sticky ||
+                node.renderStyle.position == CSSPositionType.absolute)) {
           children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
           children.add(node.toWidget());
           continue;

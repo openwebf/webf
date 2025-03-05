@@ -945,34 +945,32 @@ abstract class RenderStyle extends DiagnosticableTree {
       return order;
     } else {
       // Sort by zIndex.
-      List<RenderBox> children = containerLayoutBox.getChildren();
-      children.sort((RenderBox left, RenderBox right) {
-        // @FIXME: Add patch to handle nested fixed element paint priority, need to remove
-        // this logic after Kraken has implemented stacking context tree.
-        if (left is RenderBoxModel &&
-            left.renderStyle.position == CSSPositionType.fixed &&
-            right is RenderBoxModel &&
-            right.renderStyle.position == CSSPositionType.fixed) {
-          // Child element always paint after parent element when their position are both fixed
-          // as W3C stacking context specified.
-          // Kraken will place these two renderObjects as siblings of the children of HTML renderObject
-          // due to lack stacking context support, so it needs to add this patch to handle this case.
-          if (right.renderStyle.isAncestorOf(left.renderStyle)) return 1;
-          if (left.renderStyle.isAncestorOf(right.renderStyle)) return -1;
-        }
-
-        bool isLeftNeedsStacking = left is RenderBoxModel && left.needsStacking;
-        bool isRightNeedsStacking = right is RenderBoxModel && right.needsStacking;
-        if (!isLeftNeedsStacking && isRightNeedsStacking) {
-          return 0 <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
-        } else if (isLeftNeedsStacking && !isRightNeedsStacking) {
-          return (left.renderStyle.zIndex ?? 0) < 0 ? -1 : 1;
-        } else if (isLeftNeedsStacking && isRightNeedsStacking) {
-          return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
+      List<RenderBox> children = [];
+      List<RenderBoxModel> stackingChildren = [];
+      containerLayoutBox.visitChildren((RenderObject child) {
+        if (child is RenderBoxModel) {
+          bool isNeedsStacking = child.needsStacking;
+          if (isNeedsStacking) {
+            stackingChildren.add(child);
+          } else {
+            children.add(child);
+          }
         } else {
-          return -1;
+          children.add(child as RenderBox);
         }
       });
+
+      stackingChildren.sort((RenderBoxModel left, RenderBoxModel right) {
+        // if (left.renderStyle.position == CSSPositionType.fixed &&
+        //     right.renderStyle.position == CSSPositionType.fixed) {
+        //   if (right.renderStyle.isAncestorOf(left.renderStyle)) return 1;
+        //   if (left.renderStyle.isAncestorOf(right.renderStyle)) return -1;
+        // }
+        return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
+      });
+
+      children.addAll(stackingChildren);
+
       return children;
     }
   }
@@ -2837,26 +2835,4 @@ class CSSRenderStyle extends RenderStyle
   double deflatePaddingBorderWidth(double borderBoxWidth) {
     return borderBoxWidth - paddingLeft.computedValue - paddingRight.computedValue - border.left - border.right;
   }
-
-  @override
-  List<DiagnosticsNode> getChildren() {
-    // TODO: implement getChildren
-    throw UnimplementedError();
-  }
-
-  @override
-  List<DiagnosticsNode> getProperties() {
-    // TODO: implement getProperties
-    throw UnimplementedError();
-  }
-
-  @override
-  String toDescription({TextTreeConfiguration? parentConfiguration}) {
-    // TODO: implement toDescription
-    throw UnimplementedError();
-  }
-
-  @override
-  // TODO: implement value
-  Object? get value => throw UnimplementedError();
 }

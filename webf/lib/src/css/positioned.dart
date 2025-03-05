@@ -298,6 +298,8 @@ class CSSPositionedLayout {
     Size size = child.boxSize!;
     Size parentSize = parent.boxSize!;
 
+    Offset ancestorOffset = child.getOffsetToAncestor(Offset.zero, parent) - (child.parentData as RenderLayoutParentData).offset;
+
     RenderStyle parentRenderStyle = parent.renderStyle;
 
     CSSLengthValue parentBorderLeftWidth = parentRenderStyle.effectiveBorderLeftWidth;
@@ -372,7 +374,7 @@ class CSSPositionedLayout {
       marginBottom,
     );
 
-    childParentData.offset = Offset(x, y);
+    childParentData.offset = Offset(x, y) - ancestorOffset;
   }
 
   // Compute the offset of positioned element in one axis.

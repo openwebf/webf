@@ -117,7 +117,14 @@ class RenderWidget extends RenderBoxModel
     }
 
     for (RenderBoxModel child in _positionedChildren) {
-      CSSPositionedLayout.applyPositionedChildOffset(this, child);
+      Element? containingBlockElement = child.renderStyle.target.getContainingBlockElement();
+      if (containingBlockElement == null || containingBlockElement.attachedRenderer == null) continue;
+
+      if (child.renderStyle.position == CSSPositionType.absolute) {
+        containingBlockElement.attachedRenderer!.absolutePositionedChildren.add(child);
+      } else {
+        CSSPositionedLayout.applyPositionedChildOffset(this, child);
+      }
     }
 
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));

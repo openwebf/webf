@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:collection/collection.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
@@ -230,7 +231,14 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     // Set offset of positioned element after flex box size is set.
     for (RenderBoxModel child in _positionedChildren) {
-      CSSPositionedLayout.applyPositionedChildOffset(this, child);
+      Element? containingBlockElement = child.renderStyle.target.getContainingBlockElement();
+      if (containingBlockElement == null || containingBlockElement.attachedRenderer == null) continue;
+
+      if (child.renderStyle.position == CSSPositionType.absolute) {
+        containingBlockElement.attachedRenderer!.absolutePositionedChildren.add(child);
+      } else {
+        CSSPositionedLayout.applyPositionedChildOffset(this, child);
+      }
       // Position of positioned element affect the scroll size of container.
       extendMaxScrollableSize(child);
       addOverflowLayoutFromChild(child);

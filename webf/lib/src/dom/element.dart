@@ -536,8 +536,15 @@ abstract class Element extends ContainerNode
 
     // No need to detach and reattach renderBoxMode when its position
     // changes between static and relative.
-    if (currentPosition == CSSPositionType.absolute ||
-        currentPosition == CSSPositionType.fixed) {
+    if (currentPosition == CSSPositionType.absolute || currentPosition == CSSPositionType.sticky) {
+      // Find the renderBox of its containing block.
+      Element? containingBlockElement = getContainingBlockElement();
+
+      if (containingBlockElement == null) return;
+
+      renderStyle.requestWidgetToRebuild(
+          ToPositionPlaceHolderUpdateReason(positionedElement: this, containingBlockElement: containingBlockElement));
+    } else if (currentPosition == CSSPositionType.fixed) {
       // Find the renderBox of its containing block.
       Element? containingBlockElement = getContainingBlockElement();
 
@@ -547,14 +554,6 @@ abstract class Element extends ContainerNode
           ToPositionPlaceHolderUpdateReason(positionedElement: this, containingBlockElement: containingBlockElement));
       containingBlockElement.renderStyle.requestWidgetToRebuild(
           AttachPositionedChild(positionedElement: this, containingBlockElement: containingBlockElement));
-    } else if (currentPosition == CSSPositionType.sticky) {
-      // Find the renderBox of its containing block.
-      Element? containingBlockElement = getContainingBlockElement();
-
-      if (containingBlockElement == null) return;
-
-      renderStyle.requestWidgetToRebuild(
-          ToPositionPlaceHolderUpdateReason(positionedElement: this, containingBlockElement: containingBlockElement));
     }
   }
 

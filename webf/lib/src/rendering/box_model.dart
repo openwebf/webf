@@ -289,7 +289,7 @@ class RenderLayoutBox extends RenderBoxModel
     // Layout positioned element
     while (child != null) {
       final ContainerParentDataMixin<RenderBox>? childParentData =
-      child.parentData as ContainerParentDataMixin<RenderBox>?;
+          child.parentData as ContainerParentDataMixin<RenderBox>?;
       if (child is! RenderBoxModel) {
         child = childParentData!.nextSibling;
         continue;
@@ -571,6 +571,7 @@ class RenderBoxModel extends RenderBox
   BoxConstraints? get contentConstraints {
     return _contentConstraints;
   }
+
   set contentConstraints(BoxConstraints? constraints) {
     _contentConstraints = constraints;
   }
@@ -582,20 +583,26 @@ class RenderBoxModel extends RenderBox
     _needsRecalculateStyle = true;
   }
 
+  // Cached positioned children for apply offsets when self had layout
+  List<RenderBoxModel> absolutePositionedChildren = [];
+
   @override
   String toStringShort() {
-    return super.toStringShort() + ' ${renderStyle.target}[managedByFlutter=${renderStyle.target.managedByFlutterWidget}]';
+    return super.toStringShort() +
+        ' ${renderStyle.target}[managedByFlutter=${renderStyle.target.managedByFlutterWidget}]';
   }
 
   bool get isSizeTight {
     bool isDefinedSize = (renderStyle.width.value != null &&
         renderStyle.height.value != null &&
-        renderStyle.width.isPrecise && renderStyle.height.isPrecise);
+        renderStyle.width.isPrecise &&
+        renderStyle.height.isPrecise);
     bool isFixedMinAndMaxSize = (renderStyle.minWidth.value == renderStyle.maxWidth.value &&
-        renderStyle.minWidth.value != null && renderStyle.minWidth.isPrecise) && (
-        renderStyle.minHeight.value == renderStyle.maxHeight.value && renderStyle.minHeight.value != null &&
-            renderStyle.minHeight.isPrecise
-    );
+            renderStyle.minWidth.value != null &&
+            renderStyle.minWidth.isPrecise) &&
+        (renderStyle.minHeight.value == renderStyle.maxHeight.value &&
+            renderStyle.minHeight.value != null &&
+            renderStyle.minHeight.isPrecise);
 
     return isDefinedSize || isFixedMinAndMaxSize;
   }
@@ -645,17 +652,23 @@ class RenderBoxModel extends RenderBox
   // https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context#the_stacking_context
   bool get needsStacking {
     return
-      // Element with a position value absolute, relative, fixed or sticky.
-      renderStyle.position != CSSPositionType.static ||
-          // Element that is a child of a flex container with z-index value other than auto.
-          ((renderStyle.getParentRenderStyle()!.display == CSSDisplay.flex || renderStyle.getParentRenderStyle()!.display == CSSDisplay.inlineFlex) &&
-              renderStyle.zIndex != null) ||
-          // Element with a opacity value less than 1.
-          renderStyle.opacity < 1.0 ||
-          // Element with a transform value.
-          renderStyle.transform != null ||
-          // Element with a filter value.
-          renderStyle.filter != null;
+        // Root element of the document (<html>).
+        renderStyle.target is HTMLElement ||
+            // Element with a position value absolute or relative and z-index value other than auto.
+            ((renderStyle.position == CSSPositionType.relative || renderStyle.position == CSSPositionType.absolute) &&
+                renderStyle.zIndex != null) ||
+            // Element with a position value fixed or sticky
+            ((renderStyle.position == CSSPositionType.fixed || renderStyle.position == CSSPositionType.sticky)) ||
+            // Element that is a child of a flex container with z-index value other than auto.
+            ((renderStyle.getParentRenderStyle()!.display == CSSDisplay.flex ||
+                    renderStyle.getParentRenderStyle()!.display == CSSDisplay.inlineFlex) &&
+                renderStyle.zIndex != null) ||
+            // Element with a opacity value less than 1.
+            renderStyle.opacity < 1.0 ||
+            // Element with a transform value.
+            renderStyle.transform != null ||
+            // Element with a filter value.
+            renderStyle.filter != null;
   }
 
   T copyWith<T extends RenderBoxModel>(T copiedRenderBoxModel) {
@@ -669,19 +682,19 @@ class RenderBoxModel extends RenderBox
     RenderIntersectionObserverMixin.copyTo(this, copiedRenderBoxModel);
 
     return copiedRenderBoxModel
-    // Copy render style
+      // Copy render style
       ..renderStyle = renderStyle
 
-    // Copy overflow
+      // Copy overflow
       ..scrollListener = scrollListener
       ..scrollablePointerListener = scrollablePointerListener
       ..scrollOffsetX = scrollOffsetX
       ..scrollOffsetY = scrollOffsetY
 
-    // Copy renderPositionHolder
+      // Copy renderPositionHolder
       ..renderPositionPlaceholder = renderPositionPlaceholder
 
-    // Copy parentData
+      // Copy parentData
       ..parentData = parentData;
   }
 
@@ -833,7 +846,8 @@ class RenderBoxModel extends RenderBox
     double? parentBoxContentConstraintsWidth;
     if (parent is RenderBoxModel && this is RenderLayoutBox) {
       RenderBoxModel parentRenderBoxModel = (parent as RenderBoxModel);
-      parentBoxContentConstraintsWidth = parentRenderBoxModel.renderStyle.deflateMarginConstraints(parentRenderBoxModel.contentConstraints!).maxWidth;
+      parentBoxContentConstraintsWidth =
+          parentRenderBoxModel.renderStyle.deflateMarginConstraints(parentRenderBoxModel.contentConstraints!).maxWidth;
 
       // When inner minimal content size are larger that parent's constraints.
       if (parentBoxContentConstraintsWidth < minConstraintWidth) {
@@ -846,7 +860,8 @@ class RenderBoxModel extends RenderBox
       }
     }
 
-    double maxConstraintWidth = renderStyle.borderBoxLogicalWidth ?? parentBoxContentConstraintsWidth ?? double.infinity;
+    double maxConstraintWidth =
+        renderStyle.borderBoxLogicalWidth ?? parentBoxContentConstraintsWidth ?? double.infinity;
     // Height should be not smaller than border and padding in vertical direction
     // when box-sizing is border-box which is only supported.
     double minConstraintHeight = renderStyle.effectiveBorderTopWidth.computedValue +
@@ -1146,7 +1161,7 @@ class RenderBoxModel extends RenderBox
       final Matrix4 transform = Matrix4.identity();
       applyLayoutTransform(child, transform, false);
       Offset tlOffset =
-      MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
+          MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
       overflowRect = Rect.fromLTRB(
           math.min(overflowRect.left, tlOffset.dx),
           math.min(overflowRect.top, tlOffset.dy),
@@ -1159,6 +1174,12 @@ class RenderBoxModel extends RenderBox
 
   // Hooks when content box had layout.
   void didLayout() {
+    for (RenderBoxModel child in absolutePositionedChildren) {
+      if (child.attached) {
+        CSSPositionedLayout.applyPositionedChildOffset(this, child);
+      }
+    }
+
     scrollableViewportSize = Size(
         _contentSize!.width + renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue,
         _contentSize!.height + renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue);
@@ -1170,18 +1191,18 @@ class RenderBoxModel extends RenderBox
       positionedHolder!.preferredSize = Size.copy(size);
     }
 
-    // Positioned renderBoxModel will not trigger parent to relayout. Needs to update it's offset for itself.
-    if (parentData is RenderLayoutParentData) {
-      RenderLayoutParentData selfParentData = parentData as RenderLayoutParentData;
-      RenderObject? parentBox = parent;
-      if (parentBox is RenderEventListener) {
-        parentBox = parentBox.parent;
-      }
-
-      if (selfParentData.isPositioned && parentBox is RenderBoxModel && parentBox.hasSize) {
-        CSSPositionedLayout.applyPositionedChildOffset(parentBox, this);
-      }
-    }
+    // // Positioned renderBoxModel will not trigger parent to relayout. Needs to update it's offset for itself.
+    // if (parentData is RenderLayoutParentData) {
+    //   RenderLayoutParentData selfParentData = parentData as RenderLayoutParentData;
+    //   RenderObject? parentBox = parent;
+    //   if (parentBox is RenderEventListener) {
+    //     parentBox = parentBox.parent;
+    //   }
+    //
+    //   if (selfParentData.isPositioned && parentBox is RenderBoxModel && parentBox.hasSize) {
+    //     CSSPositionedLayout.applyPositionedChildOffset(this);
+    //   }
+    // }
 
     needsLayout = false;
     dispatchResize(contentSize, boxSize ?? Size.zero);
@@ -1341,7 +1362,9 @@ class RenderBoxModel extends RenderBox
   }
 
   bool _disposed = false;
+
   bool get disposed => _disposed;
+
   /// Called when its corresponding element disposed
   @override
   @mustCallSuper
@@ -1363,6 +1386,8 @@ class RenderBoxModel extends RenderBox
     disposePainter();
     // Evict render decoration image cache.
     renderStyle.backgroundImage?.image?.evict();
+
+    absolutePositionedChildren.clear();
   }
 
   Offset getTotalScrollOffset() {

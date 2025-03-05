@@ -76,7 +76,14 @@ class RenderPositionedBoxWrapper extends RenderBoxModel
 
     // Set offset of positioned element after flex box size is set.
     for (RenderBoxModel child in _positionedChildren) {
-      CSSPositionedLayout.applyPositionedChildOffset(this, child);
+      dom.Element? containingBlockElement = child.renderStyle.target.getContainingBlockElement();
+      if (containingBlockElement == null || containingBlockElement.attachedRenderer == null) continue;
+
+      if (child.renderStyle.position == CSSPositionType.absolute) {
+        containingBlockElement.attachedRenderer!.absolutePositionedChildren.add(child);
+      } else {
+        CSSPositionedLayout.applyPositionedChildOffset(this, child);
+      }
       // Position of positioned element affect the scroll size of container.
       extendMaxScrollableSize(child);
       addOverflowLayoutFromChild(child);
