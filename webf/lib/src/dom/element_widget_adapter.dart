@@ -84,38 +84,37 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     if (webFElement.childNodes.isEmpty) {
       children = [];
     } else {
-      for (int i = 0; i < webFElement.childNodes.length; i++) {
-        Node node = webFElement.childNodes.elementAt(i);
+      webFElement.childNodes.forEach((node) {
         if (node is Element &&
             (node.renderStyle.position == CSSPositionType.fixed)) {
           children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
-          continue;
+          return;
         } else if (node is Element &&
             (node.renderStyle.position == CSSPositionType.sticky ||
                 node.renderStyle.position == CSSPositionType.absolute)) {
           children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
           children.add(node.toWidget());
-          continue;
+          return;
         } else if (node is RouterLinkElement) {
           webFState ??= context.findAncestorStateOfType<WebFState>();
           String routerPath = node.path;
-          if (webFState != null && webFState.widget.controller.initialRoute == routerPath) {
+          if (webFState != null && webFState?.widget.controller.initialRoute == routerPath) {
             children.add(node.toWidget());
-            continue;
+            return;
           }
 
           routerViewState ??= context.findAncestorStateOfType<WebFRouterViewState>();
           if (routerViewState != null) {
             children.add(node.toWidget());
-            continue;
+            return;
           }
 
           children.add(flutter.SizedBox.shrink());
-          continue;
+          return;
         } else {
           children.add(node.toWidget());
         }
-      }
+      });
     }
 
     flutter.Widget widget;
