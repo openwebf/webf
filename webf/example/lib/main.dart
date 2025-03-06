@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
+import 'package:flutter/cupertino.dart';
 
 import 'custom_elements/icon.dart';
 import 'custom_elements/search.dart';
@@ -223,10 +224,30 @@ class FirstPage extends StatelessWidget {
   }
 }
 
-class WebFDemo extends StatelessWidget {
+class WebFDemo extends StatefulWidget {
   final WebFController controller;
 
   WebFDemo({required this.controller});
+
+  @override
+  _WebFDemoState createState() => _WebFDemoState();
+}
+
+class _WebFDemoState extends State<WebFDemo> {
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    Future.delayed(Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -242,8 +263,8 @@ class WebFDemo extends StatelessWidget {
                     // sets theme mode to dark
                     !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight()
                         : AdaptiveTheme.of(context).setDark();
-                    controller.darkModeOverride = isDarkModeEnabled;
-                    controller.view.onPlatformBrightnessChanged();
+                    widget.controller.darkModeOverride = isDarkModeEnabled;
+                    widget.controller.view.onPlatformBrightnessChanged();
                   },
                 )),
           ],
@@ -251,10 +272,38 @@ class WebFDemo extends StatelessWidget {
         // floatingActionButton: FloatingActionButton(onPressed: () {
         //   print(controller.view.getRootRenderObject()!.toStringDeep());
         // }),
-        body: Center(
-          // Center is a layout widget. It takes a single child and positions it
-          // in the middle of the parent.
-          child: WebF(controller: controller),
-        ));
+        body: _isLoading 
+            ? _buildSplashScreen() 
+            : Center(
+                child: WebF(controller: widget.controller),
+              )
+    );
+  }
+  
+  Widget _buildSplashScreen() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/logo.png',
+            width: 150,
+            height: 150,
+          ),
+          SizedBox(height: 24),
+          CupertinoActivityIndicator(
+            radius: 14,
+          ),
+          SizedBox(height: 16),
+          Text(
+            '正在加载...',
+            style: TextStyle(
+              fontSize: 16,
+              color: CupertinoColors.systemGrey,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
