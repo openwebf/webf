@@ -635,11 +635,7 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   bool isSelfPositioned() {
-    if (attachedRenderBoxModel?.parentData is RenderLayoutParentData) {
-      RenderLayoutParentData childParentData = attachedRenderBoxModel?.parentData as RenderLayoutParentData;
-      return childParentData.isPositioned;
-    }
-    return false;
+    return position == CSSPositionType.absolute || position == CSSPositionType.fixed;
   }
 
   @pragma('vm:prefer-inline')

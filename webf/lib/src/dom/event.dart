@@ -76,8 +76,6 @@ const String EVENT_STATE_END = 'end';
 const String EVENT_STATE_CANCEL = 'cancel';
 
 mixin ElementEventMixin on ElementBase {
-  AppearEventType _prevAppearState = AppearEventType.none;
-
   bool hasIntersectionObserverEvent() {
     return hasEventListener(EVENT_APPEAR) ||
         hasEventListener(EVENT_DISAPPEAR) ||
@@ -105,16 +103,10 @@ mixin ElementEventMixin on ElementBase {
   }
 
   void handleAppear() {
-    if (_prevAppearState == AppearEventType.appear) return;
-    _prevAppearState = AppearEventType.appear;
-
     dispatchEvent(AppearEvent());
   }
 
   void handleDisappear() {
-    if (_prevAppearState == AppearEventType.disappear) return;
-    _prevAppearState = AppearEventType.disappear;
-
     dispatchEvent(DisappearEvent());
   }
 

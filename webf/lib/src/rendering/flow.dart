@@ -71,9 +71,6 @@ class RenderFlowLayout extends RenderLayoutBox {
   @override
   void setupParentData(RenderBox child) {
     child.parentData = RenderLayoutParentData();
-    if (child is RenderBoxModel) {
-      child.parentData = CSSPositionedLayout.getPositionParentData(child, child.parentData as RenderLayoutParentData);
-    }
   }
 
   double _getMainAxisExtent(RenderBox child) {
@@ -182,7 +179,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     RenderBox? child = firstChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-      if (child is RenderBoxModel && childParentData.isPositioned) {
+      if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
         _positionedChildren.add(child);
       } else {
         _nonPositionedChildren.add(child);
@@ -414,8 +411,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         RenderPositionPlaceholder positionHolder = child as RenderPositionPlaceholder;
         RenderBoxModel? childRenderBoxModel = positionHolder.positioned;
         if (childRenderBoxModel != null && childRenderBoxModel.parentData != null) {
-          RenderLayoutParentData childParentData = childRenderBoxModel.parentData as RenderLayoutParentData;
-          if (childParentData.isPositioned) {
+          if (childRenderBoxModel.renderStyle.isSelfPositioned()) {
             childMainAxisExtent = childCrossAxisExtent = 0;
           }
         }

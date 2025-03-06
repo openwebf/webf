@@ -29,12 +29,7 @@ class RenderWidget extends RenderBoxModel
 
   @override
   void setupParentData(RenderBox child) {
-    if (child is RenderBoxModel) {
-      RenderLayoutParentData parentData = RenderLayoutParentData();
-      child.parentData = CSSPositionedLayout.getPositionParentData(child, parentData);
-    } else {
-      child.parentData = RenderLayoutParentData();
-    }
+    child.parentData = RenderLayoutParentData();
   }
 
   void _layoutChild(RenderBox child) {
@@ -91,7 +86,7 @@ class RenderWidget extends RenderBoxModel
     RenderBox? child = firstChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-      if (child is RenderBoxModel && childParentData.isPositioned) {
+      if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
         _positionedChildren.add(child);
       } else {
         _nonPositionedChildren.add(child);

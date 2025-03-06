@@ -942,12 +942,8 @@ abstract class Element extends ContainerNode
       return;
     }
 
-    renderStyle.widgetRenderObjects.forEach((renderObjectElement, renderObject) {
-      willAttachRenderer(renderObjectElement);
-      didAttachRenderer(renderObjectElement);
-    });
-
     renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
+    updateElementKey();
   }
 
   void setRenderStyleProperty(String name, value) {

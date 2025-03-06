@@ -42,13 +42,6 @@ Offset _getPlaceholderToParentOffset(RenderPositionPlaceholder? placeholder, Ren
 }
 
 class CSSPositionedLayout {
-  static RenderLayoutParentData getPositionParentData(
-      RenderBoxModel renderBoxModel, RenderLayoutParentData parentData) {
-    CSSPositionType positionType = renderBoxModel.renderStyle.position;
-    parentData.isPositioned = positionType == CSSPositionType.absolute || positionType == CSSPositionType.fixed;
-    return parentData;
-  }
-
   static Offset? getRelativeOffset(RenderStyle renderStyle) {
     CSSLengthValue left = renderStyle.left;
     CSSLengthValue right = renderStyle.right;

@@ -21,14 +21,12 @@ import 'debug_overlay.dart';
 List<int> renderBoxInLayoutHashCodes = [];
 
 class RenderLayoutParentData extends ContainerBoxParentData<RenderBox> {
-  bool isPositioned = false;
-
   // Row index of child when wrapping
   int runIndex = 0;
 
   @override
   String toString() {
-    return 'isPositioned=$isPositioned; ${super.toString()}; runIndex: $runIndex;';
+    return '${super.toString()}; runIndex: $runIndex;';
   }
 }
 
@@ -346,7 +344,7 @@ class RenderLayoutBox extends RenderBoxModel
       }
 
       // Block level and positioned element doesn't involve in baseline alignment
-      if (childParentData.isPositioned) {
+      if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
         child = childParentData.nextSibling;
         continue;
       }
@@ -1200,7 +1198,7 @@ class RenderBoxModel extends RenderBox
     //   }
     //
     //   if (selfParentData.isPositioned && parentBox is RenderBoxModel && parentBox.hasSize) {
-    //     CSSPositionedLayout.applyPositionedChildOffset(this);
+    //     CSSPositionedLayout.applyPositionedChildOffset(this, parentBox);
     //   }
     // }
 

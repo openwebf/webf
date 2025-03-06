@@ -331,10 +331,8 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
 
   @override
   flutter.RenderObject createRenderObject(flutter.BuildContext context) {
-    RenderLayoutParentData parentData = RenderLayoutParentData();
     RenderBoxModel renderBoxModel =
         webFElement!.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement)!;
-    renderBoxModel.parentData = CSSPositionedLayout.getPositionParentData(renderBoxModel, parentData);
 
     // Attach position holder to apply offsets based on original layout.
     webFElement!.positionHolderElements.forEach((positionHolder) {

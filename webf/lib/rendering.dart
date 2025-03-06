@@ -19,7 +19,7 @@ export 'src/rendering/content_visibility.dart';
 export 'src/rendering/positioned_box_wrapper.dart';
 export 'src/rendering/opacity.dart';
 export 'src/rendering/overflow.dart';
-export 'src/rendering/portal.dart';
+export 'src/rendering/event_listener.dart';
 export 'src/rendering/transform.dart';
 export 'src/rendering/widget.dart';
 export 'src/rendering/viewport.dart';

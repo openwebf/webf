@@ -172,9 +172,6 @@ class RenderFlexLayout extends RenderLayoutBox {
   @override
   void setupParentData(RenderBox child) {
     child.parentData = RenderLayoutParentData();
-    if (child is RenderBoxModel) {
-      child.parentData = CSSPositionedLayout.getPositionParentData(child, child.parentData as RenderLayoutParentData);
-    }
   }
 
   bool get _isHorizontalFlexDirection {
@@ -618,7 +615,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     RenderBox? child = firstChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-      if (child is RenderBoxModel && childParentData.isPositioned) {
+      if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
         _positionedChildren.add(child);
       } else if (child is RenderPositionPlaceholder && _isPlaceholderPositioned(child)) {
         _positionPlaceholderChildren.add(child);
@@ -2155,7 +2152,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     final ParentData? childParentData = child.parentData;
     if (child is! RenderBoxModel ||
         child is RenderLineBreak ||
-        (childParentData is RenderLayoutParentData && childParentData.isPositioned)) {
+        (child.renderStyle.isSelfPositioned())) {
       return false;
     }
 
@@ -2447,8 +2444,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (child is RenderPositionPlaceholder) {
       RenderBoxModel? realDisplayedBox = child.positioned;
       if (realDisplayedBox?.attached == true) {
-        RenderLayoutParentData? parentData = realDisplayedBox?.parentData as RenderLayoutParentData?;
-        if (parentData?.isPositioned == true) {
+        if (realDisplayedBox!.renderStyle.isSelfPositioned()) {
           return true;
         }
       }
