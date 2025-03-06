@@ -325,8 +325,6 @@ class WebFController {
     Future.microtask(() async {
       _module.dispose();
       await _view.dispose();
-      // RenderViewportBox will not disposed when reload, just remove all children and clean all resources.
-      _view.viewport?.reload();
 
       double oldId = _view.contextId;
 
