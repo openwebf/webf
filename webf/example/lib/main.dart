@@ -235,12 +235,17 @@ class WebFDemo extends StatefulWidget {
 
 class _WebFDemoState extends State<WebFDemo> {
   bool _isLoading = true;
+  late final Widget _webfContent;
 
   @override
   void initState() {
     super.initState();
 
-    Future.delayed(Duration(seconds: 2), () {
+    // pre create webf content
+    _webfContent = WebF(controller: widget.controller);
+    
+    // set splash screen display time to 2s
+    Future.delayed(Duration(seconds: 3), () {
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -272,10 +277,14 @@ class _WebFDemoState extends State<WebFDemo> {
         // floatingActionButton: FloatingActionButton(onPressed: () {
         //   print(controller.view.getRootRenderObject()!.toStringDeep());
         // }),
-        body: _isLoading 
-            ? _buildSplashScreen() 
-            : Center(
-                child: WebF(controller: widget.controller),
+        body: Stack(
+          children: [
+            Offstage(
+              offstage: _isLoading,
+              child: _webfContent,
+            ),
+            if (_isLoading) _buildSplashScreen(),
+          ],
               )
     );
   }
