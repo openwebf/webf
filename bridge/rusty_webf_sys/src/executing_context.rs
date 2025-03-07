@@ -119,6 +119,14 @@ impl ExecutingContext {
     return Document::initialize::<DocumentRustMethods>(result.value, self, result.method_pointer, result.status);
   }
 
+  pub fn location(&self) -> Location {
+    Location::initialize(self)
+  }
+
+  pub fn history(&self) -> History {
+    History::initialize(self)
+  }
+
   pub fn navigator(&self) -> Navigator {
     Navigator::initialize(self)
   }
