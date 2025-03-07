@@ -614,29 +614,10 @@ class RenderFlowLayout extends RenderLayoutBox {
             // if textBox happen linebreak need to create more lineBox
             child is RenderTextBox && child.lines > 1) {
           if (child is RenderTextBox) {
-            if(isLineBreakForExtentShort(runLineBox.mainAxisExtent, mainAxisLimit, childListLineMainAxisExtent)) {
-              // append first
-              LogicTextInlineBox firstTextBox = child.lineBoxes.get(0);
-              String textData = child.data;
-              double leftWidthSpace = (mainAxisLimit - runLineBox.mainAxisExtent);
-              int firstTruncationIndex = child.getTruncationIndex(textData, leftWidthSpace);
-              String truncationText = textData.substring(0, firstTruncationIndex);
-              print('truncationText: $truncationText');
-              String leftText = textData.substring(truncationText.length);
-              print('leftText after truncate: $leftText');
-
-              // TODO
-              // child.updateRenderParagraphIfNeedTruncation(leftWidthSpace);
-            } else {
-              runLineBox = processTextBoxBreak(child, runLineBox);
-              preChild = child;
-              return;
-            }
-          }
-
-          // child is RenderFlowLayout
-          if(child is RenderFlowLayout) {
-            print('111111');
+            runLineBox = processTextBoxBreak(child, runLineBox);
+            childParentData.runIndex = lineBoxes.lineSize;
+            preChild = child;
+            return;
           }
           appendLineBox(runLineBox);
 
@@ -680,23 +661,25 @@ class RenderFlowLayout extends RenderLayoutBox {
           calculateTextCrossAxisExtent(child, 0));
       if (child.lines > 1) {
         appendLineBox(runLine);
-        newLineBox = appendAllInlineTextToLine(child, false);
+        newLineBox = appendAllInlineTextToNewLine(child, false);
       }
     } else {
       if (runLine.isNotEmpty) {
         appendLineBox(runLine);
       }
-      newLineBox = appendAllInlineTextToLine(child, true);
+      newLineBox = appendAllInlineTextToNewLine(child, true);
     }
     return newLineBox;
   }
 
-  LogicLineBox appendAllInlineTextToLine(RenderTextBox child, bool fromFirst) {
+  // create a new lineBox, and append child's inlineBoxes to the new lineBox
+  LogicLineBox appendAllInlineTextToNewLine(RenderTextBox child, bool fromFirst) {
     LogicLineBox newLineBox = buildNewLineBox();
     for (int i = fromFirst ? 0 : 1; i < child.lineBoxes.inlineBoxList.length; i++) {
       newLineBox = buildNewLineBox();
-      newLineBox.appendInlineBox(child.lineBoxes.get(i), child.lineBoxes.get(i).logicRect.width,
-          child.lineBoxes.get(i).logicRect.height, calculateTextCrossAxisExtent(child, i));
+      LogicTextInlineBox curTextBox = child.lineBoxes.get(i);
+      newLineBox.appendInlineBox(curTextBox, curTextBox.logicRect.width,
+          curTextBox.logicRect.height, calculateTextCrossAxisExtent(child, i));
 
       if (i != child.lineBoxes.inlineBoxList.length - 1) {
         appendLineBox(newLineBox);
@@ -726,9 +709,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (child is RenderPreferredSize) {
       return child.createLogicInlineBox();
     }
-    // if (child is RenderTextControlLeaderLayer) {
-    //   return child.createLogicInlineBox();
-    // }
     if (child is RenderTextBox) {
       if (child.lineBoxes.isEmpty) {
         return null;
@@ -1089,8 +1069,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           // Because RenderTextBox layout use lineJoinOffset as placeholder,
           // which will make RenderTextBox paint offset lineJoinOffset,
           // when not happen line join, we need to fix it.
-          // FIXME: outLineMainSize
-          // outLineMainSize -= runLineBox.firstLineLeftExtent;
+          outLineMainSize -= runLineBox.firstLineLeftExtent;
         }
 
         Offset relativeOffset = _getOffset(
@@ -1472,8 +1451,6 @@ enum BoxCrossSizeType {
   AUTO,
 }
 
-// RenderFlowLayout 中有一个 RenderLineBoxes
-// 放在 List<LogicLineBox> line 中， 对应一行或多行的元素，每一行元素逻辑信息 LogicLineBox 来表示
 class RenderLineBoxes {
   final List<LogicLineBox> _lineBoxList = [];
   double mainAxisLimit = 0;

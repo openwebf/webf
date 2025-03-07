@@ -5,7 +5,6 @@
 import 'dart:ui';
 import 'dart:math';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -51,28 +50,6 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   }
 
   String get data => _data;
-
-  String? _truncationData;
-  String? _newData;
-
-  void updateRenderParagraphIfNeedTruncation(double maxWidth) {
-    int truncationIndex = getTruncationIndex(_data, maxWidth);
-    if(truncationIndex > 0) {
-      _truncationData = _data.substring(0, truncationIndex);
-      _newData = _data.substring(truncationIndex);
-
-      // create new WebFRenderParagraph with _truncationData & _newData
-      TextSpan newText = CSSTextMixin.createTextSpan(_newData, renderStyle);
-
-      TextSpan truncationText = CSSTextMixin.createTextSpan(_truncationData, renderStyle, children: [newText]);
-      _renderParagraph = child = WebFRenderParagraph(
-        truncationText,
-        textDirection: TextDirection.ltr,
-        foregroundCallback: _getForeground,
-      );
-      markNeedsLayout();
-    }
-  }
 
   bool isEndWithSpace(String str) {
     return str.endsWith(WHITE_SPACE_CHAR) ||
@@ -170,13 +147,6 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   }
 
   LogicTextInlineBox get firstInlineBox => lineBoxes.firstChild;
-
-  InlineSpan? get firstInlineSpan => _renderParagraph.text.children?.first;
-
-  void appendInlineSpan(InlineSpan span) {
-    _renderParagraph.text.children?.add(span);
-  }
-
 
   // Box size equals to RenderBox.size to avoid flutter complain when read size property.
   Size? _boxSize;
@@ -440,38 +410,6 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     return clippedText;
   }
 
-  int getTruncationIndex(String text, double maxWidth) {
-    TextStyle textStyle = TextStyle(
-      fontFamilyFallback: renderStyle.fontFamily,
-      fontSize: renderStyle.fontSize.computedValue,
-      textBaseline: CSSText.getTextBaseLine(),
-      package: CSSText.getFontPackage(),
-      locale: CSSText.getLocale(),
-    );
-    TextPainter painter = TextPainter(
-        text: TextSpan(
-          text: text,
-          style: textStyle,
-        ),
-        textDirection: TextDirection.ltr);
-    painter.layout(maxWidth:  maxWidth);
-    TextRange range = painter.getLineBoundary(TextPosition(offset: 0));
-    return range.end;
-  }
-
-  // data, text string to be truncated
-  // textSize, left space size for text
-  // return truncationIndex
-  String getTruncationText(String data, Size textSize) {
-    String truncationText = data;
-    // Max character to display in one line.
-    int maxChars = (textSize.width / minCharSize.width).ceil();
-    if (data.length > maxChars) {
-      truncationText = data.substring(0, maxChars);
-    }
-    return truncationText;
-  }
-
   // '  a b  c   \n' => ' a b c '
   static String _collapseWhitespace(String string) {
     return string.replaceAll(_collapseWhiteSpaceReg, WHITE_SPACE_CHAR);
@@ -515,9 +453,29 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
       // first set text is no use, so need check again
       paragraph.text = buildTextSpan(oldText: paragraph.text);
+
+      WebFTextSpan text = paragraph.text;
+      if (firstLineIndent > 0 && firstLineIndent != _lastFirstLineIndent) {
+        // add a placeholder before text, must add a placeholder dimensions keep same size
+        if (text.children!.isEmpty) {
+          WebFTextPlaceHolderSpan placeHolderSpan = WebFTextPlaceHolderSpan();
+          text.children!.add(placeHolderSpan);
+          text.textSpanPosition.add(placeHolderSpan);
+        }
+        _updatePlaceHolderDimensions(paragraph);
+      } else if (firstLineIndent == 0 && (firstLineIndent != _lastFirstLineIndent || text.children!.isNotEmpty)) {
+        //clear placeholder and placeholder dimensions
+        text.children!.clear();
+        text.textSpanPosition.clear();
+        _clearPlaceHolderDimensions(paragraph);
+        // paragraph.markUpdateTextPainter();
+      }
+
+      _lastFirstLineIndent = firstLineIndent;
       paragraph.maxLines = _maxLines;
       paragraph.lineHeight = _lineHeight;
       paragraph.layout(constraints, parentUsesSize: true);
+      // lineRenderList be created after layout, and init with TextPainter lineMetrics
       paragraph.lineRenderList.forEach((element) {
         lineBoxes.createAndAppendTextBox(this, element.lineRect);
       });
@@ -586,10 +544,6 @@ class RenderTextLineBoxes {
   LogicTextInlineBox createAndAppendTextBox(RenderTextBox renderObject, Rect rect) {
     inlineBoxList.add(LogicTextInlineBox(logicRect: rect, renderObject: renderObject));
     return inlineBoxList.last;
-  }
-
-  void appendLineBox(LogicTextInlineBox box) {
-    inlineBoxList.add(box);
   }
 
   bool containLineBox(LogicTextInlineBox box) {

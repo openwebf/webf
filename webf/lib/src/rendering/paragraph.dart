@@ -468,7 +468,7 @@ class WebFRenderParagraph extends RenderBox
       int endLineIndex = _textPainter.maxLines ?? webfTextMaxLines;
       _lineMetrics = _lineMetrics.sublist(0, endLineIndex);
     }
-
+    // create WebFRenderTextLines for each line as lineRenders
     _lineRenders = _lineMetrics.map((element) => WebFRenderTextLine()).toList();
     for (int i = 0; i < _lineMetrics.length; i++) {
       ui.LineMetrics lineMetric = _lineMetrics[i];

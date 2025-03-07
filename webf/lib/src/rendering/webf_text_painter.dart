@@ -470,10 +470,10 @@ class WebFTextPainter {
         if (span is PlaceholderSpan) {
           placeholderCount += 1;
         }
-        return true;
+        return value.length >= placeholderCount;
       });
-      return placeholderCount;
-    }() == value.length);
+      return placeholderCount == value.length;
+    }());
     _placeholderDimensions = value;
     markNeedsLayout();
   }

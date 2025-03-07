@@ -29,7 +29,7 @@ class WebFTextSpan extends TextSpan {
   final Set<InlineSpan> textSpanPosition = <InlineSpan>{};
 
   List<InlineSpan>? preInsertChildren() {
-    return children?.where((element) => textSpanPosition.contains(element)).toList();
+    return textSpanPosition.toList();
   }
 
   List<Object> subContent(int start, int end) {
@@ -147,7 +147,6 @@ class WebFTextPlaceHolderSpan extends PlaceholderSpan {
       currentDimensions.size.width,
       currentDimensions.size.height,
       alignment,
-      scale: textScaler.scale(style?.fontSize ?? kDefaultFontSize),
       baseline: currentDimensions.baseline,
       baselineOffset: currentDimensions.baselineOffset,
     );
