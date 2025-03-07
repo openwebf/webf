@@ -1,5 +1,6 @@
 use std::ffi::*;
 use std::mem;
+use serde_json::Value;
 #[cfg(target_os = "windows")]
 use windows::Win32::System::Com::{CoTaskMemAlloc, CoTaskMemFree};
 
@@ -283,13 +284,14 @@ impl NativeValue {
     self.tag == NativeTag::TagJson as i32
   }
 
-  pub fn to_json(&self) -> String {
+  pub fn to_json(&self) -> Value {
     let ptr = unsafe {
       self.u.ptr as *mut SharedNativeString
     };
     let string_struct = unsafe { ptr.read() };
     let slice = unsafe { std::slice::from_raw_parts(string_struct.string_, string_struct.length_.try_into().unwrap()) };
-    String::from_utf16_lossy(slice)
+    let json_string = String::from_utf16_lossy(slice);
+    serde_json::from_str(&json_string).unwrap()
   }
 }
 
