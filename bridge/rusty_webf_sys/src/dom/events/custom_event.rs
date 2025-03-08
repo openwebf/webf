@@ -9,7 +9,7 @@ use crate::*;
 pub struct CustomEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub detail: extern "C" fn(ptr: *const OpaquePtr) -> NativeValue,
+  pub detail: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
   pub init_custom_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, i32, i32, NativeValue, exception_state: *const OpaquePtr) -> c_void,
 }
 pub struct CustomEvent {
@@ -36,9 +36,9 @@ impl CustomEvent {
   pub fn context<'a>(&self) -> &'a ExecutingContext {
     self.event.context()
   }
-  pub fn detail(&self) -> NativeValue {
+  pub fn detail(&self, exception_state: &ExceptionState) -> NativeValue {
     let value = unsafe {
-      ((*self.method_pointer).detail)(self.ptr())
+      ((*self.method_pointer).detail)(self.ptr(), exception_state.ptr)
     };
     value
   }
@@ -53,13 +53,13 @@ impl CustomEvent {
   }
 }
 pub trait CustomEventMethods: EventMethods {
-  fn detail(&self) -> NativeValue;
+  fn detail(&self, exception_state: &ExceptionState) -> NativeValue;
   fn init_custom_event(&self, type_: &str, can_bubble: bool, cancelable: bool, detail: NativeValue, exception_state: &ExceptionState) -> Result<(), String>;
   fn as_custom_event(&self) -> &CustomEvent;
 }
 impl CustomEventMethods for CustomEvent {
-  fn detail(&self) -> NativeValue {
-    self.detail()
+  fn detail(&self, exception_state: &ExceptionState) -> NativeValue {
+    self.detail(exception_state)
   }
   fn init_custom_event(&self, type_: &str, can_bubble: bool, cancelable: bool, detail: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
     self.init_custom_event(type_, can_bubble, cancelable, detail, exception_state)

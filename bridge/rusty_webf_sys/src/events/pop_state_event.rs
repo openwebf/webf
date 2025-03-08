@@ -9,7 +9,7 @@ use crate::*;
 pub struct PopStateEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub state: extern "C" fn(ptr: *const OpaquePtr) -> NativeValue,
+  pub state: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
 }
 pub struct PopStateEvent {
   pub event: Event,
@@ -35,20 +35,20 @@ impl PopStateEvent {
   pub fn context<'a>(&self) -> &'a ExecutingContext {
     self.event.context()
   }
-  pub fn state(&self) -> NativeValue {
+  pub fn state(&self, exception_state: &ExceptionState) -> NativeValue {
     let value = unsafe {
-      ((*self.method_pointer).state)(self.ptr())
+      ((*self.method_pointer).state)(self.ptr(), exception_state.ptr)
     };
     value
   }
 }
 pub trait PopStateEventMethods: EventMethods {
-  fn state(&self) -> NativeValue;
+  fn state(&self, exception_state: &ExceptionState) -> NativeValue;
   fn as_pop_state_event(&self) -> &PopStateEvent;
 }
 impl PopStateEventMethods for PopStateEvent {
-  fn state(&self) -> NativeValue {
-    self.state()
+  fn state(&self, exception_state: &ExceptionState) -> NativeValue {
+    self.state(exception_state)
   }
   fn as_pop_state_event(&self) -> &PopStateEvent {
     self

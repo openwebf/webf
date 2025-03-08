@@ -9,7 +9,7 @@ use crate::*;
 pub struct PerformanceMeasureRustMethods {
   pub version: c_double,
   pub performance_entry: PerformanceEntryRustMethods,
-  pub detail: extern "C" fn(ptr: *const OpaquePtr) -> NativeValue,
+  pub detail: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
 }
 pub struct PerformanceMeasure {
   pub performance_entry: PerformanceEntry,
@@ -35,20 +35,20 @@ impl PerformanceMeasure {
   pub fn context<'a>(&self) -> &'a ExecutingContext {
     self.performance_entry.context()
   }
-  pub fn detail(&self) -> NativeValue {
+  pub fn detail(&self, exception_state: &ExceptionState) -> NativeValue {
     let value = unsafe {
-      ((*self.method_pointer).detail)(self.ptr())
+      ((*self.method_pointer).detail)(self.ptr(), exception_state.ptr)
     };
     value
   }
 }
 pub trait PerformanceMeasureMethods: PerformanceEntryMethods {
-  fn detail(&self) -> NativeValue;
+  fn detail(&self, exception_state: &ExceptionState) -> NativeValue;
   fn as_performance_measure(&self) -> &PerformanceMeasure;
 }
 impl PerformanceMeasureMethods for PerformanceMeasure {
-  fn detail(&self) -> NativeValue {
-    self.detail()
+  fn detail(&self, exception_state: &ExceptionState) -> NativeValue {
+    self.detail(exception_state)
   }
   fn as_performance_measure(&self) -> &PerformanceMeasure {
     self

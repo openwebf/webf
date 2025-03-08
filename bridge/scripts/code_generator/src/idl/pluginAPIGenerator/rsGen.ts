@@ -344,6 +344,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
           generatePropReturnStatements,
           generateValidRustIdentifier,
           isVoidType,
+          isAnyType,
           isStringType,
           subClasses: _.uniq(subClasses),
           options,

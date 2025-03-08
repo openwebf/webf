@@ -9,7 +9,7 @@ use crate::*;
 pub struct PerformanceMarkRustMethods {
   pub version: c_double,
   pub performance_entry: PerformanceEntryRustMethods,
-  pub detail: extern "C" fn(ptr: *const OpaquePtr) -> NativeValue,
+  pub detail: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
 }
 pub struct PerformanceMark {
   pub performance_entry: PerformanceEntry,
@@ -35,20 +35,20 @@ impl PerformanceMark {
   pub fn context<'a>(&self) -> &'a ExecutingContext {
     self.performance_entry.context()
   }
-  pub fn detail(&self) -> NativeValue {
+  pub fn detail(&self, exception_state: &ExceptionState) -> NativeValue {
     let value = unsafe {
-      ((*self.method_pointer).detail)(self.ptr())
+      ((*self.method_pointer).detail)(self.ptr(), exception_state.ptr)
     };
     value
   }
 }
 pub trait PerformanceMarkMethods: PerformanceEntryMethods {
-  fn detail(&self) -> NativeValue;
+  fn detail(&self, exception_state: &ExceptionState) -> NativeValue;
   fn as_performance_mark(&self) -> &PerformanceMark;
 }
 impl PerformanceMarkMethods for PerformanceMark {
-  fn detail(&self) -> NativeValue {
-    self.detail()
+  fn detail(&self, exception_state: &ExceptionState) -> NativeValue {
+    self.detail(exception_state)
   }
   fn as_performance_mark(&self) -> &PerformanceMark {
     self
