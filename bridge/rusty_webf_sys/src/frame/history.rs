@@ -70,7 +70,7 @@ impl History {
   pub fn replace_state(&self, state: &str, title: &str, exception_state: &ExceptionState) {
     let state_value = NativeValue::new_json(state);
     let title_string = NativeValue::new_string(title);
-    let params_vec = vec![state_value, title_string];
+    let params_vec = vec![state_value, title_string, NativeValue::new_null()];
     let params = NativeValue::new_list(params_vec);
 
     self.context().webf_invoke_module_with_params("History", "replaceState", &params, exception_state);
