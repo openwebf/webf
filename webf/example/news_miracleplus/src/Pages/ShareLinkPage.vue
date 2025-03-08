@@ -24,7 +24,7 @@
   import PostContent from '@/Components/post/PostContent.vue';
   import InteractionBar from '@/Components/post/InteractionBar.vue';
   import CommentsSection from '@/Components/comment/CommentsSection.vue';
-  import AlertDialog from '@/Components/AlertDialog.vue';
+  // import AlertDialog from '@/Components/AlertDialog.vue';
   
   export default {
     name: 'ShareLinkPage',
@@ -33,7 +33,7 @@
       PostContent,
       InteractionBar,
       CommentsSection,
-      AlertDialog,
+      // AlertDialog,
     },
     data() {
       return {

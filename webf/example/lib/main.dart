@@ -34,6 +34,8 @@ import 'custom_elements/cupertino/loading.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
@@ -145,6 +147,7 @@ class MyAppState extends State<MyApp> {
         WebFController(
           context,
           initialRoute: '/home',
+          routeObserver: routeObserver,
           devToolsService: kDebugMode ? ChromeDevToolsService() : null,
         );
     controller!.darkModeOverride = widget.savedThemeMode == AdaptiveThemeMode.dark;
@@ -164,6 +167,9 @@ class MyAppState extends State<MyApp> {
         initialRoute: '/',
         theme: theme,
         darkTheme: darkTheme,
+        navigatorObservers: [
+          routeObserver
+        ],
         themeMode: ThemeMode.system,
         routes: {
           '/todomvc': (context) => WebFSubView(title: 'TodoMVC', path: '/todomvc', controller: controller!),

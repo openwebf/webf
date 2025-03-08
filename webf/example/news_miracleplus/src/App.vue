@@ -99,6 +99,11 @@ const ROUTE_FLAGS = {
   TOPIC: 0x800,           // 1000 0000 0000
 };
 
+// Watch the hybrid router changes
+window.addEventListener('hybridrouterchange', (e) => {
+  console.log('router changes', e.state, e.kind, e.name);
+});
+
 // Map paths to route flags
 // const PATH_TO_FLAG = {
 //   '/register': ROUTE_FLAGS.REGISTER,

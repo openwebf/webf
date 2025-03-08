@@ -19,7 +19,15 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart'
-    show AnimationController, BuildContext, RouteInformation, View, WidgetsBinding, WidgetsBindingObserver;
+    show
+        AnimationController,
+        BuildContext,
+        ModalRoute,
+        RouteInformation,
+        RouteObserver,
+        View,
+        WidgetsBinding,
+        WidgetsBindingObserver;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
@@ -103,6 +111,10 @@ class WebFController {
 
   /// The path of the first route to show
   final String? initialRoute;
+
+  /// A Navigator observer that notifies RouteAwares of changes to the state of their route.
+  /// The RouteObserver is essential for notifying hybrid router change events, allowing WebF to subscribe to route changes.
+  final RouteObserver<ModalRoute<void>>? routeObserver;
 
   /// If true the content should size itself to avoid the onscreen keyboard
   /// whose height is defined by the ambient [FlutterView]'s
@@ -219,6 +231,7 @@ class WebFController {
     this.preloadedBundles,
     this.initialCookies,
     this.initialRoute,
+    this.routeObserver,
     this.externalController = true,
     this.resizeToAvoidBottomInsets = true,
   })  : _entrypoint = bundle,
