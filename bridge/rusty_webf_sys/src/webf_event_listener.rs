@@ -14,12 +14,6 @@ pub struct EventCallbackContextData {
   pub func: EventListenerCallback,
 }
 
-impl Drop for EventCallbackContextData {
-  fn drop(&mut self) {
-    println!("Drop webf event callback context data");
-  }
-}
-
 #[repr(C)]
 pub struct EventCallbackContext {
   pub callback: extern "C" fn(event_callback_context: *const OpaquePtr,

@@ -518,6 +518,7 @@ bool EventTarget::FireEventListeners(Event& event,
     assert(i <= size);
   }
   d->firing_event_iterators->pop_back();
+  context->RunRustFutureTasks();
   return fired_listener;
 }
 
