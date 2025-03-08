@@ -295,7 +295,7 @@ const pluginApiList = [
   'events/mouse_event_init.d.ts',
   'events/pointer_event_init.d.ts',
   'events/hybrid_router_change_event_init.d.ts',
-  // 'events/pop_state_event.d.ts',
+  'events/pop_state_event.d.ts',
   'events/transition_event.d.ts',
   'events/close_event_init.d.ts',
   'events/hashchange_event_init.d.ts',

@@ -625,6 +625,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/plugin_api_inline_css_style_declaration.cc
     out/plugin_api_input_event.cc
     out/plugin_api_intersection_change_event.cc
+    out/plugin_api_pop_state_event.cc
     out/plugin_api_mouse_event.cc
     out/plugin_api_mutation_observer_registration.cc
     out/plugin_api_performance_entry.cc
