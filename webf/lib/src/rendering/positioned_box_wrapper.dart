@@ -27,7 +27,11 @@ class RenderPositionedBoxWrapper extends RenderBoxModel
   void _layoutNonPositionedChildren(RenderBox child) {
     child.layout(constraints, parentUsesSize: true);
     size = child.size;
-    scrollableSize = (child as RenderBoxModel).scrollableSize;
+    if (child is RenderBoxModel) {
+      scrollableSize = (child).scrollableSize;
+    } else {
+      scrollableSize = Size.zero;
+    }
   }
 
   @override

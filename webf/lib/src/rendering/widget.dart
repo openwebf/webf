@@ -106,7 +106,6 @@ class RenderWidget extends RenderBoxModel
 
     if (_nonPositionedChildren.isNotEmpty) {
       _layoutChild(_nonPositionedChildren.first);
-      didLayout();
     } else {
       performResize();
     }
@@ -123,6 +122,7 @@ class RenderWidget extends RenderBoxModel
     }
 
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
+    didLayout();
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackLayout(this);

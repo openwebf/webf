@@ -34,10 +34,21 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
 
       double childMarginLeft = renderStyle.marginLeft.computedValue;
 
-      // No need to add padding and border for scrolling content box.
-      Offset relativeOffset = Offset(childMarginLeft, childMarginTop);
-      // Apply position relative offset change.
-      CSSPositionedLayout.applyRelativeOffset(relativeOffset, child as RenderBoxModel);
+      if (renderStyle.isSelfPositioned()) {
+        dom.Element? containingBlockElement = renderStyle.target.getContainingBlockElement();
+        if (containingBlockElement?.attachedRenderer != null) {
+          if (renderStyle.position == CSSPositionType.absolute) {
+            containingBlockElement!.attachedRenderer!.absolutePositionedChildren.add(child as RenderBoxModel);
+          } else {
+            CSSPositionedLayout.applyPositionedChildOffset(this, child as RenderBoxModel);
+          }
+        }
+      } else {
+        // No need to add padding and border for scrolling content box.
+        Offset relativeOffset = Offset(childMarginLeft, childMarginTop);
+        // Apply position relative offset change.
+        CSSPositionedLayout.applyRelativeOffset(relativeOffset, child as RenderBoxModel);
+      }
     }
 
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));

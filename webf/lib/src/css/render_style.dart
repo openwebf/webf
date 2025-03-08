@@ -920,6 +920,27 @@ abstract class RenderStyle extends DiagnosticableTree {
     });
   }
 
+  // https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context#the_stacking_context
+  bool get needsStacking {
+    return
+        // Root element of the document (<html>).
+        target is HTMLElement ||
+            // Element with a position value absolute or relative and z-index value other than auto.
+            ((position == CSSPositionType.relative || position == CSSPositionType.absolute)) ||
+            // Element with a position value fixed or sticky
+            ((position == CSSPositionType.fixed || position == CSSPositionType.sticky)) ||
+            // Element that is a child of a flex container with z-index value other than auto.
+            ((getParentRenderStyle()!.display == CSSDisplay.flex ||
+                    getParentRenderStyle()!.display == CSSDisplay.inlineFlex) &&
+                zIndex != null) ||
+            // Element with a opacity value less than 1.
+            opacity < 1.0 ||
+            // Element with a transform value.
+            transform != null ||
+            // Element with a filter value.
+            filter != null;
+  }
+
   // Sort children by zIndex, used for paint and hitTest.
   List<RenderBox> get paintingOrder {
     if (attachedRenderBoxModel == null) return [];
@@ -945,7 +966,7 @@ abstract class RenderStyle extends DiagnosticableTree {
       List<RenderBoxModel> stackingChildren = [];
       containerLayoutBox.visitChildren((RenderObject child) {
         if (child is RenderBoxModel) {
-          bool isNeedsStacking = child.needsStacking;
+          bool isNeedsStacking = child.renderStyle.needsStacking;
           if (isNeedsStacking) {
             stackingChildren.add(child);
           } else {
@@ -957,11 +978,6 @@ abstract class RenderStyle extends DiagnosticableTree {
       });
 
       stackingChildren.sort((RenderBoxModel left, RenderBoxModel right) {
-        // if (left.renderStyle.position == CSSPositionType.fixed &&
-        //     right.renderStyle.position == CSSPositionType.fixed) {
-        //   if (right.renderStyle.isAncestorOf(left.renderStyle)) return 1;
-        //   if (left.renderStyle.isAncestorOf(right.renderStyle)) return -1;
-        // }
         return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
       });
 
@@ -2359,7 +2375,7 @@ class CSSRenderStyle extends RenderStyle
 
   @override
   void cleanContentBoxLogiclWidth() {
-      _contentBoxLogicalWidth = double.infinity;
+    _contentBoxLogicalWidth = double.infinity;
   }
 
   @override
@@ -2673,14 +2689,11 @@ class CSSRenderStyle extends RenderStyle
     if (target.isWidgetElement) {
       nextRenderBoxModel = _createRenderWidget();
     } else if (target.isReplacedElement) {
-      nextRenderBoxModel = _createRenderReplaced(
-          isRepaintBoundary: target.isRepaintBoundary);
+      nextRenderBoxModel = _createRenderReplaced(isRepaintBoundary: target.isRepaintBoundary);
     } else if (target.isSVGElement) {
-      nextRenderBoxModel =
-          target.createRenderSVG(isRepaintBoundary: target.isRepaintBoundary);
+      nextRenderBoxModel = target.createRenderSVG(isRepaintBoundary: target.isRepaintBoundary);
     } else {
-      nextRenderBoxModel = createRenderLayout(
-          isRepaintBoundary: target.isRepaintBoundary);
+      nextRenderBoxModel = createRenderLayout(isRepaintBoundary: target.isRepaintBoundary);
     }
 
     return nextRenderBoxModel;

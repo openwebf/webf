@@ -647,28 +647,6 @@ class RenderBoxModel extends RenderBox
   // Positioned holder box ref.
   RenderPositionPlaceholder? positionedHolder;
 
-  // https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context#the_stacking_context
-  bool get needsStacking {
-    return
-        // Root element of the document (<html>).
-        renderStyle.target is HTMLElement ||
-            // Element with a position value absolute or relative and z-index value other than auto.
-            ((renderStyle.position == CSSPositionType.relative || renderStyle.position == CSSPositionType.absolute) &&
-                renderStyle.zIndex != null) ||
-            // Element with a position value fixed or sticky
-            ((renderStyle.position == CSSPositionType.fixed || renderStyle.position == CSSPositionType.sticky)) ||
-            // Element that is a child of a flex container with z-index value other than auto.
-            ((renderStyle.getParentRenderStyle()!.display == CSSDisplay.flex ||
-                    renderStyle.getParentRenderStyle()!.display == CSSDisplay.inlineFlex) &&
-                renderStyle.zIndex != null) ||
-            // Element with a opacity value less than 1.
-            renderStyle.opacity < 1.0 ||
-            // Element with a transform value.
-            renderStyle.transform != null ||
-            // Element with a filter value.
-            renderStyle.filter != null;
-  }
-
   T copyWith<T extends RenderBoxModel>(T copiedRenderBoxModel) {
     if (renderPositionPlaceholder != null) {
       renderPositionPlaceholder!.positioned = copiedRenderBoxModel;

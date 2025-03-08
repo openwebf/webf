@@ -255,6 +255,8 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void _scroll(num aim, Axis direction, {bool? withAnimation = false}) {
+    if (attachedRenderer == null) return;
+
     flutter.ScrollController? scrollController = direction == Axis.horizontal ? scrollControllerX : scrollControllerY;
 
     if (scrollController == null) return;

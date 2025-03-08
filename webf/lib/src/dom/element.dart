@@ -35,6 +35,7 @@ const String ELEMENT_DEFAULT_HEIGHT = '150px';
 const String UNKNOWN = 'UNKNOWN';
 
 typedef TestElement = bool Function(Element element);
+typedef ElementVisitor = void Function(Node child);
 
 enum StickyPositionType {
   relative,
@@ -1432,6 +1433,14 @@ abstract class Element extends ContainerNode
   void debugHideHighlight() {
     if (isRendererAttached) {
       renderStyle.setDebugShouldPaintOverlay(false);
+    }
+  }
+
+  void visitChildren(ElementVisitor visitor) {
+    Node? child = firstChild;
+    while (child != null) {
+      visitor(child);
+      child = child.nextSibling;
     }
   }
 
