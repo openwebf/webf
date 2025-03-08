@@ -307,7 +307,7 @@ class CSSPositionedLayout {
         parentSize.width - parentBorderLeftWidth.computedValue - parentBorderRightWidth.computedValue,
         parentSize.height - parentBorderTopWidth.computedValue - parentBorderBottomWidth.computedValue);
 
-    RenderStyle childRenderStyle = child.renderStyle;
+    CSSRenderStyle childRenderStyle = child.renderStyle;
     CSSLengthValue left = childRenderStyle.left;
     CSSLengthValue right = childRenderStyle.right;
     CSSLengthValue top = childRenderStyle.top;
@@ -337,6 +337,10 @@ class CSSPositionedLayout {
         ? Offset.zero
         : _getPlaceholderToParentOffset(child.renderPositionPlaceholder, parent);
 
+    Offset ancestorOffset = child.renderStyle.target.parentElement == parent.renderStyle.target
+        ? Offset.zero
+        : child.renderStyle.target.parentElement!.attachedRenderer!.getOffsetToAncestor(Offset.zero, parent);
+
     double x = _computePositionedOffset(
       Axis.horizontal,
       false,
@@ -365,7 +369,7 @@ class CSSPositionedLayout {
       marginBottom,
     );
 
-    childParentData.offset = Offset(x, y);
+    childParentData.offset = Offset(x, y) - ancestorOffset;
   }
 
   // Compute the offset of positioned element in one axis.
