@@ -18,31 +18,14 @@ pub type RequestAnimationFrameCallback = Box<dyn Fn(f64)>;
 impl RustMethods for WindowRustMethods {}
 
 pub struct Window {
-  ptr: *const OpaquePtr,
-  context: *const ExecutingContext,
+  pub event_target: EventTarget,
   method_pointer: *const WindowRustMethods,
-  status: *const RustValueStatus,
 }
 
-
 impl Window {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const WindowRustMethods, status: *const RustValueStatus) -> Window {
-    Window {
-      ptr,
-      context,
-      method_pointer,
-      status,
-    }
-  }
-
-  pub fn context<'a>(&self) -> &'a ExecutingContext {
-    assert!(!self.context.is_null(), "Context PTR must not be null");
-    unsafe { &*self.context }
-  }
-
   pub fn scroll_to_with_x_and_y(&self, x: f64, y: f64, exception_state: &ExceptionState) {
     unsafe {
-      ((*self.method_pointer).scroll_to_with_x_and_y)(self.ptr, x, y, exception_state.ptr)
+      ((*self.method_pointer).scroll_to_with_x_and_y)(self.ptr(), x, y, exception_state.ptr)
     }
   }
 
@@ -69,7 +52,7 @@ impl Window {
     let callback_context_ptr = Box::into_raw(callback_context);
 
     let result = unsafe {
-      ((*self.method_pointer).request_animation_frame)(self.ptr, callback_context_ptr, exception_state.ptr)
+      ((*self.method_pointer).request_animation_frame)(self.ptr(), callback_context_ptr, exception_state.ptr)
     };
 
     if exception_state.has_exception() {
@@ -77,10 +60,52 @@ impl Window {
         let _ = Box::from_raw(callback_context_ptr);
         let _ = Box::from_raw(callback_context_data_ptr);
       }
-      return Err(exception_state.stringify(self.context()));
+      return Err(exception_state.stringify(self.event_target.context()));
     }
 
     Ok(result)
 
+  }
+}
+
+impl EventTargetMethods for Window {
+  /// Initialize the instance from cpp raw pointer.
+  fn initialize<T: RustMethods>(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const T, status: *const RustValueStatus) -> Self where Self: Sized {
+    unsafe {
+      Window {
+        event_target: EventTarget::initialize(
+          ptr,
+          context,
+          &(method_pointer as *const WindowRustMethods).as_ref().unwrap().event_target,
+          status,
+        ),
+        method_pointer: method_pointer as *const WindowRustMethods,
+      }
+    }
+  }
+
+  fn ptr(&self) -> *const OpaquePtr {
+    self.event_target.ptr
+  }
+
+  fn add_event_listener(&self,
+                        event_name: &str,
+                        callback: EventListenerCallback,
+                        options: &AddEventListenerOptions,
+                        exception_state: &ExceptionState) -> Result<(), String> {
+    self.event_target.add_event_listener(event_name, callback, options, exception_state)
+  }
+
+  fn remove_event_listener(&self,
+                           event_name: &str,
+                           callback: EventListenerCallback,
+                           exception_state: &ExceptionState) -> Result<(), String> {
+    self.event_target.remove_event_listener(event_name, callback, exception_state)
+  }
+
+  fn dispatch_event(&self,
+                    event: &Event,
+                    exception_state: &ExceptionState) -> bool{
+    self.event_target.dispatch_event(event, exception_state)
   }
 }
