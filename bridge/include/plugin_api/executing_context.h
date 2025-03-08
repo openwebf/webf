@@ -48,6 +48,8 @@ class InputEvent;
 typedef struct InputEventPublicMethods InputEventPublicMethods;
 class IntersectionChangeEvent;
 typedef struct IntersectionChangeEventPublicMethods IntersectionChangeEventPublicMethods;
+class PopStateEvent;
+typedef struct PopStateEventPublicMethods PopStateEventPublicMethods;
 class MouseEvent;
 typedef struct MouseEventPublicMethods MouseEventPublicMethods;
 class PointerEvent;
@@ -179,6 +181,9 @@ using PublicContextCreateIntersectionChangeEventWithOptions =
                                                                                  const char* type,
                                                                                  WebFIntersectionChangeEventInit* init,
                                                                                  ExceptionState& exception_state);
+
+using PublicContextCreatePopStateEvent = WebFValue<PopStateEvent, PopStateEventPublicMethods> (*)(ExecutingContext* context,
+                                                                                                 ExceptionState& exception_state);
 
 using PublicContextCreateMouseEvent =
     WebFValue<MouseEvent, MouseEventPublicMethods> (*)(ExecutingContext* context,
@@ -349,6 +354,9 @@ struct ExecutingContextWebFMethods {
                                            const char* type,
                                            WebFIntersectionChangeEventInit* init,
                                            ExceptionState& exception_state);
+
+  static WebFValue<PopStateEvent, PopStateEventPublicMethods> CreatePopStateEvent(ExecutingContext* context,
+                                                                                 ExceptionState& exception_state);
 
   static WebFValue<MouseEvent, MouseEventPublicMethods> CreateMouseEvent(ExecutingContext* context,
                                                                          const char* type,
