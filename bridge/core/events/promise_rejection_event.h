@@ -6,6 +6,7 @@
 #ifndef BRIDGE_CORE_EVENTS_PROMISE_REJECTION_EVENT_H_
 #define BRIDGE_CORE_EVENTS_PROMISE_REJECTION_EVENT_H_
 
+#include "plugin_api/promise_rejection_event.h"
 #include "core/dom/events/event.h"
 #include "qjs_promise_rejection_event_init.h"
 
@@ -35,6 +36,8 @@ class PromiseRejectionEvent : public Event {
   ScriptValue reason() { return reason_; }
 
   bool IsPromiseRejectionEvent() const override;
+
+  const PromiseRejectionEventPublicMethods* promiseRejectionEventPublicMethods();
 
  private:
   ScriptValue promise_;

@@ -46,6 +46,8 @@ pub struct ExecutingContextRustMethods {
   pub create_intersection_change_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<IntersectionChangeEventRustMethods>,
   pub create_intersection_change_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const IntersectionChangeEventInit, exception_state: *const OpaquePtr ) -> RustValue<IntersectionChangeEventRustMethods>,
   pub create_pop_state_event: extern "C" fn(*const OpaquePtr, exception_state: *const OpaquePtr ) -> RustValue<PopStateEventRustMethods>,
+  pub create_promise_rejection_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<PromiseRejectionEventRustMethods>,
+  pub create_promise_rejection_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const PromiseRejectionEventInit, exception_state: *const OpaquePtr ) -> RustValue<PromiseRejectionEventRustMethods>,
   pub create_mouse_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<MouseEventRustMethods>,
   pub create_mouse_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const MouseEventInit, exception_state: *const OpaquePtr ) -> RustValue<MouseEventRustMethods>,
   pub create_pointer_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<PointerEventRustMethods>,

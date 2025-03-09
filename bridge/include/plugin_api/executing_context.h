@@ -21,6 +21,7 @@
 #include "intersection_change_event_init.h"
 #include "mouse_event_init.h"
 #include "pointer_event_init.h"
+#include "promise_rejection_event_init.h"
 #include "transition_event_init.h"
 #include "ui_event_init.h"
 #include "window.h"
@@ -50,6 +51,8 @@ class IntersectionChangeEvent;
 typedef struct IntersectionChangeEventPublicMethods IntersectionChangeEventPublicMethods;
 class PopStateEvent;
 typedef struct PopStateEventPublicMethods PopStateEventPublicMethods;
+class PromiseRejectionEvent;
+typedef struct PromiseRejectionEventPublicMethods PromiseRejectionEventPublicMethods;
 class MouseEvent;
 typedef struct MouseEventPublicMethods MouseEventPublicMethods;
 class PointerEvent;
@@ -184,6 +187,16 @@ using PublicContextCreateIntersectionChangeEventWithOptions =
 
 using PublicContextCreatePopStateEvent = WebFValue<PopStateEvent, PopStateEventPublicMethods> (*)(ExecutingContext* context,
                                                                                                  ExceptionState& exception_state);
+
+using PublicContextCreatePromiseRejectionEvent =
+    WebFValue<PromiseRejectionEvent, PromiseRejectionEventPublicMethods> (*)(ExecutingContext* context,
+                                                      const char* type,
+                                                      ExceptionState& exception_state);
+using PublicContextCreatePromiseRejectionEventWithOptions =
+    WebFValue<PromiseRejectionEvent, PromiseRejectionEventPublicMethods> (*)(ExecutingContext* context,
+                                                      const char* type,
+                                                      WebFPromiseRejectionEventInit* init,
+                                                      ExceptionState& exception_state);
 
 using PublicContextCreateMouseEvent =
     WebFValue<MouseEvent, MouseEventPublicMethods> (*)(ExecutingContext* context,
@@ -358,6 +371,14 @@ struct ExecutingContextWebFMethods {
   static WebFValue<PopStateEvent, PopStateEventPublicMethods> CreatePopStateEvent(ExecutingContext* context,
                                                                                  ExceptionState& exception_state);
 
+  static WebFValue<PromiseRejectionEvent, PromiseRejectionEventPublicMethods>
+  CreatePromiseRejectionEvent(ExecutingContext* context, const char* type, ExceptionState& exception_state);
+  static WebFValue<PromiseRejectionEvent, PromiseRejectionEventPublicMethods> CreatePromiseRejectionEventWithOptions(
+      ExecutingContext* context,
+      const char* type,
+      WebFPromiseRejectionEventInit* init,
+      ExceptionState& exception_state);
+
   static WebFValue<MouseEvent, MouseEventPublicMethods> CreateMouseEvent(ExecutingContext* context,
                                                                          const char* type,
                                                                          ExceptionState& exception_state);
@@ -433,6 +454,10 @@ struct ExecutingContextWebFMethods {
       CreateIntersectionChangeEvent};
   PublicContextCreateIntersectionChangeEventWithOptions rust_context_create_intersection_change_event_with_options{
       CreateIntersectionChangeEventWithOptions};
+  PublicContextCreatePopStateEvent rust_context_create_pop_state_event{CreatePopStateEvent};
+  PublicContextCreatePromiseRejectionEvent rust_context_create_promise_rejection_event{CreatePromiseRejectionEvent};
+  PublicContextCreatePromiseRejectionEventWithOptions rust_context_create_promise_rejection_event_with_options{
+      CreatePromiseRejectionEventWithOptions};
   PublicContextCreateMouseEvent rust_context_create_mouse_event{CreateMouseEvent};
   PublicContextCreateMouseEventWithOptions rust_context_create_mouse_event_with_options{CreateMouseEventWithOptions};
   PublicContextCreatePointerEvent rust_context_create_pointer_event{CreatePointerEvent};

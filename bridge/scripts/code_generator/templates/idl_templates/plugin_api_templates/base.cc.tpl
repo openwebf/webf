@@ -37,5 +37,5 @@
 #include "core/input/touch_list.h"
 #include "core/input/touch.h"
 #include "core/timing/performance_measure.h"
-
+#include "core/events/promise_rejection_event.h"
 <%= content %>

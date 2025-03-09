@@ -20,7 +20,8 @@ enum EventType {
   PointerEvent = 10,
   PopStateEvent = 11,
   TransitionEvent = 12,
-  HashchangeEvent = 13,
+  PromiseRejectionEvent = 13,
+  HashchangeEvent = 14,
 }
 #[repr(C)]
 pub struct EventRustMethods {
@@ -289,6 +290,16 @@ impl Event {
       return Err("The type value of Event does not belong to the TransitionEvent type.");
     }
     Ok(TransitionEvent::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const TransitionEventRustMethods, raw_ptr.status))
+  }
+  pub fn as_promise_rejection_event(&self) -> Result<PromiseRejectionEvent, &str> {
+    let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
+      ((*self.method_pointer).dynamic_to)(self.ptr, EventType::PromiseRejectionEvent)
+    };
+    if (raw_ptr.value == std::ptr::null()) {
+      return Err("The type value of Event does not belong to the PromiseRejectionEvent type.");
+    }
+    Ok(PromiseRejectionEvent::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const PromiseRejectionEventRustMethods, raw_ptr.status))
   }
   pub fn as_hashchange_event(&self) -> Result<HashchangeEvent, &str> {
     let raw_ptr = unsafe {
