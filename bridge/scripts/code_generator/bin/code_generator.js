@@ -280,7 +280,7 @@ const pluginApiList = [
   'events/transition_event_init.d.ts',
   'events/close_event.d.ts',
   'events/intersection_change_event_init.d.ts',
-  // 'events/hybrid_router_change_event.d.ts',
+  'events/hybrid_router_change_event.d.ts',
   'events/focus_event.d.ts',
   'events/input_event_init.d.ts',
   'events/animation_event.d.ts',

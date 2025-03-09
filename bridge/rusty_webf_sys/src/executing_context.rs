@@ -41,6 +41,7 @@ pub struct ExecutingContextRustMethods {
   pub create_gesture_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const GestureEventInit, exception_state: *const OpaquePtr ) -> RustValue<GestureEventRustMethods>,
   pub create_hashchange_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<HashchangeEventRustMethods>,
   pub create_hashchange_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const HashchangeEventInit, exception_state: *const OpaquePtr ) -> RustValue<HashchangeEventRustMethods>,
+  pub create_hybrid_router_change_event: extern "C" fn(*const OpaquePtr, exception_state: *const OpaquePtr ) -> RustValue<HybridRouterChangeEventRustMethods>,
   pub create_input_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<InputEventRustMethods>,
   pub create_input_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const InputEventInit, exception_state: *const OpaquePtr ) -> RustValue<InputEventRustMethods>,
   pub create_intersection_change_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<IntersectionChangeEventRustMethods>,

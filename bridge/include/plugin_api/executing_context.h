@@ -45,6 +45,8 @@ class GestureEvent;
 typedef struct GestureEventPublicMethods GestureEventPublicMethods;
 class HashchangeEvent;
 typedef struct HashchangeEventPublicMethods HashchangeEventPublicMethods;
+class HybridRouterChangeEvent;
+typedef struct HybridRouterChangeEventPublicMethods HybridRouterChangeEventPublicMethods;
 class InputEvent;
 typedef struct InputEventPublicMethods InputEventPublicMethods;
 class IntersectionChangeEvent;
@@ -164,6 +166,10 @@ using PublicContextCreateHashchangeEventWithOptions =
                                                                  const char* type,
                                                                  WebFHashchangeEventInit* init,
                                                                  ExceptionState& exception_state);
+
+using PublicContextCreateHybridRouterChangeEvent =
+    WebFValue<HybridRouterChangeEvent, HybridRouterChangeEventPublicMethods> (*)(ExecutingContext* context,
+                                                                                 ExceptionState& exception_state);
 
 using PublicContextCreateInputEvent =
     WebFValue<InputEvent, InputEventPublicMethods> (*)(ExecutingContext* context,
@@ -352,6 +358,9 @@ struct ExecutingContextWebFMethods {
       WebFHashchangeEventInit* init,
       ExceptionState& exception_state);
 
+  static WebFValue<HybridRouterChangeEvent, HybridRouterChangeEventPublicMethods> CreateHybridRouterChangeEvent(
+      ExecutingContext* context, ExceptionState& exception_state);
+
   static WebFValue<InputEvent, InputEventPublicMethods> CreateInputEvent(ExecutingContext* context,
                                                                          const char* type,
                                                                          ExceptionState& exception_state);
@@ -448,6 +457,8 @@ struct ExecutingContextWebFMethods {
   PublicContextCreateHashchangeEvent rust_context_create_change_event{CreateHashchangeEvent};
   PublicContextCreateHashchangeEventWithOptions rust_context_create_change_event_with_options{
       CreateHashchangeEventWithOptions};
+  PublicContextCreateHybridRouterChangeEvent rust_context_create_hybrid_router_change_event{
+      CreateHybridRouterChangeEvent};
   PublicContextCreateInputEvent rust_context_create_input_event{CreateInputEvent};
   PublicContextCreateInputEventWithOptions rust_context_create_input_event_with_options{CreateInputEventWithOptions};
   PublicContextCreateIntersectionChangeEvent rust_context_create_intersection_change_event{

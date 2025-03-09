@@ -5,6 +5,7 @@
 #ifndef WEBF_CORE_EVENTS_HYBRID_ROUTER_CHANGE_EVENT_H_
 #define WEBF_CORE_EVENTS_HYBRID_ROUTER_CHANGE_EVENT_H_
 
+#include "plugin_api/hybrid_router_change_event.h"
 #include "core/dom/events/event.h"
 #include "qjs_hybrid_router_change_event_init.h"
 
@@ -43,6 +44,8 @@ class HybridRouterChangeEvent : public Event {
   AtomicString name() const;
 
   bool IsHybridRouterChangeEvent() const override;
+
+  const HybridRouterChangeEventPublicMethods* hybridRouterChangeEventPublicMethods();
 
   void Trace(GCVisitor* visitor) const override;
 

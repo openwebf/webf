@@ -11,17 +11,18 @@ enum EventType {
   CustomEvent = 1,
   GestureEvent = 2,
   CloseEvent = 3,
-  AnimationEvent = 4,
-  IntersectionChangeEvent = 5,
-  UIEvent = 6,
-  FocusEvent = 7,
-  InputEvent = 8,
-  MouseEvent = 9,
-  PointerEvent = 10,
-  PopStateEvent = 11,
-  TransitionEvent = 12,
-  PromiseRejectionEvent = 13,
-  HashchangeEvent = 14,
+  HybridRouterChangeEvent = 4,
+  AnimationEvent = 5,
+  IntersectionChangeEvent = 6,
+  UIEvent = 7,
+  FocusEvent = 8,
+  InputEvent = 9,
+  MouseEvent = 10,
+  PointerEvent = 11,
+  PopStateEvent = 12,
+  TransitionEvent = 13,
+  PromiseRejectionEvent = 14,
+  HashchangeEvent = 15,
 }
 #[repr(C)]
 pub struct EventRustMethods {
@@ -200,6 +201,16 @@ impl Event {
       return Err("The type value of Event does not belong to the CloseEvent type.");
     }
     Ok(CloseEvent::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const CloseEventRustMethods, raw_ptr.status))
+  }
+  pub fn as_hybrid_router_change_event(&self) -> Result<HybridRouterChangeEvent, &str> {
+    let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
+      ((*self.method_pointer).dynamic_to)(self.ptr, EventType::HybridRouterChangeEvent)
+    };
+    if (raw_ptr.value == std::ptr::null()) {
+      return Err("The type value of Event does not belong to the HybridRouterChangeEvent type.");
+    }
+    Ok(HybridRouterChangeEvent::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const HybridRouterChangeEventRustMethods, raw_ptr.status))
   }
   pub fn as_animation_event(&self) -> Result<AnimationEvent, &str> {
     let raw_ptr = unsafe {
