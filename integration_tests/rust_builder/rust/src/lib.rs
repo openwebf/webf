@@ -16,6 +16,7 @@ pub extern "C" fn init_webf_test_app(handle: RustValue<ExecutingContextRustMetho
 
   webf_sys::webf_future::spawn(context.clone(), async move {
     webf_test_utils::async_runner::run_tests(context.clone()).await;
+    webf_test_utils::callback_runner::run_tests(context.clone()).await;
   });
 
   std::ptr::null_mut()

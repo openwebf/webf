@@ -1,5 +1,6 @@
 use webf_sys::{AddEventListenerOptions, Event, EventTargetMethods, ExecutingContext, WebFNativeFuture};
-use webf_test_macros::{webf_test, webf_test_async};
+use webf_test_macros::{webf_test, webf_test_async, webf_test_callback};
+use webf_test_utils::callback_runner::TestDone;
 
 #[webf_test]
 pub fn test_location_should_update_when_push_state(context: ExecutingContext) {
@@ -20,8 +21,9 @@ pub fn test_location_should_update_when_push_state(context: ExecutingContext) {
   history.back(&exception_state);
 }
 
-#[webf_test_async]
-pub async fn test_pop_state_event_will_trigger_when_navigate_back(context: ExecutingContext) {
+#[webf_test_callback]
+pub async fn test_pop_state_event_will_trigger_when_navigate_back(context: ExecutingContext, done: TestDone) {
+  let (done_future, set_done) = done;
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
@@ -30,9 +32,6 @@ pub async fn test_pop_state_event_will_trigger_when_navigate_back(context: Execu
   let history = context.history();
   let json_str = r#"{"name": 2}"#;
   history.push_state_with_url(json_str, "", "/sample2", &exception_state);
-
-  let done_future = WebFNativeFuture::<()>::new();
-  let done_future_in_callback = done_future.clone();
 
   let on_pop_state_change = Box::new(move |event: &Event| {
     let context = event.context();
@@ -45,7 +44,7 @@ pub async fn test_pop_state_event_will_trigger_when_navigate_back(context: Execu
     let pathname = location.pathname(&exception_state);
     assert_eq!(pathname, "/public/core.build.js");
 
-    done_future_in_callback.set_result(Ok(Some(())));
+    set_done();
   });
 
   let event_listener_options = AddEventListenerOptions {
@@ -87,8 +86,9 @@ pub fn test_push_state_with_no_url_will_default_to_current_url(context: Executin
   history.back(&exception_state);
 }
 
-#[webf_test_async]
-pub async fn test_replace_state_should_work(context: ExecutingContext) {
+#[webf_test_callback]
+pub async fn test_replace_state_should_work(context: ExecutingContext, done: TestDone) {
+  let (done_future, set_done) = done;
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
@@ -99,9 +99,6 @@ pub async fn test_replace_state_should_work(context: ExecutingContext) {
   history.replace_state(json_state_1, "", &exception_state);
   let json_state_2 = r#"{"name": 2}"#;
   history.push_state_with_url(json_state_2, "", "/sample2", &exception_state);
-
-  let done_future = WebFNativeFuture::<()>::new();
-  let done_future_in_callback = done_future.clone();
 
   let on_pop_state_change = Box::new(move |event: &Event| {
     let context = event.context();
@@ -115,7 +112,7 @@ pub async fn test_replace_state_should_work(context: ExecutingContext) {
     let pathname = location.pathname(&exception_state);
     assert_eq!(pathname, "/public/core.build.js");
 
-    done_future_in_callback.set_result(Ok(Some(())));
+    set_done();
   });
 
   let event_listener_options = AddEventListenerOptions {
@@ -141,8 +138,9 @@ pub async fn test_replace_state_should_work(context: ExecutingContext) {
   done_future.await.unwrap();
 }
 
-#[webf_test_async]
-pub async fn test_go_back_should_work(context: ExecutingContext) {
+#[webf_test_callback]
+pub async fn test_go_back_should_work(context: ExecutingContext, done: TestDone) {
+  let (done_future, set_done) = done;
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
@@ -153,9 +151,6 @@ pub async fn test_go_back_should_work(context: ExecutingContext) {
   history.replace_state(json_state_1, "", &exception_state);
   let json_state_2 = r#"{"name": 2}"#;
   history.push_state_with_url(json_state_2, "", "/sample2", &exception_state);
-
-  let done_future = WebFNativeFuture::<()>::new();
-  let done_future_in_callback = done_future.clone();
 
   let on_pop_state_change = Box::new(move |event: &Event| {
     let context = event.context();
@@ -169,7 +164,7 @@ pub async fn test_go_back_should_work(context: ExecutingContext) {
     let pathname = location.pathname(&exception_state);
     assert_eq!(pathname, "/public/core.build.js");
 
-    done_future_in_callback.set_result(Ok(Some(())));
+    set_done();
   });
 
   let event_listener_options = AddEventListenerOptions {
@@ -195,8 +190,9 @@ pub async fn test_go_back_should_work(context: ExecutingContext) {
   done_future.await.unwrap();
 }
 
-#[webf_test_async]
-pub async fn test_hash_change_should_fire_when_history_back(context: ExecutingContext) {
+#[webf_test_callback]
+pub async fn test_hash_change_should_fire_when_history_back(context: ExecutingContext, done: TestDone) {
+  let (done_future, set_done) = done;
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
@@ -205,9 +201,6 @@ pub async fn test_hash_change_should_fire_when_history_back(context: ExecutingCo
   let history = context.history();
   let json_state = r#"{"name": 2}"#;
   history.push_state_with_url(json_state, "", "#/page_1", &exception_state);
-
-  let done_future = WebFNativeFuture::<()>::new();
-  let done_future_in_callback = done_future.clone();
 
   let on_hash_change = Box::new(move |event: &Event| {
     let event = event.as_hashchange_event().unwrap();
@@ -221,7 +214,7 @@ pub async fn test_hash_change_should_fire_when_history_back(context: ExecutingCo
     let new_anchor = parser.parse(&new_url).unwrap().anchor.unwrap();
     assert_eq!(new_anchor, "hash=hashValue");
 
-    done_future_in_callback.set_result(Ok(Some(())));
+    set_done();
   });
 
   let event_listener_options = AddEventListenerOptions {
@@ -244,8 +237,9 @@ pub async fn test_hash_change_should_fire_when_history_back(context: ExecutingCo
   done_future.await.unwrap();
 }
 
-#[webf_test_async]
-pub async fn test_hash_change_when_go_back_should_work(context: ExecutingContext) {
+#[webf_test_callback]
+pub async fn test_hash_change_when_go_back_should_work(context: ExecutingContext, done: TestDone) {
+  let (done_future, set_done) = done;
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
@@ -256,9 +250,6 @@ pub async fn test_hash_change_when_go_back_should_work(context: ExecutingContext
   history.replace_state(json_state_1, "", &exception_state);
   let json_state_2 = r#"{"name": 2}"#;
   history.push_state_with_url(json_state_2, "", "#/page_1", &exception_state);
-
-  let done_future = WebFNativeFuture::<()>::new();
-  let done_future_in_callback = done_future.clone();
 
   let on_hash_change = Box::new(move |event: &Event| {
     let event = event.as_hashchange_event().unwrap();
@@ -272,7 +263,7 @@ pub async fn test_hash_change_when_go_back_should_work(context: ExecutingContext
     let new_anchor = parser.parse(&new_url).unwrap().anchor.unwrap();
     assert_eq!(new_anchor, "hash=hashValue");
 
-    done_future_in_callback.set_result(Ok(Some(())));
+    set_done();
   });
 
   let event_listener_options = AddEventListenerOptions {
