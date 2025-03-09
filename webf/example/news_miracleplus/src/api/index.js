@@ -97,12 +97,16 @@ export const api = {
     getUserInfo: () => request('/v1/users/user_info', {
       requireAuth: true,
     }),
-    sendVerifyCode: (data) => request('/v1/users/sms_send', {
+    sendVerifyCode: ({ countryCode, phone, useCase }) => request('/v1/users/sms_send', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ country_code: countryCode, phone, use_case: useCase }),
     }),
     logout: () => request('/v1/users/user_info', {
       requireAuth: false,
+    }),
+    resetPassword: ({ code, countryCode, phone, newPassword }) => request('/v1/users/reset_password', {
+      method: 'POST',
+      body: JSON.stringify({ code, country_code: countryCode, phone, new_password: newPassword }),
     }),
     getUserFeedsList: ({ page = 1, category = 'all', userId = '' } = {}) => 
       request(`/v1/users/${userId}/feeds?page=${page}&category=${category}`, {

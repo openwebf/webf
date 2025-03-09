@@ -19,14 +19,10 @@
             <flutter-cupertino-button type="primary" @click="handleLoginByPassword" class="login-button">
               登录
             </flutter-cupertino-button>
-
-            <flutter-cupertino-button @click="switchTab" class="login-button">
-              switchTab
-            </flutter-cupertino-button>
           </div>
           <div class="login-footer">
-            <div class="login-footer-text">忘记密码？</div>
-            <a class="login-footer-link" @click="goToRegister">立即注册</a>
+            <div class="login-footer-text" @click="goToResetPassword">忘记密码？</div>
+            <div class="login-footer-link" @click="goToRegister">立即注册</div>
           </div>
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="短信登录">
@@ -114,8 +110,8 @@ export default {
       try {
         await api.auth.sendVerifyCode({
           phone: this.phoneNumber,
-          country_code: this.countryCode,
-          use_case: 'login',
+          countryCode: this.countryCode,
+          useCase: 'login',
         });        
         this.countdown = 60;
         this.startCountdown();
@@ -256,6 +252,9 @@ export default {
     },
     switchTab() {
       tabBarManager.switchTab('/home');
+    },
+    goToResetPassword() {
+      window.webf.hybridHistory.pushState({}, '/reset_password');
     },
   },
   beforeUnmount() {
