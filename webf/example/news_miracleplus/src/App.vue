@@ -5,6 +5,9 @@
   <webf-router-link path="/login" @mount="handleRouterMounted(ROUTE_FLAGS.LOGIN)">
     <login-page v-if="isRouteActive(ROUTE_FLAGS.LOGIN)"></login-page>
   </webf-router-link>
+  <webf-router-link path="/reset_password" @mount="handleRouterMounted(ROUTE_FLAGS.RESET_PASSWORD)">
+    <reset-password-page v-if="isRouteActive(ROUTE_FLAGS.RESET_PASSWORD)"></reset-password-page>
+  </webf-router-link>
   <webf-router-link path="/share_link" @mount="handleRouterMounted(ROUTE_FLAGS.SHARE_LINK)">
     <share-link-page v-if="isRouteActive(ROUTE_FLAGS.SHARE_LINK)"></share-link-page>
   </webf-router-link>
@@ -81,6 +84,7 @@ import PrivacyPolicyPage from '@/Pages/PrivacyPolicyPage.vue';
 import AnswerPage from '@/Pages/AnswerPage.vue';
 import QuestionPage from '@/Pages/QuestionPage.vue';
 import TopicPage from '@/Pages/TopicPage.vue';
+import ResetPasswordPage from '@/Pages/ResetPasswordPage.vue';
 import tabBarManager from '@/utils/tabBarManager';
 
 // Define route flags as bit positions
@@ -97,6 +101,7 @@ const ROUTE_FLAGS = {
   QUESTION: 0x200,        // 0010 0000 0000
   HOME: 0x400,            // 0100 0000 0000
   TOPIC: 0x800,           // 1000 0000 0000
+  RESET_PASSWORD: 0x1000, // 0001 0000 0000 0000
 };
 
 // Watch the hybrid router changes
@@ -138,6 +143,7 @@ export default {
     AnswerPage,
     QuestionPage,
     TopicPage,
+    ResetPasswordPage,
   },
   mounted() {
     tabBarManager.setTabBarRef(this.$refs.tabBar);
