@@ -302,7 +302,7 @@ const pluginApiList = [
   'events/mouse_event.d.ts',
   'events/pop_state_event_init.d.ts',
   'events/message_event_init.d.ts',
-  // 'events/promise_rejection_event.d.ts',
+  'events/promise_rejection_event.d.ts',
   'events/keyboard_event_init.d.ts',
   'events/hashchange_event.d.ts',
   'events/promise_rejection_event_init.d.ts',

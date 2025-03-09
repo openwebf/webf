@@ -31,7 +31,8 @@ enum class EventType {
   kPointerEvent = 10,
   kPopStateEvent = 11,
   kTransitionEvent = 12,
-  kHashchangeEvent = 13,
+  kPromiseRejectionEvent = 13,
+  kHashchangeEvent = 14,
 };
 using PublicEventGetBubbles = int32_t (*)(Event*);
 using PublicEventGetCancelBubble = int32_t (*)(Event*);
