@@ -77,7 +77,7 @@ mixin CSSSvgMixin on RenderStyle {
   CSSPaint? _fill;
   bool get isFillEmpty => _fill == null;
   @override
-  CSSPaint get fill => _fill ?? parent?.fill ?? CSSPaint.blackPaint;
+  CSSPaint get fill => _fill ?? getParentRenderStyle()?.fill ?? CSSPaint.blackPaint;
   set fill(CSSPaint? value) {
     if (_fill == value) return;
     _fill = value;
@@ -87,7 +87,7 @@ mixin CSSSvgMixin on RenderStyle {
   CSSPaint? _stroke;
   bool get isStrokeEmpty => _stroke == null;
   @override
-  CSSPaint get stroke => _stroke ?? parent?.stroke ?? CSSPaint.none;
+  CSSPaint get stroke => _stroke ?? getParentRenderStyle()?.stroke ?? CSSPaint.none;
   set stroke(CSSPaint? value) {
     if (_stroke == value) return;
     _stroke = value;
@@ -96,7 +96,7 @@ mixin CSSSvgMixin on RenderStyle {
 
   CSSLengthValue? _strokeWidth;
   @override
-  CSSLengthValue get strokeWidth => _strokeWidth ?? parent?.strokeWidth ?? CSSLengthValue(1, CSSLengthType.PX);
+  CSSLengthValue get strokeWidth => _strokeWidth ?? getParentRenderStyle()?.strokeWidth ?? CSSLengthValue(1, CSSLengthType.PX);
   set strokeWidth(CSSLengthValue? value) {
     if (_strokeWidth == value) return;
     _strokeWidth = value;

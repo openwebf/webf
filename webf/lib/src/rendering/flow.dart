@@ -473,7 +473,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     runLineBox.isFirst = true;
     int remainLines = _maxLines;
     bool happenJumpPaint = false;
-
     children.forEachIndexed((index, child) {
         if (enableWebFProfileTracking) {
           WebFProfiler.instance.startTrackLayoutStep('RenderFlowLayout._computeRunMetrics.child[$index]');
@@ -1186,9 +1185,11 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     // Max scrollable main size of all lines.
-    double maxScrollableMainSizeOfLines = scrollableMainSizeOfLines.reduce((double curr, double next) {
-      return curr > next ? curr : next;
-    });
+    double maxScrollableMainSizeOfLines = scrollableMainSizeOfLines.isEmpty
+        ? 0
+        : scrollableMainSizeOfLines.reduce((double curr, double next) {
+            return curr > next ? curr : next;
+          });
 
     RenderBoxModel container = isScrollingContentBox ? parent as RenderBoxModel : this;
     bool isScrollContainer = renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
@@ -1200,9 +1201,11 @@ class RenderFlowLayout extends RenderLayoutBox {
         (isScrollContainer ? renderStyle.paddingRight.computedValue : 0);
 
     // Max scrollable cross size of all lines.
-    double maxScrollableCrossSizeOfLines = scrollableCrossSizeOfLines.reduce((double curr, double next) {
-      return curr > next ? curr : next;
-    });
+    double maxScrollableCrossSizeOfLines = scrollableCrossSizeOfLines.isEmpty
+        ? 0
+        : scrollableCrossSizeOfLines.reduce((double curr, double next) {
+            return curr > next ? curr : next;
+          });
 
     // Padding in the end direction of axis should be included in scroll container.
     double maxScrollableCrossSizeOfChildren = maxScrollableCrossSizeOfLines +
@@ -1288,7 +1291,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     } else if (child is RenderBoxModel) {
       childRenderStyle = child.renderStyle;
     } else if (child is RenderPositionPlaceholder) {
-      childRenderStyle = child.positioned!.renderStyle;
+      childRenderStyle = child.positioned?.renderStyle;
     }
     return childRenderStyle;
   }

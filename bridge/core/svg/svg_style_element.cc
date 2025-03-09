@@ -7,6 +7,6 @@
 #include "svg_names.h"
 
 namespace webf {
-SVGStyleElement::SVGStyleElement(Document& document) : SVGElement(svg_names::kstyle, &document) {}
+SVGStyleElement::SVGStyleElement(Document& document) : SVGElement(svg_names::kStyle, &document) {}
 
 }  // namespace webf

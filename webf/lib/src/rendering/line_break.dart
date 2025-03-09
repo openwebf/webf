@@ -38,7 +38,7 @@ class RenderLineBreak extends RenderReplaced {
   // Height of BR element is only determined by its parents line-height.
   // @TODO add cache to avoid create TextPainter to measure size on every layout.
   double get lineHeight {
-    CSSLengthValue lineHeight = renderStyle.parent!.lineHeight;
+    CSSLengthValue lineHeight = renderStyle.getParentRenderStyle()!.lineHeight;
     if (lineHeight.type != CSSLengthType.NORMAL) {
       return lineHeight.computedValue;
     } else {

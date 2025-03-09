@@ -33,9 +33,18 @@ class RenderPortal extends RenderBoxModel
   }
 
   @override
+  void markNeedsLayout() {
+    super.markNeedsLayout();
+    parent?.markNeedsLayout();
+  }
+
+  @override
   void performLayout() {
     super.performLayout();
 
+    if (child is RenderBoxModel) {
+      child!.parentData = parentData;
+    }
 
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
   }

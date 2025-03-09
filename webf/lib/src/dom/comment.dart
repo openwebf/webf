@@ -15,6 +15,10 @@ class Comment extends CharacterData {
   @override
   RenderBox? get domRenderer => null;
 
+  @override
+  String get hashKey => '#comment';
+
+
   // @TODO: Get data from bridge side.
   String get data => '';
 
@@ -22,7 +26,7 @@ class Comment extends CharacterData {
   int get length => data.length;
 
   @override
-  String toString() {
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
     return 'Comment()';
   }
 }

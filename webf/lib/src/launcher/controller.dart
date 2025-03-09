@@ -229,7 +229,6 @@ class WebFViewController implements WidgetsBindingObserver {
   final Map<String, Widget> _hybridRouterViews = {};
 
   void setHybridRouterView(String path, Widget root) {
-    assert(!_hybridRouterViews.containsKey(path));
     _hybridRouterViews[path] = root;
   }
   Widget? getHybridRouterView(String path) {
@@ -426,7 +425,7 @@ class WebFViewController implements WidgetsBindingObserver {
   void _registerPlatformBrightnessChange() {
     _originalOnPlatformBrightnessChanged =
         rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged;
-    rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged = _onPlatformBrightnessChanged;
+    rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged = onPlatformBrightnessChanged;
   }
 
   void _unregisterPlatformBrightnessChange() {
@@ -435,7 +434,7 @@ class WebFViewController implements WidgetsBindingObserver {
     _originalOnPlatformBrightnessChanged = null;
   }
 
-  void _onPlatformBrightnessChanged() {
+  void onPlatformBrightnessChanged() {
     if (_originalOnPlatformBrightnessChanged != null) {
       _originalOnPlatformBrightnessChanged!();
     }
@@ -543,7 +542,7 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void removeNode(Pointer pointer) {
-    assert(hasBindingObject(pointer), 'pointer: $pointer');
+    if (!hasBindingObject(pointer)) return;
 
     Node? target = getBindingObject<Node>(pointer);
     target?.parentNode?.removeChild(target);
@@ -561,7 +560,7 @@ class WebFViewController implements WidgetsBindingObserver {
   void insertAdjacentNode(
       Pointer<NativeBindingObject> selfPointer, String position, Pointer<NativeBindingObject> newPointer) {
     assert(hasBindingObject(selfPointer), 'targetId: $selfPointer position: $position newTargetId: $newPointer');
-    assert(hasBindingObject(selfPointer), 'newTargetId: $newPointer position: $position');
+    assert(hasBindingObject(newPointer), 'newTargetId: $newPointer position: $position');
 
     Node? target = getBindingObject<Node>(selfPointer);
     Node? newNode = getBindingObject<Node>(newPointer);
@@ -647,8 +646,6 @@ class WebFViewController implements WidgetsBindingObserver {
 
     if (target is Element) {
       target.setInlineStyle(key, value);
-    } else {
-      debugPrint('Only element has style, try setting style.$key from Node(#$selfPtr).');
     }
   }
 
@@ -659,8 +656,6 @@ class WebFViewController implements WidgetsBindingObserver {
 
     if (target is Element) {
       target.clearInlineStyle();
-    } else {
-      debugPrint('Only element has style, try clear style from Node(#$selfPtr).');
     }
   }
 
@@ -669,11 +664,8 @@ class WebFViewController implements WidgetsBindingObserver {
     Node? target = getBindingObject<Node>(Pointer.fromAddress(address));
     if (target == null) return;
 
-    if (target is Element) {
+    if (target is Element && target.isConnected) {
       target.style.flushPendingProperties();
-    } else {
-      debugPrint(
-          'Only element has style, try flushPendingStyleProperties from Node(#${Pointer.fromAddress(address)}).');
     }
   }
 
@@ -731,8 +723,8 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   // Call from JS Bridge when the BindingObject class on the JS side had been Garbage collected.
-  void disposeBindingObject(WebFViewController view, Pointer<NativeBindingObject> pointer) async {
-    BindingObject? bindingObject = getBindingObject(pointer);
+  static void disposeBindingObject(WebFViewController view, Pointer<NativeBindingObject> pointer) async {
+    BindingObject? bindingObject = view.getBindingObject(pointer);
     bindingObject?.dispose();
     view.removeBindingObject(pointer);
     view.disposeTargetIdToDevNodeIdMap(bindingObject);
@@ -1209,7 +1201,8 @@ class WebFController {
 
     _isComplete = false;
 
-    RenderViewportBox rootRenderObject = view.viewport!;
+    RenderViewportBox? rootRenderObject = view.viewport;
+    if (rootRenderObject == null) return;
 
     await unload();
 

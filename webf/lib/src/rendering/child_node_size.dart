@@ -221,8 +221,6 @@ class RenderChildSize extends RenderProxyBox {
     double maxSizeBelowBaseline = 0;
     Map<int?, RenderBox> runChildren = {};
 
-    WhiteSpace? whiteSpace = ownerElement.renderStyle.whiteSpace;
-
     children.forEachIndexed((int index, RenderBox child) {
       if (!child.attached) return;
 
@@ -232,18 +230,7 @@ class RenderChildSize extends RenderProxyBox {
       double childMainAxisExtent = _getMainAxisExtent(child);
       double childCrossAxisExtent = _getCrossAxisExtent(child);
 
-      if (runChildren.isNotEmpty &&
-          // Current is block.
-          (isChildBlockLevel(child) ||
-              // Previous is block.
-              isChildBlockLevel(preChild) ||
-              // Line length is exceed container.
-              // The white-space property not only specifies whether and how white space is collapsed
-              // but only specifies whether lines may wrap at unforced soft wrap opportunities
-              // https://www.w3.org/TR/css-text-3/#line-breaking
-              (whiteSpace != WhiteSpace.nowrap && (runMainAxisExtent + childMainAxisExtent > mainAxisLimit)) ||
-              // Previous is linebreak.
-              preChild is RenderLineBreak)) {
+      if (runChildren.isNotEmpty) {
         _runMetrics.add(RunMetrics(
           runMainAxisExtent,
           runCrossAxisExtent,

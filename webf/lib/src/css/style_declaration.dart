@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
@@ -435,9 +436,24 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     String? prevValue = getPropertyValue(propertyName);
-    if (normalizedValue == prevValue) return;
+    if (normalizedValue == prevValue && (!CSSVariable.isCSSVariableValue(normalizedValue))) return;
 
     _pendingProperties[propertyName] = CSSPropertyValue(normalizedValue, baseHref: baseHref);
+  }
+
+  void flushDisplayProperties() {
+    Element? _target = target;
+    // If style target element not exists, no need to do flush operation.
+    if (_target == null) return;
+
+    if (_pendingProperties.containsKey(DISPLAY) &&
+        _target.isConnected) {
+      CSSPropertyValue? prevValue = _properties[DISPLAY];
+      CSSPropertyValue currentValue = _pendingProperties[DISPLAY]!;
+      _properties[DISPLAY] = currentValue;
+      _pendingProperties.remove(DISPLAY);
+      _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
+    }
   }
 
   void flushPendingProperties() {
@@ -455,7 +471,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
 
-    if (_pendingProperties.isEmpty || !_target.renderStyle.hasRenderBox()) {
+    if (_pendingProperties.isEmpty || (!_target.managedByFlutterWidget && !_target.renderStyle.hasRenderBox())) {
       return;
     }
 
@@ -645,7 +661,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   void _emitPropertyChanged(String property, String? original, String present, {String? baseHref}) {
-    if (original == present) return;
+    if (original == present && (!CSSVariable.isCSSVariableValue(present))) return;
 
     if (onStyleChanged != null) {
       onStyleChanged!(property, original, present, baseHref: baseHref);
@@ -677,7 +693,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   @override
-  String toString() => 'CSSStyleDeclaration($cssText)';
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) => 'CSSStyleDeclaration($cssText)';
 
   @override
   int get hashCode => cssText.hashCode;
@@ -686,6 +702,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   bool operator ==(Object other) {
     return hashCode == other.hashCode;
   }
+
 
   @override
   Iterator<MapEntry<String, CSSPropertyValue>> get iterator {

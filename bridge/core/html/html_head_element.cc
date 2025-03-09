@@ -8,6 +8,6 @@
 
 namespace webf {
 
-HTMLHeadElement::HTMLHeadElement(Document& document) : HTMLElement(html_names::khead, &document) {}
+HTMLHeadElement::HTMLHeadElement(Document& document) : HTMLElement(html_names::kHead, &document) {}
 
 }  // namespace webf

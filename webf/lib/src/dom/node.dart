@@ -168,6 +168,10 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   bool get managedByFlutterWidget => _managedByFlutterWidget;
 
+  // Determine if this node or element was created by flutter widget
+  // If this value is true, this node won't participate the DOM event system.
+  bool isWidgetOwned = false;
+
   set managedByFlutterWidget(bool value) {
     if (_managedByFlutterWidget) return;
 
@@ -265,6 +269,15 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   Node(this.nodeType, [BindingContext? context]) : super(context);
 
   bool _isConnected = false;
+  set isConnected(bool value) {
+    _isConnected = value;
+
+    Node? first = firstChild;
+    while(first != null) {
+      first.isConnected = value;
+      first = first.nextSibling;
+    }
+  }
 
   // If node is on the tree, the root parent is body.
   bool get isConnected => _isConnected;
@@ -295,6 +308,8 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   flutter.Widget toWidget({Key? key}) {
     throw FlutterError('UnKnown node types for widget conversion');
   }
+
+  String get hashKey;
 
   // Is child renderObject attached.
   bool get isRendererAttached;
@@ -438,6 +453,36 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   bool hasChildren() {
     return firstChild != null;
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty('nodeType', nodeType));
+    properties.add(DiagnosticsProperty('nodeName', nodeName));
+    properties.add(DiagnosticsProperty('managedByFlutterWidget', managedByFlutterWidget));
+    properties.add(DiagnosticsProperty('isConnected', isConnected));
+    properties.add(DiagnosticsProperty('isRendererAttached', isRendererAttached));
+    properties.add(DiagnosticsProperty('isRendererAttachedToSegmentTree', isRendererAttachedToSegmentTree));
+    properties.add(DiagnosticsProperty('renderObjectManagerType', renderObjectManagerType));
+  }
+
+  @override
+  List<DiagnosticsNode> debugDescribeChildren() {
+    final List<DiagnosticsNode> children = <DiagnosticsNode>[];
+    if (firstChild != null) {
+      Node child = firstChild!;
+      int count = 1;
+      while (true) {
+        children.add(child.toDiagnosticsNode(name: 'child $count'));
+        if (child == lastChild) {
+          break;
+        }
+        count += 1;
+        child = child.nextSibling!;
+      }
+    }
+    return children;
   }
 
   static RenderBox? findMostClosedSiblings(Node? previousSibling) {

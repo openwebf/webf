@@ -50,7 +50,7 @@ void UICommandSyncStrategy::Reset() {
   frequency_map_.clear();
 }
 void UICommandSyncStrategy::RecordUICommand(UICommand type,
-                                            std::unique_ptr<SharedNativeString>& args_01,
+                                            SharedNativeString* args_01,
                                             NativeBindingObject* native_binding_object,
                                             void* native_ptr2,
                                             bool request_ui_update) {
@@ -61,8 +61,7 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
     case UICommand::kAsyncCaller:
     case UICommand::kRemoveAttribute: {
       SyncToReserve();
-      host_->reserve_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2,
-                                         request_ui_update);
+      host_->reserve_buffer_->AddCommand(type, args_01, native_binding_object, native_ptr2, request_ui_update);
       break;
     }
     case UICommand::kCreateElement:
@@ -73,8 +72,7 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
     case UICommand::kCreateElementNS:
     case UICommand::kRemoveNode:
     case UICommand::kCloneNode: {
-      host_->waiting_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2,
-                                         request_ui_update);
+      host_->waiting_buffer_->AddCommand(type, args_01, native_binding_object, native_ptr2, request_ui_update);
 
       RecordOperationForPointer(native_binding_object);
       SyncToReserveIfNecessary();
@@ -88,13 +86,11 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
     case UICommand::kRemoveEvent:
     case UICommand::kAddEvent:
     case UICommand::kDisposeBindingObject: {
-      host_->waiting_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2,
-                                         request_ui_update);
+      host_->waiting_buffer_->AddCommand(type, args_01, native_binding_object, native_ptr2, request_ui_update);
       break;
     }
     case UICommand::kInsertAdjacentNode: {
-      host_->waiting_buffer_->addCommand(type, std::move(args_01), native_binding_object, native_ptr2,
-                                         request_ui_update);
+      host_->waiting_buffer_->AddCommand(type, args_01, native_binding_object, native_ptr2, request_ui_update);
 
       RecordOperationForPointer(native_binding_object);
       RecordOperationForPointer((NativeBindingObject*)native_ptr2);

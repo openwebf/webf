@@ -8,6 +8,6 @@
 #include "svg_names.h"
 
 namespace webf {
-SVGRectElement::SVGRectElement(Document& document) : SVGGeometryElement(svg_names::krect, document) {}
+SVGRectElement::SVGRectElement(Document& document) : SVGGeometryElement(svg_names::kRect, document) {}
 
 }  // namespace webf

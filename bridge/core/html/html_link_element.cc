@@ -9,6 +9,6 @@
 
 namespace webf {
 
-HTMLLinkElement::HTMLLinkElement(Document& document) : HTMLElement(html_names::klink, &document) {}
+HTMLLinkElement::HTMLLinkElement(Document& document) : HTMLElement(html_names::kLink, &document) {}
 
 }  // namespace webf

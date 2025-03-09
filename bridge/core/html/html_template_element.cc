@@ -9,7 +9,7 @@
 
 namespace webf {
 
-HTMLTemplateElement::HTMLTemplateElement(Document& document) : HTMLElement(html_names::ktemplate, &document) {}
+HTMLTemplateElement::HTMLTemplateElement(Document& document) : HTMLElement(html_names::kTemplate, &document) {}
 
 DocumentFragment* HTMLTemplateElement::content() const {
   return ContentInternal();

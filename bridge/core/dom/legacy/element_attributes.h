@@ -28,7 +28,10 @@ class ElementAttributes : public ScriptWrappable {
   explicit ElementAttributes(Element* element);
 
   AtomicString getAttribute(const AtomicString& name, ExceptionState& exception_state);
-  bool setAttribute(const AtomicString& name, const AtomicString& value, ExceptionState& exception_state);
+  bool setAttribute(const AtomicString& name,
+                    const AtomicString& value,
+                    ExceptionState& exception_state,
+                    bool ignore_ui_command = false);
   bool hasAttribute(const AtomicString& name, ExceptionState& exception_state);
   void removeAttribute(const AtomicString& name, ExceptionState& exception_state);
   void CopyWith(ElementAttributes* attributes);

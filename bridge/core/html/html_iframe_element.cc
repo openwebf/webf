@@ -8,6 +8,6 @@
 
 namespace webf {
 
-HTMLIFrameElement::HTMLIFrameElement(Document& document) : HTMLElement(html_names::khtml, &document) {}
+HTMLIFrameElement::HTMLIFrameElement(Document& document) : HTMLElement(html_names::kHtml, &document) {}
 
 }  // namespace webf

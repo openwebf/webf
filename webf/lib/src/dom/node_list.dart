@@ -16,6 +16,8 @@ abstract class NodeList<T extends Node> extends Iterable<T> {
 
   Node get ownerNode;
 
+  String hashKey();
+
   @override
   Iterator<T> get iterator;
 }

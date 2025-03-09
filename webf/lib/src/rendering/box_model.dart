@@ -204,29 +204,39 @@ class RenderLayoutBox extends RenderBoxModel
     return null;
   }
 
+  void markChildrenNeedsSort() {
+    _cachedPaintingOrder = null;
+  }
+
+  List<RenderBox>? _cachedPaintingOrder;
+  List<RenderBox> get paintingOrder {
+    _cachedPaintingOrder ??= renderStyle.paintingOrder;
+    return _cachedPaintingOrder!;
+  }
+
   // No need to override [all] and [addAll] method cause they invoke [insert] method eventually.
   @override
   void insert(RenderBox child, {RenderBox? after}) {
     super.insert(child, after: after);
-    _paintingOrder = null;
+    _cachedPaintingOrder = null;
   }
 
   @override
   void remove(RenderBox child) {
     super.remove(child);
-    _paintingOrder = null;
+    _cachedPaintingOrder = null;
   }
 
   @override
   void removeAll() {
     super.removeAll();
-    _paintingOrder = null;
+    _cachedPaintingOrder = null;
   }
 
   @override
   void move(RenderBox child, {RenderBox? after}) {
     super.move(child, after: after);
-    _paintingOrder = null;
+    _cachedPaintingOrder = null;
   }
 
   @override
@@ -327,58 +337,6 @@ class RenderLayoutBox extends RenderBoxModel
     }
   }
 
-  // Sort children by zIndex, used for paint and hitTest.
-  List<RenderBox>? _paintingOrder;
-
-  List<RenderBox> get paintingOrder {
-    if (_paintingOrder != null) {
-      return _paintingOrder!;
-    }
-
-    if (childCount == 0) {
-      // No child.
-      return _paintingOrder = const [];
-    } else if (childCount == 1) {
-      // Only one child.
-      final List<RenderBox> order = <RenderBox>[];
-      order.add(firstChild!);
-      return _paintingOrder = order;
-    } else {
-      // Sort by zIndex.
-      List<RenderBox> children = getChildren();
-      if (_childrenNeedsSort) {
-        children.sort((RenderBox left, RenderBox right) {
-          // @FIXME: Add patch to handle nested fixed element paint priority, need to remove
-          // this logic after Kraken has implemented stacking context tree.
-          if (left is RenderBoxModel &&
-              left.renderStyle.position == CSSPositionType.fixed &&
-              right is RenderBoxModel &&
-              right.renderStyle.position == CSSPositionType.fixed) {
-            // Child element always paint after parent element when their position are both fixed
-            // as W3C stacking context specified.
-            // Kraken will place these two renderObjects as siblings of the children of HTML renderObject
-            // due to lack stacking context support, so it needs to add this patch to handle this case.
-            if (right.renderStyle.isAncestorOf(left.renderStyle)) return 1;
-            if (left.renderStyle.isAncestorOf(right.renderStyle)) return -1;
-          }
-
-          bool isLeftNeedsStacking = left is RenderBoxModel && left.needsStacking;
-          bool isRightNeedsStacking = right is RenderBoxModel && right.needsStacking;
-          if (!isLeftNeedsStacking && isRightNeedsStacking) {
-            return 0 <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
-          } else if (isLeftNeedsStacking && !isRightNeedsStacking) {
-            return (left.renderStyle.zIndex ?? 0) < 0 ? -1 : 1;
-          } else if (isLeftNeedsStacking && isRightNeedsStacking) {
-            return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
-          } else {
-            return -1;
-          }
-        });
-      }
-      return _paintingOrder = children;
-    }
-  }
-
   @override
   void performPaint(PaintingContext context, Offset offset) {
     for (int i = 0; i < paintingOrder.length; i++) {
@@ -390,13 +348,6 @@ class RenderLayoutBox extends RenderBoxModel
         }
       }
     }
-  }
-
-  bool _childrenNeedsSort = false;
-
-  void markChildrenNeedsSort() {
-    _childrenNeedsSort = true;
-    _paintingOrder = null;
   }
 
   // Get all children as a list and detach them all.
@@ -734,11 +685,16 @@ class RenderLayoutBox extends RenderBoxModel
   }
 
   @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty('paintingOrder', paintingOrder));
+  }
+
+  @override
   void dispose() {
     super.dispose();
 
     stickyChildren.clear();
-    _paintingOrder = null;
   }
 }
 
@@ -802,7 +758,7 @@ class RenderBoxModel extends RenderBox
 
   @override
   String toStringShort() {
-    return super.toStringShort() + ' ${renderStyle.target}';
+    return super.toStringShort() + ' ${renderStyle.target}[managedByFlutter=${renderStyle.target.managedByFlutterWidget}]';
   }
 
   bool get isSizeTight {
@@ -866,7 +822,7 @@ class RenderBoxModel extends RenderBox
       // Element with a position value absolute, relative, fixed or sticky.
       renderStyle.position != CSSPositionType.static ||
           // Element that is a child of a flex container with z-index value other than auto.
-          ((renderStyle.parent!.display == CSSDisplay.flex || renderStyle.parent!.display == CSSDisplay.inlineFlex) &&
+          ((renderStyle.getParentRenderStyle()!.display == CSSDisplay.flex || renderStyle.getParentRenderStyle()!.display == CSSDisplay.inlineFlex) &&
               renderStyle.zIndex != null) ||
           // Element with a opacity value less than 1.
           renderStyle.opacity < 1.0 ||
@@ -1325,8 +1281,12 @@ class RenderBoxModel extends RenderBox
     // Positioned renderBoxModel will not trigger parent to relayout. Needs to update it's offset for itself.
     if (parentData is RenderLayoutParentData && parent is RenderBoxModel) {
       RenderLayoutParentData selfParentData = parentData as RenderLayoutParentData;
-      RenderBoxModel? parentBox = parent as RenderBoxModel?;
-      if (selfParentData.isPositioned && parentBox!.hasSize) {
+      RenderObject? parentBox = parent;
+      if (parentBox is RenderPortal) {
+        parentBox = parentBox.parent;
+      }
+
+      if (selfParentData.isPositioned && parentBox is RenderBoxModel && parentBox.hasSize) {
         CSSPositionedLayout.applyPositionedChildOffset(parentBox, this);
       }
     }

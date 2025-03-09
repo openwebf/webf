@@ -6,7 +6,10 @@
         "filename": "html_names",
         "deps": [
           "./html_attribute_names.json5"
-        ]
+        ],
+        "options": {
+          camelCase: true
+        }
       },
       {
         "template": "element_factory",

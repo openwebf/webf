@@ -9,12 +9,14 @@ import 'package:webf/webf.dart';
 class WebFHTMLElement extends WebFRenderLayoutWidgetAdaptor {
   final String tagName;
   final WebFController controller;
+  final dom.Element? parentElement;
   final Map<String, String>? inlineStyle;
 
   WebFHTMLElement({
     required this.tagName,
     required this.controller,
     Key? key,
+    required this.parentElement,
     required List<Widget> children,
     this.inlineStyle,
   }) : super(key: key, children: children);
@@ -82,6 +84,8 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
         tagName,
         BindingContext(controller.view, controller.view.contextId, allocateNewBindingObject()));
     element.managedByFlutterWidget = true;
+    element.parentOrShadowHostNode = widget.parentElement;
+    element.isWidgetOwned = true;
     _webFElement = element;
 
     super.mount(parent, newSlot);
@@ -89,14 +93,6 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
     dom.Element? parentElement = findClosestAncestorHTMLElement(this);
 
     if (parentElement != null) {
-      if (parentElement is RouterLinkElement) {
-        // @TODO: RouterLink Support
-        // Migrate previous childNodes into RouterLinkElement.
-        // parentElement.cachedChildNodes.forEach((node) {
-        //   htmlElement!.appendChild(node);
-        // });
-      }
-
       if (widget.inlineStyle != null) {
         fullFillInlineStyle(widget.inlineStyle!);
       }
@@ -109,6 +105,16 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
         _webFElement!.style.flushPendingProperties();
       }
     }
+  }
+
+  @override
+  void unmount() {
+    _webFElement!.willDetachRenderer(this);
+    super.unmount();
+    _webFElement!.didDetachRenderer(this);
+    _webFElement!.parentOrShadowHostNode = null;
+    WebFViewController.disposeBindingObject(_webFElement!.ownerView, _webFElement!.pointer!);
+    _webFElement = null;
   }
 
   @override

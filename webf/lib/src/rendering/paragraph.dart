@@ -5,7 +5,7 @@
 
 import 'dart:ui' as ui show LineMetrics, Gradient, Shader, TextBox, TextHeightBehavior;
 import 'dart:math' as math;
-
+import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
@@ -286,6 +286,7 @@ class WebFRenderParagraph extends RenderBox
 
   /// Compute distance to baseline of first text line
   double computeDistanceToFirstLineBaseline() {
+    if (_lineRenders.isEmpty) return 0.0;
     double firstLineOffset = _lineRenders[0].lineRect.top;
     ui.LineMetrics firstLineMetrics = _lineMetrics[0];
 
@@ -589,6 +590,9 @@ class WebFRenderParagraph extends RenderBox
 
   @override
   void performLayout() {
+    if (!kReleaseMode) {
+      Timeline.startSync('WebFRenderParagraph.performLayout');
+    }
     // TODO need recheck logic  more layout
     // if (_foregroundCallback != null) {
     //   _textPainter.layout();
@@ -601,8 +605,13 @@ class WebFRenderParagraph extends RenderBox
     //     );
     //   }
     // }
-
+    if (!kReleaseMode) {
+      Timeline.startSync('WebFRenderParagraph.layoutText');
+    }
     layoutText();
+    if (!kReleaseMode) {
+      Timeline.finishSync();
+    }
 
     // We grab _textPainter.size and _textPainter.didExceedMaxLines here because
     // assigning to `size` will trigger us to validate our intrinsic sizes,
@@ -676,6 +685,9 @@ class WebFRenderParagraph extends RenderBox
     } else {
       _needsClipping = false;
       _overflowShader = null;
+    }
+    if (!kReleaseMode) {
+      Timeline.finishSync();
     }
   }
 

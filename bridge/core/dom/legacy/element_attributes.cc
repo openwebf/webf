@@ -46,7 +46,8 @@ AtomicString ElementAttributes::getAttribute(const AtomicString& name, Exception
 
 bool ElementAttributes::setAttribute(const AtomicString& name,
                                      const AtomicString& value,
-                                     ExceptionState& exception_state) {
+                                     ExceptionState& exception_state,
+                                     bool ignore_ui_command) {
   bool numberIndex = IsNumberIndex(name.ToStringView());
 
   if (numberIndex) {
@@ -64,10 +65,13 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
   if (name == html_names::kStyleAttr)
     return true;
 
+  if (ignore_ui_command)
+    return true;
+
   std::unique_ptr<SharedNativeString> args_01 = value.ToNativeString(ctx());
   std::unique_ptr<SharedNativeString> args_02 = name.ToNativeString(ctx());
 
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetAttribute, std::move(args_01),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetAttribute, args_01.release(),
                                                        element_->bindingObject(), args_02.release());
 
   return true;
@@ -82,13 +86,6 @@ bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& e
 
   bool has_attribute = attributes_.count(name) > 0;
 
-  if (!has_attribute && element_->IsWidgetElement()) {
-    // Fallback to directly FFI access to dart.
-    NativeValue dart_result =
-        element_->GetBindingProperty(name, FlushUICommandReason::kDependentsOnElement, exception_state);
-    return dart_result.tag != NativeTag::TAG_NULL;
-  }
-
   return has_attribute;
 }
 
@@ -102,7 +99,7 @@ void ElementAttributes::removeAttribute(const AtomicString& name, ExceptionState
   attributes_.erase(name);
 
   std::unique_ptr<SharedNativeString> args_01 = name.ToNativeString(ctx());
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveAttribute, std::move(args_01),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveAttribute, args_01.release(),
                                                        element_->bindingObject(), nullptr);
 }
 

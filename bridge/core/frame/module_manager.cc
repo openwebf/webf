@@ -4,6 +4,7 @@
  */
 #include "module_manager.h"
 #include "core/executing_context.h"
+#include "core/frame/window.h"
 #include "foundation/logging.h"
 #include "foundation/native_value.h"
 #include "include/dart_api.h"
@@ -95,6 +96,8 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
     context->RunRustFutureTasks();
     return return_value;
   }
+
+  return nullptr;
 }
 
 static void ReturnResultToDart(Dart_PersistentHandle persistent_handle,
@@ -182,6 +185,8 @@ NativeValue* ModuleManager::__webf_invoke_module__(ExecutingContext* context,
   if (exception.HasException()) {
     return nullptr;
   }
+
+  context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
 
   NativeValue* result;
   auto module_name_string = module_name.ToNativeString(context->ctx());

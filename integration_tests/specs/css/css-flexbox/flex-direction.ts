@@ -721,4 +721,58 @@ describe('flex-direction', () => {
 
     await snapshot();
   });
+  it("has child with overflow hidden style", async () => {
+    let flexContainer = createElement(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          height: '21px',
+          'font-size': '14px',
+          color: '#1b1b1b',
+          'white-space': 'nowrap',
+          'text-overflow': 'ellipsis',
+          'line-height': '21px'
+        }
+      },
+      [
+        createElement(
+          'div',
+          {
+            style: {
+              'font-size': '14px',
+              color: '#1b1b1b',
+              'white-space': 'nowrap',
+              'line-height': '21px',
+              'min-width': '0',
+              'text-overflow': 'ellipsis',
+              overflow: 'hidden',
+              'font-weight': '600',
+            }
+          },
+          [
+            createText('丝塔芙 【大白罐】舒润保湿霜453g身体乳护体乳不含烟酰胺')
+          ]
+        ),
+        createElement(
+          'div',
+          {
+            style: {
+              'font-size': '14px',
+              'white-space': 'nowrap',
+              'line-height': '21px',
+              flex: '1',
+              color: '#989898',
+            }
+          },
+          [
+            createText('(刚刚浏览过)')
+          ]
+        ),
+      ]
+    );
+    BODY.appendChild(flexContainer);
+
+    await snapshot();
+  });
 });

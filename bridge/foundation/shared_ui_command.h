@@ -15,21 +15,25 @@ namespace webf {
 
 struct NativeBindingObject;
 
+struct UICommandBufferPack {
+  void* buffer_head;
+  void* data;
+  int64_t length;
+};
+
 class SharedUICommand : public DartReadable {
  public:
   SharedUICommand(ExecutingContext* context);
 
   void AddCommand(UICommand type,
-                  std::unique_ptr<SharedNativeString>&& args_01,
+                  SharedNativeString* args_01,
                   NativeBindingObject* native_binding_object,
                   void* nativePtr2,
                   bool request_ui_update = true);
 
   void* data();
-  uint32_t kindFlag();
-  int64_t size();
-  bool empty();
   void clear();
+  bool empty();
   void SyncToActive();
   void SyncToReserve();
 
@@ -42,6 +46,7 @@ class SharedUICommand : public DartReadable {
   std::unique_ptr<UICommandBuffer> reserve_buffer_ = nullptr;  // The ui commands which are ready to swap to active.
   std::unique_ptr<UICommandBuffer> waiting_buffer_ =
       nullptr;  // The ui commands which recorded from JS operations and sync to reserve_buffer by once.
+  std::atomic<bool> is_blocking_reading_;
   std::atomic<bool> is_blocking_writing_;
   ExecutingContext* context_;
   std::unique_ptr<UICommandSyncStrategy> ui_command_sync_strategy_ = nullptr;

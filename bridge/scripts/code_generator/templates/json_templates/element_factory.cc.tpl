@@ -79,7 +79,7 @@ static void CreateFunctionMap() {
 
   const CreateFunctionMapData data[] = {
   <% _.forEach(items, (item, index) => { %>
-    {<%= lprefix %>_names::k<%= item.name %>, <%= item.interfaceName %>Constructor},
+    {<%= lprefix %>_names::k<%= upperCamelCase(item.name) %>, <%= item.interfaceName %>Constructor},
   <% }); %>
   };
 

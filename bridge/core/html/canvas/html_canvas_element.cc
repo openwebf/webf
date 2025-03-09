@@ -12,7 +12,7 @@
 
 namespace webf {
 
-HTMLCanvasElement::HTMLCanvasElement(Document& document) : HTMLElement(html_names::kcanvas, &document) {}
+HTMLCanvasElement::HTMLCanvasElement(Document& document) : HTMLElement(html_names::kCanvas, &document) {}
 
 CanvasRenderingContext* HTMLCanvasElement::getContext(const AtomicString& type, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), type)};

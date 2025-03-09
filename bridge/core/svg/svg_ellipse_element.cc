@@ -7,6 +7,6 @@
 #include "svg_names.h"
 
 namespace webf {
-SVGEllipseElement::SVGEllipseElement(Document& document) : SVGGeometryElement(svg_names::kellipse, document) {}
+SVGEllipseElement::SVGEllipseElement(Document& document) : SVGGeometryElement(svg_names::kEllipse, document) {}
 
 }  // namespace webf

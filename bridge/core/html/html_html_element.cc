@@ -8,5 +8,5 @@
 
 namespace webf {
 
-HTMLHtmlElement::HTMLHtmlElement(Document& document) : HTMLElement(html_names::khtml, &document) {}
+HTMLHtmlElement::HTMLHtmlElement(Document& document) : HTMLElement(html_names::kHtml, &document) {}
 }  // namespace webf

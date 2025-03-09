@@ -10,6 +10,7 @@ import 'package:webf/rendering.dart';
 class RenderPositionPlaceholder extends RenderPreferredSize {
   RenderPositionPlaceholder({
     required Size preferredSize,
+    this.positioned,
     RenderBox? child,
   }) : super(preferredSize: preferredSize, child: child);
 
@@ -51,6 +52,12 @@ class RenderPositionPlaceholder extends RenderPreferredSize {
   // such as scroll or transform.
   Offset getOffsetToAncestor(Offset point, RenderObject ancestor, {bool excludeScrollOffset = false}) {
     return getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset) + point;
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty('positioned', positioned));
   }
 }
 

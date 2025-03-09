@@ -3,6 +3,7 @@
  */
 import 'dart:math';
 
+import 'package:flutter/rendering.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
@@ -419,7 +420,7 @@ class DOMMatrixReadOnly extends DynamicBindingObject with StaticDefinedBindingOb
   }
 
   @override
-  String toString() {
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
     if (_is2D) {
       // a,b,c,d,e,f
       return 'matrix(${_matrix4[0]},${_matrix4[1]},${_matrix4[4]},${_matrix4[5]},${_matrix4[12]},${_matrix4[13]})';

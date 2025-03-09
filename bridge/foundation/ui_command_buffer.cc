@@ -52,17 +52,17 @@ UICommandBuffer::~UICommandBuffer() {
   free(buffer_);
 }
 
-void UICommandBuffer::addCommand(UICommand command,
-                                 std::unique_ptr<SharedNativeString>&& args_01,
+void UICommandBuffer::AddCommand(UICommand type,
+                                 SharedNativeString* args_01,
                                  void* nativePtr,
                                  void* nativePtr2,
                                  bool request_ui_update) {
-  if (command == UICommand::kFinishRecordingCommand) {
+  if (type == UICommand::kFinishRecordingCommand) {
     return;
   }
 
-  UICommandItem item{static_cast<int32_t>(command), args_01.get(), nativePtr, nativePtr2};
-  updateFlags(command);
+  UICommandItem item{static_cast<int32_t>(type), args_01, nativePtr, nativePtr2};
+  updateFlags(type);
   addCommand(item, request_ui_update);
 }
 

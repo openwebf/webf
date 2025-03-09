@@ -10,18 +10,10 @@
 
 namespace webf {
 
-namespace {
-
-struct NativeLibraryLoadContext {
-  ExecutingContext* context{nullptr};
-  std::shared_ptr<ScriptPromiseResolver> promise_resolver{nullptr};
-};
-
-}  // namespace
-
 NativeLoader::NativeLoader(webf::ExecutingContext* context) : ScriptWrappable(context->ctx()) {}
 
 static void ExecuteNativeLibrary(PluginLibraryEntryPoint entry_point,
+                                 NativeValue* lib_name,
                                  NativeLibraryLoadContext* native_library_load_context,
                                  void* imported_data) {
   // Encounter loading error.
@@ -33,17 +25,18 @@ static void ExecuteNativeLibrary(PluginLibraryEntryPoint entry_point,
     native_library_load_context->promise_resolver->Reject(exception_value);
     JS_FreeValue(context->ctx(), exception_value);
   } else {
+    auto* meta_data = new NativeLibrartMetaData{lib_name, native_library_load_context};
     auto entry_data = WebFValue<ExecutingContext, ExecutingContextWebFMethods>{
         native_library_load_context->context, native_library_load_context->context->publicMethodPtr(),
         native_library_load_context->context->status()};
-    void* result = entry_point(entry_data);
+    void* result = entry_point(entry_data, meta_data);
+    native_library_load_context->context->RegisterNativeLibraryMetaData(meta_data);
     native_library_load_context->context->RunRustFutureTasks();
   }
-
-  delete native_library_load_context;
 }
 
 static void HandleNativeLibraryLoad(PluginLibraryEntryPoint entry_point,
+                                    NativeValue* lib_name,
                                     void* initialize_data_ptr,
                                     double context_id,
                                     void* imported_data) {
@@ -55,7 +48,8 @@ static void HandleNativeLibraryLoad(PluginLibraryEntryPoint entry_point,
     return;
 
   context->dartIsolateContext()->dispatcher()->PostToJs(context->isDedicated(), context_id, ExecuteNativeLibrary,
-                                                        entry_point, p_native_library_load_context, imported_data);
+                                                        entry_point, lib_name, p_native_library_load_context,
+                                                        imported_data);
 }
 
 ScriptPromise NativeLoader::loadNativeLibrary(const AtomicString& lib_name,

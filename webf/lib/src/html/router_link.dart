@@ -26,19 +26,22 @@ class RouterLinkElement extends WidgetElement {
     }
   }
 
+  @override
+  void mount() {
+    dispatchEvent(Event('mount'));
+  }
+
+  @override
+  void unmount() {
+    dispatchEvent(Event('unmount'));
+  }
+
   List<dom.Node> cachedChildNodes = [];
 
   @override
   void attachWidget(Widget widget) {
     if (isRouterLinkElement && _path.isNotEmpty) {
       ownerView.setHybridRouterView(_path, widget);
-      for(var node in childNodes) {
-        cachedChildNodes.add(node);
-      }
-
-      cachedChildNodes.forEach((node) {
-        removeChild(node);
-      });
     } else {
       super.attachWidget(widget);
     }
@@ -65,10 +68,15 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+    return 'RouterLinkElement [path=$_path]';
+  }
+
+  @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
-    return WebFHTMLElement(tagName: 'HTML', children: childNodes.toWidgetList(), inlineStyle: {
-      'overflow': 'auto',
+    return WebFHTMLElement(tagName: 'DIV', children: childNodes.toWidgetList(), inlineStyle: {
+      // 'overflow': 'auto',
       'position': 'relative'
-    }, controller: ownerDocument.controller,);
+    }, controller: ownerDocument.controller, parentElement: this);
   }
 }

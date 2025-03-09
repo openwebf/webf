@@ -45,7 +45,7 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     }
     existHandler.add(eventHandler);
     if (this is Element) {
-      (this as Element).renderStyle.requestWidgetToRebuild(RenderObjectUpdateReason.addEvent);
+      (this as Element).renderStyle.requestWidgetToRebuild(AddEventUpdateReason());
     }
   }
 
@@ -79,6 +79,8 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     await _dispatchEventInDOM(event);
   }
   Future<void> _handlerCaptureEvent(Event event) async {
+    // Avoid dispatch event to JS when the node was created by Flutter widgets.
+    if (this is Node && (this as Node).isWidgetOwned) return;
     await parentEventTarget?._handlerCaptureEvent(event);
     String eventType = event.type;
     List<EventHandler>? existHandler = _eventCaptureHandlers[eventType];
@@ -99,7 +101,8 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
   }
   // Refs: https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/EventDispatcher.cpp#L85
   Future<void> _dispatchEventInDOM(Event event) async {
-    // TODO: Invoke capturing event listeners in the reverse order.
+    // Avoid dispatch event to JS when the node was created by Flutter widgets.
+    if (this is Node && (this as Node).isWidgetOwned) return;
 
     String eventType = event.type;
     List<EventHandler>? existHandler = _eventHandlers[eventType];
@@ -143,7 +146,20 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     }
     return path;
   }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<bool>('disposed', disposed));
+    if (_eventHandlers.isNotEmpty) {
+      properties.add(IterableProperty('eventHandlers', _eventHandlers.keys.toList()));
+    }
+    if (_eventCaptureHandlers.isNotEmpty) {
+      properties.add(IterableProperty('eventCaptureHandlers', _eventCaptureHandlers.keys.toList()));
+    }
+  }
 }
+
 class EventListenerOptions {
 
   bool capture;
