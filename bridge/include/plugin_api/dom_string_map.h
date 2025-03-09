@@ -13,6 +13,7 @@ namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class DOMStringMap;
 enum class DOMStringMapType {
   kDOMStringMap = 0,

@@ -15,7 +15,7 @@ pub struct PointerEventInit {
   pub composed: i32,
   pub is_primary: i32,
   pub pointer_id: c_double,
-  pub pointer_type: *const c_char,
+  pub pointer_type: AtomicStringRef,
   pub pressure: c_double,
   pub tangential_pressure: c_double,
   pub tilt_x: c_double,

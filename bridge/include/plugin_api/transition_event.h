@@ -13,25 +13,20 @@ namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class TransitionEvent;
 using PublicTransitionEventGetElapsedTime = double (*)(TransitionEvent*);
-using PublicTransitionEventGetPropertyName = const char* (*)(TransitionEvent*);
-using PublicTransitionEventDupPropertyName = const char* (*)(TransitionEvent*);
-using PublicTransitionEventGetPseudoElement = const char* (*)(TransitionEvent*);
-using PublicTransitionEventDupPseudoElement = const char* (*)(TransitionEvent*);
+using PublicTransitionEventGetPropertyName = AtomicStringRef (*)(TransitionEvent*);
+using PublicTransitionEventGetPseudoElement = AtomicStringRef (*)(TransitionEvent*);
 struct TransitionEventPublicMethods : public WebFPublicMethods {
   static double ElapsedTime(TransitionEvent* transition_event);
-  static const char* PropertyName(TransitionEvent* transition_event);
-  static const char* DupPropertyName(TransitionEvent* transition_event);
-  static const char* PseudoElement(TransitionEvent* transition_event);
-  static const char* DupPseudoElement(TransitionEvent* transition_event);
+  static AtomicStringRef PropertyName(TransitionEvent* transition_event);
+  static AtomicStringRef PseudoElement(TransitionEvent* transition_event);
   double version{1.0};
   EventPublicMethods event;
   PublicTransitionEventGetElapsedTime transition_event_get_elapsed_time{ElapsedTime};
   PublicTransitionEventGetPropertyName transition_event_get_property_name{PropertyName};
-  PublicTransitionEventDupPropertyName transition_event_dup_property_name{DupPropertyName};
   PublicTransitionEventGetPseudoElement transition_event_get_pseudo_element{PseudoElement};
-  PublicTransitionEventDupPseudoElement transition_event_dup_pseudo_element{DupPseudoElement};
 };
 }  // namespace webf
 #endif  // WEBF_CORE_WEBF_API_PLUGIN_API_TRANSITION_EVENT_H_

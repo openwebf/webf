@@ -13,6 +13,7 @@ namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class CustomEvent;
 using PublicCustomEventGetDetail = NativeValue (*)(CustomEvent*, SharedExceptionState* shared_exception_state);
 using PublicCustomEventInitCustomEvent = void (*)(CustomEvent*, const char*, int32_t, int32_t, NativeValue, SharedExceptionState*);

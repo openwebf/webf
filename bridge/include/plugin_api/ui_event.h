@@ -15,6 +15,7 @@ typedef struct WindowPublicMethods WindowPublicMethods;
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class UIEvent;
 using PublicUIEventGetDetail = double (*)(UIEvent*);
 using PublicUIEventGetView = WebFValue<Window, WindowPublicMethods> (*)(UIEvent*);

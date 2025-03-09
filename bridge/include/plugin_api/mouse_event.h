@@ -13,6 +13,7 @@ namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class MouseEvent;
 using PublicMouseEventGetButton = double (*)(MouseEvent*);
 using PublicMouseEventGetClientX = double (*)(MouseEvent*);

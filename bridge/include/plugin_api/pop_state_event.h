@@ -13,6 +13,7 @@ namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class PopStateEvent;
 using PublicPopStateEventGetState = NativeValue (*)(PopStateEvent*, SharedExceptionState* shared_exception_state);
 struct PopStateEventPublicMethods : public WebFPublicMethods {

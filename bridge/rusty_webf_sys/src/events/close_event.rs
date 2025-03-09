@@ -10,8 +10,7 @@ pub struct CloseEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
   pub code: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub reason: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_reason: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub reason: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
   pub was_clean: extern "C" fn(ptr: *const OpaquePtr) -> i32,
 }
 pub struct CloseEvent {
@@ -48,8 +47,7 @@ impl CloseEvent {
     let value = unsafe {
       ((*self.method_pointer).reason)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn was_clean(&self) -> bool {
     let value = unsafe {

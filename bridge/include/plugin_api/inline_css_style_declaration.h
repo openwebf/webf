@@ -13,6 +13,7 @@ namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class InlineCssStyleDeclaration;
 struct InlineCssStyleDeclarationPublicMethods : public WebFPublicMethods {
   double version{1.0};

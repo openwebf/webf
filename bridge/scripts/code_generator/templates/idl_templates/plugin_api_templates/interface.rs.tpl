@@ -19,10 +19,7 @@ pub struct <%= className %>RustMethods {
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
   pub <%= propName %>: extern "C" fn(ptr: *const OpaquePtr<%= isAnyType(prop.type)? ", exception_state: *const OpaquePtr": "" %>) -> <%= generatePublicReturnTypeValue(prop.type) %>,
     <% if (!prop.readonly) { %>
-  pub set_<%= _.snakeCase(prop.name) %>: extern "C" fn(ptr: *const OpaquePtr, value: <%= generatePublicReturnTypeValue(prop.type) %>, exception_state: *const OpaquePtr) -> bool,
-    <% } %>
-    <% if (isStringType(prop.type)) { %>
-  pub dup_<%= _.snakeCase(prop.name) %>: extern "C" fn(ptr: *const OpaquePtr) -> <%= generatePublicReturnTypeValue(prop.type) %>,
+  pub set_<%= _.snakeCase(prop.name) %>: extern "C" fn(ptr: *const OpaquePtr, value: <%= generatePublicParameterType(prop.type) %>, exception_state: *const OpaquePtr) -> bool,
     <% } %>
   <% }); %>
 

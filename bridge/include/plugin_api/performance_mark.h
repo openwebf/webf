@@ -13,6 +13,7 @@ namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class PerformanceMark;
 using PublicPerformanceMarkGetDetail = NativeValue (*)(PerformanceMark*, SharedExceptionState* shared_exception_state);
 struct PerformanceMarkPublicMethods : public WebFPublicMethods {

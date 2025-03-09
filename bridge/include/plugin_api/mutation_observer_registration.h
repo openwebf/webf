@@ -13,6 +13,7 @@ namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class MutationObserverRegistration;
 enum class MutationObserverRegistrationType {
   kMutationObserverRegistration = 0,

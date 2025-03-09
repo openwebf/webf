@@ -9,11 +9,9 @@ use crate::*;
 pub struct AnimationEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub animation_name: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_animation_name: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub animation_name: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
   pub elapsed_time: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
 }
 pub struct AnimationEvent {
   pub event: Event,
@@ -43,8 +41,7 @@ impl AnimationEvent {
     let value = unsafe {
       ((*self.method_pointer).animation_name)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn elapsed_time(&self) -> f64 {
     let value = unsafe {
@@ -56,8 +53,7 @@ impl AnimationEvent {
     let value = unsafe {
       ((*self.method_pointer).pseudo_element)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
 }
 pub trait AnimationEventMethods: EventMethods {

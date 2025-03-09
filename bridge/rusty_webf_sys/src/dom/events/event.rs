@@ -35,8 +35,7 @@ pub struct EventRustMethods {
   pub target: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<EventTargetRustMethods>,
   pub is_trusted: extern "C" fn(ptr: *const OpaquePtr) -> i32,
   pub time_stamp: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub type_: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub type_: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
   pub init_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, i32, i32, exception_state: *const OpaquePtr) -> c_void,
   pub prevent_default: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
   pub stop_immediate_propagation: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
@@ -133,8 +132,7 @@ impl Event {
     let value = unsafe {
       ((*self.method_pointer).type_)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn init_event(&self, type_: &str, bubbles: bool, cancelable: bool, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {

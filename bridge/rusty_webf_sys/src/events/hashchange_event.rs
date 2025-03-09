@@ -9,10 +9,8 @@ use crate::*;
 pub struct HashchangeEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub new_url: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_new_url: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub old_url: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_old_url: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub new_url: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub old_url: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
 }
 pub struct HashchangeEvent {
   pub event: Event,
@@ -42,15 +40,13 @@ impl HashchangeEvent {
     let value = unsafe {
       ((*self.method_pointer).new_url)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn old_url(&self) -> String {
     let value = unsafe {
       ((*self.method_pointer).old_url)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
 }
 pub trait HashchangeEventMethods: EventMethods {

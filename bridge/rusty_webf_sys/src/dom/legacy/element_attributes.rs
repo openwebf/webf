@@ -12,7 +12,7 @@ enum ElementAttributesType {
 #[repr(C)]
 pub struct ElementAttributesRustMethods {
   pub version: c_double,
-  pub get_attribute: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> *const c_char,
+  pub get_attribute: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
   pub set_attribute: extern "C" fn(ptr: *const OpaquePtr, *const c_char, *const c_char, exception_state: *const OpaquePtr) -> c_void,
   pub has_attribute: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> i32,
   pub remove_attribute: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> c_void,
@@ -48,8 +48,7 @@ impl ElementAttributes {
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
     }
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    Ok(value.to_str().unwrap().to_string())
+    Ok(value.to_string())
   }
   pub fn set_attribute(&self, name: &str, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {

@@ -13,26 +13,23 @@ namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class PerformanceEntry;
 enum class PerformanceEntryType {
   kPerformanceEntry = 0,
   kPerformanceMeasure = 1,
   kPerformanceMark = 2,
 };
-using PublicPerformanceEntryGetName = const char* (*)(PerformanceEntry*);
-using PublicPerformanceEntryDupName = const char* (*)(PerformanceEntry*);
-using PublicPerformanceEntryGetEntryType = const char* (*)(PerformanceEntry*);
-using PublicPerformanceEntryDupEntryType = const char* (*)(PerformanceEntry*);
+using PublicPerformanceEntryGetName = AtomicStringRef (*)(PerformanceEntry*);
+using PublicPerformanceEntryGetEntryType = AtomicStringRef (*)(PerformanceEntry*);
 using PublicPerformanceEntryGetStartTime = int64_t (*)(PerformanceEntry*);
 using PublicPerformanceEntryGetDuration = int64_t (*)(PerformanceEntry*);
 using PublicPerformanceEntryToJSON = NativeValue (*)(PerformanceEntry*, SharedExceptionState*);
 using PublicPerformanceEntryRelease = void (*)(PerformanceEntry*);
 using PublicPerformanceEntryDynamicTo = WebFValue<PerformanceEntry, WebFPublicMethods> (*)(PerformanceEntry*, PerformanceEntryType);
 struct PerformanceEntryPublicMethods : public WebFPublicMethods {
-  static const char* Name(PerformanceEntry* performance_entry);
-  static const char* DupName(PerformanceEntry* performance_entry);
-  static const char* EntryType(PerformanceEntry* performance_entry);
-  static const char* DupEntryType(PerformanceEntry* performance_entry);
+  static AtomicStringRef Name(PerformanceEntry* performance_entry);
+  static AtomicStringRef EntryType(PerformanceEntry* performance_entry);
   static int64_t StartTime(PerformanceEntry* performance_entry);
   static int64_t Duration(PerformanceEntry* performance_entry);
   static NativeValue ToJSON(PerformanceEntry* performance_entry, SharedExceptionState* shared_exception_state);
@@ -40,9 +37,7 @@ struct PerformanceEntryPublicMethods : public WebFPublicMethods {
   static WebFValue<PerformanceEntry, WebFPublicMethods> DynamicTo(PerformanceEntry* performance_entry, PerformanceEntryType performance_entry_type);
   double version{1.0};
   PublicPerformanceEntryGetName performance_entry_get_name{Name};
-  PublicPerformanceEntryDupName performance_entry_dup_name{DupName};
   PublicPerformanceEntryGetEntryType performance_entry_get_entry_type{EntryType};
-  PublicPerformanceEntryDupEntryType performance_entry_dup_entry_type{DupEntryType};
   PublicPerformanceEntryGetStartTime performance_entry_get_start_time{StartTime};
   PublicPerformanceEntryGetDuration performance_entry_get_duration{Duration};
   PublicPerformanceEntryToJSON performance_entry_to_json{ToJSON};

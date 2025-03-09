@@ -10,10 +10,8 @@ pub struct TransitionEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
   pub elapsed_time: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub property_name: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_property_name: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub property_name: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
 }
 pub struct TransitionEvent {
   pub event: Event,
@@ -49,15 +47,13 @@ impl TransitionEvent {
     let value = unsafe {
       ((*self.method_pointer).property_name)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn pseudo_element(&self) -> String {
     let value = unsafe {
       ((*self.method_pointer).pseudo_element)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
 }
 pub trait TransitionEventMethods: EventMethods {
