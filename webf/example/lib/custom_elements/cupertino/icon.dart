@@ -12,10 +12,14 @@ class FlutterCupertinoIcon extends WidgetElement {
         return CupertinoIcons.eye;
       case 'hand_thumbsup':
         return CupertinoIcons.hand_thumbsup;
+      case 'hand_thumbsup_fill':
+        return CupertinoIcons.hand_thumbsup_fill;
       case 'hand_thumbsdown':
         return CupertinoIcons.hand_thumbsdown;
       case 'bookmark':
         return CupertinoIcons.bookmark;
+      case 'bookmark_fill':
+        return CupertinoIcons.bookmark_fill;
       case 'ellipsis_circle':
         return CupertinoIcons.ellipsis_circle;   
       case 'share':
@@ -36,8 +40,10 @@ class FlutterCupertinoIcon extends WidgetElement {
         return CupertinoIcons.heart;
       case 'heart_fill':
         return CupertinoIcons.heart_fill;
-      case 'bookmark':
-        return CupertinoIcons.bookmark;
+      case 'person_2':
+        return CupertinoIcons.person_2;
+      case 'pencil':
+        return CupertinoIcons.pencil;
     }
 
     return null;
