@@ -122,6 +122,28 @@ bool AtomicString::ContainsOnlyLatin1OrEmpty() const {
     ored |= characters[i];
   return !(ored & 0xFF00);
 }
+
+// AtomicStringRef is a reference to an AtomicString's string data.
+// It is used to pass an AtomicString's string data without copying the string data.
+struct AtomicStringRef {
+  AtomicStringRef(const AtomicString& atomic_string) {
+    is_8bit = atomic_string.Is8Bit();
+    if (is_8bit) {
+      data.characters8 = atomic_string.Character8();
+    } else {
+      data.characters16 = atomic_string.Character16();
+    }
+    length = atomic_string.length();
+  }
+
+  bool is_8bit;
+  union {
+    const uint8_t* characters8;
+    const uint16_t* characters16;
+  } data;
+  int64_t length;
+};
+
 }  // namespace webf
 
 #endif  // BRIDGE_BINDINGS_QJS_ATOMIC_STRING_H_

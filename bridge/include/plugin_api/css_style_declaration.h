@@ -13,35 +13,33 @@ namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class CSSStyleDeclaration;
 enum class CSSStyleDeclarationType {
   kCSSStyleDeclaration = 0,
   kComputedCssStyleDeclaration = 1,
   kInlineCssStyleDeclaration = 2,
 };
-using PublicCSSStyleDeclarationGetCssText = const char* (*)(CSSStyleDeclaration*);
+using PublicCSSStyleDeclarationGetCssText = AtomicStringRef (*)(CSSStyleDeclaration*);
 using PublicCSSStyleDeclarationSetCssText = void (*)(CSSStyleDeclaration*, const char*, SharedExceptionState*);
-using PublicCSSStyleDeclarationDupCssText = const char* (*)(CSSStyleDeclaration*);
 using PublicCSSStyleDeclarationGetLength = int64_t (*)(CSSStyleDeclaration*);
-using PublicCSSStyleDeclarationGetPropertyValue = const char* (*)(CSSStyleDeclaration*, const char*, SharedExceptionState*);
+using PublicCSSStyleDeclarationGetPropertyValue = AtomicStringRef (*)(CSSStyleDeclaration*, const char*, SharedExceptionState*);
 using PublicCSSStyleDeclarationSetProperty = void (*)(CSSStyleDeclaration*, const char*, NativeValue, SharedExceptionState*);
-using PublicCSSStyleDeclarationRemoveProperty = const char* (*)(CSSStyleDeclaration*, const char*, SharedExceptionState*);
+using PublicCSSStyleDeclarationRemoveProperty = AtomicStringRef (*)(CSSStyleDeclaration*, const char*, SharedExceptionState*);
 using PublicCSSStyleDeclarationRelease = void (*)(CSSStyleDeclaration*);
 using PublicCSSStyleDeclarationDynamicTo = WebFValue<CSSStyleDeclaration, WebFPublicMethods> (*)(CSSStyleDeclaration*, CSSStyleDeclarationType);
 struct CSSStyleDeclarationPublicMethods : public WebFPublicMethods {
-  static const char* CssText(CSSStyleDeclaration* css_style_declaration);
+  static AtomicStringRef CssText(CSSStyleDeclaration* css_style_declaration);
   static void SetCssText(CSSStyleDeclaration* css_style_declaration, const char* cssText, SharedExceptionState* shared_exception_state);
-  static const char* DupCssText(CSSStyleDeclaration* css_style_declaration);
   static int64_t Length(CSSStyleDeclaration* css_style_declaration);
-  static const char* GetPropertyValue(CSSStyleDeclaration* css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
+  static AtomicStringRef GetPropertyValue(CSSStyleDeclaration* css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
   static void SetProperty(CSSStyleDeclaration* css_style_declaration, const char* property, NativeValue value, SharedExceptionState* shared_exception_state);
-  static const char* RemoveProperty(CSSStyleDeclaration* css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
+  static AtomicStringRef RemoveProperty(CSSStyleDeclaration* css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
   static void Release(CSSStyleDeclaration* css_style_declaration);
   static WebFValue<CSSStyleDeclaration, WebFPublicMethods> DynamicTo(CSSStyleDeclaration* css_style_declaration, CSSStyleDeclarationType css_style_declaration_type);
   double version{1.0};
   PublicCSSStyleDeclarationGetCssText css_style_declaration_get_css_text{CssText};
   PublicCSSStyleDeclarationSetCssText css_style_declaration_set_css_text{SetCssText};
-  PublicCSSStyleDeclarationDupCssText css_style_declaration_dup_css_text{DupCssText};
   PublicCSSStyleDeclarationGetLength css_style_declaration_get_length{Length};
   PublicCSSStyleDeclarationGetPropertyValue css_style_declaration_get_property_value{GetPropertyValue};
   PublicCSSStyleDeclarationSetProperty css_style_declaration_set_property{SetProperty};

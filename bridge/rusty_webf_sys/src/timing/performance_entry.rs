@@ -14,10 +14,8 @@ enum PerformanceEntryType {
 #[repr(C)]
 pub struct PerformanceEntryRustMethods {
   pub version: c_double,
-  pub name: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_name: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub entry_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_entry_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub name: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub entry_type: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
   pub start_time: extern "C" fn(ptr: *const OpaquePtr) -> i64,
   pub duration: extern "C" fn(ptr: *const OpaquePtr) -> i64,
   pub to_json: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
@@ -50,15 +48,13 @@ impl PerformanceEntry {
     let value = unsafe {
       ((*self.method_pointer).name)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn entry_type(&self) -> String {
     let value = unsafe {
       ((*self.method_pointer).entry_type)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn start_time(&self) -> i64 {
     let value = unsafe {

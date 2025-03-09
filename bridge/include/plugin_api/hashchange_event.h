@@ -13,22 +13,17 @@ namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class HashchangeEvent;
-using PublicHashchangeEventGetNewURL = const char* (*)(HashchangeEvent*);
-using PublicHashchangeEventDupNewURL = const char* (*)(HashchangeEvent*);
-using PublicHashchangeEventGetOldURL = const char* (*)(HashchangeEvent*);
-using PublicHashchangeEventDupOldURL = const char* (*)(HashchangeEvent*);
+using PublicHashchangeEventGetNewURL = AtomicStringRef (*)(HashchangeEvent*);
+using PublicHashchangeEventGetOldURL = AtomicStringRef (*)(HashchangeEvent*);
 struct HashchangeEventPublicMethods : public WebFPublicMethods {
-  static const char* NewURL(HashchangeEvent* hashchange_event);
-  static const char* DupNewURL(HashchangeEvent* hashchange_event);
-  static const char* OldURL(HashchangeEvent* hashchange_event);
-  static const char* DupOldURL(HashchangeEvent* hashchange_event);
+  static AtomicStringRef NewURL(HashchangeEvent* hashchange_event);
+  static AtomicStringRef OldURL(HashchangeEvent* hashchange_event);
   double version{1.0};
   EventPublicMethods event;
   PublicHashchangeEventGetNewURL hashchange_event_get_new_url{NewURL};
-  PublicHashchangeEventDupNewURL hashchange_event_dup_new_url{DupNewURL};
   PublicHashchangeEventGetOldURL hashchange_event_get_old_url{OldURL};
-  PublicHashchangeEventDupOldURL hashchange_event_dup_old_url{DupOldURL};
 };
 }  // namespace webf
 #endif  // WEBF_CORE_WEBF_API_PLUGIN_API_HASHCHANGE_EVENT_H_

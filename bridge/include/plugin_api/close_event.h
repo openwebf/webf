@@ -13,21 +13,19 @@ namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class CloseEvent;
 using PublicCloseEventGetCode = int64_t (*)(CloseEvent*);
-using PublicCloseEventGetReason = const char* (*)(CloseEvent*);
-using PublicCloseEventDupReason = const char* (*)(CloseEvent*);
+using PublicCloseEventGetReason = AtomicStringRef (*)(CloseEvent*);
 using PublicCloseEventGetWasClean = int32_t (*)(CloseEvent*);
 struct CloseEventPublicMethods : public WebFPublicMethods {
   static int64_t Code(CloseEvent* close_event);
-  static const char* Reason(CloseEvent* close_event);
-  static const char* DupReason(CloseEvent* close_event);
+  static AtomicStringRef Reason(CloseEvent* close_event);
   static int32_t WasClean(CloseEvent* close_event);
   double version{1.0};
   EventPublicMethods event;
   PublicCloseEventGetCode close_event_get_code{Code};
   PublicCloseEventGetReason close_event_get_reason{Reason};
-  PublicCloseEventDupReason close_event_dup_reason{DupReason};
   PublicCloseEventGetWasClean close_event_get_was_clean{WasClean};
 };
 }  // namespace webf

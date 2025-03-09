@@ -20,6 +20,7 @@ typedef struct <%= dependentType %>PublicMethods <%= dependentType %>PublicMetho
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class <%= className %>;
 
 <% if (!object.parent) { %>
@@ -35,10 +36,7 @@ enum class <%= className %>Type {
   <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
 using Public<%= className %>Get<%= propName %> = <%= generatePublicReturnTypeValue(prop.type, true) %> (*)(<%= className %>*<%= isAnyType(prop.type)? ", SharedExceptionState* shared_exception_state": "" %>);
   <% if (!prop.readonly) { %>
-using Public<%= className %>Set<%= propName %> = void (*)(<%= className %>*, <%= generatePublicReturnTypeValue(prop.type, true) %>, SharedExceptionState*);
-  <% } %>
-  <% if (isStringType(prop.type)) { %>
-using Public<%= className %>Dup<%= propName %> = <%= generatePublicReturnTypeValue(prop.type, true) %> (*)(<%= className %>*);
+using Public<%= className %>Set<%= propName %> = void (*)(<%= className %>*, <%= generatePublicParameterType(prop.type, true) %>, SharedExceptionState*);
   <% } %>
 <% }); %>
 
@@ -58,10 +56,7 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
     <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
   static <%= generatePublicReturnTypeValue(prop.type, true) %> <%= propName %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type)? ", SharedExceptionState* shared_exception_state": "" %>);
     <% if (!prop.readonly) { %>
-  static void Set<%= propName %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicReturnTypeValue(prop.type, true) %> <%= prop.name %>, SharedExceptionState* shared_exception_state);
-    <% } %>
-    <% if (isStringType(prop.type)) { %>
-  static <%= generatePublicReturnTypeValue(prop.type, true) %> Dup<%= propName %>(<%= className %>* <%= _.snakeCase(className) %>);
+  static void Set<%= propName %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParameterType(prop.type, true) %> <%= prop.name %>, SharedExceptionState* shared_exception_state);
     <% } %>
   <% }); %>
 
@@ -85,9 +80,6 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
   Public<%= className %>Get<%= propName %> <%= _.snakeCase(className) %>_get_<%= _.snakeCase(prop.name) %>{<%= propName %>};
     <% if (!prop.readonly) { %>
   Public<%= className %>Set<%= propName %> <%= _.snakeCase(className) %>_set_<%= _.snakeCase(prop.name) %>{Set<%= propName %>};
-    <% } %>
-    <% if (isStringType(prop.type)) { %>
-  Public<%= className %>Dup<%= propName %> <%= _.snakeCase(className) %>_dup_<%= _.snakeCase(prop.name) %>{Dup<%= propName %>};
     <% } %>
   <% }); %>
 

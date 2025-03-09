@@ -9,10 +9,8 @@ use crate::*;
 pub struct GestureEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub state: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_state: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub direction: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_direction: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub state: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub direction: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
   pub delta_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub delta_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub velocity_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
@@ -48,15 +46,13 @@ impl GestureEvent {
     let value = unsafe {
       ((*self.method_pointer).state)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn direction(&self) -> String {
     let value = unsafe {
       ((*self.method_pointer).direction)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn delta_x(&self) -> f64 {
     let value = unsafe {

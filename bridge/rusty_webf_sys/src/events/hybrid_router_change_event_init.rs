@@ -10,7 +10,7 @@ pub struct HybridRouterChangeEventInit {
   pub bubbles: i32,
   pub cancelable: i32,
   pub composed: i32,
-  pub kind: *const c_char,
-  pub name: *const c_char,
+  pub kind: AtomicStringRef,
+  pub name: AtomicStringRef,
   pub state: NativeValue,
 }

@@ -13,6 +13,6 @@ pub struct InputEventInit {
   pub bubbles: i32,
   pub cancelable: i32,
   pub composed: i32,
-  pub input_type: *const c_char,
-  pub data: *const c_char,
+  pub input_type: AtomicStringRef,
+  pub data: AtomicStringRef,
 }

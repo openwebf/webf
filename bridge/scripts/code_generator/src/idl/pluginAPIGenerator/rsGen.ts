@@ -40,7 +40,7 @@ function generatePublicReturnTypeValue(type: ParameterType) {
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
-      return '*const c_char';
+      return 'AtomicStringRef';
     }
     case FunctionArgumentType.void:
       return 'c_void';
@@ -264,8 +264,7 @@ function generateMethodReturnStatements(type: ParameterType) {
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
-      return `let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    Ok(value.to_str().unwrap().to_string())`;
+      return 'Ok(value.to_string())';
     }
     default:
       return 'Ok(value)';
@@ -283,11 +282,7 @@ function generatePropReturnStatements(type: ParameterType) {
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
-      return `let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()`;
-    }
-    case FunctionArgumentType.any: {
-      return `value`;
+      return 'value.to_string()';
     }
     default:
       return 'value';
@@ -334,6 +329,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
           inheritedObjects,
           isPointerType,
           generatePublicReturnTypeValue,
+          generatePublicParameterType,
           generatePublicParametersType,
           generatePublicParametersTypeWithName,
           generateMethodReturnType,

@@ -14,23 +14,18 @@ namespace webf {
   auto native_value = value.ToNative(<%= _.snakeCase(className) %>->ctx(), shared_exception_state->exception_state, false);
   return native_value;
   <% } else if (isStringType(prop.type)) { %>
-  return <%= _.snakeCase(className) %>-><%= prop.name %>().ToStringView().Characters8();
+  auto value_atomic = <%= _.snakeCase(className) %>-><%= prop.name %>();
+  return AtomicStringRef(value_atomic);
   <% } else { %>
   return <%= _.snakeCase(className) %>-><%= prop.name %>();
   <% } %>
 }
   <% if (!prop.readonly) { %>
-void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicReturnTypeValue(prop.type, true) %> <%= prop.name %>, SharedExceptionState* shared_exception_state) {
+void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParameterType(prop.type, true) %> <%= prop.name %>, SharedExceptionState* shared_exception_state) {
   <% if (isStringType(prop.type)) { %>
   webf::AtomicString <%= prop.name %>Atomic = webf::AtomicString(<%= _.snakeCase(className) %>->ctx(), <%= prop.name %>);
   <% } %>
   <%= _.snakeCase(className) %>->set<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= prop.name %><% if (isStringType(prop.type)) { %>Atomic<% } %>, shared_exception_state->exception_state);
-}
-  <% } %>
-  <% if (isStringType(prop.type)) { %>
-<%= generatePublicReturnTypeValue(prop.type, true) %> <%= className %>PublicMethods::Dup<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>) {
-  const char* buffer = <%= _.snakeCase(className) %>-><%= prop.name %>().ToStringView().Characters8();
-  return strdup(buffer);
 }
   <% } %>
 <% }); %>
@@ -46,8 +41,8 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
     <% } %>
   <% }); %>
     <% if (isStringType(method.returnType)) { %>
-  webf::AtomicString value = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
-  return value.ToStringView().Characters8();
+  auto value_atomic = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
+  return AtomicStringRef(value_atomic);
     <% } else if (isVoidType(method.returnType)) { %>
   <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
     <% } else if (isAnyType(method.returnType)) { %>

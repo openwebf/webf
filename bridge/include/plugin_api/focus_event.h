@@ -15,6 +15,7 @@ typedef struct EventTargetPublicMethods EventTargetPublicMethods;
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class FocusEvent;
 using PublicFocusEventGetRelatedTarget = WebFValue<EventTarget, EventTargetPublicMethods> (*)(FocusEvent*);
 struct FocusEventPublicMethods : public WebFPublicMethods {

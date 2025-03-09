@@ -13,18 +13,19 @@ namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class ElementAttributes;
 enum class ElementAttributesType {
   kElementAttributes = 0,
 };
-using PublicElementAttributesGetAttribute = const char* (*)(ElementAttributes*, const char*, SharedExceptionState*);
+using PublicElementAttributesGetAttribute = AtomicStringRef (*)(ElementAttributes*, const char*, SharedExceptionState*);
 using PublicElementAttributesSetAttribute = void (*)(ElementAttributes*, const char*, const char*, SharedExceptionState*);
 using PublicElementAttributesHasAttribute = int32_t (*)(ElementAttributes*, const char*, SharedExceptionState*);
 using PublicElementAttributesRemoveAttribute = void (*)(ElementAttributes*, const char*, SharedExceptionState*);
 using PublicElementAttributesRelease = void (*)(ElementAttributes*);
 using PublicElementAttributesDynamicTo = WebFValue<ElementAttributes, WebFPublicMethods> (*)(ElementAttributes*, ElementAttributesType);
 struct ElementAttributesPublicMethods : public WebFPublicMethods {
-  static const char* GetAttribute(ElementAttributes* element_attributes, const char* name, SharedExceptionState* shared_exception_state);
+  static AtomicStringRef GetAttribute(ElementAttributes* element_attributes, const char* name, SharedExceptionState* shared_exception_state);
   static void SetAttribute(ElementAttributes* element_attributes, const char* name, const char* value, SharedExceptionState* shared_exception_state);
   static int32_t HasAttribute(ElementAttributes* element_attributes, const char* name, SharedExceptionState* shared_exception_state);
   static void RemoveAttribute(ElementAttributes* element_attributes, const char* name, SharedExceptionState* shared_exception_state);

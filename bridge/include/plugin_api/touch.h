@@ -15,6 +15,7 @@ typedef struct EventTargetPublicMethods EventTargetPublicMethods;
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class Touch;
 enum class TouchType {
   kTouch = 0,

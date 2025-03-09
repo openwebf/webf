@@ -7,6 +7,31 @@ use windows::Win32::System::Com::{CoTaskMemAlloc, CoTaskMemFree};
 use crate::memory_utils::safe_free_cpp_ptr;
 
 #[repr(C)]
+pub union AtomicStringValue {
+  pub characters8: *const u8,
+  pub characters16: *const u16,
+}
+
+#[repr(C)]
+pub struct AtomicStringRef {
+  pub is_8bit: bool,
+  pub data: AtomicStringValue,
+  pub length: i64,
+}
+
+impl AtomicStringRef {
+  pub fn to_string(&self) -> String {
+    if self.is_8bit {
+      let slice = unsafe { std::slice::from_raw_parts(self.data.characters8, self.length as usize) };
+      String::from_utf8_lossy(slice).to_string()
+    } else {
+      let slice = unsafe { std::slice::from_raw_parts(self.data.characters16, self.length as usize) };
+      String::from_utf16_lossy(slice).to_string()
+    }
+  }
+}
+
+#[repr(C)]
 pub struct SharedNativeString {
   pub string_: *mut u16,
   pub length_: u32,

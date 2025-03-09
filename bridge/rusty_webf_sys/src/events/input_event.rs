@@ -9,10 +9,8 @@ use crate::*;
 pub struct InputEventRustMethods {
   pub version: c_double,
   pub ui_event: UIEventRustMethods,
-  pub input_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_input_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub data: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_data: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub input_type: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub data: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
 }
 pub struct InputEvent {
   pub ui_event: UIEvent,
@@ -42,15 +40,13 @@ impl InputEvent {
     let value = unsafe {
       ((*self.method_pointer).input_type)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn data(&self) -> String {
     let value = unsafe {
       ((*self.method_pointer).data)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
 }
 pub trait InputEventMethods: UIEventMethods {

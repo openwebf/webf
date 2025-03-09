@@ -14,13 +14,12 @@ enum CSSStyleDeclarationType {
 #[repr(C)]
 pub struct CSSStyleDeclarationRustMethods {
   pub version: c_double,
-  pub css_text: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub css_text: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
   pub set_css_text: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub dup_css_text: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
   pub length: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub get_property_value: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> *const c_char,
+  pub get_property_value: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
   pub set_property: extern "C" fn(ptr: *const OpaquePtr, *const c_char, NativeValue, exception_state: *const OpaquePtr) -> c_void,
-  pub remove_property: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> *const c_char,
+  pub remove_property: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
   pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
   pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: CSSStyleDeclarationType) -> RustValue<c_void>,
 }
@@ -50,8 +49,7 @@ impl CSSStyleDeclaration {
     let value = unsafe {
       ((*self.method_pointer).css_text)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn set_css_text(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
@@ -75,8 +73,7 @@ impl CSSStyleDeclaration {
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
     }
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    Ok(value.to_str().unwrap().to_string())
+    Ok(value.to_string())
   }
   pub fn set_property(&self, property: &str, value: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
@@ -94,8 +91,7 @@ impl CSSStyleDeclaration {
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
     }
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    Ok(value.to_str().unwrap().to_string())
+    Ok(value.to_string())
   }
   pub fn as_computed_css_style_declaration(&self) -> Result<ComputedCssStyleDeclaration, &str> {
     let raw_ptr = unsafe {

@@ -11,7 +11,7 @@ pub struct MessageEventInit {
   pub cancelable: i32,
   pub composed: i32,
   pub data: NativeValue,
-  pub origin: *const c_char,
-  pub last_event_id: *const c_char,
-  pub source: *const c_char,
+  pub origin: AtomicStringRef,
+  pub last_event_id: AtomicStringRef,
+  pub source: AtomicStringRef,
 }
