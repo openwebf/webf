@@ -12,6 +12,7 @@
 #include "custom_event_init.h"
 #include "document.h"
 #include "event_init.h"
+#include "error_event_init.h"
 #include "exception_state.h"
 #include "focus_event_init.h"
 #include "foundation/native_value.h"
@@ -39,6 +40,8 @@ class AnimationEvent;
 typedef struct AnimationEventPublicMethods AnimationEventPublicMethods;
 class CloseEvent;
 typedef struct CloseEventPublicMethods CloseEventPublicMethods;
+class ErrorEvent;
+typedef struct ErrorEventPublicMethods ErrorEventPublicMethods;
 class FocusEvent;
 typedef struct FocusEventPublicMethods FocusEventPublicMethods;
 class GestureEvent;
@@ -136,6 +139,16 @@ using PublicContextCreateCustomEventWithOptions =
                                                          const char* type,
                                                          WebFCustomEventInit* init,
                                                          ExceptionState& exception_state);
+
+using PublicContextCreateErrorEvent =
+    WebFValue<ErrorEvent, ErrorEventPublicMethods> (*)(ExecutingContext* context,
+                                                      const char* type,
+                                                      ExceptionState& exception_state);
+using PublicContextCreateErrorEventWithOptions =
+    WebFValue<ErrorEvent, ErrorEventPublicMethods> (*)(ExecutingContext* context,
+                                                      const char* type,
+                                                      WebFErrorEventInit* init,
+                                                      ExceptionState& exception_state);
 
 using PublicContextCreateFocusEvent =
     WebFValue<FocusEvent, FocusEventPublicMethods> (*)(ExecutingContext* context,
@@ -333,6 +346,14 @@ struct ExecutingContextWebFMethods {
                                                                                        WebFCustomEventInit* init,
                                                                                        ExceptionState& exception_state);
 
+  static WebFValue<ErrorEvent, ErrorEventPublicMethods> CreateErrorEvent(ExecutingContext* context,
+                                                                         const char* type,
+                                                                         ExceptionState& exception_state);
+  static WebFValue<ErrorEvent, ErrorEventPublicMethods> CreateErrorEventWithOptions(ExecutingContext* context,
+                                                                                    const char* type,
+                                                                                    WebFErrorEventInit* init,
+                                                                                    ExceptionState& exception_state);
+
   static WebFValue<FocusEvent, FocusEventPublicMethods> CreateFocusEvent(ExecutingContext* context,
                                                                          const char* type,
                                                                          ExceptionState& exception_state);
@@ -449,6 +470,8 @@ struct ExecutingContextWebFMethods {
   PublicContextCreateCloseEventWithOptions rust_context_create_close_event_with_options{CreateCloseEventWithOptions};
   PublicContextCreateCustomEvent rust_context_create_custom_event{CreateCustomEvent};
   PublicContextCreateCustomEventWithOptions rust_context_create_custom_event_with_options{CreateCustomEventWithOptions};
+  PublicContextCreateErrorEvent rust_context_create_error_event{CreateErrorEvent};
+  PublicContextCreateErrorEventWithOptions rust_context_create_error_event_with_options{CreateErrorEventWithOptions};
   PublicContextCreateFocusEvent rust_context_create_focus_event{CreateFocusEvent};
   PublicContextCreateFocusEventWithOptions rust_context_create_focus_event_with_options{CreateFocusEventWithOptions};
   PublicContextCreateGestureEvent rust_context_create_gesture_event{CreateGestureEvent};

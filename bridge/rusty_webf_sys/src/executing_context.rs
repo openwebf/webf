@@ -35,6 +35,8 @@ pub struct ExecutingContextRustMethods {
   pub create_close_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const CloseEventInit, exception_state: *const OpaquePtr ) -> RustValue<CloseEventRustMethods>,
   pub create_custom_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<CustomEventRustMethods>,
   pub create_custom_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const CustomEventInit, exception_state: *const OpaquePtr ) -> RustValue<CustomEventRustMethods>,
+  pub create_error_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<ErrorEventRustMethods>,
+  pub create_error_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const ErrorEventInit, exception_state: *const OpaquePtr ) -> RustValue<ErrorEventRustMethods>,
   pub create_focus_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<FocusEventRustMethods>,
   pub create_focus_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const FocusEventInit, exception_state: *const OpaquePtr ) -> RustValue<FocusEventRustMethods>,
   pub create_gesture_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<GestureEventRustMethods>,

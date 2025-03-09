@@ -13,16 +13,17 @@ enum EventType {
   CloseEvent = 3,
   HybridRouterChangeEvent = 4,
   AnimationEvent = 5,
-  IntersectionChangeEvent = 6,
-  UIEvent = 7,
-  FocusEvent = 8,
-  InputEvent = 9,
-  MouseEvent = 10,
-  PointerEvent = 11,
-  PopStateEvent = 12,
-  TransitionEvent = 13,
-  PromiseRejectionEvent = 14,
-  HashchangeEvent = 15,
+  ErrorEvent = 6,
+  IntersectionChangeEvent = 7,
+  UIEvent = 8,
+  FocusEvent = 9,
+  InputEvent = 10,
+  MouseEvent = 11,
+  PointerEvent = 12,
+  PopStateEvent = 13,
+  TransitionEvent = 14,
+  PromiseRejectionEvent = 15,
+  HashchangeEvent = 16,
 }
 #[repr(C)]
 pub struct EventRustMethods {
@@ -221,6 +222,16 @@ impl Event {
       return Err("The type value of Event does not belong to the AnimationEvent type.");
     }
     Ok(AnimationEvent::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const AnimationEventRustMethods, raw_ptr.status))
+  }
+  pub fn as_error_event(&self) -> Result<ErrorEvent, &str> {
+    let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
+      ((*self.method_pointer).dynamic_to)(self.ptr, EventType::ErrorEvent)
+    };
+    if (raw_ptr.value == std::ptr::null()) {
+      return Err("The type value of Event does not belong to the ErrorEvent type.");
+    }
+    Ok(ErrorEvent::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const ErrorEventRustMethods, raw_ptr.status))
   }
   pub fn as_intersection_change_event(&self) -> Result<IntersectionChangeEvent, &str> {
     let raw_ptr = unsafe {
