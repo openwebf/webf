@@ -126,6 +126,8 @@ export const api = {
     getDisplayList: ({ page = 1, topic = '' } = {}) => 
       request(`/v1/displays?page=${page}&topic=${topic}`),
     getDetail: (id) => request(`/v1/share_links/${id}`),
+    getNotes: (id) => request(`/v1/share_links/${id}/notes`),
+    getRecommendations: (id) => request(`/v1/share_links/${id}/recommend`),
     publish: (data) => request('/v1/share_links', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -203,6 +205,11 @@ export const api = {
         rich_content: richContent,
         root_id: rootId,
       }),
+      requireAuth: true,
+    }),
+    createByNote: ({ noteId }) => request(`/v1/notes/${noteId}/comment`, {
+      method: 'POST',
+      body: JSON.stringify({}),
       requireAuth: true,
     }),
     like: (id) => request(`/v1/likes/like`, {

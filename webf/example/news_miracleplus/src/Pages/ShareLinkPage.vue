@@ -3,6 +3,30 @@
     <webf-listview class="webf-listview">
       <PostHeader :user="shareLink.user" />
       <PostContent :post="shareLink" />
+      <LinkPreview 
+        v-if="shareLink.link"
+        :title="shareLink.title"
+        :introduction="shareLink.introduction"
+        :logo-url="shareLink.logoUrl"
+      />
+      <ContentBlock
+        title="内容导读"
+        :content="shareLink.introduction"
+      />
+      <ContentBlock
+        title="自动总结"
+        :content="shareLink.summariedLinkContent"
+      />
+      <NotesList
+        :notes="shareLink.notes"
+        :notes-list="notesList"
+        @note-click="handleNoteClick"
+      />
+      <RecommendList
+        :recommend-list="recommendList"
+        @recommend-click="handleRecommendClick"
+      />
+
       <InteractionBar :views-count="shareLink.viewsCount" :likes-count="shareLink.likesCount"
         :comments-count="shareLink.commentsCount" :followers-count="shareLink.followersCount"
         :bookmarks-count="shareLink.bookmarksCount" :is-followed="isFollowed" :is-liked="isLiked"
@@ -14,49 +38,15 @@
     <alert-dialog ref="alertRef" />
     <flutter-cupertino-loading ref="loading" />
     <flutter-cupertino-toast ref="toast" />
-    <flutter-cupertino-modal-popup 
-        :show="showInviteModal" 
-        height="400"
-        @close="onInviteModalClose"
-      >
-        <div class="invite-modal-content">
-          <div class="invite-search-container">
-            <flutter-cupertino-input 
-              placeholder="搜索用户" 
-              class="invite-search-input" 
-              :value="searchKeyword"
-              @input="handleSearchInput"
-            />
-          </div>
-          <div class="invite-users-list">
-            <div v-if="loadingUsers" class="loading-indicator">
-              <flutter-cupertino-activity-indicator />
-              <span>加载中...</span>
-            </div>
-            <div v-else-if="invitedUsers.length === 0" class="no-users">
-              没有找到匹配的用户
-            </div>
-            <webf-listview v-else class="invite-users-list">
-              <div 
-                v-for="user in invitedUsers" 
-                :key="user.id" 
-                class="invite-user-item"
-              >
-                <img :src="user.avatar" class="user-avatar" />
-                <div class="user-info">
-                  <div class="user-name">{{ user.name }}</div>
-                  <div class="user-company">{{ user.company }} {{ user.jobTitle }}</div>
-                </div>
-                <flutter-cupertino-icon
-                  type="bookmark" 
-                  class="invite-btn"
-                  @click="handleInviteUser(user)"
-                />
-              </div>
-            </webf-listview>
-          </div>
-        </div>
-    </flutter-cupertino-modal-popup>
+    <InviteModal
+      :show="showInviteModal"
+      :loading="loadingUsers"
+      :users="invitedUsers"
+      :search-keyword="searchKeyword"
+      @close="onInviteModalClose"
+      @search="handleSearchInput"
+      @invite="handleInviteUser"
+    />
   </div>
 </template>
 
@@ -67,6 +57,12 @@ import PostContent from '@/Components/post/PostContent.vue';
 import InteractionBar from '@/Components/post/InteractionBar.vue';
 import CommentsSection from '@/Components/comment/CommentsSection.vue';
 import CommentInput from '@/Components/comment/CommentInput.vue';
+import AlertDialog from '@/Components/AlertDialog.vue';
+import LinkPreview from '@/Components/post/LinkPreview.vue';
+import ContentBlock from '@/Components/post/ContentBlock.vue';
+import NotesList from '@/Components/post/NotesList.vue';
+import RecommendList from '@/Components/post/RecommendList.vue';
+import InviteModal from '@/Components/post/InviteModal.vue';
 
 export default {
   name: 'ShareLinkPage',
@@ -75,7 +71,13 @@ export default {
     PostContent,
     InteractionBar,
     CommentsSection,
-    CommentInput
+    CommentInput,
+    AlertDialog,
+    LinkPreview,
+    ContentBlock,
+    NotesList,
+    RecommendList,
+    InviteModal
   },
   data() {
     return {
@@ -87,7 +89,9 @@ export default {
       showInviteModal: false,
       invitedUsers: [],
       searchKeyword: '',
-      loadingUsers: false
+      loadingUsers: false,
+      notesList: [],
+      recommendList: [],
     }
   },
   computed: {
@@ -101,7 +105,7 @@ export default {
       return !!this.shareLink.followed;
     }
   },
-  async activated() {
+  async mounted() {
     console.log('share link page mounted');
     this.$refs.loading.show({
       text: '加载中'
@@ -109,7 +113,11 @@ export default {
     const id = window.webf.hybridHistory.state.id;
     this.id = id;
     await this.fetchShareLinkDetail();
-    this.comments = await this.fetchComments(id);
+    await Promise.all([
+      this.fetchComments(id),
+      this.fetchNotes(id),
+      this.fetchRecommendations(id),
+    ]);
     this.$refs.loading.hide();
     api.news.viewCount({ id });
   },
@@ -124,15 +132,37 @@ export default {
         });
       }
     },
-    async fetchComments() {
+    async fetchComments(id) {
       // TODO: mock data
-      const res = await api.comments.getList({ resourceId: 55558 });
+      const res = await api.comments.getList({ resourceId: id });
       const comments = res.data.comments;
       for (const comment of comments) {
         const subRes = await api.comments.getList({ resourceId: comment.id, resourceType: 'Comment' });
         comment.subComments = subRes.data.comments;
       }
-      return comments;
+      this.comments = comments;
+    },
+    async fetchNotes(id) {
+      if (!this.shareLink.notes) return;
+      
+      try {
+        const res = await api.news.getNotes(id);
+        this.notesList = res.data.notes;
+      } catch (error) {
+        this.$refs.alertRef.show({
+          message: '获取相关问题失败'
+        });
+      }
+    },
+    async fetchRecommendations(id) {
+      try {
+        const res = await api.news.getRecommendations(id);
+        this.recommendList = res.data.share_links;
+      } catch (error) {
+        this.$refs.alertRef.show({
+          message: '获取相关分享失败'
+        });
+      }
     },
     async handleCommentSubmit(content) {
       console.log('handleCommentSubmit', content);
@@ -150,7 +180,6 @@ export default {
         resourceType: 'ShareLink',
         content: structuredContent,
       });
-      console.log('commentRes', commentRes);
       if (commentRes.success) {
         this.$refs.toast.show({
           type: 'success',
@@ -214,7 +243,6 @@ export default {
     },
     handleSearchInput(e) {
       this.searchKeyword = e.detail;
-      // 使用防抖处理搜索输入
       if (this.searchTimeout) {
         clearTimeout(this.searchTimeout);
       }
@@ -266,7 +294,25 @@ export default {
     async handleBookmark() {
       await api.news.bookmark(this.id);
       await this.fetchShareLinkDetail();
-    }
+    },
+    async handleNoteClick(note) {
+      console.log('handleNoteClick', JSON.stringify(note));
+      if (note.comment_id) {
+        // TODO：如果有关联的评论，滚动到评论点
+      } else {
+        // TODO: 否则直接发起评论
+        const res = await api.news.createByNote({ noteId: note.id });
+        if (res.success) {
+          // TODO: 刷新评论列表，滚动到评论列表的第一项
+        }
+      }
+    },
+    handleRecommendClick(item) {
+      window.webf.hybridHistory.pushState(
+        { id: item.id },
+        '/share_link'
+      );
+    },
   }
 }
 </script>
@@ -280,79 +326,5 @@ export default {
 
 .webf-listview {
   height: 100vh;
-}
-
-.invite-modal-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 16px;
-  
-  .invite-search-container {
-    margin-bottom: 16px;
-    
-    .invite-search-input {
-      width: 100%;
-    }
-  }
-  
-  .invite-users-list {
-    height: 300px;
-    flex: 1;
-    overflow-y: auto;
-    
-    .loading-indicator {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100px;
-      color: #999;
-    }
-    
-    .no-users {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100px;
-      color: #999;
-    }
-    
-    .invite-user-item {
-      display: flex;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid #eee;
-      
-      .user-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        margin-right: 12px;
-        object-fit: cover;
-      }
-      
-      .user-info {
-        flex: 1;
-        
-        .user-name {
-          font-size: 16px;
-          font-weight: 500;
-          color: #333;
-          margin-bottom: 4px;
-        }
-        
-        .user-company {
-          font-size: 12px;
-          color: #666;
-        }
-      }
-      
-      .invite-btn {
-        padding: 4px 12px;
-        font-size: 14px;
-      }
-    }
-  }
 }
 </style>
