@@ -40,4 +40,5 @@
 #include "core/events/promise_rejection_event.h"
 #include "core/events/hybrid_router_change_event.h"
 #include "core/events/error_event.h"
+#include "core/events/message_event.h"
 <%= content %>

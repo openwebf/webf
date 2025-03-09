@@ -619,19 +619,23 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/plugin_api_dom_string_map.cc
     out/plugin_api_element_attributes.cc
     out/plugin_api_event.cc
+    out/plugin_api_error_event.cc
     out/plugin_api_focus_event.cc
     out/plugin_api_gesture_event.cc
     out/plugin_api_hashchange_event.cc
+    out/plugin_api_hybrid_router_change_event.cc
     out/plugin_api_inline_css_style_declaration.cc
     out/plugin_api_input_event.cc
     out/plugin_api_intersection_change_event.cc
     out/plugin_api_pop_state_event.cc
+    out/plugin_api_message_event.cc
     out/plugin_api_mouse_event.cc
     out/plugin_api_mutation_observer_registration.cc
     out/plugin_api_performance_entry.cc
     out/plugin_api_performance_mark.cc
     out/plugin_api_performance_measure.cc
     out/plugin_api_pointer_event.cc
+    out/plugin_api_promise_rejection_event.cc
     out/plugin_api_touch.cc
     out/plugin_api_transition_event.cc
     out/plugin_api_ui_event.cc

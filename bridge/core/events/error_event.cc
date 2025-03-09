@@ -29,9 +29,7 @@ ErrorEvent::ErrorEvent(ExecutingContext* context, const std::string& message, st
     : Event(context, event_type_names::kerror), message_(message), source_location_(std::move(location)) {}
 
 ErrorEvent::ErrorEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
-    : Event(context, type),
-      message_(""),
-      source_location_(std::make_unique<SourceLocation>("", 0, 0)) {}
+    : Event(context, type), message_(""), source_location_(std::make_unique<SourceLocation>("", 0, 0)) {}
 
 ErrorEvent::ErrorEvent(ExecutingContext* context,
                        const AtomicString& type,
