@@ -7,6 +7,7 @@
 #define BRIDGE_CORE_EVENTS_MESSAGE_EVENT_H_
 
 #include "core/dom/events/event.h"
+#include "plugin_api/message_event.h"
 #include "qjs_message_event_init.h"
 
 namespace webf {
@@ -38,11 +39,18 @@ class MessageEvent : public Event {
 
   bool IsMessageEvent() const override;
 
+  const MessageEventPublicMethods* messageEventPublicMethods();
+
  private:
   ScriptValue data_;
   AtomicString origin_;
   AtomicString lastEventId_;
   AtomicString source_;
+};
+
+template <>
+struct DowncastTraits<MessageEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsMessageEvent(); }
 };
 
 }  // namespace webf
