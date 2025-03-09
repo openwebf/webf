@@ -1,14 +1,7 @@
 <template>
-    <flutter-cupertino-alert
-        ref="alert"
-        :title="title"
-        :message="message"
-        :confirm-text="confirmText"
-        :cancel-text="cancelText"
-        :cancel-destructive="cancelDestructive"
-        @confirm="handleConfirm"
-        @cancel="handleCancel"
-    />
+    <flutter-cupertino-alert ref="alert" :title="title" :message="message" :confirm-text="confirmText"
+        :cancel-text="cancelText" :cancel-destructive="cancelDestructive" @confirm="handleConfirm"
+        @cancel="handleCancel" />
 </template>
 
 <script>

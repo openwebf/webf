@@ -4,26 +4,32 @@
         <span class="views">
           <flutter-cupertino-icon type="eye" class="icon" />{{ viewsCount }}
         </span>
-        <span class="likes">
-          <flutter-cupertino-icon type="hand_thumbsup" class="icon" />{{ likesCount }}
+        <span class="follows">
+          <flutter-cupertino-icon type="person_2" class="icon" />{{ followersCount }}
+        </span>
+        <span class="likes" @click="handleLike">
+          <flutter-cupertino-icon :type="isLiked ? 'hand_thumbsup_fill' : 'hand_thumbsup'" class="icon" />{{ likesCount }}
+        </span>
+        <span class="bookmarks" @click="handleBookmark">
+          <flutter-cupertino-icon :type="isBookmarked ? 'bookmark_fill' : 'bookmark'" class="icon" />{{ bookmarksCount }}
         </span>
         <span class="comments">
           <flutter-cupertino-icon type="ellipsis_circle" class="icon" />{{ commentsCount }}
         </span>
       </div>
       <div class="actions">
-        <flutter-cupertino-button @click="$emit('discuss')" class="action-button">
-          <div class="button-content">
-            <flutter-cupertino-icon type="chat_bubble" class="icon" />
-            <span>邀请讨论</span>
-          </div>
-        </flutter-cupertino-button>
-        <flutter-cupertino-button @click="$emit('share')" class="action-button">
-          <div class="button-content">
-            <flutter-cupertino-icon type="share" class="icon" />
-            <span>分享</span>
-          </div>
-        </flutter-cupertino-button>
+        <div class="action-item" @click="$emit('invite')">
+          <flutter-cupertino-icon type="chat_bubble" class="icon" />
+          <span>邀请</span>
+        </div>
+        <div class="action-item" @click="handleFollow">
+          <flutter-cupertino-icon :type="isFollowed ? 'heart_fill' : 'heart'" class="icon" />
+          <span>{{ isFollowed ? '取消关注' : '关注' }}</span>
+        </div>
+        <div class="action-item" @click="$emit('share')">
+          <flutter-cupertino-icon type="share" class="icon" />
+          <span>分享</span>
+        </div>
       </div>
     </div>
   </template>
@@ -34,7 +40,32 @@
     props: {
       viewsCount: Number,
       likesCount: Number,
-      commentsCount: Number
+      commentsCount: Number,
+      followersCount: Number,
+      bookmarksCount: Number,
+      isFollowed: {
+        type: Boolean,
+        default: false
+      },
+      isLiked: {
+        type: Boolean,
+        default: false
+      },
+      isBookmarked: {
+        type: Boolean,
+        default: false
+      }
+    },
+    methods: {
+      handleFollow() {
+        this.$emit('follow', !this.isFollowed);
+      },
+      handleLike() {
+        this.$emit('like', !this.isLiked);
+      },
+      handleBookmark() {
+        this.$emit('bookmark', !this.isBookmarked);
+      }
     }
   }
   </script>
@@ -62,21 +93,14 @@
       margin-top: 12px;
       display: flex;
 
-      .action-button {
-        margin-right: 16px;
-        text-align: center;
-        border-radius: 8px;
-        .button-content {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          text-align: center;
-          color: var(--button-primary-text, #fff); 
-          
-          .icon {
-            margin-right: 4px;
-            color: var(--button-primary-text, #fff); 
-          }
+      .action-item {
+        margin-right: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        
+        .icon {
+          margin-right: 4px;
         }
       }
     }

@@ -7,9 +7,6 @@
           <div class="time">2小时前</div>
         </div>
       </div>
-      <flutter-cupertino-button class="follow-btn" type="primary">
-        + 关注
-      </flutter-cupertino-button>
     </div>
   </template>
   
@@ -20,6 +17,19 @@
       user: {
         type: Object,
         required: true
+      }
+    },
+    data() {
+      return {
+        showBtn: true
+      }
+    },
+    methods: {
+      handleFollow() {
+        this.showBtn = false;
+      },
+      handleUnfollow() {
+        this.showBtn = true;
       }
     }
   }

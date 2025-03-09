@@ -56,8 +56,9 @@ const request = async (endpoint, options = {}) => {
         window.webf.hybridHistory.pushState({}, '/login');
         return;
       }
-      finalHeaders['Authorization'] = `Bearer ${userStore.userInfo.token}`;
     }
+    finalHeaders['Authorization'] = `Bearer ${userStore.userInfo?.token || undefined}`;
+
 
     // 处理请求体
     if (restOptions.body) {
@@ -121,7 +122,7 @@ export const api = {
     getDisplayList: ({ page = 1, topic = '' } = {}) => 
       request(`/v1/displays?page=${page}&topic=${topic}`),
     getDetail: (id) => request(`/v1/share_links/${id}`),
-    publish: (data) => request('/news/publish', {
+    publish: (data) => request('/v1/share_links', {
       method: 'POST',
       body: JSON.stringify(data),
       requireAuth: true,
@@ -133,16 +134,86 @@ export const api = {
         model_type: modelType,
       }),
     }),
+    follow: (id) => request(`/v1/follow_items`, {
+      method: 'POST',
+      body: JSON.stringify({
+        followables: [
+          {
+            followCheck: true,
+            followableId: id,
+            followableType: 'ShareLink',
+          }
+        ]
+      }),
+      requireAuth: true,
+    }),
+    unfollow: (id) => request(`/v1/follow_items`, {
+      method: 'POST',
+      body: JSON.stringify({
+        followables: [
+          {
+            followCheck: false,
+            followableId: id,
+            followableType: 'ShareLink',
+          }
+        ]
+      }),
+      requireAuth: true,
+    }),
+    like: (id) => request(`/v1/likes/like`, {
+      method: 'POST',
+      body: JSON.stringify({
+        resource_id: id,
+        resource_type: 'ShareLink',
+      }),
+    }),
+    unlike: (id) => request(`/v1/likes/neutral`, {
+      method: 'POST',
+      body: JSON.stringify({
+        resource_id: id,
+        resource_type: 'ShareLink',
+      }),
+    }),
+    bookmark: (id) => request(`/v1/bookmarks`, {
+      method: 'POST',
+      body: JSON.stringify({
+        resource_id: id,
+        resource_type: 'ShareLink',
+      }),
+    }),
   },
 
   // Comment APIs
   comments: {
     getList: ({ page = 1, resourceId = '', resourceType = 'ShareLink'} = {}) => 
       request(`/v1/comments?page=${page}&resource_id=${resourceId}&resource_type=${resourceType}`),
-    create: (data) => request('/comments', {
+    // 评论帖子传入 content
+    // 评论评论传入 richContent
+    // TODO: rootId 传入时机
+    create: ({ resourceId, resourceType, content, richContent, rootId }) => request('/v1/comments', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        resource_id: resourceId,
+        resource_type: resourceType,
+        content,
+        rich_content: richContent,
+        root_id: rootId,
+      }),
       requireAuth: true,
+    }),
+    like: (id) => request(`/v1/likes/like`, {
+      method: 'POST',
+      body: JSON.stringify({
+        resource_id: id,
+        resource_type: 'Comment',
+      }),
+    }),
+    unlike: (id) => request(`/v1/likes/neutral`, {
+      method: 'POST',
+      body: JSON.stringify({
+        resource_id: id,
+        resource_type: 'Comment',
+      }),
     }),
   },
 
@@ -151,7 +222,20 @@ export const api = {
     getFeeds: ({ page = 1, category = 'all', userId = '' } = {}) => request(`/v1/users/${userId}/feeds?page=${page}&category=${category}`, {
         requireAuth: true,
     }),
+    getInvitedUsers: ({ resource, id, search = '' } = {}) => request(`/v1/users/invited_users?resource=${resource}&id=${id}&search=${search}`, {
+      requireAuth: true,
+    }),
+    invite: ({ resourceType, resourceId, userId } = {}) => request('/v1/users/invite_user', {
+      method: 'POST',
+      body: JSON.stringify({
+        resource_type: resourceType,
+        resource_id: resourceId,
+        user_id: userId,
+      }),
+      requireAuth: true,
+    }),
   },
+  // Search APIs
   search: {
     users: ({ keyword = '', perPage = 10 } = {}) => request(`/v1/users/search?keyword=${keyword}&per_page=${perPage}`, {
         requireAuth: true,
