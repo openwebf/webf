@@ -128,6 +128,10 @@ impl ExecutingContext {
     History::initialize(self)
   }
 
+  pub fn hybrid_history(&self) -> HybridHistory {
+    HybridHistory::initialize(self)
+  }
+
   pub fn navigator(&self) -> Navigator {
     Navigator::initialize(self)
   }
