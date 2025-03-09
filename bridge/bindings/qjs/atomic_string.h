@@ -136,6 +136,12 @@ struct AtomicStringRef {
     length = atomic_string.length();
   }
 
+  AtomicStringRef(const std::string& string) {
+    is_8bit = true;
+    data.characters8 = reinterpret_cast<const uint8_t*>(string.c_str());
+    length = string.length();
+  }
+
   bool is_8bit;
   union {
     const uint8_t* characters8;

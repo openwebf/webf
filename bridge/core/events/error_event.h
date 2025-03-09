@@ -5,6 +5,7 @@
 #ifndef BRIDGE_CORE_DOM_EVENTS_ERROR_EVENT_H_
 #define BRIDGE_CORE_DOM_EVENTS_ERROR_EVENT_H_
 
+#include "plugin_api/error_event.h"
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
@@ -43,6 +44,8 @@ class ErrorEvent : public Event {
   SourceLocation* Location() const { return source_location_.get(); }
 
   bool IsErrorEvent() const override;
+
+  const ErrorEventPublicMethods* errorEventPublicMethods();
 
  private:
   std::string message_;
