@@ -245,6 +245,6 @@ export interface GlobalEventHandlers {
     /**
      * Occurs when the renderObject of this Element had been attached to detached from flutter tree
      */
-    onmount: IDLEventHandler | null;
-    onunmount: IDLEventHandler | null;
+    ononscreen: IDLEventHandler | null;
+    onoffscreen: IDLEventHandler | null;
 }

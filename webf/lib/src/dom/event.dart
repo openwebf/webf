@@ -53,6 +53,8 @@ const String EVENT_ENDED = 'ended';
 const String EVENT_PAUSE = 'pause';
 const String EVENT_POP_STATE = 'popstate';
 const String EVENT_HYBRID_ROUTER_CHANGE = 'hybridrouterchange';
+const String EVENT_ON_SCREEN = 'onscreen';
+const String EVENT_OFF_SCREEN = 'offscreen';
 const String EVENT_HASH_CHANGE = 'hashchange';
 const String EVENT_PLAY = 'play';
 const String EVENT_SEEKED = 'seeked';
@@ -251,6 +253,37 @@ class HybridRouterChangeEvent extends Event {
 
     return rawEvent;
   }
+}
+
+class _ScreenEvent extends Event {
+  final dynamic state;
+  final String path;
+
+  _ScreenEvent({required String type, required this.state, required this.path}) : super(type);
+
+  @override
+  Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
+    List<int> methods = [
+      jsonEncode(state).toNativeUtf8().address,
+      stringToNativeString(path).address,
+    ];
+
+    Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
+    bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
+
+    return rawEvent;
+  }
+}
+
+class OnScreenEvent extends _ScreenEvent {
+  OnScreenEvent({required super.state, required super.path}): super(type: EVENT_ON_SCREEN);
+}
+
+class OffScreenEvent extends _ScreenEvent {
+  OffScreenEvent({required super.state, required super.path}): super(type: EVENT_OFF_SCREEN);
 }
 
 class HashChangeEvent extends Event {

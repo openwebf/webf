@@ -1,5 +1,5 @@
 <template>
-  <div class="login-page">
+  <div class="login-page" @onscreen="handleOnScreen" @offscreen="handleOnOffScreen">
     <logo-header></logo-header>
     <div class="login-page-content">
       <div class="slogon">
@@ -95,6 +95,14 @@ export default {
   methods: {
     handlePhoneInput(e) {
       this.phoneNumber = e.detail;
+    },
+
+    handleOnScreen(e) {
+      console.log('on screen', e);
+    },
+
+    handleOnOffScreen(e) {
+      console.log('on off screen', e);
     },
 
     async handleGetVerifyCode() {

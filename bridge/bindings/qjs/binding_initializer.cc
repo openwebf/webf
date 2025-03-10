@@ -15,6 +15,7 @@
 #include "qjs_canvas_rendering_context_2d.h"
 #include "qjs_character_data.h"
 #include "qjs_close_event.h"
+#include "qjs_screen_event.h"
 #include "qjs_comment.h"
 #include "qjs_computed_css_style_declaration.h"
 #include "qjs_console.h"
@@ -124,6 +125,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSAnimationEvent::Install(context);
   QJSCloseEvent::Install(context);
   QJSHybridRouterChangeEvent::Install(context);
+  QJSScreenEvent::Install(context);
   QJSFocusEvent::Install(context);
   QJSGestureEvent::Install(context);
   QJSHashchangeEvent::Install(context);

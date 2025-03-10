@@ -360,7 +360,16 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
     widget.widgetElement.willAttachRenderer(this);
     super.mount(parent, newSlot);
     widget.widgetElement.didAttachRenderer(this);
-    widget.widgetElement.dispatchEvent(dom.Event('mount'));
+
+    ModalRoute route = ModalRoute.of(this)!;
+    widget.widgetElement.dispatchEvent(dom.OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? ''));
+  }
+
+  @override
+  void deactivate() {
+    ModalRoute route = ModalRoute.of(this)!;
+    widget.widgetElement.dispatchEvent(dom.OffScreenEvent(state: route.settings.arguments, path: route.settings.name ?? ''));
+    super.deactivate();
   }
 
   @override
@@ -369,6 +378,6 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
     widgetElement.willDetachRenderer(this);
     super.unmount();
     widgetElement.didDetachRenderer(this);
-    widgetElement.dispatchEvent(dom.Event('unmount'));
+    widgetElement.dispatchEvent(dom.Event('offscreen'));
   }
 }

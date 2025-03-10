@@ -226,7 +226,7 @@
     "intersectionchange",
     "gcopen",
     "hybridrouterchange",
-    "mount",
-    "unmount"
+    "onscreen",
+    "offscreen"
   ]
 }

@@ -287,7 +287,9 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
     webFElement.didAttachRenderer();
 
     webFElement.style.flushPendingProperties();
-    webFElement.dispatchEvent(Event('mount'));
+
+    flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
+    webFElement.dispatchEvent(OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? ''));
 
     if (webFElement is ImageElement && webFElement.shouldLazyLoading) {
       (renderObject as RenderReplaced)
@@ -298,13 +300,20 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
   }
 
   @override
+  void deactivate() {
+    flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
+    Element element = widget.webFElement;
+    element.dispatchEvent(OffScreenEvent(state: route.settings.arguments, path: route.settings.name ?? ''));
+    super.deactivate();
+  }
+
+  @override
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     Element element = widget.webFElement;
     element.willDetachRenderer(this);
     super.unmount();
     element.didDetachRenderer(this);
-    element.dispatchEvent(Event('unmount'));
   }
 }
 
@@ -408,13 +417,23 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
-    _webfElement.dispatchEvent(Event('mount'));
+
+
+    flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
+    webFElement.dispatchEvent(OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? ''));
+  }
+
+  @override
+  void deactivate() {
+    flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
+    Element element = webFElement;
+    element.dispatchEvent(OffScreenEvent(state: route.settings.arguments, path: route.settings.name ?? ''));
+    super.deactivate();
   }
 
   @override
   void unmount() {
     super.unmount();
-    _webfElement.dispatchEvent(Event('unmount'));
   }
 
   @override

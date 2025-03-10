@@ -390,6 +390,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/intersection_change_event.cc
     core/events/keyboard_event.cc
     core/events/promise_rejection_event.cc
+    core/events/screen_event.cc
     core/html/parser/html_parser.cc
     core/html/html_element.cc
     core/html/html_div_element.cc
@@ -503,6 +504,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_keyboard_event.cc
     out/qjs_keyboard_event_init.cc
     out/qjs_animation_event.cc
+    out/qjs_screen_event.cc
     out/qjs_animation_event_init.cc
     out/qjs_error_event_init.cc
     out/qjs_event_init.cc
