@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
  */
 
 #include "screen_event.h"
@@ -12,30 +12,25 @@ ScreenEvent* ScreenEvent::Create(ExecutingContext* context, ExceptionState& exce
   return MakeGarbageCollected<ScreenEvent>(context, event_type_names::khybridrouterchange, exception_state);
 }
 
-ScreenEvent* ScreenEvent::Create(
-    ExecutingContext* context,
-    const AtomicString& type,
-    const std::shared_ptr<ScreenEventInit>& initializer,
-    ExceptionState& exception_state) {
+ScreenEvent* ScreenEvent::Create(ExecutingContext* context,
+                                 const AtomicString& type,
+                                 const std::shared_ptr<ScreenEventInit>& initializer,
+                                 ExceptionState& exception_state) {
   return MakeGarbageCollected<ScreenEvent>(context, type, initializer, exception_state);
 }
 
-ScreenEvent::ScreenEvent(ExecutingContext* context,
-                                                 const AtomicString& type,
-                                                 ExceptionState& exception_state)
+ScreenEvent::ScreenEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
     : Event(context, type) {}
 
 ScreenEvent::ScreenEvent(ExecutingContext* context,
-                                                 const AtomicString& type,
-                                                 const std::shared_ptr<ScreenEventInit>& initializer,
-                                                 ExceptionState& exception_state)
+                         const AtomicString& type,
+                         const std::shared_ptr<ScreenEventInit>& initializer,
+                         ExceptionState& exception_state)
     : Event(context, type),
       state_(initializer->hasState() ? initializer->state() : ScriptValue::Empty(ctx())),
       path_(initializer->hasPath() ? initializer->path() : AtomicString::Empty()) {}
 
-ScreenEvent::ScreenEvent(ExecutingContext* context,
-                                                 const AtomicString& type,
-                                                 NativeScreenEvent* native_event)
+ScreenEvent::ScreenEvent(ExecutingContext* context, const AtomicString& type, NativeScreenEvent* native_event)
     : Event(context, type, &native_event->native_event),
 #if ANDROID_32_BIT
       state_(ScriptValue::CreateJsonObject(context->ctx(),
@@ -72,5 +67,4 @@ void ScreenEvent::Trace(GCVisitor* visitor) const {
   Event::Trace(visitor);
 }
 
-
-}
+}  // namespace webf

@@ -1,6 +1,6 @@
 /*
-* Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
-*/
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ */
 
 #ifndef WEBF_CORE_EVENTS_SCREEN_H_
 #define WEBF_CORE_EVENTS_SCREEN_H_
@@ -21,22 +21,18 @@ class ScreenEvent : public Event {
   static ScreenEvent* Create(ExecutingContext* context, ExceptionState& exception_state);
 
   static ScreenEvent* Create(ExecutingContext* context,
-                                         const AtomicString& type,
-                                         const std::shared_ptr<ScreenEventInit>& initializer,
-                                         ExceptionState& exception_state);
+                             const AtomicString& type,
+                             const std::shared_ptr<ScreenEventInit>& initializer,
+                             ExceptionState& exception_state);
+
+  explicit ScreenEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state);
 
   explicit ScreenEvent(ExecutingContext* context,
-                                   const AtomicString& type,
-                                   ExceptionState& exception_state);
+                       const AtomicString& type,
+                       const std::shared_ptr<ScreenEventInit>& initializer,
+                       ExceptionState& exception_state);
 
-  explicit ScreenEvent(ExecutingContext* context,
-                                   const AtomicString& type,
-                                   const std::shared_ptr<ScreenEventInit>& initializer,
-                                   ExceptionState& exception_state);
-
-  explicit ScreenEvent(ExecutingContext* context,
-                                   const AtomicString& type,
-                       NativeScreenEvent* native_ui_event);
+  explicit ScreenEvent(ExecutingContext* context, const AtomicString& type, NativeScreenEvent* native_ui_event);
 
   ScriptValue state() const;
   AtomicString path() const;
@@ -56,7 +52,5 @@ struct DowncastTraits<ScreenEvent> {
 };
 
 }  // namespace webf
-
-
 
 #endif  // WEBF_CORE_EVENTS_SCREEN_H_
