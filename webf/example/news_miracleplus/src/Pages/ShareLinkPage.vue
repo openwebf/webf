@@ -1,5 +1,5 @@
 <template>
-  <div class="share-link-page">
+  <div class="share-link-page" @onscreen="onScreen" @offscreen="offScreen">
     <webf-listview class="webf-listview">
       <PostHeader :user="shareLink.user" />
       <PostContent :post="shareLink" />
@@ -105,23 +105,35 @@ export default {
       return !!this.shareLink.followed;
     }
   },
-  async mounted() {
-    console.log('share link page mounted');
-    this.$refs.loading.show({
-      text: '加载中'
-    });
-    const id = window.webf.hybridHistory.state.id;
-    this.id = id;
-    await this.fetchShareLinkDetail();
-    await Promise.all([
-      this.fetchComments(id),
-      this.fetchNotes(id),
-      this.fetchRecommendations(id),
-    ]);
-    this.$refs.loading.hide();
-    api.news.viewCount({ id });
-  },
   methods: {
+    async onScreen() {
+      this.$refs.loading.show({
+        text: '加载中'
+      });
+      const id = window.webf.hybridHistory.state.id;
+      this.id = id;
+      await this.fetchShareLinkDetail();
+      this.$refs.loading.hide();
+      await Promise.all([
+        this.fetchComments(id),
+        this.fetchNotes(id),
+        this.fetchRecommendations(id),
+      ]);
+      api.news.viewCount({ id });
+    },
+    async offScreen() {
+      // Reset data to initial state to prevent flashing when re-entering the page
+      this.id = '';
+      this.shareLink = {
+        user: {}
+      };
+      this.comments = [];
+      this.invitedUsers = [];
+      this.searchKeyword = '';
+      this.loadingUsers = false;
+      this.notesList = [];
+      this.recommendList = [];
+    },
     async fetchShareLinkDetail() {
       try {
         const res = await api.news.getDetail(this.id);
