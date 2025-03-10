@@ -8,6 +8,9 @@ class TabBarManager {
     static getInstance() {
       if (!TabBarManager.instance) {
         TabBarManager.instance = new TabBarManager();
+        window.addEventListener('hybridrouterchange', (e) => {
+          TabBarManager.instance.setCurrentPath(e.name);
+        });
       }
       return TabBarManager.instance;
     }
@@ -22,8 +25,6 @@ class TabBarManager {
   
     switchTab(targetPath) {
       const isInTabBar = this.tabBarPath === this.currentPath;
-      console.log('isInTabBar', isInTabBar);
-      console.log('this.currentPath', this.currentPath);
       if (this.tabBarRef) {
         this.tabBarRef.switchTab(targetPath);
       }
