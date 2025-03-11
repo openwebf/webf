@@ -668,7 +668,13 @@ abstract class RenderStyle extends DiagnosticableTree {
     if (selfRender is RenderEventListener && selfRender.parent is RenderBoxModel)
       return matcher(selfRender.parent as RenderBoxModel, selfRender.renderStyle);
 
-    return matcher(selfRender, selfRender.renderStyle);
+    if (selfRender.parent is! RenderBoxModel) return false;
+
+    if (selfRender.parent is RenderEventListener) {
+      selfRender = selfRender.parent as RenderBoxModel;
+    }
+
+    return matcher(selfRender.parent as RenderBoxModel, (selfRender.parent as RenderBoxModel).renderStyle);
   }
 
   @pragma('vm:prefer-inline')
