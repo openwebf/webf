@@ -335,9 +335,11 @@ class CSSPositionedLayout {
     // https://www.w3.org/TR/CSS2/visudet.html#static-position
     Offset staticPositionOffset = _getPlaceholderToParentOffset(child.renderPositionPlaceholder, parent);
 
-    Offset ancestorOffset = child.renderStyle.target.parentElement == parent.renderStyle.target
+    Offset ancestorOffset = childRenderStyle.position == CSSPositionType.fixed
         ? Offset.zero
-        : child.renderStyle.target.parentElement!.attachedRenderer!.getOffsetToAncestor(Offset.zero, parent);
+        : child.renderStyle.target.parentElement == parent.renderStyle.target
+            ? Offset.zero
+            : child.renderStyle.target.parentElement!.attachedRenderer!.getOffsetToAncestor(Offset.zero, parent);
 
     double x = _computePositionedOffset(
       Axis.horizontal,
