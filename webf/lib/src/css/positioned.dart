@@ -333,7 +333,7 @@ class CSSPositionedLayout {
     // The static position of positioned element is its offset when its position property had been static
     // which equals to the position of its placeholder renderBox.
     // https://www.w3.org/TR/CSS2/visudet.html#static-position
-    Offset staticPositionOffset = _getPlaceholderToParentOffset(child.renderPositionPlaceholder, parent);
+    Offset staticPositionOffset = _getPlaceholderToParentOffset(child.renderStyle.target.attachedRenderer?.renderPositionPlaceholder, parent);
 
     Offset ancestorOffset = childRenderStyle.position == CSSPositionType.fixed
         ? Offset.zero
