@@ -76,7 +76,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     WebFState? webFState;
     WebFRouterViewState? routerViewState;
 
-    if (this is WidgetElement || webFElement.renderStyle.effectiveDisplay == CSSDisplay.none) {
+    if (this is WidgetElement || webFElement.renderStyle.display == CSSDisplay.none) {
       return flutter.SizedBox.shrink();
     }
 

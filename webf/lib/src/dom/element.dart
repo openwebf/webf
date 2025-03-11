@@ -938,7 +938,6 @@ abstract class Element extends ContainerNode
       return;
     }
     if (oldDisplay == CSSDisplay.none && presentDisplay != oldDisplay) {
-      assert(!renderStyle.hasRenderBox());
       parentElement?.renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
       return;
     }
