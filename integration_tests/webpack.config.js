@@ -17,44 +17,54 @@ let coreSpecFiles = [];
 let getSnapshotOption = () => ({ snapshotRoot: null, delayForSnapshot: false });
 
 if (process.env.SPEC_SCOPE) {
- let targetSpec = specGroup.find((item) => item.name === process.env.SPEC_SCOPE.trim());
- if (targetSpec) {
-  getSnapshotOption = () => ({ snapshotRoot: targetSpec.snapshotRoot || null, delayForSnapshot: !!targetSpec.delayForSnapshot });
+  let specList = process.env.SPEC_SCOPE.split(',').map(spec => spec.trim());
+  let targetSpecGroup = specGroup.filter((item) => specList.indexOf(item.name) != -1);
+  if (targetSpecGroup.length > 0) {
 
-   let targetSpecCollection = targetSpec.specs;
-   targetSpecCollection.forEach(spec => {
-     let files = glob.sync(spec, {
-       cwd: context,
-       ignore: ['node_modules/**'],
-     }).map((file) => './' + file);
-     coreSpecFiles = coreSpecFiles.concat(files);
-   });
- } else {
-   throw new Error('Unknown target spec scope: ' + process.env.SPEC_SCOPE);
- }
-} else {
- coreSpecFiles = glob.sync('specs/**/*.{js,jsx,ts,tsx,html,svg}', {
-   cwd: context,
-   ignore: ['node_modules/**'],
- }).map((file) => './' + file);
- if (process.env.WEBF_TEST_FILTER) {
-   coreSpecFiles = coreSpecFiles.filter(name => name.includes(process.env.WEBF_TEST_FILTER))
- }
- getSnapshotOption = (file) => {
-  for (const group of specGroup) {
-    if (group.specs.some(pattern => minimatch(file, pattern))) {
-      return { snapshotRoot: group.snapshotRoot || null, delayForSnapshot: group.delayForSnapshot };
+    targetSpecGroup.forEach((group) => {
+      group.specs.forEach(spec => {
+        let files = glob.sync(spec, {
+          cwd: context,
+          ignore: ['node_modules/**'],
+        }).map((file) => './' + file);
+        coreSpecFiles = coreSpecFiles.concat(files);
+      });
+    })
+
+    getSnapshotOption = (file) => {
+      for (const group of targetSpecGroup) {
+        if (group.specs.some(pattern => minimatch(file, pattern))) {
+          return { snapshotRoot: group.snapshotRoot || null, delayForSnapshot: group.delayForSnapshot };
+        }
+      }
+      return { snapshotRoot: null, delayForSnapshot: false };
     }
+  } else {
+    throw new Error('Unknown target spec scope: ' + process.env.SPEC_SCOPE);
   }
-  return { snapshotRoot: null, delayForSnapshot: false };
- }
+} else {
+  coreSpecFiles = glob.sync('specs/**/*.{js,jsx,ts,tsx,html,svg}', {
+    cwd: context,
+    ignore: ['node_modules/**'],
+  }).map((file) => './' + file);
+  if (process.env.WEBF_TEST_FILTER) {
+    coreSpecFiles = coreSpecFiles.filter(name => name.includes(process.env.WEBF_TEST_FILTER))
+  }
+  getSnapshotOption = (file) => {
+    for (const group of specGroup) {
+      if (group.specs.some(pattern => minimatch(file, pattern))) {
+        return { snapshotRoot: group.snapshotRoot || null, delayForSnapshot: group.delayForSnapshot };
+      }
+    }
+    return { snapshotRoot: null, delayForSnapshot: false };
+  }
 }
 
-const dartVersion = execSync('dart --version', {encoding: 'utf-8'});
+const dartVersion = execSync('dart --version', { encoding: 'utf-8' });
 const regExp = /Dart SDK version: (\d\.\d{1,3}\.\d{1,3}) /;
 let versionNum = regExp.exec(dartVersion)[1];
 const ignoreSpecsForOldFlutter = [
-    './specs/dom/elements/pre.ts'
+  './specs/dom/elements/pre.ts'
 ];
 if (versionNum && parseFloat(versionNum) < 2.19) {
   coreSpecFiles = coreSpecFiles.filter(file => {

@@ -199,7 +199,7 @@ mixin CSSMarginMixin on RenderStyle {
         (isParentOverflowVisible || isParentOverflowClip) &&
         parentRenderStyle.paddingTop.computedValue == 0 &&
         parentRenderStyle.effectiveBorderTopWidth.computedValue == 0 &&
-        parentRenderStyle.isParentBoxModelMatch((renderBoxModel, _) => renderBoxModel is RenderFlowLayout)) {
+        parentRenderStyle.isParentBoxModelMatch((renderBoxModel, _) => renderBoxModel is RenderFlowLayout || renderBoxModel is RenderLayoutBoxWrapper)) {
       return 0;
     }
     return marginTop;
@@ -355,7 +355,7 @@ mixin CSSMarginMixin on RenderStyle {
         (isParentOverflowVisible || isParentOverflowClip) &&
         parentRenderStyle.paddingBottom.computedValue == 0 &&
         parentRenderStyle.effectiveBorderBottomWidth.computedValue == 0 &&
-        parentRenderStyle.isParentBoxModelMatch((renderBoxModel, _) => renderBoxModel is RenderFlowLayout)) {
+        parentRenderStyle.isParentBoxModelMatch((renderBoxModel, _) => renderBoxModel is RenderFlowLayout || renderBoxModel is RenderLayoutBoxWrapper)) {
       return 0;
     }
     return marginBottom;

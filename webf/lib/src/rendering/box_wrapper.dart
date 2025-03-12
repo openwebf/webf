@@ -26,8 +26,8 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
     super.performLayout();
 
     if (child is RenderBoxModel) {
-      double childMarginTop = renderStyle.collapsedMarginTop;
-      double childMarginBottom = renderStyle.collapsedMarginBottom;
+      double childMarginTop = (child as RenderBoxModel).renderStyle.collapsedMarginTop;
+      double childMarginBottom = (child as RenderBoxModel).renderStyle.collapsedMarginBottom;
       Size scrollableSize = (child as RenderBoxModel).scrollableSize;
 
       size = constraints.constrain(Size(scrollableSize.width, childMarginTop + scrollableSize.height + childMarginBottom));

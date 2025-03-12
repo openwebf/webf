@@ -262,7 +262,7 @@ describe('Background-position', () => {
     });
     BODY.appendChild(target);
 
-    target.onmount = () => {
+    target.ononscreen = () => {
       test_computed_value('background-position', '1px', '1px 50%');
       test_computed_value('background-position', '1px center', '1px 50%');
       test_computed_value('background-position', '-2% -3%');
