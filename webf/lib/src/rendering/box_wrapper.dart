@@ -22,6 +22,11 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
   }
 
   @override
+  double? computeDistanceToActualBaseline(TextBaseline baseline) {
+    return computeDistanceToBaseline();
+  }
+
+  @override
   void performLayout() {
     super.performLayout();
 
