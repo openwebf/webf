@@ -1088,36 +1088,16 @@ class RenderFlowLayout extends RenderLayoutBox {
         renderStyle.paddingTop.computedValue +
         (isScrollContainer ? renderStyle.paddingBottom.computedValue : 0);
 
-    double maxScrollableMainSize;
-
-    if (renderStyle.width.isPrecise) {
-      maxScrollableMainSize = math.max(
-          size.width -
-              container.renderStyle.effectiveBorderLeftWidth.computedValue -
-              container.renderStyle.effectiveBorderRightWidth.computedValue,
-          maxScrollableMainSizeOfChildren);
-    } else {
-      maxScrollableMainSize = math.max(
-          size.width,
-          maxScrollableMainSizeOfChildren +
-              container.renderStyle.effectiveBorderLeftWidth.computedValue +
-              container.renderStyle.effectiveBorderRightWidth.computedValue);
-    }
-
-    double maxScrollableCrossSize;
-    if (renderStyle.height.isPrecise) {
-      maxScrollableCrossSize = math.max(
-          size.height -
-              container.renderStyle.effectiveBorderTopWidth.computedValue -
-              container.renderStyle.effectiveBorderBottomWidth.computedValue,
-          maxScrollableCrossSizeOfChildren);
-    } else {
-      maxScrollableCrossSize = math.max(
-          size.height,
-          maxScrollableCrossSizeOfChildren +
-              container.renderStyle.effectiveBorderTopWidth.computedValue +
-              container.renderStyle.effectiveBorderBottomWidth.computedValue);
-    }
+    double maxScrollableMainSize = math.max(
+        size.width -
+            container.renderStyle.effectiveBorderLeftWidth.computedValue -
+            container.renderStyle.effectiveBorderRightWidth.computedValue,
+        maxScrollableMainSizeOfChildren);
+    double maxScrollableCrossSize = math.max(
+        size.height -
+            container.renderStyle.effectiveBorderTopWidth.computedValue -
+            container.renderStyle.effectiveBorderBottomWidth.computedValue,
+        maxScrollableCrossSizeOfChildren);
 
     assert(maxScrollableMainSize.isFinite);
     assert(maxScrollableCrossSize.isFinite);
