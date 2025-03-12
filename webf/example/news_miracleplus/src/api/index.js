@@ -133,11 +133,11 @@ export const api = {
       body: JSON.stringify(data),
       requireAuth: true,
     }),
-    viewCount: ({ id, modelType = 'ShareLink' }) => request(`/v1/view_counts`, { 
+    viewCount: ({ id }) => request(`/v1/view_counts`, { 
       method: 'POST',
       body: JSON.stringify({
         id,
-        model_type: modelType,
+        model_type: 'ShareLink',
       }),
     }),
     follow: (id) => request(`/v1/follow_items`, {
@@ -267,6 +267,39 @@ export const api = {
     }),
     getAnswerDetail: (id) => request(`/v1/answers/${id}`, {
       requireAuth: true,
+    }),
+    follow: (id) => request(`/v1/follow_items`, {
+      method: 'POST',
+      body: JSON.stringify({
+        followables: [
+          {
+            followCheck: true,
+            followableId: id,
+            followableType: 'Question',
+          }
+        ]
+      }),
+      requireAuth: true,
+    }),
+    unfollow: (id) => request(`/v1/follow_items`, {
+      method: 'POST',
+      body: JSON.stringify({
+        followables: [
+          {
+            followCheck: false,
+            followableId: id,
+            followableType: 'Question',
+          }
+        ]
+      }),
+      requireAuth: true,
+    }),
+    viewCount: ({ id }) => request(`/v1/view_counts`, { 
+      method: 'POST',
+      body: JSON.stringify({
+        id,
+        model_type: 'Question',
+      }),
     }),
   },
   topic: {

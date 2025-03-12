@@ -44,6 +44,8 @@ class FlutterCupertinoIcon extends WidgetElement {
         return CupertinoIcons.person_2;
       case 'pencil':
         return CupertinoIcons.pencil;
+      case 'add_circled':
+        return CupertinoIcons.add_circled;
     }
 
     return null;

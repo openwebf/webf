@@ -15,12 +15,12 @@
                 </div>
                 <webf-listview v-else class="invite-users-list">
                     <div v-for="user in users" :key="user.id" class="invite-user-item">
-                        <img :src="user.avatar" class="user-avatar" />
+                        <img :src="formatUserAvatar(user)" class="user-avatar" />
                         <div class="user-info">
                             <div class="user-name">{{ user.name }}</div>
                             <div class="user-company">{{ user.company }} {{ user.jobTitle }}</div>
                         </div>
-                        <flutter-cupertino-icon type="bookmark" class="invite-btn" @click="$emit('invite', user)" />
+                        <flutter-cupertino-icon type="add_circled" class="invite-btn" @click="$emit('invite', user)" />
                     </div>
                 </webf-listview>
             </div>
@@ -29,6 +29,8 @@
 </template>
 
 <script>
+import formatAvatar from '@/utils/formatAvatar';
+
 export default {
     name: 'InviteModal',
     props: {
@@ -39,6 +41,11 @@ export default {
             default: () => []
         },
         searchKeyword: String
+    },
+    methods: {
+        formatUserAvatar(user) {
+            return formatAvatar(user.avatar);
+        }
     },
     emits: ['close', 'search', 'invite']
 }

@@ -140,7 +140,7 @@ export default {
         this.shareLink = res.data.share_link;
       } catch (error) {
         this.$refs.alertRef.show({
-          message: '获取分享详情失败'
+          message: '获取详情失败'
         });
       }
     },
@@ -211,12 +211,6 @@ export default {
         }
         console.log('follow res', res);
         if (res.success) {
-          // // 更新本地状态
-          // this.shareLink.followed = newFollowState;
-          // // 更新关注数
-          // this.shareLink.followersCount = newFollowState
-          //   ? (this.shareLink.followersCount || 0) + 1
-          //   : (this.shareLink.followersCount || 1) - 1;
           await this.fetchShareLinkDetail();
         }
       } catch (error) {
@@ -270,7 +264,7 @@ export default {
         });
         
         const res = await api.user.invite({
-          resourceType: 'ShareLink',
+          resourceType: 'share_link',
           resourceId: this.id,
           userId: user.id
         });
@@ -280,7 +274,7 @@ export default {
             type: 'success',
             content: `已成功邀请 ${user.name}`
           });
-          this.onInviteModalClose();
+          await this.fetchInvitedUsers();
         }
       } catch (error) {
         this.$refs.alertRef.show({

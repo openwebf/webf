@@ -27,8 +27,8 @@
         <!-- bottom action bar -->
         <div class="action-bar">
             <div class="left-actions">
-                <div class="follow-btn">
-                    <template v-if="question.followed">
+                <div class="follow-btn" @click="handleFollow">
+                    <template v-if="isFollowed">
                         <flutter-cupertino-icon type="heart_fill" class="icon" />
                         <div class="div">已关注</div>
                     </template>
@@ -37,7 +37,7 @@
                         <div class="div">关注问题 {{ question.followersCount }}</div>
                     </template>
                 </div>
-                <div class="invite-btn">
+                <div class="invite-btn" @click="$emit('invite')">
                     <flutter-cupertino-icon type="chat_bubble" class="icon" />
                     <div class="div">邀请回答</div>
                 </div>
@@ -77,9 +77,15 @@ export default {
             if (user.company) parts.push(user.company);
             if (user.jobTitle) parts.push(user.jobTitle);
             return parts.join(' · ');
+        },
+        isFollowed() {
+            return !!this.question.followed;
         }
     },
     methods: {
+        handleFollow() {
+            this.$emit('follow', !this.isFollowed);
+        },
         goToTopicPage(topicId) {
             window.webf.hybridHistory.pushState({
                 id: topicId,
