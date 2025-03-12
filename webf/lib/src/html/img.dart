@@ -677,7 +677,7 @@ class _ImageState extends flutter.State<WebFImage> {
 
   @override
   flutter.Widget build(flutter.BuildContext context) {
-    flutter.RawImage rawImage = flutter.RawImage(
+    flutter.RawImage rawImage = WebFRawImage(
         image: imageElement._cachedImageInfo?.image,
         width: imageElement.naturalWidth.toDouble(),
         fit: imageElement.renderStyle.objectFit,
