@@ -97,7 +97,7 @@ describe('Background-color', () => {
     });
     BODY.appendChild(target);
 
-    target.onmount = () => {
+    target.ononscreen = () => {
       test_computed_value('background-color', 'currentcolor', 'rgb(0, 255, 0)');
 
       test_computed_value('background-color', 'red', 'rgb(255, 0, 0)');

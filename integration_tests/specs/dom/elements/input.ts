@@ -327,7 +327,7 @@ describe('Tags input', () => {
       done();
     });
 
-    input1.onmount = () => {
+    input1.ononscreen = () => {
       input1.focus();
       requestAnimationFrame(() => {
         input2.focus();

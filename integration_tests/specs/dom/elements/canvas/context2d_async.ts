@@ -37,7 +37,7 @@ describe('Canvas context 2d async', () => {
     div.appendChild(canvas);
 
     // @ts-ignore
-    canvas.onmount = async () => {
+    canvas.ononscreen = async () => {
       var context = canvas.getContext('2d');
 
       if (!context) {

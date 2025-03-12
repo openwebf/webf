@@ -190,6 +190,7 @@ mixin CSSMarginMixin on RenderStyle {
 
     bool isParentOverflowVisible = parentRenderStyle.effectiveOverflowY == CSSOverflowType.visible;
     bool isParentOverflowClip = parentRenderStyle.effectiveOverflowY == CSSOverflowType.clip;
+    bool isParentNotRenderWidget = !parentRenderStyle.isSelfRenderWidget();
 
     // Margin top of first child with parent which is in flow layout collapse with parent
     // which makes the margin top of itself 0.
@@ -198,6 +199,7 @@ mixin CSSMarginMixin on RenderStyle {
         parentRenderStyle.effectiveDisplay == CSSDisplay.block &&
         (isParentOverflowVisible || isParentOverflowClip) &&
         parentRenderStyle.paddingTop.computedValue == 0 &&
+        isParentNotRenderWidget &&
         parentRenderStyle.effectiveBorderTopWidth.computedValue == 0 &&
         parentRenderStyle.isParentBoxModelMatch((renderBoxModel, _) => renderBoxModel is RenderFlowLayout || renderBoxModel is RenderLayoutBoxWrapper)) {
       return 0;
@@ -347,12 +349,15 @@ mixin CSSMarginMixin on RenderStyle {
 
     bool isParentOverflowVisible = parentRenderStyle.effectiveOverflowY == CSSOverflowType.visible;
     bool isParentOverflowClip = parentRenderStyle.effectiveOverflowY == CSSOverflowType.clip;
+    bool isParentNotRenderWidget = !parentRenderStyle.isSelfRenderWidget();
+
     // Margin bottom of first child with parent which is in flow layout collapse with parent
     // which makes the margin top of itself 0.
     // Margin collapse does not work on document root box.
     if (!isParentDocumentRootBox() &&
         parentRenderStyle.effectiveDisplay == CSSDisplay.block &&
         (isParentOverflowVisible || isParentOverflowClip) &&
+        isParentNotRenderWidget &&
         parentRenderStyle.paddingBottom.computedValue == 0 &&
         parentRenderStyle.effectiveBorderBottomWidth.computedValue == 0 &&
         parentRenderStyle.isParentBoxModelMatch((renderBoxModel, _) => renderBoxModel is RenderFlowLayout || renderBoxModel is RenderLayoutBoxWrapper)) {

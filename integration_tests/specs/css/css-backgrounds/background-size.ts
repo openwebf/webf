@@ -448,7 +448,7 @@ describe('Background-size', () => {
     });
     BODY.appendChild(target);
 
-    target.onmount = () => {
+    target.ononscreen = () => {
       test_computed_value('background-size', '1px', '1px');
       test_computed_value('background-size', '1px auto', '1px auto');
       test_computed_value('background-size', '2% 3%');

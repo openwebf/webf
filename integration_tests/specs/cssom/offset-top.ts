@@ -7,7 +7,7 @@ describe('OffsetTop In Scrollable Parent', () => {
     parent.style.height = "100px";
     parent.style.position = "relative";
     // @ts-ignore
-    parent.onmount = onParentMount;
+    parent.ononscreen = onParentMount;
 
     // Create spacer div
     const spacer = document.createElement("div");
@@ -19,7 +19,7 @@ describe('OffsetTop In Scrollable Parent', () => {
     child.id = "child";
     child.style.backgroundColor = 'red';
     // @ts-ignore
-    child.onmount = onChildMount;
+    child.ononscreen = onChildMount;
 
     // Create absolute-child div
     const absoluteChild = document.createElement("div");
@@ -29,7 +29,7 @@ describe('OffsetTop In Scrollable Parent', () => {
     absoluteChild.style.left = "43px";
     absoluteChild.style.backgroundColor = 'blue';
     // @ts-ignore
-    absoluteChild.onmount = onAbsoluteChildMount;
+    absoluteChild.ononscreen = onAbsoluteChildMount;
 
     // Append elements to parent
     parent.appendChild(spacer);
@@ -299,7 +299,7 @@ describe('OffsetTop in ListView Parent', () => {
     parent.style.height = "100px";
     parent.style.position = "relative";
     // @ts-ignore
-    parent.onmount = onParentMount;
+    parent.ononscreen = onParentMount;
 
     // Create spacer div
     const spacer = document.createElement("div");
@@ -311,7 +311,7 @@ describe('OffsetTop in ListView Parent', () => {
     child.id = "child";
     child.style.backgroundColor = 'red';
     // @ts-ignore
-    child.onmount = onChildMount;
+    child.ononscreen = onChildMount;
 
     // Create absolute-child div
     const absoluteChild = document.createElement("div");
@@ -321,7 +321,7 @@ describe('OffsetTop in ListView Parent', () => {
     absoluteChild.style.left = "43px";
     absoluteChild.style.backgroundColor = 'blue';
     // @ts-ignore
-    absoluteChild.onmount = onAbsoluteChildMount;
+    absoluteChild.ononscreen = onAbsoluteChildMount;
 
     // Append elements to parent
     parent.appendChild(spacer);

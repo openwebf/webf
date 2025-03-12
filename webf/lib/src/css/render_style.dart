@@ -644,6 +644,11 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   @pragma('vm:prefer-inline')
+  bool isSelfRenderWidget() {
+    return someRenderBoxSatisfy((renderObject) => renderObject is RenderWidget);
+  }
+
+  @pragma('vm:prefer-inline')
   bool isSelfRenderLayoutBox() {
     return someRenderBoxSatisfy((renderObject) => renderObject is RenderLayoutBox);
   }

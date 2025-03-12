@@ -228,7 +228,7 @@ describe('Tags img', () => {
     expect(img.naturalHeight).toEqual(0);
 
     // @ts-ignore
-    img.onmount = () => {
+    img.ononscreen = () => {
       expect(img.width).toEqual(20);
       expect(img.height).toEqual(20);
     };

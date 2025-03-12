@@ -7,7 +7,7 @@ describe('Transform rotate', function () {
       transform: 'rotate(5deg)',
     });
     document.body.appendChild(div);
-    div.onmount = async () => {
+    div.ononscreen = async () => {
       const style = window.getComputedStyle(div);
       expect(style['transform']).toEqual(
         'matrix(0.996195, 0.087156, -0.087156, 0.996195, 0, 0)',

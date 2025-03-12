@@ -1505,19 +1505,6 @@ Element? _findContainingBlock(Element child, Element viewportElement) {
   return parent;
 }
 
-// Cache fixed renderObject to root element
-void _addFixedChild(RenderBoxModel childRenderBoxModel, Document ownerDocument) {
-  Set<RenderBoxModel> fixedChildren = ownerDocument.fixedChildren;
-  if (!fixedChildren.contains(childRenderBoxModel)) {
-    fixedChildren.add(childRenderBoxModel);
-  }
-}
-
-bool _isRenderBoxFixed(RenderBox renderBox, Document ownerDocument) {
-  Set<RenderBoxModel> fixedChildren = ownerDocument.fixedChildren;
-  return fixedChildren.contains(renderBox);
-}
-
 // Reflect attribute type as property.
 // String: Any input.
 // Bool: Any input is true.

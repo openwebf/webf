@@ -149,7 +149,7 @@ describe('Tags img async', () => {
     let imgSizeChecked = false;
 
     // @ts-ignore
-    img.onmount = async () => {
+    img.ononscreen = async () => {
       imgSizeChecked = true;
         // @ts-ignore
       expect(await img.width_async).toEqual(20);

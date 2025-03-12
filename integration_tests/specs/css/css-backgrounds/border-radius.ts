@@ -524,7 +524,7 @@ describe('border_radius', () => {
     });
     BODY.appendChild(target);
 
-    target.onmount = () => {
+    target.ononscreen = () => {
       test_computed_value('border-radius', '1px');
       test_computed_value('border-radius', '1px 2% 3px 4%');
       test_computed_value(

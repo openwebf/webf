@@ -9,7 +9,7 @@ describe('Transform matrix3d', function () {
     });
     document.body.appendChild(div);
 
-    div.onmount = async () => {
+    div.ononscreen = async () => {
       const style = window.getComputedStyle(div);
       expect(style['transform']).toEqual('none');
       // @ts-ignore

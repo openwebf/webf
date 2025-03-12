@@ -161,7 +161,7 @@ describe('background-repeat', () => {
     });
     BODY.appendChild(target);
 
-    target.onmount = () => {
+    target.ononscreen = () => {
       test_computed_value('background-repeat', 'repeat-x');
       test_computed_value('background-repeat', 'repeat-y');
       test_computed_value('background-repeat', 'repeat');

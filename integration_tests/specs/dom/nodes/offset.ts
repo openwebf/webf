@@ -40,7 +40,7 @@ describe('Offset api', () => {
     document.body.appendChild(div);
 
     // @ts-ignore
-    div.onmount = async () => {
+    div.ononscreen = async () => {
       let str = '';
       RECT_PROPERTIES.forEach(key => {
         str += `${key}: ${div[key]}px `;
@@ -91,7 +91,7 @@ describe('Offset api', () => {
     BODY.appendChild(div2);
 
     // @ts-ignore
-    div2.onmount = () => {
+    div2.ononscreen = () => {
       expect(item1.offsetTop).toBe(0);
       expect(item1.offsetLeft).toBe(0);
 
@@ -137,7 +137,7 @@ describe('Offset api', () => {
     document.body.appendChild(container);
 
     // @ts-ignore
-    container.onmount = () => {
+    container.ononscreen = () => {
       expect(box.offsetTop).toBe(100);
 
       container.scrollTo(0, 20);

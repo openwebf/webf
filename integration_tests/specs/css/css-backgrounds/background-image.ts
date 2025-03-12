@@ -104,7 +104,7 @@ describe('background image', function () {
     });
     BODY.appendChild(target);
 
-    target.onmount = (e) => {
+    target.ononscreen = (e) => {
       test_computed_value('background-image', 'none');
 
       test_computed_value(

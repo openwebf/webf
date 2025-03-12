@@ -6,7 +6,7 @@ describe('background-331', () => {
   it('background initial value for background', async (done) => {
     let div = createElementWithStyle('div', divStyle);
     append(BODY, div);
-    div.onmount = () => {
+    div.ononscreen = () => {
       let cs = window.getComputedStyle(div, null);
       expect(cs.getPropertyValue('background')).toBe('rgb(255, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box');
       done();
@@ -16,7 +16,7 @@ describe('background-331', () => {
   it('background initial value for background-image', async (done) => {
     let div = createElementWithStyle('div', divStyle);
     append(BODY, div);
-    div.onmount = () => {
+    div.ononscreen = () => {
       let cs = window.getComputedStyle(div, null);
       expect(cs.getPropertyValue('background-image')).toBe('none');
       done();
@@ -26,7 +26,7 @@ describe('background-331', () => {
   it('background initial value for background-position', async (done) => {
     let div = createElementWithStyle('div', divStyle);
     append(BODY, div);
-    div.onmount = () => {
+    div.ononscreen = () => {
       let cs = window.getComputedStyle(div, null);
       expect(cs.getPropertyValue('background-position')).toBe('0% 0%');
       done();
@@ -36,7 +36,7 @@ describe('background-331', () => {
   xit('background initial value for background-size', async (done) => {
     let div = createElementWithStyle('div', divStyle);
     append(BODY, div);
-    div.onmount = () => {
+    div.ononscreen = () => {
       let cs = window.getComputedStyle(div, null);
       expect(cs.getPropertyValue('background-size')).toBe('auto');
       done();
@@ -46,7 +46,7 @@ describe('background-331', () => {
   it('background initial value for background-repeat', async (done) => {
     let div = createElementWithStyle('div', divStyle);
     append(BODY, div);
-    div.onmount = () => {
+    div.ononscreen = () => {
       let cs = window.getComputedStyle(div, null);
       expect(cs.getPropertyValue('background-repeat')).toBe('repeat');
       done();
@@ -56,7 +56,7 @@ describe('background-331', () => {
   xit('background initial value for background-attachment', async (done) => {
     let div = createElementWithStyle('div', divStyle);
     append(BODY, div);
-    div.onmount = () => {
+    div.ononscreen = () => {
       let cs = window.getComputedStyle(div, null);
       expect(cs.getPropertyValue('background-attachment')).toBe('scroll');
       done();
@@ -66,7 +66,7 @@ describe('background-331', () => {
   xit('background initial value for background-origin', async (done) => {
     let div = createElementWithStyle('div', divStyle);
     append(BODY, div);
-    div.onmount = () => {
+    div.ononscreen = () => {
       let cs = window.getComputedStyle(div, null);
       expect(cs.getPropertyValue('background-origin')).toBe('padding-box');
       done();
@@ -76,7 +76,7 @@ describe('background-331', () => {
   xit('background initial value for background-clip', async (done) => {
     let div = createElementWithStyle('div', divStyle);
     append(BODY, div);
-    div.onmount = () => {
+    div.ononscreen = () => {
       let cs = window.getComputedStyle(div, null);
       expect(cs.getPropertyValue('background-clip')).toBe('border-box');
       done();
@@ -86,7 +86,7 @@ describe('background-331', () => {
   it('background initial value for background-color', async (done) => {
     let div = createElementWithStyle('div', divStyle);
     append(BODY, div);
-    div.onmount = () => {
+    div.ononscreen = () => {
       let cs = window.getComputedStyle(div, null);
       expect(cs.getPropertyValue('background-color')).toBe('rgb(255, 0, 0)');
       done();
@@ -115,7 +115,7 @@ describe('background-331', () => {
     });
     BODY.appendChild(target);
 
-    target.onmount = () => {
+    target.ononscreen = () => {
       test_computed_value('background-attachment', 'local', 'local');
       test_computed_value('background-attachment', 'scroll', 'scroll');
       test_computed_value('background-attachment', 'fixed', 'fixed');
