@@ -1093,13 +1093,6 @@ class RenderBoxModel extends RenderBox
       }
     }
 
-    RenderBoxModel scrollContainer = this;
-    // Scrollable area of positioned element will ignore padding area of scroll container.
-    maxScrollableX -=
-        scrollContainer.renderStyle.paddingLeft.computedValue + scrollContainer.renderStyle.paddingRight.computedValue;
-    maxScrollableY -=
-        scrollContainer.renderStyle.paddingTop.computedValue + scrollContainer.renderStyle.paddingBottom.computedValue;
-
     maxScrollableX = math.max(maxScrollableX, scrollableSize.width);
     maxScrollableY = math.max(maxScrollableY, scrollableSize.height);
 
@@ -1154,6 +1147,10 @@ class RenderBoxModel extends RenderBox
       if (child.attached) {
         CSSPositionedLayout.applyPositionedChildOffset(this, child);
       }
+    }
+
+    if (renderStyle.target.id == 'container') {
+      print(2);
     }
 
     scrollableViewportSize = Size(
