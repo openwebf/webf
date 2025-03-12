@@ -38,7 +38,7 @@ describe('custom widget element', () => {
 
     document.body.appendChild(image);
 
-    image.addEventListener('mount', async () => {
+    image.addEventListener('onscreen', async () => {
       await simulateClick(10, 10);
     });
   });
