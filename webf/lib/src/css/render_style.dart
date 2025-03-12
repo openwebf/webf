@@ -974,11 +974,14 @@ abstract class RenderStyle extends DiagnosticableTree {
     } else {
       // Sort by zIndex.
       List<RenderBox> children = [];
+      List<RenderBox> negativeStackingChildren = [];
       List<RenderBoxModel> stackingChildren = [];
       containerLayoutBox.visitChildren((RenderObject child) {
         if (child is RenderBoxModel) {
           bool isNeedsStacking = child.renderStyle.needsStacking;
-          if (isNeedsStacking) {
+          if (child.renderStyle.zIndex != null && child.renderStyle.zIndex! < 0) {
+            negativeStackingChildren.add(child);
+          } else if (isNeedsStacking) {
             stackingChildren.add(child);
           } else {
             children.add(child);
@@ -992,6 +995,7 @@ abstract class RenderStyle extends DiagnosticableTree {
         return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
       });
 
+      children.insertAll(0, negativeStackingChildren);
       children.addAll(stackingChildren);
 
       return children;
