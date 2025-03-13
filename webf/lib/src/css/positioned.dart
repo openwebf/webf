@@ -185,7 +185,8 @@ class CSSPositionedLayout {
       if (isVerticalFixed) {
         offsetY += stickyTop - offsetTopToScrollContainer;
         // Sticky child can not exceed the bottom boundary of its parent container
-        RenderBoxModel parentContainer = child.parent as RenderBoxModel;
+        // RenderBoxModel parentContainer = child.parent as RenderBoxModel;
+        RenderBoxModel parentContainer = child.renderStyle.getParentRenderStyle()!.attachedRenderBoxModel!;
         double maxOffsetY = parentContainer.boxSize!.height - childHeight;
         if (offsetY > maxOffsetY) {
           offsetY = maxOffsetY;
@@ -221,7 +222,7 @@ class CSSPositionedLayout {
   // the offsets are automatically calculated in reference to the nearest scrollport.
   // https://www.w3.org/TR/css-position-3/#stickypos-insets
   static void applyStickyChildOffset(RenderBoxModel scrollContainer, RenderBoxModel child) {
-    RenderPositionPlaceholder? childRenderPositionHolder = child.renderPositionPlaceholder;
+    RenderPositionPlaceholder? childRenderPositionHolder = child.renderStyle.getSelfPositionPlaceHolder();
     if (childRenderPositionHolder == null) return;
     RenderLayoutParentData childPlaceHolderParentData = childRenderPositionHolder.parentData as RenderLayoutParentData;
     // Original offset of sticky child in relative status
@@ -333,7 +334,7 @@ class CSSPositionedLayout {
     // The static position of positioned element is its offset when its position property had been static
     // which equals to the position of its placeholder renderBox.
     // https://www.w3.org/TR/CSS2/visudet.html#static-position
-    Offset staticPositionOffset = _getPlaceholderToParentOffset(child.renderStyle.target.attachedRenderer?.renderPositionPlaceholder, parent);
+    Offset staticPositionOffset = _getPlaceholderToParentOffset(child.renderStyle.getSelfPositionPlaceHolder(), parent);
 
     Offset ancestorOffset = childRenderStyle.position == CSSPositionType.fixed
         ? Offset.zero

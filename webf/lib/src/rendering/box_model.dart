@@ -276,7 +276,7 @@ class RenderLayoutBox extends RenderBoxModel
   }
 
   // Cache sticky children to calculate the base offset of sticky children
-  List<RenderBoxModel> stickyChildren = [];
+  final Set<RenderBoxModel> stickyChildren = {};
 
   /// Find all the children whose position is sticky to this element
   List<RenderBoxModel> findStickyChildren() {
@@ -968,10 +968,12 @@ class RenderBoxModel extends RenderBox
     RenderBoxModel? scrollContainer;
     RenderObject? parent = this.parent;
 
-    while (parent != null && parent is RenderLayoutBox) {
-      if (parent.parent is RenderLayoutBox) {
+    while (parent != null) {
+      if (parent is RenderLayoutBox &&
+          (parent.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
+              parent.renderStyle.effectiveOverflowY != CSSOverflowType.visible)) {
         // Scroll container should has definite constraints
-        scrollContainer = parent.parent as RenderBoxModel;
+        scrollContainer = parent;
         break;
       }
       parent = parent.parent;

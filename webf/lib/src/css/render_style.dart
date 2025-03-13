@@ -693,6 +693,17 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   @pragma('vm:prefer-inline')
+  RenderPositionPlaceholder? getSelfPositionPlaceHolder() {
+    return getSelfRenderBoxValue((renderBoxModel, renderStyle) {
+      if (renderBoxModel is RenderLayoutBoxWrapper) {
+        return renderStyle.target.attachedRenderer!.renderPositionPlaceholder;
+      }
+
+      return renderBoxModel.renderPositionPlaceholder;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
   T? getFirstChildRenderStyle<T extends RenderStyle>() {
     Node? firstChild = target.firstAttachedRenderChild;
     if (firstChild is Element) {

@@ -4,6 +4,7 @@
  */
 
 import 'package:webf/css.dart';
+import 'package:webf/rendering.dart';
 
 // CSS Box Sizing: https://drafts.csswg.org/css-sizing-3/
 
@@ -38,6 +39,7 @@ mixin CSSSizingMixin on RenderStyle {
     _width = value;
     cleanContentBoxLogiclWidth();
     _markSelfAndParentNeedsLayout();
+    _markScrollContainerNeedsLayout();
   }
 
   CSSLengthValue? _height;
@@ -53,6 +55,7 @@ mixin CSSSizingMixin on RenderStyle {
     _height = value;
     cleanContentBoxLogiclHeight();
     _markSelfAndParentNeedsLayout();
+    _markScrollContainerNeedsLayout();
   }
 
   // https://drafts.csswg.org/css-sizing-3/#min-size-properties
@@ -78,6 +81,7 @@ mixin CSSSizingMixin on RenderStyle {
     _minWidth = value;
     cleanContentBoxLogiclWidth();
     _markSelfAndParentNeedsLayout();
+    _markScrollContainerNeedsLayout();
   }
 
   CSSLengthValue? _minHeight;
@@ -92,6 +96,7 @@ mixin CSSSizingMixin on RenderStyle {
     }
     _minHeight = value;
     _markSelfAndParentNeedsLayout();
+    _markScrollContainerNeedsLayout();
   }
 
   // https://drafts.csswg.org/css-sizing-3/#max-size-properties
@@ -117,6 +122,7 @@ mixin CSSSizingMixin on RenderStyle {
     _maxWidth = value;
     cleanContentBoxLogiclWidth();
     _markSelfAndParentNeedsLayout();
+    _markScrollContainerNeedsLayout();
   }
 
   CSSLengthValue? _maxHeight;
@@ -139,6 +145,7 @@ mixin CSSSizingMixin on RenderStyle {
     _maxHeight = value;
     cleanContentBoxLogiclHeight();
     _markSelfAndParentNeedsLayout();
+    _markScrollContainerNeedsLayout();
   }
 
   // Intrinsic width of replaced element.
@@ -152,6 +159,7 @@ mixin CSSSizingMixin on RenderStyle {
     if (_intrinsicWidth == value) return;
     _intrinsicWidth = value;
     _markSelfAndParentNeedsLayout();
+    _markScrollContainerNeedsLayout();
   }
 
   // Intrinsic height of replaced element.
@@ -165,6 +173,7 @@ mixin CSSSizingMixin on RenderStyle {
     if (_intrinsicHeight == value) return;
     _intrinsicHeight = value;
     _markSelfAndParentNeedsLayout();
+    _markScrollContainerNeedsLayout();
   }
 
   // Aspect ratio of replaced element.
@@ -224,5 +233,11 @@ mixin CSSSizingMixin on RenderStyle {
     if (isParentRenderViewportBox()) {
       markParentNeedsLayout();
     }
+  }
+
+  void _markScrollContainerNeedsLayout() {
+    RenderBoxModel? renderBoxModel = attachedRenderBoxModel;
+    RenderBoxModel? scrollContainer = renderBoxModel?.findScrollContainer();
+    scrollContainer?.markNeedsLayout();
   }
 }
