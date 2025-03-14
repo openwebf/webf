@@ -7,6 +7,7 @@ pub mod dom;
 pub mod cookie;
 pub mod navigator;
 pub mod storage;
+pub mod timer;
 
 #[no_mangle]
 pub extern "C" fn init_webf_test_app(handle: RustValue<ExecutingContextRustMethods>, meta_data: *const NativeLibraryMetaData) -> *mut c_void {
