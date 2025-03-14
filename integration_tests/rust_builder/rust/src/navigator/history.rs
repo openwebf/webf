@@ -1,5 +1,5 @@
-use webf_sys::{AddEventListenerOptions, Event, EventTargetMethods, ExecutingContext, WebFNativeFuture};
-use webf_test_macros::{webf_test, webf_test_async, webf_test_callback};
+use webf_sys::{AddEventListenerOptions, Event, EventTargetMethods, ExecutingContext};
+use webf_test_macros::{webf_test, webf_test_callback};
 use webf_test_utils::callback_runner::TestDone;
 
 #[webf_test]
