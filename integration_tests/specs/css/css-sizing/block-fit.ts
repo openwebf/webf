@@ -1,6 +1,6 @@
 /*auto generated*/
 describe('block-fit', () => {
-  it('content-as-initial-ref', async () => {
+  it('content-as-initial-ref', async (done) => {
     let child;
     let parent;
     parent = createElement(
@@ -24,7 +24,10 @@ describe('block-fit', () => {
     );
     BODY.appendChild(parent);
 
-    await snapshot(0.1);
+    child.onload = async () => {
+      await snapshot(0.1);
+      done();
+    }
   });
   it('content-as-initial', async () => {
     let child;
