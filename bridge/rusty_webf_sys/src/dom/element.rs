@@ -111,6 +111,7 @@ pub trait ElementMethods: ContainerNodeMethods {
   fn style(&self) -> CSSStyleDeclaration;
   fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>>;
   fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>>;
+  fn as_element(&self) -> &Element;
 }
 
 impl ContainerNodeMethods for Element {}
@@ -166,6 +167,10 @@ impl EventTargetMethods for Element {
   fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool {
     self.container_node.dispatch_event(event, exception_state)
   }
+
+  fn as_event_target(&self) -> &EventTarget {
+    self.container_node.as_event_target()
+  }
 }
 
 impl ElementMethods for Element {
@@ -177,5 +182,8 @@ impl ElementMethods for Element {
   }
   fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
     self.to_blob_with_device_pixel_ratio(device_pixel_ratio, exception_state)
+  }
+  fn as_element(&self) -> &Element {
+    self
   }
 }

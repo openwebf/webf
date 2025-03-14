@@ -349,6 +349,10 @@ impl EventTargetMethods for Document {
   fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool {
     self.container_node.node.event_target.dispatch_event(event, exception_state)
   }
+
+  fn as_event_target(&self) -> &EventTarget {
+    self.container_node.node.event_target.as_event_target()
+  }
 }
 
 impl ContainerNodeMethods for Document {}
