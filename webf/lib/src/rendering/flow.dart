@@ -231,7 +231,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       Element? containingBlockElement = child.renderStyle.target.getContainingBlockElement();
       if (containingBlockElement == null || containingBlockElement.attachedRenderer == null) continue;
 
-      if (child.renderStyle.position == CSSPositionType.absolute) {
+      if (child.renderStyle.position == CSSPositionType.absolute || child.renderStyle.position == CSSPositionType.fixed) {
         containingBlockElement.attachedRenderer!.absolutePositionedChildren.add(child);
       } else {
         CSSPositionedLayout.applyPositionedChildOffset(this, child);
@@ -248,14 +248,18 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     // Set offset of sticky element on each layout.
     for (RenderBoxModel child in _stickyChildren) {
-      RenderLayoutBox scrollContainer = child.findScrollContainer()! as RenderLayoutBox;
+      RenderBoxModel scrollContainer = child.findScrollContainer()!;
       // Sticky offset depends on the layout of scroll container, delay the calculation of
       // sticky offset to the layout stage of scroll container if its not layouted yet
       // due to the layout order of Flutter renderObject tree is from down to up.
       if (scrollContainer.hasSize) {
         CSSPositionedLayout.applyStickyChildOffset(scrollContainer, child);
       }
-      scrollContainer.stickyChildren.add(child);
+      if (scrollContainer is RenderLayoutBox) {
+        scrollContainer.stickyChildren.add(child);
+      } else if (scrollContainer is RenderWidget) {
+        scrollContainer.stickyChildren.add(child);
+      }
     }
 
     bool isScrollContainer = renderStyle.effectiveOverflowX != CSSOverflowType.visible ||

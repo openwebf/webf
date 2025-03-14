@@ -86,12 +86,9 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     } else {
       webFElement.childNodes.forEach((node) {
         if (node is Element &&
-            (node.renderStyle.position == CSSPositionType.fixed)) {
-          children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
-          return;
-        } else if (node is Element &&
             (node.renderStyle.position == CSSPositionType.sticky ||
-                node.renderStyle.position == CSSPositionType.absolute)) {
+                node.renderStyle.position == CSSPositionType.absolute ||
+                node.renderStyle.position == CSSPositionType.fixed)) {
           children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
           children.add(node.toWidget());
           return;
@@ -141,13 +138,6 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                     positionX: position,
                   );
 
-                  if (webFElement.positionedElements.isNotEmpty) {
-                    return PositionedBoxWrapper(
-                      ownerElement: webFElement,
-                      children: [adapter, ...webFElement.positionedElements.map((element) => element.toWidget())],
-                    );
-                  }
-
                   return adapter;
                 }),
             ownerElement: webFElement);
@@ -176,15 +166,15 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                             positionY: positionY,
                           );
 
-                          if (webFElement.positionedElements.isNotEmpty) {
-                            return PositionedBoxWrapper(
-                              ownerElement: webFElement,
-                              children: [
-                                adapter,
-                                ...webFElement.positionedElements.map((element) => element.toWidget())
-                              ],
-                            );
-                          }
+                          // if (webFElement.positionedElements.isNotEmpty) {
+                          //   return PositionedBoxWrapper(
+                          //     ownerElement: webFElement,
+                          //     children: [
+                          //       adapter,
+                          //       ...webFElement.positionedElements.map((element) => element.toWidget())
+                          //     ],
+                          //   );
+                          // }
 
                           return adapter;
                         });
@@ -396,6 +386,10 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
     super.mount(parent, newSlot);
     webFElement.didAttachRenderer();
 
+    if (webFElement.renderStyle.position == CSSPositionType.fixed) {
+      webFElement.ownerDocument.fixedChildren.add(renderObject as RenderBoxModel);
+    }
+
     webFElement.style.flushPendingProperties();
   }
 
@@ -404,6 +398,11 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     Element element = webFElement;
     element.willDetachRenderer(this);
+
+    if (webFElement.renderStyle.position == CSSPositionType.fixed) {
+      webFElement.ownerDocument.fixedChildren.remove(renderObject as RenderBoxModel);
+    }
+
     super.unmount();
     element.didDetachRenderer(this);
   }
@@ -417,7 +416,6 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
-
 
     flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
     webFElement.dispatchEvent(OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? ''));

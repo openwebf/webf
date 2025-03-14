@@ -639,6 +639,11 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   @pragma('vm:prefer-inline')
+  bool isSelfStickyPosition() {
+    return position == CSSPositionType.sticky;
+  }
+
+  @pragma('vm:prefer-inline')
   bool isSelfRenderReplaced() {
     return someRenderBoxSatisfy((renderObject) => renderObject is RenderReplaced);
   }
@@ -1084,7 +1089,9 @@ abstract class RenderStyle extends DiagnosticableTree {
         return matcher(renderBoxModel, renderBoxModel.renderStyle);
       case RenderObjectGetType.parent:
         RenderObject? parent = renderBoxModel.parent;
-        while (parent is RenderEventListener || parent is RenderLayoutBoxWrapper || parent is RenderPositionedBoxWrapper) {
+        while (parent is RenderEventListener ||
+            parent is RenderLayoutBoxWrapper ||
+            (parent is RenderFlowLayout && parent.renderStyle == this)) {
           parent = parent!.parent;
         }
 

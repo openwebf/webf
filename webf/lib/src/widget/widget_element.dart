@@ -88,6 +88,8 @@ abstract class WidgetElement extends dom.Element {
   @override
   bool get isWidgetElement => true;
 
+  bool get isScrollingElement => false;
+
   @mustCallSuper
   @override
   void didDetachRenderer([RenderObjectElement? flutterWidgetElement]) {
@@ -306,7 +308,7 @@ class WebFWidgetElementState extends dom.WebFElementWidgetState {
     }
 
     final positionedElements = widgetElement.childNodes.where((node) {
-      return node is dom.Element && node.renderStyle.isSelfPositioned();
+      return node is dom.Element && (node.renderStyle.isSelfPositioned());
     });
 
     List<Widget> children = [child, ...positionedElements.map((element) => element.toWidget())];

@@ -15,6 +15,9 @@ class RenderWidget extends RenderBoxModel
     with ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
   RenderWidget({required super.renderStyle});
 
+  // Cache sticky children to calculate the base offset of sticky children
+  final Set<RenderBoxModel> stickyChildren = {};
+
   @override
   BoxSizeType get widthSizeType {
     bool widthDefined = renderStyle.width.isNotAuto || renderStyle.minWidth.isNotAuto;
@@ -121,6 +124,11 @@ class RenderWidget extends RenderBoxModel
       }
     }
 
+    // // Calculate the offset of its sticky children.
+    // for (RenderBoxModel stickyChild in stickyChildren) {
+    //   CSSPositionedLayout.applyStickyChildOffset(this, stickyChild);
+    // }
+
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
     didLayout();
 
@@ -148,6 +156,13 @@ class RenderWidget extends RenderBoxModel
   double computeDistanceToActualBaseline(TextBaseline baseline) {
     return computeDistanceToBaseline();
   }
+
+  @override
+  void dispose() {
+    super.dispose();
+    stickyChildren.clear();
+  }
+
 
   /// Compute distance to baseline of replaced element
   @override
@@ -179,7 +194,14 @@ class RenderWidget extends RenderBoxModel
     RenderBox? child = firstChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-      context.paintChild(child, offset + childParentData.offset);
+
+      Offset childPaintOffset = childParentData.offset;
+      if (child is RenderBoxModel && child.renderStyle.position == CSSPositionType.fixed) {
+        Offset totalScrollOffset = getTotalScrollOffset();
+        childPaintOffset += totalScrollOffset;
+      }
+
+      context.paintChild(child, offset + childPaintOffset);
       child = childParentData.nextSibling;
     }
   }
@@ -212,6 +234,15 @@ class RenderWidget extends RenderBoxModel
         position: position!,
         hitTest: (BoxHitTestResult result, Offset transformed) {
           assert(transformed == position - childParentData.offset);
+
+          if (child is RenderBoxModel) {
+            CSSPositionType positionType = child.renderStyle.position;
+            if (positionType == CSSPositionType.fixed) {
+              Offset totalScrollOffset = (this as RenderBoxModel).getTotalScrollOffset();
+              transformed -= totalScrollOffset;
+            }
+          }
+
           return child!.hitTest(result, position: transformed);
         },
       );

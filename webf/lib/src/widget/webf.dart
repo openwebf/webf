@@ -126,7 +126,7 @@ class WebFState extends State<WebF> with RouteAware {
 
     return RepaintBoundary(
       child: WebFContext(
-        child: WebFRootRenderObjectWidget(
+        child: WebFRootViewport(
           widget.controller,
           viewportWidth: widget.controller.viewportWidth,
           viewportHeight: widget.controller.viewportHeight,
@@ -182,7 +182,7 @@ class WebFContextInheritElement extends InheritedElement {
   }
 }
 
-class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
+class WebFRootViewport extends MultiChildRenderObjectWidget {
   final bool resizeToAvoidBottomInsets;
   final WebFController controller;
   final Color? background;
@@ -190,7 +190,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
   final double? viewportHeight;
 
   // Creates a widget that visually hides its child.
-  WebFRootRenderObjectWidget(
+  WebFRootViewport(
     this.controller, {
     Key? key,
     this.background,
@@ -225,7 +225,7 @@ class WebFRootRenderObjectWidget extends MultiChildRenderObjectWidget {
 }
 
 class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
-  _WebFRenderObjectElement(WebFRootRenderObjectWidget widget) : super(widget);
+  _WebFRenderObjectElement(WebFRootViewport widget) : super(widget);
 
   @override
   void mount(Element? parent, Object? newSlot) async {
@@ -316,5 +316,5 @@ class _WebFRenderObjectElement extends MultiChildRenderObjectElement {
   }
 
   @override
-  WebFRootRenderObjectWidget get widget => super.widget as WebFRootRenderObjectWidget;
+  WebFRootViewport get widget => super.widget as WebFRootViewport;
 }

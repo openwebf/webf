@@ -22,12 +22,16 @@ class FlutterListViewElement extends WidgetElement {
     return context != null && scrollDirection == Axis.vertical ? PrimaryScrollController.maybeOf(context!) : null;
   }
 
+  @override
+  bool get isScrollingElement => true;
+
   void _scrollListener() {
     ScrollController? scrollController = context != null ? PrimaryScrollController.maybeOf(context!) : null;
     if (scrollController != null) {
       if (scrollController.position.extentAfter < 50) {
         dispatchEvent(dom.Event('end'));
       }
+      handleScroll(scrollController.position.pixels, scrollController.position.axisDirection);
     }
   }
 

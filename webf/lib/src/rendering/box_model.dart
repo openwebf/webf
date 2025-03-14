@@ -159,6 +159,14 @@ mixin RenderBoxContainerDefaultsMixin<ChildType extends RenderBox,
         position: position!,
         hitTest: (BoxHitTestResult result, Offset transformed) {
           assert(transformed == position - childParentData.offset);
+          if (child is RenderBoxModel) {
+            CSSPositionType positionType = child.renderStyle.position;
+            if (positionType == CSSPositionType.fixed) {
+              Offset totalScrollOffset = (this as RenderBoxModel).getTotalScrollOffset();
+              transformed -= totalScrollOffset;
+            }
+          }
+
           return child.hitTest(result, position: transformed);
         },
       );
@@ -277,47 +285,6 @@ class RenderLayoutBox extends RenderBoxModel
 
   // Cache sticky children to calculate the base offset of sticky children
   final Set<RenderBoxModel> stickyChildren = {};
-
-  /// Find all the children whose position is sticky to this element
-  List<RenderBoxModel> findStickyChildren() {
-    List<RenderBoxModel> stickyChildren = [];
-
-    RenderBox? child = firstChild;
-
-    // Layout positioned element
-    while (child != null) {
-      final ContainerParentDataMixin<RenderBox>? childParentData =
-          child.parentData as ContainerParentDataMixin<RenderBox>?;
-      if (child is! RenderBoxModel) {
-        child = childParentData!.nextSibling;
-        continue;
-      }
-
-      RenderBoxModel childRenderBoxModel = child;
-      RenderStyle childRenderStyle = childRenderBoxModel.renderStyle;
-      CSSOverflowType overflowX = childRenderStyle.effectiveOverflowX;
-      CSSOverflowType overflowY = childRenderStyle.effectiveOverflowY;
-
-      if (CSSPositionedLayout.isSticky(childRenderBoxModel)) {
-        stickyChildren.add(child);
-      }
-
-      // No need to loop scrollable container children
-      if (overflowX != CSSOverflowType.visible || overflowY != CSSOverflowType.visible) {
-        child = childParentData!.nextSibling;
-        continue;
-      }
-      if (child is RenderLayoutBox) {
-        List<RenderBoxModel> mergedChildren = child.findStickyChildren();
-        for (RenderBoxModel child in mergedChildren) {
-          stickyChildren.add(child);
-        }
-      }
-      child = childParentData!.nextSibling;
-    }
-
-    return stickyChildren;
-  }
 
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {
@@ -976,6 +943,10 @@ class RenderBoxModel extends RenderBox
         scrollContainer = parent;
         break;
       }
+      if (parent is RenderWidget && (parent.renderStyle.target as WidgetElement).isScrollingElement) {
+        scrollContainer = parent;
+        break;
+      }
       parent = parent.parent;
     }
     return scrollContainer;
@@ -1149,10 +1120,6 @@ class RenderBoxModel extends RenderBox
       if (child.attached) {
         CSSPositionedLayout.applyPositionedChildOffset(this, child);
       }
-    }
-
-    if (renderStyle.target.id == 'container') {
-      print(2);
     }
 
     scrollableViewportSize = Size(
@@ -1369,10 +1336,11 @@ class RenderBoxModel extends RenderBox
     double top = scrollTop;
     double left = scrollLeft;
     RenderObject? parentNode = parent;
-    while (parentNode is RenderBoxModel) {
-      top += parentNode.scrollTop;
-      left += parentNode.scrollLeft;
-
+    while (parentNode != null) {
+      if (parentNode is RenderBoxModel) {
+        top += parentNode.scrollTop;
+        left += parentNode.scrollLeft;
+      }
       parentNode = parentNode.parent;
     }
     return Offset(left, top);
@@ -1420,12 +1388,12 @@ class RenderBoxModel extends RenderBox
             offset: (scrollLeft != 0.0 || scrollTop != 0.0) ? Offset(-scrollLeft, -scrollTop) : null,
             position: transformPosition,
             hitTest: (BoxHitTestResult result, Offset position) {
-              CSSPositionType positionType = renderStyle.position;
-              if (positionType == CSSPositionType.fixed) {
-                Offset totalScrollOffset = getTotalScrollOffset();
-                position -= totalScrollOffset;
-                transformPosition -= totalScrollOffset;
-              }
+              // CSSPositionType positionType = renderStyle.position;
+              // if (positionType == CSSPositionType.fixed) {
+              //   Offset totalScrollOffset = getTotalScrollOffset();
+              //   position -= totalScrollOffset;
+              //   transformPosition -= totalScrollOffset;
+              // }
 
               // Determine whether the hittest position is within the visible area of the node in scroll.
               if ((clipX || clipY) && !size.contains(transformPosition)) {

@@ -501,23 +501,31 @@ abstract class Element extends ContainerNode
   /// So it needs to manually mark element needs paint and add scroll offset in paint stage
   void _applyFixedChildrenOffset(double scrollOffset, AxisDirection axisDirection) {
     // Only root element has fixed children.
-    if (this == ownerDocument.documentElement) {
-      for (RenderBoxModel child in ownerDocument.fixedChildren) {
-        // Save scrolling offset for paint
-        if (axisDirection == AxisDirection.down) {
-          child.scrollingOffsetY = scrollOffset;
-        } else if (axisDirection == AxisDirection.right) {
-          child.scrollingOffsetX = scrollOffset;
-        }
+    for (RenderBoxModel child in ownerDocument.fixedChildren) {
+      // Save scrolling offset for paint
+      if (axisDirection == AxisDirection.down) {
+        child.scrollingOffsetY = scrollOffset;
+      } else if (axisDirection == AxisDirection.right) {
+        child.scrollingOffsetX = scrollOffset;
       }
     }
   }
 
   // Calculate sticky status according to scroll offset and scroll direction
   void _applyStickyChildrenOffset() {
-    RenderLayoutBox scrollContainer = renderStyle.attachedRenderBoxModel as RenderLayoutBox;
-    for (RenderBoxModel stickyChild in scrollContainer.stickyChildren) {
-      CSSPositionedLayout.applyStickyChildOffset(scrollContainer, stickyChild);
+    RenderBoxModel scrollContainer = renderStyle.attachedRenderBoxModel!;
+
+    Set<RenderBoxModel>? stickyChildren;
+    if (scrollContainer is RenderLayoutBox) {
+      stickyChildren = scrollContainer.stickyChildren;
+    } else if (scrollContainer is RenderWidget) {
+      stickyChildren = scrollContainer.stickyChildren;
+    }
+
+    if (stickyChildren != null) {
+      for (RenderBoxModel stickyChild in stickyChildren) {
+        CSSPositionedLayout.applyStickyChildOffset(scrollContainer, stickyChild);
+      }
     }
   }
 
@@ -537,7 +545,9 @@ abstract class Element extends ContainerNode
 
     // No need to detach and reattach renderBoxMode when its position
     // changes between static and relative.
-    if (currentPosition == CSSPositionType.absolute || currentPosition == CSSPositionType.sticky) {
+    if (currentPosition == CSSPositionType.absolute ||
+        currentPosition == CSSPositionType.sticky ||
+        currentPosition == CSSPositionType.fixed) {
       // Find the renderBox of its containing block.
       Element? containingBlockElement = getContainingBlockElement();
 
