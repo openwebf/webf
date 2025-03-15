@@ -949,7 +949,7 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   // https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context#the_stacking_context
   bool get needsStacking {
-    return
+    bool selfNeedsStacking =
         // Root element of the document (<html>).
         target is HTMLElement ||
             // Element with a position value absolute or relative and z-index value other than auto.
@@ -966,6 +966,16 @@ abstract class RenderStyle extends DiagnosticableTree {
             transform != null ||
             // Element with a filter value.
             filter != null;
+    if (selfNeedsStacking) return true;
+
+    Node? child = target.firstChild;
+    while (child != null) {
+      if (child is Element && child.renderStyle.needsStacking) {
+        return true;
+      }
+      child = child.nextSibling;
+    }
+    return false;
   }
 
   // Sort children by zIndex, used for paint and hitTest.

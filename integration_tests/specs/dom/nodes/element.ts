@@ -162,7 +162,7 @@ describe('DOM Element API', () => {
     await snapshot();
   });
 
-  it('should work with listview with fixed elements', async () => {
+  it('should work with listview with fixed elements', async (done) => {
     const style = document.createElement('style');
     style.innerHTML = `.container {
         margin: 64px 0 32px;
@@ -197,20 +197,24 @@ describe('DOM Element API', () => {
 
     BODY.append(listview);
 
-    const clickBox = document.querySelector('#box');
+    listview.ononscreen = async () => {
+      const clickBox = document.querySelector('#box');
 
-    const rect1 = clickBox?.getBoundingClientRect();
+      const rect1 = clickBox?.getBoundingClientRect();
 
-    await snapshot();
+      await snapshot();
 
-    // @ts-ignore
-    listview.scrollTop = 200;
+      // @ts-ignore
+      listview.scrollTop = 200;
 
-    const rect2 = clickBox?.getBoundingClientRect();
+      const rect2 = clickBox?.getBoundingClientRect();
 
-    await snapshot();
+      await snapshot();
 
-    expect(JSON.stringify(rect1)).toEqual(JSON.stringify(rect2));
+      expect(JSON.stringify(rect1)).toEqual(JSON.stringify(rect2));
+
+      done();
+    }
   });
 
   it('should works with globalToLocal transform with position fixed layout', async () => {
