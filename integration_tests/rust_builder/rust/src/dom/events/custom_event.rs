@@ -1,8 +1,9 @@
 use webf_sys::{CustomEventInit, ExecutingContext, NativeValue};
 use webf_test_macros::webf_test;
+use webf_test_utils::common::TestCaseMetadata;
 
 #[webf_test]
-pub fn it_should_work_as_expected(context: ExecutingContext) {
+pub fn it_should_work_as_expected(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let exception_state = context.create_exception_state();
   let detail = NativeValue::new_string("detailMessage");
   let custom_event_init = CustomEventInit {

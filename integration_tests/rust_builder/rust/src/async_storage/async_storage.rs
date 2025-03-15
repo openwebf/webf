@@ -1,8 +1,9 @@
 use webf_sys::ExecutingContext;
 use webf_test_macros::webf_test_async;
+use webf_test_utils::common::TestCaseMetadata;
 
 #[webf_test_async]
-pub async fn test_should_work_with_get_item(context: ExecutingContext) {
+pub async fn test_should_work_with_get_item(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let storage = context.async_storage();
   let exception_state = context.create_exception_state();
 
@@ -14,7 +15,7 @@ pub async fn test_should_work_with_get_item(context: ExecutingContext) {
 }
 
 #[webf_test_async]
-pub async fn test_should_work_with_set_item_and_remove_item(context: ExecutingContext) {
+pub async fn test_should_work_with_set_item_and_remove_item(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let storage = context.async_storage();
   let exception_state = context.create_exception_state();
 
@@ -27,7 +28,7 @@ pub async fn test_should_work_with_set_item_and_remove_item(context: ExecutingCo
 }
 
 #[webf_test_async]
-pub async fn test_should_work_with_set_item_and_clear_and_get_all_keys(context: ExecutingContext) {
+pub async fn test_should_work_with_set_item_and_clear_and_get_all_keys(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let storage = context.async_storage();
   let exception_state = context.create_exception_state();
 
@@ -42,7 +43,7 @@ pub async fn test_should_work_with_set_item_and_clear_and_get_all_keys(context: 
 }
 
 #[webf_test_async]
-pub async fn test_should_work_with_length(context: ExecutingContext) {
+pub async fn test_should_work_with_length(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let storage = context.async_storage();
   let exception_state = context.create_exception_state();
 

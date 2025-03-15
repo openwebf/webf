@@ -1,9 +1,9 @@
 use webf_sys::{AddEventListenerOptions, Event, EventTargetMethods, ExecutingContext};
 use webf_test_macros::{webf_test, webf_test_callback};
-use webf_test_utils::callback_runner::TestDone;
+use webf_test_utils::{callback_runner::TestDone, common::TestCaseMetadata};
 
 #[webf_test]
-pub fn test_location_should_update_when_push_state(context: ExecutingContext) {
+pub fn test_location_should_update_when_push_state(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
@@ -22,7 +22,7 @@ pub fn test_location_should_update_when_push_state(context: ExecutingContext) {
 }
 
 #[webf_test_callback]
-pub async fn test_pop_state_event_will_trigger_when_navigate_back(context: ExecutingContext, done: TestDone) {
+pub async fn test_pop_state_event_will_trigger_when_navigate_back(_metadata: TestCaseMetadata, context: ExecutingContext, done: TestDone) {
   let (done_future, set_done) = done;
   let exception_state = context.create_exception_state();
   let location = context.location();
@@ -68,7 +68,7 @@ pub async fn test_pop_state_event_will_trigger_when_navigate_back(context: Execu
 }
 
 #[webf_test]
-pub fn test_push_state_with_no_url_will_default_to_current_url(context: ExecutingContext) {
+pub fn test_push_state_with_no_url_will_default_to_current_url(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
@@ -87,7 +87,7 @@ pub fn test_push_state_with_no_url_will_default_to_current_url(context: Executin
 }
 
 #[webf_test_callback]
-pub async fn test_replace_state_should_work(context: ExecutingContext, done: TestDone) {
+pub async fn test_replace_state_should_work(_metadata: TestCaseMetadata, context: ExecutingContext, done: TestDone) {
   let (done_future, set_done) = done;
   let exception_state = context.create_exception_state();
   let location = context.location();
@@ -139,7 +139,7 @@ pub async fn test_replace_state_should_work(context: ExecutingContext, done: Tes
 }
 
 #[webf_test_callback]
-pub async fn test_go_back_should_work(context: ExecutingContext, done: TestDone) {
+pub async fn test_go_back_should_work(_metadata: TestCaseMetadata, context: ExecutingContext, done: TestDone) {
   let (done_future, set_done) = done;
   let exception_state = context.create_exception_state();
   let location = context.location();
@@ -191,7 +191,7 @@ pub async fn test_go_back_should_work(context: ExecutingContext, done: TestDone)
 }
 
 #[webf_test_callback]
-pub async fn test_hash_change_should_fire_when_history_back(context: ExecutingContext, done: TestDone) {
+pub async fn test_hash_change_should_fire_when_history_back(_metadata: TestCaseMetadata, context: ExecutingContext, done: TestDone) {
   let (done_future, set_done) = done;
   let exception_state = context.create_exception_state();
   let location = context.location();
@@ -238,7 +238,7 @@ pub async fn test_hash_change_should_fire_when_history_back(context: ExecutingCo
 }
 
 #[webf_test_callback]
-pub async fn test_hash_change_when_go_back_should_work(context: ExecutingContext, done: TestDone) {
+pub async fn test_hash_change_when_go_back_should_work(_metadata: TestCaseMetadata, context: ExecutingContext, done: TestDone) {
   let (done_future, set_done) = done;
   let exception_state = context.create_exception_state();
   let location = context.location();

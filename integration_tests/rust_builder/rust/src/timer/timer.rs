@@ -1,10 +1,10 @@
 use std::{cell::RefCell, rc::Rc, time::{SystemTime, UNIX_EPOCH}};
 use webf_sys::{ExecutingContext, IntervalCallback, RequestAnimationFrameCallback, TimeoutCallback};
 use webf_test_macros::webf_test_callback;
-use webf_test_utils::callback_runner::TestDone;
+use webf_test_utils::{callback_runner::TestDone, common::TestCaseMetadata};
 
 #[webf_test_callback]
-pub async fn test_resolve_after_100ms(context: ExecutingContext, done: TestDone) {
+pub async fn test_resolve_after_100ms(_metadata: TestCaseMetadata, context: ExecutingContext, done: TestDone) {
   let (done_future, set_done) = done;
   let start_time = SystemTime::now()
     .duration_since(UNIX_EPOCH)
@@ -28,7 +28,7 @@ pub async fn test_resolve_after_100ms(context: ExecutingContext, done: TestDone)
 }
 
 #[webf_test_callback]
-pub async fn test_stop_before_resolved(context: ExecutingContext, done: TestDone) {
+pub async fn test_stop_before_resolved(_metadata: TestCaseMetadata, context: ExecutingContext, done: TestDone) {
   let (done_future, set_done) = done;
 
   let exception_state = context.create_exception_state();
@@ -53,7 +53,7 @@ pub async fn test_stop_before_resolved(context: ExecutingContext, done: TestDone
 }
 
 #[webf_test_callback]
-pub async fn test_trigger_5_times_and_stop(context: ExecutingContext, done: TestDone) {
+pub async fn test_trigger_5_times_and_stop(_metadata: TestCaseMetadata, context: ExecutingContext, done: TestDone) {
   let (done_future, set_done) = done;
   let exception_state = context.create_exception_state();
 
@@ -70,7 +70,6 @@ pub async fn test_trigger_5_times_and_stop(context: ExecutingContext, done: Test
     *count_value += 1;
 
     if *count_value > 5 {
-      // 当计数达到5次后，清除间隔定时器
       let exception_state = context_clone.create_exception_state();
       let interval_id = *interval_id_clone.borrow();
       context_clone.clear_interval(interval_id, &exception_state);
@@ -91,7 +90,7 @@ pub async fn test_trigger_5_times_and_stop(context: ExecutingContext, done: Test
 }
 
 #[webf_test_callback]
-pub async fn test_request_animation_frame_with_timestamp(context: ExecutingContext, done: TestDone) {
+pub async fn test_request_animation_frame_with_timestamp(_metadata: TestCaseMetadata, context: ExecutingContext, done: TestDone) {
   let (done_future, set_done) = done;
   let exception_state = context.create_exception_state();
 
@@ -106,7 +105,7 @@ pub async fn test_request_animation_frame_with_timestamp(context: ExecutingConte
 }
 
 #[webf_test_callback]
-pub async fn test_clear_timeout(context: ExecutingContext, done: TestDone) {
+pub async fn test_clear_timeout(_metadata: TestCaseMetadata, context: ExecutingContext, done: TestDone) {
   let (done_future, set_done) = done;
   let exception_state = context.create_exception_state();
 

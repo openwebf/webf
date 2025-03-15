@@ -1,8 +1,9 @@
 use webf_sys::ExecutingContext;
 use webf_test_macros::{webf_test, webf_test_async};
+use webf_test_utils::common::TestCaseMetadata;
 
 #[webf_test]
-pub fn test_hardware_concurrency(context: ExecutingContext) {
+pub fn test_hardware_concurrency(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let navigator = context.navigator();
   let exception_state = context.create_exception_state();
   let hardware_concurrency = navigator.hardware_concurrency(&exception_state);
@@ -11,7 +12,7 @@ pub fn test_hardware_concurrency(context: ExecutingContext) {
 }
 
 #[webf_test]
-pub fn test_platform(context: ExecutingContext) {
+pub fn test_platform(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let navigator = context.navigator();
   let exception_state = context.create_exception_state();
   let platform = navigator.platform(&exception_state);
@@ -20,7 +21,7 @@ pub fn test_platform(context: ExecutingContext) {
 }
 
 #[webf_test]
-pub fn test_app_name(context: ExecutingContext) {
+pub fn test_app_name(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let navigator = context.navigator();
   let exception_state = context.create_exception_state();
   let app_name = navigator.app_name(&exception_state);
@@ -29,7 +30,7 @@ pub fn test_app_name(context: ExecutingContext) {
 }
 
 #[webf_test]
-pub fn test_app_version(context: ExecutingContext) {
+pub fn test_app_version(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let navigator = context.navigator();
   let exception_state = context.create_exception_state();
   let app_version = navigator.app_version(&exception_state);
@@ -38,7 +39,7 @@ pub fn test_app_version(context: ExecutingContext) {
 }
 
 #[webf_test]
-pub fn test_language(context: ExecutingContext) {
+pub fn test_language(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let navigator = context.navigator();
   let exception_state = context.create_exception_state();
   let language = navigator.language(&exception_state);
@@ -47,7 +48,7 @@ pub fn test_language(context: ExecutingContext) {
 }
 
 #[webf_test]
-pub fn test_languages(context: ExecutingContext) {
+pub fn test_languages(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let navigator = context.navigator();
   let exception_state = context.create_exception_state();
   let languages = navigator.languages(&exception_state);
@@ -57,7 +58,7 @@ pub fn test_languages(context: ExecutingContext) {
 }
 
 #[webf_test]
-pub fn test_user_agent(context: ExecutingContext) {
+pub fn test_user_agent(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let navigator = context.navigator();
   let exception_state = context.create_exception_state();
   let ua_string = navigator.user_agent(&exception_state);
@@ -66,7 +67,7 @@ pub fn test_user_agent(context: ExecutingContext) {
 }
 
 #[webf_test_async]
-pub async fn test_clipboard(context: ExecutingContext) {
+pub async fn test_clipboard(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let navigator = context.navigator();
   let exception_state = context.create_exception_state();
   let clipboard = navigator.clipboard();

@@ -1,9 +1,9 @@
 use webf_sys::{ExecutingContext, NodeMethods};
 use webf_test_macros::webf_test_async;
-use webf_test_utils::{dom_utils::{create_element_with_style, create_element_with_style_and_child}, snapshot::snapshot_with_target_and_filename};
+use webf_test_utils::{common::TestCaseMetadata, dom_utils::{create_element_with_style, create_element_with_style_and_child}, snapshot::snapshot_with_target_and_filename};
 
 #[webf_test_async]
-pub async fn test_set_background_color(context: ExecutingContext) {
+pub async fn test_set_background_color(metadata: TestCaseMetadata, context: ExecutingContext) {
   let style = serde_json::json!({
     "width": "200px",
     "height": "200px",
@@ -12,11 +12,11 @@ pub async fn test_set_background_color(context: ExecutingContext) {
   let canvas = create_element_with_style(&context, "canvas", &style);
   let document = context.document();
   document.body().append_child(&canvas.as_node(), &context.create_exception_state()).unwrap();
-  snapshot_with_target_and_filename(context, &canvas, "snapshots/dom/elements/canvas/canvas.rs.c6bff5e41").await.unwrap();
+  snapshot_with_target_and_filename(context, &canvas, metadata.snapshot_filename).await.unwrap();
 }
 
 #[webf_test_async]
-pub async fn test_behavior_like_inline_element(context: ExecutingContext) {
+pub async fn test_behavior_like_inline_element(metadata: TestCaseMetadata, context: ExecutingContext) {
   let wrapper_style = serde_json::json!({
     "width": "200px",
     "height": "200px",
@@ -35,5 +35,5 @@ pub async fn test_behavior_like_inline_element(context: ExecutingContext) {
   wrapper.append_child(&text.as_node(), &exception_state).unwrap();
   let document = context.document();
   document.body().append_child(&wrapper.as_node(), &exception_state).unwrap();
-  snapshot_with_target_and_filename(context, &wrapper, "snapshots/dom/elements/canvas/canvas.rs.58e528bc1").await.unwrap();
+  snapshot_with_target_and_filename(context, &wrapper, metadata.snapshot_filename).await.unwrap();
 }

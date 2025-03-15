@@ -46,8 +46,8 @@ pub fn webf_test_async(_attr: TokenStream, item: TokenStream) -> TokenStream {
         file!().to_string(),
         #fn_name.to_string(),
         std::sync::Arc::new(
-          Box::new(|context| {
-            Box::pin(#fn_ident(context))
+          Box::new(|metadata, context| {
+            Box::pin(#fn_ident(metadata, context))
           })
         )
       );
@@ -75,8 +75,8 @@ pub fn webf_test_callback(_attr: TokenStream, item: TokenStream) -> TokenStream 
         file!().to_string(),
         #fn_name.to_string(),
         std::sync::Arc::new(
-          Box::new(|context, done| {
-            Box::pin(#fn_ident(context, done))
+          Box::new(|metadata, context, done| {
+            Box::pin(#fn_ident(metadata, context, done))
           })
         )
       );

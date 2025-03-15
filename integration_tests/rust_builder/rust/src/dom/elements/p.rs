@@ -1,9 +1,9 @@
 use webf_sys::{ExecutingContext, NativeValue, NodeMethods};
 use webf_test_macros::webf_test_async;
-use webf_test_utils::snapshot::snapshot_with_filename;
+use webf_test_utils::{common::TestCaseMetadata, snapshot::snapshot_with_filename};
 
 #[webf_test_async]
-pub async fn test_tag_p_basic(context: ExecutingContext) {
+pub async fn test_tag_p_basic(metadata: TestCaseMetadata, context: ExecutingContext) {
   let document = context.document();
   let exception_state = context.create_exception_state();
 
@@ -19,5 +19,5 @@ pub async fn test_tag_p_basic(context: ExecutingContext) {
   let body = document.body();
   body.append_child(&p.as_node(), &exception_state).unwrap();
 
-  snapshot_with_filename(context.clone(), "snapshots/dom/elements/p.rs.1f1e162c1").await.unwrap();
+  snapshot_with_filename(context.clone(), metadata.snapshot_filename).await.unwrap();
 }
