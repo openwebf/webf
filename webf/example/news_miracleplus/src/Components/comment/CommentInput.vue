@@ -3,11 +3,11 @@
     <flutter-cupertino-input 
       class="input" 
       placeholder="分享、交流你的看法..."
-      :value="content"
+      :val="content"
       @input="handleInput"
     />
     <flutter-cupertino-button type="primary" @click="handleSubmit" class="send-button">
-      发送1
+      发送
     </flutter-cupertino-button>
   </div>
 </template>
@@ -38,10 +38,20 @@ export default {
   padding: 12px;
   background: white;
   display: flex;
+  flex-direction: column;
   align-items: center;
   padding-bottom: 30px;
+  width: 100%;
+
+  .input {
+    border-radius: 8px;
+    width: 100%;
+    border: 1px solid #ccc;
+  }
 
   .send-button {
+    margin-top: 12px;
+    align-self: flex-end;
     width: 25%;
     padding: 0;
     display: flex;
@@ -50,13 +60,6 @@ export default {
     text-align: center;
     border-radius: 8px;
     color: var(--button-primary-text);
-  }
-
-  .input {
-    margin-right: 12px;
-    border-radius: 8px;
-    width: 75%;
-    border: 1px solid #ccc;
   }
 }
 </style>

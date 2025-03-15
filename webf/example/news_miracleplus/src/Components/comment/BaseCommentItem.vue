@@ -44,7 +44,7 @@
           <flutter-cupertino-input 
             :placeholder="isEditing ? '请编辑评论内容' : '请输入评论内容'" 
             class="comment-input" 
-            :value="editContent"
+            :val="editContent"
             @input="handleInput"
           />
           <flutter-cupertino-button 

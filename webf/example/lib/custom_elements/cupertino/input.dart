@@ -7,6 +7,8 @@ import 'package:webf/dom.dart' as dom;
 class FlutterCupertinoInput extends WidgetElement {
   FlutterCupertinoInput(super.context);
 
+  final TextEditingController _controller = TextEditingController();
+
   static final Map<String, IconData> _iconMap = {
     'phone': CupertinoIcons.phone,
     'shield': CupertinoIcons.shield,
@@ -14,6 +16,27 @@ class FlutterCupertinoInput extends WidgetElement {
     'search': CupertinoIcons.search,
     // ...
   };
+
+  @override
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
+    
+    attributes['val'] = ElementAttributeProperty(
+      getter: () => _controller.text,
+      setter: (val) {
+        if (val != _controller.text) {
+          _controller.text = val;
+          setState(() {});
+        }
+      }
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   TextInputFormatter? _getInputFormatter(String? type) {
     switch (type) {
@@ -75,6 +98,7 @@ class FlutterCupertinoInput extends WidgetElement {
     return SizedBox(
       height: height,
       child: CupertinoTextField(
+        controller: _controller,
         placeholder: placeholder,
         obscureText: isPassword,
         keyboardType: _getKeyboardType(type),
@@ -99,12 +123,7 @@ class FlutterCupertinoInput extends WidgetElement {
     super.initializeMethods(methods);
 
     methods['getValue'] = BindingObjectMethodSync(call: (args) {
-      return getAttribute('value') ?? '';
-    });
-
-    methods['setValue'] = BindingObjectMethodSync(call: (args) {
-      if (args.isEmpty) return;
-      setAttribute('value', args[0].toString());
+      return _controller.text;
     });
   }
 }

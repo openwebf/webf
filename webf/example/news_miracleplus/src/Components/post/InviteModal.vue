@@ -2,7 +2,7 @@
     <flutter-cupertino-modal-popup :show="show" height="400" @close="$emit('close')">
         <div class="invite-modal-content">
             <div class="invite-search-container">
-                <flutter-cupertino-input placeholder="搜索用户" class="invite-search-input" :value="searchKeyword"
+                <flutter-cupertino-input placeholder="搜索用户" class="invite-search-input" :val="searchKeyword"
                     @input="$emit('search', $event)" />
             </div>
             <div class="invite-users-list">
