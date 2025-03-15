@@ -75,6 +75,8 @@
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-secondary);
   
     .stats {
       display: flex;

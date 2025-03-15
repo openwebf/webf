@@ -11,6 +11,9 @@
   <router-view path="/share_link">
     <share-link-page></share-link-page>
   </router-view>
+  <router-view path="/comment">
+    <comment-page></comment-page>
+  </router-view>
   <router-view path="/user">
     <user-page></user-page>
   </router-view>
@@ -78,6 +81,7 @@ import MyPage from '@/Pages/MyPage.vue';
 import RegisterPage from '@/Pages/RegisterPage.vue';
 import LoginPage from '@/Pages/LoginPage.vue';
 import ShareLinkPage from '@/Pages/ShareLinkPage.vue';
+import CommentPage from '@/Pages/CommentPage.vue';
 import EditPage from '@/Pages/EditPage.vue';
 import SettingPage from '@/Pages/SettingPage.vue';
 import UserAgreementPage from '@/Pages/UserAgreementPage.vue';
@@ -99,6 +103,7 @@ export default {
     RegisterPage,
     LoginPage,
     ShareLinkPage,
+    CommentPage,
     UserPage,
     MyPage,
     EditPage,

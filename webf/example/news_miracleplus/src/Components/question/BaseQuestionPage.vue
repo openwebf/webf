@@ -44,6 +44,8 @@ export default {
 
   data() {
     return {
+      singleAnswerId: '',
+      questionId: '',
       question: {
         user: {
           avatar: '',
@@ -89,10 +91,15 @@ export default {
     },
 
     async offScreen() {
+      this.singleAnswerId = '';
+      this.questionId = '';
       this.question = {
         user: { avatar: '', name: '' },
       };
       this.allAnswers = [];
+      this.invitedUsers = [];
+      this.searchKeyword = '';
+      this.loadingUsers = false;
     },
 
     async fetchQuestionDetail(id) {

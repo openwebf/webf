@@ -191,6 +191,9 @@ export const api = {
 
   // Comment APIs
   comments: {
+    getShareLinkComments: ({ page = 1, limit = 20, id = '' }) => request(`/v1/comments?resource_id=${id}&limit=${limit}&page=${page}&resource_type=ShareLink`),
+    getSingleComment: (id = '') => request(`/v1/comments/${id}`),
+    getSubComments: (id = '') => request(`/v1/comments?resource_id=${id}&resource_type=Comment`),
     getList: ({ page = 1, resourceId = '', resourceType = 'ShareLink'} = {}) => 
       request(`/v1/comments?page=${page}&resource_id=${resourceId}&resource_type=${resourceType}`),
     // 评论帖子传入 content
