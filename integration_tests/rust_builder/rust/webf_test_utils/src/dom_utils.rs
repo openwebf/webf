@@ -46,7 +46,7 @@ pub fn create_element_with_style_and_children(
   context: &ExecutingContext,
   tag_name: &str,
   style: &Value,
-  children: &[Node],
+  children: &Vec<&Node>,
 ) -> Element {
   let exception_state = context.create_exception_state();
 

@@ -1,5 +1,12 @@
 use webf_sys::{ElementMethods, ExecutingContext, NativeValue, NodeMethods};
 
+pub struct TestCaseMetadata {
+  pub mod_path: String,
+  pub source_file: String,
+  pub test_name: String,
+  pub snapshot_filename: String,
+}
+
 fn clear_all_timer(context: ExecutingContext) {
   let exception_state = context.create_exception_state();
   let callback = Box::new(|| {});

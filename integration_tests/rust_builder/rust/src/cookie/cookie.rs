@@ -1,8 +1,9 @@
 use webf_sys::ExecutingContext;
 use webf_test_macros::webf_test;
+use webf_test_utils::common::TestCaseMetadata;
 
 #[webf_test]
-pub fn test_works_with_cookie_getter_and_setter(context: ExecutingContext) {
+pub fn test_works_with_cookie_getter_and_setter(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let document = context.document();
   let exception_state = context.create_exception_state();
 

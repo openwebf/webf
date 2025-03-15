@@ -1,6 +1,6 @@
 use webf_sys::{Element, ElementMethods, EventTargetMethods, ExecutingContext, WebFNativeFuture};
 
-pub fn snapshot_with_target_and_filename(context: ExecutingContext, target: &Element, filename: &'static str) -> WebFNativeFuture<()> {
+pub fn snapshot_with_target_and_filename(context: ExecutingContext, target: &Element, filename: String) -> WebFNativeFuture<()> {
   context.__webf_sync_buffer__();
 
   let window = context.window();
@@ -15,12 +15,13 @@ pub fn snapshot_with_target_and_filename(context: ExecutingContext, target: &Ele
     let context_for_future = context_for_callback.clone();
     let snapshot_future_in_callback = snapshot_future_in_callback.clone();
     let target = target.as_event_target().as_element().unwrap();
+    let filename = filename.clone();
     webf_sys::webf_future::spawn(context_for_callback.clone(), async move {
       let exception_state = context_for_future.create_exception_state();
 
       let html_blob = target.to_blob_with_device_pixel_ratio(1.0, &exception_state).await.unwrap().unwrap();
 
-      let match_result = context_for_future.__webf_match_image_snapshot__(html_blob, filename, &exception_state).await.unwrap().unwrap();
+      let match_result = context_for_future.__webf_match_image_snapshot__(html_blob, &filename, &exception_state).await.unwrap().unwrap();
       assert_eq!(match_result, true);
 
       snapshot_future_in_callback.set_result(Ok(Some(())));
@@ -32,7 +33,7 @@ pub fn snapshot_with_target_and_filename(context: ExecutingContext, target: &Ele
   snapshot_future
 }
 
-pub fn snapshot_with_filename(context: ExecutingContext, filename: &'static str) -> WebFNativeFuture<()> {
+pub fn snapshot_with_filename(context: ExecutingContext, filename: String) -> WebFNativeFuture<()> {
   let document = context.document();
   let html = document.document_element();
 
