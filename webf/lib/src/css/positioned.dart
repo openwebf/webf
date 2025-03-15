@@ -130,7 +130,7 @@ class CSSPositionedLayout {
         offsetX += stickyLeft - offsetLeftToScrollContainer;
         // Sticky child can not exceed the left boundary of its parent container
         RenderBoxModel parentContainer = child.parent as RenderBoxModel;
-        double maxOffsetX = parentContainer.boxSize!.width - childWidth;
+        double maxOffsetX = parentContainer.scrollableSize.width - childWidth;
         if (offsetX > maxOffsetX) {
           offsetX = maxOffsetX;
         }
@@ -187,7 +187,7 @@ class CSSPositionedLayout {
         // Sticky child can not exceed the bottom boundary of its parent container
         // RenderBoxModel parentContainer = child.parent as RenderBoxModel;
         RenderBoxModel parentContainer = child.renderStyle.getParentRenderStyle()!.attachedRenderBoxModel!;
-        double maxOffsetY = parentContainer.boxSize!.height - childHeight;
+        double maxOffsetY = parentContainer.scrollableSize.height - childHeight;
         if (offsetY > maxOffsetY) {
           offsetY = maxOffsetY;
         }
