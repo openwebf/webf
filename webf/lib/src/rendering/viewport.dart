@@ -70,7 +70,6 @@ class RenderViewportBox extends RenderBox
   void performLayout() {
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.startTrackLayout(this);
-      WebFProfiler.instance.startTrackLayoutStep('Root Get Constraints');
     }
 
     if (_viewportSize != null) {
@@ -91,10 +90,6 @@ class RenderViewportBox extends RenderBox
             math.min(constraints.maxHeight, currentView.physicalSize.height / currentView.devicePixelRatio));
         size = constraints.constrain(preferredSize);
       }
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayoutStep();
     }
 
     RenderObject? child = firstChild;

@@ -636,20 +636,14 @@ class RenderFlexLayout extends RenderLayoutBox {
       needsRelayout = false;
     }
     doingThisLayout = false;
+
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackLayout(this);
     }
   }
 
   void _doPerformLayout() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayoutStep('RenderFlexLayout.beforeLayout');
-    }
     beforeLayout();
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayoutStep();
-    }
 
     List<RenderBoxModel> _positionedChildren = [];
     List<RenderPositionPlaceholder> _positionPlaceholderChildren = [];
