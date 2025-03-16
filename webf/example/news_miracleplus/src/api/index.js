@@ -210,6 +210,26 @@ export const api = {
       }),
       requireAuth: true,
     }),
+    update: ({ id, content, richContent }) => request(`/v1/comments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        content,
+        rich_content: richContent,
+      }),
+      requireAuth: true,
+    }),
+    reply: ({ id, richContent, rootId }) => {
+      return request(`/v1/comments`, {
+        method: 'POST',
+        body: JSON.stringify({
+          resource_id: id,
+          resource_type: 'Comment',
+          rich_content: richContent,
+          ...(rootId && { root_id: rootId }), // Only include root_id if it exists
+        }),
+        requireAuth: true,
+      });
+    },
     createByNote: ({ noteId }) => request(`/v1/notes/${noteId}/comment`, {
       method: 'POST',
       body: JSON.stringify({}),

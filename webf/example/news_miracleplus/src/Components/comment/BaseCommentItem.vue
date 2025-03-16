@@ -41,9 +41,12 @@
         @close="onModalClose"
       >
         <div class="comment-modal-content">
-          <flutter-cupertino-input 
-            :placeholder="isEditing ? '请编辑评论内容' : '请输入评论内容'" 
+          <flutter-cupertino-textarea
             class="comment-input" 
+            :placeholder="isEditing ? '请编辑评论内容' : '请输入评论内容'"
+            minLines="3"
+            autoSize="true"
+            maxLength="1000"
             :val="editContent"
             @input="handleInput"
           />
@@ -51,8 +54,26 @@
             type="primary" 
             class="comment-confirm-btn"
             @click="confirmAction"
+            :disabled="submitStatus !== 'idle'"
           >
-            {{ isEditing ? '保存' : '回复' }}
+            <template v-if="submitStatus === 'idle'">
+              {{ isEditing ? '保存' : '回复' }}
+            </template>
+            <flutter-cupertino-icon
+              class="comment-confirm-btn-icon"
+              v-else-if="submitStatus === 'submitting'"
+              type="rays"
+            />
+            <flutter-cupertino-icon 
+              class="comment-confirm-btn-icon"
+              v-else-if="submitStatus === 'success'"
+              type="check_mark_circled"
+            />
+            <flutter-cupertino-icon 
+              class="comment-confirm-btn-icon"
+              v-else-if="submitStatus === 'error'"
+              type="clear_circled"
+            />
           </flutter-cupertino-button>
         </div>
       </flutter-cupertino-modal-popup>
@@ -65,11 +86,16 @@
   import { api } from '@/api';
   export default {
     name: 'BaseCommentItem',
+    inject: ['updateComment', 'addCommentReply'],
     props: {
       comment: {
         type: Object,
         required: true
       },
+      rootId: {
+        type: String,
+        default: ''
+      }
     },
     setup() {
       const userStore = useUserStore();
@@ -84,6 +110,7 @@
         showModal: false,
         isEditing: false,
         editContent: '',
+        submitStatus: 'idle', // 'idle' | 'submitting' | 'success' | 'error'
       }
     },
     computed: {
@@ -143,22 +170,97 @@
         this.editContent = e.detail;
       },
       onModalClose() {
-        this.showModal = false;
-      },
-      async confirmAction() {
-        if (this.isEditing) {
-          // 处理编辑评论的逻辑
-          console.log('保存编辑的评论:', this.editContent);
-          // 这里可以添加调用API保存编辑评论的代码
-          // await api.comments.update(this.comment.id, this.editContent);
-        } else {
-          // 处理回复评论的逻辑
-          console.log('回复评论:', this.editContent);
-          // 这里可以添加调用API回复评论的代码
-          // await api.comments.reply(this.comment.id, this.editContent);
+        if (this.submitStatus === 'submitting') {
+          return;
         }
         this.showModal = false;
-        this.editContent = '';
+        this.submitStatus = 'idle';
+      },
+      formatToRichContent(text) {
+        const paragraphs = text.split('\n').filter(p => p.trim());
+
+        const richContent = paragraphs.map(paragraph => ({
+          type: 'paragraph',
+          children: [{
+            type: 'text',
+            text: paragraph
+          }]
+        }));
+
+        return JSON.stringify(richContent);
+      },
+      async confirmAction() {
+        const richContent = this.formatToRichContent(this.editContent);
+        
+        if (this.isEditing) {
+          try {
+            this.submitStatus = 'submitting';
+            const res = await api.comments.update({
+              id: this.comment.id,
+              content: richContent,
+              richContent: richContent,
+            });
+            
+            if (res.success) {
+              this.submitStatus = 'success';
+              this.updateComment(this.comment.id, {
+                content: richContent,
+                richContent: richContent,
+              });
+
+              setTimeout(() => {
+                this.showModal = false;
+                this.editContent = '';
+                this.submitStatus = 'idle';  // 重置状态
+              }, 1000);
+            } else {
+              this.submitStatus = 'error';
+              setTimeout(() => {
+                this.submitStatus = 'idle';  // 重置状态
+              }, 1000);
+            }
+          } catch (error) {
+            this.submitStatus = 'error';
+            setTimeout(() => {
+              this.submitStatus = 'idle';
+            }, 1000);
+          }
+        } else {
+          try {
+            this.submitStatus = 'submitting';
+            console.log('reply comment.id', this.comment.id);
+            console.log('reply rootId', this.rootId);
+            console.log('reply richContent', richContent);
+            const res = await api.comments.reply({
+              id: this.comment.id,
+              richContent: richContent,
+              rootId: this.rootId || undefined,
+            });
+            console.log('reply res', JSON.stringify(res));
+            
+            if (res.success) {
+              this.submitStatus = 'success';
+              const commentRes = await api.comments.getSingleComment(res['comment_id']);
+              this.addCommentReply(this.comment.id, commentRes.data.comment);
+              
+              setTimeout(() => {
+                this.showModal = false;
+                this.editContent = '';
+                this.submitStatus = 'idle';
+              }, 1000);
+            } else {
+              this.submitStatus = 'error';
+              setTimeout(() => {
+                this.submitStatus = 'idle';
+              }, 1000);
+            }
+          } catch (error) {
+            this.submitStatus = 'error';
+            setTimeout(() => {
+              this.submitStatus = 'idle';
+            }, 1000);
+          }
+        }
       }
     }
   }
@@ -248,10 +350,19 @@
       flex-direction: column;
 
       .comment-input {
+        width: 100%;
         margin-bottom: 12px;
       }
       .comment-confirm-btn {
         color: var(--font-color-primary);
+        min-width: 60px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        .comment-confirm-btn-icon {
+          font-size: 20px;
+        }
       }
     }
   }

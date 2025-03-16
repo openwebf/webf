@@ -1,6 +1,9 @@
 <template>
   <div class="comment-item">
-    <BaseCommentItem :comment="comment" />
+    <BaseCommentItem 
+      :comment="comment"
+      :root-id="rootId" 
+    />
     <div v-if="hasSubComments" class="sub-comments">
       <div 
         v-for="subComment in comment.subComments" 
@@ -9,6 +12,8 @@
       >
         <CommentItem 
           :comment="subComment"
+          :root-id="isTopLevel ? String(subComment.id) : rootId"
+          :is-sub-comment="true"
         />
 
       </div>
@@ -27,12 +32,20 @@ export default {
     comment: {
       type: Object,
       required: true
-    }
+    },
+    rootId: {
+      type: String,
+      default: ''
+    },
+    isTopLevel: {
+      type: Boolean,
+      default: false
+    },
   },
   computed: {
     hasSubComments() {
       return this.comment.subComments && this.comment.subComments.length > 0;
-    }
+    },
   }
 }
 </script>

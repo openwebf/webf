@@ -1,8 +1,11 @@
 <template>
   <div class="comment-input">
-    <flutter-cupertino-input 
+    <flutter-cupertino-textarea
       class="input" 
       placeholder="分享、交流你的看法..."
+      autoSize="true"
+      minLines="3"
+      maxLength="1000"
       :val="content"
       @input="handleInput"
     />
@@ -22,8 +25,7 @@ export default {
   },
   methods: {
     handleSubmit() {
-      console.log('111111');
-      // this.$emit('submit', this.content);
+      this.$emit('submit', this.content);
       this.content = '';
     },
     handleInput(e) {

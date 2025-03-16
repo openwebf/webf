@@ -9,36 +9,32 @@
 
             <!-- 内容块 -->
             <ContentBlock v-if="shareLink.introduction" title="内容导读" :content="shareLink.introduction" />
-            <ContentBlock v-if="shareLink.summariedLinkContent" title="自动总结" :content="shareLink.summariedLinkContent" />
-            <NotesList v-if="shareLink.notes" :notes="shareLink.notes" :notes-list="notesList" @note-click="handleNoteClick" />
+            <ContentBlock v-if="shareLink.summariedLinkContent" title="自动总结"
+                :content="shareLink.summariedLinkContent" />
+            <NotesList v-if="shareLink.notes" :notes="shareLink.notes" :notes-list="notesList"
+                @note-click="handleNoteClick" />
             <RecommendList :recommend-list="recommendList" @recommend-click="handleRecommendClick" />
 
             <!-- 交互栏 -->
             <InteractionBar v-bind="interactionBarProps" @follow="handleFollow" @like="handleLike"
                 @bookmark="handleBookmark" @invite="handleInvite" @share="handleShare" />
-            
+
             <!-- 可选的"查看全部"按钮 -->
             <slot name="view-all" :comments-count="shareLink.commentsCount" />
             <!-- 评论区 -->
             <CommentsSection :comments="allComments" :total="shareLink.commentsCount" />
 
             <!-- 评论输入框 -->
-            <slot name="comment-input" />
+            <slot name="comment-input" :handle-comment-submit="handleCommentSubmit" />
         </webf-listview>
 
         <!-- 通用的弹窗组件 -->
         <alert-dialog ref="alertRef" />
         <flutter-cupertino-loading ref="loading" />
         <flutter-cupertino-toast ref="toast" />
-        <InviteModal
-            :show="showInviteModal"
-            :loading="loadingUsers"
-            :users="invitedUsers"
-            :search-keyword="searchKeyword"
-            @close="onInviteModalClose"
-            @search="handleSearchInput"
-            @invite="handleInviteUser"
-        />
+        <InviteModal :show="showInviteModal" :loading="loadingUsers" :users="invitedUsers"
+            :search-keyword="searchKeyword" @close="onInviteModalClose" @search="handleSearchInput"
+            @invite="handleInviteUser" />
     </div>
 </template>
 
@@ -120,6 +116,13 @@ export default {
                 isLiked: this.isLiked,
                 isBookmarked: this.isBookmarked,
             }
+        }
+    },
+
+    provide() {
+        return {
+            updateComment: this.updateComment,
+            addCommentReply: this.addCommentReply,
         }
     },
 
@@ -210,30 +213,6 @@ export default {
                 this.$refs.alertRef.show({
                     message: '获取相关分享失败'
                 });
-            }
-        },
-        async handleCommentSubmit(content) {
-            console.log('handleCommentSubmit', content);
-            const structuredContent = JSON.stringify([{
-                type: 'paragraph',
-                children: [
-                    {
-                        text: content,
-                    }
-                ]
-            }]);
-            // Handle new comment submission
-            const commentRes = await api.comments.create({
-                resourceId: this.shareLinkId,
-                resourceType: 'ShareLink',
-                content: structuredContent,
-            });
-            if (commentRes.success) {
-                this.$refs.toast.show({
-                    type: 'success',
-                    content: '评论成功',
-                });
-                this.allComments = await this.fetchComments();
             }
         },
         async handleFollow(newFollowState) {
@@ -354,6 +333,71 @@ export default {
                 '/share_link'
             );
         },
+        updateComment(commentId, updatedData) {
+            const updateCommentInList = (comments) => {
+                for (let comment of comments) {
+                    if (comment.id === commentId) {
+                        Object.assign(comment, updatedData);
+                        return true;
+                    }
+                    if (comment.subComments?.length) {
+                        if (updateCommentInList(comment.subComments)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
+
+            updateCommentInList(this.allComments);
+        },
+        addCommentReply(parentId, replyData) {
+            const addReplyToComment = (comments) => {
+                for (let comment of comments) {
+                    if (comment.id === parentId) {
+                        if (!comment.subComments) {
+                            comment.subComments = [];
+                        }
+                        console.log('yes find it', comment.subComments.length);
+                        comment.subComments.push(replyData);
+                        return true;
+                    }
+                    if (comment.subComments?.length) {
+                        if (addReplyToComment(comment.subComments)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
+
+            addReplyToComment(this.allComments);
+        },
+        async handleCommentSubmit(content) {
+            const paragraphs = content.split('\n').filter(p => p.trim());
+            const richContent = paragraphs.map(paragraph => ({
+                type: 'paragraph',
+                children: [{
+                    type: 'text',
+                    text: paragraph
+                }]
+            }));
+            const structuredContent = JSON.stringify(richContent);
+            
+            const commentRes = await api.comments.create({
+                resourceId: this.shareLinkId,
+                resourceType: 'ShareLink',
+                content: structuredContent,
+            });
+
+            if (commentRes.success) {
+                this.$refs.toast.show({
+                    type: 'success',
+                    content: '评论成功',
+                });
+                await this.fetchComments();
+            }
+        }
     }
 }
 </script>

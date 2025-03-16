@@ -5,6 +5,7 @@
           v-for="comment in comments" 
           :key="comment.id"
           :comment="comment"
+          :is-top-level="true"
         />
       </div>
     </div>

@@ -20,6 +20,7 @@ import 'custom_elements/slider.dart';
 import 'custom_elements/cupertino/tab_bar.dart';
 import 'custom_elements/cupertino/button.dart';
 import 'custom_elements/cupertino/input.dart';
+import 'custom_elements/cupertino/textarea.dart';
 import 'custom_elements/cupertino/tab.dart';
 import 'custom_elements/cupertino/segmented_tab.dart';
 import 'custom_elements/cupertino/switch.dart';
@@ -66,6 +67,7 @@ void main() async {
   WebF.defineCustomElement('flutter-cupertino-alert', (context) => FlutterCupertinoAlert(context));
   WebF.defineCustomElement('flutter-cupertino-toast', (context) => FlutterCupertinoToast(context));
   WebF.defineCustomElement('flutter-cupertino-loading', (context) => FlutterCupertinoLoading(context));
+  WebF.defineCustomElement('flutter-cupertino-textarea', (context) => FlutterCupertinoTextArea(context));
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }
 
