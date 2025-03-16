@@ -5,13 +5,16 @@ class FlutterCupertinoModalPopup extends WidgetElement {
   FlutterCupertinoModalPopup(super.context);
   
   bool _isVisible = false;
+  NavigatorState? _navigator;
 
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
 
     attributes['show'] = ElementAttributeProperty(
-      getter: () => _isVisible.toString(),
+      getter: () {
+        return _isVisible.toString();
+      },
       setter: (value) {
         final shouldShow = value == 'true';
         if (shouldShow != _isVisible) {
@@ -25,6 +28,8 @@ class FlutterCupertinoModalPopup extends WidgetElement {
   void _handleVisibilityChange() {
     if (_isVisible) {
       _showModal();
+    } else {
+      _navigator?.pop();
     }
   }
 
@@ -35,6 +40,7 @@ class FlutterCupertinoModalPopup extends WidgetElement {
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) {
+        _navigator = Navigator.of(context);
         return Container(
           height: double.tryParse(getAttribute('height') ?? '') ?? 300,
           padding: const EdgeInsets.only(bottom: 20),

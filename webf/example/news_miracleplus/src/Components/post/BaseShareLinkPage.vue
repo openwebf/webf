@@ -30,9 +30,15 @@
         <alert-dialog ref="alertRef" />
         <flutter-cupertino-loading ref="loading" />
         <flutter-cupertino-toast ref="toast" />
-        <InviteModal :show="showInviteModal" :loading="loadingUsers" :users="invitedUsers"
-            :search-keyword="searchKeyword" @close="onInviteModalClose" @search="handleSearchInput"
-            @invite="handleInviteUser" />
+        <InviteModal
+            :show="showInviteModal"
+            :loading="loadingUsers"
+            :users="invitedUsers"
+            :search-keyword="searchKeyword"
+            @close="onInviteModalClose"
+            @search="handleSearchInput"
+            @invite="handleInviteUser"
+        />
     </div>
 </template>
 
@@ -68,7 +74,7 @@ export default {
         pageType: {
             type: String,
             required: true,
-            validator: (value) => ['share', 'comment'].includes(value)
+            validator: (value) => ['shareLink', 'comment'].includes(value)
         },
     },
 
@@ -218,7 +224,7 @@ export default {
             }]);
             // Handle new comment submission
             const commentRes = await api.comments.create({
-                resourceId: this.id,
+                resourceId: this.shareLinkId,
                 resourceType: 'ShareLink',
                 content: structuredContent,
             });
@@ -235,9 +241,9 @@ export default {
             try {
                 let res;
                 if (newFollowState) {
-                    res = await api.news.follow(this.id);
+                    res = await api.news.follow(this.shareLinkId);
                 } else {
-                    res = await api.news.unfollow(this.id);
+                    res = await api.news.unfollow(this.shareLinkId);
                 }
                 console.log('follow res', res);
                 if (res.success) {
@@ -265,7 +271,7 @@ export default {
                 this.loadingUsers = true;
                 const res = await api.user.getInvitedUsers({
                     resource: 'ShareLink',
-                    id: this.id,
+                    id: this.shareLinkId,
                     search: this.searchKeyword
                 });
                 this.invitedUsers = res.data.users;
@@ -295,7 +301,7 @@ export default {
 
                 const res = await api.user.invite({
                     resourceType: 'share_link',
-                    resourceId: this.id,
+                    resourceId: this.shareLinkId,
                     userId: user.id
                 });
 
@@ -321,14 +327,14 @@ export default {
         async handleLike() {
             // 处理点赞按钮点击
             if (this.isLiked) {
-                await api.news.unlike(this.id);
+                await api.news.unlike(this.shareLinkId);
             } else {
-                await api.news.like(this.id);
+                await api.news.like(this.shareLinkId);
             }
             await this.fetchShareLinkDetail();
         },
         async handleBookmark() {
-            await api.news.bookmark(this.id);
+            await api.news.bookmark(this.shareLinkId);
             await this.fetchShareLinkDetail();
         },
         async handleNoteClick(note) {
