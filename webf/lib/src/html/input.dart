@@ -355,9 +355,7 @@ mixin BaseInputElement on WidgetElement {
         break;
     }
 
-    if (!ownerDocument.controller.shouldBlockingFlushingResolvedStyleProperties) {
-      style.flushPendingProperties();
-    }
+    style.flushPendingProperties();
   }
 
   String get placeholder => getAttribute('placeholder') ?? '';

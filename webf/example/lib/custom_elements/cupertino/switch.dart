@@ -3,7 +3,7 @@ import 'package:webf/webf.dart';
 
 Color? _parseColor(String? colorString) {
   if (colorString == null) return null;
-  
+
   if (colorString.startsWith('#')) {
     String hex = colorString.replaceFirst('#', '');
     if (hex.length == 6) {

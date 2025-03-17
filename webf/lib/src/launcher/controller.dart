@@ -557,16 +557,6 @@ class WebFController {
     return controllerPreloadingCompleter.future;
   }
 
-  bool get shouldBlockingFlushingResolvedStyleProperties {
-    if (mode != WebFLoadingMode.preRendering) return false;
-
-    RenderBox? rootRenderObject = view.getRootRenderObject();
-
-    if (rootRenderObject == null || !rootRenderObject.attached) return true;
-
-    return preRenderingStatus.index < PreRenderingStatus.done.index;
-  }
-
   PreRenderingStatus _preRenderingStatus = PreRenderingStatus.none;
 
   PreRenderingStatus get preRenderingStatus => _preRenderingStatus;

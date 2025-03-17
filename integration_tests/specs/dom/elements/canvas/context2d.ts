@@ -469,6 +469,8 @@ describe('Canvas context 2d', () => {
     context.fillStyle = 'green';
     context.fillRect(10, 10, 50, 50);
 
+    await sleep(0.1);
+
     await snapshot(canvas);
     done();
   });

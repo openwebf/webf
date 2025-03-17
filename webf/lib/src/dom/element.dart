@@ -555,16 +555,9 @@ abstract class Element extends ContainerNode
 
       renderStyle.requestWidgetToRebuild(
           ToPositionPlaceHolderUpdateReason(positionedElement: this, containingBlockElement: containingBlockElement));
-    } else if (currentPosition == CSSPositionType.fixed) {
-      // Find the renderBox of its containing block.
-      Element? containingBlockElement = getContainingBlockElement();
-
-      if (containingBlockElement == null) return;
-
-      renderStyle.requestWidgetToRebuild(
-          ToPositionPlaceHolderUpdateReason(positionedElement: this, containingBlockElement: containingBlockElement));
-      containingBlockElement.renderStyle.requestWidgetToRebuild(
-          AttachPositionedChild(positionedElement: this, containingBlockElement: containingBlockElement));
+    } else if (currentPosition == CSSPositionType.static) {
+      renderStyle.requestWidgetToRebuild(ToStaticLayoutUpdateReason());
+      updateElementKey();
     }
   }
 
@@ -673,8 +666,6 @@ abstract class Element extends ContainerNode
     attributes.clear();
     _attributeProperties.clear();
     ownerDocument.clearElementStyleDirty(this);
-    positionedElements.clear();
-    stickyPositionedElements.clear();
     holderAttachedPositionedElement = null;
     holderAttachedContainingBlockElement = null;
     _beforeElement?.dispose();
@@ -837,7 +828,6 @@ abstract class Element extends ContainerNode
     _updateIDMap(null, oldID: _id);
     _updateNameMap(null, oldName: getAttribute(_NAME));
     if (renderStyle.position == CSSPositionType.fixed || renderStyle.position == CSSPositionType.absolute) {
-      holderAttachedContainingBlockElement?.positionedElements.remove(this);
       holderAttachedContainingBlockElement?.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
     }
   }
@@ -998,9 +988,11 @@ abstract class Element extends ContainerNode
         break;
       case POSITION:
         assert(oldValue != null);
-        scheduleMicrotask(() {
-          _updateHostingWidgetWithPosition(oldValue);
-        });
+        if (value == 'static' && oldValue == 'absolute') {
+          print(2);
+        }
+        print('set position $this new=$value old=$oldValue');
+        _updateHostingWidgetWithPosition(oldValue);
         break;
       case COLOR:
         _updateColorRelativePropertyWithColor(this);
@@ -1217,9 +1209,7 @@ abstract class Element extends ContainerNode
       var hasInheritedPendingProperty = false;
       if (style.merge(newStyle)) {
         hasInheritedPendingProperty = style.hasInheritedPendingProperty;
-        if (!ownerDocument.controller.shouldBlockingFlushingResolvedStyleProperties) {
-          style.flushPendingProperties();
-        }
+        style.flushPendingProperties();
       }
 
       if (rebuildNested || hasInheritedPendingProperty) {
@@ -1239,9 +1229,7 @@ abstract class Element extends ContainerNode
       _removeInlineStyleProperty(property);
     });
     inlineStyle.clear();
-    if (!ownerDocument.controller.shouldBlockingFlushingResolvedStyleProperties) {
-      style.flushPendingProperties();
-    }
+    style.flushPendingProperties();
   }
 
   void _removeInlineStyleProperty(String property) {
@@ -1265,13 +1253,7 @@ abstract class Element extends ContainerNode
       }
 
       if (renderStyle.isBoxModelHaveSize()) {
-        RenderBoxModel ancestor;
-        if (ownerDocument.documentElement!.positionedElements.isNotEmpty) {
-          ancestor = ownerDocument.documentElement!.attachedRenderer!.parent as RenderBoxModel;
-        } else {
-          ancestor = ownerDocument.documentElement!.attachedRenderer as RenderBoxModel;
-        }
-
+        RenderBoxModel ancestor = ownerDocument.documentElement!.attachedRenderer as RenderBoxModel;
         Offset offset = renderStyle.getOffset(ancestorRenderBox: ancestor, excludeScrollOffset: true);
         Size size = renderStyle.boxSize()!;
         boundingClientRect = BoundingClientRect(

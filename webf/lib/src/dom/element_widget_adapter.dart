@@ -14,9 +14,6 @@ import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 
 mixin ElementAdapterMixin on ElementBase {
-  final Set<Element> positionedElements = {};
-  final Set<Element> stickyPositionedElements = {};
-
   // Rendering this element as an RenderPositionHolder
   Element? holderAttachedPositionedElement;
   Element? holderAttachedContainingBlockElement;
@@ -89,6 +86,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
             (node.renderStyle.position == CSSPositionType.sticky ||
                 node.renderStyle.position == CSSPositionType.absolute ||
                 node.renderStyle.position == CSSPositionType.fixed)) {
+          print(node);
           children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
           children.add(node.toWidget());
           return;
@@ -166,21 +164,10 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                             positionY: positionY,
                           );
 
-                          // if (webFElement.positionedElements.isNotEmpty) {
-                          //   return PositionedBoxWrapper(
-                          //     ownerElement: webFElement,
-                          //     children: [
-                          //       adapter,
-                          //       ...webFElement.positionedElements.map((element) => element.toWidget())
-                          //     ],
-                          //   );
-                          // }
-
                           return adapter;
                         });
                   }
 
-                  children.addAll(webFElement.positionedElements.map((element) => element.toWidget()));
                   return WebFRenderLayoutWidgetAdaptor(
                     webFElement: webFElement,
                     children: children,
@@ -191,12 +178,10 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                 }),
             ownerElement: webFElement);
       } else {
-        children.addAll(webFElement.positionedElements.map((element) => element.toWidget()));
         widget = scrollableX ??
             WebFRenderLayoutWidgetAdaptor(webFElement: webFElement, children: children, key: webFElement.key);
       }
     } else {
-      children.addAll(webFElement.positionedElements.map((element) => element.toWidget()));
       widget = WebFRenderLayoutWidgetAdaptor(webFElement: webFElement, children: children, key: webFElement.key);
     }
 
