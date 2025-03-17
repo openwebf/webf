@@ -20,7 +20,7 @@ import 'custom_elements/slider.dart';
 import 'custom_elements/cupertino/tab_bar.dart';
 import 'custom_elements/cupertino/button.dart';
 import 'custom_elements/cupertino/input.dart';
-import 'custom_elements/cupertino/textarea.dart';
+// import 'custom_elements/cupertino/textarea.dart';
 import 'custom_elements/cupertino/tab.dart';
 import 'custom_elements/cupertino/segmented_tab.dart';
 import 'custom_elements/cupertino/switch.dart';
@@ -67,7 +67,7 @@ void main() async {
   WebF.defineCustomElement('flutter-cupertino-alert', (context) => FlutterCupertinoAlert(context));
   WebF.defineCustomElement('flutter-cupertino-toast', (context) => FlutterCupertinoToast(context));
   WebF.defineCustomElement('flutter-cupertino-loading', (context) => FlutterCupertinoLoading(context));
-  WebF.defineCustomElement('flutter-cupertino-textarea', (context) => FlutterCupertinoTextArea(context));
+  // WebF.defineCustomElement('flutter-cupertino-textarea', (context) => FlutterCupertinoTextArea(context));
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }
 
@@ -154,8 +154,8 @@ class MyAppState extends State<MyApp> {
         );
     controller!.darkModeOverride = widget.savedThemeMode == AdaptiveThemeMode.dark;
     // controller!.preload(WebFBundle.fromUrl('assets:///assets/bundle.html'));
-    // controller!.preload(WebFBundle.fromUrl('http://localhost:8080/'), viewportSize: MediaQuery.of(context).size);
-    controller!.preload(WebFBundle.fromUrl('assets:///vue_project/dist/index.html'));
+    controller!.preload(WebFBundle.fromUrl('http://localhost:8080/'), viewportSize: MediaQuery.of(context).size);
+    // controller!.preload(WebFBundle.fromUrl('assets:///vue_project/dist/index.html'));
   }
 
   @override
@@ -253,15 +253,12 @@ class _WebFDemoState extends State<WebFDemo> {
 
     // pre create webf content
     _webfContent = WebF(controller: widget.controller);
-    
-    // set splash screen display time to 2s
-    Future.delayed(Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    });
+
+    widget.controller.onLoad = (WebFController controller) {
+      setState(() {
+        _isLoading = false;
+      });
+    };
   }
 
   @override
@@ -298,7 +295,7 @@ class _WebFDemoState extends State<WebFDemo> {
               )
     );
   }
-  
+
   Widget _buildSplashScreen() {
     return Center(
       child: Column(
