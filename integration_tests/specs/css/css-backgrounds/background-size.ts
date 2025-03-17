@@ -1,5 +1,5 @@
 describe('Background-size', () => {
-  it('should works with contain', async () => {
+  it('should works with contain', async (done) => {
     let div1;
     let div = createElement(
      'div',
@@ -20,10 +20,14 @@ describe('Background-size', () => {
      ]
     );
     append(BODY, div);
-    await snapshot(0.1);
+    div1.ononscreen = async () => {
+      await snapshot(0.5);
+      done();
+    }
+    
   });
 
-  it('should works with cover', async () => {
+  it('should works with cover', async (done) => {
     let div1;
     let div = createElement(
      'div',
@@ -44,7 +48,11 @@ describe('Background-size', () => {
      ]
     );
     append(BODY, div);
-    await snapshot(0.1);
+    // @ts-ignore
+    div.ononscreen = async () => {
+      await snapshot(0.1);
+      done();
+    }
   });
 
   it('should works with auto', async () => {

@@ -1004,7 +1004,7 @@ describe('Position absolute', () => {
     await snapshot();
   });
 
-  it('offset should work when ancestors has transform', async () => {
+  it('offset should work when ancestors has transform', async (done) => {
     let container;
     let child;
     container = createElement(
@@ -1067,10 +1067,13 @@ describe('Position absolute', () => {
 
     BODY.appendChild(container);
 
-    expect(child.offsetTop).toEqual(22);
-    expect(child.offsetLeft).toEqual(21);
+    container.ononscreen = async () => {
+      expect(child.offsetTop).toEqual(22);
+      expect(child.offsetLeft).toEqual(21);
 
-    await snapshot();
+      await snapshot();
+      done();
+    }
   });
 
   it('offset should work when ancestors has scrolled', async () => {

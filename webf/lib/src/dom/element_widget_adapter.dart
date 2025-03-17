@@ -86,7 +86,6 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
             (node.renderStyle.position == CSSPositionType.sticky ||
                 node.renderStyle.position == CSSPositionType.absolute ||
                 node.renderStyle.position == CSSPositionType.fixed)) {
-          print(node);
           children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
           children.add(node.toWidget());
           return;

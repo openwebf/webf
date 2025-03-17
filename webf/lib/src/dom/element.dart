@@ -988,10 +988,6 @@ abstract class Element extends ContainerNode
         break;
       case POSITION:
         assert(oldValue != null);
-        if (value == 'static' && oldValue == 'absolute') {
-          print(2);
-        }
-        print('set position $this new=$value old=$oldValue');
         _updateHostingWidgetWithPosition(oldValue);
         break;
       case COLOR:

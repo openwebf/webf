@@ -4,6 +4,7 @@
  */
 
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart';
 
 enum CSSPositionType {
   static,
@@ -34,7 +35,7 @@ mixin CSSPositionMixin on RenderStyle {
       return;
     }
     _top = value;
-    _markParentNeedsLayout();
+    _markContainingBlockNeedsLayout();
   }
 
   @override
@@ -45,7 +46,7 @@ mixin CSSPositionMixin on RenderStyle {
       return;
     }
     _bottom = value;
-    _markParentNeedsLayout();
+    _markContainingBlockNeedsLayout();
   }
 
   @override
@@ -56,7 +57,7 @@ mixin CSSPositionMixin on RenderStyle {
       return;
     }
     _left = value;
-    _markParentNeedsLayout();
+    _markContainingBlockNeedsLayout();
   }
 
   @override
@@ -67,7 +68,7 @@ mixin CSSPositionMixin on RenderStyle {
       return;
     }
     _right = value;
-    _markParentNeedsLayout();
+    _markContainingBlockNeedsLayout();
   }
 
   // The z-index property specifies the stack order of an element.
@@ -93,7 +94,7 @@ mixin CSSPositionMixin on RenderStyle {
 
     // Position effect the stacking context.
     _markNeedsSort();
-    _markParentNeedsLayout(force: true);
+    _markContainingBlockNeedsLayout();
     // Position change may affect transformed display
     // https://www.w3.org/TR/css-display-3/#transformations
 
@@ -111,16 +112,12 @@ mixin CSSPositionMixin on RenderStyle {
 
   // Mark parent render object to layout.
   // If force to true, ignoring current position type judgement of static, useful for updating position type.
-  void _markParentNeedsLayout({bool force = false}) {
+  void _markContainingBlockNeedsLayout() {
     // Should mark positioned element's containing block needs layout directly
     // cause RelayoutBoundary of positioned element will prevent the needsLayout flag
     // to bubble up in the RenderObject tree.
-    if (isSelfParentDataAreRenderLayoutParentData()) {
-      RenderStyle renderStyle = this;
-      if (force || renderStyle.position != DEFAULT_POSITION_TYPE) {
-        markParentNeedsLayout();
-      }
-    }
+    Element? containingBlock = target.getContainingBlockElement();
+    containingBlock?.renderStyle.markNeedsLayout();
   }
 
   void _markParentNeedsPaint() {
