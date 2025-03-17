@@ -118,7 +118,7 @@ class RenderWidget extends RenderBoxModel
       if (containingBlockElement == null || containingBlockElement.attachedRenderer == null) continue;
 
       if (child.renderStyle.position == CSSPositionType.absolute) {
-        containingBlockElement.attachedRenderer!.absolutePositionedChildren.add(child);
+        containingBlockElement.attachedRenderer!.positionedChildren.add(child);
       } else {
         CSSPositionedLayout.applyPositionedChildOffset(this, child);
       }

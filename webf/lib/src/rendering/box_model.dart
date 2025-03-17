@@ -549,7 +549,7 @@ class RenderBoxModel extends RenderBox
   }
 
   // Cached positioned children for apply offsets when self had layout
-  List<RenderBoxModel> absolutePositionedChildren = [];
+  List<RenderBoxModel> positionedChildren = [];
 
   @override
   String toStringShort() {
@@ -578,34 +578,6 @@ class RenderBoxModel extends RenderBox
 
   BoxSizeType get heightSizeType {
     return renderStyle.height.isAuto ? BoxSizeType.automatic : BoxSizeType.specified;
-  }
-
-  // Cache scroll offset of scrolling box in horizontal direction
-  // to be used in paint of fixed children
-  double? _scrollingOffsetX;
-
-  double? get scrollingOffsetX => _scrollingOffsetX;
-
-  set scrollingOffsetX(double? value) {
-    if (value == null) return;
-    if (_scrollingOffsetX != value) {
-      _scrollingOffsetX = value;
-      markNeedsPaint();
-    }
-  }
-
-  // Cache scroll offset of scrolling box in vertical direction
-  // to be used in paint of fixed children
-  double? _scrollingOffsetY;
-
-  double? get scrollingOffsetY => _scrollingOffsetY;
-
-  set scrollingOffsetY(double? value) {
-    if (value == null) return;
-    if (_scrollingOffsetY != value) {
-      _scrollingOffsetY = value;
-      markNeedsPaint();
-    }
   }
 
   // Position of sticky element changes between relative and fixed of scroll container
@@ -1116,7 +1088,7 @@ class RenderBoxModel extends RenderBox
 
   // Hooks when content box had layout.
   void didLayout() {
-    for (RenderBoxModel child in absolutePositionedChildren) {
+    for (RenderBoxModel child in positionedChildren) {
       if (child.attached) {
         CSSPositionedLayout.applyPositionedChildOffset(this, child);
       }
@@ -1210,10 +1182,6 @@ class RenderBoxModel extends RenderBox
     if (alpha == 0) {
       paintIntersectionObserver(context, offset, paintNothing);
     } else {
-      // Paint fixed element to fixed position by compensating scroll offset
-      double offsetY = scrollingOffsetY != null ? offset.dy + scrollingOffsetY! : offset.dy;
-      double offsetX = scrollingOffsetX != null ? offset.dx + scrollingOffsetX! : offset.dx;
-      offset = Offset(offsetX, offsetY);
       paintColorFilter(context, offset, _chainPaintImageFilter);
     }
   }
@@ -1329,7 +1297,7 @@ class RenderBoxModel extends RenderBox
     // Evict render decoration image cache.
     renderStyle.backgroundImage?.image?.evict();
 
-    absolutePositionedChildren.clear();
+    positionedChildren.clear();
   }
 
   Offset getTotalScrollOffset() {

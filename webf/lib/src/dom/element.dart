@@ -502,12 +502,9 @@ abstract class Element extends ContainerNode
   void _applyFixedChildrenOffset(double scrollOffset, AxisDirection axisDirection) {
     // Only root element has fixed children.
     for (RenderBoxModel child in ownerDocument.fixedChildren) {
-      // Save scrolling offset for paint
-      if (axisDirection == AxisDirection.down) {
-        child.scrollingOffsetY = scrollOffset;
-      } else if (axisDirection == AxisDirection.right) {
-        child.scrollingOffsetX = scrollOffset;
-      }
+      Element? containingBlockElement = child.renderStyle.target.getContainingBlockElement();
+      if (containingBlockElement == null || containingBlockElement.attachedRenderer == null) continue;
+      CSSPositionedLayout.applyPositionedChildOffset(containingBlockElement.attachedRenderer!, child);
     }
   }
 

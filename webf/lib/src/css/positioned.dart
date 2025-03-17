@@ -229,7 +229,8 @@ class CSSPositionedLayout {
     Offset childOriginalOffset = childPlaceHolderParentData.offset;
 
     // Offset of sticky child to scroll container
-    Offset childToScrollContainerOffset = childRenderPositionHolder.getOffsetToAncestor(Offset.zero, scrollContainer, excludeScrollOffset: true);
+    Offset childToScrollContainerOffset =
+        childRenderPositionHolder.getOffsetToAncestor(Offset.zero, scrollContainer, excludeScrollOffset: true);
 
     bool isVerticalFixed = false;
     bool isHorizontalFixed = false;
@@ -328,8 +329,9 @@ class CSSPositionedLayout {
     Offset staticPositionOffset = _getPlaceholderToParentOffset(child.renderStyle.getSelfPositionPlaceHolder(), parent);
 
     Offset ancestorOffset = child.renderStyle.target.parentElement == parent.renderStyle.target
-            ? Offset.zero
-            : child.renderStyle.target.parentElement!.attachedRenderer!.getOffsetToAncestor(Offset.zero, parent);
+        ? Offset.zero
+        : child.renderStyle.target.parentElement!.attachedRenderer!.getOffsetToAncestor(Offset.zero, parent,
+            excludeScrollOffset: child.renderStyle.position == CSSPositionType.fixed);
 
     double x = _computePositionedOffset(
       Axis.horizontal,
