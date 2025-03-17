@@ -22,7 +22,7 @@ describe('Position fixed', () => {
     });
     div1.appendChild(document.createTextNode('fixed element'));
     container1.appendChild(div1);
-    await snapshot(container1);
+    await snapshot();
   });
 
   it('works with scroller container', async () => {
