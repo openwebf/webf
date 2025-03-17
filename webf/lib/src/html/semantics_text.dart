@@ -51,10 +51,10 @@ const Map<String, dynamic> _markDefaultStyle = {BACKGROUND_COLOR: 'yellow', COLO
 
 const Map<String, dynamic> _hrDefaultStyle = {
   DISPLAY: BLOCK,
-  MARGIN: '8px 0',
-  BORDER_WIDTH: '1px',
-  BORDER_STYLE: 'solid',
-  BORDER_COLOR: 'rgb(21, 26, 20)',
+  MARGIN: '1em 0',
+  BORDER_WIDTH: '0.5px',
+  BORDER_STYLE: BorderStyle.solid,
+  BORDER_COLOR: 'rgb(136,136,136)',
 };
 
 const Map<String, dynamic> _defaultStyle = {FONT_STYLE: ITALIC};
