@@ -176,9 +176,6 @@ export default {
     goToLogin() {
       window.webf.hybridHistory.pushState({}, '/login');
     },
-    goToHome() {
-      window.webf.hybridHistory.pushState({}, '/index');
-    }
   },
   beforeUnmount() {
     if (this.timer) {

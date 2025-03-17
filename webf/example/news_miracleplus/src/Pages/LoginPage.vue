@@ -230,9 +230,6 @@ export default {
     goToRegister() {
       window.webf.hybridHistory.pushState({}, '/register');
     },
-    goToHome() {
-      window.webf.hybridHistory.pushState({}, '/index');
-    },
     showCountryCodePicker() {
       console.log('showCountryCodePicker');
       this.isSelectingCountryCode = true;

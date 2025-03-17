@@ -29,7 +29,7 @@ class TabBarManager {
         this.tabBarRef.switchTab(targetPath);
       }
       if (!isInTabBar) {
-        window.webf.hybridHistory.pushState({}, this.tabBarPath);
+        window.webf.hybridHistory.replaceState({}, this.tabBarPath);
         this.currentPath = this.tabBarPath;
       }
     }
