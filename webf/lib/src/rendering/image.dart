@@ -42,6 +42,6 @@ class WebFRawImage extends RawImage {
 
   @override
   RenderImage createRenderObject(BuildContext context) {
-    return WebFRenderImage(image: image, fit: fit);
+    return WebFRenderImage(image: image?.clone(), fit: fit);
   }
 }
