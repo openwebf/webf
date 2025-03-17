@@ -67,8 +67,7 @@ class DoubleClickDetector {
   }
 
   bool _isValidDoubleClick(TapUpDetails currentDetails) {
-    return _isWithinTimeThreshold() &&
-        _isWithinDistanceThreshold(currentDetails);
+    return _isWithinTimeThreshold() && _isWithinDistanceThreshold(currentDetails);
   }
 
   bool _isWithinTimeThreshold() {
@@ -93,57 +92,63 @@ class DoubleClickDetector {
   }
 }
 
-
 class GestureDispatcher {
   EventTarget target;
 
   GestureDispatcher(this.target) {
-    _gestureRecognizers = [
-      TapGestureRecognizer()..onTapUp = _onClick,
-      SwipeGestureRecognizer()..onSwipe = _onSwipe,
-      PanGestureRecognizer()
+    _gestureRecognizers = {
+      EVENT_CLICK: TapGestureRecognizer()..onTapUp = _onClick,
+      EVENT_SWIPE: SwipeGestureRecognizer()..onSwipe = _onSwipe,
+      EVENT_PAN: PanGestureRecognizer()
         ..onStart = _onPanStart
         ..onUpdate = _onPanUpdate
         ..onEnd = _onPanEnd,
-      LongPressGestureRecognizer()..onLongPress = _onLongPress,
-      ScaleGestureRecognizer()
+      EVENT_LONG_PRESS: LongPressGestureRecognizer()..onLongPress = _onLongPress,
+      EVENT_SCALE: ScaleGestureRecognizer()
         ..onStart = _onScaleStart
         ..onUpdate = _onScaleUpdate
         ..onEnd = _onScaleEnd,
-      ImmediateMultiDragGestureRecognizer()..onStart = _onDragStart
-    ];
+      EVENT_DRAG: ImmediateMultiDragGestureRecognizer()..onStart = _onDragStart
+    };
     _dragEventInfo = _DragEventInfo(this);
   }
 
   late _DragEventInfo _dragEventInfo;
 
-  late List<GestureRecognizer> _gestureRecognizers;
+  late Map<String, GestureRecognizer> _gestureRecognizers;
 
-  void _handlePointerDown(PointerDownEvent event) {
+  void _handlePointerDown(EventTarget currentTarget, PointerDownEvent event) {
     // Add pointer to gestures then register the gesture recognizer to the arena.
-    _gestureRecognizers.forEach((gesture) {
-      // Register the recognizer that needs to be monitored.
-      gesture.addPointer(event);
+    _gestureRecognizers.forEach((eventName, gesture) {
+      if (currentTarget.getEventHandlers().containsKey(eventName) ||
+          currentTarget.getCaptureEventHandlers().containsKey(eventName)) {
+        // Register the recognizer that needs to be monitored.
+        gesture.addPointer(event);
+      }
     });
   }
 
-  void _handlePointerPanZoomStart(PointerPanZoomStartEvent event) {
+  void _handlePointerPanZoomStart(EventTarget currentTarget, PointerPanZoomStartEvent event) {
     // Add pointer to gestures then register the gesture recognizer to the arena.
-    _gestureRecognizers.forEach((gesture) {
-      // Register the recognizer that needs to be monitored.
-      gesture.addPointerPanZoom(event);
+    _gestureRecognizers.forEach((eventName, gesture) {
+      if (currentTarget.getEventHandlers().containsKey(eventName) ||
+          currentTarget.getCaptureEventHandlers().containsKey(eventName)) {
+        // Register the recognizer that needs to be monitored.
+        gesture.addPointerPanZoom(event);
+      }
     });
   }
 
   void handlePointerEvent(PointerEvent event) {
+    EventTarget currentTarget = getCurrentEventTarget();
+
     if (event is PointerDownEvent) {
-      _handlePointerDown(event);
+      _handlePointerDown(currentTarget, event);
     }
 
     if (event is PointerPanZoomStartEvent) {
-      _handlePointerPanZoomStart(event);
+      _handlePointerPanZoomStart(currentTarget, event);
     }
-
   }
 
   final DoubleClickDetector _doubleClickDetector = DoubleClickDetector();
@@ -151,7 +156,8 @@ class GestureDispatcher {
   void _onClick(TapUpDetails details) {
     _handleMouseEvent(EVENT_CLICK, localPosition: details.localPosition, globalPosition: details.globalPosition);
     if (_doubleClickDetector.isDoubleClick(details)) {
-      _handleMouseEvent(EVENT_DOUBLE_CLICK, localPosition: details.localPosition, globalPosition: details.globalPosition);
+      _handleMouseEvent(EVENT_DOUBLE_CLICK,
+          localPosition: details.localPosition, globalPosition: details.globalPosition);
     }
   }
 
@@ -198,6 +204,16 @@ class GestureDispatcher {
     return _dragEventInfo;
   }
 
+  EventTarget getCurrentEventTarget() {
+    EventTarget target = this.target.ownerView.viewport?.rawPointerListener.lastActiveEventTarget ?? this.target;
+
+    if (target is SVGElement && target.hostingImageElement != null) {
+      target = target.hostingImageElement!;
+    }
+
+    return target;
+  }
+
   void _handleMouseEvent(String type, {Offset localPosition = Offset.zero, Offset globalPosition = Offset.zero}) {
     RenderBox? root = (this.target as Node).ownerDocument.attachedRenderer;
 
@@ -205,13 +221,8 @@ class GestureDispatcher {
       return;
     }
 
-    EventTarget target = this.target.ownerView.viewport?.rawPointerListener.lastActiveEventTarget ?? this.target;
+    EventTarget target = getCurrentEventTarget();
 
-    if (target is SVGElement && target.hostingImageElement != null) {
-      target = target.hostingImageElement!;
-    }
-
-    // When Kraken wraps the Flutter Widget, Kraken need to calculate the global coordinates relative to self.
     Offset globalOffset = root.globalToLocal(Offset(globalPosition.dx, globalPosition.dy));
     double clientX = globalOffset.dx;
     double clientY = globalOffset.dy;
@@ -247,5 +258,4 @@ class GestureDispatcher {
     );
     target.dispatchEvent(event);
   }
-
 }
