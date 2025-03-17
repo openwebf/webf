@@ -126,6 +126,7 @@ void defineBuiltInElements() {
   _isDefined = true;
   // Inline text
   defineElement(BR, (context) => BRElement(context));
+  defineElement(HR, (context) => HRElement(context));
   defineElement(B, (context) => BringElement(context));
   defineElement(ABBR, (context) => AbbreviationElement(context));
   defineElement(EM, (context) => EmphasisElement(context));

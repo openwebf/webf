@@ -30,6 +30,7 @@ const String Q = 'Q';
 const String KBD = 'KBD';
 const String DFN = 'DFN';
 const String BR = 'BR';
+const String HR = 'HR';
 
 const Map<String, dynamic> _uDefaultStyle = {TEXT_DECORATION: UNDERLINE};
 
@@ -47,6 +48,14 @@ const Map<String, dynamic> _abbrDefaultStyle = {
 };
 
 const Map<String, dynamic> _markDefaultStyle = {BACKGROUND_COLOR: 'yellow', COLOR: 'black'};
+
+const Map<String, dynamic> _hrDefaultStyle = {
+  DISPLAY: BLOCK,
+  MARGIN: '8px 0',
+  BORDER_WIDTH: '1px',
+  BORDER_STYLE: 'solid',
+  BORDER_COLOR: 'rgb(21, 26, 20)',
+};
 
 const Map<String, dynamic> _defaultStyle = {FONT_STYLE: ITALIC};
 
@@ -202,4 +211,11 @@ class MarkElement extends Element {
 
   @override
   Map<String, dynamic> get defaultStyle => _markDefaultStyle;
+}
+
+class HRElement extends Element {
+  HRElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _hrDefaultStyle;
 }
