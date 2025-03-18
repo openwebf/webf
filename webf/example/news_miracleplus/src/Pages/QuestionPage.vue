@@ -1,5 +1,5 @@
 <template>
-    <BaseQuestionPage :question-id="questionId" page-type="question" @answer="handleAnswer">
+    <BaseQuestionPage page-type="question" @answer="handleAnswer">
         <template #answer-input="{ handleAnswerSubmit }">
             <CommentInput ref="commentInput" @submit="handleAnswerSubmit" />
         </template>
@@ -16,11 +16,6 @@ export default {
         BaseQuestionPage,
         CommentInput,
     },
-    data() {
-        return {
-            questionId: '',
-        }
-    },
     methods: {
         handleAnswer() {
             this.$nextTick(() => {
@@ -35,13 +30,6 @@ export default {
                 });
             }
             );
-        },
-        async onScreen() {
-            console.log('onScreen 2', new Date().getTime());
-            this.questionId = window.webf.hybridHistory.state.id;
-        },
-        async offScreen() {
-            this.questionId = '';
         },
     }
 }
