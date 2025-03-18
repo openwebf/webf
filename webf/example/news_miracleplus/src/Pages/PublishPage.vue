@@ -18,12 +18,12 @@
       </div>
 
       <div class="form-item">
-        <flutter-cupertino-input
+        <flutter-cupertino-textarea
           placeholder="内容"
           class="content-input"
-          multiline
-          :maxLines="10"
-          @input="handleContentInput"
+          minLines="5"
+          autoSize="true"
+吃          @input="handleContentInput"
         />
       </div>
 
