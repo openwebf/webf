@@ -7,7 +7,7 @@
 
       <CommentsSection :comments="allAnswers" :total="question.answersCount" />
 
-      <slot />
+      <slot name="answer-input" :handle-answer-submit="handleAnswerSubmit" />
     </webf-listview>
 
     <alert-dialog ref="alertRef" />
@@ -65,6 +65,13 @@ export default {
     }
   },
 
+  provide() {
+    return {
+      update: this.updateAnswer,
+      addReply: this.addAnswerReply,
+    }
+  },
+
   methods: {
     async onScreen() {
       this.$refs.loading.show({ text: '加载中' });
@@ -111,6 +118,7 @@ export default {
       }
     },
 
+    // TODO: 回答完后，需要刷新回答
     async fetchAnswers() {
       const answers = this.question.answers;
       for (const answer of answers) {
@@ -217,6 +225,68 @@ export default {
       } finally {
         this.$refs.loading.hide();
       }
+    },
+    async handleAnswerSubmit(content) {
+      const paragraphs = content.split('\n').filter(p => p.trim());
+      const richContent = paragraphs.map(paragraph => ({
+        type: 'paragraph',
+        children: [{
+          type: 'text',
+          text: paragraph
+        }]
+      }));
+      const structuredContent = JSON.stringify(richContent);
+      const answerRes = await api.question.answer({
+        questionId: this.questionId,
+        content: structuredContent,
+      });
+      if (answerRes.success) {
+        this.$refs.toast.show({
+          type: 'success',
+          content: '回答成功',
+        });
+        await this.fetchQuestionDetail(this.questionId);
+        await this.fetchAnswers();
+      }
+    },
+    updateAnswer(answerId, updatedData) {
+      const updateAnswerInList = (answers) => {
+        for (let answer of answers) {
+          if (answer.id === answerId) {
+            Object.assign(answer, updatedData);
+            return true;
+          }
+          if (answer.subComments?.length) {
+            if (updateAnswerInList(answer.subComments)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+
+      updateAnswerInList(this.allAnswers);
+    },
+    addAnswerReply(parentId, replyData) {
+      const addReplyToAnswer = (answers) => {
+        for (let answer of answers) {
+          if (answer.id === parentId) {
+            if (!answer.subComments) {
+              answer.subComments = [];
+            }
+            answer.subComments.push(replyData);
+            return true;
+          }
+          if (answer.subComments?.length) {
+            if (addReplyToAnswer(answer.subComments)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+
+      addReplyToAnswer(this.allAnswers);
     },
 
   }

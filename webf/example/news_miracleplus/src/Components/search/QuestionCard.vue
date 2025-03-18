@@ -33,7 +33,6 @@
     methods: {
       viewQuestionDetail() {
         console.log('viewQuestionDetail', this.question);
-        // TODO: 实现问题详情页
         window.webf.hybridHistory.pushState({ id: this.question.id }, '/question');
       },
       handleFollowQuestion() {

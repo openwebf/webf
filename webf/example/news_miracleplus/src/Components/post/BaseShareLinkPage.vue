@@ -121,8 +121,8 @@ export default {
 
     provide() {
         return {
-            updateComment: this.updateComment,
-            addCommentReply: this.addCommentReply,
+            update: this.updateComment,
+            addReply: this.addCommentReply,
         }
     },
 
@@ -358,7 +358,6 @@ export default {
                         if (!comment.subComments) {
                             comment.subComments = [];
                         }
-                        console.log('yes find it', comment.subComments.length);
                         comment.subComments.push(replyData);
                         return true;
                     }

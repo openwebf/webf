@@ -4,8 +4,8 @@
         page-type="question" 
         @answer="handleAnswer"
     >
-        <template #default>
-            <CommentInput v-if="showCommentInput" @submit="handleCommentSubmit" />
+        <template #answer-input="{ handleAnswerSubmit }">
+            <CommentInput v-if="showCommentInput" @submit="handleAnswerSubmit" />
         </template>
     </BaseQuestionPage>
 </template>
@@ -28,11 +28,8 @@ export default {
     },
     methods: {
         handleAnswer() {
+            console.log('收到啦');
             this.showCommentInput = true;
-        },
-        handleCommentSubmit() {
-            // TODO: 处理评论提交
-            this.showCommentInput = false;
         },
         async onScreen() {
             console.log('onScreen 2', new Date().getTime());

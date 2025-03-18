@@ -324,6 +324,14 @@ export const api = {
         model_type: 'Question',
       }),
     }),
+    answer: ({ questionId, content }) => request(`/v1/answers`, {
+      method: 'POST',
+      body: JSON.stringify({
+        content_type: 'slatejs',
+        content,
+        question_id: questionId,
+      }),
+    }),
   },
   topic: {
     getDetail: (id) => request(`/v1/topics/${id}`, {

@@ -86,7 +86,7 @@
   import { api } from '@/api';
   export default {
     name: 'BaseCommentItem',
-    inject: ['updateComment', 'addCommentReply'],
+    inject: ['update', 'addReply'],
     props: {
       comment: {
         type: Object,
@@ -203,7 +203,7 @@
             
             if (res.success) {
               this.submitStatus = 'success';
-              this.updateComment(this.comment.id, {
+              this.update(this.comment.id, {
                 content: richContent,
                 richContent: richContent,
               });
@@ -241,7 +241,7 @@
             if (res.success) {
               this.submitStatus = 'success';
               const commentRes = await api.comments.getSingleComment(res['comment_id']);
-              this.addCommentReply(this.comment.id, commentRes.data.comment);
+              this.addReply(this.comment.id, commentRes.data.comment);
               
               setTimeout(() => {
                 this.showModal = false;
