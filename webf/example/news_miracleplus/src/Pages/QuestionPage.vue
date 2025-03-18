@@ -1,11 +1,7 @@
 <template>
-    <BaseQuestionPage
-        :question-id="questionId"
-        page-type="question" 
-        @answer="handleAnswer"
-    >
+    <BaseQuestionPage :question-id="questionId" page-type="question" @answer="handleAnswer">
         <template #answer-input="{ handleAnswerSubmit }">
-            <CommentInput v-if="showCommentInput" @submit="handleAnswerSubmit" />
+            <CommentInput ref="commentInput" @submit="handleAnswerSubmit" />
         </template>
     </BaseQuestionPage>
 </template>
@@ -23,13 +19,22 @@ export default {
     data() {
         return {
             questionId: '',
-            showCommentInput: false
         }
     },
     methods: {
         handleAnswer() {
-            console.log('收到啦');
-            this.showCommentInput = true;
+            this.$nextTick(() => {
+                const element = this.$refs.commentInput.$el;
+                const rect = element.getBoundingClientRect();
+                console.log('rect: ', rect);
+                const scrollTop = document.documentElement.scrollTop;
+                console.log('scrollTop: ', scrollTop);
+                window.scrollTo({
+                    top: scrollTop + rect.top - 100,
+                    behavior: 'smooth'
+                });
+            }
+            );
         },
         async onScreen() {
             console.log('onScreen 2', new Date().getTime());

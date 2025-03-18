@@ -81,16 +81,16 @@ export default {
         this.singleAnswerId = id;
         this.questionId = questionId;
         await this.fetchQuestionDetail(this.questionId);
+        this.$refs.loading.hide();
         const currentAnswer = await this.fetchAnswer(this.singleAnswerId);
         this.allAnswers = [currentAnswer];
       } else {
         const { id } = window.webf.hybridHistory.state;
         this.questionId = id;
         await this.fetchQuestionDetail(this.questionId);
+        this.$refs.loading.hide();
         await this.fetchAnswers();
       }
-
-      this.$refs.loading.hide();
       api.question.viewCount({
         id: this.questionId,
         modelType: this.pageType === 'answer' ? 'Answer' : 'Question'
