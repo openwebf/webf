@@ -30,6 +30,7 @@
 <script>
 import { api } from '@/api';
 import { useUserStore } from '@/stores/userStore';
+import tabBarManager from '@/utils/tabBarManager';
 export default {
     name: 'SettingPage',
     components: {},
@@ -52,7 +53,7 @@ export default {
             await api.auth.logout();
             const userStore = useUserStore();
             userStore.clearUserInfo();
-            window.webf.hybridHistory.pushState({}, '/login');
+            tabBarManager.switchTab('/my');
         }
     }
 }
