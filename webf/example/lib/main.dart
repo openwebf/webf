@@ -254,11 +254,15 @@ class _WebFDemoState extends State<WebFDemo> {
     // pre create webf content
     _webfContent = WebF(controller: widget.controller);
 
-    widget.controller.onLoad = (WebFController controller) {
-      setState(() {
-        _isLoading = false;
-      });
-    };
+    if (widget.controller.isComplete) {
+      _isLoading = false;
+    } else {
+      widget.controller.onLoad = (WebFController controller) {
+        setState(() {
+          _isLoading = false;
+        });
+      };
+    }
   }
 
   @override
