@@ -1,7 +1,7 @@
 <template>
     <div class="post-header">
       <div class="author-info">
-        <img :src="user?.avatar" class="avatar" />
+        <img :src="formattedAvatar" class="avatar" />
         <div class="author-details">
           <div class="name">{{ user?.name }}</div>
           <div class="time">2小时前</div>
@@ -11,6 +11,8 @@
   </template>
   
   <script>
+  import formatAvatar from '@/utils/formatAvatar';
+
   export default {
     name: 'PostHeader',
     props: {
@@ -22,6 +24,11 @@
     data() {
       return {
         showBtn: true
+      }
+    },
+    computed: {
+      formattedAvatar() {
+        return formatAvatar(this.user.avatar);
       }
     },
     methods: {
