@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
@@ -233,6 +234,9 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       if (child.renderStyle.position == CSSPositionType.absolute || child.renderStyle.position == CSSPositionType.fixed) {
         containingBlockElement.attachedRenderer!.positionedChildren.add(child);
+        if (!containingBlockElement.attachedRenderer!.needsLayout) {
+          CSSPositionedLayout.applyPositionedChildOffset(containingBlockElement.attachedRenderer!, child);
+        }
       } else {
         CSSPositionedLayout.applyPositionedChildOffset(this, child);
       }

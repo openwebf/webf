@@ -659,6 +659,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       if (child.renderStyle.position == CSSPositionType.absolute) {
         containingBlockElement.attachedRenderer!.positionedChildren.add(child);
+        if (!containingBlockElement.attachedRenderer!.needsLayout) {
+          CSSPositionedLayout.applyPositionedChildOffset(containingBlockElement.attachedRenderer!, child);
+        }
       } else {
         CSSPositionedLayout.applyPositionedChildOffset(this, child);
       }

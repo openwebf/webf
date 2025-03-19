@@ -44,6 +44,9 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
         if (containingBlockElement?.attachedRenderer != null) {
           if (renderStyle.position == CSSPositionType.absolute) {
             containingBlockElement!.attachedRenderer!.positionedChildren.add(child as RenderBoxModel);
+            if (!containingBlockElement.attachedRenderer!.needsLayout) {
+              CSSPositionedLayout.applyPositionedChildOffset(containingBlockElement.attachedRenderer!, child as RenderBoxModel);
+            }
           } else {
             CSSPositionedLayout.applyPositionedChildOffset(this, child as RenderBoxModel);
           }

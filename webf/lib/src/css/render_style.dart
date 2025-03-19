@@ -810,7 +810,7 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   bool isRepaintBoundary() {
-    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.isRepaintBoundary);
+    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.isRepaintBoundary) ?? false;
   }
 
   @pragma('vm:prefer-inline')

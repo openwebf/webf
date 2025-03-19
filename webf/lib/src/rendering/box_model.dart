@@ -159,6 +159,12 @@ mixin RenderBoxContainerDefaultsMixin<ChildType extends RenderBox,
         position: position!,
         hitTest: (BoxHitTestResult result, Offset transformed) {
           assert(transformed == position - childParentData.offset);
+
+          if (child is RenderBoxModel && child.renderStyle.position == CSSPositionType.fixed) {
+            Offset scrollOffset = child.getTotalScrollOffset();
+            transformed -= scrollOffset;
+          }
+
           return child.hitTest(result, position: transformed);
         },
       );
@@ -541,7 +547,7 @@ class RenderBoxModel extends RenderBox
   }
 
   // Cached positioned children for apply offsets when self had layout
-  List<RenderBoxModel> positionedChildren = [];
+  final Set<RenderBoxModel> positionedChildren = {};
 
   @override
   String toStringShort() {
@@ -575,7 +581,9 @@ class RenderBoxModel extends RenderBox
   // Cache additional offset of scrolling box in horizontal direction
   // to be used in paint of fixed children
   double? _additionalPaintOffsetX;
+
   double? get additionalPaintOffsetX => _additionalPaintOffsetX;
+
   set additionalPaintOffsetX(double? value) {
     if (value == null) return;
     if (_additionalPaintOffsetX != value) {
@@ -587,7 +595,9 @@ class RenderBoxModel extends RenderBox
   // Cache scroll offset of scrolling box in vertical direction
   // to be used in paint of fixed children
   double? _additionalPaintOffsetY;
+
   double? get additionalPaintOffsetY => _additionalPaintOffsetY;
+
   set additionalPaintOffsetY(double? value) {
     if (value == null) return;
     if (_additionalPaintOffsetY != value) {
@@ -1443,6 +1453,8 @@ class RenderBoxModel extends RenderBox
     properties.add(DiagnosticsProperty('backgroundColor', renderStyle.backgroundColor?.value));
     properties.add(DiagnosticsProperty('isSizeTight', isSizeTight));
     properties.add(DiagnosticsProperty('effectiveDisplay', renderStyle.effectiveDisplay));
+    properties.add(DiagnosticsProperty(
+        'additionalPaintOffset', Offset(additionalPaintOffsetX ?? 0.0, additionalPaintOffsetY ?? 0.0)));
     properties.add(DiagnosticsProperty('width', renderStyle.width.value));
     properties.add(DiagnosticsProperty('height', renderStyle.height.value));
 

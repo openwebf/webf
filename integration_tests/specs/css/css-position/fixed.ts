@@ -519,15 +519,18 @@ describe('Position fixed', () => {
     document.body.appendChild(div1);
     document.body.appendChild(div2);
 
-    window.scrollBy(500, 500);
-
     requestAnimationFrame(async () => {
+      window.scrollBy(500, 500);
+
       document.body.appendChild(fixed);
+
       await snapshot();
       requestAnimationFrame(async () => {
         window.scrollBy(-500, -500);
-        await snapshot();
-        done();
+        requestAnimationFrame(async () => {
+          await snapshot();
+          done();
+        })
       });
     });
   });
@@ -566,16 +569,21 @@ describe('Position fixed', () => {
     document.body.appendChild(div1);
     document.body.appendChild(div2);
 
-    window.scrollBy(500, 500);
+    // @ts-ignore
+    document.body.ononscreen = () => {
+      window.scrollBy(500, 500);
 
-    requestAnimationFrame(async () => {
-      document.body.appendChild(fixed);
-      await snapshot();
       requestAnimationFrame(async () => {
-        window.scrollBy(-500, -500);
+        document.body.appendChild(fixed);
         await snapshot();
-        done();
+        requestAnimationFrame(async () => {
+          window.scrollBy(-500, -500);
+          requestAnimationFrame(async () => {
+            await snapshot();
+            done();
+          })
+        });
       });
-    });
+    }
   });
 });

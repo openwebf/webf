@@ -29,13 +29,15 @@ Offset? _getRenderPositionHolderScrollOffset(RenderPositionPlaceholder holder, R
 }
 
 // Get the offset of the RenderPlaceholder of positioned element to its parent RenderBoxModel.
-Offset _getPlaceholderToParentOffset(RenderPositionPlaceholder? placeholder, RenderBoxModel parent) {
+Offset _getPlaceholderToParentOffset(RenderPositionPlaceholder? placeholder, RenderBoxModel parent,
+    {bool excludeScrollOffset = false}) {
   if (placeholder == null || !placeholder.attached) {
     return Offset.zero;
   }
   Offset positionHolderScrollOffset = _getRenderPositionHolderScrollOffset(placeholder, parent) ?? Offset.zero;
   // Offset of positioned element should exclude scroll offset to its containing block.
-  Offset toParentOffset = placeholder.getOffsetToAncestor(Offset.zero, parent, excludeScrollOffset: true);
+  Offset toParentOffset =
+      placeholder.getOffsetToAncestor(Offset.zero, parent, excludeScrollOffset: excludeScrollOffset);
   Offset placeholderOffset = positionHolderScrollOffset + toParentOffset;
 
   return placeholderOffset;
@@ -326,12 +328,21 @@ class CSSPositionedLayout {
     // The static position of positioned element is its offset when its position property had been static
     // which equals to the position of its placeholder renderBox.
     // https://www.w3.org/TR/CSS2/visudet.html#static-position
-    Offset staticPositionOffset = _getPlaceholderToParentOffset(child.renderStyle.getSelfPositionPlaceHolder(), parent);
+    Offset staticPositionOffset = _getPlaceholderToParentOffset(child.renderStyle.getSelfPositionPlaceHolder(), parent,
+        excludeScrollOffset: child.renderStyle.position != CSSPositionType.fixed);
 
     Offset ancestorOffset = child.renderStyle.target.parentElement == parent.renderStyle.target
         ? Offset.zero
         : child.renderStyle.target.parentElement!.attachedRenderer!.getOffsetToAncestor(Offset.zero, parent,
-            excludeScrollOffset: child.renderStyle.position == CSSPositionType.fixed);
+            excludeScrollOffset: child.renderStyle.position != CSSPositionType.fixed);
+
+    // ScrollTop and scrollLeft will be added to offset of renderBox in the paint stage
+    // for positioned fixed element.
+    if (childRenderStyle.position == CSSPositionType.fixed) {
+      Offset scrollOffset = child.getTotalScrollOffset();
+      child.additionalPaintOffsetX = scrollOffset.dx;
+      child.additionalPaintOffsetY = scrollOffset.dy;
+    }
 
     double x = _computePositionedOffset(
       Axis.horizontal,
