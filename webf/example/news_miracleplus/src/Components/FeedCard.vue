@@ -74,7 +74,24 @@
       truncatedContent() {
         // Truncate content to 100 characters and add ellipsis
         const content = this.item.item.content || '';
-        return content.length > 100 ? content.slice(0, 100) + '...' : content;
+        try {
+          const parsed = JSON.parse(content);
+          const result = parsed.map(block => {
+            if (block.type === 'paragraph') {
+                return block.children.map(child => child.text).join('');
+            }
+            return '';
+          }).join('\n');
+          return result.length > 100 ? result.slice(0, 100) + '...' : result;
+        } catch (e) {
+          if (this.isMarkdown(content)) {
+            const strippedContent = this.stripMarkdown(content);
+            return strippedContent.length > 100 
+              ? strippedContent.slice(0, 100) + '...' 
+              : strippedContent;
+          }
+          return content.length > 100 ? content.slice(0, 100) + '...' : content;
+        }
       },
       truncatedIntroduction() {
         const introduction = this.item.item.introduction || '';
@@ -102,6 +119,35 @@
         window.webf.hybridHistory.pushState({
             id: this.item.item.id
         }, '/share_link');
+      },
+      isMarkdown(text) {
+        // Common markdown patterns
+        const markdownPatterns = [
+          /^#\s/m,           // title
+          /\*\*(.*?)\*\*/,   // bold
+          /\*(.*?)\*/,       // italic
+          /\[(.*?)\]\((.*?)\)/, // link
+          /```[\s\S]*?```/,  // code
+          /^\s*[-*+]\s/m,    // unordered list
+          /^\s*\d+\.\s/m,    // ordered list
+          /^\s*>\s/m,        // quote
+        ];
+
+        return markdownPatterns.some(pattern => pattern.test(text));
+      },
+      stripMarkdown(text) {
+        return text
+          .replace(/^#+\s+/gm, '')           // title
+          .replace(/\*\*(.*?)\*\*/g, '$1')   // bold
+          .replace(/\*(.*?)\*/g, '$1')       // italic
+          .replace(/\[(.*?)\]\(.*?\)/g, '$1') // link
+          .replace(/```[\s\S]*?```/g, '')    // code
+          .replace(/^\s*[-*+]\s/gm, '')      // unordered list
+          .replace(/^\s*\d+\.\s/gm, '')      // ordered list
+          .replace(/^\s*>\s/gm, '')          // quote
+          .replace(/`(.*?)`/g, '$1')         // code
+          .replace(/\n{2,}/g, '\n')          // multiple newlines to single newline
+          .trim();
       }
     }
   }

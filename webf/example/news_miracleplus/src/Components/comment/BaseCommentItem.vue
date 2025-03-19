@@ -11,7 +11,7 @@
       </div>
       
       <div class="comment-content">
-        <div class="comment-text">{{ parseContent(comment.content || comment.richContent) }}</div>
+        <div class="comment-text">{{ formattedContent }}</div>
       </div>
   
       <div class="comment-actions">
@@ -83,6 +83,7 @@
   <script>
   import { useUserStore } from '@/stores/userStore'
   import formatAvatar from '@/utils/formatAvatar';
+  import { parseRichContent, formatToRichContent } from '@/utils/parseRichContent';
   import { api } from '@/api';
   export default {
     name: 'BaseCommentItem',
@@ -123,23 +124,12 @@
       },
       showEditBtn() {
         return this.comment.user.id === this.userStore?.userInfo.id;
+      },
+      formattedContent() {
+        return parseRichContent(this.comment.content || this.comment.richContent);
       }
     },
     methods: {
-      parseContent(content) {
-          try {
-              const parsed = JSON.parse(content);
-              // TODO: simple parse for text content
-              return parsed.map(block => {
-                  if (block.type === 'paragraph') {
-                      return block.children.map(child => child.text).join('');
-                  }
-                  return '';
-              }).join('\n');
-          } catch (e) {
-              return content;
-          }
-      },
       async handleLike() {
         let res;
         if (this.isLiked) {
@@ -163,7 +153,7 @@
       },
       handleEdit() {
         this.isEditing = true;
-        this.editContent = this.parseContent(this.comment.content || this.comment.richContent);
+        this.editContent = parseRichContent(this.comment.content || this.comment.richContent);
         this.showModal = true;
       },
       handleInput(e) {
@@ -176,21 +166,8 @@
         this.showModal = false;
         this.submitStatus = 'idle';
       },
-      formatToRichContent(text) {
-        const paragraphs = text.split('\n').filter(p => p.trim());
-
-        const richContent = paragraphs.map(paragraph => ({
-          type: 'paragraph',
-          children: [{
-            type: 'text',
-            text: paragraph
-          }]
-        }));
-
-        return JSON.stringify(richContent);
-      },
       async confirmAction() {
-        const richContent = this.formatToRichContent(this.editContent);
+        const richContent = formatToRichContent(this.editContent);
         
         if (this.isEditing) {
           try {

@@ -12,6 +12,7 @@
   
   <script>
   import markdownit from 'markdown-it'
+  import { parseRichContent, checkIsRichContent } from '@/utils/parseRichContent';
   export default {
     name: 'PostContent',
     props: {
@@ -22,38 +23,15 @@
     },
     computed: {
       formattedContent() {
-        return this.formatContent(this.post.content);
+        return parseRichContent(this.post.content);
       },
       isRichContent() {
-        let result = false;
-        try {
-          JSON.parse(this.post.content);
-          result = true;
-        } catch (e) {
-          result = false;
-        }
-        return result;
+        return checkIsRichContent(this.post.content);
       },
       renderedMarkdown() {
         const md = markdownit()
         const result = md.render(this.post.content || '');
         return result;
-      }
-    },
-    methods: {
-      formatContent(content) {
-        console.log('content', content);
-        try {
-          const parsedContent = JSON.parse(content);
-          return parsedContent.map(block => {
-            if (block.type === 'paragraph') {
-              return `<p>${block.children.map(child => child.text).join('')}</p>`;
-            }
-            return '';
-          }).join('');
-        } catch (e) {
-          return content;
-        }
       }
     }
   }

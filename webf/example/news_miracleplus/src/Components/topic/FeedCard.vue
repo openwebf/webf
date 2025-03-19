@@ -33,6 +33,7 @@
 
 <script>
 import CardBottomInfo from '@/Components/CardBottomInfo.vue';
+import { parseRichContent } from '@/utils/parseRichContent';
 export default {
   name: 'FeedCard',
   components: {
@@ -73,18 +74,8 @@ export default {
           return this.item.item.user?.avatar || '';
       },
       parsedContent() {
-          try {
-              const content = JSON.parse(this.item.item.content);
-              const text = content.map(block => {
-                  if (block.type === 'paragraph') {
-                      return block.children.map(child => child.text).join('');
-                  }
-                  return '';
-              }).join('\n');
-              return text.length > 100 ? text.substring(0, 100) + '...' : text;
-          } catch (e) {
-              return this.item.item.content || '';
-          }
+          const content = parseRichContent(this.item.item.content);
+          return content.length > 100 ? content.substring(0, 100) + '...' : content;
       }
   },
   methods: {

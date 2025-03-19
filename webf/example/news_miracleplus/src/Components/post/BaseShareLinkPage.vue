@@ -40,6 +40,7 @@
 
 <script>
 import { api } from '@/api';
+import { formatToRichContent } from '@/utils/parseRichContent';
 import PostHeader from './PostHeader.vue';
 import PostContent from './PostContent.vue';
 import LinkPreview from './LinkPreview.vue';
@@ -373,20 +374,12 @@ export default {
             addReplyToComment(this.allComments);
         },
         async handleCommentSubmit(content) {
-            const paragraphs = content.split('\n').filter(p => p.trim());
-            const richContent = paragraphs.map(paragraph => ({
-                type: 'paragraph',
-                children: [{
-                    type: 'text',
-                    text: paragraph
-                }]
-            }));
-            const structuredContent = JSON.stringify(richContent);
+            const richContent = formatToRichContent(content);
             
             const commentRes = await api.comments.create({
                 resourceId: this.shareLinkId,
                 resourceType: 'ShareLink',
-                content: structuredContent,
+                content: richContent,
             });
 
             if (commentRes.success) {

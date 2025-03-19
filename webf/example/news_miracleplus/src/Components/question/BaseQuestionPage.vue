@@ -20,6 +20,7 @@
 
 <script>
 import { api } from '@/api';
+import { formatToRichContent } from '@/utils/parseRichContent';
 import QuestionHeader from './QuestionHeader.vue';
 import CommentsSection from '../comment/CommentsSection.vue';
 import InviteModal from '../post/InviteModal.vue';
@@ -227,18 +228,10 @@ export default {
       }
     },
     async handleAnswerSubmit(content) {
-      const paragraphs = content.split('\n').filter(p => p.trim());
-      const richContent = paragraphs.map(paragraph => ({
-        type: 'paragraph',
-        children: [{
-          type: 'text',
-          text: paragraph
-        }]
-      }));
-      const structuredContent = JSON.stringify(richContent);
+      const richContent = formatToRichContent(content);
       const answerRes = await api.question.answer({
         questionId: this.questionId,
-        content: structuredContent,
+        content: richContent,
       });
       if (answerRes.success) {
         this.$refs.toast.show({

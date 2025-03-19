@@ -14,7 +14,7 @@
 
 <script>
 import ShareLinkCount from '../ShareLinkCount.vue';
-
+import { parseRichContent } from '@/utils/parseRichContent';
 export default {
   name: 'AnswerCard',
   components: {
@@ -28,22 +28,11 @@ export default {
   },
   computed: {
     parsedContent() {
-      try {
-        const content = JSON.parse(this.data.content);
-        const text = content
-          .filter(block => block.type === 'paragraph')
-          .map(block => block.children.map(child => child.text).join(''))
-          .join('\n')
-          .trim();
-        
-        return text.length > 100 ? text.substring(0, 100) + '...' : text;
-      } catch (e) {
-        return '';
-      }
-    },
+      const content = parseRichContent(this.data.content);
+      return content.length > 100 ? content.substring(0, 100) + '...' : content;
+    }
   },
   methods: {
-    // TODO: 
     viewDetail() {
       window.webf.hybridHistory.pushState({
         id: this.data.id
