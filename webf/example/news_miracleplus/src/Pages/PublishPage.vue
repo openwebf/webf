@@ -23,7 +23,7 @@
           class="content-input"
           minLines="5"
           autoSize="true"
-吃          @input="handleContentInput"
+          @input="handleContentInput"
         />
       </div>
 
