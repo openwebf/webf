@@ -159,14 +159,6 @@ mixin RenderBoxContainerDefaultsMixin<ChildType extends RenderBox,
         position: position!,
         hitTest: (BoxHitTestResult result, Offset transformed) {
           assert(transformed == position - childParentData.offset);
-          if (child is RenderBoxModel) {
-            CSSPositionType positionType = child.renderStyle.position;
-            if (positionType == CSSPositionType.fixed) {
-              Offset totalScrollOffset = (this as RenderBoxModel).getTotalScrollOffset();
-              transformed -= totalScrollOffset;
-            }
-          }
-
           return child.hitTest(result, position: transformed);
         },
       );
@@ -578,6 +570,30 @@ class RenderBoxModel extends RenderBox
 
   BoxSizeType get heightSizeType {
     return renderStyle.height.isAuto ? BoxSizeType.automatic : BoxSizeType.specified;
+  }
+
+  // Cache additional offset of scrolling box in horizontal direction
+  // to be used in paint of fixed children
+  double? _additionalPaintOffsetX;
+  double? get additionalPaintOffsetX => _additionalPaintOffsetX;
+  set additionalPaintOffsetX(double? value) {
+    if (value == null) return;
+    if (_additionalPaintOffsetX != value) {
+      _additionalPaintOffsetX = value;
+      markNeedsPaint();
+    }
+  }
+
+  // Cache scroll offset of scrolling box in vertical direction
+  // to be used in paint of fixed children
+  double? _additionalPaintOffsetY;
+  double? get additionalPaintOffsetY => _additionalPaintOffsetY;
+  set additionalPaintOffsetY(double? value) {
+    if (value == null) return;
+    if (_additionalPaintOffsetY != value) {
+      _additionalPaintOffsetY = value;
+      markNeedsPaint();
+    }
   }
 
   // Position of sticky element changes between relative and fixed of scroll container
@@ -1182,6 +1198,10 @@ class RenderBoxModel extends RenderBox
     if (alpha == 0) {
       paintIntersectionObserver(context, offset, paintNothing);
     } else {
+      // Paint fixed element to fixed position by compensating scroll offset
+      double offsetY = additionalPaintOffsetY != null ? offset.dy + additionalPaintOffsetY! : offset.dy;
+      double offsetX = additionalPaintOffsetX != null ? offset.dx + additionalPaintOffsetX! : offset.dx;
+      offset = Offset(offsetX, offsetY);
       paintColorFilter(context, offset, _chainPaintImageFilter);
     }
   }

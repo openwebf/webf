@@ -217,7 +217,7 @@ describe('DOM Element API', () => {
     }
   });
 
-  it('should works with globalToLocal transform with position fixed layout', async () => {
+  it('should works with globalToLocal transform with position fixed layout', async (done) => {
     const style = document.createElement('style');
     style.innerHTML = `.container {
         margin: 64px 0 32px;
@@ -248,17 +248,21 @@ describe('DOM Element API', () => {
 
     BODY.append(container);
 
-    const clickBox = document.querySelector('#box');
-    const rect = clickBox?.getBoundingClientRect();
-
     // @ts-ignore
-    const offset1 = clickBox?.___testGlobalToLocal__(rect.x, rect.y + 10);
-
-    window.scrollTo(0, 200);
-
-    // @ts-ignore
-    const offset2 = clickBox?.___testGlobalToLocal__(rect?.x, rect.y + 10);
-    expect(JSON.stringify(offset1)).toEqual(JSON.stringify(offset2));
+    container.ononscreen = () => {
+      const clickBox = document.querySelector('#box');
+      const rect = clickBox?.getBoundingClientRect();
+  
+      // @ts-ignore
+      const offset1 = clickBox?.___testGlobalToLocal__(rect.x, rect.y + 10);
+  
+      window.scrollTo(0, 200);
+  
+      // @ts-ignore
+      const offset2 = clickBox?.___testGlobalToLocal__(rect?.x, rect.y + 10);
+      expect(JSON.stringify(offset1)).toEqual(JSON.stringify(offset2));
+      done();
+    }
   });
 
   it('should works when getting multiple zero rects', () => {
