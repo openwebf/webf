@@ -277,8 +277,8 @@ using PublicContextCreateUIEventWithOptions =
 // Only C type member can be included in this class, any C++ type and classes can is not allowed to use here.
 struct ExecutingContextWebFMethods {
   static WebFValue<Document, DocumentPublicMethods> document(ExecutingContext* context);
-static WebFValue<Window, WindowPublicMethods> window(ExecutingContext* context);
-static WebFValue<Performance, PerformancePublicMethods> performance(ExecutingContext* context);
+  static WebFValue<Window, WindowPublicMethods> window(ExecutingContext* context);
+  static WebFValue<Performance, PerformancePublicMethods> performance(ExecutingContext* context);
   static WebFValue<SharedExceptionState, ExceptionStatePublicMethods> CreateExceptionState();
   static void FinishRecordingUIOperations(ExecutingContext* context);
   static void WebFSyncBuffer(ExecutingContext* context);
