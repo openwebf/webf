@@ -10,6 +10,12 @@
             </div>
         </div>
 
+        <!-- question link -->
+        <a v-if="question.link" :href="question.link" class="question-link" target="_blank">
+            <flutter-cupertino-icon type="link" class="link-icon" />
+            <span class="link-text">{{ formatUrl(question.link) }}</span>
+        </a>
+
         <!-- question content -->
         <div v-if="question.content" class="content">{{ question.content }}</div>
 
@@ -90,6 +96,14 @@ export default {
             window.webf.hybridHistory.pushState({
                 id: topicId,
             }, '/topic');
+        },
+        formatUrl(url) {
+            try {
+                const urlObj = new URL(url);
+                return urlObj.hostname;
+            } catch (e) {
+                return url;
+            }
         }
     }
 }
@@ -112,14 +126,14 @@ export default {
         flex-direction: row;
         flex-wrap: wrap;
         margin: 8px 0 12px 0;
-        
+
         .topic-tag {
             background-color: #F5F5F5;
             border-radius: 12px;
             padding: 4px 12px;
             margin-right: 8px;
             margin-bottom: 8px;
-            
+
             .topic-div {
                 font-size: 12px;
                 color: #666666;
@@ -131,6 +145,33 @@ export default {
         font-size: 15px;
         color: #666666;
         margin-bottom: 16px;
+    }
+
+    .question-link {
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 6px 12px;
+        background-color: #F5F5F5;
+        border-radius: 4px;
+        text-decoration: none;
+        color: var(--link-color);
+        font-size: 14px;
+
+        .link-icon {
+            margin-right: 6px;
+            font-size: 16px;
+        }
+
+        .link-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        &:active {
+            background-color: #ebebeb;
+        }
     }
 
     .user-info {

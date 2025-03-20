@@ -1,11 +1,7 @@
 <template>
   <div class="question-header">
-    <QuestionSection 
-      :question="question"
-      @answer="$emit('answer')"
-      @follow="$emit('follow', $event)"
-      @invite="$emit('invite')"
-    />
+    <QuestionSection :question="question" @answer="$emit('answer')" @follow="$emit('follow', $event)"
+      @invite="$emit('invite')" />
   </div>
 </template>
 
@@ -25,4 +21,4 @@ export default {
   },
   emits: ['answer', 'follow', 'invite']
 }
-</script> 
+</script>
