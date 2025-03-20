@@ -53,9 +53,6 @@ final Map<String, ModuleCreator> _creatorMap = {};
 
 void _defineModule(ModuleCreator moduleCreator) {
   BaseModule fakeModule = moduleCreator(null);
-  if (_creatorMap.containsKey(fakeModule.name)) {
-    return;
-  }
   _creatorMap[fakeModule.name] = moduleCreator;
 }
 

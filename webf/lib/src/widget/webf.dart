@@ -42,6 +42,10 @@ class WebF extends StatefulWidget {
     defineWidgetElement(tagName.toUpperCase(), creator);
   }
 
+  static void defineModule(ModuleCreator creator) {
+    ModuleManager.defineModule(creator);
+  }
+
   WebF({Key? key, required this.controller}) : super(key: key);
 
   @override
