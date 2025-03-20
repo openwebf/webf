@@ -44,11 +44,11 @@ describe('Position absolute', () => {
     });
     append(parent, child);
     append(BODY, parent);
-    await snapshot(parent);
+    await snapshot();
 
     requestAnimationFrame(async () => {
       child.style.left = '150px';
-      await snapshot(parent);
+      await snapshot();
       done();
     });
   });
