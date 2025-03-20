@@ -334,7 +334,7 @@ class CSSPositionedLayout {
     Offset ancestorOffset = child.renderStyle.target.parentElement == parent.renderStyle.target
         ? Offset.zero
         : child.renderStyle.target.parentElement!.attachedRenderer!.getOffsetToAncestor(Offset.zero, parent,
-            excludeScrollOffset: child.renderStyle.position != CSSPositionType.fixed);
+            excludeScrollOffset: child.renderStyle.position != CSSPositionType.fixed, excludeAncestorBorderTop: false);
 
     // ScrollTop and scrollLeft will be added to offset of renderBox in the paint stage
     // for positioned fixed element.

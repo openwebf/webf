@@ -1289,10 +1289,13 @@ class RenderBoxModel extends RenderBox
 
   // Get the layout offset of renderObject to its ancestor which does not include the paint offset
   // such as scroll or transform.getLayoutTransformTo
-  Offset getOffsetToAncestor(Offset point, RenderBoxModel ancestor, {bool excludeScrollOffset = false}) {
-    double ancestorBorderTop = ancestor.renderStyle.borderTopWidth?.computedValue ?? 0;
-    double ancestorBorderLeft = ancestor.renderStyle.borderLeftWidth?.computedValue ?? 0;
-    Offset ancestorBorderWidth = Offset(ancestorBorderLeft, ancestorBorderTop);
+  Offset getOffsetToAncestor(Offset point, RenderBoxModel ancestor, {bool excludeScrollOffset = false, bool excludeAncestorBorderTop = true}) {
+    Offset ancestorBorderWidth = Offset.zero;
+    if (excludeAncestorBorderTop) {
+      double ancestorBorderTop = ancestor.renderStyle.borderTopWidth?.computedValue ?? 0;
+      double ancestorBorderLeft = ancestor.renderStyle.borderLeftWidth?.computedValue ?? 0;
+      ancestorBorderWidth = Offset(ancestorBorderLeft, ancestorBorderTop);
+    }
 
     return getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset) + point - ancestorBorderWidth;
   }
