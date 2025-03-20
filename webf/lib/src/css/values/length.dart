@@ -190,15 +190,12 @@ class CSSLengthValue {
       case CSSLengthType.PERCENTAGE:
         CSSPositionType positionType = renderStyle!.position;
         bool isPositioned = positionType == CSSPositionType.absolute || positionType == CSSPositionType.fixed;
-        bool isPositionFixed = positionType == CSSPositionType.fixed;
         RenderStyle? currentRenderStyle = renderStyle;
-        RenderStyle? parentRenderStyle = currentRenderStyle?.getParentRenderStyle();
 
-        if (isPositionFixed) {
-          parentRenderStyle = renderStyle!.target.ownerDocument.documentElement!.renderStyle;
-        }
+        RenderStyle? parentRenderStyle = isPositioned
+            ? currentRenderStyle?.target.getContainingBlockElement()?.renderStyle
+            : currentRenderStyle?.getParentRenderStyle();
 
-        // RenderBoxModel? renderBoxModel = renderStyle!.renderBoxModel;
         // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
         // cause the element of renderStyle parent may not equal to containing block.
         // RenderObject? containerRenderBox = renderBoxModel?.parent;
@@ -369,7 +366,8 @@ class CSSLengthValue {
             double? borderBoxWidth = renderStyle!.borderBoxWidth ?? renderStyle!.borderBoxLogicalWidth;
             if (isPercentage && borderBoxWidth != null) {
               final destinationWidth = renderStyle?.getRenderBoxValueByType(RenderObjectGetType.self,
-                  (renderBox, _) => renderBox.boxPainter?.backgroundImageSize?.width.toDouble()) ?? 0;
+                      (renderBox, _) => renderBox.boxPainter?.backgroundImageSize?.width.toDouble()) ??
+                  0;
               _computedValue = (borderBoxWidth - destinationWidth) * value!;
             } else {
               _computedValue = value!;
@@ -379,7 +377,8 @@ class CSSLengthValue {
             double? borderBoxHeight = renderStyle!.borderBoxHeight ?? renderStyle!.borderBoxLogicalHeight;
             if (isPercentage && borderBoxHeight != null) {
               final destinationHeight = renderStyle?.getRenderBoxValueByType(RenderObjectGetType.self,
-                      (renderBox, _) => renderBox.boxPainter?.backgroundImageSize?.height.toDouble()) ?? 0;
+                      (renderBox, _) => renderBox.boxPainter?.backgroundImageSize?.height.toDouble()) ??
+                  0;
               _computedValue = (borderBoxHeight - destinationHeight) * value!;
             } else {
               _computedValue = value!;

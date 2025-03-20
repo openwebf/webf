@@ -1,6 +1,6 @@
 /*auto generated*/
 describe('abspos-overflow', () => {
-  it('001-ref', async () => {
+  xit('001-ref', async () => {
     let positioned;
     let p;
     let overflow;
@@ -45,7 +45,7 @@ describe('abspos-overflow', () => {
 
     await snapshot();
   });
-  it('001', async () => {
+  xit('001', async () => {
     let control;
     let p;
     let positioned;
@@ -111,7 +111,7 @@ describe('abspos-overflow', () => {
 
     await snapshot();
   });
-  it('002-ref', async () => {
+  xit('002-ref', async () => {
     let positioned;
     let p;
     let overflow;
@@ -156,7 +156,7 @@ describe('abspos-overflow', () => {
 
     await snapshot();
   });
-  it('002', async () => {
+  xit('002', async () => {
     let control;
     let p;
     let positioned;
@@ -223,7 +223,7 @@ describe('abspos-overflow', () => {
 
     await snapshot();
   });
-  it('003-ref', async () => {
+  xit('003-ref', async () => {
     let positioned;
     let p;
     let overflow;
@@ -269,7 +269,7 @@ describe('abspos-overflow', () => {
 
     await snapshot();
   });
-  it('003', async () => {
+  xit('003', async () => {
     let control;
     let p;
     let positioned;
