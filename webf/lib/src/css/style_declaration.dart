@@ -61,6 +61,11 @@ class CSSPropertyValue {
   String value;
 
   CSSPropertyValue(this.value, {this.baseHref});
+
+  @override
+  String toString() {
+    return value;
+  }
 }
 
 // CSS Object Model: https://drafts.csswg.org/cssom/#the-cssstyledeclaration-interface
