@@ -38,7 +38,10 @@ class InspectorServerConnect {
 
 class InspectorClientConnected {}
 
-class InspectorServerStart {}
+class InspectorServerStart {
+  int port;
+  InspectorServerStart(this.port);
+}
 
 class InspectorFrontEndMessage {
   InspectorFrontEndMessage(this.id, this.module, this.method, this.params);

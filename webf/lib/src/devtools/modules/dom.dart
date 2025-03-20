@@ -45,7 +45,7 @@ class InspectDOMModule extends UIInspectorModule {
     int x = params['x'];
     int y = params['y'];
 
-    RenderBox rootRenderObject = document.domRenderer!;
+    RenderBox rootRenderObject = document.viewport!;
     BoxHitTestResult result = BoxHitTestResult();
     rootRenderObject.hitTest(result, position: Offset(x.toDouble(), y.toDouble()));
     var hitPath = result.path;
@@ -60,15 +60,19 @@ class InspectDOMModule extends UIInspectorModule {
       hitPath = hitPath.skip(1);
     }
     if (hitPath.isNotEmpty && hitPath.first.target is RenderBoxModel) {
-      RenderBoxModel lastHitRenderBoxModel = result.path.first.target as RenderBoxModel;
-      int? targetId = view.forDevtoolsNodeId(lastHitRenderBoxModel.renderStyle.target);
-      sendToFrontend(
-          id,
-          JSONEncodableMap({
-            'backendId': targetId,
-            'frameId': DEFAULT_FRAME_ID,
-            'nodeId': targetId,
-          }));
+      RenderObject lastHitRenderBoxModel = result.path.first.target as RenderObject;
+      if (lastHitRenderBoxModel is RenderBoxModel) {
+        int? targetId = view.forDevtoolsNodeId(lastHitRenderBoxModel.renderStyle.target);
+        sendToFrontend(
+            id,
+            JSONEncodableMap({
+              'backendId': targetId,
+              'frameId': DEFAULT_FRAME_ID,
+              'nodeId': targetId,
+            }));
+      } else {
+        sendToFrontend(id, null);
+      }
     } else {
       sendToFrontend(id, null);
     }

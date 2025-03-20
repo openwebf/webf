@@ -320,6 +320,8 @@ class WebFController {
         devToolsService!.init(this);
       }
 
+      flushUICommand(view, nullptr);
+
       controlledInitCompleter.complete();
     }).then((_) {
       if (externalController && _entrypoint != null) {
@@ -393,6 +395,8 @@ class WebFController {
 
       _module = WebFModuleController(this, _view.contextId);
 
+      flushUICommand(view, nullptr);
+
       // Reconnect the new contextId to the Controller
       _controllerMap.remove(oldId);
       _controllerMap[_view.contextId] = this;
@@ -436,27 +440,18 @@ class WebFController {
       devToolsService!.willReload();
     }
 
-    print('controller inited');
-
     _isComplete = false;
     _evaluated = false;
 
     RenderViewportBox? rootRenderObject = view.viewport;
-    print('root renderObject: $rootRenderObject');
     if (rootRenderObject == null) return;
 
-    print('before unload');
     await unload();
 
-    print('after unload');
 
     view.viewport = rootRenderObject;
 
-    // Initialize document, window and the documentElement.
-    flushUICommand(view, nullptr);
-
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
-      print('before init');
       // Sync viewport size to the documentElement.
       view.document.initializeRootElementSize();
       // Starting to flush ui commands every frames.
@@ -471,8 +466,6 @@ class WebFController {
       if (devToolsService != null) {
         devToolsService!.didReload();
       }
-
-      controlledInitCompleter.complete();
     });
 
     return controlledInitCompleter.future;

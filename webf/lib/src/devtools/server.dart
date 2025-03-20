@@ -14,7 +14,7 @@ import 'package:ffi/ffi.dart';
 
 const String CONTENT_TYPE = 'Content-Type';
 const String CONTENT_LENGTH = 'Content-Length';
-const String FAVICON = 'https://gw.alicdn.com/tfs/TB1tTwGAAL0gK0jSZFxXXXWHVXa-144-144.png';
+const String FAVICON = 'https://openwebf.com/img/openwebf.png';
 
 typedef MessageCallback = void Function(Map<String, dynamic>?);
 
@@ -54,7 +54,7 @@ void serverIsolateEntryPoint(SendPort isolateToMainStream) {
     if (data is InspectorServerInit) {
       IsolateInspectorServer server = IsolateInspectorServer(data.port, data.address, data.bundleURL);
       server.onStarted = () {
-        isolateToMainStream.send(InspectorServerStart());
+        isolateToMainStream.send(InspectorServerStart(server.port));
       };
       server.onFrontendMessage = handleFrontEndMessage;
       server.start();

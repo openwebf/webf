@@ -187,6 +187,9 @@ class InspectPageModule extends UIInspectorModule {
   @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) async {
     switch (method) {
+      case 'getResourceTree':
+        handleGetFrameResourceTree(id, params!);
+        break;
       case 'startScreencast':
         sendToFrontend(id, null);
         _devToolsMaxWidth = params?['maxWidth'] ?? 0;
@@ -229,6 +232,9 @@ class InspectPageModule extends UIInspectorModule {
   int _devToolsMaxHeight = 0;
 
   void _frameScreenCast(Duration timeStamp) {
+    if (!devtoolsService.controller!.isComplete) {
+      return;
+    }
     Element root = document.documentElement!;
     // the devtools of some pc do not automatically scale. so modify devicePixelRatio for it
     double? devicePixelRatio;
@@ -278,6 +284,14 @@ class InspectPageModule extends UIInspectorModule {
     if (ackSessionID == _lastSentSessionID && _isFramingScreenCast) {
       SchedulerBinding.instance.addPostFrameCallback(_frameScreenCast);
     }
+  }
+
+  void handleGetFrameResourceTree(int? id, Map<String, dynamic> params) {
+    Frame frame = Frame('Frame Name', 'frame-id', '', '', '', '', '', '', []);
+    FrameResourceTree frameResourceTree = FrameResourceTree(frame, []);
+    sendToFrontend(id, JSONEncodableMap({
+      'frameTree': frameResourceTree
+    }));
   }
 }
 

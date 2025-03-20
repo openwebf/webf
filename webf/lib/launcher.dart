@@ -4,3 +4,5 @@
  */
 
 export 'src/launcher/controller.dart';
+export 'src/launcher/view_controller.dart';
+export 'src/launcher/module_controller.dart';

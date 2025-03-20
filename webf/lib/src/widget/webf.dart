@@ -134,7 +134,9 @@ class WebFState extends State<WebF> with RouteAware {
 
     List<Widget> children = [];
 
-    if (_isWebFInitReady && widget.controller.view.document.documentElement != null) {
+    if (_isWebFInitReady &&
+        widget.controller.controlledInitCompleter.isCompleted &&
+        widget.controller.view.document.documentElement != null) {
       children = [widget.controller.view.document.documentElement!.toWidget()];
     }
 
