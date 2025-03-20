@@ -5,6 +5,7 @@ namespace webf {
 
 <% _.forEach(object.props, function(prop, index) { %>
 <%= generatePublicReturnTypeValue(prop.type, true) %> <%= className %>PublicMethods::<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type)? ", SharedExceptionState* shared_exception_state": "" %>) {
+  MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
   <% if (isPointerType(prop.type)) { %>
   auto* result = <%= _.snakeCase(className) %>-><%= prop.name %>();
   WebFValueStatus* status_block = result->KeepAlive();
@@ -22,6 +23,7 @@ namespace webf {
 }
   <% if (!prop.readonly) { %>
 void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParameterType(prop.type, true) %> <%= prop.name %>, SharedExceptionState* shared_exception_state) {
+  MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
   <% if (isStringType(prop.type)) { %>
   webf::AtomicString <%= prop.name %>Atomic = webf::AtomicString(<%= _.snakeCase(className) %>->ctx(), <%= prop.name %>);
   <% } %>
@@ -32,12 +34,30 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
 
 <% _.forEach(object.methods, function(method, index) { %>
 <%= generatePublicReturnTypeValue(method.returnType, true) %> <%= className %>PublicMethods::<%= _.startCase(method.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParametersTypeWithName(method.args, true) %>SharedExceptionState* shared_exception_state) {
+  MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
   <% _.forEach(method.args, function(arg, index) { %>
     <% if (isStringType(arg.type)) { %>
   webf::AtomicString <%= _.snakeCase(arg.name) %>_atomic = webf::AtomicString(<%= _.snakeCase(className) %>->ctx(), <%= _.snakeCase(arg.name) %>);
     <% } %>
     <% if (isAnyType(arg.type)) { %>
   ScriptValue <%=_.snakeCase(arg.name)%>_script_value = ScriptValue(<%= _.snakeCase(className) %>->ctx(), <%=_.snakeCase(arg.name)%>);
+    <% } %>
+    <% if (isPointerType(arg.type)) { %>
+  std::shared_ptr<<%= arg.type.value %>> <%= arg.name %>_p = <%= arg.type.value %>::Create();
+    <% _.forEach([...dependentClasses[getPointerType(arg.type)].props, ...dependentClasses[getPointerType(arg.type)].inheritedProps], function (prop) { %>
+      <% if(isStringType(prop.type)) { %>
+  ScriptValue <%=_.snakeCase(prop.name)%>_script_value = ScriptValue(<%= _.snakeCase(className) %>->ctx(), <%=_.snakeCase(arg.name)%>);
+  <%= arg.name %>_p->set<%=_.upperFirst(prop.name)%>(<%=_.snakeCase(prop.name)%>_atomic);
+      <% } else if (isAnyType(prop.type)) { %>
+  NativeValue <%=_.snakeCase(prop.name)%> = <%= arg.name %>-><%=_.snakeCase(prop.name)%>;
+  ScriptValue <%=_.snakeCase(prop.name)%>_script_value = ScriptValue(<%= _.snakeCase(className) %>->ctx(), <%=_.snakeCase(prop.name)%>);
+  <%= arg.name %>_p->set<%=_.upperFirst(prop.name)%>(<%=_.snakeCase(prop.name)%>_script_value);
+      <% } else { %>
+  <%= arg.name %>_p->set<%=_.upperFirst(prop.name)%>(<%= arg.name %>-><%=_.snakeCase(prop.name)%>);
+     <% } %>
+  
+    <% }) %>
+
     <% } %>
   <% }); %>
     <% if (isStringType(method.returnType)) { %>
@@ -49,6 +69,19 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   auto return_value = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
   auto return_native_value = return_value.ToNative(<%= _.snakeCase(className) %>->ctx(), shared_exception_state->exception_state, false);
   return return_native_value;
+    <% } else if (isVectorType(method.returnType)) { %>
+  auto vector_value = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
+  auto vector_size = vector_value.size();
+  WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>* return_elements = (WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>*)malloc(sizeof(WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>) * vector_size);
+  for (int i = 0; i < vector_size; i++) {
+    <%= getPointerType(method.returnType.value) %>* entry = vector_value[i];
+    WebFValueStatus* status_block = entry->KeepAlive();
+    return_elements[i].value = entry;
+    return_elements[i].method_pointer = entry-><%= _.lowerFirst(getPointerType(method.returnType.value)) %>PublicMethods();
+    return_elements[i].status = status_block;
+  }
+  auto result = VectorValueRef(return_elements, vector_size);
+  return result;
     <% } else { %>
   return <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
     <% } %>
@@ -85,7 +118,7 @@ WebFValue<<%= className %>, WebFPublicMethods> <%= className %>PublicMethods::Dy
 <% if (object.construct && !isVoidType(object.construct.returnType)) { %>
   <% if (object.construct.args.length === 0) { %>
 WebFValue<<%= className %>, <%= className %>PublicMethods> ExecutingContextWebFMethods::Create<%= className %>(ExecutingContext* context, ExceptionState& exception_state) {
-
+  MemberMutationScope member_mutation_scope{context};
   <%= className %>* obj = <%= className %>::Create(context, exception_state);
   WebFValueStatus* status_block = obj->KeepAlive();
 
@@ -95,8 +128,8 @@ WebFValue<<%= className %>, <%= className %>PublicMethods> ExecutingContextWebFM
 
   <% if (object.construct.args.length >= 1 && object.construct.args.some(arg => arg.name === 'type')) { %>
 WebFValue<<%= className %>, <%= className %>PublicMethods> ExecutingContextWebFMethods::Create<%= className %>(ExecutingContext* context, const char* type, ExceptionState& exception_state) {
+  MemberMutationScope member_mutation_scope{context};
   AtomicString type_atomic = AtomicString(context->ctx(), type);
-
   <%= className %>* event = <%= className %>::Create(context, type_atomic, exception_state);
 
   WebFValueStatus* status_block = event->KeepAlive();
@@ -106,6 +139,7 @@ WebFValue<<%= className %>, <%= className %>PublicMethods> ExecutingContextWebFM
 
   <% if (object.construct.args.length > 1) { %>
 WebFValue<<%= className %>, <%= className %>PublicMethods> ExecutingContextWebFMethods::Create<%= className %>WithOptions(ExecutingContext* context, <%= generatePublicParametersTypeWithName(object.construct.args, true) %> ExceptionState& exception_state) {
+  MemberMutationScope member_mutation_scope{context};
   <% if (object.construct.args.some(arg => arg.name === 'type')) { %>
   AtomicString type_atomic = AtomicString(context->ctx(), type);
   <% } %>

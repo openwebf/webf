@@ -235,7 +235,7 @@ const pluginApiList = [
   'timing/performance_measure.d.ts',
   'timing/performance_mark_options.d.ts',
   'timing/performance_entry.d.ts',
-  // 'timing/performance.d.ts',
+  'timing/performance.d.ts',
   'timing/performance_mark.d.ts',
   'dom/mutation_observer_registration.d.ts',
   // 'dom/character_data.d.ts',
