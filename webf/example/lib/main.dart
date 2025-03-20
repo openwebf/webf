@@ -56,7 +56,8 @@ void main() async {
   WebF.defineCustomElement('flutter-cupertino-tab', (context) => FlutterCupertinoTab(context));
   WebF.defineCustomElement('flutter-cupertino-tab-item', (context) => FlutterCupertinoTabItem(context));
   WebF.defineCustomElement('flutter-cupertino-segmented-tab', (context) => FlutterCupertinoSegmentedTab(context));
-  WebF.defineCustomElement('flutter-cupertino-segmented-tab-item', (context) => FlutterCupertinoSegmentedTabItem(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-segmented-tab-item', (context) => FlutterCupertinoSegmentedTabItem(context));
   WebF.defineCustomElement('flutter-cupertino-switch', (context) => FlutterCupertinoSwitch(context));
   WebF.defineCustomElement('flutter-cupertino-picker', (context) => FlutterCupertinoPicker(context));
   WebF.defineCustomElement('flutter-cupertino-picker-item', (context) => FlutterCupertinoPickerItem(context));

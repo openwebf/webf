@@ -92,6 +92,14 @@ class WebFState extends State<WebF> with RouteAware {
     super.initState();
     watchWindowIsReady();
     _isWebFInitReady = widget.controller.evaluated;
+
+    if (!widget.controller.isComplete) {
+      widget.controller.controlledInitCompleter.future.then((_) {
+        setState(() {
+          _isWebFInitReady = true;
+        });
+      });
+    }
   }
 
   Future<void> load(WebFBundle bundle) async {
@@ -100,6 +108,12 @@ class WebFState extends State<WebF> with RouteAware {
 
   Future<void> reload() async {
     await widget.controller.reload();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    widget.controller.attachToFlutter(context);
   }
 
   void requestForUpdate(AdapterUpdateReason reason) {
@@ -136,21 +150,6 @@ class WebFState extends State<WebF> with RouteAware {
         ),
       ),
     );
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
-
-  @override
-  void didUpdateWidget(WebF oldWidget) {
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }
 

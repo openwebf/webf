@@ -28,6 +28,7 @@ final _nonNegativeLengthRegExp = RegExp(r'^[+]?(\d+)?(\.\d+)?' + _unitRegStr + r
 enum CSSLengthType {
   // absolute units
   PX, // px
+  RPX,
   // relative units
   EM, // em,
   REM, // rem
@@ -148,6 +149,10 @@ class CSSLengthValue {
     switch (type) {
       case CSSLengthType.PX:
         _computedValue = value;
+        break;
+      case CSSLengthType.RPX:
+        FlutterView window = renderStyle!.currentFlutterView;
+        _computedValue = value! / 750.0 * window.physicalSize.width / window.devicePixelRatio;
         break;
       case CSSLengthType.EM:
         // Font size of the parent, in the case of typographical properties like font-size,
@@ -593,7 +598,6 @@ class CSSLength {
   }
 
   static CSSLengthValue parseLength(String text, RenderStyle? renderStyle, [String? propertyName, Axis? axisType]) {
-    FlutterView? window = renderStyle?.currentFlutterView;
     double? value;
     CSSLengthType unit = CSSLengthType.PX;
     if (text == ZERO) {
@@ -619,7 +623,7 @@ class CSSLength {
       unit = CSSLengthType.EM;
     } else if (text.endsWith(RPX)) {
       value = double.tryParse(text.split(RPX)[0]);
-      if (value != null && window != null) value = value / 750.0 * window.physicalSize.width / window.devicePixelRatio;
+      unit = CSSLengthType.RPX;
     } else if (text.endsWith(PX)) {
       value = double.tryParse(text.split(PX)[0]);
     } else if (text.endsWith(VW)) {
@@ -665,29 +669,6 @@ class CSSLength {
         CSSCalcValue? calcValue = CSSCalcValue.tryParse(renderStyle, propertyName ?? '', text);
         if (calcValue != null) {
           return CSSLengthValue.calc(calcValue, renderStyle, propertyName);
-        }
-      }
-
-      List<CSSFunctionalNotation> notations = CSSFunction.parseFunction(text);
-      // https://drafts.csswg.org/css-env/#env-function
-      // Using Environment Variables: the env() notation
-      if (notations.length == 1 && notations[0].name == ENV && notations[0].args.length == 1 && window != null) {
-        switch (notations[0].args.first) {
-          case SAFE_AREA_INSET_TOP:
-            value = window.viewPadding.top / window.devicePixelRatio;
-            break;
-          case SAFE_AREA_INSET_RIGHT:
-            value = window.viewPadding.right / window.devicePixelRatio;
-            break;
-          case SAFE_AREA_INSET_BOTTOM:
-            value = window.viewPadding.bottom / window.devicePixelRatio;
-            break;
-          case SAFE_AREA_INSET_LEFT:
-            value = window.viewPadding.left / window.devicePixelRatio;
-            break;
-          default:
-            // Using fallback value if not match user agent-defined environment variable: env(xxx, 50px).
-            return parseLength(notations[0].args[1], renderStyle, propertyName, axisType);
         }
       }
     } else {

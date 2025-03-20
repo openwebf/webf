@@ -4,6 +4,7 @@
  */
 import 'dart:ui';
 
+import 'package:path/path.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -15,11 +16,14 @@ const String WINDOW = 'WINDOW';
 
 class Window extends EventTarget {
   final Document document;
-  final Screen screen;
+  Screen? _screen;
+  Screen get screen {
+    _screen ??= Screen(contextId!, document.controller.ownerFlutterView, document.controller.view);
+    return _screen!;
+  }
 
   Window(BindingContext? context, this.document)
-      : screen = Screen(context!.contextId, document.controller.ownerFlutterView, document.controller.view),
-        super(context) {
+      : super(context) {
     BindingBridge.listenEvent(this, 'load');
     BindingBridge.listenEvent(this, 'gcopen');
   }

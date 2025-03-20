@@ -495,11 +495,22 @@ class ImageElement extends Element {
         return;
       }
 
-      if (_isSVGMode) {
-        _loadSVGImage();
-      } else {
-        _loadNormalImage();
+      _loadImg() {
+        if (_isSVGMode) {
+          _loadSVGImage();
+        } else {
+          _loadNormalImage();
+        }
       }
+
+      if (!ownerDocument.controller.isFlutterAttached) {
+        ownerView.registerCallbackOnceForFlutterAttached(() {
+          _loadImg();
+        });
+      } else {
+        _loadImg();
+      }
+
     });
     SchedulerBinding.instance.scheduleFrame();
   }
@@ -537,6 +548,7 @@ class ImageElement extends Element {
   // The image will be encoded into a small size for better rasterization performance.
   void _loadNormalImage() {
     var provider = _currentImageProvider;
+    FlutterView ownerFlutterView = ownerDocument.controller.ownerFlutterView;
     if (provider == null || (provider.boxFit != renderStyle.objectFit || provider.url != _resolvedUri)) {
       // Image should be resized based on different ratio according to object-fit value.
       BoxFit objectFit = renderStyle.objectFit;
@@ -548,11 +560,10 @@ class ImageElement extends Element {
         loadImage: obtainImage,
         onImageLoad: _onImageLoad,
         controller: ownerDocument.controller,
-        devicePixelRatio: ownerDocument.defaultView.devicePixelRatio,
+        devicePixelRatio: ownerFlutterView.devicePixelRatio,
       );
     }
 
-    FlutterView ownerFlutterView = ownerDocument.controller.ownerFlutterView;
     // Try to make sure that this image can be encoded into a smaller size.
     int? cachedWidth = renderStyle.width.value != null && width > 0 && width.isFinite
         ? (width * ownerFlutterView.devicePixelRatio).toInt()
