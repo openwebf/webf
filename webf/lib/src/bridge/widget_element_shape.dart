@@ -16,11 +16,7 @@ class WidgetElementShape extends Struct {
   external Pointer<NativeValue> asyncMethods;
 }
 
-Pointer<WidgetElementShape>? _cachedWidgetElementShape;
-
 Pointer<WidgetElementShape> createWidgetElementShape(Map<String, ElementCreator> creators) {
-  if (_cachedWidgetElementShape != null) return _cachedWidgetElementShape!;
-
   Pointer<WidgetElementShape> nativeShapes = malloc.allocate(sizeOf<WidgetElementShape>() * creators.length);
   int shapeIndex = 0;
 
@@ -66,14 +62,5 @@ Pointer<WidgetElementShape> createWidgetElementShape(Map<String, ElementCreator>
     shapeIndex++;
   });
 
-  _cachedWidgetElementShape = nativeShapes;
-
   return nativeShapes;
-}
-
-void clearCachedWidgetElementShape() {
-  if (_cachedWidgetElementShape != null) {
-    malloc.free(_cachedWidgetElementShape!);
-  }
-  _cachedWidgetElementShape = null;
 }

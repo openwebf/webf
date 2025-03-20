@@ -354,6 +354,8 @@ class ImageElement extends Element {
   void _onImageError(Object exception, StackTrace? stackTrace) {
     debugPrint('$exception\n$stackTrace');
     scheduleMicrotask(_dispatchErrorEvent);
+    // Decrement load event delay count after decode.
+    ownerDocument.decrementLoadEventDelayCount();
   }
 
   void _resizeImage() {
@@ -496,6 +498,9 @@ class ImageElement extends Element {
       }
 
       _loadImg() {
+        // Increment load event delay count before decode.
+        ownerDocument.incrementLoadEventDelayCount();
+
         if (_isSVGMode) {
           _loadSVGImage();
         } else {
@@ -533,11 +538,12 @@ class ImageElement extends Element {
 
       // _updateRenderObject(svg: renderObject);
       _dispatchLoadEvent();
-      // Decrement load event delay count after decode.
-      ownerDocument.decrementLoadEventDelayCount();
     } catch (e, stack) {
       print('$e\n$stack');
       _dispatchErrorEvent();
+    } finally {
+      // Decrement load event delay count after decode.
+      ownerDocument.decrementLoadEventDelayCount();
     }
     return;
   }
@@ -613,9 +619,6 @@ class ImageElement extends Element {
     if (_resolvedUri == null) {
       return;
     }
-
-    // Increment load event delay count before decode.
-    ownerDocument.incrementLoadEventDelayCount();
 
     _debounce.run(() {
       _updateImageData();

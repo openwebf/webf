@@ -348,8 +348,7 @@ class WebFController {
   final Map<String, String> sessionStorage = {};
 
   HistoryModule get history => _module.moduleManager.getModule('History')!;
-
-  HistoryModule get hybridHistory => _module.moduleManager.getModule('HybridHistory')!;
+  HybridHistoryModule get hybridHistory => _module.moduleManager.getModule('HybridHistory')!;
 
   static Uri fallbackBundleUri([double? id]) {
     // The fallback origin uri, like `vm://bundle/0`

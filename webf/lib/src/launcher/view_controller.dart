@@ -642,6 +642,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
   @override
   void didChangeMetrics() {
+    if (!rootController.isFlutterAttached) return;
     final ownerView = rootController.ownerFlutterView;
     final bool resizeToAvoidBottomInsets = rootController.resizeToAvoidBottomInsets;
     final double bottomInsets;

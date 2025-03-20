@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
@@ -37,9 +39,48 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
+class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
+  @override
+  void back(BuildContext context) {
+    Navigator.pop(context);
+  }
+
+  @override
+  String path(BuildContext context) {
+    String? currentPath = ModalRoute.of(context)?.settings.name;
+    return currentPath ?? '';
+  }
+
+  @override
+  void pushState(BuildContext context, state, String name) {
+    Navigator.pushNamed(context, name, arguments: state);
+  }
+
+  @override
+  void replaceState(BuildContext context, state, String name) {
+    Navigator.pushReplacementNamed(context, name, arguments: state);
+  }
+
+  @override
+  state(BuildContext context) {
+    var route = ModalRoute.of(context);
+    if (route?.settings.arguments != null) {
+      return jsonEncode(route!.settings.arguments);
+    }
+    return '{}';
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
+
+  // Initialize the controller manager
+  WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
+      maxAliveInstances: 10,
+      onControllerDisposed: (String name, WebFController controller) {
+        print('controller disposed: $name $controller');
+      }));
   WebF.defineCustomElement('flutter-tab', (context) => FlutterTab(context));
   WebF.defineCustomElement('flutter-tab-item', (context) => FlutterTabItem(context));
   WebF.defineCustomElement('flutter-icon', (context) => FlutterIcon(context));
@@ -69,6 +110,34 @@ void main() async {
   WebF.defineCustomElement('flutter-cupertino-toast', (context) => FlutterCupertinoToast(context));
   WebF.defineCustomElement('flutter-cupertino-loading', (context) => FlutterCupertinoLoading(context));
   WebF.defineCustomElement('flutter-cupertino-textarea', (context) => FlutterCupertinoTextArea(context));
+
+  // Add home controller with preloading
+  WebFControllerManager.instance.addWithPrerendering(
+      name: 'home',
+      createController: () => WebFController(
+            initialRoute: '/home',
+            routeObserver: routeObserver,
+            devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+          ),
+      bundle: WebFBundle.fromUrl('assets:///assets/bundle.html'),
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+      });
+
+  // Add vue controller with preloading
+  WebFControllerManager.instance.addWithPrerendering(
+      name: 'miracle_plus',
+      createController: () => WebFController(
+            initialRoute: '/home',
+            routeObserver: routeObserver,
+            devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+          ),
+      bundle: WebFBundle.fromUrl('http://localhost:8080'),
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+      });
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }
 
@@ -91,8 +160,7 @@ class WebFSubView extends StatelessWidget {
                 isDarkModeEnabled: AdaptiveTheme.of(context).theme.brightness == Brightness.dark,
                 onStateChanged: (isDarkModeEnabled) async {
                   // sets theme mode to dark
-                  !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight()
-                      : AdaptiveTheme.of(context).setDark();
+                  !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight() : AdaptiveTheme.of(context).setDark();
                   controller.darkModeOverride = isDarkModeEnabled;
                   controller.view.onPlatformBrightnessChanged();
                 },
@@ -140,27 +208,14 @@ class MyApp extends StatefulWidget {
 }
 
 class MyAppState extends State<MyApp> {
-  WebFController? controller;
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // bool isDark = AdaptiveTheme.of(context).theme.brightness == Brightness.dark;
-    controller = controller ??
-        WebFController(
-          context,
-          initialRoute: '/home',
-          routeObserver: routeObserver,
-          devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-        );
-    controller!.darkModeOverride = widget.savedThemeMode == AdaptiveThemeMode.dark;
-    // controller!.preload(WebFBundle.fromUrl('assets:///assets/bundle.html'));
-    controller!.preload(WebFBundle.fromUrl('http://localhost:8080/'), viewportSize: MediaQuery.of(context).size);
-    // controller!.preload(WebFBundle.fromUrl('assets:///vue_project/dist/index.html'));
   }
 
   @override
   Widget build(BuildContext context) {
+    WebFController controller = WebFControllerManager.instance.getController('miracle_plus')!;
     return AdaptiveTheme(
       light: ThemeData.light(useMaterial3: true),
       dark: ThemeData.dark(useMaterial3: true),
@@ -170,35 +225,33 @@ class MyAppState extends State<MyApp> {
         initialRoute: '/',
         theme: theme,
         darkTheme: darkTheme,
-        navigatorObservers: [
-          routeObserver
-        ],
+        navigatorObservers: [routeObserver],
         themeMode: ThemeMode.system,
         routes: {
-          '/todomvc': (context) => WebFSubView(title: 'TodoMVC', path: '/todomvc', controller: controller!),
+          '/todomvc': (context) => WebFSubView(title: 'TodoMVC', path: '/todomvc', controller: controller),
           '/positioned_layout': (context) =>
-              WebFSubView(title: 'CSS Positioned Layout', path: '/positioned_layout', controller: controller!),
-          '/home': (context) => WebFSubView(title: '首页', path: '/home', controller: controller!),
-          '/search': (context) => WebFSubView(title: '搜索', path: '/search', controller: controller!),
-          '/publish': (context) => WebFSubView(title: '发布', path: '/publish', controller: controller!),
-          '/message': (context) => WebFSubView(title: '消息', path: '/message', controller: controller!),
-          '/my': (context) => WebFSubView(title: '我的', path: '/my', controller: controller!),
-          '/register': (context) => WebFSubView(title: '注册', path: '/register', controller: controller!),
-          '/login': (context) => WebFSubView(title: '登录', path: '/login', controller: controller!),
-          '/reset_password': (context) => WebFSubView(title: '重置密码', path: '/reset_password', controller: controller!),
-          '/share_link': (context) => WebFSubView(title: '详情', path: '/share_link', controller: controller!),
-          '/comment': (context) => WebFSubView(title: '评论', path: '/comment', controller: controller!),
-          '/user': (context) => WebFSubView(title: '用户', path: '/user', controller: controller!),
-          '/edit': (context) => WebFSubView(title: '编辑', path: '/edit', controller: controller!),
-          '/setting': (context) => WebFSubView(title: '设置', path: '/setting', controller: controller!),
-          '/user_agreement': (context) => WebFSubView(title: '用户服务协议', path: '/user_agreement', controller: controller!),
-          '/privacy_policy': (context) => WebFSubView(title: '隐私政策', path: '/privacy_policy', controller: controller!),
-          '/answer': (context) => WebFSubView(title: '回答', path: '/answer', controller: controller!),
-          '/question': (context) => WebFSubView(title: '问题', path: '/question', controller: controller!),
-          '/topic': (context) => WebFSubView(title: '话题', path: '/topic', controller: controller!),
+              WebFSubView(title: 'CSS Positioned Layout', path: '/positioned_layout', controller: controller),
+          '/home': (context) => WebFSubView(title: '首页', path: '/home', controller: controller),
+          '/search': (context) => WebFSubView(title: '搜索', path: '/search', controller: controller),
+          '/publish': (context) => WebFSubView(title: '发布', path: '/publish', controller: controller),
+          '/message': (context) => WebFSubView(title: '消息', path: '/message', controller: controller),
+          '/my': (context) => WebFSubView(title: '我的', path: '/my', controller: controller),
+          '/register': (context) => WebFSubView(title: '注册', path: '/register', controller: controller),
+          '/login': (context) => WebFSubView(title: '登录', path: '/login', controller: controller),
+          '/reset_password': (context) => WebFSubView(title: '重置密码', path: '/reset_password', controller: controller),
+          '/share_link': (context) => WebFSubView(title: '详情', path: '/share_link', controller: controller),
+          '/comment': (context) => WebFSubView(title: '评论', path: '/comment', controller: controller),
+          '/user': (context) => WebFSubView(title: '用户', path: '/user', controller: controller),
+          '/edit': (context) => WebFSubView(title: '编辑', path: '/edit', controller: controller),
+          '/setting': (context) => WebFSubView(title: '设置', path: '/setting', controller: controller),
+          '/user_agreement': (context) => WebFSubView(title: '用户服务协议', path: '/user_agreement', controller: controller),
+          '/privacy_policy': (context) => WebFSubView(title: '隐私政策', path: '/privacy_policy', controller: controller),
+          '/answer': (context) => WebFSubView(title: '回答', path: '/answer', controller: controller),
+          '/question': (context) => WebFSubView(title: '问题', path: '/question', controller: controller),
+          '/topic': (context) => WebFSubView(title: '话题', path: '/topic', controller: controller),
         },
         debugShowCheckedModeBanner: false,
-        home: FirstPage(title: 'Landing Bay', controller: controller!),
+        home: FirstPage(title: 'Landing Bay', controller: controller),
       ),
     );
   }
@@ -206,7 +259,6 @@ class MyAppState extends State<MyApp> {
   @override
   void dispose() {
     super.dispose();
-    controller?.dispose();
   }
 }
 
@@ -278,17 +330,17 @@ class _WebFDemoState extends State<WebFDemo> {
                   isDarkModeEnabled: AdaptiveTheme.of(context).theme.brightness == Brightness.dark,
                   onStateChanged: (isDarkModeEnabled) async {
                     // sets theme mode to dark
-                    !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight()
-                        : AdaptiveTheme.of(context).setDark();
+                    !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight() : AdaptiveTheme.of(context).setDark();
                     widget.controller.darkModeOverride = isDarkModeEnabled;
                     widget.controller.view.onPlatformBrightnessChanged();
                   },
                 )),
           ],
         ),
-        // floatingActionButton: FloatingActionButton(onPressed: () {
-        //   print(controller.view.getRootRenderObject()!.toStringDeep());
-        // }),
+        floatingActionButton: FloatingActionButton(onPressed: () {
+          // WidgetsBinding.instance.performReassemble();
+          // print(controller.view.getRootRenderObject()!.toStringDeep());
+        }),
         body: Stack(
           children: [
             Offstage(
@@ -297,8 +349,7 @@ class _WebFDemoState extends State<WebFDemo> {
             ),
             if (_isLoading) _buildSplashScreen(),
           ],
-        )
-    );
+        ));
   }
 
   Widget _buildSplashScreen() {
