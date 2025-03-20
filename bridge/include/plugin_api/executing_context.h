@@ -33,6 +33,8 @@ namespace webf {
 class Document;
 class ExecutingContext;
 class Window;
+class Performance;
+typedef struct PerformancePublicMethods PerformancePublicMethods;
 class UIEvent;
 typedef struct UIEventPublicMethods UIEventPublicMethods;
 class CustomEvent;
@@ -70,6 +72,7 @@ typedef struct TransitionEventPublicMethods TransitionEventPublicMethods;
 
 using PublicContextGetDocument = WebFValue<Document, DocumentPublicMethods> (*)(ExecutingContext*);
 using PublicContextGetWindow = WebFValue<Window, WindowPublicMethods> (*)(ExecutingContext*);
+using PublicContextGetPerformance = WebFValue<Performance, PerformancePublicMethods> (*)(ExecutingContext*);
 using PublicContextGetExceptionState = WebFValue<SharedExceptionState, ExceptionStatePublicMethods> (*)();
 using PublicFinishRecordingUIOperations = void (*)(ExecutingContext* context);
 using PublicWebFSyncBuffer = void (*)(ExecutingContext* context);
@@ -274,7 +277,8 @@ using PublicContextCreateUIEventWithOptions =
 // Only C type member can be included in this class, any C++ type and classes can is not allowed to use here.
 struct ExecutingContextWebFMethods {
   static WebFValue<Document, DocumentPublicMethods> document(ExecutingContext* context);
-  static WebFValue<Window, WindowPublicMethods> window(ExecutingContext* context);
+static WebFValue<Window, WindowPublicMethods> window(ExecutingContext* context);
+static WebFValue<Performance, PerformancePublicMethods> performance(ExecutingContext* context);
   static WebFValue<SharedExceptionState, ExceptionStatePublicMethods> CreateExceptionState();
   static void FinishRecordingUIOperations(ExecutingContext* context);
   static void WebFSyncBuffer(ExecutingContext* context);
@@ -469,6 +473,7 @@ struct ExecutingContextWebFMethods {
   double version{1.0};
   PublicContextGetDocument context_get_document{document};
   PublicContextGetWindow context_get_window{window};
+  PublicContextGetPerformance context_get_Performance{performance};
   PublicContextGetExceptionState context_get_exception_state{CreateExceptionState};
   PublicFinishRecordingUIOperations context_finish_recording_ui_operations{FinishRecordingUIOperations};
   PublicWebFSyncBuffer context_webf_sync_buffer{WebFSyncBuffer};

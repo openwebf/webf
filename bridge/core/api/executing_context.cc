@@ -11,6 +11,7 @@
 #include "core/frame/module_manager.h"
 #include "core/frame/window.h"
 #include "core/frame/window_or_worker_global_scope.h"
+#include "core/timing/performance.h"
 #include "foundation/native_value_converter.h"
 
 namespace webf {
@@ -24,6 +25,11 @@ WebFValue<Document, DocumentPublicMethods> ExecutingContextWebFMethods::document
 WebFValue<Window, WindowPublicMethods> ExecutingContextWebFMethods::window(webf::ExecutingContext* context) {
   return WebFValue<Window, WindowPublicMethods>(context->window(), context->window()->windowPublicMethods(),
                                                 context->window()->KeepAlive());
+}
+
+WebFValue<Performance, PerformancePublicMethods> ExecutingContextWebFMethods::performance(webf::ExecutingContext* context) {
+  return WebFValue<Performance, PerformancePublicMethods>(context->performance(), context->performance()->performancePublicMethods(),
+                                                context->performance()->KeepAlive());
 }
 
 WebFValue<SharedExceptionState, ExceptionStatePublicMethods> ExecutingContextWebFMethods::CreateExceptionState() {
