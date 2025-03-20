@@ -67,16 +67,16 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
   }
 
   @override
-  Future<HttpClientRequest?> beforeRequest(HttpClientRequest request) {
+  Future<HttpClientRequest?> beforeRequest(String requestId, HttpClientRequest request) {
     List<int> data = List<int>.from((request as ProxyHttpClientRequest).data);
 
     sendEventToFrontend(NetworkRequestWillBeSentEvent(
-      requestId: _getRequestId(request),
+      requestId: requestId,
       loaderId: devtoolsService.controller!.view.contextId.toString(),
       requestMethod: request.method,
       url: request.uri.toString(),
       headers: _getHttpHeaders(request.headers),
-      timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) ~/ 1000,
+      timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
       data: data,
     ));
 
@@ -101,18 +101,17 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
           ...extraHeaders
         },
         siteHasCookieInOtherPartition: false,
-        requestId: _getRequestId(request)));
+        requestId: requestId));
     HttpClientInterceptor? customHttpClientInterceptor = _customHttpClientInterceptor;
     if (customHttpClientInterceptor != null) {
-      return customHttpClientInterceptor.beforeRequest(request);
+      return customHttpClientInterceptor.beforeRequest(requestId, request);
     } else {
       return Future.value(null);
     }
   }
 
   @override
-  Future<HttpClientResponse?> afterResponse(HttpClientRequest request, HttpClientResponse response) async {
-    String requestId = _getRequestId(request);
+  Future<HttpClientResponse?> afterResponse(String requestId, HttpClientRequest request, HttpClientResponse response) async {
     sendEventToFrontend(NetworkResponseReceivedEvent(
       requestId: requestId,
       loaderId: devtoolsService.controller!.view.contextId.toString(),
@@ -128,12 +127,12 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
       encodedDataLength: response.contentLength,
       protocol: request.uri.scheme,
       type: _getRequestType(request),
-      timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) ~/ 1000,
+      timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
     ));
     sendEventToFrontend(NetworkLoadingFinishedEvent(
       requestId: requestId,
       contentLength: response.contentLength,
-      timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) ~/ 1000,
+      timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
     ));
     Uint8List data = await consolidateHttpClientResponseBytes(response);
     _responseBuffers[requestId] = data;
@@ -145,17 +144,17 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
 
     HttpClientInterceptor? customHttpClientInterceptor = _customHttpClientInterceptor;
     if (customHttpClientInterceptor != null) {
-      return customHttpClientInterceptor.afterResponse(request, proxyResponse);
+      return customHttpClientInterceptor.afterResponse(requestId, request, proxyResponse);
     } else {
       return Future.value(proxyResponse);
     }
   }
 
   @override
-  Future<HttpClientResponse?> shouldInterceptRequest(HttpClientRequest request) {
+  Future<HttpClientResponse?> shouldInterceptRequest(String requestId, HttpClientRequest request) {
     HttpClientInterceptor? customHttpClientInterceptor = _customHttpClientInterceptor;
     if (customHttpClientInterceptor != null) {
-      return customHttpClientInterceptor.shouldInterceptRequest(request);
+      return customHttpClientInterceptor.shouldInterceptRequest(requestId, request);
     } else {
       return Future.value(null);
     }
@@ -168,7 +167,7 @@ class NetworkRequestWillBeSentEvent extends InspectorEvent {
   final String url;
   final String requestMethod;
   final Map<String, List<String>> headers;
-  final int timestamp;
+  final double timestamp;
   final List<int> data;
 
   NetworkRequestWillBeSentEvent({
@@ -202,7 +201,7 @@ class NetworkRequestWillBeSentEvent extends InspectorEvent {
           // 'isSameSite': false
         },
         'timestamp': timestamp,
-        'wallTime': timestamp,
+        'wallTime': DateTime.now().millisecondsSinceEpoch / 1000,
         'initiator': {
           'type': 'script',
           'lineNumber': 0,
@@ -230,7 +229,7 @@ class NetworkResponseReceivedEvent extends InspectorEvent {
   final int encodedDataLength;
   final String protocol;
   final String type;
-  final int timestamp;
+  final double timestamp;
 
   NetworkResponseReceivedEvent({
     required this.requestId,
@@ -280,7 +279,7 @@ class NetworkResponseReceivedEvent extends InspectorEvent {
 class NetworkLoadingFinishedEvent extends InspectorEvent {
   final String requestId;
   final int contentLength;
-  final int timestamp;
+  final double timestamp;
 
   NetworkLoadingFinishedEvent({required this.requestId, required this.contentLength, required this.timestamp});
 
@@ -450,12 +449,6 @@ Map<String, List<String>> _getHttpHeaders(HttpHeaders headers) {
     map[name] = values;
   });
   return map;
-}
-
-String _getRequestId(HttpClientRequest request) {
-  // @NOTE: For creating backend request, only uri is the same object reference.
-  // See http_client_request.dart [_createBackendClientRequest]
-  return request.uri.hashCode.toString();
 }
 
 // Allowed Values: Document, Stylesheet, Image, Media, Font, Script, TextTrack, XHR, Fetch, EventSource, WebSocket,
