@@ -27,9 +27,10 @@ WebFValue<Window, WindowPublicMethods> ExecutingContextWebFMethods::window(webf:
                                                 context->window()->KeepAlive());
 }
 
-WebFValue<Performance, PerformancePublicMethods> ExecutingContextWebFMethods::performance(webf::ExecutingContext* context) {
-  return WebFValue<Performance, PerformancePublicMethods>(context->performance(), context->performance()->performancePublicMethods(),
-                                                context->performance()->KeepAlive());
+WebFValue<Performance, PerformancePublicMethods> ExecutingContextWebFMethods::performance(
+    webf::ExecutingContext* context) {
+  return WebFValue<Performance, PerformancePublicMethods>(
+      context->performance(), context->performance()->performancePublicMethods(), context->performance()->KeepAlive());
 }
 
 WebFValue<SharedExceptionState, ExceptionStatePublicMethods> ExecutingContextWebFMethods::CreateExceptionState() {

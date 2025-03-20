@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
 #ifndef WEBF_CORE_NATIVE_VECTOR_VALUE_REF_H_
@@ -12,7 +12,7 @@ struct VectorValueRef {
   int64_t size;
   void* data;
 
-  VectorValueRef(void* data, int64_t size) : data(data), size(size) {};
+  VectorValueRef(void* data, int64_t size) : data(data), size(size){};
 };
 }  // namespace webf
 
