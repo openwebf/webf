@@ -9,6 +9,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:webf/rendering.dart';
 
 /// Returns a sequence containing the specified [Layer] and all of its
 /// ancestors.  The returned sequence is in [parent, child] order.
@@ -103,6 +104,7 @@ mixin RenderIntersectionObserverMixin on RenderBox {
       _intersectionObserverLayer.layer = IntersectionObserverLayer(
           elementSize: size,
           paintOffset: offset,
+          flutterView: (this as RenderBoxModel).renderStyle.currentFlutterView,
           onIntersectionChange: _onIntersectionChange!,
           intersectPadding: intersectPadding);
     } else {
@@ -116,7 +118,11 @@ mixin RenderIntersectionObserverMixin on RenderBox {
 
 class IntersectionObserverLayer extends ContainerLayer {
   IntersectionObserverLayer(
-      {required Size elementSize, required Offset paintOffset, required this.onIntersectionChange, required Rect intersectPadding})
+      {required Size elementSize,
+      required Offset paintOffset,
+      required this.flutterView,
+      required this.onIntersectionChange,
+      required Rect intersectPadding})
       : // TODO: This is zero for box element. For sliver element, this offset points to the start of the element which may be outside the viewport.
         _elementOffset = Offset.zero,
         _elementSize = elementSize,
@@ -125,6 +131,8 @@ class IntersectionObserverLayer extends ContainerLayer {
 
   /// The size of the corresponding element.
   Size _elementSize;
+
+  ui.FlutterView flutterView;
 
   // A padding around element bounds.
   final Rect _intersectPadding;
@@ -231,8 +239,9 @@ class IntersectionObserverLayer extends ContainerLayer {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
 
-    properties..add(DiagnosticsProperty<Rect>('elementRect', _elementBounds))..add(
-        DiagnosticsProperty<Rect>('rootBounds', _rootBounds));
+    properties
+      ..add(DiagnosticsProperty<Rect>('elementRect', _elementBounds))
+      ..add(DiagnosticsProperty<Rect>('rootBounds', _rootBounds));
   }
 
   void _scheduleIntersectionObservationUpdate() {
@@ -267,7 +276,7 @@ class IntersectionObserverLayer extends ContainerLayer {
   // https://github.com/google/flutter.widgets/blob/master/packages/visibility_detector/lib/src/visibility_detector_layer.dart#L130
   // Computes the accumulated clipping bounds, in global coordinates.
   Rect _computeClipRect() {
-    var clipRect = Offset.zero & RendererBinding.instance.renderView.size;
+    var clipRect = Offset.zero & flutterView.display.size;
 
     var parentLayer = parent;
     while (parentLayer != null) {
@@ -337,11 +346,13 @@ class IntersectionObserverLayer extends ContainerLayer {
       Rect rootBounds = layer._computeClipRect();
 
       Rect paddingAroundElementBounds = Rect.fromLTRB(
-          elementBounds.left - layer._intersectPadding.left, elementBounds.top - layer._intersectPadding.top,
-          elementBounds.right + layer._intersectPadding.right, elementBounds.bottom + layer._intersectPadding.bottom);
+          elementBounds.left - layer._intersectPadding.left,
+          elementBounds.top - layer._intersectPadding.top,
+          elementBounds.right + layer._intersectPadding.right,
+          elementBounds.bottom + layer._intersectPadding.bottom);
 
-      final info = IntersectionObserverEntry.fromRects(
-          boundingClientRect: paddingAroundElementBounds, rootBounds: rootBounds);
+      final info =
+          IntersectionObserverEntry.fromRects(boundingClientRect: paddingAroundElementBounds, rootBounds: rootBounds);
       layer._fireCallback(info);
     }
     _updated.clear();

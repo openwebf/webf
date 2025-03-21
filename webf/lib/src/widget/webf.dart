@@ -157,6 +157,12 @@ class WebFState extends State<WebF> with RouteAware {
       ),
     );
   }
+
+  @override
+  void dispose() {
+    super.dispose();
+    widget.controller.detachFromFlutter();
+  }
 }
 
 class WebFContext extends InheritedWidget {

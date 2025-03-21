@@ -17,8 +17,8 @@ import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/widget.dart';
 import 'package:webf/src/scheduler/debounce.dart';
-import 'package:webf/src/widget/portal.dart';
 import 'package:webf/svg.dart';
 
 const String IMAGE = 'IMG';

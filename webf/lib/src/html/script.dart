@@ -22,6 +22,7 @@ const String _MIME_APPLICATION_JAVASCRIPT = 'application/javascript';
 const String _MIME_X_APPLICATION_JAVASCRIPT = 'application/x-javascript';
 const String _MIME_X_APPLICATION_KBC = 'application/vnd.webf.bc1';
 const String _JAVASCRIPT_MODULE = 'module';
+
 enum ScriptReadyState { loading, interactive, complete }
 
 typedef ScriptExecution = Future<void> Function(bool async);
@@ -39,11 +40,13 @@ class ScriptRunner {
   // Indicate the sync pending scripts.
   int _resolvingCount = 0;
 
-  static Future<void> _evaluateScriptBundle(double contextId, WebFBundle bundle, {bool async = false, EvaluateOpItem? profileOp}) async {
+  static Future<void> _evaluateScriptBundle(double contextId, WebFBundle bundle,
+      {bool async = false, EvaluateOpItem? profileOp}) async {
     // Evaluate bundle.
     if (bundle.isJavascript) {
       assert(isValidUTF8String(bundle.data!), 'The JavaScript codes should be in UTF-8 encoding format');
-      bool result = await evaluateScripts(contextId, bundle.data!, url: bundle.url, cacheKey: bundle.cacheKey, profileOp: profileOp);
+      bool result = await evaluateScripts(contextId, bundle.data!,
+          url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache, profileOp: profileOp);
       if (!result) {
         throw FlutterError('Script code are not valid to evaluate.');
       }
@@ -274,6 +277,7 @@ class ScriptElement extends Element {
   }
 
   bool get defer => getAttribute('defer') != null;
+
   set defer(bool value) {
     if (value) {
       internalSetAttribute('defer', '');
@@ -283,16 +287,19 @@ class ScriptElement extends Element {
   }
 
   String get type => getAttribute('type') ?? '';
+
   set type(String value) {
     internalSetAttribute('type', value);
   }
 
   String get charset => getAttribute('charset') ?? '';
+
   set charset(String value) {
     internalSetAttribute('charset', value);
   }
 
   String get text => getAttribute('text') ?? '';
+
   set text(String value) {
     internalSetAttribute('text', value);
   }

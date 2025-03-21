@@ -187,6 +187,11 @@ class WebFViewController implements WidgetsBindingObserver {
     _onFlutterAttached.clear();
   }
 
+  void detachFromFlutter() {
+    _unregisterPlatformBrightnessChange();
+    viewport = null;
+  }
+
   void initDocument(view, Pointer<NativeBindingObject> pointer) {
     document = Document(
       BindingContext(view, _contextId, pointer),

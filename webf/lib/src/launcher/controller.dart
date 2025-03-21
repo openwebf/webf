@@ -212,7 +212,9 @@ class WebFController {
     _onJSLog = jsLogHandler;
   }
 
-  late ui.FlutterView ownerFlutterView;
+  ui.FlutterView? _ownerFlutterView;
+
+  ui.FlutterView get ownerFlutterView => _ownerFlutterView!;
 
   List<BuildContext> buildContextStack = [];
 
@@ -348,6 +350,7 @@ class WebFController {
   final Map<String, String> sessionStorage = {};
 
   HistoryModule get history => _module.moduleManager.getModule('History')!;
+
   HybridHistoryModule get hybridHistory => _module.moduleManager.getModule('HybridHistory')!;
 
   static Uri fallbackBundleUri([double? id]) {
@@ -446,7 +449,6 @@ class WebFController {
     if (rootRenderObject == null) return;
 
     await unload();
-
 
     view.viewport = rootRenderObject;
 
@@ -797,12 +799,21 @@ class WebFController {
   }
 
   bool _isFlutterAttached = false;
+
   bool get isFlutterAttached => _isFlutterAttached;
+
   void attachToFlutter(BuildContext context) {
-    ownerFlutterView = View.of(context);
+    _ownerFlutterView = View.of(context);
     view.attachToFlutter(context);
     PaintingBinding.instance.systemFonts.addListener(_watchFontLoading);
     _isFlutterAttached = true;
+  }
+
+  void detachFromFlutter() {
+    view.detachFromFlutter();
+    PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
+    _isFlutterAttached = false;
+    _ownerFlutterView = null;
   }
 
   // Execute the content from entrypoint bundle.
@@ -836,7 +847,11 @@ class WebFController {
       if (entrypoint.isJavascript) {
         assert(isValidUTF8String(data), 'The JavaScript codes should be in UTF-8 encoding format');
         // Prefer sync decode in loading entrypoint.
-        await evaluateScripts(contextId, data, url: url, profileOp: evaluateOpItem);
+        await evaluateScripts(contextId, data,
+            url: url,
+            cacheKey: entrypoint.cacheKey,
+            loadedFromCache: entrypoint.loadedFromCache,
+            profileOp: evaluateOpItem);
       } else if (entrypoint.isBytecode) {
         await evaluateQuickjsByteCode(contextId, data, profileOp: evaluateOpItem);
       } else if (entrypoint.isHTML) {
@@ -846,7 +861,11 @@ class WebFController {
         // Fallback treating text content as JavaScript.
         try {
           assert(isValidUTF8String(data), 'The JavaScript codes should be in UTF-8 encoding format');
-          await evaluateScripts(contextId, data, url: url, profileOp: evaluateOpItem);
+          await evaluateScripts(contextId, data,
+              loadedFromCache: entrypoint.loadedFromCache,
+              cacheKey: entrypoint.cacheKey,
+              url: url,
+              profileOp: evaluateOpItem);
         } catch (error) {
           print('Fallback to execute JavaScript content of $url');
           rethrow;

@@ -5,15 +5,12 @@ class FlutterCupertinoLoading extends WidgetElement {
   FlutterCupertinoLoading(super.context);
 
   OverlayEntry? _overlayEntry;
-  BuildContext? _savedContext;
   bool _isDisposed = false;
 
   @override
   void mount() {
     super.mount();
     _isDisposed = false;
-    // Save context when component is mounted
-    _savedContext = context;
   }
 
   @override
@@ -37,31 +34,19 @@ class FlutterCupertinoLoading extends WidgetElement {
   }
 
   void _show(String? text) {
-    if (_isDisposed) return;
-    
+    print('context: $context');
+    if (_isDisposed || context == null) return;
+
     _hide(); // Hide existing overlay if any
 
-    if (_savedContext == null) return;
+    final overlay = Overlay.maybeOf(context!);
+    if (overlay == null) return;
 
-    BuildContext? contextToUse = _savedContext;
-    if (contextToUse == null || !contextToUse.mounted) return;
+    _overlayEntry = OverlayEntry(
+      builder: (context) => _LoadingWidget(text: text),
+    );
 
-    Future.microtask(() {
-      if (_isDisposed) return;
-      
-      try {
-        final overlay = Overlay.maybeOf(contextToUse!);
-        if (overlay == null) return;
-
-        _overlayEntry = OverlayEntry(
-          builder: (context) => _LoadingWidget(text: text),
-        );
-
-        overlay.insert(_overlayEntry!);
-      } catch (e) {
-        print('Error showing loading: $e');
-      }
-    });
+    overlay.insert(_overlayEntry!);
   }
 
   void _hide() {
@@ -79,7 +64,6 @@ class FlutterCupertinoLoading extends WidgetElement {
   void dispose() {
     _isDisposed = true;
     _hide();
-    _savedContext = null;
     super.dispose();
   }
 

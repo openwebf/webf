@@ -9,7 +9,7 @@
               </div>
             </webf-listview>
         </template>
-        
+
         <!-- 最新标签页内容 -->
         <template #latest>
           <webf-listview class="listview">
@@ -19,7 +19,7 @@
           </webf-listview>
 
         </template>
-        
+
         <!-- 讨论标签页内容 -->
         <template #discussion>
           <webf-listview class="listview">
@@ -28,7 +28,7 @@
             </div>
           </webf-listview>
         </template>
-        
+
         <!-- 新闻标签页内容 -->
         <template #news>
             <webf-listview class="listview">
@@ -37,7 +37,7 @@
               </div>
             </webf-listview>
         </template>
-        
+
         <!-- 学术标签页内容 -->
         <template #academic>
             <webf-listview class="listview">
@@ -46,7 +46,7 @@
               </div>
             </webf-listview>
         </template>
-        
+
         <!-- 产品标签页内容 -->
         <template #product>
             <webf-listview class="listview">
@@ -96,16 +96,6 @@ export default {
       return this.userStore.userAvatar;
     }
   },
-  async onScreen() {
-    this.$refs.loading.show({
-      text: '加载中'
-    });
-    const res = await api.news.getHotList();
-    this.hotList = res.data.feeds;
-    this.$refs.loading.hide();
-  },
-  async offScreen() {
-  },
   data: () => {
     return {
       tabsConfig: [
@@ -116,7 +106,7 @@ export default {
         { id: 'academic', title: '学术' },
         { id: 'product', title: '产品' }
       ],
-      loadedTabs: new Set(['hot']), 
+      loadedTabs: new Set(['hot']),
       hotList: [],
       latestList: [],
       commentList: [],
@@ -157,6 +147,18 @@ export default {
       this.loadedTabs.add(this.tabsConfig[tabIndex].id);
       this.$refs.loading.hide();
     },
+    async onScreen() {
+      if (this.hotList.length == 0) {
+        this.$refs.loading.show({
+          text: '加载中'
+        });
+        const res = await api.news.getHotList();
+        this.hotList = res.data.feeds;
+        this.$refs.loading.hide();
+      }
+    },
+    async offScreen() {
+    },
   }
 }
 </script>
@@ -174,3 +176,4 @@ export default {
   width: 100vw;
 }
 </style>
+

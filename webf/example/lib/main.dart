@@ -213,9 +213,11 @@ class MyAppState extends State<MyApp> {
     super.didChangeDependencies();
   }
 
+  String webfPage = 'miracle_plus';
+
   @override
   Widget build(BuildContext context) {
-    WebFController controller = WebFControllerManager.instance.getController('miracle_plus')!;
+    WebFController controller = WebFControllerManager.instance.getController(webfPage)!;
     return AdaptiveTheme(
       light: ThemeData.light(useMaterial3: true),
       dark: ThemeData.dark(useMaterial3: true),
@@ -377,5 +379,10 @@ class _WebFDemoState extends State<WebFDemo> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }

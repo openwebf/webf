@@ -16,11 +16,11 @@ class WebFEventListener extends SingleChildRenderObjectWidget {
   }
 
   @override
-  _PortalElement createElement() => _PortalElement(this);
+  _EventListenerElement createElement() => _EventListenerElement(this);
 }
 
-class _PortalElement extends SingleChildRenderObjectElement {
-  _PortalElement(super.widget);
+class _EventListenerElement extends SingleChildRenderObjectElement {
+  _EventListenerElement(super.widget);
 
   @override
   WebFEventListener get widget => super.widget as WebFEventListener;
