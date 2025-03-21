@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:webf/foundation.dart';
 
 import 'cookie_jar.dart';
 import 'http_cache.dart';
@@ -25,6 +26,7 @@ class ProxyHttpClientRequest extends HttpClientRequest {
   final Uri _uri;
 
   HttpClientRequest? _backendRequest;
+  WebFBundle? ownerBundle;
 
   // Saving all the data before calling real `close` to [HttpClientRequest].
   final List<int> _data = [];
@@ -151,6 +153,7 @@ class ProxyHttpClientRequest extends HttpClientRequest {
         cacheObject = await cacheController.getCacheObject(request.uri);
         if (cacheObject.hitLocalCache(request)) {
           HttpClientResponse? cacheResponse = await cacheObject.toHttpClientResponse(_nativeHttpClient);
+          ownerBundle?.setLoadingFromCache();
           if (cacheResponse != null) {
             return cacheResponse;
           }
@@ -197,7 +200,7 @@ class ProxyHttpClientRequest extends HttpClientRequest {
         response = cacheObject == null
             ? rawResponse
             : await HttpCacheController.instance(origin)
-                .interceptResponse(request, rawResponse, cacheObject, _nativeHttpClient);
+                .interceptResponse(request, rawResponse, cacheObject, _nativeHttpClient, ownerBundle);
         hitNegotiateCache = rawResponse != response;
       }
 
@@ -220,7 +223,7 @@ class ProxyHttpClientRequest extends HttpClientRequest {
         // Step 6: Intercept response by cache controller (handle 304).
         // Note: No need to negotiate cache here, this is final response, hit or not hit.
         return HttpCacheController.instance(origin)
-            .interceptResponse(request, response, cacheObject, _nativeHttpClient);
+            .interceptResponse(request, response, cacheObject, _nativeHttpClient, ownerBundle);
       } else {
         return response;
       }

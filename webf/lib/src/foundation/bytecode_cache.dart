@@ -144,11 +144,11 @@ class QuickJSByteCodeCache {
   }
 
   // Get the CacheObject by uri, no validation needed here.
-  static Future<QuickJSByteCodeCacheObject> getCacheObject(Uint8List codeBytes, { String? cacheKey }) async {
+  static Future<QuickJSByteCodeCacheObject> getCacheObject(Uint8List codeBytes, { String? cacheKey, bool? loadedFromCache }) async {
     QuickJSByteCodeCacheObject cacheObject;
 
     // L2 cache in memory.
-    final String hash = cacheKey != null ? _getCacheHashFast(cacheKey) : _getCacheHashSlow(codeBytes);
+    final String hash = (cacheKey != null && loadedFromCache == true) ? _getCacheHashFast(cacheKey) : _getCacheHashSlow(codeBytes);
     if (_caches.containsKey(hash)) {
       cacheObject = _caches[hash]!;
     } else {

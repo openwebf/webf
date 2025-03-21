@@ -108,6 +108,12 @@ abstract class WebFBundle {
     return HttpCacheController.getCacheKey(resolvedUri!).hashCode.toString();
   }
 
+  bool _wasLoadedFromCache = false;
+  bool get loadedFromCache => _wasLoadedFromCache;
+  void setLoadingFromCache() {
+    _wasLoadedFromCache = true;
+  }
+
   // Content type for data.
   // The default value is plain text.
   ContentType? _contentType;
@@ -275,7 +281,9 @@ class NetworkBundle extends WebFBundle {
       WebFProfiler.instance.startTrackNetworkStep(currentProfileOp!, 'request.close()');
     }
 
+    (request as ProxyHttpClientRequest).ownerBundle = this;
     final HttpClientResponse response = await request.close();
+    (request).ownerBundle = null;
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackNetworkStep(currentProfileOp!);
