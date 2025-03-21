@@ -96,10 +96,6 @@
         });
         this.user = res.data.user;
     },
-    activated() {
-      console.log('onShow');
-      console.log('window.webf.hybridHistory.state: ', window.webf.hybridHistory.state);
-    },
     methods: {}
   }
   </script>

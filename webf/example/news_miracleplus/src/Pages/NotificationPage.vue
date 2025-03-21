@@ -1,5 +1,5 @@
 <template>
-  <div class="notification-page">
+  <div class="notification-page" @onscreen="onScreen" @offscreen="offScreen">
     <div class="page-title">通知</div>
     <webf-listview class="notification-list">
       <div v-for="notification in notifications" :key="notification.id" class="notification-item">
@@ -32,12 +32,12 @@ export default {
       userStore,
     }
   },
-  async activated() {
-    console.log('NotificationPage activated');
+  async onScreen() {
+    console.log('NotificationPage onScreen');
     await this.fetchNotifications();
   },
-  async deactivated() {
-    console.log('NotificationPage deactivated');
+  async offScreen() {
+    console.log('NotificationPage offScreen');
   },
   methods: {
     async fetchNotifications() {

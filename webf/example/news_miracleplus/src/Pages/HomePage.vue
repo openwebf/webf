@@ -1,6 +1,6 @@
 <template>
   <div id="main">
-    <feeds-tabs :tabs="tabsConfig" @change="onTabChange">
+    <feeds-tabs :tabs="tabsConfig" @change="onTabChange" @onscreen="onScreen" @offscreen="offScreen">
         <!-- 热门标签页内容 -->
         <template #hot>
             <webf-listview class="listview">
@@ -96,8 +96,7 @@ export default {
       return this.userStore.userAvatar;
     }
   },
-  async activated() {
-    console.log('HomePage activated');
+  async onScreen() {
     this.$refs.loading.show({
       text: '加载中'
     });
@@ -105,14 +104,7 @@ export default {
     this.hotList = res.data.feeds;
     this.$refs.loading.hide();
   },
-  async deactivated() {
-    console.log('HomePage deactivated');
-  },
-  updated() {
-    console.log('isLoggedIn', this.isLoggedIn);
-    console.log('userInfo', this.userInfo);
-    console.log('userName', this.userName);
-    console.log('userAvatar', this.userAvatar);
+  async offScreen() {
   },
   data: () => {
     return {

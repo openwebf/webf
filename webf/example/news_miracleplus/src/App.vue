@@ -42,29 +42,19 @@
     <flutter-tab-bar ref="tabBar" class="tab-bar" backgroundColor="#FFFFFF" activeColor="#007AFF"
       :currentIndex="currentIndex" @tabchange="handleTabChange">
       <flutter-tab-bar-item title="首页" icon="home" path="/home">
-        <keep-alive>
-          <home-page v-if="currentIndex === 0"></home-page>
-        </keep-alive>
+        <home-page v-if="currentIndex === 0"></home-page>
       </flutter-tab-bar-item>
       <flutter-tab-bar-item title="搜索" icon="search" path="/search">
-        <keep-alive>
-          <search-page v-if="currentIndex === 1"></search-page>
-        </keep-alive>
+        <search-page v-if="currentIndex === 1"></search-page>
       </flutter-tab-bar-item>
       <flutter-tab-bar-item title="发布" icon="add_circled_solid" path="/publish">
-        <keep-alive>
-          <publish-page v-if="currentIndex === 2"></publish-page>
-        </keep-alive>
+        <publish-page v-if="currentIndex === 2"></publish-page>
       </flutter-tab-bar-item>
       <flutter-tab-bar-item title="消息" icon="bell" path="/notification">
-        <keep-alive>
-          <notification-page v-if="currentIndex === 3"></notification-page>
-        </keep-alive>
+        <notification-page v-if="currentIndex === 3"></notification-page>
       </flutter-tab-bar-item>
       <flutter-tab-bar-item title="我的" icon="person" path="/my">
-        <keep-alive>
-          <my-page v-if="currentIndex === 4"></my-page>
-        </keep-alive>
+        <my-page v-if="currentIndex === 4"></my-page>
       </flutter-tab-bar-item>
     </flutter-tab-bar>
   </router-view>

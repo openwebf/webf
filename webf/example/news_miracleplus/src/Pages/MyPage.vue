@@ -1,5 +1,5 @@
 <template>
-  <div class="my-page">
+  <div class="my-page" @onscreen="onScreen" @offscreen="offScreen">
     <div class="user-info-block">
       <img :src="formattedAvatar" class="avatar" />
       <div class="name" v-if="isLoggedIn">{{ userInfo.name }}</div>
@@ -112,6 +112,12 @@ export default {
     //   this[`${category}Feeds`] = res.data.feeds;
     // });
   // },
+  async onScreen() {
+    console.log('MyPage onScreen');
+  },
+  async offScreen() {
+    console.log('MyPage offScreen');
+  },
   data() {
     return {
       user: {
@@ -146,15 +152,6 @@ export default {
       return this.userInfo.company;
     }
   },
-  activated() {
-    console.log('MyPage activated');
-  },
-  deactivated() {
-    console.log('MyPage deactivated');
-  },
-  beforeUnmount() {
-    console.log('MyPage beforeUnmount');
-  },
   methods: {
     goToLoginPage() {
       window.webf.hybridHistory.pushState({}, '/login');
@@ -170,7 +167,7 @@ export default {
     },
     goToQuestionPage() {
       window.webf.hybridHistory.pushState({
-        id: 'xMqhdl',
+        id: 'v9Vh5b',
       }, '/question');
     },
     goToSettingPage() {
