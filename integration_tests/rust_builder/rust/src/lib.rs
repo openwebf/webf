@@ -6,6 +6,7 @@ pub mod async_storage;
 pub mod dom;
 pub mod cookie;
 pub mod navigator;
+pub mod performance;
 pub mod storage;
 pub mod timer;
 
