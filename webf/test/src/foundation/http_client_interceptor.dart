@@ -54,7 +54,7 @@ void main() {
 
 class TestHttpClientInterceptor implements HttpClientInterceptor {
   @override
-  Future<HttpClientRequest?> beforeRequest(HttpClientRequest request) async {
+  Future<HttpClientRequest?> beforeRequest(String requestId, HttpClientRequest request) async {
     if (request.headers.value('x-test-id') == 'beforeRequest-001') {
       request.headers.add('x-test-before-request', 'modified');
     }
@@ -62,7 +62,7 @@ class TestHttpClientInterceptor implements HttpClientInterceptor {
   }
 
   @override
-  Future<HttpClientResponse?> afterResponse(HttpClientRequest request, HttpClientResponse response) async {
+  Future<HttpClientResponse?> afterResponse(String requestId, HttpClientRequest request, HttpClientResponse response) async {
     if (request.headers.value('x-test-id') == 'afterResponse-001') {
       return HttpClientStreamResponse(response,
           initialHeaders: createHttpHeaders(initialHeaders: {
@@ -73,7 +73,7 @@ class TestHttpClientInterceptor implements HttpClientInterceptor {
   }
 
   @override
-  Future<HttpClientResponse?> shouldInterceptRequest(HttpClientRequest request) async {
+  Future<HttpClientResponse?> shouldInterceptRequest(String requestId, HttpClientRequest request) async {
     if (request.headers.value('x-test-id') == 'shouldInterceptRequest-001') {
       return HttpClientStreamResponse(Stream.value('HelloWorld'.codeUnits));
     }
