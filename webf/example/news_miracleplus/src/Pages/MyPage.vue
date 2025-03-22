@@ -35,8 +35,8 @@
       </div>
       
       <div class="karma-count">
-        <div>社区 Karma： {{ userInfo.karma || 0 }}</div>
-        <flutter-cupertino-icon type="question_circle" />
+        <div class="karma-count-text">社区 Karma： {{ userInfo.karma || 0 }}</div>
+        <flutter-cupertino-icon type="question_circle" class="karma-help-icon" @click="showKarmaHelp = true" />
       </div>
     </div>
     <flutter-cupertino-segmented-tab>
@@ -82,6 +82,25 @@
       </flutter-cupertino-segmented-tab-item>
     </flutter-cupertino-segmented-tab>
     <flutter-cupertino-toast ref="toast" />
+
+    <!-- Add Karma help modal -->
+    <flutter-cupertino-modal-popup
+      :show="showKarmaHelp"
+      @close="showKarmaHelp = false"
+      position="center"
+    >
+      <div class="karma-help-modal">
+        <div class="karma-help-title">什么是 Karma？</div>
+        <div class="karma-help-content">积分统计社区贡献，分享、回答、评论上的点赞和浏览能提高积分</div>
+        <flutter-cupertino-button
+          type="primary"
+          class="karma-help-btn"
+          @click="showKarmaHelp = false"
+        >
+          知道了
+        </flutter-cupertino-button>
+      </div>
+    </flutter-cupertino-modal-popup>
   </div>
 
 </template>
@@ -120,6 +139,7 @@ export default {
   },
   data() {
     return {
+      showKarmaHelp: false,
       user: {
       },
       allFeeds: [],
@@ -272,6 +292,43 @@ export default {
       color: #999;
       display: flex;
       align-items: center;
+
+      .karma-count-text {
+        margin-right: 4px;
+      }
+
+      .karma-help-icon {
+        color: #999;
+      }
+    }
+  }
+
+  .karma-help-modal {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    width: 280px;
+
+    .karma-help-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .karma-help-content {
+      font-size: 15px;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .karma-help-btn {
+      width: 100%;
+      height: 44px;
+      color: var(--font-color-primary);
     }
   }
 }
