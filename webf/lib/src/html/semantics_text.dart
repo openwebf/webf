@@ -53,7 +53,7 @@ const Map<String, dynamic> _hrDefaultStyle = {
   DISPLAY: BLOCK,
   MARGIN: '1em 0',
   BORDER_WIDTH: '0.5px',
-  BORDER_STYLE: BorderStyle.solid,
+  BORDER_STYLE: SOLID,
   BORDER_COLOR: 'rgb(136,136,136)',
 };
 
