@@ -454,7 +454,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           // first layout text child need use current line left extent to do first layout,
           // if happen line break next step will use mainAxisExtent layout twice,
           if (isCanUseInlineBoxConstraints(child, mainAxisLimit, childConstraints) &&
-              !isBreakForBlock(preChild) &&
+              !isBreakForBlock(preChild) && !isJoinBox(child) &&
               runLineBox.mainAxisExtent != 0 &&
               childConstraints is InlineBoxConstraints) {
             double leftWidth = runLineBox.findLastLineRenderMainExtent();
