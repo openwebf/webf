@@ -7,6 +7,7 @@
 #ifndef WEBF_CORE_WEBF_API_PLUGIN_API_TOUCH_INIT_H_
 #define WEBF_CORE_WEBF_API_PLUGIN_API_TOUCH_INIT_H_
 #include <stdint.h>
+#include "core/native/vector_value_ref.h"
 #include "webf_value.h"
 #include "foundation/native_value.h"
 namespace webf {

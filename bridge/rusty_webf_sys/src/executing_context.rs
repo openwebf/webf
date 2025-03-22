@@ -12,6 +12,7 @@ pub struct ExecutingContextRustMethods {
   pub version: c_double,
   pub get_document: extern "C" fn(*const OpaquePtr) -> RustValue<DocumentRustMethods>,
   pub get_window: extern "C" fn(*const OpaquePtr) -> RustValue<WindowRustMethods>,
+  pub get_performance: extern "C" fn(*const OpaquePtr) -> RustValue<PerformanceRustMethods>,
   pub create_exception_state: extern "C" fn() -> RustValue<ExceptionStateRustMethods>,
   pub finish_recording_ui_operations: extern "C" fn(*const OpaquePtr) -> c_void,
   pub webf_sync_buffer: extern "C" fn(*const OpaquePtr) -> c_void,
@@ -117,6 +118,14 @@ impl ExecutingContext {
       ((*self.method_pointer).get_window)(self.ptr)
     };
     return Window::initialize(result.value, self, result.method_pointer, result.status);
+  }
+
+  /// Obtain the performance instance from ExecutingContext.
+  pub fn performance(&self) -> Performance {
+    let result = unsafe {
+      ((*self.method_pointer).get_performance)(self.ptr)
+    };
+    return Performance::initialize(result.value, self, result.method_pointer, result.status);
   }
 
   /// Obtain the document instance from ExecutingContext.

@@ -282,4 +282,9 @@ void Performance::measure(const AtomicString& measure_name,
   }
 }
 
+const PerformancePublicMethods* Performance::performancePublicMethods() {
+  static PerformancePublicMethods performance_public_methods;
+  return &performance_public_methods;
+}
+
 }  // namespace webf

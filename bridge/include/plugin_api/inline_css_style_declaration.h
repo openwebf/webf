@@ -7,6 +7,7 @@
 #ifndef WEBF_CORE_WEBF_API_PLUGIN_API_INLINE_CSS_STYLE_DECLARATION_H_
 #define WEBF_CORE_WEBF_API_PLUGIN_API_INLINE_CSS_STYLE_DECLARATION_H_
 #include <stdint.h>
+#include "core/native/vector_value_ref.h"
 #include "rust_readable.h"
 #include "css_style_declaration.h"
 namespace webf {

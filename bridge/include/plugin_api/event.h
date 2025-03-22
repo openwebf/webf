@@ -7,6 +7,7 @@
 #ifndef WEBF_CORE_WEBF_API_PLUGIN_API_EVENT_H_
 #define WEBF_CORE_WEBF_API_PLUGIN_API_EVENT_H_
 #include <stdint.h>
+#include "core/native/vector_value_ref.h"
 #include "rust_readable.h"
 #include "webf_value.h"
 namespace webf {

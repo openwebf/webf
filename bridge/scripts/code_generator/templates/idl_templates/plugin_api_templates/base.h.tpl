@@ -9,6 +9,8 @@
 #ifndef WEBF_CORE_WEBF_API_<%= blob.filename.toUpperCase() %>_H_
 #define WEBF_CORE_WEBF_API_<%= blob.filename.toUpperCase() %>_H_
 #include <stdint.h>
+#include "core/native/vector_value_ref.h"
+
 <%= content %>
 
 #endif  // WEBF_CORE_WEBF_API_<%= blob.filename.toUpperCase() %>_H_

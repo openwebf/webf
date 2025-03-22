@@ -632,6 +632,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/plugin_api_mouse_event.cc
     out/plugin_api_mutation_observer_registration.cc
     out/plugin_api_performance_entry.cc
+    out/plugin_api_performance.cc
     out/plugin_api_performance_mark.cc
     out/plugin_api_performance_measure.cc
     out/plugin_api_pointer_event.cc

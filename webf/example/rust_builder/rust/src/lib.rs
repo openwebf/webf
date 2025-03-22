@@ -1,7 +1,7 @@
 use std::ffi::c_void;
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventTargetMethods, NativeLibraryMetaData, NativeValue, RustValue};
+use webf_sys::{initialize_webf_api, performance, AddEventListenerOptions, EventTargetMethods, NativeLibraryMetaData, NativeValue, PerformanceMarkOptions, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
@@ -15,6 +15,23 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>, 
   document.dispatch_event(&click_event, &exception_state);
 
   let div_element = document.create_element("div", &exception_state).unwrap();
+
+  let performance = context.performance();
+  let exception_state = context.create_exception_state();
+  let now = performance.now(&exception_state).unwrap();
+  let options = PerformanceMarkOptions {
+    detail: NativeValue::new_null(),
+    start_time: now as f64,
+  };
+
+  performance.mark("abc", &options, &exception_state).unwrap();
+  performance.mark("efg", &options, &exception_state).unwrap();
+
+  let entries = performance.get_entries(&exception_state).unwrap();
+  let has_abc = entries.iter().any(|entry| entry.name() == "abc");
+  let has_efg = entries.iter().any(|entry| entry.name() == "efg");
+  assert!(has_abc);
+  assert!(has_efg);
 
   let event_listener_options = AddEventListenerOptions {
     passive: 0,

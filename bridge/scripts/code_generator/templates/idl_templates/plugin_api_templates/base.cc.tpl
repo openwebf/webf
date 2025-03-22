@@ -41,4 +41,7 @@
 #include "core/events/hybrid_router_change_event.h"
 #include "core/events/error_event.h"
 #include "core/events/message_event.h"
+#include "core/timing/performance.h"
+#include "core/native/vector_value_ref.h"
+#include "include/plugin_api/performance_mark_options.h"
 <%= content %>

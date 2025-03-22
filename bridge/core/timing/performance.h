@@ -11,6 +11,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
 #include "performance_entry.h"
+#include "plugin_api/performance.h"
 #include "qjs_performance_mark_options.h"
 
 namespace webf {
@@ -62,6 +63,8 @@ class Performance : public ScriptWrappable {
                ExceptionState& exception_state);
 
   void Trace(GCVisitor* visitor) const override;
+
+  const PerformancePublicMethods* performancePublicMethods();
 
  private:
   void measure(const AtomicString& measure_name,

@@ -7,7 +7,7 @@ import {IDLBlob} from '../IDLBlob';
 import {ClassObject, FunctionArguments, FunctionArgumentType} from '../declaration';
 import {getPointerType, isPointerType} from '../generateSource';
 import {ParameterType} from '../analyzer';
-import {isAnyType, isStringType} from './cppGen';
+import {isAnyType, isStringType, isVectorType} from './cppGen';
 
 function readSourceTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../../../templates/idl_templates/plugin_api_templates/' + name + '.rs.tpl'), {encoding: 'utf-8'});
@@ -21,6 +21,9 @@ function generatePublicReturnTypeValue(type: ParameterType) {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
     return `RustValue<${pointerType}RustMethods>`;
+  }
+  if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
+    return `VectorValueRef<${getPointerType(type.value)}RustMethods>`;
   }
   switch (type.value) {
     case FunctionArgumentType.int64: {
@@ -49,10 +52,13 @@ function generatePublicReturnTypeValue(type: ParameterType) {
   }
 }
 
-function generateMethodReturnType(type: ParameterType) {
+function generateMethodReturnType(type: ParameterType): string {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
     return `${pointerType}`;
+  }
+  if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
+    return `Vec<${getPointerType(type.value)}>`;
   }
   switch (type.value) {
     case FunctionArgumentType.int64: {
@@ -84,7 +90,7 @@ function generateMethodReturnType(type: ParameterType) {
 function generatePublicParameterType(type: ParameterType): string {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
-    return `${pointerType}*`;
+    return `*const ${pointerType}`;
   }
   switch (type.value) {
     case FunctionArgumentType.int64: {
@@ -141,7 +147,7 @@ function generatePublicParametersName(parameters: FunctionArguments[]): string {
 function generateMethodParameterType(type: ParameterType): string {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
-    return `${pointerType}*`;
+    return `&${pointerType}`;
   }
   switch (type.value) {
     case FunctionArgumentType.int64: {
@@ -199,8 +205,6 @@ function generateMethodParametersName(parameters: FunctionArguments[]): string {
       case FunctionArgumentType.boolean: {
         return `i32::from(${generateValidRustIdentifier(param.name)})`;
       }
-      case FunctionArgumentType.any:
-        return `${param.name}`;
       default:
         return `${generateValidRustIdentifier(param.name)}`;
     }
@@ -257,6 +261,9 @@ function generateMethodReturnStatements(type: ParameterType) {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
     return `Ok(${pointerType}::initialize(value.value, self.context(), value.method_pointer, value.status))`;
+  }
+  if (isVectorType(type)) {
+    return 'Ok(result)'
   }
   switch (type.value) {
     case FunctionArgumentType.boolean: {
@@ -340,8 +347,10 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
           generatePropReturnStatements,
           generateValidRustIdentifier,
           isVoidType,
+          isVectorType,
           isAnyType,
           isStringType,
+          getPointerType,
           subClasses: _.uniq(subClasses),
           options,
         });

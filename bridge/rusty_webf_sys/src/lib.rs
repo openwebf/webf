@@ -20,6 +20,7 @@ pub mod script_value_ref;
 pub mod webf_event_listener;
 pub mod webf_function;
 pub mod webf_future;
+pub mod vector_value_ref;
 
 pub use css::*;
 pub use dom::*;
@@ -37,6 +38,7 @@ pub use script_value_ref::*;
 pub use webf_event_listener::*;
 pub use webf_function::*;
 pub use webf_future::*;
+pub use vector_value_ref::*;
 
 #[repr(C)]
 pub struct OpaquePtr;

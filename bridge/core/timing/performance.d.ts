@@ -11,8 +11,8 @@ interface Performance {
   getEntriesByName(name: string, type?: string): PerformanceEntry[];
 
   mark(name: string, options?: PerformanceMarkOptions): void;
-  measure(name: string): void;
-  measure(name: string, startMark?: any): void;
+  // measure(name: string): void;
+  // measure(name: string, startMark?: any): void;
   measure(name: string, startMark?: any, endMark?: string): void;
   clearMarks(name?: string): void;
   clearMeasures(name?: string): void;

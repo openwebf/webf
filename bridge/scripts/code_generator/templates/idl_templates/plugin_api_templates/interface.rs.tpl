@@ -150,6 +150,15 @@ impl <%= className %> {
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
     }
+    <% if (isVectorType(method.returnType)) { %>
+    let size = value.size as usize;
+    let mut result = Vec::with_capacity(size);
+    for i in 0..size {
+      let value = unsafe { &*value.data.add(i) };
+      let value = <%= getPointerType(method.returnType.value) %>::initialize(value.value, self.context(), value.method_pointer, value.status);
+      result.push(value);
+    }
+    <% } %>
     <%= generateMethodReturnStatements(method.returnType) %>
   }
     <% } %>
