@@ -55,7 +55,7 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
       <% } else { %>
   <%= arg.name %>_p->set<%=_.upperFirst(prop.name)%>(<%= arg.name %>-><%=_.snakeCase(prop.name)%>);
      <% } %>
-  
+
     <% }) %>
 
     <% } %>
@@ -72,7 +72,7 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
     <% } else if (isVectorType(method.returnType)) { %>
   auto vector_value = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
   auto vector_size = vector_value.size();
-  WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>* return_elements = (WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>*)malloc(sizeof(WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>) * vector_size);
+  WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>* return_elements = (WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>*)dart_malloc(sizeof(WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>) * vector_size);
   for (int i = 0; i < vector_size; i++) {
     <%= getPointerType(method.returnType.value) %>* entry = vector_value[i];
     WebFValueStatus* status_block = entry->KeepAlive();
