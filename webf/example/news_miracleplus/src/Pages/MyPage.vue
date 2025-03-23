@@ -41,7 +41,7 @@
     </div>
     <flutter-cupertino-segmented-tab @change="onTabChange">
       <flutter-cupertino-segmented-tab-item title="全部">
-        <webf-listview class="feed-listview">
+        <webf-listview class="feed-listview" @refresh="onRefreshAll" @loadmore="onLoadMoreAll">
           <div v-if="!isLoggedIn">
             <login-tip />
           </div>
@@ -54,7 +54,7 @@
         </webf-listview>
       </flutter-cupertino-segmented-tab-item>
       <flutter-cupertino-segmented-tab-item title="分享">
-        <webf-listview class="feed-listview">
+        <webf-listview class="feed-listview" @refresh="onRefreshShare" @loadmore="onLoadMoreShare">
           <div v-if="!isLoggedIn">
             <login-tip />
           </div>
@@ -67,7 +67,7 @@
         </webf-listview>
       </flutter-cupertino-segmented-tab-item>
       <flutter-cupertino-segmented-tab-item title="评论">
-        <webf-listview class="feed-listview">
+        <webf-listview class="feed-listview" @refresh="onRefreshComment" @loadmore="onLoadMoreComment">
           <div v-if="!isLoggedIn">
             <login-tip />
           </div>
@@ -80,7 +80,7 @@
         </webf-listview>
       </flutter-cupertino-segmented-tab-item>
       <flutter-cupertino-segmented-tab-item title="点赞">
-        <webf-listview class="feed-listview">
+        <webf-listview class="feed-listview" @refresh="onRefreshLike" @loadmore="onLoadMoreLike">
           <div v-if="!isLoggedIn">
             <login-tip />
           </div>
@@ -93,7 +93,7 @@
         </webf-listview>
       </flutter-cupertino-segmented-tab-item>
       <flutter-cupertino-segmented-tab-item title="收藏">
-        <webf-listview class="feed-listview">
+        <webf-listview class="feed-listview" @refresh="onRefreshCollect" @loadmore="onLoadMoreCollect">
           <div v-if="!isLoggedIn">
             <login-tip />
           </div>
@@ -154,6 +154,17 @@ export default {
       commentFeeds: [],
       likeFeeds: [],
       collectFeeds: [],
+      allPage: 1,
+      sharePage: 1,
+      commentPage: 1,
+      likePage: 1,
+      collectPage: 1,
+      allHasMore: true,
+      shareHasMore: true,
+      commentHasMore: true,
+      likeHasMore: true,
+      collectHasMore: true,
+      isLoading: false
     }
   },
   setup() {
@@ -182,7 +193,7 @@ export default {
   methods: {
     async onScreen() {
       if (this.isLoggedIn) {
-        await this.getFeeds();
+        await this.loadFeeds('all', 1, true);
       }
     },
     goToLoginPage() {
@@ -208,30 +219,157 @@ export default {
     goToSettingPage() {
         window.webf.hybridHistory.pushState({}, '/setting');
     },
-    async getFeeds(category = 'all') {
+    async loadFeeds(category = 'all', page = 1, replace = false) {
+      if (this.isLoading) return;
+      
       try {
-        this.$refs.loading.show({
-          text: '加载中'
-        });
+        this.isLoading = true;
+        if (page === 1) {
+          this.$refs.loading.show({
+            text: '加载中'
+          });
+        }
         
         // 调用 API 获取数据
         const res = await api.auth.getUserFeedsList({
           userId: this.userInfo.id,
           category,
-          page: 1,
+          page,
         });
         
-        if (res && res.data && res.data.feeds && res.data.feeds.length > 0) {
-          this[`${category}Feeds`] = res.data.feeds;
+        // 处理数据
+        if (res && res.data && res.data.feeds) {
+          // 更新页面数据
+          if (replace) {
+            this[`${category}Feeds`] = res.data.feeds;
+            this[`${category}Page`] = 1;
+          } else {
+            this[`${category}Feeds`] = [...this[`${category}Feeds`], ...res.data.feeds];
+          }
+          
+          // 判断是否还有更多数据
+          this[`${category}HasMore`] = res.data.feeds.length > 0;
+          
+          // 更新页码
+          if (!replace && res.data.feeds.length > 0) {
+            this[`${category}Page`] = page;
+          }
+          
+          console.log(`已加载 ${category} feeds: ${res.data.feeds.length}, 当前页: ${this[`${category}Page`]}`);
+        } else {
+          this[`${category}HasMore`] = false;
         }
       } catch (error) {
-        console.error('获取feeds失败:', error);
+        console.error(`获取${category}列表失败:`, error);
         this.$refs.toast.show({
           type: 'error',
           content: '获取数据失败'
         });
       } finally {
-        this.$refs.loading.hide();
+        this.isLoading = false;
+        if (page === 1) {
+          this.$refs.loading.hide();
+        }
+      }
+    },
+    async onRefreshAll() {
+      try {
+        await this.loadFeeds('all', 1, true);
+        this.$refs.toast.show({
+          type: 'success',
+          content: '刷新成功'
+        });
+      } catch (error) {
+        // 错误已在 loadFeeds 中处理
+      }
+    },
+    async onRefreshShare() {
+      try {
+        await this.loadFeeds('share', 1, true);
+        this.$refs.toast.show({
+          type: 'success',
+          content: '刷新成功'
+        });
+      } catch (error) {
+        // 错误已在 loadFeeds 中处理
+      }
+    },
+    async onRefreshComment() {
+      try {
+        await this.loadFeeds('comment', 1, true);
+        this.$refs.toast.show({
+          type: 'success',
+          content: '刷新成功'
+        });
+      } catch (error) {
+        // 错误已在 loadFeeds 中处理
+      }
+    },
+    async onRefreshLike() {
+      try {
+        await this.loadFeeds('like', 1, true);
+        this.$refs.toast.show({
+          type: 'success',
+          content: '刷新成功'
+        });
+      } catch (error) {
+        // 错误已在 loadFeeds 中处理
+      }
+    },
+    async onRefreshCollect() {
+      try {
+        await this.loadFeeds('collect', 1, true);
+        this.$refs.toast.show({
+          type: 'success',
+          content: '刷新成功'
+        });
+      } catch (error) {
+        // 错误已在 loadFeeds 中处理
+      }
+    },
+    async onLoadMoreAll() {
+      if (!this.allHasMore || this.isLoading) return;
+      
+      try {
+        await this.loadFeeds('all', this.allPage + 1);
+      } catch (error) {
+        // 错误已在 loadFeeds 中处理
+      }
+    },
+    async onLoadMoreShare() {
+      if (!this.shareHasMore || this.isLoading) return;
+      
+      try {
+        await this.loadFeeds('share', this.sharePage + 1);
+      } catch (error) {
+        // 错误已在 loadFeeds 中处理
+      }
+    },
+    async onLoadMoreComment() {
+      if (!this.commentHasMore || this.isLoading) return;
+      
+      try {
+        await this.loadFeeds('comment', this.commentPage + 1);
+      } catch (error) {
+        // 错误已在 loadFeeds 中处理
+      }
+    },
+    async onLoadMoreLike() {
+      if (!this.likeHasMore || this.isLoading) return;
+      
+      try {
+        await this.loadFeeds('like', this.likePage + 1);
+      } catch (error) {
+        // 错误已在 loadFeeds 中处理
+      }
+    },
+    async onLoadMoreCollect() {
+      if (!this.collectHasMore || this.isLoading) return;
+      
+      try {
+        await this.loadFeeds('collect', this.collectPage + 1);
+      } catch (error) {
+        // 错误已在 loadFeeds 中处理
       }
     },
     getActionName(actionType) {
@@ -247,8 +385,12 @@ export default {
     async onTabChange(e) {
       const index = e.detail;
       const category = ['all', 'share', 'comment', 'like', 'collect'][index];
-      await this.getFeeds(category);
-    },
+      
+      // 如果数据为空，加载第一页
+      if (this[`${category}Feeds`].length === 0) {
+        await this.loadFeeds(category, 1, true);
+      }
+    }
   }
 }
 </script>

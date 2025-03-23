@@ -1,10 +1,10 @@
 <template>
     <div class="share-link-card" @click="viewDetail">
       <!-- 标题 -->
-      <text class="title">{{ data.title }}</text>
+      <div class="title">{{ data.title }}</div>
       
       <!-- 内容预览 -->
-      <text class="content" :numberOfLines="3">{{ data.content }}</text>
+      <div class="content" :numberOfLines="3">{{ data.content }}</div>
       
       <!-- 底部数据统计 -->
       <div class="footer">

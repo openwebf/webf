@@ -24,7 +24,7 @@
       
       <flutter-cupertino-segmented-tab @change="onTabChange">
         <flutter-cupertino-segmented-tab-item title="全部">
-          <webf-listview class="feed-listview">
+          <webf-listview class="feed-listview" @refresh="onRefreshAll" @loadmore="onLoadMoreAll">
             <div v-if="allFeeds.length === 0" class="empty-state">
               暂无内容
             </div>
@@ -34,7 +34,7 @@
           </webf-listview>
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="分享">
-          <webf-listview class="feed-listview">
+          <webf-listview class="feed-listview" @refresh="onRefreshShare" @loadmore="onLoadMoreShare">
             <div v-if="shareFeeds.length === 0" class="empty-state">
               暂无分享内容
             </div>
@@ -44,7 +44,7 @@
           </webf-listview>
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="评论">
-          <webf-listview class="feed-listview">
+          <webf-listview class="feed-listview" @refresh="onRefreshComment" @loadmore="onLoadMoreComment">
             <div v-if="commentFeeds.length === 0" class="empty-state">
               暂无评论内容
             </div>
@@ -54,7 +54,7 @@
           </webf-listview>
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="点赞">
-          <webf-listview class="feed-listview">
+          <webf-listview class="feed-listview" @refresh="onRefreshLike" @loadmore="onLoadMoreLike">
             <div v-if="likeFeeds.length === 0" class="empty-state">
               暂无点赞内容
             </div>
@@ -105,7 +105,7 @@
       const userId = this.getUserId();
       if (userId) {
         await this.getUserInfo(userId);
-        await this.getFeeds('all', userId);
+        await this.loadFeeds('all', userId, 1, true);
       }
     },
     async offScreen() {
@@ -119,6 +119,18 @@
         shareFeeds: [],
         commentFeeds: [],
         likeFeeds: [],
+        // 添加分页数据
+        allPage: 1,
+        sharePage: 1,
+        commentPage: 1,
+        likePage: 1,
+        // 是否有更多数据
+        allHasMore: true,
+        shareHasMore: true,
+        commentHasMore: true,
+        likeHasMore: true,
+        // 加载状态
+        isLoading: false
       }
     },
     setup() {
@@ -143,7 +155,7 @@
       const userId = this.getUserId();
       if (userId) {
         await this.getUserInfo(userId);
-        await this.getFeeds('all', userId);
+        await this.loadFeeds('all', userId, 1, true);
       }
     },
     methods: {
@@ -181,39 +193,163 @@
           this.$refs.loading.hide();
         }
       },
-      async getFeeds(category = 'all', userId) {
+      async loadFeeds(category = 'all', userId, page = 1, replace = false) {
+        if (this.isLoading) return;
+        
         try {
-          this.$refs.loading.show({
-            text: '加载中'
-          });
+          this.isLoading = true;
+          if (page === 1) {
+            this.$refs.loading.show({
+              text: '加载中'
+            });
+          }
           
           // 调用 API 获取数据
           const res = await api.auth.getUserFeedsList({
             userId,
             category,
-            page: 1,
+            page,
           });
           
-          // API 返回数据处理
+          // 处理数据
           if (res && res.data && res.data.feeds && res.data.feeds.length > 0) {
-            this[`${category}Feeds`] = res.data.feeds;
-            console.log(`已加载 ${category} feeds: ${res.data.feeds.length}`);
-            console.log(JSON.stringify(this[`${category}Feeds`]));
+            // 更新页面数据
+            if (replace) {
+              this[`${category}Feeds`] = res.data.feeds;
+              this[`${category}Page`] = 1;
+            } else {
+              this[`${category}Feeds`] = [...this[`${category}Feeds`], ...res.data.feeds];
+            }
+            
+            // 判断是否还有更多数据
+            this[`${category}HasMore`] = res.data.feeds.length > 0;
+            
+            // 更新页码
+            if (!replace && res.data.feeds.length > 0) {
+              this[`${category}Page`] = page;
+            }
+            
+            console.log(`已加载 ${category} feeds: ${res.data.feeds.length}, 当前页: ${this[`${category}Page`]}`);
           } else {
-            console.log(`没有获取到 ${category} 数据，返回: `, res);
-            // 创建示例数据供测试
-            this.createSampleFeeds(category);
+            this[`${category}HasMore`] = false;
+            
+            if (this[`${category}Feeds`].length === 0) {
+              // 如果没有数据，创建示例数据
+              this.createSampleFeeds(category);
+            }
           }
         } catch (error) {
-          console.error(`获取${category}动态失败:`, error);
+          console.error(`获取${category}列表失败:`, error);
           this.$refs.toast.show({
             type: 'error',
             content: '获取数据失败'
           });
-          // 创建示例数据供测试
-          this.createSampleFeeds(category);
+          
+          if (this[`${category}Feeds`].length === 0) {
+            // 如果出错且没有数据，创建示例数据
+            this.createSampleFeeds(category);
+          }
         } finally {
-          this.$refs.loading.hide();
+          this.isLoading = false;
+          if (page === 1) {
+            this.$refs.loading.hide();
+          }
+        }
+      },
+      async onRefreshAll() {
+        const userId = this.getUserId();
+        if (!userId) return;
+        
+        try {
+          await this.loadFeeds('all', userId, 1, true);
+          this.$refs.toast.show({
+            type: 'success',
+            content: '刷新成功'
+          });
+        } catch (error) {
+          // 错误已在 loadFeeds 中处理
+        }
+      },
+      async onRefreshShare() {
+        const userId = this.getUserId();
+        if (!userId) return;
+        
+        try {
+          await this.loadFeeds('share', userId, 1, true);
+          this.$refs.toast.show({
+            type: 'success',
+            content: '刷新成功'
+          });
+        } catch (error) {
+          // 错误已在 loadFeeds 中处理
+        }
+      },
+      async onRefreshComment() {
+        const userId = this.getUserId();
+        if (!userId) return;
+        
+        try {
+          await this.loadFeeds('comment', userId, 1, true);
+          this.$refs.toast.show({
+            type: 'success',
+            content: '刷新成功'
+          });
+        } catch (error) {
+          // 错误已在 loadFeeds 中处理
+        }
+      },
+      async onRefreshLike() {
+        const userId = this.getUserId();
+        if (!userId) return;
+        
+        try {
+          await this.loadFeeds('like', userId, 1, true);
+          this.$refs.toast.show({
+            type: 'success',
+            content: '刷新成功'
+          });
+        } catch (error) {
+          // 错误已在 loadFeeds 中处理
+        }
+      },
+      async onLoadMoreAll() {
+        const userId = this.getUserId();
+        if (!userId || !this.allHasMore || this.isLoading) return;
+        
+        try {
+          await this.loadFeeds('all', userId, this.allPage + 1);
+        } catch (error) {
+          // 错误已在 loadFeeds 中处理
+        }
+      },
+      async onLoadMoreShare() {
+        const userId = this.getUserId();
+        if (!userId || !this.shareHasMore || this.isLoading) return;
+        
+        try {
+          await this.loadFeeds('share', userId, this.sharePage + 1);
+        } catch (error) {
+          // 错误已在 loadFeeds 中处理
+        }
+      },
+      async onLoadMoreComment() {
+        const userId = this.getUserId();
+        if (!userId || !this.commentHasMore || this.isLoading) return;
+        
+        try {
+          await this.loadFeeds('comment', userId, this.commentPage + 1);
+        } catch (error) {
+          // 错误已在 loadFeeds 中处理
+        }
+      },
+      async onLoadMoreLike() {
+        const userId = this.getUserId();
+        if (!userId || !this.likeHasMore || this.isLoading) return;
+        
+        try {
+          await this.loadFeeds('like', userId, this.likePage + 1);
+        } catch (error) {
+          // 错误已在 loadFeeds 中处理
         }
       },
       createSampleFeeds(category) {
@@ -311,7 +447,11 @@
         if (!userId) return;
         
         const category = ['all', 'share', 'comment', 'like'][index];
-        await this.getFeeds(category, userId);
+        
+        // 如果数据为空，加载第一页
+        if (this[`${category}Feeds`].length === 0) {
+          await this.loadFeeds(category, userId, 1, true);
+        }
       }
     }
   }

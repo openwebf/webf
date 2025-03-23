@@ -1,5 +1,6 @@
 <template>
     <div class="share-page" @onscreen="onScreen" @offscreen="offScreen">
+        <!-- TODO: 下拉刷新 -->
         <webf-listview class="webf-listview">
             <!-- 共用的分享头部 -->
             <PostHeader :user="shareLink.user" />
@@ -32,9 +33,15 @@
         <alert-dialog ref="alertRef" />
         <flutter-cupertino-loading ref="loading" />
         <flutter-cupertino-toast ref="toast" />
-        <InviteModal :show="showInviteModal" :loading="loadingUsers" :users="invitedUsers"
-            :search-keyword="searchKeyword" @close="onInviteModalClose" @search="handleSearchInput"
-            @invite="handleInviteUser" />
+        <InviteModal
+            :show="showInviteModal"
+            :loading="loadingUsers"
+            :users="invitedUsers"
+            :search-keyword="searchKeyword"
+            @close="onInviteModalClose"
+            @search="handleSearchInput"
+            @invite="handleInviteUser"
+        />
     </div>
 </template>
 

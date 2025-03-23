@@ -1,7 +1,7 @@
 <template>
   <div class="answer-card">
-    <text class="question-title">{{ data.question.title }}</text>
-    <text class="content" :numberOfLines="3">{{ parsedContent }}</text>
+    <div class="question-title">{{ data.question.title }}</div>
+    <div class="content" :numberOfLines="3">{{ parsedContent }}</div>
     <div class="footer">
       <share-link-count 
         :viewsCount="data.viewsCount" 

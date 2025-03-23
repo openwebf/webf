@@ -1,5 +1,5 @@
 <template>
-    <div class="topic-page">
+    <div class="topic-page" @onscreen="onScreen">
         <webf-listview class="topic-page-listview">
             <TopicHeader 
                 :topic="topic"
@@ -34,13 +34,13 @@ export default {
             feeds: []
         }
     },
-    async mounted() {
-        const id = window.webf.hybridHistory.state.id;
-        const res = await api.topic.getDetail(id);
-        this.topic = res.data.topic;
-        this.feeds = res.data.feeds;
-    },
     methods: {
+        async onScreen() {
+            const id = window.webf.hybridHistory.state.id;
+            const res = await api.topic.getDetail(id);
+            this.topic = res.data.topic;
+            this.feeds = res.data.feeds;
+        },
         handleFollow(topicId) {
             // 处理关注/取消关注逻辑
             console.log('Follow topic:', topicId);

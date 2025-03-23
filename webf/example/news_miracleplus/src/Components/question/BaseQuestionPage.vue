@@ -1,5 +1,6 @@
 <template>
   <div class="question-page" @onscreen="onScreen" @offscreen="offScreen">
+    <!-- TODO: 下拉刷新 -->
     <webf-listview class="question-page-listview">
       <QuestionHeader :question="question" @answer="handleAnswer" @follow="handleFollow" @invite="handleInvite" />
 

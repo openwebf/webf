@@ -7,7 +7,7 @@
           :src="data.logoUrl"
           mode="aspectFill"
         />
-        <text class="link" :numberOfLines="1">{{ data.title }}</text>
+        <div class="link" :numberOfLines="1">{{ data.title }}</div>
       </div>
       <div class="footer">
         <share-link-count :viewsCount="data.viewsCount" :likesCount="data.likesCount" :commentsCount="data.commentsCount" />
