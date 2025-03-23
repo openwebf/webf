@@ -79,7 +79,7 @@ void main() async {
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
-      maxAliveInstances: 1,
+      maxAliveInstances: 2,
       maxAttachedInstances: 1,
       onControllerDisposed: (String name, WebFController controller) {
         print('controller disposed: $name $controller');

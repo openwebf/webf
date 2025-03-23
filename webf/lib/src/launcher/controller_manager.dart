@@ -169,6 +169,26 @@ class WebFControllerManager {
       'setup': setup,
     };
 
+    // Check if controller already exists
+    if (_controllersByName.containsKey(name)) {
+      final instance = _controllersByName[name]!;
+      
+      // If it's disposed, remove it
+      if (instance.state == ControllerState.disposed) {
+        _controllersByName.remove(name);
+      } else {
+        // If it's not disposed, update usage order and return
+        _updateUsageOrder(name);
+        return instance.controller;
+      }
+    }
+    
+    // Check if we've reached max capacity and enforce limits if needed
+    if (_controllersByName.length >= _config.maxAliveInstances &&
+        _config.autoDisposeWhenLimitReached) {
+      _disposeLeastRecentlyUsed();
+    }
+
     // Create the controller
     WebFController controller = createController();
 
@@ -209,10 +229,30 @@ class WebFControllerManager {
       'setup': setup,
     };
 
+    // Check if controller already exists
+    if (_controllersByName.containsKey(name)) {
+      final instance = _controllersByName[name]!;
+      
+      // If it's disposed, remove it
+      if (instance.state == ControllerState.disposed) {
+        _controllersByName.remove(name);
+      } else {
+        // If it's not disposed, update usage order and return
+        _updateUsageOrder(name);
+        return instance.controller;
+      }
+    }
+    
+    // Check if we've reached max capacity and enforce limits if needed
+    if (_controllersByName.length >= _config.maxAliveInstances &&
+        _config.autoDisposeWhenLimitReached) {
+      _disposeLeastRecentlyUsed();
+    }
+    
     // Create the controller
     WebFController controller = createController();
     
-    // Register first to establish name mapping
+    // Register first to establish name mapping (state will be detached)
     registerController(name, controller);
 
     // Set routes
@@ -349,6 +389,21 @@ class WebFControllerManager {
   /// Register a controller with the manager
   /// Returns the registered controller for chaining
   WebFController registerController(String name, WebFController controller) {
+    // If a controller with this name already exists, update its usage order and return it
+    if (_controllersByName.containsKey(name) && 
+        _controllersByName[name]!.state != ControllerState.disposed) {
+      _updateUsageOrder(name);
+      return _controllersByName[name]!.controller;
+    }
+    
+    // Remove any disposed controller with this name
+    if (_controllersByName.containsKey(name) && 
+        _controllersByName[name]!.state == ControllerState.disposed) {
+      _controllersByName.remove(name);
+      // Also cleanup from usage tracking
+      _recentlyUsedControllers.removeWhere((element) => element == name);
+    }
+
     // Check if we've reached max capacity and dispose if needed
     if (_controllersByName.length >= _config.maxAliveInstances &&
         _config.autoDisposeWhenLimitReached) {
@@ -372,8 +427,20 @@ class WebFControllerManager {
   /// Use this when you need immediate access without recreation
   WebFController? getControllerSync(String name) {
     if (_controllersByName.containsKey(name)) {
+      final instance = _controllersByName[name]!;
+      
+      // If controller is disposed, remove it and return null
+      if (instance.state == ControllerState.disposed) {
+        // Remove from tracking collections to prevent memory leaks
+        _controllersByName.remove(name);
+        _recentlyUsedControllers.removeWhere((element) => element == name);
+        _attachedControllers.removeWhere((element) => element == name);
+        return null;
+      }
+      
+      // Update usage order for non-disposed controllers
       _updateUsageOrder(name);
-      return _controllersByName[name]!.controller;
+      return instance.controller;
     }
     return null;
   }
@@ -388,17 +455,28 @@ class WebFControllerManager {
   /// Updates usage order if found
   /// Automatically recreates the controller if it was disposed but init params exist
   Future<WebFController?> getController(String name) async {
-    // If the controller exists and isn't disposed, return it
+    // If the controller exists
     if (_controllersByName.containsKey(name)) {
-      _updateUsageOrder(name);
+      final instance = _controllersByName[name]!;
       
       // If controller is in disposed state but we have init params, recreate it
-      if (_controllersByName[name]!.state == ControllerState.disposed && 
-          _controllerInitParams.containsKey(name)) {
-        return await _recreateController(name);
+      if (instance.state == ControllerState.disposed) {
+        // First remove the disposed instance to prevent memory leaks
+        _controllersByName.remove(name);
+        _recentlyUsedControllers.removeWhere((element) => element == name);
+        
+        // Then recreate if we have initialization parameters
+        if (_controllerInitParams.containsKey(name)) {
+          return await _recreateController(name);
+        }
+        
+        // If no init params, return null
+        return null;
       }
       
-      return _controllersByName[name]!.controller;
+      // Update usage order for non-disposed controllers
+      _updateUsageOrder(name);
+      return instance.controller;
     }
     
     // If controller doesn't exist but we have init params, recreate it
@@ -443,7 +521,9 @@ class WebFControllerManager {
     // Update state to disposed
     if (instance != null && !instance.controller.disposed) {
       final controller = instance.controller;
-      instance.state = ControllerState.disposed;
+      
+      // Remove from map to avoid memory leaks
+      _controllersByName.remove(leastRecentlyUsedName);
       
       // Notify through callback if provided
       if (_config.onControllerDisposed != null) {
@@ -502,12 +582,21 @@ class WebFControllerManager {
         _attachedControllers.removeWhere((element) => element == name);
       }
       
-      // Then dispose
-      await instance.controller.dispose();
+      // Get reference to controller before removing from map
+      final controller = instance.controller;
       
-      // Remove from tracking
+      // Remove from all tracking collections to prevent memory leaks
       _controllersByName.remove(name);
       _recentlyUsedControllers.removeWhere((element) => element == name);
+      _attachedControllers.removeWhere((element) => element == name);
+      
+      // Then dispose
+      await controller.dispose();
+    } else if (instance != null) {
+      // Even if already disposed, remove from tracking collections
+      _controllersByName.remove(name);
+      _recentlyUsedControllers.removeWhere((element) => element == name);
+      _attachedControllers.removeWhere((element) => element == name);
     }
   }
 
