@@ -761,7 +761,7 @@ class WebFController {
 
   String get origin {
     Uri uri = Uri.parse(url);
-    return '${uri.scheme}://${uri.host}:${uri.port}?query=${uri.query}';
+    return '${uri.scheme}://${uri.host}:${uri.port}';
   }
 
   Future<void> executeEntrypoint(
