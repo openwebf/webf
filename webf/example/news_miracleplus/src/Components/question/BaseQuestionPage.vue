@@ -1,7 +1,6 @@
 <template>
   <div class="question-page" @onscreen="onScreen" @offscreen="offScreen">
-    <!-- TODO: 下拉刷新 -->
-    <webf-listview class="question-page-listview">
+    <webf-listview class="question-page-listview" @refresh="onRefresh">
       <QuestionHeader :question="question" @answer="handleAnswer" @follow="handleFollow" @invite="handleInvite" />
 
       <slot name="view-all" :answers-count="question.answersCount" />
@@ -282,7 +281,9 @@ export default {
 
       addReplyToAnswer(this.allAnswers);
     },
-
+    async onRefresh() {
+      await this.onScreen();
+    }
   }
 }
 </script>

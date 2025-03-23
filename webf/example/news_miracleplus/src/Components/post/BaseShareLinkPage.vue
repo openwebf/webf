@@ -1,7 +1,6 @@
 <template>
     <div class="share-page" @onscreen="onScreen" @offscreen="offScreen">
-        <!-- TODO: 下拉刷新 -->
-        <webf-listview class="webf-listview">
+        <webf-listview class="webf-listview" @refresh="onRefresh">
             <!-- 共用的分享头部 -->
             <PostHeader :user="shareLink.user" />
             <PostContent :post="shareLink" />
@@ -396,6 +395,9 @@ export default {
                 });
                 await this.fetchComments();
             }
+        },
+        async onRefresh() {
+            await this.onScreen();
         }
     }
 }
