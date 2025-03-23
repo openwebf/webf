@@ -47,6 +47,9 @@ class WebFViewController implements WidgetsBindingObserver {
         this.gestureListener,
         this.initialCookies}) {}
 
+  bool _inited = false;
+  bool get inited => _inited;
+
   Future<void> initialize() async {
     if (enableDebug) {
       debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
@@ -54,6 +57,8 @@ class WebFViewController implements WidgetsBindingObserver {
     }
 
     _contextId = await initBridge(this, runningThread);
+
+    _inited = true;
 
     _setupObserver();
 
@@ -277,6 +282,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
   // Dispose controller and recycle all resources.
   Future<void> dispose() async {
+    if (!_inited) return;
     await waitingSyncTaskComplete(contextId);
     _disposed = true;
     debugDOMTreeChanged = null;

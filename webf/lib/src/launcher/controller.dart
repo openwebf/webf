@@ -257,6 +257,7 @@ class WebFController {
   Completer controlledInitCompleter = Completer();
   Completer controllerPreloadingCompleter = Completer();
   Completer controllerPreRenderingCompleter = Completer();
+  Completer controllerOnLoadCompleter = Completer();
 
   bool externalController;
 
@@ -305,8 +306,8 @@ class WebFController {
         gestureListener: _gestureListener,
         initialCookies: initialCookies);
 
-    _view.initialize().then((_) {
-      final double contextId = _view.contextId;
+    _view!.initialize().then((_) {
+      final double contextId = view.contextId;
 
       _module = WebFModuleController(this, contextId);
 
@@ -336,16 +337,16 @@ class WebFController {
     });
   }
 
-  late WebFViewController _view;
+  WebFViewController? _view;
 
   WebFViewController get view {
-    return _view;
+    return _view!;
   }
 
-  late WebFModuleController _module;
+  WebFModuleController? _module;
 
   WebFModuleController get module {
-    return _module;
+    return _module!;
   }
 
   final Queue<HistoryItem> previousHistoryStack = Queue();
@@ -353,9 +354,9 @@ class WebFController {
 
   final Map<String, String> sessionStorage = {};
 
-  HistoryModule get history => _module.moduleManager.getModule('History')!;
+  HistoryModule get history => module.moduleManager.getModule('History')!;
 
-  HybridHistoryModule get hybridHistory => _module.moduleManager.getModule('HybridHistory')!;
+  HybridHistoryModule get hybridHistory => module.moduleManager.getModule('HybridHistory')!;
 
   static Uri fallbackBundleUri([double? id]) {
     // The fallback origin uri, like `vm://bundle/0`
@@ -363,7 +364,7 @@ class WebFController {
   }
 
   void setNavigationDelegate(WebFNavigationDelegate delegate) {
-    _view.navigationDelegate = delegate;
+    view.navigationDelegate = delegate;
   }
 
   bool isFontsLoading = false;
@@ -376,36 +377,36 @@ class WebFController {
   }
 
   Future<void> unload() async {
-    assert(!_view.disposed, 'WebF have already disposed');
+    assert(!view.disposed, 'WebF have already disposed');
     // Should clear previous page cached ui commands
-    clearUICommand(_view.contextId);
+    clearUICommand(view.contextId);
 
     await controlledInitCompleter.future;
     controlledInitCompleter = Completer();
 
     Future.microtask(() async {
-      _module.dispose();
-      await _view.dispose();
+      _module?.dispose();
+      await _view?.dispose();
 
-      double oldId = _view.contextId;
+      double oldId = _view!.contextId;
 
       _view = WebFViewController(
-          background: _view.background,
-          enableDebug: _view.enableDebug,
+          background: _view?.background,
+          enableDebug: _view?.enableDebug ?? false,
           rootController: this,
-          navigationDelegate: _view.navigationDelegate,
-          gestureListener: _view.gestureListener,
+          navigationDelegate: _view?.navigationDelegate,
+          gestureListener: _view?.gestureListener,
           runningThread: runningThread!);
 
-      await _view.initialize();
+      await _view?.initialize();
 
-      _module = WebFModuleController(this, _view.contextId);
+      _module = WebFModuleController(this, _view!.contextId);
 
       flushUICommand(view, nullptr);
 
       // Reconnect the new contextId to the Controller
       _controllerMap.remove(oldId);
-      _controllerMap[_view.contextId] = this;
+      _controllerMap[_view!.contextId] = this;
 
       controlledInitCompleter.complete();
     });
@@ -440,7 +441,7 @@ class WebFController {
 
   Future<void> reload() async {
     print('before reload');
-    assert(!_view.disposed, 'WebF have already disposed');
+    assert(!_view!.disposed, 'WebF have already disposed');
 
     if (devToolsService != null) {
       devToolsService!.willReload();
@@ -477,7 +478,7 @@ class WebFController {
   }
 
   Future<void> load(WebFBundle bundle) async {
-    assert(!_view.disposed, 'WebF have already disposed');
+    assert(!_view!.disposed, 'WebF have already disposed');
 
     if (devToolsService != null) {
       devToolsService!.willReload();
@@ -746,11 +747,14 @@ class WebFController {
   bool get disposed => _disposed;
 
   Future<void> dispose() async {
-    _module.dispose();
     PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
-    await _view.dispose();
-    _controllerMap[_view.contextId] = null;
-    _controllerMap.remove(_view.contextId);
+    await _view?.dispose();
+    _module?.dispose();
+    if (_view?.inited == true) {
+      _controllerMap[_view!.contextId] = null;
+      _controllerMap.remove(_view!.contextId);
+    }
+
     // To release entrypoint bundle memory.
     _entrypoint?.dispose();
 
@@ -768,7 +772,7 @@ class WebFController {
       {bool shouldResolve = true, bool shouldEvaluate = true, AnimationController? animationController}) async {
     if (_entrypoint != null && shouldResolve) {
       await controlledInitCompleter.future;
-      await Future.wait([_resolveEntrypoint(), _module.initialize()]);
+      await Future.wait([_resolveEntrypoint(), _module!.initialize()]);
       if (_entrypoint!.isResolved && shouldEvaluate) {
         await evaluateEntrypoint(animationController: animationController);
       } else {
@@ -782,7 +786,7 @@ class WebFController {
   // Resolve the entrypoint bundle.
   // In general you should use executeEntrypoint, which including resolving and evaluating.
   Future<void> _resolveEntrypoint() async {
-    assert(!_view.disposed, 'WebF have already disposed');
+    assert(!_view!.disposed, 'WebF have already disposed');
 
     WebFBundle? bundleToLoad = _entrypoint;
     if (bundleToLoad == null) {
@@ -834,7 +838,7 @@ class WebFController {
       return;
     }
 
-    assert(!_view.disposed, 'WebF have already disposed');
+    assert(!_view!.disposed, 'WebF have already disposed');
     if (_entrypoint != null) {
       EvaluateOpItem? evaluateOpItem;
       if (enableWebFProfileTracking) {
@@ -842,11 +846,11 @@ class WebFController {
       }
 
       WebFBundle entrypoint = _entrypoint!;
-      double contextId = _view.contextId;
+      double contextId = _view!.contextId;
       assert(entrypoint.isResolved, 'The webf bundle $entrypoint is not resolved to evaluate.');
 
       // entry point start parse.
-      _view.document.parsing = true;
+      _view!.document.parsing = true;
 
       Uint8List data = entrypoint.data!;
       if (entrypoint.isJavascript) {
@@ -881,7 +885,7 @@ class WebFController {
       }
 
       // entry point end parse.
-      _view.document.parsing = false;
+      _view!.document.parsing = false;
 
       // Should check completed when parse end.
       SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -916,30 +920,31 @@ class WebFController {
     if (_isComplete) return;
 
     // Are we still parsing?
-    if (_view.document.parsing) return;
+    if (_view!.document.parsing) return;
 
     // Are all script element complete?
-    if (_view.document.isDelayingDOMContentLoadedEvent) return;
+    if (_view!.document.isDelayingDOMContentLoadedEvent) return;
 
     if (mode == WebFLoadingMode.standard || mode == WebFLoadingMode.preloading) {
-      _view.document.readyState = DocumentReadyState.interactive;
+      _view!.document.readyState = DocumentReadyState.interactive;
       dispatchDOMContentLoadedEvent();
     }
 
     // Still waiting for images/scripts?
-    if (_view.document.hasPendingRequest) return;
+    if (_view!.document.hasPendingRequest) return;
 
     // Still waiting for elements that don't go through a FrameLoader?
-    if (_view.document.isDelayingLoadEvent) return;
+    if (_view!.document.isDelayingLoadEvent) return;
 
     // Any frame that hasn't completed yet?
     // TODO:
 
     _isComplete = true;
+    controllerOnLoadCompleter.complete();
 
     if (mode == WebFLoadingMode.standard || mode == WebFLoadingMode.preloading) {
       dispatchWindowLoadEvent();
-      _view.document.readyState = DocumentReadyState.complete;
+      _view!.document.readyState = DocumentReadyState.complete;
     } else if (mode == WebFLoadingMode.preRendering) {
       if (!controllerPreRenderingCompleter.isCompleted) {
         controllerPreRenderingCompleter.complete();
@@ -965,7 +970,7 @@ class WebFController {
       Event event = Event(EVENT_DOM_CONTENT_LOADED);
       EventTarget window = view.window;
       window.dispatchEvent(event);
-      _view.document.dispatchEvent(event);
+      _view!.document.dispatchEvent(event);
       if (onDOMContentLoaded != null) {
         onDOMContentLoaded!(this);
       }
@@ -981,7 +986,7 @@ class WebFController {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       // DOM element are created at next frame, so we should trigger onload callback in the next frame.
       Event event = Event(EVENT_LOAD);
-      _view.window.dispatchEvent(event);
+      _view!.window.dispatchEvent(event);
 
       if (onLoad != null) {
         onLoad!(this);
@@ -996,7 +1001,7 @@ class WebFController {
     if (_preloadEventDispatched) return;
     _preloadEventDispatched = true;
     Event event = Event(EVENT_PRELOADED);
-    _view.window.dispatchEvent(event);
+    view.window.dispatchEvent(event);
   }
 
   bool _preRenderedEventDispatched = false;
@@ -1005,12 +1010,12 @@ class WebFController {
     if (_preRenderedEventDispatched) return;
     _preRenderedEventDispatched = true;
     Event event = Event(EVENT_PRERENDERED);
-    _view.window.dispatchEvent(event);
+    view.window.dispatchEvent(event);
   }
 
   Future<void> dispatchWindowResizeEvent() async {
     Event event = Event(EVENT_RESIZE);
-    await _view.window.dispatchEvent(event);
+    await view.window.dispatchEvent(event);
   }
 }
 
@@ -1031,9 +1036,9 @@ abstract class DevToolsService {
 
   UIInspector? get uiInspector => _uiInspector;
 
-  late Isolate _isolateServer;
+  Isolate? _isolateServer;
 
-  Isolate get isolateServer => _isolateServer;
+  Isolate get isolateServer => _isolateServer!;
 
   set isolateServer(Isolate isolate) {
     _isolateServer = isolate;
@@ -1074,9 +1079,9 @@ abstract class DevToolsService {
 
   void dispose() {
     _uiInspector?.dispose();
-    _contextDevToolMap.remove(controller!.view.contextId);
+    _contextDevToolMap.remove(controller?.view.contextId);
     _controller = null;
     _isolateServerPort = null;
-    _isolateServer.kill();
+    _isolateServer?.kill();
   }
 }

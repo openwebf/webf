@@ -8,7 +8,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/widget.dart'; // For AsyncWebF
 import 'package:webf/devtools.dart';
+import 'package:webf/launcher.dart'; // For WebFControllerManager
 import 'package:flutter/cupertino.dart';
 
 import 'custom_elements/icon.dart';
@@ -77,7 +79,8 @@ void main() async {
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
-      maxAliveInstances: 10,
+      maxAliveInstances: 1,
+      maxAttachedInstances: 1,
       onControllerDisposed: (String name, WebFController controller) {
         print('controller disposed: $name $controller');
       }));
@@ -141,7 +144,6 @@ void main() async {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
       });
-
 
   // Add vue controller with preloading
   WebFControllerManager.instance.addWithPrerendering(
@@ -217,9 +219,7 @@ class WebFSubViewState extends State<WebFSubView> {
       // floatingActionButton: FloatingActionButton(onPressed: () {
       //   print(context.findRenderObject()?.toStringDeep());
       // }),
-      body: WebFRouterView(
-          controller: controller,
-          path: widget.path),
+      body: WebFRouterView(controller: controller, path: widget.path),
     );
   }
 }
@@ -320,23 +320,29 @@ class FirstPageState extends State<FirstPage> {
         title: Text(widget.title),
       ),
       body: ListView(children: [
-        ElevatedButton(onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) {
-            return WebFDemo(webfPageName: 'html/css');
-          }));
-        }, child: Text('Open HTML/CSS/JavaScript demo')),
+        ElevatedButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(webfPageName: 'html/css');
+              }));
+            },
+            child: Text('Open HTML/CSS/JavaScript demo')),
         SizedBox(height: 18),
-        ElevatedButton(onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) {
-            return WebFDemo(webfPageName: 'vuejs');
-          }));
-        }, child: Text('Open Vue.js demo')),
+        ElevatedButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(webfPageName: 'vuejs');
+              }));
+            },
+            child: Text('Open Vue.js demo')),
         SizedBox(height: 18),
-        ElevatedButton(onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) {
-            return WebFDemo(webfPageName: 'miracle_plus');
-          }));
-        }, child: Text('Open MiraclePlus App')),
+        ElevatedButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(webfPageName: 'miracle_plus');
+              }));
+            },
+            child: Text('Open MiraclePlus App')),
       ]),
       floatingActionButton: FloatingActionButton(onPressed: () {
         WebFControllerManager.instance.disposeAll();
@@ -355,33 +361,8 @@ class WebFDemo extends StatefulWidget {
 }
 
 class _WebFDemoState extends State<WebFDemo> {
-  bool _isLoading = true;
-  late final Widget _webfContent;
-
-  @override
-  void initState() {
-    super.initState();
-
-    WebFController controller = WebFControllerManager.instance.getController(widget.webfPageName)!;
-
-    // pre create webf content
-    _webfContent = WebF(controller: controller);
-
-    if (controller.isComplete) {
-      _isLoading = false;
-    } else {
-      controller.onLoad = (WebFController controller) {
-        setState(() {
-          _isLoading = false;
-        });
-      };
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    WebFController controller = WebFControllerManager.instance.getController(widget.webfPageName)!;
-
     return Scaffold(
         appBar: AppBar(
           title: Text('WebF Demo'),
@@ -393,8 +374,10 @@ class _WebFDemoState extends State<WebFDemo> {
                   onStateChanged: (isDarkModeEnabled) async {
                     // sets theme mode to dark
                     !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight() : AdaptiveTheme.of(context).setDark();
-                    controller.darkModeOverride = isDarkModeEnabled;
-                    controller.view.onPlatformBrightnessChanged();
+                    WebFController? controller =
+                        await WebFControllerManager.instance.getController(widget.webfPageName);
+                    controller?.darkModeOverride = isDarkModeEnabled;
+                    controller?.view.onPlatformBrightnessChanged();
                   },
                 )),
           ],
@@ -404,13 +387,7 @@ class _WebFDemoState extends State<WebFDemo> {
           // print(controller.view.getRootRenderObject()!.toStringDeep());
         }),
         body: Stack(
-          children: [
-            Offstage(
-              offstage: _isLoading,
-              child: _webfContent,
-            ),
-            if (_isLoading) _buildSplashScreen(),
-          ],
+          children: [WebF.fromControllerName(controllerName: widget.webfPageName, loadingWidget: _buildSplashScreen())],
         ));
   }
 

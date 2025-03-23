@@ -65,6 +65,8 @@ class FlutterCupertinoAlert extends WidgetElement {
     super.initializeMethods(methods);
 
     methods['show'] = BindingObjectMethodSync(call: (args) {
+      if (context == null) return;
+
       if (args.isNotEmpty) {
         final Map<String, dynamic> options = args[0];
         _tempTitle = options['title']?.toString();

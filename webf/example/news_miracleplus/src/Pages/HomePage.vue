@@ -564,5 +564,6 @@ export default {
 .listview {
   height: 100vh;
   width: 100vw;
+  padding-bottom: 90px;
 }
 </style>
