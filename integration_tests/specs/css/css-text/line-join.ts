@@ -119,8 +119,8 @@ describe('Text Line Join', () => {
             display: 'inline-block'
           },
         }),
-        createElement(
-        'Strong ',
+        createElement (
+        'Strong',
         {
           style: {},
         },
