@@ -1,5 +1,5 @@
 <template>
-  <div class="my-page" @onscreen="onScreen" @offscreen="offScreen">
+  <div class="my-page" @onscreen="onScreen">
     <div class="user-info-block">
       <img :src="formattedAvatar" class="avatar" />
       <div class="name" v-if="isLoggedIn">{{ userInfo.name }}</div>
@@ -25,14 +25,14 @@
             设置
           </flutter-cupertino-button>
       </div>
-      <div class="edit-block" v-if="isLoggedIn">
+      <!-- <div class="edit-block" v-if="isLoggedIn">
           <flutter-cupertino-button class="edit-profile" type="primary" shape="rounded" @click="goToQuestionPage">
             问题详情
           </flutter-cupertino-button>
           <flutter-cupertino-button class="setting" @click="goToAnswerPage">
             回答详情
           </flutter-cupertino-button>
-      </div>
+      </div> -->
       
       <div class="karma-count">
         <div class="karma-count-text">社区 Karma： {{ userInfo.karma || 0 }}</div>
@@ -133,33 +133,16 @@
 
 <script>
 import LoginTip from '@/Components/LoginTip.vue';
+import UserFeedCard from '@/Components/UserFeedCard.vue';
 
 import { useUserStore } from '@/stores/userStore';
 import formatAvatar from '@/utils/formatAvatar';
 import { api } from '@/api';
-import UserFeedCard from '@/Components/UserFeedCard.vue';
 
 export default {
   components: {
     UserFeedCard,
     LoginTip,
-  },
-  async onScreen() {
-    console.log('MyPage onScreen');
-    console.log('isLoggedIn: ', this.isLoggedIn);
-    if (this.isLoggedIn) {
-      await this.getFeeds();
-    }
-  },
-  async mounted() {
-    console.log('MyPage mounted');
-    console.log('isLoggedIn: ', this.isLoggedIn);
-    if (this.isLoggedIn) {
-      await this.getFeeds();
-    }
-  },
-  async offScreen() {
-    console.log('MyPage offScreen');
   },
   data() {
     return {
@@ -197,6 +180,11 @@ export default {
     }
   },
   methods: {
+    async onScreen() {
+      if (this.isLoggedIn) {
+        await this.getFeeds();
+      }
+    },
     goToLoginPage() {
       window.webf.hybridHistory.pushState({}, '/login');
     },
@@ -233,11 +221,8 @@ export default {
           page: 1,
         });
         
-        // API 返回数据处理
         if (res && res.data && res.data.feeds && res.data.feeds.length > 0) {
           this[`${category}Feeds`] = res.data.feeds;
-          console.log(`已加载 ${category} feeds: ${res.data.feeds.length}`);
-          console.log(JSON.stringify(this[`${category}Feeds`]));
         }
       } catch (error) {
         console.error('获取feeds失败:', error);
@@ -260,11 +245,10 @@ export default {
       return types[actionType] || '未知';
     },
     async onTabChange(e) {
-      console.log('onTabChange: ', e.detail);
       const index = e.detail;
       const category = ['all', 'share', 'comment', 'like', 'collect'][index];
       await this.getFeeds(category);
-    }
+    },
   }
 }
 </script>

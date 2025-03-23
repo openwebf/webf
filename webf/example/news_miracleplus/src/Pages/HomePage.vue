@@ -157,8 +157,6 @@ export default {
         this.$refs.loading.hide();
       }
     },
-    async offScreen() {
-    },
   }
 }
 </script>

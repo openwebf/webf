@@ -11,6 +11,7 @@
         </div>
       </div>
     </webf-listview>
+    <flutter-cupertino-loading ref="loading" />
   </div>
 </template>
 
@@ -32,14 +33,14 @@ export default {
       userStore,
     }
   },
-  async onScreen() {
-    console.log('NotificationPage onScreen');
-    await this.fetchNotifications();
-  },
-  async offScreen() {
-    console.log('NotificationPage offScreen');
-  },
   methods: {
+    async onScreen() {
+      this.$refs.loading.show({
+        text: '加载中'
+      });
+      await this.fetchNotifications();
+      this.$refs.loading.hide();
+    },
     async fetchNotifications() {
       try {
         const res = await api.auth.getUserNotifications({

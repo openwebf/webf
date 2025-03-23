@@ -8,37 +8,37 @@
   <router-view path="/reset_password" title="重置密码">
     <reset-password-page></reset-password-page>
   </router-view>
-  <router-view path="/share_link">
+  <router-view path="/share_link" title="分享链接">
     <share-link-page></share-link-page>
   </router-view>
-  <router-view path="/comment">
+  <router-view path="/comment" title="评论">
     <comment-page></comment-page>
   </router-view>
-  <router-view path="/user">
+  <router-view path="/user" title="用户">
     <user-page></user-page>
   </router-view>
-  <router-view path="/edit">
+  <router-view path="/edit" title="编辑资料">
     <edit-page></edit-page>
   </router-view>
-  <router-view path="/setting">
+  <router-view path="/setting" title="设置">
     <setting-page></setting-page>
   </router-view>
-  <router-view path="/user_agreement">
+  <router-view path="/user_agreement" title="用户协议">
     <user-agreement-page></user-agreement-page>
   </router-view>
-  <router-view path="/privacy_policy">
+  <router-view path="/privacy_policy" title="隐私政策">
     <privacy-policy-page></privacy-policy-page>
   </router-view>
-  <router-view path="/answer">
+  <router-view path="/answer" title="回答">
     <answer-page></answer-page>
   </router-view>
-  <router-view path="/question">
+  <router-view path="/question" title="问题">
     <question-page></question-page>
   </router-view>
-  <router-view path="/topic">
+  <router-view path="/topic" title="话题">
     <topic-page></topic-page>
   </router-view>
-  <router-view path="/home">
+  <router-view path="/home" title="首页">
     <flutter-tab-bar ref="tabBar" class="tab-bar" backgroundColor="#FFFFFF" activeColor="#007AFF"
       :currentIndex="currentIndex" @tabchange="handleTabChange">
       <flutter-tab-bar-item title="首页" icon="home" path="/home">
