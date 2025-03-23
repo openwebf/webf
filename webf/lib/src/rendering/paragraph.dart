@@ -135,10 +135,10 @@ class WebFRenderParagraph extends RenderBox
   /// How the text should be aligned horizontally.
   TextAlign get textAlign => _textPainter.textAlign;
 
-  // set textAlign(TextAlign value) {
-  //   if (_textPainter.textAlign == value) return;
-  //   _textPainter.textAlign = value;
-  // }
+  set textAlign(TextAlign value) {
+    if (_textPainter.textAlign == value) return;
+    _textPainter.textAlign = value;
+  }
 
   ui.LineMetrics getLineMetricsByLineNum(int index) {
     return _lineMetrics[index];

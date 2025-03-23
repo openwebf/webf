@@ -446,7 +446,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     lineBoxes.clear();
     if (paragraph != null) {
       paragraph.overflow = renderStyle.effectiveTextOverflow;
-      // paragraph.textAlign = renderStyle.textAlign;
+      paragraph.textAlign = renderStyle.textAlign;
 
       // first set text is no use, so need check again
       paragraph.text = buildTextSpan(oldText: paragraph.text);
