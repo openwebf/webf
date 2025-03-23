@@ -96,8 +96,8 @@ class WebFViewController implements WidgetsBindingObserver {
     _hybridRouterViews[path] = root;
   }
 
-  WidgetElement? getHybridRouterView(String path) {
-    return _hybridRouterViews[path];
+  RouterLinkElement? getHybridRouterView(String path) {
+    return _hybridRouterViews[path] as RouterLinkElement?;
   }
 
   void removeHybridRouterView(String path) {
@@ -311,6 +311,7 @@ class WebFViewController implements WidgetsBindingObserver {
   }
 
   void _unregisterPlatformBrightnessChange() {
+    if (_originalOnPlatformBrightnessChanged == null) return;
     rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged =
         _originalOnPlatformBrightnessChanged;
     _originalOnPlatformBrightnessChanged = null;

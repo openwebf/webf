@@ -41,7 +41,7 @@ flutter:
     - vue_project/dist/js/
     - vue_project/dist/css/
     - vue_project/dist/img/
-#    - news_miracleplus/dist/
-#    - news_miracleplus/dist/js/
-#    - news_miracleplus/dist/css/
-#    - news_miracleplus/dist/img/
+    - news_miracleplus/dist/
+    - news_miracleplus/dist/js/
+    - news_miracleplus/dist/css/
+    - news_miracleplus/dist/img/

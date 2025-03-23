@@ -113,9 +113,8 @@ void main() async {
 
   // Add home controller with preloading
   WebFControllerManager.instance.addWithPrerendering(
-      name: 'home',
+      name: 'html/css',
       createController: () => WebFController(
-            initialRoute: '/home',
             routeObserver: routeObserver,
             devToolsService: kDebugMode ? ChromeDevToolsService() : null,
           ),
@@ -127,32 +126,80 @@ void main() async {
 
   // Add vue controller with preloading
   WebFControllerManager.instance.addWithPrerendering(
-      name: 'miracle_plus',
+      name: 'vuejs',
       createController: () => WebFController(
-            initialRoute: '/home',
+            initialRoute: '/',
             routeObserver: routeObserver,
             devToolsService: kDebugMode ? ChromeDevToolsService() : null,
           ),
-      bundle: WebFBundle.fromUrl('http://localhost:8080'),
+      bundle: WebFBundle.fromUrl('assets:///vue_project/dist/index.html'),
+      routes: {
+        '/todomvc': (context, controller) => WebFSubView(path: '/todomvc', controller: controller),
+        '/positioned_layout': (context, controller) => WebFSubView(path: '/positioned_layout', controller: controller),
+      },
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
       });
+
+
+  // Add vue controller with preloading
+  WebFControllerManager.instance.addWithPrerendering(
+      name: 'miracle_plus',
+      createController: () => WebFController(
+        initialRoute: '/home',
+        routeObserver: routeObserver,
+        devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+      ),
+      bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'),
+      routes: {
+        '/home': (context, controller) => WebFSubView(path: '/home', controller: controller),
+        '/search': (context, controller) => WebFSubView(path: '/search', controller: controller),
+        '/publish': (context, controller) => WebFSubView(path: '/publish', controller: controller),
+        '/message': (context, controller) => WebFSubView(path: '/message', controller: controller),
+        '/my': (context, controller) => WebFSubView(path: '/my', controller: controller),
+        '/register': (context, controller) => WebFSubView(path: '/register', controller: controller),
+        '/login': (context, controller) => WebFSubView(path: '/login', controller: controller),
+        '/reset_password': (context, controller) => WebFSubView(path: '/reset_password', controller: controller),
+        '/share_link': (context, controller) => WebFSubView(path: '/share_link', controller: controller),
+        '/comment': (context, controller) => WebFSubView(path: '/comment', controller: controller),
+        '/user': (context, controller) => WebFSubView(path: '/user', controller: controller),
+        '/edit': (context, controller) => WebFSubView(path: '/edit', controller: controller),
+        '/setting': (context, controller) => WebFSubView(path: '/setting', controller: controller),
+        '/user_agreement': (context, controller) => WebFSubView(path: '/user_agreement', controller: controller),
+        '/privacy_policy': (context, controller) => WebFSubView(path: '/privacy_policy', controller: controller),
+        '/answer': (context, controller) => WebFSubView(path: '/answer', controller: controller),
+        '/question': (context, controller) => WebFSubView(path: '/question', controller: controller),
+        '/topic': (context, controller) => WebFSubView(path: '/topic', controller: controller),
+      },
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+      });
+
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }
 
-class WebFSubView extends StatelessWidget {
-  const WebFSubView({super.key, required this.title, required this.path, required this.controller});
+class WebFSubView extends StatefulWidget {
+  const WebFSubView({super.key, required this.path, required this.controller});
 
   final WebFController controller;
-  final String title;
   final String path;
 
   @override
+  State<StatefulWidget> createState() {
+    return WebFSubViewState();
+  }
+}
+
+class WebFSubViewState extends State<WebFSubView> {
+  @override
   Widget build(BuildContext context) {
+    WebFController controller = widget.controller;
+    RouterLinkElement? routerLinkElement = controller.view.getHybridRouterView(widget.path);
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(routerLinkElement?.getAttribute('title') ?? ''),
         actions: [
           Padding(
               padding: EdgeInsets.fromLTRB(0, 0, 20, 0),
@@ -170,7 +217,9 @@ class WebFSubView extends StatelessWidget {
       // floatingActionButton: FloatingActionButton(onPressed: () {
       //   print(context.findRenderObject()?.toStringDeep());
       // }),
-      body: WebFRouterView(controller: controller, path: path),
+      body: WebFRouterView(
+          controller: controller,
+          path: widget.path),
     );
   }
 }
@@ -213,11 +262,8 @@ class MyAppState extends State<MyApp> {
     super.didChangeDependencies();
   }
 
-  String webfPage = 'miracle_plus';
-
   @override
   Widget build(BuildContext context) {
-    WebFController controller = WebFControllerManager.instance.getController(webfPage)!;
     return AdaptiveTheme(
       light: ThemeData.light(useMaterial3: true),
       dark: ThemeData.dark(useMaterial3: true),
@@ -229,31 +275,23 @@ class MyAppState extends State<MyApp> {
         darkTheme: darkTheme,
         navigatorObservers: [routeObserver],
         themeMode: ThemeMode.system,
-        routes: {
-          '/todomvc': (context) => WebFSubView(title: 'TodoMVC', path: '/todomvc', controller: controller),
-          '/positioned_layout': (context) =>
-              WebFSubView(title: 'CSS Positioned Layout', path: '/positioned_layout', controller: controller),
-          '/home': (context) => WebFSubView(title: '首页', path: '/home', controller: controller),
-          '/search': (context) => WebFSubView(title: '搜索', path: '/search', controller: controller),
-          '/publish': (context) => WebFSubView(title: '发布', path: '/publish', controller: controller),
-          '/message': (context) => WebFSubView(title: '消息', path: '/message', controller: controller),
-          '/my': (context) => WebFSubView(title: '我的', path: '/my', controller: controller),
-          '/register': (context) => WebFSubView(title: '注册', path: '/register', controller: controller),
-          '/login': (context) => WebFSubView(title: '登录', path: '/login', controller: controller),
-          '/reset_password': (context) => WebFSubView(title: '重置密码', path: '/reset_password', controller: controller),
-          '/share_link': (context) => WebFSubView(title: '详情', path: '/share_link', controller: controller),
-          '/comment': (context) => WebFSubView(title: '评论', path: '/comment', controller: controller),
-          '/user': (context) => WebFSubView(title: '用户', path: '/user', controller: controller),
-          '/edit': (context) => WebFSubView(title: '编辑', path: '/edit', controller: controller),
-          '/setting': (context) => WebFSubView(title: '设置', path: '/setting', controller: controller),
-          '/user_agreement': (context) => WebFSubView(title: '用户服务协议', path: '/user_agreement', controller: controller),
-          '/privacy_policy': (context) => WebFSubView(title: '隐私政策', path: '/privacy_policy', controller: controller),
-          '/answer': (context) => WebFSubView(title: '回答', path: '/answer', controller: controller),
-          '/question': (context) => WebFSubView(title: '问题', path: '/question', controller: controller),
-          '/topic': (context) => WebFSubView(title: '话题', path: '/topic', controller: controller),
+        onGenerateInitialRoutes: (initialRoute) {
+          return [
+            CupertinoPageRoute(
+              builder: (context) {
+                return FirstPage(title: 'Landing Bay');
+              },
+            )
+          ];
+        },
+        onGenerateRoute: (settings) {
+          return CupertinoPageRoute(
+            builder: (context) {
+              return WebFControllerManager.instance.routes[settings.name]!(context);
+            },
+          );
         },
         debugShowCheckedModeBanner: false,
-        home: FirstPage(title: 'Landing Bay', controller: controller),
       ),
     );
   }
@@ -264,35 +302,53 @@ class MyAppState extends State<MyApp> {
   }
 }
 
-class FirstPage extends StatelessWidget {
-  const FirstPage({Key? key, required this.title, required this.controller}) : super(key: key);
+class FirstPage extends StatefulWidget {
+  const FirstPage({Key? key, required this.title}) : super(key: key);
   final String title;
-  final WebFController controller;
 
+  @override
+  State<StatefulWidget> createState() {
+    return FirstPageState();
+  }
+}
+
+class FirstPageState extends State<FirstPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(widget.title),
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) {
-              return WebFDemo(controller: controller!);
-            }));
-          },
-          child: const Text('Open WebF Page'),
-        ),
-      ),
+      body: ListView(children: [
+        ElevatedButton(onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return WebFDemo(webfPageName: 'html/css');
+          }));
+        }, child: Text('Open HTML/CSS/JavaScript demo')),
+        SizedBox(height: 18),
+        ElevatedButton(onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return WebFDemo(webfPageName: 'vuejs');
+          }));
+        }, child: Text('Open Vue.js demo')),
+        SizedBox(height: 18),
+        ElevatedButton(onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return WebFDemo(webfPageName: 'miracle_plus');
+          }));
+        }, child: Text('Open MiraclePlus App')),
+      ]),
+      floatingActionButton: FloatingActionButton(onPressed: () {
+        WebFControllerManager.instance.disposeAll();
+      }),
     );
   }
 }
 
 class WebFDemo extends StatefulWidget {
-  final WebFController controller;
+  final String webfPageName;
 
-  WebFDemo({required this.controller});
+  WebFDemo({required this.webfPageName});
 
   @override
   _WebFDemoState createState() => _WebFDemoState();
@@ -306,13 +362,15 @@ class _WebFDemoState extends State<WebFDemo> {
   void initState() {
     super.initState();
 
-    // pre create webf content
-    _webfContent = WebF(controller: widget.controller);
+    WebFController controller = WebFControllerManager.instance.getController(widget.webfPageName)!;
 
-    if (widget.controller.isComplete) {
+    // pre create webf content
+    _webfContent = WebF(controller: controller);
+
+    if (controller.isComplete) {
       _isLoading = false;
     } else {
-      widget.controller.onLoad = (WebFController controller) {
+      controller.onLoad = (WebFController controller) {
         setState(() {
           _isLoading = false;
         });
@@ -322,6 +380,8 @@ class _WebFDemoState extends State<WebFDemo> {
 
   @override
   Widget build(BuildContext context) {
+    WebFController controller = WebFControllerManager.instance.getController(widget.webfPageName)!;
+
     return Scaffold(
         appBar: AppBar(
           title: Text('WebF Demo'),
@@ -333,8 +393,8 @@ class _WebFDemoState extends State<WebFDemo> {
                   onStateChanged: (isDarkModeEnabled) async {
                     // sets theme mode to dark
                     !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight() : AdaptiveTheme.of(context).setDark();
-                    widget.controller.darkModeOverride = isDarkModeEnabled;
-                    widget.controller.view.onPlatformBrightnessChanged();
+                    controller.darkModeOverride = isDarkModeEnabled;
+                    controller.view.onPlatformBrightnessChanged();
                   },
                 )),
           ],

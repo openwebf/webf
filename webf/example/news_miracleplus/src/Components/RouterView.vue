@@ -1,5 +1,5 @@
 <template>
-    <webf-router-link :path="path" @onscreen="onScreen">
+    <webf-router-link :path="path" @onscreen="onScreen" :title="title">
       <slot v-if="isMounted"></slot>
     </webf-router-link>
   </template>
@@ -12,6 +12,9 @@
         type: String,
         required: true,
       },
+      title: {
+        type: String
+      }
     },
     data() {
       return {

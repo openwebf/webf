@@ -1,11 +1,11 @@
 <template>
-  <router-view path="/register">
+  <router-view path="/register" title="注册">
     <register-page></register-page>
   </router-view>
-  <router-view path="/login">
+  <router-view path="/login" title="登陆">
     <login-page></login-page>
   </router-view>
-  <router-view path="/reset_password">
+  <router-view path="/reset_password" title="重置密码">
     <reset-password-page></reset-password-page>
   </router-view>
   <router-view path="/share_link">

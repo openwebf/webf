@@ -6,14 +6,14 @@ class FlutterCupertinoTextArea extends WidgetElement {
   FlutterCupertinoTextArea(super.context) {
     _controller.addListener(_handleTextChange);
   }
-  
+
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
-    
+
     attributes['val'] = ElementAttributeProperty(
       getter: () => _controller.text,
       setter: (value) {
@@ -130,8 +130,8 @@ class FlutterCupertinoTextArea extends WidgetElement {
               height: 1.2,
             ),
             decoration: BoxDecoration(
-              color: _disabled 
-                  ? CupertinoColors.systemGrey6 
+              color: _disabled
+                  ? CupertinoColors.systemGrey6
                   : CupertinoColors.white,
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -177,6 +177,12 @@ class FlutterCupertinoTextArea extends WidgetElement {
       _controller.clear();
       setState(() {});
     });
+  }
+
+  @override
+  void willDetachRenderer([RenderObjectElement? flutterWidgetElement]) {
+    super.willDetachRenderer(flutterWidgetElement);
+    _focusNode.unfocus();
   }
 
   @override

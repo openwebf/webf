@@ -43,7 +43,6 @@ class _WebFTesterState extends State<WebFTester> {
     });
 
     controller = WebFController(
-      context,
       navigationDelegate: navigationDelegate,
       viewportWidth: width,
       viewportHeight: height,

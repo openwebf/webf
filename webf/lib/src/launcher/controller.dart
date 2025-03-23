@@ -172,6 +172,9 @@ class WebFController {
   /// Defaults to true.
   final bool resizeToAvoidBottomInsets;
 
+  /// The routing table for hybrid routers.
+  Map<String, SubViewBuilder>? routes;
+
   static final Map<double, WebFController?> _controllerMap = {};
   static final Map<String, double> _nameIdMap = {};
 
@@ -278,6 +281,7 @@ class WebFController {
     this.initialCookies,
     this.initialRoute,
     this.routeObserver,
+    this.routes,
     this.externalController = true,
     this.resizeToAvoidBottomInsets = true,
   })  : _entrypoint = bundle,
@@ -751,6 +755,7 @@ class WebFController {
     _entrypoint?.dispose();
 
     devToolsService?.dispose();
+    routes = null;
     _disposed = true;
   }
 

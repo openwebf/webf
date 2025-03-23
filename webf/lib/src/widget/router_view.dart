@@ -52,6 +52,7 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
 
       return widget.defaultViewBuilder!(context);
     }
+
     return WebFContext(
         controller: widget.controller,
         child: WebFRouterViewport(
@@ -78,8 +79,8 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
     super.didPop();
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    var name = route.settings.name;
-    widget.controller.view.window.dispatchEvent(dom.HybridRouterChangeEvent(state: state, kind: 'pop', name: name!));
+    String name = route.settings.name ?? '';
+    widget.controller.view.window.dispatchEvent(dom.HybridRouterChangeEvent(state: state, kind: 'pop', name: name));
   }
 
   @override
@@ -87,8 +88,8 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
     super.didPush();
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    var name = route.settings.name;
-    widget.controller.view.window.dispatchEvent(dom.HybridRouterChangeEvent(state: state, kind: 'push', name: name!));
+    String name = route.settings.name ?? '';
+    widget.controller.view.window.dispatchEvent(dom.HybridRouterChangeEvent(state: state, kind: 'push', name: name));
   }
 }
 

@@ -4,6 +4,7 @@
 
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 
@@ -41,6 +42,8 @@ typedef ControllerFactory = WebFController Function();
 /// Function for configuring a controller
 typedef ControllerSetup = Function(WebFController controller);
 
+/// Function that creates an WebFSubView
+typedef SubViewBuilder = Widget Function(BuildContext context, WebFController);
 
 /// A manager class that holds multiple WebFController instances
 /// It manages the lifecycle of controllers and enforces resource limits
@@ -62,6 +65,19 @@ class WebFControllerManager {
 
   /// Get the singleton instance of the manager
   static WebFControllerManager get instance => _instance;
+
+  Map<String, WidgetBuilder> get routes {
+    Map<String, WidgetBuilder> routes = {};
+    _controllersByName.forEach((_, controller) {
+      controller.routes?.forEach((name, builder) {
+        if (routes.containsKey(name)) {
+          throw FlutterError('found repeat routing name registered. exist: $name, new: $name');
+        }
+        routes[name] = (context) => builder(context, controller);
+      });
+    });
+    return routes;
+  }
 
   /// Initialize the manager with custom configuration
   void initialize(WebFControllerManagerConfig config) {
@@ -98,10 +114,14 @@ class WebFControllerManager {
     required String name,
     required ControllerFactory createController,
     required WebFBundle bundle,
+    Map<String, SubViewBuilder>? routes,
     ControllerSetup? setup
   }) async {
     // Create the controller
     WebFController controller = createController();
+
+    // Merge hybrid route config
+    controller.routes = routes;
 
     // Wait for initialization
     await controller.controlledInitCompleter.future;
@@ -125,11 +145,14 @@ class WebFControllerManager {
     required String name,
     required ControllerFactory createController,
     required WebFBundle bundle,
+    Map<String, SubViewBuilder>? routes,
     ControllerSetup? setup
   }) async {
     // Create the controller
     WebFController controller = createController();
     registerController(name, controller);
+
+    controller.routes = routes;
 
     // Wait for initialization
     await controller.controlledInitCompleter.future;
