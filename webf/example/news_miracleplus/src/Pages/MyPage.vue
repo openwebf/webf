@@ -39,49 +39,75 @@
         <flutter-cupertino-icon type="question_circle" class="karma-help-icon" @click="showKarmaHelp = true" />
       </div>
     </div>
-    <flutter-cupertino-segmented-tab>
+    <flutter-cupertino-segmented-tab @change="onTabChange">
       <flutter-cupertino-segmented-tab-item title="全部">
-        <div v-if="!isLoggedIn">
-          <login-tip />
-        </div>
-        <!-- <div v-for="item in allFeeds" :key="item.id">
-          <feed-card :item="item"></feed-card>
-        </div> -->
+        <webf-listview class="feed-listview">
+          <div v-if="!isLoggedIn">
+            <login-tip />
+          </div>
+          <div v-else-if="allFeeds.length === 0" class="empty-state">
+            暂无内容
+          </div>
+          <div v-else v-for="item in allFeeds" :key="item.id">
+            <user-feed-card :feed="item"></user-feed-card>
+          </div>
+        </webf-listview>
       </flutter-cupertino-segmented-tab-item>
       <flutter-cupertino-segmented-tab-item title="分享">
-        <div v-if="!isLoggedIn">
-          <login-tip />
-        </div>
-        <!-- <div v-for="item in shareFeeds" :key="item.id">
-          <feed-card :item="item"></feed-card>
-        </div> -->
+        <webf-listview class="feed-listview">
+          <div v-if="!isLoggedIn">
+            <login-tip />
+          </div>
+          <div v-else-if="shareFeeds.length === 0" class="empty-state">
+            暂无分享内容
+          </div>
+          <div v-else v-for="item in shareFeeds" :key="item.id">
+            <user-feed-card :feed="item"></user-feed-card>
+          </div>
+        </webf-listview>
       </flutter-cupertino-segmented-tab-item>
       <flutter-cupertino-segmented-tab-item title="评论">
-        <div v-if="!isLoggedIn">
-          <login-tip />
-        </div>
-        <!-- <div v-for="item in commentFeeds" :key="item.id">
-          <comment-card :item="item"></comment-card>
-        </div> -->
+        <webf-listview class="feed-listview">
+          <div v-if="!isLoggedIn">
+            <login-tip />
+          </div>
+          <div v-else-if="commentFeeds.length === 0" class="empty-state">
+            暂无评论内容
+          </div>
+          <div v-else v-for="item in commentFeeds" :key="item.id">
+            <user-feed-card :feed="item"></user-feed-card>
+          </div>
+        </webf-listview>
       </flutter-cupertino-segmented-tab-item>
       <flutter-cupertino-segmented-tab-item title="点赞">
-        <div v-if="!isLoggedIn">
-          <login-tip />
-        </div>
-        <!-- <div v-for="item in likeFeeds" :key="item.id">
-          <feed-card :item="item"></feed-card>
-        </div> -->
+        <webf-listview class="feed-listview">
+          <div v-if="!isLoggedIn">
+            <login-tip />
+          </div>
+          <div v-else-if="likeFeeds.length === 0" class="empty-state">
+            暂无点赞内容
+          </div>
+          <div v-else v-for="item in likeFeeds" :key="item.id">
+            <user-feed-card :feed="item"></user-feed-card>
+          </div>
+        </webf-listview>
       </flutter-cupertino-segmented-tab-item>
       <flutter-cupertino-segmented-tab-item title="收藏">
-        <div v-if="!isLoggedIn">
-          <login-tip />
-        </div>
-        <!-- <div v-for="item in collectFeeds" :key="item.id">
-          <feed-card :item="item"></feed-card>
-        </div> -->
+        <webf-listview class="feed-listview">
+          <div v-if="!isLoggedIn">
+            <login-tip />
+          </div>
+          <div v-else-if="collectFeeds.length === 0" class="empty-state">
+            暂无收藏内容
+          </div>
+          <div v-else v-for="item in collectFeeds" :key="item.id">
+            <user-feed-card :feed="item"></user-feed-card>
+          </div>
+        </webf-listview>
       </flutter-cupertino-segmented-tab-item>
     </flutter-cupertino-segmented-tab>
     <flutter-cupertino-toast ref="toast" />
+    <flutter-cupertino-loading ref="loading" />
 
     <!-- Add Karma help modal -->
     <flutter-cupertino-modal-popup
@@ -106,33 +132,31 @@
 </template>
 
 <script>
-// import FeedCard from '@/Components/FeedCard.vue';
-// import CommentCard from '@/Components/comment/CommentCard.vue';
 import LoginTip from '@/Components/LoginTip.vue';
 
 import { useUserStore } from '@/stores/userStore';
 import formatAvatar from '@/utils/formatAvatar';
-// import { api } from '@/api';
+import { api } from '@/api';
+import UserFeedCard from '@/Components/UserFeedCard.vue';
+
 export default {
   components: {
-    // FeedCard,
-    // CommentCard,
+    UserFeedCard,
     LoginTip,
   },
-  // async mounted() {
-    // ['all', 'share', 'comment', 'like', 'collect'].forEach(async (category) => {
-    //   const res = await api.auth.getUserFeedsList({
-    //     userId: this.user.id,
-    //     category,
-    //     page: 1,
-    //     token: this.user.token,
-    //     anonymousId: this.user.anonymousId,
-    //   });
-    //   this[`${category}Feeds`] = res.data.feeds;
-    // });
-  // },
   async onScreen() {
     console.log('MyPage onScreen');
+    console.log('isLoggedIn: ', this.isLoggedIn);
+    if (this.isLoggedIn) {
+      await this.getFeeds();
+    }
+  },
+  async mounted() {
+    console.log('MyPage mounted');
+    console.log('isLoggedIn: ', this.isLoggedIn);
+    if (this.isLoggedIn) {
+      await this.getFeeds();
+    }
   },
   async offScreen() {
     console.log('MyPage offScreen');
@@ -180,10 +204,13 @@ export default {
       window.webf.hybridHistory.pushState({}, '/edit');
     },
     goToAnswerPage() {
+      // window.webf.hybridHistory.pushState({
+      //   id: '2046',
+      //   questionId: 'xr9ho0',
+      // }, '/answer');
       window.webf.hybridHistory.pushState({
-        id: '2046',
-        questionId: 'xr9ho0',
-      }, '/answer');
+        userId: 'b6mtKg',
+      }, '/user');
     },
     goToQuestionPage() {
       window.webf.hybridHistory.pushState({
@@ -192,6 +219,51 @@ export default {
     },
     goToSettingPage() {
         window.webf.hybridHistory.pushState({}, '/setting');
+    },
+    async getFeeds(category = 'all') {
+      try {
+        this.$refs.loading.show({
+          text: '加载中'
+        });
+        
+        // 调用 API 获取数据
+        const res = await api.auth.getUserFeedsList({
+          userId: this.userInfo.id,
+          category,
+          page: 1,
+        });
+        
+        // API 返回数据处理
+        if (res && res.data && res.data.feeds && res.data.feeds.length > 0) {
+          this[`${category}Feeds`] = res.data.feeds;
+          console.log(`已加载 ${category} feeds: ${res.data.feeds.length}`);
+          console.log(JSON.stringify(this[`${category}Feeds`]));
+        }
+      } catch (error) {
+        console.error('获取feeds失败:', error);
+        this.$refs.toast.show({
+          type: 'error',
+          content: '获取数据失败'
+        });
+      } finally {
+        this.$refs.loading.hide();
+      }
+    },
+    getActionName(actionType) {
+      const types = {
+        'share_link': '分享',
+        'comment': '评论',
+        'like': '点赞',
+        'collect': '收藏',
+        'all': '全部'
+      };
+      return types[actionType] || '未知';
+    },
+    async onTabChange(e) {
+      console.log('onTabChange: ', e.detail);
+      const index = e.detail;
+      const category = ['all', 'share', 'comment', 'like', 'collect'][index];
+      await this.getFeeds(category);
     }
   }
 }
@@ -330,6 +402,19 @@ export default {
       height: 44px;
       color: var(--font-color-primary);
     }
+  }
+  
+  .feed-listview {
+
+    height: calc(100vh - 350px);
+    padding: 16px;
+  }
+  
+  .empty-state {
+    padding: 24px;
+    text-align: center;
+    color: #999;
+    font-size: 14px;
   }
 }
 </style>

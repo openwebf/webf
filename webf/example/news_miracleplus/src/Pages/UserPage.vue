@@ -1,5 +1,5 @@
 <template>
-    <div class="user-page">
+    <div class="user-page" @onscreen="onScreen" @offscreen="offScreen">
       <div class="user-info-block">
         <img :src="formattedAvatar" class="avatar" />
         <div class="name">{{ user.name }}</div>
@@ -8,31 +8,84 @@
         </div>
         <div class="stats">
           <div class="stat-item">
-            <div class="number">{{ user.followingCount }}</div>
+            <div class="number">{{ user.followingCount || 0 }}</div>
             <div class="label">关注</div>
           </div>
           <div class="stat-item">
-            <div class="number">{{ user.followerCount }}</div>
+            <div class="number">{{ user.followerCount || 0 }}</div>
             <div class="label">粉丝</div>
           </div>
         </div>        
         <div class="karma-count">
-          <div>社区 Karma： {{ user.karma }}</div>
-          <flutter-cupertino-icon type="question_circle" />
+          <div class="karma-count-text">社区 Karma： {{ user.karma || 0 }}</div>
+          <flutter-cupertino-icon type="question_circle" class="karma-help-icon" @click="showKarmaHelp = true" />
         </div>
       </div>
-      <flutter-cupertino-segmented-tab>
+      
+      <flutter-cupertino-segmented-tab @change="onTabChange">
         <flutter-cupertino-segmented-tab-item title="全部">
+          <webf-listview class="feed-listview">
+            <div v-if="allFeeds.length === 0" class="empty-state">
+              暂无内容
+            </div>
+            <div v-else v-for="item in allFeeds" :key="item.id">
+              <user-feed-card :feed="item"></user-feed-card>
+            </div>
+          </webf-listview>
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="分享">
+          <webf-listview class="feed-listview">
+            <div v-if="shareFeeds.length === 0" class="empty-state">
+              暂无分享内容
+            </div>
+            <div v-else v-for="item in shareFeeds" :key="item.id">
+              <user-feed-card :feed="item"></user-feed-card>
+            </div>
+          </webf-listview>
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="评论">
+          <webf-listview class="feed-listview">
+            <div v-if="commentFeeds.length === 0" class="empty-state">
+              暂无评论内容
+            </div>
+            <div v-else v-for="item in commentFeeds" :key="item.id">
+              <user-feed-card :feed="item"></user-feed-card>
+            </div>
+          </webf-listview>
         </flutter-cupertino-segmented-tab-item>
         <flutter-cupertino-segmented-tab-item title="点赞">
-        </flutter-cupertino-segmented-tab-item>
-        <flutter-cupertino-segmented-tab-item title="收藏">
+          <webf-listview class="feed-listview">
+            <div v-if="likeFeeds.length === 0" class="empty-state">
+              暂无点赞内容
+            </div>
+            <div v-else v-for="item in likeFeeds" :key="item.id">
+              <user-feed-card :feed="item"></user-feed-card>
+            </div>
+          </webf-listview>
         </flutter-cupertino-segmented-tab-item>
       </flutter-cupertino-segmented-tab>
+
+      <flutter-cupertino-toast ref="toast" />
+      <flutter-cupertino-loading ref="loading" />
+
+      <!-- Add Karma help modal -->
+      <flutter-cupertino-modal-popup
+        :show="showKarmaHelp"
+        @close="showKarmaHelp = false"
+        position="center"
+      >
+        <div class="karma-help-modal">
+          <div class="karma-help-title">什么是 Karma？</div>
+          <div class="karma-help-content">积分统计社区贡献，分享、回答、评论上的点赞和浏览能提高积分</div>
+          <flutter-cupertino-button
+            type="primary"
+            class="karma-help-btn"
+            @click="showKarmaHelp = false"
+          >
+            知道了
+          </flutter-cupertino-button>
+        </div>
+      </flutter-cupertino-modal-popup>
     </div>
   
   </template>
@@ -41,31 +94,31 @@
   import { useUserStore } from '@/stores/userStore';
   import formatAvatar from '@/utils/formatAvatar';
   import { api } from '@/api';
+  import UserFeedCard from '@/Components/UserFeedCard.vue';
+
   export default {
     components: {
-      // FeedCard,
-      // CommentCard,
+      UserFeedCard,
     },
-    // async mounted() {
-      // ['all', 'share', 'comment', 'like', 'collect'].forEach(async (category) => {
-      //   const res = await api.auth.getUserFeedsList({
-      //     userId: this.user.id,
-      //     category,
-      //     page: 1,
-      //     token: this.user.token,
-      //     anonymousId: this.user.anonymousId,
-      //   });
-      //   this[`${category}Feeds`] = res.data.feeds;
-      // });
-    // },
+    async onScreen() {
+      console.log('UserPage onScreen');
+      const userId = this.getUserId();
+      if (userId) {
+        await this.getUserInfo(userId);
+        await this.getFeeds('all', userId);
+      }
+    },
+    async offScreen() {
+      console.log('UserPage offScreen');
+    },
     data() {
       return {
+        showKarmaHelp: false,
         user: {},
         allFeeds: [],
         shareFeeds: [],
         commentFeeds: [],
         likeFeeds: [],
-        collectFeeds: [],
       }
     },
     setup() {
@@ -86,17 +139,181 @@
       },
     },
     async mounted() {
-        const userId = window.webf.hybridHistory.state.id;
-        if (!userId) {
-            return;
-        }
-        console.log('userId: ', userId);
-        const res = await api.user.getFeeds({
-            userId,
-        });
-        this.user = res.data.user;
+      console.log('UserPage mounted');
+      const userId = this.getUserId();
+      if (userId) {
+        await this.getUserInfo(userId);
+        await this.getFeeds('all', userId);
+      }
     },
-    methods: {}
+    methods: {
+      getUserId() {
+        const userId = window.webf.hybridHistory.state.userId;
+        console.log('userId from state: ', userId);
+        return userId;
+      },
+      async getUserInfo(userId) {
+        try {
+          this.$refs.loading.show({
+            text: '加载中'
+          });
+          
+          const res = await api.user.getFeeds({
+              userId,
+          });
+          
+          if (res && res.data && res.data.user) {
+            this.user = res.data.user;
+            console.log('获取到用户信息: ', this.user);
+          } else {
+            this.$refs.toast.show({
+              type: 'error',
+              content: '获取用户信息失败'
+            });
+          }
+        } catch (error) {
+          console.error('获取用户信息失败:', error);
+          this.$refs.toast.show({
+            type: 'error',
+            content: '获取用户信息失败'
+          });
+        } finally {
+          this.$refs.loading.hide();
+        }
+      },
+      async getFeeds(category = 'all', userId) {
+        try {
+          this.$refs.loading.show({
+            text: '加载中'
+          });
+          
+          // 调用 API 获取数据
+          const res = await api.auth.getUserFeedsList({
+            userId,
+            category,
+            page: 1,
+          });
+          
+          // API 返回数据处理
+          if (res && res.data && res.data.feeds && res.data.feeds.length > 0) {
+            this[`${category}Feeds`] = res.data.feeds;
+            console.log(`已加载 ${category} feeds: ${res.data.feeds.length}`);
+            console.log(JSON.stringify(this[`${category}Feeds`]));
+          } else {
+            console.log(`没有获取到 ${category} 数据，返回: `, res);
+            // 创建示例数据供测试
+            this.createSampleFeeds(category);
+          }
+        } catch (error) {
+          console.error(`获取${category}动态失败:`, error);
+          this.$refs.toast.show({
+            type: 'error',
+            content: '获取数据失败'
+          });
+          // 创建示例数据供测试
+          this.createSampleFeeds(category);
+        } finally {
+          this.$refs.loading.hide();
+        }
+      },
+      createSampleFeeds(category) {
+        // 为测试创建样本数据
+        const sampleFeed = {
+          id: `sample-${Date.now()}`,
+          actionType: category === 'all' ? 'share_link' : category,
+          createdAt: new Date().toISOString(),
+          account: {
+            id: this.user.id,
+            name: this.user.name,
+            avatar: this.user.avatar,
+            company: this.user.company,
+            jobTitle: this.user.jobTitle
+          },
+          item: {
+            id: `item-${Date.now()}`,
+            title: '示例内容标题',
+            content: '这是一段示例内容，用于测试用户动态展示。',
+            commentCount: 5,
+            likeCount: 10,
+            liked: false,
+            bookmarked: false
+          }
+        };
+        
+        if (category === 'all') {
+          // 为全部标签创建多种类型的示例数据
+          this.allFeeds = [
+            { ...sampleFeed, actionType: 'share_link', id: 'sample-share' },
+            { 
+              ...sampleFeed, 
+              actionType: 'comment', 
+              id: 'sample-comment',
+              item: {
+                ...sampleFeed.item,
+                content: '这是一条示例评论内容',
+                resourceType: 'ShareLink',
+                resource: {
+                  id: 'resource-1',
+                  brief: '评论的原始内容标题'
+                }
+              } 
+            },
+            { 
+              ...sampleFeed, 
+              actionType: 'like', 
+              id: 'sample-like',
+              item: {
+                ...sampleFeed.item,
+                __typename: 'ShareLink',
+                liked: true
+              } 
+            }
+          ];
+        } else if (category === 'share') {
+          this.shareFeeds = [sampleFeed];
+        } else if (category === 'comment') {
+          this.commentFeeds = [{
+            ...sampleFeed,
+            item: {
+              ...sampleFeed.item,
+              content: '这是一条示例评论内容',
+              resourceType: 'ShareLink',
+              resource: {
+                id: 'resource-1',
+                brief: '评论的原始内容标题'
+              }
+            }
+          }];
+        } else if (category === 'like') {
+          this.likeFeeds = [{
+            ...sampleFeed,
+            item: {
+              ...sampleFeed.item,
+              __typename: 'ShareLink',
+              liked: true
+            }
+          }];
+        }
+      },
+      getActionName(actionType) {
+        const types = {
+          'share_link': '分享',
+          'comment': '评论',
+          'like': '点赞',
+          'all': '全部'
+        };
+        return types[actionType] || '未知';
+      },
+      async onTabChange(e) {
+        console.log('onTabChange: ', e.detail);
+        const index = e.detail;
+        const userId = this.getUserId();
+        if (!userId) return;
+        
+        const category = ['all', 'share', 'comment', 'like'][index];
+        await this.getFeeds(category, userId);
+      }
+    }
   }
   </script>
   
@@ -184,7 +401,56 @@
         color: #999;
         display: flex;
         align-items: center;
+        
+        .karma-count-text {
+          margin-right: 4px;
+        }
+
+        .karma-help-icon {
+          color: #999;
+        }
       }
+    }
+
+    .karma-help-modal {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      width: 280px;
+
+      .karma-help-title {
+        font-size: 17px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 12px;
+        text-align: center;
+      }
+
+      .karma-help-content {
+        font-size: 15px;
+        color: #666;
+        line-height: 1.5;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .karma-help-btn {
+        width: 100%;
+        height: 44px;
+        color: var(--font-color-primary);
+      }
+    }
+    
+    .feed-listview {
+      height: calc(100vh - 280px);
+      padding: 16px;
+    }
+    
+    .empty-state {
+      padding: 24px;
+      text-align: center;
+      color: #999;
+      font-size: 14px;
     }
   }
   </style>

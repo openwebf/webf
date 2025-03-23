@@ -69,7 +69,8 @@
         return this.item.pinnedAt !== null;
       },
       truncatedTitle() {
-        return this.item.item.title.length > 50 ? this.item.item.title.slice(0, 50) + '...' : this.item.item.title;
+        const title = this.item.item.title || '';
+        return title.length > 50 ? title.slice(0, 50) + '...' : title;
       },
       truncatedContent() {
         // Truncate content to 100 characters and add ellipsis
