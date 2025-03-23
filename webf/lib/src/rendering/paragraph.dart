@@ -183,7 +183,7 @@ class WebFRenderParagraph extends RenderBox
 
   bool get outLineClampLimit {
     if(constraints is MultiLineBoxConstraints
-        && (constraints as MultiLineBoxConstraints).maxLines != double.maxFinite) {
+        && (constraints as MultiLineBoxConstraints).maxLines != double.maxFinite.toInt()) {
       return true;
     }
     return false;
@@ -231,7 +231,7 @@ class WebFRenderParagraph extends RenderBox
   /// zero.
   set maxLines(int? value) {
     assert(value == null || value > 0);
-    if (_textPainter.maxLines == value || value == webfTextMaxLines) return;
+    if (_textPainter.maxLines == value) return;
     _textPainter.maxLines = value;
     _overflowShader = null;
   }
