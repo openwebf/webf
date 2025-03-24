@@ -11,8 +11,6 @@
             <ContentBlock v-if="shareLink.introduction" title="内容导读" :content="shareLink.introduction" />
             <ContentBlock v-if="shareLink.summariedLinkContent" title="自动总结"
                 :content="shareLink.summariedLinkContent" />
-            <NotesList v-if="shareLink.notes" :notes="shareLink.notes" :notes-list="notesList"
-                @note-click="handleNoteClick" />
             <RecommendList :recommend-list="recommendList" @recommend-click="handleRecommendClick" />
 
             <!-- 交互栏 -->
@@ -55,7 +53,6 @@ import CommentsSection from '../comment/CommentsSection.vue';
 import InviteModal from './InviteModal.vue';
 import AlertDialog from '../AlertDialog.vue';
 import ContentBlock from './ContentBlock.vue';
-import NotesList from './NotesList.vue';
 import RecommendList from './RecommendList.vue';
 
 export default {
@@ -69,7 +66,6 @@ export default {
         InviteModal,
         AlertDialog,
         ContentBlock,
-        NotesList,
         RecommendList,
     },
 
@@ -94,7 +90,6 @@ export default {
             loadingUsers: false,
             invitedUsers: [],
             searchKeyword: '',
-            notesList: [],
             recommendList: [],
         }
     },
@@ -153,7 +148,6 @@ export default {
                 await this.fetchShareLinkDetail(this.shareLinkId);
                 this.$refs.loading.hide();
                 await this.fetchComments();
-                await this.fetchNotes(id);
                 await this.fetchRecommendations(id);
             }
             api.news.viewCount({ id: this.shareLinkId });
@@ -169,7 +163,6 @@ export default {
             this.invitedUsers = [];
             this.searchKeyword = '';
             this.loadingUsers = false;
-            this.notesList = [];
             this.recommendList = [];
         },
         async fetchShareLinkDetail(id) {
@@ -199,18 +192,6 @@ export default {
                 comment.subComments = subRes.data.comments;
             }
             this.allComments = comments;
-        },
-        async fetchNotes(id) {
-            if (!this.shareLink.notes) return;
-
-            try {
-                const res = await api.news.getNotes(id);
-                this.notesList = res.data.notes;
-            } catch (error) {
-                this.$refs.alertRef.show({
-                    message: '获取相关问题失败'
-                });
-            }
         },
         async fetchRecommendations(id) {
             try {
@@ -322,17 +303,6 @@ export default {
         async handleBookmark() {
             await api.news.bookmark(this.shareLinkId);
             await this.fetchShareLinkDetail();
-        },
-        async handleNoteClick(note) {
-            if (note.comment_id) {
-                // TODO：如果有关联的评论，滚动到评论点
-            } else {
-                // TODO: 否则直接发起评论
-                const res = await api.news.createByNote({ noteId: note.id });
-                if (res.success) {
-                    // TODO: 刷新评论列表，滚动到评论列表的第一项
-                }
-            }
         },
         handleRecommendClick(item) {
             window.webf.hybridHistory.pushState(
