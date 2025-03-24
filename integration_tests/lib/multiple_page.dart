@@ -49,7 +49,6 @@ class MultiplePageState extends State<MultiplePage> {
     super.didChangeDependencies();
 
     controller = WebFController(
-      context,
       viewportWidth: 360,
       viewportHeight: 640,
       bundle: WebFBundle.fromContent(widget.bundle, contentType: widget.contentType),
@@ -220,7 +219,7 @@ void main() {
 
           WidgetsBinding.instance.addPostFrameCallback((_) {
             MultiplePageState state = pageController.state(specName)!;
-            state.webf!.controller.onLoad = (_) {
+            state.webf!.controller?.onLoad = (_) {
               Timer(Duration(milliseconds: 500), () async {
                 await state.webf!.controller!.reload();
                 Timer(Duration(milliseconds: 500), () async {

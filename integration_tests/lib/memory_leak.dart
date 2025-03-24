@@ -62,8 +62,7 @@ class MemoryLeakPageState extends State<MemoryLeakPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    controller = WebFController(context,
-        viewportWidth: 360,
+    controller = WebFController(viewportWidth: 360,
         viewportHeight: 640,
         bundle: WebFBundle.fromUrl('file://${widget.path}'),
         uriParser: IntegrationTestUriParser());

@@ -237,23 +237,6 @@ class WebFDirectState extends State<WebF> with RouteAware {
       ),
     );
 
-    if (!widget.controller!.isComplete) {
-      return FutureBuilder(future: widget.controller!.controllerOnLoadCompleter.future, builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return widget.loadingWidget ??
-              const SizedBox(
-                width: 50,
-                height: 50,
-                child: Center(
-                  child: CircularProgressIndicator(),
-                ),
-              );
-        }
-
-        return result;
-      });
-    }
-
     return result;
   }
 
