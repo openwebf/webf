@@ -82,21 +82,29 @@ enum PreRenderingStatus { none, preloading, evaluate, rendering, done }
 
 class WebFController {
   /// The background color for viewport, default to transparent.
+  /// This determines the background color of the WebF widget content area.
   final Color? background;
 
-  /// the width of WebF Widget
-  /// default: the value of max-width in constraints.
+  /// The width of WebF Widget.
+  /// Default: the value of max-width in constraints.
+  /// This allows you to explicitly set the width of the WebF rendering area regardless of parent constraints.
   final double? viewportWidth;
 
-  /// the height of WebF Widget
-  /// default: the value if max-height in constraints.
+  /// The height of WebF Widget.
+  /// Default: the value of max-height in constraints.
+  /// This allows you to explicitly set the height of the WebF rendering area regardless of parent constraints.
   final double? viewportHeight;
 
   /// The methods of the webFNavigateDelegation help you implement custom behaviors that are triggered
   /// during a webf view's process of loading, and completing a navigation request.
+  ///
+  /// Use this to intercept and handle navigation events such as page redirects or link clicks.
   final WebFNavigationDelegate? navigationDelegate;
 
-  /// A method channel for receiving messaged from JavaScript code and sending message to JavaScript.
+  /// A method channel for receiving messages from JavaScript code and sending messages to JavaScript.
+  ///
+  /// This enables bidirectional communication between Dart and JavaScript, allowing you to expose
+  /// native functionality to web content or get data from the JavaScript environment.
   final WebFMethodChannel? javaScriptChannel;
 
   /// Specify the running thread for your JavaScript codes.
@@ -126,39 +134,77 @@ class WebFController {
   final WebFThread? runningThread;
 
   /// Callback triggered when a network error occurs during loading.
+  ///
+  /// Use this to handle and possibly recover from network failures when loading resources.
   LoadErrorHandler? onLoadError;
 
   /// Callback triggered when the app is fully loaded, including DOM, CSS, JavaScript, and images.
+  ///
+  /// This is equivalent to the window.onload event in web browsers and indicates all resources
+  /// have been loaded and rendered.
   LoadHandler? onLoad;
 
   /// Callback triggered when the app's DOM and CSS have finished loading.
+  ///
+  /// This is equivalent to the DOMContentLoaded event in web browsers and fires when the initial
+  /// HTML document has been completely loaded and parsed, without waiting for stylesheets,
+  /// images, and subframes to finish loading.
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
   LoadHandler? onDOMContentLoaded;
 
   /// Callback triggered when a JavaScript error occurs during loading.
+  ///
+  /// Use this to catch and handle JavaScript execution errors in the web content.
   JSErrorHandler? onJSError;
 
-  // Open a service to support Chrome DevTools for debugging.
+  /// Open a service to support Chrome DevTools for debugging.
+  ///
+  /// When enabled, allows you to connect Chrome DevTools to inspect rendered DOM elements,
+  /// debug JavaScript, monitor network requests, and analyze performance of the WebF content.
   final DevToolsService? devToolsService;
 
+  /// A listener for processing gesture events from the rendered content.
+  ///
+  /// Use this to intercept and handle user interactions with the rendered elements,
+  /// allowing custom gesture handling or additional processing of touch and pointer events.
   final GestureListener? gestureListener;
 
+  /// Interceptor for HTTP client operations initiated by JavaScript code.
+  ///
+  /// This allows you to intercept, modify, redirect or mock network requests made from JavaScript,
+  /// giving you control over the network layer of the WebF environment.
   final HttpClientInterceptor? httpClientInterceptor;
 
+  /// Parser for handling and potentially transforming URIs within WebF.
+  ///
+  /// This can be used to customize how URLs are resolved, redirected, or rewritten
+  /// before they are processed by the WebF engine.
   UriParser? uriParser;
 
-  /// Remote resources (HTML, CSS, JavaScript, Images, and other content loadable via WebFBundle) can be pre-loaded before WebF is mounted in Flutter.
-  /// Use this property to reduce loading times when a WebF application attempts to load external resources on pages.
+  /// Remote resources (HTML, CSS, JavaScript, Images, and other content loadable via WebFBundle)
+  /// that can be pre-loaded before WebF is mounted in Flutter.
+  ///
+  /// Use this property to reduce loading times when a WebF application attempts to load external
+  /// resources. Pre-loading can significantly improve startup performance, especially for frequently
+  /// accessed resources.
   final List<WebFBundle>? preloadedBundles;
 
-  /// The initial cookies to set.
+  /// The initial cookies to set for the JavaScript environment.
+  ///
+  /// These cookies will be available to JavaScript and network requests from the start.
   final List<Cookie>? initialCookies;
 
-  /// The path of the first route to show
+  /// The default route path for the hybrid router in WebF.
+  ///
+  /// Sets the initial path that the router will navigate to when the application starts.
+  /// This is the entry point for the hybrid routing system in WebF.
   final String? initialRoute;
 
   /// A Navigator observer that notifies RouteAwares of changes to the state of their route.
-  /// The RouteObserver is essential for notifying hybrid router change events, allowing WebF to subscribe to route changes.
+  ///
+  /// The RouteObserver is essential for the hybrid routing system, enabling WebF to
+  /// subscribe to Flutter route changes and maintain synchronization between Flutter
+  /// navigation and WebF's routing system.
   final RouteObserver<ModalRoute<void>>? routeObserver;
 
   /// If true the content should size itself to avoid the onscreen keyboard
@@ -172,12 +218,20 @@ class WebFController {
   /// Defaults to true.
   final bool resizeToAvoidBottomInsets;
 
-  /// The routing table for hybrid routers.
+  /// The routing table for the WebF hybrid router.
+  ///
+  /// Maps route paths to Flutter widgets, enabling the hybrid navigation system where
+  /// routes can be handled by either WebF content or native Flutter components.
+  /// This allows seamless integration between WebF-rendered content and Flutter widgets.
   Map<String, SubViewBuilder>? routes;
 
   static final Map<double, WebFController?> _controllerMap = {};
   static final Map<String, double> _nameIdMap = {};
 
+  /// The loading mode for WebF content.
+  ///
+  /// Controls how resources are loaded and when execution occurs.
+  /// Default is standard mode where everything is loaded and executed when mounted.
   WebFLoadingMode mode = WebFLoadingMode.standard;
 
   bool get isPreLoadingOrPreRenderingComplete =>
@@ -201,6 +255,10 @@ class WebFController {
     return getControllerOfJSContextId(contextId);
   }
 
+  /// Callback triggered when the title of the document changes.
+  ///
+  /// This is invoked when the document title is updated through JavaScript,
+  /// allowing the app to reflect title changes in the UI.
   TitleChangedHandler? onTitleChanged;
 
   WebFMethodChannel? _methodChannel;
@@ -219,7 +277,7 @@ class WebFController {
 
   ui.FlutterView get ownerFlutterView => _ownerFlutterView!;
 
-  List<BuildContext> buildContextStack = [];
+  final List<BuildContext> buildContextStack = [];
 
   bool? _darkModeOverride;
 
@@ -227,6 +285,10 @@ class WebFController {
     _darkModeOverride = value;
   }
 
+  /// Whether the current UI mode is dark mode.
+  ///
+  /// Returns true if dark mode is explicitly overridden to true via darkModeOverride
+  /// or if the platform brightness is not light.
   bool get isDarkMode {
     return _darkModeOverride ?? ownerFlutterView.platformDispatcher.platformBrightness != Brightness.light;
   }
@@ -234,6 +296,9 @@ class WebFController {
   final GestureListener? _gestureListener;
   Map<String, WebFBundle>? _preloadBundleIndex;
 
+  /// Retrieves a preloaded bundle that matches the given URL.
+  ///
+  /// Returns the WebFBundle if it exists in the preloaded bundles list, or null if not found.
   WebFBundle? getPreloadBundleFromUrl(String url) {
     return _preloadBundleIndex?[url];
   }
@@ -339,36 +404,93 @@ class WebFController {
 
   WebFViewController? _view;
 
+  /// The view controller that manages the visual rendering and DOM operations.
+  ///
+  /// Provides access to the document, window, viewport, and other rendering components.
   WebFViewController get view {
     return _view!;
   }
 
   WebFModuleController? _module;
 
+  /// The module controller that manages JavaScript modules and features.
+  ///
+  /// Provides access to browser-like APIs such as history, timers, storage, and other modules.
   WebFModuleController get module {
     return _module!;
   }
 
+  /// Queue of previous history items for the standard Web History API implementation.
+  ///
+  /// Used for tracking and enabling backward navigation with window.history.back().
   final Queue<HistoryItem> previousHistoryStack = Queue();
+
+  /// Queue of next history items for the standard Web History API implementation.
+  ///
+  /// Used for tracking and enabling forward navigation with window.history.forward().
   final Queue<HistoryItem> nextHistoryStack = Queue();
 
+  /// Storage for session data that implements the standard Web Storage API's sessionStorage.
+  ///
+  /// This maintains key-value pairs accessible through JavaScript's window.sessionStorage,
+  /// which persists for the duration of the page session but is cleared when the page is closed.
   final Map<String, String> sessionStorage = {};
 
+  /// Access to the standard Web History API implementation.
+  ///
+  /// Provides methods like back(), forward(), pushState(), etc., following the web standard.
   HistoryModule get history => module.moduleManager.getModule('History')!;
 
+  /// Access to WebF's hybrid history implementation that integrates with Flutter navigation.
+  ///
+  /// Enables synchronized navigation between WebF content and native Flutter routes.
   HybridHistoryModule get hybridHistory => module.moduleManager.getModule('HybridHistory')!;
 
-  static Uri fallbackBundleUri([double? id]) {
+  /// Creates a fallback URI for WebF bundle content.
+  ///
+  /// Generates a URI in the format `vm://bundle/[id]` that serves as a virtual origin
+  /// for WebF content that doesn't have a real URL. This is important for maintaining
+  /// same-origin security policies in the JavaScript environment.
+  ///
+  /// @param id Optional JavaScript context ID to make the URI unique per context
+  /// @return A URI object representing the virtual bundle location
+  static Uri
+  fallbackBundleUri([double? id]) {
     // The fallback origin uri, like `vm://bundle/0`
     return Uri(scheme: 'vm', host: 'bundle', path: id != null ? '$id' : null);
   }
 
+  /// Sets a navigation delegate to handle navigation events.
+  /// 
+  /// The navigation delegate allows intercepting and controlling navigation actions
+  /// such as page loads and redirects within the WebF content.
+  /// 
+  /// Example:
+  /// ```dart
+  /// controller.setNavigationDelegate(WebFNavigationDelegate(
+  ///   decidePolicyForNavigation: (request) {
+  ///     // Block navigation to external websites
+  ///     if (request.url.startsWith('https://external.com')) {
+  ///       return WebFNavigationDecision.prevent;
+  ///     }
+  ///     return WebFNavigationDecision.allow;
+  ///   }
+  /// ));
+  /// ```
   void setNavigationDelegate(WebFNavigationDelegate delegate) {
     view.navigationDelegate = delegate;
   }
 
+  /// Flag indicating whether fonts are currently being loaded.
+  /// 
+  /// When true, indicates that system fonts are in the process of loading,
+  /// which may affect text rendering in the WebF content.
   bool isFontsLoading = false;
 
+  /// Watches for font loading events and updates the isFontsLoading flag.
+  /// 
+  /// This method is registered as a listener with the system fonts service to track
+  /// when fonts are being loaded, which can affect text layout and rendering.
   void _watchFontLoading() {
     isFontsLoading = true;
     SchedulerBinding.instance.scheduleFrameCallback((_) {
@@ -376,6 +498,10 @@ class WebFController {
     });
   }
 
+  /// Unloads the current WebF content and prepares a fresh environment.
+  ///
+  /// This method clears the current page, disposes resources, and sets up a new
+  /// controller instance, allowing a complete reset of the WebF environment.
   Future<void> unload() async {
     assert(!view.disposed, 'WebF have already disposed');
     // Should clear previous page cached ui commands
@@ -424,8 +550,15 @@ class WebFController {
     return historyModule.stackTop?.resolvedUri;
   }
 
+  /// The current URL of the WebF content.
+  ///
+  /// Returns the URL string from the current history item or an empty string if not available.
   String get url => _url ?? '';
 
+  /// The current URI of the WebF content as a Uri object.
+  ///
+  /// Returns the resolved Uri from the current history item or null if not available.
+  /// Useful for accessing and manipulating individual components of the current URL.
   Uri? get uri => _uri;
 
   _addHistory(WebFBundle bundle) {
@@ -439,6 +572,10 @@ class WebFController {
     historyModule.add(bundle);
   }
 
+  /// Reloads the current WebF content.
+  ///
+  /// This performs a full reload of the current content, including disposing the old
+  /// environment and re-executing the entrypoint JavaScript/HTML.
   Future<void> reload() async {
     print('before reload');
     assert(!_view!.disposed, 'WebF have already disposed');
@@ -477,6 +614,10 @@ class WebFController {
     return controlledInitCompleter.future;
   }
 
+  /// Loads content from the provided WebFBundle.
+  ///
+  /// Unloads any existing content, adds the bundle to history, and executes the new content.
+  /// This is the main method for loading new content into WebF.
   Future<void> load(WebFBundle bundle) async {
     assert(!_view!.disposed, 'WebF have already disposed');
 
@@ -617,6 +758,10 @@ class WebFController {
   /// If your application depends on viewModule properties, ensure that the related code is placed within the `load` and `DOMContentLoaded` or `prerendered` event callbacks of the window.
   /// These callbacks are triggered once the WebF widget is mounted into the Flutter tree.
   /// Apps optimized for this mode remain compatible with both `standard` and `preloading` modes.
+  /// Aggressively preloads and prerenders content from the provided WebFBundle.
+  ///
+  /// This mode loads, parses, and executes content in a simulated environment before mounting.
+  /// Can improve loading performance by up to 90%, but requires special handling for dimension-dependent code.
   Future<void> preRendering(WebFBundle bundle) async {
     if (_preRenderingStatus == PreRenderingStatus.done) return;
 
@@ -714,6 +859,10 @@ class WebFController {
   void reactiveWidgetElements() {}
 
   // Pause all timers and callbacks if page are invisible.
+  /// Pauses all timers, animations, and JavaScript execution.
+  ///
+  /// Useful when the WebF content is not visible or the app is in the background.
+  /// Reduces resource usage by suspending non-essential operations.
   void pause() {
     if (_paused) return;
     _paused = true;
@@ -723,6 +872,10 @@ class WebFController {
   }
 
   // Resume all timers and callbacks if page now visible.
+  /// Resumes all timers, animations, and JavaScript execution that were paused.
+  ///
+  /// Call this when the WebF content becomes visible again or the app returns to the foreground.
+  /// Restores normal operation of the paused WebF environment.
   void resume() {
     if (!_paused) return;
 
@@ -746,6 +899,10 @@ class WebFController {
 
   bool get disposed => _disposed;
 
+  /// Disposes the WebF controller and all associated resources.
+  ///
+  /// Cleans up native resources, listeners, and cached data. Should be called when
+  /// the controller is no longer needed to prevent memory leaks.
   Future<void> dispose() async {
     PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
     await _view?.dispose();
@@ -811,6 +968,10 @@ class WebFController {
 
   bool get isFlutterAttached => _isFlutterAttached;
 
+  /// Attaches the WebF controller to a Flutter BuildContext.
+  ///
+  /// This connects the WebF environment to the Flutter widget tree, enabling rendering
+  /// and interactions. Must be called before content can be displayed.
   void attachToFlutter(BuildContext context) {
     _ownerFlutterView = View.of(context);
     view.attachToFlutter(context);
@@ -818,6 +979,10 @@ class WebFController {
     _isFlutterAttached = true;
   }
 
+  /// Detaches the WebF controller from the Flutter widget tree.
+  ///
+  /// Disconnects the WebF environment from Flutter, stopping rendering and interactions.
+  /// Should be called when the WebF content is no longer displayed or needed.
   void detachFromFlutter() {
     view.detachFromFlutter();
     PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
@@ -961,6 +1126,13 @@ class WebFController {
 
   bool _domContentLoadedEventDispatched = false;
 
+  /// Dispatches the DOMContentLoaded event to the document and window.
+  ///
+  /// This is equivalent to the standard Web DOMContentLoaded event, which fires when the 
+  /// initial HTML document has been completely loaded and parsed, without waiting for 
+  /// stylesheets, images, and other resources to finish loading.
+  /// 
+  /// Also calls the onDOMContentLoaded callback if one is provided.
   void dispatchDOMContentLoadedEvent() {
     if (_domContentLoadedEventDispatched) return;
 
@@ -980,6 +1152,12 @@ class WebFController {
 
   bool _loadEventDispatched = false;
 
+  /// Dispatches the load event to the window.
+  ///
+  /// This is equivalent to the standard Web window.onload event, which fires when the
+  /// whole page has loaded, including all dependent resources such as stylesheets and images.
+  /// 
+  /// Also calls the onLoad callback if one is provided.
   void dispatchWindowLoadEvent() {
     if (_loadEventDispatched) return;
     _loadEventDispatched = true;
@@ -997,6 +1175,11 @@ class WebFController {
 
   bool _preloadEventDispatched = false;
 
+  /// Dispatches the preloaded event to the window.
+  ///
+  /// This custom WebF event fires when content has been preloaded using the
+  /// preloading mode. JavaScript code can listen for this event to know
+  /// when preloading has completed.
   void dispatchWindowPreloadedEvent() {
     if (_preloadEventDispatched) return;
     _preloadEventDispatched = true;
@@ -1006,6 +1189,12 @@ class WebFController {
 
   bool _preRenderedEventDispatched = false;
 
+  /// Dispatches the prerendered event to the window.
+  ///
+  /// This custom WebF event fires when content has been prerendered using the
+  /// preRendering mode. JavaScript code can listen for this event to know
+  /// when prerendering has completed and perform any operations that depend
+  /// on accurate viewport dimensions.
   void dispatchWindowPreRenderedEvent() {
     if (_preRenderedEventDispatched) return;
     _preRenderedEventDispatched = true;
@@ -1013,13 +1202,27 @@ class WebFController {
     view.window.dispatchEvent(event);
   }
 
+  /// Dispatches the resize event to the window.
+  ///
+  /// This is equivalent to the standard Web window.onresize event, which fires when
+  /// the document view has been resized. In WebF, this occurs when the viewport size
+  /// changes due to device rotation, window resizing, or other layout changes.
+  ///
+  /// Returns a Future that completes when the event has been dispatched.
   Future<void> dispatchWindowResizeEvent() async {
     Event event = Event(EVENT_RESIZE);
     await view.window.dispatchEvent(event);
   }
 }
 
+/// Abstract base class for implementing DevTools debugging services for WebF content.
+/// 
+/// Provides the infrastructure needed to connect Chrome DevTools to a WebF instance,
+/// enabling inspection of DOM elements, JavaScript debugging, network monitoring,
+/// and other developer tools features.
 abstract class DevToolsService {
+  /// Previous instance of DevToolsService during a page reload.
+  /// 
   /// Design prevDevTool for reload page,
   /// do not use it in any other place.
   /// More detail see [InspectPageModule.handleReloadPage].
@@ -1027,6 +1230,10 @@ abstract class DevToolsService {
 
   static final Map<double, DevToolsService> _contextDevToolMap = {};
 
+  /// Retrieves the DevTools service instance associated with a specific JavaScript context ID.
+  /// 
+  /// @param contextId The unique identifier for a JavaScript context
+  /// @return The DevToolsService instance for the context, or null if none exists
   static DevToolsService? getDevToolOfContextId(double contextId) {
     return _contextDevToolMap[contextId];
   }
@@ -1034,12 +1241,26 @@ abstract class DevToolsService {
   /// Used for debugger inspector.
   UIInspector? _uiInspector;
 
+  /// Provides access to the UI inspector for debugging DOM elements.
+  /// 
+  /// The UI inspector enables visualization and inspection of the DOM structure
+  /// and rendered elements in DevTools.
   UIInspector? get uiInspector => _uiInspector;
 
+  /// The Dart isolate running the DevTools server.
+  /// 
+  /// DevTools runs in a separate isolate to avoid impacting the performance
+  /// of the main Flutter application.
   Isolate? _isolateServer;
 
+  /// Access to the isolate running the DevTools server.
+  /// 
+  /// This isolate handles communication with Chrome DevTools.
   Isolate get isolateServer => _isolateServer!;
 
+  /// Sets the isolate for the DevTools server.
+  /// 
+  /// @param isolate The Dart isolate instance handling DevTools communication
   set isolateServer(Isolate isolate) {
     _isolateServer = isolate;
   }
@@ -1056,6 +1277,12 @@ abstract class DevToolsService {
 
   WebFController? get controller => _controller;
 
+  /// Initializes the DevTools service for a WebF controller.
+  /// 
+  /// Sets up the inspector server and UI inspector, enabling Chrome DevTools
+  /// to connect to and debug the WebF content.
+  /// 
+  /// @param controller The WebFController instance to enable debugging for
   void init(WebFController controller) {
     _contextDevToolMap[controller.view.contextId] = this;
     _controller = controller;
@@ -1064,19 +1291,35 @@ abstract class DevToolsService {
     controller.view.debugDOMTreeChanged = uiInspector!.onDOMTreeChanged;
   }
 
+  /// Indicates whether the WebF content is currently being reloaded.
+  /// 
+  /// Used to manage DevTools state during page reloads.
   bool get isReloading => _reloading;
+  
+  /// Internal flag to track reload state.
   bool _reloading = false;
 
+  /// Called before WebF content is reloaded to prepare DevTools.
+  /// 
+  /// Sets the reloading flag to true to prevent DevTools operations during reload.
   void willReload() {
     _reloading = true;
   }
 
+  /// Called after WebF content has been reloaded to reconnect DevTools.
+  /// 
+  /// Updates the DOM tree change handlers and notifies the inspector server
+  /// about the reload completion.
   void didReload() {
     _reloading = false;
     controller!.view.debugDOMTreeChanged = _uiInspector!.onDOMTreeChanged;
     _isolateServerPort!.send(InspectorReload(_controller!.view.contextId));
   }
 
+  /// Disposes the DevTools service and releases all resources.
+  /// 
+  /// Cleans up the UI inspector, removes context mappings, and terminates
+  /// the inspector isolate server.
   void dispose() {
     _uiInspector?.dispose();
     _contextDevToolMap.remove(controller?.view.contextId);
