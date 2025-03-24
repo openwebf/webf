@@ -1,6 +1,6 @@
 <template>
   <div id="main">
-    <feeds-tabs :tabs="tabsConfig" @change="onTabChange" @onscreen="onScreen" @offscreen="offScreen">
+    <feeds-tabs :tabs="tabsConfig" @change="onTabChange" @onscreen="onScreen">
         <!-- 热门标签页内容 -->
         <template #hot>
             <webf-listview class="listview" @refresh="onRefreshHot" @loadmore="onLoadMoreHot">
@@ -538,17 +538,6 @@ export default {
         content,
         type
       });
-    },
-    
-    // 为兼容原来的方法保留这些空方法
-    async onRefresh() {
-      console.log('onRefresh');
-    },
-    async onLoadMore() {
-      console.log('onLoadMore');
-    },
-    async offScreen() {
-      console.log('offScreen');
     }
   }
 }
