@@ -53,6 +53,7 @@ jobs:
       with:
         name: macos_bridge_binary
         path: bridge/build/macos/
+    - run: npm i
     - run: node scripts/run_bridge_unit_test.js
 
   webf_unit_test:
