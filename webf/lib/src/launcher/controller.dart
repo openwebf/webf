@@ -277,7 +277,19 @@ class WebFController {
 
   ui.FlutterView get ownerFlutterView => _ownerFlutterView!;
 
-  final List<BuildContext> buildContextStack = [];
+  final List<BuildContext> _buildContextStack = [];
+  void pushNewBuildContext(BuildContext context) {
+    _buildContextStack.add(context);
+  }
+
+  void popBuildContext() {
+    _buildContextStack.removeLast();
+  }
+
+  UniqueKey key = UniqueKey();
+
+  BuildContext? get currentBuildContext => _buildContextStack.isNotEmpty ? _buildContextStack.last : null;
+  BuildContext? get rootBuildContext => _buildContextStack.isNotEmpty ? _buildContextStack.first : null;
 
   bool? _darkModeOverride;
 
@@ -323,6 +335,7 @@ class WebFController {
   Completer controllerPreloadingCompleter = Completer();
   Completer controllerPreRenderingCompleter = Completer();
   Completer controllerOnLoadCompleter = Completer();
+  Completer controllerOnDOMContentLoadedCompleter = Completer();
 
   bool externalController;
 
@@ -461,10 +474,10 @@ class WebFController {
   }
 
   /// Sets a navigation delegate to handle navigation events.
-  /// 
+  ///
   /// The navigation delegate allows intercepting and controlling navigation actions
   /// such as page loads and redirects within the WebF content.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// controller.setNavigationDelegate(WebFNavigationDelegate(
@@ -482,13 +495,13 @@ class WebFController {
   }
 
   /// Flag indicating whether fonts are currently being loaded.
-  /// 
+  ///
   /// When true, indicates that system fonts are in the process of loading,
   /// which may affect text rendering in the WebF content.
   bool isFontsLoading = false;
 
   /// Watches for font loading events and updates the isFontsLoading flag.
-  /// 
+  ///
   /// This method is registered as a listener with the system fonts service to track
   /// when fonts are being loaded, which can affect text layout and rendering.
   void _watchFontLoading() {
@@ -977,6 +990,7 @@ class WebFController {
     view.attachToFlutter(context);
     PaintingBinding.instance.systemFonts.addListener(_watchFontLoading);
     _isFlutterAttached = true;
+    pushNewBuildContext(context);
   }
 
   /// Detaches the WebF controller from the Flutter widget tree.
@@ -988,6 +1002,7 @@ class WebFController {
     PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
     _isFlutterAttached = false;
     _ownerFlutterView = null;
+    popBuildContext();
   }
 
   // Execute the content from entrypoint bundle.
@@ -1066,10 +1081,13 @@ class WebFController {
     }
   }
 
-  // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/loader/FrameLoader.h#L470
+  // window.onload
   bool _isComplete = false;
-
   bool get isComplete => _isComplete;
+
+  // window.onDOMContentLoaded
+  bool _isDOMComplete = false;
+  bool get isDOMComplete => _isDOMComplete;
 
   bool _evaluated = false;
 
@@ -1082,18 +1100,19 @@ class WebFController {
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/loader/FrameLoader.cpp#L840
   // Check whether the document has been loaded, such as html has parsed (main of JS has evaled) and images/scripts has loaded.
   void checkCompleted() {
-    if (_isComplete) return;
-
     // Are we still parsing?
     if (_view!.document.parsing) return;
 
     // Are all script element complete?
     if (_view!.document.isDelayingDOMContentLoadedEvent) return;
 
-    if (mode == WebFLoadingMode.standard || mode == WebFLoadingMode.preloading) {
-      _view!.document.readyState = DocumentReadyState.interactive;
-      dispatchDOMContentLoadedEvent();
-    }
+    if (_isDOMComplete) return;
+
+    _view!.document.readyState = DocumentReadyState.interactive;
+    dispatchDOMContentLoadedEvent();
+    _isDOMComplete = true;
+
+    controllerOnDOMContentLoadedCompleter.complete();
 
     // Still waiting for images/scripts?
     if (_view!.document.hasPendingRequest) return;
@@ -1101,16 +1120,16 @@ class WebFController {
     // Still waiting for elements that don't go through a FrameLoader?
     if (_view!.document.isDelayingLoadEvent) return;
 
-    // Any frame that hasn't completed yet?
-    // TODO:
+    if (_isComplete) return;
 
+    // The page load was complete
     _isComplete = true;
     controllerOnLoadCompleter.complete();
 
-    if (mode == WebFLoadingMode.standard || mode == WebFLoadingMode.preloading) {
-      dispatchWindowLoadEvent();
-      _view!.document.readyState = DocumentReadyState.complete;
-    } else if (mode == WebFLoadingMode.preRendering) {
+    dispatchWindowLoadEvent();
+    _view!.document.readyState = DocumentReadyState.complete;
+
+    if (mode == WebFLoadingMode.preRendering) {
       if (!controllerPreRenderingCompleter.isCompleted) {
         controllerPreRenderingCompleter.complete();
       }
@@ -1128,10 +1147,10 @@ class WebFController {
 
   /// Dispatches the DOMContentLoaded event to the document and window.
   ///
-  /// This is equivalent to the standard Web DOMContentLoaded event, which fires when the 
-  /// initial HTML document has been completely loaded and parsed, without waiting for 
+  /// This is equivalent to the standard Web DOMContentLoaded event, which fires when the
+  /// initial HTML document has been completely loaded and parsed, without waiting for
   /// stylesheets, images, and other resources to finish loading.
-  /// 
+  ///
   /// Also calls the onDOMContentLoaded callback if one is provided.
   void dispatchDOMContentLoadedEvent() {
     if (_domContentLoadedEventDispatched) return;
@@ -1156,7 +1175,7 @@ class WebFController {
   ///
   /// This is equivalent to the standard Web window.onload event, which fires when the
   /// whole page has loaded, including all dependent resources such as stylesheets and images.
-  /// 
+  ///
   /// Also calls the onLoad callback if one is provided.
   void dispatchWindowLoadEvent() {
     if (_loadEventDispatched) return;
@@ -1216,13 +1235,13 @@ class WebFController {
 }
 
 /// Abstract base class for implementing DevTools debugging services for WebF content.
-/// 
+///
 /// Provides the infrastructure needed to connect Chrome DevTools to a WebF instance,
 /// enabling inspection of DOM elements, JavaScript debugging, network monitoring,
 /// and other developer tools features.
 abstract class DevToolsService {
   /// Previous instance of DevToolsService during a page reload.
-  /// 
+  ///
   /// Design prevDevTool for reload page,
   /// do not use it in any other place.
   /// More detail see [InspectPageModule.handleReloadPage].
@@ -1231,7 +1250,7 @@ abstract class DevToolsService {
   static final Map<double, DevToolsService> _contextDevToolMap = {};
 
   /// Retrieves the DevTools service instance associated with a specific JavaScript context ID.
-  /// 
+  ///
   /// @param contextId The unique identifier for a JavaScript context
   /// @return The DevToolsService instance for the context, or null if none exists
   static DevToolsService? getDevToolOfContextId(double contextId) {
@@ -1242,24 +1261,24 @@ abstract class DevToolsService {
   UIInspector? _uiInspector;
 
   /// Provides access to the UI inspector for debugging DOM elements.
-  /// 
+  ///
   /// The UI inspector enables visualization and inspection of the DOM structure
   /// and rendered elements in DevTools.
   UIInspector? get uiInspector => _uiInspector;
 
   /// The Dart isolate running the DevTools server.
-  /// 
+  ///
   /// DevTools runs in a separate isolate to avoid impacting the performance
   /// of the main Flutter application.
   Isolate? _isolateServer;
 
   /// Access to the isolate running the DevTools server.
-  /// 
+  ///
   /// This isolate handles communication with Chrome DevTools.
   Isolate get isolateServer => _isolateServer!;
 
   /// Sets the isolate for the DevTools server.
-  /// 
+  ///
   /// @param isolate The Dart isolate instance handling DevTools communication
   set isolateServer(Isolate isolate) {
     _isolateServer = isolate;
@@ -1278,10 +1297,10 @@ abstract class DevToolsService {
   WebFController? get controller => _controller;
 
   /// Initializes the DevTools service for a WebF controller.
-  /// 
+  ///
   /// Sets up the inspector server and UI inspector, enabling Chrome DevTools
   /// to connect to and debug the WebF content.
-  /// 
+  ///
   /// @param controller The WebFController instance to enable debugging for
   void init(WebFController controller) {
     _contextDevToolMap[controller.view.contextId] = this;
@@ -1292,22 +1311,22 @@ abstract class DevToolsService {
   }
 
   /// Indicates whether the WebF content is currently being reloaded.
-  /// 
+  ///
   /// Used to manage DevTools state during page reloads.
   bool get isReloading => _reloading;
-  
+
   /// Internal flag to track reload state.
   bool _reloading = false;
 
   /// Called before WebF content is reloaded to prepare DevTools.
-  /// 
+  ///
   /// Sets the reloading flag to true to prevent DevTools operations during reload.
   void willReload() {
     _reloading = true;
   }
 
   /// Called after WebF content has been reloaded to reconnect DevTools.
-  /// 
+  ///
   /// Updates the DOM tree change handlers and notifies the inspector server
   /// about the reload completion.
   void didReload() {
@@ -1317,7 +1336,7 @@ abstract class DevToolsService {
   }
 
   /// Disposes the DevTools service and releases all resources.
-  /// 
+  ///
   /// Cleans up the UI inspector, removes context mappings, and terminates
   /// the inspector isolate server.
   void dispose() {

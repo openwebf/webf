@@ -286,8 +286,10 @@ class MyAppState extends State<MyApp> {
         },
         onGenerateRoute: (settings) {
           return CupertinoPageRoute(
+            settings: settings,
             builder: (context) {
-              return WebFControllerManager.instance.routes[settings.name]!(context);
+              Widget? entry = WebFControllerManager.instance.getRouterBuilderBySettings(context, settings);
+              return entry ?? Text('Page not found');
             },
           );
         },

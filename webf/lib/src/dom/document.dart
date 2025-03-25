@@ -503,9 +503,9 @@ class Document extends ContainerNode {
   void childrenChanged(ChildrenChange change) {
     super.childrenChanged(change);
 
-    List<flutter.BuildContext> buildContextStack = ownerView.rootController.buildContextStack;
-    if (buildContextStack.isNotEmpty) {
-      WebFDirectState webFState = buildContextStack.first.findAncestorStateOfType<WebFDirectState>()!;
+    flutter.BuildContext? rootBuildContext = ownerView.rootController.rootBuildContext;
+    if (rootBuildContext != null) {
+      WebFState webFState = rootBuildContext.findAncestorStateOfType<WebFState>()!;
 
       webFState.requestForUpdate(DocumentElementChangedReason());
     }

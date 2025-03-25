@@ -70,7 +70,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   flutter.Widget build(flutter.BuildContext context) {
     super.build(context);
 
-    WebFDirectState? webFState;
+    WebFState? webFState;
     WebFRouterViewState? routerViewState;
 
     if (this is WidgetElement || webFElement.renderStyle.display == CSSDisplay.none) {
@@ -90,7 +90,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
           children.add(node.toWidget());
           return;
         } else if (node is RouterLinkElement) {
-          webFState ??= context.findAncestorStateOfType<WebFDirectState>();
+          webFState ??= context.findAncestorStateOfType<WebFState>();
           String routerPath = node.path;
           if (webFState != null && webFState?.widget.controller!.initialRoute == routerPath) {
             children.add(node.toWidget());

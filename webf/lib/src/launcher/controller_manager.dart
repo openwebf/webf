@@ -32,17 +32,17 @@ import 'package:webf/launcher.dart';
 ///       }
 ///     )
 ///   );
-///   
+///
 ///   // Add controllers
 ///   await WebFControllerManager.instance.addWithPrerendering(
 ///     name: 'home',
 ///     createController: () => WebFController(),
 ///     bundle: WebFBundle.fromUrl('https://example.com'),
 ///   );
-///   
+///
 ///   // To use a controller with automatic lifecycle management:
 ///   runApp(AsyncWebF(controllerName: 'home'));
-///   
+///
 ///   // Or use the controller directly:
 ///   final controller = await WebFControllerManager.instance.getController('home');
 ///   runApp(WebF(controller: controller!));
@@ -85,7 +85,7 @@ enum ControllerState {
 class _ControllerInstance {
   WebFController controller;
   ControllerState state;
-  
+
   _ControllerInstance(this.controller, this.state);
 }
 
@@ -125,6 +125,7 @@ class WebFControllerManager {
   /// Get the singleton instance of the manager
   static WebFControllerManager get instance => _instance;
 
+  /// Get all registered router configs
   Map<String, WidgetBuilder> get routes {
     Map<String, WidgetBuilder> routes = {};
     _controllersByName.forEach((name, instance) {
@@ -138,6 +139,18 @@ class WebFControllerManager {
     return routes;
   }
 
+  /// Get the router entry widget by router settings.
+  Widget? getRouterBuilderBySettings(BuildContext context, RouteSettings settings) {
+    for (final entry in _controllersByName.entries) {
+      _ControllerInstance controllerInstance = entry.value;
+      if (controllerInstance.controller.routes?.containsKey(settings.name) == true) {
+        return controllerInstance.controller.routes![settings.name!]!(context, controllerInstance.controller);
+      }
+    }
+
+    return null;
+  }
+
   /// Initialize the manager with custom configuration
   void initialize(WebFControllerManagerConfig config) {
     _config = config;
@@ -145,9 +158,9 @@ class WebFControllerManager {
 
   /// Count of attached controllers
   int get attachedControllersCount => _attachedControllers.length;
-  
+
   /// Count of detached controllers
-  int get detachedControllersCount => 
+  int get detachedControllersCount =>
       _controllersByName.values.where((i) => i.state == ControllerState.detached).length;
 
   /// Adds a controller with preloading enabled
@@ -172,7 +185,7 @@ class WebFControllerManager {
     // Check if controller already exists
     if (_controllersByName.containsKey(name)) {
       final instance = _controllersByName[name]!;
-      
+
       // If it's disposed, remove it
       if (instance.state == ControllerState.disposed) {
         _controllersByName.remove(name);
@@ -182,7 +195,7 @@ class WebFControllerManager {
         return instance.controller;
       }
     }
-    
+
     // Check if we've reached max capacity and enforce limits if needed
     if (_controllersByName.length >= _config.maxAliveInstances &&
         _config.autoDisposeWhenLimitReached) {
@@ -232,7 +245,7 @@ class WebFControllerManager {
     // Check if controller already exists
     if (_controllersByName.containsKey(name)) {
       final instance = _controllersByName[name]!;
-      
+
       // If it's disposed, remove it
       if (instance.state == ControllerState.disposed) {
         _controllersByName.remove(name);
@@ -242,16 +255,16 @@ class WebFControllerManager {
         return instance.controller;
       }
     }
-    
+
     // Check if we've reached max capacity and enforce limits if needed
     if (_controllersByName.length >= _config.maxAliveInstances &&
         _config.autoDisposeWhenLimitReached) {
       _disposeLeastRecentlyUsed();
     }
-    
+
     // Create the controller
     WebFController controller = createController();
-    
+
     // Register first to establish name mapping (state will be detached)
     registerController(name, controller);
 
@@ -277,10 +290,10 @@ class WebFControllerManager {
   Future<WebFController> _recreateController(String name) async {
     // Remove the disposed controller instance
     _controllersByName.remove(name);
-    
+
     // Get stored parameters
     final params = _controllerInitParams[name]!;
-    
+
     // Re-create based on type
     if (params['type'] == 'preload') {
       return await addWithPreload(
@@ -326,7 +339,7 @@ class WebFControllerManager {
     // Attach controller to Flutter
     controller.attachToFlutter(context);
     instance.state = ControllerState.attached;
-    
+
     // Update tracking queues
     _attachedControllers.add(name);
     _updateUsageOrder(name);
@@ -346,10 +359,10 @@ class WebFControllerManager {
     if (instance.state == ControllerState.attached) {
       controller.detachFromFlutter();
       instance.state = ControllerState.detached;
-      
+
       // Update tracking queue
       _attachedControllers.removeWhere((element) => element == name);
-      
+
       // Notify through callback if provided
       if (_config.onControllerDetached != null) {
         _config.onControllerDetached!(name, controller);
@@ -378,7 +391,7 @@ class WebFControllerManager {
       final controller = instance.controller;
       controller.detachFromFlutter();
       instance.state = ControllerState.detached;
-      
+
       // Notify through callback if provided
       if (_config.onControllerDetached != null) {
         _config.onControllerDetached!(leastRecentlyUsedName, controller);
@@ -390,14 +403,14 @@ class WebFControllerManager {
   /// Returns the registered controller for chaining
   WebFController registerController(String name, WebFController controller) {
     // If a controller with this name already exists, update its usage order and return it
-    if (_controllersByName.containsKey(name) && 
+    if (_controllersByName.containsKey(name) &&
         _controllersByName[name]!.state != ControllerState.disposed) {
       _updateUsageOrder(name);
       return _controllersByName[name]!.controller;
     }
-    
+
     // Remove any disposed controller with this name
-    if (_controllersByName.containsKey(name) && 
+    if (_controllersByName.containsKey(name) &&
         _controllersByName[name]!.state == ControllerState.disposed) {
       _controllersByName.remove(name);
       // Also cleanup from usage tracking
@@ -421,14 +434,14 @@ class WebFControllerManager {
   static Future<WebFController?> getInstance(String name) async {
     return await _instance.getController(name);
   }
-  
+
   /// Get a controller instance by name synchronously
   /// Unlike getController, this won't attempt to recreate disposed controllers
   /// Use this when you need immediate access without recreation
   WebFController? getControllerSync(String name) {
     if (_controllersByName.containsKey(name)) {
       final instance = _controllersByName[name]!;
-      
+
       // If controller is disposed, remove it and return null
       if (instance.state == ControllerState.disposed) {
         // Remove from tracking collections to prevent memory leaks
@@ -437,14 +450,14 @@ class WebFControllerManager {
         _attachedControllers.removeWhere((element) => element == name);
         return null;
       }
-      
+
       // Update usage order for non-disposed controllers
       _updateUsageOrder(name);
       return instance.controller;
     }
     return null;
   }
-  
+
   /// Get a controller instance by name synchronously
   /// Unlike getController, this won't attempt to recreate disposed controllers
   static WebFController? getInstanceSync(String name) {
@@ -458,32 +471,32 @@ class WebFControllerManager {
     // If the controller exists
     if (_controllersByName.containsKey(name)) {
       final instance = _controllersByName[name]!;
-      
+
       // If controller is in disposed state but we have init params, recreate it
       if (instance.state == ControllerState.disposed) {
         // First remove the disposed instance to prevent memory leaks
         _controllersByName.remove(name);
         _recentlyUsedControllers.removeWhere((element) => element == name);
-        
+
         // Then recreate if we have initialization parameters
         if (_controllerInitParams.containsKey(name)) {
           return await _recreateController(name);
         }
-        
+
         // If no init params, return null
         return null;
       }
-      
+
       // Update usage order for non-disposed controllers
       _updateUsageOrder(name);
       return instance.controller;
     }
-    
+
     // If controller doesn't exist but we have init params, recreate it
     if (_controllerInitParams.containsKey(name)) {
       return await _recreateController(name);
     }
-    
+
     return null;
   }
 
@@ -521,15 +534,15 @@ class WebFControllerManager {
     // Update state to disposed
     if (instance != null && !instance.controller.disposed) {
       final controller = instance.controller;
-      
+
       // Remove from map to avoid memory leaks
       _controllersByName.remove(leastRecentlyUsedName);
-      
+
       // Notify through callback if provided
       if (_config.onControllerDisposed != null) {
         _config.onControllerDisposed!(leastRecentlyUsedName, controller);
       }
-      
+
       // Dispose the controller
       controller.dispose();
     }
@@ -550,7 +563,7 @@ class WebFControllerManager {
   ControllerState? getControllerState(String name) {
     return _controllersByName[name]?.state;
   }
-  
+
   /// Find the name of a controller by its instance
   String? getControllerName(WebFController controller) {
     for (final entry in _controllersByName.entries) {
@@ -581,15 +594,15 @@ class WebFControllerManager {
         instance.controller.detachFromFlutter();
         _attachedControllers.removeWhere((element) => element == name);
       }
-      
+
       // Get reference to controller before removing from map
       final controller = instance.controller;
-      
+
       // Remove from all tracking collections to prevent memory leaks
       _controllersByName.remove(name);
       _recentlyUsedControllers.removeWhere((element) => element == name);
       _attachedControllers.removeWhere((element) => element == name);
-      
+
       // Then dispose
       await controller.dispose();
     } else if (instance != null) {

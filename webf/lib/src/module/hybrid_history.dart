@@ -42,33 +42,33 @@ class HybridHistoryModule extends BaseModule {
 
   void back() async {
     if (_delegate != null) {
-      _delegate!.back((moduleManager!.controller.buildContextStack.last));
+      _delegate!.back((moduleManager!.controller.currentBuildContext!));
       return;
     }
-    Navigator.pop(moduleManager!.controller.buildContextStack.last);
+    Navigator.pop(moduleManager!.controller.currentBuildContext!);
   }
 
   void pushState(state, String name) {
     if (_delegate != null) {
-      _delegate!.pushState(moduleManager!.controller.buildContextStack.last, state, name);
+      _delegate!.pushState(moduleManager!.controller.currentBuildContext!, state, name);
       return;
     }
-    Navigator.pushNamed(moduleManager!.controller.buildContextStack.last, name, arguments: state);
+    Navigator.pushNamed(moduleManager!.controller.currentBuildContext!, name, arguments: state);
   }
 
   void replaceState(state, String name) {
     if (_delegate != null) {
-      _delegate!.replaceState(moduleManager!.controller.buildContextStack.last, state, name);
+      _delegate!.replaceState(moduleManager!.controller.currentBuildContext!, state, name);
       return;
     }
-    Navigator.pushReplacementNamed(moduleManager!.controller.buildContextStack.last, name, arguments: state);
+    Navigator.pushReplacementNamed(moduleManager!.controller.currentBuildContext!, name, arguments: state);
   }
 
   String path() {
     if (_delegate != null) {
-      return _delegate!.path(moduleManager!.controller.buildContextStack.last);
+      return _delegate!.path(moduleManager!.controller.currentBuildContext!);
     }
-    String? currentPath = ModalRoute.of(moduleManager!.controller.buildContextStack.last)?.settings.name;
+    String? currentPath = ModalRoute.of(moduleManager!.controller.currentBuildContext!)?.settings.name;
     return currentPath ?? '';
   }
 
@@ -77,9 +77,9 @@ class HybridHistoryModule extends BaseModule {
     switch (method) {
       case 'state':
         if (_delegate != null) {
-          return _delegate!.state(moduleManager!.controller.buildContextStack.last);
+          return _delegate!.state(moduleManager!.controller.currentBuildContext!);
         }
-        var route = ModalRoute.of(moduleManager!.controller.buildContextStack.last);
+        var route = ModalRoute.of(moduleManager!.controller.currentBuildContext!);
         if (route?.settings.arguments != null) {
           return jsonEncode(route!.settings.arguments);
         }

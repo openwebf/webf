@@ -10,34 +10,9 @@ class WebFRouterViewport extends MultiChildRenderObjectWidget {
   WebFRouterViewport({required this.controller, super.children});
 
   @override
-  MultiChildRenderObjectElement createElement() {
-    return WebRouterViewportElement(this);
-  }
-
-  @override
   RenderObject createRenderObject(BuildContext context) {
     RenderViewportBox root = RenderViewportBox(viewportSize: null, controller: controller);
-
     return root;
-  }
-}
-
-class WebRouterViewportElement extends MultiChildRenderObjectElement {
-  WebRouterViewportElement(super.widget);
-
-  @override
-  WebFRouterViewport get widget => super.widget as WebFRouterViewport;
-
-  @override
-  void mount(Element? parent, Object? newSlot) {
-    super.mount(parent, newSlot);
-    widget.controller.buildContextStack.add(this);
-  }
-
-  @override
-  void unmount() {
-    widget.controller.buildContextStack.removeLast();
-    super.unmount();
   }
 }
 
@@ -66,11 +41,13 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   void didChangeDependencies() {
     super.didChangeDependencies();
     widget.controller.routeObserver?.subscribe(this, ModalRoute.of(context)!);
+    widget.controller.pushNewBuildContext(context);
   }
 
   @override
   void dispose() {
     widget.controller.routeObserver?.unsubscribe(this);
+    widget.controller.popBuildContext();
     super.dispose();
   }
 
