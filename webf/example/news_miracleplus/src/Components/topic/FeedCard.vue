@@ -5,7 +5,7 @@
           <div class="title">{{ item.item.title }}</div>
           <div class="description">{{ item.item.content }}</div>
           <div class="link-preview" v-if="item.item.logoUrl">
-              <img :src="item.item.logoUrl" class="link-logo" />
+              <smart-image :src="item.item.logoUrl" class="link-logo" />
           </div>
       </template>
 
@@ -32,12 +32,14 @@
 </template>
 
 <script>
+import SmartImage from '@/Components/SmartImage.vue';
 import CardBottomInfo from '@/Components/CardBottomInfo.vue';
 import { parseRichContent } from '@/utils/parseRichContent';
 export default {
   name: 'FeedCard',
   components: {
-    CardBottomInfo
+    CardBottomInfo,
+    SmartImage,
   },
   props: {
       item: {

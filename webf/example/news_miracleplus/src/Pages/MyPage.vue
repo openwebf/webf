@@ -1,7 +1,7 @@
 <template>
   <div class="my-page" @onscreen="onScreen">
     <div class="user-info-block">
-      <img :src="formattedAvatar" class="avatar" />
+      <smart-image :src="formattedAvatar" class="avatar" />
       <div class="name" v-if="isLoggedIn">{{ userInfo.name }}</div>
       <div class="login-button" v-else @click="goToLoginPage">登录/注册</div>
       <div class="title" v-if="isLoggedIn">
@@ -134,7 +134,7 @@
 <script>
 import LoginTip from '@/Components/LoginTip.vue';
 import UserFeedCard from '@/Components/UserFeedCard.vue';
-
+import SmartImage from '@/Components/SmartImage.vue';
 import { useUserStore } from '@/stores/userStore';
 import formatAvatar from '@/utils/formatAvatar';
 import { api } from '@/api';
@@ -143,6 +143,7 @@ export default {
   components: {
     UserFeedCard,
     LoginTip,
+    SmartImage,
   },
   data() {
     return {

@@ -32,7 +32,7 @@
       <div class="title">{{ truncatedTitle }}</div>
       <div class="link-card">
         <div v-if="feed.item.logoUrl" class="logo">
-          <img :src="feed.item.logoUrl" alt="Logo" />
+          <smart-image :src="feed.item.logoUrl" />
         </div>
         <div class="content">
           <div class="introduction">{{ truncatedIntroduction }}</div>
@@ -100,7 +100,7 @@
         <div class="title">{{ truncatedTitle }}</div>
         <div class="link-card">
           <div v-if="feed.item.logoUrl" class="logo">
-            <img :src="feed.item.logoUrl" alt="Logo" />
+            <smart-image :src="feed.item.logoUrl" />
           </div>
           <div class="content">
             <div class="introduction">{{ truncatedIntroduction }}</div>
@@ -125,7 +125,7 @@
     <!-- Bottom info -->
     <div class="bottom-info">
       <div class="user-info">
-        <img :src="formattedAvatar" class="avatar" />
+        <smart-image :src="formattedAvatar" class="avatar" />
         <div class="name">{{ feed.account.name }}</div>
         <div class="time">{{ formattedTime }}</div>
       </div>
@@ -148,10 +148,14 @@
 </template>
 
 <script>
+import SmartImage from '@/Components/SmartImage.vue';
 import formatAvatar from '@/utils/formatAvatar';
 
 export default {
   name: 'UserFeedCard',
+  components: {
+    SmartImage,
+  },
   props: {
     feed: {
       type: Object,

@@ -1,7 +1,7 @@
 <template>
     <div class="post-header">
       <div class="author-info">
-        <img :src="formattedAvatar" class="avatar" />
+        <smart-image :src="formattedAvatar" class="avatar" />
         <div class="author-details">
           <div class="name">{{ user?.name }}</div>
           <div class="time">2小时前</div>
@@ -11,10 +11,14 @@
   </template>
   
   <script>
+  import SmartImage from '@/Components/SmartImage.vue';
   import formatAvatar from '@/utils/formatAvatar';
 
   export default {
     name: 'PostHeader',
+    components: {
+      SmartImage,
+    },
     props: {
       user: {
         type: Object,

@@ -339,26 +339,3 @@ export const api = {
     }),
   }
 };
-
-// Usage example:
-/*
-try {
-  // Get news list
-  const newsList = await api.news.getList({ page: 1, limit: 10 });
-  
-  // Login
-  const userData = await api.auth.login({ 
-    username: 'user', 
-    password: 'pass' 
-  });
-  
-  // Publish news
-  const publishResult = await api.news.publish({
-    title: 'News Title',
-    content: 'News Content'
-  });
-} catch (error) {
-  // Handle error
-  console.error('Operation failed:', error.message);
-}
-*/

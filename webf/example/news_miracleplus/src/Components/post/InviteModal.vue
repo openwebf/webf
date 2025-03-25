@@ -15,7 +15,7 @@
                 </div>
                 <webf-listview v-else class="invite-users-list">
                     <div v-for="user in users" :key="user.id" class="invite-user-item">
-                        <img :src="formatUserAvatar(user)" class="user-avatar" />
+                        <smart-image :src="formatUserAvatar(user)" class="user-avatar" />
                         <div class="user-info">
                             <div class="user-name">{{ user.name }}</div>
                             <div class="user-company">{{ user.company }} {{ user.jobTitle }}</div>
@@ -30,9 +30,12 @@
 
 <script>
 import formatAvatar from '@/utils/formatAvatar';
-
+import SmartImage from '@/Components/SmartImage.vue';
 export default {
     name: 'InviteModal',
+    components: {
+        SmartImage,
+    },
     props: {
         show: Boolean,
         loading: Boolean,

@@ -1,7 +1,7 @@
 <template>
     <div class="user-page" @onscreen="onScreen" @offscreen="offScreen">
       <div class="user-info-block">
-        <img :src="formattedAvatar" class="avatar" />
+        <smart-image :src="formattedAvatar" class="avatar" />
         <div class="name">{{ user.name }}</div>
         <div class="title">
           {{ formattedTitle }}
@@ -95,10 +95,11 @@
   import formatAvatar from '@/utils/formatAvatar';
   import { api } from '@/api';
   import UserFeedCard from '@/Components/UserFeedCard.vue';
-
+  import SmartImage from '@/Components/SmartImage.vue';
   export default {
     components: {
       UserFeedCard,
+      SmartImage,
     },
     async onScreen() {
       console.log('UserPage onScreen');

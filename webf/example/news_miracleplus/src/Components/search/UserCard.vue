@@ -1,6 +1,6 @@
 <template>
     <div class="user-card" @click="viewUserDetail">
-      <img :src="user.avatar" class="avatar" />
+      <smart-image :src="user.avatar" class="avatar" />
       <div class="user-info">
         <div class="name">{{ user.name }}</div>
         <div class="title">{{ formattedTitle }}</div>
@@ -9,8 +9,13 @@
   </template>
   
   <script>
+  import SmartImage from '@/Components/SmartImage.vue';
+
   export default {
     name: 'UserCard',
+    components: {
+      SmartImage,
+    },
     props: {
       user: {
         type: Object,

@@ -21,6 +21,7 @@ import 'custom_elements/bottom_sheet.dart';
 import 'custom_elements/tab.dart';
 import 'custom_elements/switch.dart';
 import 'custom_elements/slider.dart';
+import 'custom_elements/svg_img.dart';
 import 'custom_elements/cupertino/tab_bar.dart';
 import 'custom_elements/cupertino/button.dart';
 import 'custom_elements/cupertino/input.dart';
@@ -95,6 +96,7 @@ void main() async {
   WebF.defineCustomElement('flutter-switch', (context) => FlutterSwitch(context));
   WebF.defineCustomElement('flutter-tab-bar', (context) => FlutterTabBar(context));
   WebF.defineCustomElement('flutter-tab-bar-item', (context) => FlutterTabBarItem(context));
+  WebF.defineCustomElement('flutter-svg-img', (context) => FlutterSVGImg(context));
   WebF.defineCustomElement('flutter-cupertino-button', (context) => FlutterCupertinoButton(context));
   WebF.defineCustomElement('flutter-cupertino-input', (context) => FlutterCupertinoInput(context));
   WebF.defineCustomElement('flutter-cupertino-tab', (context) => FlutterCupertinoTab(context));

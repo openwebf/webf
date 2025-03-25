@@ -2,7 +2,7 @@
     <div class="base-comment-item">
       <div class="comment-header">
         <div class="user-info">
-          <img :src="formattedAvatar" class="avatar" />
+          <smart-image :src="formattedAvatar" class="avatar" />
           <div class="user-meta">
             <span class="username">{{ comment.user.name }}</span>
             <span class="time">{{ formattedTime }}</span>
@@ -81,12 +81,16 @@
   </template>
   
   <script>
+  import SmartImage from '@/Components/SmartImage.vue';
   import { useUserStore } from '@/stores/userStore'
   import formatAvatar from '@/utils/formatAvatar';
   import { parseRichContent, formatToRichContent } from '@/utils/parseRichContent';
   import { api } from '@/api';
   export default {
     name: 'BaseCommentItem',
+    components: {
+      SmartImage,
+    },
     inject: ['update', 'addReply'],
     props: {
       comment: {

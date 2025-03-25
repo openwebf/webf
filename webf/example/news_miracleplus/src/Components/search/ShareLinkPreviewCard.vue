@@ -1,11 +1,10 @@
 <template>
     <div class="share-link-preview-card" @click="viewDetail">
       <div v-if="data.link" class="preview-box">
-        <img 
+        <smart-image 
           v-if="data.logoUrl" 
           class="logo" 
           :src="data.logoUrl"
-          mode="aspectFill"
         />
         <div class="link" :numberOfLines="1">{{ data.title }}</div>
       </div>
@@ -16,10 +15,12 @@
   </template>
   
   <script>
+  import SmartImage from '@/Components/SmartImage.vue';
   import ShareLinkCount from '../ShareLinkCount.vue';
   export default {
     name: 'ShareLinkPreviewCard',
     components: {
+        SmartImage,
         ShareLinkCount,
     },
     props: {

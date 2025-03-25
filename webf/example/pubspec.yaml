@@ -23,6 +23,7 @@ dependencies:
   day_night_switcher: ^0.2.0+1
   adaptive_theme: ^3.3.0
   cupertino_icons: ^1.0.0
+  flutter_svg: ^2.0.17
 # When depending on this package from a real application,
 # you should remove the following overrides.
 # See https://dart.dev/tools/pub/dependencies#version-constraints
@@ -44,4 +45,3 @@ flutter:
     - news_miracleplus/dist/
     - news_miracleplus/dist/js/
     - news_miracleplus/dist/css/
-    - news_miracleplus/dist/img/

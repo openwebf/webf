@@ -22,7 +22,7 @@
         <!-- questioner info -->
         <div class="user-info">
             <div class="left">
-                <img class="avatar" :src="question.user.avatar" mode="aspectFill" />
+                <smart-image class="avatar" :src="question.user.avatar" />
                 <div class="user-meta">
                     <div class="name">{{ question.user.name }}</div>
                     <div class="desc">{{ userDesc }}</div>
@@ -57,8 +57,13 @@
 </template>
 
 <script>
+import SmartImage from '@/Components/SmartImage.vue';
+
 export default {
     name: 'QuestionSection',
+    components: {
+        SmartImage,
+    },
     props: {
         question: {
             type: Object,
