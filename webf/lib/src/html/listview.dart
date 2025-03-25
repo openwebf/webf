@@ -36,7 +36,7 @@ class FlutterListViewElement extends WidgetElement {
   bool get isScrollingElement => true;
 
   void _scrollListener() {
-    if (!mounted || !_scrollController.hasClients) {
+    if (!mounted || !_scrollController.hasClients ||  _scrollController.positions.isEmpty) {
       return;
     }
 
