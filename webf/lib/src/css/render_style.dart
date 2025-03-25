@@ -640,6 +640,11 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   @pragma('vm:prefer-inline')
+  bool isSelfHTMLElement() {
+    return target is HTMLElement;
+  }
+
+  @pragma('vm:prefer-inline')
   bool isSelfRenderReplaced() {
     return someRenderBoxSatisfy((renderObject) => renderObject is RenderReplaced);
   }
@@ -2154,9 +2159,10 @@ class CSSRenderStyle extends RenderStyle
       return;
     } else if (effectiveDisplay == CSSDisplay.block || effectiveDisplay == CSSDisplay.flex) {
       CSSRenderStyle? parentStyle = renderStyle.getParentRenderStyle();
-      // Use width directly if defined.
       if (renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
+      } else if (renderStyle.isSelfHTMLElement()) {
+        logicalWidth = target.ownerView.viewport!.boxSize!.width;
       } else if (parentStyle != null) {
         // Block element (except replaced element) will stretch to the content width of its parent in flow layout.
         // Replaced element also stretch in flex layout if align-items is stretch.
@@ -2250,6 +2256,8 @@ class CSSRenderStyle extends RenderStyle
     } else {
       if (renderStyle.height.isNotAuto) {
         logicalHeight = renderStyle.height.computedValue;
+      } else if (renderStyle.isSelfHTMLElement()) {
+        logicalHeight = renderStyle.target.ownerView.viewport!.boxSize!.height;
       } else if ((renderStyle.position == CSSPositionType.absolute || renderStyle.position == CSSPositionType.fixed) &&
           !renderStyle.isSelfRenderReplaced() &&
           renderStyle.height.isAuto &&

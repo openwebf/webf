@@ -12,6 +12,7 @@ import 'package:webf/bridge.dart';
 const String HTML = 'HTML';
 const Map<String, dynamic> _defaultStyle = {
   DISPLAY: BLOCK,
+  OVERFLOW: AUTO
 };
 
 class HTMLElement extends Element {

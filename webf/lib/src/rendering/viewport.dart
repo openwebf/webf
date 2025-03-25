@@ -36,6 +36,7 @@ class RenderViewportBox extends RenderBox
 
   Size? _viewportSize;
   Size? _boxSize;
+  Size? get boxSize => _boxSize;
 
   Size get viewportSize {
     if (_viewportSize != null) return _viewportSize!;

@@ -438,25 +438,6 @@ class Document extends ContainerNode {
     }
 
     _documentElement = element as HTMLElement?;
-
-    if (viewport?.hasSize == true && documentElementChanged) {
-      initializeRootElementSize();
-    }
-  }
-
-  void initializeRootElementSize() {
-    assert(documentElement != null);
-    assert(viewport!.hasSize);
-    documentElement!.renderStyle.width = CSSLengthValue(viewport!.viewportSize.width, CSSLengthType.PX);
-    documentElement!.renderStyle.height = CSSLengthValue(viewport!.viewportSize.height, CSSLengthType.PX);
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
-    documentElement!.setRenderStyleProperty(OVERFLOW_X, CSSOverflowType.scroll);
-    documentElement!.setRenderStyleProperty(OVERFLOW_Y, CSSOverflowType.scroll);
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
   }
 
   @override
@@ -505,9 +486,8 @@ class Document extends ContainerNode {
 
     flutter.BuildContext? rootBuildContext = ownerView.rootController.rootBuildContext;
     if (rootBuildContext != null) {
-      WebFState? webFState = rootBuildContext.findAncestorStateOfType<WebFState>();
-
-      webFState?.requestForUpdate(DocumentElementChangedReason());
+      WebFState state = (rootBuildContext as flutter.StatefulElement).state as WebFState;
+      state?.requestForUpdate(DocumentElementChangedReason());
     }
   }
 

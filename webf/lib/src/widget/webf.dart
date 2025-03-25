@@ -454,32 +454,4 @@ class WebFRootViewport extends MultiChildRenderObjectWidget {
 
     return root;
   }
-
-  @override
-  void updateRenderObject(BuildContext context, covariant RenderObject renderObject) {
-    super.updateRenderObject(context, renderObject);
-    print('update..');
-  }
-
-  @override
-  MultiChildRenderObjectElement createElement() {
-    return _WebFRootViewportElement(this);
-  }
-}
-
-class _WebFRootViewportElement extends MultiChildRenderObjectElement {
-  _WebFRootViewportElement(super.widget);
-
-  @override
-  void mount(Element? parent, Object? newSlot) {
-    super.mount(parent, newSlot);
-
-    RendererBinding.instance.addPostFrameCallback((_) {
-      // Sync viewport size to the documentElement.
-      widget.controller.view.document.initializeRootElementSize();
-    });
-  }
-
-  @override
-  WebFRootViewport get widget => super.widget as WebFRootViewport;
 }

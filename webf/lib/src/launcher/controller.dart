@@ -610,8 +610,6 @@ class WebFController {
     view.viewport = rootRenderObject;
 
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
-      // Sync viewport size to the documentElement.
-      view.document.initializeRootElementSize();
       // Starting to flush ui commands every frames.
       view.flushPendingCommandsPerFrame();
 
@@ -658,8 +656,6 @@ class WebFController {
     Completer completer = Completer();
 
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
-      // Sync viewport size to the documentElement.
-      view.document.initializeRootElementSize();
       // Starting to flush ui commands every frames.
       view.flushPendingCommandsPerFrame();
 
