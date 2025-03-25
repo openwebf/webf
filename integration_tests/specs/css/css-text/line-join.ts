@@ -10,7 +10,7 @@ describe('Text Line Join', () => {
       },
       [
         createElement(
-        'String',
+        'Strong',
         {
           style: {},
         },

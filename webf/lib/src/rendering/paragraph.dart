@@ -207,7 +207,7 @@ class WebFRenderParagraph extends RenderBox
   /// TextPainter set overflow = TextOverflow.ellipsis and not set maxLines, which make
   /// computeLineMetrics() return List<ui.LineMetrics> last one width lose
   bool get happenEllipsis {
-    return (overflow == TextOverflow.ellipsis || outLineClampLimit) && (maxLines ?? 0) > 0;
+    return (overflow == TextOverflow.ellipsis) && (maxLines ?? 0) > 0;
   }
 
   /// The number of font pixels for each logical pixel.

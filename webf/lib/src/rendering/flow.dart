@@ -454,7 +454,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           // first layout text child need use current line left extent to do first layout,
           // if happen line break next step will use mainAxisExtent layout twice,
           if (isCanUseInlineBoxConstraints(child, mainAxisLimit, childConstraints) &&
-              !isBreakForBlock(preChild) && !isJoinBox(child) &&
+              !isBreakForBlock(preChild) &&
               runLineBox.mainAxisExtent != 0 &&
               childConstraints is InlineBoxConstraints) {
             double leftWidth = runLineBox.findLastLineRenderMainExtent();
@@ -518,6 +518,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
         // If runLineBox.mainAxisExtent > 0 and runLineBox no child, maybe happen line join,
         // but first child mainAxisExtent too big on this time can happen line break
+        // RenderTextBox lines > 1, happen lien break
         if ((runLineBox.isNotEmpty || runLineBox.mainAxisExtent > 0) &&
             isLineBreak(child, preChild, runLineBox.mainAxisExtent, mainAxisLimit, childListLineMainAxisExtent) ||
             // if textBox happen linebreak need to create more lineBox
@@ -1204,6 +1205,10 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   bool isJoinBox(RenderBox? box) {
     return !isBlockLevel(box) && !isInlineBlockLevel(box);
+  }
+
+  bool isInlineBox(RenderBox? box) {
+    return isInlineBlockLevel(box) || isInlineBlockLevel(box);
   }
 
   bool isParamsLevelNode(RenderBox? box, List<CSSDisplay> params) {
