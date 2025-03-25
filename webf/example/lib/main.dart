@@ -289,7 +289,7 @@ class MyAppState extends State<MyApp> {
             settings: settings,
             builder: (context) {
               Widget? entry = WebFControllerManager.instance.getRouterBuilderBySettings(context, settings);
-              return entry ?? Text('Page not found');
+              return entry ?? Scaffold(appBar: AppBar(title: Text('Error')), body: Center(child: Text('Page not found')));
             },
           );
         },

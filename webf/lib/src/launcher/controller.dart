@@ -283,7 +283,9 @@ class WebFController {
   }
 
   void popBuildContext() {
-    _buildContextStack.removeLast();
+    if (_buildContextStack.isNotEmpty) {
+      _buildContextStack.removeLast();
+    }
   }
 
   UniqueKey key = UniqueKey();
