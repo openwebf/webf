@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/launcher.dart';
@@ -75,10 +76,70 @@ class WebFRouterView extends StatefulWidget {
   final String path;
   final WidgetBuilder? defaultViewBuilder;
 
+  /// Create a WebFRouterView widget using a controller name from WebFControllerManager.
+  ///
+  /// This constructor will asynchronously load the controller and automatically handle
+  /// recreation of disposed controllers.
+  ///
+  /// You can customize the loading experience with loadingWidget and handle errors
+  /// with errorBuilder. The builder allows you to create custom UI with the controller.
+  static Widget fromControllerName({
+    required String controllerName,
+    required String path,
+    Widget? loadingWidget,
+    Widget Function(BuildContext context, Object error)? errorBuilder
+  }) {
+    return _AsyncWebFRouterView(
+        controllerName: controllerName, path: path, loadingWidget: loadingWidget, errorBuilder: errorBuilder);
+  }
+
   WebFRouterView({required this.controller, required this.path, this.defaultViewBuilder});
 
   @override
   State<StatefulWidget> createState() {
     return WebFRouterViewState();
+  }
+}
+
+class _AsyncWebFRouterView extends StatelessWidget {
+  final String controllerName;
+  final String path;
+  final Widget? loadingWidget;
+  final Widget Function(BuildContext context, Object error)? errorBuilder;
+
+  _AsyncWebFRouterView({required this.controllerName, required this.path, this.loadingWidget, this.errorBuilder});
+
+  @override
+  Widget build(BuildContext context) {
+    WebFController? existingController = WebFControllerManager.getInstanceSync(controllerName);
+    if (existingController != null) {
+      return WebFRouterView(controller: existingController, path: path);
+    }
+    return FutureBuilder(
+        future: WebFControllerManager.instance.getController(controllerName), builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return loadingWidget ??
+            const SizedBox(
+              width: 50,
+              height: 50,
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+      }
+
+      if (snapshot.hasError) {
+        return errorBuilder != null
+            ? errorBuilder!(context, snapshot.error!)
+            : Center(child: Text('Error: ${snapshot.error}'));
+      }
+
+      if (!snapshot.hasData || snapshot.data == null) {
+        final errorMsg = 'Controller "$controllerName" not found';
+        return errorBuilder != null ? errorBuilder!(context, errorMsg) : Center(child: Text(errorMsg));
+      }
+
+      return WebFRouterView(controller: snapshot.data!, path: path);
+    });
   }
 }
