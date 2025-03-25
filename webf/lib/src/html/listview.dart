@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:webf/src/css/position.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
+import 'dart:async';
 
 const LISTVIEW = 'LISTVIEW';
 const WEBF_LISTVIEW = 'WEBF-LISTVIEW';
@@ -12,127 +14,89 @@ class FlutterListViewElement extends WidgetElement {
 
   Axis scrollDirection = Axis.vertical;
 
-  // Control the state of pull-to-refresh
-  bool _isRefreshing = false;
   
   // Control the state of load more
   bool _isLoadingMore = false;
+
   
-  // The threshold of pull-to-refresh
-  final double _refreshTriggerPullDistance = 100.0;
+  // Use a dedicated ScrollController to control scrolling
+  final ScrollController _scrollController = ScrollController();
 
   @override
   ScrollController? get scrollControllerX {
-    return context != null && scrollDirection == Axis.horizontal ? PrimaryScrollController.maybeOf(context!) : null;
+    return scrollDirection == Axis.horizontal ? _scrollController : null;
   }
 
   @override
   ScrollController? get scrollControllerY {
-    return context != null && scrollDirection == Axis.vertical ? PrimaryScrollController.maybeOf(context!) : null;
+    return scrollDirection == Axis.vertical ? _scrollController : null;
   }
 
   @override
   bool get isScrollingElement => true;
 
   void _scrollListener() {
-    ScrollController? scrollController = context != null ? PrimaryScrollController.maybeOf(context!) : null;
-    if (scrollController != null) {
-      // Handle load more
-      if (scrollController.position.extentAfter < 50 && !_isLoadingMore) {
-        _isLoadingMore = true;
-        // Trigger load more event
-        dispatchEvent(dom.Event('loadmore'));
-        
-        // Reset state after 200ms to avoid multiple triggers in a short time
-        Future.delayed(const Duration(milliseconds: 200), () {
+    if (!mounted || !_scrollController.hasClients) {
+      return;
+    }
+
+    // Handle load more
+    if (_scrollController.position.extentAfter < 50 && !_isLoadingMore) {
+      _isLoadingMore = true;
+      dispatchEvent(dom.Event('loadmore'));
+      
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) {
           _isLoadingMore = false;
-        });
-      }
-      
-      // Handle pull-to-refresh
-      if (scrollController.position.pixels < 0) {
-          // 这里可以根据拖动距离来更新下拉指示器状态
-          // 比如当拖动距离超过阈值时，可以更新指示器颜色或文本
-      }
-      
-      handleScroll(scrollController.position.pixels, scrollController.position.axisDirection);
+        }
+      });
     }
-  }
-  
-  // Handle the operation when scrolling ends
-  void _handleScrollEnd() {
-    ScrollController? scrollController = context != null ? PrimaryScrollController.maybeOf(context!) : null;
-    if (scrollController != null) {
-      // If the scrolling ends at the top and there is a pull-to-refresh distance, trigger refresh
-      if (scrollController.position.pixels < 0 && 
-          scrollController.position.pixels.abs() > _refreshTriggerPullDistance && 
-          !_isRefreshing) {
-        _isRefreshing = true;
-        // Trigger refresh event
-        dispatchEvent(dom.Event('refresh'));
-        
-        // Reset state after 2 seconds, actually it should be reset by user code after refreshing
-        Future.delayed(const Duration(seconds: 2), () {
-          _isRefreshing = false;
-        });
-      }
-    }
+
+    handleScroll(_scrollController.position.pixels, _scrollController.position.axisDirection);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    ScrollController? scrollController = PrimaryScrollController.maybeOf(context!);
-    scrollController?.addListener(_scrollListener);
-    
-    // Listen to scroll notifications, for handling pull-to-refresh
-    // This part needs to be implemented in the build method using NotificationListener
+    _scrollController.addListener(_scrollListener);
   }
 
   @override
   void stateDispose() {
-    if (context == null) return;
-    ScrollController? scrollController = PrimaryScrollController.maybeOf(context!);
-    scrollController?.removeListener(_scrollListener);
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
     super.stateDispose();
   }
 
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
     return WebFChildNodeSize(
-        ownerElement: this,
-        child: NotificationListener<ScrollNotification>(
-          onNotification: (ScrollNotification notification) {
-            // Listen to scroll end event
-            if (notification is ScrollEndNotification) {
-              _handleScrollEnd();
-            }
-            return false;
-          },
-          child: RefreshIndicator(
+      ownerElement: this,
+      child: CustomScrollView(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        scrollDirection: scrollDirection,
+        slivers: [
+          CupertinoSliverRefreshControl(
             onRefresh: () async {
-              if (!_isRefreshing) {
-                _isRefreshing = true;
-                // Trigger refresh event
-                dispatchEvent(dom.Event('refresh'));
-                
-                // Wait for refresh to complete
-                // Here create a delayed Future, actually it should be marked as completed by user code
-                await Future.delayed(const Duration(seconds: 2));
-                _isRefreshing = false;
-              }
+              // Trigger the refresh event
+              dispatchEvent(dom.Event('refresh'));
+              
+              // Wait for 2 seconds to complete the refresh
+              await Future.delayed(const Duration(seconds: 2));              
             },
-            child: ListView.builder(
-              scrollDirection: scrollDirection,
-              itemCount: childNodes.length + 1, // Add one item for loading more
-              itemBuilder: (context, index) {
-                // If it is the last element, add a loading more indicator
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (BuildContext context, int index) {
                 if (index == childNodes.length) {
                   return Container(
                     height: 50,
                     alignment: Alignment.center,
                     child: _isLoadingMore 
-                      ? const CircularProgressIndicator(strokeWidth: 2)
+                      ? const CupertinoActivityIndicator()
                       : const SizedBox.shrink(),
                   );
                 }
@@ -148,21 +112,16 @@ class FlutterListViewElement extends WidgetElement {
                 }
                 return node.toWidget();
               },
-              primary: true,
-              padding: const EdgeInsets.all(0),
-              physics: const AlwaysScrollableScrollPhysics(),
+              childCount: childNodes.length + 1,
             ),
           ),
-        ));
+        ],
+      ),
+    );
   }
   
-  // Provide a public method for JS to call, representing refresh completion
-  void completeRefresh() {
-    _isRefreshing = false;
-  }
-  
-  // Provide a public method for JS to call, representing load more completion
   void completeLoadMore() {
     _isLoadingMore = false;
+    setState(() {});
   }
 }
