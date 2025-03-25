@@ -225,7 +225,7 @@ describe('Text Line Join', () => {
     await snapshot();
   });
 
-  it('works with join two inline element and img and more text', async () => {
+  it('works with join two inline element pre text and img and more text', async () => {
     let div = createElement(
       'div',
       {
