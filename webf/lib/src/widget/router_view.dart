@@ -42,13 +42,11 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   void didChangeDependencies() {
     super.didChangeDependencies();
     widget.controller.routeObserver?.subscribe(this, ModalRoute.of(context)!);
-    widget.controller.pushNewBuildContext(context);
   }
 
   @override
   void dispose() {
     widget.controller.routeObserver?.unsubscribe(this);
-    widget.controller.popBuildContext();
     super.dispose();
   }
 
@@ -99,6 +97,30 @@ class WebFRouterView extends StatefulWidget {
   State<StatefulWidget> createState() {
     return WebFRouterViewState();
   }
+
+  @override
+  StatefulElement createElement() {
+    return _WebFRouterViewElement(this);
+  }
+}
+
+class _WebFRouterViewElement extends StatefulElement {
+  _WebFRouterViewElement(super.widget);
+
+  @override
+  void mount(Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
+    widget.controller.pushNewBuildContext(this);
+  }
+
+  @override
+  void unmount() {
+    widget.controller.popBuildContext();
+    super.unmount();
+  }
+
+  @override
+  WebFRouterView get widget => super.widget as WebFRouterView;
 }
 
 class _AsyncWebFRouterView extends StatelessWidget {
