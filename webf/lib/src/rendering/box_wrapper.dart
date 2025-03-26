@@ -27,6 +27,11 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
   }
 
   @override
+  double? computeDistanceToBaseline() {
+    return renderStyle.attachedRenderBoxModel!.computeDistanceToBaseline();
+  }
+
+  @override
   void performLayout() {
     super.performLayout();
 

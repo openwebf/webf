@@ -1273,7 +1273,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         double maxMainConstraints =
             _isHorizontalFlexDirection ? contentConstraints!.maxWidth : contentConstraints!.maxHeight;
         // determining isScrollingContentBox is to reduce the scope of influence
-        if (maxMainConstraints.isFinite) {
+        if (renderStyle.isSelfScrollingContainer() && maxMainConstraints.isFinite) {
           maxMainSize = totalFlexShrink > 0 ? math.min(maxMainSize, maxMainConstraints) : maxMainSize;
           maxMainSize = totalFlexGrow > 0 ? math.max(maxMainSize, maxMainConstraints) : maxMainSize;
         }

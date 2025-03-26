@@ -495,20 +495,13 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   @pragma('vm:prefer-inline')
-  bool isParentRenderBox() {
-    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderBox);
-  }
-
-  @pragma('vm:prefer-inline')
   bool isParentRenderLayoutBox() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderLayoutBox);
+    return getParentRenderStyle()?.isSelfRenderLayoutBox() == true;
   }
 
   @pragma('vm:prefer-inline')
   bool isParentRenderFlexLayout() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderFlexLayout);
+    return getParentRenderStyle()?.isSelfRenderFlexLayout() == true;
   }
 
   @pragma('vm:prefer-inline')
@@ -594,6 +587,11 @@ abstract class RenderStyle extends DiagnosticableTree {
   @pragma('vm:prefer-inline')
   bool isSelfRenderBoxAttached() {
     return someRenderBoxSatisfy((boxModel) => boxModel.attached == true);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfScrollingContainer() {
+    return effectiveOverflowX != CSSOverflowType.visible || effectiveOverflowY != CSSOverflowType.visible;
   }
 
   @pragma('vm:prefer-inline')

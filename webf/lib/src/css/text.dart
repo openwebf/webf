@@ -188,7 +188,7 @@ mixin CSSTextMixin on RenderStyle {
   void updateFontRelativeLength() {
     if (_fontRelativeProperties.isEmpty) return;
     markNeedsLayout();
-    if (isSelfBoxModelSizeTight() && isParentRenderBox()) {
+    if (isSelfBoxModelSizeTight()) {
       markParentNeedsLayout();
     }
   }
@@ -201,7 +201,7 @@ mixin CSSTextMixin on RenderStyle {
   void updateRootFontRelativeLength() {
     if (_rootFontRelativeProperties.isEmpty) return;
     markNeedsLayout();
-    if (isSelfBoxModelSizeTight() && isParentRenderBox()) {
+    if (isSelfBoxModelSizeTight()) {
       markParentNeedsLayout();
     }
   }
