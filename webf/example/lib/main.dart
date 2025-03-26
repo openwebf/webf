@@ -11,6 +11,7 @@ import 'package:webf/webf.dart';
 import 'package:webf/widget.dart'; // For AsyncWebF
 import 'package:webf/devtools.dart';
 import 'package:webf/launcher.dart'; // For WebFControllerManager
+import 'package:webf/cupertino.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'custom_elements/icon.dart';
@@ -22,21 +23,6 @@ import 'custom_elements/tab.dart';
 import 'custom_elements/switch.dart';
 import 'custom_elements/slider.dart';
 import 'custom_elements/svg_img.dart';
-import 'custom_elements/cupertino/tab_bar.dart';
-import 'custom_elements/cupertino/button.dart';
-import 'custom_elements/cupertino/input.dart';
-import 'custom_elements/cupertino/textarea.dart';
-import 'custom_elements/cupertino/tab.dart';
-import 'custom_elements/cupertino/segmented_tab.dart';
-import 'custom_elements/cupertino/switch.dart';
-import 'custom_elements/cupertino/picker.dart';
-import 'custom_elements/cupertino/date_picker.dart';
-import 'custom_elements/cupertino/modal_popup.dart';
-import 'custom_elements/cupertino/icon.dart';
-import 'custom_elements/cupertino/search_input.dart';
-import 'custom_elements/cupertino/alert.dart';
-import 'custom_elements/cupertino/toast.dart';
-import 'custom_elements/cupertino/loading.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
@@ -94,27 +80,8 @@ void main() async {
   WebF.defineCustomElement('flutter-bottom-sheet', (context) => FlutterBottomSheet(context));
   WebF.defineCustomElement('flutter-slider', (context) => SliderElement(context));
   WebF.defineCustomElement('flutter-switch', (context) => FlutterSwitch(context));
-  WebF.defineCustomElement('flutter-tab-bar', (context) => FlutterTabBar(context));
-  WebF.defineCustomElement('flutter-tab-bar-item', (context) => FlutterTabBarItem(context));
   WebF.defineCustomElement('flutter-svg-img', (context) => FlutterSVGImg(context));
-  WebF.defineCustomElement('flutter-cupertino-button', (context) => FlutterCupertinoButton(context));
-  WebF.defineCustomElement('flutter-cupertino-input', (context) => FlutterCupertinoInput(context));
-  WebF.defineCustomElement('flutter-cupertino-tab', (context) => FlutterCupertinoTab(context));
-  WebF.defineCustomElement('flutter-cupertino-tab-item', (context) => FlutterCupertinoTabItem(context));
-  WebF.defineCustomElement('flutter-cupertino-segmented-tab', (context) => FlutterCupertinoSegmentedTab(context));
-  WebF.defineCustomElement(
-      'flutter-cupertino-segmented-tab-item', (context) => FlutterCupertinoSegmentedTabItem(context));
-  WebF.defineCustomElement('flutter-cupertino-switch', (context) => FlutterCupertinoSwitch(context));
-  WebF.defineCustomElement('flutter-cupertino-picker', (context) => FlutterCupertinoPicker(context));
-  WebF.defineCustomElement('flutter-cupertino-picker-item', (context) => FlutterCupertinoPickerItem(context));
-  WebF.defineCustomElement('flutter-cupertino-date-picker', (context) => FlutterCupertinoDatePicker(context));
-  WebF.defineCustomElement('flutter-cupertino-modal-popup', (context) => FlutterCupertinoModalPopup(context));
-  WebF.defineCustomElement('flutter-cupertino-icon', (context) => FlutterCupertinoIcon(context));
-  WebF.defineCustomElement('flutter-cupertino-search-input', (context) => FlutterCupertinoSearchInput(context));
-  WebF.defineCustomElement('flutter-cupertino-alert', (context) => FlutterCupertinoAlert(context));
-  WebF.defineCustomElement('flutter-cupertino-toast', (context) => FlutterCupertinoToast(context));
-  WebF.defineCustomElement('flutter-cupertino-loading', (context) => FlutterCupertinoLoading(context));
-  WebF.defineCustomElement('flutter-cupertino-textarea', (context) => FlutterCupertinoTextArea(context));
+  installWebFCupertino();
 
   // Add home controller with preloading
   WebFControllerManager.instance.addWithPrerendering(
