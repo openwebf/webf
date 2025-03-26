@@ -121,16 +121,12 @@ bool EventTarget::removeEventListener(const AtomicString& event_type,
                                       const std::shared_ptr<EventListener>& event_listener,
                                       const std::shared_ptr<QJSUnionEventListenerOptionsBoolean>& options,
                                       ExceptionState& exception_state) {
-  std::shared_ptr<EventListenerOptions> event_listener_options;
-  if (options->IsBoolean()) {
-    event_listener_options = EventListenerOptions::Create();
-    event_listener_options->setCapture(options->GetAsBoolean());
-  } else {
+  std::shared_ptr<EventListenerOptions> event_listener_options = EventListenerOptions::Create();
+  if (options != nullptr) {
     if (options->IsBoolean()) {
-      event_listener_options = AddEventListenerOptions::Create();
       event_listener_options->setCapture(options->GetAsBoolean());
-    } else if (options->IsEventListenerOptions()) {
-      event_listener_options = options->GetAsEventListenerOptions();
+    } else if (options->IsEventListenerOptions() && options->GetAsEventListenerOptions()->hasCapture()) {
+      event_listener_options->setCapture(options->GetAsEventListenerOptions()->capture());
     }
   }
 
