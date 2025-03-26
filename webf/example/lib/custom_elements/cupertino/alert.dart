@@ -84,7 +84,7 @@ class FlutterCupertinoAlert extends WidgetElement {
     methods['hide'] = BindingObjectMethodSync(call: (args) {
       _tempTitle = null;
       _tempMessage = null;
-      Navigator.of(context!).pop();
+      Navigator.of(context!, rootNavigator: true).pop();
     });
   }
 }
