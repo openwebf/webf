@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:webf/src/cupertino/tab.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
 
@@ -42,7 +43,7 @@ class FlutterTabBar extends WidgetElement {
     List<BottomNavigationBarItem> items = [];
 
     for (var child in childNodes) {
-      if (child is! dom.Element || child.tagName != 'FLUTTER-TAB-BAR-ITEM') continue;
+      if (child is! FlutterCupertinoTabBarItem) continue;
 
       final title = child.getAttribute('title') ?? '';
       final icon = child.getAttribute('icon') ?? '';
@@ -68,8 +69,8 @@ class FlutterTabBar extends WidgetElement {
   List<Widget> _buildTabViews(ChildNodeList childNodes) {
     final tabViews = <Widget>[];
     for (var child in childNodes) {
-      if (child is! dom.Element || child.tagName != 'FLUTTER-TAB-BAR-ITEM') continue;
-      tabViews.add(child.toWidget(key: ObjectKey(child)));
+      if (child is! FlutterCupertinoTabBarItem) continue;
+      tabViews.add(child.toWidget());
     }
     print('tabViews: ${tabViews.length}');
     return tabViews;
@@ -124,8 +125,8 @@ class FlutterTabBar extends WidgetElement {
   }
 }
 
-class FlutterTabBarItem extends WidgetElement {
-  FlutterTabBarItem(super.context);
+class FlutterCupertinoTabBarItem extends WidgetElement {
+  FlutterCupertinoTabBarItem(super.context);
 
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {

@@ -39,24 +39,24 @@
     <topic-page></topic-page>
   </router-view>
   <router-view path="/home" title="首页">
-    <flutter-tab-bar ref="tabBar" class="tab-bar" backgroundColor="#FFFFFF" activeColor="#007AFF"
+    <flutter-cupertino-tab-bar ref="tabBar" class="tab-bar" backgroundColor="#FFFFFF" activeColor="#007AFF"
       :currentIndex="currentIndex" @tabchange="handleTabChange">
-      <flutter-tab-bar-item title="首页" icon="home" path="/home">
+      <flutter-cupertino-tab-bar-item title="首页" icon="home" path="/home">
         <home-page v-if="currentIndex === 0"></home-page>
-      </flutter-tab-bar-item>
-      <flutter-tab-bar-item title="搜索" icon="search" path="/search">
+      </flutter-cupertino-tab-bar-item>
+      <flutter-cupertino-tab-bar-item title="搜索" icon="search" path="/search">
         <search-page v-if="currentIndex === 1"></search-page>
-      </flutter-tab-bar-item>
-      <flutter-tab-bar-item title="发布" icon="add_circled_solid" path="/publish">
+      </flutter-cupertino-tab-bar-item>
+      <flutter-cupertino-tab-bar-item title="发布" icon="add_circled_solid" path="/publish">
         <publish-page v-if="currentIndex === 2"></publish-page>
-      </flutter-tab-bar-item>
-      <flutter-tab-bar-item title="消息" icon="bell" path="/notification">
+      </flutter-cupertino-tab-bar-item>
+      <flutter-cupertino-tab-bar-item title="消息" icon="bell" path="/notification">
         <notification-page v-if="currentIndex === 3"></notification-page>
-      </flutter-tab-bar-item>
-      <flutter-tab-bar-item title="我的" icon="person" path="/my">
+      </flutter-cupertino-tab-bar-item>
+      <flutter-cupertino-tab-bar-item title="我的" icon="person" path="/my">
         <my-page v-if="currentIndex === 4"></my-page>
-      </flutter-tab-bar-item>
-    </flutter-tab-bar>
+      </flutter-cupertino-tab-bar-item>
+    </flutter-cupertino-tab-bar>
   </router-view>
 </template>
 
