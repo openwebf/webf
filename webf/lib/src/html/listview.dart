@@ -36,23 +36,28 @@ class FlutterListViewElement extends WidgetElement {
   bool get isScrollingElement => true;
 
   void _scrollListener() {
-    if (!mounted || !_scrollController.hasClients ||  _scrollController.positions.isEmpty) {
+    if (!mounted || !_scrollController.hasClients || _scrollController.positions.isEmpty) {
       return;
     }
 
-    // Handle load more
-    if (_scrollController.position.extentAfter < 50 && !_isLoadingMore) {
-      _isLoadingMore = true;
-      dispatchEvent(dom.Event('loadmore'));
-      
-      Future.delayed(const Duration(milliseconds: 200), () {
-        if (mounted) {
-          _isLoadingMore = false;
-        }
-      });
-    }
+    try {
+      // Handle load more
+      final position = _scrollController.position;
+      if (position.extentAfter < 50 && !_isLoadingMore) {
+        _isLoadingMore = true;
+        dispatchEvent(dom.Event('loadmore'));
+        
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (mounted) {
+            _isLoadingMore = false;
+          }
+        });
+      }
 
-    handleScroll(_scrollController.position.pixels, _scrollController.position.axisDirection);
+      handleScroll(position.pixels, position.axisDirection);
+    } catch (e) {
+      return;
+    }
   }
 
   @override
