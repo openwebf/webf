@@ -454,7 +454,10 @@ class _PositionedPlaceHolderElement extends flutter.SingleChildRenderObjectEleme
 
     // Remove the reference for this in paired render box model.
     RenderBoxModel? pairedRenderBoxModel = widget.positionedElement.renderStyle.attachedRenderBoxModel;
-    pairedRenderBoxModel?.renderPositionPlaceholder = null;
+    if (pairedRenderBoxModel?.renderPositionPlaceholder == renderObject) {
+      pairedRenderBoxModel?.renderPositionPlaceholder = null;
+    }
+
 
     super.unmount();
   }
