@@ -2173,7 +2173,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (flipMainAxis) {
           childMainPosition -= betweenSpace + childMainAxisMargin;
         } else {
-          childMainPosition += _getMainAxisExtent(child) + betweenSpace;
+          childMainPosition += _getMainAxisExtent(child) - childMainAxisMargin + betweenSpace;
         }
       }
 
