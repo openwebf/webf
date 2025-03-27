@@ -4,6 +4,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
@@ -199,11 +200,6 @@ abstract class WidgetElement extends dom.Element {
     }
 
     return child;
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }
 

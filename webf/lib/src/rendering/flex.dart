@@ -530,7 +530,7 @@ class RenderFlexLayout extends RenderLayoutBox {
   }
 
   bool _isChildMainAxisClip(RenderBoxModel renderBoxModel) {
-    if (renderBoxModel is RenderReplaced) {
+    if (renderBoxModel.renderStyle.isSelfRenderReplaced()) {
       return false;
     }
     if (_isHorizontalFlexDirection) {
@@ -1389,7 +1389,8 @@ class RenderFlexLayout extends RenderLayoutBox {
       double childCrossExtent = childCrossSize + childCrossMargin;
 
       if (runChild.flexedMainSize != childMainSize &&
-          child is RenderReplaced &&
+          child is RenderBoxModel &&
+          child.renderStyle.isSelfRenderReplaced() &&
           child.renderStyle.aspectRatio != null) {
         double childAspectRatio = child.renderStyle.aspectRatio!;
         if (_isHorizontalFlexDirection && child.renderStyle.height.isAuto) {
@@ -1440,21 +1441,37 @@ class RenderFlexLayout extends RenderLayoutBox {
   ) {
     if (childFlexedMainSize != null) {
       if (_isHorizontalFlexDirection) {
-        _overrideChildContentBoxLogicalWidth(child, childFlexedMainSize);
+        if ((child.renderStyle.isSelfRenderLayoutBox() ||
+            child.renderStyle.isSelfRenderWidget() ||
+            (child.renderStyle.isSelfRenderReplaced() && child.renderStyle.minWidth.isNotAuto))) {
+          _overrideChildContentBoxLogicalWidth(child, childFlexedMainSize);
+        }
       } else {
-        _overrideChildContentBoxLogicalHeight(child, childFlexedMainSize);
+        if (child.renderStyle.isSelfRenderLayoutBox() ||
+            child.renderStyle.isSelfRenderWidget() ||
+            (child.renderStyle.isSelfRenderReplaced() && child.renderStyle.minHeight.isNotAuto)) {
+          _overrideChildContentBoxLogicalHeight(child, childFlexedMainSize);
+        }
       }
     }
 
     if (childStretchedCrossSize != null) {
       if (_isHorizontalFlexDirection) {
-        _overrideChildContentBoxLogicalHeight(child, childStretchedCrossSize);
+        if (child.renderStyle.isSelfRenderLayoutBox() ||
+            child.renderStyle.isSelfRenderWidget() ||
+            (child.renderStyle.isSelfRenderReplaced() && child.renderStyle.minHeight.isNotAuto)) {
+          _overrideChildContentBoxLogicalHeight(child, childStretchedCrossSize);
+        }
       } else {
-        _overrideChildContentBoxLogicalWidth(child, childStretchedCrossSize);
+        if (child.renderStyle.isSelfRenderLayoutBox() ||
+            child.renderStyle.isSelfRenderWidget() ||
+            (child.renderStyle.isSelfRenderReplaced() && child.renderStyle.minWidth.isNotAuto)) {
+          _overrideChildContentBoxLogicalWidth(child, childStretchedCrossSize);
+        }
       }
     }
 
-    if (child is RenderReplaced && child.renderStyle.aspectRatio != null) {
+    if (child.renderStyle.isSelfRenderReplaced() && child.renderStyle.aspectRatio != null) {
       _overrideReplacedChildLength(child, childFlexedMainSize, childStretchedCrossSize);
     }
 
@@ -1487,10 +1504,11 @@ class RenderFlexLayout extends RenderLayoutBox {
   // length is not specified on the other axis, the length needs to be
   // overrided in the other axis.
   void _overrideReplacedChildLength(
-    RenderReplaced child,
+    RenderBoxModel child,
     double? childFlexedMainSize,
     double? childStretchedCrossSize,
   ) {
+    assert(child.renderStyle.isSelfRenderReplaced());
     if (childFlexedMainSize != null && childStretchedCrossSize == null) {
       if (_isHorizontalFlexDirection) {
         _overrideReplacedChildHeight(child);
@@ -1510,8 +1528,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   // Override replaced child height when its height is auto.
   void _overrideReplacedChildHeight(
-    RenderReplaced child,
+    RenderBoxModel child,
   ) {
+    assert(child.renderStyle.isSelfRenderReplaced());
     if (child.renderStyle.height.isAuto) {
       double maxConstraintWidth = child.renderStyle.borderBoxLogicalWidth!;
       double maxConstraintHeight = maxConstraintWidth / child.renderStyle.aspectRatio!;
@@ -1530,8 +1549,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   // Override replaced child width when its width is auto.
   void _overrideReplacedChildWidth(
-    RenderReplaced child,
+    RenderBoxModel child,
   ) {
+    assert(child.renderStyle.isSelfRenderReplaced());
     if (child.renderStyle.width.isAuto) {
       double maxConstraintHeight = child.renderStyle.borderBoxLogicalHeight!;
       double maxConstraintWidth = maxConstraintHeight * child.renderStyle.aspectRatio!;
@@ -2152,9 +2172,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     // is treated the same as flex-start.
     // https://www.w3.org/TR/css-flexbox-1/#abspos-items
     final ParentData? childParentData = child.parentData;
-    if (child is! RenderBoxModel ||
-        child is RenderLineBreak ||
-        (child.renderStyle.isSelfPositioned())) {
+    if (child is! RenderBoxModel || child is RenderLineBreak || (child.renderStyle.isSelfPositioned())) {
       return false;
     }
 
@@ -2165,10 +2183,13 @@ class RenderFlexLayout extends RenderLayoutBox {
     bool isChildLengthAuto =
         _isHorizontalFlexDirection ? child.renderStyle.height.isAuto : child.renderStyle.width.isAuto;
 
+    bool isChildMinLengthAuto =
+        _isHorizontalFlexDirection ? child.renderStyle.minHeight.isAuto : child.renderStyle.minWidth.isAuto;
+
     // If the cross size property of the flex item computes to auto, and neither of
     // the cross axis margins are auto, the flex item is stretched.
     // https://www.w3.org/TR/css-flexbox-1/#valdef-align-items-stretch
-    if (isChildAlignmentStretch && !_isChildCrossAxisMarginAutoExist(child) && isChildLengthAuto) {
+    if (isChildAlignmentStretch && !_isChildCrossAxisMarginAutoExist(child) && isChildLengthAuto && isChildMinLengthAuto) {
       return true;
     }
 

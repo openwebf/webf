@@ -32,7 +32,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
     // The content of replaced elements is always trimmed to the content edge curve.
     // https://www.w3.org/TR/css-backgrounds-3/#corner-clipping
-    if (borderRadius != null && this is RenderReplaced && renderStyle.aspectRatio != null) {
+    if (borderRadius != null && renderStyle.isSelfRenderReplaced() && renderStyle.aspectRatio != null) {
       return true;
     }
 
@@ -60,7 +60,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
     // The content of replaced elements is always trimmed to the content edge curve.
     // https://www.w3.org/TR/css-backgrounds-3/#corner-clipping
-    if (borderRadius != null && this is RenderReplaced && renderStyle.aspectRatio != null) {
+    if (borderRadius != null && renderStyle.isSelfRenderReplaced() && renderStyle.aspectRatio != null) {
       return true;
     }
 
@@ -208,7 +208,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
         RRect clipRRect = borderTop != null ? borderRRect.deflate(borderTop) : borderRRect;
 
         // The content of replaced elements is trimmed to the content edge curve.
-        if (this is RenderReplaced) {
+        if (renderStyle.isSelfRenderReplaced()) {
           // @TODO: Currently only support clip uniform padding for replaced element.
           double paddingTop = renderStyle.paddingTop.computedValue;
           clipRRect = clipRRect.deflate(paddingTop);

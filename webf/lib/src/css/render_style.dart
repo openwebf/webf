@@ -937,13 +937,7 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   void markParentNeedsSort() {
-    everyRenderBox((_, renderBoxModel) {
-      if (renderBoxModel is RenderLayoutBox) {
-        (renderBoxModel.parent as RenderLayoutBox?)?.markChildrenNeedsSort();
-      }
-
-      return true;
-    });
+    getParentRenderStyle()?.markChildrenNeedsSort();
   }
 
   // https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context#the_stacking_context
