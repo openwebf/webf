@@ -300,7 +300,7 @@ describe('border', () => {
     });
   });
 
-  it('border-style-computed', async () => {
+  it('border-style-computed', async (done) => {
     let target
     target = createElement('div', {
       id: 'target',
@@ -320,10 +320,11 @@ describe('border', () => {
       // test_computed_value('border-right-style', 'double')
       // test_computed_value('border-bottom-style', 'groove')
       // test_computed_value('border-left-style', 'ridge')
+      done();
     }
   })
 
-  it('border-width-computed', async () => {
+  it('border-width-computed', async (done) => {
     let box
     let target
     box = createElement('div', {
@@ -378,7 +379,7 @@ describe('border', () => {
       // expect(0).toBeLessThanOrEqual(thin);
       // expect(thin).toBeLessThanOrEqual(medium);
       // expect(medium).toBeLessThanOrEqual(thick);
-
+      done();
     }
   })
 });

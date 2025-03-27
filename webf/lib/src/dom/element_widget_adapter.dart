@@ -3,9 +3,12 @@
  */
 
 import 'dart:async';
+import 'dart:ffi' as ffi;
 
 import 'package:flutter/material.dart' as flutter;
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 import 'package:webf/gesture.dart';
@@ -92,7 +95,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
         } else if (node is RouterLinkElement) {
           webFState ??= context.findAncestorStateOfType<WebFState>();
           String routerPath = node.path;
-          if (webFState != null && webFState?.widget.controller!.initialRoute == routerPath) {
+          if (webFState != null && webFState?.widget.controller.initialRoute == routerPath) {
             children.add(node.toWidget());
             return;
           }
@@ -194,6 +197,10 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   @override
   void deactivate() {
     super.deactivate();
+    webFElement.scrollControllerY?.dispose();
+    webFElement.scrollControllerY = null;
+    webFElement.scrollControllerX?.dispose();
+    webFElement.scrollControllerX = null;
     webFElement.states.remove(this);
   }
 
@@ -206,6 +213,10 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   @override
   void dispose() {
     webFElement.states.remove(this);
+    webFElement.scrollControllerY?.dispose();
+    webFElement.scrollControllerY = null;
+    webFElement.scrollControllerX?.dispose();
+    webFElement.scrollControllerX = null;
     super.dispose();
   }
 
@@ -263,7 +274,12 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
     webFElement.style.flushPendingProperties();
 
     flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
-    webFElement.dispatchEvent(OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? ''));
+    OnScreenEvent event = OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
+    // Should dispatch onscreen event after did build and layout
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      webFElement.dispatchEvent(event);
+      // flushUICommand(webFElement.ownerView, ffi.nullptr);
+    });
 
     if (webFElement is ImageElement && webFElement.shouldLazyLoading) {
       (renderObject as RenderReplaced)
@@ -277,7 +293,11 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
   void deactivate() {
     flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
     Element element = widget.webFElement;
-    element.dispatchEvent(OffScreenEvent(state: route.settings.arguments, path: route.settings.name ?? ''));
+    OffScreenEvent event = OffScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      element.dispatchEvent(event);
+    });
+
     super.deactivate();
   }
 
@@ -399,14 +419,20 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
     super.mount(parent, newSlot);
 
     flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
-    webFElement.dispatchEvent(OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? ''));
+    OnScreenEvent event = OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      webFElement.dispatchEvent(event);
+    });
   }
 
   @override
   void deactivate() {
     flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
     Element element = webFElement;
-    element.dispatchEvent(OffScreenEvent(state: route.settings.arguments, path: route.settings.name ?? ''));
+    OffScreenEvent event = OffScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      element.dispatchEvent(event);
+    });
     super.deactivate();
   }
 

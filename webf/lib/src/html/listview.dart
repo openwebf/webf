@@ -14,39 +14,49 @@ class FlutterListViewElement extends WidgetElement {
 
   Axis scrollDirection = Axis.vertical;
 
-  
   // Control the state of load more
   bool _isLoadingMore = false;
 
-  
+
   // Use a dedicated ScrollController to control scrolling
-  final ScrollController _scrollController = ScrollController();
+  ScrollController? _scrollController = ScrollController();
 
   @override
   ScrollController? get scrollControllerX {
     return scrollDirection == Axis.horizontal ? _scrollController : null;
   }
 
+  set scrollControllerX(ScrollController? value) {
+    if (scrollDirection == Axis.horizontal) {
+      _scrollController = null;
+    }
+  }
+
   @override
   ScrollController? get scrollControllerY {
     return scrollDirection == Axis.vertical ? _scrollController : null;
+  }
+  set scrollControllerY(ScrollController? value) {
+    if (scrollDirection == Axis.vertical) {
+      _scrollController = null;
+    }
   }
 
   @override
   bool get isScrollingElement => true;
 
   void _scrollListener() {
-    if (!mounted || !_scrollController.hasClients || _scrollController.positions.isEmpty) {
+    if (!mounted || !(_scrollController?.hasClients == true) || (_scrollController?.positions.isEmpty == true)) {
       return;
     }
 
     try {
       // Handle load more
-      final position = _scrollController.position;
+      final position = _scrollController!.position;
       if (position.extentAfter < 50 && !_isLoadingMore) {
         _isLoadingMore = true;
         dispatchEvent(dom.Event('loadmore'));
-        
+
         Future.delayed(const Duration(milliseconds: 200), () {
           if (mounted) {
             _isLoadingMore = false;
@@ -63,13 +73,12 @@ class FlutterListViewElement extends WidgetElement {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _scrollController.addListener(_scrollListener);
+    _scrollController?.addListener(_scrollListener);
   }
 
   @override
   void stateDispose() {
-    _scrollController.removeListener(_scrollListener);
-    _scrollController.dispose();
+    _scrollController?.removeListener(_scrollListener);
     super.stateDispose();
   }
 
@@ -88,9 +97,9 @@ class FlutterListViewElement extends WidgetElement {
             onRefresh: () async {
               // Trigger the refresh event
               dispatchEvent(dom.Event('refresh'));
-              
+
               // Wait for 2 seconds to complete the refresh
-              await Future.delayed(const Duration(seconds: 2));              
+              await Future.delayed(const Duration(seconds: 2));
             },
           ),
           SliverList(
@@ -100,12 +109,12 @@ class FlutterListViewElement extends WidgetElement {
                   return Container(
                     height: 50,
                     alignment: Alignment.center,
-                    child: _isLoadingMore 
+                    child: _isLoadingMore
                       ? const CupertinoActivityIndicator()
                       : const SizedBox.shrink(),
                   );
                 }
-                
+
                 Node? node = childNodes.elementAt(index);
                 if (node is dom.Element) {
                   CSSPositionType positionType = node.renderStyle.position;
@@ -124,7 +133,7 @@ class FlutterListViewElement extends WidgetElement {
       ),
     );
   }
-  
+
   void completeLoadMore() {
     _isLoadingMore = false;
     setState(() {});

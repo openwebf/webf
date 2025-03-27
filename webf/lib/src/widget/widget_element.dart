@@ -360,13 +360,20 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
     widget.widgetElement.didAttachRenderer(this);
 
     ModalRoute route = ModalRoute.of(this)!;
-    widget.widgetElement.dispatchEvent(dom.OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? ''));
+    dom.OnScreenEvent event = dom.OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
+
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      widget.widgetElement.dispatchEvent(event);
+    });
   }
 
   @override
   void deactivate() {
     ModalRoute route = ModalRoute.of(this)!;
-    widget.widgetElement.dispatchEvent(dom.OffScreenEvent(state: route.settings.arguments, path: route.settings.name ?? ''));
+    dom.OffScreenEvent event = dom.OffScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      widget.widgetElement.dispatchEvent(event);
+    });
     super.deactivate();
   }
 
