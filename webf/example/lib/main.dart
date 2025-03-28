@@ -23,6 +23,8 @@ import 'custom_elements/tab.dart';
 import 'custom_elements/switch.dart';
 import 'custom_elements/slider.dart';
 import 'custom_elements/svg_img.dart';
+import 'custom_elements/shimmer/shimmer.dart';
+import 'custom_elements/shimmer/shimmer_items.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
@@ -81,6 +83,10 @@ void main() async {
   WebF.defineCustomElement('flutter-slider', (context) => SliderElement(context));
   WebF.defineCustomElement('flutter-switch', (context) => FlutterSwitch(context));
   WebF.defineCustomElement('flutter-svg-img', (context) => FlutterSVGImg(context));
+  WebF.defineCustomElement('flutter-shimmer', (context) => FlutterShimmerElement(context));
+  WebF.defineCustomElement('flutter-shimmer-avatar', (context) => FlutterShimmerAvatarElement(context));
+  WebF.defineCustomElement('flutter-shimmer-text', (context) => FlutterShimmerTextElement(context));
+  WebF.defineCustomElement('flutter-shimmer-button', (context) => FlutterShimmerButtonElement(context));
   installWebFCupertino();
 
   // Add home controller with preloading

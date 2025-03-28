@@ -4,55 +4,85 @@
         <!-- 热门标签页内容 -->
         <template #hot>
             <webf-listview class="listview" @refresh="onRefreshHot" @loadmore="onLoadMoreHot">
-              <div v-for="item in hotList" :key="item.id">
-                <feed-card :item="item"></feed-card>
+              <div v-if="!hotList.length || loadingStates.hot" class="skeleton-wrapper">
+                <feed-card-skeleton v-for="i in 5" :key="i" />
               </div>
+              <template v-else>
+                <div v-for="item in hotList" :key="item.id">
+                  <feed-card :item="item"></feed-card>
+                </div>
+              </template>
             </webf-listview>
         </template>
 
         <!-- 最新标签页内容 -->
         <template #latest>
           <webf-listview class="listview" @refresh="onRefreshLatest" @loadmore="onLoadMoreLatest">
-            <div v-for="item in latestList" :key="item.id">
-              <feed-card :item="item"></feed-card>
+            <div v-if="!latestList.length || loadingStates.latest" class="skeleton-wrapper">
+              <feed-card-skeleton v-for="i in 5" :key="i" />
             </div>
+            <template v-else>
+              <div v-for="item in latestList" :key="item.id">
+                <feed-card :item="item"></feed-card>
+              </div>
+            </template>
           </webf-listview>
         </template>
 
         <!-- 讨论标签页内容 -->
         <template #discussion>
           <webf-listview class="listview" @refresh="onRefreshComment" @loadmore="onLoadMoreComment">
-            <div v-for="item in commentList" :key="item.id">
-              <comment-card :item="item"></comment-card>
+            <div v-if="!commentList.length || loadingStates.discussion" class="skeleton-wrapper">
+              <comment-card-skeleton v-for="i in 5" :key="i" />
             </div>
+            <template v-else>
+              <div v-for="item in commentList" :key="item.id">
+                <comment-card :item="item"></comment-card>
+              </div>
+            </template>
           </webf-listview>
         </template>
 
         <!-- 新闻标签页内容 -->
         <template #news>
-            <webf-listview class="listview" @refresh="onRefreshNews" @loadmore="onLoadMoreNews">
+          <webf-listview class="listview" @refresh="onRefreshNews" @loadmore="onLoadMoreNews">
+            <div v-if="!newsList.length || loadingStates.news" class="skeleton-wrapper">
+              <display-card-skeleton v-for="i in 5" :key="i" />
+            </div>
+            <template v-else>
               <div v-for="item in newsList" :key="item.id">
                 <display-card :item="item"></display-card>
               </div>
-            </webf-listview>
+            </template>
+          </webf-listview>
         </template>
 
         <!-- 学术标签页内容 -->
         <template #academic>
-            <webf-listview class="listview" @refresh="onRefreshAcademic" @loadmore="onLoadMoreAcademic">
+          <webf-listview class="listview" @refresh="onRefreshAcademic" @loadmore="onLoadMoreAcademic">
+            <div v-if="!academicList.length || loadingStates.academic" class="skeleton-wrapper">
+              <display-card-skeleton v-for="i in 5" :key="i" />
+            </div>
+            <template v-else>
               <div v-for="item in academicList" :key="item.id">
                 <display-card :item="item"></display-card>
               </div>
-            </webf-listview>
+            </template>
+          </webf-listview>
         </template>
 
         <!-- 产品标签页内容 -->
         <template #product>
-            <webf-listview class="listview" @refresh="onRefreshProduct" @loadmore="onLoadMoreProduct">
+          <webf-listview class="listview" @refresh="onRefreshProduct" @loadmore="onLoadMoreProduct">
+            <div v-if="!productList.length || loadingStates.product" class="skeleton-wrapper">
+              <display-card-skeleton v-for="i in 5" :key="i" />
+            </div>
+            <template v-else>
               <div v-for="item in productList" :key="item.id">
                 <display-card :item="item"></display-card>
               </div>
-            </webf-listview>
+            </template>
+          </webf-listview>
         </template>
     </feeds-tabs>
     <flutter-cupertino-loading ref="loading" />
@@ -66,6 +96,9 @@ import FeedsTabs from "@/Components/FeedsTabs.vue";
 import FeedCard from "@/Components/FeedCard.vue";
 import CommentCard from "@/Components/comment/CommentCard.vue";
 import DisplayCard from "@/Components/DisplayCard.vue";
+import FeedCardSkeleton from '@/Components/skeleton/FeedCardSkeleton.vue';
+import DisplayCardSkeleton from '@/Components/skeleton/DisplayCardSkeleton.vue';
+import CommentCardSkeleton from '@/Components/skeleton/CommentCardSkeleton.vue';
 import { api } from '@/api';
 
 export default {
@@ -74,6 +107,9 @@ export default {
     FeedCard,
     CommentCard,
     DisplayCard,
+    FeedCardSkeleton,
+    DisplayCardSkeleton,
+    CommentCardSkeleton,
   },
   setup() {
     const userStore = useUserStore();
@@ -127,53 +163,60 @@ export default {
       academicHasMore: true,
       productHasMore: true,
       // 记录是否正在加载中
-      isLoading: false
+      loadingStates: {
+        hot: true,
+        latest: true,
+        discussion: true,
+        news: true,
+        academic: true,
+        product: true
+      },
+      currentTab: 'hot', // 添加当前 tab 追踪
     }
   },
   methods: {
     async onTabChange(e) {
       const tabIndex = e.detail;
-      if (this.loadedTabs.has(this.tabsConfig[tabIndex].id)) {
-        console.log('already loaded', this.tabsConfig[tabIndex].id);
+      const tabId = this.tabsConfig[tabIndex].id;
+      
+      // 如果切换到相同的 tab，直接返回
+      if (this.currentTab === tabId) {
+        return;
+      }
+
+      this.currentTab = tabId;
+      
+      // 如果已经加载过且有数据，不需要重新加载
+      if (this.loadedTabs.has(tabId) && this.getListByTabId(tabId).length > 0) {
         return;
       }
       
-      this.showLoading('加载中');
+      this.loadingStates[tabId] = true;
       
       try {
-        if (tabIndex === 0) {
-          await this.loadHotList(1, true);
-        } else if (tabIndex === 1) {
-          await this.loadLatestList(1, true);
-        } else if (tabIndex === 2) {
-          await this.loadCommentList(1, true);
-        } else if (tabIndex === 3) {
-          await this.loadNewsList(1, true);
-        } else if (tabIndex === 4) {
-          await this.loadAcademicList(1, true);
-        } else if (tabIndex === 5) {
-          await this.loadProductList(1, true);
-        }
-        
-        this.loadedTabs.add(this.tabsConfig[tabIndex].id);
+        await this.loadListByTabId(tabId, 1, true);
+        this.loadedTabs.add(tabId);
       } catch (error) {
-        console.error('加载标签页数据失败:', error);
+        console.error(`加载${tabId}标签页数据失败:`, error);
         this.showToast('加载失败，请重试', 'error');
       } finally {
-        this.hideLoading();
+        // 确保只有当前 tab 的 loading 状态被更新
+        if (this.currentTab === tabId) {
+          this.loadingStates[tabId] = false;
+        }
       }
     },
     
     async onScreen() {
-      if (this.hotList.length == 0) {
-        this.showLoading('加载中');
+      if (this.hotList.length === 0) {
+        this.loadingStates.hot = true;
         try {
           await this.loadHotList(1, true);
         } catch (error) {
           console.error('加载热门列表失败:', error);
           this.showToast('加载失败，请重试', 'error');
         } finally {
-          this.hideLoading();
+          this.loadingStates.hot = false;
         }
       }
     },
@@ -181,9 +224,6 @@ export default {
     // 热门列表加载逻辑
     async loadHotList(page, replace = false) {
       try {
-        if (this.isLoading) return;
-        this.isLoading = true;
-        
         const res = await api.news.getHotList({ page });
         
         if (res.data && res.data.feeds) {
@@ -193,11 +233,7 @@ export default {
           } else {
             this.hotList = [...this.hotList, ...res.data.feeds];
           }
-          
-          // 判断是否还有更多数据
           this.hotHasMore = res.data.feeds.length > 0;
-          
-          // 如果成功加载了数据，更新页码
           if (!replace && res.data.feeds.length > 0) {
             this.hotPage = page;
           }
@@ -207,8 +243,6 @@ export default {
       } catch (error) {
         console.error('加载热门列表失败:', error);
         throw error;
-      } finally {
-        this.isLoading = false;
       }
     },
     
@@ -224,7 +258,7 @@ export default {
     
     // 上拉加载更多热门列表
     async onLoadMoreHot() {
-      if (!this.hotHasMore || this.isLoading) return;
+      if (!this.hotHasMore || this.loadingStates.hot || this.currentTab !== 'hot') return;
       
       try {
         const nextPage = this.hotPage + 1;
@@ -238,9 +272,6 @@ export default {
     // 最新列表加载逻辑
     async loadLatestList(page, replace = false) {
       try {
-        if (this.isLoading) return;
-        this.isLoading = true;
-        
         const res = await api.news.getLatestList({ page });
         
         if (res.data && res.data.feeds) {
@@ -250,11 +281,7 @@ export default {
           } else {
             this.latestList = [...this.latestList, ...res.data.feeds];
           }
-          
-          // 判断是否还有更多数据
           this.latestHasMore = res.data.feeds.length > 0;
-          
-          // 如果成功加载了数据，更新页码
           if (!replace && res.data.feeds.length > 0) {
             this.latestPage = page;
           }
@@ -264,8 +291,6 @@ export default {
       } catch (error) {
         console.error('加载最新列表失败:', error);
         throw error;
-      } finally {
-        this.isLoading = false;
       }
     },
     
@@ -281,7 +306,7 @@ export default {
     
     // 上拉加载更多最新列表
     async onLoadMoreLatest() {
-      if (!this.latestHasMore || this.isLoading) return;
+      if (!this.latestHasMore || this.loadingStates.latest) return;
       
       try {
         const nextPage = this.latestPage + 1;
@@ -295,9 +320,6 @@ export default {
     // 评论列表加载逻辑
     async loadCommentList(page, replace = false) {
       try {
-        if (this.isLoading) return;
-        this.isLoading = true;
-        
         const res = await api.news.getCommentList({ page });
         
         if (res.data && res.data.feeds) {
@@ -307,11 +329,7 @@ export default {
           } else {
             this.commentList = [...this.commentList, ...res.data.feeds];
           }
-          
-          // 判断是否还有更多数据
           this.commentHasMore = res.data.feeds.length > 0;
-          
-          // 如果成功加载了数据，更新页码
           if (!replace && res.data.feeds.length > 0) {
             this.commentPage = page;
           }
@@ -321,8 +339,6 @@ export default {
       } catch (error) {
         console.error('加载评论列表失败:', error);
         throw error;
-      } finally {
-        this.isLoading = false;
       }
     },
     
@@ -338,7 +354,7 @@ export default {
     
     // 上拉加载更多评论列表
     async onLoadMoreComment() {
-      if (!this.commentHasMore || this.isLoading) return;
+      if (!this.commentHasMore || this.loadingStates.discussion) return;
       
       try {
         const nextPage = this.commentPage + 1;
@@ -352,9 +368,6 @@ export default {
     // 新闻列表加载逻辑
     async loadNewsList(page, replace = false) {
       try {
-        if (this.isLoading) return;
-        this.isLoading = true;
-        
         const res = await api.news.getDisplayList({ page, topic: '新闻' });
         
         if (res.data && res.data.displays) {
@@ -364,11 +377,7 @@ export default {
           } else {
             this.newsList = [...this.newsList, ...res.data.displays];
           }
-          
-          // 判断是否还有更多数据
           this.newsHasMore = res.data.displays.length > 0;
-          
-          // 如果成功加载了数据，更新页码
           if (!replace && res.data.displays.length > 0) {
             this.newsPage = page;
           }
@@ -378,8 +387,6 @@ export default {
       } catch (error) {
         console.error('加载新闻列表失败:', error);
         throw error;
-      } finally {
-        this.isLoading = false;
       }
     },
     
@@ -395,7 +402,7 @@ export default {
     
     // 上拉加载更多新闻列表
     async onLoadMoreNews() {
-      if (!this.newsHasMore || this.isLoading) return;
+      if (!this.newsHasMore || this.loadingStates.news) return;
       
       try {
         const nextPage = this.newsPage + 1;
@@ -409,9 +416,6 @@ export default {
     // 学术列表加载逻辑
     async loadAcademicList(page, replace = false) {
       try {
-        if (this.isLoading) return;
-        this.isLoading = true;
-        
         const res = await api.news.getDisplayList({ page, topic: '学术' });
         
         if (res.data && res.data.displays) {
@@ -421,11 +425,7 @@ export default {
           } else {
             this.academicList = [...this.academicList, ...res.data.displays];
           }
-          
-          // 判断是否还有更多数据
           this.academicHasMore = res.data.displays.length > 0;
-          
-          // 如果成功加载了数据，更新页码
           if (!replace && res.data.displays.length > 0) {
             this.academicPage = page;
           }
@@ -435,8 +435,6 @@ export default {
       } catch (error) {
         console.error('加载学术列表失败:', error);
         throw error;
-      } finally {
-        this.isLoading = false;
       }
     },
     
@@ -452,7 +450,7 @@ export default {
     
     // 上拉加载更多学术列表
     async onLoadMoreAcademic() {
-      if (!this.academicHasMore || this.isLoading) return;
+      if (!this.academicHasMore || this.loadingStates.academic) return;
       
       try {
         const nextPage = this.academicPage + 1;
@@ -466,9 +464,6 @@ export default {
     // 产品列表加载逻辑
     async loadProductList(page, replace = false) {
       try {
-        if (this.isLoading) return;
-        this.isLoading = true;
-        
         const res = await api.news.getDisplayList({ page, topic: '产品' });
         
         if (res.data && res.data.displays) {
@@ -478,11 +473,7 @@ export default {
           } else {
             this.productList = [...this.productList, ...res.data.displays];
           }
-          
-          // 判断是否还有更多数据
           this.productHasMore = res.data.displays.length > 0;
-          
-          // 如果成功加载了数据，更新页码
           if (!replace && res.data.displays.length > 0) {
             this.productPage = page;
           }
@@ -492,8 +483,6 @@ export default {
       } catch (error) {
         console.error('加载产品列表失败:', error);
         throw error;
-      } finally {
-        this.isLoading = false;
       }
     },
     
@@ -509,7 +498,7 @@ export default {
     
     // 上拉加载更多产品列表
     async onLoadMoreProduct() {
-      if (!this.productHasMore || this.isLoading) return;
+      if (!this.productHasMore || this.loadingStates.product) return;
       
       try {
         const nextPage = this.productPage + 1;
@@ -538,7 +527,37 @@ export default {
         content,
         type
       });
-    }
+    },
+
+    // 新增：根据 tabId 获取对应的列表
+    getListByTabId(tabId) {
+      const listMap = {
+        hot: this.hotList,
+        latest: this.latestList,
+        discussion: this.commentList,
+        news: this.newsList,
+        academic: this.academicList,
+        product: this.productList
+      };
+      return listMap[tabId] || [];
+    },
+
+    // 新增：统一的列表加载方法
+    async loadListByTabId(tabId, page, replace = false) {
+      const loadFuncMap = {
+        hot: this.loadHotList,
+        latest: this.loadLatestList,
+        discussion: this.loadCommentList,
+        news: this.loadNewsList,
+        academic: this.loadAcademicList,
+        product: this.loadProductList
+      };
+
+      const loadFunc = loadFuncMap[tabId];
+      if (loadFunc) {
+        await loadFunc(page, replace);
+      }
+    },
   }
 }
 </script>
@@ -554,5 +573,9 @@ export default {
   height: 100vh;
   width: 100vw;
   padding-bottom: 90px;
+}
+
+.skeleton-wrapper {
+  padding: 16px;
 }
 </style>

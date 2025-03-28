@@ -1,30 +1,41 @@
 <template>
   <div class="notification-page" @onscreen="onScreen" @offscreen="offScreen">
-    <div class="page-title">通知</div>
-    <webf-listview class="notification-list">
-      <div v-for="notification in notifications" :key="notification.id" class="notification-item">
-        <div class="notification-time">{{ formatTime(notification.created_at) }}</div>
-        <div class="notification-content">
-          <span class="user-name" @click="handleUserClick(notification.links.user.id)">{{ notification.links.user.name }}</span>
-          回复了你关注的分享
-          <span class="share-title" @click="handleShareClick(notification.links.share_link.id)">{{ notification.links.share_link.name }}</span>
+    <template v-if="isLoading">
+      <notification-skeleton />
+    </template>
+    <template v-else>
+      <div class="page-title">通知</div>
+      <webf-listview class="notification-list">
+        <div v-for="notification in notifications" :key="notification.id" class="notification-item">
+          <div class="notification-time">{{ formatTime(notification.created_at) }}</div>
+          <div class="notification-content">
+            <span class="user-name" @click="handleUserClick(notification.links.user.id)">{{ notification.links.user.name }}</span>
+            回复了你关注的分享
+            <span class="share-title" @click="handleShareClick(notification.links.share_link.id)">{{ notification.links.share_link.name }}</span>
+          </div>
         </div>
-      </div>
-    </webf-listview>
+      </webf-listview>
+    </template>
     <flutter-cupertino-loading ref="loading" />
   </div>
 </template>
 
 <script>
+import NotificationSkeleton from '@/Components/skeleton/NotificationSkeleton.vue';
+
 import { useUserStore } from '@/stores/userStore'
 import { api } from '@/api';
 
 export default {
   name: 'NotificationPage',
+  components: {
+    NotificationSkeleton,
+  },
   data() {
     return {
       notifications: [],
       page: 1,
+      isLoading: true,
     }
   },
   setup() {
@@ -35,11 +46,9 @@ export default {
   },
   methods: {
     async onScreen() {
-      this.$refs.loading.show({
-        text: '加载中'
-      });
+      this.isLoading = true;
       await this.fetchNotifications();
-      this.$refs.loading.hide();
+      this.isLoading = false;
     },
     async fetchNotifications() {
       try {
