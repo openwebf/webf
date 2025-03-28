@@ -124,10 +124,10 @@ void main() async {
   WebFControllerManager.instance.addWithPrerendering(
       name: 'miracle_plus',
       createController: () => WebFController(
-        initialRoute: '/home',
-        routeObserver: routeObserver,
-        devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-      ),
+            initialRoute: '/home',
+            routeObserver: routeObserver,
+            devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+          ),
       bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'),
       routes: {
         '/home': (context, controller) => WebFSubView(path: '/home', controller: controller),
@@ -264,7 +264,8 @@ class MyAppState extends State<MyApp> {
             settings: settings,
             builder: (context) {
               Widget? entry = WebFControllerManager.instance.getRouterBuilderBySettings(context, settings);
-              return entry ?? Scaffold(appBar: AppBar(title: Text('Error')), body: Center(child: Text('Page not found')));
+              return entry ??
+                  Scaffold(appBar: AppBar(title: Text('Error')), body: Center(child: Text('Page not found')));
             },
           );
         },
@@ -312,6 +313,16 @@ class FirstPageState extends State<FirstPage> {
               }));
             },
             child: Text('Open Vue.js demo')),
+        ElevatedButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(
+                  webfPageName: 'vuejs',
+                  initialRoute: '/positioned_layout',
+                );
+              }));
+            },
+            child: Text('Open Vue.js demo Positioned Layout')),
         SizedBox(height: 18),
         ElevatedButton(
             onPressed: () {
@@ -320,6 +331,13 @@ class FirstPageState extends State<FirstPage> {
               }));
             },
             child: Text('Open MiraclePlus App')),
+        ElevatedButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(webfPageName: 'miracle_plus', initialRoute: '/login',);
+              }));
+            },
+            child: Text('Open MiraclePlus App Login')),
       ]),
       floatingActionButton: FloatingActionButton(onPressed: () {
         WebFControllerManager.instance.disposeAll();
@@ -330,8 +348,9 @@ class FirstPageState extends State<FirstPage> {
 
 class WebFDemo extends StatefulWidget {
   final String webfPageName;
+  final String initialRoute;
 
-  WebFDemo({required this.webfPageName});
+  WebFDemo({required this.webfPageName, this.initialRoute = '/'});
 
   @override
   _WebFDemoState createState() => _WebFDemoState();
@@ -364,7 +383,12 @@ class _WebFDemoState extends State<WebFDemo> {
           // print(controller.view.getRootRenderObject()!.toStringDeep());
         }),
         body: Stack(
-          children: [WebF.fromControllerName(controllerName: widget.webfPageName, loadingWidget: _buildSplashScreen())],
+          children: [
+            WebF.fromControllerName(
+                controllerName: widget.webfPageName,
+                loadingWidget: _buildSplashScreen(),
+                initialRoute: widget.initialRoute)
+          ],
         ));
   }
 

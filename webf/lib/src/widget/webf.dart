@@ -15,7 +15,6 @@ import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
 
 typedef OnControllerCreated = void Function(WebFController controller);
@@ -27,6 +26,12 @@ class WebF extends StatefulWidget {
 
   /// Widget to display while loading the controller when using controllerName
   final Widget? loadingWidget;
+
+  /// The default route path for the hybrid router in WebF.
+  ///
+  /// Sets the initial path that the router will navigate to when the application starts.
+  /// This is the entry point for the hybrid routing system in WebF.
+  final String? initialRoute;
 
   /// Custom error builder when using controllerName
   final Widget Function(BuildContext context, Object error)? errorBuilder;
@@ -61,6 +66,7 @@ class WebF extends StatefulWidget {
   const WebF({
     Key? key,
     this.loadingWidget,
+    this.initialRoute,
     required this.controller,
   })  : errorBuilder = null,
         super(key: key);
@@ -75,9 +81,10 @@ class WebF extends StatefulWidget {
   static _AsyncWebF fromControllerName(
       {Key? key,
       required String controllerName,
+      String? initialRoute,
       Widget? loadingWidget,
       Widget Function(BuildContext context, Object error)? errorBuilder}) {
-    return _AsyncWebF(controllerName: controllerName, loadingWidget: loadingWidget, errorBuilder: errorBuilder);
+    return _AsyncWebF(controllerName: controllerName, loadingWidget: loadingWidget, errorBuilder: errorBuilder, initialRoute: initialRoute);
   }
 
   @override
@@ -106,14 +113,16 @@ class WebF extends StatefulWidget {
 class _AsyncWebF extends StatelessWidget {
   final String controllerName;
   final Widget? loadingWidget;
+  final String? initialRoute;
   final Widget Function(BuildContext context, Object error)? errorBuilder;
 
-  _AsyncWebF({required this.controllerName, this.loadingWidget, this.errorBuilder});
+  _AsyncWebF({required this.controllerName, this.loadingWidget, this.errorBuilder, this.initialRoute});
 
   Widget buildWebF(WebFController controller) {
     return WebF(
         controller: controller,
         key: controller.key,
+        initialRoute: initialRoute,
         loadingWidget: loadingWidget ??
             const SizedBox(
               width: 50,
@@ -218,14 +227,14 @@ class WebFState extends State<WebF> with RouteAware {
     List<Widget> children = [];
 
     Widget result = RepaintBoundary(
-      key: widget.controller!.key,
+      key: widget.controller.key,
       child: WebFContext(
         child: WebFRootViewport(
-          widget.controller!,
-          viewportWidth: widget.controller!.viewportWidth,
-          viewportHeight: widget.controller!.viewportHeight,
-          background: widget.controller!.background,
-          resizeToAvoidBottomInsets: widget.controller!.resizeToAvoidBottomInsets,
+          widget.controller,
+          viewportWidth: widget.controller.viewportWidth,
+          viewportHeight: widget.controller.viewportHeight,
+          background: widget.controller.background,
+          resizeToAvoidBottomInsets: widget.controller.resizeToAvoidBottomInsets,
           children: children,
         ),
       ),
@@ -246,12 +255,25 @@ class WebFState extends State<WebF> with RouteAware {
                   );
             }
 
-            children.add(widget.controller.view.document.documentElement!.toWidget());
-
+            if (widget.initialRoute != null && widget.initialRoute != '/') {
+              WidgetElement? child = widget.controller.view.getHybridRouterView(widget.initialRoute!);
+              if (child != null) {
+                children.add(child.toWidget());
+              } else {
+                children.add(widget.controller.view.document.documentElement!.toWidget());
+              }
+            } else {
+              children.add(widget.controller.view.document.documentElement!.toWidget());
+            }
             return result;
           });
     } else {
-      children.add(widget.controller.view.document.documentElement!.toWidget());
+      if (widget.initialRoute != null && widget.initialRoute != '/') {
+        WidgetElement? child = widget.controller.view.getHybridRouterView(widget.initialRoute!);
+        children.add(child!.toWidget());
+      } else {
+        children.add(widget.controller.view.document.documentElement!.toWidget());
+      }
     }
 
     return result;

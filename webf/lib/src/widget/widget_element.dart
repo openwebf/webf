@@ -371,8 +371,9 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
   void deactivate() {
     ModalRoute route = ModalRoute.of(this)!;
     dom.OffScreenEvent event = dom.OffScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
+    WidgetElement widgetElement = widget.widgetElement;
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      widget.widgetElement.dispatchEvent(event);
+      widgetElement.dispatchEvent(event);
     });
     super.deactivate();
   }
@@ -383,6 +384,5 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
     widgetElement.willDetachRenderer(this);
     super.unmount();
     widgetElement.didDetachRenderer(this);
-    widgetElement.dispatchEvent(dom.Event('offscreen'));
   }
 }
