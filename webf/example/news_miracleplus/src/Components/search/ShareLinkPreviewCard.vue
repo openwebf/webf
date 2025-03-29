@@ -42,7 +42,7 @@
   <style scoped>
   .share-link-preview-card {
     padding: 16px;
-    background-color: var(--background-color);
+    background-color: var(--background-primary);
     margin-top: 8px;
     border-radius: 8px;
 
@@ -51,7 +51,7 @@
       flex-direction: row;
       align-items: center;
       padding: 12px;
-      background-color: #F5F5F5;
+      background-color: var(--background-secondary);
       border-radius: 6px;
       margin-bottom: 12px;
 
@@ -65,7 +65,7 @@
       .link {
         flex: 1;
         font-size: 14px;
-        color: #666666;
+        color: var(--font-color-secondary);
       }
     }
   }

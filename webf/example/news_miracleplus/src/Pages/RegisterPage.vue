@@ -202,7 +202,7 @@ export default {
     &-title {
       font-size: 24px;
       font-weight: 600;
-      color: var(--font-color);
+      color: var(--font-color-primary);
     }
 
     &-description {
@@ -225,7 +225,7 @@ export default {
     .tel-input {
       .country-code {
         width: 20%;
-        background-color: #fff;
+        background-color: var(--background-primary);
         border-radius: 4px;
         padding: 0 8px;
         height: 44px;
@@ -263,7 +263,7 @@ export default {
     width: 100%;
     font-size: 16px;
     font-weight: 600;
-    color: var(--button-primary-text, #fff);
+    color: var(--button-primary-text);
     display: flex;
     justify-content: center;
     align-items: center;

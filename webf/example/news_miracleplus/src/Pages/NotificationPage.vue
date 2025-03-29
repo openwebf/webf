@@ -65,6 +65,7 @@ export default {
       return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     },
     handleUserClick(userId) {
+      console.log('userId', userId);
       window.webf.hybridHistory.pushState({
         id: userId
       }, '/user');
@@ -101,7 +102,7 @@ export default {
       margin-bottom: 12px;
 
       .notification-time {
-        color: #999;
+        color: var(--link-color);
         font-size: 14px;
         margin-bottom: 8px;
       }
@@ -111,17 +112,34 @@ export default {
         line-height: 1.5;
 
         .user-name {
-          color: #007AFF;
+          color: var(--link-color);
           font-weight: 500;
         }
 
         .share-title {
-          color: #007AFF;
+          color: var(--link-color);
           display: block;
           margin-top: 4px;
         }
       }
+
+      .action {
+        color: var(--link-color);
+        font-size: 14px;
+      }
+
+      .time {
+        color: var(--link-color);
+        font-size: 14px;
+      }
     }
+  }
+
+  .empty-state {
+    padding: 24px;
+    text-align: center;
+    color: var(--font-color-secondary);
+    font-size: 14px;
   }
 }
 </style>

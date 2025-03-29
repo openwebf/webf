@@ -60,6 +60,7 @@ export default {
     flex-direction: column;
     height: 100%;
     padding: 16px;
+    background: var(--background-primary);
 
     .invite-search-container {
         margin-bottom: 16px;
@@ -80,7 +81,7 @@ export default {
             align-items: center;
             justify-content: center;
             height: 100px;
-            color: #999;
+            color: var(--font-color-secondary);
         }
 
         .no-users {
@@ -88,14 +89,14 @@ export default {
             align-items: center;
             justify-content: center;
             height: 100px;
-            color: #999;
+            color: var(--font-color-secondary);
         }
 
         .invite-user-item {
             display: flex;
             align-items: center;
             padding: 12px 0;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border-primary);
 
             .user-avatar {
                 width: 40px;
@@ -111,13 +112,13 @@ export default {
                 .user-name {
                     font-size: 16px;
                     font-weight: 500;
-                    color: #333;
+                    color: var(--font-color-primary);
                     margin-bottom: 4px;
                 }
 
                 .user-company {
                     font-size: 12px;
-                    color: #666;
+                    color: var(--font-color-secondary);
                 }
             }
 

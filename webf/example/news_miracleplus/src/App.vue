@@ -39,8 +39,7 @@
     <topic-page></topic-page>
   </router-view>
   <router-view path="/home" title="首页">
-    <flutter-cupertino-tab-bar ref="tabBar" class="tab-bar" backgroundColor="#FFFFFF" activeColor="#007AFF"
-      :currentIndex="currentIndex" @tabchange="handleTabChange">
+    <flutter-cupertino-tab-bar ref="tabBar" class="tab-bar" :currentIndex="currentIndex" @tabchange="handleTabChange">
       <flutter-cupertino-tab-bar-item title="首页" icon="home" path="/home">
         <home-page v-if="currentIndex === 0"></home-page>
       </flutter-cupertino-tab-bar-item>

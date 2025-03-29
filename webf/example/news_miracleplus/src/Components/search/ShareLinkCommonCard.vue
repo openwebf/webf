@@ -40,20 +40,20 @@ methods: {
 <style lang="scss" scoped>
   .share-link-card {
     padding: 16px;
-    background-color: var(--background-color);
+    background-color: var(--background-primary);
     border-radius: 8px;
     margin-top: 8px;
 
     .title {
       font-size: 16px;
       font-weight: 500;
-      color: #333333;
+      color: var(--font-color-primary);
       margin-bottom: 8px;
     }
 
     .content {
       font-size: 14px;
-      color: #666666;
+      color: var(--font-color-secondary);
       line-height: 20px;
       margin-bottom: 12px;
     }
@@ -75,7 +75,7 @@ methods: {
 
         .count {
           font-size: 12px;
-          color: #999999;
+          color: var(--font-color-secondary);
         }
       }
     }

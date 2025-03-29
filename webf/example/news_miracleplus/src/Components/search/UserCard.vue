@@ -48,7 +48,7 @@
     padding: 12px;
     margin-top: 8px;
     border-radius: 8px;
-    background: var(--background-color);
+    background: var(--background-primary);
   
     .avatar {
       width: 40px;
@@ -65,7 +65,7 @@
       .name {
         font-size: 16px;
         font-weight: 500;
-        color: #333;
+        color: var(--font-color-primary);
         margin-bottom: 4px;
         // 防止过长的名字溢出
         white-space: nowrap;
@@ -75,7 +75,7 @@
   
       .title {
         font-size: 14px;
-        color: #666;
+        color: var(--font-color-secondary);
         // 防止过长的职位信息溢出
         white-space: nowrap;
         overflow: hidden;

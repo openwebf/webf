@@ -36,13 +36,13 @@ export default {
 
 <style lang="scss" scoped>
 .topic-header {
-    background-color: #FFFFFF;
+    background-color: var(--background-primary);
     padding: 16px;
 
     .title {
         font-size: 17px;
         font-weight: 600;
-        color: #333333;
+        color: var(--font-color-primary);
         margin-bottom: 8px;
     }
 
@@ -54,7 +54,7 @@ export default {
 
         .stats {
             font-size: 14px;
-            color: #666666;
+            color: var(--font-color-secondary);
         }
 
         .follow-btn {

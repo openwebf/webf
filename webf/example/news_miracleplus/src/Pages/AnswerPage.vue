@@ -53,7 +53,7 @@ export default {
 .view-all-btn {
   text-align: center;
   font-size: 14px;
-  color: #666666;
+  color: var(--font-color-secondary);
   padding: 16px 0;
   border-bottom: 1px solid var(--border-secondary);
 }

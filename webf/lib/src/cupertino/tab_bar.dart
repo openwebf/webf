@@ -1,6 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:webf/src/cupertino/tab.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
 
@@ -76,10 +74,45 @@ class FlutterTabBar extends WidgetElement {
     return tabViews;
   }
 
+  Color? _parseColor(String? colorStr) {
+    if (colorStr == null) return null;
+    try {
+      return Color(int.parse(colorStr.replaceAll('#', ''), radix: 16) + 0xFF000000);
+    } catch (e) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
+    final theme = CupertinoTheme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    final customBackgroundColor = _parseColor(getAttribute('backgroundColor'));
+    final customActiveColor = _parseColor(getAttribute('activeColor'));
+    final customInactiveColor = _parseColor(getAttribute('inactiveColor'));
+
+    final defaultBackgroundColor = isDark 
+        ? CupertinoDynamicColor.resolve(
+            const CupertinoDynamicColor.withBrightness(
+              color: Color(0xFF1C1C1E),
+              darkColor: Color(0xFF1C1C1E),
+            ),
+            context,
+          )
+        : CupertinoColors.systemBackground;
+    
+    final defaultActiveColor = isDark
+        ? CupertinoDynamicColor.resolve(CupertinoColors.systemBlue, context)
+        : CupertinoColors.systemBlue;
+
+    final defaultInactiveColor = isDark
+        ? CupertinoDynamicColor.resolve(CupertinoColors.systemGrey, context)
+        : CupertinoColors.systemGrey;
+
     final paths = _getTabPaths();
     final tabViews = _buildTabViews(childNodes);
+    
     return SizedBox(
         height: MediaQuery.of(context).size.height,
         child: CupertinoTabScaffold(
@@ -87,20 +120,23 @@ class FlutterTabBar extends WidgetElement {
             tabBar: CupertinoTabBar(
                 items: _buildTabItems(),
                 currentIndex: int.tryParse(getAttribute('currentIndex') ?? '0') ?? 0,
-                backgroundColor: getAttribute('backgroundColor') != null
-                    ? Color(int.parse(getAttribute('backgroundColor')!.replaceAll('#', ''), radix: 16) + 0xFF000000)
-                    : null,
-                activeColor: getAttribute('activeColor') != null
-                    ? Color(int.parse(getAttribute('activeColor')!.replaceAll('#', ''), radix: 16) + 0xFF000000)
-                    : null,
-                inactiveColor: getAttribute('inactiveColor') != null
-                    ? Color(int.parse(getAttribute('inactiveColor')!.replaceAll('#', ''), radix: 16) + 0xFF000000)
-                    : CupertinoColors.inactiveGray,
+                backgroundColor: customBackgroundColor ?? defaultBackgroundColor,
+                activeColor: customActiveColor ?? defaultActiveColor,
+                inactiveColor: customInactiveColor ?? defaultInactiveColor,
                 iconSize: double.tryParse(getAttribute('iconSize') ?? '30.0') ?? 30.0,
                 height: double.tryParse(getAttribute('height') ?? '50.0') ?? 50.0,
+                border: isDark 
+                    ? Border(
+                        top: BorderSide(
+                          color: CupertinoDynamicColor.resolve(
+                            CupertinoColors.separator, 
+                            context
+                          ).withOpacity(0.3)
+                        )
+                      )
+                    : null,
                 onTap: (index) {
                   setAttribute('currentIndex', index.toString());
-                  print('index: $index');
                   dispatchEvent(CustomEvent('tabchange', detail: index));
                 }),
             tabBuilder: (BuildContext context, int index) {
@@ -111,7 +147,12 @@ class FlutterTabBar extends WidgetElement {
                     return tabViews[index];
                   }
                   return Center(
-                    child: Text('Invalid tab of $index for route ${paths[index]}'),
+                    child: Text(
+                      'Invalid tab of $index for route ${paths[index]}',
+                      style: TextStyle(
+                        color: isDark ? CupertinoColors.white : CupertinoColors.black,
+                      ),
+                    ),
                   );
                 },
               );

@@ -70,7 +70,7 @@ export default {
     font-size: 20px;
     font-weight: bold;
     margin-bottom: 20px;
-    color: var(--font-color);
+    color: var(--font-color-primary);
 }
 
 .setting-list {
@@ -83,9 +83,9 @@ export default {
     justify-content: space-between;
     align-items: center;
     padding: 16px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-primary);
     cursor: pointer;
-    color: var(--font-color);
+    color: var(--font-color-primary);
 }
 
 .setting-item:last-child {
@@ -93,7 +93,7 @@ export default {
 }
 
 .arrow-right {
-    border: solid #999;
+    border: solid var(--font-color-secondary);
     border-width: 0 2px 2px 0;
     display: inline-block;
     padding: 3px;
@@ -101,6 +101,6 @@ export default {
 }
 
 .logout span {
-    color: #ff4d4f;
+    color: var(--link-color);
 }
 </style>

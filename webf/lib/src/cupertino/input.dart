@@ -95,6 +95,10 @@ class FlutterCupertinoInput extends WidgetElement {
     final prefixWidget = _buildSlotWidget('prefix');
     final suffixWidget = _buildSlotWidget('suffix');
     
+    // Get theme colors
+    final theme = CupertinoTheme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return SizedBox(
       height: height,
       child: CupertinoTextField(
@@ -109,11 +113,18 @@ class FlutterCupertinoInput extends WidgetElement {
         prefix: prefixWidget,
         suffix: suffixWidget,
         decoration: BoxDecoration(
-          color: CupertinoColors.white,
+          color: isDark ? CupertinoColors.systemGrey6.darkColor : CupertinoColors.white,
           borderRadius: BorderRadius.circular(8),
         ),
+        style: TextStyle(
+          color: isDark ? CupertinoColors.white : CupertinoColors.black,
+          height: 1
+        ),
+        placeholderStyle: TextStyle(
+          color: isDark ? CupertinoColors.systemGrey : CupertinoColors.systemGrey,
+          height: 1
+        ),
         padding: EdgeInsets.symmetric(horizontal: 10),
-        style: TextStyle(height: 1),  
       ),
     );
   }

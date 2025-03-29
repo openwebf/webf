@@ -12,6 +12,10 @@ class FlutterCupertinoSearchInput extends WidgetElement {
     final value = getAttribute('value') ?? '';
     final TextEditingController controller = TextEditingController(text: value);
     
+    // Get theme colors
+    final theme = CupertinoTheme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return CupertinoSearchTextField(
       controller: controller,
       placeholder: placeholder,
@@ -23,11 +27,19 @@ class FlutterCupertinoSearchInput extends WidgetElement {
         // Dispatch search event when user submits
         dispatchEvent(CustomEvent('search', detail: value));
       },
-      // Use system background color
-      backgroundColor: CupertinoColors.systemGrey6,
+      // Use system background color based on theme
+      backgroundColor: isDark ? CupertinoColors.systemGrey6.darkColor : CupertinoColors.systemGrey6,
       // Add rounded corners
       borderRadius: BorderRadius.circular(8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      // Style for input text
+      style: TextStyle(
+        color: isDark ? CupertinoColors.white : CupertinoColors.black,
+      ),
+      // Style for placeholder text
+      placeholderStyle: TextStyle(
+        color: isDark ? CupertinoColors.systemGrey : CupertinoColors.systemGrey,
+      ),
     );
   }
 

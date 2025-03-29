@@ -21,13 +21,13 @@ export default {
 
     .icon {
         font-size: 32px;
-
+        color: var(--font-color-secondary);
         margin-bottom: 16px;
     }
 
     .tip-text {
         font-size: 14px;
-        color: #999;
+        color: var(--font-color-secondary);
         margin: 0;
     }
 }

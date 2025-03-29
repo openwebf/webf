@@ -249,7 +249,7 @@
   
   <style lang="scss" scoped>
   .base-comment-item {
-    background: #fff;
+    background: var(--background-primary);
     border-radius: 8px;
     margin-bottom: 8px;
   
@@ -277,12 +277,12 @@
           .username {
             font-size: 16px;
             font-weight: 500;
-            color: #333;
+            color: var(--font-color-primary);
           }
   
           .time {
             font-size: 14px;
-            color: #999;
+            color: var(--font-color-secondary);
           }
         }
       }
@@ -294,7 +294,7 @@
       .comment-text {
         font-size: 15px;
         line-height: 1.5;
-        color: #333;
+        color: var(--font-color-primary);
       }
     }
   
@@ -315,7 +315,7 @@
         background: none;
         border: none;
         padding: 4px 8px;
-        color: #999;
+        color: var(--font-color-secondary);
         font-size: 14px;
         cursor: pointer;
       }

@@ -68,10 +68,11 @@
         .name {
           font-size: 16px;
           font-weight: 600;
+          color: var(--font-color-primary);
         }
         .time {
           font-size: 12px;
-          color: #999;
+          color: var(--font-color-secondary);
         }
       }
     }
@@ -80,7 +81,7 @@
       height: 32px;
       text-align: center;
       border-radius: 8px;
-      color: var(--button-primary-text, #fff); 
+      color: var(--button-primary-text);
     }
   }
   </style>

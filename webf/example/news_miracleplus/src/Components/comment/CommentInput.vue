@@ -38,7 +38,7 @@ export default {
 <style lang="scss" scoped>
 .comment-input {
   padding: 12px;
-  background: white;
+  background: var(--background-primary);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -48,7 +48,7 @@ export default {
   .input {
     border-radius: 8px;
     width: 100%;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-primary);
   }
 
   .send-button {

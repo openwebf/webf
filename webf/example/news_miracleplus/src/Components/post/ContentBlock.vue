@@ -19,20 +19,20 @@
   .content-block {
     margin: 16px 0;
     padding: 16px;
-    background: #F8F9FA;
+    background: var(--background-secondary);
     border-radius: 8px;
   
     .block-title {
       font-size: 16px;
       font-weight: 600;
-      color: #1C1C1E;
+      color: var(--font-color-primary);
       margin-bottom: 8px;
     }
   
     .block-content {
       font-size: 14px;
       line-height: 1.6;
-      color: #3C3C43;
+      color: var(--font-color-secondary);
       white-space: pre-wrap;
     }
   }

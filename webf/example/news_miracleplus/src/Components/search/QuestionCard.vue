@@ -48,13 +48,13 @@
     padding: 16px;
     border-radius: 8px;
     margin-top: 8px;
-    background-color: var(--background-color);
+    background-color: var(--background-primary);
   }
   
   .title {
     font-size: 16px;
     font-weight: 500;
-    color: #333;
+    color: var(--font-color-primary);
     margin-bottom: 8px;
     line-height: 1.4;
   }
@@ -68,15 +68,15 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #999;
+        color: var(--font-color-secondary);
         font-size: 14px;
 
         .icon {
-        font-size: 14px;
+          font-size: 14px;
         }
 
         span {
-        margin-left: 4px;
+          margin-left: 4px;
         }
     }
 
@@ -87,7 +87,7 @@
     .tag {
         margin-left: 16px;
         font-size: 14px;
-        color: #999;
+        color: var(--font-color-secondary);
     }
   }
   

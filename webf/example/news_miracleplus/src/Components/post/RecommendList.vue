@@ -35,7 +35,7 @@
     .block-title {
       font-size: 16px;
       font-weight: 600;
-      color: #1C1C1E;
+      color: var(--font-color-primary);
       margin-bottom: 8px;
     }
     .recommend-list {
@@ -44,7 +44,7 @@
         cursor: pointer;
         
         &:not(:last-child) {
-          border-bottom: 1px solid rgba(60, 60, 67, 0.1);
+          border-bottom: 1px solid var(--border-primary);
         }
         
         &:active {
@@ -55,14 +55,14 @@
           font-size: 14px;
           font-weight: 500;
           line-height: 1.4;
-          color: #1C1C1E;
+          color: var(--font-color-primary);
           margin-bottom: 4px;
         }
         
         .recommend-desc {
           font-size: 13px;
           line-height: 1.3;
-          color: #8E8E93;
+          color: var(--font-color-secondary);
           display: -webkit-box;
           -webkit-line-clamp: 2;
           line-clamp: 2;

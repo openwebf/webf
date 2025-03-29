@@ -420,7 +420,7 @@ export default {
     .name {
       font-size: 18px;
       font-weight: 600;
-      color: #333;
+      color: var(--font-color-primary);
       margin-bottom: 24px;
       text-align: center;
     }
@@ -428,16 +428,15 @@ export default {
     .login-button {
       font-size: 18px;
       font-weight: 600;
-      color: #666;
+      color: var(--font-color-secondary);
       text-align: center;
       margin-top: 8px;
       margin-bottom: 24px;
-
     }
 
     .title {
       font-size: 14px;
-      color: #666;
+      color: var(--font-color-secondary);
       margin-bottom: 20px;
       text-align: center;
     }
@@ -458,12 +457,12 @@ export default {
         .number {
           font-size: 18px;
           font-weight: 600;
-          color: #333;
+          color: var(--font-color-primary);
         }
 
         .label {
           font-size: 14px;
-          color: #666;
+          color: var(--font-color-secondary);
         }
       }
     }
@@ -491,7 +490,7 @@ export default {
 
     .karma-count {
       font-size: 12px;
-      color: #999;
+      color: var(--font-color-secondary);
       display: flex;
       align-items: center;
 
@@ -500,13 +499,13 @@ export default {
       }
 
       .karma-help-icon {
-        color: #999;
+        color: var(--font-color-secondary);
       }
     }
   }
 
   .karma-help-modal {
-    background: #fff;
+    background: var(--background-primary);
     border-radius: 12px;
     padding: 20px;
     width: 280px;
@@ -514,14 +513,14 @@ export default {
     .karma-help-title {
       font-size: 17px;
       font-weight: 600;
-      color: #333;
+      color: var(--font-color-primary);
       margin-bottom: 12px;
       text-align: center;
     }
 
     .karma-help-content {
       font-size: 15px;
-      color: #666;
+      color: var(--font-color-secondary);
       line-height: 1.5;
       margin-bottom: 20px;
       text-align: center;
@@ -535,7 +534,6 @@ export default {
   }
   
   .feed-listview {
-
     height: calc(100vh - 350px);
     padding: 16px;
   }
@@ -543,7 +541,7 @@ export default {
   .empty-state {
     padding: 24px;
     text-align: center;
-    color: #999;
+    color: var(--font-color-secondary);
     font-size: 14px;
   }
 }

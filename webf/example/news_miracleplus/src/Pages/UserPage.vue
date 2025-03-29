@@ -1,6 +1,7 @@
 <template>
     <div class="user-page" @onscreen="onScreen" @offscreen="offScreen">
-      <div class="user-info-block">
+      <user-info-skeleton v-if="isLoading" />
+      <div class="user-info-block" v-else>
         <smart-image :src="formattedAvatar" class="avatar" />
         <div class="name">{{ user.name }}</div>
         <div class="title">
@@ -96,21 +97,12 @@
   import { api } from '@/api';
   import UserFeedCard from '@/Components/UserFeedCard.vue';
   import SmartImage from '@/Components/SmartImage.vue';
+  import UserInfoSkeleton from '@/Components/skeleton/UserInfo.vue';
   export default {
     components: {
       UserFeedCard,
       SmartImage,
-    },
-    async onScreen() {
-      console.log('UserPage onScreen');
-      const userId = this.getUserId();
-      if (userId) {
-        await this.getUserInfo(userId);
-        await this.loadFeeds('all', userId, 1, true);
-      }
-    },
-    async offScreen() {
-      console.log('UserPage offScreen');
+      UserInfoSkeleton,
     },
     data() {
       return {
@@ -151,17 +143,21 @@
         return this.user.company;
       },
     },
-    async mounted() {
-      console.log('UserPage mounted');
-      const userId = this.getUserId();
-      if (userId) {
-        await this.getUserInfo(userId);
-        await this.loadFeeds('all', userId, 1, true);
-      }
-    },
     methods: {
+      async onScreen() {
+        this.isLoading = true;
+        const userId = this.getUserId();
+        console.log('userId: ', userId);
+        if (userId) {
+          await this.getUserInfo(userId);
+          await this.loadFeeds('all', userId, 1, true);
+        }
+      },
+      async offScreen() {
+        console.log('UserPage offScreen');
+      },
       getUserId() {
-        const userId = window.webf.hybridHistory.state.userId;
+        const userId = window.webf.hybridHistory.state.id;
         console.log('userId from state: ', userId);
         return userId;
       },
@@ -195,10 +191,7 @@
         }
       },
       async loadFeeds(category = 'all', userId, page = 1, replace = false) {
-        if (this.isLoading) return;
-        
         try {
-          this.isLoading = true;
           if (page === 1) {
             this.$refs.loading.show({
               text: '加载中'
@@ -479,13 +472,14 @@
       .name {
         font-size: 18px;
         font-weight: 600;
-        color: #333;
-        margin-bottom: 8px;
+        color: var(--font-color-primary);
+        margin-bottom: 24px;
+        text-align: center;
       }
   
       .title {
         font-size: 14px;
-        color: #666;
+        color: var(--font-color-secondary);
         margin-bottom: 20px;
         text-align: center;
       }
@@ -506,12 +500,12 @@
           .number {
             font-size: 18px;
             font-weight: 600;
-            color: #333;
+            color: var(--font-color-primary);
           }
   
           .label {
             font-size: 14px;
-            color: #666;
+            color: var(--font-color-secondary);
           }
         }
       }
@@ -539,7 +533,7 @@
   
       .karma-count {
         font-size: 12px;
-        color: #999;
+        color: var(--font-color-secondary);
         display: flex;
         align-items: center;
         
@@ -548,13 +542,13 @@
         }
 
         .karma-help-icon {
-          color: #999;
+          color: var(--font-color-secondary);
         }
       }
     }
 
     .karma-help-modal {
-      background: #fff;
+      background: var(--background-primary);
       border-radius: 12px;
       padding: 20px;
       width: 280px;
@@ -562,14 +556,14 @@
       .karma-help-title {
         font-size: 17px;
         font-weight: 600;
-        color: #333;
+        color: var(--font-color-primary);
         margin-bottom: 12px;
         text-align: center;
       }
 
       .karma-help-content {
         font-size: 15px;
-        color: #666;
+        color: var(--font-color-secondary);
         line-height: 1.5;
         margin-bottom: 20px;
         text-align: center;
@@ -590,7 +584,7 @@
     .empty-state {
       padding: 24px;
       text-align: center;
-      color: #999;
+      color: var(--font-color-secondary);
       font-size: 14px;
     }
   }

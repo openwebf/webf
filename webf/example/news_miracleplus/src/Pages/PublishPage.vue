@@ -21,8 +21,9 @@
         <flutter-cupertino-textarea
           placeholder="内容"
           class="content-input"
-          minLines="5"
+          minLines="9"
           autoSize="true"
+          transparent="true"
           @input="handleContentInput"
         />
       </div>
@@ -185,13 +186,13 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #f5f5f5;
+  background-color: var(--background-secondary);
 }
 
 .publish-header {
-  background-color: #fff;
+  background-color: var(--background-primary);
   padding: 12px 16px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-primary);
   
   .header-content {
     display: flex;
@@ -220,7 +221,7 @@ export default {
 
   .form-item {
     margin-bottom: 16px;
-    background-color: #fff;
+    background-color: var(--background-primary);
     border-radius: 8px;
     overflow: hidden;
   }
@@ -251,11 +252,8 @@ export default {
     width: 100%;
     height: 44px;
     margin-top: 24px;
-    background-color: var(--primary-color);
-    color: #fff;
     font-size: 16px;
     font-weight: 500;
-    border-radius: 8px;
     
     &:disabled {
       opacity: 0.5;

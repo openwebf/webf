@@ -293,7 +293,7 @@ export default {
     .search-empty-text {
       margin-top: 16px;
       font-size: 14px;
-      color: #999999;
+      color: var(--font-color-secondary);
     }
   }
   .share-link-list {
@@ -311,7 +311,7 @@ export default {
   .empty-state {
     padding: 24px;
     text-align: center;
-    color: #999;
+    color: var(--font-color-secondary);
     font-size: 14px;
   }
 }

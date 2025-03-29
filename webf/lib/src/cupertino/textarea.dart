@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart' show Colors;
 import 'package:webf/webf.dart';
 
 class FlutterCupertinoTextArea extends WidgetElement {
@@ -79,6 +79,14 @@ class FlutterCupertinoTextArea extends WidgetElement {
         setState(() {});
       }
     );
+
+    attributes['transparent'] = ElementAttributeProperty(
+      getter: () => _transparent.toString(),
+      setter: (value) {
+        _transparent = value == 'true';
+        setState(() {});
+      }
+    );
   }
 
   String _placeholder = '';
@@ -88,6 +96,7 @@ class FlutterCupertinoTextArea extends WidgetElement {
   int _rows = 2;
   bool _showCount = false;
   bool _autoSize = false;
+  bool _transparent = false;
 
   void _handleTextChange() {
     if (_showCount && _maxLength != null) {
@@ -97,6 +106,25 @@ class FlutterCupertinoTextArea extends WidgetElement {
 
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
+    // Get theme colors
+    final theme = CupertinoTheme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Define colors based on theme
+    final backgroundColor = _transparent 
+        ? Colors.transparent
+        : _disabled
+            ? (isDark ? CupertinoColors.systemGrey6.darkColor : CupertinoColors.systemGrey6)
+            : (isDark ? CupertinoColors.systemGrey6.darkColor : CupertinoColors.white);
+    
+    final textColor = isDark ? CupertinoColors.white : CupertinoColors.black;
+    final placeholderColor = isDark 
+        ? CupertinoColors.systemGrey.darkColor 
+        : CupertinoColors.placeholderText;
+    final countTextColor = isDark
+        ? CupertinoColors.systemGrey.darkColor
+        : CupertinoColors.systemGrey;
+
     return ConstrainedBox(
       constraints: BoxConstraints(
         minHeight: 0,
@@ -118,21 +146,24 @@ class FlutterCupertinoTextArea extends WidgetElement {
             textAlign: renderStyle.textAlign,
             textAlignVertical: TextAlignVertical.top,
             style: TextStyle(
-              color: renderStyle.color.value,
+              color: textColor,
               fontSize: renderStyle.fontSize.value,
               fontWeight: renderStyle.fontWeight,
               height: 1.2,
             ),
             placeholder: _placeholder,
             placeholderStyle: TextStyle(
-              color: CupertinoColors.placeholderText,
+              color: placeholderColor,
               fontSize: renderStyle.fontSize.value,
               height: 1.2,
             ),
             decoration: BoxDecoration(
-              color: _disabled
-                  ? CupertinoColors.systemGrey6
-                  : CupertinoColors.white,
+              color: backgroundColor,
+              borderRadius: _transparent ? null : BorderRadius.circular(8),
+              border: _transparent ? null : Border.all(
+                color: isDark ? CupertinoColors.systemGrey.darkColor : CupertinoColors.systemGrey4,
+                width: 0.5,
+              ),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             onChanged: (value) {
@@ -150,7 +181,7 @@ class FlutterCupertinoTextArea extends WidgetElement {
                 child: Text(
                   '${_controller.text.length}/$_maxLength',
                   style: TextStyle(
-                    color: CupertinoColors.systemGrey,
+                    color: countTextColor,
                     fontSize: 12,
                   ),
                 ),

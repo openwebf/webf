@@ -122,7 +122,7 @@ export default {
     .title {
         font-size: 17px;
         font-weight: 500;
-        color: #333333;
+        color: var(--font-color-primary);
         margin-bottom: 8px;
     }
 
@@ -133,7 +133,7 @@ export default {
         margin: 8px 0 12px 0;
 
         .topic-tag {
-            background-color: #F5F5F5;
+            background-color: var(--background-secondary);
             border-radius: 12px;
             padding: 4px 12px;
             margin-right: 8px;
@@ -141,14 +141,14 @@ export default {
 
             .topic-div {
                 font-size: 12px;
-                color: #666666;
+                color: var(--font-color-secondary);
             }
         }
     }
 
     .content {
         font-size: 15px;
-        color: #666666;
+        color: var(--font-color-secondary);
         margin-bottom: 16px;
     }
 
@@ -157,7 +157,7 @@ export default {
         align-items: center;
         margin-bottom: 12px;
         padding: 6px 12px;
-        background-color: #F5F5F5;
+        background-color: var(--background-secondary);
         border-radius: 4px;
         text-decoration: none;
         color: var(--link-color);
@@ -175,7 +175,7 @@ export default {
         }
 
         &:active {
-            background-color: #ebebeb;
+            background-color: var(--background-tertiary);
         }
     }
 
@@ -201,13 +201,13 @@ export default {
         .user-meta {
             .name {
                 font-size: 14px;
-                color: #333333;
+                color: var(--font-color-primary);
                 margin-bottom: 2px;
             }
 
             .desc {
                 font-size: 12px;
-                color: #999999;
+                color: var(--font-color-secondary);
             }
         }
     }
@@ -240,7 +240,7 @@ export default {
 
                 .div {
                     font-size: 14px;
-                    color: #666666;
+                    color: var(--font-color-secondary);
                 }
             }
         }

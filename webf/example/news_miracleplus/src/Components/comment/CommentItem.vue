@@ -52,7 +52,7 @@ export default {
 
 <style lang="scss" scoped>
 .comment-item {
-  background: #fff;
+  background: var(--background-primary);
   border-radius: 8px;
   padding: 4px;
   margin-bottom: 8px;
@@ -63,7 +63,7 @@ export default {
     padding-left: 4px;
 
     .sub-comment-item {
-      background: #f8f8f8;
+      background: var(--background-secondary);
       border-radius: 8px;
       padding: 4px;
       margin-bottom: 8px;

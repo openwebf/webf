@@ -577,8 +577,8 @@ export default {
     
     .action-type-badge {
       padding: 2px 8px;
-      background-color: rgba(0, 0, 0, 0.06);
-      color: #666;
+      background-color: var(--background-secondary);
+      color: var(--font-color-secondary);
       border-radius: 10px;
       font-size: 12px;
     }
@@ -596,11 +596,11 @@ export default {
         margin-left: 8px;
         
         &.liked {
-          color: #ff2d55;
+          color: var(--link-color);
         }
         
         &.bookmarked {
-          color: #007aff;
+          color: var(--link-color);
         }
         
         .indicator-icon {
@@ -614,7 +614,7 @@ export default {
     font-size: 16px;
     font-weight: bold;
     margin-bottom: 8px;
-    color: var(--font-color);
+    color: var(--font-color-primary);
   }
 
   .description {
@@ -627,16 +627,16 @@ export default {
   .question-title {
     font-size: 15px;
     font-weight: bold;
-    color: var(--font-color);
+    color: var(--font-color-primary);
     margin-bottom: 10px;
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: var(--background-secondary);
     padding: 10px;
     border-radius: 6px;
     display: flex;
     align-items: flex-start;
     
     .question-icon {
-      color: #007AFF;
+      color: var(--link-color);
       margin-right: 6px;
       font-size: 16px;
       flex-shrink: 0;
@@ -645,7 +645,7 @@ export default {
   }
   
   .comment-resource {
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: var(--background-secondary);
     padding: 10px;
     border-radius: 6px;
     margin-bottom: 10px;
@@ -657,23 +657,23 @@ export default {
   }
   
   .root-comment {
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: var(--background-secondary);
     padding: 8px 12px;
     border-radius: 6px;
     margin-top: 8px;
     margin-bottom: 10px;
-    border-left: 3px solid #ddd;
+    border-left: 3px solid var(--border-primary);
     
     .root-comment-brief {
       font-size: 12px;
-      color: #666;
+      color: var(--font-color-secondary);
     }
   }
   
   .follow-info {
     display: flex;
     align-items: center;
-    color: #007AFF;
+    color: var(--link-color);
     margin-bottom: 10px;
     
     .follow-icon {
@@ -686,7 +686,7 @@ export default {
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    background: #f5f5f5;
+    background: var(--background-secondary);
     border-radius: 8px;
     margin-bottom: 12px;
     text-decoration: none;
@@ -698,7 +698,7 @@ export default {
 
       .link-title {
         font-size: 15px;
-        color: #333;
+        color: var(--font-color-primary);
         margin-bottom: 4px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -707,7 +707,7 @@ export default {
 
       .link-url {
         font-size: 13px;
-        color: #666;
+        color: var(--font-color-secondary);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -715,7 +715,7 @@ export default {
     }
 
     .arrow-icon {
-      color: #999;
+      color: var(--font-color-secondary);
       font-size: 20px;
     }
   }
@@ -740,13 +740,13 @@ export default {
 
       .name {
         font-size: 14px;
-        color: #333;
+        color: var(--font-color-primary);
         margin-right: 8px;
       }
 
       .time {
         font-size: 12px;
-        color: #999;
+        color: var(--font-color-secondary);
       }
     }
 
@@ -758,7 +758,7 @@ export default {
         display: flex;
         align-items: center;
         margin-left: 12px;
-        color: #999;
+        color: var(--font-color-secondary);
         font-size: 12px;
 
         .icon {
@@ -771,7 +771,7 @@ export default {
 
   .link-card {
     display: flex;
-    background: #f5f5f5;
+    background: var(--background-secondary);
     border-radius: 8px;
     padding: 12px;
     margin-bottom: 12px;
@@ -809,7 +809,7 @@ export default {
       
       .link-description {
         font-size: 12px;
-        color: #666;
+        color: var(--font-color-secondary);
       }
     }
   }
@@ -817,7 +817,7 @@ export default {
   .comment-container {
     display: flex;
     flex-direction: column;
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: var(--background-secondary);
     border-radius: 8px;
     padding: 12px;
     margin-bottom: 12px;
@@ -827,10 +827,10 @@ export default {
       align-items: center;
       margin-bottom: 8px;
       font-size: 14px;
-      color: #666;
+      color: var(--font-color-secondary);
       
       .liked-icon {
-        color: #ff2d55;
+        color: var(--link-color);
         margin-right: 6px;
         font-size: 14px;
       }
@@ -838,7 +838,7 @@ export default {
     
     .description {
       font-size: 14px;
-      color: #333;
+      color: var(--font-color-primary);
       margin-bottom: 8px;
       line-height: 1.5;
     }
@@ -846,14 +846,14 @@ export default {
   
   .comment-source {
     padding: 8px 12px;
-    background-color: rgba(0, 0, 0, 0.03);
+    background-color: var(--background-secondary);
     border-radius: 6px;
     margin-top: 4px;
-    border-left: 3px solid #ddd;
+    border-left: 3px solid var(--border-primary);
     
     .comment-source-brief {
       font-size: 12px;
-      color: #666;
+      color: var(--font-color-secondary);
     }
   }
 }
