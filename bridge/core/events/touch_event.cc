@@ -102,4 +102,9 @@ bool TouchEvent::IsTouchEvent() const {
   return true;
 }
 
+const TouchEventPublicMethods* TouchEvent::touchEventPublicMethods() {
+  static TouchEventPublicMethods touch_event_public_methods;
+  return &touch_event_public_methods;
+}
+
 }  // namespace webf

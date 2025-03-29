@@ -17,14 +17,15 @@ enum EventType {
   ErrorEvent = 7,
   IntersectionChangeEvent = 8,
   UIEvent = 9,
-  FocusEvent = 10,
-  InputEvent = 11,
-  MouseEvent = 12,
-  PointerEvent = 13,
-  PopStateEvent = 14,
-  TransitionEvent = 15,
-  PromiseRejectionEvent = 16,
-  HashchangeEvent = 17,
+  TouchEvent = 10,
+  FocusEvent = 11,
+  InputEvent = 12,
+  MouseEvent = 13,
+  PointerEvent = 14,
+  PopStateEvent = 15,
+  TransitionEvent = 16,
+  PromiseRejectionEvent = 17,
+  HashchangeEvent = 18,
 }
 #[repr(C)]
 pub struct EventRustMethods {
@@ -263,6 +264,16 @@ impl Event {
       return Err("The type value of Event does not belong to the UIEvent type.");
     }
     Ok(UIEvent::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const UIEventRustMethods, raw_ptr.status))
+  }
+  pub fn as_touch_event(&self) -> Result<TouchEvent, &str> {
+    let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
+      ((*self.method_pointer).dynamic_to)(self.ptr, EventType::TouchEvent)
+    };
+    if (raw_ptr.value == std::ptr::null()) {
+      return Err("The type value of Event does not belong to the TouchEvent type.");
+    }
+    Ok(TouchEvent::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const TouchEventRustMethods, raw_ptr.status))
   }
   pub fn as_focus_event(&self) -> Result<FocusEvent, &str> {
     let raw_ptr = unsafe {
