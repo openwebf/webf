@@ -1,6 +1,6 @@
 <template>
   <div id="main">
-    <feeds-tabs :tabs="tabsConfig" @change="onTabChange" @onscreen="onScreen">
+    <feeds-tabs :tabs="tabsConfig" @change="onTabChange">
         <!-- 热门标签页内容 -->
         <template #hot>
             <webf-listview class="listview" @refresh="onRefreshHot" @loadmore="onLoadMoreHot">
@@ -173,6 +173,10 @@ export default {
       },
       currentTab: 'hot', // 添加当前 tab 追踪
     }
+  },
+  async mounted() {
+    console.log('mounted HomePage');
+    await this.onScreen();
   },
   methods: {
     async onTabChange(e) {

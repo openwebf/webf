@@ -1,5 +1,5 @@
 <template>
-  <div class="notification-page" @onscreen="onScreen" @offscreen="offScreen">
+  <div class="notification-page">
     <template v-if="isLoading">
       <notification-skeleton />
     </template>
@@ -43,6 +43,9 @@ export default {
     return {
       userStore,
     }
+  },
+  async mounted() {
+    await this.onScreen();
   },
   methods: {
     async onScreen() {

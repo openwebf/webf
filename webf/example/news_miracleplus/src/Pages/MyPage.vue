@@ -1,5 +1,5 @@
 <template>
-  <div class="my-page" @onscreen="onScreen">
+  <div class="my-page">
     <user-info-skeleton v-if="isLoading" />
     <div class="user-info-block" v-else>
       <smart-image :src="formattedAvatar" class="avatar" />
@@ -193,6 +193,9 @@ export default {
       }
       return this.userInfo.company;
     }
+  },
+  async mounted() {
+    await this.onScreen();
   },
   methods: {
     async onScreen() {
