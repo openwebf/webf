@@ -1,6 +1,6 @@
 <template>
   <div class="my-page">
-    <user-info-skeleton v-if="isLoading" />
+    <user-info-skeleton v-if="isUserInfoLoading" />
     <div class="user-info-block" v-else>
       <smart-image :src="formattedAvatar" class="avatar" />
       <div class="name" v-if="isLoggedIn">{{ userInfo.name }}</div>
@@ -25,16 +25,7 @@
           <flutter-cupertino-button class="setting" @click="goToSettingPage">
             设置
           </flutter-cupertino-button>
-      </div>
-      <!-- <div class="edit-block" v-if="isLoggedIn">
-          <flutter-cupertino-button class="edit-profile" type="primary" shape="rounded" @click="goToQuestionPage">
-            问题详情
-          </flutter-cupertino-button>
-          <flutter-cupertino-button class="setting" @click="goToAnswerPage">
-            回答详情
-          </flutter-cupertino-button>
-      </div> -->
-      
+      </div>      
       <div class="karma-count">
         <div class="karma-count-text">社区 Karma： {{ userInfo.karma || 0 }}</div>
         <flutter-cupertino-icon type="question_circle" class="karma-help-icon" @click="showKarmaHelp = true" />
@@ -151,8 +142,7 @@ export default {
   data() {
     return {
       showKarmaHelp: false,
-      user: {
-      },
+      user: {},
       allFeeds: [],
       shareFeeds: [],
       commentFeeds: [],
@@ -168,7 +158,14 @@ export default {
       commentHasMore: true,
       likeHasMore: true,
       collectHasMore: true,
-      isLoading: false
+      isUserInfoLoading: false,
+      feedsLoadingStates: {
+        all: false,
+        share: false,
+        comment: false,
+        like: false,
+        collect: false
+      }
     }
   },
   setup() {
@@ -200,7 +197,12 @@ export default {
   methods: {
     async onScreen() {
       if (this.isLoggedIn) {
-        await this.loadFeeds('all', 1, true);
+        this.isUserInfoLoading = true;
+        try {
+          await this.loadFeeds('all', 1, true);
+        } finally {
+          this.isUserInfoLoading = false;
+        }
       }
     },
     goToLoginPage() {
@@ -209,28 +211,14 @@ export default {
     goToEditPage() {
       window.webf.hybridHistory.pushState({}, '/edit');
     },
-    goToAnswerPage() {
-      // window.webf.hybridHistory.pushState({
-      //   id: '2046',
-      //   questionId: 'xr9ho0',
-      // }, '/answer');
-      window.webf.hybridHistory.pushState({
-        userId: 'b6mtKg',
-      }, '/user');
-    },
-    goToQuestionPage() {
-      window.webf.hybridHistory.pushState({
-        id: 'v9Vh5b',
-      }, '/question');
-    },
     goToSettingPage() {
         window.webf.hybridHistory.pushState({}, '/setting');
     },
     async loadFeeds(category = 'all', page = 1, replace = false) {
-      if (this.isLoading) return;
+      if (this.feedsLoadingStates[category]) return;
       
       try {
-        this.isLoading = true;
+        this.feedsLoadingStates[category] = true;
         if (page === 1) {
           this.$refs.loading.show({
             text: '加载中'
@@ -273,7 +261,7 @@ export default {
           content: '获取数据失败'
         });
       } finally {
-        this.isLoading = false;
+        this.feedsLoadingStates[category] = false;
         if (page === 1) {
           this.$refs.loading.hide();
         }
@@ -335,7 +323,7 @@ export default {
       }
     },
     async onLoadMoreAll() {
-      if (!this.allHasMore || this.isLoading) return;
+      if (!this.allHasMore || this.feedsLoadingStates.all) return;
       
       try {
         await this.loadFeeds('all', this.allPage + 1);
@@ -344,7 +332,7 @@ export default {
       }
     },
     async onLoadMoreShare() {
-      if (!this.shareHasMore || this.isLoading) return;
+      if (!this.shareHasMore || this.feedsLoadingStates.share) return;
       
       try {
         await this.loadFeeds('share', this.sharePage + 1);
@@ -353,7 +341,7 @@ export default {
       }
     },
     async onLoadMoreComment() {
-      if (!this.commentHasMore || this.isLoading) return;
+      if (!this.commentHasMore || this.feedsLoadingStates.comment) return;
       
       try {
         await this.loadFeeds('comment', this.commentPage + 1);
@@ -362,7 +350,7 @@ export default {
       }
     },
     async onLoadMoreLike() {
-      if (!this.likeHasMore || this.isLoading) return;
+      if (!this.likeHasMore || this.feedsLoadingStates.like) return;
       
       try {
         await this.loadFeeds('like', this.likePage + 1);
@@ -371,7 +359,7 @@ export default {
       }
     },
     async onLoadMoreCollect() {
-      if (!this.collectHasMore || this.isLoading) return;
+      if (!this.collectHasMore || this.feedsLoadingStates.collect) return;
       
       try {
         await this.loadFeeds('collect', this.collectPage + 1);

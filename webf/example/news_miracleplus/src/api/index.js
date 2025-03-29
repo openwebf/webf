@@ -97,6 +97,11 @@ export const api = {
     getUserInfo: () => request('/v1/users/user_info', {
       requireAuth: true,
     }),
+    updateUserInfo: (id, data) => request(`/v1/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      requireAuth: true,
+    }),
     sendVerifyCode: ({ countryCode, phone, useCase }) => request('/v1/users/sms_send', {
       method: 'POST',
       body: JSON.stringify({ country_code: countryCode, phone, use_case: useCase }),
