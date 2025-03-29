@@ -1,5 +1,8 @@
 <template>
     <div class="share-page" @onscreen="onScreen" @offscreen="offScreen">
+        <template v-if="loading">
+            <share-link-skeleton />
+        </template>
         <webf-listview class="webf-listview" @refresh="onRefresh">
             <!-- 共用的分享头部 -->
             <PostHeader :user="shareLink.user" />
@@ -54,6 +57,7 @@ import InviteModal from './InviteModal.vue';
 import AlertDialog from '../AlertDialog.vue';
 import ContentBlock from './ContentBlock.vue';
 import RecommendList from './RecommendList.vue';
+import ShareLinkSkeleton from '@/Components/skeleton/ShareLinkSkeleton.vue';
 
 export default {
     name: 'BaseShareLinkPage',
@@ -67,6 +71,7 @@ export default {
         AlertDialog,
         ContentBlock,
         RecommendList,
+        ShareLinkSkeleton,
     },
 
     props: {
@@ -91,6 +96,7 @@ export default {
             invitedUsers: [],
             searchKeyword: '',
             recommendList: [],
+            loading: true,
         }
     },
 
@@ -130,29 +136,51 @@ export default {
 
     methods: {
         async onScreen() {
-            this.$refs.loading.show({
-                text: '加载中'
-            });
-            if (this.pageType === 'comment') {
-                const { id, shareLinkId } = window.webf.hybridHistory.state;
-                this.singleCommentId = id;
-                this.shareLinkId = shareLinkId;
-                console.log('shareLinkId', this.shareLinkId);
-                console.log('singleCommentId', this.singleCommentId);
-                await this.fetchShareLinkDetail(this.shareLinkId);
-                this.$refs.loading.hide();
-                await this.fetchComment(this.singleCommentId);
-            } else {
-                const { id } = window.webf.hybridHistory.state;
-                this.shareLinkId = id;
-                await this.fetchShareLinkDetail(this.shareLinkId);
-                this.$refs.loading.hide();
-                await this.fetchComments();
-                await this.fetchRecommendations(id);
+            this.loading = true;
+            try {
+                if (this.pageType === 'comment') {
+                    const { id, shareLinkId } = window.webf.hybridHistory.state;
+                    this.singleCommentId = id;
+                    this.shareLinkId = shareLinkId;
+                    // 先加载主要内容
+                    await this.fetchShareLinkDetail(this.shareLinkId);
+                    this.loading = false;
+                    // 后续加载评论
+                    await this.fetchComment(this.singleCommentId);
+                } else {
+                    const { id } = window.webf.hybridHistory.state;
+                    this.shareLinkId = id;
+                    // 先加载主要内容
+                    await this.fetchShareLinkDetail(this.shareLinkId);
+                    this.loading = false;
+                    // 后续并行加载评论和推荐
+                    Promise.all([
+                        this.fetchComments(),
+                        this.fetchRecommendations(id)
+                    ]).catch(() => {
+                        this.$refs.alertRef.show({
+                            message: '加载部分内容失败，请稍后重试'
+                        });
+                    });
+                }
+                // 浏览量统计可以放在最后
+                api.news.viewCount({ id: this.shareLinkId }).catch(() => {
+                    // 浏览量统计失败不影响使用，可以静默失败
+                    console.warn('View count update failed');
+                });
+            } catch (error) {
+                this.$refs.alertRef.show({
+                    message: '加载失败，请稍后重试'
+                });
+            } finally {
+                // 确保主要内容加载失败时也会关闭加载状态
+                if (this.loading) {
+                    this.loading = false;
+                }
             }
-            api.news.viewCount({ id: this.shareLinkId });
         },
         async offScreen() {
+            this.loading = true;
             // Reset data to initial state to prevent flashing when re-entering the page
             this.shareLinkId = '';
             this.singleCommentId = '';
@@ -173,6 +201,7 @@ export default {
                 this.$refs.alertRef.show({
                     message: '获取详情失败'
                 });
+                throw error;
             }
         },
         async fetchComment(id) {
@@ -367,8 +396,13 @@ export default {
             }
         },
         async onRefresh() {
-            await this.onScreen();
-        }
+            this.loading = true;
+            try {
+                await this.onScreen();
+            } finally {
+                this.loading = false;
+            }
+        },
     }
 }
 </script>

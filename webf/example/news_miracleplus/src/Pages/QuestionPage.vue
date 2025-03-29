@@ -1,9 +1,9 @@
 <template>
-    <BaseQuestionPage page-type="question" @answer="handleAnswer">
-        <template #answer-input="{ handleAnswerSubmit }">
-            <CommentInput ref="commentInput" @submit="handleAnswerSubmit" />
-        </template>
-    </BaseQuestionPage>
+  <BaseQuestionPage page-type="question" @answer="handleAnswer">
+    <template #answer-input="{ handleAnswerSubmit }">
+      <CommentInput ref="commentInput" @submit="handleAnswerSubmit" />
+    </template>
+  </BaseQuestionPage>
 </template>
 
 <script>

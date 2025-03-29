@@ -1,5 +1,5 @@
 <template>
-  <div @onscreen="onScreen" @offscreen="offScreen">
+  <div class="share-link-page" @onscreen="onScreen" @offscreen="offScreen">
     <BaseShareLinkPage page-type="shareLink">
       <template #comment-input="{ handleCommentSubmit }">
         <CommentInput @submit="handleCommentSubmit" />

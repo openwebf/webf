@@ -1,5 +1,8 @@
 <template>
   <div class="question-page" @onscreen="onScreen" @offscreen="offScreen">
+    <template v-if="loading">
+      <question-skeleton />
+    </template>
     <webf-listview class="question-page-listview" @refresh="onRefresh">
       <QuestionHeader :question="question" @answer="handleAnswer" @follow="handleFollow" @invite="handleInvite" />
 
@@ -25,6 +28,7 @@ import QuestionHeader from './QuestionHeader.vue';
 import CommentsSection from '../comment/CommentsSection.vue';
 import InviteModal from '../post/InviteModal.vue';
 import AlertDialog from '../AlertDialog.vue';
+import QuestionSkeleton from '@/Components/skeleton/QuestionSkeleton.vue';
 
 export default {
   name: 'BaseQuestionPage',
@@ -33,6 +37,7 @@ export default {
     CommentsSection,
     InviteModal,
     AlertDialog,
+    QuestionSkeleton,
   },
 
   props: {
@@ -63,6 +68,7 @@ export default {
       loadingUsers: false,
       invitedUsers: [],
       searchKeyword: '',
+      loading: true,
     }
   },
 
@@ -75,30 +81,43 @@ export default {
 
   methods: {
     async onScreen() {
-      this.$refs.loading.show({ text: '加载中' });
+      this.loading = true;
 
-      if (this.pageType === 'answer') {
-        const { id, questionId } = window.webf.hybridHistory.state;
-        this.singleAnswerId = id;
-        this.questionId = questionId;
-        await this.fetchQuestionDetail(this.questionId);
-        this.$refs.loading.hide();
-        const currentAnswer = await this.fetchAnswer(this.singleAnswerId);
-        this.allAnswers = [currentAnswer];
-      } else {
-        const { id } = window.webf.hybridHistory.state;
-        this.questionId = id;
-        await this.fetchQuestionDetail(this.questionId);
-        this.$refs.loading.hide();
-        await this.fetchAnswers();
+      try {
+        if (this.pageType === 'answer') {
+          const { id, questionId } = window.webf.hybridHistory.state;
+          this.singleAnswerId = id;
+          this.questionId = questionId;
+          await this.fetchQuestionDetail(this.questionId);
+          this.loading = false;
+          const currentAnswer = await this.fetchAnswer(this.singleAnswerId);
+          this.allAnswers = [currentAnswer];
+        } else {
+          const { id } = window.webf.hybridHistory.state;
+          this.questionId = id;
+          await this.fetchQuestionDetail(this.questionId);
+          this.loading = false;
+          await this.fetchAnswers();
+        }
+        api.question.viewCount({
+          id: this.questionId,
+          modelType: this.pageType === 'answer' ? 'Answer' : 'Question'
+        }).catch(() => {
+          console.warn('View count update failed');
+        });
+      } catch (error) {
+        this.$refs.alertRef.show({
+          message: '加载失败，请稍后重试'
+        });
+      } finally {
+        if (this.loading) {
+          this.loading = false;
+        }
       }
-      api.question.viewCount({
-        id: this.questionId,
-        modelType: this.pageType === 'answer' ? 'Answer' : 'Question'
-      });
     },
 
     async offScreen() {
+      this.loading = true;
       this.singleAnswerId = '';
       this.questionId = '';
       this.question = {
@@ -282,7 +301,12 @@ export default {
       addReplyToAnswer(this.allAnswers);
     },
     async onRefresh() {
-      await this.onScreen();
+      this.loading = true;
+      try {
+        await this.onScreen();
+      } finally {
+        this.loading = false;
+      }
     }
   }
 }
@@ -291,7 +315,6 @@ export default {
 <style lang="scss" scoped>
 .question-page {
   background: var(--background-primary);
-  min-height: 100vh;
   padding: 16px;
 
   .question-page-listview {
