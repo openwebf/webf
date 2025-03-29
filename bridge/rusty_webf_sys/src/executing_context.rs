@@ -58,6 +58,8 @@ pub struct ExecutingContextRustMethods {
   pub create_promise_rejection_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const PromiseRejectionEventInit, exception_state: *const OpaquePtr ) -> RustValue<PromiseRejectionEventRustMethods>,
   pub create_pointer_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<PointerEventRustMethods>,
   pub create_pointer_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const PointerEventInit, exception_state: *const OpaquePtr ) -> RustValue<PointerEventRustMethods>,
+  pub create_touch_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<TouchEventRustMethods>,
+  pub create_touch_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const TouchEventInit, exception_state: *const OpaquePtr ) -> RustValue<TouchEventRustMethods>,
   pub create_transition_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<TransitionEventRustMethods>,
   pub create_transition_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const TransitionEventInit, exception_state: *const OpaquePtr ) -> RustValue<TransitionEventRustMethods>,
   pub create_ui_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<UIEventRustMethods>,
