@@ -81,7 +81,6 @@ export default {
             return formatAvatar(this.userInfo?.avatar);
         },
         userInfo() {
-            console.log('userInfo', JSON.stringify(this.userStore.userInfo));
             return this.userStore.userInfo || {};
         },
     },
