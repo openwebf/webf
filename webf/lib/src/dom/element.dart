@@ -530,12 +530,16 @@ abstract class Element extends ContainerNode
   }
 
   void _updateHostingWidgetWithOverflow(CSSOverflowType oldOverflow) {
-    renderStyle.requestWidgetToRebuild(AddScrollerUpdateReason());
+    if (!hasScroll) {
+      renderStyle.requestWidgetToRebuild(AddScrollerUpdateReason());
+    }
   }
 
   void _updateHostingWidgetWithTransform() {
-    updateElementKey();
-    renderStyle.requestWidgetToRebuild(UpdateTransformReason());
+    if (!renderStyle.isRepaintBoundary()) {
+      updateElementKey();
+      renderStyle.requestWidgetToRebuild(UpdateTransformReason());
+    }
   }
 
   void _updateHostingWidgetWithPosition(CSSPositionType oldPosition) {
@@ -1390,12 +1394,12 @@ abstract class Element extends ContainerNode
       } else {
         if (this is HTMLElement) {
           Image image = await ownerDocument.viewport!
-              .toImage(devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
+              .toImage(devicePixelRatio ?? ownerDocument.controller.ownerFlutterView!.devicePixelRatio);
           ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
           captured = byteData!.buffer.asUint8List();
         } else {
           Image image =
-              await renderStyle.toImage(devicePixelRatio ?? ownerDocument.controller.ownerFlutterView.devicePixelRatio);
+              await renderStyle.toImage(devicePixelRatio ?? ownerDocument.controller.ownerFlutterView!.devicePixelRatio);
           ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
           captured = byteData!.buffer.asUint8List();
         }

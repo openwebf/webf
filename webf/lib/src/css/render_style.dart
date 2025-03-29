@@ -1218,7 +1218,7 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   Size get viewportSize => target.ownerDocument.viewport?.viewportSize ?? Size.zero;
 
-  FlutterView get currentFlutterView => target.ownerDocument.controller.ownerFlutterView;
+  FlutterView get currentFlutterView => target.ownerDocument.controller.ownerFlutterView!;
 
   double get rootFontSize => target.ownerDocument.documentElement!.renderStyle.fontSize.computedValue;
 

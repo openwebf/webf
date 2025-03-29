@@ -245,7 +245,7 @@ class InspectPageModule extends UIInspectorModule {
 
     if (_devToolsMaxWidth > 0 && _devToolsMaxHeight > 0 && viewportWidth > 0 && viewportHeight > 0) {
       devicePixelRatio = math.min(_devToolsMaxHeight / viewportHeight, _devToolsMaxHeight / viewportHeight);
-      devicePixelRatio = math.min(devicePixelRatio, document.controller.ownerFlutterView.devicePixelRatio);
+      devicePixelRatio = math.min(devicePixelRatio, document.controller.ownerFlutterView!.devicePixelRatio);
     }
     root.toBlob(devicePixelRatio: devicePixelRatio).then((Uint8List screenShot) {
       String encodedImage = base64Encode(screenShot);

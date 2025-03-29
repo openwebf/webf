@@ -32,7 +32,7 @@ interface CanvasRenderingContext2D extends CanvasRenderingContext {
     fillRect(x: number, y: number, w: number, h: number): SupportAsync<DartImpl<void>>;
     fillText(text: string, x: number, y: number, maxWidth?: number): SupportAsync<DartImpl<void>>;
     lineTo(x: number, y: number): SupportAsync<DartImpl<void>>;
-  measureText(text: string): SupportAsync<TextMetrics>;
+    measureText(text: string): SupportAsync<TextMetrics>;
     moveTo(x: number, y: number): SupportAsync<DartImpl<void>>;
     rect(x: number, y: number, w: number, h: number): SupportAsync<DartImpl<void>>;
     restore(): SupportAsync<DartImpl<void>>;

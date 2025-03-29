@@ -274,8 +274,7 @@ class WebFController {
   }
 
   ui.FlutterView? _ownerFlutterView;
-
-  ui.FlutterView get ownerFlutterView => _ownerFlutterView!;
+  ui.FlutterView? get ownerFlutterView => _ownerFlutterView;
 
   final List<BuildContext> _buildContextStack = [];
   void pushNewBuildContext(BuildContext context) {
@@ -304,7 +303,7 @@ class WebFController {
   /// Returns true if dark mode is explicitly overridden to true via darkModeOverride
   /// or if the platform brightness is not light.
   bool get isDarkMode {
-    return _darkModeOverride ?? ownerFlutterView.platformDispatcher.platformBrightness != Brightness.light;
+    return _darkModeOverride ?? ownerFlutterView?.platformDispatcher.platformBrightness != Brightness.light;
   }
 
   final GestureListener? _gestureListener;

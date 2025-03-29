@@ -63,6 +63,7 @@ class RawPointerListener {
     }
 
     if (event is PointerMoveEvent && _activeEventTarget.containsKey(touchPoint.id)) {
+      _activeTouches[touchPoint.id] = touchPoint;
       _handleTouchPoint(_activeEventTarget[touchPoint.id]!, touchPoint);
     }
 

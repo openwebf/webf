@@ -312,13 +312,13 @@ class WebFViewController implements WidgetsBindingObserver {
 
   void _registerPlatformBrightnessChange() {
     _originalOnPlatformBrightnessChanged =
-        rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged;
-    rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged = onPlatformBrightnessChanged;
+        rootController.ownerFlutterView?.platformDispatcher.onPlatformBrightnessChanged;
+    rootController.ownerFlutterView?.platformDispatcher.onPlatformBrightnessChanged = onPlatformBrightnessChanged;
   }
 
   void _unregisterPlatformBrightnessChange() {
     if (_originalOnPlatformBrightnessChanged == null) return;
-    rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged =
+    rootController.ownerFlutterView?.platformDispatcher.onPlatformBrightnessChanged =
         _originalOnPlatformBrightnessChanged;
     _originalOnPlatformBrightnessChanged = null;
   }
@@ -658,7 +658,7 @@ class WebFViewController implements WidgetsBindingObserver {
     final ownerView = rootController.ownerFlutterView;
     final bool resizeToAvoidBottomInsets = rootController.resizeToAvoidBottomInsets;
     final double bottomInsets;
-    if (resizeToAvoidBottomInsets) {
+    if (resizeToAvoidBottomInsets && ownerView != null) {
       bottomInsets = ownerView.viewInsets.bottom / ownerView.devicePixelRatio;
     } else {
       bottomInsets = 0;

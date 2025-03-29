@@ -554,7 +554,7 @@ class ImageElement extends Element {
   // The image will be encoded into a small size for better rasterization performance.
   void _loadNormalImage() {
     var provider = _currentImageProvider;
-    FlutterView ownerFlutterView = ownerDocument.controller.ownerFlutterView;
+    FlutterView? ownerFlutterView = ownerDocument.controller.ownerFlutterView;
     if (provider == null || (provider.boxFit != renderStyle.objectFit || provider.url != _resolvedUri)) {
       // Image should be resized based on different ratio according to object-fit value.
       BoxFit objectFit = renderStyle.objectFit;
@@ -566,16 +566,16 @@ class ImageElement extends Element {
         loadImage: obtainImage,
         onImageLoad: _onImageLoad,
         controller: ownerDocument.controller,
-        devicePixelRatio: ownerFlutterView.devicePixelRatio,
+        devicePixelRatio: ownerFlutterView?.devicePixelRatio ?? 2.0,
       );
     }
 
     // Try to make sure that this image can be encoded into a smaller size.
     int? cachedWidth = renderStyle.width.value != null && width > 0 && width.isFinite
-        ? (width * ownerFlutterView.devicePixelRatio).toInt()
+        ? (width * (ownerFlutterView?.devicePixelRatio ?? 2.0)).toInt()
         : null;
     int? cachedHeight = renderStyle.height.value != null && height > 0 && height.isFinite
-        ? (height * ownerFlutterView.devicePixelRatio).toInt()
+        ? (height * (ownerFlutterView?.devicePixelRatio ?? 2.0)).toInt()
         : null;
 
     if (cachedWidth != null && cachedHeight != null) {

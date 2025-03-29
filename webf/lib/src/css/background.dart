@@ -296,7 +296,7 @@ class CSSBackgroundImage {
         Uri uri = Uri.parse(url);
         if (url.isNotEmpty) {
           uri = controller.uriParser!.resolve(Uri.parse(baseHref ?? controller.url), uri);
-          FlutterView ownerFlutterView = controller.ownerFlutterView;
+          FlutterView ownerFlutterView = controller.ownerFlutterView!;
           return _image = BoxFitImage(
             boxFit: renderStyle.backgroundSize.fit,
             url: uri,

@@ -93,7 +93,7 @@ class RenderViewportBox extends RenderBox
       if (constraints.biggest.isFinite) {
         size = constraints.biggest;
       } else {
-        FlutterView currentView = controller.ownerFlutterView;
+        FlutterView currentView = controller.ownerFlutterView!;
         Size preferredSize = Size(
             math.min(constraints.maxWidth, currentView.physicalSize.width / currentView.devicePixelRatio),
             math.min(constraints.maxHeight, currentView.physicalSize.height / currentView.devicePixelRatio));

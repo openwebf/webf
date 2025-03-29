@@ -18,6 +18,8 @@ class Window extends EventTarget {
   final Document document;
   Screen? _screen;
   Screen get screen {
+    if (document.controller.ownerFlutterView == null) return Screen.zero(contextId!, null, document.controller.view);
+
     _screen ??= Screen(contextId!, document.controller.ownerFlutterView, document.controller.view);
     return _screen!;
   }
@@ -106,9 +108,9 @@ class Window extends EventTarget {
   }
 
   String get colorScheme =>
-      document.controller.ownerFlutterView.platformDispatcher.platformBrightness == Brightness.light ? 'light' : 'dark';
+      document.controller.ownerFlutterView?.platformDispatcher.platformBrightness == Brightness.light ? 'light' : 'dark';
 
-  double get devicePixelRatio => document.controller.ownerFlutterView.devicePixelRatio;
+  double get devicePixelRatio => document.controller.ownerFlutterView?.devicePixelRatio ?? 1.0;
 
   // The innerWidth/innerHeight attribute must return the viewport width/height
   // including the size of a rendered scroll bar (if any), or zero if there is no viewport.

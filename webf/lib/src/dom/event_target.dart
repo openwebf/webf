@@ -2,6 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
@@ -45,7 +47,11 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     }
     existHandler.add(eventHandler);
     if (this is Element) {
-      (this as Element).renderStyle.requestWidgetToRebuild(AddEventUpdateReason());
+      scheduleMicrotask(() {
+        if (_eventHandlers[eventType]?.isNotEmpty == true && !(this as Element).hasEvent) {
+          (this as Element).renderStyle.requestWidgetToRebuild(AddEventUpdateReason());
+        }
+      });
     }
   }
 

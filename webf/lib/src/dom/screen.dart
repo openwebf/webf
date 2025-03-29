@@ -25,16 +25,18 @@ class ScreenData extends Struct {
 // As its name suggests, the Screen interface represents information about the screen of the output device.
 // https://drafts.csswg.org/cssom-view/#the-screen-interface
 class Screen extends StaticBindingObject {
-  final FlutterView currentView;
+  final FlutterView? currentView;
   Screen(double contextId, this.currentView, WebFViewController view) : super(BindingContext(view, contextId, allocateNewBindingObject()));
+
+  Screen.zero(double contextId, this.currentView, WebFViewController view): super(BindingContext(view, contextId, allocateNewBindingObject()));
 
   @override
   Pointer<Void> buildExtraNativeData() {
     Pointer<ScreenData> extraData = malloc.allocate(sizeOf<ScreenData>());
-    extraData.ref.width = currentView.physicalSize.width ~/ currentView.devicePixelRatio;
-    extraData.ref.height = currentView.physicalSize.height ~/ currentView.devicePixelRatio;
-    extraData.ref.availWidth = currentView.physicalSize.width ~/ currentView.devicePixelRatio;
-    extraData.ref.availHeight = currentView.physicalSize.height ~/ currentView.devicePixelRatio;
+    extraData.ref.width = currentView != null ? currentView!.physicalSize.width ~/ currentView!.devicePixelRatio : 0;
+    extraData.ref.height = currentView != null ? currentView!.physicalSize.height ~/ currentView!.devicePixelRatio : 0;
+    extraData.ref.availWidth = currentView != null ? currentView!.physicalSize.width ~/ currentView!.devicePixelRatio : 0;
+    extraData.ref.availHeight = currentView != null ? currentView!.physicalSize.height ~/ currentView!.devicePixelRatio : 0;
     return extraData.cast<Void>();
   }
 
@@ -47,17 +49,17 @@ class Screen extends StaticBindingObject {
   //        so the size of kraken view is depending on how big is the flutter view, for users
   //        they can not adjust size of kraken view. The [window.physicalSize] is the size of
   //        native flutter view. (@zeroling)
-  int get availWidth => currentView.physicalSize.width ~/ currentView.devicePixelRatio;
+  int get availWidth => currentView != null ? currentView!.physicalSize.width ~/ currentView!.devicePixelRatio : 0;
 
   // The availHeight attribute must return the height of the Web-exposed available screen area.
-  int get availHeight => currentView.physicalSize.height ~/ currentView.devicePixelRatio;
+  int get availHeight => currentView != null ? currentView!.physicalSize.height ~/ currentView!.devicePixelRatio : 0;
 
   // The width attribute must return the width of the Web-exposed screen area.
   // The Web-exposed screen area is one of the following:
   //   - The area of the output device, in CSS pixels.
   //   - The area of the viewport, in CSS pixels.
-  int get width => currentView.physicalSize.width ~/ currentView.devicePixelRatio;
+  int get width => currentView != null ? currentView!.physicalSize.width ~/ currentView!.devicePixelRatio : 0;
 
   // The height attribute must return the height of the Web-exposed screen area.
-  int get height => currentView.physicalSize.height ~/ currentView.devicePixelRatio;
+  int get height => currentView != null ? currentView!.physicalSize.height ~/ currentView!.devicePixelRatio : 0;
 }
