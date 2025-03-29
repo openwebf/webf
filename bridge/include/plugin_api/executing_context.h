@@ -259,13 +259,13 @@ using PublicContextCreatePointerEventWithOptions =
 
 using PublicContextCreateTouchEvent =
     WebFValue<TouchEvent, TouchEventPublicMethods> (*)(ExecutingContext* context,
-                                                                const char* type,
-                                                                ExceptionState& exception_state);
+                                                       const char* type,
+                                                       ExceptionState& exception_state);
 using PublicContextCreateTouchEventWithOptions =
     WebFValue<TouchEvent, TouchEventPublicMethods> (*)(ExecutingContext* context,
-                                                                const char* type,
-                                                                WebFTouchEventInit* init,
-                                                                ExceptionState& exception_state);
+                                                       const char* type,
+                                                       WebFTouchEventInit* init,
+                                                       ExceptionState& exception_state);
 
 using PublicContextCreateTransitionEvent =
     WebFValue<TransitionEvent, TransitionEventPublicMethods> (*)(ExecutingContext* context,
@@ -468,13 +468,13 @@ struct ExecutingContextWebFMethods {
       ExceptionState& exception_state);
 
   static WebFValue<TouchEvent, TouchEventPublicMethods> CreateTouchEvent(ExecutingContext* context,
-                                                                          const char* type,
-                                                                          ExceptionState& exception_state);
+                                                                         const char* type,
+                                                                         ExceptionState& exception_state);
 
   static WebFValue<TouchEvent, TouchEventPublicMethods> CreateTouchEventWithOptions(ExecutingContext* context,
-                                                                                     const char* type,
-                                                                                     WebFTouchEventInit* init,
-                                                                                     ExceptionState& exception_state);
+                                                                                    const char* type,
+                                                                                    WebFTouchEventInit* init,
+                                                                                    ExceptionState& exception_state);
 
   static WebFValue<TransitionEvent, TransitionEventPublicMethods>
   CreateTransitionEvent(ExecutingContext* context, const char* type, ExceptionState& exception_state);
