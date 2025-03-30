@@ -21,6 +21,12 @@ mixin ElementAdapterMixin on ElementBase {
   Element? holderAttachedPositionedElement;
   Element? holderAttachedContainingBlockElement;
 
+  flutter.ScrollController? _scrollControllerX;
+  flutter.ScrollController? get scrollControllerX => _scrollControllerX;
+
+  flutter.ScrollController? _scrollControllerY;
+  flutter.ScrollController? get scrollControllerY => _scrollControllerY;
+
   final Set<flutter.RenderObjectElement> positionHolderElements = {};
 
   bool hasEvent = false;
@@ -124,7 +130,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       if (overflowX == CSSOverflowType.scroll ||
           overflowX == CSSOverflowType.auto ||
           overflowX == CSSOverflowType.hidden) {
-        webFElement.scrollControllerX ??= flutter.ScrollController();
+        webFElement._scrollControllerX ??= flutter.ScrollController();
         scrollableX = LayoutBoxWrapper(
             child: flutter.Scrollable(
                 controller: webFElement.scrollControllerX,
@@ -146,7 +152,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       if (overflowY == CSSOverflowType.scroll ||
           overflowY == CSSOverflowType.auto ||
           overflowY == CSSOverflowType.hidden) {
-        webFElement.scrollControllerY ??= flutter.ScrollController();
+        webFElement._scrollControllerY ??= flutter.ScrollController();
         widget = LayoutBoxWrapper(
             child: flutter.Scrollable(
                 axisDirection: AxisDirection.down,
@@ -197,10 +203,10 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   @override
   void deactivate() {
     super.deactivate();
-    webFElement.scrollControllerY?.dispose();
-    webFElement.scrollControllerY = null;
-    webFElement.scrollControllerX?.dispose();
-    webFElement.scrollControllerX = null;
+    webFElement._scrollControllerY?.dispose();
+    webFElement._scrollControllerY = null;
+    webFElement._scrollControllerX?.dispose();
+    webFElement._scrollControllerX = null;
     webFElement.states.remove(this);
   }
 
@@ -213,10 +219,10 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   @override
   void dispose() {
     webFElement.states.remove(this);
-    webFElement.scrollControllerY?.dispose();
-    webFElement.scrollControllerY = null;
-    webFElement.scrollControllerX?.dispose();
-    webFElement.scrollControllerX = null;
+    webFElement._scrollControllerY?.dispose();
+    webFElement._scrollControllerY = null;
+    webFElement._scrollControllerX?.dispose();
+    webFElement._scrollControllerX = null;
     super.dispose();
   }
 
@@ -278,7 +284,6 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
     // Should dispatch onscreen event after did build and layout
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       webFElement.dispatchEvent(event);
-      // flushUICommand(webFElement.ownerView, ffi.nullptr);
     });
 
     if (webFElement is ImageElement && webFElement.shouldLazyLoading) {

@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/widgets.dart';
 import 'package:webf/src/css/position.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
-import 'dart:async';
 
 const LISTVIEW = 'LISTVIEW';
 const WEBF_LISTVIEW = 'WEBF-LISTVIEW';
@@ -26,6 +25,7 @@ class FlutterListViewElement extends WidgetElement {
     return scrollDirection == Axis.horizontal ? _scrollController : null;
   }
 
+  @override
   set scrollControllerX(ScrollController? value) {
     if (scrollDirection == Axis.horizontal) {
       _scrollController = null;
@@ -36,9 +36,10 @@ class FlutterListViewElement extends WidgetElement {
   ScrollController? get scrollControllerY {
     return scrollDirection == Axis.vertical ? _scrollController : null;
   }
+  @override
   set scrollControllerY(ScrollController? value) {
     if (scrollDirection == Axis.vertical) {
-      _scrollController = null;
+      _scrollController = value;
     }
   }
 
@@ -79,6 +80,8 @@ class FlutterListViewElement extends WidgetElement {
   @override
   void stateDispose() {
     _scrollController?.removeListener(_scrollListener);
+    _scrollController?.dispose();
+    _scrollController = null;
     super.stateDispose();
   }
 
@@ -109,9 +112,7 @@ class FlutterListViewElement extends WidgetElement {
                   return Container(
                     height: 50,
                     alignment: Alignment.center,
-                    child: _isLoadingMore
-                      ? const CupertinoActivityIndicator()
-                      : const SizedBox.shrink(),
+                    child: _isLoadingMore ? const CupertinoActivityIndicator() : const SizedBox.shrink(),
                   );
                 }
 

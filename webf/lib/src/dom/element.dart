@@ -530,9 +530,7 @@ abstract class Element extends ContainerNode
   }
 
   void _updateHostingWidgetWithOverflow(CSSOverflowType oldOverflow) {
-    if (!hasScroll) {
-      renderStyle.requestWidgetToRebuild(AddScrollerUpdateReason());
-    }
+    renderStyle.requestWidgetToRebuild(AddScrollerUpdateReason());
   }
 
   void _updateHostingWidgetWithTransform() {
@@ -676,10 +674,6 @@ abstract class Element extends ContainerNode
     _beforeElement = null;
     _afterElement?.dispose();
     _afterElement = null;
-    scrollControllerX?.dispose();
-    scrollControllerX = null;
-    scrollControllerY?.dispose();
-    scrollControllerY = null;
     super.dispose();
   }
 
