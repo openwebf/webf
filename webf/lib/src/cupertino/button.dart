@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 
 class FlutterCupertinoButton extends WidgetElement {
@@ -8,54 +9,112 @@ class FlutterCupertinoButton extends WidgetElement {
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
 
-    attributes['type'] = ElementAttributeProperty(
-      getter: () => _type,
+    // Button variant: filled | tinted | plain
+    attributes['variant'] = ElementAttributeProperty(
+      getter: () => _variant,
       setter: (value) {
-        _type = value;
+        _variant = value;
         setState(() {});
       }
     );
 
+    // Button size: small | large
+    attributes['size-style'] = ElementAttributeProperty(
+      getter: () => _sizeStyle,
+      setter: (value) {
+        _sizeStyle = value;
+        setState(() {});
+      }
+    );
+
+    // Whether the button is disabled
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => _disabled.toString(),
       setter: (value) {
-        _disabled = value == 'true';
+        _disabled = value != 'false';
+        setState(() {});
+      }
+    );
+
+    // Custom button color
+    attributes['color'] = ElementAttributeProperty(
+      getter: () => _color?.toString(),
+      setter: (value) {
+        _color = parseColor(value);
+        setState(() {});
+      }
+    );
+
+    // The opacity when the button is pressed
+    attributes['pressed-opacity'] = ElementAttributeProperty(
+      getter: () => _pressedOpacity.toString(),
+      setter: (value) {
+        _pressedOpacity = double.tryParse(value) ?? 0.4;
         setState(() {});
       }
     );
   }
 
-  String _type = 'primary';
+  String _variant = 'filled';  // plain | filled | tinted
+  String _sizeStyle = 'large';   // small | large
   bool _disabled = false;
+  Color? _color;
+  double _pressedOpacity = 0.4;
+
+  EdgeInsetsGeometry getDefaultPadding() {
+    return _sizeStyle == 'small' 
+      ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+      : const EdgeInsets.symmetric(horizontal: 16, vertical: 12);
+  }
+
+  double getDefaultMinSize() {
+    return _sizeStyle == 'small' ? 32.0 : 44.0;
+  }
 
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
     final theme = CupertinoTheme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    Color getButtonColor() {
-      if (_disabled) {
-        return isDark 
-          ? CupertinoColors.systemGrey3.darkColor 
-          : CupertinoColors.systemGrey3;
-      }
-      
-      switch (_type) {
-        case 'primary':
+    // Get renderStyle
+    final style = renderStyle;
+    final hasWidth = style?.width?.computedValue != 0.0;
+    final hasHeight = style?.height?.computedValue != 0.0;
+    final hasPadding = style?.padding != null && style!.padding != EdgeInsets.zero;
+    final hasBorderRadius = style?.borderRadius != null;
+    final hasMinHeight = style?.minHeight?.computedValue != 0.0;
+    final textAlign = style?.textAlign ?? TextAlign.center;
+
+    // Determine the alignment based on textAlign
+    AlignmentGeometry alignment;
+    switch (textAlign) {
+      case TextAlign.left:
+        alignment = Alignment.centerLeft;
+        break;
+      case TextAlign.right:
+        alignment = Alignment.centerRight;
+        break;
+      default:
+        alignment = Alignment.center;
+    }
+
+    // Get the color of the disabled state
+    Color getDisabledColor() {
+      switch (_variant) {
+        case 'filled':
           return isDark 
-            ? CupertinoColors.systemBlue.darkColor 
-            : CupertinoColors.systemBlue;
-        case 'secondary':
+            ? CupertinoColors.systemGrey4.darkColor 
+            : CupertinoColors.systemGrey4;
+        case 'tinted':
           return isDark 
-            ? CupertinoColors.systemGrey6.darkColor 
-            : CupertinoColors.systemGrey6;
+            ? CupertinoColors.systemGrey5.darkColor 
+            : CupertinoColors.systemGrey5;
         default:
-          return isDark 
-            ? CupertinoColors.systemBlue.darkColor 
-            : CupertinoColors.systemBlue;
+          return Colors.transparent;
       }
     }
 
+    // Get the text color
     Color getTextColor() {
       if (_disabled) {
         return isDark 
@@ -63,41 +122,98 @@ class FlutterCupertinoButton extends WidgetElement {
           : CupertinoColors.systemGrey;
       }
 
-      switch (_type) {
-        case 'primary':
+      switch (_variant) {
+        case 'filled':
           return CupertinoColors.white;
-        case 'secondary':
-          return isDark 
-            ? CupertinoColors.white 
-            : CupertinoColors.black;
+        case 'tinted':
+          return theme.primaryColor;
         default:
-          return CupertinoColors.white;
+          return theme.primaryColor;
       }
     }
-
-    return CupertinoButton(
-      onPressed: _disabled ? null : () {
-        dispatchEvent(Event('click'));
-      },
-      padding: EdgeInsets.zero,
-      color: getButtonColor(),
-      disabledColor: getButtonColor(),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: double.infinity,
-        height: double.infinity,
-        alignment: Alignment.center,
-        child: DefaultTextStyle(
-          style: TextStyle(
-            color: getTextColor(),
-            fontSize: renderStyle.fontSize.value ?? 16,
-            fontWeight: renderStyle.fontWeight,
-          ),
-          child: childNodes.isEmpty 
-            ? const SizedBox() 
-            : childNodes.first.toWidget(),
+    Widget buttonChild = Container(
+      width: hasWidth ? style!.width!.value : null,
+      height: hasHeight ? style!.height!.value : null,
+      alignment: alignment,
+      child: DefaultTextStyle(
+        style: TextStyle(
+          color: getTextColor(),
+          fontSize: _sizeStyle == 'small' ? 14 : 16,
+          fontWeight: FontWeight.w400,
         ),
+        child: childNodes.isEmpty 
+          ? const SizedBox() 
+          : childNodes.first.toWidget(),
       ),
     );
+
+    Widget button;
+    switch (_variant) {
+      case 'filled':
+        button = CupertinoButton.filled(
+          onPressed: _disabled ? null : () {
+            dispatchEvent(Event('click'));
+          },
+          padding: hasWidth ? EdgeInsets.zero : (hasPadding ? style!.padding! : getDefaultPadding()),
+          disabledColor: getDisabledColor(),
+          pressedOpacity: _pressedOpacity,
+          borderRadius: hasBorderRadius 
+            ? BorderRadius.circular(style!.borderRadius!.first.x) 
+            : BorderRadius.circular(8),
+          minSize: hasMinHeight ? style!.minHeight!.value : getDefaultMinSize(),
+          alignment: alignment,
+          child: buttonChild,
+        );
+        break;
+      case 'tinted':
+        button = CupertinoButton.tinted(
+          onPressed: _disabled ? null : () {
+            dispatchEvent(Event('click'));
+          },
+          padding: hasWidth ? EdgeInsets.zero : (hasPadding ? style!.padding! : getDefaultPadding()),
+          color: _color,
+          disabledColor: getDisabledColor(),
+          pressedOpacity: _pressedOpacity,
+          borderRadius: hasBorderRadius 
+            ? BorderRadius.circular(style!.borderRadius!.first.x) 
+            : BorderRadius.circular(8),
+          minSize: hasMinHeight ? style!.minHeight!.value : getDefaultMinSize(),
+          alignment: alignment,
+          child: buttonChild,
+        );
+        break;
+      default:
+        button = CupertinoButton(
+          onPressed: _disabled ? null : () {
+            dispatchEvent(Event('click'));
+          },
+          padding: hasWidth ? EdgeInsets.zero : (hasPadding ? style!.padding! : getDefaultPadding()),
+          color: _color,
+          disabledColor: getDisabledColor(),
+          pressedOpacity: _pressedOpacity,
+          borderRadius: hasBorderRadius 
+            ? BorderRadius.circular(style!.borderRadius!.first.x) 
+            : BorderRadius.circular(8),
+          minSize: hasMinHeight ? style!.minHeight!.value : getDefaultMinSize(),
+          alignment: alignment,
+          child: buttonChild,
+        );
+    }
+
+    return UnconstrainedBox(
+      child: button,
+    );
+  }
+
+  Color? parseColor(String? value) {
+    if (value == null) return null;
+    if (value.startsWith('#')) {
+      final hex = value.substring(1);
+      final int? color = int.tryParse(hex, radix: 16);
+      if (color != null) {
+        return Color(color | 0xFF000000);
+      }
+    }
+    return null;
   }
 }

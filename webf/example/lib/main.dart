@@ -130,6 +130,9 @@ void main() async {
       bundle: WebFBundle.fromUrl('assets:///cupertino_gallery/dist/index.html'),
       routes: {
         '/': (context, controller) => WebFSubView(path: '/', controller: controller),
+        '/button': (context, controller) => WebFSubView(path: '/button', controller: controller),
+        '/switch': (context, controller) => WebFSubView(path: '/switch', controller: controller),
+        '/input': (context, controller) => WebFSubView(path: '/input', controller: controller),
       },
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();

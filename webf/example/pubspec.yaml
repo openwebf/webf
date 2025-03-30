@@ -45,3 +45,6 @@ flutter:
     - news_miracleplus/dist/
     - news_miracleplus/dist/js/
     - news_miracleplus/dist/css/
+    - cupertino_gallery/dist/
+    - cupertino_gallery/dist/js/
+    - cupertino_gallery/dist/css/
