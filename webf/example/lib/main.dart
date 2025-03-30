@@ -120,6 +120,22 @@ void main() async {
         controller.darkModeOverride = savedThemeMode?.isDark;
       });
 
+  WebFControllerManager.instance.addWithPrerendering(
+      name: 'cupertino_gallery',
+      createController: () => WebFController(
+            initialRoute: '/',
+            routeObserver: routeObserver,
+            devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+          ),
+      bundle: WebFBundle.fromUrl('assets:///cupertino_gallery/dist/index.html'),
+      routes: {
+        '/': (context, controller) => WebFSubView(path: '/', controller: controller),
+      },
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+      });
+
   // Add vue controller with preloading
   WebFControllerManager.instance.addWithPrerendering(
       name: 'miracle_plus',
@@ -338,6 +354,13 @@ class FirstPageState extends State<FirstPage> {
               }));
             },
             child: Text('Open MiraclePlus App Login')),
+        ElevatedButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(webfPageName: 'cupertino_gallery');
+              }));
+            },
+            child: Text('Open Cupertino Gallery')),
       ]),
       floatingActionButton: FloatingActionButton(onPressed: () {
         WebFControllerManager.instance.disposeAll();
