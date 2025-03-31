@@ -19,7 +19,7 @@
               <flutter-cupertino-input type="number" placeholder="数字输入框" />
               <flutter-cupertino-input type="tel" placeholder="电话输入框" />
               <flutter-cupertino-input type="email" placeholder="邮箱输入框" />
-              <flutter-cupertino-input type="url" placeholder="URL输入框" />
+              <flutter-cupertino-input type="url" placeholder="URL 输入框" />
             </div>
           </div>
 
@@ -132,10 +132,6 @@
     min-width: 200px;
     margin-right: 12px;
     margin-bottom: 12px;
-
-    &:last-child {
-      margin-right: 0;
-    }
 
     &.text-left {
       text-align: left;

@@ -11,6 +11,9 @@
   <router-view path="/input" title="Input">
     <input-page></input-page>
   </router-view>
+  <router-view path="/icon" title="Icon">
+    <icon-page></icon-page>
+  </router-view>
 </template>
 
 <script>
@@ -19,7 +22,7 @@ import HomePage from './Pages/HomePage.vue';
 import ButtonPage from './Pages/ButtonPage.vue';
 import SwitchPage from './Pages/SwitchPage.vue';
 import InputPage from './Pages/InputPage.vue';
-
+import IconPage from './Pages/IconPage.vue';
 export default {
   name: 'App',
   components: {
@@ -28,8 +31,9 @@ export default {
     ButtonPage,
     SwitchPage,
     InputPage,
-  }
-}
+    IconPage,
+  },
+};
 </script>
 
 <style src="./assets/styles/app.css" />

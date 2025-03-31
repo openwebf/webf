@@ -30,6 +30,15 @@
             </div>
             <div class="item-arrow">></div>
           </div>
+
+          <!-- 图标 -->
+          <div class="component-item" @click="navigateTo('/icon')">
+            <div class="item-content">
+              <div class="item-title">Icon 图标</div>
+              <div class="item-desc">iOS 风格的图标组件</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
         </div>
       </div>
     </webf-listview>
