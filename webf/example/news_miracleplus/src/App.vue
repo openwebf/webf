@@ -41,19 +41,19 @@
   <router-view path="/home" title="首页">
     <flutter-cupertino-tab-bar ref="tabBar" class="tab-bar" :currentIndex="currentIndex" @tabchange="handleTabChange">
       <flutter-cupertino-tab-bar-item title="首页" icon="home" path="/home">
-        <home-page v-show="currentIndex === 0"></home-page>
+        <home-page v-if="enableHomePage"></home-page>
       </flutter-cupertino-tab-bar-item>
       <flutter-cupertino-tab-bar-item title="搜索" icon="search" path="/search">
-        <search-page v-show="currentIndex === 1"></search-page>
+        <search-page v-if="enableSearchPage"></search-page>
       </flutter-cupertino-tab-bar-item>
       <flutter-cupertino-tab-bar-item title="发布" icon="add_circled_solid" path="/publish">
-        <publish-page v-show="currentIndex === 2"></publish-page>
+        <publish-page v-if="enablePublishPage"></publish-page>
       </flutter-cupertino-tab-bar-item>
       <flutter-cupertino-tab-bar-item title="消息" icon="bell" path="/notification">
-        <notification-page v-show="currentIndex === 3"></notification-page>
+        <notification-page v-if="enableNotification"></notification-page>
       </flutter-cupertino-tab-bar-item>
       <flutter-cupertino-tab-bar-item title="我的" icon="person" path="/my">
-        <my-page v-show="currentIndex === 4"></my-page>
+        <my-page v-if="enableMyPage"></my-page>
       </flutter-cupertino-tab-bar-item>
     </flutter-cupertino-tab-bar>
   </router-view>
@@ -110,12 +110,34 @@ export default {
   },
   methods: {
     handleTabChange(e) {
+      switch(e.detail) {
+        case 0:
+          this.enableHomePage = true;
+          break;
+        case 1:
+          this.enableSearchPage = true;
+          break;
+        case 2:
+          this.enablePublishPage = true;
+          break;
+        case 3:
+          this.enableNotification = true;
+          break;
+        case 4:
+          this.enableMyPage = true;
+          break;
+      }
       this.currentIndex = e.detail;
     },
   },
   data() {
     return {
-      currentIndex: 0,
+      // currentIndex: 0,
+      enableHomePage: true,
+      enableSearchPage: false,
+      enablePublishPage: false,
+      enableNotification: false,
+      enableMyPage: false,
     };
   },
 };
