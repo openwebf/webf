@@ -136,6 +136,10 @@ ExecutingContext::~ExecutingContext() {
     assert_m(false, "Unhandled exception found when Dispose JSContext.");
   }
 
+  for (auto& pending_promise : active_pending_promises_) {
+    pending_promise->Reset();
+  }
+
   active_pending_promises_.clear();
 
   JS_FreeValue(script_state_.ctx(), global_object_);
@@ -437,6 +441,7 @@ void ExecutingContext::RunRustFutureTasks() {
     meta_data->removed_callbacks.clear();
     if (meta_data->callbacks.empty() && meta_data->load_context != nullptr) {
       meta_data->load_context->promise_resolver->Resolve(JS_NULL);
+      meta_data->load_context->context->UnRegisterActiveScriptPromise(meta_data->load_context->promise_resolver.get());
       delete meta_data->load_context;
       meta_data->load_context = nullptr;
     }

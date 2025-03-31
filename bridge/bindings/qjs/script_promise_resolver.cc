@@ -20,9 +20,14 @@ ScriptPromiseResolver::ScriptPromiseResolver(ExecutingContext* context)
 }
 
 ScriptPromiseResolver::~ScriptPromiseResolver() {
+  Reset();
+}
+
+void ScriptPromiseResolver::Reset() {
   JS_FreeValue(context_->ctx(), promise_);
   JS_FreeValue(context_->ctx(), resolve_func_);
   JS_FreeValue(context_->ctx(), reject_func_);
+  context_ = nullptr;
 }
 
 void ScriptPromiseResolver::Trace(GCVisitor* visitor) const {
@@ -32,10 +37,12 @@ void ScriptPromiseResolver::Trace(GCVisitor* visitor) const {
 }
 
 ScriptPromise ScriptPromiseResolver::Promise() {
-  return ScriptPromise(context_->ctx(), promise_);
+  if (context_ == nullptr) return {};
+  return {context_->ctx(), promise_};
 }
 
 void ScriptPromiseResolver::ResolveOrRejectImmediately(JSValue value) {
+  if (context_ == nullptr) return;
   context_->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
   {
     if (state_ == kResolving) {
