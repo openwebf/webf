@@ -37,12 +37,14 @@ void ScriptPromiseResolver::Trace(GCVisitor* visitor) const {
 }
 
 ScriptPromise ScriptPromiseResolver::Promise() {
-  if (context_ == nullptr) return {};
+  if (context_ == nullptr)
+    return {};
   return {context_->ctx(), promise_};
 }
 
 void ScriptPromiseResolver::ResolveOrRejectImmediately(JSValue value) {
-  if (context_ == nullptr) return;
+  if (context_ == nullptr)
+    return;
   context_->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
   {
     if (state_ == kResolving) {

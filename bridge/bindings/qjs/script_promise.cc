@@ -31,7 +31,8 @@ ScriptPromise::ScriptPromise(JSContext* ctx,
 }
 
 JSValue ScriptPromise::ToQuickJS() {
-  if (ctx_ == nullptr) return JS_NULL;
+  if (ctx_ == nullptr)
+    return JS_NULL;
   return JS_DupValue(ctx_, promise_.QJSValue());
 }
 
