@@ -2,6 +2,7 @@
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
  */
 
+import 'dart:async';
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -140,15 +141,12 @@ class WebFControllerManager {
   }
 
   /// Get the router entry widget by router settings.
-  Widget? getRouterBuilderBySettings(BuildContext context, RouteSettings settings) {
-    for (final entry in _controllersByName.entries) {
-      _ControllerInstance controllerInstance = entry.value;
-      if (controllerInstance.controller.routes?.containsKey(settings.name) == true) {
-        return controllerInstance.controller.routes![settings.name!]!(context, controllerInstance.controller);
-      }
-    }
-
-    return null;
+  Widget? getRouterBuilderBySettings(BuildContext context, String pageName, RouteSettings settings) {
+    _ControllerInstance? instance = _controllersByName[pageName];
+    if (instance == null) return null;
+    SubViewBuilder? builder = instance.controller.routes?[settings.name];
+    if (builder == null) return null;
+    return builder(context, instance.controller);
   }
 
   /// Initialize the manager with custom configuration
@@ -543,8 +541,10 @@ class WebFControllerManager {
         _config.onControllerDisposed!(leastRecentlyUsedName, controller);
       }
 
-      // Dispose the controller
-      controller.dispose();
+      // Make sure script fully evaluated
+      controller.controllerOnDOMContentLoadedCompleter.future.then((_) {
+        controller.dispose();
+      });
     }
   }
 
@@ -572,6 +572,190 @@ class WebFControllerManager {
       }
     }
     return null;
+  }
+
+  /// Updates a controller by creating a new instance with preload
+  /// This replaces the existing controller with a fresh instance
+  /// Returns the new controller ready for use
+  Future<WebFController> updateWithPreload({
+    required String name,
+    ControllerFactory? createController,
+    required WebFBundle bundle,
+    Map<String, SubViewBuilder>? routes,
+    ControllerSetup? setup
+  }) async {
+    // Get the current state of the controller if it exists
+    ControllerState? currentState = getControllerState(name);
+    final oldController = getControllerSync(name);
+    final wasAttached = currentState == ControllerState.attached;
+    BuildContext? currentContext = oldController?.currentBuildContext;
+    Map<String, SubViewBuilder>? oldRoutes = oldController?.routes;
+
+    // Get existing initialization parameters if available
+    final oldParams = _controllerInitParams[name];
+
+    // Determine which factory to use (prefer provided, fallback to existing, or create default)
+    ControllerFactory actualCreateController;
+    if (createController != null) {
+      actualCreateController = createController;
+    } else if (oldParams != null && oldParams['createController'] != null) {
+      actualCreateController = oldParams['createController'];
+    } else {
+      actualCreateController = () => WebFController();
+    }
+
+    // Create a new controller instance
+    WebFController newController = actualCreateController();
+
+    // Copy relevant properties from old controller to new controller
+    if (routes == null && oldRoutes != null) {
+      newController.routes = oldRoutes;
+    } else if (routes != null) {
+      newController.routes = routes;
+    }
+
+    // Store updated initialization parameters
+    _controllerInitParams[name] = {
+      'type': 'preload',
+      'createController': actualCreateController,
+      'bundle': bundle,
+      'routes': newController.routes,
+      'setup': setup ?? oldParams?['setup'],
+    };
+
+    // Wait for the new controller to initialize
+    await newController.controlledInitCompleter.future;
+
+    // Apply optional setup
+    if (setup != null) {
+      setup(newController);
+    } else if (oldParams?['setup'] != null) {
+      // Apply the previous setup if available and no new setup is provided
+      ControllerSetup oldSetup = oldParams!['setup'];
+      oldSetup(newController);
+    }
+
+    // Preload the new bundle
+    await newController.preload(bundle);
+
+    // Remove the old controller from tracking if it exists
+    final instance = _controllersByName.remove(name);
+    _recentlyUsedControllers.removeWhere((element) => element == name);
+    _attachedControllers.removeWhere((element) => element == name);
+
+    // Register the new controller with the same name
+    _controllersByName[name] = _ControllerInstance(
+      newController,
+      wasAttached ? ControllerState.attached : ControllerState.detached
+    );
+    _updateUsageOrder(name);
+
+    // If the old controller was attached and we have a context, attach the new one
+    if (wasAttached && currentContext != null) {
+      _attachedControllers.add(name);
+      newController.attachToFlutter(currentContext);
+    }
+
+    // Schedule disposal of the old controller after returning the new one, if it exists
+    if (instance != null && !instance.controller.disposed) {
+      Future.microtask(() async {
+        await instance.controller.dispose();
+      });
+    }
+
+    return newController;
+  }
+
+  /// Updates a controller by creating a new instance with prerendering
+  /// This replaces the existing controller with a fresh instance
+  /// Returns the new controller ready for use
+  Future<WebFController> updateWithPrerendering({
+    required String name,
+    ControllerFactory? createController,
+    required WebFBundle bundle,
+    Map<String, SubViewBuilder>? routes,
+    ControllerSetup? setup
+  }) async {
+    // Get the current state of the controller if it exists
+    ControllerState? currentState = getControllerState(name);
+    final oldController = getControllerSync(name);
+    final wasAttached = currentState == ControllerState.attached;
+    BuildContext? currentContext = oldController?.currentBuildContext;
+    Map<String, SubViewBuilder>? oldRoutes = oldController?.routes;
+
+    // Get existing initialization parameters if available
+    final oldParams = _controllerInitParams[name];
+
+    // Determine which factory to use (prefer provided, fallback to existing, or create default)
+    ControllerFactory actualCreateController;
+    if (createController != null) {
+      actualCreateController = createController;
+    } else if (oldParams != null && oldParams['createController'] != null) {
+      actualCreateController = oldParams['createController'];
+    } else {
+      actualCreateController = () => WebFController();
+    }
+
+    // Create a new controller instance
+    WebFController newController = actualCreateController();
+
+    // Copy relevant properties from old controller to new controller
+    if (routes == null && oldRoutes != null) {
+      newController.routes = oldRoutes;
+    } else if (routes != null) {
+      newController.routes = routes;
+    }
+
+    // Store updated initialization parameters
+    _controllerInitParams[name] = {
+      'type': 'prerendering',
+      'createController': actualCreateController,
+      'bundle': bundle,
+      'routes': newController.routes,
+      'setup': setup ?? oldParams?['setup'],
+    };
+
+    // Wait for the new controller to initialize
+    await newController.controlledInitCompleter.future;
+
+    // Apply optional setup
+    if (setup != null) {
+      setup(newController);
+    } else if (oldParams?['setup'] != null) {
+      // Apply the previous setup if available and no new setup is provided
+      ControllerSetup oldSetup = oldParams!['setup'];
+      oldSetup(newController);
+    }
+
+    // Prerender the new bundle
+    await newController.preRendering(bundle);
+
+    // Remove the old controller from tracking if it exists
+    final instance = _controllersByName.remove(name);
+    _recentlyUsedControllers.removeWhere((element) => element == name);
+    _attachedControllers.removeWhere((element) => element == name);
+
+    // Register the new controller with the same name
+    _controllersByName[name] = _ControllerInstance(
+      newController,
+      wasAttached ? ControllerState.attached : ControllerState.detached
+    );
+    _updateUsageOrder(name);
+
+    // If the old controller was attached and we have a context, attach the new one
+    if (wasAttached && currentContext != null) {
+      _attachedControllers.add(name);
+      newController.attachToFlutter(currentContext);
+    }
+
+    // Schedule disposal of the old controller after returning the new one, if it exists
+    if (instance != null && !instance.controller.disposed) {
+      Future.microtask(() async {
+        await instance.controller.dispose();
+      });
+    }
+
+    return newController;
   }
 
   /// Remove a controller by name without disposing it

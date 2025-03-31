@@ -103,7 +103,7 @@ void main() async {
       });
 
   // Add vue controller with preloading
-  WebFControllerManager.instance.addWithPrerendering(
+  WebFControllerManager.instance.addWithPreload(
       name: 'vuejs',
       createController: () => WebFController(
             initialRoute: '/',
@@ -149,7 +149,7 @@ void main() async {
             routeObserver: routeObserver,
             devToolsService: kDebugMode ? ChromeDevToolsService() : null,
           ),
-      bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'),
+      bundle: WebFBundle.fromUrl('http://localhost:8080'),
       routes: {
         '/home': (context, controller) => WebFSubView(path: '/home', controller: controller),
         '/search': (context, controller) => WebFSubView(path: '/search', controller: controller),
@@ -253,9 +253,17 @@ class MyApp extends StatefulWidget {
 }
 
 class MyAppState extends State<MyApp> {
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  final ValueNotifier<String> webfPageName = ValueNotifier('');
+
+  Route<dynamic>? handleOnGenerateRoute(RouteSettings settings) {
+    return CupertinoPageRoute(
+      settings: settings,
+      builder: (context) {
+        Widget? entry =
+            WebFControllerManager.instance.getRouterBuilderBySettings(context, webfPageName.value, settings);
+        return entry ?? Scaffold(appBar: AppBar(title: Text('Error')), body: Center(child: Text('Page not found')));
+      },
+    );
   }
 
   @override
@@ -275,21 +283,16 @@ class MyAppState extends State<MyApp> {
           return [
             CupertinoPageRoute(
               builder: (context) {
-                return FirstPage(title: 'Landing Bay');
+                return ValueListenableBuilder(
+                    valueListenable: webfPageName,
+                    builder: (context, value, child) {
+                      return FirstPage(title: 'Landing Bay', webfPageName: webfPageName);
+                    });
               },
             )
           ];
         },
-        onGenerateRoute: (settings) {
-          return CupertinoPageRoute(
-            settings: settings,
-            builder: (context) {
-              Widget? entry = WebFControllerManager.instance.getRouterBuilderBySettings(context, settings);
-              return entry ??
-                  Scaffold(appBar: AppBar(title: Text('Error')), body: Center(child: Text('Page not found')));
-            },
-          );
-        },
+        onGenerateRoute: handleOnGenerateRoute,
         debugShowCheckedModeBanner: false,
       ),
     );
@@ -302,8 +305,9 @@ class MyAppState extends State<MyApp> {
 }
 
 class FirstPage extends StatefulWidget {
-  const FirstPage({Key? key, required this.title}) : super(key: key);
+  const FirstPage({Key? key, required this.title, required this.webfPageName}) : super(key: key);
   final String title;
+  final ValueNotifier<String> webfPageName;
 
   @override
   State<StatefulWidget> createState() {
@@ -321,6 +325,7 @@ class FirstPageState extends State<FirstPage> {
       body: ListView(children: [
         ElevatedButton(
             onPressed: () {
+              widget.webfPageName.value = 'html/css';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
                 return WebFDemo(webfPageName: 'html/css');
               }));
@@ -329,6 +334,7 @@ class FirstPageState extends State<FirstPage> {
         SizedBox(height: 18),
         ElevatedButton(
             onPressed: () {
+              widget.webfPageName.value = 'vuejs';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
                 return WebFDemo(webfPageName: 'vuejs');
               }));
@@ -336,6 +342,7 @@ class FirstPageState extends State<FirstPage> {
             child: Text('Open Vue.js demo')),
         ElevatedButton(
             onPressed: () {
+              widget.webfPageName.value = 'vuejs';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
                 return WebFDemo(
                   webfPageName: 'vuejs',
@@ -347,6 +354,7 @@ class FirstPageState extends State<FirstPage> {
         SizedBox(height: 18),
         ElevatedButton(
             onPressed: () {
+              widget.webfPageName.value = 'miracle_plus';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
                 return WebFDemo(webfPageName: 'miracle_plus');
               }));
@@ -354,22 +362,42 @@ class FirstPageState extends State<FirstPage> {
             child: Text('Open MiraclePlus App')),
         ElevatedButton(
             onPressed: () {
+              widget.webfPageName.value = 'miracle_plus';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
-                return WebFDemo(webfPageName: 'miracle_plus', initialRoute: '/login',);
+                return WebFDemo(
+                  webfPageName: 'miracle_plus',
+                  initialRoute: '/login',
+                );
               }));
             },
             child: Text('Open MiraclePlus App Login')),
+        SizedBox(height: 18),
         ElevatedButton(
             onPressed: () {
+              widget.webfPageName.value = 'cupertino_gallery';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
                 return WebFDemo(webfPageName: 'cupertino_gallery');
               }));
             },
             child: Text('Open Cupertino Gallery')),
       ]),
-      floatingActionButton: FloatingActionButton(onPressed: () {
-        WebFControllerManager.instance.disposeAll();
-      }),
+      floatingActionButton: FloatingActionButton(
+          child: Text('Update'),
+          onPressed: () {
+            WebFControllerManager.instance.updateWithPreload(
+                createController: () => WebFController(
+                      initialRoute: '/',
+                      routeObserver: routeObserver,
+                      devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+                    ),
+                name: 'html/css',
+                routes: {
+                  '/todomvc': (context, controller) => WebFSubView(path: '/todomvc', controller: controller),
+                  '/positioned_layout': (context, controller) =>
+                      WebFSubView(path: '/positioned_layout', controller: controller),
+                },
+                bundle: WebFBundle.fromUrl('assets:///vue_project/dist/index.html'));
+          }),
     );
   }
 }

@@ -548,6 +548,11 @@ class WebFController {
       _controllerMap.remove(oldId);
       _controllerMap[_view!.contextId] = this;
 
+      _preloadStatus = PreloadingStatus.none;
+      _preRenderingStatus = PreRenderingStatus.none;
+      _isComplete = false;
+      _evaluated = false;
+
       controlledInitCompleter.complete();
     });
 
@@ -597,9 +602,6 @@ class WebFController {
     if (devToolsService != null) {
       devToolsService!.willReload();
     }
-
-    _isComplete = false;
-    _evaluated = false;
 
     RenderViewportBox? rootRenderObject = view.viewport;
     if (rootRenderObject == null) return;
@@ -1155,6 +1157,7 @@ class WebFController {
     _domContentLoadedEventDispatched = true;
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (_view == null) return;
       Event event = Event(EVENT_DOM_CONTENT_LOADED);
       EventTarget window = view.window;
       window.dispatchEvent(event);
