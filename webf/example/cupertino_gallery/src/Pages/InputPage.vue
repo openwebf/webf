@@ -10,6 +10,19 @@
             <flutter-cupertino-input placeholder="请输入内容" />
           </div>
 
+          <!-- 双向绑定 -->
+          <div class="component-item">
+            <div class="item-label">双向绑定</div>
+            <flutter-cupertino-input 
+              :val="inputText"
+              placeholder="请输入内容"
+              @input="onInputChange"
+            />
+            <div class="event-output">
+              当前输入内容：{{ inputText }}
+            </div>
+          </div>
+
           <!-- 输入框类型 -->
           <div class="component-item">
             <div class="item-label">输入框类型</div>
@@ -82,6 +95,21 @@
     </webf-listview>
   </div>
 </template>
+
+<script>
+export default {
+  data() {
+    return {
+      inputText: '初始输入内容'
+    }
+  },
+  methods: {
+    onInputChange(e) {
+      this.inputText = e.detail;
+    }
+  }
+}
+</script>
 
 <style lang="scss" scoped>
 #list {
@@ -157,5 +185,11 @@
       padding: 0 20px;
     }
   }
+}
+
+.event-output {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--font-color-secondary);
 }
 </style>

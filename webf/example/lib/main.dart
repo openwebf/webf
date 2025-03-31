@@ -134,6 +134,7 @@ void main() async {
         '/switch': (context, controller) => WebFSubView(path: '/switch', controller: controller),
         '/input': (context, controller) => WebFSubView(path: '/input', controller: controller),
         '/icon': (context, controller) => WebFSubView(path: '/icon', controller: controller),
+        '/search_input': (context, controller) => WebFSubView(path: '/search_input', controller: controller),
       },
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();

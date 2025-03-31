@@ -13,15 +13,6 @@
             <div class="item-arrow">></div>
           </div>
 
-          <!-- 输入框 -->
-          <div class="component-item" @click="navigateTo('/input')">
-            <div class="item-content">
-              <div class="item-title">Input 输入框</div>
-              <div class="item-desc">用于输入内容的表单组件</div>
-            </div>
-            <div class="item-arrow">></div>
-          </div>
-
           <!-- 开关 -->
           <div class="component-item" @click="navigateTo('/switch')">
             <div class="item-content">
@@ -36,6 +27,24 @@
             <div class="item-content">
               <div class="item-title">Icon 图标</div>
               <div class="item-desc">iOS 风格的图标组件</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
+
+          <!-- 输入框 -->
+          <div class="component-item" @click="navigateTo('/input')">
+            <div class="item-content">
+              <div class="item-title">Input 输入框</div>
+              <div class="item-desc">用于输入内容的表单组件</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
+
+          <!-- 搜索框 -->
+          <div class="component-item" @click="navigateTo('/search_input')">
+            <div class="item-content">
+              <div class="item-title">SearchInput 搜索框</div>
+              <div class="item-desc">用于搜索内容的搜索框组件</div>
             </div>
             <div class="item-arrow">></div>
           </div>

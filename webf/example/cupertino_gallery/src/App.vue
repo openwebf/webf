@@ -14,6 +14,9 @@
   <router-view path="/icon" title="Icon">
     <icon-page></icon-page>
   </router-view>
+  <router-view path="/search_input" title="SearchInput">
+    <search-input-page></search-input-page>
+  </router-view>
 </template>
 
 <script>
@@ -23,6 +26,7 @@ import ButtonPage from './Pages/ButtonPage.vue';
 import SwitchPage from './Pages/SwitchPage.vue';
 import InputPage from './Pages/InputPage.vue';
 import IconPage from './Pages/IconPage.vue';
+import SearchInputPage from './Pages/SearchInputPage.vue';
 export default {
   name: 'App',
   components: {
@@ -32,6 +36,7 @@ export default {
     SwitchPage,
     InputPage,
     IconPage,
+    SearchInputPage,
   },
 };
 </script>
