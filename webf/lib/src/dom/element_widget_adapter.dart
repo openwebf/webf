@@ -425,8 +425,9 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
 
     flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
     OnScreenEvent event = OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
+    Element webfElement = webFElement;
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      webFElement.dispatchEvent(event);
+      webfElement.dispatchEvent(event);
     });
   }
 

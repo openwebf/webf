@@ -198,7 +198,12 @@ class WebFController {
   ///
   /// Sets the initial path that the router will navigate to when the application starts.
   /// This is the entry point for the hybrid routing system in WebF.
-  final String? initialRoute;
+  String? initialRoute;
+
+  /// The default route state for the hybrid router in WebF.
+  ///
+  /// Users can read this value by webf.hybridRouter.state when loading by initialRoute path.
+  Map<String, dynamic>? initialState;
 
   /// A Navigator observer that notifies RouteAwares of changes to the state of their route.
   ///
@@ -360,6 +365,7 @@ class WebFController {
     this.preloadedBundles,
     this.initialCookies,
     this.initialRoute,
+    this.initialState,
     this.routeObserver,
     this.routes,
     this.externalController = true,

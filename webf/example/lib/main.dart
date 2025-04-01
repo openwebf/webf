@@ -53,7 +53,7 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
   }
 
   @override
-  state(BuildContext context) {
+  state(BuildContext context, Map<String, dynamic>? initialState) {
     var route = ModalRoute.of(context);
     if (route?.settings.arguments != null) {
       return jsonEncode(route!.settings.arguments);
@@ -259,9 +259,13 @@ class MyAppState extends State<MyApp> {
     return CupertinoPageRoute(
       settings: settings,
       builder: (context) {
-        Widget? entry =
-            WebFControllerManager.instance.getRouterBuilderBySettings(context, webfPageName.value, settings);
-        return entry ?? Scaffold(appBar: AppBar(title: Text('Error')), body: Center(child: Text('Page not found')));
+        return Scaffold(appBar: AppBar(), body: WebFRouterView.fromControllerName(
+            controllerName: webfPageName.value,
+            path: settings.name!,
+            loadingWidget: _WebFDemoState.buildSplashScreen()));
+        // Widget? entry =
+        //     WebFControllerManager.instance.getRouterBuilderBySettings(context, webfPageName.value, settings);
+        // return entry ?? Scaffold(appBar: AppBar(title: Text('Error')), body: Center(child: Text('Page not found')));
       },
     );
   }
@@ -327,7 +331,7 @@ class FirstPageState extends State<FirstPage> {
             onPressed: () {
               widget.webfPageName.value = 'html/css';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
-                return WebFDemo(webfPageName: 'html/css');
+                return WebFDemo(webfPageName: 'html/css', initialRoute: '/',);
               }));
             },
             child: Text('Open HTML/CSS/JavaScript demo')),
@@ -356,7 +360,7 @@ class FirstPageState extends State<FirstPage> {
             onPressed: () {
               widget.webfPageName.value = 'miracle_plus';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
-                return WebFDemo(webfPageName: 'miracle_plus');
+                return WebFDemo(webfPageName: 'miracle_plus', initialRoute: '/home');
               }));
             },
             child: Text('Open MiraclePlus App')),

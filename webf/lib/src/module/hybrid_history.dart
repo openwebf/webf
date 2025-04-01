@@ -25,7 +25,7 @@ abstract class HybridHistoryDelegate {
 
   String path(BuildContext context);
 
-  dynamic state(BuildContext context);
+  dynamic state(BuildContext context, Map<String, dynamic>? initialState);
 }
 
 class HybridHistoryModule extends BaseModule {
@@ -76,12 +76,18 @@ class HybridHistoryModule extends BaseModule {
   String invoke(String method, params, InvokeModuleCallback callback) {
     switch (method) {
       case 'state':
+        Map<String, dynamic>? initialState = moduleManager!.controller.initialState;
+
         if (_delegate != null) {
-          return _delegate!.state(moduleManager!.controller.currentBuildContext!);
+          return _delegate!.state(moduleManager!.controller.currentBuildContext!, initialState);
         }
+
         var route = ModalRoute.of(moduleManager!.controller.currentBuildContext!);
+
         if (route?.settings.arguments != null) {
           return jsonEncode(route!.settings.arguments);
+        } else if (route?.settings.name == null && initialState != null) {
+          return jsonEncode(initialState);
         }
         return '{}';
       case 'back':

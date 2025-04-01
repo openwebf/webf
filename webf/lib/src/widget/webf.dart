@@ -33,6 +33,11 @@ class WebF extends StatefulWidget {
   /// This is the entry point for the hybrid routing system in WebF.
   final String? initialRoute;
 
+  /// The default route state for the hybrid router in WebF.
+  ///
+  /// Users can read this value by webf.hybridRouter.state when loading by initialRoute path.
+  final Map<String, dynamic>? initialState;
+
   /// Custom error builder when using controllerName
   final Widget Function(BuildContext context, Object error)? errorBuilder;
 
@@ -67,6 +72,7 @@ class WebF extends StatefulWidget {
     Key? key,
     this.loadingWidget,
     this.initialRoute,
+    this.initialState,
     required this.controller,
   })  : errorBuilder = null,
         super(key: key);
@@ -82,13 +88,15 @@ class WebF extends StatefulWidget {
       {Key? key,
       required String controllerName,
       String? initialRoute,
+      Map<String, dynamic>? initialState,
       Widget? loadingWidget,
       Widget Function(BuildContext context, Object error)? errorBuilder}) {
     return _AsyncWebF(
         controllerName: controllerName,
         loadingWidget: loadingWidget,
         errorBuilder: errorBuilder,
-        initialRoute: initialRoute);
+        initialRoute: initialRoute,
+        initialState: initialState);
   }
 
   @override
@@ -118,15 +126,18 @@ class _AsyncWebF extends StatelessWidget {
   final String controllerName;
   final Widget? loadingWidget;
   final String? initialRoute;
+  final Map<String, dynamic>? initialState;
   final Widget Function(BuildContext context, Object error)? errorBuilder;
 
-  _AsyncWebF({required this.controllerName, this.loadingWidget, this.errorBuilder, this.initialRoute});
+  _AsyncWebF(
+      {required this.controllerName, this.loadingWidget, this.errorBuilder, this.initialRoute, this.initialState});
 
   Widget buildWebF(WebFController controller) {
     return WebF(
         controller: controller,
         key: controller.key,
         initialRoute: initialRoute,
+        initialState: initialState,
         loadingWidget: loadingWidget ??
             const SizedBox(
               width: 50,
@@ -237,8 +248,10 @@ class WebFState extends State<WebF> with RouteAware {
           }
 
           List<Widget> children = [];
-          if (widget.initialRoute != null && widget.initialRoute != '/') {
-            WidgetElement? child = widget.controller.view.getHybridRouterView(widget.initialRoute!);
+          if (widget.initialRoute != null) {
+            widget.controller.initialState = widget.initialState;
+            widget.controller.initialRoute = widget.initialRoute;
+            RouterLinkElement? child = widget.controller.view.getHybridRouterView(widget.initialRoute!);
             if (child != null) {
               children.add(child.toWidget());
             } else {
