@@ -42,7 +42,7 @@
       },
       truncatedContent() {
         const content = this.item.linkDescription || this.item.introduction || '';
-        return content.length > 100 ? content.slice(0, 97) + '...' : content;
+        return content;
       }
     }
   }

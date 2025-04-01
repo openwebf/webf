@@ -149,7 +149,7 @@ void main() async {
             routeObserver: routeObserver,
             devToolsService: kDebugMode ? ChromeDevToolsService() : null,
           ),
-      bundle: WebFBundle.fromUrl('http://localhost:8080'),
+      bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'),
       routes: {
         '/home': (context, controller) => WebFSubView(path: '/home', controller: controller),
         '/search': (context, controller) => WebFSubView(path: '/search', controller: controller),
