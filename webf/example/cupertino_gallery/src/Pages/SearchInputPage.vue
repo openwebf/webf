@@ -2,132 +2,132 @@
   <div id="main">
     <webf-listview id="list">
       <div class="component-section">
-        <div class="section-title">SearchInput 搜索框</div>
+        <div class="section-title">Search Input</div>
         <div class="component-block">
-          <!-- 基础用法 -->
+          <!-- Basic Usage -->
           <div class="component-item">
-            <div class="item-label">基础用法</div>
-            <flutter-cupertino-search-input placeholder="请输入搜索内容" />
+            <div class="item-label">Basic Usage</div>
+            <flutter-cupertino-search-input placeholder="Enter search content" />
           </div>
 
-          <!-- 默认值 -->
+          <!-- Default Value -->
           <div class="component-item">
-            <div class="item-label">默认值</div>
+            <div class="item-label">Default Value</div>
             <flutter-cupertino-search-input 
-              val="默认搜索内容" 
-              placeholder="请输入搜索内容" 
+              val="Default search content" 
+              placeholder="Enter search content" 
             />
           </div>
 
-          <!-- 双向绑定 -->
+          <!-- Two-way Binding -->
           <div class="component-item">
-            <div class="item-label">双向绑定</div>
+            <div class="item-label">Two-way Binding</div>
             <flutter-cupertino-search-input 
               :val="searchText"
-              placeholder="请输入搜索内容"
+              placeholder="Enter search content"
               @input="onSearchInput"
             />
             <div class="event-output">
-              当前输入内容：{{ searchText }}
+              Current input: {{ searchText }}
             </div>
           </div>
 
-          <!-- 禁用状态 -->
+          <!-- Disabled State -->
           <div class="component-item">
-            <div class="item-label">禁用状态</div>
+            <div class="item-label">Disabled State</div>
             <flutter-cupertino-search-input 
-              placeholder="禁用状态的搜索框" 
+              placeholder="Disabled search input" 
               disabled
             />
           </div>
 
-          <!-- 输入类型 -->
+          <!-- Input Types -->
           <div class="component-item">
-            <div class="item-label">输入类型</div>
+            <div class="item-label">Input Types</div>
             <div class="search-row">
               <flutter-cupertino-search-input 
                 type="number"
-                placeholder="数字输入" 
+                placeholder="Number input" 
               />
               <flutter-cupertino-search-input 
                 type="tel"
-                placeholder="电话号码" 
+                placeholder="Phone number" 
               />
               <flutter-cupertino-search-input 
                 type="url"
-                placeholder="网址" 
+                placeholder="URL" 
               />
             </div>
           </div>
 
-          <!-- 自定义图标 -->
+          <!-- Custom Icons -->
           <div class="component-item">
-            <div class="item-label">自定义图标</div>
+            <div class="item-label">Custom Icons</div>
             <div class="search-row">
               <flutter-cupertino-search-input 
                 prefix-icon="search"
                 suffix-icon="xmark_circle_fill"
-                placeholder="默认图标" 
+                placeholder="Default icons" 
               />
               <flutter-cupertino-search-input 
                 item-color="#007AFF"
                 item-size="24"
-                placeholder="自定义图标颜色和大小" 
+                placeholder="Custom icon color and size" 
               />
             </div>
           </div>
 
-          <!-- 清除按钮显示模式 -->
+          <!-- Clear Button Display Mode -->
           <div class="component-item">
-            <div class="item-label">清除按钮显示模式</div>
+            <div class="item-label">Clear Button Display Mode</div>
             <div class="search-row">
               <flutter-cupertino-search-input 
                 suffix-mode="never"
-                placeholder="从不显示清除按钮" 
+                placeholder="Never show clear button" 
               />
               <flutter-cupertino-search-input 
                 suffix-mode="always"
-                placeholder="始终显示清除按钮" 
+                placeholder="Always show clear button" 
               />
               <flutter-cupertino-search-input 
                 suffix-mode="editing"
-                placeholder="编辑时显示清除按钮" 
+                placeholder="Show clear button while editing" 
               />
             </div>
           </div>
 
-          <!-- 自定义样式 -->
+          <!-- Custom Styles -->
           <div class="component-item">
-            <div class="item-label">自定义样式</div>
+            <div class="item-label">Custom Styles</div>
             <div class="search-row">
               <flutter-cupertino-search-input 
-                placeholder="自定义圆角" 
+                placeholder="Custom border radius" 
                 class="custom-radius" 
               />
               <flutter-cupertino-search-input 
-                placeholder="自定义内边距" 
+                placeholder="Custom padding" 
                 class="custom-padding" 
               />
             </div>
           </div>
 
-          <!-- 事件监听 -->
+          <!-- Event Handling -->
           <div class="component-item">
-            <div class="item-label">事件监听</div>
+            <div class="item-label">Event Handling</div>
             <flutter-cupertino-search-input 
-              placeholder="输入内容触发事件" 
+              placeholder="Input triggers events" 
               @input="onInput"
               @search="onSearch"
               @clear="onClear"
             />
             <div class="event-output" v-if="inputValue">
-              输入的内容: {{ inputValue }}
+              Input content: {{ inputValue }}
             </div>
             <div class="event-output" v-if="searchValue">
-              搜索的内容: {{ searchValue }}
+              Search content: {{ searchValue }}
             </div>
             <div class="event-output" v-if="isCleared">
-              搜索框已清空
+              Search input cleared
             </div>
           </div>
         </div>
@@ -143,7 +143,7 @@ export default {
       inputValue: '',
       searchValue: '',
       isCleared: false,
-      searchText: '初始搜索内容'
+      searchText: 'Initial search content'
     }
   },
   methods: {

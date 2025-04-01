@@ -2,11 +2,11 @@
     <div id="main">
       <webf-listview id="list">
         <div class="component-section">
-          <div class="section-title">Icon 图标</div>
+          <div class="section-title">Icon</div>
           <div class="component-block">
-            <!-- 基础图标 -->
+            <!-- Basic Icons -->
             <div class="component-item">
-              <div class="item-label">基础图标</div>
+              <div class="item-label">Basic Icons</div>
               <div class="icon-row">
                 <flutter-cupertino-icon type="home" />
                 <flutter-cupertino-icon type="person" />
@@ -15,9 +15,9 @@
               </div>
             </div>
   
-            <!-- 填充图标 -->
+            <!-- Filled Icons -->
             <div class="component-item">
-              <div class="item-label">填充图标</div>
+              <div class="item-label">Filled Icons</div>
               <div class="icon-row">
                 <flutter-cupertino-icon type="location_fill" />
                 <flutter-cupertino-icon type="person_fill" />
@@ -26,9 +26,9 @@
               </div>
             </div>
   
-            <!-- 不同尺寸 -->
+            <!-- Different Sizes -->
             <div class="component-item">
-              <div class="item-label">不同尺寸</div>
+              <div class="item-label">Different Sizes</div>
               <div class="icon-row">
                 <flutter-cupertino-icon type="star" style="font-size: 16px;" />
                 <flutter-cupertino-icon type="star" style="font-size: 24px;" />
@@ -37,9 +37,9 @@
               </div>
             </div>
   
-            <!-- 不同颜色 -->
+            <!-- Different Colors -->
             <div class="component-item">
-              <div class="item-label">不同颜色</div>
+              <div class="item-label">Different Colors</div>
               <div class="icon-row">
                 <flutter-cupertino-icon type="heart_fill" style="color: #ff6b81;" />
                 <flutter-cupertino-icon type="star_fill" style="color: #ffd700;" />
@@ -48,9 +48,9 @@
               </div>
             </div>
   
-            <!-- 操作图标 -->
+            <!-- Action Icons -->
             <div class="component-item">
-              <div class="item-label">操作图标</div>
+              <div class="item-label">Action Icons</div>
               <div class="icon-row">
                 <flutter-cupertino-icon type="plus" />
                 <flutter-cupertino-icon type="minus" />
@@ -59,9 +59,9 @@
               </div>
             </div>
   
-            <!-- 导航图标 -->
+            <!-- Navigation Icons -->
             <div class="component-item">
-              <div class="item-label">导航图标</div>
+              <div class="item-label">Navigation Icons</div>
               <div class="icon-row">
                 <flutter-cupertino-icon type="back" />
                 <flutter-cupertino-icon type="forward" />
@@ -70,9 +70,9 @@
               </div>
             </div>
   
-            <!-- 状态图标 -->
+            <!-- Status Icons -->
             <div class="component-item">
-              <div class="item-label">状态图标</div>
+              <div class="item-label">Status Icons</div>
               <div class="icon-row">
                 <flutter-cupertino-icon type="check_mark" />
                 <flutter-cupertino-icon type="xmark" />
@@ -80,9 +80,9 @@
               </div>
             </div>
   
-            <!-- 媒体图标 -->
+            <!-- Media Icons -->
             <div class="component-item">
-              <div class="item-label">媒体图标</div>
+              <div class="item-label">Media Icons</div>
               <div class="icon-row">
                 <flutter-cupertino-icon type="play_fill" />
                 <flutter-cupertino-icon type="pause_fill" />
@@ -91,9 +91,9 @@
               </div>
             </div>
   
-            <!-- 系统图标 -->
+            <!-- System Icons -->
             <div class="component-item">
-              <div class="item-label">系统图标</div>
+              <div class="item-label">System Icons</div>
               <div class="icon-row">
                 <flutter-cupertino-icon type="wifi" />
                 <flutter-cupertino-icon type="wifi_exclamationmark" />

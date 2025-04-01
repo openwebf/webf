@@ -2,11 +2,11 @@
   <div id="main">
     <webf-listview id="list">
       <div class="component-section">
-        <div class="section-title">Button 按钮</div>
+        <div class="section-title">Button</div>
         <div class="component-block">
-          <!-- 按钮变体 -->
+          <!-- Button Variants -->
           <div class="component-item">
-            <div class="item-label">按钮变体</div>
+            <div class="item-label">Button Variants</div>
             <div class="button-row">
               <flutter-cupertino-button variant="filled">Filled Button</flutter-cupertino-button>
               <flutter-cupertino-button variant="tinted">Tinted Button</flutter-cupertino-button>
@@ -14,27 +14,27 @@
             </div>
           </div>
 
-          <!-- 按钮尺寸 -->
+          <!-- Button Sizes -->
           <div class="component-item">
-            <div class="item-label">按钮尺寸</div>
+            <div class="item-label">Button Sizes</div>
             <div class="button-row">
               <flutter-cupertino-button size-style="small" variant="filled">Small Button</flutter-cupertino-button>
               <flutter-cupertino-button size-style="large" variant="filled">Large Button</flutter-cupertino-button>
             </div>
           </div>
 
-          <!-- 自定义颜色 -->
+          <!-- Custom Colors -->
           <div class="component-item">
-            <div class="item-label">自定义颜色</div>
+            <div class="item-label">Custom Colors</div>
             <div class="button-row">
               <flutter-cupertino-button variant="tinted" color="#FFFF00">Custom Color</flutter-cupertino-button>
               <flutter-cupertino-button variant="filled" disabled>Disabled Button</flutter-cupertino-button>
             </div>
           </div>
 
-          <!-- 自定义样式 -->
+          <!-- Custom Styles -->
           <div class="component-item">
-            <div class="item-label">自定义样式</div>
+            <div class="item-label">Custom Styles</div>
             <div class="button-row">
               <flutter-cupertino-button variant="filled" class="custom-padding">Custom
                 Padding</flutter-cupertino-button>
@@ -43,9 +43,9 @@
             </div>
           </div>
 
-          <!-- 按压效果 -->
+          <!-- Press Effect -->
           <div class="component-item">
-            <div class="item-label">按压效果</div>
+            <div class="item-label">Press Effect</div>
             <div class="button-row">
               <flutter-cupertino-button variant="filled" pressed-opacity="0.2">Light Press
                 Effect</flutter-cupertino-button>
@@ -54,9 +54,9 @@
             </div>
           </div>
 
-          <!-- 禁用状态 -->
+          <!-- Disabled State -->
           <div class="component-item">
-            <div class="item-label">禁用状态</div>
+            <div class="item-label">Disabled State</div>
             <div class="button-row">
               <flutter-cupertino-button variant="plain" disabled>Plain Disabled</flutter-cupertino-button>
               <flutter-cupertino-button variant="filled" disabled>Filled Disabled</flutter-cupertino-button>

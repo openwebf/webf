@@ -2,49 +2,49 @@
   <div id="main">
     <webf-listview id="list">
       <div class="component-section">
-        <div class="section-title">Cupertino 组件</div>
+        <div class="section-title">Cupertino Components</div>
         <div class="component-block">
-          <!-- 按钮 -->
+          <!-- Button -->
           <div class="component-item" @click="navigateTo('/button')">
             <div class="item-content">
-              <div class="item-title">Button 按钮</div>
-              <div class="item-desc">用于触发操作的按钮组件</div>
+              <div class="item-title">Button</div>
+              <div class="item-desc">A button component for triggering actions</div>
             </div>
             <div class="item-arrow">></div>
           </div>
 
-          <!-- 开关 -->
-          <div class="component-item" @click="navigateTo('/switch')">
-            <div class="item-content">
-              <div class="item-title">Switch 开关</div>
-              <div class="item-desc">用于切换状态的开关组件</div>
-            </div>
-            <div class="item-arrow">></div>
-          </div>
-
-          <!-- 图标 -->
-          <div class="component-item" @click="navigateTo('/icon')">
-            <div class="item-content">
-              <div class="item-title">Icon 图标</div>
-              <div class="item-desc">iOS 风格的图标组件</div>
-            </div>
-            <div class="item-arrow">></div>
-          </div>
-
-          <!-- 输入框 -->
+          <!-- Input -->
           <div class="component-item" @click="navigateTo('/input')">
             <div class="item-content">
-              <div class="item-title">Input 输入框</div>
-              <div class="item-desc">用于输入内容的表单组件</div>
+              <div class="item-title">Input</div>
+              <div class="item-desc">A form component for text input</div>
             </div>
             <div class="item-arrow">></div>
           </div>
 
-          <!-- 搜索框 -->
+          <!-- Switch -->
+          <div class="component-item" @click="navigateTo('/switch')">
+            <div class="item-content">
+              <div class="item-title">Switch</div>
+              <div class="item-desc">A toggle component for switching states</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
+
+          <!-- Icon -->
+          <div class="component-item" @click="navigateTo('/icon')">
+            <div class="item-content">
+              <div class="item-title">Icon</div>
+              <div class="item-desc">iOS-style icon component</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
+
+          <!-- Search Input -->
           <div class="component-item" @click="navigateTo('/search_input')">
             <div class="item-content">
-              <div class="item-title">SearchInput 搜索框</div>
-              <div class="item-desc">用于搜索内容的搜索框组件</div>
+              <div class="item-title">Search Input</div>
+              <div class="item-desc">A search input component for content searching</div>
             </div>
             <div class="item-arrow">></div>
           </div>

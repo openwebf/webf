@@ -2,91 +2,91 @@
   <div id="main">
     <webf-listview id="list">
       <div class="component-section">
-        <div class="section-title">Input 输入框</div>
+        <div class="section-title">Input</div>
         <div class="component-block">
-          <!-- 基础用法 -->
+          <!-- Basic Usage -->
           <div class="component-item">
-            <div class="item-label">基础用法</div>
-            <flutter-cupertino-input placeholder="请输入内容" />
+            <div class="item-label">Basic Usage</div>
+            <flutter-cupertino-input placeholder="Enter content" />
           </div>
 
-          <!-- 双向绑定 -->
+          <!-- Two-way Binding -->
           <div class="component-item">
-            <div class="item-label">双向绑定</div>
+            <div class="item-label">Two-way Binding</div>
             <flutter-cupertino-input 
               :val="inputText"
-              placeholder="请输入内容"
+              placeholder="Enter content"
               @input="onInputChange"
             />
             <div class="event-output">
-              当前输入内容：{{ inputText }}
+              Current input: {{ inputText }}
             </div>
           </div>
 
-          <!-- 输入框类型 -->
+          <!-- Input Types -->
           <div class="component-item">
-            <div class="item-label">输入框类型</div>
+            <div class="item-label">Input Types</div>
             <div class="input-row">
-              <flutter-cupertino-input type="text" placeholder="文本输入框" />
-              <flutter-cupertino-input type="password" placeholder="密码输入框" />
-              <flutter-cupertino-input type="number" placeholder="数字输入框" />
-              <flutter-cupertino-input type="tel" placeholder="电话输入框" />
-              <flutter-cupertino-input type="email" placeholder="邮箱输入框" />
-              <flutter-cupertino-input type="url" placeholder="URL 输入框" />
+              <flutter-cupertino-input type="text" placeholder="Text input" />
+              <flutter-cupertino-input type="password" placeholder="Password input" />
+              <flutter-cupertino-input type="number" placeholder="Number input" />
+              <flutter-cupertino-input type="tel" placeholder="Phone input" />
+              <flutter-cupertino-input type="email" placeholder="Email input" />
+              <flutter-cupertino-input type="url" placeholder="URL input" />
             </div>
           </div>
 
-          <!-- 清除按钮 -->
+          <!-- Clear Button -->
           <div class="component-item">
-            <div class="item-label">清除按钮</div>
-            <flutter-cupertino-input placeholder="输入文字显示清除按钮" clearable />
+            <div class="item-label">Clear Button</div>
+            <flutter-cupertino-input placeholder="Input text to show clear button" clearable />
           </div>
 
-          <!-- 最大长度 -->
+          <!-- Maximum Length -->
           <div class="component-item">
-            <div class="item-label">最大长度</div>
-            <flutter-cupertino-input placeholder="最多输入10个字符" maxlength="10" />
+            <div class="item-label">Maximum Length</div>
+            <flutter-cupertino-input placeholder="Maximum 10 characters" maxlength="10" />
           </div>
 
-          <!-- 禁用状态 -->
+          <!-- Disabled State -->
           <div class="component-item">
-            <div class="item-label">禁用状态</div>
+            <div class="item-label">Disabled State</div>
             <div class="input-row">
-              <flutter-cupertino-input val="这里是禁用的" disabled />
-              <flutter-cupertino-input val="这里是只读的" readonly />
+              <flutter-cupertino-input val="This is disabled" disabled />
+              <flutter-cupertino-input val="This is read-only" readonly />
             </div>
           </div>
 
-          <!-- 自定义样式 -->
+          <!-- Custom Styles -->
           <div class="component-item">
-            <div class="item-label">自定义样式</div>
+            <div class="item-label">Custom Styles</div>
             <div class="input-row">
               <flutter-cupertino-input 
-                placeholder="自定义高度" 
+                placeholder="Custom height" 
                 class="custom-height" 
               />
               <flutter-cupertino-input 
-                placeholder="自定义圆角" 
+                placeholder="Custom border radius" 
                 class="custom-radius" 
               />
               <flutter-cupertino-input 
-                placeholder="自定义内边距" 
+                placeholder="Custom padding" 
                 class="custom-padding" 
               />
               <flutter-cupertino-input 
-                placeholder="文字右对齐" 
+                placeholder="Right aligned text" 
                 class="text-right"
               />
             </div>
           </div>
 
-          <!-- 前缀和后缀 -->
+          <!-- Prefix and Suffix -->
           <div class="component-item">
-            <div class="item-label">前缀和后缀</div>
-            <flutter-cupertino-input placeholder="带有前缀的输入框">
-              <span slotName="prefix">￥</span>
+            <div class="item-label">Prefix and Suffix</div>
+            <flutter-cupertino-input placeholder="Input with prefix">
+              <span slotName="prefix">$</span>
             </flutter-cupertino-input>
-            <flutter-cupertino-input placeholder="带有后缀的输入框" style="margin-top: 12px;">
+            <flutter-cupertino-input placeholder="Input with suffix" style="margin-top: 12px;">
               <span slotName="suffix">.com</span>
             </flutter-cupertino-input>
           </div>
@@ -100,7 +100,7 @@
 export default {
   data() {
     return {
-      inputText: '初始输入内容'
+      inputText: 'Initial input content'
     }
   },
   methods: {

@@ -2,19 +2,19 @@
   <div id="main">
     <webf-listview id="list">
       <div class="component-section">
-        <div class="section-title">Switch 开关</div>
+        <div class="section-title">Switch</div>
         <div class="component-block">
-          <!-- 基础用法 -->
+          <!-- Basic Usage -->
           <div class="component-item">
-            <div class="item-label">基础用法</div>
+            <div class="item-label">Basic Usage</div>
             <div class="switch-row">
               <flutter-cupertino-switch checked="true" @change="handleSwitchChange" />
             </div>
           </div>
 
-          <!-- 自定义颜色 -->
+          <!-- Custom Colors -->
           <div class="component-item">
-            <div class="item-label">自定义颜色</div>
+            <div class="item-label">Custom Colors</div>
             <div class="switch-row">
               <flutter-cupertino-switch 
                 checked="true" 
@@ -29,9 +29,9 @@
             </div>
           </div>
 
-          <!-- 禁用状态 -->
+          <!-- Disabled State -->
           <div class="component-item">
-            <div class="item-label">禁用状态</div>
+            <div class="item-label">Disabled State</div>
             <div class="switch-row">
               <flutter-cupertino-switch checked="true" disabled />
               <flutter-cupertino-switch checked="false" disabled />
