@@ -504,7 +504,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         if (!happenJumpPaint &&
             ((child is RenderFlowLayout && isInlineLevel(child) && (child).lineBoxes.happenVisualOverflow()) ||
                 (child is RenderTextBox && child.happenVisualOverflow))) {
-          happenJumpPaint = true;
+          // happenJumpPaint = true;
         }
 
         // This value use to range every line render position
