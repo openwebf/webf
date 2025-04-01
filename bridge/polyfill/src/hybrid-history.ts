@@ -6,17 +6,24 @@
 import { webf } from './webf';
 
 class HybridHistory {
+  // State management
   get state() {
     return JSON.parse(webf.invokeModule('HybridHistory', 'state'));
   }
-  back() {
-     webf.invokeModule('HybridHistory', 'back');
+
+  get path() {
+    return webf.invokeModule('HybridHistory', 'path');
   }
+  
+  // Original API methods - kept for backward compatibility
+  back() {
+    webf.invokeModule('HybridHistory', 'back');
+  }
+  
   pushState(state: any, name: string) {
     if (arguments.length < 2) {
       throw TypeError("Failed to execute 'pushState' on 'HybridHistory': 2 arguments required, but only " + arguments.length + " present");
     }
-
     webf.invokeModule('HybridHistory', 'pushState', [state, name]);
   }
 
@@ -26,9 +33,84 @@ class HybridHistory {
     }
     webf.invokeModule('HybridHistory', 'replaceState', [state, name]);
   }
-
-  get path() {
-    return webf.invokeModule('HybridHistory', 'path');
+  
+  restorablePopAndPushState(state: any, name: string): string {
+    if (arguments.length < 2) {
+      throw TypeError("Failed to execute 'restorablePopAndPushState' on 'HybridHistory': 2 arguments required, but only " + arguments.length + " present");
+    }
+    return webf.invokeModule('HybridHistory', 'restorablePopAndPushState', [state, name]);
+  }
+  
+  // New Flutter-like API methods
+  pop(result?: any) {
+    webf.invokeModule('HybridHistory', 'pop', result !== undefined ? [result] : []);
+  }
+  
+  pushNamed(routeName: string, options?: { arguments?: any }) {
+    if (arguments.length < 1) {
+      throw TypeError("Failed to execute 'pushNamed' on 'HybridHistory': 1 argument required, but only " + arguments.length + " present");
+    }
+    webf.invokeModule('HybridHistory', 'pushNamed', 
+      options?.arguments !== undefined ? [routeName, options.arguments] : [routeName]);
+  }
+  
+  pushReplacementNamed(routeName: string, options?: { arguments?: any }) {
+    if (arguments.length < 1) {
+      throw TypeError("Failed to execute 'pushReplacementNamed' on 'HybridHistory': 1 argument required, but only " + arguments.length + " present");
+    }
+    webf.invokeModule('HybridHistory', 'pushReplacementNamed', 
+      options?.arguments !== undefined ? [routeName, options.arguments] : [routeName]);
+  }
+  
+  restorablePopAndPushNamed(routeName: string, options?: { arguments?: any }): string {
+    if (arguments.length < 1) {
+      throw TypeError("Failed to execute 'restorablePopAndPushNamed' on 'HybridHistory': 1 argument required, but only " + arguments.length + " present");
+    }
+    return webf.invokeModule('HybridHistory', 'restorablePopAndPushNamed', 
+      options?.arguments !== undefined ? [routeName, options.arguments] : [routeName]);
+  }
+  
+  // Utility methods
+  canPop(): boolean {
+    return webf.invokeModule('HybridHistory', 'canPop') === 'true';
+  }
+  
+  maybePop(result?: any): boolean {
+    return webf.invokeModule('HybridHistory', 'maybePop', result !== undefined ? [result] : []) === 'true';
+  }
+  
+  popAndPushNamed(routeName: string, options?: { arguments?: any }) {
+    if (arguments.length < 1) {
+      throw TypeError("Failed to execute 'popAndPushNamed' on 'HybridHistory': 1 argument required, but only " + arguments.length + " present");
+    }
+    webf.invokeModule('HybridHistory', 'popAndPushNamed', 
+      options?.arguments !== undefined ? [routeName, options.arguments] : [routeName]);
+  }
+  
+  popUntil(routeName: string) {
+    if (arguments.length < 1) {
+      throw TypeError("Failed to execute 'popUntil' on 'HybridHistory': 1 argument required, but only " + arguments.length + " present");
+    }
+    webf.invokeModule('HybridHistory', 'popUntil', [routeName]);
+  }
+  
+  // Original style with 3 parameters (state, newRouteName, untilRouteName)
+  pushNamedAndRemoveUntil(state: any, newRouteName: string, untilRouteName: string) {
+    if (arguments.length < 3) {
+      throw TypeError("Failed to execute 'pushNamedAndRemoveUntil' on 'HybridHistory': 3 arguments required, but only " + arguments.length + " present");
+    }
+    webf.invokeModule('HybridHistory', 'pushNamedAndRemoveUntil', [state, newRouteName, untilRouteName]);
+  }
+  
+  // New Flutter-like API with options
+  pushNamedAndRemoveUntilRoute(newRouteName: string, untilRouteName: string, options?: { arguments?: any }) {
+    if (arguments.length < 2) {
+      throw TypeError("Failed to execute 'pushNamedAndRemoveUntilRoute' on 'HybridHistory': 2 arguments required, but only " + arguments.length + " present");
+    }
+    webf.invokeModule('HybridHistory', 'pushNamedAndRemoveUntil', 
+      options?.arguments !== undefined ? 
+        [newRouteName, untilRouteName, options.arguments] : 
+        [newRouteName, untilRouteName]);
   }
 }
 

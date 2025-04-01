@@ -3,14 +3,10 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
-import 'package:webf/widget.dart'; // For AsyncWebF
 import 'package:webf/devtools.dart';
-import 'package:webf/launcher.dart'; // For WebFControllerManager
 import 'package:webf/cupertino.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -28,39 +24,9 @@ import 'custom_elements/shimmer/shimmer_items.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
+import 'custom_hybrid_history_delegate.dart';
+
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
-
-class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
-  @override
-  void back(BuildContext context) {
-    Navigator.pop(context);
-  }
-
-  @override
-  String path(BuildContext context) {
-    String? currentPath = ModalRoute.of(context)?.settings.name;
-    return currentPath ?? '';
-  }
-
-  @override
-  void pushState(BuildContext context, state, String name) {
-    Navigator.pushNamed(context, name, arguments: state);
-  }
-
-  @override
-  void replaceState(BuildContext context, state, String name) {
-    Navigator.pushReplacementNamed(context, name, arguments: state);
-  }
-
-  @override
-  state(BuildContext context, Map<String, dynamic>? initialState) {
-    var route = ModalRoute.of(context);
-    if (route?.settings.arguments != null) {
-      return jsonEncode(route!.settings.arguments);
-    }
-    return '{}';
-  }
-}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
