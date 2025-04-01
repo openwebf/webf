@@ -2,7 +2,7 @@
   <router-view path="/register" title="注册">
     <register-page></register-page>
   </router-view>
-  <router-view path="/login" title="登陆">
+  <router-view path="/login" title="登录">
     <login-page></login-page>
   </router-view>
   <router-view path="/reset_password" title="重置密码">

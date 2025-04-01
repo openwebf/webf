@@ -21,7 +21,7 @@
         </flutter-cupertino-input>
         <flutter-cupertino-input class="pwd-input" placeholder="请设置密码" icon="lock" type="password"
           @input="handlePasswordInput" />
-        <flutter-cupertino-button type="primary" @click="handleRegister" class="register-button">
+        <flutter-cupertino-button size="large" type="primary" @click="handleRegister" class="register-button">
           注册
         </flutter-cupertino-button>
       </div>

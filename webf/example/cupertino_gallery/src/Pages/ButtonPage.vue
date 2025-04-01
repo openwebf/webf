@@ -18,8 +18,8 @@
           <div class="component-item">
             <div class="item-label">Button Sizes</div>
             <div class="button-row">
-              <flutter-cupertino-button size-style="small" variant="filled">Small Button</flutter-cupertino-button>
-              <flutter-cupertino-button size-style="large" variant="filled">Large Button</flutter-cupertino-button>
+              <flutter-cupertino-button size="small" variant="filled">Small Button</flutter-cupertino-button>
+              <flutter-cupertino-button size="large" variant="filled">Large Button</flutter-cupertino-button>
             </div>
           </div>
 

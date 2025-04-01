@@ -466,7 +466,6 @@ export default {
       margin-bottom: 12px;
 
       .edit-profile {
-        height: 36px;
         margin-right: 12px;
         width: 100px;
         color: var(--font-color-primary);
@@ -474,7 +473,6 @@ export default {
 
       .setting {
         width: 100px;
-        height: 36px;
         color: var(--font-color-primary);
       }
     }

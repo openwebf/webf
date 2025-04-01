@@ -19,7 +19,7 @@ class FlutterCupertinoButton extends WidgetElement {
     );
 
     // Button size: small | large
-    attributes['size-style'] = ElementAttributeProperty(
+    attributes['size'] = ElementAttributeProperty(
       getter: () => _sizeStyle,
       setter: (value) {
         _sizeStyle = value;
@@ -56,7 +56,7 @@ class FlutterCupertinoButton extends WidgetElement {
   }
 
   String _variant = 'filled';  // plain | filled | tinted
-  String _sizeStyle = 'large';   // small | large
+  String _sizeStyle = 'small';   // small | large
   bool _disabled = false;
   Color? _color;
   double _pressedOpacity = 0.4;
