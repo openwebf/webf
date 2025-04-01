@@ -1,5 +1,5 @@
 <template>
-    <webf-router-link :path="path" @onscreen="onScreen" :title="title">
+    <webf-router-link :path="path" @onscreen="onScreen" :title="title" @hybridrouterchange="onRouterChange">
       <slot v-if="isMounted"></slot>
     </webf-router-link>
   </template>
@@ -24,6 +24,9 @@
     methods: {
       onScreen() {
         this.isMounted = true;
+      },
+      onRouterChange(e) {
+        console.log(e);
       }
     }
   }

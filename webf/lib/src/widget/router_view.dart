@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
+import 'package:webf/html.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
@@ -48,30 +49,46 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
 
   @override
   void didPop() {
-    super.didPop();
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
     String name = route.settings.name ?? '';
-    widget.controller.view.window.dispatchEvent(dom.HybridRouterChangeEvent(state: state, kind: 'pop', name: name));
+
+    dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPop', name: name);
+    RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
+    routerLinkElement.dispatchEvent(event);
   }
 
   @override
   void didPopNext() {
-    super.didPopNext();
+    ModalRoute route = ModalRoute.of(context)!;
+    var state = route.settings.arguments;
+    String name = route.settings.name ?? '';
+
+    dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPopNext', name: name);
+    RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
+    routerLinkElement.dispatchEvent(event);
   }
 
   @override
   void didPush() {
-    super.didPush();
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
     String name = route.settings.name ?? '';
-    widget.controller.view.window.dispatchEvent(dom.HybridRouterChangeEvent(state: state, kind: 'push', name: name));
+
+    dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPush', name: name);
+    RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
+    routerLinkElement.dispatchEvent(event);
   }
 
   @override
   void didPushNext() {
-    super.didPushNext();
+    ModalRoute route = ModalRoute.of(context)!;
+    var state = route.settings.arguments;
+    String name = route.settings.name ?? '';
+
+    dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPushNext', name: name);
+    RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
+    routerLinkElement.dispatchEvent(event);
   }
 }
 

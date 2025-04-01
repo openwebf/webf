@@ -221,6 +221,70 @@ class WebFState extends State<WebF> with RouteAware {
     watchWindowIsReady();
   }
 
+  @override
+  void didPop() {
+    ModalRoute route = ModalRoute.of(context)!;
+    var state = route.settings.arguments;
+    String name = route.settings.name ?? '';
+
+    Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPop', name: name);
+    widget.controller.view.document.dispatchEvent(event);
+
+    if (widget.controller.initialRoute != null) {
+      RouterLinkElement? routerLinkElement =
+          widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
+      routerLinkElement?.dispatchEvent(event);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    ModalRoute route = ModalRoute.of(context)!;
+    var state = route.settings.arguments;
+    String name = route.settings.name ?? '';
+
+    Event event = HybridRouterChangeEvent(state: state, kind: 'didPopNext', name: name);
+    widget.controller.view.document.dispatchEvent(event);
+
+    if (widget.controller.initialRoute != null) {
+      RouterLinkElement? routerLinkElement =
+      widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
+      routerLinkElement?.dispatchEvent(event);
+    }
+  }
+
+  @override
+  void didPush() {
+    ModalRoute route = ModalRoute.of(context)!;
+    var state = route.settings.arguments;
+    String name = route.settings.name ?? '';
+
+    Event event = HybridRouterChangeEvent(state: state, kind: 'didPush', name: name);
+    widget.controller.view.document.dispatchEvent(event);
+
+    if (widget.controller.initialRoute != null) {
+      RouterLinkElement? routerLinkElement =
+      widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
+      routerLinkElement?.dispatchEvent(event);
+    }
+  }
+
+  @override
+  void didPushNext() {
+    ModalRoute route = ModalRoute.of(context)!;
+    var state = route.settings.arguments;
+    String name = route.settings.name ?? '';
+
+    Event event = HybridRouterChangeEvent(state: state, kind: 'didPushNext', name: name);
+    widget.controller.view.document.dispatchEvent(event);
+
+    if (widget.controller.initialRoute != null) {
+      RouterLinkElement? routerLinkElement =
+      widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
+      routerLinkElement?.dispatchEvent(event);
+    }
+  }
+
   void requestForUpdate(AdapterUpdateReason reason) {
     if (!mounted) return;
 
@@ -277,8 +341,15 @@ class WebFState extends State<WebF> with RouteAware {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    widget.controller.routeObserver?.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
   void dispose() {
     super.dispose();
+    widget.controller.routeObserver?.unsubscribe(this);
   }
 }
 
