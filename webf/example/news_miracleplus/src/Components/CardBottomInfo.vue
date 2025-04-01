@@ -56,7 +56,7 @@
   }
   </script>
   
-  <style lang="scss" scoped>
+  <style lang="scss">
   .bottom-info {
     display: flex;
     align-items: center;

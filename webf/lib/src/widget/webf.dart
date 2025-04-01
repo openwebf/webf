@@ -84,7 +84,11 @@ class WebF extends StatefulWidget {
       String? initialRoute,
       Widget? loadingWidget,
       Widget Function(BuildContext context, Object error)? errorBuilder}) {
-    return _AsyncWebF(controllerName: controllerName, loadingWidget: loadingWidget, errorBuilder: errorBuilder, initialRoute: initialRoute);
+    return _AsyncWebF(
+        controllerName: controllerName,
+        loadingWidget: loadingWidget,
+        errorBuilder: errorBuilder,
+        initialRoute: initialRoute);
   }
 
   @override
@@ -135,16 +139,10 @@ class _AsyncWebF extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    WebFController? existingController = WebFControllerManager.getInstanceSync(controllerName);
-
-    if (existingController != null) {
-      return buildWebF(existingController);
-    }
-
     return FutureBuilder<WebFController?>(
       future: WebFControllerManager.instance.getController(controllerName),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting && snapshot.data == null) {
           return loadingWidget ??
               const SizedBox(
                 width: 50,
@@ -224,59 +222,45 @@ class WebFState extends State<WebF> with RouteAware {
       return const SizedBox(width: 0, height: 0);
     }
 
-    List<Widget> children = [];
+    return FutureBuilder(
+        future: widget.controller.controllerOnDOMContentLoadedCompleter.future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting && snapshot.data == null) {
+            return widget.loadingWidget ??
+                const SizedBox(
+                  width: 50,
+                  height: 50,
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+          }
 
-    Widget result = RepaintBoundary(
-      key: widget.controller.key,
-      child: WebFContext(
-        child: WebFRootViewport(
-          widget.controller,
-          viewportWidth: widget.controller.viewportWidth,
-          viewportHeight: widget.controller.viewportHeight,
-          background: widget.controller.background,
-          resizeToAvoidBottomInsets: widget.controller.resizeToAvoidBottomInsets,
-          children: children,
-        ),
-      ),
-    );
-
-    if (!widget.controller.isDOMComplete) {
-      return FutureBuilder(
-          future: widget.controller.controllerOnDOMContentLoadedCompleter.future,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return widget.loadingWidget ??
-                  const SizedBox(
-                    width: 50,
-                    height: 50,
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-            }
-
-            if (widget.initialRoute != null && widget.initialRoute != '/') {
-              WidgetElement? child = widget.controller.view.getHybridRouterView(widget.initialRoute!);
-              if (child != null) {
-                children.add(child.toWidget());
-              } else {
-                children.add(widget.controller.view.document.documentElement!.toWidget());
-              }
+          List<Widget> children = [];
+          if (widget.initialRoute != null && widget.initialRoute != '/') {
+            WidgetElement? child = widget.controller.view.getHybridRouterView(widget.initialRoute!);
+            if (child != null) {
+              children.add(child.toWidget());
             } else {
               children.add(widget.controller.view.document.documentElement!.toWidget());
             }
-            return result;
-          });
-    } else {
-      if (widget.initialRoute != null && widget.initialRoute != '/') {
-        WidgetElement? child = widget.controller.view.getHybridRouterView(widget.initialRoute!);
-        children.add(child!.toWidget());
-      } else {
-        children.add(widget.controller.view.document.documentElement!.toWidget());
-      }
-    }
+          } else {
+            children.add(widget.controller.view.document.documentElement!.toWidget());
+          }
 
-    return result;
+          Widget result = RepaintBoundary(
+            key: widget.controller.key,
+            child: WebFRootViewport(
+              widget.controller,
+              viewportWidth: widget.controller.viewportWidth,
+              viewportHeight: widget.controller.viewportHeight,
+              background: widget.controller.background,
+              resizeToAvoidBottomInsets: widget.controller.resizeToAvoidBottomInsets,
+              children: children,
+            ),
+          );
+          return result;
+        });
   }
 
   @override
@@ -330,6 +314,8 @@ class _WebFElement extends StatefulElement {
       throw FlutterError('Consider providing a WebFBundle resource as the entry point for WebF');
     }
 
+    print('start for loading..');
+
     await controller.controlledInitCompleter.future;
 
     SchedulerBinding.instance.addPostFrameCallback((_) async {
@@ -354,8 +340,6 @@ class _WebFElement extends StatefulElement {
       }
 
       controller.evaluated = true;
-
-      markNeedsBuild();
     });
   }
 

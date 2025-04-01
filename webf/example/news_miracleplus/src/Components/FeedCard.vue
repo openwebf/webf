@@ -154,7 +154,7 @@
   }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .feed-card {
   background: var(--background-primary);
   border-radius: 8px;

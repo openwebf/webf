@@ -48,7 +48,7 @@
   }
   </script>
   
-  <style lang="scss" scoped>
+  <style lang="scss">
   .display-content {
     border: 1px solid var(--card-border-color);
     border-radius: 8px;

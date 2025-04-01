@@ -68,7 +68,7 @@ void main() async {
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
-      maxAliveInstances: 2,
+      maxAliveInstances: 4,
       maxAttachedInstances: 1,
       onControllerDisposed: (String name, WebFController controller) {
         print('controller disposed: $name $controller');
@@ -442,13 +442,13 @@ class _WebFDemoState extends State<WebFDemo> {
           children: [
             WebF.fromControllerName(
                 controllerName: widget.webfPageName,
-                loadingWidget: _buildSplashScreen(),
+                loadingWidget: buildSplashScreen(),
                 initialRoute: widget.initialRoute)
           ],
         ));
   }
 
-  Widget _buildSplashScreen() {
+  static Widget buildSplashScreen() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

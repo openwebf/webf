@@ -17,8 +17,8 @@
 
         <!-- 最新标签页内容 -->
         <template #latest>
-          <webf-listview class="listview" @refresh="onRefreshLatest" @loadmore="onLoadMoreLatest">
-            <div v-if="!latestList.length || loadingStates.latest" class="skeleton-wrapper">
+          <webf-listview class="listview" @refresh="onRefreshLatest" @loadmore="onLoadMoreLatest" @onscreen="enableLatestList = true">
+            <div v-if="enableLatestList && (!latestList.length || loadingStates.latest)" class="skeleton-wrapper">
               <feed-card-skeleton v-for="i in 5" :key="i" />
             </div>
             <template v-else>
@@ -31,8 +31,8 @@
 
         <!-- 讨论标签页内容 -->
         <template #discussion>
-          <webf-listview class="listview" @refresh="onRefreshComment" @loadmore="onLoadMoreComment">
-            <div v-if="!commentList.length || loadingStates.discussion" class="skeleton-wrapper">
+          <webf-listview class="listview" @refresh="onRefreshComment" @loadmore="onLoadMoreComment" @onscreen="enableCommentList = true">
+            <div v-if="enableCommentList && (!commentList.length || loadingStates.discussion)" class="skeleton-wrapper">
               <comment-card-skeleton v-for="i in 5" :key="i" />
             </div>
             <template v-else>
@@ -45,8 +45,8 @@
 
         <!-- 新闻标签页内容 -->
         <template #news>
-          <webf-listview class="listview" @refresh="onRefreshNews" @loadmore="onLoadMoreNews">
-            <div v-if="!newsList.length || loadingStates.news" class="skeleton-wrapper">
+          <webf-listview class="listview" @refresh="onRefreshNews" @loadmore="onLoadMoreNews" @onscreen="enableNewsList = true">
+            <div v-if="enableNewsList && (!newsList.length || loadingStates.news)" class="skeleton-wrapper">
               <display-card-skeleton v-for="i in 5" :key="i" />
             </div>
             <template v-else>
@@ -59,8 +59,8 @@
 
         <!-- 学术标签页内容 -->
         <template #academic>
-          <webf-listview class="listview" @refresh="onRefreshAcademic" @loadmore="onLoadMoreAcademic">
-            <div v-if="!academicList.length || loadingStates.academic" class="skeleton-wrapper">
+          <webf-listview class="listview" @refresh="onRefreshAcademic" @loadmore="onLoadMoreAcademic" @onscreen="enableAcademicList = true">
+            <div v-if="enableAcademicList && (!academicList.length || loadingStates.academic)" class="skeleton-wrapper">
               <display-card-skeleton v-for="i in 5" :key="i" />
             </div>
             <template v-else>
@@ -73,8 +73,8 @@
 
         <!-- 产品标签页内容 -->
         <template #product>
-          <webf-listview class="listview" @refresh="onRefreshProduct" @loadmore="onLoadMoreProduct">
-            <div v-if="!productList.length || loadingStates.product" class="skeleton-wrapper">
+          <webf-listview class="listview" @refresh="onRefreshProduct" @loadmore="onLoadMoreProduct" @onscreen="enableProductList = true">
+            <div v-if="enableProductList && (!productList.length || loadingStates.product)" class="skeleton-wrapper">
               <display-card-skeleton v-for="i in 5" :key="i" />
             </div>
             <template v-else>
@@ -141,6 +141,11 @@ export default {
         { id: 'academic', title: '学术' },
         { id: 'product', title: '产品' }
       ],
+      enableLatestList: false,
+      enableCommentList: false,
+      enableNewsList: false,
+      enableAcademicList: false,
+      enableProductList: false,
       loadedTabs: new Set(['hot']),
       hotList: [],
       latestList: [],
@@ -566,7 +571,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style>
 #list {
   padding: 10px 0;
   height: 100vh;

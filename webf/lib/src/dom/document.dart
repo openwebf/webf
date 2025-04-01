@@ -487,7 +487,7 @@ class Document extends ContainerNode {
     flutter.BuildContext? rootBuildContext = ownerView.rootController.rootBuildContext;
     if (rootBuildContext != null) {
       WebFState state = (rootBuildContext as flutter.StatefulElement).state as WebFState;
-      state?.requestForUpdate(DocumentElementChangedReason());
+      state.requestForUpdate(DocumentElementChangedReason());
     }
   }
 

@@ -1,6 +1,6 @@
 <template>
     <flutter-shimmer>
-      <div class="feed-card">
+      <div class="feed-card-skeleton">
         <!-- 标题骨架 -->
         <flutter-shimmer-text class="title" />
         
@@ -18,8 +18,8 @@
     </flutter-shimmer>
   </template>
   
-  <style lang="scss" scoped>
-  .feed-card {
+  <style lang="scss">
+  .feed-card-skeleton {
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 12px;

@@ -362,8 +362,10 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
     ModalRoute route = ModalRoute.of(this)!;
     dom.OnScreenEvent event = dom.OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
 
+    WidgetElement widgetElement = widget.widgetElement;
+
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      widget.widgetElement.dispatchEvent(event);
+      widgetElement.dispatchEvent(event);
     });
   }
 
