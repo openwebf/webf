@@ -230,9 +230,9 @@ class WebFState extends State<WebF> with RouteAware {
   void didPop() {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    String name = route.settings.name ?? widget.controller.initialRoute ?? '';
+    String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
-    Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPop', name: name);
+    Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPop', path: path);
     widget.controller.view.document.dispatchEvent(event);
 
     if (widget.controller.initialRoute != null) {
@@ -246,9 +246,9 @@ class WebFState extends State<WebF> with RouteAware {
   void didPopNext() {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    String name = route.settings.name ?? widget.controller.initialRoute ?? '';
+    String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
-    Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPopNext', name: name);
+    Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPopNext', path: path);
     widget.controller.view.document.dispatchEvent(event);
 
     if (widget.controller.initialRoute != null) {
@@ -262,12 +262,12 @@ class WebFState extends State<WebF> with RouteAware {
   void didPush() async {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    String name = route.settings.name ?? widget.controller.initialRoute ?? '';
+    String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
     await widget.controller.controllerOnLoadCompleter.future;
     flushUICommand(widget.controller.view, nullptr);
 
-    Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPush', name: name);
+    Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPush', path: path);
     widget.controller.view.document.dispatchEvent(event);
 
     if (widget.controller.initialRoute != null) {
@@ -280,9 +280,9 @@ class WebFState extends State<WebF> with RouteAware {
   void didPushNext() {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    String name = route.settings.name ?? widget.controller.initialRoute ?? '';
+    String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
-    Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPushNext', name: name);
+    Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPushNext', path: path);
     widget.controller.view.document.dispatchEvent(event);
 
     if (widget.controller.initialRoute != null) {

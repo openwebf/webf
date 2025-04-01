@@ -40,7 +40,7 @@ class HybridRouterChangeEvent : public Event {
 
   ScriptValue state() const;
   AtomicString kind() const;
-  AtomicString name() const;
+  AtomicString path() const;
 
   bool IsHybridRouterChangeEvent() const override;
 
@@ -49,7 +49,7 @@ class HybridRouterChangeEvent : public Event {
  private:
   ScriptValue state_;
   AtomicString kind_;
-  AtomicString name_;
+  AtomicString path_;
 };
 
 template <>

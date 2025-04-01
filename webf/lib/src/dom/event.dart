@@ -233,16 +233,16 @@ class PopStateEvent extends Event {
 class HybridRouterChangeEvent extends Event {
   final dynamic state;
   final String kind;
-  final String name;
+  final String path;
 
-  HybridRouterChangeEvent({this.state, required this.kind, required this.name}) : super(EVENT_HYBRID_ROUTER_CHANGE);
+  HybridRouterChangeEvent({this.state, required this.kind, required this.path}) : super(EVENT_HYBRID_ROUTER_CHANGE);
 
   @override
   Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
     List<int> methods = [
       jsonEncode(state).toNativeUtf8().address,
       stringToNativeString(kind).address,
-      stringToNativeString(name).address
+      stringToNativeString(path).address
     ];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();

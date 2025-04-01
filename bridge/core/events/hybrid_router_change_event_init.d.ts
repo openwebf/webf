@@ -4,6 +4,6 @@ import {EventInit} from "../dom/events/event_init";
 @Dictionary()
 export interface HybridRouterChangeEventInit extends EventInit {
   kind?: string;
-  name?: string;
+  path?: string;
   state?: any;
 }
