@@ -31,11 +31,7 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
 
     return WebFContext(
         controller: widget.controller,
-        child: WebFRouterViewport(
-            controller: widget.controller,
-            children: [
-              child.toWidget()
-            ]));
+        child: WebFRouterViewport(controller: widget.controller, children: [child.toWidget()]));
   }
 
   @override
@@ -60,12 +56,22 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   }
 
   @override
+  void didPopNext() {
+    super.didPopNext();
+  }
+
+  @override
   void didPush() {
     super.didPush();
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
     String name = route.settings.name ?? '';
     widget.controller.view.window.dispatchEvent(dom.HybridRouterChangeEvent(state: state, kind: 'push', name: name));
+  }
+
+  @override
+  void didPushNext() {
+    super.didPushNext();
   }
 }
 
@@ -81,14 +87,18 @@ class WebFRouterView extends StatefulWidget {
   ///
   /// You can customize the loading experience with loadingWidget and handle errors
   /// with errorBuilder. The builder allows you to create custom UI with the controller.
-  static Widget fromControllerName({
-    required String controllerName,
-    required String path,
-    Widget? loadingWidget,
-    Widget Function(BuildContext context, Object error)? errorBuilder
-  }) {
+  static Widget fromControllerName(
+      {required String controllerName,
+      required String path,
+      Widget? loadingWidget,
+      WebFRouterViewBuilder? builder,
+      Widget Function(BuildContext context, Object error)? errorBuilder}) {
     return _AsyncWebFRouterView(
-        controllerName: controllerName, path: path, loadingWidget: loadingWidget, errorBuilder: errorBuilder);
+        controllerName: controllerName,
+        path: path,
+        builder: builder,
+        loadingWidget: loadingWidget,
+        errorBuilder: errorBuilder);
   }
 
   WebFRouterView({required this.controller, required this.path, this.defaultViewBuilder});
@@ -123,45 +133,50 @@ class _WebFRouterViewElement extends StatefulElement {
   WebFRouterView get widget => super.widget as WebFRouterView;
 }
 
+typedef WebFRouterViewBuilder = Widget Function(BuildContext context, WebFController controller);
+
 class _AsyncWebFRouterView extends StatelessWidget {
   final String controllerName;
   final String path;
   final Widget? loadingWidget;
+  final WebFRouterViewBuilder? builder;
   final Widget Function(BuildContext context, Object error)? errorBuilder;
 
-  _AsyncWebFRouterView({required this.controllerName, required this.path, this.loadingWidget, this.errorBuilder});
+  _AsyncWebFRouterView(
+      {required this.controllerName, required this.path, this.builder, this.loadingWidget, this.errorBuilder});
 
   @override
   Widget build(BuildContext context) {
-    WebFController? existingController = WebFControllerManager.getInstanceSync(controllerName);
-    if (existingController != null) {
-      return WebFRouterView(controller: existingController, path: path);
-    }
     return FutureBuilder(
-        future: WebFControllerManager.instance.getController(controllerName), builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return loadingWidget ??
-            const SizedBox(
-              width: 50,
-              height: 50,
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-      }
+        future: WebFControllerManager.instance.getController(controllerName),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting && snapshot.data == null) {
+            return loadingWidget ??
+                const SizedBox(
+                  width: 50,
+                  height: 50,
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+          }
 
-      if (snapshot.hasError) {
-        return errorBuilder != null
-            ? errorBuilder!(context, snapshot.error!)
-            : Center(child: Text('Error: ${snapshot.error}'));
-      }
+          if (snapshot.hasError) {
+            return errorBuilder != null
+                ? errorBuilder!(context, snapshot.error!)
+                : Center(child: Text('Error: ${snapshot.error}'));
+          }
 
-      if (!snapshot.hasData || snapshot.data == null) {
-        final errorMsg = 'Controller "$controllerName" not found';
-        return errorBuilder != null ? errorBuilder!(context, errorMsg) : Center(child: Text(errorMsg));
-      }
+          if (!snapshot.hasData || snapshot.data == null) {
+            final errorMsg = 'Controller "$controllerName" not found';
+            return errorBuilder != null ? errorBuilder!(context, errorMsg) : Center(child: Text(errorMsg));
+          }
 
-      return WebFRouterView(controller: snapshot.data!, path: path);
-    });
+          WebFController controller = snapshot.data!;
+
+          return builder != null
+              ? builder!(context, controller)
+              : WebFRouterView(controller: snapshot.data!, path: path);
+        });
   }
 }

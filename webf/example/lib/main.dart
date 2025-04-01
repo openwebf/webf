@@ -68,7 +68,7 @@ void main() async {
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
-      maxAliveInstances: 4,
+      maxAliveInstances: 1,
       maxAttachedInstances: 1,
       onControllerDisposed: (String name, WebFController controller) {
         print('controller disposed: $name $controller');
@@ -111,10 +111,6 @@ void main() async {
             devToolsService: kDebugMode ? ChromeDevToolsService() : null,
           ),
       bundle: WebFBundle.fromUrl('assets:///vue_project/dist/index.html'),
-      routes: {
-        '/todomvc': (context, controller) => WebFSubView(path: '/todomvc', controller: controller),
-        '/positioned_layout': (context, controller) => WebFSubView(path: '/positioned_layout', controller: controller),
-      },
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
@@ -128,14 +124,6 @@ void main() async {
             devToolsService: kDebugMode ? ChromeDevToolsService() : null,
           ),
       bundle: WebFBundle.fromUrl('assets:///cupertino_gallery/dist/index.html'),
-      routes: {
-        '/': (context, controller) => WebFSubView(path: '/', controller: controller),
-        '/button': (context, controller) => WebFSubView(path: '/button', controller: controller),
-        '/switch': (context, controller) => WebFSubView(path: '/switch', controller: controller),
-        '/input': (context, controller) => WebFSubView(path: '/input', controller: controller),
-        '/icon': (context, controller) => WebFSubView(path: '/icon', controller: controller),
-        '/search_input': (context, controller) => WebFSubView(path: '/search_input', controller: controller),
-      },
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
@@ -150,26 +138,6 @@ void main() async {
             devToolsService: kDebugMode ? ChromeDevToolsService() : null,
           ),
       bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'),
-      routes: {
-        '/home': (context, controller) => WebFSubView(path: '/home', controller: controller),
-        '/search': (context, controller) => WebFSubView(path: '/search', controller: controller),
-        '/publish': (context, controller) => WebFSubView(path: '/publish', controller: controller),
-        '/message': (context, controller) => WebFSubView(path: '/message', controller: controller),
-        '/my': (context, controller) => WebFSubView(path: '/my', controller: controller),
-        '/register': (context, controller) => WebFSubView(path: '/register', controller: controller),
-        '/login': (context, controller) => WebFSubView(path: '/login', controller: controller),
-        '/reset_password': (context, controller) => WebFSubView(path: '/reset_password', controller: controller),
-        '/share_link': (context, controller) => WebFSubView(path: '/share_link', controller: controller),
-        '/comment': (context, controller) => WebFSubView(path: '/comment', controller: controller),
-        '/user': (context, controller) => WebFSubView(path: '/user', controller: controller),
-        '/edit': (context, controller) => WebFSubView(path: '/edit', controller: controller),
-        '/setting': (context, controller) => WebFSubView(path: '/setting', controller: controller),
-        '/user_agreement': (context, controller) => WebFSubView(path: '/user_agreement', controller: controller),
-        '/privacy_policy': (context, controller) => WebFSubView(path: '/privacy_policy', controller: controller),
-        '/answer': (context, controller) => WebFSubView(path: '/answer', controller: controller),
-        '/question': (context, controller) => WebFSubView(path: '/question', controller: controller),
-        '/topic': (context, controller) => WebFSubView(path: '/topic', controller: controller),
-      },
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
@@ -259,13 +227,13 @@ class MyAppState extends State<MyApp> {
     return CupertinoPageRoute(
       settings: settings,
       builder: (context) {
-        return Scaffold(appBar: AppBar(), body: WebFRouterView.fromControllerName(
+        return WebFRouterView.fromControllerName(
             controllerName: webfPageName.value,
             path: settings.name!,
-            loadingWidget: _WebFDemoState.buildSplashScreen()));
-        // Widget? entry =
-        //     WebFControllerManager.instance.getRouterBuilderBySettings(context, webfPageName.value, settings);
-        // return entry ?? Scaffold(appBar: AppBar(title: Text('Error')), body: Center(child: Text('Page not found')));
+            builder: (context, controller) {
+              return WebFSubView(controller: controller, path: settings.name!);
+            },
+            loadingWidget: _WebFDemoState.buildSplashScreen());
       },
     );
   }
@@ -384,6 +352,14 @@ class FirstPageState extends State<FirstPage> {
               }));
             },
             child: Text('Open Cupertino Gallery')),
+        ElevatedButton(
+            onPressed: () {
+              widget.webfPageName.value = 'cupertino_gallery';
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(webfPageName: 'cupertino_gallery', initialRoute: '/button',);
+              }));
+            },
+            child: Text('Open Cupertino Gallery / Button')),
       ]),
       floatingActionButton: FloatingActionButton(
           child: Text('Update'),

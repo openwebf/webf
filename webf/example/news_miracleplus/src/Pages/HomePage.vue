@@ -187,21 +187,21 @@ export default {
     async onTabChange(e) {
       const tabIndex = e.detail;
       const tabId = this.tabsConfig[tabIndex].id;
-      
+
       // 如果切换到相同的 tab，直接返回
       if (this.currentTab === tabId) {
         return;
       }
 
       this.currentTab = tabId;
-      
+
       // 如果已经加载过且有数据，不需要重新加载
       if (this.loadedTabs.has(tabId) && this.getListByTabId(tabId).length > 0) {
         return;
       }
-      
+
       this.loadingStates[tabId] = true;
-      
+
       try {
         await this.loadListByTabId(tabId, 1, true);
         this.loadedTabs.add(tabId);
@@ -215,7 +215,7 @@ export default {
         }
       }
     },
-    
+
     async onScreen() {
       if (this.hotList.length === 0) {
         this.loadingStates.hot = true;
@@ -229,12 +229,12 @@ export default {
         }
       }
     },
-    
+
     // 热门列表加载逻辑
     async loadHotList(page, replace = false) {
       try {
         const res = await api.news.getHotList({ page });
-        
+
         if (res.data && res.data.feeds) {
           if (replace) {
             this.hotList = res.data.feeds;
@@ -254,7 +254,7 @@ export default {
         throw error;
       }
     },
-    
+
     // 下拉刷新热门列表
     async onRefreshHot() {
       try {
@@ -264,11 +264,11 @@ export default {
         this.showToast('刷新失败，请重试', 'error');
       }
     },
-    
+
     // 上拉加载更多热门列表
     async onLoadMoreHot() {
       if (!this.hotHasMore || this.loadingStates.hot || this.currentTab !== 'hot') return;
-      
+
       try {
         const nextPage = this.hotPage + 1;
         await this.loadHotList(nextPage);
@@ -277,12 +277,12 @@ export default {
         this.showToast('加载更多失败', 'error');
       }
     },
-    
+
     // 最新列表加载逻辑
     async loadLatestList(page, replace = false) {
       try {
         const res = await api.news.getLatestList({ page });
-        
+
         if (res.data && res.data.feeds) {
           if (replace) {
             this.latestList = res.data.feeds;
@@ -302,7 +302,7 @@ export default {
         throw error;
       }
     },
-    
+
     // 下拉刷新最新列表
     async onRefreshLatest() {
       try {
@@ -312,11 +312,11 @@ export default {
         this.showToast('刷新失败，请重试', 'error');
       }
     },
-    
+
     // 上拉加载更多最新列表
     async onLoadMoreLatest() {
       if (!this.latestHasMore || this.loadingStates.latest) return;
-      
+
       try {
         const nextPage = this.latestPage + 1;
         await this.loadLatestList(nextPage);
@@ -325,12 +325,12 @@ export default {
         this.showToast('加载更多失败', 'error');
       }
     },
-    
+
     // 评论列表加载逻辑
     async loadCommentList(page, replace = false) {
       try {
         const res = await api.news.getCommentList({ page });
-        
+
         if (res.data && res.data.feeds) {
           if (replace) {
             this.commentList = res.data.feeds;
@@ -350,7 +350,7 @@ export default {
         throw error;
       }
     },
-    
+
     // 下拉刷新评论列表
     async onRefreshComment() {
       try {
@@ -360,11 +360,11 @@ export default {
         this.showToast('刷新失败，请重试', 'error');
       }
     },
-    
+
     // 上拉加载更多评论列表
     async onLoadMoreComment() {
       if (!this.commentHasMore || this.loadingStates.discussion) return;
-      
+
       try {
         const nextPage = this.commentPage + 1;
         await this.loadCommentList(nextPage);
@@ -373,12 +373,12 @@ export default {
         this.showToast('加载更多失败', 'error');
       }
     },
-    
+
     // 新闻列表加载逻辑
     async loadNewsList(page, replace = false) {
       try {
         const res = await api.news.getDisplayList({ page, topic: '新闻' });
-        
+
         if (res.data && res.data.displays) {
           if (replace) {
             this.newsList = res.data.displays;
@@ -398,7 +398,7 @@ export default {
         throw error;
       }
     },
-    
+
     // 下拉刷新新闻列表
     async onRefreshNews() {
       try {
@@ -408,11 +408,11 @@ export default {
         this.showToast('刷新失败，请重试', 'error');
       }
     },
-    
+
     // 上拉加载更多新闻列表
     async onLoadMoreNews() {
       if (!this.newsHasMore || this.loadingStates.news) return;
-      
+
       try {
         const nextPage = this.newsPage + 1;
         await this.loadNewsList(nextPage);
@@ -421,12 +421,12 @@ export default {
         this.showToast('加载更多失败', 'error');
       }
     },
-    
+
     // 学术列表加载逻辑
     async loadAcademicList(page, replace = false) {
       try {
         const res = await api.news.getDisplayList({ page, topic: '学术' });
-        
+
         if (res.data && res.data.displays) {
           if (replace) {
             this.academicList = res.data.displays;
@@ -446,7 +446,7 @@ export default {
         throw error;
       }
     },
-    
+
     // 下拉刷新学术列表
     async onRefreshAcademic() {
       try {
@@ -456,11 +456,11 @@ export default {
         this.showToast('刷新失败，请重试', 'error');
       }
     },
-    
+
     // 上拉加载更多学术列表
     async onLoadMoreAcademic() {
       if (!this.academicHasMore || this.loadingStates.academic) return;
-      
+
       try {
         const nextPage = this.academicPage + 1;
         await this.loadAcademicList(nextPage);
@@ -469,12 +469,12 @@ export default {
         this.showToast('加载更多失败', 'error');
       }
     },
-    
+
     // 产品列表加载逻辑
     async loadProductList(page, replace = false) {
       try {
         const res = await api.news.getDisplayList({ page, topic: '产品' });
-        
+
         if (res.data && res.data.displays) {
           if (replace) {
             this.productList = res.data.displays;
@@ -494,7 +494,7 @@ export default {
         throw error;
       }
     },
-    
+
     // 下拉刷新产品列表
     async onRefreshProduct() {
       try {
@@ -504,11 +504,11 @@ export default {
         this.showToast('刷新失败，请重试', 'error');
       }
     },
-    
+
     // 上拉加载更多产品列表
     async onLoadMoreProduct() {
       if (!this.productHasMore || this.loadingStates.product) return;
-      
+
       try {
         const nextPage = this.productPage + 1;
         await this.loadProductList(nextPage);
@@ -517,19 +517,19 @@ export default {
         this.showToast('加载更多失败', 'error');
       }
     },
-    
+
     // 辅助方法：显示加载状态
     showLoading(text = '加载中') {
       this.$refs.loading.show({
         text
       });
     },
-    
+
     // 辅助方法：隐藏加载状态
     hideLoading() {
       this.$refs.loading.hide();
     },
-    
+
     // 辅助方法：显示提示消息
     showToast(content, type = 'info') {
       this.$refs.toast.show({
