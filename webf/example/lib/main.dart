@@ -299,7 +299,10 @@ class FirstPageState extends State<FirstPage> {
             onPressed: () {
               widget.webfPageName.value = 'html/css';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
-                return WebFDemo(webfPageName: 'html/css', initialRoute: '/',);
+                return WebFDemo(
+                  webfPageName: 'html/css',
+                  initialRoute: '/',
+                );
               }));
             },
             child: Text('Open HTML/CSS/JavaScript demo')),
@@ -328,7 +331,11 @@ class FirstPageState extends State<FirstPage> {
             onPressed: () {
               widget.webfPageName.value = 'miracle_plus';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
-                return WebFDemo(webfPageName: 'miracle_plus', initialRoute: '/home');
+                return WebFDemo(
+                  webfPageName: 'miracle_plus',
+                  initialRoute: '/home',
+                  initialState: {'name': 1},
+                );
               }));
             },
             child: Text('Open MiraclePlus App')),
@@ -356,7 +363,10 @@ class FirstPageState extends State<FirstPage> {
             onPressed: () {
               widget.webfPageName.value = 'cupertino_gallery';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
-                return WebFDemo(webfPageName: 'cupertino_gallery', initialRoute: '/button',);
+                return WebFDemo(
+                  webfPageName: 'cupertino_gallery',
+                  initialRoute: '/button',
+                );
               }));
             },
             child: Text('Open Cupertino Gallery / Button')),
@@ -385,8 +395,9 @@ class FirstPageState extends State<FirstPage> {
 class WebFDemo extends StatefulWidget {
   final String webfPageName;
   final String initialRoute;
+  final Map<String, dynamic>? initialState;
 
-  WebFDemo({required this.webfPageName, this.initialRoute = '/'});
+  WebFDemo({required this.webfPageName, this.initialRoute = '/', this.initialState});
 
   @override
   _WebFDemoState createState() => _WebFDemoState();
@@ -423,7 +434,8 @@ class _WebFDemoState extends State<WebFDemo> {
             WebF.fromControllerName(
                 controllerName: widget.webfPageName,
                 loadingWidget: buildSplashScreen(),
-                initialRoute: widget.initialRoute)
+                initialRoute: widget.initialRoute,
+                initialState: widget.initialState)
           ],
         ));
   }

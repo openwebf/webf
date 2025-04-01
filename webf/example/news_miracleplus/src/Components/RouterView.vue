@@ -26,7 +26,7 @@
         this.isMounted = true;
       },
       onRouterChange(e) {
-        console.log(e);
+        console.log('route change', e, e.state);
       }
     }
   }

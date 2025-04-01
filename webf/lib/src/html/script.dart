@@ -128,10 +128,9 @@ class ScriptRunner {
       // Dispatch the load event.
       Timer.run(() {
         element.dispatchEvent(Event(EVENT_LOAD));
+        // Decrement load event delay count after eval.
+        _document.decrementDOMContentLoadedEventDelayCount();
       });
-
-      // Decrement load event delay count after eval.
-      _document.decrementDOMContentLoadedEventDelayCount();
 
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackEvaluate(evaluateOpItem!);
@@ -169,8 +168,8 @@ class ScriptRunner {
       debugPrint('Failed to load: $url, reason: $e\n$st');
       Timer.run(() {
         element.dispatchEvent(Event(EVENT_ERROR));
+        _document.decrementDOMContentLoadedEventDelayCount();
       });
-      _document.decrementDOMContentLoadedEventDelayCount();
       // Cancel failed task.
       if (!isInPreLoading) {
         _syncScriptTasks.remove(task);
