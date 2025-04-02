@@ -644,9 +644,9 @@ class RenderFlowLayout extends RenderLayoutBox {
       double extentBelowBaseline = childMarginTop + childSize.height + childMarginBottom - childAscent;
       // The box Render child no content, but have line height, it is error
       // need to reset extentBelowBaseLine to zero
-      if (childAscent == 0 && childSize.height > 0) {
-        extentBelowBaseline = 0;
-      }
+      // if (childAscent == 0 && childSize.height > 0) {
+      //   extentBelowBaseline = 0;
+      // }
       return [extentAboveBaseline, extentBelowBaseline];
     }
     return null;
