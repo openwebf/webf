@@ -3,10 +3,16 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'package:webf/dom.dart';
+import 'package:webf/src/css/keywords.dart';
 import 'package:webf/webf.dart';
 
 const String ANCHOR = 'A';
 const String _TARGET_SELF = 'self';
+const Map<String, dynamic> _defaultStyle = {
+  TEXT_DECORATION_LINE: UNDERLINE,
+  TEXT_DECORATION_COLOR: 'rgb(0, 0, 238)',
+  COLOR: 'rgb(0, 0, 238)',
+};
 
 class HTMLAnchorElement extends Element {
   HTMLAnchorElement([BindingContext? context]) : super(context) {
@@ -30,6 +36,9 @@ class HTMLAnchorElement extends Element {
       }
     }
   }
+
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   WebFNavigationType _getNavigationType(String scheme) {
     switch (scheme.toLowerCase()) {
