@@ -923,6 +923,7 @@ class WebFController {
   /// the controller is no longer needed to prevent memory leaks.
   Future<void> dispose() async {
     PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
+    removeHttpOverrides(contextId: _view!.contextId);
     await _view?.dispose();
     _module?.dispose();
     if (_view?.inited == true) {
