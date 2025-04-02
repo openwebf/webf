@@ -112,6 +112,10 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
 
   @override
   Future<HttpClientResponse?> afterResponse(String requestId, HttpClientRequest request, HttpClientResponse response) async {
+    if (devtoolsService.controller == null) {
+      return response;
+    }
+
     sendEventToFrontend(NetworkResponseReceivedEvent(
       requestId: requestId,
       loaderId: devtoolsService.controller!.view.contextId.toString(),
