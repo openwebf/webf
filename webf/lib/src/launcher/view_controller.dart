@@ -202,7 +202,6 @@ class WebFViewController implements WidgetsBindingObserver {
       BindingContext(view, _contextId, pointer),
       controller: rootController,
       gestureListener: gestureListener,
-      initialCookies: initialCookies,
     );
 
     // Listeners need to be registered to window in order to dispatch events on demand.

@@ -602,7 +602,6 @@ class WebFController {
   /// This performs a full reload of the current content, including disposing the old
   /// environment and re-executing the entrypoint JavaScript/HTML.
   Future<void> reload() async {
-    print('before reload');
     assert(!_view!.disposed, 'WebF have already disposed');
 
     if (devToolsService != null) {
@@ -704,6 +703,7 @@ class WebFController {
     // Update entrypoint.
     _entrypoint = bundle;
     _replaceCurrentHistory(bundle);
+    view.document.initializeCookieJarForUrl(url);
 
     mode = WebFLoadingMode.preloading;
 
@@ -793,6 +793,7 @@ class WebFController {
     // Update entrypoint.
     _entrypoint = bundle;
     _replaceCurrentHistory(bundle);
+    view.document.initializeCookieJarForUrl(url);
 
     mode = WebFLoadingMode.preRendering;
 

@@ -129,12 +129,15 @@ class Document extends ContainerNode {
   @override
   bool get isConnected => true;
 
-  Document(BindingContext context, {required this.controller, this.gestureListener, List<Cookie>? initialCookies})
+  Document(BindingContext context, {required this.controller, this.gestureListener})
       : super(NodeType.DOCUMENT_NODE, context) {
-    cookie_ = CookieJar(controller.url, initialCookies: initialCookies);
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
     ruleSet = RuleSet(this);
+  }
+
+  void initializeCookieJarForUrl(String url) {
+    cookie_ = CookieJar(controller.url, initialCookies: controller.initialCookies);
   }
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L1898
