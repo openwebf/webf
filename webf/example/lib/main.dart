@@ -146,9 +146,9 @@ class WebFSubViewState extends State<WebFSubView> {
               )),
         ],
       ),
-      // floatingActionButton: FloatingActionButton(onPressed: () {
-      //   print(context.findRenderObject()?.toStringDeep());
-      // }),
+      floatingActionButton: FloatingActionButton(onPressed: () {
+        controller.cookieManager.clearAllCookies();
+      }),
       body: WebFRouterView(controller: controller, path: widget.path),
     );
   }

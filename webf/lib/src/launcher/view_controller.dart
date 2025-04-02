@@ -248,14 +248,6 @@ class WebFViewController implements WidgetsBindingObserver {
     });
   }
 
-  void setCookie(List<Cookie> cookies, [Uri? uri]) {
-    document.cookie.setCookie(cookies, uri);
-  }
-
-  void clearCookie() {
-    document.cookie.clearCookie();
-  }
-
   Future<void> evaluateJavaScripts(String code) async {
     assert(!_disposed, 'WebF have already disposed');
     List<int> data = utf8.encode(code);

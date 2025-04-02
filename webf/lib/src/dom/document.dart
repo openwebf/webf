@@ -137,7 +137,7 @@ class Document extends ContainerNode {
   }
 
   void initializeCookieJarForUrl(String url) {
-    cookie_ = CookieJar(controller.url, initialCookies: controller.initialCookies);
+    controller.cookieManager.initialize(url: url, initialCookies: controller.initialCookies);
   }
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L1898
@@ -164,10 +164,6 @@ class Document extends ContainerNode {
   Document get ownerDocument => this;
 
   Element? focusedElement;
-
-  late CookieJar cookie_;
-
-  CookieJar get cookie => cookie_;
 
   // Returns the Window object of the active document.
   // https://html.spec.whatwg.org/multipage/window-object.html#dom-document-defaultview-dev
@@ -234,10 +230,20 @@ class Document extends ContainerNode {
     }
   }
 
+  String get cookie {
+    CookieManager cookieManager = controller.cookieManager;
+    return cookieManager.getCookieString(controller.url);
+  }
+  set cookie(Object? value) {
+    if (value is! String) return;
+    CookieManager cookieManager = controller.cookieManager;
+    cookieManager.setCookieString(controller.url, value);
+  }
+
   static final StaticDefinedBindingPropertyMap _documentProperties = {
     'cookie': StaticDefinedBindingProperty(
-        getter: (document) => castToType<Document>(document).cookie.cookie(),
-        setter: (document, value) => castToType<Document>(document).cookie.setCookieString(value)),
+        getter: (document) => castToType<Document>(document).cookie,
+        setter: (document, value) => castToType<Document>(document).cookie = value),
     'compatMode': StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).compatMode),
     'domain': StaticDefinedBindingProperty(
         getter: (document) => castToType<Document>(document).domain,
@@ -347,7 +353,7 @@ class Document extends ContainerNode {
   }
 
   dynamic debugClearCookies(List<dynamic> args) {
-    cookie.clearAllCookies();
+    controller.cookieManager.clearAllCookies();
   }
 
   dynamic querySelector(List<dynamic> args) {
@@ -614,7 +620,6 @@ class Document extends ContainerNode {
     styleSheets.clear();
     nthIndexCache.clearAll();
     adoptedStyleSheets.clear();
-    cookie.clearCookie();
     _styleDirtyElements.clear();
     fixedChildren.clear();
     pendingPreloadingScriptCallbacks.clear();

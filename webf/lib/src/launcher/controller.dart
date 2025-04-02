@@ -194,6 +194,11 @@ class WebFController {
   /// These cookies will be available to JavaScript and network requests from the start.
   final List<Cookie>? initialCookies;
 
+  /// Cookie manager that provides methods to manipulate cookies.
+  ///
+  /// Allows developers to create, read, update, and delete cookies with full control.
+  late CookieManager cookieManager;
+
   /// The default route path for the hybrid router in WebF.
   ///
   /// Sets the initial path that the router will navigate to when the application starts.
@@ -375,6 +380,7 @@ class WebFController {
         runningThread = runningThread ?? DedicatedThread(),
         _methodChannel = javaScriptChannel {
     _initializePreloadBundle();
+    cookieManager = CookieManager();
     if (enableWebFProfileTracking) {
       WebFProfiler.initialize();
     }
