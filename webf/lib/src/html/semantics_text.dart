@@ -47,6 +47,11 @@ const Map<String, dynamic> _abbrDefaultStyle = {
   TEXT_DECORATION_STYLE: DOTTED,
 };
 
+const Map<String, dynamic> _emDefaultStyle = {
+  DISPLAY: INLINE,
+  FONT_STYLE: ITALIC
+};
+
 const Map<String, dynamic> _markDefaultStyle = {BACKGROUND_COLOR: 'yellow', COLOR: 'black'};
 
 const Map<String, dynamic> _hrDefaultStyle = {
@@ -104,7 +109,7 @@ class EmphasisElement extends Element {
   EmphasisElement([BindingContext? context]) : super(context);
 
   @override
-  Map<String, dynamic> get defaultStyle => _defaultStyle;
+  Map<String, dynamic> get defaultStyle => _emDefaultStyle;
 }
 
 class CitationElement extends Element {
