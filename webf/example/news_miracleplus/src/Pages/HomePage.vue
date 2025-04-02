@@ -3,8 +3,8 @@
     <feeds-tabs :tabs="tabsConfig" @change="onTabChange">
         <!-- 热门标签页内容 -->
         <template #hot>
-            <webf-listview class="listview" @refresh="onRefreshHot" @loadmore="onLoadMoreHot">
-              <div v-if="!hotList.length || loadingStates.hot" class="skeleton-wrapper">
+            <webf-listview style="height: 100vh; width: 100vw; padding-bottom: 90px;" @refresh="onRefreshHot" @loadmore="onLoadMoreHot">
+              <div v-if="!hotList.length || loadingStates.hot" style="padding: 16px;">
                 <feed-card-skeleton v-for="i in 5" :key="i" />
               </div>
               <template v-else>
@@ -17,8 +17,8 @@
 
         <!-- 最新标签页内容 -->
         <template #latest>
-          <webf-listview class="listview" @refresh="onRefreshLatest" @loadmore="onLoadMoreLatest" @onscreen="enableLatestList = true">
-            <div v-if="enableLatestList && (!latestList.length || loadingStates.latest)" class="skeleton-wrapper">
+          <webf-listview style="height: 100vh; width: 100vw; padding-bottom: 90px;" @refresh="onRefreshLatest" @loadmore="onLoadMoreLatest" @onscreen="enableLatestList = true">
+            <div v-if="enableLatestList && (!latestList.length || loadingStates.latest)" style="padding: 16px;">
               <feed-card-skeleton v-for="i in 5" :key="i" />
             </div>
             <template v-else>
@@ -31,8 +31,8 @@
 
         <!-- 讨论标签页内容 -->
         <template #discussion>
-          <webf-listview class="listview" @refresh="onRefreshComment" @loadmore="onLoadMoreComment" @onscreen="enableCommentList = true">
-            <div v-if="enableCommentList && (!commentList.length || loadingStates.discussion)" class="skeleton-wrapper">
+          <webf-listview style="height: 100vh; width: 100vw; padding-bottom: 90px;" @refresh="onRefreshComment" @loadmore="onLoadMoreComment" @onscreen="enableCommentList = true">
+            <div v-if="enableCommentList && (!commentList.length || loadingStates.discussion)" style="padding: 16px;">
               <comment-card-skeleton v-for="i in 5" :key="i" />
             </div>
             <template v-else>
@@ -45,8 +45,8 @@
 
         <!-- 新闻标签页内容 -->
         <template #news>
-          <webf-listview class="listview" @refresh="onRefreshNews" @loadmore="onLoadMoreNews" @onscreen="enableNewsList = true">
-            <div v-if="enableNewsList && (!newsList.length || loadingStates.news)" class="skeleton-wrapper">
+          <webf-listview style="height: 100vh; width: 100vw; padding-bottom: 90px;" @refresh="onRefreshNews" @loadmore="onLoadMoreNews" @onscreen="enableNewsList = true">
+            <div v-if="enableNewsList && (!newsList.length || loadingStates.news)" style="padding: 16px;">
               <display-card-skeleton v-for="i in 5" :key="i" />
             </div>
             <template v-else>
@@ -59,8 +59,8 @@
 
         <!-- 学术标签页内容 -->
         <template #academic>
-          <webf-listview class="listview" @refresh="onRefreshAcademic" @loadmore="onLoadMoreAcademic" @onscreen="enableAcademicList = true">
-            <div v-if="enableAcademicList && (!academicList.length || loadingStates.academic)" class="skeleton-wrapper">
+          <webf-listview style="height: 100vh; width: 100vw; padding-bottom: 90px;" @refresh="onRefreshAcademic" @loadmore="onLoadMoreAcademic" @onscreen="enableAcademicList = true">
+            <div v-if="enableAcademicList && (!academicList.length || loadingStates.academic)" style="padding: 16px;">
               <display-card-skeleton v-for="i in 5" :key="i" />
             </div>
             <template v-else>
@@ -73,8 +73,8 @@
 
         <!-- 产品标签页内容 -->
         <template #product>
-          <webf-listview class="listview" @refresh="onRefreshProduct" @loadmore="onLoadMoreProduct" @onscreen="enableProductList = true">
-            <div v-if="enableProductList && (!productList.length || loadingStates.product)" class="skeleton-wrapper">
+          <webf-listview style="height: 100vh; width: 100vw; padding-bottom: 90px;" @refresh="onRefreshProduct" @loadmore="onLoadMoreProduct" @onscreen="enableProductList = true">
+            <div v-if="enableProductList && (!productList.length || loadingStates.product)" style="padding: 16px;">
               <display-card-skeleton v-for="i in 5" :key="i" />
             </div>
             <template v-else>
@@ -570,21 +570,3 @@ export default {
   }
 }
 </script>
-
-<style>
-#list {
-  padding: 10px 0;
-  height: 100vh;
-  width: 100vw;
-}
-
-.listview {
-  height: 100vh;
-  width: 100vw;
-  padding-bottom: 90px;
-}
-
-.skeleton-wrapper {
-  padding: 16px;
-}
-</style>

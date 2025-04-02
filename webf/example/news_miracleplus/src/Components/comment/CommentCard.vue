@@ -1,10 +1,10 @@
 <template>
-    <div class="comment-card">
+    <div style="background: var(--card-background); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
       <!-- Title -->
-      <h2 class="title">{{ item.item.resource.brief }}</h2>
+      <h2 style="font-size: 16px; font-weight: bold; margin-bottom: 8px; color: var(--font-color-primary);">{{ item.item.resource.brief }}</h2>
   
       <!-- Description -->
-      <p class="description">{{ truncatedContent }}</p>
+      <p style="font-size: 14px; color: var(--font-color-secondary); margin-bottom: 12px; line-height: 1.5;">{{ truncatedContent }}</p>
   
       <!-- Bottom info -->
       <card-bottom-info 
@@ -54,51 +54,3 @@
     }
   }
   </script>
-  
-  <style lang="scss" scoped>
-  .comment-card {
-    background: var(--card-background);
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 12px;
-  
-    .title {
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 8px;
-      color: var(--font-color-primary);
-    }
-  
-    .description {
-      font-size: 14px;
-      color: var(--font-color-secondary);
-      margin-bottom: 12px;
-      line-height: 1.5;
-    }
-  
-    .bottom-info {
-      display: flex;
-      align-items: center;
-      font-size: 12px;
-      color: var(--secondary-font-color);
-  
-      .source, .time {
-        margin-right: 12px;
-      }
-  
-      .stats {
-        display: flex;
-  
-        span {
-          margin-left: 12px;
-          display: flex;
-          align-items: center;
-        }
-  
-        .icon {
-          margin-right: 4px;
-        }
-      }
-    }
-  }
-  </style>

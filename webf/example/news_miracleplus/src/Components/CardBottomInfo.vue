@@ -1,7 +1,7 @@
 <template>
-    <div class="bottom-info">
-      <span class="source">{{ userName }}</span>
-      <span class="time">{{ computedCreatedAt }}</span>
+    <div style="display: flex; align-items: center; font-size: 12px; color: var(--secondary-font-color); padding-top: 12px;">
+      <span style="margin-right: 12px;">{{ userName }}</span>
+      <span style="margin-right: 12px;">{{ computedCreatedAt }}</span>
       <share-link-count :viewsCount="viewsCount" :likesCount="likesCount" :commentsCount="commentsCount" />
     </div>
   </template>
@@ -55,17 +55,3 @@
     }
   }
   </script>
-  
-  <style lang="scss">
-  .bottom-info {
-    display: flex;
-    align-items: center;
-    font-size: 12px;
-    color: var(--secondary-font-color);
-    padding-top: 12px;
-  
-    .source, .time {
-      margin-right: 12px;
-    }
-  }
-  </style>

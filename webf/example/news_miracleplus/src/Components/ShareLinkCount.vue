@@ -1,13 +1,13 @@
 <template>
-    <div class="share-link-count">
-        <span class="views">
-          <flutter-cupertino-icon type="eye" class="icon" />{{ viewsCount }}
+    <div style="display: flex; align-items: center; font-size: 12px; color: var(--secondary-font-color); padding-top: 12px;">
+        <span style="margin-right: 12px;">
+          <flutter-cupertino-icon type="eye" style="margin-right: 4px;" />{{ viewsCount }}
         </span>
-        <span class="likes">
-          <flutter-cupertino-icon type="hand_thumbsup" class="icon" />{{ likesCount }}
+        <span style="margin-right: 12px;">
+          <flutter-cupertino-icon type="hand_thumbsup" style="margin-right: 4px;" />{{ likesCount }}
         </span>
-        <span class="comments">
-          <flutter-cupertino-icon type="ellipsis_circle" class="icon" />{{ commentsCount }}
+        <span style="margin-right: 12px;">
+          <flutter-cupertino-icon type="ellipsis_circle" style="margin-right: 4px;" />{{ commentsCount }}
         </span>
     </div>
 </template>
@@ -31,20 +31,3 @@ export default {
     }
 }
 </script>
-
-<style lang="scss">
-.share-link-count {
-    display: flex;
-    margin-left: auto;
-
-    span {
-        margin-left: 12px;
-        display: flex;
-        align-items: center;
-    }
-
-    .icon {
-        margin-right: 4px;
-    }
-}
-</style>

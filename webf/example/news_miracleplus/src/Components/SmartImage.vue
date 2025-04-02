@@ -4,7 +4,7 @@
       :src="src"
       :width="width"
       :height="height"
-      :style="imageStyle"
+      :style="computedStyle"
       :class="$attrs.class"
       @load="$emit('load', $event)"
       @error="$emit('error', $event)"
@@ -14,7 +14,7 @@
       :src="src"
       :width="width"
       :height="height"
-      :style="imageStyle"
+      :style="computedStyle"
       :class="$attrs.class"
       @load="$emit('load', $event)"
       @error="$emit('error', $event)"
@@ -57,10 +57,13 @@
         return this.src?.toLowerCase().endsWith('.svg')
       },
       
-      imageStyle() {
+      computedStyle() {
+        // 合并基础样式、object-fit/position 和外部传入的样式
         return {
+          display: 'inline-block',
           'object-fit': this.fit,
-          'object-position': this.position
+          'object-position': this.position,
+          ...(this.$attrs.style || {})  // 合并外部传入的 style
         }
       }
     },

@@ -1,5 +1,5 @@
 <template>
-    <div class="display-card">
+    <div style="background: var(--background-primary); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
         <display-content :item="item" />
         <card-bottom-info 
           :userName="item.user.name"
@@ -46,12 +46,3 @@
     }
   }
   </script>
-  
-  <style lang="scss" scoped>
-.display-card {
-  background: var(--background-primary);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 12px;
-}
-</style> 

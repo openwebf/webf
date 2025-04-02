@@ -1,19 +1,19 @@
 <template>
-    <div class="feed-card" @click="viewDetail">
+    <div style="background: var(--background-primary); border-radius: 8px; padding: 16px; margin-bottom: 12px;" @click="viewDetail">
       <!-- Top link -->
-      <div class="top-link" v-if="isPinned">置顶</div>
+      <div v-if="isPinned" style="color: var(--link-color); font-size: 12px; margin-bottom: 8px;">置顶</div>
       
       <template v-if="item.item.link">
-        <div class="description">{{ item.item.content }}</div>
+        <div style="font-size: 14px; color: var(--secondary-font-color); margin-bottom: 12px; line-height: 1.5;">{{ item.item.content }}</div>
         <display-content :item="item.item" />
       </template>
 
       <template v-else>
         <!-- Title -->
-        <div class="title">{{ truncatedTitle }}</div>
+        <div style="font-size: 16px; font-weight: bold; margin-bottom: 8px; color: var(--font-color);">{{ truncatedTitle }}</div>
 
         <!-- Description -->
-        <p class="description">{{ truncatedContent }}</p>
+        <p style="font-size: 14px; color: var(--secondary-font-color); margin-bottom: 12px; line-height: 1.5;">{{ truncatedContent }}</p>
       </template>
       <!-- Bottom info -->
       <card-bottom-info 
@@ -153,33 +153,4 @@
     }
   }
 </script>
-
-<style lang="scss">
-.feed-card {
-  background: var(--background-primary);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 12px;
-
-  .top-link {
-    color: var(--link-color);
-    font-size: 12px;
-    margin-bottom: 8px;
-  }
-
-  .title {
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 8px;
-    color: var(--font-color);
-  }
-
-  .description {
-    font-size: 14px;
-    color: var(--secondary-font-color);
-    margin-bottom: 12px;
-    line-height: 1.5;
-  }
-}
-</style>
   
