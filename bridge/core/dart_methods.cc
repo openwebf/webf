@@ -14,6 +14,7 @@ using namespace webf;
 namespace webf {
 
 int32_t start_timer_id = 1;
+int32_t start_idle_id = 1;
 
 DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
                                      const uint64_t* dart_methods,
@@ -27,7 +28,9 @@ DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
   set_interval_ = reinterpret_cast<SetInterval>(dart_methods[i++]);
   clear_timeout_ = reinterpret_cast<ClearTimeout>(dart_methods[i++]);
   request_animation_frame_ = reinterpret_cast<RequestAnimationFrame>(dart_methods[i++]);
+  request_idle_callback_ = reinterpret_cast<RequestIdleCallback>(dart_methods[i++]);
   cancel_animation_frame_ = reinterpret_cast<CancelAnimationFrame>(dart_methods[i++]);
+  cancel_idle_callback_ = reinterpret_cast<CancelIdleCallback>(dart_methods[i++]);
   to_blob_ = reinterpret_cast<ToBlob>(dart_methods[i++]);
   flush_ui_command_ = reinterpret_cast<FlushUICommand>(dart_methods[i++]);
   create_binding_object_ = reinterpret_cast<CreateBindingObject>(dart_methods[i++]);
@@ -150,12 +153,41 @@ int32_t DartMethodPointer::requestAnimationFrame(bool is_dedicated,
   return new_frame_id;
 }
 
+int32_t DartMethodPointer::requestIdleCallback(bool is_dedicated,
+                                               void* callback_context,
+                                               double context_id,
+                                               double timeout,
+                                               webf::AsyncIdelCallback callback) {
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call START";
+#endif
+
+  int32_t new_idle_id = start_idle_id++;
+
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, request_idle_callback_, new_idle_id,
+                                                  callback_context, context_id, timeout, callback);
+
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call END";
+#endif
+
+  return new_idle_id;
+}
+
 void DartMethodPointer::cancelAnimationFrame(bool is_dedicated, double context_id, int32_t id) {
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::cancelAnimationFrame call START";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, cancel_animation_frame_, context_id, id);
+}
+
+void DartMethodPointer::cancelIdleCallback(bool is_dedicated, double context_id, int32_t id) {
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::cancelAnimationFrame call START";
+#endif
+
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, cancel_idle_callback_, context_id, id);
 }
 
 void DartMethodPointer::toBlob(bool is_dedicated,

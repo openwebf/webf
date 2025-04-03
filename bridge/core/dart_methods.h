@@ -30,6 +30,7 @@ namespace webf {
 using InvokeModuleResultCallback = void (*)(Dart_PersistentHandle persistent_handle, NativeValue* result);
 using AsyncCallback = void (*)(void* callback_context, double context_id, char* errmsg);
 using AsyncRAFCallback = void (*)(void* callback_context, double context_id, double result, char* errmsg);
+using AsyncIdelCallback = void (*)(void* callback_context, double context_id, double timeout);
 using AsyncModuleCallback = NativeValue* (*)(void* callback_context,
                                              double context_id,
                                              const char* errmsg,
@@ -70,8 +71,14 @@ typedef void (*RequestAnimationFrame)(int32_t new_frame_id,
                                       void* callback_context,
                                       double context_id,
                                       AsyncRAFCallback callback);
+typedef void (*RequestIdleCallback)(int32_t new_idle_id,
+                                    void* callback_context,
+                                    double context_id,
+                                    double timeout,
+                                    AsyncIdelCallback callback);
 typedef void (*ClearTimeout)(double context_id, int32_t timerId);
 typedef void (*CancelAnimationFrame)(double context_id, int32_t id);
+typedef void (*CancelIdleCallback)(double context_id, int32_t id);
 typedef void (*ToBlob)(void* callback_context,
                        double context_id,
                        AsyncBlobCallback blobCallback,
@@ -180,7 +187,9 @@ class DartMethodPointer {
                                 void* callback_context,
                                 double context_id,
                                 AsyncRAFCallback callback);
+  int32_t requestIdleCallback(bool is_dedicated, void* callback_context, double context_id, double timeout, AsyncIdelCallback callback);
   void cancelAnimationFrame(bool is_dedicated, double context_id, int32_t id);
+  void cancelIdleCallback(bool is_dedicated, double context_id, int32_t id);
   void toBlob(bool is_dedicated,
               void* callback_context,
               double context_id,
@@ -248,7 +257,9 @@ class DartMethodPointer {
   SetInterval set_interval_{nullptr};
   ClearTimeout clear_timeout_{nullptr};
   RequestAnimationFrame request_animation_frame_{nullptr};
+  RequestIdleCallback request_idle_callback_{nullptr};
   CancelAnimationFrame cancel_animation_frame_{nullptr};
+  CancelIdleCallback  cancel_idle_callback_{nullptr};
   ToBlob to_blob_{nullptr};
   FlushUICommand flush_ui_command_{nullptr};
   CreateBindingObject create_binding_object_{nullptr};

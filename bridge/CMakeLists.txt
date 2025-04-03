@@ -80,7 +80,7 @@ if (ENABLE_ASAN)
   add_link_options(-fsanitize=address -fno-omit-frame-pointer)
 endif ()
 
-if (NOT MSVC) 
+if (NOT MSVC)
   if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     # Avoid quickjs stackoverflow.
     add_compile_options(-O1)
@@ -218,7 +218,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32")
     add_library(pthreadVC3 SHARED ${PTHREADS_ROOT}/pthread-JMP.c ${PTHREADS_ROOT}/version.rc)
     target_compile_definitions(pthreadVC3
-      PRIVATE 
+      PRIVATE
       _UNICODE
       UNICODE
       WIN32
@@ -325,6 +325,8 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/frame/module_callback.cc
     core/frame/module_context_coordinator.cc
     core/frame/window.cc
+    core/frame/window_idle_tasks.cc
+    core/frame/script_idle_task_controller.cc
     core/frame/screen.cc
     core/frame/legacy/location.cc
     core/timing/performance.cc
@@ -591,6 +593,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/defined_properties.cc
     out/element_attribute_names.cc
     out/element_namespace_uris.cc
+    out/qjs_window_idle_request_options.cc
 
     # SVG generated
     out/svg_names.cc

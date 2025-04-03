@@ -11,6 +11,8 @@
 #include "core/dom/events/event_target.h"
 #include "plugin_api/window.h"
 #include "qjs_scroll_to_options.h"
+#include "qjs_window_idle_request_options.h"
+#include "core/frame/script_idle_task_controller.h"
 #include "screen.h"
 
 namespace webf {
@@ -64,11 +66,20 @@ class Window : public EventTargetWithInlineData {
                                                 const AtomicString& pseudo_elt,
                                                 ExceptionState& exception_state);
 
-  double requestAnimationFrame(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exceptionState);
+  double requestAnimationFrame(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exception_state);
+  double requestIdleCallback(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exception_state);
+  int64_t requestIdleCallback(
+      const std::shared_ptr<QJSFunction>& callback,
+      const std::shared_ptr<WindowIdleRequestOptions>& options,
+      ExceptionState& exception_state);
+
   void cancelAnimationFrame(double request_id, ExceptionState& exception_state);
+  void cancelIdleCallback(int64_t idle_id, ExceptionState& exception_state);
 
   void OnLoadEventFired();
   bool IsWindowOrWorkerGlobalScope() const override;
+
+  ScriptedIdleTaskController* script_idle_task() { return &scripted_idle_task_controller_; };
 
   void Trace(GCVisitor* visitor) const override;
   const WindowPublicMethods* windowPublicMethods();
@@ -78,6 +89,8 @@ class Window : public EventTargetWithInlineData {
 
  private:
   Member<Screen> screen_;
+  ScriptedIdleTaskController scripted_idle_task_controller_;
+  friend class WindowIdleTasks;
 };
 
 template <>

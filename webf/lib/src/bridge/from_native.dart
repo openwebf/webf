@@ -272,6 +272,7 @@ typedef NativeAsyncCallback = Void Function(Pointer<Void> callbackContext, Doubl
 typedef DartAsyncCallback = void Function(Pointer<Void> callbackContext, double contextId, Pointer<Utf8> errmsg);
 typedef NativeRAFAsyncCallback = Void Function(
     Pointer<Void> callbackContext, Double contextId, Double data, Pointer<Utf8> errmsg);
+typedef NativeRequestIdleAsyncCallback = Void Function(Pointer<Void> callbackContext, Double contextId, Double timeout);
 typedef DartRAFAsyncCallback = void Function(Pointer<Void>, double contextId, double data, Pointer<Utf8> errmsg);
 
 // Register requestBatchUpdate
@@ -403,6 +404,28 @@ void _cancelAnimationFrame(double contextId, int timerId) {
 final Pointer<NativeFunction<NativeCancelAnimationFrame>> _nativeCancelAnimationFrame =
     Pointer.fromFunction(_cancelAnimationFrame);
 
+typedef NativeRequestIdleCallback = Void Function(Int32 newIdleId, Pointer<Void> callbackContext, Double contextId,
+    Double timeout, Pointer<NativeFunction<NativeRequestIdleAsyncCallback>>);
+
+void _requestIdleCallback(int newIdleId, Pointer<Void> callbackContext, double contextId, double timeout,
+    Pointer<NativeFunction<NativeRequestIdleAsyncCallback>> callback) {
+  print('request idle');
+}
+
+final Pointer<NativeFunction<NativeRequestIdleCallback>> _nativeRequestIdleCallback =
+    Pointer.fromFunction(_requestIdleCallback);
+
+// Register cancelAnimationFrame
+typedef NativeCancelIdleCallback = Void Function(Double contextId, Int32 id);
+
+void _cancelIdleCallback(double contextId, int idleId) {
+  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  // controller.module.cancelAnimationFrame(idleId);
+}
+
+final Pointer<NativeFunction<NativeCancelIdleCallback>> _nativeCancelIdleCallback =
+    Pointer.fromFunction(_cancelIdleCallback);
+
 typedef NativeAsyncBlobCallback = Void Function(
     Pointer<Void> callbackContext, Double contextId, Pointer<Utf8>, Pointer<Uint8>, Int32);
 typedef DartAsyncBlobCallback = void Function(
@@ -458,11 +481,15 @@ typedef NativeLoadNativeLibrary = Void Function(
 typedef NativeLoadNativeLibraryCallback = Pointer<Void> Function(
     Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> entryPoint,
     Pointer<NativeString> libName,
-    Pointer<Void> initializeData, Double contextId, Pointer<Void> exportData);
+    Pointer<Void> initializeData,
+    Double contextId,
+    Pointer<Void> exportData);
 typedef DartLoadNativeLibraryCallback = Pointer<Void> Function(
     Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> entryPoint,
     Pointer<NativeString> libName,
-    Pointer<Void> initializeData, double contextId, Pointer<Void> exportData);
+    Pointer<Void> initializeData,
+    double contextId,
+    Pointer<Void> exportData);
 
 typedef StandardWebFPluginExternalSymbol = Void Function();
 typedef DartStandardWebFPluginExternalSymbol = void Function();
@@ -488,7 +515,7 @@ void _loadNativeLibrary(double contextId, Pointer<NativeString> nativeLibName, P
     final library = DynamicLibrary.open(join(_defaultLibraryPath, _getNativeLibraryName(libName)));
     String entrySymbol = Platform.environment['WEBF_ENABLE_TEST'] != null ? 'init_webf_test_app' : 'init_webf_app';
     Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> nativeFunction =
-      library.lookup<NativeFunction<StandardWebFPluginExternalSymbol>>(entrySymbol);
+        library.lookup<NativeFunction<StandardWebFPluginExternalSymbol>>(entrySymbol);
 
     callback(nativeFunction, nativeLibName, initializeData, contextId, importData);
   } catch (e, stack) {
@@ -537,7 +564,9 @@ final List<int> _dartNativeMethods = [
   _nativeSetInterval.address,
   _nativeClearTimeout.address,
   _nativeRequestAnimationFrame.address,
+  _nativeRequestIdleCallback.address,
   _nativeCancelAnimationFrame.address,
+  _nativeCancelIdleCallback.address,
   _nativeToBlob.address,
   _nativeFlushUICommand.address,
   _nativeCreateBindingObject.address,
