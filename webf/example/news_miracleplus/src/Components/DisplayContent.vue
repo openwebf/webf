@@ -3,7 +3,7 @@
       <!-- Title -->
       <div style="font-size: 16px; font-weight: bold; margin-bottom: 5px; color: var(--font-color-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ truncatedTitle }}</div>
   
-      <div style="display: flex; gap: 10px; margin-bottom: 12px; align-items: flex-start;">
+      <div style="display: flex; margin-bottom: 12px; align-items: flex-start;">
         <!-- Logo Image -->
         <smart-image :src="logoUrl" style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; flex-shrink: 0; margin-right: 10px;" />
         
