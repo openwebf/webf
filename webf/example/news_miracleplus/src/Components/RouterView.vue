@@ -5,6 +5,8 @@
   </template>
 
   <script>
+  import tabBarManager from '@/utils/tabBarManager';
+
   export default {
     name: 'RouterView',
     props: {
@@ -26,7 +28,9 @@
         this.isMounted = true;
       },
       onRouterChange(e) {
+        // 通知 tabBarManager 路由变化
         console.log('route change', e, e.state);
+        tabBarManager.setCurrentPath(this.path);
       }
     }
   }

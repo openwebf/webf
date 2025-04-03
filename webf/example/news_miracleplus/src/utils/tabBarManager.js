@@ -8,9 +8,6 @@ class TabBarManager {
     static getInstance() {
       if (!TabBarManager.instance) {
         TabBarManager.instance = new TabBarManager();
-        window.addEventListener('hybridrouterchange', (e) => {
-          TabBarManager.instance.setCurrentPath(e.name);
-        });
       }
       return TabBarManager.instance;
     }
