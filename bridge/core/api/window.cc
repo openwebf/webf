@@ -16,4 +16,11 @@ void WindowPublicMethods::ScrollToWithXAndY(Window* window,
   window->scrollTo(x, y, shared_exception_state->exception_state);
 }
 
+double WindowPublicMethods::RequestAnimationFrame(Window* window,
+                                                  WebFNativeFunctionContext* callback_context,
+                                                  SharedExceptionState* shared_exception_state) {
+  auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
+  return window->requestAnimationFrame(callback_impl, shared_exception_state->exception_state);
+}
+
 }  // namespace webf

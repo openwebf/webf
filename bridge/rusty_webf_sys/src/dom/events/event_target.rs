@@ -49,7 +49,6 @@ pub struct EventTargetRustMethods {
 
 impl RustMethods for EventTargetRustMethods {}
 
-
 pub struct EventTarget {
   pub ptr: *const OpaquePtr,
   status: *const RustValueStatus,
@@ -233,6 +232,8 @@ pub trait EventTargetMethods {
     exception_state: &ExceptionState) -> Result<(), String>;
 
   fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool;
+
+  fn as_event_target(&self) -> &EventTarget;
 }
 
 impl Drop for EventTarget {
@@ -280,5 +281,9 @@ impl EventTargetMethods for EventTarget {
 
   fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool {
     self.dispatch_event(event, exception_state)
+  }
+
+  fn as_event_target(&self) -> &EventTarget {
+    self
   }
 }

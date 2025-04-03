@@ -161,13 +161,3 @@ Below is a table that displays the corresponding data types across both environm
 | `bool`    | `boolean`  |
 | `Map`     | `Object`   |
 | `List`    | `Array`    |
-
-### Modes of Data Exchange
-
-Although the standard way to transfer data is by copying — which meets the requirements of most scenarios, certain situations, especially those involving voluminous data, call for a more expedited mode of data transfer.
-
-WebF introduces specialized modes of data transmission that sidestep the traditional copying procedure. Instead of replicating the data, references to the actual data are utilized.
-
-Adopting this approach considerably slashes the overhead associated with data transfers, promising enhanced performance.
-
-For an in-depth understanding of this streamlined data exchange approach and its impact on boosting performance, please consult the [Zero-copy data transmission](/docs/tutorials/performance_optimization/zero_copy_data_transmission) guide.

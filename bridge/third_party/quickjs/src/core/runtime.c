@@ -56,6 +56,13 @@
 #include "parser.h"
 #include "shape.h"
 
+#ifdef _MSC_VER
+# if _MSC_VER >= 1942
+#   undef NAN
+#   define NAN (-(float)(((float)(1e+300 * 1e+300)) * 0.0F))
+# endif
+#endif
+
 static const JSClassExoticMethods js_arguments_exotic_methods = {
     .define_own_property = js_arguments_define_own_property,
 };

@@ -13,6 +13,7 @@
 #include "core/html/html_body_element.h"
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
+#include "foundation/native_value_converter.h"
 
 namespace webf {
 
@@ -245,6 +246,25 @@ WebFValue<Element, HTMLElementPublicMethods> DocumentPublicMethods::Body(webf::D
   auto* body = document->body();
   WebFValueStatus* status_block = body->KeepAlive();
   return WebFValue<Element, HTMLElementPublicMethods>{body, body->htmlElementPublicMethods(), status_block};
+}
+
+NativeValue DocumentPublicMethods::Cookie(webf::Document* document,
+                                          webf::SharedExceptionState* shared_exception_state) {
+  auto cookie = document->GetBindingProperty(binding_call_methods::kcookie, FlushUICommandReason::kDependentsOnElement,
+                                             shared_exception_state->exception_state);
+  if (shared_exception_state->exception_state.HasException()) {
+    return Native_NewNull();
+  }
+  return cookie;
+}
+
+void DocumentPublicMethods::SetCookie(webf::Document* document,
+                                      const char* value,
+                                      webf::SharedExceptionState* shared_exception_state) {
+  webf::AtomicString value_atomic = webf::AtomicString(document->ctx(), value);
+  document->SetBindingProperty(binding_call_methods::kcookie,
+                               NativeValueConverter<NativeTypeString>::ToNativeValue(document->ctx(), value_atomic),
+                               shared_exception_state->exception_state);
 }
 
 void DocumentPublicMethods::ClearCookie(webf::Document* document, webf::SharedExceptionState* shared_exception_state) {

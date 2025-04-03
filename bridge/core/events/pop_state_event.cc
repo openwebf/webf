@@ -51,6 +51,11 @@ bool PopStateEvent::IsPopstateEvent() const {
   return true;
 }
 
+const PopStateEventPublicMethods* PopStateEvent::popStateEventPublicMethods() {
+  static PopStateEventPublicMethods pop_state_event_public_methods;
+  return &pop_state_event_public_methods;
+}
+
 void PopStateEvent::Trace(GCVisitor* visitor) const {
   state_.Trace(visitor);
   Event::Trace(visitor);

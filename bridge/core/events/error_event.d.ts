@@ -8,5 +8,5 @@ interface ErrorEvent extends Event {
   readonly colno: number;
   readonly error: any;
   [key: string]: any;
-  new(eventType: string, init?: ErrorEventInit) : ErrorEvent;
+  new(type: string, init?: ErrorEventInit) : ErrorEvent;
 }

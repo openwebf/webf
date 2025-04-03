@@ -11,6 +11,6 @@ pub struct CloseEventInit {
   pub cancelable: i32,
   pub composed: i32,
   pub code: i64,
-  pub reason: *const c_char,
+  pub reason: AtomicStringRef,
   pub was_clean: i32,
 }

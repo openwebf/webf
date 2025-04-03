@@ -10,6 +10,9 @@ pub struct InputEventInit {
   pub detail: c_double,
   pub view: RustValue<WindowRustMethods>,
   pub which: c_double,
-  pub input_type: *const c_char,
-  pub data: *const c_char,
+  pub bubbles: i32,
+  pub cancelable: i32,
+  pub composed: i32,
+  pub input_type: AtomicStringRef,
+  pub data: AtomicStringRef,
 }

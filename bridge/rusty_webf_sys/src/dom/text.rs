@@ -69,4 +69,8 @@ impl EventTargetMethods for Text {
   fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool {
     self.character_data.dispatch_event(event, exception_state)
   }
+
+  fn as_event_target(&self) -> &EventTarget {
+    self.character_data.as_event_target()
+  }
 }

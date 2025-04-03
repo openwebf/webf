@@ -9,8 +9,8 @@ use crate::*;
 pub struct CustomEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub detail: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<ScriptValueRefRustMethods>,
-  pub init_custom_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, i32, i32, *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
+  pub detail: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
+  pub init_custom_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, i32, i32, NativeValue, exception_state: *const OpaquePtr) -> c_void,
 }
 pub struct CustomEvent {
   pub event: Event,
@@ -36,15 +36,15 @@ impl CustomEvent {
   pub fn context<'a>(&self) -> &'a ExecutingContext {
     self.event.context()
   }
-  pub fn detail(&self) -> ScriptValueRef {
+  pub fn detail(&self, exception_state: &ExceptionState) -> NativeValue {
     let value = unsafe {
-      ((*self.method_pointer).detail)(self.ptr())
+      ((*self.method_pointer).detail)(self.ptr(), exception_state.ptr)
     };
-    ScriptValueRef::initialize(value.value, self.context(), value.method_pointer)
+    value
   }
-  pub fn init_custom_event(&self, type_: &str, can_bubble: bool, cancelable: bool, detail: &ScriptValueRef, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn init_custom_event(&self, type_: &str, can_bubble: bool, cancelable: bool, detail: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).init_custom_event)(self.ptr(), CString::new(type_).unwrap().as_ptr(), i32::from(can_bubble), i32::from(cancelable), detail.ptr, exception_state.ptr);
+      ((*self.method_pointer).init_custom_event)(self.ptr(), CString::new(type_).unwrap().as_ptr(), i32::from(can_bubble), i32::from(cancelable), detail, exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -53,15 +53,15 @@ impl CustomEvent {
   }
 }
 pub trait CustomEventMethods: EventMethods {
-  fn detail(&self) -> ScriptValueRef;
-  fn init_custom_event(&self, type_: &str, can_bubble: bool, cancelable: bool, detail: &ScriptValueRef, exception_state: &ExceptionState) -> Result<(), String>;
+  fn detail(&self, exception_state: &ExceptionState) -> NativeValue;
+  fn init_custom_event(&self, type_: &str, can_bubble: bool, cancelable: bool, detail: NativeValue, exception_state: &ExceptionState) -> Result<(), String>;
   fn as_custom_event(&self) -> &CustomEvent;
 }
 impl CustomEventMethods for CustomEvent {
-  fn detail(&self) -> ScriptValueRef {
-    self.detail()
+  fn detail(&self, exception_state: &ExceptionState) -> NativeValue {
+    self.detail(exception_state)
   }
-  fn init_custom_event(&self, type_: &str, can_bubble: bool, cancelable: bool, detail: &ScriptValueRef, exception_state: &ExceptionState) -> Result<(), String> {
+  fn init_custom_event(&self, type_: &str, can_bubble: bool, cancelable: bool, detail: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
     self.init_custom_event(type_, can_bubble, cancelable, detail, exception_state)
   }
   fn as_custom_event(&self) -> &CustomEvent {
@@ -116,5 +116,27 @@ impl EventMethods for CustomEvent {
   }
   fn as_event(&self) -> &Event {
     &self.event
+  }
+}
+impl ExecutingContext {
+  pub fn create_custom_event(&self, event_type: &str, exception_state: &ExceptionState) -> Result<CustomEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_custom_event)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(CustomEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
+  }
+  pub fn create_custom_event_with_options(&self, event_type: &str, options: &CustomEventInit,  exception_state: &ExceptionState) -> Result<CustomEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_custom_event_with_options)(self.ptr, event_type_c_string.as_ptr(), options, exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(CustomEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
   }
 }
