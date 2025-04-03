@@ -7,25 +7,32 @@ class FlutterTabBar extends WidgetElement {
 
   final CupertinoTabController _controller = CupertinoTabController();
 
+  // Define static method map
+  static StaticDefinedSyncBindingObjectMethodMap tabBarSyncMethods = {
+    'switchTab': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) async {
+        final tabBar = castToType<FlutterTabBar>(element);
+        if (args.isEmpty) return;
+
+        final targetPath = args[0].toString();
+        final paths = tabBar._getTabPaths();
+        final targetIndex = paths.indexOf(targetPath);
+        print('targetIndex: $targetIndex');
+        if (targetIndex != -1) {
+          tabBar._controller.index = targetIndex;
+
+          tabBar.setAttribute('currentIndex', targetIndex.toString());
+          tabBar.dispatchEvent(CustomEvent('tabchange', detail: targetIndex));
+        }
+      },
+    ),
+  };
+
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
-
-    methods['switchTab'] = BindingObjectMethodSync(call: (args) async {
-      if (args.isEmpty) return;
-
-      final targetPath = args[0].toString();
-      final paths = _getTabPaths();
-      final targetIndex = paths.indexOf(targetPath);
-      print('targetIndex: $targetIndex');
-      if (targetIndex != -1) {
-        _controller.index = targetIndex;
-
-        setAttribute('currentIndex', targetIndex.toString());
-        dispatchEvent(CustomEvent('tabchange', detail: targetIndex));
-      }
-    });
-  }
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
+    ...super.methods,
+    tabBarSyncMethods,
+  ];
 
   static final Map<String, IconData> _iconMap = {
     'home': CupertinoIcons.home,

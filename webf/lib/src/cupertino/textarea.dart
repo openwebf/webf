@@ -192,23 +192,34 @@ class FlutterCupertinoTextArea extends WidgetElement {
     );
   }
 
+  // Define static method map
+  static StaticDefinedSyncBindingObjectMethodMap textareaSyncMethods = {
+    'focus': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final textarea = castToType<FlutterCupertinoTextArea>(element);
+        textarea._focusNode.requestFocus();
+      },
+    ),
+    'blur': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final textarea = castToType<FlutterCupertinoTextArea>(element);
+        textarea._focusNode.unfocus();
+      },
+    ),
+    'clear': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final textarea = castToType<FlutterCupertinoTextArea>(element);
+        textarea._controller.clear();
+        textarea.setState(() {});
+      },
+    ),
+  };
+
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
-
-    methods['focus'] = BindingObjectMethodSync(call: (args) {
-      _focusNode.requestFocus();
-    });
-
-    methods['blur'] = BindingObjectMethodSync(call: (args) {
-      _focusNode.unfocus();
-    });
-
-    methods['clear'] = BindingObjectMethodSync(call: (args) {
-      _controller.clear();
-      setState(() {});
-    });
-  }
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
+    ...super.methods,
+    textareaSyncMethods,
+  ];
 
   @override
   void willDetachRenderer([RenderObjectElement? flutterWidgetElement]) {

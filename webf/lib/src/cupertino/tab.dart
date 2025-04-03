@@ -61,20 +61,27 @@ class FlutterCupertinoTab extends WidgetElement {
     );
   }
 
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
+  // Define static method map
+  static StaticDefinedSyncBindingObjectMethodMap tabSyncMethods = {
+    'switchTab': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final tab = castToType<FlutterCupertinoTab>(element);
+        if (args.isEmpty) return;
+        final index = int.tryParse(args[0].toString());
+        if (index != null) {
+          tab._currentIndex = index;
+          tab.setState(() {});
+          tab.dispatchEvent(CustomEvent('change', detail: index));
+        }
+      },
+    ),
+  };
 
-    methods['switchTab'] = BindingObjectMethodSync(call: (args) {
-      if (args.isEmpty) return;
-      final index = int.tryParse(args[0].toString());
-      if (index != null) {
-        _currentIndex = index;
-        setState(() {});
-        dispatchEvent(CustomEvent('change', detail: index));
-      }
-    });
-  }
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
+    ...super.methods,
+    tabSyncMethods,
+  ];
 
   @override
   void dispose() {

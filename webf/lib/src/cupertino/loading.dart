@@ -13,25 +13,32 @@ class FlutterCupertinoLoading extends WidgetElement {
     _isDisposed = false;
   }
 
+  // Define static method map
+  static StaticDefinedSyncBindingObjectMethodMap loadingSyncMethods = {
+    'show': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final loading = castToType<FlutterCupertinoLoading>(element);
+        String? text;
+        if (args.isNotEmpty) {
+          final Map<String, dynamic> params = args[0] as Map<String, dynamic>;
+          text = params['text']?.toString();
+        }
+        loading._show(text);
+      },
+    ),
+    'hide': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final loading = castToType<FlutterCupertinoLoading>(element);
+        loading._hide();
+      },
+    ),
+  };
+
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
-
-    // Show loading method
-    methods['show'] = BindingObjectMethodSync(call: (args) {
-      String? text;
-      if (args.isNotEmpty) {
-        final Map<String, dynamic> params = args[0] as Map<String, dynamic>;
-        text = params['text']?.toString();
-      }
-      _show(text);
-    });
-
-    // Hide loading method
-    methods['hide'] = BindingObjectMethodSync(call: (args) {
-      _hide();
-    });
-  }
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
+        ...super.methods,
+        loadingSyncMethods,
+      ];
 
   void _show(String? text) {
     print('context: $context');

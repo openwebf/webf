@@ -7,6 +7,43 @@ class FlutterCupertinoAlert extends WidgetElement {
   String? _tempTitle;
   String? _tempMessage;
 
+  // Define static method map
+  static StaticDefinedSyncBindingObjectMethodMap alertSyncMethods = {
+    'show': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final alert = castToType<FlutterCupertinoAlert>(element);
+        if (alert.context == null) return;
+
+        if (args.isNotEmpty) {
+          final Map<String, dynamic> options = args[0];
+          alert._tempTitle = options['title']?.toString();
+          alert._tempMessage = options['message']?.toString();
+        }
+        print('showCupertinoDialog');
+        print(alert._tempTitle);
+        print(alert._tempMessage);
+        showCupertinoDialog(
+          context: alert.context!,
+          builder: (BuildContext context) => alert.build(context, alert.childNodes),
+        );
+      },
+    ),
+    'hide': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final alert = castToType<FlutterCupertinoAlert>(element);
+        alert._tempTitle = null;
+        alert._tempMessage = null;
+        Navigator.of(alert.context!, rootNavigator: true).pop();
+      },
+    ),
+  };
+
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
+    ...super.methods,
+    alertSyncMethods,
+  ];
+
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
     return CupertinoAlertDialog(
@@ -58,33 +95,5 @@ class FlutterCupertinoAlert extends WidgetElement {
     );
 
     return actions;
-  }
-
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
-
-    methods['show'] = BindingObjectMethodSync(call: (args) {
-      if (context == null) return;
-
-      if (args.isNotEmpty) {
-        final Map<String, dynamic> options = args[0];
-        _tempTitle = options['title']?.toString();
-        _tempMessage = options['message']?.toString();
-      }
-      print('showCupertinoDialog');
-      print(_tempTitle);
-      print(_tempMessage);
-      showCupertinoDialog(
-        context: context!,
-        builder: (BuildContext context) => build(context, childNodes),
-      );
-    });
-
-    methods['hide'] = BindingObjectMethodSync(call: (args) {
-      _tempTitle = null;
-      _tempMessage = null;
-      Navigator.of(context!, rootNavigator: true).pop();
-    });
   }
 }

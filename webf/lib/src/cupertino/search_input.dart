@@ -210,31 +210,46 @@ class FlutterCupertinoSearchInput extends WidgetElement {
     );
   }
 
-  @override 
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
+  // Define static method map
+  static StaticDefinedSyncBindingObjectMethodMap searchInputSyncMethods = {
+    'getValue': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final searchInput = castToType<FlutterCupertinoSearchInput>(element);
+        return searchInput._controller.text;
+      },
+    ),
+    'setValue': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final searchInput = castToType<FlutterCupertinoSearchInput>(element);
+        if (args.isEmpty) return;
+        searchInput._controller.text = args[0].toString();
+      },
+    ),
+    'focus': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final searchInput = castToType<FlutterCupertinoSearchInput>(element);
+        searchInput._focusNode.requestFocus();
+      },
+    ),
+    'blur': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final searchInput = castToType<FlutterCupertinoSearchInput>(element);
+        searchInput._focusNode.unfocus();
+      },
+    ),
+    'clear': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final searchInput = castToType<FlutterCupertinoSearchInput>(element);
+        searchInput._controller.clear();
+      },
+    ),
+  };
 
-    methods['getValue'] = BindingObjectMethodSync(call: (args) {
-      return _controller.text;
-    });
-
-    methods['setValue'] = BindingObjectMethodSync(call: (args) {
-      if (args.isEmpty) return;
-      _controller.text = args[0].toString();
-    });
-
-    methods['focus'] = BindingObjectMethodSync(call: (args) {
-      _focusNode.requestFocus();
-    });
-
-    methods['blur'] = BindingObjectMethodSync(call: (args) {
-      _focusNode.unfocus();
-    });
-
-    methods['clear'] = BindingObjectMethodSync(call: (args) {
-      _controller.clear();
-    });
-  }
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
+    ...super.methods,
+    searchInputSyncMethods,
+  ];
 
   @override
   void dispose() {

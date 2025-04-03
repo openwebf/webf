@@ -221,31 +221,44 @@ class FlutterCupertinoInput extends WidgetElement {
     return formatters.isEmpty ? null : formatters;
   }
 
+  // Define static method map
+  static StaticDefinedSyncBindingObjectMethodMap inputSyncMethods = {
+    'getValue': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final input = castToType<FlutterCupertinoInput>(element);
+        return input._controller.text;
+      },
+    ),
+    'setValue': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final input = castToType<FlutterCupertinoInput>(element);
+        if (args.isNotEmpty) {
+          input._controller.text = args[0].toString();
+        }
+        return null;
+      },
+    ),
+    'focus': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final input = castToType<FlutterCupertinoInput>(element);
+        input._focusNode.requestFocus();
+        return null;
+      },
+    ),
+    'blur': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final input = castToType<FlutterCupertinoInput>(element);
+        input._focusNode.unfocus();
+        return null;
+      },
+    ),
+  };
+
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
-
-    methods['getValue'] = BindingObjectMethodSync(call: (args) {
-      return _controller.text;
-    });
-
-    methods['setValue'] = BindingObjectMethodSync(call: (args) {
-      if (args.isNotEmpty) {
-        _controller.text = args[0].toString();
-      }
-      return null;
-    });
-
-    methods['focus'] = BindingObjectMethodSync(call: (args) {
-      _focusNode.requestFocus();
-      return null;
-    });
-
-    methods['blur'] = BindingObjectMethodSync(call: (args) {
-      _focusNode.unfocus();
-      return null;
-    });
-  }
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
+    ...super.methods,
+    inputSyncMethods,
+  ];
 
   @override
   void dispose() {

@@ -17,30 +17,40 @@ class FlutterCupertinoToast extends WidgetElement {
   OverlayEntry? _overlayEntry;
   Timer? _timer;
 
+  // Define static method map
+  static StaticDefinedSyncBindingObjectMethodMap toastSyncMethods = {
+    'show': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final toast = castToType<FlutterCupertinoToast>(element);
+        if (args.isEmpty) return;
+
+        final Map<String, dynamic> params = args[0] as Map<String, dynamic>;
+        final String content = params['content']?.toString() ?? '';
+        final String? typeStr = params['type']?.toString();
+        final int? durationMs = params['duration'] as int?;
+
+        final type =
+            typeStr != null ? toast._parseToastType(typeStr) : ToastType.normal;
+        final duration = durationMs != null
+            ? Duration(milliseconds: durationMs)
+            : const Duration(milliseconds: 2000);
+
+        toast._show(content, type, duration);
+      },
+    ),
+    'close': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final toast = castToType<FlutterCupertinoToast>(element);
+        toast._hide();
+      },
+    ),
+  };
+
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
-
-    methods['show'] = BindingObjectMethodSync(call: (args) {
-      if (args.isEmpty) return;
-      
-      final Map<String, dynamic> params = args[0] as Map<String, dynamic>;
-      final String content = params['content']?.toString() ?? '';
-      final String? typeStr = params['type']?.toString();
-      final int? durationMs = params['duration'] as int?;
-      
-      final type = typeStr != null ? _parseToastType(typeStr) : ToastType.normal;
-      final duration = durationMs != null 
-          ? Duration(milliseconds: durationMs)
-          : const Duration(milliseconds: 2000);
-      
-      _show(content, type, duration);
-    });
-
-    methods['close'] = BindingObjectMethodSync(call: (args) {
-      _hide();
-    });
-  }
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
+        ...super.methods,
+        toastSyncMethods,
+      ];
 
   ToastType _parseToastType(String type) {
     switch (type.toLowerCase()) {
@@ -154,7 +164,8 @@ class _ToastWidget extends StatelessWidget {
                     children: [
                       if (type != ToastType.normal) ...[
                         type == ToastType.loading
-                            ? const CupertinoActivityIndicator(color: CupertinoColors.white)
+                            ? const CupertinoActivityIndicator(
+                                color: CupertinoColors.white)
                             : Icon(
                                 _getIcon(),
                                 color: CupertinoColors.white,
