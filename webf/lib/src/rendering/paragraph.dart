@@ -384,7 +384,7 @@ class WebFRenderParagraph extends RenderBox
       Rect old = _lineRenders[i].lineRect;
       ui.LineMetrics metrics = _lineMetrics[i];
       bool isLastLine = i == _lineMetrics.length - 1;
-      if(isLastLine) {
+      if(isLastLine && range != TextRange.empty) {
         range = TextRange(start:range.start, end: (textSpan as WebFTextSpan).contentLength);
       }
 
