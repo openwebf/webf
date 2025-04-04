@@ -180,13 +180,13 @@ class LogicInlineBox {
 
     // getDistanceToBaseline() return RenderObject baselineExtent is not right for us.
     // need to update for RenderFlowLayout and RenderTextBox
-    if(renderObject is RenderFlowLayout && !(renderObject as RenderFlowLayout).lineBoxes.isEmpty) {
-      if(childAscent != null && childAscent == childSize.height) {
-        childAscent = childAscent - (renderObject as RenderFlowLayout).lineBoxes.last!.baselineBelowExtent;
-      } else if((renderObject as RenderFlowLayout).lineBoxes.length == 1) {
-        childAscent = (renderObject as RenderFlowLayout).lineBoxes.last!.baselineExtent;
-      }
-    }
+    // if(renderObject is RenderFlowLayout && !(renderObject as RenderFlowLayout).lineBoxes.isEmpty) {
+    //   if(childAscent != null && childAscent == childSize.height) {
+    //     childAscent = childAscent - (renderObject as RenderFlowLayout).lineBoxes.last!.baselineBelowExtent;
+    //   } else if((renderObject as RenderFlowLayout).lineBoxes.length == 1) {
+    //     childAscent = (renderObject as RenderFlowLayout).lineBoxes.last!.baselineExtent;
+    //   }
+    // }
 
 
     // When baseline of children not found, use boundary of margin bottom as baseline.
