@@ -190,7 +190,8 @@ class LogicInlineBox {
 
 
     // When baseline of children not found, use boundary of margin bottom as baseline.
-    double extentAboveBaseline = childAscent ?? baseline;
+    // double extentAboveBaseline = childAscent ?? baseline;
+    double extentAboveBaseline = (childAscent != null && childAscent > 0) ? childAscent  : baseline;
     extentAboveBaseline = min(baseline, extentAboveBaseline);
     extentAboveBaseline = max(extentAboveBaseline, 0);
     return extentAboveBaseline;
