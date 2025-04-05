@@ -20,8 +20,8 @@
 #include "hashchange_event_init.h"
 #include "input_event_init.h"
 #include "intersection_change_event_init.h"
-#include "keyboard_event_init.h"
 #include "keyboard_event.h"
+#include "keyboard_event_init.h"
 #include "message_event_init.h"
 #include "mouse_event_init.h"
 #include "pointer_event_init.h"
@@ -215,13 +215,13 @@ using PublicContextCreateIntersectionChangeEventWithOptions =
                                                                                  ExceptionState& exception_state);
 using PublicContextCreateKeyboardEvent =
     WebFValue<KeyboardEvent, KeyboardEventPublicMethods> (*)(ExecutingContext* context,
-                                                           const char* type,
-                                                           ExceptionState& exception_state);
+                                                             const char* type,
+                                                             ExceptionState& exception_state);
 using PublicContextCreateKeyboardEventWithOptions =
     WebFValue<KeyboardEvent, KeyboardEventPublicMethods> (*)(ExecutingContext* context,
-                                                           const char* type,
-                                                           WebFKeyboardEventInit* init,
-                                                           ExceptionState& exception_state);
+                                                             const char* type,
+                                                             WebFKeyboardEventInit* init,
+                                                             ExceptionState& exception_state);
 using PublicContextCreateMessageEvent =
     WebFValue<MessageEvent, MessageEventPublicMethods> (*)(ExecutingContext* context,
                                                            const char* type,
@@ -430,13 +430,13 @@ struct ExecutingContextWebFMethods {
                                            ExceptionState& exception_state);
 
   static WebFValue<KeyboardEvent, KeyboardEventPublicMethods> CreateKeyboardEvent(ExecutingContext* context,
-                                                                             const char* type,
-                                                                             ExceptionState& exception_state);
+                                                                                  const char* type,
+                                                                                  ExceptionState& exception_state);
   static WebFValue<KeyboardEvent, KeyboardEventPublicMethods> CreateKeyboardEventWithOptions(
-    ExecutingContext* context,
-    const char* type,
-    WebFKeyboardEventInit* init,
-    ExceptionState& exception_state);
+      ExecutingContext* context,
+      const char* type,
+      WebFKeyboardEventInit* init,
+      ExceptionState& exception_state);
   static WebFValue<MessageEvent, MessageEventPublicMethods> CreateMessageEvent(ExecutingContext* context,
                                                                                const char* type,
                                                                                ExceptionState& exception_state);
