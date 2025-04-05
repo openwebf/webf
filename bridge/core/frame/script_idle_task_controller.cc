@@ -110,8 +110,9 @@ uint32_t ScriptedIdleTaskController::RegisterIdleCallback(const std::shared_ptr<
   idle_callback->SetStatus(IdleCallback::IdleStatus::kPending);
 
   size_t ui_command_size = context->uiCommandBuffer()->size();
-  uint32_t requestId = context->dartMethodPtr()->requestIdleCallback(
-      context->isDedicated(), idle_callback.get(), context->contextId(), timeout, ui_command_size, handleRequestIdleCallbackWrapper);
+  uint32_t requestId =
+      context->dartMethodPtr()->requestIdleCallback(context->isDedicated(), idle_callback.get(), context->contextId(),
+                                                    timeout, ui_command_size, handleRequestIdleCallbackWrapper);
   idle_callback->SetFrameId(requestId);
   // Register frame callback to collection.
   idle_callback_collection_.RegisterIdleCallback(requestId, idle_callback);
@@ -119,8 +120,7 @@ uint32_t ScriptedIdleTaskController::RegisterIdleCallback(const std::shared_ptr<
   return requestId;
 }
 
-void ScriptedIdleTaskController::CancelIdleCallback(webf::ExecutingContext* context,
-                                                    uint32_t callback_id) {
+void ScriptedIdleTaskController::CancelIdleCallback(webf::ExecutingContext* context, uint32_t callback_id) {
   auto frame_callback = idle_callback_collection_.GetIdleCallback(callback_id);
   if (frame_callback != nullptr) {
     frame_callback->SetStatus(IdleCallback::kCanceled);

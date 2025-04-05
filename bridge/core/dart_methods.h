@@ -188,7 +188,12 @@ class DartMethodPointer {
                                 void* callback_context,
                                 double context_id,
                                 AsyncRAFCallback callback);
-  int32_t requestIdleCallback(bool is_dedicated, void* callback_context, double context_id, double timeout, int32_t ui_command_size, AsyncIdelCallback callback);
+  int32_t requestIdleCallback(bool is_dedicated,
+                              void* callback_context,
+                              double context_id,
+                              double timeout,
+                              int32_t ui_command_size,
+                              AsyncIdelCallback callback);
   void cancelAnimationFrame(bool is_dedicated, double context_id, int32_t id);
   void cancelIdleCallback(bool is_dedicated, double context_id, int32_t id);
   void toBlob(bool is_dedicated,
@@ -260,7 +265,7 @@ class DartMethodPointer {
   RequestAnimationFrame request_animation_frame_{nullptr};
   RequestIdleCallback request_idle_callback_{nullptr};
   CancelAnimationFrame cancel_animation_frame_{nullptr};
-  CancelIdleCallback  cancel_idle_callback_{nullptr};
+  CancelIdleCallback cancel_idle_callback_{nullptr};
   ToBlob to_blob_{nullptr};
   FlushUICommand flush_ui_command_{nullptr};
   CreateBindingObject create_binding_object_{nullptr};

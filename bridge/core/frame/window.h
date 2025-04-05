@@ -9,10 +9,10 @@
 #include "bindings/qjs/wrapper_type_info.h"
 #include "core/css/computed_css_style_declaration.h"
 #include "core/dom/events/event_target.h"
+#include "core/frame/script_idle_task_controller.h"
 #include "plugin_api/window.h"
 #include "qjs_scroll_to_options.h"
 #include "qjs_window_idle_request_options.h"
-#include "core/frame/script_idle_task_controller.h"
 #include "screen.h"
 
 namespace webf {
@@ -68,10 +68,9 @@ class Window : public EventTargetWithInlineData {
 
   double requestAnimationFrame(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exception_state);
   double ___requestIdleCallback__(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exception_state);
-  int64_t ___requestIdleCallback__(
-      const std::shared_ptr<QJSFunction>& callback,
-      const std::shared_ptr<WindowIdleRequestOptions>& options,
-      ExceptionState& exception_state);
+  int64_t ___requestIdleCallback__(const std::shared_ptr<QJSFunction>& callback,
+                                   const std::shared_ptr<WindowIdleRequestOptions>& options,
+                                   ExceptionState& exception_state);
 
   void cancelAnimationFrame(double request_id, ExceptionState& exception_state);
   void cancelIdleCallback(int64_t idle_id, ExceptionState& exception_state);

@@ -21,10 +21,11 @@ class WindowIdleTasks {
                                  const std::shared_ptr<IdleCallback>& callback,
                                  const std::shared_ptr<WindowIdleRequestOptions>& options);
   static void cancelIdleCallback(Window&, int64_t id);
+
  private:
   friend class Window;
 };
 
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_FRAME_WINDOW_IDLE_TASKS_H_
