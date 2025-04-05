@@ -29,7 +29,6 @@ class CanvasGradient : public BindingObject {
 
   const CanvasGradientPublicMethods* canvasGradientPublicMethods();
 
-
  private:
 };
 
