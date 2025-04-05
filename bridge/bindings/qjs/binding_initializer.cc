@@ -20,6 +20,7 @@
 #include "qjs_console.h"
 #include "qjs_css_style_declaration.h"
 #include "qjs_custom_event.h"
+#include "qjs_idle_deadline.h"
 #include "qjs_document.h"
 #include "qjs_document_fragment.h"
 #include "qjs_dom_matrix.h"
@@ -194,6 +195,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSPerformanceMeasure::Install(context);
   QJSHTMLCollection::Install(context);
   QJSHTMLAllCollection::Install(context);
+  QJSIdleDeadline::Install(context);
 
   // SVG
   QJSSVGElement::Install(context);

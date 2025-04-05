@@ -157,6 +157,7 @@ int32_t DartMethodPointer::requestIdleCallback(bool is_dedicated,
                                                void* callback_context,
                                                double context_id,
                                                double timeout,
+                                               int32_t ui_command_size,
                                                webf::AsyncIdelCallback callback) {
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call START";
@@ -164,8 +165,8 @@ int32_t DartMethodPointer::requestIdleCallback(bool is_dedicated,
 
   int32_t new_idle_id = start_idle_id++;
 
-  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, request_idle_callback_, new_idle_id,
-                                                  callback_context, context_id, timeout, callback);
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, request_idle_callback_, new_idle_id, callback_context,
+                                                  context_id, timeout, ui_command_size, callback);
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call END";

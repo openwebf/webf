@@ -328,6 +328,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/frame/window_idle_tasks.cc
     core/frame/script_idle_task_controller.cc
     core/frame/screen.cc
+    core/frame/idle_deadline.cc
     core/frame/legacy/location.cc
     core/timing/performance.cc
     core/timing/performance_mark.cc
@@ -529,6 +530,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_text.cc
     out/qjs_screen.cc
     out/qjs_node_list.cc
+    out/qjs_idle_deadline.cc
     out/event_type_names.cc
     out/built_in_string.cc
     out/mutation_record_types.cc

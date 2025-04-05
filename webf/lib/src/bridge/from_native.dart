@@ -9,6 +9,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:path/path.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
@@ -273,6 +274,7 @@ typedef DartAsyncCallback = void Function(Pointer<Void> callbackContext, double 
 typedef NativeRAFAsyncCallback = Void Function(
     Pointer<Void> callbackContext, Double contextId, Double data, Pointer<Utf8> errmsg);
 typedef NativeRequestIdleAsyncCallback = Void Function(Pointer<Void> callbackContext, Double contextId, Double timeout);
+typedef DartRequestIdleAsyncCallback = void Function(Pointer<Void> callbackContext, double contextId, double timeout);
 typedef DartRAFAsyncCallback = void Function(Pointer<Void>, double contextId, double data, Pointer<Utf8> errmsg);
 
 // Register requestBatchUpdate
@@ -405,11 +407,31 @@ final Pointer<NativeFunction<NativeCancelAnimationFrame>> _nativeCancelAnimation
     Pointer.fromFunction(_cancelAnimationFrame);
 
 typedef NativeRequestIdleCallback = Void Function(Int32 newIdleId, Pointer<Void> callbackContext, Double contextId,
-    Double timeout, Pointer<NativeFunction<NativeRequestIdleAsyncCallback>>);
+    Double timeout, Int32 uiCommandSize, Pointer<NativeFunction<NativeRequestIdleAsyncCallback>>);
 
 void _requestIdleCallback(int newIdleId, Pointer<Void> callbackContext, double contextId, double timeout,
-    Pointer<NativeFunction<NativeRequestIdleAsyncCallback>> callback) {
-  print('request idle');
+    int uiCommandSize, Pointer<NativeFunction<NativeRequestIdleAsyncCallback>> callback) {
+  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  Timer timer = Timer(Duration(milliseconds: timeout.toInt()), () {
+    controller.module.cancelIdleCallback(newIdleId);
+    SchedulerBinding.instance.addPostFrameCallback((timestamp) {
+      if (controller.disposed) return;
+      DartRequestIdleAsyncCallback f = callback.asFunction();
+      f(callbackContext, contextId, 0);
+    });
+    SchedulerBinding.instance.scheduleFrame();
+  });
+  try {
+    controller.module.requestIdleCallback(contextId, newIdleId, uiCommandSize, (double remainingTime) {
+      timer.cancel();
+      if (controller.disposed) return;
+      DartRequestIdleAsyncCallback f = callback.asFunction();
+      f(callbackContext, contextId, remainingTime);
+    });
+  } catch(e, stack) {
+    print('$e $stack');
+  }
+
 }
 
 final Pointer<NativeFunction<NativeRequestIdleCallback>> _nativeRequestIdleCallback =
@@ -420,7 +442,7 @@ typedef NativeCancelIdleCallback = Void Function(Double contextId, Int32 id);
 
 void _cancelIdleCallback(double contextId, int idleId) {
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
-  // controller.module.cancelAnimationFrame(idleId);
+  controller.module.cancelAnimationFrame(idleId);
 }
 
 final Pointer<NativeFunction<NativeCancelIdleCallback>> _nativeCancelIdleCallback =

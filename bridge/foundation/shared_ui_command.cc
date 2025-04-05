@@ -86,6 +86,18 @@ bool SharedUICommand::empty() {
   return active_buffer->empty();
 }
 
+int64_t SharedUICommand::size() {
+  // simply spin wait for the swapBuffers to finish.
+  while (is_blocking_reading_.load(std::memory_order::memory_order_acquire)) {
+  }
+
+  is_blocking_writing_.store(true, std::memory_order::memory_order_release);
+  int64_t size = reserve_buffer_->size() + waiting_buffer_->size() + active_buffer->size();
+  is_blocking_writing_.store(false, std::memory_order::memory_order_release);
+
+  return size;
+}
+
 void SharedUICommand::SyncToReserve() {
   if (waiting_buffer_->empty())
     return;

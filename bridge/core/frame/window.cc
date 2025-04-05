@@ -306,16 +306,15 @@ double Window::requestAnimationFrame(const std::shared_ptr<QJSFunction>& callbac
   return request_id;
 }
 
-double Window::requestIdleCallback(const std::shared_ptr<QJSFunction>& callback,
+double Window::___requestIdleCallback__(const std::shared_ptr<QJSFunction>& callback,
                                    webf::ExceptionState& exception_state) {
   auto options = WindowIdleRequestOptions::Create();
-  return requestIdleCallback(callback, options, exception_state);
+  return ___requestIdleCallback__(callback, options, exception_state);
 }
 
-int64_t Window::requestIdleCallback(const std::shared_ptr<QJSFunction>& callback,
+int64_t Window::___requestIdleCallback__(const std::shared_ptr<QJSFunction>& callback,
                                    const std::shared_ptr<WindowIdleRequestOptions>& options,
                                    webf::ExceptionState& exception_state) {
-  GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kStandard);
   auto idle_callback = IdleCallback::Create(GetExecutingContext(), callback);
   int32_t request_id = WindowIdleTasks::requestIdleCallback(*this, idle_callback, options);
 

@@ -24,3 +24,7 @@ export const webfPrint = __webf_print__;
 declare const __webf_is_proxy__: (obj: any) => boolean;
 
 export const webfIsProxy = __webf_is_proxy__;
+
+declare const ___requestIdleCallback__: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+
+export const requestIdleCallback = ___requestIdleCallback__;

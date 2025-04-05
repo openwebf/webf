@@ -67,8 +67,8 @@ class Window : public EventTargetWithInlineData {
                                                 ExceptionState& exception_state);
 
   double requestAnimationFrame(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exception_state);
-  double requestIdleCallback(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exception_state);
-  int64_t requestIdleCallback(
+  double ___requestIdleCallback__(const std::shared_ptr<QJSFunction>& callback, ExceptionState& exception_state);
+  int64_t ___requestIdleCallback__(
       const std::shared_ptr<QJSFunction>& callback,
       const std::shared_ptr<WindowIdleRequestOptions>& options,
       ExceptionState& exception_state);

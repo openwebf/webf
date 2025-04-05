@@ -561,6 +561,7 @@ FutureOr<void> disposePage(bool isSync, double contextId) async {
     _DisposePageContext context = _DisposePageContext(completer);
     Pointer<NativeFunction<HandleDisposePageResult>> f = Pointer.fromFunction(_handleDisposePageResult);
     _disposePage(contextId, dartContext!.pointer, page, context, f);
+    _allocatedPages.remove(contextId);
     return completer.future;
   }
 }
@@ -721,17 +722,16 @@ typedef DartGetUICommandItems = Pointer<UICommandBufferPack> Function(Pointer<Vo
 final DartGetUICommandItems _getUICommandItems =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetUICommandItems>>('getUICommandItems').asFunction();
 
-typedef NativeGetUICommandKindFlags = Uint32 Function(Pointer<Void>);
-typedef DartGetUICommandKindFlags = int Function(Pointer<Void>);
-
-final DartGetUICommandKindFlags _getUICommandKindFlags =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetUICommandKindFlags>>('getUICommandKindFlag').asFunction();
-
 typedef NativeGetUICommandItemSize = Int64 Function(Pointer<Void>);
 typedef DartGetUICommandItemSize = int Function(Pointer<Void>);
 
 final DartGetUICommandItemSize _getUICommandItemSize =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetUICommandItemSize>>('getUICommandItemSize').asFunction();
+
+int getUICommandSize(double contextId) {
+  if (!_allocatedPages.containsKey(contextId)) return 0;
+  return _getUICommandItemSize(_allocatedPages[contextId]!);
+}
 
 typedef NativeClearUICommandItems = Void Function(Pointer<Void>);
 typedef DartClearUICommandItems = void Function(Pointer<Void>);

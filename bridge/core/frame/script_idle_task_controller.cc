@@ -5,6 +5,7 @@
 #include "script_idle_task_controller.h"
 #include "core/executing_context.h"
 #include "core/frame/window.h"
+#include "qjs_idle_deadline.h"
 
 namespace webf {
 
@@ -16,13 +17,15 @@ std::shared_ptr<IdleCallback> IdleCallback::Create(ExecutingContext* context,
 IdleCallback::IdleCallback(ExecutingContext* context, std::shared_ptr<QJSFunction> callback)
     : context_(context), callback_(std::move(callback)) {}
 
-void IdleCallback::Fire(double timeout) {
+void IdleCallback::Fire(double remaining_time) {
   if (callback_ == nullptr)
     return;
 
   JSContext* ctx = context_->ctx();
+  MemberMutationScope member_mutation_scope{context_};
 
-  ScriptValue arguments[] = {ScriptValue(ctx, timeout)};
+  auto* idle_deadline = MakeGarbageCollected<IdleDeadline>(context_, remaining_time);
+  ScriptValue arguments[] = {idle_deadline->ToValue()};
 
   ScriptValue return_value = callback_->Invoke(ctx, ScriptValue::Empty(ctx), 1, arguments);
 
@@ -60,7 +63,7 @@ void IdleCallbackCollection::Trace(GCVisitor* visitor) const {
   }
 }
 
-static void handleRequestIdleCallback(void* ptr, double contextId, double timeout) {
+static void handleRequestIdleCallback(void* ptr, double contextId, double remaining_time) {
   auto* frame_callback = static_cast<IdleCallback*>(ptr);
   auto* context = frame_callback->context();
 
@@ -79,7 +82,7 @@ static void handleRequestIdleCallback(void* ptr, double contextId, double timeou
 
   frame_callback->SetStatus(IdleCallback::IdleStatus::kExecuting);
 
-  frame_callback->Fire(timeout);
+  frame_callback->Fire(remaining_time);
 
   frame_callback->SetStatus(IdleCallback::IdleStatus::kFinished);
 
@@ -89,7 +92,7 @@ static void handleRequestIdleCallback(void* ptr, double contextId, double timeou
   context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
 }
 
-static void handleRequestIdleCallbackWrapper(void* ptr, double contextId, double timeout) {
+static void handleRequestIdleCallbackWrapper(void* ptr, double contextId, double remaining_time) {
   auto* p_idle_callback = static_cast<IdleCallback*>(ptr);
   auto* context = p_idle_callback->context();
 
@@ -97,7 +100,7 @@ static void handleRequestIdleCallbackWrapper(void* ptr, double contextId, double
     return;
 
   context->dartIsolateContext()->dispatcher()->PostToJs(context->isDedicated(), contextId, handleRequestIdleCallback,
-                                                        ptr, contextId, timeout);
+                                                        ptr, contextId, remaining_time);
 }
 
 uint32_t ScriptedIdleTaskController::RegisterIdleCallback(const std::shared_ptr<IdleCallback>& idle_callback,
@@ -106,8 +109,9 @@ uint32_t ScriptedIdleTaskController::RegisterIdleCallback(const std::shared_ptr<
 
   idle_callback->SetStatus(IdleCallback::IdleStatus::kPending);
 
+  size_t ui_command_size = context->uiCommandBuffer()->size();
   uint32_t requestId = context->dartMethodPtr()->requestIdleCallback(
-      context->isDedicated(), idle_callback.get(), context->contextId(), timeout, handleRequestIdleCallbackWrapper);
+      context->isDedicated(), idle_callback.get(), context->contextId(), timeout, ui_command_size, handleRequestIdleCallbackWrapper);
   idle_callback->SetFrameId(requestId);
   // Register frame callback to collection.
   idle_callback_collection_.RegisterIdleCallback(requestId, idle_callback);
