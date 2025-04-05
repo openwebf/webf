@@ -222,7 +222,7 @@ const pluginApiList = [
   // 'html/canvas/canvas_rendering_context.d.ts',
   // 'html/canvas/html_canvas_element.d.ts',
   // 'html/canvas/canvas_pattern.d.ts',
-  // 'html/canvas/canvas_gradient.d.ts',
+  'html/canvas/canvas_gradient.d.ts',
   // 'html/html_html_element.d.ts',
   // 'html/html_unknown_element.d.ts',
   // 'html/html_body_element.d.ts',

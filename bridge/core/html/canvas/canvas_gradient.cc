@@ -16,7 +16,10 @@ NativeValue CanvasGradient::HandleCallFromDartSide(const AtomicString& method,
                                                    Dart_Handle dart_object) {
   return Native_NewNull();
 }
-
+const CanvasGradientPublicMethods* CanvasGradient::canvasGradientPublicMethods() {
+  static CanvasGradientPublicMethods canvas_gradient_public_methods;
+  return &canvas_gradient_public_methods;
+}
 bool CanvasGradient::IsCanvasGradient() const {
   return true;
 }
