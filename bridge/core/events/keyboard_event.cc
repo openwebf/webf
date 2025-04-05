@@ -128,4 +128,8 @@ bool KeyboardEvent::IsKeyboardEvent() const {
   return true;
 }
 
+const KeyboardEventPublicMethods* KeyboardEvent::keyboardEventPublicMethods() {
+  static KeyboardEventPublicMethods keyboard_event_public_methods;
+  return &keyboard_event_public_methods;
+}
 }  // namespace webf

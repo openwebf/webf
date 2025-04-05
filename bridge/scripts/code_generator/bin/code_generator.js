@@ -288,7 +288,7 @@ const pluginApiList = [
   'events/pointer_event.d.ts',
   'events/input_event.d.ts',
   'events/error_event.d.ts',
-  // 'events/keyboard_event.d.ts',
+  'events/keyboard_event.d.ts',
   'events/gesture_event_init.d.ts',
   'events/intersection_change_event.d.ts',
   'events/ui_event.d.ts',

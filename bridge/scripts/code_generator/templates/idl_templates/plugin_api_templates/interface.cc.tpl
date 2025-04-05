@@ -17,6 +17,8 @@ namespace webf {
   <% } else if (isStringType(prop.type)) { %>
   auto value_atomic = <%= _.snakeCase(className) %>-><%= prop.name %>();
   return AtomicStringRef(value_atomic);
+  <% } else if (prop.typeMode.static) { %>
+  return <%= _.snakeCase(className) %>-><%= prop.name %>;
   <% } else { %>
   return <%= _.snakeCase(className) %>-><%= prop.name %>();
   <% } %>

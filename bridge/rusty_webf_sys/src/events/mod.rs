@@ -34,6 +34,7 @@ pub mod transition_event_init;
 pub mod transition_event;
 pub mod ui_event_init;
 pub mod ui_event;
+pub mod keyboard_event;
 
 pub use animation_event_init::*;
 pub use animation_event::*;
@@ -54,6 +55,7 @@ pub use input_event::*;
 pub use intersection_change_event_init::*;
 pub use intersection_change_event::*;
 pub use keyboard_event_init::*;
+pub use keyboard_event::*;
 pub use message_event_init::*;
 pub use message_event::*;
 pub use mouse_event_init::*;

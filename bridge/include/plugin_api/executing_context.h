@@ -20,6 +20,8 @@
 #include "hashchange_event_init.h"
 #include "input_event_init.h"
 #include "intersection_change_event_init.h"
+#include "keyboard_event_init.h"
+#include "keyboard_event.h"
 #include "message_event_init.h"
 #include "mouse_event_init.h"
 #include "pointer_event_init.h"
@@ -37,6 +39,8 @@ class Performance;
 typedef struct PerformancePublicMethods PerformancePublicMethods;
 class UIEvent;
 typedef struct UIEventPublicMethods UIEventPublicMethods;
+class KeyboardEvent;
+typedef struct KeyboardEventPublicMethods KeyboardEventPublicMethods;
 class CustomEvent;
 typedef struct CustomEventPublicMethods CustomEventPublicMethods;
 class AnimationEvent;
@@ -209,7 +213,15 @@ using PublicContextCreateIntersectionChangeEventWithOptions =
                                                                                  const char* type,
                                                                                  WebFIntersectionChangeEventInit* init,
                                                                                  ExceptionState& exception_state);
-
+using PublicContextCreateKeyboardEvent =
+    WebFValue<KeyboardEvent, KeyboardEventPublicMethods> (*)(ExecutingContext* context,
+                                                           const char* type,
+                                                           ExceptionState& exception_state);
+using PublicContextCreateKeyboardEventWithOptions =
+    WebFValue<KeyboardEvent, KeyboardEventPublicMethods> (*)(ExecutingContext* context,
+                                                           const char* type,
+                                                           WebFKeyboardEventInit* init,
+                                                           ExceptionState& exception_state);
 using PublicContextCreateMessageEvent =
     WebFValue<MessageEvent, MessageEventPublicMethods> (*)(ExecutingContext* context,
                                                            const char* type,
@@ -417,6 +429,14 @@ struct ExecutingContextWebFMethods {
                                            WebFIntersectionChangeEventInit* init,
                                            ExceptionState& exception_state);
 
+  static WebFValue<KeyboardEvent, KeyboardEventPublicMethods> CreateKeyboardEvent(ExecutingContext* context,
+                                                                             const char* type,
+                                                                             ExceptionState& exception_state);
+  static WebFValue<KeyboardEvent, KeyboardEventPublicMethods> CreateKeyboardEventWithOptions(
+    ExecutingContext* context,
+    const char* type,
+    WebFKeyboardEventInit* init,
+    ExceptionState& exception_state);
   static WebFValue<MessageEvent, MessageEventPublicMethods> CreateMessageEvent(ExecutingContext* context,
                                                                                const char* type,
                                                                                ExceptionState& exception_state);
@@ -517,6 +537,9 @@ struct ExecutingContextWebFMethods {
       CreateIntersectionChangeEvent};
   PublicContextCreateIntersectionChangeEventWithOptions rust_context_create_intersection_change_event_with_options{
       CreateIntersectionChangeEventWithOptions};
+  PublicContextCreateKeyboardEvent rust_context_create_keyboard_event{CreateKeyboardEvent};
+  PublicContextCreateKeyboardEventWithOptions rust_context_create_keyboard_event_with_options{
+      CreateKeyboardEventWithOptions};
   PublicContextCreateMessageEvent rust_context_create_message_event{CreateMessageEvent};
   PublicContextCreateMessageEventWithOptions rust_context_create_message_event_with_options{
       CreateMessageEventWithOptions};
