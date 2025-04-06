@@ -796,8 +796,8 @@ _NativeCommandData readNativeUICommandMemory(double contextId) {
 }
 
 void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPointer) {
-  assert(_allocatedPages.containsKey(view.contextId));
   if (view.disposed) return;
+  assert(_allocatedPages.containsKey(view.contextId));
 
   if (view.rootController.isFontsLoading) {
     SchedulerBinding.instance.scheduleFrameCallback((timeStamp) {
