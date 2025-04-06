@@ -48,6 +48,15 @@
             </div>
             <div class="item-arrow">></div>
           </div>
+
+          <!-- Textarea -->
+          <div class="component-item" @click="navigateTo('/textarea')">
+            <div class="item-content">
+              <div class="item-title">Textarea</div>
+              <div class="item-desc">A textarea component for multi-line text input</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
         </div>
       </div>
     </webf-listview>

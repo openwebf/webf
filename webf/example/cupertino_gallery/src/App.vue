@@ -17,6 +17,9 @@
   <router-view path="/search_input" title="SearchInput">
     <search-input-page></search-input-page>
   </router-view>
+  <router-view path="/textarea" title="Textarea">
+    <textarea-page></textarea-page>
+  </router-view>
 </template>
 
 <script>
@@ -27,6 +30,7 @@ import SwitchPage from './Pages/SwitchPage.vue';
 import InputPage from './Pages/InputPage.vue';
 import IconPage from './Pages/IconPage.vue';
 import SearchInputPage from './Pages/SearchInputPage.vue';
+import TextareaPage from './Pages/TextareaPage.vue';
 export default {
   name: 'App',
   components: {
@@ -37,6 +41,7 @@ export default {
     InputPage,
     IconPage,
     SearchInputPage,
+    TextareaPage,
   },
 };
 </script>

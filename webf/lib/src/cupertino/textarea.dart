@@ -35,7 +35,7 @@ class FlutterCupertinoTextArea extends WidgetElement {
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => _disabled.toString(),
       setter: (value) {
-        _disabled = value == 'true';
+        _disabled = value != 'false';
         setState(() {});
       }
     );
@@ -43,7 +43,7 @@ class FlutterCupertinoTextArea extends WidgetElement {
     attributes['readonly'] = ElementAttributeProperty(
       getter: () => _readOnly.toString(),
       setter: (value) {
-        _readOnly = value == 'true';
+        _readOnly = value != 'false';
         setState(() {});
       }
     );
@@ -67,7 +67,7 @@ class FlutterCupertinoTextArea extends WidgetElement {
     attributes['showCount'] = ElementAttributeProperty(
       getter: () => _showCount.toString(),
       setter: (value) {
-        _showCount = value == 'true';
+        _showCount = value != 'false';
         setState(() {});
       }
     );
@@ -75,7 +75,7 @@ class FlutterCupertinoTextArea extends WidgetElement {
     attributes['autoSize'] = ElementAttributeProperty(
       getter: () => _autoSize.toString(),
       setter: (value) {
-        _autoSize = value == 'true';
+        _autoSize = value != 'false';
         setState(() {});
       }
     );
@@ -83,7 +83,7 @@ class FlutterCupertinoTextArea extends WidgetElement {
     attributes['transparent'] = ElementAttributeProperty(
       getter: () => _transparent.toString(),
       setter: (value) {
-        _transparent = value == 'true';
+        _transparent = value != 'false';
         setState(() {});
       }
     );
@@ -142,7 +142,7 @@ class FlutterCupertinoTextArea extends WidgetElement {
             maxLines: _autoSize ? null : _rows,
             minLines: _rows,
             maxLength: _showCount ? null : _maxLength,
-            keyboardType: TextInputType.multiline,
+            keyboardType: _autoSize ? TextInputType.multiline : TextInputType.text,
             textAlign: renderStyle.textAlign,
             textAlignVertical: TextAlignVertical.top,
             style: TextStyle(
