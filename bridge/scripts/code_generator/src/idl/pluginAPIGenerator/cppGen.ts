@@ -202,7 +202,25 @@ function generatePublicParametersName(parameters: FunctionArguments[]): string {
   }
   return parameters.map(param => {
     const name = _.snakeCase(param.name);
-    return `${isPointerType(param.type) ? name + '_p' : isStringType(param.type) ? name + '_atomic' : isAnyType(param.type)? name + '_script_value': name}`;
+    if (isPointerType(param.type)) {
+      const pointerType = getPointerType(param.type);
+      // dictionary types
+      if (pointerType.endsWith('Options') || pointerType.endsWith('Init')) {
+        return name + '_p';
+      }
+      // special case for EventListener
+      else if (pointerType === 'JSEventListener') {
+        return name + '_impl';
+      }
+      return name;
+    }
+    else if (isStringType(param.type)) {
+      return name + '_atomic';
+    }
+    else if (isAnyType(param.type)) {
+      return name + '_script_value';
+    }
+    return name;
   }).join(', ') + ', ';
 }
 

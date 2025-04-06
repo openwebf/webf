@@ -6,27 +6,22 @@
 use std::ffi::*;
 use crate::*;
 #[repr(C)]
-pub struct HTMLElementRustMethods {
+pub struct HTMLDivElementRustMethods {
   pub version: c_double,
-  pub element: ElementRustMethods,
-  pub offset_top: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub offset_left: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub offset_width: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub offset_height: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub click: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
+  pub html_element: HTMLElementRustMethods,
 }
-pub struct HTMLElement {
-  pub element: Element,
-  method_pointer: *const HTMLElementRustMethods,
+pub struct HTMLDivElement {
+  pub html_element: HTMLElement,
+  method_pointer: *const HTMLDivElementRustMethods,
 }
-impl HTMLElement {
-  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const HTMLElementRustMethods, status: *const RustValueStatus) -> HTMLElement {
+impl HTMLDivElement {
+  pub fn initialize(ptr: *const OpaquePtr, context: *const ExecutingContext, method_pointer: *const HTMLDivElementRustMethods, status: *const RustValueStatus) -> HTMLDivElement {
     unsafe {
-      HTMLElement {
-        element: Element::initialize(
+      HTMLDivElement {
+        html_element: HTMLElement::initialize(
           ptr,
           context,
-          &(method_pointer).as_ref().unwrap().element,
+          &(method_pointer).as_ref().unwrap().html_element,
           status,
         ),
         method_pointer,
@@ -34,295 +29,262 @@ impl HTMLElement {
     }
   }
   pub fn ptr(&self) -> *const OpaquePtr {
-    self.element.ptr()
+    self.html_element.ptr()
   }
   pub fn context<'a>(&self) -> &'a ExecutingContext {
-    self.element.context()
-  }
-  pub fn offset_top(&self) -> f64 {
-    let value = unsafe {
-      ((*self.method_pointer).offset_top)(self.ptr())
-    };
-    value
-  }
-  pub fn offset_left(&self) -> f64 {
-    let value = unsafe {
-      ((*self.method_pointer).offset_left)(self.ptr())
-    };
-    value
-  }
-  pub fn offset_width(&self) -> f64 {
-    let value = unsafe {
-      ((*self.method_pointer).offset_width)(self.ptr())
-    };
-    value
-  }
-  pub fn offset_height(&self) -> f64 {
-    let value = unsafe {
-      ((*self.method_pointer).offset_height)(self.ptr())
-    };
-    value
-  }
-  pub fn click(&self, exception_state: &ExceptionState) -> Result<(), String> {
-    unsafe {
-      ((*self.method_pointer).click)(self.ptr(), exception_state.ptr);
-    };
-    if exception_state.has_exception() {
-      return Err(exception_state.stringify(self.context()));
-    }
-    Ok(())
+    self.html_element.context()
   }
 }
-pub trait HTMLElementMethods: ElementMethods {
-  fn offset_top(&self) -> f64;
-  fn offset_left(&self) -> f64;
-  fn offset_width(&self) -> f64;
-  fn offset_height(&self) -> f64;
-  fn click(&self, exception_state: &ExceptionState) -> Result<(), String>;
-  fn as_html_element(&self) -> &HTMLElement;
+pub trait HTMLDivElementMethods: HTMLElementMethods {
+  fn as_html_div_element(&self) -> &HTMLDivElement;
 }
-impl HTMLElementMethods for HTMLElement {
-  fn offset_top(&self) -> f64 {
-    self.offset_top()
-  }
-  fn offset_left(&self) -> f64 {
-    self.offset_left()
-  }
-  fn offset_width(&self) -> f64 {
-    self.offset_width()
-  }
-  fn offset_height(&self) -> f64 {
-    self.offset_height()
-  }
-  fn click(&self, exception_state: &ExceptionState) -> Result<(), String> {
-    self.click(exception_state)
-  }
-  fn as_html_element(&self) -> &HTMLElement {
+impl HTMLDivElementMethods for HTMLDivElement {
+  fn as_html_div_element(&self) -> &HTMLDivElement {
     self
   }
 }
-impl ElementMethods for HTMLElement {
+impl HTMLElementMethods for HTMLDivElement {
+  fn offset_top(&self) -> f64 {
+    self.html_element.offset_top()
+  }
+  fn offset_left(&self) -> f64 {
+    self.html_element.offset_left()
+  }
+  fn offset_width(&self) -> f64 {
+    self.html_element.offset_width()
+  }
+  fn offset_height(&self) -> f64 {
+    self.html_element.offset_height()
+  }
+  fn click(&self, exception_state: &ExceptionState) -> Result<(), String> {
+    self.html_element.click(exception_state)
+  }
+  fn as_html_element(&self) -> &HTMLElement {
+    &self.html_element
+  }
+}
+impl ElementMethods for HTMLDivElement {
   fn id(&self) -> String {
-    self.element.id()
+    self.html_element.element.id()
   }
   fn set_id(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
-    self.element.set_id(value, exception_state)
+    self.html_element.element.set_id(value, exception_state)
   }
   fn class_name(&self) -> String {
-    self.element.class_name()
+    self.html_element.element.class_name()
   }
   fn set_class_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
-    self.element.set_class_name(value, exception_state)
+    self.html_element.element.set_class_name(value, exception_state)
   }
   fn dataset(&self) -> DOMStringMap {
-    self.element.dataset()
+    self.html_element.element.dataset()
   }
   fn name(&self) -> String {
-    self.element.name()
+    self.html_element.element.name()
   }
   fn set_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
-    self.element.set_name(value, exception_state)
+    self.html_element.element.set_name(value, exception_state)
   }
   fn attributes(&self) -> ElementAttributes {
-    self.element.attributes()
+    self.html_element.element.attributes()
   }
   fn style(&self) -> CSSStyleDeclaration {
-    self.element.style()
+    self.html_element.element.style()
   }
   fn client_height(&self) -> f64 {
-    self.element.client_height()
+    self.html_element.element.client_height()
   }
   fn client_left(&self) -> f64 {
-    self.element.client_left()
+    self.html_element.element.client_left()
   }
   fn client_top(&self) -> f64 {
-    self.element.client_top()
+    self.html_element.element.client_top()
   }
   fn client_width(&self) -> f64 {
-    self.element.client_width()
+    self.html_element.element.client_width()
   }
   fn outer_html(&self) -> String {
-    self.element.outer_html()
+    self.html_element.element.outer_html()
   }
   fn inner_html(&self) -> String {
-    self.element.inner_html()
+    self.html_element.element.inner_html()
   }
   fn set_inner_html(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
-    self.element.set_inner_html(value, exception_state)
+    self.html_element.element.set_inner_html(value, exception_state)
   }
   fn owner_document(&self) -> Document {
-    self.element.owner_document()
+    self.html_element.element.owner_document()
   }
   fn scroll_left(&self) -> f64 {
-    self.element.scroll_left()
+    self.html_element.element.scroll_left()
   }
   fn set_scroll_left(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
-    self.element.set_scroll_left(value, exception_state)
+    self.html_element.element.set_scroll_left(value, exception_state)
   }
   fn scroll_top(&self) -> f64 {
-    self.element.scroll_top()
+    self.html_element.element.scroll_top()
   }
   fn set_scroll_top(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
-    self.element.set_scroll_top(value, exception_state)
+    self.html_element.element.set_scroll_top(value, exception_state)
   }
   fn scroll_width(&self) -> f64 {
-    self.element.scroll_width()
+    self.html_element.element.scroll_width()
   }
   fn scroll_height(&self) -> f64 {
-    self.element.scroll_height()
+    self.html_element.element.scroll_height()
   }
   fn local_name(&self) -> String {
-    self.element.local_name()
+    self.html_element.element.local_name()
   }
   fn tag_name(&self) -> String {
-    self.element.tag_name()
+    self.html_element.element.tag_name()
   }
   fn dir(&self) -> String {
-    self.element.dir()
+    self.html_element.element.dir()
   }
   fn set_dir(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
-    self.element.set_dir(value, exception_state)
+    self.html_element.element.set_dir(value, exception_state)
   }
   fn set_attribute(&self, qualified_name: &str, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
-    self.element.set_attribute(qualified_name, value, exception_state)
+    self.html_element.element.set_attribute(qualified_name, value, exception_state)
   }
   fn remove_attribute(&self, qualified_name: &str, exception_state: &ExceptionState) -> Result<(), String> {
-    self.element.remove_attribute(qualified_name, exception_state)
+    self.html_element.element.remove_attribute(qualified_name, exception_state)
   }
   fn has_attribute(&self, qualified_name: &str, exception_state: &ExceptionState) -> Result<bool, String> {
-    self.element.has_attribute(qualified_name, exception_state)
+    self.html_element.element.has_attribute(qualified_name, exception_state)
   }
   fn get_bounding_client_rect(&self, exception_state: &ExceptionState) -> Result<BoundingClientRect, String> {
-    self.element.get_bounding_client_rect(exception_state)
+    self.html_element.element.get_bounding_client_rect(exception_state)
   }
   fn get_client_rects(&self, exception_state: &ExceptionState) -> Result<Vec<BoundingClientRect>, String> {
-    self.element.get_client_rects(exception_state)
+    self.html_element.element.get_client_rects(exception_state)
   }
   fn get_elements_by_class_name(&self, class_name: &str, exception_state: &ExceptionState) -> Result<Vec<Element>, String> {
-    self.element.get_elements_by_class_name(class_name, exception_state)
+    self.html_element.element.get_elements_by_class_name(class_name, exception_state)
   }
   fn get_elements_by_tag_name(&self, tag_name: &str, exception_state: &ExceptionState) -> Result<Vec<Element>, String> {
-    self.element.get_elements_by_tag_name(tag_name, exception_state)
+    self.html_element.element.get_elements_by_tag_name(tag_name, exception_state)
   }
   fn query_selector(&self, selectors: &str, exception_state: &ExceptionState) -> Result<Element, String> {
-    self.element.query_selector(selectors, exception_state)
+    self.html_element.element.query_selector(selectors, exception_state)
   }
   fn query_selector_all(&self, selectors: &str, exception_state: &ExceptionState) -> Result<Vec<Element>, String> {
-    self.element.query_selector_all(selectors, exception_state)
+    self.html_element.element.query_selector_all(selectors, exception_state)
   }
   fn matches(&self, selectors: &str, exception_state: &ExceptionState) -> Result<bool, String> {
-    self.element.matches(selectors, exception_state)
+    self.html_element.element.matches(selectors, exception_state)
   }
   fn closest(&self, selectors: &str, exception_state: &ExceptionState) -> Result<Element, String> {
-    self.element.closest(selectors, exception_state)
+    self.html_element.element.closest(selectors, exception_state)
   }
   fn test_global_to_local(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<NativeValue, String> {
-    self.element.test_global_to_local(x, y, exception_state)
+    self.html_element.element.test_global_to_local(x, y, exception_state)
   }
   fn as_element(&self) -> &Element {
-    &self.element
+    &self.html_element.element
   }
 }
-impl NodeMethods for HTMLElement {
+impl NodeMethods for HTMLDivElement {
   fn element_node(&self) -> f64 {
-    self.element.node.element_node()
+    self.html_element.element.node.element_node()
   }
   fn attribute_node(&self) -> f64 {
-    self.element.node.attribute_node()
+    self.html_element.element.node.attribute_node()
   }
   fn text_node(&self) -> f64 {
-    self.element.node.text_node()
+    self.html_element.element.node.text_node()
   }
   fn comment_node(&self) -> f64 {
-    self.element.node.comment_node()
+    self.html_element.element.node.comment_node()
   }
   fn document_node(&self) -> f64 {
-    self.element.node.document_node()
+    self.html_element.element.node.document_node()
   }
   fn document_type_node(&self) -> f64 {
-    self.element.node.document_type_node()
+    self.html_element.element.node.document_type_node()
   }
   fn document_fragment_node(&self) -> f64 {
-    self.element.node.document_fragment_node()
+    self.html_element.element.node.document_fragment_node()
   }
   fn node_type(&self) -> f64 {
-    self.element.node.node_type()
+    self.html_element.element.node.node_type()
   }
   fn node_name(&self) -> String {
-    self.element.node.node_name()
+    self.html_element.element.node.node_name()
   }
   fn child_nodes(&self) -> NodeList {
-    self.element.node.child_nodes()
+    self.html_element.element.node.child_nodes()
   }
   fn first_child(&self) -> Node {
-    self.element.node.first_child()
+    self.html_element.element.node.first_child()
   }
   fn is_connected(&self) -> bool {
-    self.element.node.is_connected()
+    self.html_element.element.node.is_connected()
   }
   fn last_child(&self) -> Node {
-    self.element.node.last_child()
+    self.html_element.element.node.last_child()
   }
   fn next_sibling(&self) -> Node {
-    self.element.node.next_sibling()
+    self.html_element.element.node.next_sibling()
   }
   fn owner_document(&self) -> Document {
-    self.element.node.owner_document()
+    self.html_element.element.node.owner_document()
   }
   fn parent_element(&self) -> Element {
-    self.element.node.parent_element()
+    self.html_element.element.node.parent_element()
   }
   fn parent_node(&self) -> Node {
-    self.element.node.parent_node()
+    self.html_element.element.node.parent_node()
   }
   fn previous_sibling(&self) -> Node {
-    self.element.node.previous_sibling()
+    self.html_element.element.node.previous_sibling()
   }
   fn has_child_nodes(&self, exception_state: &ExceptionState) -> Result<bool, String> {
-    self.element.node.has_child_nodes(exception_state)
+    self.html_element.element.node.has_child_nodes(exception_state)
   }
   fn append_child(&self, new_node: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
-    self.element.node.append_child(new_node, exception_state)
+    self.html_element.element.node.append_child(new_node, exception_state)
   }
   fn clone_node(&self, deep: bool, exception_state: &ExceptionState) -> Result<Node, String> {
-    self.element.node.clone_node(deep, exception_state)
+    self.html_element.element.node.clone_node(deep, exception_state)
   }
   fn contains(&self, other: &Node, exception_state: &ExceptionState) -> Result<bool, String> {
-    self.element.node.contains(other, exception_state)
+    self.html_element.element.node.contains(other, exception_state)
   }
   fn insert_before(&self, new_child: &Node, ref_child: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
-    self.element.node.insert_before(new_child, ref_child, exception_state)
+    self.html_element.element.node.insert_before(new_child, ref_child, exception_state)
   }
   fn is_equal_node(&self, other_node: &Node, exception_state: &ExceptionState) -> Result<bool, String> {
-    self.element.node.is_equal_node(other_node, exception_state)
+    self.html_element.element.node.is_equal_node(other_node, exception_state)
   }
   fn is_same_node(&self, other_node: &Node, exception_state: &ExceptionState) -> Result<bool, String> {
-    self.element.node.is_same_node(other_node, exception_state)
+    self.html_element.element.node.is_same_node(other_node, exception_state)
   }
   fn remove_child(&self, old_child: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
-    self.element.node.remove_child(old_child, exception_state)
+    self.html_element.element.node.remove_child(old_child, exception_state)
   }
   fn remove(&self, exception_state: &ExceptionState) -> Result<(), String> {
-    self.element.node.remove(exception_state)
+    self.html_element.element.node.remove(exception_state)
   }
   fn replace_child(&self, new_child: &Node, old_child: &Node, exception_state: &ExceptionState) -> Result<Node, String> {
-    self.element.node.replace_child(new_child, old_child, exception_state)
+    self.html_element.element.node.replace_child(new_child, old_child, exception_state)
   }
   fn as_node(&self) -> &Node {
-    &self.element.node
+    &self.html_element.element.node
   }
 }
-impl EventTargetMethods for HTMLElement {
+impl EventTargetMethods for HTMLDivElement {
   fn add_event_listener(&self, type_: &str, callback: EventListenerCallback, options: &AddEventListenerOptions, exception_state: &ExceptionState) -> Result<(), String> {
-    self.element.node.event_target.add_event_listener(type_, callback, options, exception_state)
+    self.html_element.element.node.event_target.add_event_listener(type_, callback, options, exception_state)
   }
   fn remove_event_listener(&self, type_: &str, callback: EventListenerCallback, options: &EventListenerOptions, exception_state: &ExceptionState) -> Result<(), String> {
-    self.element.node.event_target.remove_event_listener(type_, callback, options, exception_state)
+    self.html_element.element.node.event_target.remove_event_listener(type_, callback, options, exception_state)
   }
   fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> Result<bool, String> {
-    self.element.node.event_target.dispatch_event(event, exception_state)
+    self.html_element.element.node.event_target.dispatch_event(event, exception_state)
   }
   fn as_event_target(&self) -> &EventTarget {
-    &self.element.node.event_target
+    &self.html_element.element.node.event_target
   }
 }

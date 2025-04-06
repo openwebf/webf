@@ -16,6 +16,8 @@ pub struct <%= className %>RustMethods {
   <% } %>
 
   <% _.forEach(object.props, function(prop, index) { %>
+    <% var id = `${object.name}.${prop.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
   pub <%= propName %>: extern "C" fn(ptr: *const OpaquePtr<%= isAnyType(prop.type)? ", exception_state: *const OpaquePtr": "" %>) -> <%= generatePublicReturnTypeValue(prop.type) %>,
     <% if (!prop.readonly) { %>
@@ -24,6 +26,8 @@ pub struct <%= className %>RustMethods {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% var id = `${object.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
   pub <%= methodName %>: extern "C" fn(ptr: *const OpaquePtr, <%= generatePublicParametersType(method.args) %>exception_state: *const OpaquePtr) -> <%= generatePublicReturnTypeValue(method.returnType) %>,
   <% }); %>
@@ -94,6 +98,8 @@ impl <%= className %> {
   <% } %>
 
   <% _.forEach(object.props, function(prop, index) { %>
+    <% var id = `${object.name}.${prop.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   pub fn <%= propName %>(&self) {
@@ -131,23 +137,89 @@ impl <%= className %> {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% var id = `${object.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
   pub fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
+      <% _.forEach(method.args, function(arg, index) { %>
+        <% if (isPointerType(arg.type)) { %>
+          <% var pointerType = getPointerType(arg.type); %>
+          <% if (pointerType === 'JSEventListener') { %>
+    let <%= arg.name %>_context_data = Box::new(EventCallbackContextData {
+      executing_context_ptr: self.context().ptr,
+      executing_context_method_pointer: self.context().method_pointer(),
+      executing_context_meta_data: self.context().meta_data,
+      executing_context_status: self.context().status,
+      func: <%= arg.name %>,
+    });
+    let <%= arg.name %>_context_data_ptr = Box::into_raw(<%= arg.name %>_context_data);
+    let <%= arg.name %>_context = Box::new(EventCallbackContext {
+      callback: invoke_event_listener_callback,
+      free_ptr: release_event_listener_callback,
+      ptr: <%= arg.name %>_context_data_ptr
+    });
+    let <%= arg.name %>_context_ptr = Box::into_raw(<%= arg.name %>_context);
+          <% } %>
+        <% } %>
+      <% }); %>
     unsafe {
       ((*self.method_pointer).<%= methodName %>)(self.ptr(), <%= generateMethodParametersName(method.args) %>exception_state.ptr);
     };
     if exception_state.has_exception() {
+      <% _.forEach(method.args, function(arg, index) { %>
+        <% if (isPointerType(arg.type)) { %>
+          <% var pointerType = getPointerType(arg.type); %>
+          <% if (pointerType === 'JSEventListener') { %>
+      unsafe {
+        let _ = Box::from_raw(<%= arg.name %>_context_ptr);
+        let _ = Box::from_raw(<%= arg.name %>_context_data_ptr);
+      }
+          <% } %>
+        <% } %>
+      <% }); %>
       return Err(exception_state.stringify(self.context()));
     }
     Ok(())
   }
     <% } else { %>
   pub fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<<%= generateMethodReturnType(method.returnType) %>, String> {
+    <% _.forEach(method.args, function(arg, index) { %>
+      <% if (isPointerType(arg.type)) { %>
+        <% var pointerType = getPointerType(arg.type); %>
+        <% if (pointerType === 'JSEventListener') { %>
+    let <%= arg.name %>_context_data = Box::new(EventCallbackContextData {
+      executing_context_ptr: self.context().ptr,
+      executing_context_method_pointer: self.context().method_pointer(),
+      executing_context_meta_data: self.context().meta_data,
+      executing_context_status: self.context().status,
+      func: <%= arg.name %>,
+    });
+    let <%= arg.name %>_context_data_ptr = Box::into_raw(<%= arg.name %>_context_data);
+    let <%= arg.name %>_context = Box::new(EventCallbackContext {
+      callback: invoke_event_listener_callback,
+      free_ptr: release_event_listener_callback,
+      ptr: <%= arg.name %>_context_data_ptr
+    });
+    let <%= arg.name %>_context_ptr = Box::into_raw(<%= arg.name %>_context);
+        <% } %>
+      <% } %>
+    <% }); %>
     let value = unsafe {
       ((*self.method_pointer).<%= methodName %>)(self.ptr(), <%= generateMethodParametersName(method.args) %>exception_state.ptr)
     };
     if exception_state.has_exception() {
+      <% _.forEach(method.args, function(arg, index) { %>
+        <% if (isPointerType(arg.type)) { %>
+          <% var pointerType = getPointerType(arg.type); %>
+          <% if (pointerType === 'JSEventListener') { %>
+      unsafe {
+        let _ = Box::from_raw(<%= arg.name %>_context_ptr);
+        let _ = Box::from_raw(<%= arg.name %>_context_data_ptr);
+      }
+          <% } %>
+        <% } %>
+      <% }); %>
       return Err(exception_state.stringify(self.context()));
     }
     <% if (isVectorType(method.returnType)) { %>
@@ -195,6 +267,8 @@ impl Drop for <%= className %> {
 <% var parentMethodsSuperTrait = object.parent ? `: ${object.parent}Methods` : ''; %>
 pub trait <%= className %>Methods<%= parentMethodsSuperTrait %> {
   <% _.forEach(object.props, function(prop, index) { %>
+    <% var id = `${object.name}.${prop.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   fn <%= propName %>(&self);
@@ -210,6 +284,8 @@ pub trait <%= className %>Methods<%= parentMethodsSuperTrait %> {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% var id = `${object.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String>;
@@ -222,6 +298,8 @@ pub trait <%= className %>Methods<%= parentMethodsSuperTrait %> {
 
 impl <%= className %>Methods for <%= className %> {
   <% _.forEach(object.props, function(prop, index) { %>
+    <% var id = `${object.name}.${prop.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   fn <%= propName %>(&self) {
@@ -245,6 +323,8 @@ impl <%= className %>Methods for <%= className %> {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% var id = `${object.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
@@ -266,6 +346,8 @@ impl <%= className %>Methods for <%= className %> {
   <% parentKey = parentKey === '' ? _.snakeCase(parentObject.name) : `${parentKey}.${_.snakeCase(parentObject.name)}`; %>
 impl <%= parentObject.name %>Methods for <%= className %> {
   <% _.forEach(parentObject.props, function(prop, index) { %>
+    <% var id = `${parentObject.name}.${prop.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   fn <%= propName %>(&self) {
@@ -285,6 +367,8 @@ impl <%= parentObject.name %>Methods for <%= className %> {
   <% }); %>
 
   <% _.forEach(parentObject.methods, function(method, index) { %>
+    <% var id = `${parentObject.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {

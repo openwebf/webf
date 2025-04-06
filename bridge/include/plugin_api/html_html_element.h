@@ -4,21 +4,21 @@
 /*
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#ifndef WEBF_CORE_WEBF_API_PLUGIN_API_COMMENT_H_
-#define WEBF_CORE_WEBF_API_PLUGIN_API_COMMENT_H_
+#ifndef WEBF_CORE_WEBF_API_PLUGIN_API_HTML_HTML_ELEMENT_H_
+#define WEBF_CORE_WEBF_API_PLUGIN_API_HTML_HTML_ELEMENT_H_
 #include <stdint.h>
 #include "core/native/vector_value_ref.h"
 #include "rust_readable.h"
-#include "character_data.h"
+#include "html_element.h"
 namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
 typedef struct AtomicStringRef AtomicStringRef;
-class Comment;
-struct CommentPublicMethods : public WebFPublicMethods {
+class HTMLHtmlElement;
+struct HTMLHtmlElementPublicMethods : public WebFPublicMethods {
   double version{1.0};
-  CharacterDataPublicMethods character_data;
+  HTMLElementPublicMethods html_element;
 };
 }  // namespace webf
-#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_COMMENT_H_
+#endif  // WEBF_CORE_WEBF_API_PLUGIN_API_HTML_HTML_ELEMENT_H_

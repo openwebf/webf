@@ -140,6 +140,13 @@ bool EventTarget::removeEventListener(const AtomicString& event_type,
 
 bool EventTarget::removeEventListener(const AtomicString& event_type,
                                       const std::shared_ptr<EventListener>& event_listener,
+                                      const std::shared_ptr<EventListenerOptions>& options,
+                                      ExceptionState& exception_state) {
+  return RemoveEventListenerInternal(event_type, event_listener, options);
+}
+
+bool EventTarget::removeEventListener(const AtomicString& event_type,
+                                      const std::shared_ptr<EventListener>& event_listener,
                                       bool use_capture,
                                       ExceptionState& exception_state) {
   auto options = EventListenerOptions::Create();

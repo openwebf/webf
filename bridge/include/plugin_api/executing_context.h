@@ -72,6 +72,8 @@ class TouchEvent;
 typedef struct TouchEventPublicMethods TouchEventPublicMethods;
 class TransitionEvent;
 typedef struct TransitionEventPublicMethods TransitionEventPublicMethods;
+class Image;
+typedef struct ImagePublicMethods ImagePublicMethods;
 
 using PublicContextGetDocument = WebFValue<Document, DocumentPublicMethods> (*)(ExecutingContext*);
 using PublicContextGetWindow = WebFValue<Window, WindowPublicMethods> (*)(ExecutingContext*);
@@ -286,6 +288,17 @@ using PublicContextCreateUIEventWithOptions =
                                                  WebFUIEventInit* init,
                                                  ExceptionState& exception_state);
 
+using PublicContextCreateEventTarget =
+    WebFValue<EventTarget, EventTargetPublicMethods> (*)(ExecutingContext* context,
+                                                         ExceptionState& exception_state);
+using PublicContextCreateDocumentFragment =
+    WebFValue<DocumentFragment, DocumentFragmentPublicMethods> (*)(ExecutingContext* context,
+                                                                   ExceptionState& exception_state);
+using PublicContextCreateDocument = WebFValue<Document, DocumentPublicMethods> (*)(ExecutingContext* context,
+                                                                                   ExceptionState& exception_state);
+using PublicContextCreateImage = WebFValue<Image, ImagePublicMethods> (*)(ExecutingContext* context,
+                                                                 ExceptionState& exception_state);
+
 // Memory aligned and readable from WebF side.
 // Only C type member can be included in this class, any C++ type and classes can is not allowed to use here.
 struct ExecutingContextWebFMethods {
@@ -491,6 +504,14 @@ struct ExecutingContextWebFMethods {
                                                                            const char* type,
                                                                            WebFUIEventInit* init,
                                                                            ExceptionState& exception_state);
+  static WebFValue<EventTarget, EventTargetPublicMethods> CreateEventTarget(ExecutingContext* context,
+                                                                             ExceptionState& exception_state);
+  static WebFValue<DocumentFragment, DocumentFragmentPublicMethods> CreateDocumentFragment(
+      ExecutingContext* context, ExceptionState& exception_state);
+  static WebFValue<Document, DocumentPublicMethods> CreateDocument(ExecutingContext* context,
+                                                                   ExceptionState& exception_state);
+  static WebFValue<Image, ImagePublicMethods> CreateImage(ExecutingContext* context,
+                                                          ExceptionState& exception_state);
 
   double version{1.0};
   PublicContextGetDocument context_get_document{document};
@@ -558,6 +579,10 @@ struct ExecutingContextWebFMethods {
       CreateTransitionEventWithOptions};
   PublicContextCreateUIEvent rust_context_create_ui_event{CreateUIEvent};
   PublicContextCreateUIEventWithOptions rust_context_create_ui_event_with_options{CreateUIEventWithOptions};
+  PublicContextCreateEventTarget rust_context_create_event_target{CreateEventTarget};
+  PublicContextCreateDocumentFragment rust_context_create_document_fragment{CreateDocumentFragment};
+  PublicContextCreateDocument rust_context_create_document{CreateDocument};
+  PublicContextCreateImage rust_context_create_image{CreateImage};
 };
 
 }  // namespace webf

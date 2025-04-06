@@ -64,6 +64,10 @@ pub struct ExecutingContextRustMethods {
   pub create_transition_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const TransitionEventInit, exception_state: *const OpaquePtr ) -> RustValue<TransitionEventRustMethods>,
   pub create_ui_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<UIEventRustMethods>,
   pub create_ui_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const UIEventInit, exception_state: *const OpaquePtr ) -> RustValue<UIEventRustMethods>,
+  pub create_event_target: extern "C" fn(*const OpaquePtr, exception_state: *const OpaquePtr ) -> RustValue<EventTargetRustMethods>,
+  pub create_document_fragment: extern "C" fn(*const OpaquePtr, exception_state: *const OpaquePtr ) -> RustValue<DocumentFragmentRustMethods>,
+  pub create_document: extern "C" fn(*const OpaquePtr, exception_state: *const OpaquePtr ) -> RustValue<DocumentRustMethods>,
+  pub create_image: extern "C" fn(*const OpaquePtr, exception_state: *const OpaquePtr ) -> RustValue<ImageRustMethods>,
 }
 
 pub type TimeoutCallback = Box<dyn Fn()>;
@@ -135,7 +139,7 @@ impl ExecutingContext {
     let result = unsafe {
       ((*self.method_pointer).get_document)(self.ptr)
     };
-    return Document::initialize::<DocumentRustMethods>(result.value, self, result.method_pointer, result.status);
+    return Document::initialize(result.value, self, result.method_pointer, result.status);
   }
 
   pub fn location(&self) -> Location {

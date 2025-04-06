@@ -27,7 +27,7 @@ class Text : public CharacterData {
   }
 
   NodeType nodeType() const override;
-  const TextNodePublicMethods* textNodePublicMethods();
+  const TextPublicMethods* textPublicMethods();
 
  private:
   std::string nodeName() const override;

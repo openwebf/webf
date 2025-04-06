@@ -6,6 +6,7 @@
 #define BRIDGE_CORE_HTML_HTML_SCRIPT_ELEMENT_H_
 
 #include "html_element.h"
+#include "plugin_api/html_script_element.h"
 
 namespace webf {
 
@@ -16,6 +17,11 @@ class HTMLScriptElement : public HTMLElement {
   static bool supports(const AtomicString& type, ExceptionState& exception_state);
 
   explicit HTMLScriptElement(Document& document);
+
+  const HTMLScriptElementPublicMethods* htmlScriptElementPublicMethods() {
+    static HTMLScriptElementPublicMethods html_element_public_methods;
+    return &html_element_public_methods;
+  }
 };
 
 }  // namespace webf
