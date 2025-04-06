@@ -24,6 +24,9 @@ dependencies:
   adaptive_theme: ^3.3.0
   cupertino_icons: ^1.0.0
   flutter_svg: ^2.0.17
+  share_plus: ^10.0.0
+  path_provider: ^2.1.5
+
 # When depending on this package from a real application,
 # you should remove the following overrides.
 # See https://dart.dev/tools/pub/dependencies#version-constraints

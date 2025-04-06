@@ -1,10 +1,10 @@
 <template>
-  <div class="question-page" @onscreen="onScreen" @offscreen="offScreen">
+  <div class="question-page" @onscreen="onScreen" @offscreen="offScreen" repaint-boundary>
     <template v-if="loading">
       <question-skeleton />
     </template>
     <webf-listview class="question-page-listview" @refresh="onRefresh">
-      <QuestionHeader :question="question" @answer="handleAnswer" @follow="handleFollow" @invite="handleInvite" />
+      <QuestionHeader :question="question" @answer="handleAnswer" @follow="handleFollow" @invite="handleInvite" @share="handleShare" />
 
       <slot name="view-all" :answers-count="question.answersCount" />
 
@@ -164,6 +164,39 @@ export default {
 
     handleAnswer() {
       this.$emit('answer');
+    },
+
+    async handleShare() {
+        return new Promise((resolve) => {
+            requestAnimationFrame(async () => {
+                try {
+                    const element = document.getElementsByClassName('question-page')[0];
+                    if (!element) {
+                        throw new Error('question page element not found');
+                    }
+                    const blob = await element.toBlob(1.0);
+                    
+                    const arrayBuffer = await blob.arrayBuffer();
+                    const uint8Array = new Uint8Array(arrayBuffer); 
+                    const array = Array.from(uint8Array);
+                    
+                    // Call native share through WebF method channel
+                    const result = await window.webf.methodChannel.invokeMethod('share', {
+                        blob: array,
+                        title: this.question.title || '分享',
+                        text: this.question.content || ''
+                    });
+                    console.log('Share result:', result);
+                    resolve(result);
+                } catch (error) {
+                    console.error('Share failed:', error);
+                    this.$refs.alertRef.show({
+                        message: '分享失败，请稍后重试'
+                    });
+                    resolve();
+                }
+            });
+        });
     },
 
     async handleFollow(newFollowState) {

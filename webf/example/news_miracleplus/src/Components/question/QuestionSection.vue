@@ -51,7 +51,7 @@
             <flutter-cupertino-button type="primary" class="answer-btn" @click="$emit('answer')">
                 回答
             </flutter-cupertino-button>
-            <flutter-cupertino-icon type="share" class="share-icon" />
+            <flutter-cupertino-icon type="share" class="share-icon" @click="$emit('share')" />
         </div>
     </div>
 </template>

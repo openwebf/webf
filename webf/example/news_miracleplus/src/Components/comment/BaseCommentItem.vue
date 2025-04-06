@@ -1,5 +1,5 @@
 <template>
-    <div class="base-comment-item">
+    <div class="base-comment-item" ref="baseCommentItem">
       <div class="comment-header">
         <div class="user-info">
           <smart-image :src="formattedAvatar" class="avatar" />
@@ -30,7 +30,7 @@
           </button>
         </div>
         <div class="right-actions">
-          <button class="action-btn">
+          <button class="action-btn" @click="handleShareComment">
             <flutter-cupertino-icon type="share" class="icon" />
           </button>
         </div>
@@ -242,6 +242,38 @@
             }, 1000);
           }
         }
+      },
+      async handleShareComment() {
+        return new Promise((resolve) => {
+            requestAnimationFrame(async () => {
+                try {
+                    const element = this.$refs.baseCommentItem;
+                    if (!element) {
+                        throw new Error('comment item element not found');
+                    }
+                    const blob = await element.toBlob(1.0);
+                    
+                    const arrayBuffer = await blob.arrayBuffer();
+                    const uint8Array = new Uint8Array(arrayBuffer); 
+                    const array = Array.from(uint8Array);
+                    
+                    // Call native share through WebF method channel
+                    const result = await window.webf.methodChannel.invokeMethod('share', {
+                        blob: array,
+                        title: this.comment.title || '分享',
+                        text: this.comment.content || ''
+                    });
+                    console.log('Share result:', result);
+                    resolve(result);
+                } catch (error) {
+                    console.error('Share failed:', error);
+                    this.$refs.alertRef.show({
+                        message: '分享失败，请稍后重试'
+                    });
+                    resolve();
+                }
+            });
+        });
       }
     }
   }

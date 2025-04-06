@@ -1,7 +1,7 @@
 <template>
   <div class="question-header">
     <QuestionSection :question="question" @answer="$emit('answer')" @follow="$emit('follow', $event)"
-      @invite="$emit('invite')" />
+      @invite="$emit('invite')" @share="$emit('share')" />
   </div>
 </template>
 
@@ -19,6 +19,6 @@ export default {
       required: true
     }
   },
-  emits: ['answer', 'follow', 'invite']
+  emits: ['answer', 'follow', 'invite', 'share']
 }
 </script>

@@ -1,5 +1,5 @@
 <template>
-    <div class="share-page" @onscreen="onScreen" @offscreen="offScreen">
+    <div class="share-page" @onscreen="onScreen" @offscreen="offScreen" repaint-boundary>
         <template v-if="loading">
             <share-link-skeleton />
         </template>
@@ -316,9 +316,37 @@ export default {
                 this.$refs.loading.hide();
             }
         },
-        handleShare() {
-            // 处理分享按钮点击
-            console.log('share clicked');
+        async handleShare() {
+            return new Promise((resolve) => {
+                requestAnimationFrame(async () => {
+                    try {
+                        const element = document.getElementsByClassName('share-page')[0];
+                        if (!element) {
+                            throw new Error('Share element not found');
+                        }
+                        const blob = await element.toBlob(1.0);
+                        
+                        const arrayBuffer = await blob.arrayBuffer();
+                        const uint8Array = new Uint8Array(arrayBuffer); 
+                        const array = Array.from(uint8Array);
+                        
+                        // Call native share through WebF method channel
+                        const result = await window.webf.methodChannel.invokeMethod('share', {
+                            blob: array,
+                            title: this.shareLink.title || '分享',
+                            text: this.shareLink.introduction || ''
+                        });
+                        console.log('Share result:', result);
+                        resolve(result);
+                    } catch (error) {
+                        console.error('Share failed:', error);
+                        this.$refs.alertRef.show({
+                            message: '分享失败，请稍后重试'
+                        });
+                        resolve();
+                    }
+                });
+            });
         },
         async handleLike() {
             // 处理点赞按钮点击
