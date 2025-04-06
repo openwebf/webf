@@ -58,10 +58,11 @@ class FlutterListViewElement extends WidgetElement {
       if (position.extentAfter < 50 && !_isLoadingMore) {
         _isLoadingMore = true;
         dispatchEvent(dom.Event('loadmore'));
-
-        Future.delayed(const Duration(milliseconds: 200), () {
+        setState(() {}); 
+        Future.delayed(const Duration(milliseconds: 2000), () {
           if (mounted) {
             _isLoadingMore = false;
+            setState(() {});
           }
         });
       }
