@@ -55,7 +55,7 @@ class FlutterListViewElement extends WidgetElement {
     try {
       // Handle load more
       final position = _scrollController!.position;
-      if (position.extentAfter < 50 && !_isLoadingMore) {
+      if (position.extentAfter < 50 && !_isLoadingMore && hasEventListener('loadmore')) {
         _isLoadingMore = true;
         dispatchEvent(dom.Event('loadmore'));
         setState(() {}); 
@@ -101,22 +101,21 @@ class FlutterListViewElement extends WidgetElement {
         if (isCupertinoPlatform)
           CupertinoSliverRefreshControl(
             onRefresh: () async {
-              // Trigger the refresh event
-              dispatchEvent(dom.Event('refresh'));
-
-              // Wait for 2 seconds to complete the refresh
-              await Future.delayed(const Duration(seconds: 2));
+              if (hasEventListener('refresh')) {
+                dispatchEvent(dom.Event('refresh'));
+                await Future.delayed(const Duration(seconds: 2));
+              }
             },
           ),
         SliverList(
           delegate: SliverChildBuilderDelegate(
             (BuildContext context, int index) {
               if (index == childNodes.length) {
-                return Container(
+                return hasEventListener('loadmore') ? Container(
                   height: 50,
                   alignment: Alignment.center,
                   child: _isLoadingMore ? const CupertinoActivityIndicator() : const SizedBox.shrink(),
-                );
+                ) : const SizedBox.shrink();
               }
 
               Node? node = childNodes.elementAt(index);
@@ -142,11 +141,10 @@ class FlutterListViewElement extends WidgetElement {
         ? scrollView 
         : RefreshIndicator(
             onRefresh: () async {
-              // Trigger the refresh event
-              dispatchEvent(dom.Event('refresh'));
-
-              // Wait for 2 seconds to complete the refresh
-              await Future.delayed(const Duration(seconds: 2));
+              if (hasEventListener('refresh')) {
+                dispatchEvent(dom.Event('refresh'));
+                await Future.delayed(const Duration(seconds: 2));
+              }
             },
             child: scrollView,
           ),
