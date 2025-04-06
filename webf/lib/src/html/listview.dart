@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart' show RefreshIndicator;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:webf/src/css/position.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
@@ -87,15 +88,16 @@ class FlutterListViewElement extends WidgetElement {
 
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
-    return WebFChildNodeSize(
-      ownerElement: this,
-      child: CustomScrollView(
-        controller: _scrollController,
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
-        ),
-        scrollDirection: scrollDirection,
-        slivers: [
+    final isCupertinoPlatform = defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS;
+    
+    Widget scrollView = CustomScrollView(
+      controller: _scrollController,
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      scrollDirection: scrollDirection,
+      slivers: [
+        if (isCupertinoPlatform)
           CupertinoSliverRefreshControl(
             onRefresh: () async {
               // Trigger the refresh event
@@ -105,33 +107,48 @@ class FlutterListViewElement extends WidgetElement {
               await Future.delayed(const Duration(seconds: 2));
             },
           ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
-                if (index == childNodes.length) {
-                  return Container(
-                    height: 50,
-                    alignment: Alignment.center,
-                    child: _isLoadingMore ? const CupertinoActivityIndicator() : const SizedBox.shrink(),
-                  );
+        SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (BuildContext context, int index) {
+              if (index == childNodes.length) {
+                return Container(
+                  height: 50,
+                  alignment: Alignment.center,
+                  child: _isLoadingMore ? const CupertinoActivityIndicator() : const SizedBox.shrink(),
+                );
+              }
+
+              Node? node = childNodes.elementAt(index);
+              if (node is dom.Element) {
+                CSSPositionType positionType = node.renderStyle.position;
+                if (positionType == CSSPositionType.absolute || positionType == CSSPositionType.fixed) {
+                  return PositionPlaceHolder(node.holderAttachedPositionedElement!, node);
                 }
 
-                Node? node = childNodes.elementAt(index);
-                if (node is dom.Element) {
-                  CSSPositionType positionType = node.renderStyle.position;
-                  if (positionType == CSSPositionType.absolute || positionType == CSSPositionType.fixed) {
-                    return PositionPlaceHolder(node.holderAttachedPositionedElement!, node);
-                  }
-
-                  return LayoutBoxWrapper(ownerElement: node, child: childNodes.elementAt(index).toWidget());
-                }
-                return node.toWidget();
-              },
-              childCount: childNodes.length + 1,
-            ),
+                return LayoutBoxWrapper(ownerElement: node, child: childNodes.elementAt(index).toWidget());
+              }
+              return node.toWidget();
+            },
+            childCount: childNodes.length + 1,
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+
+    return WebFChildNodeSize(
+      ownerElement: this,
+      child: isCupertinoPlatform 
+        ? scrollView 
+        : RefreshIndicator(
+            onRefresh: () async {
+              // Trigger the refresh event
+              dispatchEvent(dom.Event('refresh'));
+
+              // Wait for 2 seconds to complete the refresh
+              await Future.delayed(const Duration(seconds: 2));
+            },
+            child: scrollView,
+          ),
     );
   }
 
