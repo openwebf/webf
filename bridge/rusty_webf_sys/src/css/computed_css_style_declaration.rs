@@ -11,16 +11,10 @@ pub struct ComputedCssStyleDeclarationRustMethods {
   pub css_style_declaration: CSSStyleDeclarationRustMethods,
   pub css_text: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
   pub set_css_text: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub css_text_async: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_css_text_async: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
   pub length: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub length_async: extern "C" fn(ptr: *const OpaquePtr) -> i64,
   pub get_property_value: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
-  pub get_property_value_async: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
   pub set_property: extern "C" fn(ptr: *const OpaquePtr, *const c_char, NativeValue, exception_state: *const OpaquePtr) -> c_void,
-  pub set_property_async: extern "C" fn(ptr: *const OpaquePtr, *const c_char, NativeValue, exception_state: *const OpaquePtr) -> c_void,
   pub remove_property: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
-  pub remove_property_async: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
 }
 pub struct ComputedCssStyleDeclaration {
   pub css_style_declaration: CSSStyleDeclaration,
@@ -61,45 +55,15 @@ impl ComputedCssStyleDeclaration {
     }
     Ok(())
   }
-  pub fn css_text_async(&self) -> String {
-    let value = unsafe {
-      ((*self.method_pointer).css_text_async)(self.ptr())
-    };
-    value.to_string()
-  }
-  pub fn set_css_text_async(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
-    unsafe {
-      ((*self.method_pointer).set_css_text_async)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
-    };
-    if exception_state.has_exception() {
-      return Err(exception_state.stringify(self.context()));
-    }
-    Ok(())
-  }
   pub fn length(&self) -> i64 {
     let value = unsafe {
       ((*self.method_pointer).length)(self.ptr())
     };
     value
   }
-  pub fn length_async(&self) -> i64 {
-    let value = unsafe {
-      ((*self.method_pointer).length_async)(self.ptr())
-    };
-    value
-  }
   pub fn get_property_value(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
     let value = unsafe {
       ((*self.method_pointer).get_property_value)(self.ptr(), CString::new(property).unwrap().as_ptr(), exception_state.ptr)
-    };
-    if exception_state.has_exception() {
-      return Err(exception_state.stringify(self.context()));
-    }
-    Ok(value.to_string())
-  }
-  pub fn get_property_value_async(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
-    let value = unsafe {
-      ((*self.method_pointer).get_property_value_async)(self.ptr(), CString::new(property).unwrap().as_ptr(), exception_state.ptr)
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -115,27 +79,9 @@ impl ComputedCssStyleDeclaration {
     }
     Ok(())
   }
-  pub fn set_property_async(&self, property: &str, value: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
-    unsafe {
-      ((*self.method_pointer).set_property_async)(self.ptr(), CString::new(property).unwrap().as_ptr(), value, exception_state.ptr);
-    };
-    if exception_state.has_exception() {
-      return Err(exception_state.stringify(self.context()));
-    }
-    Ok(())
-  }
   pub fn remove_property(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
     let value = unsafe {
       ((*self.method_pointer).remove_property)(self.ptr(), CString::new(property).unwrap().as_ptr(), exception_state.ptr)
-    };
-    if exception_state.has_exception() {
-      return Err(exception_state.stringify(self.context()));
-    }
-    Ok(value.to_string())
-  }
-  pub fn remove_property_async(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
-    let value = unsafe {
-      ((*self.method_pointer).remove_property_async)(self.ptr(), CString::new(property).unwrap().as_ptr(), exception_state.ptr)
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -146,16 +92,10 @@ impl ComputedCssStyleDeclaration {
 pub trait ComputedCssStyleDeclarationMethods: CSSStyleDeclarationMethods {
   fn css_text(&self) -> String;
   fn set_css_text(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
-  fn css_text_async(&self) -> String;
-  fn set_css_text_async(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
   fn length(&self) -> i64;
-  fn length_async(&self) -> i64;
   fn get_property_value(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String>;
-  fn get_property_value_async(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String>;
   fn set_property(&self, property: &str, value: NativeValue, exception_state: &ExceptionState) -> Result<(), String>;
-  fn set_property_async(&self, property: &str, value: NativeValue, exception_state: &ExceptionState) -> Result<(), String>;
   fn remove_property(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String>;
-  fn remove_property_async(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String>;
   fn as_computed_css_style_declaration(&self) -> &ComputedCssStyleDeclaration;
 }
 impl ComputedCssStyleDeclarationMethods for ComputedCssStyleDeclaration {
@@ -165,35 +105,17 @@ impl ComputedCssStyleDeclarationMethods for ComputedCssStyleDeclaration {
   fn set_css_text(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_css_text(value, exception_state)
   }
-  fn css_text_async(&self) -> String {
-    self.css_text_async()
-  }
-  fn set_css_text_async(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
-    self.set_css_text_async(value, exception_state)
-  }
   fn length(&self) -> i64 {
     self.length()
-  }
-  fn length_async(&self) -> i64 {
-    self.length_async()
   }
   fn get_property_value(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
     self.get_property_value(property, exception_state)
   }
-  fn get_property_value_async(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
-    self.get_property_value_async(property, exception_state)
-  }
   fn set_property(&self, property: &str, value: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_property(property, value, exception_state)
   }
-  fn set_property_async(&self, property: &str, value: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
-    self.set_property_async(property, value, exception_state)
-  }
   fn remove_property(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
     self.remove_property(property, exception_state)
-  }
-  fn remove_property_async(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String> {
-    self.remove_property_async(property, exception_state)
   }
   fn as_computed_css_style_declaration(&self) -> &ComputedCssStyleDeclaration {
     self

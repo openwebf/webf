@@ -16,6 +16,7 @@ pub struct <%= className %>RustMethods {
   <% } %>
 
   <% _.forEach(object.props, function(prop, index) { %>
+    <% if (prop.async_type) { return; } %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
   pub <%= propName %>: extern "C" fn(ptr: *const OpaquePtr<%= isAnyType(prop.type)? ", exception_state: *const OpaquePtr": "" %>) -> <%= generatePublicReturnTypeValue(prop.type) %>,
     <% if (!prop.readonly) { %>
@@ -24,6 +25,7 @@ pub struct <%= className %>RustMethods {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% if (method.async_returnType) { return; } %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
   pub <%= methodName %>: extern "C" fn(ptr: *const OpaquePtr, <%= generatePublicParametersType(method.args) %>exception_state: *const OpaquePtr) -> <%= generatePublicReturnTypeValue(method.returnType) %>,
   <% }); %>
@@ -94,6 +96,7 @@ impl <%= className %> {
   <% } %>
 
   <% _.forEach(object.props, function(prop, index) { %>
+    <% if (prop.async_type) { return; } %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   pub fn <%= propName %>(&self) {
@@ -131,6 +134,7 @@ impl <%= className %> {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% if (method.async_returnType) { return; } %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
   pub fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
@@ -195,6 +199,7 @@ impl Drop for <%= className %> {
 <% var parentMethodsSuperTrait = object.parent ? `: ${object.parent}Methods` : ''; %>
 pub trait <%= className %>Methods<%= parentMethodsSuperTrait %> {
   <% _.forEach(object.props, function(prop, index) { %>
+    <% if (prop.async_type) { return; } %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   fn <%= propName %>(&self);
@@ -210,6 +215,7 @@ pub trait <%= className %>Methods<%= parentMethodsSuperTrait %> {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% if (method.async_returnType) { return; } %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String>;
@@ -222,6 +228,7 @@ pub trait <%= className %>Methods<%= parentMethodsSuperTrait %> {
 
 impl <%= className %>Methods for <%= className %> {
   <% _.forEach(object.props, function(prop, index) { %>
+    <% if (prop.async_type) { return; } %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   fn <%= propName %>(&self) {
@@ -245,6 +252,7 @@ impl <%= className %>Methods for <%= className %> {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% if (method.async_returnType) { return; } %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
@@ -266,6 +274,7 @@ impl <%= className %>Methods for <%= className %> {
   <% parentKey = parentKey === '' ? _.snakeCase(parentObject.name) : `${parentKey}.${_.snakeCase(parentObject.name)}`; %>
 impl <%= parentObject.name %>Methods for <%= className %> {
   <% _.forEach(parentObject.props, function(prop, index) { %>
+    <% if (prop.async_type) { return; } %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   fn <%= propName %>(&self) {
@@ -285,6 +294,7 @@ impl <%= parentObject.name %>Methods for <%= className %> {
   <% }); %>
 
   <% _.forEach(parentObject.methods, function(method, index) { %>
+    <% if (method.async_returnType) { return; } %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
