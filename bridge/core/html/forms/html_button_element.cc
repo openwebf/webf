@@ -4,6 +4,9 @@
  */
 
 #include "html_button_element.h"
-#include "qjs_html_button_element.h"
+#include "html_names.h"
 
-namespace webf {}  // namespace webf
+namespace webf {
+
+HTMLButtonElement::HTMLButtonElement(Document& document) : WidgetElement(html_names::kButton, &document) {}
+}  // namespace webf

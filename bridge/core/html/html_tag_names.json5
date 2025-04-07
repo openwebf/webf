@@ -44,10 +44,6 @@
       "filename": "html_link_element"
     },
     {
-      "name": "input",
-      "interfaceHeaderDir": "core/html/forms"
-    },
-    {
       "name": "textarea",
       "interfaceName": "HTMLTextareaElement",
       "interfaceHeaderDir": "core/html/forms"
@@ -56,6 +52,15 @@
       "name": "form",
       "interfaceHeaderDir": "core/html/forms"
     },
+    {
+      "name": "button",
+      "interfaceHeaderDir": "core/html/forms"
+    },
+    {
+      "name": "input",
+      "interfaceHeaderDir": "core/html/forms"
+    },
+    "br",
     "template",
     {
       "name": "img",

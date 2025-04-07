@@ -55,6 +55,7 @@
 #include "qjs_html_template_element.h"
 #include "qjs_html_textarea_element.h"
 #include "qjs_html_unknown_element.h"
+#include "qjs_html_br_element.h"
 #include "qjs_hybrid_router_change_event.h"
 #include "qjs_idle_deadline.h"
 #include "qjs_image.h"
@@ -158,6 +159,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLImageElement::Install(context);
   QJSHTMLInputElement::Install(context);
   QJSHTMLTextareaElement::Install(context);
+  QJSHTMLBrElement::Install(context);
   QJSHTMLButtonElement::Install(context);
   QJSHTMLFormElement::Install(context);
   QJSImage::Install(context);

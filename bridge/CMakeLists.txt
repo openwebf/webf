@@ -408,6 +408,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_iframe_element.cc
     core/html/html_link_element.cc
     core/html/html_unknown_element.cc
+    core/html/html_br_element.cc
     core/html/image.cc
     core/html/html_collection.cc
     core/html/canvas/html_canvas_element.cc
@@ -548,6 +549,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_image_element.cc
     out/qjs_html_iframe_element.cc
     out/qjs_html_canvas_element.cc
+    out/qjs_html_br_element.cc
     out/qjs_html_link_element.cc
     out/qjs_image.cc
     out/qjs_widget_element.cc
