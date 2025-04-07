@@ -59,7 +59,7 @@ JSValue ExecutionContextData::constructorForIdSlowCase(const WrapperTypeInfo* ty
   JS_DefinePropertyValue(ctx, prototypeObject, built_in_string::kconstructor.Impl(), JS_DupValue(ctx, classObject),
                          JS_PROP_NORMAL);
   JS_DefinePropertyValue(ctx, prototypeObject, JS_ATOM_Symbol_toStringTag, JS_NewString(ctx, type->className),
-                         JS_PROP_NORMAL);
+                         JS_PROP_C_W_E);
 
   // Inherit to parentClass.
   if (type->parent_class != nullptr) {
