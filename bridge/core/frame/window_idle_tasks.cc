@@ -10,7 +10,8 @@ namespace webf {
 int WindowIdleTasks::requestIdleCallback(webf::Window& window,
                                          const std::shared_ptr<IdleCallback>& callback,
                                          const std::shared_ptr<WindowIdleRequestOptions>& options) {
-  return window.scripted_idle_task_controller_.RegisterIdleCallback(callback, options->hasTimeout() ? options->timeout() : 0);
+  return window.scripted_idle_task_controller_.RegisterIdleCallback(callback,
+                                                                    options->hasTimeout() ? options->timeout() : 0);
 }
 
 void WindowIdleTasks::cancelIdleCallback(webf::Window& window, int64_t id) {
