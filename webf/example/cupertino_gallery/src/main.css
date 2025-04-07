@@ -121,5 +121,5 @@ body {
 }
 
 flutter-cupertino-button[variant="filled"]:not([disabled]) {
-  color: white;
+  color: var(--button-primary-text);
 }
