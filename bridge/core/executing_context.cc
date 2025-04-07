@@ -136,10 +136,6 @@ ExecutingContext::~ExecutingContext() {
     assert_m(false, "Unhandled exception found when Dispose JSContext.");
   }
 
-  for (auto& pending_promise : active_pending_promises_) {
-    pending_promise->Reset();
-  }
-
   active_pending_promises_.clear();
 
   JS_FreeValue(script_state_.ctx(), global_object_);
