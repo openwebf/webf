@@ -66,8 +66,9 @@ Element createElement(String name, [BindingContext? context]) {
   ElementCreator? creator = _htmlRegistry[name] ?? _widgetElements[name];
   Element element;
   if (creator == null) {
-    print('Unexpected HTML element "$name"');
-
+    if (enableWebFCommandLog) {
+      print('Unexpected HTML element "$name"');
+    }
     element = _UnknownHTMLElement(context);
   } else {
     element = creator(context);

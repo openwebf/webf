@@ -277,10 +277,13 @@ class WebFState extends State<WebF> with RouteAware {
   }
 
   @override
-  void didPushNext() {
+  void didPushNext() async {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
     String path = route.settings.name ?? widget.controller.initialRoute ?? '';
+
+    await widget.controller.controllerOnLoadCompleter.future;
+    flushUICommand(widget.controller.view, nullptr);
 
     Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPushNext', path: path);
     widget.controller.view.document.dispatchEvent(event);
