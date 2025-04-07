@@ -167,25 +167,31 @@ abstract class BindingBridge {
 
   static void createBindingObject(double contextId, Pointer<NativeBindingObject> pointer, CreateBindingObjectType type, Pointer<NativeValue> args, int argc) {
     WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+
+    Stopwatch? stopwatch;
+    if (enableWebFCommandLog) {
+      stopwatch = Stopwatch();
+    }
+
     List<dynamic> arguments = List.generate(argc, (index) {
       return fromNativeValue(controller.view, args.elementAt(index));
     });
     switch(type) {
       case CreateBindingObjectType.createDOMMatrix: {
-        DOMMatrix domMatrix = DOMMatrix(BindingContext(controller.view, contextId, pointer), arguments);
-        controller.view.setBindingObject(pointer, domMatrix);
-        return;
+        DOMMatrix(BindingContext(controller.view, contextId, pointer), arguments);
+        break;
       }
       case CreateBindingObjectType.createPath2D: {
-        Path2D path2D = Path2D(context: BindingContext(controller.view, contextId, pointer), path2DInit: arguments);
-        controller.view.setBindingObject(pointer, path2D);
-        return;
+        Path2D(context: BindingContext(controller.view, contextId, pointer), path2DInit: arguments);
+        break;
       }
       case CreateBindingObjectType.createDOMPoint: {
-        DOMPoint domPoint = DOMPoint(BindingContext(controller.view, contextId, pointer), arguments);
-        controller.view.setBindingObject(pointer, domPoint);
-        return;
+        DOMPoint(BindingContext(controller.view, contextId, pointer), arguments);
+        break;
       }
+    }
+    if (enableWebFCommandLog) {
+      print('CreateBindingObject: $pointer $type arg: $arguments, time: ${stopwatch!.elapsedMicroseconds}us');
     }
   }
 

@@ -123,7 +123,6 @@ class CanvasElement extends Element {
   void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     super.didDetachRenderer(flutterWidgetElement);
     style.removeStyleChangeListener(_styleChangedListener);
-    painter.dispose();
   }
 
   CanvasRenderingContext2D getContext(String type, {options}) {
@@ -365,9 +364,7 @@ class WebFCanvasPaint extends flutter.SingleChildRenderObjectWidget {
       canvasElement.painter
         ..scaleX = scaleX
         ..scaleY = scaleY;
-      if (canvasElement.painter.shouldRepaint(canvasElement.painter)) {
-        renderCanvas.markNeedsPaint();
-      }
+      renderCanvas.markNeedsPaint();
     }
   }
 }
