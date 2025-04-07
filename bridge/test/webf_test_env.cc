@@ -326,6 +326,10 @@ void TEST_simulateChangeDarkMode(MousePointer*, int32_t length, int32_t pointer)
 
 void TEST_simulateInputText(SharedNativeString* nativeString) {}
 
+void TEST_requestIdleCallback() {}
+
+void TEST_cancelIdleCallback() {}
+
 std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
   std::vector<uint64_t> mockMethods{reinterpret_cast<uint64_t>(TEST_invokeModule),
                                     reinterpret_cast<uint64_t>(TEST_requestBatchUpdate),
@@ -334,7 +338,10 @@ std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
                                     reinterpret_cast<uint64_t>(TEST_setInterval),
                                     reinterpret_cast<uint64_t>(TEST_clearTimeout),
                                     reinterpret_cast<uint64_t>(TEST_requestAnimationFrame),
+                                    reinterpret_cast<uint64_t>(TEST_requestIdleCallback),
                                     reinterpret_cast<uint64_t>(TEST_cancelAnimationFrame),
+                                    reinterpret_cast<uint64_t>(TEST_cancelIdleCallback),
+
                                     reinterpret_cast<uint64_t>(TEST_toBlob),
                                     reinterpret_cast<uint64_t>(TEST_flushUICommand),
                                     reinterpret_cast<uint64_t>(TEST_CreateBindingObject),
