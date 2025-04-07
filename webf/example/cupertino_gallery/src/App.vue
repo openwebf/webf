@@ -20,6 +20,24 @@
   <router-view path="/textarea" title="Textarea">
     <textarea-page></textarea-page>
   </router-view>
+  <router-view path="/segmented_tab" title="Segmented Tab">
+    <segmented-tab-page></segmented-tab-page>
+  </router-view>
+  <router-view path="/alert" title="Alert">
+    <alert-page></alert-page>
+  </router-view>
+  <router-view path="/date_picker" title="Date Picker">
+    <date-picker-page></date-picker-page>
+  </router-view>
+  <router-view path="/loading" title="Loading">
+    <loading-page></loading-page>
+  </router-view>
+  <router-view path="/modal_popup" title="Modal Popup">
+    <modal-popup-page></modal-popup-page>
+  </router-view>
+  <router-view path="/picker" title="Picker">
+    <picker-page></picker-page>
+  </router-view>
 </template>
 
 <script>
@@ -31,6 +49,13 @@ import InputPage from './Pages/InputPage.vue';
 import IconPage from './Pages/IconPage.vue';
 import SearchInputPage from './Pages/SearchInputPage.vue';
 import TextareaPage from './Pages/TextareaPage.vue';
+import SegmentedTabPage from './Pages/SegmentedTabPage.vue';
+import AlertPage from './Pages/AlertPage.vue';
+import DatePickerPage from './Pages/DatePickerPage.vue';
+import LoadingPage from './Pages/LoadingPage.vue';
+import ModalPopupPage from './Pages/ModalPopupPage.vue';
+import PickerPage from './Pages/PickerPage.vue';
+
 export default {
   name: 'App',
   components: {
@@ -42,6 +67,12 @@ export default {
     IconPage,
     SearchInputPage,
     TextareaPage,
+    SegmentedTabPage,
+    AlertPage,
+    DatePickerPage,
+    LoadingPage,
+    ModalPopupPage,
+    PickerPage,
   },
 };
 </script>

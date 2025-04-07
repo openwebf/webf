@@ -49,8 +49,13 @@ class FlutterCupertinoLoading extends WidgetElement {
     final overlay = Overlay.maybeOf(context!);
     if (overlay == null) return;
 
+    final bool maskClosable = attributes['maskClosable'] != null && attributes['maskClosable'] != 'false';
+
     _overlayEntry = OverlayEntry(
-      builder: (context) => _LoadingWidget(text: text),
+      builder: (context) => _LoadingWidget(
+        text: text,
+        onMaskTap: maskClosable ? _hide : null,
+      ),
     );
 
     overlay.insert(_overlayEntry!);
@@ -82,8 +87,12 @@ class FlutterCupertinoLoading extends WidgetElement {
 
 class _LoadingWidget extends StatelessWidget {
   final String? text;
+  final VoidCallback? onMaskTap;
 
-  const _LoadingWidget({this.text});
+  const _LoadingWidget({
+    this.text,
+    this.onMaskTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +102,7 @@ class _LoadingWidget extends StatelessWidget {
         children: [
           Positioned.fill(
             child: GestureDetector(
-              onTap: () {},
+              onTap: onMaskTap,
               child: Container(
                 color: CupertinoColors.black.withOpacity(0.1),
               ),

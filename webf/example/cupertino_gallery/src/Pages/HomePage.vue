@@ -57,6 +57,60 @@
             </div>
             <div class="item-arrow">></div>
           </div>
+
+          <!-- Segmented Tab -->
+          <div class="component-item" @click="navigateTo('/segmented_tab')">
+            <div class="item-content">
+              <div class="item-title">Segmented Tab</div>
+              <div class="item-desc">A tab component with segmented control style</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
+
+          <!-- Alert -->
+          <div class="component-item" @click="navigateTo('/alert')">
+            <div class="item-content">
+              <div class="item-title">Alert</div>
+              <div class="item-desc">A modal dialog component for showing alerts</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
+
+          <!-- Date Picker -->
+          <div class="component-item" @click="navigateTo('/date_picker')">
+            <div class="item-content">
+              <div class="item-title">Date Picker</div>
+              <div class="item-desc">A component for selecting date and time</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
+
+          <!-- Loading -->
+          <div class="component-item" @click="navigateTo('/loading')">
+            <div class="item-content">
+              <div class="item-title">Loading</div>
+              <div class="item-desc">A loading indicator component</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
+
+          <!-- Modal Popup -->
+          <div class="component-item" @click="navigateTo('/modal_popup')">
+            <div class="item-content">
+              <div class="item-title">Modal Popup</div>
+              <div class="item-desc">A modal popup component for bottom sheets</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
+
+          <!-- Picker -->
+          <div class="component-item" @click="navigateTo('/picker')">
+            <div class="item-content">
+              <div class="item-title">Picker</div>
+              <div class="item-desc">A component for selecting from a list of options</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
         </div>
       </div>
     </webf-listview>

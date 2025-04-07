@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
 

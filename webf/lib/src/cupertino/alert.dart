@@ -1,11 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
+import 'dart:convert';
 
 class FlutterCupertinoAlert extends WidgetElement {
   FlutterCupertinoAlert(super.context);
 
   String? _tempTitle;
   String? _tempMessage;
+  bool _isVisible = false;
 
   // Define static method map
   static StaticDefinedSyncBindingObjectMethodMap alertSyncMethods = {
@@ -19,13 +21,9 @@ class FlutterCupertinoAlert extends WidgetElement {
           alert._tempTitle = options['title']?.toString();
           alert._tempMessage = options['message']?.toString();
         }
-        print('showCupertinoDialog');
-        print(alert._tempTitle);
-        print(alert._tempMessage);
-        showCupertinoDialog(
-          context: alert.context!,
-          builder: (BuildContext context) => alert.build(context, alert.childNodes),
-        );
+        
+        alert._isVisible = true;
+        alert.showDialog();
       },
     ),
     'hide': StaticDefinedSyncBindingObjectMethod(
@@ -33,10 +31,24 @@ class FlutterCupertinoAlert extends WidgetElement {
         final alert = castToType<FlutterCupertinoAlert>(element);
         alert._tempTitle = null;
         alert._tempMessage = null;
+        alert._isVisible = false;
         Navigator.of(alert.context!, rootNavigator: true).pop();
       },
     ),
   };
+
+  void showDialog() {
+    if (!_isVisible) return;
+    
+    showCupertinoDialog(
+      context: context!,
+      builder: (BuildContext context) => build(context, childNodes),
+    ).then((_) {
+      _isVisible = false;
+      _tempTitle = null;
+      _tempMessage = null;
+    });
+  }
 
   @override
   List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
@@ -46,6 +58,10 @@ class FlutterCupertinoAlert extends WidgetElement {
 
   @override
   Widget build(BuildContext context, ChildNodeList childNodes) {
+    if (!_isVisible) {
+      return const SizedBox.shrink();
+    }
+
     return CupertinoAlertDialog(
       title: Text(
         _tempTitle ?? getAttribute('title') ?? '',
@@ -74,7 +90,10 @@ class FlutterCupertinoAlert extends WidgetElement {
       actions.add(
         CupertinoDialogAction(
           isDestructiveAction: getAttribute('cancel-destructive') == 'true',
+          isDefaultAction: getAttribute('cancel-default') == 'true',
+          textStyle: _parseTextStyle('cancel-text-style'),
           onPressed: () {
+            Navigator.of(context!, rootNavigator: true).pop();
             dispatchEvent(CustomEvent('cancel'));
           },
           child: Text(cancelText),
@@ -86,8 +105,11 @@ class FlutterCupertinoAlert extends WidgetElement {
     final confirmText = getAttribute('confirm-text') ?? '确定';
     actions.add(
       CupertinoDialogAction(
-        isDefaultAction: true,
+        isDefaultAction: getAttribute('confirm-default') != 'false',
+        isDestructiveAction: getAttribute('confirm-destructive') == 'true',
+        textStyle: _parseTextStyle('confirm-text-style'),
         onPressed: () {
+          Navigator.of(context!, rootNavigator: true).pop();
           dispatchEvent(CustomEvent('confirm'));
         },
         child: Text(confirmText),
@@ -95,5 +117,37 @@ class FlutterCupertinoAlert extends WidgetElement {
     );
 
     return actions;
+  }
+
+  TextStyle? _parseTextStyle(String attributeName) {
+    final styleStr = getAttribute(attributeName);
+    if (styleStr == null) return null;
+
+    try {
+      final Map<String, dynamic> styleMap = Map<String, dynamic>.from(
+        const JsonDecoder().convert(styleStr)
+      );
+      
+      return TextStyle(
+        color: styleMap['color'] != null ? parseColor(styleMap['color']) : null,
+        fontSize: styleMap['fontSize']?.toDouble(),
+        fontWeight: styleMap['fontWeight'] == 'bold' ? FontWeight.bold : FontWeight.normal,
+      );
+    } catch (e) {
+      print('Error parsing text style: $e');
+      return null;
+    }
+  }
+
+  Color? parseColor(String? value) {
+    if (value == null) return null;
+    if (value.startsWith('#')) {
+      final hex = value.substring(1);
+      final int? color = int.tryParse(hex, radix: 16);
+      if (color != null) {
+        return Color(color | 0xFF000000);
+      }
+    }
+    return null;
   }
 }
