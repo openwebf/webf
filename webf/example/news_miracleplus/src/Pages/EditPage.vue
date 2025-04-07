@@ -36,7 +36,7 @@
         </div>
 
         <div class="button-section">
-            <flutter-cupertino-button class="save-button" @click="handleSave">
+            <flutter-cupertino-button variant="filled" class="save-button" @click="handleSave">
                 保存
             </flutter-cupertino-button>
         </div>

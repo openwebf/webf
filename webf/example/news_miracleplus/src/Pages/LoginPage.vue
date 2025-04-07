@@ -16,7 +16,7 @@
             </flutter-cupertino-input>
             <flutter-cupertino-input class="pwd-input" placeholder="请输入密码" type="password"
               @input="handlePasswordInput" />
-            <flutter-cupertino-button size="large" type="primary" @click="handleLoginByPassword" class="login-button">
+            <flutter-cupertino-button size="large" variant="filled" @click="handleLoginByPassword" class="login-button">
               登录
             </flutter-cupertino-button>
           </div>
@@ -43,7 +43,7 @@
                 </span>
               </div>
             </flutter-cupertino-input>
-            <flutter-cupertino-button size="large" type="primary" @click="handleLoginByPhoneCode" class="login-button">
+            <flutter-cupertino-button size="large" variant="filled" @click="handleLoginByPhoneCode" class="login-button">
               登录
             </flutter-cupertino-button>
           </div>

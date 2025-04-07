@@ -48,7 +48,7 @@
                     <div class="div">邀请回答</div>
                 </div>
             </div>
-            <flutter-cupertino-button type="primary" class="answer-btn" @click="$emit('answer')">
+            <flutter-cupertino-button variant="filled" class="answer-btn" @click="$emit('answer')">
                 回答
             </flutter-cupertino-button>
             <flutter-cupertino-icon type="share" class="share-icon" @click="$emit('share')" />
@@ -250,7 +250,7 @@ export default {
             height: 32px;
             border-radius: 16px;
             font-size: 14px;
-            color: var(--font-color-primary);
+            color: var(--button-primary-text);
         }
     }
 }

@@ -79,7 +79,7 @@
           <div class="karma-help-title">什么是 Karma？</div>
           <div class="karma-help-content">积分统计社区贡献，分享、回答、评论上的点赞和浏览能提高积分</div>
           <flutter-cupertino-button
-            type="primary"
+            variant="filled"
             class="karma-help-btn"
             @click="showKarmaHelp = false"
           >
@@ -572,7 +572,7 @@
       .karma-help-btn {
         width: 100%;
         height: 44px;
-        color: var(--font-color-primary);
+        color: var(--button-primary-text);
       }
     }
     

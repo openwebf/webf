@@ -93,9 +93,13 @@
         align-items: center;
         justify-content: space-between;
         margin-bottom: 12px;
-        gap: 12px;
 
-        .edit-profile,
+        .edit-profile {
+            width: 100px;
+            height: 36px;
+            margin-right: 12px;
+        }
+
         .setting {
             width: 100px;
             height: 36px;

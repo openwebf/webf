@@ -7,7 +7,7 @@
           <!-- 基础用法 -->
           <div class="component-item">
             <div class="item-label">Basic Usage</div>
-            <flutter-cupertino-button @click="showBasicPopup">
+            <flutter-cupertino-button variant="filled"  @click="showBasicPopup">
               Show Basic Popup
             </flutter-cupertino-button>
           </div>
@@ -15,7 +15,7 @@
           <!-- 自定义内容 -->
           <div class="component-item">
             <div class="item-label">Custom Content</div>
-            <flutter-cupertino-button @click="showCustomPopup">
+            <flutter-cupertino-button variant="filled"  @click="showCustomPopup">
               Show Custom Popup
             </flutter-cupertino-button>
           </div>
@@ -23,7 +23,7 @@
           <!-- 自定义高度 -->
           <div class="component-item">
             <div class="item-label">Custom Height</div>
-            <flutter-cupertino-button @click="showHeightPopup">
+            <flutter-cupertino-button variant="filled"  @click="showHeightPopup">
               Show 400px Height Popup
             </flutter-cupertino-button>
           </div>
@@ -31,7 +31,7 @@
           <!-- 禁用点击遮罩关闭 -->
           <div class="component-item">
             <div class="item-label">Disable Mask Close</div>
-            <flutter-cupertino-button @click="showNoMaskClosePopup">
+            <flutter-cupertino-button variant="filled"  @click="showNoMaskClosePopup">
               Show Non-maskClosable Popup
             </flutter-cupertino-button>
           </div>
@@ -39,7 +39,7 @@
           <!-- 自定义样式 -->
           <div class="component-item">
             <div class="item-label">Custom Style</div>
-            <flutter-cupertino-button @click="showCustomStylePopup">
+            <flutter-cupertino-button variant="filled" @click="showCustomStylePopup">
               Show Custom Style Popup
             </flutter-cupertino-button>
           </div>
@@ -100,7 +100,7 @@
             This popup has disabled mask close functionality, can only be closed by other means
           </div>
           <div class="popup-footer">
-            <flutter-cupertino-button @click="hideNoMaskClosePopup">
+            <flutter-cupertino-button variant="filled" @click="hideNoMaskClosePopup">
               Close
             </flutter-cupertino-button>
           </div>

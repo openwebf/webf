@@ -51,7 +51,7 @@
             @input="handleInput"
           />
           <flutter-cupertino-button 
-            type="primary" 
+            variant="filled"
             class="comment-confirm-btn"
             @click="confirmAction"
             :disabled="submitStatus !== 'idle'"
@@ -367,7 +367,7 @@
         margin-bottom: 12px;
       }
       .comment-confirm-btn {
-        color: var(--font-color-primary);
+        color: var(--button-primary-text);
         min-width: 60px;
         display: flex;
         justify-content: center;

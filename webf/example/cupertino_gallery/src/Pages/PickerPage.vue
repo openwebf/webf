@@ -7,7 +7,7 @@
           <!-- Basic Usage -->
           <div class="component-item">
             <div class="item-label">Basic Usage</div>
-            <flutter-cupertino-button @click="showBasicPicker">
+            <flutter-cupertino-button variant="filled" @click="showBasicPicker">
               Select City
             </flutter-cupertino-button>
             <div class="picker-value" v-if="cityValue">
@@ -18,7 +18,7 @@
           <!-- Multi Column -->
           <div class="component-item">
             <div class="item-label">Multi Column</div>
-            <flutter-cupertino-button @click="showMultiPicker">
+            <flutter-cupertino-button variant="filled" @click="showMultiPicker">
               Select Date
             </flutter-cupertino-button>
             <div class="picker-value" v-if="dateValue">
@@ -29,7 +29,7 @@
           <!-- Cascade Selection -->
           <div class="component-item">
             <div class="item-label">Cascade Selection</div>
-            <flutter-cupertino-button @click="showCascadePicker">
+            <flutter-cupertino-button variant="filled" @click="showCascadePicker">
               Select Region
             </flutter-cupertino-button>
             <div class="picker-value" v-if="areaValue">

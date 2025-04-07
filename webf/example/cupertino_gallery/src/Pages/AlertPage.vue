@@ -7,7 +7,7 @@
           <!-- Basic Usage -->
           <div class="component-item">
             <div class="item-label">Basic Usage</div>
-            <flutter-cupertino-button @click="showBasicAlert">
+            <flutter-cupertino-button variant="filled" @click="showBasicAlert">
               Show Basic Alert
             </flutter-cupertino-button>
           </div>
@@ -15,7 +15,7 @@
           <!-- With Title and Buttons -->
           <div class="component-item">
             <div class="item-label">With Title and Buttons</div>
-            <flutter-cupertino-button @click="showConfirmAlert">
+            <flutter-cupertino-button variant="filled" @click="showConfirmAlert">
               Show Confirm Alert
             </flutter-cupertino-button>
           </div>
@@ -23,7 +23,7 @@
           <!-- With Title and Message -->
           <div class="component-item">
             <div class="item-label">With Title and Message</div>
-            <flutter-cupertino-button @click="showCustomAlert">
+            <flutter-cupertino-button variant="filled" @click="showCustomAlert">
               Show Title and Message
             </flutter-cupertino-button>
           </div>
@@ -31,7 +31,7 @@
           <!-- Destructive Action -->
           <div class="component-item">
             <div class="item-label">Destructive Action</div>
-            <flutter-cupertino-button @click="showDestructiveAlert">
+            <flutter-cupertino-button variant="filled" @click="showDestructiveAlert">
               Show Destructive Alert
             </flutter-cupertino-button>
           </div>
@@ -39,7 +39,7 @@
           <!-- Default Button -->
           <div class="component-item">
             <div class="item-label">Default Button</div>
-            <flutter-cupertino-button @click="showDefaultButtonAlert">
+            <flutter-cupertino-button variant="filled" @click="showDefaultButtonAlert">
               Show Default Button Alert
             </flutter-cupertino-button>
           </div>

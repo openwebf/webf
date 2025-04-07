@@ -58,7 +58,7 @@
           <!-- Popup Picker -->
           <div class="component-item">
             <div class="item-label">Popup Picker</div>
-            <flutter-cupertino-button @click="showCustomPicker">
+            <flutter-cupertino-button variant="filled" @click="showCustomPicker">
               Select Date (with restrictions)
             </flutter-cupertino-button>
             <div class="picker-value" v-if="customValue">

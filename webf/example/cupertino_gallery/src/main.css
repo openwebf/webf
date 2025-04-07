@@ -101,3 +101,7 @@ body {
 	-moz-osx-font-smoothing: grayscale;
 	font-weight: 300;
 }
+
+flutter-cupertino-button[variant="filled"]:not([disabled]) {
+  color: white;
+}

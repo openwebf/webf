@@ -3,7 +3,7 @@
         <div class="title">{{ topic.title }}</div>
         <div class="stats-section">
             <div class="stats">{{ topic.topicablesCount }}个相关讨论</div>
-            <flutter-cupertino-button type="primary" class="follow-btn" @click="handleFollow">
+            <flutter-cupertino-button variant="filled" class="follow-btn" @click="handleFollow">
                 + 关注
             </flutter-cupertino-button>
         </div>
@@ -60,7 +60,7 @@ export default {
         .follow-btn {
             width: 100px;
             height: 32px;
-            color: var(--font-color-primary);
+            color: var(--button-primary-text);
         }
     }
 }

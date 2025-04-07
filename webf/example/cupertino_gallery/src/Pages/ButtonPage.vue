@@ -27,7 +27,7 @@
           <div class="component-item">
             <div class="item-label">Custom Colors</div>
             <div class="button-row">
-              <flutter-cupertino-button variant="tinted" color="#FFFF00">Custom Color</flutter-cupertino-button>
+              <flutter-cupertino-button variant="tinted" class="custom-color">Custom Color</flutter-cupertino-button>
               <flutter-cupertino-button variant="filled" disabled>Disabled Button</flutter-cupertino-button>
             </div>
           </div>
@@ -111,12 +111,20 @@
         flex-wrap: wrap;
         align-items: center;
 
+        .filled-button {
+          color: white;
+        }
+
         :deep(flutter-cupertino-button) {
           margin-right: 12px;
           margin-bottom: 12px;
 
           &:last-child {
             margin-right: 0;
+          }
+
+          &.custom-color {
+            background-color: #FFFF00;
           }
 
           &.custom-padding {

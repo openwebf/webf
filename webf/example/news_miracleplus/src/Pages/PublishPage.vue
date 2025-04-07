@@ -45,8 +45,8 @@
       </div>
 
       <flutter-cupertino-button 
-        class="publish-btn" 
-        :type="isFormValid ? 'primary' : 'secondary'"
+        class="publish-btn"
+        :variant="isFormValid ? 'filled' : 'tinted'"
         :disabled="!isFormValid" 
         @click="handlePublish"
       >
@@ -254,7 +254,7 @@ export default {
     margin-top: 24px;
     font-size: 16px;
     font-weight: 500;
-    
+    color: var(--button-primary-text);
     &:disabled {
       opacity: 0.5;
     }

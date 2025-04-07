@@ -7,7 +7,7 @@
           <!-- Basic Usage -->
           <div class="component-item">
             <div class="item-label">Basic Usage</div>
-            <flutter-cupertino-button @click="showBasicLoading">
+            <flutter-cupertino-button variant="filled" @click="showBasicLoading">
               Show Loading
             </flutter-cupertino-button>
           </div>
@@ -15,7 +15,7 @@
           <!-- With Text -->
           <div class="component-item">
             <div class="item-label">With Text</div>
-            <flutter-cupertino-button @click="showLoadingWithText">
+            <flutter-cupertino-button variant="filled" @click="showLoadingWithText">
               Show Loading
             </flutter-cupertino-button>
           </div>
@@ -23,7 +23,7 @@
           <!-- Auto Hide -->
           <div class="component-item">
             <div class="item-label">Auto Hide</div>
-            <flutter-cupertino-button @click="showAutoHideLoading">
+            <flutter-cupertino-button variant="filled"  @click="showAutoHideLoading">
               Show Loading (Auto hide in 2s)
             </flutter-cupertino-button>
           </div>
@@ -31,7 +31,7 @@
           <!-- Mask Closable -->
           <div class="component-item">
             <div class="item-label">Mask Closable</div>
-            <flutter-cupertino-button @click="showMaskClosableLoading">
+            <flutter-cupertino-button variant="filled"  @click="showMaskClosableLoading">
               Show Loading (Click mask to close)
             </flutter-cupertino-button>
           </div>

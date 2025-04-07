@@ -21,7 +21,7 @@
         </flutter-cupertino-input>
         <flutter-cupertino-input class="pwd-input" placeholder="输入新密码" icon="lock" type="password"
           @input="handlePasswordInput" />
-        <flutter-cupertino-button type="primary" @click="handleResetPassword" class="reset-password-button">
+        <flutter-cupertino-button variant="filled" @click="handleResetPassword" class="reset-password-button">
           重置密码
         </flutter-cupertino-button>
       </div>

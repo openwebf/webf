@@ -19,10 +19,10 @@
         </div>
       </div>
       <div class="edit-block" v-if="isLoggedIn">
-          <flutter-cupertino-button class="edit-profile" type="primary" shape="rounded" @click="goToEditPage">
+          <flutter-cupertino-button class="edit-profile" variant="filled" shape="rounded" @click="goToEditPage">
             编辑资料
           </flutter-cupertino-button>
-          <flutter-cupertino-button class="setting" @click="goToSettingPage">
+          <flutter-cupertino-button class="setting" variant="tinted" @click="goToSettingPage">
             设置
           </flutter-cupertino-button>
       </div>      
@@ -111,7 +111,7 @@
         <div class="karma-help-title">什么是 Karma？</div>
         <div class="karma-help-content">积分统计社区贡献，分享、回答、评论上的点赞和浏览能提高积分</div>
         <flutter-cupertino-button
-          type="primary"
+          variant="filled"
           class="karma-help-btn"
           @click="showKarmaHelp = false"
         >
@@ -468,7 +468,7 @@ export default {
       .edit-profile {
         margin-right: 12px;
         width: 100px;
-        color: var(--font-color-primary);
+        color: var(--button-primary-text);
       }
 
       .setting {

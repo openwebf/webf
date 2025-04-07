@@ -9,7 +9,7 @@
       :val="content"
       @input="handleInput"
     />
-    <flutter-cupertino-button type="primary" @click="handleSubmit" class="send-button">
+    <flutter-cupertino-button variant="filled" @click="handleSubmit" class="send-button">
       发送
     </flutter-cupertino-button>
   </div>
