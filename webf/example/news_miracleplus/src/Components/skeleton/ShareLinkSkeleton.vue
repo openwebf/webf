@@ -77,7 +77,14 @@
     .actions {
       .action-buttons {
         display: flex;
-        gap: 12px;
+        
+        :deep(flutter-shimmer-button) {
+          margin-right: 12px;
+          
+          &:last-child {
+            margin-right: 0;
+          }
+        }
       }
     }
   }
