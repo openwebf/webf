@@ -4,35 +4,35 @@
       <div class="component-section">
         <div class="section-title">Loading</div>
         <div class="component-block">
-          <!-- 基础用法 -->
+          <!-- Basic Usage -->
           <div class="component-item">
-            <div class="item-label">基础用法</div>
+            <div class="item-label">Basic Usage</div>
             <flutter-cupertino-button @click="showBasicLoading">
-              显示加载
+              Show Loading
             </flutter-cupertino-button>
           </div>
 
-          <!-- 带文字提示 -->
+          <!-- With Text -->
           <div class="component-item">
-            <div class="item-label">带文字提示</div>
+            <div class="item-label">With Text</div>
             <flutter-cupertino-button @click="showLoadingWithText">
-              显示加载
+              Show Loading
             </flutter-cupertino-button>
           </div>
 
-          <!-- 延时关闭 -->
+          <!-- Auto Hide -->
           <div class="component-item">
-            <div class="item-label">延时关闭</div>
+            <div class="item-label">Auto Hide</div>
             <flutter-cupertino-button @click="showAutoHideLoading">
-              显示加载（2秒后自动关闭）
+              Show Loading (Auto hide in 2s)
             </flutter-cupertino-button>
           </div>
 
-          <!-- 点击遮罩关闭 -->
+          <!-- Mask Closable -->
           <div class="component-item">
-            <div class="item-label">点击遮罩关闭</div>
+            <div class="item-label">Mask Closable</div>
             <flutter-cupertino-button @click="showMaskClosableLoading">
-              显示加载（点击遮罩关闭）
+              Show Loading (Click mask to close)
             </flutter-cupertino-button>
           </div>
         </div>
@@ -58,7 +58,7 @@ export default {
     },
     showLoadingWithText() {
       this.$refs.textLoading.show({
-        text: '加载中...'
+        text: 'Loading...'
       });
       setTimeout(() => {
         this.$refs.textLoading.hide();
@@ -66,7 +66,7 @@ export default {
     },
     showAutoHideLoading() {
       this.$refs.autoHideLoading.show({
-        text: '处理中...'
+        text: 'Processing...'
       });
       setTimeout(() => {
         this.$refs.autoHideLoading.hide();
@@ -74,7 +74,7 @@ export default {
     },
     showMaskClosableLoading() {
       this.$refs.maskClosableLoading.show({
-        text: '点击遮罩关闭'
+        text: 'Click mask to close'
       });
     },
   }

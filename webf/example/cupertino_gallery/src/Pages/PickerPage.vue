@@ -4,36 +4,36 @@
       <div class="component-section">
         <div class="section-title">Picker</div>
         <div class="component-block">
-          <!-- 基础用法 -->
+          <!-- Basic Usage -->
           <div class="component-item">
-            <div class="item-label">基础用法</div>
+            <div class="item-label">Basic Usage</div>
             <flutter-cupertino-button @click="showBasicPicker">
-              选择城市
+              Select City
             </flutter-cupertino-button>
             <div class="picker-value" v-if="cityValue">
-              已选择：{{ cityValue }}
+              Selected: {{ cityValue }}
             </div>
           </div>
 
-          <!-- 多列选择 -->
+          <!-- Multi Column -->
           <div class="component-item">
-            <div class="item-label">多列选择</div>
+            <div class="item-label">Multi Column</div>
             <flutter-cupertino-button @click="showMultiPicker">
-              选择日期
+              Select Date
             </flutter-cupertino-button>
             <div class="picker-value" v-if="dateValue">
-              已选择：{{ dateValue }}
+              Selected: {{ dateValue }}
             </div>
           </div>
 
-          <!-- 联动选择 -->
+          <!-- Cascade Selection -->
           <div class="component-item">
-            <div class="item-label">联动选择</div>
+            <div class="item-label">Cascade Selection</div>
             <flutter-cupertino-button @click="showCascadePicker">
-              选择地区
+              Select Region
             </flutter-cupertino-button>
             <div class="picker-value" v-if="areaValue">
-              已选择：{{ areaValue }}
+              Selected: {{ areaValue }}
             </div>
           </div>
         </div>
@@ -66,7 +66,7 @@
             <flutter-cupertino-picker-item
               v-for="year in years"
               :key="year"
-              :label="year + '年'"
+              :label="year + ' Year'"
               :val="year"
             />
           </flutter-cupertino-picker>
@@ -78,7 +78,7 @@
             <flutter-cupertino-picker-item
               v-for="month in months"
               :key="month"
-              :label="month + '月'"
+              :label="month + ' Month'"
               :val="month"
             />
           </flutter-cupertino-picker>
@@ -122,25 +122,25 @@
 export default {
   data() {
     return {
-      // 城市选择
-      cities: ['北京', '上海', '广州', '深圳', '杭州', '南京', '成都', '武汉'],
+      // City selection
+      cities: ['Beijing', 'Shanghai', 'Guangzhou', 'Shenzhen', 'Hangzhou', 'Nanjing', 'Chengdu', 'Wuhan'],
       cityValue: '',
 
-      // 日期选择
+      // Date selection
       years: Array.from({ length: 10 }, (_, i) => 2020 + i),
       months: Array.from({ length: 12 }, (_, i) => i + 1),
       selectedYear: '',
       selectedMonth: '',
       dateValue: '',
 
-      // 地区选择
-      provinces: ['广东省', '浙江省', '江苏省'],
+      // Region selection
+      provinces: ['Guangdong', 'Zhejiang', 'Jiangsu'],
       citiesMap: {
-        '广东省': ['广州市', '深圳市', '东莞市'],
-        '浙江省': ['杭州市', '宁波市', '温州市'],
-        '江苏省': ['南京市', '苏州市', '无锡市'],
+        'Guangdong': ['Guangzhou', 'Shenzhen', 'Dongguan'],
+        'Zhejiang': ['Hangzhou', 'Ningbo', 'Wenzhou'],
+        'Jiangsu': ['Nanjing', 'Suzhou', 'Wuxi'],
       },
-      selectedProvince: '广东省',
+      selectedProvince: 'Guangdong',
       selectedCity: '',
       areaValue: '',
     }
@@ -173,7 +173,7 @@ export default {
     },
     updateDateValue() {
       if (this.selectedYear && this.selectedMonth) {
-        this.dateValue = `${this.selectedYear}年${this.selectedMonth}月`;
+        this.dateValue = `${this.selectedYear}-${String(this.selectedMonth).padStart(2, '0')}`;
       }
     },
     onProvinceChange(e) {
@@ -187,7 +187,7 @@ export default {
     },
     updateAreaValue() {
       if (this.selectedProvince && this.selectedCity) {
-        this.areaValue = `${this.selectedProvince} ${this.selectedCity}`;
+        this.areaValue = `${this.selectedProvince}, ${this.selectedCity}`;
       }
     }
   }

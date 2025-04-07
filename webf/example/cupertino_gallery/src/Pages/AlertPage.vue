@@ -4,43 +4,43 @@
       <div class="component-section">
         <div class="section-title">Alert</div>
         <div class="component-block">
-          <!-- 基础用法 -->
+          <!-- Basic Usage -->
           <div class="component-item">
-            <div class="item-label">基础用法</div>
+            <div class="item-label">Basic Usage</div>
             <flutter-cupertino-button @click="showBasicAlert">
-              显示基础弹窗
+              Show Basic Alert
             </flutter-cupertino-button>
           </div>
 
-          <!-- 带标题和按钮 -->
+          <!-- With Title and Buttons -->
           <div class="component-item">
-            <div class="item-label">带标题和按钮</div>
+            <div class="item-label">With Title and Buttons</div>
             <flutter-cupertino-button @click="showConfirmAlert">
-              显示确认弹窗
+              Show Confirm Alert
             </flutter-cupertino-button>
           </div>
 
-          <!-- 带标题和消息 -->
+          <!-- With Title and Message -->
           <div class="component-item">
-            <div class="item-label">带标题和消息</div>
+            <div class="item-label">With Title and Message</div>
             <flutter-cupertino-button @click="showCustomAlert">
-              显示标题和消息
+              Show Title and Message
             </flutter-cupertino-button>
           </div>
 
-          <!-- 危险操作 -->
+          <!-- Destructive Action -->
           <div class="component-item">
-            <div class="item-label">危险操作</div>
+            <div class="item-label">Destructive Action</div>
             <flutter-cupertino-button @click="showDestructiveAlert">
-              显示危险操作弹窗
+              Show Destructive Alert
             </flutter-cupertino-button>
           </div>
 
-          <!-- 默认按钮 -->
+          <!-- Default Button -->
           <div class="component-item">
-            <div class="item-label">默认按钮</div>
+            <div class="item-label">Default Button</div>
             <flutter-cupertino-button @click="showDefaultButtonAlert">
-              显示默认按钮弹窗
+              Show Default Button Alert
             </flutter-cupertino-button>
           </div>
         </div>
@@ -50,32 +50,32 @@
     <!-- Alert Components -->
     <flutter-cupertino-alert
       ref="basicAlert"
-      title="这是一个基础弹窗"
-      confirm-text="我知道了"
+      title="This is a Basic Alert"
+      confirm-text="Got it"
     />
 
     <flutter-cupertino-alert 
       ref="confirmAlert"
-      title="确认要执行此操作吗？"
-      cancel-text="取消"
-      confirm-text="确认"
+      title="Are you sure you want to proceed?"
+      cancel-text="Cancel"
+      confirm-text="Confirm"
       @cancel="onCancel"
       @confirm="onConfirm"
     />
 
     <flutter-cupertino-alert 
       ref="customAlert"
-      title="操作提示"
-      message="这是一条重要的提示信息，请仔细阅读"
-      confirm-text="我知道了"
+      title="Operation Notice"
+      message="This is an important notice, please read carefully"
+      confirm-text="Got it"
     />
 
     <flutter-cupertino-alert
       ref="destructiveAlert"
-      title="删除确认"
-      message="删除后数据将无法恢复，是否继续？"
-      cancel-text="取消"
-      confirm-text="删除"
+      title="Delete Confirmation"
+      message="Data cannot be recovered after deletion. Do you want to continue?"
+      cancel-text="Cancel"
+      confirm-text="Delete"
       confirm-destructive="true"
       @cancel="onCancel"
       @confirm="onDelete"
@@ -83,10 +83,10 @@
 
     <flutter-cupertino-alert
       ref="defaultButtonAlert"
-      title="选择操作"
-      message="请选择要执行的操作"
-      cancel-text="稍后再说"
-      confirm-text="立即更新"
+      title="Choose Action"
+      message="Please select the action to perform"
+      cancel-text="Later"
+      confirm-text="Update Now"
       cancel-default="true"
       @cancel="onLater"
       @confirm="onUpdate"
@@ -113,19 +113,19 @@ export default {
       this.$refs.defaultButtonAlert.show();
     },
     onCancel() {
-      console.log('操作已取消');
+      console.log('Operation cancelled');
     },
     onConfirm() {
-      console.log('操作已确认');
+      console.log('Operation confirmed');
     },
     onDelete() {
-      console.log('执行删除操作');
+      console.log('Executing delete operation');
     },
     onLater() {
-      console.log('稍后再说');
+      console.log('Postponed');
     },
     onUpdate() {
-      console.log('执行更新操作');
+      console.log('Executing update operation');
     }
   }
 }

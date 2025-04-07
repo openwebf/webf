@@ -6,41 +6,41 @@
         <div class="component-block">
           <!-- 基础用法 -->
           <div class="component-item">
-            <div class="item-label">基础用法</div>
+            <div class="item-label">Basic Usage</div>
             <flutter-cupertino-button @click="showBasicPopup">
-              显示基础弹出层
+              Show Basic Popup
             </flutter-cupertino-button>
           </div>
 
           <!-- 自定义内容 -->
           <div class="component-item">
-            <div class="item-label">自定义内容</div>
+            <div class="item-label">Custom Content</div>
             <flutter-cupertino-button @click="showCustomPopup">
-              显示自定义弹出层
+              Show Custom Popup
             </flutter-cupertino-button>
           </div>
 
           <!-- 自定义高度 -->
           <div class="component-item">
-            <div class="item-label">自定义高度</div>
+            <div class="item-label">Custom Height</div>
             <flutter-cupertino-button @click="showHeightPopup">
-              显示高度为 400px 的弹出层
+              Show 400px Height Popup
             </flutter-cupertino-button>
           </div>
 
           <!-- 禁用点击遮罩关闭 -->
           <div class="component-item">
-            <div class="item-label">禁用点击遮罩关闭</div>
+            <div class="item-label">Disable Mask Close</div>
             <flutter-cupertino-button @click="showNoMaskClosePopup">
-              显示禁用点击遮罩关闭的弹出层
+              Show Non-maskClosable Popup
             </flutter-cupertino-button>
           </div>
 
           <!-- 自定义样式 -->
           <div class="component-item">
-            <div class="item-label">自定义样式</div>
+            <div class="item-label">Custom Style</div>
             <flutter-cupertino-button @click="showCustomStylePopup">
-              显示自定义样式弹出层
+              Show Custom Style Popup
             </flutter-cupertino-button>
           </div>
         </div>
@@ -53,8 +53,8 @@
         @close="onPopupClose"
       >
         <div class="popup-content">
-          <div class="popup-title">基础弹出层</div>
-          <div class="popup-text">这是一个基础的弹出层示例</div>
+          <div class="popup-title">Basic Popup</div>
+          <div class="popup-text">This is a basic popup example</div>
         </div>
       </flutter-cupertino-modal-popup>
 
@@ -65,7 +65,7 @@
         @close="onPopupClose"
       >
         <div class="popup-content">
-          <div class="popup-title">分享到</div>
+          <div class="popup-title">Share to</div>
           <div class="share-grid">
             <div class="share-item" v-for="item in shareItems" :key="item.icon">
               <div class="share-label">{{ item.label }}</div>
@@ -81,8 +81,8 @@
         @close="onPopupClose"
       >
         <div class="popup-content">
-          <div class="popup-title">自定义高度</div>
-          <div class="popup-text">这个弹出层的高度是 400px</div>
+          <div class="popup-title">Custom Height</div>
+          <div class="popup-text">This popup has a height of 400px</div>
         </div>
       </flutter-cupertino-modal-popup>
 
@@ -95,13 +95,13 @@
         @close="onPopupClose"
       >
         <div class="popup-content">
-          <div class="popup-title">禁用点击遮罩关闭</div>
+          <div class="popup-title">Disable Mask Close</div>
           <div class="popup-text">
-            这个弹出层禁用了点击遮罩关闭的功能，只能通过其他方式关闭
+            This popup has disabled mask close functionality, can only be closed by other means
           </div>
           <div class="popup-footer">
             <flutter-cupertino-button @click="hideNoMaskClosePopup">
-              点击关闭
+              Close
             </flutter-cupertino-button>
           </div>
         </div>
@@ -116,9 +116,9 @@
         @close="onPopupClose"
       >
         <div class="popup-content custom-style">
-          <div class="popup-title">自定义样式</div>
+          <div class="popup-title">Custom Style</div>
           <div class="popup-text">
-            这是一个自定义样式的弹出层示例，关闭了默认的背景色，并设置了半透明的遮罩
+            This is a custom styled popup example with disabled background and semi-transparent mask
           </div>
         </div>
       </flutter-cupertino-modal-popup>
@@ -131,10 +131,10 @@ export default {
   data() {
     return {
       shareItems: [
-        { icon: 'pencil', label: '信息' },
-        { icon: 'mail_fill', label: '邮件' },
-        { icon: 'link', label: '复制链接' },
-        { icon: 'share', label: '更多' },
+        { icon: 'pencil', label: 'Message' },
+        { icon: 'mail_fill', label: 'Email' },
+        { icon: 'link', label: 'Copy Link' },
+        { icon: 'share', label: 'More' },
       ],
     }
   },

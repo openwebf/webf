@@ -4,9 +4,9 @@
       <div class="component-section">
         <div class="section-title">Date Picker</div>
         <div class="component-block">
-          <!-- 日期选择 -->
+          <!-- Date Selection -->
           <div class="component-item">
-            <div class="item-label">日期选择</div>
+            <div class="item-label">Date Selection</div>
             <flutter-cupertino-date-picker
               mode="date"
               height="200"
@@ -18,13 +18,13 @@
               @change="onDateChange"
             />
             <div class="picker-value" v-if="dateValue">
-              已选择：{{ formatDate(dateValue) }}
+              Selected: {{ formatDate(dateValue) }}
             </div>
           </div>
 
-          <!-- 时间选择 -->
+          <!-- Time Selection -->
           <div class="component-item">
-            <div class="item-label">时间选择</div>
+            <div class="item-label">Time Selection</div>
             <flutter-cupertino-date-picker
               mode="time"
               height="200"
@@ -34,13 +34,13 @@
               @change="onTimeChange"
             />
             <div class="picker-value" v-if="timeValue">
-              已选择：{{ timeValue }}
+              Selected: {{ timeValue }}
             </div>
           </div>
 
-          <!-- 日期时间选择 -->
+          <!-- Date and Time Selection -->
           <div class="component-item">
-            <div class="item-label">日期时间选择</div>
+            <div class="item-label">Date and Time Selection</div>
             <flutter-cupertino-date-picker
               mode="dateAndTime"
               height="200"
@@ -51,18 +51,18 @@
               @change="onDateTimeChange"
             />
             <div class="picker-value" v-if="dateTimeValue">
-              已选择：{{ formatDateTime(dateTimeValue) }}
+              Selected: {{ formatDateTime(dateTimeValue) }}
             </div>
           </div>
 
-          <!-- 弹出式选择器 -->
+          <!-- Popup Picker -->
           <div class="component-item">
-            <div class="item-label">弹出式选择器</div>
+            <div class="item-label">Popup Picker</div>
             <flutter-cupertino-button @click="showCustomPicker">
-              选择日期（带限制）
+              Select Date (with restrictions)
             </flutter-cupertino-button>
             <div class="picker-value" v-if="customValue">
-              已选择：{{ formatDate(customValue) }}
+              Selected: {{ formatDate(customValue) }}
             </div>
           </div>
         </div>
@@ -124,11 +124,11 @@ export default {
     },
     formatDate(dateStr) {
       const date = new Date(dateStr);
-      return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     },
     formatDateTime(dateStr) {
       const date = new Date(dateStr);
-      return `${this.formatDate(dateStr)} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+      return `${this.formatDate(dateStr)} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     }
   }
 }
