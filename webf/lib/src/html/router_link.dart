@@ -36,6 +36,14 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
+  void connectedCallback() {
+    super.connectedCallback();
+    if (path == ownerDocument.controller.initialRoute) {
+      dispatchEvent(Event('pode'));
+    }
+  }
+
+  @override
   void disconnectedCallback() {
     super.disconnectedCallback();
     if (_path.isNotEmpty) {

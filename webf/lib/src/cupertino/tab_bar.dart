@@ -17,7 +17,6 @@ class FlutterTabBar extends WidgetElement {
         final targetPath = args[0].toString();
         final paths = tabBar._getTabPaths();
         final targetIndex = paths.indexOf(targetPath);
-        print('targetIndex: $targetIndex');
         if (targetIndex != -1) {
           tabBar._controller.index = targetIndex;
 
@@ -77,7 +76,6 @@ class FlutterTabBar extends WidgetElement {
       if (child is! FlutterCupertinoTabBarItem) continue;
       tabViews.add(child.toWidget());
     }
-    print('tabViews: ${tabViews.length}');
     return tabViews;
   }
 
@@ -94,12 +92,12 @@ class FlutterTabBar extends WidgetElement {
   Widget build(BuildContext context, ChildNodeList childNodes) {
     final theme = CupertinoTheme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     final customBackgroundColor = _parseColor(getAttribute('backgroundColor'));
     final customActiveColor = _parseColor(getAttribute('activeColor'));
     final customInactiveColor = _parseColor(getAttribute('inactiveColor'));
 
-    final defaultBackgroundColor = isDark 
+    final defaultBackgroundColor = isDark
         ? CupertinoDynamicColor.resolve(
             const CupertinoDynamicColor.withBrightness(
               color: Color(0xFF1C1C1E),
@@ -108,7 +106,7 @@ class FlutterTabBar extends WidgetElement {
             context,
           )
         : CupertinoColors.systemBackground;
-    
+
     final defaultActiveColor = isDark
         ? CupertinoDynamicColor.resolve(CupertinoColors.systemBlue, context)
         : CupertinoColors.systemBlue;
@@ -119,7 +117,7 @@ class FlutterTabBar extends WidgetElement {
 
     final paths = _getTabPaths();
     final tabViews = _buildTabViews(childNodes);
-    
+
     return SizedBox(
         height: MediaQuery.of(context).size.height,
         child: CupertinoTabScaffold(
@@ -132,11 +130,11 @@ class FlutterTabBar extends WidgetElement {
                 inactiveColor: customInactiveColor ?? defaultInactiveColor,
                 iconSize: double.tryParse(getAttribute('iconSize') ?? '30.0') ?? 30.0,
                 height: double.tryParse(getAttribute('height') ?? '50.0') ?? 50.0,
-                border: isDark 
+                border: isDark
                     ? Border(
                         top: BorderSide(
                           color: CupertinoDynamicColor.resolve(
-                            CupertinoColors.separator, 
+                            CupertinoColors.separator,
                             context
                           ).withOpacity(0.3)
                         )
@@ -149,7 +147,6 @@ class FlutterTabBar extends WidgetElement {
             tabBuilder: (BuildContext context, int index) {
               return CupertinoTabView(
                 builder: (BuildContext context) {
-                  print('tabViews: ${tabViews.length}');
                   if (index < tabViews.length) {
                     return tabViews[index];
                   }
