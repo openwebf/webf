@@ -1,5 +1,5 @@
 <template>
-    <div class="share-page" @onscreen="onScreen" @offscreen="offScreen" repaint-boundary>
+    <div class="share-page" @onscreen="onScreen" @offscreen="offScreen">
         <template v-if="loading">
             <share-link-skeleton />
         </template>
@@ -320,7 +320,7 @@ export default {
             return new Promise((resolve) => {
                 requestAnimationFrame(async () => {
                     try {
-                        const element = document.getElementsByClassName('share-page')[0];
+                        const element = document.body;
                         if (!element) {
                             throw new Error('Share element not found');
                         }
