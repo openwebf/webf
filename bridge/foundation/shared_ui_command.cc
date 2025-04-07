@@ -80,7 +80,7 @@ void SharedUICommand::clear() {
 // called by c++ to check if there are commands.
 bool SharedUICommand::empty() {
   if (context_->isDedicated()) {
-    return reserve_buffer_->empty() && waiting_buffer_->empty();
+    return reserve_buffer_->empty() && waiting_buffer_->empty() && active_buffer->empty();
   }
 
   return active_buffer->empty();
