@@ -289,15 +289,14 @@ using PublicContextCreateUIEventWithOptions =
                                                  ExceptionState& exception_state);
 
 using PublicContextCreateEventTarget =
-    WebFValue<EventTarget, EventTargetPublicMethods> (*)(ExecutingContext* context,
-                                                         ExceptionState& exception_state);
+    WebFValue<EventTarget, EventTargetPublicMethods> (*)(ExecutingContext* context, ExceptionState& exception_state);
 using PublicContextCreateDocumentFragment =
     WebFValue<DocumentFragment, DocumentFragmentPublicMethods> (*)(ExecutingContext* context,
                                                                    ExceptionState& exception_state);
 using PublicContextCreateDocument = WebFValue<Document, DocumentPublicMethods> (*)(ExecutingContext* context,
                                                                                    ExceptionState& exception_state);
 using PublicContextCreateImage = WebFValue<Image, ImagePublicMethods> (*)(ExecutingContext* context,
-                                                                 ExceptionState& exception_state);
+                                                                          ExceptionState& exception_state);
 
 // Memory aligned and readable from WebF side.
 // Only C type member can be included in this class, any C++ type and classes can is not allowed to use here.
@@ -505,13 +504,13 @@ struct ExecutingContextWebFMethods {
                                                                            WebFUIEventInit* init,
                                                                            ExceptionState& exception_state);
   static WebFValue<EventTarget, EventTargetPublicMethods> CreateEventTarget(ExecutingContext* context,
-                                                                             ExceptionState& exception_state);
+                                                                            ExceptionState& exception_state);
   static WebFValue<DocumentFragment, DocumentFragmentPublicMethods> CreateDocumentFragment(
-      ExecutingContext* context, ExceptionState& exception_state);
+      ExecutingContext* context,
+      ExceptionState& exception_state);
   static WebFValue<Document, DocumentPublicMethods> CreateDocument(ExecutingContext* context,
                                                                    ExceptionState& exception_state);
-  static WebFValue<Image, ImagePublicMethods> CreateImage(ExecutingContext* context,
-                                                          ExceptionState& exception_state);
+  static WebFValue<Image, ImagePublicMethods> CreateImage(ExecutingContext* context, ExceptionState& exception_state);
 
   double version{1.0};
   PublicContextGetDocument context_get_document{document};
