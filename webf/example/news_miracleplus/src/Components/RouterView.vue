@@ -1,5 +1,5 @@
 <template>
-    <webf-router-link :path="path" :title="title" @hybridrouterchange="onRouterChange" @pode="onScreen">
+    <webf-router-link :path="path" :title="title" @onscreen="onScreen" @hybridrouterchange="onRouterChange" @pode="onScreen">
       <slot v-if="isMounted"></slot>
     </webf-router-link>
   </template>
