@@ -8,6 +8,7 @@ import {ClassObject, FunctionArguments, FunctionArgumentType} from '../declarati
 import {getPointerType, isPointerType} from '../generateSource';
 import {ParameterType} from '../analyzer';
 import {isAnyType, isStringType, isVectorType} from './cppGen';
+import { skipList } from './common';
 
 function readSourceTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../../../templates/idl_templates/plugin_api_templates/' + name + '.rs.tpl'), {encoding: 'utf-8'});
@@ -90,7 +91,14 @@ function generateMethodReturnType(type: ParameterType): string {
 function generatePublicParameterType(type: ParameterType): string {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
-    return `*const ${pointerType}`;
+    // special case for EventListener
+    if (pointerType === 'JSEventListener') {
+      return '*const EventCallbackContext';
+    }
+    if (pointerType.endsWith('Options') || pointerType.endsWith('Init')) {
+      return `*const ${pointerType}`;
+    }
+    return `*const OpaquePtr`;
   }
   switch (type.value) {
     case FunctionArgumentType.int64: {
@@ -112,8 +120,11 @@ function generatePublicParameterType(type: ParameterType): string {
     case FunctionArgumentType.legacy_dom_string: {
       return '*const c_char';
     }
+    case FunctionArgumentType.function: {
+      return '*const WebFNativeFunctionContext';
+    }
     default:
-      return 'void*';
+      return '*const c_void';
   }
 }
 
@@ -147,6 +158,10 @@ function generatePublicParametersName(parameters: FunctionArguments[]): string {
 function generateMethodParameterType(type: ParameterType): string {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
+    // special case for EventListener
+    if (pointerType === 'JSEventListener') {
+      return 'EventListenerCallback';
+    }
     return `&${pointerType}`;
   }
   switch (type.value) {
@@ -197,6 +212,16 @@ function generateMethodParametersName(parameters: FunctionArguments[]): string {
     return '';
   }
   return parameters.map(param => {
+    if (isPointerType(param.type)) {
+      const pointerType = getPointerType(param.type);
+      // special case for EventListener
+      if (pointerType === 'JSEventListener') {
+        return `${generateValidRustIdentifier(param.name)}_context_ptr`;
+      }
+      if (!pointerType.endsWith('Options') && !pointerType.endsWith('Init')) {
+        return `${generateValidRustIdentifier(param.name)}.ptr()`;
+      }
+    }
     switch (param.type.value) {
       case FunctionArgumentType.dom_string:
       case FunctionArgumentType.legacy_dom_string: {
@@ -252,6 +277,8 @@ function getClassName(blob: IDLBlob) {
 function generateValidRustIdentifier(name: string) {
   const rustKeywords = [
     'type',
+    'self',
+    'async',
   ];
   let identifier = _.snakeCase(name);
   return rustKeywords.includes(identifier) ? `${identifier}_` : identifier;
@@ -333,6 +360,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
           parentClassName: object.parent,
           blob,
           object,
+          skipList,
           inheritedObjects,
           isPointerType,
           generatePublicReturnTypeValue,

@@ -119,6 +119,10 @@ class EventTarget : public BindingObject {
                            ExceptionState& exception_state);
   bool removeEventListener(const AtomicString& event_type,
                            const std::shared_ptr<EventListener>& event_listener,
+                           const std::shared_ptr<EventListenerOptions>& options,
+                           ExceptionState& exception_state);
+  bool removeEventListener(const AtomicString& event_type,
+                           const std::shared_ptr<EventListener>& event_listener,
                            bool use_capture,
                            ExceptionState& exception_state);
   bool dispatchEvent(Event* event, ExceptionState& exception_state);

@@ -74,33 +74,36 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   ScriptValue <%=_.snakeCase(arg.name)%>_script_value = ScriptValue(<%= _.snakeCase(className) %>->ctx(), <%=_.snakeCase(arg.name)%>);
     <% } %>
     <% if (isPointerType(arg.type)) { %>
-  std::shared_ptr<<%= arg.type.value %>> <%= arg.name %>_p = <%= arg.type.value %>::Create();
-    <% _.forEach([...dependentClasses[getPointerType(arg.type)].props, ...dependentClasses[getPointerType(arg.type)].inheritedProps], function (prop) { %>
-      <% if(isStringType(prop.type)) { %>
+      <% var pointerType = getPointerType(arg.type); %>
+      <% if (pointerType === 'JSEventListener') { %>
+  auto <%= arg.name %>_impl = WebFPublicPluginEventListener::Create(<%= arg.name %>, shared_exception_state);
+      <% } else if (pointerType.endsWith('Options') || pointerType.endsWith('Init')) { %>
+  std::shared_ptr<<%= pointerType %>> <%= arg.name %>_p = <%= pointerType %>::Create();
+        <% _.forEach([...(dependentClasses[getPointerType(arg.type)]?.props ?? []), ...(dependentClasses[getPointerType(arg.type)]?.inheritedProps ?? [])], function (prop) { %>
+          <% if(isStringType(prop.type)) { %>
   ScriptValue <%=_.snakeCase(prop.name)%>_script_value = ScriptValue(<%= _.snakeCase(className) %>->ctx(), <%=_.snakeCase(arg.name)%>);
   <%= arg.name %>_p->set<%=_.upperFirst(prop.name)%>(<%=_.snakeCase(prop.name)%>_atomic);
-      <% } else if (isAnyType(prop.type)) { %>
+          <% } else if (isAnyType(prop.type)) { %>
   NativeValue <%=_.snakeCase(prop.name)%> = <%= arg.name %>-><%=_.snakeCase(prop.name)%>;
   ScriptValue <%=_.snakeCase(prop.name)%>_script_value = ScriptValue(<%= _.snakeCase(className) %>->ctx(), <%=_.snakeCase(prop.name)%>);
   <%= arg.name %>_p->set<%=_.upperFirst(prop.name)%>(<%=_.snakeCase(prop.name)%>_script_value);
-      <% } else { %>
+          <% } else { %>
   <%= arg.name %>_p->set<%=_.upperFirst(prop.name)%>(<%= arg.name %>-><%=_.snakeCase(prop.name)%>);
-     <% } %>
-
-    <% }) %>
-
+          <% } %>
+        <% }) %>
+      <% } %>
     <% } %>
   <% }); %>
-    <% if (isStringType(method.returnType)) { %>
+  <% if (isStringType(method.returnType)) { %>
   auto value_atomic = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
   return AtomicStringRef(value_atomic);
-    <% } else if (isVoidType(method.returnType)) { %>
+  <% } else if (isVoidType(method.returnType)) { %>
   <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
-    <% } else if (isAnyType(method.returnType)) { %>
+  <% } else if (isAnyType(method.returnType)) { %>
   auto return_value = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
   auto return_native_value = return_value.ToNative(<%= _.snakeCase(className) %>->ctx(), shared_exception_state->exception_state, false);
   return return_native_value;
-    <% } else if (isVectorType(method.returnType)) { %>
+  <% } else if (isVectorType(method.returnType)) { %>
   auto vector_value = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
   auto vector_size = vector_value.size();
   WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>* return_elements = (WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>*)dart_malloc(sizeof(WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>) * vector_size);
@@ -113,13 +116,13 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   }
   auto result = VectorValueRef(return_elements, vector_size);
   return result;
-    <% } else if (isPointerType(method.returnType)) { %>
+  <% } else if (isPointerType(method.returnType)) { %>
   auto* result = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
   WebFValueStatus* status_block = result->KeepAlive();
   return <%= generatePublicReturnTypeValue(method.returnType, true) %>(result, result-><%= _.camelCase(getPointerType(method.returnType)) %>PublicMethods(), status_block);
-    <% } else { %>
+  <% } else { %>
   return <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
-    <% } %>
+  <% } %>
   <% } %>
 }
 <% }); %>
