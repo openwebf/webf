@@ -7,6 +7,7 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
+#include "plugin_api/canvas_gradient.h"
 
 namespace webf {
 
@@ -25,6 +26,9 @@ class CanvasGradient : public BindingObject {
                                      Dart_Handle dart_object) override;
 
   bool IsCanvasGradient() const override;
+
+  const CanvasGradientPublicMethods* canvasGradientPublicMethods();
+
 
  private:
 };

@@ -45,4 +45,6 @@
 #include "core/native/vector_value_ref.h"
 #include "include/plugin_api/performance_mark_options.h"
 #include "core/events/keyboard_event.h"
+#include "core/html/canvas/canvas_gradient.h"
+#include "binding_call_methods.h"
 <%= content %>

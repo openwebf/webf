@@ -54,6 +54,12 @@ export function isVoidType(type: ParameterType): boolean {
   return type.value === FunctionArgumentType.void;
 }
 
+export function isDoubleType(type: ParameterType): boolean {
+  return type.value === FunctionArgumentType.double;
+}
+export function isIntType(type: ParameterType): boolean {
+  return type.value === FunctionArgumentType.int32 || type.value === FunctionArgumentType.int64;
+}
 export function isVectorType(type: ParameterType): boolean {
   return !!(type.isArray && typeof type.value === 'object' && !Array.isArray(type.value));
 }
@@ -267,6 +273,8 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
           generatePublicParametersType,
           generatePublicParametersTypeWithName,
           isStringType,
+          isDoubleType,
+          isIntType,
           isAnyType,
           isVectorType,
           dependentTypes: Array.from(dependentTypes),
@@ -408,6 +416,8 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           isPointerType,
           getPointerType,
           isStringType,
+          isDoubleType,
+          isIntType,
           isAnyType,
           isVectorType,
           isVoidType,
