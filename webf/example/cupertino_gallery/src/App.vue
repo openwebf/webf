@@ -38,6 +38,9 @@
   <router-view path="/picker" title="Picker">
     <picker-page></picker-page>
   </router-view>
+  <router-view path="/slider" title="Slider">
+    <slider-page></slider-page>
+  </router-view>
 </template>
 
 <script>
@@ -55,6 +58,7 @@ import DatePickerPage from './Pages/DatePickerPage.vue';
 import LoadingPage from './Pages/LoadingPage.vue';
 import ModalPopupPage from './Pages/ModalPopupPage.vue';
 import PickerPage from './Pages/PickerPage.vue';
+import SliderPage from './Pages/SliderPage.vue';
 
 export default {
   name: 'App',
@@ -73,6 +77,7 @@ export default {
     LoadingPage,
     ModalPopupPage,
     PickerPage,
+    SliderPage,
   },
 };
 </script>

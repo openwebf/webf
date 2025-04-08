@@ -18,6 +18,7 @@ import 'tab.dart';
 import 'tab_bar.dart';
 import 'textarea.dart';
 import 'toast.dart';
+import 'slider.dart';
 
 void installWebFCupertino() {
   WebF.defineCustomElement('flutter-cupertino-button', (context) => FlutterCupertinoButton(context));
@@ -40,4 +41,5 @@ void installWebFCupertino() {
   WebF.defineCustomElement('flutter-cupertino-textarea', (context) => FlutterCupertinoTextArea(context));
   WebF.defineCustomElement('flutter-cupertino-tab-bar', (context) => FlutterTabBar(context));
   WebF.defineCustomElement('flutter-cupertino-tab-bar-item', (context) => FlutterCupertinoTabBarItem(context));
+  WebF.defineCustomElement('flutter-cupertino-slider', (context) => FlutterCupertinoSlider(context));
 }

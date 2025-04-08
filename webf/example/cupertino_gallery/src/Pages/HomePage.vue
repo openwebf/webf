@@ -111,6 +111,15 @@
             </div>
             <div class="item-arrow">></div>
           </div>
+
+          <!-- Slider -->
+          <div class="component-item" @click="navigateTo('/slider')">
+            <div class="item-content">
+              <div class="item-title">Slider</div>
+              <div class="item-desc">An iOS-style slider for selecting values from a range</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
         </div>
       </div>
     </webf-listview>
