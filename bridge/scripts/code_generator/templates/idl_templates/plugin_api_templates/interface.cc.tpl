@@ -113,6 +113,10 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   }
   auto result = VectorValueRef(return_elements, vector_size);
   return result;
+    <% } else if (isPointerType(method.returnType)) { %>
+  auto* result = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
+  WebFValueStatus* status_block = result->KeepAlive();
+  return <%= generatePublicReturnTypeValue(method.returnType, true) %>(result, result-><%= _.camelCase(getPointerType(method.returnType)) %>PublicMethods(), status_block);
     <% } else { %>
   return <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
     <% } %>

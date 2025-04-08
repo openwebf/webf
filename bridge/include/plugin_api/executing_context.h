@@ -26,6 +26,7 @@
 #include "mouse_event_init.h"
 #include "pointer_event_init.h"
 #include "promise_rejection_event_init.h"
+#include "touch_event_init.h"
 #include "transition_event_init.h"
 #include "ui_event_init.h"
 #include "window.h"
@@ -71,6 +72,8 @@ class PromiseRejectionEvent;
 typedef struct PromiseRejectionEventPublicMethods PromiseRejectionEventPublicMethods;
 class PointerEvent;
 typedef struct PointerEventPublicMethods PointerEventPublicMethods;
+class TouchEvent;
+typedef struct TouchEventPublicMethods TouchEventPublicMethods;
 class TransitionEvent;
 typedef struct TransitionEventPublicMethods TransitionEventPublicMethods;
 
@@ -265,6 +268,16 @@ using PublicContextCreatePointerEventWithOptions =
                                                            const char* type,
                                                            WebFPointerEventInit* init,
                                                            ExceptionState& exception_state);
+
+using PublicContextCreateTouchEvent =
+    WebFValue<TouchEvent, TouchEventPublicMethods> (*)(ExecutingContext* context,
+                                                       const char* type,
+                                                       ExceptionState& exception_state);
+using PublicContextCreateTouchEventWithOptions =
+    WebFValue<TouchEvent, TouchEventPublicMethods> (*)(ExecutingContext* context,
+                                                       const char* type,
+                                                       WebFTouchEventInit* init,
+                                                       ExceptionState& exception_state);
 
 using PublicContextCreateTransitionEvent =
     WebFValue<TransitionEvent, TransitionEventPublicMethods> (*)(ExecutingContext* context,
@@ -474,6 +487,15 @@ struct ExecutingContextWebFMethods {
       WebFPointerEventInit* init,
       ExceptionState& exception_state);
 
+  static WebFValue<TouchEvent, TouchEventPublicMethods> CreateTouchEvent(ExecutingContext* context,
+                                                                         const char* type,
+                                                                         ExceptionState& exception_state);
+
+  static WebFValue<TouchEvent, TouchEventPublicMethods> CreateTouchEventWithOptions(ExecutingContext* context,
+                                                                                    const char* type,
+                                                                                    WebFTouchEventInit* init,
+                                                                                    ExceptionState& exception_state);
+
   static WebFValue<TransitionEvent, TransitionEventPublicMethods>
   CreateTransitionEvent(ExecutingContext* context, const char* type, ExceptionState& exception_state);
   static WebFValue<TransitionEvent, TransitionEventPublicMethods> CreateTransitionEventWithOptions(
@@ -552,6 +574,8 @@ struct ExecutingContextWebFMethods {
   PublicContextCreatePointerEvent rust_context_create_pointer_event{CreatePointerEvent};
   PublicContextCreatePointerEventWithOptions rust_context_create_pointer_event_with_options{
       CreatePointerEventWithOptions};
+  PublicContextCreateTouchEvent rust_context_create_touch_event{CreateTouchEvent};
+  PublicContextCreateTouchEventWithOptions rust_context_create_touch_event_with_options{CreateTouchEventWithOptions};
   PublicContextCreateTransitionEvent rust_context_create_transition_event_event{CreateTransitionEvent};
   PublicContextCreateTransitionEventWithOptions rust_context_create_transition_event_with_options{
       CreateTransitionEventWithOptions};

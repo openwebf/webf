@@ -638,6 +638,8 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/plugin_api_pointer_event.cc
     out/plugin_api_promise_rejection_event.cc
     out/plugin_api_touch.cc
+    out/plugin_api_touch_event.cc
+    out/plugin_api_touch_list.cc
     out/plugin_api_transition_event.cc
     out/plugin_api_ui_event.cc
     out/plugin_api_keyboard_event.cc
