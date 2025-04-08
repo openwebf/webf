@@ -38,6 +38,8 @@ abstract class WidgetElement extends dom.Element {
 
   bool isRouterLinkElement = false;
 
+  /// Current BuildContext for the last build of WidgetElement
+  /// could be null if this widgetElement not was attached to screen in Flutter.
   BuildContext? get context {
     return state?.context;
   }

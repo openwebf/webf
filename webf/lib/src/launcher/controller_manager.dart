@@ -542,8 +542,11 @@ class WebFControllerManager {
       }
 
       // Make sure script fully evaluated
-      controller.controllerOnDOMContentLoadedCompleter.future.then((_) {
-        controller.dispose();
+      controller.controllerOnLoadCompleter.future.then((_) {
+        // Delay dispose and waiting for the executing for current scripts
+        Future.delayed(Duration(seconds: 1), () {
+          controller.dispose();
+        });
       });
     }
   }
