@@ -68,6 +68,8 @@ class FlutterCupertinoToast extends WidgetElement {
   }
 
   void _show(String message, ToastType type, Duration duration) {
+    if (context == null) return;
+
     _hide();
 
     _overlayEntry = OverlayEntry(
