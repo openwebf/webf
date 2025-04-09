@@ -38,7 +38,10 @@ const Map<String, dynamic> _sDefaultStyle = {TEXT_DECORATION: LINE_THROUGH};
 
 const Map<String, dynamic> _smallDefaultStyle = {FONT_SIZE: SMALLER};
 
-const Map<String, dynamic> _codeDefaultStyle = {FONT_FAMILY: 'monospace'};
+const Map<String, dynamic> _codeDefaultStyle = {
+  DISPLAY: INLINE,
+  FONT_FAMILY: 'monospace'
+};
 
 const Map<String, dynamic> _boldDefaultStyle = {FONT_WEIGHT: BOLD};
 
