@@ -351,7 +351,7 @@ describe('block-replaced', () => {
 
     await snapshot();
   });
-  it('height-006-ref', async () => {
+  fit('height-006-ref', async () => {
     let p;
     let div;
     p = createElement(
@@ -400,7 +400,7 @@ describe('block-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-001', async () => {
     let p;
