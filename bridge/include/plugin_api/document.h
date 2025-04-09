@@ -38,11 +38,11 @@ class ExecutingContext;
 typedef struct NativeValue NativeValue;
 typedef struct AtomicStringRef AtomicStringRef;
 class Document;
-using PublicDocumentGetTitle = AtomicStringRef (*)(Document*);
+using PublicDocumentGetTitle = AtomicStringRef (*)(Document*, SharedExceptionState* shared_exception_state);
 using PublicDocumentSetTitle = void (*)(Document*, const char*, SharedExceptionState*);
 using PublicDocumentGetBody = WebFValue<HTMLBodyElement, HTMLBodyElementPublicMethods> (*)(Document*);
 using PublicDocumentSetBody = void (*)(Document*, HTMLBodyElement*, SharedExceptionState*);
-using PublicDocumentGetCookie = AtomicStringRef (*)(Document*);
+using PublicDocumentGetCookie = AtomicStringRef (*)(Document*, SharedExceptionState* shared_exception_state);
 using PublicDocumentSetCookie = void (*)(Document*, const char*, SharedExceptionState*);
 using PublicDocumentGetDomain = AtomicStringRef (*)(Document*);
 using PublicDocumentSetDomain = void (*)(Document*, const char*, SharedExceptionState*);
@@ -51,7 +51,7 @@ using PublicDocumentGetDocumentElement = WebFValue<HTMLHtmlElement, HTMLHtmlElem
 using PublicDocumentGetLocation = NativeValue (*)(Document*, SharedExceptionState* shared_exception_state);
 using PublicDocumentGetCompatMode = AtomicStringRef (*)(Document*);
 using PublicDocumentGetReadyState = AtomicStringRef (*)(Document*);
-using PublicDocumentGetVisibilityState = AtomicStringRef (*)(Document*);
+using PublicDocumentGetVisibilityState = AtomicStringRef (*)(Document*, SharedExceptionState* shared_exception_state);
 using PublicDocumentGetHidden = int32_t (*)(Document*);
 using PublicDocumentGetDefaultView = WebFValue<Window, WindowPublicMethods> (*)(Document*);
 using PublicDocumentClearCookies = void (*)(Document*, SharedExceptionState*);
@@ -68,11 +68,11 @@ using PublicDocumentQuerySelector = WebFValue<Element, ElementPublicMethods> (*)
 using PublicDocumentQuerySelectorAll = VectorValueRef (*)(Document*, const char*, SharedExceptionState*);
 using PublicDocumentElementFromPoint = WebFValue<Element, ElementPublicMethods> (*)(Document*, double, double, SharedExceptionState*);
 struct DocumentPublicMethods : public WebFPublicMethods {
-  static AtomicStringRef Title(Document* document);
+  static AtomicStringRef Title(Document* document, SharedExceptionState* shared_exception_state);
   static void SetTitle(Document* document, const char* title, SharedExceptionState* shared_exception_state);
   static WebFValue<HTMLBodyElement, HTMLBodyElementPublicMethods> Body(Document* document);
   static void SetBody(Document* document, HTMLBodyElement* body, SharedExceptionState* shared_exception_state);
-  static AtomicStringRef Cookie(Document* document);
+  static AtomicStringRef Cookie(Document* document, SharedExceptionState* shared_exception_state);
   static void SetCookie(Document* document, const char* cookie, SharedExceptionState* shared_exception_state);
   static AtomicStringRef Domain(Document* document);
   static void SetDomain(Document* document, const char* domain, SharedExceptionState* shared_exception_state);
@@ -81,7 +81,7 @@ struct DocumentPublicMethods : public WebFPublicMethods {
   static NativeValue Location(Document* document, SharedExceptionState* shared_exception_state);
   static AtomicStringRef CompatMode(Document* document);
   static AtomicStringRef ReadyState(Document* document);
-  static AtomicStringRef VisibilityState(Document* document);
+  static AtomicStringRef VisibilityState(Document* document, SharedExceptionState* shared_exception_state);
   static int32_t Hidden(Document* document);
   static WebFValue<Window, WindowPublicMethods> DefaultView(Document* document);
   static void ClearCookies(Document* document, SharedExceptionState* shared_exception_state);

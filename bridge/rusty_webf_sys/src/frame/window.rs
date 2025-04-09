@@ -9,7 +9,6 @@ use crate::*;
 pub struct WindowRustMethods {
   pub version: c_double,
   pub event_target: EventTargetRustMethods,
-  pub window: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<WindowRustMethods>,
   pub parent: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<WindowRustMethods>,
   pub self_: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<WindowRustMethods>,
   pub screen: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<ScreenRustMethods>,
@@ -50,12 +49,6 @@ impl Window {
   }
   pub fn context<'a>(&self) -> &'a ExecutingContext {
     self.event_target.context()
-  }
-  pub fn window(&self) -> Window {
-    let value = unsafe {
-      ((*self.method_pointer).window)(self.ptr())
-    };
-    Window::initialize(value.value, self.context(), value.method_pointer, value.status)
   }
   pub fn parent(&self) -> Window {
     let value = unsafe {
@@ -170,7 +163,6 @@ impl Window {
   }
 }
 pub trait WindowMethods: EventTargetMethods {
-  fn window(&self) -> Window;
   fn parent(&self) -> Window;
   fn self_(&self) -> Window;
   fn screen(&self) -> Screen;
@@ -190,9 +182,6 @@ pub trait WindowMethods: EventTargetMethods {
   fn as_window(&self) -> &Window;
 }
 impl WindowMethods for Window {
-  fn window(&self) -> Window {
-    self.window()
-  }
   fn parent(&self) -> Window {
     self.parent()
   }

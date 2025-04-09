@@ -36,7 +36,7 @@ enum class <%= className %>Type {
 <% var id = `${object.name}.${prop.name}`; %>
 <% if (skipList.includes(id)) return; %>
   <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
-using Public<%= className %>Get<%= propName %> = <%= generatePublicReturnTypeValue(prop.type, true) %> (*)(<%= className %>*<%= isAnyType(prop.type)? ", SharedExceptionState* shared_exception_state": "" %>);
+using Public<%= className %>Get<%= propName %> = <%= generatePublicReturnTypeValue(prop.type, true) %> (*)(<%= className %>*<%= isAnyType(prop.type) || prop.typeMode.dartImpl ? ", SharedExceptionState* shared_exception_state": "" %>);
   <% if (!prop.readonly) { %>
 using Public<%= className %>Set<%= propName %> = void (*)(<%= className %>*, <%= generatePublicParameterType(prop.type, true) %>, SharedExceptionState*);
   <% } %>
@@ -60,7 +60,7 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
   <% var id = `${object.name}.${prop.name}`; %>
   <% if (skipList.includes(id)) return; %>
     <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
-  static <%= generatePublicReturnTypeValue(prop.type, true) %> <%= propName %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type)? ", SharedExceptionState* shared_exception_state": "" %>);
+  static <%= generatePublicReturnTypeValue(prop.type, true) %> <%= propName %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type) || prop.typeMode.dartImpl ? ", SharedExceptionState* shared_exception_state": "" %>);
     <% if (!prop.readonly) { %>
   static void Set<%= propName %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParameterType(prop.type, true) %> <%= prop.name %>, SharedExceptionState* shared_exception_state);
     <% } %>

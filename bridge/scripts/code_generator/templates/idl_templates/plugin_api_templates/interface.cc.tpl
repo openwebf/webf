@@ -44,8 +44,8 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   webf::AtomicString <%= prop.name %>Atomic = webf::AtomicString(<%= _.snakeCase(className) %>->ctx(), <%= prop.name %>);
     <% } %>
   <%= _.snakeCase(className) %>->set<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= prop.name %><% if (isStringType(prop.type)) { %>Atomic<% } %>, shared_exception_state->exception_state);
-}
   <% } %>
+}
   <% } %>
 <% }); %>
 
@@ -67,7 +67,7 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
     <% }) %>
   };
   <%= _.snakeCase(className) %>->InvokeBindingMethod(binding_call_methods::kaddColorStop, <%= method.args.length %>, args, FlushUICommandReason::kDependentsOnElement<% if(method.returnTypeMode?.layoutDependent){ %> | FlushUICommandReason::kDependentsOnLayout <% } %>, shared_exception_state->exception_state);
-  
+
   <% } else { %>
 
   <% _.forEach(method.args, function(arg, index) { %>

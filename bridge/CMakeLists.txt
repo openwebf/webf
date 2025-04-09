@@ -295,20 +295,20 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/page.cc
     core/dart_methods.cc
     core/api/exception_state.cc
-    core/api/event_target.cc
-    core/api/node.cc
+    # core/api/event_target.cc
+    # core/api/node.cc
     core/api/executing_context.cc
     core/api/container_node.cc
-    core/api/document.cc
-    core/api/element.cc
-    core/api/html_element.cc
-    core/api/html_image_element.cc
-    core/api/html_canvas_element.cc
-    core/api/document_fragment.cc
-    core/api/window.cc
-    core/api/text.cc
-    core/api/comment.cc
-    core/api/character_data.cc
+    # core/api/document.cc
+    # core/api/element.cc
+    # core/api/html_element.cc
+    # core/api/html_image_element.cc
+    # core/api/html_canvas_element.cc
+    # core/api/document_fragment.cc
+    # core/api/window.cc
+    # core/api/text.cc
+    # core/api/comment.cc
+    # core/api/character_data.cc
     core/api/script_value_ref.cc
     core/dart_isolate_context.cc
     core/dart_context_data.cc
@@ -644,6 +644,27 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/plugin_api_ui_event.cc
     out/plugin_api_keyboard_event.cc
     out/plugin_api_canvas_gradient.cc
+    out/plugin_api_document.cc
+    out/plugin_api_html_element.cc
+    out/plugin_api_html_image_element.cc
+    out/plugin_api_html_canvas_element.cc
+    out/plugin_api_html_div_element.cc
+    out/plugin_api_html_head_element.cc
+    out/plugin_api_html_body_element.cc
+    out/plugin_api_html_html_element.cc
+    out/plugin_api_document_fragment.cc
+    out/plugin_api_text.cc
+    out/plugin_api_window.cc
+    out/plugin_api_comment.cc
+    out/plugin_api_character_data.cc
+    out/plugin_api_event_target.cc
+    out/plugin_api_element.cc
+    out/plugin_api_node.cc
+    out/plugin_api_node_list.cc
+    out/plugin_api_screen.cc
+    out/plugin_api_html_script_element.cc
+    out/plugin_api_canvas_rendering_context.cc
+    out/plugin_api_image.cc
   )
 
 
