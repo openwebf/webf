@@ -351,7 +351,7 @@ describe('block-replaced', () => {
 
     await snapshot();
   });
-  fit('height-006-ref', async () => {
+  it('height-006-ref', async () => {
     let p;
     let div;
     p = createElement(
