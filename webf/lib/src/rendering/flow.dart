@@ -1058,8 +1058,6 @@ class RenderFlowLayout extends RenderLayoutBox {
           lineDistance = math.max(lineDistance!, childBaseLineDistance);
         else
           lineDistance = childBaseLineDistance;
-      } else if (childBaseLineDistance == null && (child.parent as RenderBoxModel).hasSize) {
-          lineDistance = (child.parent as RenderBoxModel).boxSize?.height;
       }
     });
 
