@@ -33,6 +33,8 @@ enum class <%= className %>Type {
 <% } %>
 
 <% _.forEach(object.props, function(prop, index) { %>
+<% var id = `${object.name}.${prop.name}`; %>
+<% if (skipList.includes(id)) return; %>
   <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
 using Public<%= className %>Get<%= propName %> = <%= generatePublicReturnTypeValue(prop.type, true) %> (*)(<%= className %>*<%= isAnyType(prop.type)? ", SharedExceptionState* shared_exception_state": "" %>);
   <% if (!prop.readonly) { %>
@@ -41,6 +43,8 @@ using Public<%= className %>Set<%= propName %> = void (*)(<%= className %>*, <%=
 <% }); %>
 
 <% _.forEach(object.methods, function(method, index) { %>
+<% var id = `${object.name}.${method.name}`; %>
+<% if (skipList.includes(id)) return; %>
   <% var methodName = _.startCase(method.name).replace(/ /g, ''); %>
 using Public<%= className %><%= methodName %> = <%= generatePublicReturnTypeValue(method.returnType, true) %> (*)(<%= className %>*, <%= generatePublicParametersType(method.args, true) %>SharedExceptionState*);
 <% }); %>
@@ -53,6 +57,8 @@ using Public<%= className %>DynamicTo = WebFValue<<%= className %>, WebFPublicMe
 struct <%= className %>PublicMethods : public WebFPublicMethods {
 
   <% _.forEach(object.props, function(prop, index) { %>
+  <% var id = `${object.name}.${prop.name}`; %>
+  <% if (skipList.includes(id)) return; %>
     <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
   static <%= generatePublicReturnTypeValue(prop.type, true) %> <%= propName %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type)? ", SharedExceptionState* shared_exception_state": "" %>);
     <% if (!prop.readonly) { %>
@@ -61,6 +67,8 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% var id = `${object.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var methodName = _.startCase(method.name).replace(/ /g, ''); %>
   static <%= generatePublicReturnTypeValue(method.returnType, true) %> <%= methodName %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParametersTypeWithName(method.args, true) %>SharedExceptionState* shared_exception_state);
   <% }); %>
@@ -76,6 +84,8 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
   <% } %>
 
   <% _.forEach(object.props, function(prop, index) { %>
+    <% var id = `${object.name}.${prop.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
   Public<%= className %>Get<%= propName %> <%= _.snakeCase(className) %>_get_<%= _.snakeCase(prop.name) %>{<%= propName %>};
     <% if (!prop.readonly) { %>
@@ -84,6 +94,8 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% var id = `${object.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var methodName = _.startCase(method.name).replace(/ /g, ''); %>
   Public<%= className %><%= methodName %> <%= _.snakeCase(className) %>_<%= _.snakeCase(method.name) %>{<%= methodName %>};
   <% }); %>

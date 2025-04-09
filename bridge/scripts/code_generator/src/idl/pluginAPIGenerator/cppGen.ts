@@ -7,6 +7,7 @@ import {ClassObject, FunctionArguments, FunctionArgumentType} from '../declarati
 import {GenerateOptions, generateSupportedOptions} from '../generator';
 import {ParameterType} from '../analyzer';
 import {getPointerType, isPointerType} from '../generateSource';
+import { skipList } from './common';
 
 function readHeaderTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../../../templates/idl_templates/plugin_api_templates/' + name + '.h.tpl'), {encoding: 'utf-8'});
@@ -298,6 +299,7 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
           dependentTypes: Array.from(dependentTypes),
           subClasses: _.uniq(subClasses),
           options,
+          skipList,
         });
       }
       case TemplateKind.Dictionary: {
@@ -336,6 +338,7 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
           isStringType,
           dependentTypes: Array.from(dependentTypes),
           options,
+          skipList,
         });
       }
       case TemplateKind.globalFunction: {
@@ -443,6 +446,7 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           dependentClasses,
           subClasses: _.uniq(subClasses),
           options,
+          skipList,
         });
       }
       case TemplateKind.globalFunction: {

@@ -4,6 +4,8 @@
 namespace webf {
 
 <% _.forEach(object.props, function(prop, index) { %>
+<% var id = `${object.name}.${prop.name}`; %>
+<% if (skipList.includes(id)) return; %>
 <%= generatePublicReturnTypeValue(prop.type, true) %> <%= className %>PublicMethods::<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type) || prop.typeMode.dartImpl ? ", SharedExceptionState* shared_exception_state": "" %>) {
   MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
   <% if (prop.typeMode.dartImpl) { %>
@@ -48,6 +50,8 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
 <% }); %>
 
 <% _.forEach(object.methods, function(method, index) { %>
+<% var id = `${object.name}.${method.name}`; %>
+<% if (skipList.includes(id)) return; %>
 <%= generatePublicReturnTypeValue(method.returnType, true) %> <%= className %>PublicMethods::<%= _.startCase(method.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParametersTypeWithName(method.args, true) %>SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
   <% if (method.returnTypeMode?.dartImpl) { %>

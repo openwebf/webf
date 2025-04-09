@@ -22,31 +22,16 @@ enum class NodeListType {
   kNodeList = 0,
 };
 using PublicNodeListGetLength = int64_t (*)(NodeList*);
-using PublicNodeListGetForEach = int64_t (*)(NodeList*);
-using PublicNodeListGetKeys = int64_t (*)(NodeList*);
-using PublicNodeListGetEntries = int64_t (*)(NodeList*);
-using PublicNodeListGetValues = int64_t (*)(NodeList*);
-using PublicNodeListGetSymbolIterator = int64_t (*)(NodeList*);
 using PublicNodeListItem = WebFValue<Node, NodePublicMethods> (*)(NodeList*, double, SharedExceptionState*);
 using PublicNodeListRelease = void (*)(NodeList*);
 using PublicNodeListDynamicTo = WebFValue<NodeList, WebFPublicMethods> (*)(NodeList*, NodeListType);
 struct NodeListPublicMethods : public WebFPublicMethods {
   static int64_t Length(NodeList* node_list);
-  static int64_t ForEach(NodeList* node_list);
-  static int64_t Keys(NodeList* node_list);
-  static int64_t Entries(NodeList* node_list);
-  static int64_t Values(NodeList* node_list);
-  static int64_t SymbolIterator(NodeList* node_list);
   static WebFValue<Node, NodePublicMethods> Item(NodeList* node_list, double index, SharedExceptionState* shared_exception_state);
   static void Release(NodeList* node_list);
   static WebFValue<NodeList, WebFPublicMethods> DynamicTo(NodeList* node_list, NodeListType node_list_type);
   double version{1.0};
   PublicNodeListGetLength node_list_get_length{Length};
-  PublicNodeListGetForEach node_list_get_for_each{ForEach};
-  PublicNodeListGetKeys node_list_get_keys{Keys};
-  PublicNodeListGetEntries node_list_get_entries{Entries};
-  PublicNodeListGetValues node_list_get_values{Values};
-  PublicNodeListGetSymbolIterator node_list_get_symbol_iterator{SymbolIterator};
   PublicNodeListItem node_list_item{Item};
   PublicNodeListRelease node_list_release{Release};
   PublicNodeListDynamicTo node_list_dynamic_to{DynamicTo};

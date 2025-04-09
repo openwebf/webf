@@ -33,8 +33,6 @@ using PublicNodeGetDOCUMENTTYPENODE = double (*)(Node*);
 using PublicNodeGetDOCUMENTFRAGMENTNODE = double (*)(Node*);
 using PublicNodeGetNodeType = double (*)(Node*);
 using PublicNodeGetNodeName = AtomicStringRef (*)(Node*);
-using PublicNodeGetNodeValue = int64_t (*)(Node*);
-using PublicNodeSetNodeValue = void (*)(Node*, int64_t, SharedExceptionState*);
 using PublicNodeGetChildNodes = WebFValue<NodeList, NodeListPublicMethods> (*)(Node*);
 using PublicNodeGetFirstChild = WebFValue<Node, NodePublicMethods> (*)(Node*);
 using PublicNodeGetIsConnected = int32_t (*)(Node*);
@@ -44,8 +42,6 @@ using PublicNodeGetOwnerDocument = WebFValue<Document, DocumentPublicMethods> (*
 using PublicNodeGetParentElement = WebFValue<Element, ElementPublicMethods> (*)(Node*);
 using PublicNodeGetParentNode = WebFValue<Node, NodePublicMethods> (*)(Node*);
 using PublicNodeGetPreviousSibling = WebFValue<Node, NodePublicMethods> (*)(Node*);
-using PublicNodeGetTextContent = int64_t (*)(Node*);
-using PublicNodeSetTextContent = void (*)(Node*, int64_t, SharedExceptionState*);
 using PublicNodeHasChildNodes = int32_t (*)(Node*, SharedExceptionState*);
 using PublicNodeAppendChild = WebFValue<Node, NodePublicMethods> (*)(Node*, Node*, SharedExceptionState*);
 using PublicNodeCloneNode = WebFValue<Node, NodePublicMethods> (*)(Node*, int32_t, SharedExceptionState*);
@@ -66,8 +62,6 @@ struct NodePublicMethods : public WebFPublicMethods {
   static double DOCUMENTFRAGMENTNODE(Node* node);
   static double NodeType(Node* node);
   static AtomicStringRef NodeName(Node* node);
-  static int64_t NodeValue(Node* node);
-  static void SetNodeValue(Node* node, int64_t nodeValue, SharedExceptionState* shared_exception_state);
   static WebFValue<NodeList, NodeListPublicMethods> ChildNodes(Node* node);
   static WebFValue<Node, NodePublicMethods> FirstChild(Node* node);
   static int32_t IsConnected(Node* node);
@@ -77,8 +71,6 @@ struct NodePublicMethods : public WebFPublicMethods {
   static WebFValue<Element, ElementPublicMethods> ParentElement(Node* node);
   static WebFValue<Node, NodePublicMethods> ParentNode(Node* node);
   static WebFValue<Node, NodePublicMethods> PreviousSibling(Node* node);
-  static int64_t TextContent(Node* node);
-  static void SetTextContent(Node* node, int64_t textContent, SharedExceptionState* shared_exception_state);
   static int32_t HasChildNodes(Node* node, SharedExceptionState* shared_exception_state);
   static WebFValue<Node, NodePublicMethods> AppendChild(Node* node, Node* new_node, SharedExceptionState* shared_exception_state);
   static WebFValue<Node, NodePublicMethods> CloneNode(Node* node, int32_t deep, SharedExceptionState* shared_exception_state);
@@ -100,8 +92,6 @@ struct NodePublicMethods : public WebFPublicMethods {
   PublicNodeGetDOCUMENTFRAGMENTNODE node_get_document_fragment_node{DOCUMENTFRAGMENTNODE};
   PublicNodeGetNodeType node_get_node_type{NodeType};
   PublicNodeGetNodeName node_get_node_name{NodeName};
-  PublicNodeGetNodeValue node_get_node_value{NodeValue};
-  PublicNodeSetNodeValue node_set_node_value{SetNodeValue};
   PublicNodeGetChildNodes node_get_child_nodes{ChildNodes};
   PublicNodeGetFirstChild node_get_first_child{FirstChild};
   PublicNodeGetIsConnected node_get_is_connected{IsConnected};
@@ -111,8 +101,6 @@ struct NodePublicMethods : public WebFPublicMethods {
   PublicNodeGetParentElement node_get_parent_element{ParentElement};
   PublicNodeGetParentNode node_get_parent_node{ParentNode};
   PublicNodeGetPreviousSibling node_get_previous_sibling{PreviousSibling};
-  PublicNodeGetTextContent node_get_text_content{TextContent};
-  PublicNodeSetTextContent node_set_text_content{SetTextContent};
   PublicNodeHasChildNodes node_has_child_nodes{HasChildNodes};
   PublicNodeAppendChild node_append_child{AppendChild};
   PublicNodeCloneNode node_clone_node{CloneNode};

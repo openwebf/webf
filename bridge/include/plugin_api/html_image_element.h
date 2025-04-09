@@ -36,7 +36,6 @@ using PublicHTMLImageElementGetFetchPriority = AtomicStringRef (*)(HTMLImageElem
 using PublicHTMLImageElementSetFetchPriority = void (*)(HTMLImageElement*, const char*, SharedExceptionState*);
 using PublicHTMLImageElementGetLoading = AtomicStringRef (*)(HTMLImageElement*);
 using PublicHTMLImageElementSetLoading = void (*)(HTMLImageElement*, const char*, SharedExceptionState*);
-using PublicHTMLImageElementDecode = int64_t (*)(HTMLImageElement*, SharedExceptionState*);
 struct HTMLImageElementPublicMethods : public WebFPublicMethods {
   static AtomicStringRef Alt(HTMLImageElement* html_image_element);
   static void SetAlt(HTMLImageElement* html_image_element, const char* alt, SharedExceptionState* shared_exception_state);
@@ -58,7 +57,6 @@ struct HTMLImageElementPublicMethods : public WebFPublicMethods {
   static void SetFetchPriority(HTMLImageElement* html_image_element, const char* fetchPriority, SharedExceptionState* shared_exception_state);
   static AtomicStringRef Loading(HTMLImageElement* html_image_element);
   static void SetLoading(HTMLImageElement* html_image_element, const char* loading, SharedExceptionState* shared_exception_state);
-  static int64_t Decode(HTMLImageElement* html_image_element, SharedExceptionState* shared_exception_state);
   double version{1.0};
   HTMLElementPublicMethods html_element;
   PublicHTMLImageElementGetAlt html_image_element_get_alt{Alt};
@@ -81,7 +79,6 @@ struct HTMLImageElementPublicMethods : public WebFPublicMethods {
   PublicHTMLImageElementSetFetchPriority html_image_element_set_fetch_priority{SetFetchPriority};
   PublicHTMLImageElementGetLoading html_image_element_get_loading{Loading};
   PublicHTMLImageElementSetLoading html_image_element_set_loading{SetLoading};
-  PublicHTMLImageElementDecode html_image_element_decode{Decode};
 };
 }  // namespace webf
 #endif  // WEBF_CORE_WEBF_API_PLUGIN_API_HTML_IMAGE_ELEMENT_H_
