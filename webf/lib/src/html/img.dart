@@ -11,6 +11,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
@@ -53,7 +54,7 @@ class ImageElement extends Element {
   bool _isListeningStream = false;
 
   bool _isSVGImage = false;
-  SVGElement? _svgElement;
+  Uint8List? _svgBytes;
 
   // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-complete-dev
   // A boolean value which indicates whether or not the image has completely loaded.
@@ -107,8 +108,7 @@ class ImageElement extends Element {
 
   @override
   flutter.Widget toWidget({Key? key, bool positioned = false}) {
-    flutter.Widget child = WebFReplacedElementWidget(
-        webFElement: this, key: key ?? this.key, child: _isSVGImage ? WebFSVGImage(_svgElement!) : WebFImage(this));
+    flutter.Widget child = WebFReplacedElementWidget(webFElement: this, key: key ?? this.key, child: WebFImage(this));
     return WebFEventListener(ownerElement: this, child: child);
   }
 
@@ -258,11 +258,7 @@ class ImageElement extends Element {
     _currentImageProvider?.evict(configuration: _currentImageConfig ?? ImageConfiguration.empty);
     _currentImageConfig = null;
     _currentImageProvider = null;
-
-    if (_svgElement != null) {
-      _svgElement!.dispose();
-      _svgElement = null;
-    }
+    _svgBytes = null;
   }
 
   // Width and height set through style declaration.
@@ -478,6 +474,7 @@ class ImageElement extends Element {
     if (shouldLazyLoading) {
       final completer = Completer<bool?>();
       _updateImageDataLazyCompleter = completer;
+
       /// The method is foolproof to avoid IntersectionObserver not working
       Future.delayed(Duration(seconds: 3), () {
         _updateImageDataLazyCompleter?.complete();
@@ -515,28 +512,20 @@ class ImageElement extends Element {
       } else {
         _loadImg();
       }
-
     });
     SchedulerBinding.instance.scheduleFrame();
   }
 
   void _loadSVGImage() async {
-    final builder = SVGRenderBoxBuilder(obtainImage(this, _resolvedUri!), target: this);
-
     try {
-      SVGElement svgElement = await builder.decode(ownerDocument.ownerView);
-      final size = builder.getIntrinsicSize();
-      naturalWidth = size.width.toInt();
-      naturalHeight = size.height.toInt();
-      svgElement.hostingImageElement = this;
+      ImageLoadResponse response = await obtainImage(this, _resolvedUri!);
+      _svgBytes = response.bytes;
       _resizeImage();
-
       _isSVGImage = true;
-      _svgElement = svgElement;
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
+      });
 
-      renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
-
-      // _updateRenderObject(svg: renderObject);
       _dispatchLoadEvent();
     } catch (e, stack) {
       print('$e\n$stack');
@@ -665,22 +654,11 @@ class ImageElement extends Element {
 class WebFImage extends flutter.StatefulWidget {
   final ImageElement imageElement;
 
-  WebFImage(this.imageElement);
+  WebFImage(this.imageElement, {flutter.Key? key}) : super(key: key);
 
   @override
   flutter.State<flutter.StatefulWidget> createState() {
     return _ImageState(imageElement);
-  }
-}
-
-class WebFSVGImage extends flutter.StatelessWidget {
-  final SVGElement svgElement;
-
-  WebFSVGImage(this.svgElement);
-
-  @override
-  flutter.Widget build(flutter.BuildContext context) {
-    return svgElement.toWidget();
   }
 }
 
@@ -691,14 +669,21 @@ class _ImageState extends flutter.State<WebFImage> {
 
   @override
   flutter.Widget build(flutter.BuildContext context) {
-    flutter.RawImage rawImage = WebFRawImage(
-        image: imageElement._cachedImageInfo?.image,
-        width: imageElement.naturalWidth.toDouble(),
-        fit: imageElement.renderStyle.objectFit,
-        alignment: imageElement.renderStyle.objectPosition,
-        height: imageElement.naturalHeight.toDouble());
+    flutter.Widget child;
+    if (!imageElement._isSVGImage) {
+      child = WebFRawImage(
+          image: imageElement._cachedImageInfo?.image,
+          width: imageElement.naturalWidth.toDouble(),
+          fit: imageElement.renderStyle.objectFit,
+          alignment: imageElement.renderStyle.objectPosition,
+          height: imageElement.naturalHeight.toDouble());
+    } else {
+      child = SvgPicture.memory(
+        imageElement._svgBytes!,
+      );
+    }
 
-    return rawImage;
+    return child;
   }
 }
 

@@ -37,7 +37,7 @@ void main() async {
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
-      maxAliveInstances: 1,
+      maxAliveInstances: 4,
       maxAttachedInstances: 1,
       onControllerDisposed: (String name, WebFController controller) {
         print('controller disposed: $name $controller');
@@ -463,7 +463,7 @@ Future<bool> handleShare(Map<String, dynamic> args) async {
     final downloadDir = await getDownloadsDirectory();
     final now = DateTime.now().millisecondsSinceEpoch;
     final filePath = '${downloadDir?.path}/screenshot_$now.png';
-    
+
     final file = File(filePath);
     await file.writeAsBytes(blobData);
 
@@ -472,7 +472,7 @@ Future<bool> handleShare(Map<String, dynamic> args) async {
       text: args['text'],
       subject: args['title'],
     );
-    
+
     return true;
   } catch (e, stackTrace) {
     print('Share failed: $e');
