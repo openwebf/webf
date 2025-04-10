@@ -6,10 +6,10 @@ namespace webf {
 <% _.forEach(object.props, function(prop, index) { %>
 <% var id = `${object.name}.${prop.name}`; %>
 <% if (skipList.includes(id)) return; %>
-<%= generatePublicReturnTypeValue(prop.type, true) %> <%= className %>PublicMethods::<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type) || prop.typeMode.dartImpl ? ", SharedExceptionState* shared_exception_state": "" %>) {
+<%= generatePublicReturnTypeValue(prop.type, true, prop.typeMode) %> <%= className %>PublicMethods::<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type) || prop.typeMode.dartImpl ? ", SharedExceptionState* shared_exception_state": "" %>) {
   MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
   <% if (prop.typeMode.dartImpl) { %>
-  return <%= _.snakeCase(className) %>->GetBindingProperty(binding_call_methods::k<%= _.camelCase(prop.name) %>, shared_exception_state->exception_state);
+  return <%= _.snakeCase(className) %>->GetBindingProperty(binding_call_methods::k<%= _.camelCase(prop.name) %>,  FlushUICommandReason::kDependentsOnElement  <%= prop.typeMode.layoutDependent ? '| FlushUICommandReason::kDependentsOnLayout' : '' %>, shared_exception_state->exception_state);
   <% } else if (isPointerType(prop.type)) { %>
   auto* result = <%= _.snakeCase(className) %>-><%= prop.name %>();
   WebFValueStatus* status_block = result->KeepAlive();
@@ -31,13 +31,7 @@ namespace webf {
 void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParameterType(prop.type, true) %> <%= prop.name %>, SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
   <% if (prop.typeMode.dartImpl) { %>
-    <% if (isStringType(prop.type)) { %>
-  NativeValue <%= _.snakeCase(prop.name) %>_native = Native_NewCString(<%= _.snakeCase(prop.name) %>);
-    <% } else if (isDoubleType(prop.type)) { %>
-  NativeValue <%= _.snakeCase(prop.name) %>_native = Native_NewFloat64(<%= _.snakeCase(prop.name) %>);
-    <% } else if (isIntType(prop.type)) { %>
-  NativeValue <%= _.snakeCase(prop.name) %>_native = Native_NewInt64(<%= _.snakeCase(prop.name) %>);
-    <% } %>
+  NativeValue <%= _.snakeCase(prop.name) %>_native = <%= generateNativeValueConverter(prop.type) %>(<%= prop.name %>);
   <%= _.snakeCase(className) %>->SetBindingProperty(binding_call_methods::k<%= _.camelCase(prop.name) %>, <%= _.snakeCase(prop.name) %>_native, shared_exception_state->exception_state);
   <% } else { %>
     <% if (isStringType(prop.type)) { %>
@@ -57,13 +51,7 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   <% if (method.returnTypeMode?.dartImpl) { %>
   NativeValue args[] = {
     <% _.forEach(method.args, function(arg, index) { %>
-      <% if (isStringType(arg.type)) { %>
-    Native_NewCString(<%= _.snakeCase(arg.name) %>),
-      <% } else if (isDoubleType(arg.type)) { %>
-    Native_NewFloat64(<%= _.snakeCase(arg.name) %>),
-      <% } else if (isIntType(arg.type)) { %>
-    Native_NewInt64(<%= _.snakeCase(arg.name) %>),
-      <% } %>
+    <%= generateNativeValueConverter(arg.type) %>(<%= _.snakeCase(arg.name) %>),
     <% }) %>
   };
   <%= _.snakeCase(className) %>->InvokeBindingMethod(binding_call_methods::kaddColorStop, <%= method.args.length %>, args, FlushUICommandReason::kDependentsOnElement<% if(method.returnTypeMode?.layoutDependent){ %> | FlushUICommandReason::kDependentsOnLayout <% } %>, shared_exception_state->exception_state);

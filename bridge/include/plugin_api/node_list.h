@@ -22,12 +22,12 @@ enum class NodeListType {
   kNodeList = 0,
 };
 using PublicNodeListGetLength = int64_t (*)(NodeList*);
-using PublicNodeListItem = WebFValue<Node, NodePublicMethods> (*)(NodeList*, double, SharedExceptionState*);
+using PublicNodeListItem = WebFValue<webf::Node, NodePublicMethods> (*)(NodeList*, double, SharedExceptionState*);
 using PublicNodeListRelease = void (*)(NodeList*);
 using PublicNodeListDynamicTo = WebFValue<NodeList, WebFPublicMethods> (*)(NodeList*, NodeListType);
 struct NodeListPublicMethods : public WebFPublicMethods {
   static int64_t Length(NodeList* node_list);
-  static WebFValue<Node, NodePublicMethods> Item(NodeList* node_list, double index, SharedExceptionState* shared_exception_state);
+  static WebFValue<webf::Node, NodePublicMethods> Item(NodeList* node_list, double index, SharedExceptionState* shared_exception_state);
   static void Release(NodeList* node_list);
   static WebFValue<NodeList, WebFPublicMethods> DynamicTo(NodeList* node_list, NodeListType node_list_type);
   double version{1.0};

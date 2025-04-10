@@ -41,6 +41,9 @@ class CharacterData : public Node {
 template <>
 struct DowncastTraits<CharacterData> {
   static bool AllowFrom(const Node& node) { return node.IsCharacterDataNode(); }
+  static bool AllowFrom(const EventTarget& event_target) {
+    return event_target.IsNode() && To<Node>(event_target).IsCharacterDataNode();
+  }
 };
 
 }  // namespace webf

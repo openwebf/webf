@@ -8,6 +8,7 @@
 #include "core/dom/document.h"
 #include "core/frame/window_event_handlers.h"
 #include "html_element.h"
+#include "plugin_api/html_body_element.h"
 
 namespace webf {
 
@@ -17,6 +18,11 @@ class HTMLBodyElement : public HTMLElement {
  public:
   using ImplType = HTMLBodyElement*;
   explicit HTMLBodyElement(Document&);
+
+  const HTMLBodyElementPublicMethods* htmlBodyElementPublicMethods() {
+    static HTMLBodyElementPublicMethods html_body_element_public_methods;
+    return &html_body_element_public_methods;
+  }
 
   DEFINE_WINDOW_ATTRIBUTE_EVENT_LISTENER(blur, kblur);
   DEFINE_WINDOW_ATTRIBUTE_EVENT_LISTENER(error, kerror);

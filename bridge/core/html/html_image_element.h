@@ -25,6 +25,8 @@ class HTMLImageElement : public HTMLElement {
 
   ScriptPromise decode(ExceptionState& exception_state) const;
 
+  virtual bool IsImage() const { return false; }
+
   const HTMLImageElementPublicMethods* htmlImageElementPublicMethods() {
     static HTMLImageElementPublicMethods html_image_element_public_methods;
     return &html_image_element_public_methods;

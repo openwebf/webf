@@ -18,9 +18,9 @@ class ExecutingContext;
 typedef struct NativeValue NativeValue;
 typedef struct AtomicStringRef AtomicStringRef;
 class FocusEvent;
-using PublicFocusEventGetRelatedTarget = WebFValue<EventTarget, EventTargetPublicMethods> (*)(FocusEvent*);
+using PublicFocusEventGetRelatedTarget = WebFValue<webf::EventTarget, EventTargetPublicMethods> (*)(FocusEvent*);
 struct FocusEventPublicMethods : public WebFPublicMethods {
-  static WebFValue<EventTarget, EventTargetPublicMethods> RelatedTarget(FocusEvent* focus_event);
+  static WebFValue<webf::EventTarget, EventTargetPublicMethods> RelatedTarget(FocusEvent* focus_event);
   double version{1.0};
   UIEventPublicMethods ui_event;
   PublicFocusEventGetRelatedTarget focus_event_get_related_target{RelatedTarget};

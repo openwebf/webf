@@ -22,6 +22,8 @@ export const skipList = [
   'Element.toBlob',
 
   'Window.window',
+  'Window.parent',
+  'Window.self',
   'Window.scroll',
   'Window.scrollTo',
   'Window.scrollBy',

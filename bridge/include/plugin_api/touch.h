@@ -34,7 +34,7 @@ using PublicTouchGetRadiusY = double (*)(Touch*);
 using PublicTouchGetRotationAngle = double (*)(Touch*);
 using PublicTouchGetScreenX = double (*)(Touch*);
 using PublicTouchGetScreenY = double (*)(Touch*);
-using PublicTouchGetTarget = WebFValue<EventTarget, EventTargetPublicMethods> (*)(Touch*);
+using PublicTouchGetTarget = WebFValue<webf::EventTarget, EventTargetPublicMethods> (*)(Touch*);
 using PublicTouchRelease = void (*)(Touch*);
 using PublicTouchDynamicTo = WebFValue<Touch, WebFPublicMethods> (*)(Touch*, TouchType);
 struct TouchPublicMethods : public WebFPublicMethods {
@@ -51,7 +51,7 @@ struct TouchPublicMethods : public WebFPublicMethods {
   static double RotationAngle(Touch* touch);
   static double ScreenX(Touch* touch);
   static double ScreenY(Touch* touch);
-  static WebFValue<EventTarget, EventTargetPublicMethods> Target(Touch* touch);
+  static WebFValue<webf::EventTarget, EventTargetPublicMethods> Target(Touch* touch);
   static void Release(Touch* touch);
   static WebFValue<Touch, WebFPublicMethods> DynamicTo(Touch* touch, TouchType touch_type);
   double version{1.0};

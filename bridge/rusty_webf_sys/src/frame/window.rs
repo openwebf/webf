@@ -9,8 +9,6 @@ use crate::*;
 pub struct WindowRustMethods {
   pub version: c_double,
   pub event_target: EventTargetRustMethods,
-  pub parent: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<WindowRustMethods>,
-  pub self_: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<WindowRustMethods>,
   pub screen: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<ScreenRustMethods>,
   pub scroll_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub scroll_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
@@ -49,18 +47,6 @@ impl Window {
   }
   pub fn context<'a>(&self) -> &'a ExecutingContext {
     self.event_target.context()
-  }
-  pub fn parent(&self) -> Window {
-    let value = unsafe {
-      ((*self.method_pointer).parent)(self.ptr())
-    };
-    Window::initialize(value.value, self.context(), value.method_pointer, value.status)
-  }
-  pub fn self_(&self) -> Window {
-    let value = unsafe {
-      ((*self.method_pointer).self_)(self.ptr())
-    };
-    Window::initialize(value.value, self.context(), value.method_pointer, value.status)
   }
   pub fn screen(&self) -> Screen {
     let value = unsafe {
@@ -163,8 +149,6 @@ impl Window {
   }
 }
 pub trait WindowMethods: EventTargetMethods {
-  fn parent(&self) -> Window;
-  fn self_(&self) -> Window;
   fn screen(&self) -> Screen;
   fn scroll_x(&self) -> f64;
   fn scroll_y(&self) -> f64;
@@ -182,12 +166,6 @@ pub trait WindowMethods: EventTargetMethods {
   fn as_window(&self) -> &Window;
 }
 impl WindowMethods for Window {
-  fn parent(&self) -> Window {
-    self.parent()
-  }
-  fn self_(&self) -> Window {
-    self.self_()
-  }
   fn screen(&self) -> Screen {
     self.screen()
   }

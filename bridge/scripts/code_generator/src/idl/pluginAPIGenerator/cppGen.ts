@@ -3,7 +3,7 @@ import path from 'path';
 import {IDLBlob} from '../IDLBlob';
 import {getTemplateKind, TemplateKind} from '../generateHeader';
 import _ from 'lodash';
-import {ClassObject, FunctionArguments, FunctionArgumentType} from '../declaration';
+import {ClassObject, FunctionArguments, FunctionArgumentType, ParameterMode} from '../declaration';
 import {GenerateOptions, generateSupportedOptions} from '../generator';
 import {ParameterType} from '../analyzer';
 import {getPointerType, isPointerType} from '../generateSource';
@@ -65,10 +65,13 @@ export function isVectorType(type: ParameterType): boolean {
   return !!(type.isArray && typeof type.value === 'object' && !Array.isArray(type.value));
 }
 
-function generatePublicReturnTypeValue(type: ParameterType, is32Bit: boolean = false): string {
+function generatePublicReturnTypeValue(type: ParameterType, is32Bit: boolean = false, typeMode?: ParameterMode): string {
+  if (typeMode?.dartImpl) {
+    return 'NativeValue'
+  }
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
-    return `WebFValue<${pointerType}, ${pointerType}PublicMethods>`;
+    return `WebFValue<webf::${pointerType}, ${pointerType}PublicMethods>`;
   }
   if (isVectorType(type)) {
     return `VectorValueRef`;
@@ -185,6 +188,27 @@ function generatePublicParameterType(type: ParameterType, is32Bit: boolean = fal
   }
 }
 
+function generateNativeValueConverter(type: ParameterType): string {
+
+  if (isPointerType(type)) {
+    return `Native_NewPtr<${getPointerType(type)}>`;
+  }
+
+  switch (type.value) {
+    case FunctionArgumentType.int32:
+    case FunctionArgumentType.int64:
+      return `Native_NewInt64`;
+    case FunctionArgumentType.double:
+      return `Native_NewFloat64`;
+    case FunctionArgumentType.boolean:
+      return `Native_NewBool`;
+    case FunctionArgumentType.dom_string:
+    case FunctionArgumentType.legacy_dom_string:
+      return `Native_NewCString`;
+  }
+  return ''
+}
+
 function generatePublicParametersType(parameters: FunctionArguments[], is32Bit: boolean = false): string {
   if (parameters.length === 0) {
     return '';
@@ -292,7 +316,7 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
           generatePublicParametersType,
           generatePublicParametersTypeWithName,
           isStringType,
-          isDoubleType,
+          generateNativeValueConverter,
           isIntType,
           isAnyType,
           isVectorType,
@@ -437,7 +461,7 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           isPointerType,
           getPointerType,
           isStringType,
-          isDoubleType,
+          generateNativeValueConverter,
           isIntType,
           isAnyType,
           isVectorType,

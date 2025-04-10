@@ -19,11 +19,11 @@ typedef struct NativeValue NativeValue;
 typedef struct AtomicStringRef AtomicStringRef;
 class UIEvent;
 using PublicUIEventGetDetail = double (*)(UIEvent*);
-using PublicUIEventGetView = WebFValue<Window, WindowPublicMethods> (*)(UIEvent*);
+using PublicUIEventGetView = WebFValue<webf::Window, WindowPublicMethods> (*)(UIEvent*);
 using PublicUIEventGetWhich = double (*)(UIEvent*);
 struct UIEventPublicMethods : public WebFPublicMethods {
   static double Detail(UIEvent* ui_event);
-  static WebFValue<Window, WindowPublicMethods> View(UIEvent* ui_event);
+  static WebFValue<webf::Window, WindowPublicMethods> View(UIEvent* ui_event);
   static double Which(UIEvent* ui_event);
   double version{1.0};
   EventPublicMethods event;

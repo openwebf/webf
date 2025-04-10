@@ -22,12 +22,12 @@ enum class TouchListType {
   kTouchList = 0,
 };
 using PublicTouchListGetLength = double (*)(TouchList*);
-using PublicTouchListItem = WebFValue<Touch, TouchPublicMethods> (*)(TouchList*, double, SharedExceptionState*);
+using PublicTouchListItem = WebFValue<webf::Touch, TouchPublicMethods> (*)(TouchList*, double, SharedExceptionState*);
 using PublicTouchListRelease = void (*)(TouchList*);
 using PublicTouchListDynamicTo = WebFValue<TouchList, WebFPublicMethods> (*)(TouchList*, TouchListType);
 struct TouchListPublicMethods : public WebFPublicMethods {
   static double Length(TouchList* touch_list);
-  static WebFValue<Touch, TouchPublicMethods> Item(TouchList* touch_list, double index, SharedExceptionState* shared_exception_state);
+  static WebFValue<webf::Touch, TouchPublicMethods> Item(TouchList* touch_list, double index, SharedExceptionState* shared_exception_state);
   static void Release(TouchList* touch_list);
   static WebFValue<TouchList, WebFPublicMethods> DynamicTo(TouchList* touch_list, TouchListType touch_list_type);
   double version{1.0};
