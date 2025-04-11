@@ -42,10 +42,10 @@ using Public<%= className %>Set<%= propName %> = void (*)(<%= className %>*, <%=
   <% } %>
 <% }); %>
 
-<% _.forEach(object.methods, function(method, index) { %>
+<% _.forEach(methodsWithoutOverload, function(method, index) { %>
 <% var id = `${object.name}.${method.name}`; %>
 <% if (skipList.includes(id)) return; %>
-  <% var methodName = _.startCase(method.name).replace(/ /g, ''); %>
+  <% var methodName = _.startCase(method.rustName || method.name).replace(/ /g, ''); %>
 using Public<%= className %><%= methodName %> = <%= generatePublicReturnTypeValue(method.returnType, true) %> (*)(<%= className %>*, <%= generatePublicParametersType(method.args, true) %>SharedExceptionState*);
 <% }); %>
 
@@ -66,10 +66,10 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
     <% } %>
   <% }); %>
 
-  <% _.forEach(object.methods, function(method, index) { %>
+  <% _.forEach(methodsWithoutOverload, function(method, index) { %>
     <% var id = `${object.name}.${method.name}`; %>
     <% if (skipList.includes(id)) return; %>
-    <% var methodName = _.startCase(method.name).replace(/ /g, ''); %>
+    <% var methodName = _.startCase(method.rustName || method.name).replace(/ /g, ''); %>
   static <%= generatePublicReturnTypeValue(method.returnType, true) %> <%= methodName %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParametersTypeWithName(method.args, true) %>SharedExceptionState* shared_exception_state);
   <% }); %>
 
@@ -93,11 +93,11 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
     <% } %>
   <% }); %>
 
-  <% _.forEach(object.methods, function(method, index) { %>
+  <% _.forEach(methodsWithoutOverload, function(method, index) { %>
     <% var id = `${object.name}.${method.name}`; %>
     <% if (skipList.includes(id)) return; %>
-    <% var methodName = _.startCase(method.name).replace(/ /g, ''); %>
-  Public<%= className %><%= methodName %> <%= _.snakeCase(className) %>_<%= _.snakeCase(method.name) %>{<%= methodName %>};
+    <% var methodName =  _.startCase(method.rustName || method.name).replace(/ /g, ''); %>
+  Public<%= className %><%= methodName %> <%= _.snakeCase(className) %>_<%= _.snakeCase(methodName) %>{<%= methodName %>};
   <% }); %>
 
   <% if (!object.parent) { %>

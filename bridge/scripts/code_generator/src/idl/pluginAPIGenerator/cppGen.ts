@@ -3,7 +3,7 @@ import path from 'path';
 import {IDLBlob} from '../IDLBlob';
 import {getTemplateKind, TemplateKind} from '../generateHeader';
 import _ from 'lodash';
-import {ClassObject, FunctionArguments, FunctionArgumentType, ParameterMode} from '../declaration';
+import {ClassObject, FunctionArguments, FunctionArgumentType, FunctionDeclaration, ParameterMode} from '../declaration';
 import {GenerateOptions, generateSupportedOptions} from '../generator';
 import {ParameterType} from '../analyzer';
 import {getPointerType, isPointerType} from '../generateSource';
@@ -259,6 +259,25 @@ export function isAnyType(type: ParameterType): boolean {
   return type.value === FunctionArgumentType.any;
 }
 
+export function getMethodsWithoutOverload(methods: FunctionDeclaration[]) {
+  const methodsWithoutOverload = [] as (FunctionDeclaration | {rustName?: string})[];
+  const methodsNames = new Set<string>();
+  methods.forEach(method => {
+    const name = method.name;
+    if (methodsNames.has(name)) {
+      const rustName = name + 'With' + method.args.map(arg => _.upperFirst(arg.name)).join('');
+      methodsWithoutOverload.push({
+        ...method,
+        rustName: rustName,
+      })
+    } else {
+      methodsNames.add(name);
+      methodsWithoutOverload.push(method);
+    }
+  });
+  return methodsWithoutOverload;
+}
+
 function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
   const baseTemplate = readHeaderTemplate('base');
   const contents = blob.objects.map(object => {
@@ -306,11 +325,13 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
           appendSubClasses(object.name);
         }
 
+        const methodsWithoutOverload = getMethodsWithoutOverload(object.methods);
         return _.template(readHeaderTemplate('interface'))({
           className: getClassName(blob),
           parentClassName: object.parent,
           blob: blob,
           object,
+          methodsWithoutOverload,
           generatePublicParameterType,
           generatePublicReturnTypeValue,
           generatePublicParametersType,
@@ -448,11 +469,13 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           }
         }
 
+        const methodsWithoutOverload = getMethodsWithoutOverload(object.methods);
         return _.template(readSourceTemplate('interface'))({
           className: getClassName(blob),
           parentClassName: object.parent,
           blob: blob,
           object,
+          methodsWithoutOverload,
           generatePublicReturnTypeValue,
           generatePublicParametersType,
           generatePublicParametersTypeWithName,

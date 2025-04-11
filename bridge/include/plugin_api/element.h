@@ -69,6 +69,12 @@ using PublicElementQuerySelector = WebFValue<webf::Element, ElementPublicMethods
 using PublicElementQuerySelectorAll = VectorValueRef (*)(Element*, const char*, SharedExceptionState*);
 using PublicElementMatches = int32_t (*)(Element*, const char*, SharedExceptionState*);
 using PublicElementClosest = WebFValue<webf::Element, ElementPublicMethods> (*)(Element*, const char*, SharedExceptionState*);
+using PublicElementScroll = void (*)(Element*, double, double, SharedExceptionState*);
+using PublicElementScrollWithOptions = void (*)(Element*, WebFScrollToOptions*, SharedExceptionState*);
+using PublicElementScrollBy = void (*)(Element*, double, double, SharedExceptionState*);
+using PublicElementScrollByWithOptions = void (*)(Element*, WebFScrollToOptions*, SharedExceptionState*);
+using PublicElementScrollTo = void (*)(Element*, double, double, SharedExceptionState*);
+using PublicElementScrollToWithOptions = void (*)(Element*, WebFScrollToOptions*, SharedExceptionState*);
 using PublicElementTestGlobalToLocal = NativeValue (*)(Element*, double, double, SharedExceptionState*);
 struct ElementPublicMethods : public WebFPublicMethods {
   static AtomicStringRef Id(Element* element);
@@ -109,6 +115,12 @@ struct ElementPublicMethods : public WebFPublicMethods {
   static VectorValueRef QuerySelectorAll(Element* element, const char* selectors, SharedExceptionState* shared_exception_state);
   static int32_t Matches(Element* element, const char* selectors, SharedExceptionState* shared_exception_state);
   static WebFValue<webf::Element, ElementPublicMethods> Closest(Element* element, const char* selectors, SharedExceptionState* shared_exception_state);
+  static void Scroll(Element* element, double x, double y, SharedExceptionState* shared_exception_state);
+  static void ScrollWithOptions(Element* element, WebFScrollToOptions* options, SharedExceptionState* shared_exception_state);
+  static void ScrollBy(Element* element, double x, double y, SharedExceptionState* shared_exception_state);
+  static void ScrollByWithOptions(Element* element, WebFScrollToOptions* options, SharedExceptionState* shared_exception_state);
+  static void ScrollTo(Element* element, double x, double y, SharedExceptionState* shared_exception_state);
+  static void ScrollToWithOptions(Element* element, WebFScrollToOptions* options, SharedExceptionState* shared_exception_state);
   static NativeValue TestGlobalToLocal(Element* element, double x, double y, SharedExceptionState* shared_exception_state);
   double version{1.0};
   NodePublicMethods node;
@@ -150,6 +162,12 @@ struct ElementPublicMethods : public WebFPublicMethods {
   PublicElementQuerySelectorAll element_query_selector_all{QuerySelectorAll};
   PublicElementMatches element_matches{Matches};
   PublicElementClosest element_closest{Closest};
+  PublicElementScroll element_scroll{Scroll};
+  PublicElementScrollWithOptions element_scroll_with_options{ScrollWithOptions};
+  PublicElementScrollBy element_scroll_by{ScrollBy};
+  PublicElementScrollByWithOptions element_scroll_by_with_options{ScrollByWithOptions};
+  PublicElementScrollTo element_scroll_to{ScrollTo};
+  PublicElementScrollToWithOptions element_scroll_to_with_options{ScrollToWithOptions};
   PublicElementTestGlobalToLocal element_test_global_to_local{TestGlobalToLocal};
 };
 }  // namespace webf

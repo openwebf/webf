@@ -47,6 +47,12 @@ pub struct ElementRustMethods {
   pub query_selector_all: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
   pub matches: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> i32,
   pub closest: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub scroll: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> c_void,
+  pub scroll_with_options: extern "C" fn(ptr: *const OpaquePtr, *const ScrollToOptions, exception_state: *const OpaquePtr) -> c_void,
+  pub scroll_by: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> c_void,
+  pub scroll_by_with_options: extern "C" fn(ptr: *const OpaquePtr, *const ScrollToOptions, exception_state: *const OpaquePtr) -> c_void,
+  pub scroll_to: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> c_void,
+  pub scroll_to_with_options: extern "C" fn(ptr: *const OpaquePtr, *const ScrollToOptions, exception_state: *const OpaquePtr) -> c_void,
   pub test_global_to_local: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> NativeValue,
 }
 pub struct Element {
@@ -383,6 +389,60 @@ impl Element {
     }
     Ok(Element::initialize(value.value, self.context(), value.method_pointer, value.status))
   }
+  pub fn scroll(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).scroll)(self.ptr(), x, y, exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn scroll_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).scroll_with_options)(self.ptr(), options, exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn scroll_by(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).scroll_by)(self.ptr(), x, y, exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn scroll_by_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).scroll_by_with_options)(self.ptr(), options, exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn scroll_to(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).scroll_to)(self.ptr(), x, y, exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn scroll_to_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).scroll_to_with_options)(self.ptr(), options, exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
   pub fn test_global_to_local(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<NativeValue, String> {
     let value = unsafe {
       ((*self.method_pointer).test_global_to_local)(self.ptr(), x, y, exception_state.ptr)
@@ -432,6 +492,12 @@ pub trait ElementMethods: NodeMethods {
   fn query_selector_all(&self, selectors: &str, exception_state: &ExceptionState) -> Result<Vec<Element>, String>;
   fn matches(&self, selectors: &str, exception_state: &ExceptionState) -> Result<bool, String>;
   fn closest(&self, selectors: &str, exception_state: &ExceptionState) -> Result<Element, String>;
+  fn scroll(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String>;
+  fn scroll_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String>;
+  fn scroll_by(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String>;
+  fn scroll_by_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String>;
+  fn scroll_to(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String>;
+  fn scroll_to_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String>;
   fn test_global_to_local(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<NativeValue, String>;
   fn as_element(&self) -> &Element;
 }
@@ -549,6 +615,24 @@ impl ElementMethods for Element {
   }
   fn closest(&self, selectors: &str, exception_state: &ExceptionState) -> Result<Element, String> {
     self.closest(selectors, exception_state)
+  }
+  fn scroll(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll(x, y, exception_state)
+  }
+  fn scroll_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll_with_options(options, exception_state)
+  }
+  fn scroll_by(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll_by(x, y, exception_state)
+  }
+  fn scroll_by_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll_by_with_options(options, exception_state)
+  }
+  fn scroll_to(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll_to(x, y, exception_state)
+  }
+  fn scroll_to_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll_to_with_options(options, exception_state)
   }
   fn test_global_to_local(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<NativeValue, String> {
     self.test_global_to_local(x, y, exception_state)

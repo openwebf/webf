@@ -178,6 +178,24 @@ impl ElementMethods for HTMLHeadElement {
   fn closest(&self, selectors: &str, exception_state: &ExceptionState) -> Result<Element, String> {
     self.html_element.element.closest(selectors, exception_state)
   }
+  fn scroll(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    self.html_element.element.scroll(x, y, exception_state)
+  }
+  fn scroll_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    self.html_element.element.scroll_with_options(options, exception_state)
+  }
+  fn scroll_by(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    self.html_element.element.scroll_by(x, y, exception_state)
+  }
+  fn scroll_by_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    self.html_element.element.scroll_by_with_options(options, exception_state)
+  }
+  fn scroll_to(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    self.html_element.element.scroll_to(x, y, exception_state)
+  }
+  fn scroll_to_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    self.html_element.element.scroll_to_with_options(options, exception_state)
+  }
   fn test_global_to_local(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<NativeValue, String> {
     self.html_element.element.test_global_to_local(x, y, exception_state)
   }

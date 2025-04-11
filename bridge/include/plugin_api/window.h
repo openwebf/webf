@@ -37,6 +37,12 @@ using PublicWindowGetInnerHeight = NativeValue (*)(Window*, SharedExceptionState
 using PublicWindowBtoa = AtomicStringRef (*)(Window*, const char*, SharedExceptionState*);
 using PublicWindowAtob = AtomicStringRef (*)(Window*, const char*, SharedExceptionState*);
 using PublicWindowOpen = WebFValue<webf::Window, WindowPublicMethods> (*)(Window*, const char*, SharedExceptionState*);
+using PublicWindowScroll = void (*)(Window*, double, double, SharedExceptionState*);
+using PublicWindowScrollWithOptions = void (*)(Window*, WebFScrollToOptions*, SharedExceptionState*);
+using PublicWindowScrollTo = void (*)(Window*, WebFScrollToOptions*, SharedExceptionState*);
+using PublicWindowScrollToWithXY = void (*)(Window*, double, double, SharedExceptionState*);
+using PublicWindowScrollBy = void (*)(Window*, WebFScrollToOptions*, SharedExceptionState*);
+using PublicWindowScrollByWithXY = void (*)(Window*, double, double, SharedExceptionState*);
 using PublicWindowCancelAnimationFrame = void (*)(Window*, double, SharedExceptionState*);
 using PublicWindowGetComputedStyle = WebFValue<webf::ComputedCssStyleDeclaration, ComputedCssStyleDeclarationPublicMethods> (*)(Window*, Element*, const char*, SharedExceptionState*);
 struct WindowPublicMethods : public WebFPublicMethods {
@@ -52,6 +58,12 @@ struct WindowPublicMethods : public WebFPublicMethods {
   static AtomicStringRef Btoa(Window* window, const char* string, SharedExceptionState* shared_exception_state);
   static AtomicStringRef Atob(Window* window, const char* string, SharedExceptionState* shared_exception_state);
   static WebFValue<webf::Window, WindowPublicMethods> Open(Window* window, const char* url, SharedExceptionState* shared_exception_state);
+  static void Scroll(Window* window, double x, double y, SharedExceptionState* shared_exception_state);
+  static void ScrollWithOptions(Window* window, WebFScrollToOptions* options, SharedExceptionState* shared_exception_state);
+  static void ScrollTo(Window* window, WebFScrollToOptions* options, SharedExceptionState* shared_exception_state);
+  static void ScrollToWithXY(Window* window, double x, double y, SharedExceptionState* shared_exception_state);
+  static void ScrollBy(Window* window, WebFScrollToOptions* options, SharedExceptionState* shared_exception_state);
+  static void ScrollByWithXY(Window* window, double x, double y, SharedExceptionState* shared_exception_state);
   static void CancelAnimationFrame(Window* window, double request_id, SharedExceptionState* shared_exception_state);
   static WebFValue<webf::ComputedCssStyleDeclaration, ComputedCssStyleDeclarationPublicMethods> GetComputedStyle(Window* window, Element* element, const char* pseudo_elt, SharedExceptionState* shared_exception_state);
   double version{1.0};
@@ -68,6 +80,12 @@ struct WindowPublicMethods : public WebFPublicMethods {
   PublicWindowBtoa window_btoa{Btoa};
   PublicWindowAtob window_atob{Atob};
   PublicWindowOpen window_open{Open};
+  PublicWindowScroll window_scroll{Scroll};
+  PublicWindowScrollWithOptions window_scroll_with_options{ScrollWithOptions};
+  PublicWindowScrollTo window_scroll_to{ScrollTo};
+  PublicWindowScrollToWithXY window_scroll_to_with_xy{ScrollToWithXY};
+  PublicWindowScrollBy window_scroll_by{ScrollBy};
+  PublicWindowScrollByWithXY window_scroll_by_with_xy{ScrollByWithXY};
   PublicWindowCancelAnimationFrame window_cancel_animation_frame{CancelAnimationFrame};
   PublicWindowGetComputedStyle window_get_computed_style{GetComputedStyle};
 };

@@ -21,6 +21,13 @@ pub struct WindowRustMethods {
   pub btoa: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
   pub atob: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
   pub open: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> RustValue<WindowRustMethods>,
+  pub scroll: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> c_void,
+  pub scroll_with_options: extern "C" fn(ptr: *const OpaquePtr, *const ScrollToOptions, exception_state: *const OpaquePtr) -> c_void,
+  pub scroll_to: extern "C" fn(ptr: *const OpaquePtr, *const ScrollToOptions, exception_state: *const OpaquePtr) -> c_void,
+  pub scroll_to_with_xy: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> c_void,
+  pub scroll_by: extern "C" fn(ptr: *const OpaquePtr, *const ScrollToOptions, exception_state: *const OpaquePtr) -> c_void,
+  pub scroll_by_with_xy: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> c_void,
+  pub post_message_with_message: extern "C" fn(ptr: *const OpaquePtr, NativeValue, exception_state: *const OpaquePtr) -> c_void,
   pub cancel_animation_frame: extern "C" fn(ptr: *const OpaquePtr, c_double, exception_state: *const OpaquePtr) -> c_void,
   pub get_computed_style: extern "C" fn(ptr: *const OpaquePtr, *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> RustValue<ComputedCssStyleDeclarationRustMethods>,
 }
@@ -129,6 +136,69 @@ impl Window {
     }
     Ok(Window::initialize(value.value, self.context(), value.method_pointer, value.status))
   }
+  pub fn scroll(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).scroll)(self.ptr(), x, y, exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn scroll_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).scroll_with_options)(self.ptr(), options, exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn scroll_to(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).scroll_to)(self.ptr(), options, exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn scroll_to_with_xy(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).scroll_to_with_xy)(self.ptr(), x, y, exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn scroll_by(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).scroll_by)(self.ptr(), options, exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn scroll_by_with_xy(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).scroll_by_with_xy)(self.ptr(), x, y, exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn post_message_with_message(&self, message: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).post_message_with_message)(self.ptr(), message, exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
   pub fn cancel_animation_frame(&self, request_id: f64, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).cancel_animation_frame)(self.ptr(), request_id, exception_state.ptr);
@@ -161,6 +231,13 @@ pub trait WindowMethods: EventTargetMethods {
   fn btoa(&self, string: &str, exception_state: &ExceptionState) -> Result<String, String>;
   fn atob(&self, string: &str, exception_state: &ExceptionState) -> Result<String, String>;
   fn open(&self, url: &str, exception_state: &ExceptionState) -> Result<Window, String>;
+  fn scroll(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String>;
+  fn scroll_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String>;
+  fn scroll_to(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String>;
+  fn scroll_to_with_xy(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String>;
+  fn scroll_by(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String>;
+  fn scroll_by_with_xy(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String>;
+  fn post_message_with_message(&self, message: NativeValue, exception_state: &ExceptionState) -> Result<(), String>;
   fn cancel_animation_frame(&self, request_id: f64, exception_state: &ExceptionState) -> Result<(), String>;
   fn get_computed_style(&self, element: &Element, pseudo_elt: &str, exception_state: &ExceptionState) -> Result<ComputedCssStyleDeclaration, String>;
   fn as_window(&self) -> &Window;
@@ -201,6 +278,27 @@ impl WindowMethods for Window {
   }
   fn open(&self, url: &str, exception_state: &ExceptionState) -> Result<Window, String> {
     self.open(url, exception_state)
+  }
+  fn scroll(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll(x, y, exception_state)
+  }
+  fn scroll_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll_with_options(options, exception_state)
+  }
+  fn scroll_to(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll_to(options, exception_state)
+  }
+  fn scroll_to_with_xy(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll_to_with_xy(x, y, exception_state)
+  }
+  fn scroll_by(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll_by(options, exception_state)
+  }
+  fn scroll_by_with_xy(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll_by_with_xy(x, y, exception_state)
+  }
+  fn post_message_with_message(&self, message: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
+    self.post_message_with_message(message, exception_state)
   }
   fn cancel_animation_frame(&self, request_id: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.cancel_animation_frame(request_id, exception_state)

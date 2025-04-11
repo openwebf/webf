@@ -4,7 +4,7 @@ import _ from 'lodash';
 import {getTemplateKind, TemplateKind} from '../generateHeader';
 import {GenerateOptions, generateSupportedOptions} from '../generator';
 import {IDLBlob} from '../IDLBlob';
-import {ClassObject, FunctionArguments, FunctionArgumentType} from '../declaration';
+import {ClassObject, FunctionArguments, FunctionArgumentType, FunctionDeclaration} from '../declaration';
 import {getPointerType, isPointerType} from '../generateSource';
 import {ParameterType} from '../analyzer';
 import {isAnyType, isStringType, isVectorType} from './cppGen';
@@ -323,6 +323,25 @@ function generatePropReturnStatements(type: ParameterType) {
   }
 }
 
+function getMethodsWithoutOverload(methods: FunctionDeclaration[]) {
+  const methodsWithoutOverload = [] as FunctionDeclaration[];
+  const methodsNames = new Set<string>();
+  methods.forEach(method => {
+    const name = method.name;
+    if (methodsNames.has(name)) {
+      const rustName = name + 'With' + method.args.map(arg => _.upperFirst(arg.name)).join('');
+      methodsWithoutOverload.push({
+        ...method,
+        name: rustName,
+      })
+    } else {
+      methodsNames.add(name);
+      methodsWithoutOverload.push(method);
+    }
+  });
+  return methodsWithoutOverload;
+}
+
 function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
   const baseTemplate = readSourceTemplate('base');
   const contents = blob.objects.map(object => {
@@ -338,6 +357,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
         let currentParentObject = object;
         while (currentParentObject.parent) {
           const parentObject = ClassObject.globalClassMap[currentParentObject.parent];
+          parentObject.methods = getMethodsWithoutOverload(parentObject.methods);
           inheritedObjects.push(parentObject);
           currentParentObject = parentObject;
         }
@@ -354,6 +374,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
         if (object.name in ClassObject.globalClassRelationMap) {
           appendSubClasses(object.name);
         }
+        object.methods = getMethodsWithoutOverload(object.methods);
 
         return _.template(readSourceTemplate('interface'))({
           className: getClassName(blob),

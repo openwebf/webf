@@ -43,10 +43,10 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   <% } %>
 <% }); %>
 
-<% _.forEach(object.methods, function(method, index) { %>
+<% _.forEach(methodsWithoutOverload, function(method, index) { %>
 <% var id = `${object.name}.${method.name}`; %>
 <% if (skipList.includes(id)) return; %>
-<%= generatePublicReturnTypeValue(method.returnType, true) %> <%= className %>PublicMethods::<%= _.startCase(method.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParametersTypeWithName(method.args, true) %>SharedExceptionState* shared_exception_state) {
+<%= generatePublicReturnTypeValue(method.returnType, true) %> <%= className %>PublicMethods::<%= _.startCase(method.rustName || method.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParametersTypeWithName(method.args, true) %>SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
   <% if (method.returnTypeMode?.dartImpl) { %>
   NativeValue args[] = {
@@ -73,7 +73,7 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   std::shared_ptr<<%= pointerType %>> <%= arg.name %>_p = <%= pointerType %>::Create();
         <% _.forEach([...(dependentClasses[getPointerType(arg.type)]?.props ?? []), ...(dependentClasses[getPointerType(arg.type)]?.inheritedProps ?? [])], function (prop) { %>
           <% if(isStringType(prop.type)) { %>
-  ScriptValue <%=_.snakeCase(prop.name)%>_script_value = ScriptValue(<%= _.snakeCase(className) %>->ctx(), <%=_.snakeCase(arg.name)%>);
+  auto <%=_.snakeCase(prop.name)%>_atomic = AtomicString(<%= _.snakeCase(className) %>->ctx(), <%= arg.name %>-><%=_.snakeCase(prop.name)%>);
   <%= arg.name %>_p->set<%=_.upperFirst(prop.name)%>(<%=_.snakeCase(prop.name)%>_atomic);
           <% } else if (isAnyType(prop.type)) { %>
   NativeValue <%=_.snakeCase(prop.name)%> = <%= arg.name %>-><%=_.snakeCase(prop.name)%>;
