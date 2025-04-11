@@ -32,8 +32,7 @@ template <>
 struct DowncastTraits<Image> {
   static bool AllowFrom(const EventTarget& event_target) {
     return event_target.IsNode() && To<Node>(event_target).IsHTMLElement() &&
-           To<HTMLElement>(event_target).tagName() == html_names::kimg &&
-           To<HTMLImageElement>(event_target).IsImage();
+           To<HTMLElement>(event_target).tagName() == html_names::kimg && To<HTMLImageElement>(event_target).IsImage();
   }
 };
 

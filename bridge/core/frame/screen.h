@@ -44,9 +44,7 @@ class Screen : public EventTargetWithInlineData {
 
 template <>
 struct DowncastTraits<Screen> {
-  static bool AllowFrom(const EventTarget& event_target) {
-    return event_target.IsScreen();
-  }
+  static bool AllowFrom(const EventTarget& event_target) { return event_target.IsScreen(); }
 };
 
 }  // namespace webf
