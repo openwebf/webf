@@ -41,6 +41,9 @@
   <router-view path="/slider" title="Slider">
     <slider-page></slider-page>
   </router-view>
+  <router-view path="/context_menu" title="Context Menu">
+    <context-menu-page></context-menu-page>
+  </router-view>
 </template>
 
 <script>
@@ -59,6 +62,7 @@ import LoadingPage from './Pages/LoadingPage.vue';
 import ModalPopupPage from './Pages/ModalPopupPage.vue';
 import PickerPage from './Pages/PickerPage.vue';
 import SliderPage from './Pages/SliderPage.vue';
+import ContextMenuPage from './Pages/ContextMenuPage.vue';
 
 export default {
   name: 'App',
@@ -78,6 +82,7 @@ export default {
     ModalPopupPage,
     PickerPage,
     SliderPage,
+    ContextMenuPage,
   },
 };
 </script>

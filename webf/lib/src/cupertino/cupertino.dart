@@ -5,6 +5,7 @@
 import 'package:webf/webf.dart';
 import 'alert.dart';
 import 'button.dart';
+import 'context_menu.dart';
 import 'date_picker.dart';
 import 'icon.dart';
 import 'input.dart';
@@ -42,4 +43,5 @@ void installWebFCupertino() {
   WebF.defineCustomElement('flutter-cupertino-tab-bar', (context) => FlutterTabBar(context));
   WebF.defineCustomElement('flutter-cupertino-tab-bar-item', (context) => FlutterCupertinoTabBarItem(context));
   WebF.defineCustomElement('flutter-cupertino-slider', (context) => FlutterCupertinoSlider(context));
+  WebF.defineCustomElement('flutter-cupertino-context-menu', (context) => FlutterCupertinoContextMenu(context));
 }

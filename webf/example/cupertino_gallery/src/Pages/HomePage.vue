@@ -120,6 +120,15 @@
             </div>
             <div class="item-arrow">></div>
           </div>
+
+          <!-- Context Menu -->
+          <div class="component-item" @click="navigateTo('/context_menu')">
+            <div class="item-content">
+              <div class="item-title">Context Menu</div>
+              <div class="item-desc">A context menu component for showing actions</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
         </div>
       </div>
     </webf-listview>
