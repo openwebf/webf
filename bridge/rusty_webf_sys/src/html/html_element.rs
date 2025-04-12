@@ -21,12 +21,20 @@ pub struct HTMLElement {
 pub trait HTMLElementMethods: ElementMethods {}
 
 impl ElementMethods for HTMLElement {
+  fn style(&self) -> CSSStyleDeclaration {
+    self.element.style()
+  }
+
   fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
     self.element.to_blob(exception_state)
   }
 
   fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
     self.element.to_blob_with_device_pixel_ratio(device_pixel_ratio, exception_state)
+  }
+
+  fn as_element(&self) -> &Element {
+    &self.element
   }
 }
 
@@ -82,6 +90,10 @@ impl EventTargetMethods for HTMLElement {
 
   fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool {
     self.element.dispatch_event(event, exception_state)
+  }
+
+  fn as_event_target(&self) -> &EventTarget {
+    self.element.as_event_target()
   }
 }
 

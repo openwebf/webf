@@ -1,5 +1,4 @@
 #include "rust_readable.h"
-#include "script_value_ref.h"
 <% if (object.parent) { %>
 #include "<%= _.snakeCase(object.parent) %>.h"
 <% } else { %>
@@ -20,8 +19,9 @@ typedef struct <%= dependentType %>PublicMethods <%= dependentType %>PublicMetho
 <% }); %>
 class SharedExceptionState;
 class ExecutingContext;
+typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class <%= className %>;
-typedef struct ScriptValueRef ScriptValueRef;
 
 <% if (!object.parent) { %>
 enum class <%= className %>Type {
@@ -33,17 +33,16 @@ enum class <%= className %>Type {
 <% } %>
 
 <% _.forEach(object.props, function(prop, index) { %>
+  <% if (prop.async_type) { return; } %>
   <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
-using Public<%= className %>Get<%= propName %> = <%= generatePublicReturnTypeValue(prop.type, true) %> (*)(<%= className %>*);
+using Public<%= className %>Get<%= propName %> = <%= generatePublicReturnTypeValue(prop.type, true) %> (*)(<%= className %>*<%= isAnyType(prop.type)? ", SharedExceptionState* shared_exception_state": "" %>);
   <% if (!prop.readonly) { %>
-using Public<%= className %>Set<%= propName %> = void (*)(<%= className %>*, <%= generatePublicReturnTypeValue(prop.type, true) %>, SharedExceptionState*);
-  <% } %>
-  <% if (isStringType(prop.type)) { %>
-using Public<%= className %>Dup<%= propName %> = <%= generatePublicReturnTypeValue(prop.type, true) %> (*)(<%= className %>*);
+using Public<%= className %>Set<%= propName %> = void (*)(<%= className %>*, <%= generatePublicParameterType(prop.type, true) %>, SharedExceptionState*);
   <% } %>
 <% }); %>
 
 <% _.forEach(object.methods, function(method, index) { %>
+  <% if (method.async_type) { return; } %>
   <% var methodName = _.startCase(method.name).replace(/ /g, ''); %>
 using Public<%= className %><%= methodName %> = <%= generatePublicReturnTypeValue(method.returnType, true) %> (*)(<%= className %>*, <%= generatePublicParametersType(method.args, true) %>SharedExceptionState*);
 <% }); %>
@@ -56,17 +55,16 @@ using Public<%= className %>DynamicTo = WebFValue<<%= className %>, WebFPublicMe
 struct <%= className %>PublicMethods : public WebFPublicMethods {
 
   <% _.forEach(object.props, function(prop, index) { %>
+    <% if (prop.async_type) { return; } %>
     <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
-  static <%= generatePublicReturnTypeValue(prop.type, true) %> <%= propName %>(<%= className %>* <%= _.snakeCase(className) %>);
+  static <%= generatePublicReturnTypeValue(prop.type, true) %> <%= propName %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type)? ", SharedExceptionState* shared_exception_state": "" %>);
     <% if (!prop.readonly) { %>
-  static void Set<%= propName %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicReturnTypeValue(prop.type, true) %> <%= prop.name %>, SharedExceptionState* shared_exception_state);
-    <% } %>
-    <% if (isStringType(prop.type)) { %>
-  static <%= generatePublicReturnTypeValue(prop.type, true) %> Dup<%= propName %>(<%= className %>* <%= _.snakeCase(className) %>);
+  static void Set<%= propName %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParameterType(prop.type, true) %> <%= prop.name %>, SharedExceptionState* shared_exception_state);
     <% } %>
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% if (method.async_type || method.async_returnType) { return; } %>
     <% var methodName = _.startCase(method.name).replace(/ /g, ''); %>
   static <%= generatePublicReturnTypeValue(method.returnType, true) %> <%= methodName %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParametersTypeWithName(method.args, true) %>SharedExceptionState* shared_exception_state);
   <% }); %>
@@ -82,17 +80,16 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
   <% } %>
 
   <% _.forEach(object.props, function(prop, index) { %>
+    <% if (prop.async_type) { return; } %>
     <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
   Public<%= className %>Get<%= propName %> <%= _.snakeCase(className) %>_get_<%= _.snakeCase(prop.name) %>{<%= propName %>};
     <% if (!prop.readonly) { %>
   Public<%= className %>Set<%= propName %> <%= _.snakeCase(className) %>_set_<%= _.snakeCase(prop.name) %>{Set<%= propName %>};
     <% } %>
-    <% if (isStringType(prop.type)) { %>
-  Public<%= className %>Dup<%= propName %> <%= _.snakeCase(className) %>_dup_<%= _.snakeCase(prop.name) %>{Dup<%= propName %>};
-    <% } %>
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% if (method.async_type || method.async_returnType) { return; } %>
     <% var methodName = _.startCase(method.name).replace(/ /g, ''); %>
   Public<%= className %><%= methodName %> <%= _.snakeCase(className) %>_<%= _.snakeCase(method.name) %>{<%= methodName %>};
   <% }); %>

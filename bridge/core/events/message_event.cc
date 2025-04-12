@@ -85,4 +85,9 @@ bool MessageEvent::IsMessageEvent() const {
   return true;
 }
 
+const MessageEventPublicMethods* MessageEvent::messageEventPublicMethods() {
+  static MessageEventPublicMethods message_event_public_methods;
+  return &message_event_public_methods;
+}
+
 }  // namespace webf

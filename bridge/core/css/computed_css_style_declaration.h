@@ -8,6 +8,7 @@
 #include "bindings/qjs/cppgc/member.h"
 #include "core/binding_object.h"
 #include "css_style_declaration.h"
+#include "plugin_api/computed_css_style_declaration.h"
 
 namespace webf {
 
@@ -42,6 +43,8 @@ class ComputedCssStyleDeclaration : public CSSStyleDeclaration {
   ScriptPromise cssText_async(ExceptionState& exception_state);
   void setCssText(const AtomicString& value, ExceptionState& exception_state) override;
   ScriptPromise setCssText_async(const AtomicString& value, ExceptionState& exception_state);
+
+  const ComputedCssStyleDeclarationPublicMethods* computedCssStyleDeclarationPublicMethods();
 
  private:
 };

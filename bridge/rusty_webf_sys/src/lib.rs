@@ -3,11 +3,14 @@
 */
 #![allow(unused)]
 
+pub mod css;
 pub mod dom;
 pub mod events;
 pub mod frame;
+pub mod geometry;
 pub mod html;
 pub mod input;
+pub mod timing;
 
 pub mod exception_state;
 pub mod executing_context;
@@ -17,12 +20,16 @@ pub mod script_value_ref;
 pub mod webf_event_listener;
 pub mod webf_function;
 pub mod webf_future;
+pub mod vector_value_ref;
 
+pub use css::*;
 pub use dom::*;
 pub use events::*;
 pub use frame::*;
+pub use geometry::*;
 pub use html::*;
 pub use input::*;
+pub use timing::*;
 
 pub use exception_state::*;
 pub use executing_context::*;
@@ -31,6 +38,7 @@ pub use script_value_ref::*;
 pub use webf_event_listener::*;
 pub use webf_function::*;
 pub use webf_future::*;
+pub use vector_value_ref::*;
 
 #[repr(C)]
 pub struct OpaquePtr;

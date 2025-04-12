@@ -5,5 +5,5 @@ interface PromiseRejectionEvent extends Event {
     readonly promise: any;
     readonly reason: any;
     [key: string]: any;
-    new(eventType: string, init?: PromiseRejectionEventInit) : PromiseRejectionEvent;
+    new(type: string, init?: PromiseRejectionEventInit) : PromiseRejectionEvent;
 }

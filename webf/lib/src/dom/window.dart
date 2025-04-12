@@ -141,7 +141,7 @@ class Window extends EventTarget {
   }
 
   @override
-  void addEventListener(String eventType, EventHandler handler, {EventListenerOptions? addEventListenerOptions}) {
+  void addEventListener(String eventType, EventHandler handler, {EventListenerOptions? addEventListenerOptions, bool builtInCallback = false}) {
     super.addEventListener(eventType, handler, addEventListenerOptions: addEventListenerOptions);
     switch (eventType) {
       case EVENT_SCROLL:
@@ -159,7 +159,7 @@ class Window extends EventTarget {
   }
 
   @override
-  void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false}) {
+  void removeEventListener(String eventType, EventHandler handler, {bool isCapture = false, bool builtInCallback = false}) {
     super.removeEventListener(eventType, handler, isCapture: isCapture);
     switch (eventType) {
       case EVENT_SCROLL:

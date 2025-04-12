@@ -9,10 +9,8 @@ use crate::*;
 pub struct InputEventRustMethods {
   pub version: c_double,
   pub ui_event: UIEventRustMethods,
-  pub input_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_input_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub data: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_data: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub input_type: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub data: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
 }
 pub struct InputEvent {
   pub ui_event: UIEvent,
@@ -42,15 +40,13 @@ impl InputEvent {
     let value = unsafe {
       ((*self.method_pointer).input_type)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn data(&self) -> String {
     let value = unsafe {
       ((*self.method_pointer).data)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
 }
 pub trait InputEventMethods: UIEventMethods {
@@ -131,5 +127,27 @@ impl EventMethods for InputEvent {
   }
   fn as_event(&self) -> &Event {
     &self.ui_event.event
+  }
+}
+impl ExecutingContext {
+  pub fn create_input_event(&self, event_type: &str, exception_state: &ExceptionState) -> Result<InputEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_input_event)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(InputEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
+  }
+  pub fn create_input_event_with_options(&self, event_type: &str, options: &InputEventInit,  exception_state: &ExceptionState) -> Result<InputEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_input_event_with_options)(self.ptr, event_type_c_string.as_ptr(), options, exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(InputEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
   }
 }

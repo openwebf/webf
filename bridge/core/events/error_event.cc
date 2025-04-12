@@ -29,16 +29,14 @@ ErrorEvent::ErrorEvent(ExecutingContext* context, const std::string& message, st
     : Event(context, event_type_names::kerror), message_(message), source_location_(std::move(location)) {}
 
 ErrorEvent::ErrorEvent(ExecutingContext* context, const AtomicString& type, ExceptionState& exception_state)
-    : Event(context, event_type_names::kerror),
-      message_(type.ToStdString(ctx())),
-      source_location_(std::make_unique<SourceLocation>("", 0, 0)) {}
+    : Event(context, type), message_(""), source_location_(std::make_unique<SourceLocation>("", 0, 0)) {}
 
 ErrorEvent::ErrorEvent(ExecutingContext* context,
                        const AtomicString& type,
                        const std::shared_ptr<ErrorEventInit>& initializer,
                        ExceptionState& exception_state)
     : Event(context, event_type_names::kerror),
-      message_(initializer->hasMessage() ? type.ToStdString(ctx()) : ""),
+      message_(initializer->hasMessage() ? initializer->message().ToStdString(ctx()) : ""),
       error_(initializer->hasError() ? initializer->error() : ScriptValue::Empty(ctx())),
       source_location_(
           std::make_unique<SourceLocation>(initializer->hasFilename() ? initializer->filename().ToStdString(ctx()) : "",
@@ -47,6 +45,11 @@ ErrorEvent::ErrorEvent(ExecutingContext* context,
 
 bool ErrorEvent::IsErrorEvent() const {
   return true;
+}
+
+const ErrorEventPublicMethods* ErrorEvent::errorEventPublicMethods() {
+  static ErrorEventPublicMethods error_event_public_methods;
+  return &error_event_public_methods;
 }
 
 }  // namespace webf
