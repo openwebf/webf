@@ -138,6 +138,15 @@
             </div>
             <div class="item-arrow">></div>
           </div>
+
+          <!-- Radio -->
+          <div class="component-item" @click="navigateTo('/radio')">
+            <div class="item-content">
+              <div class="item-title">Radio</div>
+              <div class="item-desc">A macOS-style radio button component</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
         </div>
       </div>
     </webf-listview>

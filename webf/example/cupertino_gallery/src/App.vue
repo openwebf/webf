@@ -47,6 +47,9 @@
   <router-view path="/checkbox" title="Checkbox">
     <checkbox-page></checkbox-page>
   </router-view>
+  <router-view path="/radio" title="Radio">
+    <radio-page></radio-page>
+  </router-view>
 </template>
 
 <script>
@@ -67,6 +70,7 @@ import PickerPage from './Pages/PickerPage.vue';
 import SliderPage from './Pages/SliderPage.vue';
 import ContextMenuPage from './Pages/ContextMenuPage.vue';
 import CheckboxPage from './Pages/CheckboxPage.vue';
+import RadioPage from './Pages/RadioPage.vue';
 
 export default {
   name: 'App',
@@ -88,6 +92,7 @@ export default {
     SliderPage,
     ContextMenuPage,
     CheckboxPage,
+    RadioPage,
   },
 };
 </script>
